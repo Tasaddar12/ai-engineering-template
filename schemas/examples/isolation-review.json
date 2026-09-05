@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "kind": "isolation-review",
+  "id": "synthetic-example",
+  "plan_id": "PLAN-001",
+  "graph_revision": 0,
+  "task_set_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "verdict": "fail",
+  "reviewer": "synthetic-example",
+  "review_kind": "foundation_design_review",
+  "checks": [
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    },
+    {
+      "id": "synthetic-example",
+      "status": "fail",
+      "rationale": "synthetic-example",
+      "evidence": []
+    }
+  ],
+  "findings": [],
+  "rewrite_summary": [],
+  "report_ref": "synthetic-example",
+  "created_at": "2026-09-05T00:00:00Z"
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/research-item.schema.json",
+  "title": "research-item",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "research-item"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^RES-[0-9]{3,}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived",
+        "superseded"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_note": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "url",
+          "retrieved_at",
+          "claim",
+          "evidence_note"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "conclusions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "relevance_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "superseded_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^RES-[0-9]{3,}$"
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "title",
+    "question",
+    "status",
+    "sources",
+    "conclusions",
+    "uncertainties",
+    "relevance_refs",
+    "superseded_by"
+  ],
+  "additionalProperties": false
+}

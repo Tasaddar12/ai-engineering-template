@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/task-graph.schema.json",
+  "title": "task-graph",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "task-graph"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_id": {
+      "type": "string",
+      "pattern": "^PLAN-[0-9]{3,}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "approved",
+        "superseded"
+      ]
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "pattern": "^TASK-[0-9]{3,}$"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^TASK-[0-9]{3,}$"
+            },
+            "minItems": 0
+          }
+        },
+        "required": [
+          "task_id",
+          "depends_on"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "task_set_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "review_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "plan_id",
+    "revision",
+    "status",
+    "nodes",
+    "task_set_sha256",
+    "review_ref"
+  ],
+  "additionalProperties": false
+}

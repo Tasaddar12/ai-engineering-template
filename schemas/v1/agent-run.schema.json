@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/agent-run.schema.json",
+  "title": "agent-run",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "agent-run"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "request_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "unknown"
+      ]
+    },
+    "adapter_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_handle": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "actual_model": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "type": "string",
+              "minLength": 1
+            },
+            "provider": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "capability_rank": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "invocation_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "profile",
+            "provider",
+            "model_id",
+            "capability_rank",
+            "invocation_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "finished_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "output_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error_category": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "lease_generation": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "request_ref",
+    "attempt_id",
+    "status",
+    "adapter_id",
+    "external_handle",
+    "actual_model",
+    "started_at",
+    "finished_at",
+    "output_ref",
+    "error_category",
+    "lease_generation"
+  ],
+  "additionalProperties": false
+}

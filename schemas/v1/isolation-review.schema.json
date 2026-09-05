@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/isolation-review.schema.json",
+  "title": "isolation-review",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "isolation-review"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_id": {
+      "type": "string",
+      "pattern": "^PLAN-[0-9]{3,}$"
+    },
+    "graph_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "task_set_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "fail",
+        "pass",
+        "inconclusive"
+      ]
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_kind": {
+      "type": "string",
+      "enum": [
+        "foundation_design_review",
+        "runtime_agent_review"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "pass",
+              "not_applicable"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "rationale",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 12
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "major",
+              "minor",
+              "info"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "defect",
+              "structural",
+              "missing_evidence",
+              "policy"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "expected_fix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "acceptance_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "resolved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "category",
+          "description",
+          "paths",
+          "expected_fix",
+          "acceptance_ids",
+          "resolved"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "rewrite_summary": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "report_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "plan_id",
+    "graph_revision",
+    "task_set_sha256",
+    "verdict",
+    "reviewer",
+    "review_kind",
+    "checks",
+    "findings",
+    "rewrite_summary",
+    "report_ref",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

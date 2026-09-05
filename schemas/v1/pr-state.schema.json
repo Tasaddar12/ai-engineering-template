@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/pr-state.schema.json",
+  "title": "pr-state",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "pr-state"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_id": {
+      "type": "string",
+      "pattern": "^PLAN-[0-9]{3,}$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "number": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "prepared",
+        "open",
+        "checks_pending",
+        "ready",
+        "merged",
+        "closed"
+      ]
+    },
+    "base_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "head_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "observed_base_oid": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^([a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "observed_head_oid": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^([a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "required_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "head_oid": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{40}|[a-f0-9]{64})$"
+          },
+          "conclusion": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "success",
+              "failure",
+              "cancelled",
+              "skipped",
+              "unknown"
+            ]
+          },
+          "evidence_ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name",
+          "head_oid",
+          "conclusion",
+          "evidence_ref"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "review_decision": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "approved",
+        "changes_requested"
+      ]
+    },
+    "merge_oid": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^([a-f0-9]{40}|[a-f0-9]{64})$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authorization_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "operation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "last_observed_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "plan_id",
+    "run_id",
+    "repository",
+    "number",
+    "url",
+    "status",
+    "base_branch",
+    "head_branch",
+    "observed_base_oid",
+    "observed_head_oid",
+    "required_checks",
+    "checks",
+    "review_decision",
+    "merge_oid",
+    "authorization_refs",
+    "operation_id",
+    "last_observed_at"
+  ],
+  "additionalProperties": false
+}

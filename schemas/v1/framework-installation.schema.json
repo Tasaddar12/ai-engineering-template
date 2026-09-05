@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/framework-installation.schema.json",
+  "title": "framework-installation",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "framework-installation"
+    },
+    "framework_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_compatibility": {
+      "type": "string",
+      "minLength": 1
+    },
+    "installation_status": {
+      "type": "string",
+      "enum": [
+        "source_foundation",
+        "installed",
+        "upgrade_pending"
+      ]
+    },
+    "manifest_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "owned_roots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "project_owned_roots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "framework_version",
+    "schema_compatibility",
+    "installation_status",
+    "manifest_ref",
+    "owned_roots",
+    "project_owned_roots"
+  ],
+  "additionalProperties": false
+}

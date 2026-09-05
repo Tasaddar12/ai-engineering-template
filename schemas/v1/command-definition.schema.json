@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/command-definition.schema.json",
+  "title": "command-definition",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "command-definition"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "argv": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "cwd_rule": {
+      "type": "string",
+      "enum": [
+        "project",
+        "worktree",
+        "control"
+      ]
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_output_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "permission_class": {
+      "type": "string",
+      "enum": [
+        "local_read",
+        "local_execute",
+        "external_write",
+        "destructive"
+      ]
+    },
+    "environment_bindings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    },
+    "shell": {
+      "const": false
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "linux",
+          "windows"
+        ]
+      },
+      "minItems": 1
+    },
+    "success_rule": {
+      "type": "string",
+      "enum": [
+        "exit_zero",
+        "unittest_nonzero_count"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "argv",
+    "cwd_rule",
+    "timeout_seconds",
+    "max_output_bytes",
+    "permission_class",
+    "environment_bindings",
+    "shell",
+    "platforms",
+    "success_rule"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-010",
+  "plan_id": "PLAN-001",
+  "title": "Reconcile interrupted side-effect intents",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Reconcile interrupted side-effect intents. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-009"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/ai_engineering/state/intents/",
+      "tests/unit/state_intents/",
+      "docs/implementation/TASK-010.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      "docs/architecture/",
+      "docs/state/",
+      "docs/workflows/",
+      "schemas/v1/",
+      "src/ai_engineering/state/checkpoints/"
+    ],
+    "prohibited_paths": [
+      ".ai/",
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "README.md",
+      "docs/decisions/"
+    ],
+    "resources": [
+      "component:state/intents"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-010-AC1",
+      "description": "Record intents before effects and resolve committed duplicate operation IDs",
+      "verification": "TASK-010 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-010-AC2",
+      "description": "Return ambiguous outcomes for unresolved effects and never blindly repeat them",
+      "verification": "TASK-010 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-02"
+  ],
+  "spec_refs": [
+    ".ai/specs/SPEC-001.json"
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    "docs/architecture/service-contracts.md",
+    "handoff:TASK-009"
+  ],
+  "output_contracts": [
+    "state/intents public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-010"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

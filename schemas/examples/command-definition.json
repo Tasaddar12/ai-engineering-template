@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "kind": "command-definition",
+  "id": "synthetic-example",
+  "argv": [
+    "synthetic-example"
+  ],
+  "cwd_rule": "project",
+  "timeout_seconds": 1,
+  "max_output_bytes": 1,
+  "permission_class": "local_read",
+  "environment_bindings": [],
+  "shell": false,
+  "platforms": [
+    "linux"
+  ],
+  "success_rule": "exit_zero"
+}

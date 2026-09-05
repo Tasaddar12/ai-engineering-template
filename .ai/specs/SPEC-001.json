@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "kind": "spec",
+  "id": "SPEC-001",
+  "title": "Autonomous local engineering lifecycle",
+  "status": "active",
+  "document_ref": ".ai/specs/SPEC-001.md",
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "description": "A fresh agent reconstructs project intent from typed, schema-valid repository artifacts.",
+      "verification": "PLAN-001 AC-01"
+    },
+    {
+      "id": "REQ-02",
+      "description": "Git worktrees and workflow checkpoints reconcile safely after interruptions.",
+      "verification": "PLAN-001 AC-02"
+    },
+    {
+      "id": "REQ-03",
+      "description": "Every graph is acyclic, acceptance-complete and reviewed for isolated ownership.",
+      "verification": "PLAN-001 AC-03"
+    },
+    {
+      "id": "REQ-04",
+      "description": "Independent agents execute concurrently with bounded explicit context and safe serialized state.",
+      "verification": "PLAN-001 AC-04"
+    },
+    {
+      "id": "REQ-05",
+      "description": "Both exact-candidate higher-capability task reviews and final integrated validation must pass.",
+      "verification": "PLAN-001 AC-05"
+    },
+    {
+      "id": "REQ-06",
+      "description": "Structural failures automatically produce re-reviewed replacement graphs within lineage budgets.",
+      "verification": "PLAN-001 AC-06"
+    },
+    {
+      "id": "REQ-07",
+      "description": "Delivery preserves authorization, current-head CI evidence, observed merge and archival history.",
+      "verification": "PLAN-001 AC-07"
+    },
+    {
+      "id": "REQ-08",
+      "description": "Projects initialize/adopt/upgrade versioned framework assets without overwriting project knowledge.",
+      "verification": "PLAN-001 AC-08"
+    },
+    {
+      "id": "REQ-09",
+      "description": "A usable Python CLI proves offline workflows in realistic Git fixtures and platform CI.",
+      "verification": "PLAN-001 AC-09"
+    }
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "superseded_by": []
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "kind": "adr-index",
+  "decisions": [
+    {
+      "id": "ADR-001",
+      "status": "proposed",
+      "document_ref": "synthetic-example",
+      "supersedes": [],
+      "superseded_by": null
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/review-result.schema.json",
+  "title": "review-result",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "review-result"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "implementation",
+        "consistency",
+        "integration"
+      ]
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^TASK-[0-9]{3,}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "plan_id": {
+      "type": "string",
+      "pattern": "^PLAN-[0-9]{3,}$"
+    },
+    "candidate_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_fingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "fail",
+        "pass",
+        "inconclusive"
+      ]
+    },
+    "reviewer": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capability_rank": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invocation_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "profile",
+        "provider",
+        "model_id",
+        "capability_rank",
+        "invocation_id"
+      ],
+      "additionalProperties": false
+    },
+    "independent_session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "implementation_session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_1_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "checklist_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "pass",
+              "not_applicable"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "rationale",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "major",
+              "minor",
+              "info"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "defect",
+              "structural",
+              "missing_evidence",
+              "policy"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "expected_fix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "acceptance_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "resolved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "category",
+          "description",
+          "paths",
+          "expected_fix",
+          "acceptance_ids",
+          "resolved"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "stage",
+    "request_id",
+    "task_id",
+    "plan_id",
+    "candidate_ref",
+    "candidate_fingerprint",
+    "verdict",
+    "reviewer",
+    "independent_session_id",
+    "implementation_session_id",
+    "review_1_ref",
+    "checklist_version",
+    "checks",
+    "findings",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

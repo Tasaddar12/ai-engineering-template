@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "kind": "plan",
+  "id": "PLAN-001",
+  "title": "Local-first framework MVP with deterministic adapters",
+  "status": "approved",
+  "archived": false,
+  "spec_refs": [
+    ".ai/specs/SPEC-001.json"
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "research_refs": [
+    ".ai/research/RES-001.json"
+  ],
+  "document_ref": "docs/plans/PLAN-001.md",
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "description": "A fresh agent reconstructs project intent from typed, schema-valid repository artifacts.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-02",
+      "description": "Git worktrees and workflow checkpoints reconcile safely after interruptions.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-03",
+      "description": "Every graph is acyclic, acceptance-complete and reviewed for isolated ownership.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-04",
+      "description": "Independent agents execute concurrently with bounded explicit context and safe serialized state.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-05",
+      "description": "Both exact-candidate higher-capability task reviews and final integrated validation must pass.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-06",
+      "description": "Structural failures automatically produce re-reviewed replacement graphs within lineage budgets.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-07",
+      "description": "Delivery preserves authorization, current-head CI evidence, observed merge and archival history.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-08",
+      "description": "Projects initialize/adopt/upgrade versioned framework assets without overwriting project knowledge.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    },
+    {
+      "id": "AC-09",
+      "description": "A usable Python CLI proves offline workflows in realistic Git fixtures and platform CI.",
+      "verification": "Mapped task behavior tests plus integrated E2E assertions in TASK-035/TASK-036 and packaging in TASK-037"
+    }
+  ],
+  "task_ids": [
+    "TASK-001",
+    "TASK-002",
+    "TASK-003",
+    "TASK-004",
+    "TASK-005",
+    "TASK-006",
+    "TASK-007",
+    "TASK-008",
+    "TASK-009",
+    "TASK-010",
+    "TASK-011",
+    "TASK-012",
+    "TASK-013",
+    "TASK-014",
+    "TASK-015",
+    "TASK-016",
+    "TASK-017",
+    "TASK-018",
+    "TASK-019",
+    "TASK-020",
+    "TASK-021",
+    "TASK-022",
+    "TASK-023",
+    "TASK-024",
+    "TASK-025",
+    "TASK-026",
+    "TASK-027",
+    "TASK-028",
+    "TASK-029",
+    "TASK-030",
+    "TASK-031",
+    "TASK-032",
+    "TASK-033",
+    "TASK-034",
+    "TASK-035",
+    "TASK-036",
+    "TASK-037",
+    "TASK-038",
+    "TASK-039"
+  ],
+  "graph_ref": ".ai/graphs/PLAN-001-r2.json",
+  "isolation_review_ref": ".ai/reviews/isolation/ISO-PLAN-001-r2.json",
+  "resume_state": null,
+  "integration_branch": "ai/PLAN-001/integration",
+  "target_branch": "main",
+  "merge_evidence_ref": null
+}

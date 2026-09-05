@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "kind": "research-item",
+  "id": "RES-001",
+  "title": "Foundational protocol references",
+  "question": "Which primary protocol documentation anchors worktree, process and schema design?",
+  "status": "active",
+  "sources": [
+    {
+      "url": "https://git-scm.com/docs/git-worktree",
+      "retrieved_at": "2026-09-05T00:00:00Z",
+      "claim": "Git exposes worktree porcelain inspection and worktree maintenance locks.",
+      "evidence_note": "Primary documentation consulted; design details and cross-platform behavior still require implementation verification."
+    },
+    {
+      "url": "https://docs.python.org/3/library/subprocess.html",
+      "retrieved_at": "2026-09-05T00:00:00Z",
+      "claim": "Python supports argument-list execution without a shell and explicit process result handling.",
+      "evidence_note": "Primary documentation consulted; design details and cross-platform behavior still require implementation verification."
+    },
+    {
+      "url": "https://json-schema.org/draft/2020-12",
+      "retrieved_at": "2026-09-05T00:00:00Z",
+      "claim": "JSON Schema 2020-12 defines a machine-readable validation vocabulary.",
+      "evidence_note": "Primary documentation consulted; design details and cross-platform behavior still require implementation verification."
+    }
+  ],
+  "conclusions": [
+    "Use observed Git facts, typed subprocess ports and local schema validation."
+  ],
+  "uncertainties": [
+    "Windows behavior is not yet executed; production adapters are not selected."
+  ],
+  "relevance_refs": [
+    "ARCHITECTURE.md"
+  ],
+  "superseded_by": []
+}

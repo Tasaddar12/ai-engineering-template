@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "kind": "adr-index",
+  "decisions": [
+    {
+      "id": "ADR-001",
+      "status": "accepted",
+      "document_ref": "docs/decisions/ADR-001.md",
+      "supersedes": [],
+      "superseded_by": null
+    },
+    {
+      "id": "ADR-002",
+      "status": "accepted",
+      "document_ref": "docs/decisions/ADR-002.md",
+      "supersedes": [],
+      "superseded_by": null
+    },
+    {
+      "id": "ADR-003",
+      "status": "accepted",
+      "document_ref": "docs/decisions/ADR-003.md",
+      "supersedes": [],
+      "superseded_by": null
+    },
+    {
+      "id": "ADR-004",
+      "status": "accepted",
+      "document_ref": "docs/decisions/ADR-004.md",
+      "supersedes": [],
+      "superseded_by": null
+    },
+    {
+      "id": "ADR-005",
+      "status": "accepted",
+      "document_ref": "docs/decisions/ADR-005.md",
+      "supersedes": [],
+      "superseded_by": null
+    }
+  ]
+}

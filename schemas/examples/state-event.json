@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "kind": "state-event",
+  "id": "synthetic-example",
+  "operation_id": "synthetic-example",
+  "generation": 0,
+  "entity_id": "synthetic-example",
+  "event_type": "synthetic-example",
+  "from_state": null,
+  "to_state": "synthetic-example",
+  "evidence_refs": [],
+  "created_at": "2026-09-05T00:00:00Z",
+  "payload_ref": null
+}

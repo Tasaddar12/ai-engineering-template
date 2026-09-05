@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-026",
+  "plan_id": "PLAN-001",
+  "title": "Compose resumable plan execution steps",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Compose the accepted execution services into a resumable step machine ending at tasks_accepted. Invoke an injected completion continuation; never import later integration-review/CI implementations.",
+  "depends_on": [
+    "TASK-012",
+    "TASK-015",
+    "TASK-018",
+    "TASK-020",
+    "TASK-022",
+    "TASK-023",
+    "TASK-025",
+    "TASK-039"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/ai_engineering/workflows/execution/",
+      "tests/unit/workflows_execution/",
+      "docs/implementation/TASK-026.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      "docs/architecture/",
+      "docs/state/",
+      "docs/workflows/",
+      "schemas/v1/",
+      "src/ai_engineering/domain/orchestration_ports/",
+      "src/ai_engineering/orchestration/integration/",
+      "src/ai_engineering/orchestration/scheduler/",
+      "src/ai_engineering/planning/isolation/",
+      "src/ai_engineering/reviews/gates/",
+      "src/ai_engineering/validation/",
+      "src/ai_engineering/workflows/recovery/",
+      "src/ai_engineering/worktrees/reconcile/"
+    ],
+    "prohibited_paths": [
+      ".ai/",
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "README.md",
+      "docs/decisions/"
+    ],
+    "resources": [
+      "component:workflows/execution"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-026-AC1",
+      "description": "Drive the documented plan state machine from approved graph through accepted tasks using injected services",
+      "verification": "TASK-026 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-026-AC2",
+      "description": "Resume from committed phases without duplicate effects and pause durably on unsupported capability or budget",
+      "verification": "TASK-026 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-04",
+    "AC-06"
+  ],
+  "spec_refs": [
+    ".ai/specs/SPEC-001.json"
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    "docs/architecture/service-contracts.md",
+    "handoff:TASK-012",
+    "handoff:TASK-015",
+    "handoff:TASK-018",
+    "handoff:TASK-020",
+    "handoff:TASK-022",
+    "handoff:TASK-023",
+    "handoff:TASK-025",
+    "handoff:TASK-039"
+  ],
+  "output_contracts": [
+    "workflows/execution public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-026"
+  ],
+  "estimated_production_files": 5,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-009",
+  "plan_id": "PLAN-001",
+  "title": "Persist serialized state checkpoints",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Persist serialized state checkpoints. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-002",
+    "TASK-007",
+    "TASK-008"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/ai_engineering/state/checkpoints/",
+      "tests/unit/state_checkpoints/",
+      "docs/implementation/TASK-009.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      "docs/architecture/",
+      "docs/state/",
+      "docs/workflows/",
+      "schemas/v1/",
+      "src/ai_engineering/domain/local_ports/",
+      "src/ai_engineering/domain/transitions/",
+      "src/ai_engineering/git/"
+    ],
+    "prohibited_paths": [
+      ".ai/",
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "README.md",
+      "docs/decisions/"
+    ],
+    "resources": [
+      "component:state/checkpoints"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-009-AC1",
+      "description": "Commit generation-checked transactions with exclusive coordinator ownership and operation deduplication",
+      "verification": "TASK-009 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-009-AC2",
+      "description": "Recover projection writes after injected crash without acknowledging an uncommitted generation",
+      "verification": "TASK-009 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-02"
+  ],
+  "spec_refs": [
+    ".ai/specs/SPEC-001.json"
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    "docs/architecture/service-contracts.md",
+    "handoff:TASK-002",
+    "handoff:TASK-007",
+    "handoff:TASK-008"
+  ],
+  "output_contracts": [
+    "state/checkpoints public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-009"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

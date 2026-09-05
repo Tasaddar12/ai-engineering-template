@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "kind": "research-item",
+  "id": "RES-001",
+  "title": "synthetic-example",
+  "question": "synthetic-example",
+  "status": "active",
+  "sources": [
+    {
+      "url": "https://example.invalid/synthetic",
+      "retrieved_at": "2026-09-05T00:00:00Z",
+      "claim": "synthetic-example",
+      "evidence_note": "synthetic-example"
+    }
+  ],
+  "conclusions": [
+    "synthetic-example"
+  ],
+  "uncertainties": [],
+  "relevance_refs": [],
+  "superseded_by": []
+}

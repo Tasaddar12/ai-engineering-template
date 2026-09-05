@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/policy.schema.json",
+  "title": "policy",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "policy"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "autonomous_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "approval_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "external_grants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resource": {
+            "type": "string",
+            "minLength": 1
+          },
+          "authority_ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "action",
+          "resource",
+          "authority_ref"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "max_parallel": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_review_cycles": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_rewrites": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "max_agent_invocations": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "required_sandbox": {
+      "type": "boolean"
+    },
+    "allow_review_downgrade": {
+      "const": false
+    },
+    "model_profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "capability_rank": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "configured": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "provider",
+          "model_id",
+          "capability_rank",
+          "configured"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "id",
+    "autonomous_actions",
+    "approval_actions",
+    "external_grants",
+    "max_parallel",
+    "max_review_cycles",
+    "max_rewrites",
+    "max_agent_invocations",
+    "required_sandbox",
+    "allow_review_downgrade",
+    "model_profiles"
+  ],
+  "additionalProperties": false
+}

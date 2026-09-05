@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "kind": "framework-installation",
+  "framework_version": "0.1.0.dev0",
+  "schema_compatibility": "1.0",
+  "installation_status": "source_foundation",
+  "manifest_ref": null,
+  "owned_roots": [
+    "schemas/",
+    "templates/"
+  ],
+  "project_owned_roots": [
+    ".ai/specs/",
+    ".ai/plans/",
+    ".ai/tasks/",
+    ".ai/decisions/",
+    ".ai/research/",
+    ".ai/project/"
+  ]
+}

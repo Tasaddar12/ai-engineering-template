@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-008",
+  "plan_id": "PLAN-001",
+  "title": "Implement pure guarded transitions",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Implement pure guarded transitions. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-001",
+    "TASK-004"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/ai_engineering/domain/transitions/",
+      "tests/unit/domain_transitions/",
+      "docs/implementation/TASK-008.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      "docs/architecture/",
+      "docs/state/",
+      "docs/workflows/",
+      "schemas/v1/",
+      "src/ai_engineering/domain/values/",
+      "src/ai_engineering/schemas/"
+    ],
+    "prohibited_paths": [
+      ".ai/",
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "README.md",
+      "docs/decisions/"
+    ],
+    "resources": [
+      "component:domain/transitions"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-008-AC1",
+      "description": "Reject illegal entity state transitions and missing evidence guards",
+      "verification": "TASK-008 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-008-AC2",
+      "description": "Make transition decisions deterministic with immutable events and no IO",
+      "verification": "TASK-008 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-01"
+  ],
+  "spec_refs": [
+    ".ai/specs/SPEC-001.json"
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    "docs/architecture/service-contracts.md",
+    "handoff:TASK-001",
+    "handoff:TASK-004"
+  ],
+  "output_contracts": [
+    "domain/transitions public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-008"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

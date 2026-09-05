@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-020",
+  "plan_id": "PLAN-001",
+  "title": "Enforce independent two-stage review gates",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Enforce independent two-stage review gates. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-003",
+    "TASK-017",
+    "TASK-018",
+    "TASK-019",
+    "TASK-038"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/ai_engineering/reviews/gates/",
+      "tests/unit/reviews_gates/",
+      "docs/implementation/TASK-020.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      "docs/architecture/",
+      "docs/state/",
+      "docs/workflows/",
+      "schemas/v1/",
+      "src/ai_engineering/agents/",
+      "src/ai_engineering/config/",
+      "src/ai_engineering/domain/workflow_ports/",
+      "src/ai_engineering/reviews/candidates/",
+      "src/ai_engineering/validation/"
+    ],
+    "prohibited_paths": [
+      ".ai/",
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "README.md",
+      "docs/decisions/"
+    ],
+    "resources": [
+      "component:reviews/gates"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-020-AC1",
+      "description": "Require separate higher-capability R1/R2 invocations and every applicable checklist item with evidence",
+      "verification": "TASK-020 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-020-AC2",
+      "description": "Restart validation and both reviews after material R2 fixes and reject stale mismatched reports",
+      "verification": "TASK-020 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-05"
+  ],
+  "spec_refs": [
+    ".ai/specs/SPEC-001.json"
+  ],
+  "adr_refs": [
+    "docs/decisions/ADR-001.md",
+    "docs/decisions/ADR-002.md",
+    "docs/decisions/ADR-003.md",
+    "docs/decisions/ADR-004.md",
+    "docs/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    "docs/architecture/service-contracts.md",
+    "handoff:TASK-003",
+    "handoff:TASK-017",
+    "handoff:TASK-018",
+    "handoff:TASK-019",
+    "handoff:TASK-038"
+  ],
+  "output_contracts": [
+    "reviews/gates public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-020"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

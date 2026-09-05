@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "kind": "spec",
+  "id": "SPEC-001",
+  "title": "synthetic-example",
+  "status": "draft",
+  "document_ref": "synthetic-example",
+  "requirements": [
+    {
+      "id": "synthetic-example",
+      "description": "synthetic-example",
+      "verification": "synthetic-example"
+    }
+  ],
+  "adr_refs": [],
+  "superseded_by": []
+}

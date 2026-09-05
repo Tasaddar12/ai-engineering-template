@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "kind": "project-state",
+  "project_id": "ai-engineering-framework",
+  "generation": 1,
+  "phase": "foundation",
+  "summary": "Phase-one foundation complete: architecture, 26 schemas, contracts and 39-task roadmap. Independent task isolation review passed on graph r2. Runtime orchestration remains unimplemented; no remote or provider configured.",
+  "control_branch": "ai/state",
+  "active_plans": [
+    "PLAN-001"
+  ],
+  "completed_plans": [],
+  "active_runs": [],
+  "known_blockers": [],
+  "next_actions": [
+    "Implement TASK-001 in a dedicated worktree using the approved PLAN-001 graph",
+    "After TASK-001 acceptance, schedule dependency-ready contract/schema tasks"
+  ],
+  "framework_ref": ".ai/framework.json",
+  "policy_ref": ".ai/project/policy.json",
+  "decision_index_ref": ".ai/decisions/index.json",
+  "updated_at": "2026-09-05T18:45:28.578231+00:00"
+}

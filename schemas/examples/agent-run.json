@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "kind": "agent-run",
+  "id": "synthetic-example",
+  "request_ref": "synthetic-example",
+  "attempt_id": "synthetic-example",
+  "status": "queued",
+  "adapter_id": "synthetic-example",
+  "external_handle": null,
+  "actual_model": null,
+  "started_at": null,
+  "finished_at": null,
+  "output_ref": null,
+  "error_category": null,
+  "lease_generation": 0
+}

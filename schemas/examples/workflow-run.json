@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "kind": "workflow-run",
+  "id": "synthetic-example",
+  "plan_id": "PLAN-001",
+  "status": "queued",
+  "phase": "synthetic-example",
+  "graph_revision": 0,
+  "expected_generation": 0,
+  "policy_ref": "synthetic-example",
+  "pending_operations": [],
+  "agent_run_ids": [],
+  "budgets": {
+    "max_agent_invocations": 0,
+    "used_agent_invocations": 0,
+    "max_rewrites": 0,
+    "used_rewrites": 0,
+    "max_elapsed_seconds": 0
+  },
+  "started_at": null,
+  "finished_at": null,
+  "pause_reason": null,
+  "resume_phase": null
+}

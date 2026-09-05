@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "kind": "agent-output",
+  "id": "synthetic-example",
+  "request_id": "synthetic-example",
+  "attempt_id": "synthetic-example",
+  "status": "failed",
+  "actual_model": {
+    "profile": "synthetic-example",
+    "provider": "synthetic-example",
+    "model_id": "synthetic-example",
+    "capability_rank": 0,
+    "invocation_id": "synthetic-example"
+  },
+  "artifact_refs": [],
+  "command_evidence_refs": [],
+  "discoveries": [],
+  "scope_change_requests": [],
+  "error_category": null,
+  "summary": "synthetic-example"
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "kind": "agent-request",
+  "id": "synthetic-example",
+  "workflow_id": "synthetic-example",
+  "run_id": "synthetic-example",
+  "attempt_id": "synthetic-example",
+  "task_id": null,
+  "plan_id": "PLAN-001",
+  "spec_refs": [
+    "synthetic-example"
+  ],
+  "role": "synthetic-example",
+  "graph_revision": 0,
+  "base_oid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "current_oid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "worktree_id": "synthetic-example",
+  "scope": {
+    "write_paths": [
+      "synthetic-example"
+    ],
+    "read_paths": [],
+    "prohibited_paths": [],
+    "resources": []
+  },
+  "context_ref": "synthetic-example",
+  "allowed_command_ids": [],
+  "acceptance_criteria": [
+    {
+      "id": "synthetic-example",
+      "description": "synthetic-example",
+      "verification": "synthetic-example"
+    }
+  ],
+  "dependency_handoffs": [],
+  "checklist_ids": [],
+  "model_profile": "synthetic-example",
+  "policy_ref": "synthetic-example",
+  "permission_subset": [],
+  "lease_generation": 0,
+  "idempotency_key": "synthetic-example"
+}

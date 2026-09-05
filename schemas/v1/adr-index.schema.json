@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-engineering.invalid/schemas/v1/adr-index.schema.json",
+  "title": "adr-index",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "kind": {
+      "const": "adr-index"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ADR-[0-9]{3,}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "accepted",
+              "superseded"
+            ]
+          },
+          "document_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^ADR-[0-9]{3,}$"
+            },
+            "minItems": 0
+          },
+          "superseded_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^ADR-[0-9]{3,}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "document_ref",
+          "supersedes",
+          "superseded_by"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "kind",
+    "decisions"
+  ],
+  "additionalProperties": false
+}
