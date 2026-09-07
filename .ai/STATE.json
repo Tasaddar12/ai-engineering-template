@@ -2,22 +2,25 @@
   "schema_version": "1.0",
   "kind": "project-state",
   "project_id": "ai-engineering-framework",
-  "generation": 1,
+  "generation": 3,
   "phase": "foundation",
-  "summary": "Phase-one foundation complete: architecture, 26 schemas, contracts and 39-task roadmap. Independent task isolation review passed on graph r2. Runtime orchestration remains unimplemented; no remote or provider configured.",
+  "summary": "The docs-first bootstrap installer, plan/task record CLI, standalone provider namespaces, multi-plan layout, and validator are complete and validated. The autonomous workflow engine remains unimplemented, and the revised PLAN-001 graph has no current isolation approval.",
   "control_branch": "ai/state",
   "active_plans": [
     "PLAN-001"
   ],
   "completed_plans": [],
+  "archived_plans": [],
   "active_runs": [],
-  "known_blockers": [],
+  "known_blockers": [
+    "PLAN-001 graph r3 requires fresh independent isolation review before implementation"
+  ],
   "next_actions": [
-    "Implement TASK-001 in a dedicated worktree using the approved PLAN-001 graph",
-    "After TASK-001 acceptance, schedule dependency-ready contract/schema tasks"
+    "Integrate the reviewed repository correction and preserve its validation evidence",
+    "Obtain fresh independent isolation approval for PLAN-001 graph r3 before starting any implementation task"
   ],
   "framework_ref": ".ai/framework.json",
   "policy_ref": ".ai/project/policy.json",
   "decision_index_ref": ".ai/decisions/index.json",
-  "updated_at": "2026-09-05T18:45:28.578231+00:00"
+  "updated_at": "2026-09-07T23:54:40Z"
 }

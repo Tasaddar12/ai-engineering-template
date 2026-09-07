@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-028",
+  "plan_id": "PLAN-001",
+  "title": "Implement delivery intent and fake hosting adapter",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Implement delivery intent and fake hosting adapter. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-003",
+    "TASK-010"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/delivery.py",
+      "tests/unit/delivery_hosting/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-028.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/workflow_ports.py",
+      "src/intents.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:delivery/hosting"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-028-AC1",
+      "description": "Prepare local PR payload and idempotent fake publish/observe operations bound to repository/head",
+      "verification": "TASK-028 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-028-AC2",
+      "description": "Refuse external writes without scoped authorization and reconcile ambiguous creates",
+      "verification": "TASK-028 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-07"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-003",
+    "handoff:TASK-010"
+  ],
+  "output_contracts": [
+    "delivery/hosting public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-028"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

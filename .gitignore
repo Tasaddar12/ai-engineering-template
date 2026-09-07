@@ -8,6 +8,7 @@ dist/
 .mypy_cache/
 .ruff_cache/
 .ai/local/
+.worktrees/
 
 # Local credentials; deliberately named examples may be committed.
 .env

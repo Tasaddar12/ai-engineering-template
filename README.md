@@ -1,57 +1,29 @@
-# AI Engineering Framework
+# AI Engineering Toolkit
 
-A local-first Python framework for plan-driven engineering with isolated Git worktrees, durable repository memory, parallel agents, two independent higher-capability reviews, and autonomous replanning.
+This repository builds a reusable local toolkit for keeping AI-assisted engineering focused, traceable, and easier to resume. It installs compact workflow guidance, isolated work records, local validation contracts, and provider entry files into any folder without copying this repository’s own development history.
 
-**Status: phase-one engineering foundation, version 0.1.0.dev0.** Architecture, schemas, review contracts, and the implementation backlog are present. The only executable CLI features are help and version. Agent execution, plan implementation, installation into other projects, and PR automation are designed but not implemented. No provider or remote repository is configured.
-
-## Start here
-
-1. Read [current state](.ai/STATE.json), [architecture](ARCHITECTURE.md), and [agent instructions](AGENTS.md).
-2. Read [SPEC-001](.ai/specs/SPEC-001.md) and [PLAN-001](docs/plans/PLAN-001.md).
-3. Read the [isolation review](docs/plans/PLAN-001-isolation-review.md) before starting a task.
-4. Select a ready task from `.ai/tasks/`, reconcile Git, and create its dedicated worktree.
-
-## Available now
-
-Requires Python 3.11+ and Git. From the repository root:
+The working bootstrap supports Python 3.11+ on Windows and Linux. It uses only the standard library and does not require provider credentials or network access. Record validation additionally requires `jsonschema`; install it in the target environment with `python -m pip install -r PATH/.ai/requirements.txt` after setup.
 
 ```text
-python -m pip install -e ".[dev]"
-python -m ai_engineering --help
-python -m ai_engineering --version
-python scripts/validate_foundation.py
+python src/install.py PATH --assistant claude
+python src/install.py PATH --assistant chatgpt
 ```
 
-The validation command needs the declared `jsonschema` development dependency. PowerShell, Windows Command Prompt, and Linux shells use the same commands (use `py -3` in place of `python` if appropriate). No Bash automation is required.
+Choose one provider mode. ChatGPT/Codex receives a self-contained `.ai/` workflow namespace; Claude Code receives a self-contained `.claude/` namespace. The copyable source material is visible under `docs/agents/`, `docs/templates/`, and `docs/workflows/`.
 
-## Target operator experience — not available yet
+Use `--dry-run` to inspect every intended file and directory without creating the destination. Existing project files are preserved. A repeated installation is idempotent, and conflicting framework-owned files cause a clear failure instead of being overwritten.
+
+The installed folder contains its own record and validation tools:
 
 ```text
-python -m ai_engineering project init
-python -m ai_engineering project adopt --dry-run
-python -m ai_engineering plan implement PLAN-004
-python -m ai_engineering run resume RUN-004
-python -m ai_engineering state reconcile --dry-run
-python -m ai_engineering framework upgrade --dry-run
+python PATH/.ai/tools/ai.py --project PATH plan create PLAN-100 --title "Improve reliability"
+python PATH/.ai/tools/ai.py --project PATH task create PLAN-100 TASK-002 --title "Add checks" --objective "Add focused reliability checks" --depends-on TASK-001
+python PATH/.ai/tools/ai.py --project PATH plan list
+python PATH/.ai/tools/validate_foundation.py --project PATH
 ```
 
-The future `ai` command will be an optional equivalent entry point. Six major workflows cover project lifecycle, research/decision, planning, plan execution, delivery, and reconciliation. See [CLI design](docs/architecture/cli.md).
+For Codex or ChatGPT, start the session with “Read `.ai/AGENTS.md` before working.” The hidden file is deliberately kept out of the project root, so Codex does not discover it automatically from a root launch. Claude Code uses the installed `.claude/CLAUDE.md`; its `agents/` Markdown files are selected workflow guides rather than native subagent definitions. Ordinary ChatGPT chats need the relevant files attached or read explicitly.
 
-## What makes a run complete
+The current release provides safe installation, focused guidance, plan/task record creation, and deterministic validation. Automatic agent execution, independent review invocation, recovery, remote delivery, and lifecycle completion are not implemented.
 
-An approved task graph is implemented in separate worktrees; all required validation and both task reviews pass on the same candidate; the combined plan passes integration review and CI. Completion and archival require observed merge evidence. An unmerged plan remains delivery-ready, never falsely completed.
-
-## Navigation
-
-- [Repository layout and ownership](docs/architecture/layout.md)
-- [State and crash recovery](docs/state/persistence.md)
-- [Workflow transitions](docs/state/transitions.md)
-- [Agent contracts and model routing](docs/agents/contracts.md)
-- [Review checklists](docs/workflows/reviews.md)
-- [Recovery and replanning](docs/workflows/recovery.md)
-- [Delivery roadmap](docs/plans/ROADMAP.md)
-- [Schema catalog](docs/schemas/README.md)
-- [Repository restoration and cleanup review](docs/REPOSITORY-INITIALIZATION.md)
-- [Contribution guide](CONTRIBUTING.md) and [security policy](SECURITY.md)
-
-Licensing and public distribution terms are not yet selected. Local design and development can proceed; no license grant is implied.
+See [architecture](ARCHITECTURE.md), [contributing](CONTRIBUTING.md), and [security](SECURITY.md).

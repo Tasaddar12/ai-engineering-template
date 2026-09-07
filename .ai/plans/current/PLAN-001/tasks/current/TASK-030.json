@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-030",
+  "plan_id": "PLAN-001",
+  "title": "Reconcile completed work and archive",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Reconcile completed work and archive. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-004",
+    "TASK-009",
+    "TASK-012",
+    "TASK-029",
+    "TASK-039"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/archive.py",
+      "tests/unit/workflows_archive/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-030.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/delivery_ci.py",
+      "src/orchestration_ports.py",
+      "src/worktree_reconcile.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:workflows/archive"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-030-AC1",
+      "description": "Mark plan/tasks completed only after observed merge and preserve the original graph, review, snapshot, artifact and commit provenance without rewriting historical bytes",
+      "verification": "TASK-030 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-030-AC2",
+      "description": "Create a snapshot-root-relative content-hashed archive manifest, resolve historical references in that immutable namespace, and perform only eligible owned worktree cleanup",
+      "verification": "TASK-030 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-07"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-004 lifecycle-neutral digest and historical reference validation",
+    "handoff:TASK-009 transactional lifecycle relocation",
+    "handoff:TASK-012",
+    "handoff:TASK-029",
+    "handoff:TASK-039"
+  ],
+  "output_contracts": [
+    "workflows/archive public behavior described by this task acceptance; archive relocation preserves the approved structural digest and original review/snapshot provenance"
+  ],
+  "validation_commands": [
+    "test.TASK-030"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

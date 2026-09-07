@@ -50,6 +50,14 @@
       },
       "minItems": 0
     },
+    "archived_plans": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^PLAN-[0-9]{3,}$"
+      },
+      "minItems": 0
+    },
     "active_runs": {
       "type": "array",
       "items": {
@@ -101,6 +109,7 @@
     "control_branch",
     "active_plans",
     "completed_plans",
+    "archived_plans",
     "active_runs",
     "known_blockers",
     "next_actions",

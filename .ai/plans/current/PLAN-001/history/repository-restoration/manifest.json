@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "kind": "archive-manifest",
+  "id": "ARCHIVE-PLAN-001-REPOSITORY-RESTORATION",
+  "plan_id": "PLAN-001",
+  "reason": "Archived repository restoration report and Windows initialization evidence",
+  "merge_evidence_ref": null,
+  "artifacts": [
+    {
+      "path": "evidence/initialization-windows.json",
+      "sha256": "e2f5d03085a14e22ef99d1a5b8c6de204278d4282eb6d63efccaf1a1eaad5b83"
+    },
+    {
+      "path": "report.md",
+      "sha256": "3fd721dd46c5792e50c33935535ced4285c61ef15f412fe1c701faff4575d536"
+    }
+  ],
+  "retained_commit_oids": [
+    "d52d3c2dbb1b525843351cc697817e0a5e90ee29"
+  ],
+  "created_at": "2026-09-07T18:00:00Z"
+}

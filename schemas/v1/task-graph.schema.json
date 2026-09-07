@@ -58,7 +58,8 @@
     },
     "task_set_sha256": {
       "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
+      "pattern": "^[a-f0-9]{64}$",
+      "$comment": "SHA-256 of sorted structural task fields. Excludes status, archived, attempt_ids, superseded_by, and resume_state so lifecycle-only changes do not invalidate isolation approval."
     },
     "review_ref": {
       "anyOf": [
