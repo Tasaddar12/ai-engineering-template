@@ -51,6 +51,7 @@ An approved task graph is implemented in separate worktrees; all required valida
 - [Recovery and replanning](docs/workflows/recovery.md)
 - [Delivery roadmap](docs/plans/ROADMAP.md)
 - [Schema catalog](docs/schemas/README.md)
+- [Repository restoration and cleanup review](docs/REPOSITORY-INITIALIZATION.md)
 - [Contribution guide](CONTRIBUTING.md) and [security policy](SECURITY.md)
 
 Licensing and public distribution terms are not yet selected. Local design and development can proceed; no license grant is implied.
