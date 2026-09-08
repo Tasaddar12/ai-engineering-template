@@ -1,0 +1,56 @@
+context hash PASS .ai/plans/current/PLAN-001/plan.json 9195d603c9190f859fdcd74ecc47cd441f4b52ed6aa8f2438276ba766b58d72b
+context hash PASS .ai/plans/current/PLAN-001/spec.json f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc
+context hash PASS .ai/plans/current/PLAN-001/graph.json 1b0f207a9a5ea4f9bd96f36f123bd15ce09c2b271fff155d71552caa8758140c
+context hash PASS .ai/plans/current/PLAN-001/tasks/current/TASK-013.json 4fe79cfb487f2fe1ff2355acf09301e7594e443681d450bb74d71fa2ecd8381e
+context hash PASS .ai/shared/architecture/service-contracts.md 9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248
+context hash PASS .ai/shared/workflows/reviews.md 0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0
+context hash PASS .ai/decisions/ADR-001.md 3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4
+context hash PASS .ai/decisions/ADR-002.md 46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44
+context hash PASS .ai/decisions/ADR-003.md 2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214
+context hash PASS .ai/decisions/ADR-004.md a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5
+context hash PASS .ai/decisions/ADR-005.md 0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2
+context hash PASS .ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md 4fda15d6cf78c7d53088d47bdab935692cae24e69318325384bd151ce6bc6c06
+context hash PASS .ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md 20d8d02fad6b86f5047f9454c66d661ccfa00b40697d874a4ca3bbda3d016147
+validation hash PASS .ai/plans/current/PLAN-001/evidence/validation/TASK-013-a1-51a94cd050ad.txt 9511f0de97681f5c05d756754b53256bf4af4e082999e907f86c0acc7cff5408
+exact-source import contracts D:\Codex Projects\ai-engineering-template\.worktrees\TASK-013-a1\src\contracts.py
+exact-source import domain_values D:\Codex Projects\ai-engineering-template\.worktrees\TASK-013-a1\src\domain_values.py
+exact-source import plan_graph D:\Codex Projects\ai-engineering-template\.worktrees\TASK-013-a1\src\plan_graph.py
+identity PASS 24f7c768f996c4abf66ed37a5ea1e89b459dd74b 51a94cd050ad6c7cb525c6d26c9c7e38e0943c13 clean candidate; scope ['.ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md', 'src/plan_graph.py', 'tests/unit/planning_dag/test_plan_graph.py']
+diff hash PASS 0b6ef715d71366b4f73988fa650a6a0d35b908e0a309dfbfd4ee59be862236cb
+policy/model hash PASS b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42
+fingerprint PASS 9c7b3139798b22e6f1bb30a9d5e5bf9230db0c75a348cdedbc30f472201bd9ae
+ROOT initial status (coordinator candidate/evidence files may be untracked):
+?? .ai/plans/current/PLAN-001/evidence/validation/TASK-013-a1-51a94cd050ad.txt
+?? .ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.py
+?? .ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt
+?? .ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-013-a1-51a94cd050ad.json
+
+Declared suite ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_dag/', '-p', 'test_*.py'] cwd D:\Codex Projects\ai-engineering-template\.worktrees\TASK-013-a1 exit 0
+ .............
+----------------------------------------------------------------------
+Ran 13 tests in 0.221s
+
+OK
+
+test_01_live_approved_snapshot_and_isolation_digest (__main__.IndependentGraphChecks.test_01_live_approved_snapshot_and_isolation_digest) ... current r4 PASS: 39 nodes/order, 9 covered criteria, digest c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e
+ok
+test_02_namespace_and_qualified_lookup (__main__.IndependentGraphChecks.test_02_namespace_and_qualified_lookup) ... ok
+test_03_all_small_graphs_against_permutation_oracle (__main__.IndependentGraphChecks.test_03_all_small_graphs_against_permutation_oracle) ... all 64 directed 3-node graphs PASS: 25 DAGs and 39 cyclic graphs; exhaustive permutation oracle
+ok
+test_04_shuffles_and_frontier_powersets (__main__.IndependentGraphChecks.test_04_shuffles_and_frontier_powersets) ... 32 randomized 5-node DAG shuffles + 1,024 accepted-fact subsets PASS
+ok
+test_05_membership_edge_schema_and_digest_rejections (__main__.IndependentGraphChecks.test_05_membership_edge_schema_and_digest_rejections) ... 14 schema/membership/edge/digest negative cases PASS with immutable structured errors
+ok
+test_06_exact_acceptance_coverage (__main__.IndependentGraphChecks.test_06_exact_acceptance_coverage) ... ok
+test_07_status_is_not_integration_evidence (__main__.IndependentGraphChecks.test_07_status_is_not_integration_evidence) ... all 11 non-superseded task statuses PASS; accepted/completed alone never unlock dependents
+ok
+test_08_integration_fact_boundary (__main__.IndependentGraphChecks.test_08_integration_fact_boundary) ... ok
+test_09_immutable_input_output_and_no_runtime_io (__main__.IndependentGraphChecks.test_09_immutable_input_output_and_no_runtime_io) ... ok
+test_10_proposed_replacement_graph_excludes_retained_history (__main__.IndependentGraphChecks.test_10_proposed_replacement_graph_excludes_retained_history) ... proposed whole live replacement PASS; retained superseded/archived records are excluded from build input under live-graph contract
+ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.630s
+
+OK
+Final exact head/root base/candidate cleanliness PASS

@@ -1,0 +1,23 @@
+PRE: identity PASS; clean exact head/base; 13 context hashes; validation hash; raw diff/policy/model/fingerprint; passing same-candidate R1; r4 digest; unchanged accepted 001/004/039 code.
+Changed paths: ['A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md', 'A\tsrc/plan_graph.py', 'A\ttests/unit/planning_dag/test_plan_graph.py']
+Candidate imports: {'contracts': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\contracts.py', 'domain_values': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\domain_values.py', 'plan_graph': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\plan_graph.py', 'orchestration_ports': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\orchestration_ports.py'}
+test_01_real_plan_through_accepted_port_values (__main__.ConsistencyChecks.test_01_real_plan_through_accepted_port_values) ... Real plan -> accepted scheduling DTO: 39 nodes, 9 criteria, 7 synthetic facts; frontier ['TASK-013']
+ok
+test_02_lifecycle_neutral_digest_and_structural_prose (__main__.ConsistencyChecks.test_02_lifecycle_neutral_digest_and_structural_prose) ... Lifecycle-only path/attempt movement preserves full DAG; structural mixed-field prose rejects prior digest.
+ok
+test_03_proposed_split_coverage_and_excluded_history (__main__.ConsistencyChecks.test_03_proposed_split_coverage_and_excluded_history) ... 40-node proposed split preserves original coverage and prerequisite bytes; excluded history/facts and dropped original AC reject.
+ok
+test_04_registry_error_and_frozen_input_compatibility (__main__.ConsistencyChecks.test_04_registry_error_and_frozen_input_compatibility) ... Immutable accepted JSON builds; nine version/kind/shape failures preserve accepted registry category/details/retryability.
+ok
+test_05_plan_qualified_namespace_across_port_roundtrip (__main__.ConsistencyChecks.test_05_plan_qualified_namespace_across_port_roundtrip) ... Two complete 39-task plans share local IDs but all lookup/frontier identities stay disjoint.
+ok
+test_06_detached_values_and_stable_direct_fact_order (__main__.ConsistencyChecks.test_06_detached_values_and_stable_direct_fact_order) ... Builder/port-derived outputs remain detached, immutable, deterministic; full SHA-256 integration facts preserved.
+ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.460s
+
+OK
+POST: identity PASS; clean exact head/base; 13 context hashes; validation hash; raw diff/policy/model/fingerprint; passing same-candidate R1; r4 digest; unchanged accepted 001/004/039 code.
+Changed paths: ['A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md', 'A\tsrc/plan_graph.py', 'A\ttests/unit/planning_dag/test_plan_graph.py']
+Candidate imports: {'contracts': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\contracts.py', 'domain_values': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\domain_values.py', 'plan_graph': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\plan_graph.py', 'orchestration_ports': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\orchestration_ports.py'}
