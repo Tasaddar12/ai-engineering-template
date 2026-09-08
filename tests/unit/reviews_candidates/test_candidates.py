@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import subprocess
 import sys
 import unittest
 from dataclasses import replace
@@ -37,42 +36,26 @@ ADR_PATHS = (
 HANDOFF_PATHS = (
     ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
 )
-TASK_001_CANDIDATE_PATH = (
-    ".ai/plans/current/PLAN-001/reviews/candidates/"
-    "CANDIDATE-TASK-001-a2-d1fc91746641.json"
+TASK_001_TASK_PATH = (
+    ".ai/plans/current/PLAN-001/tasks/current/TASK-001.json"
 )
+TASK_001_RECORD = b"""{
+  "id": "TASK-001",
+  "plan_id": "PLAN-001",
+  "depends_on": [],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ]
+}
+"""
 
 
 def material(path: str, content: bytes | bytearray) -> MaterialInput:
     return MaterialInput(path=path, content=content)
-
-
-def git_bytes(*arguments: str) -> bytes:
-    command = ["git"]
-    git_pointer = WORKTREE_ROOT / ".git"
-    if sys.platform.startswith("linux") and git_pointer.is_file():
-        pointer = git_pointer.read_text(encoding="utf-8").strip()
-        git_dir = pointer.removeprefix("gitdir: ")
-        if len(git_dir) >= 3 and git_dir[1:3] == ":/":
-            git_dir = f"/mnt/{git_dir[0].lower()}/{git_dir[3:]}"
-            command.extend(
-                [f"--git-dir={git_dir}", f"--work-tree={WORKTREE_ROOT}"]
-            )
-    completed = subprocess.run(
-        [*command, *arguments],
-        cwd=WORKTREE_ROOT,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-        shell=False,
-    )
-    if completed.returncode != 0:
-        raise AssertionError(
-            f"git {' '.join(arguments)} failed with {completed.returncode}: "
-            f"{completed.stderr.decode('utf-8', errors='replace')}"
-        )
-    return completed.stdout
 
 
 def context(**changes: object) -> CandidateContext:
@@ -221,75 +204,72 @@ class CandidateTests(unittest.TestCase):
         self.assertNotEqual(task_candidate.fingerprint, plan_candidate.fingerprint)
 
     def test_actual_dependency_free_task_context_needs_no_handoff_placeholder(self) -> None:
-        historical_wire = json.loads(
-            (WORKTREE_ROOT / TASK_001_CANDIDATE_PATH).read_bytes()
-        )
-        historical = candidate_from_wire(historical_wire, self.registry)
-        head_oid = historical.head_oid
-        observed = {
-            reference["path"]: material(
-                reference["path"],
-                git_bytes("show", f"{head_oid}:{reference['path']}"),
-            )
-            for reference in historical_wire["context_refs"]
-        }
-        for reference in historical_wire["context_refs"]:
-            self.assertEqual(
-                hashlib.sha256(observed[reference["path"]].content).hexdigest(),
-                reference["sha256"],
-            )
-
-        task_path = ".ai/plans/current/PLAN-001/tasks/current/TASK-001.json"
-        task_record = json.loads(observed[task_path].content)
+        task_record = json.loads(TASK_001_RECORD)
         self.assertEqual(task_record["depends_on"], [])
         required_handoffs = tuple(
             f".ai/plans/current/PLAN-001/evidence/implementation/{task_id}.md"
             for task_id in task_record["depends_on"]
         )
         actual_context = CandidateContext(
-            plan=observed[".ai/plans/current/PLAN-001/plan.json"],
-            graph=observed[".ai/plans/current/PLAN-001/graph.json"],
-            specs=[observed[".ai/plans/current/PLAN-001/spec.json"]],
-            adrs=[observed[path] for path in task_record["adr_refs"]],
+            plan=material(
+                ".ai/plans/current/PLAN-001/plan.json",
+                json.dumps(
+                    {"id": "PLAN-001", "adr_refs": task_record["adr_refs"]},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8"),
+            ),
+            graph=material(
+                ".ai/plans/current/PLAN-001/graph.json",
+                b'{"nodes":[{"task_id":"TASK-001","depends_on":[]}]}',
+            ),
+            specs=[
+                material(
+                    ".ai/plans/current/PLAN-001/spec.json",
+                    b'{"id":"SPEC-001","status":"active"}',
+                )
+            ],
+            adrs=[
+                material(path, f"{path}\nStatus: accepted\n".encode("utf-8"))
+                for path in task_record["adr_refs"]
+            ],
             contracts=[
-                observed[".ai/shared/architecture/service-contracts.md"]
+                material(
+                    ".ai/shared/architecture/service-contracts.md",
+                    b"ReviewService.evaluate(request) -> result\n",
+                )
             ],
             handoffs=(),
             required_adr_paths=task_record["adr_refs"],
             required_handoff_paths=required_handoffs,
             supplemental=[
-                observed[task_path],
-                observed[".ai/shared/workflows/reviews.md"],
+                material(TASK_001_TASK_PATH, TASK_001_RECORD),
+                material(
+                    ".ai/shared/workflows/reviews.md",
+                    b"Candidate identity and invalidation\n",
+                ),
             ],
         )
-        validation_path = historical_wire["validation_refs"][0]["path"]
         reconstructed = build_candidate(
             request(
-                candidate_id=historical.candidate_id,
-                task_id=historical.task_id,
-                plan_id=historical.plan_id,
-                graph_revision=historical.graph_revision,
-                base_oid=historical.base_oid,
-                head_oid=historical.head_oid,
-                diff=git_bytes(
-                    "diff",
-                    "--binary",
-                    historical.base_oid,
-                    historical.head_oid,
-                    "--",
-                ),
+                candidate_id="CANDIDATE-TASK-001-dependency-free-fixture",
+                task_id=task_record["id"],
+                plan_id=task_record["plan_id"],
+                graph_revision=4,
+                base_oid="1a5e4ad2c0f476edcec3d55ca0ccc37d4c914751",
+                head_oid="d1fc917466410febc6238479e65816dd39591a4f",
+                diff=b"diff --git a/src/domain_values.py b/src/domain_values.py\n",
                 context=actual_context,
                 validation=[
                     material(
-                        validation_path,
-                        (WORKTREE_ROOT / validation_path).read_bytes(),
+                        ".ai/plans/current/PLAN-001/evidence/validation/"
+                        "TASK-001-a2-d1fc91746641.txt",
+                        b"Ran focused TASK-001 tests\nOK\n",
                     )
                 ],
-                checklist_version=historical.checklist_version,
-                policy=git_bytes("show", f"{head_oid}:.ai/project/policy.json"),
-                model_profile=git_bytes(
-                    "show", f"{head_oid}:.ai/project/agent-models.json"
-                ),
+                checklist_version="PLAN-001-v1",
+                policy=b'{"review_required":true}\n',
+                model_profile=b'{"implementation":"sol/xhigh"}\n',
             ),
             self.registry,
         )

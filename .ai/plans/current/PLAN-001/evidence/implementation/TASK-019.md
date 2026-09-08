@@ -25,6 +25,7 @@ central export, plan record, policy, or canonical state file changed.
 This handoff also records a bounded correction made before the first independent review. The
 original owner-final head was `f9e32b0ce8c8950dcb541356cae23a2a7202adc5`; this correction remains
 attempt `TASK-019-a1` and is not a new attempt or a response to a formal review verdict.
+The subsequent clean-source regression repair also remains in this same pre-review correction.
 
 ## Behavior and acceptance mapping
 
@@ -131,23 +132,39 @@ The pre-review correction then produced these additional observed results from t
 | Linux Python 3.11.16 minimum-version venv through `wsl.exe -d Ubuntu-24.04 --cd /mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-019-a1 --exec ...`: same exact leaf command | The first run exited 1 because the regression helper passed the linked worktree's Windows-form `.git` pointer to Linux Git. After the tracked helper fix, exit 0; 14 tests; `OK`; final run 1.650 seconds. |
 | Windows Python 3.12 coordinator venv: `-m py_compile src/candidates.py tests/unit/reviews_candidates/test_candidates.py` | Exit 0 after the correction. |
 
-The added regression parses the accepted
-`CANDIDATE-TASK-001-a2-d1fc91746641.json`, reads every historical context blob from exact candidate
-commit `d1fc917466410febc6238479e65816dd39591a4f`, verifies all 11 raw-byte hashes, confirms the actual
-TASK-001 record has `depends_on=[]`, and builds a schema-valid typed context with `handoffs=()`.
-Another regression builds a schema-valid plan candidate whose applicable ADR set is empty. Focused
-failures cover missing named ADRs and handoffs, including one missing handoff among multiple required
-paths. No unrelated broad suite was run for this correction.
+The original historical reconciliation parsed accepted
+`CANDIDATE-TASK-001-a2-d1fc91746641.json`, read every context blob from exact candidate commit
+`d1fc917466410febc6238479e65816dd39591a4f`, verified all 11 raw-byte hashes, confirmed the actual
+TASK-001 record has `depends_on=[]`, and built a schema-valid typed context with `handoffs=()`; the
+three-runtime results above preserve that observation. The final tracked regression uses a bounded
+self-contained projection of those actual TASK-001 identity, dependency, ADR, role/path, base/head,
+validation, policy, and model inputs. It therefore proves the same applicable-role behavior without
+requiring a repository, historical commit, review artifact, or ambient project checkout. Another
+regression builds a schema-valid plan candidate whose applicable ADR set is empty. Focused failures
+cover missing named ADRs and handoffs, including one missing handoff among multiple required paths.
+
+After removing the history dependency, the Windows Python 3.12 worktree leaf passed 14 tests in
+0.307 seconds and the test file compiled successfully. A clean source export at
+`C:/Users/killi/AppData/Local/Temp/task019-export-228aeb627e3b4406b375b8545a3e511d` contained only
+`src/` (`candidates.py`, `contracts.py`, `domain_values.py`), 27 `schemas/v1/` records, and the owned
+test file. It had no `.git`, `.ai`, local virtual environment, or ambient editable source; origin
+checks resolved all three project modules from the export. The exact declared leaf there exited 0
+with 14 tests and `OK` in 0.313 seconds. The unchanged Windows/Linux 3.11 source matrix was not
+repeated after this test-only self-containment repair, per the coordinator's instruction to avoid an
+unchanged full matrix. No unrelated broad suite was run.
 
 ## Pre-handoff self-check
 
 The full owned base-to-candidate source/test behavior, correction diff, frozen candidate schema,
 accepted TASK-001/TASK-004 constructors, and repository callers were inspected. No production caller
 exists yet outside this owned leaf. The review found and fixed the unconditional ADR/handoff
-assumption, added exact applicable-path completeness rather than a nonempty-role proxy, and fixed the
-WSL linked-worktree observer defect found by the first Linux run. Ordering, raw hashes, alias
-rejection, defensive copying, task/plan identities, both Git OID widths, changed-input invalidation,
-and historical wire parsing remain covered. No further in-scope defect was found.
+assumption and added exact applicable-path completeness rather than a nonempty-role proxy. The first
+Linux run then exposed a Windows-form linked-worktree pointer defect in the history observer. A later
+clean-source review found that even the corrected observer still made the required regression depend
+on ambient Git history. The final test removes that observer and its subprocess/pointer plumbing and
+uses bounded tracked data instead. Ordering, raw hashes, alias rejection, defensive copying,
+task/plan identities, both Git OID widths, changed-input invalidation, historical wire compatibility,
+and clean-source execution remain covered. No further in-scope defect was found.
 
 ## Assumptions, limitations, and reviewer guidance
 
@@ -176,3 +193,8 @@ native invocation ID is `call_qf39dyVIkjyh0iP8NeCfyn0m`, with conservative charg
 records only native configured/observed submission data. No separate provider-returned effective
 model ID, effort observation, or provider invocation UUID was exposed, and no production provider
 adapter was configured or invoked.
+
+The clean-source follow-up inherited that same Sol/xhigh rank-3 configured context. Its
+coordinator-observed native follow-up ID is `call_a4PbUQKFoWQSlfDfUSymhW2f`, with conservative charge
+`104/300`; it is not a fresh context, review stage, or task attempt. No separate provider-effective
+identity was supplied.
