@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-017-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "review-request-TASK-017-a1-c2-R1-native82",
+  "task_id": "TASK-017",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-017-a1-e79df3b8d071.json",
+  "candidate_fingerprint": "b1d15eb23f6efe4625c3489e708c0c5cf6708b479698277a7b0d55f849cbf488",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_IeeqHuJhhGdcnlsYo24whZra"
+  },
+  "independent_session_id": "/root/review_017_c2_r1",
+  "implementation_session_id": "/root/repair_017_c1",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC1 remains incomplete: valid mapped-profile effects start but cannot reconnect after restart (R1-TASK-017-003). AC2 capability, rank, configured:false and invalid observed provenance cases pass; both prior findings are resolved.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-017.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-checks.txt"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "The flat Python fake respects REQ-04/AC-04 and exclusions: no production provider, network authority, canonical journal, intents, lease admission, review-gate implementation or new v1 fields. The finding is within existing recovery behavior.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/shared/architecture/service-contracts.md",
+        "src/agents.py"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Whole-request idempotency and identity fences pass. First terminal poll/result and confirmed cancellation now remain stable. The new provider-name equality rejects valid effects previously admitted through the accepted settings mapping.",
+      "evidence": [
+        "src/agents.py",
+        "src/config.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-temporal.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "fail",
+      "rationale": "Atomic replacement failures roll back start, scripting, polling and cancellation without leaked temporary files. Invalid observed facts do not advance cursors. Restoration nevertheless fails for a valid unchanged mapped configuration, preventing required sequential recovery.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-recovery.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-edges.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Independent temporal exploration admits all 249 reachable combinations and rejects 1363 impossible cursor/last/quiescence combinations across 35 script pairs. Empty, late, exhausted, partial and unconsumed fault scripts work. Valid non-identity profile mapping is the remaining recovery edge failure.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-temporal.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-temporal.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-edges.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "Exact declared Windows Python 3.12.14 leaf independently ran 27 tests, exit 0; committed candidate binds matching Windows/Linux Python 3.11.16 evidence. Owned tests meaningfully cover repaired temporal/corruption cases, but their same-name synthetic profiles miss the supported mapping that fails with the real accepted loader.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/commands/test.TASK-017.json",
+        "tests/unit/agents/test_agents.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-checks.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.py"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The optional single-owner provider backing file is explicitly dispatched, simulation-owned and separate from TASK-009/010 workflow state. No downstream owner, shared contract, registry, public Protocol or schema is implemented or changed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-017.json",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Native Git confirms exact clean head and frozen merge-base, with only agents.py, its owned test leaf and handoff added. Raw diff, 14 committed contexts, 3 ROOT validation hashes, policy/model digest and fingerprint match; r4 task and structural graph digests independently match approval.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-017-a1-e79df3b8d071.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-checks.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-edges.txt",
+        ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "The explicit agents submodule uses accepted immutable request/result values and frozen start/poll/cancel signatures. Configuration/capabilities are injected; tuples detach scripts, and persistence/rollback stays localized. The defect has a bounded implementation correction without new abstractions or prerequisite edits.",
+      "evidence": [
+        "src/agents.py",
+        "src/workflow_ports.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-038.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "No credentials, network calls, native-setting reads or automatic promotion of configured:false were found. 22 changed request fields and 18 changed handle cases fail closed; five model mutations remain rejected after restoration without cursor movement. Simulation metadata distinguishes submitted effort from unavailable provider-observed effort. The new defect is a false rejection, not an authority bypass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-checks.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-edges.txt",
+        "src/agents.py",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "Handoff accurately records prior failures, repair behavior, local validation limitations and one-owner simulation boundaries. Its general reconnection claim for unchanged saved settings is too broad while valid policy-to-provider profile mappings cannot restore. Update evidence alongside the bounded correction.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-017-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/agents.py:885 newly requires configured_model.name == request.model_profile during restoration. Accepted TASK-038 ProjectSettings.configured_model resolves policy_profile_map, whose policy and provider profile names may differ. A real schema-validated source fixture maps implementation to implementation_custom with the identical provider/model/rank/effort, configured:true and adequate review rank. start, exact retry and queued poll succeed in the first Python process, but a second fresh process with byte-identical settings fails FakeAgentProviderState construction with validation_failed. The identity-mapping control recovers the same single effect. A successfully started fake effect thus becomes unrecoverable after coordinator/process loss despite valid unchanged saved settings.",
+      "paths": [
+        "src/agents.py",
+        "tests/unit/agents/test_agents.py"
+      ],
+      "expected_fix": "Preserve the distinction between the requested policy profile and the resolved configured provider profile when validating restored state. Check their relationship through the injected accepted policy_profile_map/configured_model binding, retaining the existing exact stored model/effort/identity checks. Add an owned regression using a valid non-identity mapping through the accepted configuration loader and a fresh-process restart; do not change TASK-038, frozen ports or schemas.",
+      "acceptance_ids": [
+        "TASK-017-AC1"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T10:03:52.722407+00:00"
+}
