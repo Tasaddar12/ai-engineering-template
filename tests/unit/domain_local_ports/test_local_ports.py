@@ -248,6 +248,101 @@ class SchemaRecordTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires error_category"):
             dataclasses.replace(result, error_category=None)
 
+    def test_both_command_argv_fields_preserve_schema_valid_process_arguments(self) -> None:
+        argument_sets = (
+            ("python", "-c", "import sys; print(repr(sys.argv[1]))", "  payload  "),
+            ("python", "-c", "x = 1\n\tprint(x)"),
+            ("python", "-k", "value", "-k", "value"),
+        )
+        for arguments in argument_sets:
+            with self.subTest(arguments=arguments):
+                definition = CommandDefinition(
+                    "test.arguments",
+                    list(arguments),
+                    "project",
+                    5,
+                    2048,
+                    "local_execute",
+                    (),
+                    ("windows", "linux"),
+                    "exit_zero",
+                )
+                result = CommandEvidence(
+                    "CMD-ARGUMENTS",
+                    "test.arguments",
+                    list(arguments),
+                    "project",
+                    ".",
+                    NOW,
+                    NOW,
+                    0,
+                    "exited",
+                    None,
+                    None,
+                    False,
+                    False,
+                    (),
+                    None,
+                )
+
+                self.registry.validate(wire(definition), source="argument command definition")
+                self.registry.validate(wire(result), source="argument command evidence")
+                self.assertEqual(definition.argv, arguments)
+                self.assertEqual(result.argv_redacted, arguments)
+
+    def test_both_command_argv_fields_reject_schema_and_process_invalid_inputs(self) -> None:
+        def make_definition(arguments: object) -> CommandDefinition:
+            return CommandDefinition(
+                "test.arguments",
+                arguments,
+                "project",
+                5,
+                2048,
+                "local_execute",
+                (),
+                ("windows",),
+                "exit_zero",
+            )
+
+        def make_evidence(arguments: object) -> CommandEvidence:
+            return CommandEvidence(
+                "CMD-ARGUMENTS",
+                "test.arguments",
+                arguments,
+                "project",
+                ".",
+                NOW,
+                NOW,
+                0,
+                "exited",
+                None,
+                None,
+                False,
+                False,
+                (),
+                None,
+            )
+
+        for factory in (make_definition, make_evidence):
+            with self.subTest(dto=factory.__name__, case="scalar collection"):
+                with self.assertRaises(TypeError):
+                    factory("python")
+            with self.subTest(dto=factory.__name__, case="empty collection"):
+                with self.assertRaisesRegex(ValueError, "must not be empty"):
+                    factory(())
+            with self.subTest(dto=factory.__name__, case="empty argument"):
+                with self.assertRaisesRegex(ValueError, "items must be non-empty"):
+                    factory(("python", ""))
+            with self.subTest(dto=factory.__name__, case="non-string argument"):
+                with self.assertRaisesRegex(TypeError, "items must be strings"):
+                    factory(("python", 3))
+            with self.subTest(dto=factory.__name__, case="process-invalid NUL"):
+                with self.assertRaisesRegex(ValueError, "cannot contain NUL"):
+                    factory(("python", "before\0after"))
+
+        with self.assertRaisesRegex(ValueError, "surrounding whitespace"):
+            dataclasses.replace(make_definition(("python",)), id=" test.arguments ")
+
     def test_worktree_record_matches_schema_without_local_absolute_path(self) -> None:
         record = worktree_record(status=WorktreeStatus.ACTIVE, observed_head_oid=OID_A, lease_id="LEASE-1")
 

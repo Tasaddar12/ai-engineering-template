@@ -16,6 +16,14 @@ The candidate is the Git commit containing this handoff. Its object ID is observ
 and intentionally is not embedded in that same commit. The coordinator can bind the frozen candidate
 from the branch head reported with this handoff.
 
+The first frozen candidate at `f38680d2d892d38abaf95402f7470c90a838b68c` received a failing R1
+verdict in `TASK-002-a1-c1-R1`. Its one preserved finding, `R1-TASK-002-001`, showed that metadata
+validation rejected schema-valid whitespace-significant and multiline argv values in both command
+DTOs even though direct `shell=False` executions preserved them and succeeded. The review files are
+retained in ROOT at commit `8446225b832db582e49598670ef1f0f3345be415`. This bounded repair creates
+a new candidate; the failed verdict is not reused, and fresh independent R1 then R2 are required on
+the identical repaired commit.
+
 Verified changed paths are limited to the three paths TASK-002 owns:
 
 - `src/local_ports.py` (added)
@@ -47,6 +55,11 @@ file changed.
 - `CommandDefinition` and `CommandEvidence` match their complete v1 schema field sets with no extra
   effort or provider fields. `CommandRequest` carries optional plan identity, project/run/operation
   identity, the typed definition, permitted environment values, and a validated relative cwd.
+- Both command argv fields use argument-specific immutable validation. They preserve leading and
+  trailing whitespace, embedded newlines/tabs, and repeated arguments exactly while retaining v1's
+  nonempty sequence, string-item, and nonempty-item constraints. Embedded NUL is rejected explicitly
+  because Python process APIs cannot launch such an argument; metadata labels retain the stricter
+  trimmed and control-free validation.
 - `LocalProjectBinding`, `LocalWorktreeBinding`, and `LocalControlBinding` isolate absolute host paths
   from portable definitions, records, and evidence. `cwd_relative="."` explicitly selects a bound root
   without weakening TASK-001 `ScopePath` rules. Secret environment values are excluded from repr.
@@ -116,9 +129,9 @@ All Python commands used
 
 | Command | Observed result |
 | --- | --- |
-| `-m unittest discover -s tests/unit/domain_local_ports/ -p test_*.py` | Exit 0; 25 focused tests; `OK`. This is the exact declared TASK-002 command, and the test file places this worktree's `src` first on `sys.path`. |
+| `-m unittest discover -s tests/unit/domain_local_ports/ -p test_*.py` | Exit 0; 27 focused tests; `OK`. This is the exact declared TASK-002 command, and the test file places this worktree's `src` first on `sys.path`. |
 | `-m unittest discover -s tests -p test_*.py` | Exit 0; 24 existing aggregate/bootstrap tests; `OK`. The current namespaceless nested leaf layout is intentionally not reached by parent discovery; the task leaf command is authoritative until aggregate wiring is owned later. |
-| `src/validate_foundation.py` | Exit 0; 27 schemas, 142 artifacts, 1 plan, 39 tasks, 280 unordered pairs, 4 archive manifests, 246 local links. |
+| `src/validate_foundation.py` | Exit 0; 27 schemas, 147 artifacts, 1 plan, 39 tasks, 280 unordered pairs, 4 archive manifests, 262 local links. |
 | `-m py_compile src/local_ports.py tests/unit/domain_local_ports/test_local_ports.py` | Exit 0. |
 | `git diff --check` | Exit 0. |
 
@@ -127,7 +140,9 @@ exercise zero-plan events and control worktrees, freeze caller-owned collections
 the exact Protocol signatures, and cover stale generation, mixed operation IDs, missing records,
 invalid OIDs/refs, missing cwd bindings, unpermitted environment, timeout/unknown command evidence,
 ambiguous Git effects, unmanaged dirty worktrees, live leases, retention requirements, and missing
-success evidence.
+success evidence. The repair regressions validate both command DTOs through the registry and prove
+exact round trips for significant surrounding spaces, multiline/tab content, and repeated arguments;
+they also reject scalar/empty collections, empty or non-string items, and process-invalid NUL values.
 
 ## Assumptions, deviations, risks, and reviewer guidance
 
@@ -146,9 +161,11 @@ success evidence.
   structural discoveries. Windows is the only host actually exercised here; the DTO tests themselves
   contain no platform-specific process behavior.
 
-Reviewer focus: validate exact schema field sets, direct zero-plan event identity, relocation grouping,
-root `.` cwd handling, repeated argv values, timeout/cancel termination codes, expected/missing/unborn
-Git heads, unknown `changed=None`, plan-free control bindings, unmanaged/absent/dirty worktree facts,
+Reviewer focus: rerun the preserved significant-space and multiline reproductions against both DTOs,
+then probe repeated values, tabs, empty/non-string arguments, NUL rejection, and unchanged strict
+metadata labels. Also validate exact schema field sets, direct zero-plan event identity, relocation
+grouping, root `.` cwd handling, timeout/cancel termination codes, expected/missing/unborn Git heads,
+unknown `changed=None`, plan-free control bindings, unmanaged/absent/dirty worktree facts,
 live/unknown leases, and merged-or-retained cleanup guards. Confirm that no class performs IO and no
 portable record includes an absolute path.
 

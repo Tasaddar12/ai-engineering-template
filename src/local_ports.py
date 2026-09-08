@@ -78,6 +78,23 @@ def _strings(values: Iterable[str], label: str, *, nonempty: bool = False) -> tu
     return tuple(_text(value, f"{label} item") for value in result)
 
 
+def _arguments(values: Iterable[str], label: str) -> tuple[str, ...]:
+    """Freeze process arguments without applying metadata normalization rules."""
+    result = _tuple(values, label)
+    if not result:
+        raise ValueError(f"{label} must not be empty")
+    arguments: list[str] = []
+    for value in result:
+        if not isinstance(value, str):
+            raise TypeError(f"{label} items must be strings")
+        if not value:
+            raise ValueError(f"{label} items must be non-empty")
+        if "\0" in value:
+            raise ValueError(f"{label} items cannot contain NUL")
+        arguments.append(value)
+    return tuple(arguments)
+
+
 def _texts(values: Iterable[str], label: str, *, nonempty: bool = False) -> tuple[str, ...]:
     normalized = _strings(values, label, nonempty=nonempty)
     if len(set(normalized)) != len(normalized):
@@ -505,7 +522,7 @@ class CommandDefinition:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "id", _entity(self.id, "command definition ID"))
-        object.__setattr__(self, "argv", _strings(self.argv, "command argv", nonempty=True))
+        object.__setattr__(self, "argv", _arguments(self.argv, "command argv"))
         object.__setattr__(self, "cwd_rule", CommandCwdRule(self.cwd_rule))
         for name in ("timeout_seconds", "max_output_bytes"):
             value = getattr(self, name)
@@ -672,7 +689,7 @@ class CommandEvidence:
     def __post_init__(self) -> None:
         object.__setattr__(self, "id", _entity(self.id, "command evidence ID"))
         object.__setattr__(self, "command_id", _entity(self.command_id, "command ID"))
-        object.__setattr__(self, "argv_redacted", _strings(self.argv_redacted, "argv_redacted", nonempty=True))
+        object.__setattr__(self, "argv_redacted", _arguments(self.argv_redacted, "argv_redacted"))
         object.__setattr__(self, "cwd_worktree_id", _entity(self.cwd_worktree_id, "cwd root ID"))
         object.__setattr__(self, "cwd_relative", _cwd_relative(self.cwd_relative))
         started = _aware(self.started_at, "started_at", required=True)
