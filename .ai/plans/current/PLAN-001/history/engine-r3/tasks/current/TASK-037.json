@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-037",
+  "plan_id": "PLAN-001",
+  "title": "Package assets and configure platform CI",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Package the flat src/*.py command modules, schemas, and installable assets and configure platform CI without introducing a package directory layer.",
+  "depends_on": [
+    "TASK-035",
+    "TASK-036"
+  ],
+  "scope": {
+    "write_paths": [
+      "pyproject.toml",
+      "src/install.py",
+    "docs/",
+      ".github/workflows/",
+      "tests/package/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-037.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "docs/",
+      "src/ai.py",
+      "src/install.py",
+      "src/validate_foundation.py",
+      "tests/test_bootstrap_acceptance.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:release"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-037-AC1",
+      "description": "Build and install the complete flat-module dependency closure and exact schema/guidance assets in clean supported environments, updating the installer catalog without regressing its safe bootstrap behavior",
+      "verification": "TASK-037 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-037-AC2",
+      "description": "Configure Linux/Windows validation/build matrix and report actual support without live provider dependencies",
+      "verification": "TASK-037 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-08",
+    "AC-09"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    "docs/agents/ canonical reusable role guides",
+    ".ai/shared/architecture/service-contracts.md",
+    "docs/{agents,templates,workflows,defaults}/ reusable source payload",
+    "src/ai.py, src/install.py, and src/validate_foundation.py flat entry points",
+    "handoff:TASK-035",
+    "handoff:TASK-036",
+    "handoff:TASK-031 installer and asset ownership transferred for final packaging",
+    "handoff:TASK-034 flat CLI dependency closure"
+  ],
+  "output_contracts": [
+    "release public behavior described by this task acceptance; final installer catalog includes canonical role guides and every flat runtime dependency introduced through TASK-034 wiring"
+  ],
+  "validation_commands": [
+    "test.TASK-037"
+  ],
+  "estimated_production_files": 5,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

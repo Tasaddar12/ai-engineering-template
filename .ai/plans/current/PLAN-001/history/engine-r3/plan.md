@@ -1,6 +1,6 @@
 # PLAN-001 — Local deterministic workflow engine
 
-Status: isolation. Graph revision 4 is proposed after repository realignment and has no current isolation approval. Do not resume implementation until a fresh independent isolation review passes against the exact graph and structural task digest.
+Status: isolation. Graph revision 3 is proposed after repository realignment and has no current isolation approval. Do not resume implementation until a fresh independent isolation review passes against the exact graph and structural task digest.
 
 The working `src/install.py`, `src/ai.py`, and `src/validate_foundation.py` files are corrective bootstrap tools. They install reusable guidance, create plan/task records, and validate them. The autonomous execution, review, recovery, delivery, and completion engine in this plan remains unimplemented.
 
@@ -24,10 +24,10 @@ The 39 task records below describe remaining engine work; the separate completed
 ## Canonical bundle
 
 - [Specification](spec.md) and [machine specification](spec.json)
-- [Machine plan](plan.json) and [proposed graph r4](graph.json)
+- [Machine plan](plan.json) and [proposed graph r3](graph.json)
 - `tasks/current/` for all 39 unimplemented task records
 - `commands/` for this plan's future task validation definitions
-- `reviews/` for current candidate reviews; empty until graph r4 is reviewed
+- `reviews/` for current candidate reviews; empty until graph r3 is reviewed
 - `evidence/` for corrective and future task evidence
 - `history/` for immutable superseded foundation snapshots and reports
 
@@ -76,7 +76,3 @@ The 39 task records below describe remaining engine work; the separate completed
 | [TASK-039](tasks/current/TASK-039.json) | Orchestration service contracts | TASK-003 |
 
 All tasks are backlog. TASK-001's earlier implementation attempt is retained only through Git branch `ai/PLAN-001/TASK-001/a1` at commit `f8a6f040fc48e8a237d412379322c5eed66d8cab`; it is interrupted, unaccepted, and incompatible with the flat source layout. See [attempt evidence](evidence/TASK-001-a1.md).
-
-## Graph r4 correction
-
-The independent r3 review found that adding validator and CLI dependencies would leave installed helper tools incomplete. TASK-004 now owns the minimal installer catalog correction and an isolated installed-tool test, with explicit compatibility for lifecycle-neutral structural digests. Later installer tasks remain sequenced after it. The original r3 graph, tasks, commands and review are retained unchanged in `history/engine-r3/`. All 39 task outcomes and plan acceptance criteria remain.

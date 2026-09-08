@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-032",
+  "plan_id": "PLAN-001",
+  "title": "Upgrade owned assets with migration checks",
+  "status": "backlog",
+  "archived": false,
+  "objective": "Upgrade owned assets with migration checks. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-005",
+    "TASK-009",
+    "TASK-011",
+    "TASK-031"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/upgrade.py",
+      "tests/unit/workflows_upgrade/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-032.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/state.py",
+      "src/assets.py",
+      "src/project_lifecycle.py",
+      "src/worktrees.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:workflows/upgrade"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-032-AC1",
+      "description": "Compute dry-run three-way owned-asset changes using manifests and preserve project-owned records",
+      "verification": "TASK-032 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-032-AC2",
+      "description": "Apply compatible migrations in isolated worktree with validated checkpoint and safe rollback proposal",
+      "verification": "TASK-032 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-08"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-005",
+    "handoff:TASK-009",
+    "handoff:TASK-011",
+    "handoff:TASK-031"
+  ],
+  "output_contracts": [
+    "workflows/upgrade public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-032"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [],
+  "superseded_by": [],
+  "resume_state": null
+}

@@ -14,7 +14,6 @@
     "write_paths": [
       "src/contracts.py",
       "src/validate_foundation.py",
-      "src/install.py",
       "tests/unit/schemas/",
       ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md"
     ],
@@ -56,11 +55,6 @@
       "id": "TASK-004-AC2",
       "description": "Map validation failures to typed domain errors and check typed-value parsing parity",
       "verification": "TASK-004 failure-case tests and structured handoff evidence"
-    },
-    {
-      "id": "TASK-004-AC3",
-      "description": "Preserve the complete standalone installed helper dependency closure as flat runtime modules are introduced, using a bounded installer catalog update and a fresh-target test without source-tree imports. Canonicalize only known plan/task lifecycle locations in structural task digests so current-location records reproduce the bootstrap digest and unchanged relocated records retain approval; changed structure still invalidates approval.",
-      "verification": "TASK-004 installed-tool isolation and lifecycle-neutral digest compatibility tests plus the existing bootstrap acceptance suite"
     }
   ],
   "plan_acceptance_ids": [
@@ -84,14 +78,13 @@
   ],
   "output_contracts": [
     "schemas public behavior described by this task acceptance; use predeclared ports",
-    "structural_task_digest projection and hash contract that includes scope/dependency/acceptance/contracts/logical references while excluding status, attempts, and current/completed/archived physical locations",
-    "Installer catalog copies the full canonical flat runtime dependency closure throughout implementation, before final TASK-037 packaging; no project-owned content or native provider settings are changed. Canonical digest preserves existing current-location digests and never accepts a stale hash as a fallback."
+    "structural_task_digest projection and hash contract that includes scope/dependency/acceptance/contracts/logical references while excluding status, attempts, and current/completed/archived physical locations"
   ],
   "validation_commands": [
     "test.TASK-004"
   ],
   "estimated_production_files": 4,
-  "size_rationale": "One contract-validation outcome with three bounded checks across contracts.py, validate_foundation.py and the install.py helper catalog. Installer edits only keep standalone tools complete; TASK-031/037 own later lifecycle and release changes and are already sequenced after TASK-004.",
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
   "out_of_scope": [
     "Other task-owned modules and tests",
     "Changing shared contracts without a new prerequisite task",
