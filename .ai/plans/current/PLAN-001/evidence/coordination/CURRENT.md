@@ -27,3 +27,10 @@ review FINAL. Native budget87/300, including usage interruptions/resumptions;
 3/3 historical rewrites used, none remaining. No runtime active_run or separate
 provider-effective identity is claimed. Owners use configured Sol/xhigh; fresh
 independent reviews/recovery use Astra/xhigh.
+
+TASK-017-a2 began at8a4d789090f8a2f51be1be9c947470f82e21ef81. Fresh
+implement_017_a2 Sol/xhigh owner is ACTIVE; native charge88/300, observed call call_9PXUEvQO4ZqUKqOXh6eTRkke.
+TASK-018 owner is FINAL at802e9baf0967aa25c70563f1cd31840b6dd3ffa8; clean and
+three owned paths verified; handoff read, all three platforms report10 non-skipped
+tests. It now joins the review queue. Next candidate chosen024, owner FINAL/clean
+c1423e43b872caa25537fac3cb2641f0b9bf8009 and full handoff read.

@@ -47,3 +47,7 @@ Final verification must run all required tests from tracked files and exercise
 clean wheel/sdist installs outside the checkout, without `.ai/local` or an editable
 root installation supplying modules, fixtures or assets. This is recorded in the
 TASK-037 dispatch briefing and remains an outstanding gate, not a claimed pass.
+
+After verifying original inventory hashes and tracked destinations, the two active
+local script copies and 14 superseded local briefing copies were removed.
+The local CURRENT file now only points to the tracked current checkpoint.
