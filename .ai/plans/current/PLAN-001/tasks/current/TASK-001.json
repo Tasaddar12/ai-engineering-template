@@ -4,7 +4,7 @@
   "id": "TASK-001",
   "plan_id": "PLAN-001",
   "title": "Define immutable domain values",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Define immutable domain values. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [],
@@ -88,8 +88,9 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-001-a1"
+    "TASK-001-a1",
+    "TASK-001-a2"
   ],
   "superseded_by": [],
-  "resume_state": "Prior attempt TASK-001-a1 was interrupted and remains unaccepted; wait for fresh isolation approval of graph r3."
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
