@@ -193,3 +193,12 @@ dispatch and TASK-006 correction invocation. Graph rewrites remain three of thre
 used. No candidate review is currently frozen while the three scoped owners work.
 TASK-005 a2, TASK-013 and TASK-014 remain clean in the review queue. Linux and Windows
 validation will be used for applicable process/platform behavior before final gates.
+
+TASK-006's bounded pre-R1 correction is now clean at
+`86bc27af026d8b7b00303fa6d62b12218e0947b8`. It requires observed POSIX process-group
+ownership before confirmed cleanup and emits schema-valid unknown evidence with
+retained stream refs for a backward clock observation, without fabricated timestamps.
+The owner ran the declared suite and ResourceWarning-as-error variant on Windows
+and Ubuntu: 20 discovered, 19 executed, one platform-specific skip on each; all pass.
+The coordinator will bind fresh current-base Windows and Linux validation in one
+candidate before independent R1. Native accounting remains 59 before that dispatch.
