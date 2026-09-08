@@ -4,7 +4,7 @@
   "id": "TASK-003",
   "plan_id": "PLAN-001",
   "title": "Freeze agent and workflow service ports",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Freeze interface-only agent, context, validation, review and delivery ports using shared values; no orchestration contracts or concrete behavior.",
   "depends_on": [
@@ -92,7 +92,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-003-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
