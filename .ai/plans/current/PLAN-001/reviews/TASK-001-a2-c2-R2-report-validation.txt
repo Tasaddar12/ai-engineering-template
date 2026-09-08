@@ -1,0 +1,1 @@
+PASS: review-result v1 schema and format; R2-01..12 exactly once; all pass; no findings; exact R1 and invocation binding; all evidence paths exist

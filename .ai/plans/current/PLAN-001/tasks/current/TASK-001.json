@@ -4,7 +4,7 @@
   "id": "TASK-001",
   "plan_id": "PLAN-001",
   "title": "Define immutable domain values",
-  "status": "repairing",
+  "status": "accepted",
   "archived": false,
   "objective": "Define immutable domain values. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [],
@@ -92,5 +92,5 @@
     "TASK-001-a2"
   ],
   "superseded_by": [],
-  "resume_state": "R1-TASK-001-001 requires conservative ancestor conflict detection; repair within existing scope, then fresh validation and both review stages. The original failed review remains immutable."
+  "resume_state": "Candidate d1fc917466410febc6238479e65816dd39591a4f passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }

@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-001-a2-c2-R2-evidence.py", line 58, in <module>
+    assert digest(ROOT / reference["path"]) == reference["sha256"], reference["path"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: .ai/plans/current/PLAN-001/plan.json
