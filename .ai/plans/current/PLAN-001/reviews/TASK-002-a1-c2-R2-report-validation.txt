@@ -1,0 +1,9 @@
+PASS review-result v1 schema; complete R2-01 through R2-12; zero findings.
+PASS same-candidate passing R1 bytes unchanged; distinct implementation/R1/R2 sessions.
+PASS exact 11 frozen port signatures and four schema-shaped field sets.
+PASS cited evidence exists; final source head/base/binary diff unchanged; clean worktree; diff --check.
+8a7852adc82a890ee9ddbb57bc8d60add30a8be854106fd4dd6a3ad45c71d6da  TASK-002-a1-c2-R2.json
+f1bc80de7f8a2727620351fc0775f4505a23848cb8629b2939f88ee54ac3a938  TASK-002-a1-c2-R2.md
+0526405e780c53a24bd5d9253150dc2af5e725b8230cc576aff40825377aec10  TASK-002-a1-c2-R2-probes.py
+7354adf2d5c23630f8784a12ddfb031849c8a2eb859cb72a8ae8e05761e9ce0f  TASK-002-a1-c2-R2-probes.txt
+582d2c30ff3721685aded2f2c056a4cb5a7ddb9d2f5f1447e7090f55d50948d8  TASK-002-a1-c2-R2-declared.txt
