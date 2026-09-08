@@ -1,7 +1,7 @@
 ---
 id: TASK-049
 title: Resolve model profiles and invoke provider bridge
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-045
@@ -28,6 +28,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-049 — Resolve model profiles and invoke provider bridge
 

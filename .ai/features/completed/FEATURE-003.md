@@ -1,7 +1,7 @@
 ---
 id: FEATURE-003
 title: Validated task decomposition and feature graphs
-status: review
+status: completed
 plan: PLAN-002
 tasks:
 - TASK-046
@@ -55,7 +55,13 @@ kind: features
 worktree: .worktrees/plan-002-planning
 branch: codex/plan-002-planning
 base: c1a0728
-head: cc3ed1b0e25e7d7f8ddf101ff48b980440958288
+head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
+completion: .ai/handoffs/FEATURE-003-implementation-2.md
+review:
+  status: PASS
+  head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
+  path: .ai/reviews/FEATURE-003-critical-2.md
+merged_into: codex/plan-002-framework-reset
 ---
 # FEATURE-003 — Validated task decomposition and feature graphs
 

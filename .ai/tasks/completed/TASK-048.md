@@ -1,7 +1,7 @@
 ---
 id: TASK-048
 title: Apply validated decomposition revisions with lineage
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-047

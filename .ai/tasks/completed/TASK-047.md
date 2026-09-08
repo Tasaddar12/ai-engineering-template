@@ -1,7 +1,7 @@
 ---
 id: TASK-047
 title: Build bounded feature batches and safe parallel waves
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-046

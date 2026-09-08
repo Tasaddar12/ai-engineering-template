@@ -1,7 +1,7 @@
 ---
 id: FEATURE-004
 title: Configured agents, durable handoffs and critical review
-status: ready
+status: in-progress
 plan: PLAN-002
 tasks:
 - TASK-049
@@ -54,6 +54,11 @@ batch: agents
 effort: 8
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
 kind: features
+worktree: .worktrees/plan-002-agents
+branch: codex/plan-002-agents
+base: 49f1230224e518ca1d594aeee613612763c9e042
+head: 49f1230224e518ca1d594aeee613612763c9e042
+assignment: .ai/handoffs/FEATURE-004-assignment.md
 ---
 # FEATURE-004 — Configured agents, durable handoffs and critical review
 

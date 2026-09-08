@@ -5,9 +5,8 @@ project:
 current_focus:
   plan: PLAN-002
 active_features:
-- FEATURE-003
-waiting_features:
 - FEATURE-004
+waiting_features:
 - FEATURE-005
 - FEATURE-006
 - FEATURE-007
@@ -24,8 +23,15 @@ worktrees:
 - path: .worktrees/plan-002-planning
   branch: codex/plan-002-planning
   subject: FEATURE-003
-  head: cc3ed1b0e25e7d7f8ddf101ff48b980440958288
-  status: review
+  head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
+  status: completed
+  base_branch: codex/plan-002-framework-reset
+  cleanup: 'deferred: generated test caches retained'
+- path: .worktrees/plan-002-agents
+  branch: codex/plan-002-agents
+  subject: FEATURE-004
+  head: 49f1230224e518ca1d594aeee613612763c9e042
+  status: in-progress
   base_branch: codex/plan-002-framework-reset
 reviews:
   FEATURE-001:
@@ -36,12 +42,15 @@ reviews:
     status: PASS
     head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
     path: .ai/reviews/FEATURE-002-critical-1.md
+  FEATURE-003:
+    status: PASS
+    head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
+    path: .ai/reviews/FEATURE-003-critical-2.md
 pull_requests: {}
 active_runs: []
 blockers: []
 next_actions:
-- Review FEATURE-003
-- Finish and review FEATURE-002
-- Start FEATURE-004 after FEATURE-002 is integrated
-generation: 17
-updated_at: '2026-09-08T23:49:05.671822+00:00'
+- Implement and review FEATURE-004
+- Start FEATURE-005 after FEATURE-004 is integrated
+generation: 24
+updated_at: '2026-09-08T23:53:13.288151+00:00'

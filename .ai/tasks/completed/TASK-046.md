@@ -1,7 +1,7 @@
 ---
 id: TASK-046
 title: Validate task dependencies and ownership
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-042

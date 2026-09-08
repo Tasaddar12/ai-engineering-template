@@ -1,7 +1,7 @@
 ---
 id: TASK-050
 title: Render bounded durable agent assignments
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-049

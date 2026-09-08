@@ -1,7 +1,7 @@
 ---
 id: TASK-051
 title: Enforce one complete-diff critical review contract
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-050
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-051 — Enforce one complete-diff critical review contract
 
