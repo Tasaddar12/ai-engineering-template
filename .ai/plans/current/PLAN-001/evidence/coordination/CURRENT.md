@@ -195,3 +195,37 @@ for identical owned/dependency blobs). Both017a3 and018repair owners continue.
 017salvage checkpoint: ce1776a->dd48c2f,3cdb41e->4a56132,f5e2151->b7a30be;
 all3 salvagedblobs equal faileda2. Full lossless decoder/encoder fix and regressions
 implemented; final matrices pending after correcting a terminal fixture setup.
+
+
+ROOT FROZEN cae2df550126b7ed78162a8aa03c2c3dd946bbff for ACTIVE focused
+verify_007_c2 Astra/xhigh, charge99/300. Candidate5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a,
+FP704f1ef2363241c5e0643ed9d06680e737ea870d326a31957ed888c3a45736f7.
+Fresh coordinator Win3.12 declared suite PASS33, Windows1filename skip; exact
+owned/dependency blobs independently match owner-tested0efdcdc8. Ownerfull3matrix
+is retained in handoff; verifier does focused Windows/Linux findings checks and
+reuses verified unaffectedR1 reasoning. No taskR2, no broad suite repeat without
+new cause. Read FINAL, verify evidence, accept007 then begin009 ifPASS. No ROOT
+commits/begins while verifier active;017 and018 owners continue independently.
+
+Before017FINAL, coordinator confirmed a bounded encoder edge using actual accepted
+AcceptanceCriterion: adjacent chr(0xd83d)+chr(0xde00) survives constructor but plain
+ensure_ascii JSON hydration combines it to chr(0x1f600). First inline probe had an
+unused-import error; corrected probe confirmed the case. Sent owner for same
+lossless/preserved-invalid-provenance correction before review. No source edit,
+new helper or new upstream requirement; owner decides implementation.
+
+
+007 focused verification FINAL PASS; complete Markdown/JSON and identity/execution
+evidence read. All 14 context checks are present (earlier checkpoint count 13 was
+a prose count error), three program/output hashes independently verified. All
+three findings resolved on Windows/Linux; accepted and integrated at
+0f92a9858f85a3aac5e6c5c22b1038789af5d79a, generation 45, 11/39 accepted.
+Its clean integrated worktree was removed non-force; branch/history retained.
+009 a1 begun at b1e8717eb3253a1538a27ce2f151990c754a0eb1; Sol/xhigh owner
+implement_009 ACTIVE, native call_EM2WqkcoNZGoyRMqV57EffPI, charge 100/300.
+018 repair FINAL clean cf56dcb3eedaf23a3c5e1b75c36f0225cf01e0ec; full handoff
+and exact owned correction diff read. Owner 13 tests pass on Win3.12, Win3.11,
+Linux3.11; initial cross-version assertion failures and transient unknown outcome
+are retained honestly. Next: current candidate and focused single-stage verification.
+017 a3 remains ACTIVE. 019 pre-review correction and 024/016/005 verification
+remain queued. No task R2; final combined reviews and clean packaging remain.
