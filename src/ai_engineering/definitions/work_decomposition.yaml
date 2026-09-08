@@ -1,0 +1,20 @@
+name: work_decomposition
+prompt_template: agents/work-decomposition.md
+model_profile: planning_high
+assignment_template: handoffs/orchestrator-to-decomposition.md
+output_template: handoffs/decomposition.md
+permissions:
+  modify_files: false
+  run_commands: false
+  spawn_agents: false
+expected_inputs:
+- assignment
+- context_refs
+- constraints
+constraints:
+- coding
+- commands
+- files
+- workflow
+- external_actions
+max_concurrency: 1

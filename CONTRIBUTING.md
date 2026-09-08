@@ -1,7 +1,11 @@
 # Contributing
 
-Use Python 3.11 or newer. Keep executable modules directly under `src/`, use full type annotations for public functions, pass subprocess arguments as lists with `shell=False`, and return explicit errors for invalid or conflicting input.
+Use Python 3.11 or later. Install the editable package and development tools with `python -m pip install -e ".[dev]"` once the package implementation is available.
 
-Install development dependencies with `python -m pip install -e ".[dev]"`. Run `python -m unittest discover -s tests -v` and `python src/validate_foundation.py` before submitting a change. Tests should cover observable behavior and failure recovery, especially non-destructive installation into populated folders and cross-platform path handling.
+Read `AGENTS.md`, `.ai/STATE.yaml`, the selected PLAN document, its feature and included tasks. All plans, plan-specific contracts, features and tasks MUST remain under `.ai/`. Generic product documentation links to those artifacts.
 
-Do not commit secrets, credentials, local worktrees, virtual environments, generated build output, or temporary validation data.
+Keep public Python boundaries typed. Use `ruff format`, `ruff check`, `mypy` and focused `pytest` tests. Test meaningful behavior and regression cases in temporary repositories. Use argument lists and the central command runner for subprocesses; no core Bash scripts or independent workflow subprocess calls.
+
+Work in the feature's managed worktree and declared scope. Record real validation and a completion handoff, then obtain one independent Critical Change Review. Fix findings in the same implementation session and rerun validation and full-diff review. Structural problems return through recovery and decomposition.
+
+Keep templates in the package asset catalog; installed `.ai/templates/` copies are project-editable. Keep model configuration independent of role behavior. Do not include this repository's `.ai/` development history in a wheel or a new project installation.

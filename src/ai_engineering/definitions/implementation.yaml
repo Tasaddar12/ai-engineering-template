@@ -1,0 +1,20 @@
+name: implementation
+prompt_template: agents/implementation.md
+model_profile: coding_medium
+assignment_template: handoffs/orchestrator-to-feature-agent.md
+output_template: handoffs/feature-complete.md
+permissions:
+  modify_files: true
+  run_commands: true
+  spawn_agents: false
+expected_inputs:
+- assignment
+- context_refs
+- constraints
+constraints:
+- coding
+- commands
+- files
+- workflow
+- external_actions
+max_concurrency: 3

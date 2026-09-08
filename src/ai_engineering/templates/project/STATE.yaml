@@ -1,0 +1,18 @@
+project:
+  name: project
+  framework_version: 0.2.0
+  phase: planning
+current_focus:
+  plan: null
+active_features: []
+waiting_features: []
+blocked_features: []
+open_bugs: []
+worktrees: []
+reviews: {}
+pull_requests: {}
+active_runs: []
+blockers: []
+next_actions:
+- Create a plan or report a bug
+generation: 0
