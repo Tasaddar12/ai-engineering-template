@@ -4,7 +4,7 @@
   "id": "TASK-006",
   "plan_id": "PLAN-001",
   "title": "Execute commands with durable evidence",
-  "status": "running",
+  "status": "repairing",
   "archived": false,
   "objective": "Execute commands with durable evidence. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -101,5 +101,5 @@
     "TASK-006-a1"
   ],
   "superseded_by": [],
-  "resume_state": "The bounded pre-R1 Linux correction is committed at 86bc27af026d8b7b00303fa6d62b12218e0947b8 and owner validation passed on Windows and Linux. Form a current-base candidate with both platform evidence, then obtain fresh independent R1/R2. Preflight failures remain in evidence/assessment/TASK-006-linux-preflight.md."
+  "resume_state": "Failed review preserved; repair R1-TASK-006-001, R1-TASK-006-002; form a new candidate and rerun both independent reviews."
 }

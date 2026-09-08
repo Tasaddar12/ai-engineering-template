@@ -1,0 +1,1 @@
+PASS: final review-result JSON validates against ROOT schemas/v1/review-result.schema.json with Draft202012Validator and FormatChecker; 11 complete numbered checks; 2 unresolved major findings; verdict fail.
