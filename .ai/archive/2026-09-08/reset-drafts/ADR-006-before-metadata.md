@@ -1,8 +1,3 @@
----
-id: ADR-006
-title: Feature orchestration and readable state
-status: accepted
----
 # ADR-006 — Feature orchestration and readable state
 
 Status: accepted, 2026-09-08. Supersedes ADR-001 through ADR-004 and conflicting portions of ADR-005 in the reset archive. Authority: today's user request and Git Repo Layouts project discussion.

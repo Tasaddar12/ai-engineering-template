@@ -6,7 +6,6 @@ current_focus:
   plan: PLAN-002
 active_features: []
 waiting_features:
-- FEATURE-001
 - FEATURE-002
 - FEATURE-003
 - FEATURE-004
@@ -16,10 +15,15 @@ waiting_features:
 blocked_features: []
 open_bugs: []
 worktrees: []
-reviews: {}
+reviews:
+  FEATURE-001:
+    status: PASS
+    head: 274ca00bb42e3ea96db7f60dc189633e0651f633
+    path: .ai/reviews/FEATURE-001-critical-3.md
 pull_requests: {}
 active_runs: []
 blockers: []
 next_actions:
-- Implement FEATURE-001; then run FEATURE-002 and FEATURE-003 concurrently
-generation: 2
+- Implement FEATURE-002 and FEATURE-003 concurrently
+generation: 7
+updated_at: '2026-09-08T23:20:30.569138+00:00'

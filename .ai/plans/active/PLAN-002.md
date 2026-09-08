@@ -1,7 +1,7 @@
 ---
 id: PLAN-002
 title: Streamlined autonomous Python engineering framework
-status: ready
+status: in-progress
 tasks:
 - TASK-040
 - TASK-041
@@ -60,6 +60,7 @@ features:
 - FEATURE-007
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
 decomposition_status: approved
+kind: plans
 ---
 # PLAN-002 — Streamlined autonomous Python engineering framework
 

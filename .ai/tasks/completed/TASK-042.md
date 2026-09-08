@@ -1,7 +1,7 @@
 ---
 id: TASK-042
 title: Install reusable role, handoff and constraint assets
-status: ready
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-041
@@ -32,6 +32,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-042 — Install reusable role, handoff and constraint assets
 

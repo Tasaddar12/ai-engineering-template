@@ -1,7 +1,7 @@
 ---
 id: TASK-040
 title: Persist Markdown artifacts and strict YAML configuration
-status: ready
+status: completed
 plan: PLAN-002
 depends_on: []
 scope:
@@ -31,6 +31,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-040 — Persist Markdown artifacts and strict YAML configuration
 

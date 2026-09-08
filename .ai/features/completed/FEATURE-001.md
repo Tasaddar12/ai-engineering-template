@@ -1,7 +1,7 @@
 ---
 id: FEATURE-001
 title: Artifact, configuration and state foundation
-status: ready
+status: completed
 plan: PLAN-002
 tasks:
 - TASK-040
@@ -58,6 +58,16 @@ context:
 batch: core
 effort: 7
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
+kind: features
+branch: codex/plan-002-core
+worktree: .worktrees/plan-002-core
+head: 274ca00bb42e3ea96db7f60dc189633e0651f633
+review:
+  status: PASS
+  head: 274ca00bb42e3ea96db7f60dc189633e0651f633
+  path: .ai/reviews/FEATURE-001-critical-3.md
+completion: .ai/handoffs/FEATURE-001-implementation-3.md
+merged_into: codex/plan-002-framework-reset
 ---
 # FEATURE-001 — Artifact, configuration and state foundation
 

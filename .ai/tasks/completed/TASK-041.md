@@ -1,7 +1,7 @@
 ---
 id: TASK-041
 title: Maintain current-state index and reconcile Git observations
-status: ready
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-040
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-041 — Maintain current-state index and reconcile Git observations
 
