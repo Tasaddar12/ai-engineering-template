@@ -1,0 +1,8 @@
+Report: .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.json
+Schema: schemas/v1/review-result.schema.json
+Draft202012Validator with FormatChecker: PASS
+Exact candidate fingerprint, all 11 R1 checks, independent session, v1 reviewer field set and Markdown/JSON verdict consistency: PASS
+Every structured checklist evidence reference exists under root: PASS
+Candidate worktree accessed by this report validation: NO
+Exit code: 0
+Validated at: 2026-09-08T03:24:52.373039+00:00

@@ -1,0 +1,35 @@
+R2 independent commands run from D:/Codex Projects/ai-engineering-template/.worktrees/TASK-003-a1
+No source/schema/canonical artifact writes were made by the reviewer.
+
+COMMAND 1: ROOT/.ai/local/full-plan-venv/Scripts/python.exe -B ROOT/.ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py
+Independent R2 frozen-candidate integration/contract checks
+Working directory: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-003-a1
+Interpreter: D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-venv\Scripts\python.exe
+workflow_ports import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-003-a1\src\workflow_ports.py
+domain_values import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-003-a1\src\domain_values.py
+Candidate: 7eed3420cb4bf419205dd2a64d08acfab8cf7d75f7068b7a8b28e7c6ff5f420f
+R1 SHA256: c92e100c2163ae4c322ac433858a18374573a9d5e8b3497ef9ba4a11d5d835bb
+test_agent_observation_discovery_and_cancel_before_start (__main__.IndependentConsistencyTests.test_agent_observation_discovery_and_cancel_before_start) ... ok
+test_context_and_agent_request_use_actual_task_contract (__main__.IndependentConsistencyTests.test_context_and_agent_request_use_actual_task_contract) ... ok
+test_delivery_draft_ambiguity_discovery_and_remote_drift (__main__.IndependentConsistencyTests.test_delivery_draft_ambiguity_discovery_and_remote_drift) ... ok
+test_exact_candidate_r1_and_accepted_dependency (__main__.IndependentConsistencyTests.test_exact_candidate_r1_and_accepted_dependency) ... ok
+test_owned_diff_imports_and_frozen_method_signatures (__main__.IndependentConsistencyTests.test_owned_diff_imports_and_frozen_method_signatures) ... ok
+test_v1_model_shape_and_common_types_are_not_duplicated (__main__.IndependentConsistencyTests.test_v1_model_shape_and_common_types_are_not_duplicated) ... ok
+test_validation_precedes_fingerprint_and_r1_roundtrips (__main__.IndependentConsistencyTests.test_validation_precedes_fingerprint_and_r1_roundtrips) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.636s
+
+OK
+
+Exit code: 0
+
+COMMAND 2: ROOT/.ai/local/full-plan-venv/Scripts/python.exe -m unittest discover -s tests/unit/domain_workflow_ports/ -p test_*.py
+..........................
+----------------------------------------------------------------------
+Ran 26 tests in 0.008s
+
+OK
+
+Exit code: 0
+
