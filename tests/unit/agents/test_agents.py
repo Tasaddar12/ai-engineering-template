@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -30,6 +32,8 @@ from config import (  # noqa: E402
     ProviderModelProfile,
     ProviderModels,
     RoleModelDefaults,
+    load_installation_record,
+    load_project_settings,
 )
 from domain_values import (  # noqa: E402
     AgentOutputStatus,
@@ -156,6 +160,95 @@ else:
     raise ValueError(action)
 """
 
+REAL_LOADER_PROCESS_RESTART_SCRIPT = r"""
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+project = Path(sys.argv[2])
+state_path = project / "state.json"
+action = sys.argv[3]
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tests" / "unit" / "agents"))
+
+import agents
+import config
+import contracts
+import domain_values
+import workflow_ports
+from test_agents import observation, output, request
+
+project_settings = config.load_project_settings(
+    project,
+    config.load_installation_record(project),
+)
+agent_request = request(idempotency_key="real-loader-profile-mapping-17")
+configured = project_settings.configured_model(agent_request.model_profile)
+assert configured is not None
+capabilities = agents.AgentAdapterCapabilities(
+    roles=("implementer",),
+    permissions=("edit_scope", "tests"),
+    command_ids=("test.TASK-017",),
+    model_profiles=project_settings.models.provider().profiles,
+)
+provider = agents.FakeAgentProviderState(state_path)
+adapter = agents.DeterministicFakeAgentAdapter(
+    project_id="project-1",
+    settings=project_settings,
+    capabilities=capabilities,
+    provider_state=provider,
+)
+handle = adapter.start(agent_request, agent_request.idempotency_key)
+assert adapter.start(agent_request, agent_request.idempotency_key) == handle
+expected = adapter.expected_model(handle)
+if action == "start":
+    provider.script(
+        handle,
+        polls=(
+            observation(handle, domain_values.AgentRunStatus.RUNNING, model=expected),
+            observation(
+                handle,
+                domain_values.AgentRunStatus.SUCCEEDED,
+                model=expected,
+                structured_output=output(handle, expected),
+            ),
+        ),
+    )
+elif action != "continue":
+    raise ValueError(action)
+observed = adapter.poll(handle)
+settings_bytes = (
+    (project / ".ai" / "project" / "policy.json").read_bytes()
+    + (project / ".ai" / "project" / "agent-models.json").read_bytes()
+)
+print(
+    json.dumps(
+        {
+            "effect_count": provider.effect_count,
+            "external_handle": handle.external_handle,
+            "module_origins": {
+                module.__name__: module.__file__
+                for module in (
+                    agents,
+                    config,
+                    contracts,
+                    domain_values,
+                    workflow_ports,
+                )
+            },
+            "poll": observed.status.value,
+            "requested_policy_profile": agent_request.model_profile,
+            "resolved_provider_profile": configured.name,
+            "settings_sha256": hashlib.sha256(settings_bytes).hexdigest(),
+            "simulated_expected_profile": expected.profile,
+        },
+        sort_keys=True,
+    )
+)
+"""
+
 
 def evidence(name: str) -> EvidenceRef:
     return EvidenceRef(f".ai/evidence/{name}.json", DIGEST)
@@ -233,6 +326,60 @@ def settings(
         policy_ref=".ai/project/policy.json",
         agent_models_ref=".ai/project/agent-models.json",
     )
+
+
+def real_loader_project(directory: Path, *, mapped: bool) -> Path:
+    """Create copied source settings decoded only through accepted loaders."""
+
+    project = directory / ("mapped" if mapped else "identity")
+    shutil.copytree(WORKTREE_ROOT / "schemas" / "v1", project / "schemas" / "v1")
+    (project / ".ai" / "project").mkdir(parents=True)
+    shutil.copyfile(
+        WORKTREE_ROOT / ".ai" / "framework.json",
+        project / ".ai" / "framework.json",
+    )
+    models = json.loads(
+        (WORKTREE_ROOT / ".ai" / "project" / "agent-models.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    policy = json.loads(
+        (WORKTREE_ROOT / ".ai" / "project" / "policy.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    for provider in models["providers"].values():
+        provider["profiles"]["implementation_custom"] = copy.deepcopy(
+            provider["profiles"]["implementation"]
+        )
+    selected_name = "implementation_custom" if mapped else "implementation"
+    models["policy_profile_map"]["implementation"] = selected_name
+    selected = models["providers"][models["active_provider"]]["profiles"][
+        selected_name
+    ]
+    for profile in policy["model_profiles"]:
+        if profile["name"] == "implementation":
+            profile.update(
+                configured=True,
+                provider="OpenAI",
+                model_id=selected["model_id"],
+                capability_rank=selected["capability_rank"],
+            )
+        elif profile["name"] == "review_high":
+            profile["configured"] = True
+    for name, payload in (
+        ("agent-models.json", models),
+        ("policy.json", policy),
+    ):
+        (project / ".ai" / "project" / name).write_bytes(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        )
+    return project
 
 
 def capabilities(
@@ -773,6 +920,185 @@ class FakeAgentDispatchTests(unittest.TestCase):
                 outputs,
                 ["started", "succeeded output-first 1", "succeeded output-first 1"],
             )
+
+    def test_real_loader_profile_mapping_reconnects_across_fresh_processes(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for mapped in (False, True):
+                with self.subTest(mapped=mapped):
+                    project = real_loader_project(directory, mapped=mapped)
+                    policy_path = project / ".ai" / "project" / "policy.json"
+                    models_path = project / ".ai" / "project" / "agent-models.json"
+                    settings_bytes = policy_path.read_bytes() + models_path.read_bytes()
+                    expected_settings_sha256 = hashlib.sha256(settings_bytes).hexdigest()
+                    results = []
+                    for action in ("start", "continue"):
+                        completed = subprocess.run(
+                            [
+                                sys.executable,
+                                "-B",
+                                "-c",
+                                REAL_LOADER_PROCESS_RESTART_SCRIPT,
+                                str(WORKTREE_ROOT),
+                                str(project),
+                                action,
+                            ],
+                            cwd=WORKTREE_ROOT,
+                            capture_output=True,
+                            text=True,
+                            shell=False,
+                            check=False,
+                        )
+                        self.assertEqual(completed.returncode, 0, completed.stderr)
+                        results.append(json.loads(completed.stdout))
+
+                    first, second = results
+                    expected_provider_profile = (
+                        "implementation_custom" if mapped else "implementation"
+                    )
+                    self.assertEqual(first["poll"], "running")
+                    self.assertEqual(second["poll"], "succeeded")
+                    self.assertEqual(first["external_handle"], second["external_handle"])
+                    self.assertEqual(first["effect_count"], second["effect_count"])
+                    self.assertEqual(first["effect_count"], 1)
+                    for result in results:
+                        self.assertEqual(
+                            result["requested_policy_profile"], "implementation"
+                        )
+                        self.assertEqual(
+                            result["simulated_expected_profile"], "implementation"
+                        )
+                        self.assertEqual(
+                            result["resolved_provider_profile"],
+                            expected_provider_profile,
+                        )
+                        self.assertEqual(
+                            result["settings_sha256"], expected_settings_sha256
+                        )
+                        for origin in result["module_origins"].values():
+                            self.assertEqual(
+                                Path(origin).resolve().parent,
+                                (WORKTREE_ROOT / "src").resolve(),
+                            )
+                    self.assertEqual(
+                        policy_path.read_bytes() + models_path.read_bytes(),
+                        settings_bytes,
+                    )
+
+    def test_real_loader_binding_mutations_reject_every_adapter_use_unchanged(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = real_loader_project(Path(temporary), mapped=True)
+            project_settings = load_project_settings(
+                project,
+                load_installation_record(project),
+            )
+            adapter_capabilities = capabilities(
+                project_settings,
+                model_profiles=project_settings.models.provider().profiles,
+            )
+            state_path = project / "state.json"
+
+            def change_model_fact(
+                effect: dict[str, object], field: str, value: object
+            ) -> None:
+                configured_model = effect["configured_model"]
+                expected_model = effect["expected_model"]
+                assert isinstance(configured_model, dict)
+                assert isinstance(expected_model, dict)
+                configured_model[field] = value
+                expected_model[field] = value
+
+            cases = (
+                (
+                    "selected provider profile name",
+                    lambda effect: effect["configured_model"].update(
+                        name="stale-provider-profile"
+                    ),
+                ),
+                (
+                    "selected reasoning effort",
+                    lambda effect: effect["configured_model"].update(
+                        reasoning_effort="medium"
+                    ),
+                ),
+                (
+                    "selected provider effort",
+                    lambda effect: effect["configured_model"].update(effort="high"),
+                ),
+                (
+                    "provider provenance",
+                    lambda effect: change_model_fact(
+                        effect, "provider", "anthropic"
+                    ),
+                ),
+                (
+                    "model provenance",
+                    lambda effect: change_model_fact(
+                        effect, "model_id", "stale-model"
+                    ),
+                ),
+                (
+                    "capability provenance",
+                    lambda effect: change_model_fact(
+                        effect, "capability_rank", 99
+                    ),
+                ),
+            )
+
+            for label, mutate in cases:
+                with self.subTest(label=label):
+                    state_path.unlink(missing_ok=True)
+                    provider = FakeAgentProviderState(state_path)
+                    first, _ = adapter_values(
+                        project_settings,
+                        adapter_capabilities,
+                        provider,
+                    )
+                    agent_request = request()
+                    handle = first.start(
+                        agent_request,
+                        agent_request.idempotency_key,
+                    )
+                    payload = json.loads(state_path.read_text(encoding="utf-8"))
+                    effect = payload["effects"][0]
+                    mutate(effect)
+                    state_path.write_bytes(
+                        json.dumps(
+                            payload,
+                            ensure_ascii=False,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ).encode("utf-8")
+                    )
+                    rejected_bytes = state_path.read_bytes()
+                    del first, provider
+
+                    restored = FakeAgentProviderState(state_path)
+                    restarted, _ = adapter_values(
+                        project_settings,
+                        adapter_capabilities,
+                        restored,
+                    )
+                    actions = (
+                        lambda: restarted.start(
+                            agent_request,
+                            agent_request.idempotency_key,
+                        ),
+                        lambda: restarted.poll(handle),
+                        lambda: restarted.cancel(handle),
+                        lambda: restarted.expected_model(handle),
+                    )
+                    for action in actions:
+                        self.assert_category(ErrorCategory.VALIDATION_FAILED, action)
+                        self.assertEqual(state_path.read_bytes(), rejected_bytes)
+                        saved_effect = json.loads(state_path.read_bytes())["effects"][0]
+                        self.assertEqual(saved_effect["poll_position"], 0)
+                        self.assertEqual(saved_effect["cancel_position"], 0)
+                    del actions, restarted, restored
 
     def test_unknown_poll_is_explicit_and_can_later_reconcile(self) -> None:
         adapter, provider = adapter_values()

@@ -880,9 +880,11 @@ class FakeAgentProviderState:
         )
         if handle.external_handle != f"fake-agent-{token[:32]}":
             raise ValueError("restored fake handle is not deterministic")
+        # The request retains a policy-profile name while configured_model
+        # retains its resolved provider-profile name.  This provider-only
+        # decoder has no settings mapping; the adapter binds both at use time.
         if (
             expected_model.profile != request.model_profile
-            or configured_model.name != request.model_profile
             or expected_model.provider != configured_model.provider
             or expected_model.model_id != configured_model.model_id
             or expected_model.capability_rank != configured_model.capability_rank
@@ -1085,17 +1087,7 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
                         "idempotency key is already bound to a materially different request",
                         details={"idempotency_key": key},
                     )
-                configured = self._validate_new_dispatch(request)
-                if (
-                    prior.configured_model != configured
-                    or prior.expected_model
-                    != self._expected_model(request, configured, key)
-                ):
-                    _failure(
-                        ErrorCategory.VALIDATION_FAILED,
-                        "restored fake provider provenance does not match dispatch configuration",
-                        details={"idempotency_key": key},
-                    )
+                self._validate_effect_binding(prior)
                 return prior.handle
 
             configured = self._validate_new_dispatch(request)
@@ -1140,6 +1132,7 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         with self._provider._lock:
             effect = self._provider._effect_for_external_handle(handle)
             self._provider._require_exact_handle(effect, handle)
+            self._validate_effect_binding(effect)
             if (
                 effect.last_observation is not None
                 and effect.last_observation.status in _TERMINAL_AGENT_STATUSES
@@ -1189,6 +1182,7 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         with self._provider._lock:
             effect = self._provider._effect_for_external_handle(handle)
             self._provider._require_exact_handle(effect, handle)
+            self._validate_effect_binding(effect)
             if (
                 effect.last_observation is not None
                 and effect.last_observation.status in _TERMINAL_AGENT_STATUSES
@@ -1254,7 +1248,30 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         """Expose deterministic simulation provenance for constructing scripts."""
 
         self._validate_adapter_handle(handle)
-        return self._provider.expected_model(handle)
+        with self._provider._lock:
+            effect = self._provider._effect_for_external_handle(handle)
+            self._provider._require_exact_handle(effect, handle)
+            self._validate_effect_binding(effect)
+            return effect.expected_model
+
+    def _validate_effect_binding(self, effect: _FakeEffect) -> None:
+        """Bind a restored provider effect through the injected settings mapping."""
+
+        configured = self._validate_new_dispatch(effect.request)
+        if (
+            effect.configured_model != configured
+            or effect.expected_model
+            != self._expected_model(
+                effect.request,
+                configured,
+                effect.handle.idempotency_key,
+            )
+        ):
+            _failure(
+                ErrorCategory.VALIDATION_FAILED,
+                "restored fake provider provenance does not match dispatch configuration",
+                details={"idempotency_key": effect.handle.idempotency_key},
+            )
 
     def _validate_new_dispatch(self, request: AgentRequest) -> ProviderModelProfile:
         if request.policy_ref != self._settings.policy_ref:
