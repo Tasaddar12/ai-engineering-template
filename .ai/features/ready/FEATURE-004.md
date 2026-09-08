@@ -14,6 +14,8 @@ scope:
 - src/ai_engineering/handoffs.py
 - src/ai_engineering/review.py
 - tests/test_agents.py
+- src/ai_engineering/templates/handoffs
+- src/ai_engineering/definitions
 resources:
 - agents-api
 acceptance:
@@ -51,6 +53,7 @@ context:
 batch: agents
 effort: 8
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
+kind: features
 ---
 # FEATURE-004 — Configured agents, durable handoffs and critical review
 

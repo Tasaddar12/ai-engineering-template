@@ -8,6 +8,8 @@ depends_on:
 scope:
 - src/ai_engineering/handoffs.py
 - tests/test_agents.py
+- src/ai_engineering/templates/handoffs
+- src/ai_engineering/definitions
 resources:
 - agents-api
 acceptance:
@@ -28,6 +30,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-050 — Render bounded durable agent assignments
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-047
 title: Build bounded feature batches and safe parallel waves
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-046
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-047 — Build bounded feature batches and safe parallel waves
 

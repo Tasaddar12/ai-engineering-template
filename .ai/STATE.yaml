@@ -4,17 +4,29 @@ project:
   phase: implementation
 current_focus:
   plan: PLAN-002
-active_features: []
-waiting_features:
+active_features:
 - FEATURE-002
 - FEATURE-003
+waiting_features:
 - FEATURE-004
 - FEATURE-005
 - FEATURE-006
 - FEATURE-007
 blocked_features: []
 open_bugs: []
-worktrees: []
+worktrees:
+- path: .worktrees/plan-002-execution
+  branch: codex/plan-002-execution
+  subject: FEATURE-002
+  head: c1a072898c5cffc7f8fcb6b80618080a6c75ffdb
+  status: in-progress
+  base_branch: codex/plan-002-framework-reset
+- path: .worktrees/plan-002-planning
+  branch: codex/plan-002-planning
+  subject: FEATURE-003
+  head: cc3ed1b0e25e7d7f8ddf101ff48b980440958288
+  status: review
+  base_branch: codex/plan-002-framework-reset
 reviews:
   FEATURE-001:
     status: PASS
@@ -24,6 +36,8 @@ pull_requests: {}
 active_runs: []
 blockers: []
 next_actions:
-- Implement FEATURE-002 and FEATURE-003 concurrently
-generation: 7
-updated_at: '2026-09-08T23:20:30.569138+00:00'
+- Review FEATURE-003
+- Finish and review FEATURE-002
+- Start FEATURE-004 after FEATURE-002 is integrated
+generation: 13
+updated_at: '2026-09-08T23:42:00.862839+00:00'

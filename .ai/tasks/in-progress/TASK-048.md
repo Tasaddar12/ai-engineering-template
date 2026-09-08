@@ -1,7 +1,7 @@
 ---
 id: TASK-048
 title: Apply validated decomposition revisions with lineage
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-047
@@ -30,6 +30,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-048 — Apply validated decomposition revisions with lineage
 

@@ -12,6 +12,7 @@ dependencies:
 scope:
 - src/ai_engineering/workflows.py
 - tests/test_workflows.py
+- src/ai_engineering/state.py
 resources:
 - workflows-api
 acceptance:
@@ -35,6 +36,8 @@ acceptance:
   work, redecompose and resume eligible features automatically within existing scope.
 - Reject unauthorized material scope expansion and invalid graphs; exhausted attempts
   preserve an explicit blocker and do not corrupt active workflow state.
+- State refresh retains feature evidence while indexing BUG review and pull-request
+  metadata; workflows regression covers both subject types.
 validation:
 - tests
 - lint
@@ -50,6 +53,7 @@ context:
 batch: workflows
 effort: 7
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
+kind: features
 ---
 # FEATURE-006 — Lightweight bugfix and structural recovery
 

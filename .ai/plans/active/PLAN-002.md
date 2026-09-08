@@ -86,9 +86,9 @@ The Work Decomposition Agent approved exact coverage of 23 tasks in seven batche
 
 | Feature | Tasks | Prerequisites | Effort |
 | --- | --- | --- | --- |
-| [FEATURE-001](../../features/ready/FEATURE-001.md) — Artifact, configuration and state foundation | [TASK-040](../../tasks/ready/TASK-040.md), [TASK-041](../../tasks/ready/TASK-041.md), [TASK-042](../../tasks/ready/TASK-042.md) | None | 7 |
-| [FEATURE-002](../../features/ready/FEATURE-002.md) — Constrained commands and managed Git worktrees | [TASK-043](../../tasks/ready/TASK-043.md), [TASK-044](../../tasks/ready/TASK-044.md), [TASK-045](../../tasks/ready/TASK-045.md) | FEATURE-001 | 8 |
-| [FEATURE-003](../../features/ready/FEATURE-003.md) — Validated task decomposition and feature graphs | [TASK-046](../../tasks/ready/TASK-046.md), [TASK-047](../../tasks/ready/TASK-047.md), [TASK-048](../../tasks/ready/TASK-048.md) | FEATURE-001 | 8 |
+| [FEATURE-001](../../features/completed/FEATURE-001.md) — Artifact, configuration and state foundation | [TASK-040](../../tasks/completed/TASK-040.md), [TASK-041](../../tasks/completed/TASK-041.md), [TASK-042](../../tasks/completed/TASK-042.md) | None | 7 |
+| [FEATURE-002](../../features/in-progress/FEATURE-002.md) — Constrained commands and managed Git worktrees | [TASK-043](../../tasks/in-progress/TASK-043.md), [TASK-044](../../tasks/in-progress/TASK-044.md), [TASK-045](../../tasks/in-progress/TASK-045.md) | FEATURE-001 | 8 |
+| [FEATURE-003](../../features/review/FEATURE-003.md) — Validated task decomposition and feature graphs | [TASK-046](../../tasks/in-progress/TASK-046.md), [TASK-047](../../tasks/in-progress/TASK-047.md), [TASK-048](../../tasks/in-progress/TASK-048.md) | FEATURE-001 | 8 |
 | [FEATURE-004](../../features/ready/FEATURE-004.md) — Configured agents, durable handoffs and critical review | [TASK-049](../../tasks/ready/TASK-049.md), [TASK-050](../../tasks/ready/TASK-050.md), [TASK-051](../../tasks/ready/TASK-051.md) | FEATURE-002 | 8 |
 | [FEATURE-005](../../features/ready/FEATURE-005.md) — Concurrent implementation, repair and delivery | [TASK-052](../../tasks/ready/TASK-052.md), [TASK-053](../../tasks/ready/TASK-053.md), [TASK-054](../../tasks/ready/TASK-054.md), [TASK-055](../../tasks/ready/TASK-055.md) | FEATURE-003, FEATURE-004 | 8 |
 | [FEATURE-006](../../features/ready/FEATURE-006.md) — Lightweight bugfix and structural recovery | [TASK-056](../../tasks/ready/TASK-056.md), [TASK-057](../../tasks/ready/TASK-057.md), [TASK-058](../../tasks/ready/TASK-058.md) | FEATURE-005 | 7 |
@@ -142,3 +142,11 @@ Coordinator owns transitions, run journals, ThreadPoolExecutor scheduling, workt
 ## CLI / installation (FEATURE-007)
 
 `project.initialize(root, *, adopt=False, dry_run=False)` installs packaged templates, definitions and YAML seeds; never copies development history or overwrites user files. `cli.main(argv=None)` exposes project init/adopt, status, state reconcile, research create, plan create/decompose/implement and bug fix. Global `--project`, `--dry-run`, repeatable `--grant ACTION`. No external writes default. `ai` and `python -m ai_engineering` share entry point. Tests use temporary Git repositories and controlled providers, not the user's project.
+
+## Approved contract clarification - structured agent outputs
+
+TASK-050 / FEATURE-004 also owns packaged handoff templates and agent definitions, serialized after core through FEATURE-002. Expected output Markdown uses small YAML front matter for machine-readable results, with narrative evidence below. The bridge returns AgentResult.metadata containing role-specific result data consistent with that artifact. Work decomposition returns feature proposals and optional complete task/revision proposals; recovery uses `{reason, replacements, tasks, stopped_features, features?}`. Implementation returns completion or structural issues. No ad-hoc extraction of prose replaces these contracts. The Work Decomposition Agent checked this ownership clarification on 2026-09-08: no coverage, dependency, batch-limit or concurrent-conflict change.
+
+## Approved contract clarification - bug state evidence
+
+TASK-058 / FEATURE-006 additionally owns `src/ai_engineering/state.py` solely to index bug review and PR metadata alongside feature evidence. Regression coverage remains in `tests/test_workflows.py`. Independent decomposition approved this on 2026-09-08: serialized after core and orchestration; unchanged 23-task/seven-feature graph and FEATURE-006 effort 7.

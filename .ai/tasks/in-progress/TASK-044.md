@@ -1,7 +1,7 @@
 ---
 id: TASK-044
 title: Execute bounded commands with durable evidence
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-043
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-044 — Execute bounded commands with durable evidence
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-043
 title: Enforce command, external-action and path constraints
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-042
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-043 — Enforce command, external-action and path constraints
 

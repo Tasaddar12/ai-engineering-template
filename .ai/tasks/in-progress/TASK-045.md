@@ -1,7 +1,7 @@
 ---
 id: TASK-045
 title: Create and reconcile safe feature worktrees
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-044
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-045 — Create and reconcile safe feature worktrees
 
