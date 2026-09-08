@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "kind": "candidate",
+  "id": "CANDIDATE-TASK-015-a1-d57d1ad29462",
+  "task_id": "TASK-015",
+  "plan_id": "PLAN-001",
+  "graph_revision": 4,
+  "base_oid": "060362675e254194a6d76f877cddaa64205b1399",
+  "head_oid": "d57d1ad29462c44d0156f1b7c74c3256a339b1c7",
+  "diff_sha256": "7fc8f0737eee8fb6471cfd2d9924bab6dc3ea61c35f1dc114e44df2d5fa6f645",
+  "context_refs": [
+    {
+      "path": ".ai/plans/current/PLAN-001/plan.json",
+      "sha256": "9195d603c9190f859fdcd74ecc47cd441f4b52ed6aa8f2438276ba766b58d72b"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/spec.json",
+      "sha256": "f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/graph.json",
+      "sha256": "1b0f207a9a5ea4f9bd96f36f123bd15ce09c2b271fff155d71552caa8758140c"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/tasks/current/TASK-015.json",
+      "sha256": "688873afe8a26f2b39d3c5b513fdf6e62e95ee5bbb02a5c432957a64e40546b1"
+    },
+    {
+      "path": ".ai/shared/architecture/service-contracts.md",
+      "sha256": "9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248"
+    },
+    {
+      "path": ".ai/shared/workflows/reviews.md",
+      "sha256": "0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md",
+      "sha256": "db59748213f2ef9611f51142f205b8b692f1ff4f9f18bc47befb0e0aff8cd79c"
+    },
+    {
+      "path": ".ai/decisions/ADR-001.md",
+      "sha256": "3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4"
+    },
+    {
+      "path": ".ai/decisions/ADR-002.md",
+      "sha256": "46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44"
+    },
+    {
+      "path": ".ai/decisions/ADR-003.md",
+      "sha256": "2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214"
+    },
+    {
+      "path": ".ai/decisions/ADR-004.md",
+      "sha256": "a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5"
+    },
+    {
+      "path": ".ai/decisions/ADR-005.md",
+      "sha256": "0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md",
+      "sha256": "65290c9ad64e0f15b0b54d5d248a94ecb715b54f24e77b8f1a7f6bd3997bffde"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md",
+      "sha256": "cbc4ab723d576041c7f28272e0680f8f7bb52828a06a59f881c8941cd9699ae1"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md",
+      "sha256": "80efe35d9dde51da7d4f5474a3a6cf690e00d7fba35b5bebb489d8f07c9e629c"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md",
+      "sha256": "805368f9c1d4ba82d46be4b0ccda2bedca3f7ebace5035ad15265d62ef8bab53"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md",
+      "sha256": "c64669eab0c20242c67ced9a3481ce124cfbe29f57fe0ac8095c30939b46d3fd"
+    }
+  ],
+  "validation_refs": [
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/validation/TASK-015-a1-d57d1ad29462.txt",
+      "sha256": "9c31e8e94d11a85e0db1933af45c565e3caf05fe961666d0b59570823f4548d8"
+    }
+  ],
+  "checklist_version": "PLAN-001-v1",
+  "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+  "fingerprint": "6477f34e30bb3e5eab397898a72489d6edf77b68c62f1711a02f89cf0f86013e"
+}

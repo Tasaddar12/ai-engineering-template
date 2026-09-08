@@ -1,0 +1,60 @@
+PLAN-001/TASK-015 independent review execution evidence
+Reviewer: /root/review_015_c1
+Native configured invocation: call_EzmYq7oQsFHPFn5UhSgNWULo, gpt-6-astra/xhigh, rank 4.
+No production-provider attestation.
+Candidate: d57d1ad29462c44d0156f1b7c74c3256a339b1c7
+Base: 060362675e254194a6d76f877cddaa64205b1399
+Fingerprint: 6477f34e30bb3e5eab397898a72489d6edf77b68c62f1711a02f89cf0f86013e
+Interpreter: D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe
+Cwd: D:/Codex Projects/ai-engineering-template/.worktrees/TASK-015-a1
+
+Independent declared leaf, with Python -B to suppress review-created bytecode:
+["D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe","-B","-m","unittest","discover","-s","tests/unit/planning_isolation/","-p","test_*.py"]
+Observed tool chunk: 05be0d
+Exit: 0
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 8.116s
+
+OK
+No skips reported. The leaf test inserts candidate src before imports; diagnostic origins independently confirm accepted modules resolve to that same candidate.
+
+Independent diagnostic:
+["D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe","-B",".ai/plans/current/PLAN-001/reviews/TASK-015-a1-c1-R1-diagnostic.py"]
+Cwd: ROOT
+Observed tool chunk: 79cdf9
+Exit: 0; 11 purposeful behavior probes.
+Retained exact result: TASK-015-a1-c1-R1-diagnostic.json.txt.
+Actual accepted DeterministicFakeAgentAdapter implements start/poll/cancel and current settings/model/permission fencing. A diagnostic subclass configures the accepted public FakeAgentProviderState.script API with typed observations built from the tracked fixture and actual adapter.expected_model. It does not replace provider admission or poll validation. Scripted review content is deterministic simulation, not an independently reasoning provider.
+Controls: complete context plus exact retry (one effect); current rewritten graph; stale checklist evidence; forged observed model; actual permission denial; valid fail without proposal; unsequenced write conflict.
+Defect probes: malformed required spec; wrong-kind required spec; missing spec document; all twelve checks N/A.
+
+Independent foundation validation:
+["D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe","-B","src/validate_foundation.py"]
+Cwd: candidate
+Observed tool chunk: eaa3f3
+Exit: 0
+{
+  "schemas": 27,
+  "validated_artifacts": 205,
+  "plans": 1,
+  "tasks": 39,
+  "unordered_pairs_checked": 280,
+  "archive_manifests": 4,
+  "local_links": 592
+}
+Foundation validation checks repository records/layout, not correctness of runtime isolation.
+
+Independent exact diff whitespace check:
+["git","diff","--check","060362675e254194a6d76f877cddaa64205b1399","d57d1ad29462c44d0156f1b7c74c3256a339b1c7"]
+Cwd: ROOT
+Observed tool chunk: f31d89
+Exit: 0; empty output.
+
+Historical evidence distinguished:
+Coordinator validation for this head: 14 tests in 8.058s, manifest-bound bytes verified.
+Owner evidence: 14 tests on Windows 3.12, Windows 3.11 and Linux 3.11. These are historical owner runs; source/test/handoff blobs match owner-tested 9dba72717218d0e7c2bca394da40f5fce2f991b7. They are not relabelled independent.
+Independent review did not repeat unchanged platform matrices, packaging/E2E, unaccepted TASK-016, production providers or canonical runtime approval. All 11 R1 items and applicable task/interface checks completed; no required area remains unreviewed.
+
+Closing verification diagnostic correction:
+The first closing invocation (tool chunk 9eb5a5) exited 1 in the review-only equality assertion: in-memory dependency OID tuples were compared directly with JSON-restored lists. All underlying identity assertions had passed. The comparison now normalizes the in-memory identity through JSON before comparing it with the retained opening result. No candidate input, source, test, or finding changed. The final rerun and closing artifact are authoritative.
