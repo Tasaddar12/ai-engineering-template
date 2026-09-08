@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "wsl.exe",
+    "-d",
+    "Ubuntu-24.04",
+    "--cd",
+    "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-016-a1",
+    "--exec",
+    "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/unit/context/",
+    "-p",
+    "test_*.py",
+    "-k",
+    "real_file_and_directory_links",
+    "-v"
+  ],
+  "cwd": "D:\\Codex Projects\\ai-engineering-template",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "test_real_file_and_directory_links_are_rejected (test_context.RepositoryContextBuilderTests.test_real_file_and_directory_links_are_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nOK\n"
+}

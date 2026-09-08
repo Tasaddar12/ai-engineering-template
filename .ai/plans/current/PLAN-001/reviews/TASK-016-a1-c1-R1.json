@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-016-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-016-a1-c1-R1-call_HdCiOZGmqwHKAE7E7lvfgzu4",
+  "task_id": "TASK-016",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-016-a1-e88e7950fb6b.json",
+  "candidate_fingerprint": "160170998f8906e5c944f91cb0e8c60c92fda221d515e2e5d21f9aabc848a5cc",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_HdCiOZGmqwHKAE7E7lvfgzu4"
+  },
+  "independent_session_id": "/root/review_016_c1",
+  "implementation_session_id": "/root/repair_019_c1",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC1 raw hashes and canonical ordering pass, but required handoff/review fragments rejected by the accepted v1 registry are admitted with required_context_complete=True (001). AC2 ordinary required budgets and leakage controls pass; accepted non-UTF-8 metadata lacks typed rejection (002).",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-016.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt",
+        "src/context.py"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "The REQ-04/AC-04 bounded explicit context slice respects exclusions: no provider effect, canonical state write, unaccepted module import, shared schema/port edit or orchestration behavior. Manual single-stage review leaves frozen runtime gates unchanged.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md",
+        "src/context.py"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Independent selected raw hashes and complete unsigned preimage reproduce the bundle digest; canonical ordering, required-first selection and optional omissions pass. Incomplete structured-record admission and uncaught UTF-8 serialization remain material defects 001-002.",
+      "evidence": [
+        "src/context.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "fail",
+      "rationale": "Bounded file handles close through context managers. Missing, binary, oversized, scope-denied and leaky content produce sanitized typed errors, but DTO-accepted role with an unpaired surrogate escapes as UnicodeEncodeError (002).",
+      "evidence": [
+        "src/context.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Exact multi-file budget and one-less rejection, metadata-dominated budgets, a later small optional after an earlier omission, NFC/case aliases, prohibited scope, cross-plan paths and identity mismatch controls pass. Required invalid schemas and non-UTF-8 metadata remain gaps 001-002.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt",
+        "tests/unit/context/test_context.py"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "Exact Windows candidate leaf independently passed18 tests in0.377s with1 actual privilege skip. Linux independently passed the1 real-link test without skips. Required malformed-schema and surrogate metadata regressions are missing, and current positive fixtures are schema-incomplete (001-002). Required regressions must be tracked in the task leaf, not reviewer evidence.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-declared.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-linux-link.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt",
+        "tests/unit/context/test_context.py"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Exactly one flat source module, one owned leaf test and one handoff change. Runtime imports are standard library and accepted domain/workflow values; no ignored local helper, registry/export edit, unaccepted module or parallel public contract dependency.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-016.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-identity.json.txt",
+        "src/context.py"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Frozen exact base/head, raw binary diff, all15 committed contexts, ROOT validation, raw policy/model digest, fingerprint, approved r4/39-task digest and accepted dependencies verify. Three owned blobs equal owner head. Other merge source/test additions are byte-identical to newer frozen ROOT, not characterized as metadata-only.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-identity.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-foundation.json.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "fail",
+      "rationale": "Uses real ContextBuilder.build(ContextRequest)->ContextBundle and schema-valid immutable output with unchanged frozen signature. Required typed inputs rejected by the accepted ContractRegistry still pass completeness (001). Configured source profile and schema boundaries are unchanged; no new acceptedness field is needed.",
+      "evidence": [
+        "src/context.py",
+        "src/workflow_ports.py",
+        "src/contracts.py",
+        "src/config.py",
+        "schemas/v1/handoff.schema.json",
+        "schemas/v1/review-result.schema.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "fail",
+      "rationale": "Known sensitive values and host paths in content, reference paths, role and acceptance metadata are guarded with safe diagnostics; metadata screening precedes reads. Explicit read containment, aliases and real links pass. Missing frozen review/handoff fields still cross the required input boundary (001). Arbitrary unknown secret detection and hostile concurrent filesystem mutation are not claimed.",
+      "evidence": [
+        "src/context.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-linux-link.json.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "Full current handoff accurately records scope, owner tests/failures/skips, acceptedness responsibility and native provenance. Its v1 record admission and sanitized-error claims overstate actual behavior (001-002), so fixes require handoff updates. Owner observations are not relabeled independent.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-016.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.json.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-016-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/context.py:560/586/623 validates only selected identity fields. A required handoff with only schema_version/kind/id/task_id/commit_oid, or an R1 fragment with only schema_version/kind/plan_id/task_id/stage, fails the accepted v1 ContractRegistry but returns required_context_complete=True. Missing handoff attempt/base/context and review candidate/fingerprint/verdict/check evidence are ignored. Positive fixtures at tests/unit/context/test_context.py:67/82 use these incomplete records and hide the mismatch; handoff Public API step3 overstates v1 record admission.",
+      "paths": [
+        "src/context.py",
+        "tests/unit/context/test_context.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-016.md"
+      ],
+      "expected_fix": "Validate full required handoff/review records against accepted v1 contracts before selecting them as complete, retaining sanitized errors and the frozen build port. Use schema-valid positives and tracked missing/invalid/unknown-field negatives for both kinds; update the handoff. Keep acceptedness as curator/coordinator-supplied fact, with no added wire field or candidate identity absent from ContextRequest.",
+      "acceptance_ids": [
+        "TASK-016-AC1",
+        "AC-04"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-016-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "At src/context.py:354 metadata screening accepts a real ContextRequest role containing an unpaired surrogate (role='reviewer\\ud800'). After required file reads, src/context.py:707/101 raises UnicodeEncodeError rather than sanitized DomainException, allowing unsupported metadata to terminate context construction outside the typed error boundary. The owned metadata test at tests/unit/context/test_context.py:296 omits this case.",
+      "paths": [
+        "src/context.py",
+        "tests/unit/context/test_context.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-016.md"
+      ],
+      "expected_fix": "Reject metadata that cannot be represented in supported UTF-8 with a sanitized typed error before reads, covering all request metadata serialized by the builder and preserving valid bytes. Add tracked regressions through actual ContextRequest for role, acceptance IDs and other affected serialized fields; align the handoff's error claim.",
+      "acceptance_ids": [
+        "TASK-016-AC2",
+        "AC-04"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T16:26:17.466Z"
+}
