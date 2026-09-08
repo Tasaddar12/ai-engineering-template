@@ -14,6 +14,14 @@ import yaml
 from .errors import FrameworkError
 
 MAX_RECORD_BYTES = 2_000_000
+RESERVED_NAMES = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{i}" for i in range(1, 10)),
+    *(f"LPT{i}" for i in range(1, 10)),
+}
 
 
 class StrictLoader(yaml.SafeLoader):
@@ -74,7 +82,12 @@ def safe_path(root: Path, relative: str | Path) -> Path:
         or raw.startswith("/")
         or windows.drive
         or any(part in ("", ".", "..") for part in parts)
-        or any(":" in part or "\x00" in part for part in parts)
+        or any(
+            part.endswith((".", " "))
+            or part.split(".")[0].upper() in RESERVED_NAMES
+            or any(ord(char) < 32 or char in '<>:"|?*' for char in part)
+            for part in parts
+        )
     ):
         raise FrameworkError(f"Expected a contained relative path: {relative}")
     target = root.joinpath(*parts)

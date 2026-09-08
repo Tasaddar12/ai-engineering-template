@@ -78,6 +78,26 @@ def read_artifact(path: Path) -> Artifact:
 
 
 def write_artifact(path: Path, metadata: dict[str, Any], body: str) -> None:
+    path = Path(path).absolute()
+    identifier = str(metadata.get("id", ""))
+    kind = metadata.get("kind") or next(
+        (key for key, prefix in KINDS.items() if identifier.startswith(prefix + "-")), None
+    )
+    if kind is None:
+        raise FrameworkError(f"Unknown artifact kind: {identifier}")
+    ArtifactStore._validate(kind, metadata)
+    base = next((parent for parent in path.parents if parent.name == ".ai"), None)
+    if base is None or path != safe_path(
+        base, f"{_folder(kind, metadata['status'])}/{identifier}.md"
+    ):
+        raise FrameworkError("Artifacts must use their canonical location under .ai")
+    if path.exists():
+        previous = read_artifact(path)
+        if (
+            previous.status in {"completed", "archived", "superseded"}
+            or kind in {"reviews", "handoffs"}
+        ) and (previous.metadata != metadata or previous.body != body):
+            raise FrameworkError(f"Historical artifact is immutable: {identifier}")
     atomic_write(
         path,
         "---\n" + yaml.safe_dump(metadata, sort_keys=False, allow_unicode=True) + "---\n" + body,
@@ -160,7 +180,7 @@ class ArtifactStore:
         if path.exists():
             raise FrameworkError(f"Refusing to overwrite artifact: {path}")
         template = TEMPLATES.get(kind)
-        body = f"# {id} — {title}\n"
+        body = f"# {id} â€” {title}\n"
         if template:
             fields = {
                 name: "To be defined."
@@ -187,6 +207,10 @@ class ArtifactStore:
         if destination != old and destination.exists():
             raise FrameworkError(f"Duplicate destination: {destination}")
         original = read_artifact(old)
+        if original.status in {"completed", "archived", "superseded"} and (
+            original.metadata != artifact.metadata or original.body != artifact.body
+        ):
+            raise FrameworkError(f"Historical artifact is immutable: {artifact.id}")
         if original.id != artifact.id or old != safe_path(
             self.base, f"{_folder(kind, original.status)}/{original.id}.md"
         ):
@@ -219,6 +243,10 @@ class ArtifactStore:
                 not isinstance(x, str) for x in data[key]
             ):
                 raise FrameworkError(f"PLAN document must explicitly reference {key}")
+            if (
+                data.get("decomposition") or data.get("status") in {"in-progress", "completed"}
+            ) and not data[key]:
+                raise FrameworkError(f"An executing or decomposed PLAN requires nonempty {key}")
         if kind in {"tasks", "features"} and not re.fullmatch(
             r"PLAN-\d+", str(data.get("plan", ""))
         ):

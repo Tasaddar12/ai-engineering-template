@@ -2,7 +2,7 @@ from threading import Thread
 
 import pytest
 
-from ai_engineering.artifacts import ArtifactStore, read_artifact
+from ai_engineering.artifacts import ArtifactStore, read_artifact, write_artifact
 from ai_engineering.errors import FrameworkError
 from ai_engineering.io import parse_yaml, read_yaml, safe_path, write_yaml
 from ai_engineering.state import StateStore, reconcile, refresh_index
@@ -25,7 +25,7 @@ def test_yaml_rejects_silent_duplicate_alias_and_object_construction():
     ):
         with pytest.raises(FrameworkError):
             parse_yaml(text)
-    assert parse_yaml("title: Café\nitems: [one, two]")["title"] == "Café"
+    assert parse_yaml("title: CafÃ©\nitems: [one, two]")["title"] == "CafÃ©"
 
 
 def test_scope_rejects_absolute_traversal_and_links(tmp_path):
@@ -144,3 +144,88 @@ def test_refresh_retains_worktree_observations(project):
     data = refresh_index(project)
     assert data["waiting_features"] == ["FEATURE-001"]
     assert data["worktrees"] == []
+
+
+def test_low_level_writes_cannot_bypass_planning_location(project):
+    metadata = {"id": "PLAN-999", "title": "Plan", "status": "ready", "tasks": [], "features": []}
+    with pytest.raises(FrameworkError, match=".ai"):
+        write_artifact(project / "docs/PLAN-999.md", metadata, "# Plan")
+    assert not (project / "docs").exists()
+    metadata.pop("tasks")
+    with pytest.raises(FrameworkError, match="tasks"):
+        write_artifact(project / ".ai/plans/active/PLAN-999.md", metadata, "# Plan")
+
+
+def test_save_and_low_level_write_preserve_completed_history(project):
+    store = ArtifactStore(project)
+    task = store.create("tasks", "TASK-001", "Task", "ready", plan="PLAN-001")
+    task = store.transition(task.id, "completed")
+    before = task.path.read_bytes()
+    task.metadata["status"] = "ready"
+    with pytest.raises(FrameworkError, match="immutable"):
+        store.save(task)
+    task.metadata["status"] = "completed"
+    with pytest.raises(FrameworkError, match="immutable"):
+        write_artifact(task.path, task.metadata, "Changed history")
+    assert task.path.read_bytes() == before
+
+
+def test_decomposed_plan_requires_tasks_and_features(project):
+    store = ArtifactStore(project)
+    plan = store.create("plans", "PLAN-001", "Draft", "ready")
+    with pytest.raises(FrameworkError, match="nonempty"):
+        store.transition(plan.id, "in-progress")
+    assert store.find(plan.id).status == "ready"
+    plan.metadata.update(tasks=["TASK-001"], decomposition="HANDOFF-001")
+    with pytest.raises(FrameworkError, match="features"):
+        store.save(plan)
+
+
+def test_current_git_head_invalidates_two_matching_stale_metadata_heads(project):
+    store = ArtifactStore(project)
+    store.create(
+        "features",
+        "FEATURE-001",
+        "Feature",
+        "review",
+        plan="PLAN-001",
+        head="old",
+        worktree=".worktrees/feature",
+        review={"status": "PASS", "head": "old"},
+    )
+    state = StateStore(project)
+    value = state.load()
+    value["worktrees"] = [{"path": ".worktrees/feature", "subject": "FEATURE-001", "head": "old"}]
+    value["active_features"] = ["FEATURE-001"]
+    state.save(value)
+
+    class Facts:
+        def list_worktrees(self):
+            return [{"path": str(project / ".worktrees/feature"), "head": "new"}]
+
+        def is_ancestor(self, commit, target="HEAD"):
+            return False
+
+    result = reconcile(project, Facts())
+    assert "Stale feature review: FEATURE-001" in result["issues"]
+
+
+def test_windows_reserved_names_and_aliases_are_not_portable_paths(project):
+    for relative in ("CON", "NUL.txt", "a/COM1", "LPT9.log", "a./b", "b ", "a|b", "a\x01b"):
+        with pytest.raises(FrameworkError):
+            safe_path(project, relative)
+
+
+def test_misplaced_record_and_cross_id_save_are_rejected(project):
+    store = ArtifactStore(project)
+    first = store.create("tasks", "TASK-001", "One", "ready", plan="PLAN-001")
+    second = store.create("tasks", "TASK-002", "Two", "ready", plan="PLAN-001")
+    first.path = second.path
+    with pytest.raises(FrameworkError, match="Duplicate|different"):
+        store.save(first)
+    assert store.find(second.id).metadata["title"] == "Two"
+    misplaced = project / ".ai/tasks/blocked/TASK-002.md"
+    misplaced.parent.mkdir(parents=True)
+    second.path.rename(misplaced)
+    with pytest.raises(FrameworkError, match="misplaced"):
+        store.list("tasks")

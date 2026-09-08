@@ -192,7 +192,10 @@ def reconcile(root: Path, git: GitInspector, apply: bool = False) -> dict[str, A
             issues.append(f"Current focus plan is missing: {plan_id}")
     for feature in features:
         review = feature.metadata.get("review")
-        if isinstance(review, dict) and review.get("head") != feature.metadata.get("head"):
+        worktree = feature.metadata.get("worktree")
+        observation = actual.get((root / str(worktree)).resolve()) if worktree else None
+        current_head = observation.get("head") if observation else feature.metadata.get("head")
+        if isinstance(review, dict) and review.get("head") != current_head:
             issues.append(f"Stale feature review: {feature.id}")
     result = {"issues": issues, "worktrees": observed, "merged": sorted(merged)}
     if apply:

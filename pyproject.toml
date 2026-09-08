@@ -18,7 +18,7 @@ ai = "ai_engineering.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["ai_engineering"]
+include = ["ai_engineering", "ai_engineering.*"]
 namespaces = true
 
 [tool.setuptools.package-data]
