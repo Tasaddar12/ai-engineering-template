@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-005-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-005-a1-c1-R1-20260908T043638Z",
+  "task_id": "TASK-005",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-005-a1-0216c03b1869.json",
+  "candidate_fingerprint": "e38bebfb47b00e775c3c8462a7051f21cd41313ebd268c7b6426852e27010e58",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "manual-native:/root/r1_005_c1:20260908T043638Z"
+  },
+  "independent_session_id": "/root/r1_005_c1",
+  "implementation_session_id": "/root/implement_005",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "AC1: 86 deterministic assets per provider root, including 76 framework assets and 10 project-owned seeds, full canonical documents/schemas and four reachable tools. AC2: all hashes recomputed; tampered/missing/reordered metadata or content and duplicate/escaping paths rejected.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-005.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-declared.txt",
+        "src/assets.py"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-08/AC-08 and ADR-005 ownership are honored. The catalog performs source reads only; seeds remain project-owned after instantiation. Later initialization, upgrades, migration, runtime wiring and packaging are explicitly outside this task.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/plans/current/PLAN-001/plan.md",
+        ".ai/decisions/ADR-005.md",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-005.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced discovery, rendering, immutable records, ownership coverage, offline validation and exact manifest verification. Actual Codex/Claude installs match every managed payload and entry. Catalog-emitted tools load only emitted flat modules and validate fresh targets under isolated execution.",
+      "evidence": [
+        "src/assets.py",
+        "src/install.py",
+        "src/contracts.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Independent probes reject missing source/helper/index, malformed reachable Python and overlapping ownership. Invalid roots and manifest failures are explicit. Catalog building does not write targets or retain resources; source containment/link guards were inspected and review fixtures cleaned.",
+      "evidence": [
+        "src/assets.py",
+        "tests/unit/templates/test_assets.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "All three roots, exact LF-normalized bytes, case/NFC/NFD/compatibility aliases, ancestor collisions, Windows reserved/stream/trailing names, absolute/UNC/traversal paths, tampered content and a transitive helper cycle were exercised.",
+      "evidence": [
+        "src/domain_values.py",
+        "tests/unit/templates/test_assets.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "The exact declared command passed 10 tests with candidate-local imports. Five independent tests passed, including 258 provider payloads, actual installer parity, isolated tool execution, 90 mutation/constructor cases, and source/closure failures. Optional symlink fixture creation was denied and is explicitly unclaimed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/commands/test.TASK-005.json",
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-005-a1-0216c03b1869.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-declared.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Catalog construction/verification and framework.json ownership coverage are within TASK-005. No downstream installer/upgrade workflow, migration, package wiring or shared contract is implemented or changed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-005.json",
+        ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-005.md"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Raw Git diff contains exactly the four allowed source/test/default/handoff paths. No prohibited path changes. Exact head/base, all candidate hashes, approved graph digest and accepted TASK-004 ancestry were independently reproduced.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-005-a1-0216c03b1869.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-report-validation.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Public flat-module API is explicit and typed; frozen assets/catalogs use immutable bytes and detached recursive records. Shared ScopePath, SHA-256 values, domain errors and accepted ContractRegistry preserve dependency ownership without central registration changes.",
+      "evidence": [
+        "src/assets.py",
+        "src/domain_values.py",
+        "src/contracts.py",
+        ".ai/shared/architecture/python.md",
+        "tests/unit/templates/test_assets.py"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Selected-root destinations, portable path comparisons, source containment, offline registry validation and exact content hashes enforce the boundary. No project history, credentials, provider calls or external effects are introduced. Native provenance is distinguished from unavailable provider confirmation.",
+      "evidence": [
+        "src/assets.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Handoff matches observed interfaces, asset counts, classifications, provider-byte rendering and current installer compatibility. Canonical seed bytes and deferred dynamic instantiation are explicit. The framework default now accurately includes its already-managed framework.json file in owned_roots.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-005.md",
+        "docs/defaults/FRAMEWORK.json",
+        "src/install.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt"
+      ]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T04:36:38Z"
+}
