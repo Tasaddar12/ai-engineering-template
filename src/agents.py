@@ -70,16 +70,42 @@ _QUIESCED_CANCEL_STATUSES = {
     CancelStatus.CANCELLED,
     CancelStatus.ALREADY_TERMINAL,
 }
+# The prior UTF-8 writer could persist every ordinary Unicode scalar and NUL,
+# but it could not persist an isolated surrogate.  Using one as the private
+# escape therefore keeps legacy state unambiguous while protecting adjacent
+# surrogate code units from JSON's pair composition.
+_TRANSPORT_ESCAPE = "\udfff"
 
 
 def _text(value: object, label: str) -> str:
+    """Return workflow text exactly as accepted by the frozen DTOs."""
+
     if not isinstance(value, str):
         raise TypeError(f"{label} must be a string")
     if not value or value != value.strip():
         raise ValueError(f"{label} must be non-empty and have no surrounding whitespace")
-    if any(unicodedata.category(character) in {"Cc", "Cf", "Cs"} for character in value):
+    return value
+
+
+def _string(value: object, label: str) -> str:
+    """Extract a JSON string for a field whose constructor owns validation."""
+
+    if not isinstance(value, str):
+        raise TypeError(f"{label} must be a string")
+    return value
+
+
+def _configured_text(value: object, label: str) -> str:
+    """Validate saved configuration text without rewriting a forged value."""
+
+    text = _text(value, label)
+    if any(unicodedata.category(character) in {"Cc", "Cf", "Cs"} for character in text):
         raise ValueError(f"{label} contains a control or invisible formatting character")
-    return unicodedata.normalize("NFC", value)
+    return text
+
+
+def _optional_configured_text(value: object, label: str) -> str | None:
+    return None if value is None else _configured_text(value, label)
 
 
 def _texts(values: Iterable[str], label: str) -> tuple[str, ...]:
@@ -188,11 +214,83 @@ def _wire(value: object) -> object:
     raise TypeError(f"cannot serialize fake provider value {type(value).__name__}")
 
 
+def _transport_text(value: str) -> str:
+    """Encode Python surrogate code units without JSON pair composition."""
+
+    encoded: list[str] = []
+    for character in value:
+        codepoint = ord(character)
+        if character == _TRANSPORT_ESCAPE:
+            encoded.append(_TRANSPORT_ESCAPE + "0")
+        elif 0xD800 <= codepoint <= 0xDFFF:
+            encoded.append(f"{_TRANSPORT_ESCAPE}s{codepoint:04x}")
+        else:
+            encoded.append(character)
+    return "".join(encoded)
+
+
+def _transport_encode(value: object) -> object:
+    if isinstance(value, str):
+        return _transport_text(value)
+    if isinstance(value, list):
+        return [_transport_encode(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            _transport_text(key): _transport_encode(item)
+            for key, item in value.items()
+        }
+    return value
+
+
+def _restore_transport_text(value: str) -> str:
+    decoded: list[str] = []
+    position = 0
+    while position < len(value):
+        character = value[position]
+        if character != _TRANSPORT_ESCAPE:
+            decoded.append(character)
+            position += 1
+            continue
+        if position + 1 >= len(value):
+            raise ValueError("fake provider text contains a truncated transport escape")
+        kind = value[position + 1]
+        if kind == "0":
+            decoded.append(_TRANSPORT_ESCAPE)
+            position += 2
+            continue
+        if kind == "s" and position + 6 <= len(value):
+            encoded_codepoint = value[position + 2 : position + 6]
+            if all(character in "0123456789abcdef" for character in encoded_codepoint):
+                codepoint = int(encoded_codepoint, 16)
+                if 0xD800 <= codepoint <= 0xDFFF:
+                    decoded.append(chr(codepoint))
+                    position += 6
+                    continue
+        raise ValueError("fake provider text contains an invalid transport escape")
+    return "".join(decoded)
+
+
+def _transport_decode(value: object) -> object:
+    if isinstance(value, str):
+        return _restore_transport_text(value)
+    if isinstance(value, list):
+        return [_transport_decode(item) for item in value]
+    if isinstance(value, dict):
+        decoded: dict[str, object] = {}
+        for key, item in value.items():
+            restored_key = _restore_transport_text(key)
+            if restored_key in decoded:
+                raise ValueError("fake provider object contains duplicate decoded keys")
+            decoded[restored_key] = _transport_decode(item)
+        return decoded
+    return value
+
+
 def _decode_evidence(value: object) -> EvidenceRef:
     item = _mapping(value, "evidence reference")
     _require_keys(item, {"path", "sha256", "metadata"}, "evidence reference")
     return EvidenceRef(
-        path=_text(item.get("path"), "evidence path"),
+        path=_string(item.get("path"), "evidence path"),
         sha256=_text(item.get("sha256"), "evidence sha256"),
         metadata=_mapping(item.get("metadata", {}), "evidence metadata"),
     )
@@ -249,17 +347,21 @@ def _decode_provider_model(value: object) -> ProviderModelProfile:
         },
         "configured provider model",
     )
+    provider = _configured_text(item.get("provider"), "configured model provider")
+    rank = _integer(item.get("capability_rank"), "configured model capability rank")
+    if rank < 1:
+        raise ValueError("configured model capability rank must be at least 1")
+    reasoning_effort = _optional_configured_text(
+        item.get("reasoning_effort"), "configured reasoning effort"
+    )
+    effort = _optional_configured_text(item.get("effort"), "configured effort")
     return ProviderModelProfile(
-        provider=_text(item.get("provider"), "configured model provider"),
-        name=_text(item.get("name"), "configured model profile"),
-        model_id=_text(item.get("model_id"), "configured model ID"),
-        capability_rank=_integer(
-            item.get("capability_rank"), "configured model capability rank"
-        ),
-        reasoning_effort=_optional_text(
-            item.get("reasoning_effort"), "configured reasoning effort"
-        ),
-        effort=_optional_text(item.get("effort"), "configured effort"),
+        provider=provider,
+        name=_configured_text(item.get("name"), "configured model profile"),
+        model_id=_configured_text(item.get("model_id"), "configured model ID"),
+        capability_rank=rank,
+        reasoning_effort=reasoning_effort,
+        effort=effort,
     )
 
 
@@ -348,15 +450,15 @@ def _decode_request(value: object) -> AgentRequest:
         worktree_id=_text(item.get("worktree_id"), "worktree id"),
         scope=ScopeClaim(
             write_paths=tuple(
-                _text(raw, "write path")
+                _string(raw, "write path")
                 for raw in _array(scope.get("write_paths"), "write paths")
             ),
             read_paths=tuple(
-                _text(raw, "read path")
+                _string(raw, "read path")
                 for raw in _array(scope.get("read_paths"), "read paths")
             ),
             prohibited_paths=tuple(
-                _text(raw, "prohibited path")
+                _string(raw, "prohibited path")
                 for raw in _array(scope.get("prohibited_paths"), "prohibited paths")
             ),
             resources=tuple(
@@ -526,21 +628,25 @@ class AgentAdapterCapabilities:
             raise TypeError("model_profiles must contain ProviderModelProfile values")
         keys = [
             (
-                _text(item.provider, "capability model provider").casefold(),
-                _text(item.name, "capability model profile"),
+                _configured_text(item.provider, "capability model provider").casefold(),
+                _configured_text(item.name, "capability model profile"),
             )
             for item in profiles
         ]
         if len(set(keys)) != len(keys):
             raise ValueError("model_profiles must not contain duplicate provider/profile pairs")
         for profile in profiles:
-            _text(profile.model_id, "capability model ID")
+            _configured_text(profile.model_id, "capability model ID")
             if isinstance(profile.capability_rank, bool) or not isinstance(
                 profile.capability_rank, int
             ):
                 raise TypeError("capability model rank must be an integer")
             if profile.capability_rank < 0:
                 raise ValueError("capability model rank cannot be negative")
+            _optional_configured_text(
+                profile.reasoning_effort, "capability model reasoning effort"
+            )
+            _optional_configured_text(profile.effort, "capability model effort")
         object.__setattr__(self, "model_profiles", profiles)
         for name in ("queryable", "cancellable", "reports_model_provenance"):
             if not isinstance(getattr(self, name), bool):
@@ -764,7 +870,9 @@ class FakeAgentProviderState:
     def _load(self) -> None:
         assert self._backing_path is not None
         try:
-            raw = json.loads(self._backing_path.read_text(encoding="utf-8"))
+            raw = _transport_decode(
+                json.loads(self._backing_path.read_text(encoding="utf-8"))
+            )
             payload = _mapping(raw, "fake provider state")
             if set(payload) != {"format", "simulation_source", "effects"}:
                 raise ValueError("fake provider state has unknown or missing fields")
@@ -994,8 +1102,10 @@ class FakeAgentProviderState:
             ],
         }
         data = json.dumps(
-            payload,
-            ensure_ascii=False,
+            _transport_encode(payload),
+            # ASCII JSON plus the transport escape keeps each admitted Python
+            # surrogate code unit distinct when json.loads restores the file.
+            ensure_ascii=True,
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")

@@ -11,6 +11,7 @@ import unittest
 from dataclasses import FrozenInstanceError, replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from unittest import mock
 
 
 WORKTREE_ROOT = Path(__file__).resolve().parents[3]
@@ -161,6 +162,7 @@ else:
 """
 
 REAL_LOADER_PROCESS_RESTART_SCRIPT = r"""
+from dataclasses import replace
 import hashlib
 import json
 import sys
@@ -170,6 +172,7 @@ root = Path(sys.argv[1])
 project = Path(sys.argv[2])
 state_path = project / "state.json"
 action = sys.argv[3]
+case = sys.argv[4] if len(sys.argv) > 4 else "mapping"
 sys.path.insert(0, str(root / "src"))
 sys.path.insert(0, str(root / "tests" / "unit" / "agents"))
 
@@ -185,6 +188,32 @@ project_settings = config.load_project_settings(
     config.load_installation_record(project),
 )
 agent_request = request(idempotency_key="real-loader-profile-mapping-17")
+if case == "lossless":
+    payload = (
+        "line one\n\tCafe\u0301, isolated \ud800, and paired "
+        "\ud83d\ude00 remain exact"
+    )
+    agent_request = replace(
+        agent_request,
+        spec_refs=("spec:" + payload,),
+        context_ref="context:" + payload,
+        scope=domain_values.ScopeClaim(
+            write_paths=(" leading/source.py",),
+            read_paths=(" leading/read.py",),
+            prohibited_paths=(" leading/excluded/",),
+            resources=("component:agents",),
+        ),
+        acceptance_criteria=(
+            workflow_ports.AcceptanceCriterion(
+                "criterion:" + payload,
+                "description:" + payload,
+                "verification:" + payload,
+            ),
+        ),
+        dependency_handoffs=("handoff:" + payload,),
+        checklist_ids=("checklist:" + payload,),
+        idempotency_key="real-loader-Cafe\u0301\n\t17",
+    )
 configured = project_settings.configured_model(agent_request.model_profile)
 assert configured is not None
 capabilities = agents.AgentAdapterCapabilities(
@@ -203,22 +232,78 @@ adapter = agents.DeterministicFakeAgentAdapter(
 handle = adapter.start(agent_request, agent_request.idempotency_key)
 assert adapter.start(agent_request, agent_request.idempotency_key) == handle
 expected = adapter.expected_model(handle)
+if action == "conflict":
+    before = state_path.read_bytes()
+    changed = replace(agent_request, context_ref=agent_request.context_ref + " changed")
+    try:
+        adapter.start(changed, changed.idempotency_key)
+    except domain_values.DomainException as exc:
+        assert exc.category is domain_values.ErrorCategory.STATE_CONFLICT
+    else:
+        raise AssertionError("materially changed retry was admitted")
+    assert state_path.read_bytes() == before
+    print(json.dumps({"outcome": "state_conflict", "bytes_unchanged": True}))
+    raise SystemExit(0)
 if action == "start":
+    final_output = output(handle, expected)
+    final_observation = observation(
+        handle,
+        domain_values.AgentRunStatus.SUCCEEDED,
+        model=expected,
+        structured_output=final_output,
+    )
+    if case == "lossless":
+        rich_evidence = domain_values.EvidenceRef(
+            " leading-evidence.json",
+            "d" * 64,
+            {
+                " key\n\tCafe\u0301": [" value \n\tCafe\u0301 \ud800 ", {"nested": " exact "}],
+            },
+        )
+        final_output = replace(
+            final_output,
+            artifact_refs=("artifact:" + payload,),
+            command_evidence_refs=("command:" + payload,),
+            discoveries=("discovery:" + payload,),
+            scope_change_requests=("scope-change:" + payload,),
+            summary="summary:" + payload,
+        )
+        final_observation = replace(
+            final_observation,
+            output=final_output,
+            evidence_refs=final_observation.evidence_refs + (rich_evidence,),
+        )
     provider.script(
         handle,
         polls=(
             observation(handle, domain_values.AgentRunStatus.RUNNING, model=expected),
-            observation(
-                handle,
-                domain_values.AgentRunStatus.SUCCEEDED,
-                model=expected,
-                structured_output=output(handle, expected),
-            ),
+            final_observation,
         ),
     )
 elif action != "continue":
     raise ValueError(action)
 observed = adapter.poll(handle)
+saved = json.loads(state_path.read_text(encoding="utf-8"))
+saved_request = saved["effects"][0]["request"]
+contracts.load_contract_registry(project / "schemas" / "v1").validate(
+    saved_request,
+    source="persisted agent request",
+)
+request_sha256 = hashlib.sha256(
+    json.dumps(saved_request, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("utf-8")
+).hexdigest()
+output_sha256 = None
+output_summary = None
+if observed.output is not None:
+    saved_output = saved["effects"][0]["last_observation"]["output"]
+    contracts.load_contract_registry(project / "schemas" / "v1").validate(
+        saved_output,
+        source="persisted agent output",
+    )
+    output_sha256 = hashlib.sha256(
+        json.dumps(saved_output, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    output_summary = observed.output.summary
 settings_bytes = (
     (project / ".ai" / "project" / "policy.json").read_bytes()
     + (project / ".ai" / "project" / "agent-models.json").read_bytes()
@@ -241,8 +326,11 @@ print(
             "poll": observed.status.value,
             "requested_policy_profile": agent_request.model_profile,
             "resolved_provider_profile": configured.name,
+            "request_sha256": request_sha256,
             "settings_sha256": hashlib.sha256(settings_bytes).hexdigest(),
             "simulated_expected_profile": expected.profile,
+            "output_sha256": output_sha256,
+            "output_summary": output_summary,
         },
         sort_keys=True,
     )
@@ -328,7 +416,12 @@ def settings(
     )
 
 
-def real_loader_project(directory: Path, *, mapped: bool) -> Path:
+def real_loader_project(
+    directory: Path,
+    *,
+    mapped: bool,
+    selected_model_id: str | None = None,
+) -> Path:
     """Create copied source settings decoded only through accepted loaders."""
 
     project = directory / ("mapped" if mapped else "identity")
@@ -357,6 +450,8 @@ def real_loader_project(directory: Path, *, mapped: bool) -> Path:
     selected = models["providers"][models["active_provider"]]["profiles"][
         selected_name
     ]
+    if selected_model_id is not None:
+        selected["model_id"] = selected_model_id
     for profile in policy["model_profiles"]:
         if profile["name"] == "implementation":
             profile.update(
@@ -724,16 +819,415 @@ class FakeAgentDispatchTests(unittest.TestCase):
             self.assertEqual(saved["format"], "deterministic-fake-agent-state-v1")
             self.assertEqual(saved["simulation_source"], SIMULATION_SOURCE)
 
+    def test_all_persisted_payload_families_round_trip_losslessly(self) -> None:
+        payload = (
+            "line one\n\tCafe\u0301, isolated \ud800, and paired "
+            "\ud83d\ude00 plus escape \udfff remain exact"
+        )
+        routing = "routing\n\tCafe\u0301 remains exact"
+        adapter_id = "adapter:" + routing
+        idempotency_key = "key:" + routing
+        role = "role:" + routing
+        command = "command:" + routing
+        second_command = "second-command:" + routing
+        permission = "permission:" + routing
+        second_permission = "second-permission:" + routing
+        project_settings = settings()
+        adapter_capabilities = capabilities(
+            project_settings,
+            roles=(role,),
+            permissions=(permission, second_permission),
+            command_ids=(command, second_command),
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=provider,
+                adapter_id=adapter_id,
+            )
+            agent_request = replace(
+                request(idempotency_key=idempotency_key),
+                spec_refs=("spec:" + payload, "spec:second"),
+                role=role,
+                scope=ScopeClaim(
+                    write_paths=(" leading/Cafe\u0301.py",),
+                    read_paths=(" leading/read.py",),
+                    prohibited_paths=(" leading/excluded/",),
+                    resources=("component:agents",),
+                ),
+                context_ref="context:" + payload,
+                allowed_command_ids=(command, second_command),
+                acceptance_criteria=(
+                    AcceptanceCriterion(
+                        "criterion:" + payload,
+                        "description:" + payload,
+                        "verification:" + payload,
+                    ),
+                    AcceptanceCriterion(
+                        "criterion:second",
+                        "description:second",
+                        "verification:second",
+                    ),
+                ),
+                dependency_handoffs=("handoff:" + payload, "handoff:second"),
+                checklist_ids=("checklist:" + payload, "checklist:second"),
+                permission_subset=(permission, second_permission),
+            )
+            handle = adapter.start(agent_request, idempotency_key)
+            self.assertEqual(adapter.start(agent_request, idempotency_key), handle)
+            actual_model = adapter.expected_model(handle)
+            rich_evidence = EvidenceRef(
+                " leading-evidence.json",
+                DIGEST,
+                {
+                    " key\n\tCafe\u0301": [
+                        " value \n\tCafe\u0301 \ud800 \x00 ",
+                        {"nested": " exact "},
+                    ]
+                },
+            )
+            rich_details = {
+                " detail\n\tCafe\u0301": [
+                    " value \n\tCafe\u0301 \ud800 \x00 ",
+                    {"nested": [True, None, 3]},
+                ]
+            }
+            unknown = observation(handle, AgentRunStatus.UNKNOWN)
+            assert unknown.error is not None
+            unknown = replace(
+                unknown,
+                run=replace(unknown.run, error_category="category:" + payload),
+                evidence_refs=(rich_evidence,),
+                error=replace(
+                    unknown.error,
+                    evidence_refs=(rich_evidence,),
+                    details=rich_details,
+                ),
+            )
+            rich_output = replace(
+                output(handle, actual_model),
+                artifact_refs=("artifact:" + payload, "artifact:second"),
+                command_evidence_refs=(
+                    "command-evidence:" + payload,
+                    "command-evidence:second",
+                ),
+                discoveries=("discovery:" + payload, "discovery:second"),
+                scope_change_requests=(
+                    "scope-change:" + payload,
+                    "scope-change:second",
+                ),
+                summary="summary:" + payload,
+            )
+            succeeded = observation(
+                handle,
+                AgentRunStatus.SUCCEEDED,
+                model=actual_model,
+                structured_output=rich_output,
+            )
+            succeeded = replace(
+                succeeded,
+                evidence_refs=succeeded.evidence_refs + (rich_evidence,),
+            )
+            unknown_cancel = CancelObservation(
+                CancelStatus.UNKNOWN,
+                handle,
+                False,
+                (rich_evidence,),
+                DomainError(
+                    ErrorCategory.TRANSIENT_PROVIDER,
+                    "scripted cancellation remains unknown",
+                    retryable=True,
+                    evidence_refs=(rich_evidence,),
+                    details=rich_details,
+                ),
+            )
+            provider.script(
+                handle,
+                polls=(unknown, succeeded),
+                cancellations=(
+                    unknown_cancel,
+                    CancelObservation(
+                        CancelStatus.CANCELLED,
+                        handle,
+                        True,
+                        (rich_evidence,),
+                    ),
+                ),
+            )
+
+            observed_unknown = adapter.poll(handle)
+            self.assertEqual(observed_unknown.status, unknown.status)
+            self.assertEqual(observed_unknown.run, unknown.run)
+            self.assertEqual(observed_unknown.error, unknown.error)
+            self.assertEqual(observed_unknown.evidence_refs[0], rich_evidence)
+            observed_cancel = adapter.cancel(handle)
+            self.assertEqual(observed_cancel.status, unknown_cancel.status)
+            self.assertEqual(observed_cancel.error, unknown_cancel.error)
+            self.assertEqual(observed_cancel.evidence_refs[0], rich_evidence)
+            saved_before_reopen = backing_path.read_bytes()
+            saved_effect = json.loads(saved_before_reopen)["effects"][0]
+            self.assertEqual(
+                saved_effect["request"]["spec_refs"][1],
+                "spec:second",
+            )
+            self.assertEqual(saved_effect["request"]["allowed_command_ids"][1], second_command)
+            self.assertEqual(
+                saved_effect["request"]["scope"]["write_paths"],
+                [" leading/Caf\u00e9.py"],
+            )
+            self.assertEqual(
+                saved_effect["cancel_script"][0]["error"]["evidence_refs"][0]["path"],
+                " leading-evidence.json",
+            )
+            self.assertIn(b"\\udfffsd800", saved_before_reopen)
+            self.assertIn(b"\\udfffsd83d\\udfffsde00", saved_before_reopen)
+            self.assertIn(b"\\udfff0", saved_before_reopen)
+            self.assertIn(b"\\u0000", saved_before_reopen)
+            del adapter, provider
+
+            restored = FakeAgentProviderState(backing_path)
+            restarted = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=restored,
+                adapter_id=adapter_id,
+            )
+            self.assertEqual(restarted.start(agent_request, idempotency_key), handle)
+            self.assertEqual(backing_path.read_bytes(), saved_before_reopen)
+            completed = restarted.poll(handle)
+            self.assertEqual(completed.output, rich_output)
+            self.assertEqual(
+                restarted.cancel(handle).status,
+                CancelStatus.ALREADY_TERMINAL,
+            )
+            saved_terminal = backing_path.read_bytes()
+            del restarted, restored
+
+            final_provider = FakeAgentProviderState(backing_path)
+            final_adapter = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=final_provider,
+                adapter_id=adapter_id,
+            )
+            self.assertEqual(final_adapter.poll(handle), completed)
+            self.assertEqual(backing_path.read_bytes(), saved_terminal)
+
+        with self.assertRaises(ValueError):
+            AcceptanceCriterion("criterion", " surrounding ", "verification")
+        with self.assertRaises(ValueError):
+            ScopeClaim(write_paths=("trailing-space ",))
+        with self.assertRaises(ValueError):
+            DomainError(ErrorCategory.INVALID_INPUT, "invalid\nmessage")
+
+    def test_non_nfc_future_provenance_rejects_before_and_after_reopen(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            cases = (
+                (
+                    "decomposed",
+                    "fake-implementation-caf\u00e9",
+                    "fake-implementation-cafe\u0301",
+                ),
+                (
+                    "surrogate-pair",
+                    "fake-implementation-\U0001f600",
+                    "fake-implementation-\ud83d\ude00",
+                ),
+            )
+            for label, configured_model_id, observed_model_id in cases:
+                with self.subTest(label=label):
+                    project = real_loader_project(
+                        Path(temporary) / label,
+                        mapped=True,
+                        selected_model_id=configured_model_id,
+                    )
+                    project_settings = load_project_settings(
+                        project,
+                        load_installation_record(project),
+                    )
+                    adapter_capabilities = capabilities(
+                        project_settings,
+                        model_profiles=project_settings.models.provider().profiles,
+                    )
+                    backing_path = project / "state.json"
+                    provider = FakeAgentProviderState(backing_path)
+                    adapter, _ = adapter_values(
+                        project_settings,
+                        adapter_capabilities,
+                        provider,
+                    )
+                    agent_request = request()
+                    handle = adapter.start(
+                        agent_request,
+                        agent_request.idempotency_key,
+                    )
+                    expected = adapter.expected_model(handle)
+                    mismatched = replace(expected, model_id=observed_model_id)
+                    provider.script(
+                        handle,
+                        polls=(
+                            observation(
+                                handle,
+                                AgentRunStatus.SUCCEEDED,
+                                model=mismatched,
+                                structured_output=output(handle, mismatched),
+                            ),
+                        ),
+                    )
+                    rejected_bytes = backing_path.read_bytes()
+
+                    self.assertNotEqual(expected.model_id, mismatched.model_id)
+                    self.assert_category(
+                        ErrorCategory.VALIDATION_FAILED,
+                        lambda: adapter.poll(handle),
+                    )
+                    self.assertEqual(backing_path.read_bytes(), rejected_bytes)
+                    self.assertEqual(
+                        json.loads(rejected_bytes)["effects"][0]["poll_position"],
+                        0,
+                    )
+                    del adapter, provider
+
+                    restored = FakeAgentProviderState(backing_path)
+                    restarted, _ = adapter_values(
+                        project_settings,
+                        adapter_capabilities,
+                        restored,
+                    )
+                    self.assertEqual(
+                        restarted.start(
+                            agent_request,
+                            agent_request.idempotency_key,
+                        ),
+                        handle,
+                    )
+                    for _ in range(2):
+                        self.assert_category(
+                            ErrorCategory.VALIDATION_FAILED,
+                            lambda: restarted.poll(handle),
+                        )
+                        self.assertEqual(backing_path.read_bytes(), rejected_bytes)
+                        self.assertEqual(
+                            json.loads(backing_path.read_bytes())["effects"][0][
+                                "poll_position"
+                            ],
+                            0,
+                        )
+
     def test_file_backing_rejects_unmarked_or_malformed_provider_state(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             backing_path = Path(temporary) / "fake-provider-state.json"
-            backing_path.write_text(
-                json.dumps({"format": "unknown", "effects": []}), encoding="utf-8"
+            malformed = (
+                {"format": "unknown", "effects": []},
+                {
+                    "format": "\udfffx",
+                    "simulation_source": SIMULATION_SOURCE,
+                    "effects": [],
+                },
+                {
+                    "format": "truncated\udfff",
+                    "simulation_source": SIMULATION_SOURCE,
+                    "effects": [],
+                },
+                {
+                    "format": "invalid-codepoint\udfffs0061",
+                    "simulation_source": SIMULATION_SOURCE,
+                    "effects": [],
+                },
             )
-            self.assert_category(
-                ErrorCategory.VALIDATION_FAILED,
-                lambda: FakeAgentProviderState(backing_path),
+            for payload in malformed:
+                with self.subTest(payload=payload):
+                    backing_path.write_text(json.dumps(payload), encoding="utf-8")
+                    self.assert_category(
+                        ErrorCategory.VALIDATION_FAILED,
+                        lambda: FakeAgentProviderState(backing_path),
+                    )
+
+    def test_persistence_failures_rollback_start_script_poll_and_cancel(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            agent_request = request()
+
+            with mock.patch("agents.os.replace", side_effect=OSError("replace failed")):
+                self.assert_category(
+                    ErrorCategory.INTERNAL_ERROR,
+                    lambda: adapter.start(
+                        agent_request,
+                        agent_request.idempotency_key,
+                    ),
+                )
+            self.assertEqual(provider.effect_count, 0)
+            self.assertFalse(backing_path.exists())
+            self.assertEqual(list(backing_path.parent.glob(".fake-provider-state.json.*.tmp")), [])
+
+            handle = adapter.start(agent_request, agent_request.idempotency_key)
+            expected = adapter.expected_model(handle)
+            running = observation(handle, AgentRunStatus.RUNNING, model=expected)
+            unknown_cancel = CancelObservation(
+                CancelStatus.UNKNOWN,
+                handle,
+                False,
+                (evidence("cancel-rollback"),),
+                DomainError(
+                    ErrorCategory.TRANSIENT_PROVIDER,
+                    "scripted cancellation outcome is unknown",
+                    retryable=True,
+                ),
             )
+            saved_after_start = backing_path.read_bytes()
+            with mock.patch.object(
+                provider,
+                "_persist_locked",
+                side_effect=RuntimeError("script persistence failed"),
+            ):
+                with self.assertRaises(RuntimeError):
+                    provider.script(
+                        handle,
+                        polls=(running,),
+                        cancellations=(unknown_cancel,),
+                    )
+            self.assertEqual(backing_path.read_bytes(), saved_after_start)
+
+            provider.script(
+                handle,
+                polls=(running,),
+                cancellations=(unknown_cancel,),
+            )
+            saved_after_script = backing_path.read_bytes()
+            with mock.patch.object(
+                provider,
+                "_persist_locked",
+                side_effect=RuntimeError("poll persistence failed"),
+            ):
+                with self.assertRaises(RuntimeError):
+                    adapter.poll(handle)
+            self.assertEqual(backing_path.read_bytes(), saved_after_script)
+            self.assertEqual(adapter.poll(handle).status, AgentRunStatus.RUNNING)
+
+            saved_after_poll = backing_path.read_bytes()
+            with mock.patch.object(
+                provider,
+                "_persist_locked",
+                side_effect=RuntimeError("cancel persistence failed"),
+            ):
+                with self.assertRaises(RuntimeError):
+                    adapter.cancel(handle)
+            self.assertEqual(backing_path.read_bytes(), saved_after_poll)
+            self.assertEqual(adapter.cancel(handle).status, CancelStatus.UNKNOWN)
+
+            saved = json.loads(backing_path.read_bytes())["effects"][0]
+            self.assertEqual(saved["poll_position"], 1)
+            self.assertEqual(saved["cancel_position"], 1)
+            self.assertFalse(saved["quiesced"])
 
     def test_file_backing_rejects_forged_derived_history_and_nested_fields(
         self,
@@ -987,6 +1481,74 @@ class FakeAgentDispatchTests(unittest.TestCase):
                         settings_bytes,
                     )
 
+    def test_real_loader_lossless_records_retry_across_fresh_processes(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = real_loader_project(Path(temporary), mapped=True)
+            policy_path = project / ".ai" / "project" / "policy.json"
+            models_path = project / ".ai" / "project" / "agent-models.json"
+            settings_bytes = policy_path.read_bytes() + models_path.read_bytes()
+            expected_settings_sha256 = hashlib.sha256(settings_bytes).hexdigest()
+            state_path = project / "state.json"
+            results: list[dict[str, object]] = []
+            saved_after_success: bytes | None = None
+
+            for action in ("start", "continue", "continue", "conflict"):
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        "-B",
+                        "-c",
+                        REAL_LOADER_PROCESS_RESTART_SCRIPT,
+                        str(WORKTREE_ROOT),
+                        str(project),
+                        action,
+                        "lossless",
+                    ],
+                    cwd=WORKTREE_ROOT,
+                    capture_output=True,
+                    text=True,
+                    shell=False,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                results.append(json.loads(completed.stdout))
+                if action == "continue" and saved_after_success is None:
+                    saved_after_success = state_path.read_bytes()
+                elif saved_after_success is not None:
+                    self.assertEqual(state_path.read_bytes(), saved_after_success)
+
+            first, succeeded, terminal_retry, conflict = results
+            self.assertEqual(first["poll"], "running")
+            self.assertEqual(succeeded["poll"], "succeeded")
+            self.assertEqual(terminal_retry["poll"], "succeeded")
+            self.assertEqual(conflict["outcome"], "state_conflict")
+            self.assertIs(conflict["bytes_unchanged"], True)
+            self.assertEqual(succeeded["output_sha256"], terminal_retry["output_sha256"])
+            self.assertEqual(succeeded["output_summary"], terminal_retry["output_summary"])
+            self.assertIn("\n\tCafe\u0301", succeeded["output_summary"])
+            self.assertIn("\ud800", succeeded["output_summary"])
+            self.assertEqual(first["request_sha256"], succeeded["request_sha256"])
+            self.assertEqual(succeeded["request_sha256"], terminal_retry["request_sha256"])
+            self.assertEqual(first["effect_count"], 1)
+            self.assertEqual(first["external_handle"], succeeded["external_handle"])
+            for result in results[:3]:
+                self.assertEqual(result["settings_sha256"], expected_settings_sha256)
+                self.assertEqual(result["requested_policy_profile"], "implementation")
+                self.assertEqual(
+                    result["resolved_provider_profile"], "implementation_custom"
+                )
+                for origin in result["module_origins"].values():
+                    self.assertEqual(
+                        Path(origin).resolve().parent,
+                        (WORKTREE_ROOT / "src").resolve(),
+                    )
+            self.assertEqual(
+                policy_path.read_bytes() + models_path.read_bytes(),
+                settings_bytes,
+            )
+
     def test_real_loader_binding_mutations_reject_every_adapter_use_unchanged(
         self,
     ) -> None:
@@ -1099,6 +1661,89 @@ class FakeAgentDispatchTests(unittest.TestCase):
                         self.assertEqual(saved_effect["poll_position"], 0)
                         self.assertEqual(saved_effect["cancel_position"], 0)
                     del actions, restarted, restored
+
+    def test_terminal_fast_paths_recheck_complete_selected_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = real_loader_project(Path(temporary), mapped=True)
+            project_settings = load_project_settings(
+                project,
+                load_installation_record(project),
+            )
+            adapter_capabilities = capabilities(
+                project_settings,
+                model_profiles=project_settings.models.provider().profiles,
+            )
+            state_path = project / "state.json"
+            provider = FakeAgentProviderState(state_path)
+            adapter, _ = adapter_values(
+                project_settings,
+                adapter_capabilities,
+                provider,
+            )
+            agent_request = request()
+            handle = adapter.start(agent_request, agent_request.idempotency_key)
+            expected = adapter.expected_model(handle)
+            provider.script(
+                handle,
+                polls=(
+                    observation(
+                        handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=expected,
+                        structured_output=output(handle, expected),
+                    ),
+                ),
+            )
+            self.assertEqual(adapter.poll(handle).status, AgentRunStatus.SUCCEEDED)
+
+            rejected_bytes = state_path.read_bytes()
+            models_path = project / ".ai" / "project" / "agent-models.json"
+            models_payload = json.loads(models_path.read_bytes())
+            selected_name = models_payload["policy_profile_map"]["implementation"]
+            active_provider = models_payload["active_provider"]
+            models_payload["providers"][active_provider]["profiles"][selected_name][
+                "reasoning_effort"
+            ] = "medium"
+            models_path.write_bytes(
+                json.dumps(
+                    models_payload,
+                    ensure_ascii=True,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            )
+            changed_settings = load_project_settings(
+                project,
+                load_installation_record(project),
+            )
+            changed_capabilities = capabilities(
+                changed_settings,
+                model_profiles=changed_settings.models.provider().profiles,
+            )
+            del adapter, provider
+
+            restored = FakeAgentProviderState(state_path)
+            restarted, _ = adapter_values(
+                changed_settings,
+                changed_capabilities,
+                restored,
+            )
+            actions = (
+                lambda: restarted.start(
+                    agent_request,
+                    agent_request.idempotency_key,
+                ),
+                lambda: restarted.poll(handle),
+                lambda: restarted.cancel(handle),
+                lambda: restarted.expected_model(handle),
+            )
+            for action in actions:
+                self.assert_category(ErrorCategory.VALIDATION_FAILED, action)
+                self.assertEqual(state_path.read_bytes(), rejected_bytes)
+                saved = json.loads(state_path.read_bytes())["effects"][0]
+                self.assertEqual(saved["poll_position"], 1)
+                self.assertEqual(saved["cancel_position"], 0)
+                self.assertTrue(saved["quiesced"])
 
     def test_unknown_poll_is_explicit_and_can_later_reconcile(self) -> None:
         adapter, provider = adapter_values()
