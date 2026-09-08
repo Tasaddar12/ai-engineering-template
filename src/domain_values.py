@@ -299,11 +299,19 @@ class ScopePath:
         return self.value + suffix
 
     def contains(self, other: ScopePath | str) -> bool:
-        candidate = other if isinstance(other, ScopePath) else ScopePath.exact_file(other)
+        candidate = other if isinstance(other, ScopePath) else ScopePath(other)
         if self.kind is ScopePathKind.EXACT_FILE:
-            return self.comparison_key == candidate.comparison_key
+            return (
+                candidate.kind is ScopePathKind.EXACT_FILE
+                and self.comparison_key == candidate.comparison_key
+            )
         length = len(self.comparison_key)
-        return candidate.comparison_key[:length] == self.comparison_key
+        if candidate.comparison_key[:length] != self.comparison_key:
+            return False
+        return len(candidate.comparison_key) > length or (
+            candidate.kind is ScopePathKind.DIRECTORY_PREFIX
+            and len(candidate.comparison_key) == length
+        )
 
     def overlaps(self, other: ScopePath | str) -> bool:
         candidate = other if isinstance(other, ScopePath) else ScopePath(other)

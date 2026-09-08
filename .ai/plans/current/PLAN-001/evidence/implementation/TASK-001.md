@@ -7,13 +7,17 @@
 | Attempt | `TASK-001-a2` |
 | Branch | `ai/PLAN-001/TASK-001/a2` |
 | Logical worktree | `TASK-001-a2` |
-| Exact base | `90a13bc8dd5649cb47cc702180a6ef04056f7508` |
+| Original dispatch base | `90a13bc8dd5649cb47cc702180a6ef04056f7508` |
+| Final review base | `1dac2196ab83a36b98128a54432b06543e09a050` |
+| Coordinator metadata merge | `5ad62eeee5161060ca516ba91fe08674821b64d9` |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
 | Prerequisites | None |
 
-The candidate is the Git commit containing this handoff. Its object ID is observed after the
-commit and intentionally is not embedded in that same commit.
+The coordinator merged newer plan metadata into the branch after the first implementation commit.
+The final candidate is therefore reviewed against `1dac2196ab83a36b98128a54432b06543e09a050`.
+The candidate is the Git commit containing this handoff; its object ID is observed after the commit
+and intentionally is not embedded in that same commit.
 
 Verified candidate paths are limited to:
 
@@ -74,14 +78,14 @@ network, or clock APIs and performs no IO.
 
 ## Actual validation
 
-All commands used the required interpreter
+All Python commands used the required interpreter
 `D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe` from this
 attempt worktree.
 
 | Check | Result |
 | --- | --- |
 | `-m unittest discover -s tests/unit/domain_values/ -p test_*.py` | Exit 0; 14 tests; `OK`. The final run used the exact recorded argument list and the test file inserts this worktree's `src` directory before import. |
-| `src/validate_foundation.py` | Exit 0; 27 schemas, 123 artifacts, 1 plan, 39 tasks, 280 unordered pairs, 4 archive manifests, 173 local links. |
+| `src/validate_foundation.py` | Exit 0; 27 schemas, 123 artifacts, 1 plan, 39 tasks, 280 unordered pairs, 4 archive manifests, 174 local links. |
 | `-m unittest discover -s tests -p test_*.py` | Exit 0; 24 tests; `OK`. |
 | `-m py_compile src/domain_values.py tests/unit/domain_values/test_domain_values.py` | Exit 0. |
 | `git diff --check` | Exit 0. |
@@ -91,6 +95,12 @@ errors (a raw string ending in a backslash and an invalid Unicode character name
 fixture spelling error in the Unicode case-alias example. Each test-only issue was corrected. The
 focused command then passed repeatedly, including after adding deletion immutability and exact-file
 permission regressions.
+
+The first committed candidate, `e34731834e4881a07625c6091b7ed6ead12fd689`, was withdrawn after a
+final self-review found that `ScopePath.contains` forced string directory arguments into exact-file
+claims and allowed a directory prefix to contain a same-named exact file. The coordinator interrupted
+the newly dispatched R1 before verdict. The final candidate corrects both semantics and adds focused
+regressions; it requires a fresh candidate identity and both fresh reviews.
 
 ## Assumptions, deviations, and risks
 

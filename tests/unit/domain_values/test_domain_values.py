@@ -102,6 +102,10 @@ class ScopePathTests(unittest.TestCase):
         self.assertEqual(exact.as_wire(), "src/domain_values.py")
         self.assertEqual(directory.as_wire(), "src/domain_values/")
         self.assertTrue(directory.contains("src/domain_values/test.py"))
+        self.assertTrue(directory.contains("src/domain_values/nested/"))
+        self.assertTrue(directory.contains(directory))
+        self.assertFalse(directory.contains("src/domain_values"))
+        self.assertFalse(exact.contains(directory))
         self.assertFalse(exact.contains("src/domain_values.py/child"))
         self.assertFalse(directory.overlaps("src/domain_values_extra.py"))
 
@@ -160,6 +164,7 @@ class ScopePathTests(unittest.TestCase):
         self.assertTrue(scope.permits_write("src/domain_values.py"))
         self.assertFalse(scope.permits_write("src/domain_values.py.bak"))
         self.assertTrue(scope.permits_write("tests/unit/domain_values/test_values.py"))
+        self.assertFalse(scope.permits_write("tests/unit/domain_values"))
         self.assertFalse(scope.permits_write("tests/unit/domain_values/secret/key.txt"))
         self.assertTrue(scope.permits_read("schemas/v1/task.schema.json"))
         with self.assertRaisesRegex(ValueError, "exact-file"):
