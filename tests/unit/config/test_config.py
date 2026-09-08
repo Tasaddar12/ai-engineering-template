@@ -114,6 +114,17 @@ class ProjectConfigurationTests(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             settings.policy.max_parallel = 9
 
+    def test_actual_source_project_loads_established_policy_actions(self) -> None:
+        settings = config.load_project_settings(
+            ROOT, config.load_installation_record(ROOT)
+        )
+
+        self.assertEqual(settings.namespace, ".ai")
+        self.assertEqual(
+            settings.policy.action_requirement("local_containers"),
+            config.ActionRequirement.AUTONOMOUS,
+        )
+
     def test_unconfigured_policy_hint_is_not_an_automatic_binding(self) -> None:
         native = self.root / ".codex" / "config.toml"
         native.write_text('model = "gpt-6-astra"\nreasoning_effort = "xhigh"\n', encoding="utf-8")
@@ -359,15 +370,49 @@ class ProjectConfigurationTests(unittest.TestCase):
         self.assertEqual(narrowed.max_review_cycles, 1)
         self.assertTrue(narrowed.required_sandbox)
 
-    def test_run_can_explicitly_disable_new_agent_invocations(self) -> None:
+    def test_effective_policy_boundaries_are_schema_valid(self) -> None:
         settings = self.load()
-
-        stopped = settings.resolve_run(
-            config.RunOverrides(max_agent_invocations=0)
+        registry = load_contract_registry(SCHEMAS)
+        hydrated = config.decode_run_settings(
+            {
+                "max_parallel": 1,
+                "max_review_cycles": 1,
+                "max_rewrites": 0,
+                "max_agent_invocations": 1,
+                "required_sandbox": True,
+            }
+        )
+        accepted = (
+            settings.effective_policy(),
+            settings.effective_policy(config.RunOverrides(max_parallel=1)),
+            settings.effective_policy(config.RunOverrides(max_review_cycles=1)),
+            settings.effective_policy(config.RunOverrides(max_rewrites=0)),
+            settings.effective_policy(
+                config.RunOverrides(max_agent_invocations=1)
+            ),
+            settings.effective_policy(config.RunOverrides(required_sandbox=True)),
+            settings.policy.with_run_settings(hydrated),
         )
 
-        self.assertEqual(stopped.max_agent_invocations, 0)
-        self.assertEqual(config.decode_run_settings(stopped.to_payload()), stopped)
+        for effective_policy in accepted:
+            with self.subTest(effective_policy=effective_policy):
+                registry.validate(effective_policy.to_wire())
+
+        self.assertEqual(accepted[3].max_rewrites, 0)
+        self.assertEqual(accepted[4].max_agent_invocations, 1)
+
+    def test_zero_configured_invocation_limit_is_rejected_everywhere(self) -> None:
+        with self.assertRaises(ValueError):
+            config.RunSettings(max_agent_invocations=0)
+        with self.assertRaises(ValueError):
+            config.RunOverrides(max_agent_invocations=0)
+
+        payload = self.load().resolve_run().to_payload()
+        payload["max_agent_invocations"] = 0
+        self.assert_category(
+            ErrorCategory.INVALID_INPUT,
+            lambda: config.decode_run_settings(payload),
+        )
 
     def test_run_override_cannot_broaden_policy_or_disable_sandbox(self) -> None:
         settings = self.load()

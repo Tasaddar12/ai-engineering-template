@@ -34,6 +34,7 @@ SAFE_AUTONOMOUS_ACTIONS = frozenset(
         "read",
         "research",
         "local_worktrees",
+        "local_containers",
         "edit_scope",
         "tests",
         "commits",
@@ -558,7 +559,7 @@ class RunSettings:
         _integer(self.max_parallel, "max_parallel", 1)
         _integer(self.max_review_cycles, "max_review_cycles", 1)
         _integer(self.max_rewrites, "max_rewrites", 0)
-        _integer(self.max_agent_invocations, "max_agent_invocations", 0)
+        _integer(self.max_agent_invocations, "max_agent_invocations", 1)
         if not isinstance(self.required_sandbox, bool):
             raise TypeError("required_sandbox must be a boolean")
 
@@ -591,7 +592,7 @@ class RunOverrides:
             ("max_parallel", 1),
             ("max_review_cycles", 1),
             ("max_rewrites", 0),
-            ("max_agent_invocations", 0),
+            ("max_agent_invocations", 1),
         ):
             value = getattr(self, name)
             if value is not None:

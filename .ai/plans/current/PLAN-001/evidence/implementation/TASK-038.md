@@ -8,10 +8,17 @@
 | Branch | `ai/PLAN-001/TASK-038/a1` |
 | Logical worktree | `TASK-038-a1` |
 | Dispatch/base commit | `a72ffa7fcca3b47205af93f746d240dc9717d296` |
+| First frozen candidate / repair base | `5ce39a43fce2449af60ff53b645c212e7558435b` |
 | Candidate commit | The Git commit containing this handoff; its exact OID is reported after commit because a commit cannot embed its own object ID. |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
 | Accepted prerequisite | TASK-004 accepted candidate and handoff, already integrated into the dispatch base |
+
+First review cycle `TASK-038-a1-c1-R1` failed at the frozen candidate above with retained findings
+`R1-TASK-038-001` and `R1-TASK-038-002`. The final review and evidence are preserved in coordinator
+ROOT commit `43c8004c7313105f63d3b8d21726f8a056b96842`. This first bounded correction changes only the
+existing owned source, leaf test, and handoff paths; the repaired candidate requires a fresh R1 and
+then a fresh R2 on the identical commit.
 
 The candidate changes exactly the three TASK-038-owned paths:
 
@@ -49,6 +56,7 @@ record, or other task-owned source was changed.
   rejects missing, extra, and invalid fields. `ProjectSettings.effective_policy(...)` applies the
   same resolved snapshot to a detached `ProjectPolicy`; `ProjectPolicy.to_wire()` returns the
   schema-valid effective policy bytes a persistence owner can place behind `workflow-run.policy_ref`.
+  All accepted effective-policy boundaries are checked through the TASK-004 registry.
 
 ### TASK-038-AC2
 
@@ -57,7 +65,10 @@ record, or other task-owned source was changed.
   namespaces, cross-provider parameter wiring, unresolved model/profile references, mismatched
   configured bindings, and invalid external grants.
 - Sensitive actions cannot be classified as autonomous. Run overrides may only reduce numeric
-  limits or strengthen sandboxing; they cannot broaden the project policy.
+  limits or strengthen sandboxing; they cannot broaden the project policy. The established
+  `local_containers` action is a safe local autonomous action, matching the unchanged supported
+  source policy. Configured `max_agent_invocations` remains at least 1, as required by the frozen
+  policy schema, while `max_rewrites=0` remains a valid configuration boundary.
 - A policy profile with `configured: false` has no automatic binding even when its schema fields
   retain installer-populated provider/model hints. `ProjectSettings.configured_model(...)` returns
   `None` in that case. `AgentModels.model_for_role(...)` separately exposes the catalog
@@ -89,6 +100,10 @@ workflow-run schema has no direct `max_parallel`, `max_review_cycles`, or `requi
 so no such field was invented. Approved ephemeral environment bindings remain separate and are not
 part of the saved payload.
 
+Observed usage, exhausted/remaining invocation counts, and over-limit fact representation are not
+configuration values. Their state remains with TASK-039 and its consumers; TASK-038 does not encode
+an exhausted run as a schema-invalid configured invocation limit of zero.
+
 TASK-006 continues to consume the accepted typed command definition from TASK-002. TASK-038 does not
 decode or normalize command `argv`; whitespace, tabs, and newlines in schema-valid fixed arguments
 therefore remain under the command contract owner. TASK-017/020 can use `configured_model` to reject
@@ -102,36 +117,43 @@ Interpreter: `D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv
 
 | Command | Observed result |
 | --- | --- |
-| `-m unittest discover -s tests/unit/config/ -p test_*.py` | Exit 0; 27 tests; `OK`. Exact declared task command with the coordinator interpreter. |
+| `-m unittest discover -s tests/unit/config/ -p test_*.py` | Exit 0; 29 tests; `OK`. Exact declared task command with the coordinator interpreter. |
 | `-m py_compile src/config.py tests/unit/config/test_config.py` | Exit 0. |
 | `git diff --check` | Exit 0 after the final source, test, and handoff edits. |
 
-The 27 tests include successful installed/source loads, immutable normalized values, configured and
-unconfigured model behavior, native-provider-setting isolation, read-only bytes, run precedence and
-saved payload round trips. Failure cases cover unknown fields/actions/profiles, sensitive autonomous
-actions, invalid grants, capability ordering, provider parameter crossing, mismatched configured
-models, namespace ambiguity, compatibility/upgrade status, unsafe/overlapping paths, stale
-installation identity, broader run overrides, sandbox weakening, malformed saved payloads, and
-resume combined with new overrides.
+The 29 tests include successful fresh installed defaults, the actual source installation and its
+`local_containers` policy action, synthetic source layout, immutable normalized values, configured
+and unconfigured model behavior, native-provider-setting isolation, read-only bytes, run precedence,
+saved payload round trips, and registry validation of every accepted effective-policy boundary.
+Failure cases cover unknown fields/actions/profiles, sensitive autonomous actions, invalid grants,
+capability ordering, provider parameter crossing, mismatched configured models, namespace ambiguity,
+compatibility/upgrade status, unsafe/overlapping paths, stale installation identity, broader run
+overrides, sandbox weakening, zero configured invocation limits across constructors/hydration,
+malformed saved payloads, and resume combined with new overrides.
 
 ## Assumptions, deviations, risks, and reviewer guidance
 
 - The runtime compatibility key is the installation's `schema_compatibility`; framework versions
   must be semantic version strings but are not forced to one exact patch release.
 - The action vocabulary is intentionally closed to the documented v1 policy actions. A new policy
-  action needs an owned compatibility change rather than silent acceptance.
+  action needs an owned compatibility change rather than silent acceptance. `local_containers` is
+  included because it is already part of the unchanged supported source policy.
 - An unconfigured policy model's provider/model fields are retained as normalized hints, but only
   `configured_model` is authoritative for automatic dispatch. Manual native invocation evidence is
   separate evidence and cannot change this result.
 - RunSettings is an exact non-record payload, not a new schema-backed artifact. Persistence owners
   must hash/store/hydrate it through existing references and preserve the effective policy snapshot.
+- Configured `max_agent_invocations` uses the policy schema minimum of 1. Exhaustion and remaining
+  invocation counts are runtime facts rather than configuration sentinels; `max_rewrites=0` remains
+  valid under both policy and workflow-run schemas.
 - There are no scope deviations, source-contract changes, new dependencies, skipped required checks,
   credentials, remote calls, policy changes, or concrete prerequisite blockers. The missing direct
   run fields are handled through existing policy/payload references as directed by the coordinator.
 - Reviewers should independently mutate copied provider-native settings, project records, run
-  payloads, and caller mappings; confirm no automatic binding or file mutation occurs; verify link,
-  traversal, namespace, compatibility, action, profile, capability, and override failures; and bind
-  both reviews to the exact committed candidate.
+  payloads, and caller mappings; load the real source installation; validate minimum-value effective
+  policies through the accepted registry; confirm no automatic binding or file mutation occurs;
+  verify link, traversal, namespace, compatibility, action, profile, capability, and override
+  failures; and bind both fresh reviews to the exact repaired candidate.
 
 Implementation provenance: the coordinator dispatched this attempt with the standing OpenAI
 `gpt-5.6-sol` / `xhigh` selection. This records coordinator-observed native tool configuration only.
