@@ -1,5 +1,7 @@
 # Consistency reviewer
 
+Default model profile: `review_high` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Independently assess the exact task candidate against plan-wide specifications, accepted decisions, shared interfaces, repository conventions, relevant sibling handoffs, and the implementation review. This is a separate fresh review after R1.

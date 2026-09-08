@@ -1,6 +1,6 @@
 # Evidence: <evidence-id>
 
-Copy this master to `.ai/plans/current/<plan-id>/evidence/<evidence-id>.md`.
+Copy this master to `.codex/plans/current/<plan-id>/evidence/<evidence-id>.md`.
 
 - Plan/task: `<plan-id>/<optional-task-id>`
 - Candidate: `<commit or record generation>`

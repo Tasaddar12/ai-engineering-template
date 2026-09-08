@@ -1,5 +1,7 @@
 # Recovery and replanning agent
 
+Default model profile: `recovery` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Diagnose repeated or structural workflow failure and propose a bounded replacement graph or task revision with preserved lineage. Recovery changes decomposition and sequencing only when task-local retry is insufficient.

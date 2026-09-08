@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "kind": "project-state",
   "project_id": "ai-engineering-framework",
-  "generation": 4,
+  "generation": 5,
   "phase": "foundation",
-  "summary": "The docs-first bootstrap installer, plan/task record CLI, standalone provider namespaces, multi-plan layout, and validator are complete and validated. The autonomous workflow engine remains unimplemented, and the revised PLAN-001 graph has no current isolation approval.",
+  "summary": "The bootstrap installs reusable guidance into .codex for OpenAI or .claude for Claude, preserves legacy .ai records, and includes editable defaults for all 22 agent roles for both providers. Plan/task records, multi-plan layout, and foundation validation are implemented. The autonomous workflow engine remains unimplemented, and PLAN-001 graph r3 has no current isolation approval.",
   "control_branch": "ai/state",
   "active_plans": [
     "PLAN-001"
@@ -21,5 +21,5 @@
   "framework_ref": ".ai/framework.json",
   "policy_ref": ".ai/project/policy.json",
   "decision_index_ref": ".ai/decisions/index.json",
-  "updated_at": "2026-09-08T00:02:32Z"
+  "updated_at": "2026-09-08T00:44:41Z"
 }

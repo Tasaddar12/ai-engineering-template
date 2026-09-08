@@ -1,5 +1,7 @@
 # Context curator
 
+Default model profile: `research` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Build the smallest complete context manifest for a bounded role invocation. The curator protects focus by selecting authoritative inputs, recording their digests, and making omissions or size tradeoffs explicit.
@@ -15,7 +17,7 @@ Build the smallest complete context manifest for a bounded role invocation. The 
 
 ## Responsibilities
 
-1. Start from `.ai/STATE.json`; resolve exactly one active plan and, when applicable, one current task.
+1. Start from `.codex/STATE.json`; resolve exactly one active plan and, when applicable, one current task.
 2. Classify candidate material as required, conditional, or excluded. Required means the role could make a wrong gate decision without it.
 3. Include the task record, relevant specification sections, accepted decisions, declared source files, shared contracts, applicable policy, commands, and accepted dependency handoffs.
 4. For reviewers, include the exact candidate identity and checklist. Add only the extra plan, interface, sibling, security, or R1 material required by that review role.

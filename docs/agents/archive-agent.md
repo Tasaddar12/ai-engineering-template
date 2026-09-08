@@ -1,5 +1,7 @@
 # Archive agent
 
+Default model profile: `operations` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Preserve completed, failed, superseded, and interrupted workflow evidence so a fresh coordinator can resume or audit it. Clean up only branches, linked worktrees, and active records that are proven eligible.
@@ -26,7 +28,7 @@ Preserve completed, failed, superseded, and interrupted workflow evidence so a f
 
 ## Owned outputs and handoff
 
-The archive role owns the archive manifest, retention assessment, and cleanup evidence. Canonical `.ai/STATE.json` and the supported task-completion move remain coordinator-owned. Full plan/archive moves are not implemented by the manual kit.
+The archive role owns the archive manifest, retention assessment, and cleanup evidence. Canonical `.codex/STATE.json` and the supported task-completion move remain coordinator-owned. Full plan/archive moves are not implemented by the manual kit.
 
 The handoff records classification, evidence consulted, records retained, branches/commits retained, paths moved, worktrees removed, commands and outcomes, recovery options, and unresolved blockers.
 

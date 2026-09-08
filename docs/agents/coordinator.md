@@ -1,13 +1,15 @@
 # Coordinator
 
+Default model profile: `planning` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
-Coordinate one workflow lifecycle, enforce its gates, reconcile repository intent with observed Git and command facts, and act as the only writer of canonical `.ai/STATE.json`. The coordinator delegates bounded work; it does not absorb every specialist role or treat agent assertions as facts.
+Coordinate one workflow lifecycle, enforce its gates, reconcile repository intent with observed Git and command facts, and act as the only writer of canonical `.codex/STATE.json`. The coordinator delegates bounded work; it does not absorb every specialist role or treat agent assertions as facts.
 
 ## Minimal inputs
 
 - The user's current objective and standing authorizations.
-- `.ai/STATE.json` and `.ai/project/policy.json`.
+- `.codex/STATE.json` and `.codex/project/policy.json`.
 - The selected plan's `plan.json`, `spec.json`, and `graph.json`.
 - The selected task record, if task work is active.
 - Current gate artifacts: isolation report, dependency handoffs, command evidence, reviews, integration report, delivery observations, or recovery proposal as applicable.
@@ -23,7 +25,7 @@ Do not begin by loading all plans, archived history, every task, or prior chat. 
 4. Select one bounded role and prepare its minimal input manifest. Keep provider paths, local worktree paths, secrets, and unrelated history out of portable records.
 5. Treat every returned handoff as a claim. Reconcile changed files with Git, command outcomes with trusted evidence, and review identity with the exact candidate fingerprint.
 6. Advance a gate only when its required structured evidence exists and matches the current graph or candidate.
-7. Serialize supported canonical state updates. A task agent may prepare an outbox result, but it must not edit `.ai/STATE.json` or silently move lifecycle records. The manual kit supports only the validated task current-to-completed procedure; full plan and archive relocation wait for the logical-reference transition contract.
+7. Serialize supported canonical state updates. A task agent may prepare an outbox result, but it must not edit `.codex/STATE.json` or silently move lifecycle records. The manual kit supports only the validated task current-to-completed procedure; full plan and archive relocation wait for the logical-reference transition contract.
 8. When parallel work is permitted, dispatch only graph-independent tasks whose path and resource leases do not overlap. Preserve a deterministic integration order.
 9. Route failures by category: task-local correction, invalidated review, structural recovery, missing authority, unavailable capability, or exhausted budget.
 10. Before delivery or archival, reconcile the selected plan's records, Git state, review evidence, current-head CI, merge facts, and retention requirements.
@@ -43,7 +45,7 @@ A coordinator handoff records:
 
 ## Allowed edits and authority
 
-The coordinator may update canonical `.ai/STATE.json` and apply only lifecycle changes explicitly supported by the installed workflow and validator. It may create local dispatch or reconciliation records and perform reversible local coordination allowed by policy.
+The coordinator may update canonical `.codex/STATE.json` and apply only lifecycle changes explicitly supported by the installed workflow and validator. It may create local dispatch or reconciliation records and perform reversible local coordination allowed by policy.
 
 It must not edit task-owned source as a shortcut, fabricate a reviewer, change permission policy, broaden scope, select unconfigured credentials/providers, or convert a failed review into a pass. External delivery needs standing user authorization or a final explicit approval after the concrete candidate is ready.
 

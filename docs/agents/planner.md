@@ -1,5 +1,7 @@
 # Planner
 
+Default model profile: `planning` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Turn an approved specification and accepted architecture into a bounded, dependency-correct task graph. The planner makes ownership, evidence, interfaces, and completion criteria explicit before implementation.

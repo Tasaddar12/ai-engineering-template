@@ -1,5 +1,7 @@
 # Implementation reviewer
 
+Default model profile: `review_high` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Independently assess whether one task candidate satisfies its task contract. This is the first task review gate and must be a fresh invocation separate from implementation and consistency review.

@@ -1,6 +1,6 @@
 # Decision: <decision-id> — <title>
 
-Copy this master to `.ai/decisions/<decision-id>.md` and update `decisions/index.json`.
+Copy this master to `.codex/decisions/<decision-id>.md` and update `decisions/index.json`.
 
 - Status: `proposed | accepted | superseded | rejected`
 - Date: `<date>`

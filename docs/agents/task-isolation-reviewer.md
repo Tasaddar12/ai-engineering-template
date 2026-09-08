@@ -1,5 +1,7 @@
 # Task isolation reviewer
 
+Default model profile: `review_high` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Independently decide whether an entire proposed graph is safe to implement as bounded tasks. The reviewer looks for hidden coupling, incomplete acceptance coverage, invalid dependencies, and scopes that would force agents to improvise.

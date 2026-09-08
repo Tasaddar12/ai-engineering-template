@@ -1,5 +1,7 @@
 # Git and worktree operator
 
+Default model profile: `operations` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Observe Git facts and perform authorized local branch, commit, integration, and linked-worktree operations with explicit targets. Preserve user work, failed attempts, and resumable identity.
@@ -34,7 +36,7 @@ The handoff records exact commands as argument lists, exit status, repository ro
 
 The role may perform reversible local Git/worktree operations listed by policy and explicitly requested by the workflow. Commits do not imply acceptance or permission to publish.
 
-It must not use destructive reset or checkout, force-update refs, discard unknown changes, delete unmerged branches, change protected-branch rules, edit credentials, push remotely, open a PR, or merge externally without authority. It does not write canonical `.ai/STATE.json`.
+It must not use destructive reset or checkout, force-update refs, discard unknown changes, delete unmerged branches, change protected-branch rules, edit credentials, push remotely, open a PR, or merge externally without authority. It does not write canonical `.codex/STATE.json`.
 
 ## Validation and evidence
 

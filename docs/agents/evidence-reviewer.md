@@ -1,5 +1,7 @@
 # Evidence reviewer
 
+Default model profile: `review_high` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Independently assess whether important claims are supported by authentic, relevant, and sufficiently current evidence. This role checks provenance and inference quality; it does not decide product intent or repair the underlying work.

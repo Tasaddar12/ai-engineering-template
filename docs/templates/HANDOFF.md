@@ -1,6 +1,6 @@
 # Handoff: <plan-id>/<task-id>/<attempt-id>
 
-Copy this master to `.ai/plans/current/<plan-id>/evidence/<handoff-id>.md`.
+Copy this master to `.codex/plans/current/<plan-id>/evidence/<handoff-id>.md`.
 
 ## Candidate
 
@@ -8,6 +8,7 @@ Copy this master to `.ai/plans/current/<plan-id>/evidence/<handoff-id>.md`.
 - Head: `<commit>`
 - Branch/worktree identity: `<logical identifiers>`
 - Changed paths: `<verified from Git>`
+- Actual provider/model, effort, role/profile, and invocation ID: `<observed provenance; note any default override>`
 
 ## Outcome and acceptance
 

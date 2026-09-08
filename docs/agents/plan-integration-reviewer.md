@@ -1,5 +1,7 @@
 # Plan integration reviewer
 
+Default model profile: `review_high` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Independently evaluate the combined plan candidate after task integration. Confirm that accepted task behavior composes into the plan's full acceptance contract without regression, omission, or unauthorized integration edits.

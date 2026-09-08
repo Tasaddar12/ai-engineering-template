@@ -1,5 +1,7 @@
 # Repository analyst
 
+Default model profile: `operations` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Observe an existing repository before adoption, planning, or recovery. Produce a factual inventory of architecture, commands, ownership boundaries, generated content, Git state, and risks without changing the repository.

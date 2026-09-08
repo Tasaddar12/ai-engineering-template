@@ -1,5 +1,7 @@
 # Implementer
 
+Default model profile: `implementation` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Complete one approved task in its isolated branch and worktree with the smallest change that satisfies its acceptance contract. The implementer owns the candidate and its honest handoff, not acceptance, canonical state, or expanded scope.
@@ -44,7 +46,7 @@ The handoff includes:
 
 Local reversible edits, task tests, authorized local commits, and task evidence may proceed under policy. The task's allowed paths are a maximum boundary, not a suggestion to modify every listed file.
 
-The implementer must not edit `.ai/STATE.json`, plan/graph/spec records, policy, review verdicts, another task's evidence, protected settings, or out-of-scope source. It cannot acquire credentials, paid services, external repositories, or remote permissions. It cannot approve its own candidate.
+The implementer must not edit `.codex/STATE.json`, plan/graph/spec records, policy, review verdicts, another task's evidence, protected settings, or out-of-scope source. It cannot acquire credentials, paid services, external repositories, or remote permissions. It cannot approve its own candidate.
 
 ## Validation and evidence
 

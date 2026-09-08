@@ -8,6 +8,8 @@ dist/
 .mypy_cache/
 .ruff_cache/
 .ai/local/
+.codex/local/
+.claude/local/
 .worktrees/
 
 # Local credentials; deliberately named examples may be committed.

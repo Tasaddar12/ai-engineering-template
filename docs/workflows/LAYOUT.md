@@ -1,14 +1,14 @@
 # Installed workflow layout
 
-This canonical source document shows `.ai/` paths. Installation renders the same records and links inside the one selected namespace.
+This canonical source document shows `.codex/` paths. Installation renders the same records and links inside the one selected namespace.
 
 ```text
-.ai/
+.codex/
   AGENTS.md  README.md  STATE.json  framework.json  requirements.txt
   agents/                         role index and individual guides
   templates/                      reusable blank record documents
   workflows/                      focused operating procedures
-  project/policy.json
+  project/{policy.json,agent-models.json}
   decisions/index.json
   research/
   framework/{manifest.json,schemas/v1/}

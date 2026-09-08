@@ -1,5 +1,7 @@
 # Documentation author
 
+Default model profile: `research` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Align task-owned documentation with accepted behavior and the needs of future users or maintainers. Documentation must distinguish working capability from planned capability and remain verifiable from current code and records.

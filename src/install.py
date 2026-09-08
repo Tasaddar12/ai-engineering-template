@@ -28,12 +28,29 @@ RESERVED_WINDOWS_NAMES = {
     *(f"LPT{number}" for number in range(1, 10)),
 }
 PROVIDERS = {
-    "chatgpt": (".ai", "AGENTS.md"),
+    "codex": (".codex", "AGENTS.md"),
+    "chatgpt": (".codex", "AGENTS.md"),
     "claude": (".claude", "CLAUDE.md"),
 }
+RECORD_NAMESPACES = (".codex", ".claude", ".ai")
 TEXT_SUFFIXES = {".json", ".md", ".py", ".txt"}
 PRODUCT_TREES = ("agents", "templates", "workflows")
 PROVIDER_TOKEN = "{{PROVIDER_NOTE}}"
+TOOLKIT_MARKERS = (
+    "STATE.json",
+    "framework.json",
+    "framework",
+    "plans",
+    "templates",
+    "workflows",
+    "tools",
+    "project/policy.json",
+    "project/agent-models.json",
+    "decisions/index.json",
+    "research",
+    "requirements.txt",
+    ".gitattributes",
+)
 
 
 class InstallError(RuntimeError):
@@ -108,12 +125,14 @@ def _normalize_text(content: bytes) -> bytes:
 
 def _render_document(content: bytes, namespace: str, entry_name: str) -> bytes:
     text = _normalize_text(content).decode("utf-8")
-    if namespace == ".ai":
+    if namespace == ".codex":
         provider_note = (
-            "For Codex or ChatGPT, explicitly ask the session to read `.ai/AGENTS.md`. "
-            "Codex does not discover this hidden file from a project-root launch, and ordinary "
-            "ChatGPT chats do not automatically read local folders. See the official Codex "
-            "instruction guide: https://learn.chatgpt.com/docs/agent-configuration/agents-md"
+            "For Codex or ChatGPT, explicitly ask the session to read `.codex/AGENTS.md` at "
+            "startup. Codex discovers AGENTS.md files from the project root down to the current "
+            "working directory, so a hidden child entry is not loaded from a project-root "
+            "launch; ordinary ChatGPT chats also do not automatically read local folders. See "
+            "the official Codex instruction guide: "
+            "https://learn.chatgpt.com/docs/agent-configuration/agents-md"
         )
     else:
         provider_note = (
@@ -124,7 +143,7 @@ def _render_document(content: bytes, namespace: str, entry_name: str) -> bytes:
         )
     text = text.replace(PROVIDER_TOKEN, provider_note)
     if namespace == ".claude":
-        text = text.replace(".ai", ".claude").replace("AGENTS.md", entry_name)
+        text = text.replace(".codex", ".claude").replace("AGENTS.md", entry_name)
     return text.encode("utf-8")
 
 
@@ -153,7 +172,7 @@ def _planned_payload(
     source: Path, target: Path, assistant: str
 ) -> tuple[dict[str, bytes], dict[str, bytes], str, str]:
     if assistant not in PROVIDERS:
-        choices = ", ".join(sorted(PROVIDERS))
+        choices = ", ".join(PROVIDERS)
         raise InstallError(f"assistant must be one of: {choices}; one namespace per project")
     namespace, entry_name = PROVIDERS[assistant]
     docs_root = source / "docs"
@@ -223,12 +242,32 @@ def _planned_payload(
         f"{namespace}/README.md": defaults / "README.md",
         f"{namespace}/{entry_name}": defaults / "INSTRUCTIONS.md",
         f"{namespace}/project/policy.json": defaults / "POLICY.json",
+        f"{namespace}/project/agent-models.json": defaults / "AGENT_MODELS.json",
         f"{namespace}/decisions/index.json": defaults / "DECISIONS.json",
     }
     seed = {
         destination: _read_product_document(path, namespace, entry_name)
         for destination, path in seed_sources.items()
     }
+    models_path = f"{namespace}/project/agent-models.json"
+    policy_path = f"{namespace}/project/policy.json"
+    agent_models = json.loads(seed[models_path])
+    active_provider = "anthropic" if namespace == ".claude" else "openai"
+    provider_label = "Anthropic" if active_provider == "anthropic" else "OpenAI"
+    agent_models["active_provider"] = active_provider
+    seed[models_path] = _json_bytes(agent_models)
+
+    policy = json.loads(seed[policy_path])
+    provider_profiles = agent_models["providers"][active_provider]["profiles"]
+    policy_profile_map = agent_models["policy_profile_map"]
+    for policy_profile in policy["model_profiles"]:
+        default_name = policy_profile_map[policy_profile["name"]]
+        default_profile = provider_profiles[default_name]
+        policy_profile["provider"] = provider_label
+        policy_profile["model_id"] = default_profile["model_id"]
+        policy_profile["capability_rank"] = default_profile["capability_rank"]
+        policy_profile["configured"] = False
+    seed[policy_path] = _json_bytes(policy)
     seed[f"{namespace}/STATE.json"] = _json_bytes(default_state)
     for directory in (
         "plans/current",
@@ -257,26 +296,54 @@ def _gitignore_update(path: Path, namespace: str) -> bytes | None:
     return (text + separator + addition).encode("utf-8")
 
 
-def _validate_existing_namespace(target: Path, namespace: str) -> None:
-    selected = target / namespace
-    other = target / (".claude" if namespace == ".ai" else ".ai")
-    if _is_link(selected) or _is_link(other):
-        raise InstallError("workflow namespace cannot be a link or junction")
-    if other.exists():
-        raise InstallError(f"{other} already exists; install exactly one workflow namespace")
-    if not selected.exists():
-        return
-    if not selected.is_dir():
-        raise InstallError(f"workflow namespace is not a directory: {selected}")
-    framework = selected / "framework.json"
-    if not framework.is_file() or _is_link(framework):
-        raise InstallError(f"{selected} already exists and is not a managed workflow installation")
+def _path_present(path: Path) -> bool:
+    return path.exists() or _is_link(path)
+
+
+def _namespace_status(path: Path) -> str:
+    """Classify a namespace without treating provider-native settings as toolkit state."""
+    if not _path_present(path):
+        return "absent"
+    if _is_link(path):
+        raise InstallError(f"workflow namespace cannot be a link or junction: {path}")
+    if not path.is_dir():
+        raise InstallError(f"workflow namespace is not a directory: {path}")
+    markers = [marker for marker in TOOLKIT_MARKERS if _path_present(path / marker)]
+    state = path / "STATE.json"
+    framework = path / "framework.json"
+    if not markers:
+        return "native"
+    if not state.is_file() or _is_link(state) or not framework.is_file() or _is_link(framework):
+        return "partial"
     try:
         record = json.loads(framework.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise InstallError(f"cannot verify existing workflow installation: {exc}") from exc
-    if record.get("kind") != "framework-installation" or record.get("installation_status") != "installed":
-        raise InstallError(f"{selected} is not a compatible managed workflow installation")
+    if record.get("kind") == "framework-installation" and record.get("installation_status") == "installed":
+        return "managed"
+    return "partial"
+
+
+def _validate_existing_namespace(target: Path, namespace: str) -> None:
+    statuses = {
+        name: _namespace_status(target / name)
+        for name in RECORD_NAMESPACES
+    }
+    conflicts = [
+        name
+        for name, status in statuses.items()
+        if name != namespace and status in {"managed", "partial"}
+    ]
+    if conflicts:
+        names = ", ".join(conflicts)
+        raise InstallError(
+            f"conflicting managed or partial workflow namespace exists: {names}; "
+            "install exactly one workflow namespace"
+        )
+    if statuses[namespace] == "partial":
+        raise InstallError(
+            f"{target / namespace} contains a partial or incompatible workflow installation"
+        )
 
 
 def _plan_writes(source: Path, target: Path, assistant: str) -> tuple[list[PlannedWrite], list[Path]]:
@@ -391,7 +458,7 @@ def install(raw_destination: str, assistant: str, dry_run: bool = False) -> list
     if _is_link(target):
         raise InstallError(f"destination cannot be a link or junction: {target}")
     if assistant not in PROVIDERS:
-        choices = ", ".join(sorted(PROVIDERS))
+        choices = ", ".join(PROVIDERS)
         raise InstallError(f"assistant must be one of: {choices}; one namespace per project")
     namespace, entry_name = PROVIDERS[assistant]
     _validate_existing_namespace(target, namespace)
@@ -439,8 +506,8 @@ def install(raw_destination: str, assistant: str, dry_run: bool = False) -> list
         if repair_errors:
             raise InstallError(f"{exc}; rollback also reported: {'; '.join(repair_errors)}") from exc
         raise
-    if assistant == "chatgpt":
-        actions.append("kickoff: Read .ai/AGENTS.md before working.")
+    if namespace == ".codex":
+        actions.append("kickoff: Explicitly read .codex/AGENTS.md before working.")
     else:
         actions.append("kickoff: Claude Code uses .claude/CLAUDE.md; select one guide in .claude/agents/.")
     return actions
@@ -451,7 +518,7 @@ def _parser() -> argparse.ArgumentParser:
         description="Install one local AI workflow namespace without authentication or remote services"
     )
     parser.add_argument("destination")
-    parser.add_argument("--assistant", choices=tuple(sorted(PROVIDERS)), required=True)
+    parser.add_argument("--assistant", choices=tuple(PROVIDERS), required=True)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--version", action="version", version=VERSION)
     return parser

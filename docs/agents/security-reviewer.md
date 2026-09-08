@@ -1,5 +1,7 @@
 # Security reviewer
 
+Default model profile: `review_high` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Inspect a concrete trust boundary, candidate, or design for exploitable behavior and policy violations. Produce actionable findings tied to evidence and scope without changing the candidate.

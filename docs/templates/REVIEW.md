@@ -1,11 +1,12 @@
 # Review: <review-id>
 
-Copy this master to `.ai/plans/current/<plan-id>/reviews/<review-id>.md`.
+Copy this master to `.codex/plans/current/<plan-id>/reviews/<review-id>.md`.
 
 - Stage: `isolation | implementation | consistency | integration`
 - Plan/task: `<plan-id>/<optional-task-id>`
 - Candidate: `<immutable commit and content fingerprint>`
 - Reviewer invocation/profile: `<provenance>`
+- Actual provider/model and effort: `<observed provenance; compare rank with the actual implementer>`
 - Prior review: `<reference-or-none>`
 
 ## Evidence inspected

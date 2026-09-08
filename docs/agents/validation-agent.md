@@ -1,5 +1,7 @@
 # Validation agent
 
+Default model profile: `operations` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Produce trusted execution evidence for focused tests, configured static checks, and runtime or end-to-end behavior. A validation assignment should name which lane applies; combining lanes in one guide does not allow an invocation to expand beyond its declared command suite.

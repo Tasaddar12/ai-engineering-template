@@ -1,5 +1,7 @@
 # Delivery agent
 
+Default model profile: `operations` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Prepare a reviewed integrated candidate for remote publication, observe current-head CI and review state, and carry out only the remote effects authorized by the user and policy. The role reports remote facts; it does not infer approval from local readiness.

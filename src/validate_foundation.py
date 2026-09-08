@@ -14,7 +14,8 @@ from typing import Any
 _SCRIPT_PATH = Path(__file__).resolve()
 _INSTALLED_NAMESPACE = (
     _SCRIPT_PATH.parent.parent.name
-    if _SCRIPT_PATH.parent.name == "tools" and _SCRIPT_PATH.parent.parent.name in {".ai", ".claude"}
+    if _SCRIPT_PATH.parent.name == "tools"
+    and _SCRIPT_PATH.parent.parent.name in {".codex", ".claude", ".ai"}
     else None
 )
 
@@ -34,7 +35,7 @@ from ai import structural_task_digest
 
 PLAN_BUCKETS = ("current", "completed", "archived")
 TASK_BUCKETS = ("current", "completed", "archived")
-RECORD_NAMESPACES = (".ai", ".claude")
+RECORD_NAMESPACES = (".codex", ".claude", ".ai")
 SKIP_DIRECTORIES = {
     ".git",
     ".worktrees",
@@ -83,7 +84,10 @@ def _records_root(root: Path) -> Path:
         if (root / name / "STATE.json").is_file()
         and (root / name / "framework.json").is_file()
     ]
-    _require(bool(matches), f"{root}: no installed .ai or .claude workflow records")
+    _require(
+        bool(matches),
+        f"{root}: no installed .codex, .claude, or legacy .ai workflow records",
+    )
     _require(len(matches) == 1, f"{root}: multiple workflow namespaces are not supported")
     return matches[0]
 
@@ -111,7 +115,7 @@ def _schema_root(root: Path, records: Path, source_foundation: bool) -> Path:
         return source
     if installed.is_dir():
         return installed
-    raise ValidationFailure("Cannot locate schemas/v1 or installed .ai/framework/schemas/v1")
+    raise ValidationFailure("Cannot locate schemas/v1 or installed workflow schemas")
 
 
 def _schemas(root: Path, records: Path, source_foundation: bool) -> dict[str, dict[str, Any]]:
@@ -126,6 +130,62 @@ def _schemas(root: Path, records: Path, source_foundation: bool) -> dict[str, di
         except Exception as exc:
             raise ValidationFailure(f"Invalid JSON Schema {name}: {exc}") from exc
     return result
+
+
+def _validate_agent_models(
+    models: dict[str, Any], guide_stems: set[str], namespace: str
+) -> None:
+    providers = models["providers"]
+    roles = models["roles"]
+    _require(
+        set(roles) == guide_stems,
+        f"agent-models role guide mapping mismatch: {set(roles) ^ guide_stems}",
+    )
+    for provider_name, provider in providers.items():
+        profiles = provider["profiles"]
+        model_ranks: dict[str, int] = {}
+        for profile_name, profile in profiles.items():
+            model_id = profile["model_id"]
+            capability_rank = profile["capability_rank"]
+            previous_rank = model_ranks.setdefault(model_id, capability_rank)
+            _require(
+                previous_rank == capability_rank,
+                f"agent-models {provider_name} assigns different ranks to {model_id}",
+            )
+            if provider_name == "openai":
+                _require(
+                    profile["effort"] is None,
+                    f"agent-models openai profile {profile_name} must leave effort null",
+                )
+            if provider_name == "anthropic":
+                _require(
+                    profile["reasoning_effort"] is None,
+                    f"agent-models anthropic profile {profile_name} must leave reasoning_effort null",
+                )
+        for role_name, role in roles.items():
+            _require(
+                role[provider_name] in profiles,
+                f"agent-models role {role_name} references unknown {provider_name} profile",
+            )
+        for policy_name, profile_name in models["policy_profile_map"].items():
+            _require(
+                profile_name in profiles,
+                f"agent-models policy profile {policy_name} references unknown "
+                f"{provider_name} profile",
+            )
+        implementation_name = models["policy_profile_map"]["implementation"]
+        review_name = models["policy_profile_map"]["review_high"]
+        _require(
+            profiles[review_name]["capability_rank"]
+            > profiles[implementation_name]["capability_rank"],
+            f"agent-models {provider_name} review_high must outrank implementation",
+        )
+    expected_provider = {".codex": "openai", ".claude": "anthropic"}.get(namespace)
+    if expected_provider is not None:
+        _require(
+            models["active_provider"] == expected_provider,
+            f"agent-models active_provider must be {expected_provider} in {namespace}",
+        )
 
 
 def _validate_artifact(
@@ -372,7 +432,7 @@ def _validate_links(
     if source_foundation:
         markdown = _walk_files(root, ".md", skip_history=True)
     else:
-        entry_name = "AGENTS.md" if records.name == ".ai" else "CLAUDE.md"
+        entry_name = "CLAUDE.md" if records.name == ".claude" else "AGENTS.md"
         entry_paths = [records / "README.md", records / entry_name]
         markdown = iter(
             sorted(
@@ -449,11 +509,58 @@ def validate(root: Path) -> dict[str, int]:
         decision_ids.add(decision_id)
         _reference(root, decision["document_ref"], owner=decision_id, within=records / "decisions")
     managed_paths: list[Path] = []
+    agent_model_records: list[dict[str, Any]] = []
+    guide_stems: set[str] = set()
     if source_foundation:
         for name in ("STATE.json", "FRAMEWORK.json", "POLICY.json", "DECISIONS.json"):
             _validate_artifact(root / "docs" / "defaults" / name, schemas, counts)
+        models_path = root / "docs" / "defaults" / "AGENT_MODELS.json"
+        _require(models_path.is_file(), "Missing docs/defaults/AGENT_MODELS.json")
+        agent_model_records.append(_validate_artifact(models_path, schemas, counts))
+        source_models_path = records / "project" / "agent-models.json"
+        if source_models_path.exists():
+            _reference(
+                root,
+                source_models_path.relative_to(root).as_posix(),
+                owner="source agent-models configuration",
+            )
+            agent_model_records.append(
+                _validate_artifact(source_models_path, schemas, counts)
+            )
+        guide_stems = {
+            path.stem
+            for path in (root / "docs" / "agents").glob("*.md")
+            if path.name != "README.md"
+        }
     else:
         _, managed_paths = _installed_manifest(root, framework_preview, schemas, counts)
+        models_path = records / "project" / "agent-models.json"
+        requires_agent_models = records.name == ".codex" or any(
+            path.name == "agent-models.schema.json"
+            and path.parent.name == "v1"
+            and path.parent.parent.name == "schemas"
+            for path in managed_paths
+        )
+        _require(
+            not requires_agent_models or models_path.is_file(),
+            f"Missing required agent-models configuration {models_path.relative_to(root)}",
+        )
+        if models_path.exists():
+            _reference(
+                root,
+                models_path.relative_to(root).as_posix(),
+                owner="agent-models configuration",
+            )
+            agent_model_records.append(_validate_artifact(models_path, schemas, counts))
+            guide_stems = {
+                path.stem
+                for path in managed_paths
+                if path.parent == records / "agents"
+                and path.suffix.lower() == ".md"
+                and path.name != "README.md"
+            }
+    for agent_models in agent_model_records:
+        _validate_agent_models(agent_models, guide_stems, records.name)
     for path in sorted((records / "research").glob("*.json")):
         _validate_artifact(path, schemas, counts)
 

@@ -4,23 +4,23 @@
   "framework_version": "0.2.0.dev0",
   "schema_compatibility": "1.0",
   "installation_status": "installed",
-  "manifest_ref": ".ai/framework/manifest.json",
+  "manifest_ref": ".codex/framework/manifest.json",
   "owned_roots": [
-    ".ai/framework/",
-    ".ai/tools/",
-    ".ai/agents/",
-    ".ai/templates/",
-    ".ai/workflows/",
-    ".ai/requirements.txt",
-    ".ai/.gitattributes"
+    ".codex/framework/",
+    ".codex/tools/",
+    ".codex/agents/",
+    ".codex/templates/",
+    ".codex/workflows/",
+    ".codex/requirements.txt",
+    ".codex/.gitattributes"
   ],
   "project_owned_roots": [
-    ".ai/README.md",
-    ".ai/AGENTS.md",
-    ".ai/STATE.json",
-    ".ai/project/",
-    ".ai/plans/",
-    ".ai/decisions/",
-    ".ai/research/"
+    ".codex/README.md",
+    ".codex/AGENTS.md",
+    ".codex/STATE.json",
+    ".codex/project/",
+    ".codex/plans/",
+    ".codex/decisions/",
+    ".codex/research/"
   ]
 }

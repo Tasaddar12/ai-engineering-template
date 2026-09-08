@@ -6,14 +6,15 @@ The working `src/install.py`, `src/ai.py`, and `src/validate_foundation.py` file
 
 ## Completed foundation to preserve
 
-The repository correction is integrated. Its 13 passing tests, independent Astra code/documentation reviews, and cleanup are recorded in [review evidence](evidence/repository-realignment-reviews.md). The following existing behavior is the starting point for this plan:
+The original repository correction is integrated. Its 13 passing tests, independent Astra code/documentation reviews, and cleanup are recorded in [review evidence](evidence/repository-realignment-reviews.md). The subsequent provider namespace and agent model correction is tracked in [current correction evidence](evidence/provider-namespace-model-defaults.md). The following bootstrap behavior is the starting point for this plan:
 
 | Area | Required existing behavior |
 | --- | --- |
 | Reusable product files | Real source files live in `docs/agents/`, `docs/templates/`, `docs/workflows/`, and `docs/defaults/`, including `planner.md` and `PLAN.md`. |
-| Fresh installation | An empty target needs no existing AI folder. The installer creates a self-contained `.ai/` for ChatGPT/Codex or `.claude/` for Claude, with role guides, templates, workflows, tools, schemas, and empty records. Preserve existing project files, dry-run behavior, repeat installation, and failure recovery. |
-| Repository boundaries | Scripts stay directly under `src/`. This toolkit's own plans, tasks, decisions, reviews, and development history stay under `.ai/` or `.claude/`; they are never copied into a fresh installation. |
+| Fresh installation | An empty target needs no existing AI folder. The installer creates a self-contained `.codex/` for OpenAI or `.claude/` for Claude, with role guides, templates, workflows, tools, schemas, and empty records. Preserve existing project files, native provider settings, dry-run behavior, repeat installation, and failure recovery. Existing `.ai/` records remain readable but are not automatically migrated or duplicated. |
+| Repository boundaries | Scripts stay directly under `src/`. This toolkit's own plans, tasks, decisions, reviews, and development history remain under its existing `.ai/`; provider installations use `.codex/` or `.claude/`. Development records are never copied into a fresh installation. |
 | Multiple plans and context | Each plan owns its tasks, commands, reviews, evidence, and history. Current, completed, and archived folders are separate. Load the selected role, plan/task, and explicit references; keep unrelated and archived material out of default context. |
+| Agent models | Every role has editable OpenAI and Anthropic defaults, with higher tiers for planning/reviews and lower-cost research/development. Install `project/agent-models.json`, prefill unverified policy profiles, preserve overrides, and record actual model/effort at each gate. Defaults do not implement automatic dispatch or prove model access. |
 | Worktree cleanup | Active worktrees belong under the repository's `.worktrees/`. Remove clean merged worktrees through Git and remove the container when empty; preserve unaccepted work through branches or commits. |
 
 TASK-031 extends the existing installer with coordinated initialization/adoption, TASK-034 extends the working record CLI, and TASK-037 packages the complete runtime and document payload. Their remaining work does not require rebuilding the delivered bootstrap. TASK-004, TASK-009, TASK-030, and TASK-036 cover the logical references, transitions, provenance, and verification still needed for whole-plan completion and archival. The current kit supports only the documented bounded manual task-completion move.

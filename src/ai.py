@@ -23,7 +23,7 @@ PLAN_ID = re.compile(r"^PLAN-[0-9]{3,}$")
 TASK_ID = re.compile(r"^TASK-[0-9]{3,}$")
 PLAN_BUCKETS = ("current", "completed", "archived")
 TASK_BUCKETS = ("current", "completed", "archived")
-RECORD_NAMESPACES = (".ai", ".claude")
+RECORD_NAMESPACES = (".codex", ".claude", ".ai")
 STRUCTURAL_TASK_FIELDS = (
     "id",
     "plan_id",
@@ -106,7 +106,7 @@ def _records_root(root: Path) -> Path:
         and (root / name / "framework.json").is_file()
     ]
     if not matches:
-        raise CliError(f"{root} has no installed .ai or .claude workflow records")
+        raise CliError(f"{root} has no installed .codex, .claude, or legacy .ai workflow records")
     if len(matches) > 1:
         raise CliError(f"{root} has multiple workflow namespaces; select a project with exactly one")
     records = matches[0]
@@ -200,7 +200,7 @@ def _task_record(
             "prohibited_paths": [
                 f"{namespace}/STATE.json",
                 f"{namespace}/framework.json",
-                f"{namespace}/AGENTS.md" if namespace == ".ai" else f"{namespace}/CLAUDE.md",
+                f"{namespace}/CLAUDE.md" if namespace == ".claude" else f"{namespace}/AGENTS.md",
                 f"{namespace}/project/",
                 f"{namespace}/decisions/",
                 f"{namespace}/research/",

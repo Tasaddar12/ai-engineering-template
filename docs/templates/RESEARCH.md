@@ -1,6 +1,6 @@
 # Research: <research-id> — <question>
 
-Copy this master to `.ai/research/<research-id>.md`.
+Copy this master to `.codex/research/<research-id>.md`.
 
 ## Scope and freshness
 

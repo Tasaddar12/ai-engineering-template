@@ -19,11 +19,11 @@ import validate_foundation
 class ValidatorSafetyTests(unittest.TestCase):
     def create_project(self, parent: Path, name: str = "project") -> Path:
         project = parent / name
-        install.install(str(project), "chatgpt")
+        install.install(str(project), "codex")
         result = subprocess.run(
             [
                 sys.executable,
-                str(project / ".ai" / "tools" / "ai.py"),
+                str(project / ".codex" / "tools" / "ai.py"),
                 "--project",
                 str(project),
                 "plan",
@@ -42,7 +42,7 @@ class ValidatorSafetyTests(unittest.TestCase):
     def test_task_filename_must_match_local_id(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = self.create_project(Path(temporary))
-            task = project / ".ai/plans/current/PLAN-101/tasks/current/TASK-001.json"
+            task = project / ".codex/plans/current/PLAN-101/tasks/current/TASK-001.json"
             task.rename(task.with_name("TASK-999.json"))
             with self.assertRaisesRegex(validate_foundation.ValidationFailure, "filename/ID mismatch"):
                 validate_foundation.validate(project)
@@ -50,8 +50,8 @@ class ValidatorSafetyTests(unittest.TestCase):
     def test_structural_digest_ignores_lifecycle_and_detects_scope_change(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = self.create_project(Path(temporary))
-            task_path = project / ".ai/plans/current/PLAN-101/tasks/current/TASK-001.json"
-            graph_path = project / ".ai/plans/current/PLAN-101/graph.json"
+            task_path = project / ".codex/plans/current/PLAN-101/tasks/current/TASK-001.json"
+            graph_path = project / ".codex/plans/current/PLAN-101/graph.json"
             original_digest = json.loads(graph_path.read_text(encoding="utf-8"))["task_set_sha256"]
             task = json.loads(task_path.read_text(encoding="utf-8"))
             task["status"] = "running"
@@ -80,17 +80,61 @@ class ValidatorSafetyTests(unittest.TestCase):
     def test_installed_missing_dependency_message_is_actionable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary) / "project"
-            install.install(str(project), "chatgpt")
+            install.install(str(project), "codex")
             result = subprocess.run(
-                [sys.executable, "-S", str(project / ".ai/tools/validate_foundation.py")],
+                [sys.executable, "-S", str(project / ".codex/tools/validate_foundation.py")],
                 cwd=project,
                 check=False,
                 capture_output=True,
                 text=True,
             )
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn(".ai/requirements.txt", result.stderr)
-            self.assertTrue((project / ".ai/requirements.txt").is_file())
+            self.assertIn(".codex/requirements.txt", result.stderr)
+            self.assertTrue((project / ".codex/requirements.txt").is_file())
+
+    def test_current_provider_installs_require_agent_model_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            for assistant, namespace in (("codex", ".codex"), ("claude", ".claude")):
+                with self.subTest(assistant=assistant):
+                    project = Path(temporary) / assistant
+                    install.install(str(project), assistant)
+                    (project / namespace / "project" / "agent-models.json").unlink()
+                    with self.assertRaisesRegex(
+                        validate_foundation.ValidationFailure,
+                        "Missing required agent-models configuration",
+                    ):
+                        validate_foundation.validate(project)
+
+    def test_policy_profile_map_cannot_lower_the_review_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "project"
+            install.install(str(project), "codex")
+            models_path = project / ".codex" / "project" / "agent-models.json"
+            models = json.loads(models_path.read_text(encoding="utf-8"))
+            models["policy_profile_map"]["review_high"] = "implementation"
+            models_path.write_text(json.dumps(models, indent=2) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                validate_foundation.ValidationFailure,
+                "review_high must outrank implementation",
+            ):
+                validate_foundation.validate(project)
+
+    def test_custom_profile_names_are_valid_when_all_references_resolve(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "project"
+            install.install(str(project), "codex")
+            models_path = project / ".codex" / "project" / "agent-models.json"
+            models = json.loads(models_path.read_text(encoding="utf-8"))
+            for provider_name, provider in models["providers"].items():
+                provider["profiles"]["routine_build"] = provider["profiles"].pop(
+                    "implementation"
+                )
+                for role in models["roles"].values():
+                    if role[provider_name] == "implementation":
+                        role[provider_name] = "routine_build"
+            models["policy_profile_map"]["implementation"] = "routine_build"
+            models_path.write_text(json.dumps(models, indent=2) + "\n", encoding="utf-8")
+            self.assertEqual(validate_foundation.validate(project)["plans"], 0)
 
 
 class DestinationValidationTests(unittest.TestCase):
@@ -129,7 +173,7 @@ class MutationSafetyTests(unittest.TestCase):
         for failing_name in ("TASK-002.json", "test.TASK-002.json"):
             with self.subTest(failing_name=failing_name), tempfile.TemporaryDirectory() as temporary:
                 project = Path(temporary) / "project"
-                install.install(str(project), "chatgpt")
+                install.install(str(project), "codex")
                 self.assertEqual(
                     ai.main(["--project", str(project), "plan", "create", "PLAN-501", "--title", "Plan"]),
                     0,
@@ -179,32 +223,32 @@ class MutationSafetyTests(unittest.TestCase):
             host_file.write_text("preserve me\n", encoding="utf-8")
             with patch.object(install, "_atomic_write", side_effect=OSError("simulated write failure")):
                 with self.assertRaises(OSError):
-                    install.install(str(project), "chatgpt")
+                    install.install(str(project), "codex")
             self.assertEqual(host_file.read_text(encoding="utf-8"), "preserve me\n")
-            self.assertFalse((project / ".ai").exists())
-            install.install(str(project), "chatgpt")
+            self.assertFalse((project / ".codex").exists())
+            install.install(str(project), "codex")
             self.assertEqual(validate_foundation.validate(project)["plans"], 0)
 
     def test_state_and_decision_references_must_resolve(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary) / "project"
-            install.install(str(project), "chatgpt")
-            state_path = project / ".ai" / "STATE.json"
+            install.install(str(project), "codex")
+            state_path = project / ".codex" / "STATE.json"
             state = json.loads(state_path.read_text(encoding="utf-8"))
-            state["policy_ref"] = ".ai/project/missing-policy.json"
+            state["policy_ref"] = ".codex/project/missing-policy.json"
             state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(validate_foundation.ValidationFailure, "policy_ref"):
                 validate_foundation.validate(project)
 
-            state["policy_ref"] = ".ai/project/policy.json"
+            state["policy_ref"] = ".codex/project/policy.json"
             state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
-            decisions_path = project / ".ai" / "decisions" / "index.json"
+            decisions_path = project / ".codex" / "decisions" / "index.json"
             decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
             decisions["decisions"] = [
                 {
                     "id": "ADR-001",
                     "status": "accepted",
-                    "document_ref": ".ai/decisions/missing.md",
+                    "document_ref": ".codex/decisions/missing.md",
                     "supersedes": [],
                     "superseded_by": None,
                 }

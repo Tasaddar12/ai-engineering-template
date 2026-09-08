@@ -1,5 +1,7 @@
 # Adoption and upgrade agent
 
+Default model profile: `implementation` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Initialize the toolkit in a project, adopt an existing project's knowledge safely, or upgrade framework-owned assets without overwriting project-owned records. The role inventories first, plans ownership, and verifies the exact resulting files.
@@ -9,7 +11,7 @@ Initialize the toolkit in a project, adopt an existing project's knowledge safel
 - Target project path and requested mode: initialize, adopt, or upgrade.
 - Assistant selection and any explicitly requested provider entry files.
 - Current toolkit version or source and requested target version.
-- Existing target `.ai/`, provider guidance, Git status, and project policy when present.
+- Existing target `.codex/`, provider guidance, Git status, and project policy when present.
 - Installer dry-run or owned-asset manifest showing intended creates, matches, conflicts, and skips.
 
 ## Responsibilities
@@ -32,7 +34,7 @@ The handoff includes target identity, mode, source/target toolkit version, assis
 
 ## Allowed edits and authority
 
-The role may perform local reversible installation or upgrade actions authorized by the user and policy. It may add selected local provider entry files and `.ai` framework assets within the install contract.
+The role may perform local reversible installation or upgrade actions authorized by the user and policy. It may add selected local provider entry files and `.codex` framework assets within the install contract.
 
 It must not overwrite project knowledge, global assistant configuration, authentication, credentials, remotes, hooks, protected policy, or external services. It must not infer a provider selection. Conflicting framework-owned files fail visibly unless an explicit versioned upgrade rule handles them.
 

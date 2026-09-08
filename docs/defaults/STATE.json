@@ -14,8 +14,8 @@
   "next_actions": [
     "Create a plan and obtain isolation review before implementation"
   ],
-  "framework_ref": ".ai/framework.json",
-  "policy_ref": ".ai/project/policy.json",
-  "decision_index_ref": ".ai/decisions/index.json",
+  "framework_ref": ".codex/framework.json",
+  "policy_ref": ".codex/project/policy.json",
+  "decision_index_ref": ".codex/decisions/index.json",
   "updated_at": "1970-01-01T00:00:00Z"
 }

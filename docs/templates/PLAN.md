@@ -1,6 +1,6 @@
 # Plan: <plan-id> — <title>
 
-Copy this master to `.ai/plans/current/<plan-id>/plan.md`; keep the machine-readable `plan.json` beside it.
+Copy this master to `.codex/plans/current/<plan-id>/plan.md`; keep the machine-readable `plan.json` beside it.
 
 ## Identity and state
 

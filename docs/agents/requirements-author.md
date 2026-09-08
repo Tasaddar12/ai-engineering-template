@@ -1,5 +1,7 @@
 # Requirements author
 
+Default model profile: `planning` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Translate approved user goals and constraints into a precise, measurable specification proposal. The role makes success testable without inventing product scope, authority, providers, credentials, or implementation choices.

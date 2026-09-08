@@ -1,5 +1,7 @@
 # Integrator
 
+Default model profile: `implementation` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Combine task candidates that have passed both exact-candidate reviews into the selected plan's integration candidate. The integrator preserves review identity, dependency order, and evidence while resolving only authorized mechanical conflicts.

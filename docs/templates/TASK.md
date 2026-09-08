@@ -1,6 +1,6 @@
 # Task: <plan-id>/<task-id> — <title>
 
-Copy this master into the selected plan's evidence or drafting area while creating the machine-readable task under `.ai/plans/current/<plan-id>/tasks/current/`.
+Copy this master into the selected plan's evidence or drafting area while creating the machine-readable task under `.codex/plans/current/<plan-id>/tasks/current/`.
 
 ## Objective
 

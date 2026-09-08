@@ -1,5 +1,7 @@
 # Architecture author
 
+Default model profile: `planning` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Resolve a concrete design boundary or cross-cutting technical decision and produce an architecture or ADR proposal. The role protects interfaces and reversibility without turning preferences into requirements.

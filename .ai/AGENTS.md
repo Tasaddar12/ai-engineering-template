@@ -8,7 +8,7 @@ The reusable installer, focused record CLI, and foundation validator are working
 
 ## Working rules
 
-- Keep all repository-specific plan, task, decision, review, evidence, workflow, and agent material under `.ai/` or `.claude/`.
+- Keep all repository-specific plan, task, decision, review, evidence, workflow, and agent material under `.ai/`, `.codex/`, or `.claude/`. This source repository retains its existing `.ai/` records; fresh OpenAI installations use `.codex/`.
 - Use one task, one branch, and one worktree. Put linked worktrees under `.worktrees/`; remove clean merged worktrees and then the empty container. Preserve failed or unmerged work through Git history.
 - Check dependencies, graph digest, review status, and scope before changing task work. A task may write only its declared source, test, and plan-local evidence paths.
 - Use typed Python and argument-list subprocesses with `shell=False`. Never claim an unexecuted command passed.

@@ -1,5 +1,7 @@
 # Researcher
 
+Default model profile: `research` for both providers. Resolve this role in `.codex/project/agent-models.json` using the [model selection guide](../workflows/MODELS.md); explicit user choices take precedence.
+
 ## Purpose
 
 Answer a bounded research question with traceable sources, uncertainty, and a conclusion that can inform requirements, architecture, planning, or recovery. Research does not itself authorize a product decision or implementation.

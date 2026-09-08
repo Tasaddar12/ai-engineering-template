@@ -1,6 +1,6 @@
 # Specification: <spec-id> — <title>
 
-Copy this master to `.ai/plans/current/<plan-id>/spec.md`; keep the machine-readable `spec.json` beside it.
+Copy this master to `.codex/plans/current/<plan-id>/spec.md`; keep the machine-readable `spec.json` beside it.
 
 ## Problem and users
 
