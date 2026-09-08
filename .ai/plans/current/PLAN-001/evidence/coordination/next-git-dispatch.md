@@ -64,7 +64,8 @@ actual refs/parents/current target, preserve unknown changed=None when unresolve
 Same operation/different request conflicts; don't repeat an uncertain mutation.
 Checked-out target policy must preserve developer work. The advisory does not prove
 full idempotency, crash safety, installed execution or Python3.11 behavior; owned
-implementation tests and fresh R1/R2 remain required. Do not expand scope to009.
+implementation tests and one independent review remain required under the user's
+single-stage decision. Do not expand scope to009.
 
 ## Integration-worktree compatibility to resolve during implementation
 

@@ -1,5 +1,9 @@
 # TASK-020 coordination reminders
 
+The user's single-stage decision applies to reviewing this implementation task.
+The runtime behavior specified below remains the approved product contract; do not
+silently remove its stages while broader product refinements are deferred.
+
 Dispatch only after actual003/017/018/019/038 acceptance. Own reviews.py, its
 reviews_gates leaf and TASK-020 handoff. Consume accepted ReviewService/ReviewRequest/
 ReviewResult and actual configuration, fake agent, validation and candidate APIs.

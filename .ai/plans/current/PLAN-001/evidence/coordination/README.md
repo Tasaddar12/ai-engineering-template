@@ -4,6 +4,12 @@ This directory versions the tools and instructions still needed to finish this
 plan. They support this repository's current manual development session. They
 are not the workflow engine, an installed asset, or a substitute for its tests.
 
+The [current user decision](single-stage-review-decision.md) requires one independent
+review per remaining task, focused verification of fixes, then final combined
+reviews and later plan refinements. The coordinator and briefs apply that manual
+schedule without changing the toolkit's frozen runtime contracts. New candidate
+manifests bind this decision; historical two-stage reviews remain unchanged.
+
 Use [coordinator.py](coordinator.py) for the existing status, dispatch, candidate,
 acceptance and failed-review checkpoints. It finds this checkout from its tracked
 location and reads [dispatch records](dispatch/TASK-018-a1.json.txt) here. Run it

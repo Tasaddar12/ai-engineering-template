@@ -40,5 +40,5 @@ not a fabricated artifact in every role. Determine whether the constructor can
 represent all required review cases while rejecting genuinely missing applicable
 context. Prove a concrete typed case using actual task/plan inputs and cite the
 frozen requirements; do not invent placeholder handoffs or impose an unowned
-context-discovery service. This is a coordinator question for fresh R1/R2, not a
+context-discovery service. This is a coordinator question for the single review, not a
 review verdict or permission to change another task's source.
