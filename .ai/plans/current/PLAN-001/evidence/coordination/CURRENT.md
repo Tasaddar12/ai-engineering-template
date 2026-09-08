@@ -96,8 +96,8 @@ Final combined platform/source/package verification is still required.
 
 ## Retention, budget and runtime bindings
 
-103/300 conservative native invocations charged (102 spawn/followup plus root);
-197 remain. Three of three structural rewrites used; zero remain. Include old
+105/300 conservative native invocations charged (104 spawn/followup plus root);
+195 remain. Three of three structural rewrites used; zero remain. Include old
 errors/resumes/rejections; do not reset accounting or invent active_run records.
 Use tracked count-native-invocations.py against the original session JSONL.
 Observed native configuration is not separately returned provider-effective identity.
@@ -160,3 +160,20 @@ at96a8c9e63a669c86e34cd98f7517dd1179597e93; prior owner context unavailable.
 Native call_VwqMf0CWv9VDBzMy9d4CXMnf, Sol/xhigh rank3, charge103. Bounded
 final-diff/tests/fixes as implementation, brief findings in existing handoff only;
 no separate review stage. Active owners009 and019 already have exact requirement.
+
+019 pre-review correction FINAL clean e6960b6f50df1187c6fab69fee621ab88331f628.
+Original applicability fix c843bfca added explicit applicable-path sets and missing
+material checks; 14 tests passed all3 runtimes. Coordinator final-diff check found
+new test depended on historical Git objects; same-owner continuation104 removed
+Git/review/pointer dependencies, preserving bounded actual first-task fixture.
+Clean source export with only three project modules,27 schemas and owned test
+(no .git or .ai) passed14 tests with exact export origins. Full updated handoff
+and final correction diff read; production unchanged by104. Ready FIRST single
+independent review. No historical failed review or new attempt invented.
+017 owner continuation103 FINAL60e54410 fixed surrogate hashing and tested34Win3.12
+plus affected regression onboth3.11. Coordinator then reproduced an actual
+newline-delimited hash alias for distinct adapter/key tuples: x\ny + z versus
+x + y\nz; second legitimate dispatch failed collision. Same owner continuation
+105 (call_ezbcq68FNOfUD3DqCQPbTqxS) now fixes injective framing and directly related
+hash behavior before submission. Existing handoff only, no extra review stage.
+009 concrete state implementation compiled; actual crash/process tests in progress.
