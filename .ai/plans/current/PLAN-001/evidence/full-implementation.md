@@ -102,3 +102,7 @@ Rewrite usage remains3 of3. Recovery and review histories remain cumulative.
 Post-integration foundation validation passed:27 schemas,142 artifacts,39 tasks,
 280 unordered pairs,4 historical manifests and246 local links. This validates
 the updated records and links; it is separate from the task behavior suites.
+
+### Configuration dispatch and completed candidates (2026-09-08)
+
+Three of 39 tasks remain accepted. TASK-005 and the first bounded TASK-039 repair have clean committed owner handoffs and await exact-candidate independent reviews. TASK-002 remains in implementation. TASK-038 was dispatched from accepted TASK-004 to unblock command, context, agent, and review configuration dependencies; its write paths and component resource are disjoint from the active owners. Manual native accounting is 36 charged invocations of 300, including rejected attempts and the continuing coordinator invocation. Graph rewrite accounting remains 3 of 3 used, with no new rewrite. Production adapter bindings remain unconfigured; this is manually observed native development coordination.
