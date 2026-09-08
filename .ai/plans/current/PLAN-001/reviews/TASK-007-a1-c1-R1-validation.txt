@@ -1,0 +1,69 @@
+{
+  "head": "f5f9f8350433010d7c62856e8953b4fcc9097d65",
+  "fingerprint": "de0a81fd6566c603b44bdd5e81b1d721407ada79010017059c62f921494cdf3a",
+  "checks": {
+    "actual_head": true,
+    "clean": true,
+    "root_head": true,
+    "rawdiff": true,
+    "context:.ai/plans/current/PLAN-001/plan.json": true,
+    "context:.ai/plans/current/PLAN-001/spec.json": true,
+    "context:.ai/plans/current/PLAN-001/graph.json": true,
+    "context:.ai/plans/current/PLAN-001/tasks/current/TASK-007.json": true,
+    "context:.ai/shared/architecture/service-contracts.md": true,
+    "context:.ai/shared/workflows/reviews.md": true,
+    "context:.ai/decisions/ADR-001.md": true,
+    "context:.ai/decisions/ADR-002.md": true,
+    "context:.ai/decisions/ADR-003.md": true,
+    "context:.ai/decisions/ADR-004.md": true,
+    "context:.ai/decisions/ADR-005.md": true,
+    "context:.ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md": true,
+    "context:.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md": true,
+    "validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-f5f9f8350433.txt": true,
+    "validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-f5f9f8350433-python311.txt": true,
+    "validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-f5f9f8350433-linux-python311.txt": true,
+    "policy_model": true,
+    "fingerprint": true,
+    "base_ancestor": true,
+    "accepted006_ancestor": true,
+    "accepted006_bytes": true
+  },
+  "argv": [
+    "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/unit/git/",
+    "-p",
+    "test_*.py"
+  ],
+  "cwd": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "origins": {
+    "git_ops": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\git_ops.py",
+    "commands": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\commands.py",
+    "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\local_ports.py"
+  }
+}
+....................s........
+----------------------------------------------------------------------
+Ran 29 tests in 67.524s
+
+OK (skipped=1)
+
+Exit code: 0
+
+Supplemental identity checks:
+{
+  "graph_structural_digest": true,
+  "isolation_digest": true,
+  "accepted002_ancestor": true,
+  "accepted002_bytes": true,
+  "owner_final_bytes:src/git_ops.py": true,
+  "owner_final_bytes:tests/unit/git/test_git_ops.py": true,
+  "owner_final_bytes:.ai/plans/current/PLAN-001/evidence/implementation/TASK-007.md": true,
+  "candidate_still_clean": true
+}
+
+Final review verification: PASS review-result Draft 2020-12 schema/date format; all 11 numbered checks; 3 major findings; exact frozen ROOT, clean candidate HEAD, unchanged manifest context.

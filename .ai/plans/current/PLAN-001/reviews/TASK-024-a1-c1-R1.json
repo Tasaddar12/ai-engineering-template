@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-024-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "request-TASK-024-a1-c1-R1-8bd592c0",
+  "task_id": "TASK-024",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-024-a1-8805c35ec655.json",
+  "candidate_fingerprint": "16a689e22f0a424685c0b1c0b04abaf8488571da42855c897ff106a88bd18f38",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "manual-review-TASK-024-a1-c1-R1-8bd592c0"
+  },
+  "independent_session_id": "/root/review_024_c1_r1",
+  "implementation_session_id": "/root/implement_024",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC1 is not met: permitted ownership reassignment is rejected, split exits can omit required successor completion, and preserved augment criteria block the next rewrite. AC2 guards have meaningful passing evidence.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "fail",
+      "rationale": "REQ-06/AC-06 and the frozen recovery workflow require bounded prerequisite/follow-up recovery and repeated lineage-preserving rewrites; F1 and F3 prevent these. Pure TASK-025 exclusions are respected.",
+      "evidence": [
+        ".ai/shared/workflows/recovery.md",
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "The source-subset predicate rejects legitimate ownership changes; dependency targets lack successor-completion coverage; the criterion index discards identical repeated IDs before consulting mapped owners.",
+      "evidence": [
+        "src/recovery_proposals.py:411",
+        "src/recovery_proposals.py:461",
+        "src/recovery_proposals.py:933",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Observed failures return immutable typed issues. Overshoot remains representable and rejects without clamping. This pure module owns no process, file, lease or cleanup effects.",
+      "evidence": [
+        "src/recovery_proposals.py:484",
+        "src/recovery_proposals.py:1045",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "The independent early-exit and second-rewrite probes expose boundary failures despite valid typed inputs, full graphs and remaining rewrite budget. Historical namespaces and completed identity have passing controls.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt",
+        "tests/unit/planning_recovery_proposals/test_recovery_proposals.py:508"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "The candidate-local 13-test suite passed and exercises meaningful negatives, but it misses exit-set completeness and successive recovery, and its resource-fixture corrections encode the F1 restriction.",
+      "evidence": [
+        "tests/unit/planning_recovery_proposals/test_recovery_proposals.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Changes remain in TASK-024 ownership; no frozen DTO/schema edits, unaccepted implementations, isolation approval, state mutation or TASK-025 effects were introduced.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt",
+        "src/recovery_proposals.py"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Raw Git diff contains exactly the new recovery module, declared test leaf and handoff. All three files match owner FINAL; accepted dependency commits remain ancestors.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "The explicit flat-module API uses detached frozen full records and accepted typed contracts, graph and scope services. Required source/tests/handoff are tracked; no runtime dependency on ignored local helpers or an editable ROOT source was found.",
+      "evidence": [
+        "src/recovery_proposals.py:91",
+        "src/recovery_proposals.py:149",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Caller-verified byte/content provenance is an explicit producer boundary. Permission-set expansion, increased limits, lowered counters and premature approval are rejected; actual accepted scope conflicts consume graph-derived reachability.",
+      "evidence": [
+        "src/recovery_proposals.py:91",
+        "src/recovery_proposals.py:991",
+        "src/recovery_proposals.py:1030",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "The handoff accurately exposes the single-source assumption but calls it required authority and claims complete recovery acceptance; F1-F3 require corrected behavior, tracked regressions and updated boundary guidance.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md",
+        ".ai/shared/workflows/recovery.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-024-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "The single-source scope-subset gate rejects an allowed recovery ownership change. On the actual 39-node PLAN-001 r4 records, augmenting TASK-024 with fresh TASK-100 and unchanged TASK-024 acceptance, plan content, local_execute permission and ordered scopes passes with inherited ownership. Changing only its path to src/recovery_proposal_acceptance.py, or only its resource to component:planning/recovery_proposal_acceptance, produces only permission_expansion despite a valid 40-node DAG. Frozen recovery workflow lines 3, 7, 9 and 16 permits required out-of-scope prerequisites/follow-ups within unchanged product/permissions, and recovery-replanner responsibility 6 explicitly reassigns path/resource ownership. A proposed task scope is not an authority grant or isolation approval.",
+      "paths": [
+        "src/recovery_proposals.py:461",
+        "src/recovery_proposals.py:910",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md:134",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ],
+      "expected_fix": "Validate reassigned task ownership against the unchanged product/permission authority rather than requiring every fresh claim to fit one predecessor. Make any needed bounded authority facts explicit in the scoped proposal input or collaborator without changing frozen contracts; retain prohibited-path, permission-subset, whole-graph conflict and fresh-isolation checks. Add positive new exact-path/resource regressions and retain genuine authority-expansion negatives.",
+      "acceptance_ids": [
+        "TASK-024-AC1",
+        "TASK-024-AC2",
+        "AC-06"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-024-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "Dependency redirection trusts dependency_target_ids without checking whether they cover completion of required successors. Split TASK-100 (AC1, AC2) into TASK-300 (AC1) then TASK-301 (AC2, depends on TASK-300), map the exit to TASK-300, and redirect the former dependent TASK-200 to TASK-300. The validator returns admissible with no issues. With only TASK-300 integrated, the actual TASK-013 ready_frontier returns both TASK-200 and TASK-301, so TASK-200 can run before the required AC2 successor finishes.",
+      "paths": [
+        "src/recovery_proposals.py:142",
+        "src/recovery_proposals.py:933",
+        "src/recovery_proposals.py:951",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ],
+      "expected_fix": "Require the declared dependency targets to cover completion of all required successor work through the validated graph: each required successor must be a target or a transitive prerequisite of a target. Reject early/incomplete exit sets while retaining the valid last-node and multiple-exit cases. Add a regression using actual accepted graph readiness.",
+      "acceptance_ids": [
+        "TASK-024-AC1",
+        "AC-06"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-024-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "An admissible augmentation makes a subsequent recovery fail on its own preserved acceptance. AUGMENT TASK-100 with TASK-300 retaining identical AC1/AC2 content and mapping the criteria to TASK-300; this passes. Carry that graph forward as approved, advance used_rewrites from 1 to 2 (max 3), and replace TASK-300 with fresh TASK-400 preserving its content, prerequisites and permissions. Both criteria now exist on retained TASK-100 and TASK-300, so _criterion_index drops them globally and validation rejects only ambiguous_original_acceptance. The explicit original mapping already identifies TASK-300, and the duplicated content is identical.",
+      "paths": [
+        "src/recovery_proposals.py:411",
+        "src/recovery_proposals.py:770",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1-probes.txt"
+      ],
+      "expected_fix": "Resolve criterion content through the explicit plan-local original acceptance owners/mapping, accepting identical preserved copies created by earlier valid recovery while rejecting missing owners or conflicting content. Add a multi-rewrite augment-then-replace regression with cumulative budgets/history preserved.",
+      "acceptance_ids": [
+        "TASK-024-AC1",
+        "AC-06"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T11:42:03.653849+00:00"
+}

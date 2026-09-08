@@ -1,0 +1,24 @@
+Pre-packaging checks passed: unchanged frozen ROOT/candidate context and 42 historical companions; all four preserved review schemas/verdicts; approved graph digest; accepted dependency source/handoff commits; unchanged index and only disclosed CURRENT.md tracked progress.
+Assessment packaging foundation exit=0
+{
+  "schemas": 27,
+  "validated_artifacts": 188,
+  "plans": 1,
+  "tasks": 39,
+  "unordered_pairs_checked": 280,
+  "archive_manifests": 4,
+  "local_links": 504
+}
+
+Final independent recovery verification UTC: 2026-09-08T12:53:04.521537+00:00
+Runtime: 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]; executable=D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-venv\Scripts\python.exe
+PASS ROOT remains e054fc9f37a157713d7ff910128dfb2995b597ae; clean a2 remains b7593f11961aa6f5c3a927f3c49af32c4fa93971; original review base/fingerprint/manifest unchanged.
+PASS all 42 review companions and original recovery/packaging/budget evidence retain verified hashes. R1 PASS and R2 FAIL remain unchanged.
+PASS generation 41, 10/39 accepted, no active_run; accepted dependency source/handoffs, graph/task identity and policy/model bytes unchanged; both failed attempt branches retained.
+PASS scope inventory contains exactly four same-prefix assessment files; helper syntax, whitespace and report links valid; no fixture remains. Coordinator CURRENT.md and disjoint TASK-007 evidence are outside this assessment and the 017 manifest. ROOT index unchanged.
+Executed once: coordinator Windows Python3.12 -B TASK-017-c3-recovery-assessment-verify.py, exit0; one independent two-process provenance failure reproduction, with actual a2 module origins. No historical helper rerun, broad matrix, source change, repair, commit, cherry-pick, network call or provider spend.
+Assessment charge93/300, native call_eZzyti7aTEGoUlIDbA6ciTXC; coordinator subsequently reports independent007R1 charge94/300. Three proposed017dispatches yield97 charged/reserved; rewrites3/3 used,0 remaining. No approval, acceptance or counter reset.
+SHA256 TASK-017-c3-recovery-assessment-verification.json.txt: 5f3a3a9fa317229ae3b05f47a139e68719fe7628ba5a82fe2149352b6e15b05e
+SHA256 TASK-017-c3-recovery-assessment-verify.py: 45208ee8dad60687ffbacf58d7d26d732224a6b178d069a194f789b82ad85833
+SHA256 TASK-017-c3-recovery-assessment.md: 65ba42832cb92f74095489f56a5fb1a57d788b30df99184e58612daf66da151d
+FINAL checks complete. Recovery now stops all ROOT/candidate access and hands off a recommendation for coordinator adoption only.

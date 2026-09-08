@@ -1,0 +1,9 @@
+{
+  "task_id": "TASK-013",
+  "attempt_id": "TASK-013-a1",
+  "branch": "ai/PLAN-001/TASK-013/a1",
+  "worktree": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1",
+  "base_oid": "7bb92f3890551456fb682a8f05e00955449b849a",
+  "graph_revision": 4,
+  "task_set_sha256": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e"
+}

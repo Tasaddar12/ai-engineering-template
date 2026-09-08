@@ -1,0 +1,223 @@
+Git tracked export HEAD: 67e41a2d16040f860a5d716a82ddccc7e3d0d3f4
+Clean source: C:\Users\killi\AppData\Local\Temp\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\source
+Fresh noneditable environment: C:\Users\killi\AppData\Local\Temp\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\venv\Scripts\python.exe
+No .ai/local or .worktrees in export; PYTHONPATH/PYTHONHOME unset; user site disabled.
+Origin exit: 0
+Python 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]
+Executable C:\Users\killi\AppData\Local\Temp\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\venv\Scripts\python.exe
+jsonschema 4.26.0
+Origins [('domain_values', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\domain_values.py'), ('local_ports', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\local_ports.py'), ('workflow_ports', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\workflow_ports.py'), ('contracts', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\contracts.py'), ('validate_foundation', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\validate_foundation.py'), ('install', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\install.py'), ('commands', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\commands.py'), ('transitions', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\transitions.py'), ('plan_graph', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\plan_graph.py'), ('scope', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\scope.py'), ('config', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\config.py'), ('orchestration_ports', 'C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\source\\src\\orchestration_ports.py')]
+
+
+{"suite": "bootstrap", "exit_code": 0, "tests": 24}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py']
+Wrote .codex/plans/current/PLAN-501/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-501/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-501/graph.json
+Wrote .codex/plans/current/PLAN-501/history/.gitkeep
+Wrote .codex/plans/current/PLAN-501/plan.json
+Wrote .codex/plans/current/PLAN-501/plan.md
+Wrote .codex/plans/current/PLAN-501/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-501/spec.json
+Wrote .codex/plans/current/PLAN-501/spec.md
+Wrote .codex/plans/current/PLAN-501/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-501/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-501/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-501/graph.json
+Wrote .codex/plans/current/PLAN-501/history/.gitkeep
+Wrote .codex/plans/current/PLAN-501/plan.json
+Wrote .codex/plans/current/PLAN-501/plan.md
+Wrote .codex/plans/current/PLAN-501/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-501/spec.json
+Wrote .codex/plans/current/PLAN-501/spec.md
+Wrote .codex/plans/current/PLAN-501/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/current/TASK-001.json
+
+........................
+----------------------------------------------------------------------
+Ran 24 tests in 26.684s
+
+OK
+
+{"suite": "TASK-001", "exit_code": 0, "tests": 15}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_values/', '-p', 'test_*.py']
+
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.002s
+
+OK
+
+{"suite": "TASK-002", "exit_code": 0, "tests": 27}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_local_ports/', '-p', 'test_*.py']
+
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.212s
+
+OK
+
+{"suite": "TASK-003", "exit_code": 0, "tests": 26}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_workflow_ports/', '-p', 'test_*.py']
+
+..........................
+----------------------------------------------------------------------
+Ran 26 tests in 0.007s
+
+OK
+
+{"suite": "TASK-004", "exit_code": 0, "tests": 21}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/schemas/', '-p', 'test_*.py']
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+
+.....................
+----------------------------------------------------------------------
+Ran 21 tests in 10.904s
+
+OK
+
+{"suite": "TASK-006", "exit_code": 0, "tests": 22}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/commands/', '-p', 'test_*.py']
+TASK-006-FIXTURE {"cancellation_observed": false, "cancellation_response_seconds": null, "child_gone": true, "child_pid": 36436, "child_process_group": null, "child_session": null, "mode": "timeout", "native_termination_calls": 1, "overall_seconds": 1.141, "parent_gone": true, "parent_pid": 13588, "parent_process_group": null, "parent_session": null, "phase": "detached_while_parent_live", "reader_threads_settled": true, "startup_seconds": 0.109, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": true, "cancellation_response_seconds": 0.125, "child_gone": true, "child_pid": 2960, "child_process_group": null, "child_session": null, "mode": "cancellation", "native_termination_calls": 1, "overall_seconds": 0.234, "parent_gone": true, "parent_pid": 32508, "parent_process_group": null, "parent_session": null, "phase": "detached_while_parent_live", "reader_threads_settled": true, "startup_seconds": 0.109, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": false, "cancellation_response_seconds": null, "child_gone": true, "child_pid": 38936, "child_process_group": null, "child_session": null, "mode": "timeout", "native_termination_calls": 1, "overall_seconds": 1.281, "parent_gone": true, "parent_pid": 5788, "parent_process_group": null, "parent_session": null, "phase": "inherited_after_parent_exit", "reader_threads_settled": true, "startup_seconds": 0.11, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": true, "cancellation_response_seconds": 0.25, "child_gone": true, "child_pid": 19536, "child_process_group": null, "child_session": null, "mode": "cancellation", "native_termination_calls": 1, "overall_seconds": 0.36, "parent_gone": true, "parent_pid": 39612, "parent_process_group": null, "parent_session": null, "phase": "inherited_after_parent_exit", "reader_threads_settled": true, "startup_seconds": 0.11, "watchdog_intervened": false}
+
+...............s......
+----------------------------------------------------------------------
+Ran 22 tests in 7.730s
+
+OK (skipped=1)
+
+{"suite": "TASK-008", "exit_code": 0, "tests": 19}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_transitions/', '-p', 'test_*.py']
+
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 0.007s
+
+OK
+
+{"suite": "TASK-013", "exit_code": 0, "tests": 13}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_dag/', '-p', 'test_*.py']
+
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.225s
+
+OK
+
+{"suite": "TASK-014", "exit_code": 0, "tests": 17}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_ownership/', '-p', 'test_*.py']
+
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.002s
+
+OK
+
+{"suite": "TASK-038", "exit_code": 0, "tests": 29}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/config/', '-p', 'test_*.py']
+
+.............................
+----------------------------------------------------------------------
+Ran 29 tests in 15.227s
+
+OK
+
+{"suite": "TASK-039", "exit_code": 0, "tests": 20}
+argv: ['C:\\Users\\killi\\AppData\\Local\\Temp\\plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4\\venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_orchestration_ports/', '-p', 'test_*.py']
+
+....................
+----------------------------------------------------------------------
+Ran 20 tests in 0.008s
+
+OK
+
+{"passed": true, "suites": 11, "observed_tests": 233, "accepted_tasks": 10, "source_commit": "67e41a2d16040f860a5d716a82ddccc7e3d0d3f4", "full_plan_or_package_claimed": false}
