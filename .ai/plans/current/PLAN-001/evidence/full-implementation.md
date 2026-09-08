@@ -144,3 +144,24 @@ reported tests and an actual 39-node r4 build. They join TASK-008 and TASK-039 i
 the review queue; owner handoffs are not acceptance evidence. Native manual
 accounting is 52 charged invocations of 300 before the next TASK-008 R1 dispatch.
 Graph rewrites remain three of three used, and all 39 outcomes remain required.
+
+### Guarded transitions accepted; agent adapter dispatch (2026-09-08)
+
+TASK-008 candidate `fcb01a93f0e1022c70fa296f7342ced71bbf3250` passed its
+19 declared tests and separate fresh cycle1 reviews, then integrated at
+`62b899af5c57f651175cd6f304f52218acb12adb`. R1 covered 377 state pairs,
+269 missing and 269 failed guards, all 17 resumable states, and 95 schema-valid
+event mappings. R2 independently passed six consistency tests covering vocabulary,
+generation-checked projection transactions, resume guard rechecks, grouped task
+and plan completion relocation, stale identities and terminal history. Both reports
+have no findings. The clean merged tree was removed; six of 39 tasks are accepted.
+These are pure decision/representation checks, not proof of durable state IO.
+
+TASK-014 has a clean owner candidate `b63735f4da282ad1b0376586683d994b3c8b028f`
+with 17 reported tests and a 64-pair comparison with accepted ScopeClaim behavior;
+it still requires both reviews. TASK-006 continues actual process validation.
+TASK-017 starts at `bd962bd0c68f4803d07a16136d55c2ec8707fba8`, with accepted
+TASK-003/004/038 inputs and disjoint ownership. TASK-039's bounded repair is next
+for current-base validation and fresh reviews. Native manual accounting is
+55 charged invocations of 300 before that R1 dispatch. Historical rewrite usage
+remains three of three; no new rewrite or authority was introduced.
