@@ -1,0 +1,33 @@
+Task: PLAN-001/TASK-006
+Head: 4fe9e7a30378e13b43dc51745593adae2bb8b051
+Platform: Ubuntu-24.04 via WSL --exec
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/commands/', '-p', 'test_*.py']
+Exit code: 1
+
+Runtime/origin probe exit: 0
+Python: 3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]
+Executable: /mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-venv/bin/python
+Platform: Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39
+jsonschema: 4.26.0
+Origins: [('commands', '/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a2/src/commands.py')]
+
+
+
+TASK-006-FIXTURE {"cancellation_observed": false, "cancellation_response_seconds": null, "child_gone": true, "child_pid": 421, "child_process_group": 421, "child_session": 421, "mode": "timeout", "native_termination_calls": 1, "overall_seconds": 1.013342, "parent_gone": true, "parent_pid": 418, "parent_process_group": 418, "parent_session": 418, "phase": "detached_while_parent_live", "reader_threads_settled": true, "startup_seconds": 0.102123, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": true, "cancellation_response_seconds": 0.00786, "child_gone": true, "child_pid": 426, "child_process_group": 426, "child_session": 426, "mode": "cancellation", "native_termination_calls": 1, "overall_seconds": 0.059906, "parent_gone": true, "parent_pid": 423, "parent_process_group": 423, "parent_session": 423, "phase": "detached_while_parent_live", "reader_threads_settled": true, "startup_seconds": 0.052045, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": false, "cancellation_response_seconds": null, "child_gone": true, "child_pid": 434, "child_process_group": 431, "child_session": 431, "mode": "timeout", "native_termination_calls": 1, "overall_seconds": 1.084893, "parent_gone": true, "parent_pid": 431, "parent_process_group": 431, "parent_session": 431, "phase": "inherited_after_parent_exit", "reader_threads_settled": true, "startup_seconds": 0.051841, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": true, "cancellation_response_seconds": 0.057143, "child_gone": true, "child_pid": 439, "child_process_group": 436, "child_session": 436, "mode": "cancellation", "native_termination_calls": 1, "overall_seconds": 0.10914, "parent_gone": true, "parent_pid": 436, "parent_process_group": 436, "parent_session": 436, "phase": "inherited_after_parent_exit", "reader_threads_settled": true, "startup_seconds": 0.051996, "watchdog_intervened": false}
+
+.........F...........s
+======================================================================
+FAIL: test_inherited_pipe_descendant_cannot_block_timeout_or_cancellation_return (test_commands.CommandRunnerTests.test_inherited_pipe_descendant_cannot_block_timeout_or_cancellation_return) (mode='cancellation')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a2/tests/unit/commands/test_commands.py", line 799, in test_inherited_pipe_descendant_cannot_block_timeout_or_cancellation_return
+    self.assertGreaterEqual(
+AssertionError: 0.10913950300891884 not greater than or equal to 0.15
+
+----------------------------------------------------------------------
+Ran 22 tests in 6.560s
+
+FAILED (failures=1, skipped=1)

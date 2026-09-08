@@ -4,7 +4,7 @@
   "id": "TASK-007",
   "plan_id": "PLAN-001",
   "title": "Implement observed Git operations",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Implement observed Git operations. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -94,7 +94,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-007-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }

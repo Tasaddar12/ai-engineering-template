@@ -4,7 +4,7 @@
   "id": "TASK-006",
   "plan_id": "PLAN-001",
   "title": "Execute commands with durable evidence",
-  "status": "running",
+  "status": "accepted",
   "archived": false,
   "objective": "Execute commands with durable evidence. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -99,8 +99,9 @@
   ],
   "attempt_ids": [
     "TASK-006-a1",
-    "TASK-006-a2"
+    "TASK-006-a2",
+    "TASK-006-a3"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Candidate b41b37ac6b15ecbdfb55ed26bdc086686f4e9416 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }

@@ -319,3 +319,120 @@ version and owned-source origins with each platform log before fingerprinting.
 Allfour metadata-only probes passed; existing reviewed evidence was unchanged.
 Native accounting72/300 before the next dispatch; graph rewrites remain3/3 used.
 TASK-024 is newly dependency-ready. After006 acceptance,007 and018 remain priorities.
+
+### TASK-006 a2 coordinator validation failure (2026-09-08)
+
+The clean recovery owner head was merged with current integration metadata,
+then Windows3.12 passed22tests/one skip. Linux3.12 failed one inherited-pipe
+cancellation assertion: observed0.109s was below its retained0.15s minimum.
+Fixture readiness and finally cleanup were observed; later status assertions in
+that subcase did not execute after the failure. The remaining two coordinator
+matrix stages were not run, and no final fingerprint or c3 review was formed.
+The [preserved failure](recovery/TASK-006-a2-validation-failure.md) returns the
+consumed single allowance immediately to independent recovery. Production bytes,
+both old attempts and all failed/pass review history are retained. Generation33,
+nine of39 accepted,73/300 native invocations before fresh recovery,3/3 rewrites
+used. TASK-024 continues independently. No further ordinary repair is authorized.
+
+### Terminal command assertion correction authorized (2026-09-08)
+
+The second independent recovery confirmed the unchanged150ms cancellation floor
+as a residual test oracle defect after observed readiness replaced blind timers.
+The [new coordinator decision](recovery/TASK-006-a2-coordinator-decision.md)
+authorizes one terminal fresha3 assertion-region/handoff correction: retain the
+timeout floor, prove observed event ordering for cancellation, preserve production
+and all phase/status/EOF/schema/cleanup assertions and existing bounds. Any further
+test/validation/review failure pauses this path; no automatic additional repair.
+The consumed a2 allowance and all prior reports remain failed immutable history.
+Four exact environments and fresh cumulativec3 R1/R2 remain mandatory. Generation34,
+nine of39 accepted,74/300 charged and77/300 charged or reserved,3/3 rewritesused.
+TASK-024 continues; aftera3 dispatch,017 can enter review independently.
+
+### A3 external diagnostic invocation clarified (2026-09-08)
+
+The a3 owner stopped when its standalone import probe omitted candidate src;
+no declared suite or candidate module ran. The coordinator preserved the exact
+argv/traceback/handoff, verified unchanged source/test bytes and observed correct
+candidate imports on allfour runtimes. The [narrow clarification](recovery/TASK-006-a3-harness-clarification.md)
+distinguishes that malformed diagnostic invocation from a candidate behavior
+failure. The single existing correction may proceed to its unexecuted validation;
+no extra source repair or allowance is granted. Any actual validation/review
+failure still pauses the path. Generation35,nineaccepted,76/300charged.
+The unreviewed017old-base manifest/logs are retained and will be replaced before
+anyR1. Its first reviewer dispatch was rejected for capacity and charged; no
+review session or verdict was fabricated.
+
+### Command runner accepted; fake-agent repair queued (2026-09-08)
+
+TASK-006-a3 candidate `b41b37ac6b15ecbdfb55ed26bdc086686f4e9416` passed
+the coordinator's exact suites on Windows/Linux Python3.11/3.12, each22
+discovered/21non-skipped/one established skip. All16 phase records showed exact
+fixture identities gone, readers settled, one native termination and no watchdog
+intervention. The formerly blocked later assertions executed. Fresh cumulative
+c3 [R1](../reviews/TASK-006-a3-c3-R1.json) and distinct
+[R2](../reviews/TASK-006-a3-c3-R2.json) passed all11/all12 checks with no findings,
+binding fingerprint `3df5453edcaf80c6237f35c5ca1c5adb81adfb9682cae3af95e25091d2435e80`.
+R1 independently ran the22-test Windows suite, two Linux3.11 fixture tests with
+four post-assertion schema checks, and three negative/readiness/storage probes.
+R2 independently ran the22-test Windows suite and five Linux3.11 cross-contract
+probes. All passed. Its actual zero-test child execution remained process evidence,
+not a passing validation suite. Earlier failed attempts/reviews remain preserved.
+
+Acceptance integrated at `37eabb95443e713fe170137bbf00c8d054d9bf1e`; generation37,
+ten of39 accepted. Git removed the clean merged a3 worktree, retaining failed a1/a2
+history. Source and test hashes match the terminal decision; no further repair,
+contract change, graph rewrite, permission or counter reset was used. R1's external
+Windows-path parser diagnostic and distinct corrected verifier are retained; it
+preceded any candidate suite and changed no source or bound evidence. Local WSL
+validation is not remote CI or whole-plan completion.
+
+TASK-017 c1 [R1](../reviews/TASK-017-a1-c1-R1.json) failed two major terminal-state
+and persisted-history checks. The exact failure and companions were preserved
+at `10e27db6472bbf6d9a5a5023233ede12fae5d52d`, generation36. Its first-cycle
+same-attempt bounded repair is now clean owner head
+`7e5bd5fd5d1b36a14cbee6ae911b68a4ec9ffbf8`, verified onlythree owned paths.
+The owner observed27passing tests on Windows3.12/3.11 and Linux3.11, including
+stable terminal facts, rejected impossible restored histories, legitimate queued
+and exhausted states, deliberate unconsumed fault injection and fresh processes.
+An intermediate over-strict late-scripting rejection was corrected and retained
+in its handoff. This is queued implementation evidence, not task acceptance;
+fresh current-base candidate validation and cumulativec2 R1/R2 remain required.
+
+Native accounting80/300 before next dispatch, including rejected calls and one
+continuing coordinator. Historical graph rewrites remain3/3used, zero remaining.
+Observed native model/effort remains distinct from unavailable provider-effective
+identity. TASK-007 and018 are now dependency-ready;007 is the next owner, while017
+enters its fresh review cycle. TASK-024/016/019/005-a2 remain queued for review.
+
+### Mapped-profile recovery and obsolete checkout cleanup (2026-09-08)
+
+TASK-017 c2 R1 failed valid non-identity policy/provider profile recovery; prior
+terminal/history findings are resolved. Independent recovery confirmed the
+failure with real accepted loaders and separate processes, preserved20 historical
+files and verified exact two-commit salvage. The [coordinator decision](recovery/TASK-017-coordinator-decision.md)
+authorizes one fresh a2 bounded correction with unchanged graph/contracts and
+cumulativec3 fresh R1/R2. Generation39,tenof39accepted;87/300charged,90withnext
+owner/reviewer reservations,3/3rewritesused. Usage-interrupted invocations and
+their continuations remain charged and documented; no provider-effective claim.
+Independent007 and018 implementations continue in their original worktrees.
+
+The user asked about retained accepted-task worktrees. Git verified all10 accepted
+candidate commits are integrated into ai/PLAN-001/integration; main is unchanged.
+Three obsolete failed004a1/006a1/006a2 checkouts were clean and held only ignored
+bytecode caches. [Non-force Git cleanup](worktree-cleanup-2026-09-08.md) removed
+those directories, retaining exact named branch heads and all120 related history
+files. Current017 and allactive/queued worktrees remain. No task/plan completion
+or remote merge is claimed; all39 and finalintegrated validation remain required.
+
+## Required local material moved into version control
+
+The user requested an audit of ignored .ai/local scripts. Active manual coordinator
+and invocation-accounting tools, all 21 dispatch observations, current dispatch
+briefs and Git feasibility evidence now live in [tracked coordination material](coordination/README.md).
+The [audit](coordination/local-material-audit.md) records concrete purposes, obsolete
+one-use scripts and the existing tasks responsible for actual product behavior.
+No source/tests/docs/package references to local directories or the manual helper
+were found. Read-only status parity, exact dispatch preservation and accounting
+metadata filtering passed; foundation passed with 27 schemas, 182 artifacts,
+39 tasks and 459 links. Product packaging without ignored files remains an explicit
+TASK-037 gate. No task acceptance or graph scope changed for this migration.

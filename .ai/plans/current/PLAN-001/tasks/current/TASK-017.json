@@ -98,7 +98,8 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-017-a1"
+    "TASK-017-a1",
+    "TASK-017-a2"
   ],
   "superseded_by": [],
   "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
