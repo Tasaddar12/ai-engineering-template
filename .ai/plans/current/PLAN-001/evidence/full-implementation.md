@@ -436,3 +436,16 @@ were found. Read-only status parity, exact dispatch preservation and accounting
 metadata filtering passed; foundation passed with 27 schemas, 182 artifacts,
 39 tasks and 459 links. Product packaging without ignored files remains an explicit
 TASK-037 gate. No task acceptance or graph scope changed for this migration.
+
+## TASK-024 first review correction and clean export check
+
+Independent c1 R1 found three local recovery proposal defects and finalized FAIL.
+All reports and reproduction evidence were read and preserved at476b878; state
+generation40. A fresh Sol/xhigh owner is correcting only TASK-024 source, tests
+and handoff in the existing a1 tree; no new worktree or graph rewrite. Fresh
+cumulative c2 R1/R2 remain required. Native charges90/300; ten tasks accepted.
+
+The [clean tracked export](coordination/clean-tracked-export-67e41a2.txt) passed
+24 bootstrap tests plus all ten accepted task suites,233 discovered tests with
+one existing skip, in a fresh noneditable environment without ignored project
+files. Full engine/package verification remains TASK-037 and the final INT gate.

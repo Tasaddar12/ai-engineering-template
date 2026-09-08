@@ -34,3 +34,33 @@ TASK-018 owner is FINAL at802e9baf0967aa25c70563f1cd31840b6dd3ffa8; clean and
 three owned paths verified; handoff read, all three platforms report10 non-skipped
 tests. It now joins the review queue. Next candidate chosen024, owner FINAL/clean
 c1423e43b872caa25537fac3cb2641f0b9bf8009 and full handoff read.
+
+## Latest checkpoint
+
+TASK-024 c1 R1 is FINAL FAIL with three local major defects: overly restrictive
+successor ownership; incomplete split exit coverage; identical criteria preserved
+by augmentation blocking the next rewrite. Full reports/probes were read and
+preserved by coordinator fail at476b878b51beed2b02a2bd3d41030ea576922661,
+generation40. No R2. Fresh repair_024_c1 Sol/xhigh is ACTIVE in the existing
+a1 tree at8805c35ec655ac5c1a8fef24ede1fec1e2bb7129, limited to its source/test/
+handoff. Native charge90/300. One ordinary local repair; next candidate needs
+cumulative c2 fresh R1/R2, second failure returns to independent recovery.
+
+017a2 owner verified salvage mapping71e0ccf->ce1776a and7e5bd5f->3cdb41e;
+all three blobs matched frozen a1 before correction. Owner remains active;
+007 owner remains active. 018/016/019/005 are clean FINAL review queue.
+
+A clean Git export of67e41a2 with no local directories/worktrees, fresh noneditable
+Python3.12 environment and declaredjsonschema4.26.0 passed11 suites:24 bootstrap
+and all10 acceptedtask suites,233 discovered tests, one established006skip. Exact
+origin checks passed; PYTHONPATH/PYTHONHOME unset and user site disabled.
+Evidence: clean-tracked-export-67e41a2.txt, SHA256
+f61c026df3660dce8ead6a5c10aa58f40b7fc0b96189564e4f0123b15967f8be.
+No final full-plan/packaging claim.
+
+Automatic approval review rejected the temporary cleanup command with only
+"blocked by policy"; no deletion ran. Do not bypass that restriction. Exact
+export/venv remain C:/Users/killi/AppData/Local/Temp/plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4.
+User was informed in a separate commentary paragraph. If still unresolved at
+final, explain the rejected cleanup and stated reason in a short separate footer.
+The successful narrower action only copied/hash-verified the useful evidence.

@@ -51,3 +51,13 @@ TASK-037 dispatch briefing and remains an outstanding gate, not a claimed pass.
 After verifying original inventory hashes and tracked destinations, the two active
 local script copies and 14 superseded local briefing copies were removed.
 The local CURRENT file now only points to the tracked current checkpoint.
+
+A subsequent [clean tracked-export check](clean-tracked-export-67e41a2.txt) passed
+the bootstrap suite and all ten accepted task suites: 233 tests discovered, with
+one established skip. The export had no ignored local/worktree directories and
+ran in a fresh noneditable environment with declared dependencies. Candidate
+source origins were verified; ambient Python paths and user site were disabled.
+This strengthens the current-code check; the full completed engine and package
+installation gates remain outstanding. The disposable export/environment was
+retained because automatic approval review rejected its cleanup command with
+"blocked by policy". No project source or required helper is stored there.
