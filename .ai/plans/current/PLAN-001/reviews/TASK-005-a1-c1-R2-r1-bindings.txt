@@ -1,0 +1,8 @@
+{
+  ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-declared.txt": "8ffe01088d002c9e74e17edd3607900b4430ab4e7e195e2b7121a40e86b469e7",
+  ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.py": "76e58a15e80e6c02133d00b1c7200d4555450038712b035f5717080864855eb7",
+  ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-evidence.txt": "7008b25cbfa9ed942d6d5e4e5571c595cabecc145c1f97b73ed212b41c8e44c1",
+  ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1-report-validation.txt": "3174e6510cff61274531fc4a27be129185eddeed7e56fc4fdeb99a6f6157dd3a",
+  ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1.json": "369bc5a5885c705ea29eb5dff06c2c3e567abe11b81ce23e417a35ac3c9423f3",
+  ".ai/plans/current/PLAN-001/reviews/TASK-005-a1-c1-R1.md": "fb0e3418660a725c135995eaa83e7404b3825484a55e836fb310ad142e68780e"
+}

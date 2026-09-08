@@ -4,7 +4,7 @@
   "id": "TASK-005",
   "plan_id": "PLAN-001",
   "title": "Build owned asset catalog",
-  "status": "running",
+  "status": "accepted",
   "archived": false,
   "objective": "Build owned asset catalog. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -99,5 +99,5 @@
     "TASK-005-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Candidate 0216c03b18698a3ff4bc89c9b0ae9749255425ef passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }
