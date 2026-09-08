@@ -1,0 +1,193 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-009-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "TASK-009-a1-c1-R1-call_Uw0t13fyfLrfCRrb11YQ2YMq",
+  "task_id": "TASK-009",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-009-a1-44d9481dc6e6.json",
+  "candidate_fingerprint": "8f38ee9238f404798b4031d08c7724fdfda2286cdad831b0d6d36ede9ffe5abf",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_Uw0t13fyfLrfCRrb11YQ2YMq"
+  },
+  "independent_session_id": "/root/review_009_c1",
+  "implementation_session_id": "/root/implement_009",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC1 is not satisfied: six native-repository reproductions show gate bypasses, inconsistent/destructive lifecycle admission, and rejection of the required snapshot-relative manifest. AC2's five crash seams, committed-ref acknowledgment boundary and same-operation restart reconciliation have meaningful passing evidence; that does not cure AC1.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-relocation.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "fail",
+      "rationale": "The local-only scope and frozen wire fields are respected, but state admission permits bypassing accepted transition guards and contradicts the required atomic lifecycle registry/reference and snapshot-root-relative archive semantics. Findings 001-006 relate to existing requirements, not a request for provider or remote functionality.",
+      "evidence": [
+        ".ai/shared/state/persistence.md",
+        ".ai/shared/state/transitions.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "The complete added source, test and handoff were traced. Matching only events to projections, checking gate predicates across different artifacts, treating any passing review as applicable, trusting relocation paths/consequences, and equating repository-relative effect paths with snapshot-relative manifest entries produce the six reproduced defects.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-probe.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-relocation.json.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "fail",
+      "rationale": "Generation/CAS conflicts, lost acknowledgment, lock release, private staging cleanup, and ambiguous command/I/O branches were assessed; the executed crash/retry cases pass. However, an invalid relocation source is applied and acknowledged instead of rejected, deleting unrelated committed evidence (005). Missing lifecycle consequences similarly reach publication (004).",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Zero-plan initialization, plan-qualified repeated task IDs, stale generations, operation payload conflicts, separate-process ownership/death and five crash boundaries are exercised. Independent boundary checks additionally reproduce unrelated gate identity, mixed successful/failed command evidence, incomplete/wrong-source relocation and valid snapshot-relative manifests being mishandled.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-real-ports.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-relocation.json.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "The exact candidate independently passes all 11 declared tests in 60.205 seconds with no skips, and the tests use actual Git/processes and candidate imports. Nevertheless they omit the reproduced mandatory rejection cases; their archive fixture uses repository-relative entries rather than the frozen snapshot-relative meaning. Add tracked regressions for 001-006. The review's real accepted-006/007 composition separately passed after correcting a diagnostic environment setup error.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-009-a1-44d9481dc6e6.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-real-ports.json.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The candidate changes only the declared state module, owned test leaf and implementation handoff. It introduces no wire field, shared port change, config import, provider behavior or remote effect. The demonstrated corrections fit state admission and owned tests; no prerequisite representation gap or new graph is established.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-009-a1-44d9481dc6e6.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-relocation.json.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Exact base/head, candidate cleanliness, raw binary diff, all context/validation hashes, policy/model digest, canonical fingerprint, current r4 structural graph and all-39-task digest were verified. All three owned blobs and direct dependency blobs equal the implementer's tested head; accepted prerequisite report/candidate identities and current dependency blobs also match. The newer merge includes other accepted source and documents and is not described as metadata-only.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-relocation.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "The public read/transact methods consume accepted immutable DTOs, and local runtime/content collaborators remain explicit. Actual LocalCommandRunner, FileContentReader and LocalGitRepository compose successfully. Real RunSettings and schema-valid effective policy bytes round-trip through the generic ContentRef route without importing config in state or adding v1 fields. Admission correctness problems are recorded separately rather than treated as style findings.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-real-ports.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/configuration-resume-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "fail",
+      "rationale": "Argument-list execution, bounded/digest-checked command outputs, namespace containment, direct-ref no-dereference CAS, OS common-directory lock and preservation of developer HEAD/index/tracked/untracked bytes were checked. The durable state trust boundary still accepts unrelated review/command facts and allows an unrelated committed path to be deleted through a relocation claim (001-005).",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1-real-ports.json.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "The handoff accurately identifies scope and the passing mechanical tests, but its gate-admission, lifecycle consistency and manifest compatibility claims exceed the reproduced behavior. Correct the six owned defects, add regression evidence, and revise the existing handoff. The provenance limitation and user's one-stage review schedule are recorded honestly in this report.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-009-a1-44d9481dc6e6.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-009-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-009-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/state.py:831-859 validates each event against some projection but never requires a lifecycle-changing projection to have its own applicable event. In unguarded_status_change, an existing TASK-001 changes backlog to accepted while the only event is project.observed for fixture-project with no evidence. transact returns committed generation 1 and read reports accepted. Arbitrary lifecycle updates can therefore bypass the accepted transition/gate rules entirely.",
+      "paths": ["src/state.py", "tests/unit/state_checkpoints/test_state.py"],
+      "expected_fix": "Before publication, compare committed and proposed lifecycle records and require every lifecycle mutation to be covered by an applicable entity-kind/from/to event and the existing legal transition/gate semantics. Do not allow a project event or alternate event label to authorize a task status jump. Preserve legitimate zero-plan initialization and direct EntityId v1 events. Add the tracked negative regression and update the handoff.",
+      "acceptance_ids": ["TASK-009-AC1"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-009-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/state.py:1112-1136 and 2321-2387 decide review gates from artifact kind and a positive verdict without binding the available plan/task/stage/candidate identity to the affected projection. unrelated_review_gate advances PLAN-001/TASK-001 from review_2 to accepted using only a passing implementation review for PLAN-002/TASK-999 with an unrelated fingerprint. The schema-valid committed bytes are real, but their approval is inapplicable.",
+      "paths": ["src/state.py", "tests/unit/state_checkpoints/test_state.py"],
+      "expected_fix": "Carry the matched qualified entity into gate admission and verify the existing artifact plan/task, required stage and current candidate/content identities before counting it toward that entity's gate. Require the applicable gate artifacts rather than any positive record. Reject the reproduced cross-plan/cross-task/wrong-stage review using existing fields and add an owned regression; do not invent a StateEvent plan_id or new provider facts.",
+      "acceptance_ids": ["TASK-009-AC1"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-009-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/state.py:1138-1193 and 2347-2356 satisfy command positivity and command-definition/nonzero-count predicates independently. mixed_command_evidence supplies an unrelated command with exit 0 and the required test.TASK-001 command with exit 1 plus 'Ran 2 tests' and FAILED. The unrelated record satisfies the first predicate and the failed required record satisfies the second; transact nevertheless commits review_1 at generation 1.",
+      "paths": ["src/state.py", "tests/unit/state_checkpoints/test_state.py"],
+      "expected_fix": "Evaluate status, exit code, completion/truncation/error facts, required command identity/definition and its success rule together on the same applicable CommandEvidence. Unrelated success must not compensate for a failed required command. Add the mixed-evidence rejection regression and retain genuine passing/nonzero controls.",
+      "acceptance_ids": ["TASK-009-AC1"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-009-004",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/state.py:687-829 and 861-931 only validate supplied relocation consequences; they never validate consistency of the resulting whole lifecycle view. incomplete_relocation moves PLAN-001 from current to archived and sets archived=true, but leaves it in active_plans, absent from archived_plans, with its moved task still referencing the now-deleted current/PLAN-001/spec.json. The source spec existed before the move. The inconsistent generation is acknowledged as committed.",
+      "paths": ["src/state.py", "tests/unit/state_checkpoints/test_state.py"],
+      "expected_fix": "Validate the complete proposed lifecycle view before commit: old/new owning locations, status/archive fields, project registry, affected qualified records, recognized physical/logical references and applicable manifest effects must agree. Apply the permitted consequences or reject omissions; preserve historical bytes and lifecycle-neutral structural digests. Add a relocation fixture with a real previously resolving spec reference and missing registry/reference consequences.",
+      "acceptance_ids": ["TASK-009-AC1", "TASK-009-AC2"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-009-005",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/state.py:992-1049 trusts old_location after checking only that its Git entry exists. unrelated_relocation_source asks to complete TASK-001 but supplies .codex/evidence/keep.txt as old_location. The store deletes that unrelated committed evidence, writes a completed task at the requested new path, leaves the real old current task in place, and returns committed. The relocation source is never tied to the RecordRef's committed owning path.",
+      "paths": ["src/state.py", "tests/unit/state_checkpoints/test_state.py"],
+      "expected_fix": "Resolve the qualified record's authoritative committed path and require the file source to equal it, or the directory source to be its exact permitted owning bundle. Validate destination identity and reject unrelated/overlapping/colliding source-target claims before any publication. Add an owned regression proving rejection, unchanged state ref, retained unrelated evidence and a single unchanged task location.",
+      "acceptance_ids": ["TASK-009-AC1", "TASK-009-AC2"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-009-006",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/state.py:1052-1083, 1215-1222 and 2266-2318 treat ManifestEffect.artifact_path and archive-manifest artifacts[].path as the same repository-relative string. The frozen schema and TASK-004 validator instead resolve archive entries relative to the immutable snapshot containing the manifest. snapshot_relative_manifest uses a valid TASK-001.json entry and existing matching bytes beside the manifest's canonical location: a repository-relative effect fails path equality, while a snapshot-relative effect fails namespace admission. Both return failed/invalid_input at generation 0, blocking the required archive composition.",
+      "paths": ["src/state.py", "tests/unit/state_checkpoints/test_state.py"],
+      "expected_fix": "Resolve archive manifest entries against the manifest's actual immutable snapshot root for verification and translate effect paths at that boundary, keeping snapshot-relative serialized entries. Preserve asset-manifest repository-relative behavior and historical bytes. Add valid snapshot-relative add/retain/relocation tests and stop using a repository-relative archive entry as the acceptance fixture; no schema change is required.",
+      "acceptance_ids": ["TASK-009-AC1"],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T15:17:35Z"
+}

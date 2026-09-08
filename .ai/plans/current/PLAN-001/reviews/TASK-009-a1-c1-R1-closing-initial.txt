@@ -1,0 +1,8 @@
+Initial --verify-reports execution: exit 1.
+ContractRegistry review-result schema validation passed before the evidence-link loop.
+The link loop failed on .ai/plans/current/PLAN-001/evidence/implementation/TASK-009.md,
+which is present in the unmerged frozen candidate, but not ROOT.
+The existing report's evidence reference was corrected to the frozen candidate manifest.
+No source, candidate, prerequisite or historical report changed. This was a reviewer
+link-validation error; the six behavioral findings and their evidence were unaffected.
+The initial stdout-only closing.json.txt capture contains no successful closing result.
