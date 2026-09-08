@@ -237,12 +237,14 @@ class LocalGitRepository:
         observed_at = self._clock.now()
 
         missing_head = self._head_file_missing(request.target.root)
-        if missing_head is not True:
-            repository_probe = self._git(request, evidence, "inspect-repository", "rev-parse", "--show-prefix")
-            if not repository_probe.usable or repository_probe.exit_code != 0:
-                return self._snapshot_command_failure(request, observed_at, evidence, repository_probe, None)
+        repository_probe = self._git(request, evidence, "inspect-repository", "rev-parse", "--show-prefix")
+        if not repository_probe.usable:
+            return self._snapshot_command_failure(request, observed_at, evidence, repository_probe, None)
+        if repository_probe.exit_code == 0:
             if repository_probe.stdout not in {b"", b"\n", b"\r\n"}:
                 return self._snapshot_failure(request, observed_at, evidence, None, ErrorCategory.INVALID_INPUT, "Git target is not the root of the observed worktree")
+        elif missing_head is not True or repository_probe.exit_code != 128:
+            return self._snapshot_command_failure(request, observed_at, evidence, repository_probe, None)
         head: GitHead | None = None
         symbolic_branch: str | None = None
         if request.include_head or request.refs:
@@ -250,6 +252,12 @@ class LocalGitRepository:
                 probe = self._git(request, evidence, "inspect-missing-head", "rev-parse", "--verify", "HEAD")
                 if not probe.usable:
                     return self._snapshot_command_failure(request, observed_at, evidence, probe, None)
+                if probe.exit_code == 0:
+                    return self._snapshot_failure(
+                        request, observed_at, evidence, None,
+                        ErrorCategory.INVALID_INPUT,
+                        "Git resolved HEAD outside the exact metadata root that has no HEAD",
+                    )
                 head = GitHead(GitHeadStatus.MISSING, None, None)
                 if request.include_status or request.include_worktrees or request.ancestry:
                     return self._snapshot_failure(
@@ -413,6 +421,12 @@ class LocalGitRepository:
         source_ref, source_oid = source
         if source_ref != context.source_ref or source_oid != context.source_oid:
             return _error(ErrorCategory.GIT_CONFLICT, "source ref does not match the expected commit", evidence)
+
+        symbolic_target = self._symbolic_ref(context, context.target_ref, evidence)
+        if isinstance(symbolic_target, DomainError):
+            return symbolic_target
+        if symbolic_target is not None:
+            return _error(ErrorCategory.POLICY_DENIED, "symbolic mutation targets are not supported", evidence)
 
         target = self._exact_ref(context, context.target_ref, evidence)
         if isinstance(target, DomainError):
@@ -593,17 +607,32 @@ class LocalGitRepository:
 
     def _managed_after_state(self, context: "_MutationContext", binding: LocalWorktreeBinding, result_oid: str, evidence: list[EvidenceRef]) -> str:
         expected = context.expected_target_oid
+        branch = self._git_binding(context, binding, evidence, "managed-result-branch", PermissionClass.LOCAL_READ, "symbolic-ref", "-q", "HEAD")
         head = self._git_binding(context, binding, evidence, "managed-result-head", PermissionClass.LOCAL_READ, "rev-parse", "--verify", "HEAD")
         index = self._git_binding(context, binding, evidence, "managed-result-index", PermissionClass.LOCAL_EXECUTE, "write-tree")
         new_tree = self._git(context, evidence, "result-tree", "rev-parse", "--verify", f"{result_oid}^{{tree}}")
         old_tree = self._git(context, evidence, "before-tree", "rev-parse", "--verify", f"{expected}^{{tree}}") if expected is not None else None
         diff = self._git_binding(context, binding, evidence, "managed-result-diff", PermissionClass.LOCAL_READ, "diff", "--quiet", "--no-ext-diff")
         untracked = self._git_binding(context, binding, evidence, "managed-result-untracked", PermissionClass.LOCAL_READ, "ls-files", "--others", "--exclude-standard", "-z")
-        outcomes = (head, index, new_tree, diff, untracked) + (() if old_tree is None else (old_tree,))
+        outcomes = (branch, head, index, new_tree, diff, untracked) + (() if old_tree is None else (old_tree,))
         if any(not item.usable for item in outcomes):
             return "unknown"
+        try:
+            branch_ref = branch.stdout.decode("ascii").strip()
+            admitted_path = Path(os.path.abspath(binding.root)).resolve(strict=True)
+        except (OSError, UnicodeError, ValueError):
+            return "unknown"
+        checked = self._checked_out_paths(context, evidence)
+        if (
+            branch.exit_code != 0
+            or branch_ref != context.target_ref
+            or isinstance(checked, DomainError)
+            or checked != (admitted_path,)
+            or _single_oid(head.stdout) != result_oid
+        ):
+            return "unknown"
         index_oid = _single_oid(index.stdout)
-        if _single_oid(head.stdout) == result_oid and index_oid == _single_oid(new_tree.stdout) and diff.exit_code == 0 and not untracked.stdout:
+        if index_oid == _single_oid(new_tree.stdout) and diff.exit_code == 0 and not untracked.stdout:
             return "clean"
         if old_tree is not None and index_oid == _single_oid(old_tree.stdout) and diff.exit_code == 0 and not untracked.stdout:
             return "before"
@@ -664,6 +693,22 @@ class LocalGitRepository:
         if oid is None:
             return _error(ErrorCategory.INTERNAL_ERROR, "Git returned an invalid ref OID", evidence)
         return GitRefStatus.PRESENT, oid
+
+    def _symbolic_ref(self, context: object, ref: str, evidence: list[EvidenceRef]) -> str | None | DomainError:
+        outcome = self._git(context, evidence, "observe-symbolic-ref", "symbolic-ref", "-q", ref)
+        if not outcome.usable:
+            return _error(ErrorCategory.AMBIGUOUS_SIDE_EFFECT if outcome.ambiguous else ErrorCategory.INTERNAL_ERROR, "Git symbolic ref observation is unavailable", evidence)
+        if outcome.exit_code == 1:
+            return None
+        if outcome.exit_code != 0:
+            return _error(ErrorCategory.INTERNAL_ERROR, "Git could not inspect symbolic ref identity", evidence)
+        try:
+            target = outcome.stdout.decode("ascii").strip()
+        except UnicodeDecodeError:
+            return _error(ErrorCategory.UNSUPPORTED_CAPABILITY, "symbolic ref target is not ASCII", evidence)
+        if target == "HEAD" or not _valid_ref(target):
+            return _error(ErrorCategory.INTERNAL_ERROR, "Git returned an invalid symbolic ref target", evidence)
+        return target
 
     def _resolve_named_commit(self, context: object, requested: str, evidence: list[EvidenceRef]) -> tuple[str, str] | DomainError:
         if requested == "HEAD":
@@ -865,20 +910,43 @@ class LocalGitRepository:
         marker = root / ".git"
         try:
             if marker.is_dir():
-                return not (marker / "HEAD").is_file()
-            if marker.is_file():
+                git_dir = marker.resolve(strict=True)
+            elif marker.is_file():
                 data = marker.read_text(encoding="utf-8", errors="strict")
                 if not data.startswith("gitdir: "):
                     return None
                 git_dir = Path(data[8:].strip())
                 if not git_dir.is_absolute():
                     git_dir = marker.parent / git_dir
-                return not (git_dir.resolve(strict=True) / "HEAD").is_file()
-            if (root / "objects").is_dir() and (root / "refs").is_dir():
-                return not (root / "HEAD").is_file()
+                git_dir = git_dir.resolve(strict=True)
+            elif (root / "objects").is_dir() and (root / "refs").is_dir():
+                git_dir = root.resolve(strict=True)
+            else:
+                return None
+
+            common_dir = git_dir
+            common_marker = git_dir / "commondir"
+            if common_marker.is_file():
+                common_value = common_marker.read_text(encoding="utf-8", errors="strict").strip()
+                if not common_value:
+                    return None
+                common_dir = Path(common_value)
+                if not common_dir.is_absolute():
+                    common_dir = git_dir / common_dir
+                common_dir = common_dir.resolve(strict=True)
+                backlink = git_dir / "gitdir"
+                if not backlink.is_file():
+                    return None
+                backlink_path = Path(backlink.read_text(encoding="utf-8", errors="strict").strip())
+                if not backlink_path.is_absolute():
+                    backlink_path = git_dir / backlink_path
+                if backlink_path.resolve(strict=True) != marker.resolve(strict=True):
+                    return None
+            if not (common_dir / "objects").is_dir() or not (common_dir / "refs").is_dir():
+                return None
+            return not (git_dir / "HEAD").is_file()
         except (OSError, UnicodeError, ValueError):
             return None
-        return None
 
     def _snapshot_command_failure(self, request: GitInspectRequest, observed_at: object, evidence: list[EvidenceRef], outcome: _CommandOutcome, head: GitHead | None, refs: list[GitRefObservation] | None = None, ancestry: list[AncestryObservation] | None = None, working_tree: GitStatus | None = None) -> GitSnapshot:
         category = ErrorCategory.AMBIGUOUS_SIDE_EFFECT if outcome.ambiguous else ErrorCategory.INTERNAL_ERROR
@@ -1351,7 +1419,7 @@ def _update_transaction(git_executable: str, operations: tuple[tuple[str, str, s
         else:
             return 64
     lines.extend(("prepare", "commit", ""))
-    result = _child(git_executable, "update-ref", "--stdin", input_bytes="\n".join(lines).encode("ascii"))
+    result = _child(git_executable, "update-ref", "--no-deref", "--stdin", input_bytes="\n".join(lines).encode("ascii"))
     sys.stdout.buffer.write(result.stdout)
     sys.stderr.buffer.write(result.stderr)
     return result.returncode

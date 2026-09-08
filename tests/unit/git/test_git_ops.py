@@ -74,7 +74,7 @@ class _FailingReader:
 
 
 class _InterceptRunner:
-    def __init__(self, runner: LocalCommandRunner, mode: str, worktree: Path | None = None, before_publish=None) -> None:
+    def __init__(self, runner: LocalCommandRunner, mode: str, worktree: Path | None = None, before_publish=None, after_publish=None) -> None:
         self.runner = runner
         self.mode = mode
         self.worktree = worktree
@@ -82,6 +82,7 @@ class _InterceptRunner:
         self.publish_calls = 0
         self.read_tree_calls = 0
         self.before_publish = before_publish
+        self.after_publish = after_publish
 
     def execute(self, request):
         argv = request.definition.argv
@@ -105,6 +106,9 @@ class _InterceptRunner:
                 )
             result = self.runner.execute(request)
             self.last = result
+            if self.after_publish is not None:
+                callback, self.after_publish = self.after_publish, None
+                callback()
             if self.mode == "unknown-after-publish":
                 return dataclasses.replace(
                     result,
@@ -314,6 +318,21 @@ class InspectTests(GitFixture):
         self.assertEqual(snapshot.refs[0].status, GitRefStatus.MISSING)
         self.assertTrue(snapshot.evidence_refs)
 
+    def test_nested_empty_git_directory_cannot_claim_missing_head(self) -> None:
+        directory = self.repo / "ordinary-subdirectory"
+        (directory / ".git").mkdir(parents=True)
+        binding = LocalWorktreeBinding(self.project.project_id, EntityId("not-a-worktree"), directory)
+        snapshot = self.repository.inspect(GitInspectRequest(
+            self.project.project_id, EntityId("run-nested-empty-git"), binding,
+            refs=(GitRefQuery("HEAD"), GitRefQuery("refs/heads/main")),
+            include_status=False, include_worktrees=False,
+        ))
+        self.assertEqual(snapshot.status, ResultStatus.FAILED)
+        self.assertIsNone(snapshot.head)
+        self.assertEqual(snapshot.refs, ())
+        self.assertEqual(snapshot.error.category, ErrorCategory.INVALID_INPUT)
+        self.assertEqual(self.git("rev-parse", "HEAD", cwd=directory).strip(), self.base)
+
     def test_reports_missing_ancestry_object(self) -> None:
         missing = "f" * 40
         snapshot = self.inspect(ancestry=(AncestryQuery(missing, self.base),), include_head=False, include_status=False, include_worktrees=False)
@@ -419,6 +438,51 @@ class BranchTests(GitFixture):
         result = self.repository.create_branch(self.branch_request(source="HEAD"))
         self.assertEqual(result.status, ResultStatus.SUCCEEDED)
         self.assertEqual(self.git("rev-parse", "topic").strip(), self.base)
+
+    def test_symbolic_target_alias_is_refused_and_preserves_developer_checkout(self) -> None:
+        candidate = self.candidate_commit()
+        self.git("symbolic-ref", "refs/heads/alias", "refs/heads/main")
+        before_index = self.git("write-tree").strip()
+        before_status = self.git("status", "--porcelain=v2", "-z")
+        before_file = (self.repo / "base.txt").read_bytes()
+        result = self.repository.create_branch(self.branch_request(
+            operation="op-symbolic-target", branch="alias",
+            source="refs/heads/candidate", source_oid=candidate,
+            expected=GitRefExpectation("refs/heads/alias", GitRefStatus.PRESENT, self.base),
+        ))
+        self.assertEqual(result.status, ResultStatus.FAILED)
+        self.assertEqual(result.error.category, ErrorCategory.POLICY_DENIED)
+        self.assertEqual(self.git("symbolic-ref", "refs/heads/alias").strip(), "refs/heads/main")
+        self.assertEqual(self.git("rev-parse", "refs/heads/main").strip(), self.base)
+        self.assertEqual(self.git("write-tree").strip(), before_index)
+        self.assertEqual(self.git("status", "--porcelain=v2", "-z"), before_status)
+        self.assertEqual((self.repo / "base.txt").read_bytes(), before_file)
+        self.assertFalse((self.repo / "candidate.txt").exists())
+
+    def test_target_retargeted_to_symbolic_alias_cannot_move_developer_branch(self) -> None:
+        candidate = self.candidate_commit()
+        self.git("branch", "topic", self.base)
+        before_index = self.git("write-tree").strip()
+        before_status = self.git("status", "--porcelain=v2", "-z")
+
+        def retarget() -> None:
+            self.git("symbolic-ref", "refs/heads/topic", "refs/heads/main")
+
+        intercepted = _InterceptRunner(self.runner, "retarget-symbolic", before_publish=retarget)
+        repository = self.make_repository(intercepted)
+        result = repository.create_branch(self.branch_request(
+            operation="op-symbolic-retarget", source="refs/heads/candidate",
+            source_oid=candidate,
+            expected=GitRefExpectation("refs/heads/topic", GitRefStatus.PRESENT, self.base),
+        ))
+        self.assertEqual(result.status, ResultStatus.SUCCEEDED)
+        self.assertTrue(result.changed)
+        self.assertEqual(self.git("symbolic-ref", "-q", "refs/heads/topic", check=False), "")
+        self.assertEqual(self.git("rev-parse", "refs/heads/topic").strip(), candidate)
+        self.assertEqual(self.git("rev-parse", "refs/heads/main").strip(), self.base)
+        self.assertEqual(self.git("write-tree").strip(), before_index)
+        self.assertEqual(self.git("status", "--porcelain=v2", "-z"), before_status)
+        self.assertFalse((self.repo / "candidate.txt").exists())
 
     def test_checked_out_unborn_branch_is_preserved(self) -> None:
         unborn_root = Path(self.temporary.name) / "unborn-branch"
@@ -584,6 +648,34 @@ class MergeTests(GitFixture):
         self.assertEqual((path / "base.txt").read_text(encoding="utf-8"), "staged concurrent change\n")
         self.assertNotEqual(self.git("status", "--porcelain", cwd=path), "")
         self.assertEqual(intercepted.read_tree_calls, 0)
+
+    def test_branch_switch_after_publication_is_preserved_without_read_tree(self) -> None:
+        candidate = self.candidate_commit()
+        path, binding, admission = self.managed_integration()
+        self.git("branch", "developer", self.base)
+        switched: dict[str, object] = {}
+
+        def switch_branch() -> None:
+            self.git("checkout", "developer", cwd=path)
+            switched.update(
+                branch=self.git("symbolic-ref", "HEAD", cwd=path).strip(),
+                index=self.git("write-tree", cwd=path).strip(),
+                status=self.git("status", "--porcelain=v2", "-z", cwd=path),
+                base=(path / "base.txt").read_bytes(),
+                candidate_exists=(path / "candidate.txt").exists(),
+            )
+
+        intercepted = _InterceptRunner(self.runner, "branch-after-publish", path, after_publish=switch_branch)
+        repository = self.make_repository(intercepted, (admission,))
+        result = repository.merge(self.merge_request(operation="op-branch-switch", candidate_oid=candidate))
+        self.assertEqual(result.status, ResultStatus.UNKNOWN)
+        self.assertIsNone(result.changed)
+        self.assertEqual(intercepted.read_tree_calls, 0)
+        self.assertEqual(self.git("symbolic-ref", "HEAD", cwd=path).strip(), switched["branch"])
+        self.assertEqual(self.git("write-tree", cwd=path).strip(), switched["index"])
+        self.assertEqual(self.git("status", "--porcelain=v2", "-z", cwd=path), switched["status"])
+        self.assertEqual((path / "base.txt").read_bytes(), switched["base"])
+        self.assertEqual((path / "candidate.txt").exists(), switched["candidate_exists"])
 
     def test_candidate_ref_movement_is_rejected(self) -> None:
         candidate = self.candidate_commit()
