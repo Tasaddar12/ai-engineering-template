@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-018-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-018-a1-c2-R1-call_bIUmqZuLRspmyIIjxLPIRZZx",
+  "task_id": "TASK-018",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-018-a1-41a8cd578b81.json",
+  "candidate_fingerprint": "539d2985edce4cc829db1dea8ebca96486abdf07acd19a9de328d655afceb154",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_bIUmqZuLRspmyIIjxLPIRZZx"
+  },
+  "independent_session_id": "/root/verify_018_c2",
+  "implementation_session_id": "/root/repair_018_c1",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Current AC1 ordered authority and exact revision binding retain c1 independent reasoning; corrected AC2 zero/missing/malformed/ambiguous evidence fails under real processes. Reviewer is independent Astra/xhigh rank 4 versus correction owner Sol/xhigh rank 3, with native-only provenance explicitly recorded.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-identity.txt",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-018.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "Reused unchanged flat Python 3.11, frozen ports, ADR/exclusion reasoning after source/context verification. Corrected configured argv preserves sanitized-evidence requirement. Bound user decision supersedes the older manual two-stage schedule without changing product contracts.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/shared/architecture/python.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced changed per-stream summary/status parser and configured receipt serialization in actual current source. Exactly one complete result is required; direct bounded count conversion and sanitization preserve the existing runner/result/receipt flow.",
+      "evidence": [
+        "src/validation.py:721",
+        "src/validation.py:845",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Actual complete-shaped 5,000-digit output returns failed typed evidence, collects later command and after revision, and persists all receipts. Unchanged runner exception, missing evidence, store read-back, fsync/temp cleanup reasoning from c1 is reused; fixture cleanup completed on both hosts.",
+      "evidence": [
+        "tests/unit/validation/test_validation.py:508",
+        "src/validation.py:556",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "New tracked cases reject both original zero-test decoys, ambiguity, missing proof and failed status. Independent controls cover split/cross-stream proof, count just above bound, original bare 5,000 digits and sensitive pre-execution receipts. Reuse c1 unchanged suite/order/root/environment/stale/unknown/store guards.",
+      "evidence": [
+        "tests/unit/validation/test_validation.py:441",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-probe.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "All three required regressions are tracked. Fresh exact-candidate coordinator Windows 3.12 leaf passes 13 tests/no skips; independently selected 5 tests and 7 diagnostic cases pass on Windows 3.12 and WSL Linux 3.11 with exact imports. No claim of reviewer rerunning full matrix or Windows 3.11.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-018-a1-41a8cd578b81.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt",
+        "tests/unit/validation/test_validation.py"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Reuse c1 ownership and downstream exclusion reasoning: changes stay in the original source/test/handoff slice; helpers remain private and injected collaborators unchanged. No new schema, Git/state, candidate/review, CLI wiring, provider or dirty-tree policy is required.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-018.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-identity.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Recomputed exact clean head/base, raw diff, all 14 contexts, validation hash, policy/model, canonical fingerprint and approved graph digest. Three owned additions match corrected owner blobs. Accepted TASK-003/006 blobs and supporting dependencies match; newer-base TASK-007 files are unchanged base additions and unused by TASK-018. Retained c1 reports remain immutable.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Reuse verified unchanged Validator.run/ValidationRequest/Result and accepted CommandRunner.execute compatibility. Only private parser and serialization helpers change; remaining 32 source definitions/classes and 25 old test/fixture functions are structurally identical. No shared v1 fields or import cycles were introduced.",
+      "evidence": [
+        "src/workflow_ports.py:605",
+        "src/local_ports.py:629",
+        "src/commands.py:305",
+        "src/validation.py:295",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-final-checks.txt"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Configured receipt argv now uses the same non-empty sensitive-binding substitution as accepted TASK-006 on executed and no-command-evidence paths. Actual overlapping/empty/public binding cases preserve non-sensitive argv and keep redacted checks failed. Reuse unchanged shell-free runner, bounded/hash-verified log and durable read-back boundary reasoning.",
+      "evidence": [
+        "src/commands.py:798",
+        "src/validation.py:862",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Read full updated handoff against actual source/tests/diff. It accurately maps 001/002/003, explains 3.11 versus3.12 zero status, parser bounds, sanitized argv, private diagnostic limits and single-stage correction. Owner platform results are attributed to the handoff; actual reviewer/coordinator executions are distinguished.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-018-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved: complete unittest summary/status blocks are interpreted independently per stream, with exactly one result required. Both original zero-test decoys now retain count 0 and fail; actual conflicting, split, missing and failed-status proof also fails while standard positive controls pass.",
+      "paths": [
+        "src/validation.py",
+        "tests/unit/validation/test_validation.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md"
+      ],
+      "expected_fix": "Keep complete per-stream proof and tracked actual-process zero/ambiguous/missing/failed-status regressions.",
+      "acceptance_ids": [
+        "TASK-018-AC1",
+        "TASK-018-AC2"
+      ],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-018-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved: configured argv in all validation receipts uses authoritative non-empty sensitive bindings with accepted TASK-006 direct substitution. Executed, binding-rejected and stale-before receipts contain no synthetic secret; public whitespace/repeated args remain exact and redacted evidence fails.",
+      "paths": [
+        "src/validation.py",
+        "tests/unit/validation/test_validation.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md"
+      ],
+      "expected_fix": "Keep sanitization on all configured-command serialization paths and the tracked executed/pre-execution receipt regressions.",
+      "acceptance_ids": [
+        "TASK-018-AC1",
+        "TASK-018-AC2"
+      ],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-018-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved: digit length and count bounds precede conversion. Actual 5,000-digit complete proof returns durable failed check/suite evidence, preserves after observation and later command collection. Original bare long output and count above explicit maximum likewise fail without exception.",
+      "paths": [
+        "src/validation.py",
+        "tests/unit/validation/test_validation.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md"
+      ],
+      "expected_fix": "Keep bounded parsing and the tracked actual oversized-output regression asserting durable evidence and later-command collection.",
+      "acceptance_ids": [
+        "TASK-018-AC2"
+      ],
+      "resolved": true
+    }
+  ],
+  "created_at": "2026-09-08T13:54:25.122999+00:00"
+}

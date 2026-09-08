@@ -1,0 +1,46 @@
+# TASK-019 a1 — first single implementation review
+
+**Verdict: fail.** One bounded deserialization compatibility defect remains. This is the first formal TASK-019 review, under the tracked single-stage decision; there is no task R2 or prior R1 reference.
+
+Candidate `c56a72b7f1cc413944ac48c5f60e088bd2206677`, base `ed21f7919d589b99a19cdaedafc357b25f5e9e8b`, fingerprint `8afe5cf982ed6ad3b1b91446e7826c0845f5ba9d0fbe0dc8bcc8000419acb859`. The candidate manifest is [CANDIDATE-TASK-019-a1-c56a72b7f1cc.json](candidates/CANDIDATE-TASK-019-a1-c56a72b7f1cc.json).
+
+Reviewer `/root/review_019_c1`: coordinator-observed native `gpt-6-astra` / `xhigh`, `review_high` rank 4, invocation `call_DiX3AwEynoVk7vw2mEoxbuA6`, conservative charge 106/300. Implementation `/root/correct_019_context`: observed native Sol/xhigh rank 3, `call_qf39dyVIkjyh0iP8NeCfyn0m` (102), continuation `call_a4PbUQKFoWQSlfDfUSymhW2f` (104). These are native submitted/configured identities; separate provider-effective identity and effort were unavailable, as described by the tracked effort-provenance clarification. Automatic provider bindings remain unconfigured. The sessions are independent and rank 4 exceeds rank 3.
+
+## Finding R1-TASK-019-001 — accepted immutable JSON cannot be parsed
+
+**Major defect, TASK-019-AC2 / AC-05.** At `src/candidates.py:527`, the parser copies only the top-level Mapping. At line 473 it hashes the nested values through `json.dumps` (line 90) before converting references. `candidate_from_wire(FrozenJsonObject(valid_candidate.to_wire()), registry)` passes the accepted registry validation, then raises `ValueError: candidate is not canonical UTF-8 JSON: Object of type FrozenJsonObject is not JSON serializable`. The advertised Mapping branch of `verify_candidate` reaches that same parser.
+
+This uses TASK-001's actual accepted `FrozenJsonObject`, not an invented downstream type. TASK-004 explicitly accepts immutable JSON, and the accepted `VersionedRecord.record` field also uses this representation. Normal dictionary task/plan candidates and historical candidate dictionaries pass. The reproduction and complete results are in [the one independent probe](TASK-019-a1-c1-R1-probe.py) and [its output](TASK-019-a1-c1-R1-probe.json.txt).
+
+Normalize or detach valid nested Mapping/tuple JSON before computing the canonical fingerprint, preserving exact wire fields and array order. Add the parse/reverify and tamper/stale regressions in the owned test leaf, update the existing handoff, and validate the corrected candidate. This correction requires no downstream implementation or shared-contract change.
+
+## Verification and scope
+
+- Exact clean candidate HEAD, ROOT base HEAD, base ancestry, all 14 committed context hashes, the ROOT validation hash, raw ROOT policy-plus-model digest and unsigned canonical fingerprint matched. Raw binary diff SHA-256 is `43b3aceb2add7601d0a32082695a408155fb6863c1301648e0af3147b45bf80f`; its complete additions were reconstructed against all three committed files. `git diff --check` passed.
+- Only `src/candidates.py`, `tests/unit/reviews_candidates/test_candidates.py`, and the task handoff differ from base. All three match owner-final `e6960b6f50df1187c6fab69fee621ab88331f628`; `candidates.py` also matches owner production revision `c843bfca`. `contracts.py`, `domain_values.py` and all 27 schemas match the owner/current closure. The newer base contains other accepted changes; no global metadata-only merge claim is made.
+- Accepted TASK-001 `d1fc917466410febc6238479e65816dd39591a4f` and TASK-004 `e3c1177f993ee74815639a83ef3333faa4ba3957` are ancestors of base; their used production bytes remain identical. Current task states are accepted. All 39 task/graph dependency lists agree; the recomputed structural digest is `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e`, matching approved graph r4 and its passing independent isolation review.
+- Independent Windows Python 3.12.14 declared command, from the exact worktree with bytecode writes disabled: `-m unittest discover -s tests/unit/reviews_candidates/ -p test_*.py` — exit 0, **14 tests**, no skips, 0.315 seconds. The exact-candidate coordinator log independently records 14 passing tests in 0.308 seconds. The foundation validator passed: 27 schemas, 195 artifacts, 39 tasks, 280 unordered pairs, 4 archive manifests, 543 links.
+- The one independent diagnostic exited 1: **six groups passed, one failed**. It independently checks raw binary/BOM/non-ASCII hashes, 18 input mutations, actual dependency-free TASK-001, a plan without ADRs, missing named materials, path/OID/revision boundaries, mutation isolation, accepted historical candidates and task/plan DTO translation. Project imports resolve to exact candidate source. The sole failed group is the finding above.
+- Source/test inspection confirms the owned leaf no longer uses Git, old review artifacts, pointer repair or ambient `.ai` fixtures. The owner recorded a three-module/27-schema clean export passing 14 tests; that export and the unchanged full platform matrix were not repeated by this review. No platform-independent behavior claim relies on an unexecuted matrix.
+
+## Complete PLAN-001-v1 implementation checklist
+
+| Check | Result | Decisive rationale |
+| --- | --- | --- |
+| R1-01 | fail | AC1 is satisfied. AC2 is incomplete for the accepted immutable Mapping representation: valid candidates cannot reach current-input verification through its advertised Mapping path (R1-TASK-019-001). |
+| R1-02 | pass | Pure observed-byte hashing respects REQ-05/AC-05, the frozen v1 format and task exclusions. Git/context/validation observations and runtime review policy remain upstream; the single-stage decision changes this manual review only. |
+| R1-03 | fail | Raw digests, unsigned canonical fingerprint, stable role ordering and 18 changed-input rejections work. Deserialization hashes nested immutable mappings before converting their valid JSON representation, causing R1-TASK-019-001. |
+| R1-04 | pass | Malformed values and fingerprints reject; stale inputs produce immutable, non-retryable state_conflict with changed fields. The algorithm acquires no process, filesystem, clock, network or cleanup resources. |
+| R1-05 | fail | Dependency-free TASK-001, no-ADR plan, missing applicable materials, full OIDs, aliases, raw binary bytes and mutation defenses pass. The accepted FrozenJsonObject boundary fails (R1-TASK-019-001). |
+| R1-06 | fail | The declared leaf passes 14 meaningful tests without skips and uses tracked self-contained fixtures. Independent probes pass six groups but expose the missing immutable mapping parse/reverification regression; preserve its correction in the owned test leaf. |
+| R1-07 | pass | The algorithm owns one pure module; only accepted contracts/domain_values are project imports. No context discovery, Git observation, provider adapter, runtime gate, shared schema or concrete downstream implementation is added. |
+| R1-08 | pass | The complete binary base-to-head diff contains exactly the owned module, owned test file and own handoff. All three and the dependency/schema bytes match owner-final e6960b6f50df1187c6fab69fee621ab88331f628; newer base changes outside this closure are not characterized as metadata-only. |
+| R1-09 | fail | Explicit immutable constructors, defensive byte copies and detached v1 output are clear. Historical 001/004 candidates and task/plan CandidateRecord conversion pass, but Mapping input semantics conflict with accepted FrozenJsonObject/ContractRegistry support (R1-TASK-019-001). |
+| R1-10 | pass | No authority or side effects are introduced. Canonical portable exact paths, cross-role aliases, strict schema shape, full OIDs and fingerprint checks enforce the observed-input boundary; hashing does not attest Git, validation success or context discovery. |
+| R1-11 | pass | The handoff accurately identifies scope, APIs, caller-owned applicability, raw-byte conventions, current-input observation limits, historical correction/portability results and final self-review. The final tracked fixture has no Git/history/.ai dependency. |
+
+Relevant accepted interfaces and consumer consistency were examined in this same stage. Context discovery owns applicability and observation; this algorithm only hashes supplied raw bytes and enforces declared membership. Empty ADR/handoff requirements are valid. The combined policy/model hash follows the frozen v1 concatenation convention. No concrete downstream implementation is demanded.
+
+At initial identity verification, ROOT had the disclosed unstaged coordination `CURRENT.md` and the coordinator-created untracked candidate/validation evidence; these are outside the candidate source diff. This reviewer writes only this new report and same-prefix diagnostic companions. No candidate, earlier review, canonical state, policy, graph, commit or checkout pointer was changed. Reports are final only after the recorded schema and final identity checks.
+
+Final schema, eleven-check, invocation/session and frozen-identity verification passed; see [final verification](TASK-019-a1-c1-R1-verification.json.txt). Candidate remained clean. All ROOT and candidate access ended after this verification call.

@@ -1,0 +1,57 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "results": [
+    {
+      "name": "exact_hashes",
+      "pass": true,
+      "detail": "Exact raw binary/BOM/non-ASCII inputs and canonical unsigned v1 JSON match independent hashlib calculations."
+    },
+    {
+      "name": "invalidation",
+      "pass": true,
+      "detail": "18 independent mutations rejected with immutable non-retryable state_conflict."
+    },
+    {
+      "name": "applicable_roles",
+      "pass": true,
+      "detail": "Actual TASK-001 has no dependencies; task without handoffs and plan without ADRs succeed; each missing declared material rejects."
+    },
+    {
+      "name": "boundaries",
+      "pass": true,
+      "detail": "Portable aliases/unsafe paths, full OID boundaries, boolean revision, memoryview detachment and parsed output isolation checked."
+    },
+    {
+      "name": "historical_and_dto",
+      "pass": true,
+      "detail": "Both accepted dependency candidate wires round-trip exactly; normal task and plan outputs adapt to accepted CandidateRecord without new fields."
+    },
+    {
+      "name": "immutable_mapping_input",
+      "pass": false,
+      "error": "ValueError: candidate is not canonical UTF-8 JSON: Object of type FrozenJsonObject is not JSON serializable"
+    },
+    {
+      "name": "dependency_closure",
+      "pass": true,
+      "detail": {
+        "imports": [
+          "__future__",
+          "collections",
+          "contracts",
+          "dataclasses",
+          "domain_values",
+          "hashlib",
+          "json",
+          "re",
+          "typing"
+        ],
+        "origins": {
+          "candidates": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-019-a1\\src\\candidates.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-019-a1\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-019-a1\\src\\domain_values.py"
+        }
+      }
+    }
+  ]
+}

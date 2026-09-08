@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-007-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "TASK-007-a1-c2-R1-call_9o7ufIDb4liERCrzTpbyNOLW",
+  "task_id": "TASK-007",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-007-a1-5e06fe8d227e.json",
+  "candidate_fingerprint": "704f1ef2363241c5e0643ed9d06680e737ea870d326a31957ed888c3a45736f7",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_9o7ufIDb4liERCrzTpbyNOLW"
+  },
+  "independent_session_id": "/root/verify_007_c2",
+  "implementation_session_id": "/root/repair_007_c1",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Both task acceptance criteria now have current evidence: exact-root inspection and conditional ref operations preserve developer state for all three repaired schedules.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-02/AC-02 safety is restored for the concrete alias and changed-checkout schedules; frozen specification exclusions remain respected.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-007.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced the five changed functions and new symbolic-ref observer through their callers. Both-host regressions verify the repaired behavior; 67 existing function implementations are AST-identical to the prior reviewed candidate.",
+      "evidence": [
+        "src/git_ops.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-validation.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "A checkout whose branch/published HEAD/admitted path no longer agrees returns unknown with changed=None and no read-tree. Dirty/index, uncertain-read-tree and lost-publication controls pass without blind retries.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-linux.json.txt",
+        "src/git_ops.py"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Initial and late symbolic aliases, actual branch switch, empty/shaped fake metadata, genuine direct missing HEAD and linked-worktree missing HEAD are exercised on both hosts; checkout pointers remain unchanged.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-linux.json.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "The four required new regressions are owned and tracked. Each host passes 15 focused tests without skips plus two independent metadata observations; current candidate-bound coordinator evidence records 33 tests with one Windows filename skip.",
+      "evidence": [
+        "tests/unit/git/test_git_ops.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-linux.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-5e06fe8d227e.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The correction remains in the Git adapter, owned tests and handoff. It adds no downstream TASK-009/011/023 implementation, port, stdin field, schema or ignored runtime asset. Unaffected prior scope reasoning is retained.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-007.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-validation.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Recomputed clean exact HEAD/base, three owned paths, every context/validation hash, policy-model digest and fingerprint. Accepted002/006 ancestry and bytes, graph/isolation digest, and owner-tested owned/dependency blobs match.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-007-a1-5e06fe8d227e.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-validation.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Frozen GitRepository and CommandRunner signatures, explicit submodule imports and injected local bindings remain compatible with accepted002/006. The finite helper remains in tracked git_ops.py; unaffected architecture reasoning and evidence are reused.",
+      "evidence": [
+        "src/git_ops.py",
+        "src/local_ports.py",
+        "src/commands.py",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "All transactions prohibit dereferencing and changed checkout identity prevents advancement. Fixed shell=False argv, trusted runtime and genuine digest-checked outer evidence remain intact. Independent native Astra/xhigh rank4 selection and unavailable separate provider-effective identity are disclosed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-validation.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-windows.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-linux.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "The full updated handoff accurately records the three fixes, safe late-alias conversion, existing interface/runtime closure, actual matrix and explicit missing-HEAD limits; historical failed evidence remains unchanged.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-007.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-validation.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-007-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "Historical finding resolved on c2: preflight rejects an already-symbolic target; every private ref transaction uses --no-deref. Both actual-repository tests pass on Windows/Linux, preserving developer main, index/status/files; a late alias may safely become the requested direct target without moving its referent.",
+      "paths": [
+        "src/git_ops.py",
+        "tests/unit/git/test_git_ops.py"
+      ],
+      "expected_fix": "Observe and constrain symbolic target identity. Reject symbolic mutation targets explicitly or safely resolve/guard their referents and apply checkout policy to the actual ref, including alias retargeting. Add an actual-repository regression preserving developer HEAD, index and files; update the handoff.",
+      "acceptance_ids": [
+        "TASK-007-AC2",
+        "AC-02"
+      ],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-007-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "Historical finding resolved on c2: managed reconciliation requires the exact branch, published HEAD, admitted resolved path as sole checkout, old/new tree/index and clean observations before advancement. Both-host actual checkout-to-developer regression returns unknown/changed=None, performs zero read-tree calls and preserves developer bytes; dirty/index/uncertain controls pass.",
+      "paths": [
+        "src/git_ops.py",
+        "tests/unit/git/test_git_ops.py"
+      ],
+      "expected_fix": "Treat the observed HEAD/branch mismatch as unresolved without advancing the checkout. Revalidate the admitted branch, binding and sole checkout, expected published HEAD, old index and worktree before permitting read-tree. Add the actual branch-switch regression and retain existing dirty/index preservation tests; update the handoff.",
+      "acceptance_ids": [
+        "TASK-007-AC2",
+        "AC-02"
+      ],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-007-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "Historical finding resolved on c2: exact-root metadata layout/backlink validation, unconditional root probing and contradictory-HEAD rejection prevent parent fallback. Empty nested .git and shaped fake metadata reject; direct and linked-worktree legitimate missing HEAD succeed on both hosts with checkout pointers unchanged.",
+      "paths": [
+        "src/git_ops.py",
+        "tests/unit/git/test_git_ops.py"
+      ],
+      "expected_fix": "Prove that missing-HEAD metadata belongs to the exact bound root, reject parent-repository fallback and contradictory successful HEAD resolution, and retain legitimate missing-HEAD support. Add the actual nested empty-.git regression and update the handoff.",
+      "acceptance_ids": [
+        "TASK-007-AC1",
+        "AC-02"
+      ],
+      "resolved": true
+    }
+  ],
+  "created_at": "2026-09-08T13:38:15.648019+00:00"
+}
