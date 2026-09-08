@@ -1,0 +1,5 @@
+PASS codex, separator='/': installed origins isolated; current->completed->archived plan physically moved, task completed and both contract references/scope directory updated; scope and all five prior prose mutations reject unchanged approvals
+PASS codex, separator='\\': installed origins isolated; current->completed->archived plan physically moved, task completed and both contract references/scope directory updated; scope and all five prior prose mutations reject unchanged approvals
+PASS claude, separator='/': installed origins isolated; current->completed->archived plan physically moved, task completed and both contract references/scope directory updated; scope and all five prior prose mutations reject unchanged approvals
+PASS claude, separator='\\': installed origins isolated; current->completed->archived plan physically moved, task completed and both contract references/scope directory updated; scope and all five prior prose mutations reject unchanged approvals
+PASS 12 physical installed plan lifecycle states and 20 independent approved-graph prose rejection cases; all temporary projects removed

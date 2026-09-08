@@ -1,0 +1,20 @@
+PASS candidate identity: clean exact head/base, accepted TASK-001 ancestor, binary diff, 12 context hashes, validation hash, policy/model hash, fingerprint and five owned paths
+PASS module origins: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-004-a2\src\ai.py, D:\Codex Projects\ai-engineering-template\.worktrees\TASK-004-a2\src\contracts.py, D:\Codex Projects\ai-engineering-template\.worktrees\TASK-004-a2\src\domain_values.py, D:\Codex Projects\ai-engineering-template\.worktrees\TASK-004-a2\src\install.py, D:\Codex Projects\ai-engineering-template\.worktrees\TASK-004-a2\src\validate_foundation.py
+PASS all 27 kinds: immutable valid inputs, unknown fields and unsupported versions; schema views cannot mutate validators
+PASS logical reference constructor/error parity and qualified keys; remote/local $ref and $dynamicRef errors are typed and offline
+PASS 39-task bootstrap/new/approved graph identity: c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e
+PASS 54 disk-written/read provider/separator/plan/task bucket combinations: both mixed arrays, eight closed forms, task bucket scope, real scope invalidation
+PASS 28 unmatched prose/suffix cases byte-exact in both arrays, including ScopePath-valid sentence; logical identity changes invalidate
+PASS transitive helper closure includes reachable install.py and two extra modules with cycle, excludes unrelated source, rejects missing required helper
+PASS declared: 21 tests, exact candidate, exit 0
+PASS bootstrap: 24 tests, exact candidate, exit 0
+PASS foundation: {
+  "schemas": 27,
+  "validated_artifacts": 139,
+  "plans": 1,
+  "tasks": 39,
+  "unordered_pairs_checked": 280,
+  "archive_manifests": 4,
+  "local_links": 224
+}
+PASS final candidate remains clean and unchanged; temporary probes cleaned up
