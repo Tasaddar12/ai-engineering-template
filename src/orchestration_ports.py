@@ -1247,18 +1247,6 @@ class LineageBudget:
             object.__setattr__(self, name, _nonnegative(getattr(self, name), name))
         if self.max_tokens is not None:
             object.__setattr__(self, "max_tokens", _nonnegative(self.max_tokens, "max_tokens"))
-        if self.used_agent_invocations > self.max_agent_invocations:
-            raise ValueError("used_agent_invocations cannot exceed its lineage limit")
-        if self.used_rewrites > self.max_rewrites:
-            raise ValueError("used_rewrites cannot exceed its lineage limit")
-        if self.elapsed_seconds > self.max_elapsed_seconds:
-            raise ValueError("elapsed_seconds cannot exceed its lineage limit")
-        if self.used_review_1_cycles > self.max_review_cycles_per_stage:
-            raise ValueError("used_review_1_cycles cannot exceed its lineage limit")
-        if self.used_review_2_cycles > self.max_review_cycles_per_stage:
-            raise ValueError("used_review_2_cycles cannot exceed its lineage limit")
-        if self.max_tokens is not None and self.used_tokens > self.max_tokens:
-            raise ValueError("used_tokens cannot exceed its lineage limit")
 
 
 @dataclass(frozen=True, slots=True)

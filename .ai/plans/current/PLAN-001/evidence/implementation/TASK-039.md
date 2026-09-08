@@ -9,6 +9,7 @@
 | Branch | `ai/PLAN-001/TASK-039/a1` |
 | Logical worktree | `TASK-039-a1` |
 | Dispatch base | `4087c71693fbdd502bce9ea92d3bf1312fd04fa3` |
+| Cycle-2 repair base | `b54d39eecb862e6020be6fb5614c773d9cdc4b3b` |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
 | Accepted direct prerequisite | TASK-003 candidate `d51b72ce71ea...`, integrated by `c749ec19056dd6d215c51a9896f35785391d0ace` |
@@ -52,6 +53,8 @@ limited to the task-owned paths:
 - Recovery requests carry the complete current graph/task snapshot, original acceptance mapping,
   separate typed R1 and R2 histories, cumulative lineage invocation/rewrite/time/review/token
   counters, permission subset, failure evidence, and observed Git ref/ancestry/worktree facts.
+  Actual nonnegative usage is preserved unchanged below, at, or above configured thresholds so an
+  exhausted run can reach recovery; a DTO never clamps usage or chooses policy.
   Decisions expose bounded repair, isolation-approved rewrite, durable pause, or failure and contain
   no field capable of granting broader permissions.
 
@@ -95,7 +98,7 @@ attempt worktree.
 
 | Command | Result |
 | --- | --- |
-| `-m unittest discover -s tests/unit/domain_orchestration_ports/ -p test_*.py` | Exit 0; 19 tests; `OK`. This is the exact declared leaf command with the coordinator interpreter substituted for `python`; the test inserts this worktree's `src` first. |
+| `-m unittest discover -s tests/unit/domain_orchestration_ports/ -p test_*.py` | Exit 0; 20 tests; `OK`. This is the exact declared leaf command with the coordinator interpreter substituted for `python`; the test inserts this worktree's `src` first. |
 | `-m py_compile src/orchestration_ports.py tests/unit/domain_orchestration_ports/test_orchestration_ports.py` | Exit 0. |
 
 The focused tests validate actual v1 schemas, exact method argument and cancellation return types,
@@ -106,6 +109,18 @@ states, independent recovery histories and cumulative budgets, permission-free r
 the `tasks_accepted` boundary, all-live-task plan integration, authorized observed merge completion,
 and structural runtime Protocol compatibility.
 
+## Retained failed review cycle
+
+Cycle-1 candidate `b54d39eecb862e6020be6fb5614c773d9cdc4b3b` received the preserved failing
+R1 at `.ai/plans/current/PLAN-001/reviews/TASK-039-a1-c1-R1.md` / `.json` for
+`R1-TASK-039-001`. The finding showed that `LineageBudget` rejected actual usage above configured
+limits before `RecoveryRequest` could carry it to policy. This cycle-2 repair removes only those
+threshold comparisons, retains strict nonnegative integer and boolean rejection, and adds below,
+equal, and over-limit regressions for invocation, rewrite, elapsed, R1, R2, and token usage. The
+recovery regression carries three R1/R2 history cycles plus over-limit observations through a
+request and constructs a durable `budget_exhausted` pause with evidence. The failed cycle remains
+immutable outside this task worktree and the repaired candidate requires fresh R1 and R2.
+
 ## Assumptions, deviations, risks, and provenance
 
 - Service-specific operational DTOs refine only the semantics named in the frozen contract. Only
@@ -114,8 +129,9 @@ and structural runtime Protocol compatibility.
 - A content reference and its parsed typed review result travel together where downstream logic must
   verify a gate. Persistence and decoding remain adapter/workflow responsibilities.
 - Lineage token budgets are optional because the frozen workflow-run schema does not serialize a
-  token field; when configured, their used value remains cumulative and bounded. No cost unit or
-  provider billing behavior is invented for the deterministic fake-adapter MVP.
+  token field. Configured limits stay distinct from nonnegative actual usage, which may equal or
+  exceed a limit and remains cumulative without clamping or reset. No cost unit or provider billing
+  behavior is invented for the deterministic fake-adapter MVP.
 - No prerequisite, graph, schema, scope, or contract gap was found. There are no deviations or
   skipped declared checks. Concrete orchestration behavior and runtime wiring remain with downstream
   task owners.

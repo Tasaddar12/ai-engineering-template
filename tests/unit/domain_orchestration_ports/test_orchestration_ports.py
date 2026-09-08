@@ -342,10 +342,6 @@ def git_facts() -> GitFacts:
     )
 
 
-def budget() -> LineageBudget:
-    return LineageBudget(300, 2, 3, 1, 3600, 60, 2, 1, 0, 10000, 1000)
-
-
 def recovery_record() -> RecoveryRecord:
     return RecoveryRecord(
         "recovery-1",
@@ -392,6 +388,29 @@ def review_record(stage: ReviewStage, task_id: str | None, fingerprint: str = DI
         [],
         NOW,
     )
+
+
+def review_histories(count: int) -> tuple[list[ReviewHistoryEntry], list[ReviewHistoryEntry]]:
+    review_1: list[ReviewHistoryEntry] = []
+    review_2: list[ReviewHistoryEntry] = []
+    for cycle in range(1, count + 1):
+        review_1_ref = content(f"r1-cycle-{cycle}")
+        review_1_record = replace(
+            review_record(ReviewStage.IMPLEMENTATION, "TASK-003"),
+            id=EntityId(f"review-r1-{cycle}"),
+            request_id=EntityId(f"request-r1-{cycle}"),
+            independent_session_id=f"review-session-r1-{cycle}",
+        )
+        review_2_record = replace(
+            review_record(ReviewStage.CONSISTENCY, "TASK-003"),
+            id=EntityId(f"review-r2-{cycle}"),
+            request_id=EntityId(f"request-r2-{cycle}"),
+            independent_session_id=f"review-session-r2-{cycle}",
+            review_1_ref=review_1_ref.path,
+        )
+        review_1.append(ReviewHistoryEntry(review_1_ref, review_1_record))
+        review_2.append(ReviewHistoryEntry(content(f"r2-cycle-{cycle}"), review_2_record))
+    return review_1, review_2
 
 
 def validation_result() -> ValidationResult:
@@ -651,6 +670,25 @@ class DispatchAndSchedulingTests(unittest.TestCase):
 
 
 class IntegrationRecoveryCompletionTests(unittest.TestCase):
+    def test_lineage_budget_preserves_below_equal_and_over_limit_facts(self) -> None:
+        cases = {
+            "below": LineageBudget(3, 2, 2, 1, 10, 9, 2, 1, 1, 10, 9),
+            "equal": LineageBudget(3, 3, 2, 2, 10, 10, 2, 2, 2, 10, 10),
+            "over": LineageBudget(3, 4, 2, 3, 10, 11, 2, 3, 4, 10, 12),
+        }
+        self.assertEqual(cases["below"].elapsed_seconds, 9)
+        self.assertEqual(cases["equal"].used_tokens, 10)
+        self.assertEqual(cases["over"].used_agent_invocations, 4)
+        self.assertEqual(cases["over"].used_rewrites, 3)
+        self.assertEqual(cases["over"].elapsed_seconds, 11)
+        self.assertEqual(cases["over"].used_review_1_cycles, 3)
+        self.assertEqual(cases["over"].used_review_2_cycles, 4)
+        self.assertEqual(cases["over"].used_tokens, 12)
+        with self.assertRaises(ValueError):
+            replace(cases["below"], elapsed_seconds=-1)
+        with self.assertRaises(TypeError):
+            replace(cases["below"], used_tokens=True)
+
     def test_integration_request_requires_two_passes_on_exact_candidate(self) -> None:
         review_1 = review_record(ReviewStage.IMPLEMENTATION, "TASK-003")
         review_2 = review_record(ReviewStage.CONSISTENCY, "TASK-003")
@@ -723,16 +761,8 @@ class IntegrationRecoveryCompletionTests(unittest.TestCase):
         self.assertEqual(ambiguous.status, IntegrationStatus.AMBIGUOUS)
 
     def test_recovery_request_keeps_both_histories_mapping_budget_and_git_facts(self) -> None:
-        r1 = [
-            ReviewHistoryEntry(
-                content("review-1"), review_record(ReviewStage.IMPLEMENTATION, "TASK-003")
-            )
-        ]
-        r2 = [
-            ReviewHistoryEntry(
-                content("r2-cycle-1"), review_record(ReviewStage.CONSISTENCY, "TASK-003")
-            )
-        ]
+        r1, r2 = review_histories(3)
+        observed_budget = LineageBudget(2, 4, 1, 3, 3600, 3601, 2, 3, 3, 10000, 10001)
         request = RecoveryRequest(
             "project-1",
             "PLAN-001",
@@ -747,17 +777,37 @@ class IntegrationRecoveryCompletionTests(unittest.TestCase):
             [AcceptanceMapping("TASK-003-AC1", ["TASK-003"])],
             r1,
             r2,
-            budget(),
+            observed_budget,
             git_facts(),
             ["local_execute"],
             [evidence("failure")],
         )
         r1.clear()
         r2.clear()
-        self.assertEqual(len(request.review_1_history), 1)
-        self.assertEqual(len(request.review_2_history), 1)
-        self.assertEqual(request.lineage_budget.used_rewrites, 1)
+        self.assertEqual(len(request.review_1_history), 3)
+        self.assertEqual(len(request.review_2_history), 3)
+        self.assertEqual(request.lineage_budget.used_agent_invocations, 4)
+        self.assertEqual(request.lineage_budget.used_rewrites, 3)
+        self.assertEqual(request.lineage_budget.elapsed_seconds, 3601)
+        self.assertEqual(request.lineage_budget.used_review_1_cycles, 3)
+        self.assertEqual(request.lineage_budget.used_review_2_cycles, 3)
+        self.assertEqual(request.lineage_budget.used_tokens, 10001)
         self.assertTrue(request.git_facts.ancestry[0].is_ancestor)
+        pause = RecoveryDecision(
+            RecoveryDecisionStatus.PAUSED,
+            request.request_id,
+            request.plan_id,
+            request.run_id,
+            None,
+            None,
+            None,
+            [],
+            request.failed_task_ids,
+            ["TASK-003-a1"],
+            [evidence("budget-exhausted")],
+            error(ErrorCategory.BUDGET_EXHAUSTED),
+        )
+        self.assertEqual(pause.error.category, ErrorCategory.BUDGET_EXHAUSTED)
 
     def test_recovery_decision_cannot_hide_pause_or_broaden_authority(self) -> None:
         pause = RecoveryDecision(
