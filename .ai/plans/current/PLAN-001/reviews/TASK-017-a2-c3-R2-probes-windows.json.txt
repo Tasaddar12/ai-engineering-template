@@ -1,0 +1,290 @@
+{
+  "utc": "2026-09-08T12:15:50.640032+00:00",
+  "runtime": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "fresh_processes": [
+    [
+      {
+        "cancellation": "already_terminal",
+        "case": "baseline",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "23d45e4aea2f2357ee5824938b186d460b931c39c68815d516b7733b8a4cac0e",
+        "output_summary": "Independent contract result.",
+        "phase": "start",
+        "pid": 33024,
+        "poll": "succeeded",
+        "request_description": "Validate the result.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      },
+      {
+        "cancellation": "already_terminal",
+        "case": "baseline",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "23d45e4aea2f2357ee5824938b186d460b931c39c68815d516b7733b8a4cac0e",
+        "output_summary": "Independent contract result.",
+        "phase": "resume",
+        "pid": 30108,
+        "poll": "succeeded",
+        "request_description": "Validate the result.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      }
+    ],
+    [
+      {
+        "cancellation": "already_terminal",
+        "case": "multiline_request",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "23d45e4aea2f2357ee5824938b186d460b931c39c68815d516b7733b8a4cac0e",
+        "output_summary": "Independent contract result.",
+        "phase": "start",
+        "pid": 19684,
+        "poll": "succeeded",
+        "request_description": "Validate the first result.\nPreserve the second line.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      },
+      {
+        "case": "multiline_request",
+        "category": "validation_failed",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "message": "cannot restore deterministic fake provider state: criterion description contains a control or invisible formatting character",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "rejected",
+        "phase": "resume",
+        "pid": 32452,
+        "request_schema_valid": true,
+        "runtime": "3.12.14",
+        "saved_bytes_unchanged": true,
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61",
+        "stage": "provider_restore"
+      }
+    ],
+    [
+      {
+        "cancellation": "already_terminal",
+        "case": "unicode_request",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "23d45e4aea2f2357ee5824938b186d460b931c39c68815d516b7733b8a4cac0e",
+        "output_summary": "Independent contract result.",
+        "phase": "start",
+        "pid": 25512,
+        "poll": "succeeded",
+        "request_description": "Preserve Cafe\u0301 exactly.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      },
+      {
+        "case": "unicode_request",
+        "category": "state_conflict",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "message": "idempotency key is already bound to a materially different request",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "rejected",
+        "phase": "resume",
+        "pid": 3076,
+        "request_schema_valid": true,
+        "runtime": "3.12.14",
+        "saved_bytes_unchanged": true,
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61",
+        "stage": "start_retry"
+      }
+    ],
+    [
+      {
+        "cancellation": "already_terminal",
+        "case": "multiline_output",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "1164eabb71a09027bdb51db54564b53eeff88812475ac6d5af3c992e9441b745",
+        "output_summary": "First result.\nSecond result.",
+        "phase": "start",
+        "pid": 36980,
+        "poll": "succeeded",
+        "request_description": "Validate the result.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      },
+      {
+        "case": "multiline_output",
+        "category": "validation_failed",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "message": "cannot restore deterministic fake provider state: output summary contains a control or invisible formatting character",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "rejected",
+        "phase": "resume",
+        "pid": 6732,
+        "request_schema_valid": true,
+        "runtime": "3.12.14",
+        "saved_bytes_unchanged": true,
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61",
+        "stage": "provider_restore"
+      }
+    ],
+    [
+      {
+        "cancellation": "already_terminal",
+        "case": "unicode_output",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "8eeda4b7b46aa543b7f583a5eed68e0d006d7f69615f0efb2454ab01a46f7e3b",
+        "output_summary": "Committed Cafe\u0301 exactly.",
+        "phase": "start",
+        "pid": 33684,
+        "poll": "succeeded",
+        "request_description": "Validate the result.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      },
+      {
+        "cancellation": "already_terminal",
+        "case": "unicode_output",
+        "effect_count": 1,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "review_high",
+        "handle": "fake-agent-153b0aeb824dc9a13d353b9589cfc461",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "outcome": "admitted",
+        "output_schema_valid": true,
+        "output_sha256": "cd12a1d042699c377d6489495883bd97bd19ae5fcfd436fb4bdb459f0522d6f1",
+        "output_summary": "Committed Caf\u00e9 exactly.",
+        "phase": "resume",
+        "pid": 25720,
+        "poll": "succeeded",
+        "request_description": "Validate the result.",
+        "request_schema_valid": true,
+        "requested_profile": "review_high",
+        "resolved_profile": "r2_selected_review",
+        "runtime": "3.12.14",
+        "settings_sha256": "e1eaa9906ad6bd06e5c25d6dbd44a3d6ba3a329f7fce7b0a2eba98f40012de61"
+      }
+    ]
+  ],
+  "compatibility": {
+    "openai": {
+      "protocol_signatures": 3,
+      "mapped_review_roles": 3,
+      "wire_records_validated": 8,
+      "boundary_rejections": 13
+    },
+    "anthropic": {
+      "protocol_signatures": 3,
+      "mapped_review_roles": 3,
+      "wire_records_validated": 8,
+      "boundary_rejections": 13
+    }
+  }
+}
