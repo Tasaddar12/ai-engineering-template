@@ -113,3 +113,16 @@ execution/cache; give new helper files a concrete purpose and reuse existing too
 Report useful local discoveries and their tracked disposition in the task handoff.
 See the tracked coordination README and local-material-audit.md for this plan's
 manual tools; those are not installed product dependencies.
+
+## Required pre-handoff testing and self-check
+
+Before handing off any remaining task, the implementer must run relevant tests and
+review the final diff for bugs, contract mismatches and applicable edge cases.
+Fix in-scope issues, add regression tests and rerun affected checks before
+submission. Flag scope blockers promptly; do not repair another owner's scope.
+Tests must use the actual candidate imports. A green suite alone is insufficient.
+
+Record test results, skips and self-review findings briefly in the existing owned
+implementation handoff. This is part of implementation, not another review stage,
+agent or paperwork. Keep the single independent review. Do not repeat unchanged
+broad suites without cause or create a separate self-review artifact.

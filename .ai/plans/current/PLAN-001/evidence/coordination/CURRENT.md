@@ -1,231 +1,152 @@
 # PLAN-001 current checkpoint
 
-Complete the user's entire39-task implementation request.10/39 accepted so far.
-Worktree and ignored-script questions steer that work; they do not cancel it.
-Final combined tests, clean packages and independent combined reviews remain.
-No remote delivery/merge or plan completion is claimed. Older notes remain in Git.
+Complete the user's entire 39-task implementation request. **12/39 accepted.**
+The worktree and ignored-script questions steer that work; they do not cancel it.
+Final combined tests, clean source/wheel/sdist validation and independent combined
+reviews remain. No remote merge, CI execution or plan completion is claimed.
+Earlier coordination checkpoints remain in Git; immutable reports are unchanged.
 
-## Latest user instruction — applied
+## Current user decisions
 
-User requested one review stage for remaining tasks to reduce time/credits, then
-final reviews and later plan refinements. The tracked
-[single-stage decision](single-stage-review-decision.md) supersedes earlier dual
-manual task gates, including recovery recommendations. One independent Astra/xhigh
-review per task, focused verification of scoped fixes, no task R2. Prefer resuming
-the independent reviewer for focused checks when available. Keep new exact-candidate
-reports and immutable old evidence. Broader final refinements follow implementation.
-Runtime product contracts/graph are unchanged by this manual process adjustment.
+Use [one independent task review](single-stage-review-decision.md), with focused
+verification of scoped fixes and no task R2. Prefer continuing the same reviewer
+when available. Bind a new exact candidate and explain reuse of unchanged evidence.
+Final combined reviews and later plan refinements follow implementation. This
+manual schedule does not silently change the frozen runtime product contracts.
+The tracked coordinator and briefs implement this decision; selector verification
+is retained in single-stage-review-verification.txt.
 
-Applied by4cc51ed with coordinator selector/briefs and meaningful gate checks.
-Selector accepts one valid independent report, rejects known same-candidate failure,
-self-review, wrong identity/rank/checklist, duplicate/missing report and missing
-proof. New manifests bind the decision. See single-stage-review-verification.txt.
-The helper is tracked here; do not create an ignored canonical copy.
+Required runtime helpers, regressions, build logic and reusable instructions belong
+in tracked owned source/tests/docs and must survive clean checkout/install. The
+[local material audit](local-material-audit.md) records two reusable coordinator
+helpers, briefs and dispatches moved into this tracked directory. The 19 obsolete
+ignored one-use scripts are historical scratch, not authorities or product assets.
+Do not create another ignored canonical helper. Local runtimes/cache are disposable.
+Clean tracked export of 67e41a2 passed 24 bootstrap plus all then-accepted leaves:
+233 discovered, one established skip. This is not full-plan/package verification.
 
-## Current state and owners
+## Frozen review and live owners
 
-ROOT D:/Codex Projects/ai-engineering-template, branch ai/PLAN-001/integration.
-Latest dispatch9ad611187fd0f07bf8992919f5a4858cf17cf8cc; generation43.
-main remains501b51276a4d07826afcaa1c0cbf09a24a466587.
-The preceding007review and017assessment are both FINAL, read and verified.
-Commit current dispatch/note before forming the next018 review candidate and freeze
-ROOT while that reviewer is active. Independent owners may continue in their trees.
+ROOT: D:/Codex Projects/ai-engineering-template, ai/PLAN-001/integration.
+ROOT is FROZEN at 56187e99b24d86860171a59cad07bc02d16a70fd while verify_018_c2
+runs. No root commits, begins, source or canonical changes before FINAL. This
+unstaged coordination note is outside its manifest. Generation 45.
+main remains 501b51276a4d07826afcaa1c0cbf09a24a466587.
 
-- implement_017_a3 Sol/xhigh ACTIVE, charge95/300,
-  call_9CNyCdJ6VX2Z8og8qw76ZXtw. Fresh17a3 branch/tree at9ad611187fd0f07bf8992919f5a4858cf17cf8cc.
-  Own agents.py, agents tests and ownhandoff only. Salvage exactlythreecommits from
-  adopted recovery; verify allthree pre-repair blobs equal frozena2; fix whole
-  accepted text/path/provenance encoding/decoding contract with all prior guards.
-  Full requirements: ../recovery/TASK-017-c3-coordinator-decision.md and assessment.
-- repair_007_c1 Sol/xhigh ACTIVE, charge96/300,
-  call_C7b4NpOGclIdLKMwJ3Wb9MCx. Existing007a1 starts atclean
-  f5f9f8350433010d7c62856e8953b4fcc9097d65. Own git_ops.py, Git tests andhandoff.
-  Fix allthree source-localR1findings; actualWindows/Linux regressions required.
-  No newtree/graph/port or017pendingdependency. Coordinator merges metadata later.
+- verify_018_c2, Astra/xhigh rank 4, ACTIVE; native
+  call_bIUmqZuLRspmyIIjxLPIRZZx, charge 101/300. Exact candidate
+  41a8cd578b81981e6cda42c88f9377aaec5b1bdd, fingerprint
+  539d2985edce4cc829db1dea8ebca96486abdf07acd19a9de328d655afceb154.
+  Manifest: ../../reviews/candidates/CANDIDATE-TASK-018-a1-41a8cd578b81.json.
+  New prefix TASK-018-a1-c2-R1. Focused verification of three retained c1 findings:
+  borrowed zero-test count, sensitive configured argv in receipts, huge integer
+  parse escape. Repair owner cf56dcb3eedaf23a3c5e1b75c36f0225cf01e0ec passed
+  13 tests on Win3.12/Win3.11/Linux3.11; full handoff and exact three-path correction
+  read. Fresh coordinator Win3.12 passed 13 in 13.826s, no skips, exact origin.
+  Owner repair_018_c1 native call_6VGPOOA3hxf5UKH8ReonuohL, charge 98, Sol/xhigh.
+  Original c1 failure preserved by 5094c75bf052579b4ee5bdf22e2c256cd00b14b8.
+- implement_009, Sol/xhigh rank 3, ACTIVE; native
+  call_EM2WqkcoNZGoyRMqV57EffPI, charge 100/300. TASK-009-a1 tree/branch,
+  dispatch base b1e8717eb3253a1538a27ce2f151990c754a0eb1. Own state.py,
+  tests/unit/state_checkpoints/ and own handoff. Full checkpoint/locking/crash/
+  relocation/evidence requirements are in next-state-dispatch.md. All actual
+  002/004/007/008 dependencies accepted. No new port or ignored helper required.
+- implement_017_a3, Sol/xhigh rank 3, ACTIVE; native
+  call_9CNyCdJ6VX2Z8og8qw76ZXtw, charge 95/300. TASK-017-a3 tree/branch,
+  dispatch base 9ad611187fd0f07bf8992919f5a4858cf17cf8cc. Exact salvage verified:
+  ce1776a -> dd48c2f, 3cdb41e -> 4a56132, f5e2151 -> b7a30be; owned blobs equal
+  failed a2. Common recursive lossless string/key encoding and strict provenance
+  correction implemented. Owner reports 34/34 passing on all three runtimes,
+  including adjacent surrogate-pair preservation and invalid model spelling
+  rejected before/after restart. Final handoff/checks/clean commit still pending.
+  Adopted boundary: ../recovery/TASK-017-c3-coordinator-decision.md and assessment.
 
-Next review018 while both owners run; then024/016/019/005 as appropriate.
-When007correctedFINAL, formcurrentcandidate and focusedindependentverification
-against its complete retainedR1. No separateR2. Accept007thenbegin009critical.
-When017FINAL, validatecurrentcandidate and one independentreview against allretained
-findings/contracts. Accept017thenbegin015. Otherdispatches remainDAG-gated.
+## Recently accepted and next queue
 
-## Retained017 lineage
+TASK-007 focused c2 FINAL PASS: all 11 checks and three findings resolved. Both
+hosts passed 15 focused tests plus two metadata observations; exact identity,
+all 14 context refs and program/output hashes verified. Accepted candidate
+5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a, integration acceptance
+0f92a9858f85a3aac5e6c5c22b1038789af5d79a. Clean integrated worktree removed
+non-force; branch and failed historical evidence retained. This unlocked TASK-009.
 
-c1R1/c2R1 failed; firstrecovery authorizeda2. c3R1PASS/c3R2FAIL inherited lossless
-text/path/provenance defect. Failurepreservedd41cf4d088d744a72930c5e7660362764d99038e,
-generation41. Faileda2 cleanb7593f11961aa6f5c3a927f3c49af32c4fa93971; reviewbase
-b90556d92e0f37e664d685b4af85c43fc8143d81, FP
-f2f7e852b8eb99345c66a959f15c842f5a2b046631f0b7d349377d3353fec5ac.
-Faileda1 e79df3b8d071a7e3a3c7874cf0cacb6e704c0205 remainsretained.
+After 018 FINAL, read/verify complete evidence and accept if PASS. No R2.
+When 017 FINAL, form current candidate and perform one focused independent review
+against retained findings and changed encoding contract; accept then begin 015.
+Use a free owner slot for 019 correction before its FIRST review. Existing a1
+head f9e32b0ce8c8950dcb541356cae23a2a7202adc5, no new attempt or invented failure.
+Coordinator proved actual accepted dependency-free TASK-001 candidate d1fc917
+has all 11 contexts and validates, but CandidateContext rejects handoffs=(). Fix
+applicable-role representability without fake placeholders or unowned discovery;
+reconcile no-ADR case too. See next-candidate-dispatch.md and actual owner scope.
 
-Fresh recovery_017_c3 Astra/xhigh charge93 call_eZzyti7aTEGoUlIDbA6ciTXC FINAL.
-Assessment files ../recovery/TASK-017-c3-recovery-assessment*: exactthreecommit
-salvage,42reviewcompanions and independenttwo-process normalization-induced
-provenance bypass verified. AssessmentmdSHA256
-65ba42832cb92f74095489f56a5fb1a57d788b30df99184e58612daf66da151d.
-Verificationjson.txtSHA5f3a3a9fa317229ae3b05f47a139e68719fe7628ba5a82fe2149352b6e15b05e.
-Adoption4cc51ed, generation42->43, explicitly applies latestsingle-stageuserdecision
-instead of historicaltwo-stage/rescheduling language. Originalreportsunchanged.
+Other clean FINAL queue:
+- 024 a1 repaired 8607b0f95c32050f39283a96c70109f923e032c0; 15 tests pass on
+  Win3.12/3.11. Focused c2 verifies unchanged product scope authority, all split
+  successors behind exit and repeated criterion lineage ownership. c1 retained.
+- 016 a1 d49f8dab6abbf7853e54dd9992fd6890c9b7a325; 17 tests, Windows symlink
+  privilege skip, Linux all. First single review pending.
+- 005 a2 bc9b5a6e34a2cdb34582fffa09f1d43171820c7d; 11 tests. Candidate-sensitive
+  asset closure tests corrected; cumulative single review pending.
 
-Salvageoriginal71e0ccf697c132082bb17f7f3814ffb6abee5df6 ->
-ce1776adb42a06b5a02c7c7e7047e03c8a7f30c2; original7e5bd5fd5d1b36a14cbee6ae911b68a4ec9ffbf8 ->
-3cdb41e5698f2cb0c7fc08c36c08d57a28ea1d16; mappingfixf5e21518f50e96b421ed68175d51acf253053a18.
-Only003/004/038accepteddeps. Fourteen descendants fenced until actual017acceptance.
+Do not repeat an owner's unchanged full platform matrix after metadata-only merges.
+Verify exact owned/dependency blobs, bind fresh declared coordinator suite, and
+independently run focused affected checks. Record actual coverage and limitations.
+Final combined platform/source/package verification is still required.
 
-## Retained007 review
+## Retention, budget and runtime bindings
 
-Fresh review_007_c1_r1 Astra/xhigh charge94 call_C0C15n43LV1MyLnQE6Rf6ovt FINALFAIL.
-Three major actualWindows/Linuxdefects: symbolic target aliases movecheckedoutmain;
-managed checkout switchedtodeveloper still receivesread-tree changes; empty nested
-.gitdirectory bypassesrootproof and falselyreportssuccessmissingHEADwithparentrefs.
-All11checks; declared29testsWindowsPASS/1newlinefilename skip67.524s. Coordinator
-29testsWin3.12/3.11/Linux3.11PASS68.463/68.306/85.746s, Linuxnoskip. Runtime shadow
-controlpassesbothhosts. RequiredfinitehelperINSIDEtrackedgit_ops.py,noignoredasset.
-Fullreports/probeobservations/hashes readverified, preserved
- aafe36fa420851026df77e3a179fa1694bc892b8, generation41->42. Reviewerstopped.
-CandidateFPde0a81fd6566c603b44bdd5e81b1d721407ada79010017059c62f921494cdf3a;
-originalreviewbasee054fc9f37a157713d7ff910128dfb2995b597ae. Sourceownerfinalbeforemetadata
-b5ca05a636456f7099f02791b63a9bb7e5f29f45. Preservefailedreports; neverrerunwriters.
+101/300 conservative native invocations charged (100 spawn/followup plus root);
+199 remain. Three of three structural rewrites used; zero remain. Include old
+errors/resumes/rejections; do not reset accounting or invent active_run records.
+Use tracked count-native-invocations.py against the original session JSONL.
+Observed native configuration is not separately returned provider-effective identity.
 
-## Other FINAL owner queue
+017 old a1/a2 failed trees retain salvage lineage; no force deletion. Historical
+c1/c2/c3 reports and recovery assessments are immutable. Old recovery suggestions
+for two manual reviews are superseded only by the tracked user decision. Other
+accepted worktrees were already removed after verified local integration. All
+11 accepted handoffs are present; main has not been merged yet.
 
-Recheckcleanstate/fullhandoff/currentbasebeforecandidateformation. One review each.
+Windows runtimes: ROOT/.ai/local/full-plan-venv/Scripts/python.exe (3.12.14),
+ROOT/.ai/local/full-plan-py311-venv/Scripts/python.exe (3.11.16).
+Linux3.11: /mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python,
+via WSL Ubuntu-24.04 --cd exact candidate --exec. jsonschema 4.26.0 on all.
+Always verify candidate src origins. Never alter Windows worktree pointers for WSL.
 
-| Task | Owner head | Notes |
-| --- | --- | --- |
-|018a1|802e9baf0967aa25c70563f1cd31840b6dd3ffa8|10tests all3platforms; next candidate|
-|024a1|8607b0f95c32050f39283a96c70109f923e032c0|15testsWin3.12/3.11; c1correction, focusedc2|
-|016a1|d49f8dab6abbf7853e54dd9992fd6890c9b7a325|17tests, Windows1privilege skip|
-|019a1|f9e32b0ce8c8950dcb541356cae23a2a7202adc5|12tests; first-taskcontext question|
-|005a2|bc9b5a6e34a2cdb34582fffa09f1d43171820c7d|11closure tests; cumulativec2|
-
-024c1failurepreserved476b878b51beed2b02a2bd3d41030ea576922661; repairaddsverified
-RecoveryScopeAuthority, complete successor exits and explicitcriterionownermapping.
-019applicabilityquestion: nonemptyADRs/handoffs unconditionallyrequired bybuilder
-althoughfirstdependency-freetaskcanhavezero handoffs. Independentreviewmustestablish
-actualvalidcase; see next-candidate-dispatch.md, notyetformal finding.
-
-Accepted001002003004006008013014038039, allcandidates ancestorsofintegration.
-Three obsoleteclean004/006directories removedthroughGitwithbranches/historykept;
-see ../worktree-cleanup-2026-09-08.md. Failed017treesremainneededlineage.
-
-## Budget, tools and required files
-
-Count96/300 includingroot1 andusageinterruptions/resumptions;3/3historicalrewritesused,
-noneleft. Noactive_run/provider-effectiveidentity/resetcredit/downgradeclaimed.
-OwnersconfiguredSol/xhighrank3, independentreviews/recoveryAstra/xhighrank4.
-Accountant explicitinput sessionJSONL, currentcache.ai/local/native-invocations-current.json.
-Use tracked coordinator.py/dispatchrecords/selectedbriefs. Localinterpreters disposable;
-reviewer-briefdescribesWin/Linux3.11 anddefaultWin3.12. Do notcopyproductlogiclocal.
-
-Requiredruntimehelpers/tests/reusableguidance liveintrackedownedsource/tests/docs and
-installedclosure. Reviewhelpersneedconcretepurpose, inlinechecksandoneprobeprogram
-whenuseful. See README.md/local-material-audit.md. Final037runsallleaves andwheel/sdist
-outsidecheckoutwithout.ai/local/ambientPythonpath/editableroot, includingGithelper.
-Cleantrackedexport67e41a2passed24bootstrap+10acceptedleaves233discovered,one006skip;
-evidenceclean-tracked-export-67e41a2.txtSHA
-f61c026df3660dce8ead6a5c10aa58f40b7fc0b96189564e4f0123b15967f8be.
-Notafullplan/packageclaim.
-
-Automaticapprovalreviewrejectedtemporarydirectorycleanupwithonly "blocked by policy"
-beforeexecution. Nobypass. Export/venvremain
+Temporary export cleanup was rejected by automatic approval review: "blocked by
+policy". Do not bypass or retry through another route. Temp location remains
 C:/Users/killi/AppData/Local/Temp/plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4.
-Userinformed; unresolvedfinalrequiresseparateparagraphnamingrejectedcleanup/reason.
-017owneralsoreportedignoredpycachecleanuprejection;noignoredproductdependency.
+Evidence was separately copied and hash-verified. If unresolved at final, include
+this rejected cleanup and stated reason in a short separate final paragraph.
 
+Latest checkpoint: 017 owner FINAL clean 96a8c9e63a669c86e34cd98f7517dd1179597e93.
+Full handoff read, exact three paths and nine original/salvage/pre-repair blob
+comparisons independently verified. Full34 tests pass Win3.12 13.208s, Win3.11
+12.446s, Linux3.11 42.080s; final origins/compile/foundation/diff pass. Queued
+for current candidate and focused independent review after018 FINAL.
+019 bounded pre-review owner correct_019_context ACTIVE in existing a1, native
+call_qf39dyVIkjyh0iP8NeCfyn0m, Sol/xhigh rank3, charge102/300 (198 remain).
+018 verifier confirms corrected owned/dependency blobs identical to owner-final;
+current base additionally brings unrelated accepted007 source/tests, so the whole
+merge is not strictly metadata-only. No018 import of007; exact delta is disclosed.
+ROOT remains frozen 56187e99 for018.
 
-LATEST: ROOT FROZEN 0f9130229186d97ea89786da1e243b5239c0f377 for active
-review_018_c1 Astra/xhigh, charge97/300. Current018candidate
- d58925f56afa593a4cb4df0c7377a679b8fbe712, same base, fingerprint
-c052eff5416317e7d9284ec421e5d98ea434bb268753a42e6fcc02f876126685.
-Coordinator10tests PASS on Windows3.12, Windows3.11 and Linux3.11 with no skips.
-Candidate binds the single-stage decision; all contexts checked, clean tree.
-Await FINAL; PASS can accept directly after evidence verification, no taskR2.
-FAIL preserves history and routes scoped correction/focused verification.
-Both017a3 and007repair owners continue independently. No ROOT commits or begins
-until018review FINAL. This note remains unstaged outside its manifest.
+New user steering: actual implementation tests plus bounded bug self-check are
+required before every implementation/correction handoff, including queued work.
+Applied in tracked agent-brief.md and sent to active009/019 owners. The brief is
+outside018 frozen context; no current manifest/history changed. This is owner
+work, not another review stage. Require concise owned handoff evidence, fix
+concrete issues and rerun affected checks before independent review. Already
+active018 verification continues; queued017/024/016/005 need this owner check
+before their next candidate review. Commit unbound brief/current after018 FINAL.
 
+User clarification incorporated verbatim in substance: final-diff bug/contract/
+edge-case inspection, relevant tests, in-scope fixes with regressions and affected
+reruns, prompt scope blockers, brief results/skips/findings in EXISTING handoff.
+No extra review stage, agent or separate paperwork. Active owners009/019 notified.
 
-019 readiness question independently confirmed by coordinator, read-only inline
-probe with actual accepted TASK001 candidate d1fc917466410febc6238479e65816dd39591a4f.
-Current accepted ContractRegistry validates its manifest; actual committed task has
-zero dependencies. All11 original committed contexts supplied by proper roles to
-queued019 CandidateContext, handoffs=(), rejects only with ValueError: handoff
-context must contain at least one material input. No test helper or dummy context
-was used, no product/history changed. After018review FINAL, dispatch a bounded
-019 owner correction before its FIRST single review when a slot is available;
-this avoids a predictable extra review/repair cycle. Samea1, scopeonly, no graph
-change or historicalfailure invented. Keep actual applicable context completeness;
-ADR applicability also requires contract reconciliation, not fabricated placeholders.
-
-
-007 repair checkpoint (owner still ACTIVE, not acceptance): all3 fixes implemented,
-4 actual-repository regressions added (including late symbolic alias retargeting).
-Focused5 cases pass Win3.12 and Linux3.11; full Win3.12 passes33tests/1filename skip
-79.381s. Win3.11 and Linux3.11 full suites running. No scope blocker reported.
-Once FINAL, prioritize current007 candidate and focused verification to unblock009.
-018review is finishing FAIL with3 local findings: false zero-test success from
-unrelated/trailing summary text, unbounded numeric conversion escape, redacted argv
-reintroduced in failure receipt. Wait FINAL before preservation/owner correction.
-
-
-018 R1 FINAL FAIL, all reports/probe outcomes read and all6 final companion hashes
-verified. Preserved5094c75bf052579b4ee5bdf22e2c256cd00b14b8, generation43->44.
-Fresh Sol/xhigh repair_018_c1 ACTIVE, charge98/300, in existing018a1 at
- d58925f56afa593a4cb4df0c7377a679b8fbe712. Fix three concrete parser/redaction/error
-findings with owned regressions; no new stage or graph. No ROOT freeze now; three
-owners active (007 repair,017a3,018 repair). Counts98/300, rewritesunchanged.
-Prioritize007 FINAL/candidate/focused verification to unblock009.019 correction
-before first review is queued for a free owner slot.024/016/005 remain review queue.
-For corrected sources already tested on all3 runtimes by owners, avoid repeating
-all3 full suites after a metadata-only merge: verify identical owned/dependency
-blobs, bind fresh coordinator declared suite, then independent focused platform
-regressions as warranted. Record exact actual coverage; final combined matrix
-remains required. Do not claim unexecuted current candidate platform results.
-
-
-007 repair FINAL at0efdcdc8de38f1830550cc63d5ba58ff71427eb8, parentf5f9f8350433010d7c62856e8953b4fcc9097d65.
-Clean and exactly3 owned paths independently observed; updated full handoff read.
-Owner33tests pass Win3.12 (79.381s), Win3.11 (81.663s), Linux3.11 (102.129s);
-Windowsonefilename skip each, Linuxall. Focused5 finding cases pass both hosts.
-Origin/compile/foundation/diff pass. Two corrected harness expectations/import
-setups honestly recorded. Form current candidate with fresh coordinator declared
-suite, then focused independent single-stage verification (no full3matrix repeat
-for identical owned/dependency blobs). Both017a3 and018repair owners continue.
-017salvage checkpoint: ce1776a->dd48c2f,3cdb41e->4a56132,f5e2151->b7a30be;
-all3 salvagedblobs equal faileda2. Full lossless decoder/encoder fix and regressions
-implemented; final matrices pending after correcting a terminal fixture setup.
-
-
-ROOT FROZEN cae2df550126b7ed78162a8aa03c2c3dd946bbff for ACTIVE focused
-verify_007_c2 Astra/xhigh, charge99/300. Candidate5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a,
-FP704f1ef2363241c5e0643ed9d06680e737ea870d326a31957ed888c3a45736f7.
-Fresh coordinator Win3.12 declared suite PASS33, Windows1filename skip; exact
-owned/dependency blobs independently match owner-tested0efdcdc8. Ownerfull3matrix
-is retained in handoff; verifier does focused Windows/Linux findings checks and
-reuses verified unaffectedR1 reasoning. No taskR2, no broad suite repeat without
-new cause. Read FINAL, verify evidence, accept007 then begin009 ifPASS. No ROOT
-commits/begins while verifier active;017 and018 owners continue independently.
-
-Before017FINAL, coordinator confirmed a bounded encoder edge using actual accepted
-AcceptanceCriterion: adjacent chr(0xd83d)+chr(0xde00) survives constructor but plain
-ensure_ascii JSON hydration combines it to chr(0x1f600). First inline probe had an
-unused-import error; corrected probe confirmed the case. Sent owner for same
-lossless/preserved-invalid-provenance correction before review. No source edit,
-new helper or new upstream requirement; owner decides implementation.
-
-
-007 focused verification FINAL PASS; complete Markdown/JSON and identity/execution
-evidence read. All 14 context checks are present (earlier checkpoint count 13 was
-a prose count error), three program/output hashes independently verified. All
-three findings resolved on Windows/Linux; accepted and integrated at
-0f92a9858f85a3aac5e6c5c22b1038789af5d79a, generation 45, 11/39 accepted.
-Its clean integrated worktree was removed non-force; branch/history retained.
-009 a1 begun at b1e8717eb3253a1538a27ce2f151990c754a0eb1; Sol/xhigh owner
-implement_009 ACTIVE, native call_EM2WqkcoNZGoyRMqV57EffPI, charge 100/300.
-018 repair FINAL clean cf56dcb3eedaf23a3c5e1b75c36f0225cf01e0ec; full handoff
-and exact owned correction diff read. Owner 13 tests pass on Win3.12, Win3.11,
-Linux3.11; initial cross-version assertion failures and transient unknown outcome
-are retained honestly. Next: current candidate and focused single-stage verification.
-017 a3 remains ACTIVE. 019 pre-review correction and 024/016/005 verification
-remain queued. No task R2; final combined reviews and clean packaging remain.
+018 c2 FINAL PASS accepted at59eba55dd4ab0b48cecfac7127a1b4d08957b719,
+generation46, 12/39 accepted. Full reports/identity/actual diagnostics read and
+all six closing report hashes verified. Clean integrated018 worktree removed
+non-force; historical branches/reports retained. Root freeze released.
