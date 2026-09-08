@@ -1,7 +1,7 @@
 ---
 id: TASK-044
 title: Execute bounded commands with durable evidence
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-043

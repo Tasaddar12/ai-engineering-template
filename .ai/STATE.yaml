@@ -5,7 +5,6 @@ project:
 current_focus:
   plan: PLAN-002
 active_features:
-- FEATURE-002
 - FEATURE-003
 waiting_features:
 - FEATURE-004
@@ -18,9 +17,10 @@ worktrees:
 - path: .worktrees/plan-002-execution
   branch: codex/plan-002-execution
   subject: FEATURE-002
-  head: c1a072898c5cffc7f8fcb6b80618080a6c75ffdb
-  status: in-progress
+  head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+  status: completed
   base_branch: codex/plan-002-framework-reset
+  cleanup: 'deferred: automatic approval review rejected generated-cache removal'
 - path: .worktrees/plan-002-planning
   branch: codex/plan-002-planning
   subject: FEATURE-003
@@ -32,6 +32,10 @@ reviews:
     status: PASS
     head: 274ca00bb42e3ea96db7f60dc189633e0651f633
     path: .ai/reviews/FEATURE-001-critical-3.md
+  FEATURE-002:
+    status: PASS
+    head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+    path: .ai/reviews/FEATURE-002-critical-1.md
 pull_requests: {}
 active_runs: []
 blockers: []
@@ -39,5 +43,5 @@ next_actions:
 - Review FEATURE-003
 - Finish and review FEATURE-002
 - Start FEATURE-004 after FEATURE-002 is integrated
-generation: 13
-updated_at: '2026-09-08T23:42:00.862839+00:00'
+generation: 17
+updated_at: '2026-09-08T23:49:05.671822+00:00'

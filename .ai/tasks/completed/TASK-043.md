@@ -1,7 +1,7 @@
 ---
 id: TASK-043
 title: Enforce command, external-action and path constraints
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-042

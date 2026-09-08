@@ -1,0 +1,9 @@
+subject: FEATURE-002
+worktree: .worktrees/plan-002-execution
+branch: codex/plan-002-execution
+head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+merged_into: codex/plan-002-framework-reset
+cleanup: deferred
+reason: Automatic approval review rejected removal of generated test caches before
+  checked cleanup; no detailed reason supplied. No deletion performed.
+checked_at: '2026-09-08T23:49:05.675419+00:00'

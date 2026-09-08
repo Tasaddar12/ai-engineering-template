@@ -1,7 +1,7 @@
 ---
 id: TASK-045
 title: Create and reconcile safe feature worktrees
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-044

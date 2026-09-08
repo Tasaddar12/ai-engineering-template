@@ -1,7 +1,7 @@
 ---
 id: FEATURE-002
 title: Constrained commands and managed Git worktrees
-status: in-progress
+status: completed
 plan: PLAN-002
 tasks:
 - TASK-043
@@ -57,6 +57,13 @@ kind: features
 worktree: .worktrees/plan-002-execution
 branch: codex/plan-002-execution
 base: c1a0728
+head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+completion: .ai/handoffs/FEATURE-002-implementation.md
+review:
+  status: PASS
+  head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+  path: .ai/reviews/FEATURE-002-critical-1.md
+merged_into: codex/plan-002-framework-reset
 ---
 # FEATURE-002 — Constrained commands and managed Git worktrees
 
