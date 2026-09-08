@@ -4,7 +4,7 @@
   "id": "TASK-003",
   "plan_id": "PLAN-001",
   "title": "Freeze agent and workflow service ports",
-  "status": "running",
+  "status": "repairing",
   "archived": false,
   "objective": "Freeze interface-only agent, context, validation, review and delivery ports using shared values; no orchestration contracts or concrete behavior.",
   "depends_on": [
@@ -96,5 +96,5 @@
     "TASK-003-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Failed review preserved; repair R1-TASK-003-001, R1-TASK-003-002, R1-TASK-003-003; form a new candidate and rerun both independent reviews."
 }
