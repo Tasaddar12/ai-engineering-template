@@ -4,7 +4,7 @@
   "id": "TASK-004",
   "plan_id": "PLAN-001",
   "title": "Implement offline contract validation",
-  "status": "repairing",
+  "status": "running",
   "archived": false,
   "objective": "Implement offline contract validation. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -103,8 +103,9 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-004-a1"
+    "TASK-004-a1",
+    "TASK-004-a2"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-004-003; form a new candidate and rerun both independent reviews."
+  "resume_state": "Independent recovery permits one bounded repair in a2; two failed R1 cycles retained. See evidence/recovery/TASK-004-coordinator-decision.md. A further failure returns to recovery."
 }
