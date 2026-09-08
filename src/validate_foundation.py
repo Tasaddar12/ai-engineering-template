@@ -20,7 +20,7 @@ _INSTALLED_NAMESPACE = (
 )
 
 try:
-    from jsonschema import Draft202012Validator, FormatChecker
+    import jsonschema  # noqa: F401 - verify the installed validation dependency early
 except ImportError as exc:
     dependency_command = (
         f"python -m pip install -r {_INSTALLED_NAMESPACE}/requirements.txt"
@@ -31,7 +31,8 @@ except ImportError as exc:
         f"Install the validation dependency with: {dependency_command}"
     ) from exc
 
-from ai import structural_task_digest
+from contracts import ContractRegistry, load_contract_registry, structural_task_digest
+from domain_values import DomainException
 
 PLAN_BUCKETS = ("current", "completed", "archived")
 TASK_BUCKETS = ("current", "completed", "archived")
@@ -118,18 +119,11 @@ def _schema_root(root: Path, records: Path, source_foundation: bool) -> Path:
     raise ValidationFailure("Cannot locate schemas/v1 or installed workflow schemas")
 
 
-def _schemas(root: Path, records: Path, source_foundation: bool) -> dict[str, dict[str, Any]]:
-    result = {
-        path.stem.removesuffix(".schema"): _read(path)
-        for path in sorted(_schema_root(root, records, source_foundation).glob("*.schema.json"))
-    }
-    _require(bool(result), "No JSON schemas found")
-    for name, schema in result.items():
-        try:
-            Draft202012Validator.check_schema(schema)
-        except Exception as exc:
-            raise ValidationFailure(f"Invalid JSON Schema {name}: {exc}") from exc
-    return result
+def _schemas(root: Path, records: Path, source_foundation: bool) -> ContractRegistry:
+    try:
+        return load_contract_registry(_schema_root(root, records, source_foundation))
+    except DomainException as exc:
+        raise ValidationFailure(str(exc)) from exc
 
 
 def _validate_agent_models(
@@ -189,15 +183,18 @@ def _validate_agent_models(
 
 
 def _validate_artifact(
-    path: Path, schemas: dict[str, dict[str, Any]], counts: dict[str, int]
+    path: Path, schemas: ContractRegistry, counts: dict[str, Any]
 ) -> dict[str, Any]:
+    resolved = path.resolve(strict=False)
+    validated = counts.setdefault("_validated_artifacts", {})
+    if resolved in validated:
+        return validated[resolved]
     artifact = _read(path)
-    kind = artifact.get("kind")
-    _require(isinstance(kind, str) and kind in schemas, f"Unknown artifact kind in {path}: {kind!r}")
     try:
-        Draft202012Validator(schemas[kind], format_checker=FormatChecker()).validate(artifact)
-    except Exception as exc:
-        raise ValidationFailure(f"Schema validation failed for {path}: {exc}") from exc
+        schemas.validate(artifact, source=str(path))
+    except DomainException as exc:
+        raise ValidationFailure(str(exc)) from exc
+    validated[resolved] = artifact
     counts["validated_artifacts"] += 1
     return artifact
 
@@ -235,8 +232,8 @@ def _validate_task_locations(tasks: dict[str, tuple[str, dict[str, Any]]], plan_
 def _validate_archive_manifests(
     root: Path,
     bundle: Path,
-    schemas: dict[str, dict[str, Any]],
-    counts: dict[str, int],
+    schemas: ContractRegistry,
+    counts: dict[str, Any],
 ) -> None:
     history = bundle / "history"
     if not history.is_dir():
@@ -273,8 +270,8 @@ def _validate_plan(
     root: Path,
     bucket: str,
     bundle: Path,
-    schemas: dict[str, dict[str, Any]],
-    counts: dict[str, int],
+    schemas: ContractRegistry,
+    counts: dict[str, Any],
 ) -> str:
     plan = _validate_artifact(bundle / "plan.json", schemas, counts)
     plan_id = str(plan["id"])
@@ -379,7 +376,10 @@ def _validate_plan(
     expected = {criterion["id"] for criterion in plan["acceptance_criteria"]}
     covered = {value for task in live_tasks.values() for value in task["plan_acceptance_ids"]}
     _require(expected == covered, f"{plan_id}: acceptance coverage mismatch {expected ^ covered}")
-    digest = structural_task_digest(list(live_tasks.values()))
+    try:
+        digest = structural_task_digest(list(live_tasks.values()))
+    except DomainException as exc:
+        raise ValidationFailure(str(exc)) from exc
     _require(graph["task_set_sha256"] == digest, f"{plan_id}: stale structural task digest")
     if graph["status"] == "approved":
         _require(bool(graph["review_ref"]), f"{plan_id}: approved graph has no review")
@@ -393,8 +393,13 @@ def _validate_plan(
         _require(graph["review_ref"] is None, f"{plan_id}: unapproved graph cannot reuse a review")
         _require(plan["isolation_review_ref"] is None, f"{plan_id}: plan cannot reuse an isolation review")
 
-    for evidence in sorted((bundle / "evidence").glob("*.json")):
-        _validate_artifact(evidence, schemas, counts)
+    for artifact_path in sorted(_walk_files(bundle, ".json", skip_history=True)):
+        artifact = _validate_artifact(artifact_path, schemas, counts)
+        if "plan_id" in artifact:
+            _require(
+                artifact["plan_id"] == plan_id,
+                f"{artifact_path}: artifact belongs to another plan",
+            )
     _validate_archive_manifests(root, bundle, schemas, counts)
     counts["tasks"] += len(tasks)
     counts["plans"] += 1
@@ -404,8 +409,8 @@ def _validate_plan(
 def _installed_manifest(
     root: Path,
     framework: dict[str, Any],
-    schemas: dict[str, dict[str, Any]],
-    counts: dict[str, int],
+    schemas: ContractRegistry,
+    counts: dict[str, Any],
 ) -> tuple[dict[str, Any], list[Path]]:
     manifest_ref = framework.get("manifest_ref")
     _require(isinstance(manifest_ref, str), "Installed framework has no manifest_ref")
@@ -466,7 +471,7 @@ def validate(root: Path) -> dict[str, int]:
     source_foundation = framework_preview.get("installation_status") == "source_foundation"
     schemas = _schemas(root, records, source_foundation)
     counts = {
-        "schemas": len(schemas),
+        "schemas": len(schemas.kinds),
         "validated_artifacts": 0,
         "plans": 0,
         "tasks": 0,
@@ -589,6 +594,7 @@ def validate(root: Path) -> dict[str, int]:
         _require((root / "src" / "install.py").is_file(), "Missing flat src/install.py")
         _require((root / "src" / "validate_foundation.py").is_file(), "Missing flat validator")
     _validate_links(root, records, counts, source_foundation, managed_paths)
+    counts.pop("_validated_artifacts", None)
     return counts
 
 
