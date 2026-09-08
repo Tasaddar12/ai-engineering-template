@@ -4,7 +4,7 @@
   "id": "TASK-002",
   "plan_id": "PLAN-001",
   "title": "Freeze local persistence and process ports",
-  "status": "running",
+  "status": "repairing",
   "archived": false,
   "objective": "Freeze interface-only local persistence/process/Git/worktree ports using shared errors and values from TASK-001; no concrete behavior.",
   "depends_on": [
@@ -98,5 +98,5 @@
     "TASK-002-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Failed review preserved; repair R1-TASK-002-001; form a new candidate and rerun both independent reviews."
 }
