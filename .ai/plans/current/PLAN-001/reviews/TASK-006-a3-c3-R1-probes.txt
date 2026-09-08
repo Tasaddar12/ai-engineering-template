@@ -1,0 +1,10 @@
+{"executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe", "jsonschema": "4.26.0", "origins": {"commands": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-006-a3\\src\\commands.py", "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-006-a3\\src\\config.py", "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-006-a3\\src\\contracts.py", "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-006-a3\\src\\local_ports.py", "test_commands": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-006-a3\\tests\\unit\\commands\\test_commands.py"}, "platform": "Windows-11-10.0.26200-SP0", "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]"}
+test_actual_multiencoding_secret_capture_and_partial_storage_failure (__main__.ReviewProbes.test_actual_multiencoding_secret_capture_and_partial_storage_failure) ... ok
+test_missing_phase_and_expired_startup_are_rejected (__main__.ReviewProbes.test_missing_phase_and_expired_startup_are_rejected) ... ok
+test_watchdog_cleanup_cannot_manufacture_success (__main__.ReviewProbes.test_watchdog_cleanup_cannot_manufacture_success) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.814s
+
+OK
+PASS: focused review probes; no remaining command reader or fixture execution threads

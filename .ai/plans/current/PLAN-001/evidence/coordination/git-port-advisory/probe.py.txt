@@ -1,0 +1,195 @@
+"""Disposable transport/plumbing feasibility probe, not production Git behavior."""
+from __future__ import annotations
+
+import dataclasses
+import hashlib
+import json
+import os
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[3]
+CANDIDATE = ROOT / ".worktrees" / "TASK-006-a1"
+sys.path.insert(0, str(CANDIDATE / "src"))
+
+from commands import FileCommandLogStore, LocalCommandRunner
+from config import RunSettings, load_installation_record, load_project_settings
+from domain_values import EntityId
+from local_ports import (
+    CommandCwdRule, CommandDefinition, CommandPlatform, CommandRequest,
+    CommandRootBindings, CommandSuccessRule, EnvironmentBinding,
+    LocalProjectBinding, PermissionClass,
+)
+
+PLATFORM = "windows" if os.name == "nt" else "linux"
+SCRATCH = Path(__file__).parent / PLATFORM
+SCRATCH.mkdir(exist_ok=False)
+REPO = SCRATCH / "repo"
+REPO.mkdir()
+GIT = shutil.which("git")
+assert GIT
+BASE_ENV = {
+    "PATH": os.pathsep.join((str(Path(sys.executable).parent), str(Path(GIT).parent))),
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_CONFIG_GLOBAL": str(SCRATCH / "empty-config"),
+    "GIT_AUTHOR_NAME": "Disposable Advisory",
+    "GIT_AUTHOR_EMAIL": "advisory@example.invalid",
+    "GIT_COMMITTER_NAME": "Disposable Advisory",
+    "GIT_COMMITTER_EMAIL": "advisory@example.invalid",
+    "GIT_AUTHOR_DATE": "2026-09-08T00:00:00+0000",
+    "GIT_COMMITTER_DATE": "2026-09-08T00:00:00+0000",
+    "PYTHONDONTWRITEBYTECODE": "1",
+}
+if os.name == "nt":
+    BASE_ENV["SystemRoot"] = os.environ["SystemRoot"]
+(SCRATCH / "empty-config").write_text("", encoding="utf-8")
+
+class Clock:
+    def now(self):
+        return datetime.now(timezone.utc)
+
+class Ids:
+    count = 0
+    def new(self, kind, plan_id=None):
+        self.count += 1
+        return EntityId(f"advisory-evidence-{self.count}")
+
+SETTINGS = dataclasses.replace(
+    load_project_settings(CANDIDATE, load_installation_record(CANDIDATE)),
+    project_root=REPO,
+)
+RUNNER = LocalCommandRunner(
+    project_settings=SETTINGS, run_settings=RunSettings(),
+    allowed_permissions=(PermissionClass.LOCAL_EXECUTE,),
+    id_factory=Ids(), clock=Clock(),
+    log_store=FileCommandLogStore(REPO, "advisory-evidence"),
+    base_environment=BASE_ENV,
+)
+COMMANDS = []
+CHECKS = {}
+
+def command(*argv, code=0, environment=()):
+    definition = CommandDefinition(
+        id="advisory.command", argv=tuple(argv),
+        cwd_rule=CommandCwdRule.PROJECT, timeout_seconds=10,
+        max_output_bytes=1048576, permission_class=PermissionClass.LOCAL_EXECUTE,
+        environment_bindings=tuple(binding.name for binding in environment),
+        platforms=(CommandPlatform.WINDOWS, CommandPlatform.LINUX),
+        success_rule=CommandSuccessRule.EXIT_ZERO,
+    )
+    result = RUNNER.execute(CommandRequest(
+        project_id="advisory", plan_id=None, run_id="RUN-ADVISORY",
+        operation_id="OP-ADVISORY", definition=definition,
+        roots=CommandRootBindings(LocalProjectBinding("advisory", REPO)),
+        cwd_relative=".", environment=environment,
+    ))
+    output = []
+    for ref in (result.stdout_ref, result.stderr_ref):
+        assert ref is not None, result
+        content = (REPO / ref.path).read_bytes()
+        assert hashlib.sha256(content).hexdigest() == ref.sha256.value
+        output.append(content.decode("utf-8"))
+    COMMANDS.append({"argv": argv, "status": result.status.value,
+                     "exit": result.exit_code, "stdout": output[0], "stderr": output[1],
+                     "argv_preserved": result.argv_redacted == tuple(argv),
+                     "truncated": result.output_truncated})
+    assert result.status.value == "exited", COMMANDS[-1]
+    assert not result.output_truncated and result.argv_redacted == tuple(argv)
+    if code is not None:
+        assert result.exit_code == code, COMMANDS[-1]
+    return result.exit_code, output[0].strip()
+
+def git(*args, **kwargs):
+    return command("git", *args, **kwargs)[1]
+
+# This constant proves only transport through existing argv; a production helper
+# would validate a finite operation and its typed data, not accept arbitrary text.
+BRIDGE = (
+    "import subprocess,sys; "
+    "r=subprocess.run(['git','update-ref','--stdin'],"
+    "input=sys.argv[1].encode('ascii'),stdout=subprocess.PIPE,"
+    "stderr=subprocess.PIPE,shell=False); "
+    "sys.stdout.buffer.write(r.stdout); sys.stderr.buffer.write(r.stderr); "
+    "sys.exit(r.returncode)"
+)
+
+def transaction(text, code=0):
+    return command("python", "-B", "-c", BRIDGE, text, code=code)
+
+try:
+    version = git("--version")
+    git("init", "-b", "main")
+    (REPO / "file.txt").write_text("base\n", encoding="utf-8")
+    git("add", "--", "file.txt")
+    git("commit", "-m", "fixture base")
+    a = git("rev-parse", "HEAD")
+    tree = git("rev-parse", "HEAD^{tree}")
+    b = git("commit-tree", tree, "-p", a, "-m", "fixture candidate")
+    c = git("commit-tree", tree, "-p", a, "-m", "fixture movement")
+    git("update-ref", "refs/heads/source", a, "0" * 40)
+    git("update-ref", "refs/heads/integration", a, "0" * 40)
+    git("update-ref", "refs/heads/state", a, "0" * 40)
+    (REPO / "receipt.json").write_text(json.dumps({"request": "digest-1", "result": a}), encoding="utf-8")
+    receipt = git("hash-object", "-w", "--", "receipt.json")
+
+    # DEVNULL is valid EOF: no transaction instructions are delivered.
+    git("update-ref", "--stdin")
+    CHECKS["direct_stdin_only_no_effect"] = git("rev-parse", "refs/heads/integration") == a
+
+    branch_tx = f"start\nverify refs/heads/source {a}\ncreate refs/heads/created {a}\ncreate refs/advisory/operation-1 {receipt}\nprepare\ncommit\n"
+    transaction(branch_tx)
+    CHECKS["branch_and_receipt_committed"] = (
+        git("rev-parse", "refs/heads/created") == a
+        and git("rev-parse", "refs/advisory/operation-1") == receipt
+    )
+    # A retry first inspects the durable receipt. Re-sending the transaction is
+    # rejected, demonstrating a duplicate cannot replace the first result.
+    duplicate_code, _ = transaction(branch_tx, code=None)
+    CHECKS["duplicate_transaction_rejected"] = duplicate_code != 0
+    CHECKS["receipt_recoverable_after_ignored_result"] = json.loads(git("cat-file", "blob", "refs/advisory/operation-1"))["request"] == "digest-1"
+
+    git("update-ref", "refs/heads/source", c, a)
+    stale_source_code, _ = transaction(
+        f"start\nverify refs/heads/source {a}\ncreate refs/heads/stale-source {a}\nprepare\ncommit\n", code=None)
+    missing_code, _ = command("git", "show-ref", "--verify", "--quiet", "refs/heads/stale-source", code=None)
+    CHECKS["stale_source_aborts_target_creation"] = stale_source_code != 0 and missing_code == 1
+    git("update-ref", "refs/heads/source", b, c)
+    merge_tree = git("merge-tree", "--write-tree", a, b).splitlines()[0]
+    merged = git("commit-tree", merge_tree, "-p", a, "-p", b, "-m", "advisory integration")
+    integration_tx = f"start\nverify refs/heads/source {b}\nupdate refs/heads/integration {merged} {a}\nprepare\ncommit\n"
+    git("update-ref", "refs/heads/integration", c, a)
+    stale_target_code, _ = transaction(integration_tx, code=None)
+    CHECKS["stale_target_preserved"] = stale_target_code != 0 and git("rev-parse", "refs/heads/integration") == c
+    git("update-ref", "refs/heads/integration", a, c)
+    transaction(integration_tx)
+    CHECKS["integration_parents_and_observed_ref"] = (
+        git("rev-parse", "refs/heads/integration") == merged
+        and git("rev-list", "--parents", "-n", "1", merged).split() == [merged, a, b]
+    )
+
+    index_env = (EnvironmentBinding("GIT_INDEX_FILE", ".git/advisory-index", sensitive=False),)
+    (REPO / ".ai").mkdir()
+    (REPO / ".ai" / "STATE.json").write_text('{"generation":1}\n', encoding="utf-8")
+    git("read-tree", a, environment=index_env)
+    git("add", "--", ".ai/STATE.json", environment=index_env)
+    state_tree = git("write-tree", environment=index_env)
+    checkpoint = git("commit-tree", state_tree, "-p", a, "-m", "checkpoint operation OP-1")
+    git("update-ref", "refs/heads/state", checkpoint, a)
+    CHECKS["checkpoint_separate_index_and_ref"] = (
+        git("show", "refs/heads/state:.ai/STATE.json") == '{"generation":1}'
+        and git("write-tree") == tree
+        and git("rev-parse", "HEAD") == a
+    )
+    assert all(CHECKS.values()), CHECKS
+    summary = {"platform": PLATFORM, "git_version": version, "python": sys.version,
+               "checks": CHECKS, "commands": COMMANDS,
+               "limits": "Transport/plumbing only; no production adapter, concurrency schedule, crash injection, receipt conflict policy, installed package, or task acceptance suite."}
+    (SCRATCH / "results.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps({"platform": PLATFORM, "git_version": version, "checks": CHECKS,
+                      "command_count": len(COMMANDS)}, indent=2))
+except BaseException:
+    (SCRATCH / "failed-results.json").write_text(json.dumps({"checks": CHECKS, "commands": COMMANDS}, indent=2), encoding="utf-8")
+    raise

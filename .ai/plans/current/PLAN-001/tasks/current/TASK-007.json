@@ -4,7 +4,7 @@
   "id": "TASK-007",
   "plan_id": "PLAN-001",
   "title": "Implement observed Git operations",
-  "status": "backlog",
+  "status": "accepted",
   "archived": false,
   "objective": "Implement observed Git operations. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -94,7 +94,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-007-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Candidate 5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
 }

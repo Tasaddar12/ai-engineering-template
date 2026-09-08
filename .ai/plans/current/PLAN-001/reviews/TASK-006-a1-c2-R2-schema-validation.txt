@@ -1,0 +1,2 @@
+PASS schema-valid R2 fail report; 12 complete checks; exact passing R1 reference; all evidence paths resolve.
+Review outputs: .ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2.json .ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2.md

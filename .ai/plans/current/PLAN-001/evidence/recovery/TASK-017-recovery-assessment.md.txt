@@ -1,0 +1,267 @@
+# PLAN-001 / TASK-017 independent recovery assessment
+
+**Recommendation: adopt one bounded local repair in fresh attempt TASK-017-a2.**
+The remaining failure is an implementation defect in the distinction between a
+requested policy profile and a resolved provider profile. The accepted configuration
+contract already represents both identities. No decomposition, dependency, public
+port, schema, acceptance, or graph change is justified. Preserve a1 as unaccepted
+history; salvage its two verified owned commits into a fresh accepted-root attempt,
+repair the binding check, validate the new candidate, and require cumulative cycle-3
+R1 followed by a separate fresh R2 on the same fingerprint.
+
+This document is an independent recovery recommendation for coordinator adoption.
+It is neither an implementation authorization by itself nor R1/R2 approval. No
+source patch, cherry-pick, commit, canonical transition, or new task was performed.
+
+## Identity, trigger, and retained history
+
+| Fact | Verified value |
+| --- | --- |
+| Frozen coordinator ROOT | `10b408fa0fd43eafa49acc88dec2c5976be05966` |
+| Failed a1 candidate, clean | `e79df3b8d071a7e3a3c7874cf0cacb6e704c0205` |
+| Candidate's original review base | `e2faa2b8f3ce8f63119227edd35fa837b82d5ee8` |
+| Candidate fingerprint | `b1d15eb23f6efe4625c3489e708c0c5cf6708b479698277a7b0d55f849cbf488` |
+| Raw binary diff SHA-256 | `865d0e2a42c5227a8e8f449232b9027f8f419a088dcd3d39dda456cd4d683f4a` |
+| Plan state | Generation 38; 10 of 39 accepted; no active runtime run record |
+| Approved graph | PLAN-001-r4, revision 4, unchanged |
+| Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
+| Structural graph digest | `5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337` |
+
+Recovery is required by `.ai/shared/workflows/recovery.md` after two failed formal
+review/repair cycles at either stage. Both failures were R1; **zero R2 reviews have
+run for TASK-017**. The current task's `repairing`/resume text records coordinator
+intent, not a grant for an ordinary third repair after this threshold.
+
+- [Cycle 1 R1](../../reviews/TASK-017-a1-c1-R1.json) failed at
+  `d8930f07ca90cd0dc95ccd452a38d8fcfde8e0c4`: R1-TASK-017-001 covered terminal
+  regression, changed successful output, and cancelled-to-queued polling;
+  R1-TASK-017-002 covered forged quiescence, skipped cursors, and unknown nested
+  request fields. Its reports and companions remain byte-identical to checkpoint
+  `10e27db6472bbf6d9a5a5023233ede12fae5d52d`.
+- [Cycle 2 R1](../../reviews/TASK-017-a1-c2-R1.json) resolved those findings and
+  failed with R1-TASK-017-003, the mapped-profile restart defect. Its reports and
+  companions remain byte-identical to failed-review preservation checkpoint
+  `8ebe9629f0eb7870933623af87cd10e93677dd4b`.
+- Independent verification compared all **20** historical report/companion files,
+  all 14 manifest context hashes, all three candidate-bound validation hashes,
+  the policy/model digest, fingerprint, Git ancestry, and clean candidate state.
+  The two earlier failed reports retain their original verdicts and unresolved
+  historical findings; resolution is expressed in later evidence, not by editing them.
+
+The recovery role is `docs/agents/recovery-replanner.md`, selected through the role
+index. Inputs inspected include AGENTS/README/STATE, selected plan/spec/task/graph,
+the r4 isolation report, ADR-001 through ADR-005, policy/model mappings, the local
+agent brief and TASK-017 dispatch reminder, current a1 handoff and implementation
+ledger, both R1 histories and their relevant scripts/results, the actual scoped Git
+diffs, and accepted TASK-003/004/038 handoffs and configuration/service boundaries.
+Historical material was loaded specifically to establish failure and budget lineage.
+
+## Diagnosis and independent reproduction
+
+`src/agents.py:885` adds `configured_model.name == request.model_profile` during
+private state restoration. `request.model_profile` is the **policy** name.
+`ProjectSettings.configured_model` (`src/config.py:620`) resolves that name through
+`AgentModels.provider_profile_for_policy` (`:536`) to a **provider** profile. The
+two names need not be equal. Initial dispatch already follows the accepted mapping;
+`_expected_model` deliberately retains the requested policy name in ModelIdentity,
+while `_FakeEffect.configured_model` retains the resolved provider name and effort.
+
+The new [independent verification](TASK-017-recovery-assessment-verification.py)
+builds its own typed request and fixture through the real accepted loaders. It
+imports no candidate test helpers, changes only copied fixture configuration, and
+uses separate interpreter processes. Both provider catalogs receive an
+`implementation_custom` alias with the same existing implementation model/rank/effort;
+the policy profile `implementation` selects that alias. Fake capabilities use the
+active provider's actual decoded profiles. This is an admitted configuration, not a
+synthetic invalid-settings counterexample.
+
+| Case | First fresh process | Second fresh process with identical settings |
+| --- | --- | --- |
+| Identity mapping control | Start, exact retry, queued poll; one effect | Same handle; one effect; queued poll |
+| `implementation` → `implementation_custom` | Start, exact retry, queued poll; one effect; expected ModelIdentity profile remains `implementation` | Provider construction rejects with `validation_failed: restored fake model identity does not match its effect`; saved bytes unchanged |
+
+The [captured verification](TASK-017-recovery-assessment-verification.json) retains
+runtime, module origins, distinct process IDs, request/profile facts, settings
+digests, and outcomes. All four processes used Windows Python 3.12.14 and the exact
+candidate modules. The diagnostic ran with bytecode disabled and argument arrays
+with `shell=False`; it exited 0 because both expected control outcomes were confirmed.
+That exit is evidence that the defect reproduces, not that TASK-017 passes.
+
+This is a false rejection of valid recovery, not a missing prerequisite or a request
+for stronger credentials. It is local because the saved effect already contains the
+two identities and the adapter already receives the mapping-bearing ProjectSettings.
+TASK-003's DTOs, TASK-004's validation, and TASK-038's decoders are sufficient and
+their committed source bytes match between ROOT and the failed candidate.
+
+The retained c2 evidence also supports preserving the earlier repair: 27 declared
+tests passed on Windows 3.12/3.11 and Linux 3.11; R1 checked 24 corruptions, 22 changed
+request fields, 18 handle cases, five unconsumed model mutations across recreation,
+rollback for all four persistence mutations, four-process recovery, and a finite
+temporal matrix of 35 script pairs / 498 transitions / 249 reachable admitted states /
+1,363 unreachable rejected combinations. These results were read and hash-verified,
+not broadly rerun by recovery. They remain candidate-specific evidence and cannot
+approve changed a2 code. The matrix is bounded, not a proof for arbitrary histories.
+
+## Bounded repair contract
+
+Only `src/agents.py`, `tests/unit/agents/`, and the TASK-017 implementation handoff
+remain writable by the new implementer. The correction must meet all of the following:
+
+1. Keep the requested policy name, resolved provider profile name, and simulated
+   observed model identity distinct. Do not rename a request, normalize both names
+   into one value, silently remap persisted settings, or require identity mappings.
+2. During private hydration, retain all intrinsic request/handle/effect/model checks
+   and strict nested shapes. A provider-only constructor has no injected mapping and
+   cannot establish policy-to-provider equality from spelling. At the settings-bearing
+   reconnection/admission boundary, resolve the requested policy name through
+   `settings.configured_model(request.model_profile)` and compare the **entire** saved
+   configured ProviderModelProfile to the selected value, including provider name,
+   provider profile name, model, capability rank, and both provider-specific effort
+   fields. Retain full expected ModelIdentity equality and capability checks.
+   Existing idempotent `start` already performs this selected-binding comparison;
+   preserve or reuse it rather than inventing a second configuration decoder.
+3. A forged or stale provider profile is still rejected before an effect is admitted
+   through that settings-bearing boundary. The old c2 `configured profile mismatch`
+   test must not force the invalid string-equality rule back into the provider-only
+   constructor. Add a regression proving rejection through real configured
+   reconnection. If the correction moves admission, prove a saved handle cannot
+   bypass the chosen binding check. Do not trade valid mapped-profile recovery for
+   acceptance of unrelated stored names or changed model/rank/effort/capabilities.
+4. Preserve terminal result/output freezing, confirmed cancellation, explicit unknown
+   and pending outcomes, identity fences, exact idempotency, and cursor non-advancement
+   on failures. Retain strict validation of consumed histories and derived quiescence.
+   Valid no-script/default queued, queued-then-late scripting, empty/exhausted/partial
+   scripts, and unconsumed deliberate fault-injection values must remain recoverable.
+5. Add an owned regression using both real configuration loaders and fresh processes
+   for the valid non-identity mapping, alongside its identity control. Assert equal
+   settings bytes across processes, one effect, recovered handle, unchanged requested
+   profile, correct resolved profile, and normal continuation. Add focused negative
+   selected-binding/effort/provenance cases with unchanged backing bytes/cursors on
+   rejection. Retain relevant c1 regressions; update the handoff's recovery claims.
+
+No accepted TASK-003/004/038 source, frozen port, schema, project configuration,
+graph, task structure, permissions, or product scope may change. No canonical
+journal, lease manager, production provider, multi-owner lock, or multi-host store
+belongs in this repair. The existing private store remains a sequential, single-live-
+owner deterministic simulation. An implementation that needs a new public prerequisite
+must return a concrete structural discovery instead of expanding scope.
+
+## Salvage, acceptance, dependencies, and invalidation
+
+Create a new branch/worktree for TASK-017-a2 from the coordinator's **accepted ROOT**
+after this decision is adopted, recording that exact new dispatch OID. The source
+baseline verified here is `10b408fa0fd43eafa49acc88dec2c5976be05966`; the old R1 base
+and failed candidate are not fresh-attempt bases. Do not merge the a1 branch wholesale.
+Cherry-pick only these verified single-parent owned commits, oldest first:
+
+1. `71e0ccf697c132082bb17f7f3814ffb6abee5df6` — original source/test/handoff additions.
+2. `7e5bd5fd5d1b36a14cbee6ae911b68a4ec9ffbf8` — terminal/history repair.
+
+Git independently shows these are exactly the two non-merge commits unique to a1.
+Both touch only the three listed owned paths. The second commit's parent blobs on
+those paths equal the first commit's blobs, and the final candidate blobs equal the
+second commit's blobs. Current accepted ROOT contains none of those three paths.
+The retained `ai/PLAN-001/TASK-017/a1` branch contains the failed candidate. This
+establishes owned salvage and compatible preimages; **no cherry-pick was executed**
+during assessment. The coordinator/implementer must recheck paths and actual results
+at the real a2 base. Keep source→salvage commit mapping and failed lineage in the new
+handoff; never present cherry-picked code as already accepted.
+
+TASK-017-AC1 remains deterministic start/poll/cancel, structured output, exact
+idempotency and recovery. The mapped-profile regression repairs that existing
+criterion. TASK-017-AC2 retains rejected invalid provenance, missing capabilities,
+and inadequate review rank. PLAN-001 AC-04 / SPEC-001 REQ-04 remain unchanged.
+No criteria are lost, waived, moved, or duplicated. No task is superseded; a2 is
+another attempt of the same TASK-017, not a new task or run identity.
+
+Old graph and proposed graph are the same approved r4 and same digests. No task or
+dependency rewrite is proposed, so no new structural isolation review is needed
+for this bounded decision. Accepted direct dependencies remain TASK-003, TASK-004,
+TASK-038. The fourteen descendants remain fenced until 017 is accepted:
+TASK-015, TASK-020, TASK-021, TASK-022, TASK-023, TASK-025, TASK-026, TASK-027,
+TASK-029, TASK-030, TASK-034, TASK-035, TASK-036, TASK-037. Each was independently
+verified backlog with no attempt IDs. TASK-007 and TASK-018 are independent owners;
+their source was not read or imported as accepted context. Coordinator-confirmed
+owner/reviewer stops establish the manual a1 fence; no runtime lease service is claimed.
+
+All a2 validation and candidate-dependent reviews must be fresh. Run the declared
+`test.TASK-017` leaf with a nonzero observed count from the exact a2 tree, including
+the new real-loader/fresh-process regression. Use the supplied Windows 3.12 default
+and Windows/Linux 3.11 minimum-version environments with explicit candidate module
+origins and correct WSL cwd. Record actual failures as well as final results. Run
+required foundation/whitespace checks without treating them as behavior approval.
+Recompute the candidate manifest/fingerprint after final integration context is fixed.
+
+Then obtain **fresh cumulative cycle-3 R1**, followed only on R1 PASS by **separate
+fresh R2** on the identical candidate. Neither reviewer may be the implementer or
+reuse a failed review as approval. R1 should target the new mapping and preserved
+history/provenance behavior; R2 independently checks accepted dependency and boundary
+compatibility. A source fix or material integration-base/context change invalidates
+both gates. Accepted dependencies are unchanged; dependent readiness is recalculated
+only after actual acceptance, never from this assessment or an owner handoff.
+
+## Budget, permissions, failure gate, and next role
+
+The unchanged policy has two failed cycles before recovery, three structural
+rewrites, 300 agent invocations, four parallel slots, and no review downgrade.
+Historical rewrite usage remains **3/3 used, zero remaining**, supported by the
+retained implementation/recovery ledger and coordinator evidence. Graph revision
+alone is not used to infer this count. This local repair consumes **zero rewrites**;
+it does not reset the two failed cycles or create a fourth rewrite under another name.
+
+The immutable [83-charge snapshot](TASK-017-native-invocations-83.txt) hashes to
+`aa8f04629fea070ac63bc2fbcf938cc4f4821aa3fa5e99251a8170c7324e446b` and contains
+82 distinct native calls plus the continuing root. Its final call
+`call_NFGeNtSf9ic0FAXkxXwysoOO` assigned the retained Sol owner to independent
+TASK-018; it was not another TASK-006 repair.
+
+Recovery's original spawn `call_tYUwxLEP8iuLb3BTPBsGYqRA` was charged invocation
+84, selected Astra/xhigh, and ended with a usage error before producing assessment
+files or a verdict. This continuation is charged invocation 85,
+`call_P6pZvnvZ6x4zAY6lvZxp2FUJ`, with the inherited recovery selection. Separate
+007 and 018 continuations are charges 86 and 87. The [87-charge snapshot](TASK-017-native-invocations-87.txt)
+hashes to `2c1e97bbe540e1271d938ce9e14f5c426535c978b76772ff8c2f263b888cd7c6`;
+86 distinct calls plus root were independently counted. The coordinator reports
+the user requested continuation and usage was available; no reset credit was
+consumed or purchased by the coordinator. This does not erase the charged failures.
+
+Current accounting is **87/300 charged, 213 remaining**. Reserve at least three
+additional invocations for one fresh Sol/xhigh implementer and fresh Astra/xhigh
+R1/R2: **90 charged or reserved, 210 otherwise remaining**. This is a bounded
+next-step reservation, not a claim that all remaining plan work fits that budget.
+Reconcile the live count before every dispatch; usage retries and failed dispatches
+remain chargeable. The four slots are root, 007, 018, and this recovery; wait for this
+FINAL to release the recovery slot before dispatching a2.
+
+The observed native recovery profile is `recovery`, OpenAI `gpt-6-astra` / `xhigh`,
+rank 4; implementation remains standing Sol/xhigh rank 3 and reviewers Astra/xhigh
+rank 4. Separate provider-effective identity/effort is unavailable and not claimed.
+Automatic policy bindings remain `configured:false`; native manual invocations do
+not configure or prove a production adapter.
+
+Policy already permits local worktrees, scoped edits, tests, commits, and reviews.
+**No routine user permission is needed for this fixable local defect.** The
+coordinator must first adopt the concrete recovery recommendation and record the
+new attempt/fences/budget; that is the existing canonical-writer gate, not a new
+user approval flow. The next role is a fresh bounded implementer after adoption,
+then independent implementation reviewer and consistency reviewer.
+
+This allowance ends after that single a2 repair candidate. If the bounded repair
+cannot satisfy this contract, or its formal R1/R2 fails, return immediately to
+coordinator recovery with all evidence retained; there is **no ordinary repair or additional
+attempt authorized by this document**. Do not run R2 after failed R1. A need to
+change scope/dependencies/interfaces/acceptance is structural: with zero rewrites
+remaining, prepare a durable budget pause and concrete next action rather than
+inventing a fourth rewrite. Pause for exhausted invocation budget, recurring
+unavailable required capability/usage, conflicting ownership or unquiesced a1,
+unverifiable salvage, unresolved product choice, or missing external authority.
+An explicit authorized policy/product decision is needed to cross such a boundary;
+this assessment grants no waiver, rank inflation, credential, spend, remote write,
+counter reset, or new run identity.
+
+Recovery writes are limited to this assessment and same-prefix verification
+companions. The verification command ran once successfully; no repaired candidate
+was tested and no cross-platform matrix or remote CI was newly run by this role.
+The [final verification](TASK-017-recovery-assessment-final.txt) records frozen
+identities, report preservation, output hashes, and the final write inventory.
+All candidate and ROOT access stops after final verification and FINAL handoff.

@@ -1,0 +1,314 @@
+{
+  "atomic_replacement_rollback": 4,
+  "binding_rejections": 48,
+  "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+  "fresh_processes": [
+    [
+      {
+        "cursor": 1,
+        "effect_count": 1,
+        "effort": null,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "start",
+        "pid": 25892,
+        "poll": "unknown",
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation",
+        "runtime": "3.12.14",
+        "settings_sha256": "38c1076f6ba34fcd1234222fe83361b15079426e791be1cf33a26c41cd77072b"
+      },
+      {
+        "cursor": 2,
+        "effect_count": 1,
+        "effort": null,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "continue",
+        "pid": 26000,
+        "poll": "running",
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation",
+        "runtime": "3.12.14",
+        "settings_sha256": "38c1076f6ba34fcd1234222fe83361b15079426e791be1cf33a26c41cd77072b"
+      },
+      {
+        "cursor": 3,
+        "effect_count": 1,
+        "effort": null,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "finish",
+        "pid": 36848,
+        "poll": "succeeded",
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation",
+        "runtime": "3.12.14",
+        "settings_sha256": "38c1076f6ba34fcd1234222fe83361b15079426e791be1cf33a26c41cd77072b"
+      }
+    ],
+    [
+      {
+        "cursor": 1,
+        "effect_count": 1,
+        "effort": null,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "start",
+        "pid": 14820,
+        "poll": "unknown",
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation_custom",
+        "runtime": "3.12.14",
+        "settings_sha256": "14e2a01601a0ad4f1c69226dd4efbd442feb60456e0da9774321d7270b92dfa9"
+      },
+      {
+        "cursor": 2,
+        "effect_count": 1,
+        "effort": null,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "continue",
+        "pid": 35196,
+        "poll": "running",
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation_custom",
+        "runtime": "3.12.14",
+        "settings_sha256": "14e2a01601a0ad4f1c69226dd4efbd442feb60456e0da9774321d7270b92dfa9"
+      },
+      {
+        "cursor": 3,
+        "effect_count": 1,
+        "effort": null,
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "finish",
+        "pid": 17620,
+        "poll": "succeeded",
+        "provider": "openai",
+        "reasoning_effort": "high",
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation_custom",
+        "runtime": "3.12.14",
+        "settings_sha256": "14e2a01601a0ad4f1c69226dd4efbd442feb60456e0da9774321d7270b92dfa9"
+      }
+    ],
+    [
+      {
+        "cursor": 1,
+        "effect_count": 1,
+        "effort": "high",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "start",
+        "pid": 27848,
+        "poll": "unknown",
+        "provider": "anthropic",
+        "reasoning_effort": null,
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation",
+        "runtime": "3.12.14",
+        "settings_sha256": "3e35492b3a239ab0b68831cacbc195a40ea7d3da84ea663c0b305e0300975265"
+      },
+      {
+        "cursor": 2,
+        "effect_count": 1,
+        "effort": "high",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "continue",
+        "pid": 12308,
+        "poll": "running",
+        "provider": "anthropic",
+        "reasoning_effort": null,
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation",
+        "runtime": "3.12.14",
+        "settings_sha256": "3e35492b3a239ab0b68831cacbc195a40ea7d3da84ea663c0b305e0300975265"
+      },
+      {
+        "cursor": 3,
+        "effect_count": 1,
+        "effort": "high",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "finish",
+        "pid": 10596,
+        "poll": "succeeded",
+        "provider": "anthropic",
+        "reasoning_effort": null,
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation",
+        "runtime": "3.12.14",
+        "settings_sha256": "3e35492b3a239ab0b68831cacbc195a40ea7d3da84ea663c0b305e0300975265"
+      }
+    ],
+    [
+      {
+        "cursor": 1,
+        "effect_count": 1,
+        "effort": "high",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "start",
+        "pid": 34444,
+        "poll": "unknown",
+        "provider": "anthropic",
+        "reasoning_effort": null,
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation_custom",
+        "runtime": "3.12.14",
+        "settings_sha256": "6ecc2a3a864edd2d4be5832b5f78189525f29ce5f23fde587ab3fe84b90d4cdd"
+      },
+      {
+        "cursor": 2,
+        "effect_count": 1,
+        "effort": "high",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "continue",
+        "pid": 17948,
+        "poll": "running",
+        "provider": "anthropic",
+        "reasoning_effort": null,
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation_custom",
+        "runtime": "3.12.14",
+        "settings_sha256": "6ecc2a3a864edd2d4be5832b5f78189525f29ce5f23fde587ab3fe84b90d4cdd"
+      },
+      {
+        "cursor": 3,
+        "effect_count": 1,
+        "effort": "high",
+        "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "expected_profile": "implementation",
+        "handle": "fake-agent-1f6e7e8b30ae8b57b106425b474a83a6",
+        "origins": {
+          "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+          "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+        },
+        "phase": "finish",
+        "pid": 37416,
+        "poll": "succeeded",
+        "provider": "anthropic",
+        "reasoning_effort": null,
+        "requested_profile": "implementation",
+        "resolved_profile": "implementation_custom",
+        "runtime": "3.12.14",
+        "settings_sha256": "6ecc2a3a864edd2d4be5832b5f78189525f29ce5f23fde587ab3fe84b90d4cdd"
+      }
+    ]
+  ],
+  "jsonschema": "4.26.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "runtime": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "temporal": {
+    "empty_exhausted_controls": 2,
+    "intrinsic_corruptions_rejected": 16,
+    "legitimate_history_snapshots": 6,
+    "terminal_sequences": 5
+  },
+  "terminal_settings_capability_rejections": 32,
+  "unconsumed_provenance_rejections_across_restarts": 10
+}

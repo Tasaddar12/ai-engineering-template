@@ -1,0 +1,16 @@
+User single-stage gate verification
+Actual selector imported from tracked coordinator; actual retained c3 reports used only as immutable input. No candidate acceptance, Git mutation, source change or historical report rewrite.
+PASS a single valid independent implementation report suffices for review selection (no Git action)
+PASS rejected missing review
+PASS rejected known exact-candidate R2 failure
+PASS rejected duplicate passing report
+PASS rejected self review
+PASS rejected wrong rank
+PASS rejected wrong model
+PASS rejected wrong fingerprint
+PASS rejected wrong task
+PASS rejected wrong candidate ref
+PASS rejected missing checklist item
+PASS rejected inconclusive
+PASS rejected failed checklist
+PASS rejected missing evidence

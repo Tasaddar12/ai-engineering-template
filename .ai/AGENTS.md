@@ -16,4 +16,8 @@ The reusable installer, focused record CLI, and foundation validator are working
 - Preserve failed reviews and superseded graphs as immutable history. Material changes invalidate prior review approval.
 - Local reversible work is allowed by policy. Do not infer credentials, providers, external repositories, paid resources, publishing authority, or destructive permission.
 
+## Before every implementation handoff
+
+The implementer must run relevant tests and review the final diff for bugs, contract mismatches, and applicable edge cases. Fix in-scope issues, add regression tests, and rerun affected checks before submission. Flag scope blockers promptly. Record actual test results, skips, and self-review findings briefly in the existing handoff. Keep the required independent review; this self-check is part of implementation and adds no review stage or separate paperwork. This standing project rule applies to future tasks and corrections, not only the current plan.
+
 Run `python src/validate_foundation.py` with the development dependency installed. It validates the repository record layout, schemas, references, graph structure, plan-local IDs, archive manifests, and active documentation links; it is not an implementation test of the planned engine.

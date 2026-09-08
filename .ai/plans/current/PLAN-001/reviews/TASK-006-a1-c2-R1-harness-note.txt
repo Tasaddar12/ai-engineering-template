@@ -1,0 +1,10 @@
+The initial reviewer Linux suite wrapper exited 1 before imports or tests because
+Linux Git interpreted the Windows-created worktree .git pointer as a relative path:
+fatal: not a git repository: /mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/D:/Codex Projects/ai-engineering-template/.git/worktrees/TASK-006-a1
+The same wrapper's Windows run passed 22 discovered / 21 executed / one skip.
+An initial standalone Git diagnostic also misquoted a path with spaces; it ran no
+tests. The correctly quoted diagnostic returned the expected ce4c8edb86b0 head.
+The reviewer wrapper now passes explicit --git-dir and --work-tree arguments to
+Linux Git. This repairs the reviewer harness only; no Git metadata, source, test,
+candidate identity, or historical evidence changed. These setup failures are not
+candidate defects or failing implementation-test results.

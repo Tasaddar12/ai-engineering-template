@@ -1,0 +1,55 @@
+PRE: identity PASS; clean exact head/base; 13 context hashes; validation hash; raw diff/policy/model/fingerprint; passing same-candidate R1; r4 digest; unchanged accepted 001/004/039 code.
+Changed paths: ['A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md', 'A\tsrc/plan_graph.py', 'A\ttests/unit/planning_dag/test_plan_graph.py']
+Candidate imports: {'contracts': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\contracts.py', 'domain_values': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\domain_values.py', 'plan_graph': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\plan_graph.py', 'orchestration_ports': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\orchestration_ports.py'}
+Declared argv: ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_dag/', '-p', 'test_*.py'] ; cwd: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-013-a1 ; exit: 0
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.228s
+
+OK
+
+test_01_real_plan_through_accepted_port_values (__main__.ConsistencyChecks.test_01_real_plan_through_accepted_port_values) ... FAIL
+test_02_lifecycle_neutral_digest_and_structural_prose (__main__.ConsistencyChecks.test_02_lifecycle_neutral_digest_and_structural_prose) ... Lifecycle-only path/attempt movement preserves full DAG; structural mixed-field prose rejects prior digest.
+ok
+test_03_proposed_split_coverage_and_excluded_history (__main__.ConsistencyChecks.test_03_proposed_split_coverage_and_excluded_history) ... ERROR
+test_04_registry_error_and_frozen_input_compatibility (__main__.ConsistencyChecks.test_04_registry_error_and_frozen_input_compatibility) ... Immutable accepted JSON builds; nine version/kind/shape failures preserve accepted registry category/details/retryability.
+ok
+test_05_plan_qualified_namespace_across_port_roundtrip (__main__.ConsistencyChecks.test_05_plan_qualified_namespace_across_port_roundtrip) ... Two complete 39-task plans share local IDs but all lookup/frontier identities stay disjoint.
+ok
+test_06_detached_values_and_stable_direct_fact_order (__main__.ConsistencyChecks.test_06_detached_values_and_stable_direct_fact_order) ... FAIL
+
+======================================================================
+ERROR: test_03_proposed_split_coverage_and_excluded_history (__main__.ConsistencyChecks.test_03_proposed_split_coverage_and_excluded_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-013-a1-c1-R2-evidence.py", line 219, in test_03_proposed_split_coverage_and_excluded_history
+    self.assertEqual(caught.exception.error.details['missing_acceptance_ids'], ('AC-03',))
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-013-a1\src\domain_values.py", line 431, in __getitem__
+    raise KeyError(key)
+KeyError: 'missing_acceptance_ids'
+
+======================================================================
+FAIL: test_01_real_plan_through_accepted_port_values (__main__.ConsistencyChecks.test_01_real_plan_through_accepted_port_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-013-a1-c1-R2-evidence.py", line 157, in test_01_real_plan_through_accepted_port_values
+    self.assertTrue(expected)  # Capacity zero remains scheduler policy, not a DAG filter.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [] is not true
+
+======================================================================
+FAIL: test_06_detached_values_and_stable_direct_fact_order (__main__.ConsistencyChecks.test_06_detached_values_and_stable_direct_fact_order)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-013-a1-c1-R2-evidence.py", line 269, in test_06_detached_values_and_stable_direct_fact_order
+    self.assertTrue(frontier)
+AssertionError: () is not true
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.197s
+
+FAILED (failures=2, errors=1)
+POST: identity PASS; clean exact head/base; 13 context hashes; validation hash; raw diff/policy/model/fingerprint; passing same-candidate R1; r4 digest; unchanged accepted 001/004/039 code.
+Changed paths: ['A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md', 'A\tsrc/plan_graph.py', 'A\ttests/unit/planning_dag/test_plan_graph.py']
+Candidate imports: {'contracts': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\contracts.py', 'domain_values': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\domain_values.py', 'plan_graph': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\plan_graph.py', 'orchestration_ports': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\orchestration_ports.py'}

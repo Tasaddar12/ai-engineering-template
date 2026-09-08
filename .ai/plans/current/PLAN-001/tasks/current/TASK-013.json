@@ -4,7 +4,7 @@
   "id": "TASK-013",
   "plan_id": "PLAN-001",
   "title": "Build validated dependency graph",
-  "status": "running",
+  "status": "accepted",
   "archived": false,
   "objective": "Build validated dependency graph. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,5 +98,5 @@
     "TASK-013-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Candidate 51a94cd050ad6c7cb525c6d26c9c7e38e0943c13 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }
