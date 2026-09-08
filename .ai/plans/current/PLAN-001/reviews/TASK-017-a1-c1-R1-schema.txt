@@ -1,0 +1,1 @@
+PASS: schemas/v1/review-result.schema.json Draft 2020-12 and date-time format validation; all 11 unique ordered R1 checks; two unresolved findings; distinct reviewer/implementation sessions; exact candidate fingerprint.
