@@ -5,6 +5,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -68,6 +69,14 @@ def wire(value: object) -> object:
 class UtcClock:
     def now(self) -> datetime:
         return datetime.now(timezone.utc)
+
+
+class SequenceClock:
+    def __init__(self, *observations: datetime) -> None:
+        self._observations = iter(observations)
+
+    def now(self) -> datetime:
+        return next(self._observations)
 
 
 class SequentialIds:
@@ -245,6 +254,21 @@ class CommandRunnerTests(unittest.TestCase):
         self.assertEqual(evidence.status, CommandStatus.EXITED)
         self.assertEqual(evidence.exit_code, 7)
         self.assertIsNone(evidence.error_category)
+        self.assert_schema(evidence)
+
+    def test_backward_clock_returns_unknown_without_fabricating_finish_time(self) -> None:
+        started = datetime(2026, 9, 8, 12, 0, 1, tzinfo=timezone.utc)
+        moved_backward = datetime(2026, 9, 8, 12, 0, 0, tzinfo=timezone.utc)
+        evidence = self.runner(clock=SequenceClock(started, moved_backward)).execute(
+            self.request(self.definition((self.python, "-c", "print('process-observed')")))
+        )
+        self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
+        self.assertEqual(evidence.started_at, started)
+        self.assertIsNone(evidence.finished_at)
+        self.assertIsNone(evidence.exit_code)
+        self.assertEqual(evidence.error_category, "clock_regression")
+        self.assertEqual(self.read_log(evidence.stdout_ref).strip(), b"process-observed")
+        self.assertEqual(self.read_log(evidence.stderr_ref), b"")
         self.assert_schema(evidence)
 
     def test_project_worktree_and_control_cwd_policies_use_actual_bound_roots(self) -> None:
@@ -542,13 +566,37 @@ class CommandRunnerTests(unittest.TestCase):
         self.assertEqual(self.read_log(second), b"second")
 
     def test_native_terminator_does_not_infer_tree_quiescence_from_parent_exit(self) -> None:
-        process = __import__("subprocess").Popen(
+        process = subprocess.Popen(
             (self.python, "-c", "pass"),
             env=self.base_environment,
             shell=False,
         )
         process.wait(timeout=5)
         self.assertFalse(NativeProcessTreeTerminator().terminate(process))
+
+    @unittest.skipIf(os.name == "nt", "POSIX process-group ownership is POSIX-specific")
+    def test_posix_terminator_requires_and_confirms_an_owned_process_group(self) -> None:
+        terminator = NativeProcessTreeTerminator(grace_seconds=2)
+        unowned = subprocess.Popen(
+            (self.python, "-c", "import time; time.sleep(30)"),
+            env=self.base_environment,
+            shell=False,
+        )
+        self.addCleanup(self._kill_process, unowned)
+        self.assertNotEqual(os.getpgid(unowned.pid), unowned.pid)
+        self.assertFalse(terminator.terminate(unowned))
+        self.assertIsNotNone(unowned.poll())
+
+        owned = subprocess.Popen(
+            (self.python, "-c", "import time; time.sleep(30)"),
+            env=self.base_environment,
+            shell=False,
+            start_new_session=True,
+        )
+        self.addCleanup(self._kill_process, owned)
+        self.assertEqual(os.getpgid(owned.pid), owned.pid)
+        self.assertTrue(terminator.terminate(owned))
+        self.assertIsNotNone(owned.poll())
 
     @staticmethod
     def _restore_environment(name: str, value: str | None) -> None:
@@ -603,6 +651,12 @@ class CommandRunnerTests(unittest.TestCase):
             )
         else:
             os.kill(pid, 9)
+
+    @staticmethod
+    def _kill_process(process: subprocess.Popen[bytes]) -> None:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
 
 
 if __name__ == "__main__":

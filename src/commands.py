@@ -162,26 +162,41 @@ class NativeProcessTreeTerminator:
         return _wait_for_exit(process, self._grace_seconds)
 
     def _terminate_posix(self, process: subprocess.Popen[bytes]) -> bool:
+        if process.poll() is not None:
+            return False
         try:
-            os.killpg(process.pid, signal.SIGTERM)
+            process_group = os.getpgid(process.pid)
         except ProcessLookupError:
-            return process.poll() is not None
+            _wait_for_exit(process, self._grace_seconds)
+            return False
+        except OSError:
+            _kill_parent(process, self._grace_seconds)
+            return False
+        if process_group != process.pid:
+            _kill_parent(process, self._grace_seconds)
+            return False
+        try:
+            os.killpg(process_group, signal.SIGTERM)
+        except ProcessLookupError:
+            return _wait_for_exit(process, self._grace_seconds)
         except OSError:
             _kill_parent(process, self._grace_seconds)
             return False
         parent_exited = _wait_for_exit(process, self._grace_seconds)
-        if parent_exited and _wait_for_process_group_exit(process.pid, self._grace_seconds):
+        if parent_exited and _wait_for_process_group_exit(
+            process_group, self._grace_seconds
+        ):
             return True
         try:
-            os.killpg(process.pid, signal.SIGKILL)
+            os.killpg(process_group, signal.SIGKILL)
         except ProcessLookupError:
-            return process.poll() is not None
+            return _wait_for_exit(process, self._grace_seconds)
         except OSError:
             _kill_parent(process, self._grace_seconds)
             return False
         parent_exited = _wait_for_exit(process, self._grace_seconds)
         return parent_exited and _wait_for_process_group_exit(
-            process.pid, self._grace_seconds
+            process_group, self._grace_seconds
         )
 
 
@@ -443,6 +458,12 @@ class LocalCommandRunner:
             if isinstance(binding, LocalProjectBinding)
             else binding.worktree_id
         )
+        finished_at = self._clock.now()
+        if finished_at < started_at:
+            status = CommandStatus.UNKNOWN
+            finished_at = None
+            exit_code = None
+            error_category = "clock_regression"
         return CommandEvidence(
             id=evidence_id,
             command_id=request.definition.id,
@@ -450,7 +471,7 @@ class LocalCommandRunner:
             cwd_worktree_id=root_id,
             cwd_relative=request.cwd_relative,
             started_at=started_at,
-            finished_at=self._clock.now(),
+            finished_at=finished_at,
             exit_code=exit_code,
             status=status,
             stdout_ref=stdout_ref,

@@ -8,6 +8,7 @@
 | Branch | `ai/PLAN-001/TASK-006/a1` |
 | Logical worktree | `TASK-006-a1` |
 | Dispatch/base commit | `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f` |
+| Linux-correction base | `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` |
 | Candidate commit | The Git commit containing this handoff; its exact OID is reported after commit because a commit cannot embed its own object ID. |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
@@ -21,6 +22,15 @@ Verified candidate paths are limited to TASK-006 ownership:
 
 No port, schema, configuration, package, Git/state/validator service, shared metadata, task record,
 graph, project state, or other task-owned source changed.
+
+The coordinator ran Linux preflight on the first clean candidate before independent R1. The initial
+system-Python run could not import the declared `referencing` dependency. After the coordinator
+created a Linux virtual environment with the declared dependency, the 18-test suite found one failure
+and one error: POSIX cleanup inferred tree quiescence from an exited parent without prior group
+ownership, and a real UTC clock adjustment made the finish sample precede the start sample. The
+assessment and raw outputs are retained in coordinator ROOT commit
+`59f3afcfe4805138fccb140efa5bb96b87034605`. This bounded correction does not consume or fabricate an
+independent review cycle.
 
 ## Behavior and acceptance mapping
 
@@ -73,15 +83,27 @@ graph, project state, or other task-owned source changed.
   cancellation and a one-second timeout use native tree cleanup. On this Windows host, the timeout
   child starts its own 30-second child; `taskkill /T /F` completes, an exit code is observed, and the
   test verifies the descendant PID is no longer active before accepting `timed_out` evidence.
+- On POSIX, the terminator now establishes ownership while the process is observable by requiring
+  `getpgid(pid) == pid` before signaling a group. An exited process or a live process in a group it
+  does not own is stopped at the parent boundary and returns false. A group can be reported quiescent
+  only after that ownership observation, parent reaping, and confirmed group absence. Linux tests
+  cover both an unowned process and a runner-owned new session; the existing timeout regression also
+  confirms cleanup of a real descendant in that owned group.
 - A missing executable returns `launch_failed` with durable sanitized stderr and no inferred exit
   code. An actual parent-only cleanup leaves its spawned child active, and the runner returns
   `unknown`, `exit_code=None`, and `ambiguous_side_effect`; the test then explicitly terminates that
   known child PID. If either output drain fails or durable log storage is unavailable, the result is
   also not reported as success. The storage failure test returns `unknown` with `internal_error` and
   no fabricated refs.
+- The start and finish wall-clock calls remain direct observations from the injected TASK-002
+  `Clock`. If the finish sample is earlier, the runner does not clamp or replace it: the unrepresentable
+  finish sample is omitted, status becomes `unknown`, exit code becomes null as required by the frozen
+  DTO, and `error_category=clock_regression`. The already durable stdout/stderr refs and observed start
+  remain attached. A deterministic two-sample clock proves this boundary while retaining real child
+  output.
 - Evidence for exited-zero, exited-nonzero, launch failure, timeout, cancellation, escaped cwd,
-  redaction/truncation, unconfirmed cleanup, and unavailable durable storage is validated against the
-  accepted offline `command-evidence` v1 schema.
+  clock regression, redaction/truncation, unconfirmed cleanup, and unavailable durable storage is
+  validated against the accepted offline `command-evidence` v1 schema.
 
 ## Public interfaces and dependency notes
 
@@ -118,17 +140,25 @@ Working directory:
 | `-m py_compile src/commands.py tests/unit/commands/test_commands.py` | Exit 0 after final source/test edits. |
 | `git diff --cached --check` | Exit 0 before this handoff was added; repeated for the complete candidate before commit. |
 | Local `ruff` / `mypy` discovery | Both executables were unavailable; neither optional check is claimed. |
+| Coordinator Linux system-Python preflight on `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` | Exit 1; import failed because system jsonschema 4.10.3 lacked its `referencing` dependency. Retained coordinator output: `TASK-006-linux-dependency-preflight.txt`. |
+| Coordinator Linux declared-dependency preflight on `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` | Exit 1; 18 tests, one failure, one error, one Windows-only skip. Retained coordinator output: `TASK-006-linux-behavior-preflight.txt`. This occurred before R1. |
+| Windows `-m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one POSIX-only skip; `OK`. Exact declared suite with the coordinator Windows interpreter; 4.470 seconds. |
+| WSL `--exec <Linux interpreter> -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one Windows-only skip; `OK`. Exact declared suite with the declared-dependency Linux environment; 3.918 seconds. |
+| Windows `-W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one POSIX-only skip; `OK`; 4.401 seconds. |
+| WSL `--exec <Linux interpreter> -W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one Windows-only skip; `OK`; 4.319 seconds. |
 
-The exact task command ran again after the final production and test edits and passed 18 tests in 4.400
-seconds. No aggregate, foundation, provider, network, remote, or unrelated task suite was run.
+Before the Linux correction, the exact Windows task command ran again after the then-final production
+and test edits and passed 18 tests in 4.400 seconds. The current corrected source has the two passing
+20-test cross-platform runs above. No aggregate, foundation, provider, network, remote, or unrelated
+task suite was run.
 
 ## Assumptions, limitations, risks, and reviewer guidance
 
 - Windows 11/NTFS behavior is observed locally: direct process execution, large dual-stream output,
   `.cmd` refusal, cancellation, timeout, content-addressed hard-link persistence, and descendant
-  cleanup all ran. The POSIX process-group termination path is implemented but was not executed on
-  this Windows host; Linux confirmation belongs to the later platform CI gate. There is no claimed
-  Linux-only result in this handoff.
+  cleanup all ran. Ubuntu-24.04 under WSL directly executed the declared Linux interpreter and
+  observed POSIX owned/unowned group handling, timeout descendant cleanup, direct execution, output,
+  redaction, and persistence. WSL is local Linux preflight rather than final independent platform CI.
 - `FileCommandLogStore` needs same-filesystem hard-link support to publish a new immutable path
   without an overwrite race. If the host filesystem lacks that capability, execution evidence is
   returned as `unknown` rather than claiming durable success.
