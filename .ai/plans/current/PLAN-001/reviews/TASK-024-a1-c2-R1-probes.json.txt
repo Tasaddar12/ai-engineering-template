@@ -1,0 +1,632 @@
+{
+  "started_at": "2026-09-08T15:47:03.144616+00:00",
+  "head": "58cc78312451d7954a4c29b6ba85b6ceec353171",
+  "base": "8becdc7218d6292ed7d97371d2859783d6d4a097",
+  "checks": [
+    {
+      "name": "opening exact candidate, evidence, accepted prerequisites and preserved c1 identity",
+      "status": "pass",
+      "detail": {
+        "fingerprint": "8f2ba197a56ab71a60729dc62f23fde758f305bb70759b55e33d35369816083d",
+        "diff_sha256": "cb807164d8cb1b03a61dbe00f0ecf0f82d3d7ed4cfccd0b731d4ba9c0afb713a",
+        "context_and_validation_hashes": {
+          ".ai/plans/current/PLAN-001/plan.json": "9195d603c9190f859fdcd74ecc47cd441f4b52ed6aa8f2438276ba766b58d72b",
+          ".ai/plans/current/PLAN-001/spec.json": "f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc",
+          ".ai/plans/current/PLAN-001/graph.json": "1b0f207a9a5ea4f9bd96f36f123bd15ce09c2b271fff155d71552caa8758140c",
+          ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json": "b627f43455def3caf61873701599a624bd4cd8fd0ab5f1ce12518a3592c53ae4",
+          ".ai/shared/architecture/service-contracts.md": "9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248",
+          ".ai/shared/workflows/reviews.md": "0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0",
+          ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md": "db59748213f2ef9611f51142f205b8b692f1ff4f9f18bc47befb0e0aff8cd79c",
+          ".ai/decisions/ADR-001.md": "3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4",
+          ".ai/decisions/ADR-002.md": "46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44",
+          ".ai/decisions/ADR-003.md": "2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214",
+          ".ai/decisions/ADR-004.md": "a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5",
+          ".ai/decisions/ADR-005.md": "0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md": "cbc4ab723d576041c7f28272e0680f8f7bb52828a06a59f881c8941cd9699ae1",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md": "80efe35d9dde51da7d4f5474a3a6cf690e00d7fba35b5bebb489d8f07c9e629c",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md": "c64669eab0c20242c67ced9a3481ce124cfbe29f57fe0ac8095c30939b46d3fd",
+          ".ai/plans/current/PLAN-001/evidence/validation/TASK-024-a1-58cc78312451.txt": "43978e34178c46618be3df38450fcaa3e1e23c4e70f0163f8538c2dc9f7d4e04"
+        },
+        "root_context_raw_hashes": {
+          ".ai/plans/current/PLAN-001/plan.json": "6863417833c90de48bc7a73f71f566b5890813335c0f4a8267577405b54e8a27",
+          ".ai/plans/current/PLAN-001/spec.json": "f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc",
+          ".ai/plans/current/PLAN-001/graph.json": "feaedf79b9975bcff4428c28cecaddb73b9859ce1b9cb0a3904d715bd194553c",
+          ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json": "afc6de93a6eb18b681bb8a2f94545fd610493d09114511350fa14835266b4929",
+          ".ai/shared/architecture/service-contracts.md": "9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248",
+          ".ai/shared/workflows/reviews.md": "0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0",
+          ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md": "db59748213f2ef9611f51142f205b8b692f1ff4f9f18bc47befb0e0aff8cd79c",
+          ".ai/decisions/ADR-001.md": "3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4",
+          ".ai/decisions/ADR-002.md": "46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44",
+          ".ai/decisions/ADR-003.md": "2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214",
+          ".ai/decisions/ADR-004.md": "a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5",
+          ".ai/decisions/ADR-005.md": "0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md": "cbc4ab723d576041c7f28272e0680f8f7bb52828a06a59f881c8941cd9699ae1",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md": "80efe35d9dde51da7d4f5474a3a6cf690e00d7fba35b5bebb489d8f07c9e629c",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md": "c64669eab0c20242c67ced9a3481ce124cfbe29f57fe0ac8095c30939b46d3fd"
+        },
+        "root_EOL_note": "ROOT working copies may use CRLF; candidate and manifest bind exact committed LF bytes. ROOT content matches after only CRLF normalization.",
+        "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+        "changed_paths": [
+          "A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md",
+          "A\tsrc/recovery_proposals.py",
+          "A\ttests/unit/planning_recovery_proposals/test_recovery_proposals.py"
+        ],
+        "source_and_owned_sha256": {
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md": "dbef0e278722ad470898822d60ed5926c2c62539e6ed7519f23ae13aa0fa0b65",
+          "src/recovery_proposals.py": "43ae2edaf9cfc9c2fbc3c04df61066c0dc8f0cb398ae35c10b365d4333e94466",
+          "tests/unit/planning_recovery_proposals/test_recovery_proposals.py": "46b94e860638fa151d810d54e8e210b6fe02c04e766c56b946e96930d26a823b",
+          "src/plan_graph.py": "e6393dac8b5239f272ffca2d539672cf7c4b64576af59826be82e46528fedc65",
+          "src/scope.py": "ea94e4d5b26e1e9315330e5fb7866160efec5263bbe862457babfc1a78eb6d78",
+          "src/orchestration_ports.py": "dbd16491fc2890fb54115faa60845bb04eb0a5c67f2a4d81da840cd40b139a90",
+          "src/domain_values.py": "57329ee0235a564365d91a944b8ff1f7dabe6bc276910bfaba157a39fb26ef69",
+          "src/contracts.py": "7f8230f4038cfb179a4490939fca6bd5466575a5f63d6f1f4cd919821f295f96",
+          "src/workflow_ports.py": "0cba92f07fa67c43aad209d2f3c686a72e4c4619f32555ec4f4e76413b574f97"
+        },
+        "c1_preserved_sha256": {
+          "TASK-024-a1-c1-R1-probes.py": "7bb5a64f821b18f0452206b81d99981dc3cea6ef3fa5d3aa00513ad8ca9afdaf",
+          "TASK-024-a1-c1-R1-probes.txt": "671a4279617adb1fb855e35a086c1f498c672193660ef7f6465fd4386560e06f",
+          "TASK-024-a1-c1-R1.json": "a63c44a27d24684d4094ef37aebf06c7a8076a177abe5a0e2f03b8ebc9ccfd8d",
+          "TASK-024-a1-c1-R1.md": "5d743c70cd1efdd6fe74f43afa883e451b0582810835c900b8d40ee5ae5c6bf8"
+        },
+        "graph_structural_sha256": "5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337",
+        "task_set_sha256": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+        "origins": {
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\domain_values.py",
+          "orchestration_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\orchestration_ports.py",
+          "plan_graph": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\plan_graph.py",
+          "recovery_proposals": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\recovery_proposals.py",
+          "scope": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\scope.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\workflow_ports.py"
+        },
+        "root_status": " M .ai/plans/current/PLAN-001/evidence/coordination/CURRENT.md\n?? .ai/plans/current/PLAN-001/evidence/validation/TASK-024-a1-58cc78312451.txt\n?? .ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-initial.json.txt\n?? .ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.py\n?? .ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-024-a1-58cc78312451.json\n"
+      }
+    },
+    {
+      "name": "F1 actual r4 fresh exact path and resource in unchanged product authority",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F1 unauthorized exact path",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "product_scope_expansion"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 unauthorized resource",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "product_scope_expansion"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 authorized read scope",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F1 authorized read still requires whole-graph ordering",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "unsequenced_scope_conflict"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 unauthorized read scope",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "product_scope_expansion"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 normalized resource alias",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F1 foreign plan authority",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "scope_authority_plan_mismatch"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 external permission expansion",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "permission_expansion"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F2 early exit rejects",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "incomplete_dependency_exit_set"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F2 terminal exit admits",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F2 actual TASK-013 readiness",
+      "status": "pass",
+      "detail": {
+        "rejected_early_after_first": [
+          "TASK-200",
+          "TASK-301"
+        ],
+        "admitted_terminal_after_first": [
+          "TASK-301"
+        ],
+        "admitted_terminal_after_both": [
+          "TASK-200"
+        ]
+      }
+    },
+    {
+      "name": "F2 multiple independent exits",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F2 independent missing exit",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "incomplete_dependency_exit_set"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F2 transitive successor exit coverage",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F1 whole graph unsequenced conflicts remain rejected",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "unsequenced_scope_conflict"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 inherited prohibition source",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "product_scope_expansion"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F1 inherited prohibition authority and source",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "product_scope_expansion"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F3 first augment",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F3 admitted augment then replace",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F3 cumulative immutable histories and authority",
+      "status": "pass",
+      "detail": {
+        "rewrite_ordinal": 3,
+        "budget": "LineageBudget(max_agent_invocations=300, used_agent_invocations=27, max_rewrites=3, used_rewrites=2, max_elapsed_seconds=3600, elapsed_seconds=500, max_review_cycles_per_stage=2, used_review_1_cycles=2, used_review_2_cycles=1, max_tokens=100000, used_tokens=19000)",
+        "history_ids": [
+          "TASK-250",
+          "TASK-300"
+        ],
+        "R1_history_count": 1,
+        "R2_history_count": 1,
+        "permissions": [
+          "local_execute"
+        ]
+      }
+    },
+    {
+      "name": "F3 missing mapped owners",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "invalid_original_acceptance_mapping"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "F3 identical multiple explicit owners",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "F3 conflicting retained copy without unrelated content mutation",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "conflicting_original_acceptance"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "Prehandoff hidden first owner rejects before dictionary collapse",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "duplicate_original_acceptance_mapping"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget reset used_agent_invocations",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_usage_reset"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget reset used_rewrites",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_usage_reset"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget reset elapsed_seconds",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_usage_reset"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget reset used_review_1_cycles",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_usage_reset"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget reset used_review_2_cycles",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_usage_reset"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget reset used_tokens",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_usage_reset"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 budget limit expansion",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "budget_limit_changed"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 actual token overshoot retained",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "lineage_budget_exhausted"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 historical ID reuse rejects",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "task_id_reuse"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "AC2 other-plan historical ID remains distinct",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "AC2 completed source unchanged during augment",
+      "status": "pass",
+      "detail": {
+        "admissible": true,
+        "issues": [],
+        "requires_isolation_review": true
+      }
+    },
+    {
+      "name": "AC2 completed reference mutation rejects",
+      "status": "pass",
+      "detail": {
+        "admissible": false,
+        "issues": [
+          "completed_task_changed"
+        ],
+        "requires_isolation_review": false
+      }
+    },
+    {
+      "name": "independent controls complete",
+      "status": "pass",
+      "detail": null
+    },
+    {
+      "name": "reuse actual passing candidate-bound leaf and foundation commands from initial diagnostic",
+      "status": "pass",
+      "detail": {
+        "retained_output": ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-initial.json.txt",
+        "sha256": "dd44c97a630a0184230b93e07d42885a155081ca38af9c997a89f163e24103a6",
+        "commands": [
+          {
+            "argv": [
+              "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "tests/unit/planning_recovery_proposals/",
+              "-p",
+              "test_*.py"
+            ],
+            "cwd": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1",
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": "................\n----------------------------------------------------------------------\nRan 16 tests in 0.793s\n\nOK\n"
+          },
+          {
+            "argv": [
+              "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+              "src/validate_foundation.py"
+            ],
+            "cwd": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1",
+            "exit_code": 0,
+            "stdout": "{\n  \"schemas\": 27,\n  \"validated_artifacts\": 203,\n  \"plans\": 1,\n  \"tasks\": 39,\n  \"unordered_pairs_checked\": 280,\n  \"archive_manifests\": 4,\n  \"local_links\": 582\n}\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "closing frozen identity and historical evidence",
+      "status": "pass",
+      "detail": {
+        "fingerprint": "8f2ba197a56ab71a60729dc62f23fde758f305bb70759b55e33d35369816083d",
+        "diff_sha256": "cb807164d8cb1b03a61dbe00f0ecf0f82d3d7ed4cfccd0b731d4ba9c0afb713a",
+        "context_and_validation_hashes": {
+          ".ai/plans/current/PLAN-001/plan.json": "9195d603c9190f859fdcd74ecc47cd441f4b52ed6aa8f2438276ba766b58d72b",
+          ".ai/plans/current/PLAN-001/spec.json": "f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc",
+          ".ai/plans/current/PLAN-001/graph.json": "1b0f207a9a5ea4f9bd96f36f123bd15ce09c2b271fff155d71552caa8758140c",
+          ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json": "b627f43455def3caf61873701599a624bd4cd8fd0ab5f1ce12518a3592c53ae4",
+          ".ai/shared/architecture/service-contracts.md": "9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248",
+          ".ai/shared/workflows/reviews.md": "0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0",
+          ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md": "db59748213f2ef9611f51142f205b8b692f1ff4f9f18bc47befb0e0aff8cd79c",
+          ".ai/decisions/ADR-001.md": "3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4",
+          ".ai/decisions/ADR-002.md": "46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44",
+          ".ai/decisions/ADR-003.md": "2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214",
+          ".ai/decisions/ADR-004.md": "a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5",
+          ".ai/decisions/ADR-005.md": "0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md": "cbc4ab723d576041c7f28272e0680f8f7bb52828a06a59f881c8941cd9699ae1",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md": "80efe35d9dde51da7d4f5474a3a6cf690e00d7fba35b5bebb489d8f07c9e629c",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md": "c64669eab0c20242c67ced9a3481ce124cfbe29f57fe0ac8095c30939b46d3fd",
+          ".ai/plans/current/PLAN-001/evidence/validation/TASK-024-a1-58cc78312451.txt": "43978e34178c46618be3df38450fcaa3e1e23c4e70f0163f8538c2dc9f7d4e04"
+        },
+        "root_context_raw_hashes": {
+          ".ai/plans/current/PLAN-001/plan.json": "6863417833c90de48bc7a73f71f566b5890813335c0f4a8267577405b54e8a27",
+          ".ai/plans/current/PLAN-001/spec.json": "f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc",
+          ".ai/plans/current/PLAN-001/graph.json": "feaedf79b9975bcff4428c28cecaddb73b9859ce1b9cb0a3904d715bd194553c",
+          ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json": "afc6de93a6eb18b681bb8a2f94545fd610493d09114511350fa14835266b4929",
+          ".ai/shared/architecture/service-contracts.md": "9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248",
+          ".ai/shared/workflows/reviews.md": "0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0",
+          ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md": "db59748213f2ef9611f51142f205b8b692f1ff4f9f18bc47befb0e0aff8cd79c",
+          ".ai/decisions/ADR-001.md": "3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4",
+          ".ai/decisions/ADR-002.md": "46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44",
+          ".ai/decisions/ADR-003.md": "2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214",
+          ".ai/decisions/ADR-004.md": "a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5",
+          ".ai/decisions/ADR-005.md": "0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md": "cbc4ab723d576041c7f28272e0680f8f7bb52828a06a59f881c8941cd9699ae1",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md": "80efe35d9dde51da7d4f5474a3a6cf690e00d7fba35b5bebb489d8f07c9e629c",
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md": "c64669eab0c20242c67ced9a3481ce124cfbe29f57fe0ac8095c30939b46d3fd"
+        },
+        "root_EOL_note": "ROOT working copies may use CRLF; candidate and manifest bind exact committed LF bytes. ROOT content matches after only CRLF normalization.",
+        "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+        "changed_paths": [
+          "A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md",
+          "A\tsrc/recovery_proposals.py",
+          "A\ttests/unit/planning_recovery_proposals/test_recovery_proposals.py"
+        ],
+        "source_and_owned_sha256": {
+          ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md": "dbef0e278722ad470898822d60ed5926c2c62539e6ed7519f23ae13aa0fa0b65",
+          "src/recovery_proposals.py": "43ae2edaf9cfc9c2fbc3c04df61066c0dc8f0cb398ae35c10b365d4333e94466",
+          "tests/unit/planning_recovery_proposals/test_recovery_proposals.py": "46b94e860638fa151d810d54e8e210b6fe02c04e766c56b946e96930d26a823b",
+          "src/plan_graph.py": "e6393dac8b5239f272ffca2d539672cf7c4b64576af59826be82e46528fedc65",
+          "src/scope.py": "ea94e4d5b26e1e9315330e5fb7866160efec5263bbe862457babfc1a78eb6d78",
+          "src/orchestration_ports.py": "dbd16491fc2890fb54115faa60845bb04eb0a5c67f2a4d81da840cd40b139a90",
+          "src/domain_values.py": "57329ee0235a564365d91a944b8ff1f7dabe6bc276910bfaba157a39fb26ef69",
+          "src/contracts.py": "7f8230f4038cfb179a4490939fca6bd5466575a5f63d6f1f4cd919821f295f96",
+          "src/workflow_ports.py": "0cba92f07fa67c43aad209d2f3c686a72e4c4619f32555ec4f4e76413b574f97"
+        },
+        "c1_preserved_sha256": {
+          "TASK-024-a1-c1-R1-probes.py": "7bb5a64f821b18f0452206b81d99981dc3cea6ef3fa5d3aa00513ad8ca9afdaf",
+          "TASK-024-a1-c1-R1-probes.txt": "671a4279617adb1fb855e35a086c1f498c672193660ef7f6465fd4386560e06f",
+          "TASK-024-a1-c1-R1.json": "a63c44a27d24684d4094ef37aebf06c7a8076a177abe5a0e2f03b8ebc9ccfd8d",
+          "TASK-024-a1-c1-R1.md": "5d743c70cd1efdd6fe74f43afa883e451b0582810835c900b8d40ee5ae5c6bf8"
+        },
+        "graph_structural_sha256": "5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337",
+        "task_set_sha256": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+        "origins": {
+          "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\contracts.py",
+          "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\domain_values.py",
+          "orchestration_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\orchestration_ports.py",
+          "plan_graph": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\plan_graph.py",
+          "recovery_proposals": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\recovery_proposals.py",
+          "scope": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\scope.py",
+          "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\workflow_ports.py"
+        },
+        "root_status": " M .ai/plans/current/PLAN-001/evidence/coordination/CURRENT.md\n?? .ai/plans/current/PLAN-001/evidence/validation/TASK-024-a1-58cc78312451.txt\n?? .ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-initial.json.txt\n?? .ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.py\n?? .ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-024-a1-58cc78312451.json\n"
+      }
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/unit/planning_recovery_proposals/",
+        "-p",
+        "test_*.py"
+      ],
+      "cwd": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "................\n----------------------------------------------------------------------\nRan 16 tests in 0.793s\n\nOK\n"
+    },
+    {
+      "argv": [
+        "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+        "src/validate_foundation.py"
+      ],
+      "cwd": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1",
+      "exit_code": 0,
+      "stdout": "{\n  \"schemas\": 27,\n  \"validated_artifacts\": 203,\n  \"plans\": 1,\n  \"tasks\": 39,\n  \"unordered_pairs_checked\": 280,\n  \"archive_manifests\": 4,\n  \"local_links\": 582\n}\n",
+      "stderr": ""
+    }
+  ],
+  "finished_at": "2026-09-08T15:47:10.013250+00:00",
+  "passed": true
+}

@@ -1,0 +1,176 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-024-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "request-TASK-024-a1-c2-R1-8f2ba197",
+  "task_id": "TASK-024",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-024-a1-58cc78312451.json",
+  "candidate_fingerprint": "8f2ba197a56ab71a60729dc62f23fde758f305bb70759b55e33d35369816083d",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_IKsYkc5furZCNJo3U3iLcouk"
+  },
+  "independent_session_id": "/root/verify_024_c2",
+  "implementation_session_id": "/root/repair_019_c1",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Fresh verification resolves all three AC1 defects: bounded product ownership reassignment, completion-covering split exits, and augment-then-replace acceptance lineage. AC2 retains immutable completed/history records, plan-local IDs, permission subsets and cumulative budgets; focused independent controls and the exact 16-test leaf pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-06/AC-06 now permits required fresh task ownership inside unchanged verified product authority and preserves success content through repeated rewrites. Reuse c1's verified pure TASK-025 exclusion analysis; current imports, diff and authority documentation reconfirm it. The explicit single-stage development decision governs this review without changing frozen runtime review contracts.",
+      "evidence": [
+        ".ai/shared/workflows/recovery.md",
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Read the complete current source and repair diff. Authorization uses one plan-qualified envelope plus inherited prohibitions; dependency targets cover every successor via the validated DAG; acceptance resolution uses explicit current owners and rejects duplicate mapping IDs before dictionary construction. Independent positive and isolated negative cases exercise each correction through real accepted APIs.",
+      "evidence": [
+        "src/recovery_proposals.py:498",
+        "src/recovery_proposals.py:791",
+        "src/recovery_proposals.py:1014",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Reuse c1's passing typed-error and no-resource-cleanup analysis for unchanged pure code. Rechecked new authority, exit and acceptance failures: they return immutable typed issues without input mutation. Actual over-limit usage remains representable and rejects without clamping. No process, file, lease or application effect was added.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1.json",
+        "src/recovery_proposals.py:520",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Focused controls cover actual r4 fresh ownership, read scope, normalized resources, foreign authority, retained prohibitions and graph conflicts; early, terminal, independent and transitive split exits with real readiness; identical multiple owners, missing/conflicting owners, hidden duplicate originals and repeated lineage. Historical IDs, completed references and every usage-counter reset retain passing controls; unchanged cycle/coverage/unsupported-action checks reuse c1 reasoning and current passing tests.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt",
+        "tests/unit/planning_recovery_proposals/test_recovery_proposals.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1.json"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Independently executed the exact declared leaf on Windows Python 3.12: 16 tests, zero skips/failures/errors, exit 0. Tracked regressions cover the original three defects plus isolated duplicate-owner collapse; independent controls add nontrivial graph/readiness and authority variants. Owner Windows 3.11 and clean tracked-export results are reused only as owner evidence with exact owned/dependency blob identity verified. No unexecuted Linux or broad-matrix result is claimed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/commands/test.TASK-024.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-initial.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Reuse c1's passing scope/exclusion analysis after reconstructing the new candidate diff. Only declared source/tests/handoff changed. RecoveryScopeAuthority is an internal verified caller fact, not a new frozen wire field, permission grant, graph approval or service. TASK-025 retains quiescence, verified authority production, fresh isolation and durable application.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json",
+        ".ai/shared/architecture/service-contracts.md",
+        "src/recovery_proposals.py:150",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Independently verified exact frozen ROOT base, clean candidate head, ancestry, raw binary diff hash, all 15 candidate context hashes, validation hash, policy/model digest and canonical fingerprint. The three changed files exactly equal tested prehandoff head e3770010; accepted dependency commits remain ancestors and dependency blobs equal both c1 and current accepted source. Recomputed r4 task-set and restricted structural graph hashes; preserved c1 evidence bytes are unchanged.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-closing.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-024-a1-58cc78312451.json"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Reuse c1's explicit flat-module and immutable-record interface review; inspect the new mandatory RecoveryScopeAuthority and its documented producer boundary. Actual graph/scope/orchestration imports resolve from candidate src and equal accepted implementations; no accepted consumer or frozen DTO is changed. Source, tests, fixtures and handoff are tracked, with no required ignored local helper or editable ROOT source dependency.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c1-R1.json",
+        "src/recovery_proposals.py:150",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Rechecked changed trust boundaries: verified plan-qualified authority is supplied unchanged by the caller; it admits ownership only within authorized paths/resources, preserves relevant prohibitions and does not bypass whole-graph conflicts or the separate permission subset. Unchanged c1 producer/content provenance reasoning remains applicable. Native review provenance is coordinator-observed Astra/xhigh rank 4 above both Sol/xhigh rank-3 repair owners; provider-effective identity/effort remains unavailable and is explicitly disclosed.",
+      "evidence": [
+        "src/recovery_proposals.py:150",
+        "src/recovery_proposals.py:498",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Read the complete owned handoff. It accurately replaces the old single-source restriction, documents verified authority production, full successor completion, explicit acceptance owners and duplicate rejection, preserves historical 13/15-test evidence, distinguishes the final 16-test self-check and records actual provenance limits. It states pure admission and the remaining TASK-025 isolation/application boundary. Finished report schema and evidence links are checked separately.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-024.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-closing.json.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-024-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved for c2: RecoveryScopeAuthority supplies unchanged plan-qualified product ownership. Independent actual r4 augmentation admits a fresh exact path and resource outside TASK-024 ownership while rejecting out-of-authority paths/resources, foreign-plan authority, lost prohibitions, unordered conflicts and external permission expansion. The retained c1 failure remains immutable historical evidence.",
+      "paths": ["src/recovery_proposals.py:150", "src/recovery_proposals.py:498", ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"],
+      "expected_fix": "Implemented and verified. TASK-025 must supply verified authority before isolation and durable application; no additional TASK-024 correction is required.",
+      "acceptance_ids": ["TASK-024-AC1", "TASK-024-AC2", "AC-06"],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-024-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved for c2: every successor is a declared dependency target or a transitive prerequisite of one. Early and incomplete independent exit sets reject; terminal, multiple and transitive exit sets admit. Actual accepted TASK-013 readiness proves retained dependents remain blocked after the early successor alone and become ready after the required exits integrate.",
+      "paths": ["src/recovery_proposals.py:1014", ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"],
+      "expected_fix": "Implemented with tracked readiness regression and independently verified. No further correction required.",
+      "acceptance_ids": ["TASK-024-AC1", "AC-06"],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-024-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved for c2: criterion resolution consults explicit current owners and accepts identical preserved copies through augment then replace. Missing owners, conflicting copies and duplicate original mapping IDs reject; an invalid TASK-999 owner before a later valid entry cannot be lost through dictionary replacement. Cumulative budget, both review histories, historical records, authority and permissions remain unchanged.",
+      "paths": ["src/recovery_proposals.py:433", "src/recovery_proposals.py:798", "src/recovery_proposals.py:825", ".ai/plans/current/PLAN-001/reviews/TASK-024-a1-c2-R1-probes.json.txt"],
+      "expected_fix": "Implemented with tracked repeated-lineage and isolated duplicate-owner regressions and independently verified. No further correction required.",
+      "acceptance_ids": ["TASK-024-AC1", "AC-06"],
+      "resolved": true
+    }
+  ],
+  "created_at": "2026-09-08T15:47:53+00:00"
+}

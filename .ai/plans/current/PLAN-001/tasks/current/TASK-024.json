@@ -4,7 +4,7 @@
   "id": "TASK-024",
   "plan_id": "PLAN-001",
   "title": "Validate recovery graph proposals",
-  "status": "repairing",
+  "status": "accepted",
   "archived": false,
   "objective": "Validate recovery graph proposals. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -101,5 +101,5 @@
     "TASK-024-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-024-001, R1-TASK-024-002, R1-TASK-024-003; form a new candidate and rerun both independent reviews."
+  "resume_state": "Candidate 58cc78312451d7954a4c29b6ba85b6ceec353171 passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
 }
