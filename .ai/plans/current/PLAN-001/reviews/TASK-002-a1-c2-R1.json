@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-002-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "manual:PLAN-001:TASK-002:a1:c2:R1",
+  "task_id": "TASK-002",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-002-a1-460ab567d019.json",
+  "candidate_fingerprint": "cd07a45f07d55964abcb8b1d0fe84ee44d84a0df2d2af6f3174fc1786524c253",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_002_c2:PLAN-001:TASK-002:a1:c2:R1"
+  },
+  "independent_session_id": "/root/r1_002_c2",
+  "implementation_session_id": "/root/implement_002",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Both ACs pass: all 11 typed port signatures, qualified state access, transaction/process/Git values and guarded WorktreeManager requests/results are representable; repaired argv crosses both DTOs exactly.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-01/02 and applicable REQ-09 representation requirements respect ADR-001 through ADR-005 and the interface-only exclusion; no concrete IO adapter, authority or product expansion.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/shared/architecture/service-contracts.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Full added source and repair diff traced. Argument-specific validation preserves content/order/repeats, rejects invalid items/NUL, freezes caller collections and leaves public shapes unchanged.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Committed outcomes require evidence/checkpoints; conflicts/unknown effects remain explicit. Process termination codes and unresolved leases survive representation. Cleanup carries immutable managed/clean/no-live-lease/merged-or-retained guards with no force option; adapters must re-observe.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        ".ai/shared/state/persistence.md"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Independent probes cover prior argv triggers, tabs/CRLF/repeats, invalid arguments/strict metadata, zero-plan events, relocation grouping, root dot, unknown/cancelled process facts, missing/unborn Git, unmanaged/absent worktrees and lease/retention constraints.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "27 declared tests pass. 15 independently executed probes include retained exact defect reproductions plus fresh process roundtrips and boundary tests; nonzero leaf discovery and candidate-local imports are verified.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-declared.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        "tests/unit/domain_local_ports/test_local_ports.py"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Only one owned production module plus task tests/handoff; no source API, schema, graph, dependency or concrete algorithm expansion in repair.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        "src/local_ports.py"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Recomputed binary diff and changed paths are exactly the three allowed additions; no prohibited or unrelated change.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-002-a1-460ab567d019.json"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit flat-module Protocols and frozen typed dataclasses reuse accepted TASK-001 values/errors and TASK-004 validation; public fields and method signatures are unchanged by repair.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        ".ai/shared/architecture/service-contracts.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "No IO in candidate; shell=False is fixed, cwd uses selected host-local roots and traversal-resistant relative values, environment names are permitted and values hidden from repr. Repair preserves literal metacharacters; downstream process/realpath validation remains explicit.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Handoff accurately records preserved failed review, bounded repair, argument limitations, 27 leaf versus 24 aggregate tests, portable/local separation and later adapter responsibilities; provenance states submitted settings and unavailable provider confirmation.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-002-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved on this candidate: both CommandDefinition.argv and CommandEvidence.argv_redacted now preserve the exact schema-valid significant-space and multiline arguments rejected by c1. The original independent reproductions and fresh tab/CRLF/repeated-argument execution pass. The prior failing report remains unchanged.",
+      "paths": [
+        "src/local_ports.py",
+        "tests/unit/domain_local_ports/test_local_ports.py"
+      ],
+      "expected_fix": "Satisfied by the bounded argument-specific validator and regression coverage; no further repair required for this finding.",
+      "acceptance_ids": [
+        "TASK-002-AC1",
+        "AC-02"
+      ],
+      "resolved": true
+    }
+  ],
+  "created_at": "2026-09-08T05:19:47.115840+00:00"
+}

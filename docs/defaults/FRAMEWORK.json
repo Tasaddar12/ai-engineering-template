@@ -6,6 +6,7 @@
   "installation_status": "installed",
   "manifest_ref": ".codex/framework/manifest.json",
   "owned_roots": [
+    ".codex/framework.json",
     ".codex/framework/",
     ".codex/tools/",
     ".codex/agents/",

@@ -1,0 +1,62 @@
+{
+  "candidate": "CANDIDATE-TASK-002-a1-460ab567d019",
+  "base": "43c8004c7313105f63d3b8d21726f8a056b96842",
+  "head": "460ab567d01912167557f2f671ed07c63f0a31e7",
+  "fingerprint": "cd07a45f07d55964abcb8b1d0fe84ee44d84a0df2d2af6f3174fc1786524c253",
+  "diff_sha256": "477b5884a49f409e9a7cb990869849567af46ea6b750cca5aaf3221cdc0b8695",
+  "context_hashes_verified": 13,
+  "validation_hashes_verified": 1,
+  "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+  "graph_digest": "5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337",
+  "task_set_sha256": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+  "isolation": "r4 pass, exact digest",
+  "accepted_dependencies": [
+    {
+      "task": "TASK-001",
+      "accepted_commit_in_base": "d1fc917466410febc6238479e65816dd39591a4f",
+      "passing_r2": "TASK-001-a2-c2-R2.json"
+    },
+    {
+      "task": "TASK-004",
+      "accepted_commit_in_base": "1ee6b06c46e4c626ab6d63be52bb11d7bdfeb518",
+      "passing_r2": "TASK-004-a2-c3-R2.json"
+    }
+  ],
+  "changed_paths": [
+    ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md",
+    "src/local_ports.py",
+    "tests/unit/domain_local_ports/test_local_ports.py"
+  ],
+  "repair_lineage": "old source -> bounded repair -> byte-identical source at current head",
+  "historical_probe_sha256": "4a5ab729e1f8c45747374f28a588b06b75acb7fc4719c8ee54bdcf396a867295",
+  "imports": {
+    "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\local_ports.py",
+    "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\domain_values.py",
+    "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\contracts.py"
+  },
+  "working_tree": "clean",
+  "diff_check": "pass"
+}
+test_01_exact_protocol_annotations (retained_c1_reproductions.BoundaryTests.test_01_exact_protocol_annotations) ... ok
+test_02_schema_fieldsets_and_zero_plan_event (retained_c1_reproductions.BoundaryTests.test_02_schema_fieldsets_and_zero_plan_event) ... ok
+test_03_qualified_reads_atomic_relocation_and_detachment (retained_c1_reproductions.BoundaryTests.test_03_qualified_reads_atomic_relocation_and_detachment) ... ok
+test_04_transaction_evidence_and_errors (retained_c1_reproductions.BoundaryTests.test_04_transaction_evidence_and_errors) ... ok
+test_05_command_bindings_environment_and_cwd (retained_c1_reproductions.BoundaryTests.test_05_command_bindings_environment_and_cwd) ... ok
+test_06_all_command_observation_states (retained_c1_reproductions.BoundaryTests.test_06_all_command_observation_states) ... ok
+test_08_git_effect_expectations_and_ambiguity (retained_c1_reproductions.BoundaryTests.test_08_git_effect_expectations_and_ambiguity) ... ok
+test_09_worktree_ensure_control_and_binding_guards (retained_c1_reproductions.BoundaryTests.test_09_worktree_ensure_control_and_binding_guards) ... ok
+test_10_reconciliation_and_cleanup_are_guarded_requests (retained_c1_reproductions.BoundaryTests.test_10_reconciliation_and_cleanup_are_guarded_requests) ... ok
+ARGUMENT REPRO: schema-valid argv=['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-c', 'import sys; print(repr(sys.argv[1]))', '  payload  ']; actual stdout="'  payload  '\n"
+test_11_schema_valid_whitespace_argument_must_roundtrip (retained_c1_reproductions.BoundaryTests.test_11_schema_valid_whitespace_argument_must_roundtrip) ... ok
+ARGUMENT REPRO: schema-valid argv=['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-c', 'x = 1\nprint(x)']; actual stdout='1\n'
+test_12_schema_valid_multiline_argument_must_roundtrip (retained_c1_reproductions.BoundaryTests.test_12_schema_valid_multiline_argument_must_roundtrip) ... ok
+Fresh process roundtrip: spaces, tabs, LF/CRLF, repeated values and shell metacharacters preserved.
+test_exact_argument_roundtrip_repeats_tabs_and_detachment (__main__.FreshRepairTests.test_exact_argument_roundtrip_repeats_tabs_and_detachment) ... ok
+test_missing_unborn_and_actual_git_observations (__main__.FreshRepairTests.test_missing_unborn_and_actual_git_observations) ... ok
+test_rejected_arguments_and_unchanged_metadata (__main__.FreshRepairTests.test_rejected_arguments_and_unchanged_metadata) ... ok
+test_repair_changes_no_public_signature_or_schema_fields (__main__.FreshRepairTests.test_repair_changes_no_public_signature_or_schema_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.418s
+
+OK

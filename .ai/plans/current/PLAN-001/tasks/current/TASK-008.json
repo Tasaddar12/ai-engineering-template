@@ -4,7 +4,7 @@
   "id": "TASK-008",
   "plan_id": "PLAN-001",
   "title": "Implement pure guarded transitions",
-  "status": "backlog",
+  "status": "accepted",
   "archived": false,
   "objective": "Implement pure guarded transitions. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -94,7 +94,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-008-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Candidate fcb01a93f0e1022c70fa296f7342ced71bbf3250 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }

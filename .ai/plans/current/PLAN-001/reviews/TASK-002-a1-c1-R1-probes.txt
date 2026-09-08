@@ -1,0 +1,145 @@
+{
+  "candidate": "CANDIDATE-TASK-002-a1-f38680d2d892",
+  "head": "f38680d2d892d38abaf95402f7470c90a838b68c",
+  "base": "91bf184a7b65d300996970758ba516917cbc5a77",
+  "fingerprint": "124b498bc325109f4bdac71c3821e64ae82db308143ea2d98f754f9acf13b325",
+  "diff_sha256": "42bbce128c0836e488a7367cd0b1c6de614689c078d1b454d08305a26c829f3f",
+  "context_hashes": 13,
+  "validation_hashes": 1,
+  "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+  "structural_task_digest": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+  "graph_revision": 4,
+  "isolation": "pass",
+  "accepted_dependencies": "TASK-001 and TASK-004 accepted, passing R2, both integrated into base",
+  "changed_paths": [
+    "A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md",
+    "A\tsrc/local_ports.py",
+    "A\ttests/unit/domain_local_ports/test_local_ports.py"
+  ],
+  "imports": {
+    "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\contracts.py",
+    "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\domain_values.py",
+    "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\local_ports.py"
+  }
+}
+ARGUMENT REPRO: schema-valid argv=['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-c', 'import sys; print(repr(sys.argv[1]))', '  payload  ']; actual stdout="'  payload  '\n"
+ARGUMENT REPRO: schema-valid argv=['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-c', 'x = 1\nprint(x)']; actual stdout='1\n'
+test_01_exact_protocol_annotations (__main__.BoundaryTests.test_01_exact_protocol_annotations) ... ok
+test_02_schema_fieldsets_and_zero_plan_event (__main__.BoundaryTests.test_02_schema_fieldsets_and_zero_plan_event) ... ok
+test_03_qualified_reads_atomic_relocation_and_detachment (__main__.BoundaryTests.test_03_qualified_reads_atomic_relocation_and_detachment) ... ok
+test_04_transaction_evidence_and_errors (__main__.BoundaryTests.test_04_transaction_evidence_and_errors) ... ok
+test_05_command_bindings_environment_and_cwd (__main__.BoundaryTests.test_05_command_bindings_environment_and_cwd) ... ok
+test_06_all_command_observation_states (__main__.BoundaryTests.test_06_all_command_observation_states) ... ok
+test_07_actual_git_facts_and_unborn_representability (__main__.BoundaryTests.test_07_actual_git_facts_and_unborn_representability) ... ok
+test_08_git_effect_expectations_and_ambiguity (__main__.BoundaryTests.test_08_git_effect_expectations_and_ambiguity) ... ok
+test_09_worktree_ensure_control_and_binding_guards (__main__.BoundaryTests.test_09_worktree_ensure_control_and_binding_guards) ... ok
+test_10_reconciliation_and_cleanup_are_guarded_requests (__main__.BoundaryTests.test_10_reconciliation_and_cleanup_are_guarded_requests) ... ok
+test_11_schema_valid_whitespace_argument_must_roundtrip (__main__.BoundaryTests.test_11_schema_valid_whitespace_argument_must_roundtrip) ... 
+  test_11_schema_valid_whitespace_argument_must_roundtrip (__main__.BoundaryTests.test_11_schema_valid_whitespace_argument_must_roundtrip) (dto='CommandDefinition') ... ERROR
+  test_11_schema_valid_whitespace_argument_must_roundtrip (__main__.BoundaryTests.test_11_schema_valid_whitespace_argument_must_roundtrip) (dto='CommandEvidence') ... ERROR
+test_12_schema_valid_multiline_argument_must_roundtrip (__main__.BoundaryTests.test_12_schema_valid_multiline_argument_must_roundtrip) ... 
+  test_12_schema_valid_multiline_argument_must_roundtrip (__main__.BoundaryTests.test_12_schema_valid_multiline_argument_must_roundtrip) (dto='CommandDefinition') ... ERROR
+  test_12_schema_valid_multiline_argument_must_roundtrip (__main__.BoundaryTests.test_12_schema_valid_multiline_argument_must_roundtrip) (dto='CommandEvidence') ... ERROR
+
+======================================================================
+ERROR: test_11_schema_valid_whitespace_argument_must_roundtrip (__main__.BoundaryTests.test_11_schema_valid_whitespace_argument_must_roundtrip) (dto='CommandDefinition')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 239, in check_argv_roundtrip
+    self.assertEqual(definition(argv=argv).argv, tuple(argv))
+                     ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 47, in definition
+    return p.CommandDefinition('test.example', argv, rule, 5, 2048, 'local_execute', names, ('windows', 'linux'), 'exit_zero')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 15, in __init__
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 508, in __post_init__
+    object.__setattr__(self, "argv", _strings(self.argv, "command argv", nonempty=True))
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in _strings
+    return tuple(_text(value, f"{label} item") for value in result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in <genexpr>
+    return tuple(_text(value, f"{label} item") for value in result)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 48, in _text
+    raise ValueError(f"{label} must be non-empty and have no surrounding whitespace")
+ValueError: command argv item must be non-empty and have no surrounding whitespace
+
+======================================================================
+ERROR: test_11_schema_valid_whitespace_argument_must_roundtrip (__main__.BoundaryTests.test_11_schema_valid_whitespace_argument_must_roundtrip) (dto='CommandEvidence')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 241, in check_argv_roundtrip
+    self.assertEqual(command_evidence(argv=argv).argv_redacted, tuple(argv))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 50, in command_evidence
+    return p.CommandEvidence('CMD-1', 'test.example', argv, 'project', '.', NOW, finish, exit_code, status, None, None, False, False, (), category)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 20, in __init__
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 675, in __post_init__
+    object.__setattr__(self, "argv_redacted", _strings(self.argv_redacted, "argv_redacted", nonempty=True))
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in _strings
+    return tuple(_text(value, f"{label} item") for value in result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in <genexpr>
+    return tuple(_text(value, f"{label} item") for value in result)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 48, in _text
+    raise ValueError(f"{label} must be non-empty and have no surrounding whitespace")
+ValueError: argv_redacted item must be non-empty and have no surrounding whitespace
+
+======================================================================
+ERROR: test_12_schema_valid_multiline_argument_must_roundtrip (__main__.BoundaryTests.test_12_schema_valid_multiline_argument_must_roundtrip) (dto='CommandDefinition')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 239, in check_argv_roundtrip
+    self.assertEqual(definition(argv=argv).argv, tuple(argv))
+                     ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 47, in definition
+    return p.CommandDefinition('test.example', argv, rule, 5, 2048, 'local_execute', names, ('windows', 'linux'), 'exit_zero')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 15, in __init__
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 508, in __post_init__
+    object.__setattr__(self, "argv", _strings(self.argv, "command argv", nonempty=True))
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in _strings
+    return tuple(_text(value, f"{label} item") for value in result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in <genexpr>
+    return tuple(_text(value, f"{label} item") for value in result)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 50, in _text
+    raise ValueError(f"{label} cannot contain control characters")
+ValueError: command argv item cannot contain control characters
+
+======================================================================
+ERROR: test_12_schema_valid_multiline_argument_must_roundtrip (__main__.BoundaryTests.test_12_schema_valid_multiline_argument_must_roundtrip) (dto='CommandEvidence')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 241, in check_argv_roundtrip
+    self.assertEqual(command_evidence(argv=argv).argv_redacted, tuple(argv))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-002-a1-c1-R1-probes.py", line 50, in command_evidence
+    return p.CommandEvidence('CMD-1', 'test.example', argv, 'project', '.', NOW, finish, exit_code, status, None, None, False, False, (), category)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 20, in __init__
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 675, in __post_init__
+    object.__setattr__(self, "argv_redacted", _strings(self.argv_redacted, "argv_redacted", nonempty=True))
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in _strings
+    return tuple(_text(value, f"{label} item") for value in result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 78, in <genexpr>
+    return tuple(_text(value, f"{label} item") for value in result)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-002-a1\src\local_ports.py", line 50, in _text
+    raise ValueError(f"{label} cannot contain control characters")
+ValueError: argv_redacted item cannot contain control characters
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.297s
+
+FAILED (errors=4)
+
+Independent probe exit code: 1

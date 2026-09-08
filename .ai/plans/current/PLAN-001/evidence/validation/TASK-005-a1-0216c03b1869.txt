@@ -1,0 +1,11 @@
+Task: PLAN-001/TASK-005
+Head: 0216c03b18698a3ff4bc89c9b0ae9749255425ef
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/templates/', '-p', 'test_*.py']
+Exit code: 0
+
+
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 1.356s
+
+OK

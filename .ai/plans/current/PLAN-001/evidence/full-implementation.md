@@ -102,3 +102,66 @@ Rewrite usage remains3 of3. Recovery and review histories remain cumulative.
 Post-integration foundation validation passed:27 schemas,142 artifacts,39 tasks,
 280 unordered pairs,4 historical manifests and246 local links. This validates
 the updated records and links; it is separate from the task behavior suites.
+
+### Configuration dispatch and completed candidates (2026-09-08)
+
+Three of 39 tasks remain accepted. TASK-005 and the first bounded TASK-039 repair have clean committed owner handoffs and await exact-candidate independent reviews. TASK-002 remains in implementation. TASK-038 was dispatched from accepted TASK-004 to unblock command, context, agent, and review configuration dependencies; its write paths and component resource are disjoint from the active owners. Manual native accounting is 36 charged invocations of 300, including rejected attempts and the continuing coordinator invocation. Graph rewrite accounting remains 3 of 3 used, with no new rewrite. Production adapter bindings remain unconfigured; this is manually observed native development coordination.
+
+### Fourth task accepted; state-transition dispatch (2026-09-08)
+
+TASK-005 is accepted at integration commit 85f87b3536990970fbcf9d2cf6b299696eb008ec, after exact candidate 0216c03b18698a3ff4bc89c9b0ae9749255425ef passed its 10 declared tests and separate fresh R1/R2. R1 added five independent probe tests and R2 four; both found no defects. The clean merged worktree was removed. Four of 39 tasks are accepted. TASK-008 now implements pure guarded transitions from accepted TASK-001/TASK-004, while TASK-038 implements configuration. Local interfaces TASK-002 and the bounded TASK-039 repair have clean owner handoffs queued for review.
+
+Manual native accounting is 39 charged invocations of 300, including rejected attempts and the continuing root invocation. Graph rewrite accounting remains 3 of 3 used. A [saved-configuration integration note](configuration-resume-clarification.md) records how existing policy and hashed payload references can preserve resumed settings without adding workflow-run fields; TASK-009/TASK-034 still own persistence and composition.
+
+### Local-port argument repair (2026-09-08)
+
+TASK-002 candidate f38680d2d892d38abaf95402f7470c90a838b68c passed 25 declared tests, but fresh R1 found one major representation defect: command definitions and evidence rejected schema-valid multiline and whitespace-significant arguments. The reviewer reproduced real fixed-argv execution success followed by both DTO constructor failures. The immutable failing report and probes were preserved at integration commit 8446225b832db582e49598670ef1f0f3345be415. The owner is performing its first bounded local correction; no schema, signature, graph, or permission change is authorized. Fresh validation and both independent reviews remain required. Manual native accounting is 41 charged invocations of 300; four tasks remain accepted and graph rewrites remain 3 of 3 used.
+
+### Local interfaces accepted; bounded asset-test follow-up (2026-09-08)
+
+TASK-002 candidate 460ab567d01912167557f2f671ed07c63f0a31e7 passed 27 declared tests, a fresh R1 with 15 independent probes, and separate R2 with five cross-contract scenarios. It was accepted at 4e4dc60178f073042d989f517ee1d363cbe6777c and its clean merged worktree was removed. Five tasks had then been accepted. The independently reproduced asset-test closure limitation led to the [scoped TASK-005 follow-up decision](assessment/TASK-005-coordinator-follow-up.md); its historical accepted code/reviews remain preserved, but current TASK-005 status was reopened before any descendant dispatch. Four of 39 tasks are therefore currently accepted: TASK-001, TASK-002, TASK-003, and TASK-004.
+
+TASK-005 a2 now changes only its test/handoff, and TASK-013 implements dependency-graph validation in a disjoint worktree. TASK-038 has a clean first repair for its two preserved R1 findings (29 declared tests reported); TASK-008 has a clean initial handoff (19 declared tests reported); TASK-039 has a clean first repair (20 declared tests reported). These queued candidates still require coordinator validation and fresh independent reviews. Manual native accounting is 48 charged invocations of 300 before the next reviewer dispatch. The approved graph/task structure and three-of-three rewrite accounting remain unchanged.
+
+### Configuration accepted; command and scope implementations (2026-09-08)
+
+TASK-038 repaired candidate `6f2b12c3283ed7d6e3d4876020fe690c6e0061a3`
+passed its 29 declared tests and both fresh cycle2 reviews. R1 passed 48
+effective-policy validations and 28 expected rejections; R2 independently passed
+96 validations and 54 rejections, plus actual source and provider installations.
+Both original findings remain preserved and are repaired: source `local_containers`
+loads, and configured invocation limits enforce the schema minimum of one while
+zero rewrites remain valid. Integration commit `ab36f09f7775201882bf863a90bc264be022adbd`
+accepts TASK-038, making five of 39 currently accepted. The clean merged tree was
+removed. Saved configuration persistence remains TASK-009/034 work.
+
+TASK-006 command execution is dispatched at `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f`;
+TASK-014 scope detection at `0881d34129b54584c29ce8db11a66cae7f1bd1be`. Their
+component/path claims are disjoint and their prerequisites are accepted. TASK-005
+a2 is clean at `bc9b5a6e34a2cdb34582fffa09f1d43171820c7d` with 11 reported tests;
+TASK-013 a1 is clean at `8423040c44e24a295a7ebf8027e5dc7d05afb9c6` with 13
+reported tests and an actual 39-node r4 build. They join TASK-008 and TASK-039 in
+the review queue; owner handoffs are not acceptance evidence. Native manual
+accounting is 52 charged invocations of 300 before the next TASK-008 R1 dispatch.
+Graph rewrites remain three of three used, and all 39 outcomes remain required.
+
+### Guarded transitions accepted; agent adapter dispatch (2026-09-08)
+
+TASK-008 candidate `fcb01a93f0e1022c70fa296f7342ced71bbf3250` passed its
+19 declared tests and separate fresh cycle1 reviews, then integrated at
+`62b899af5c57f651175cd6f304f52218acb12adb`. R1 covered 377 state pairs,
+269 missing and 269 failed guards, all 17 resumable states, and 95 schema-valid
+event mappings. R2 independently passed six consistency tests covering vocabulary,
+generation-checked projection transactions, resume guard rechecks, grouped task
+and plan completion relocation, stale identities and terminal history. Both reports
+have no findings. The clean merged tree was removed; six of 39 tasks are accepted.
+These are pure decision/representation checks, not proof of durable state IO.
+
+TASK-014 has a clean owner candidate `b63735f4da282ad1b0376586683d994b3c8b028f`
+with 17 reported tests and a 64-pair comparison with accepted ScopeClaim behavior;
+it still requires both reviews. TASK-006 continues actual process validation.
+TASK-017 starts at `bd962bd0c68f4803d07a16136d55c2ec8707fba8`, with accepted
+TASK-003/004/038 inputs and disjoint ownership. TASK-039's bounded repair is next
+for current-base validation and fresh reviews. Native manual accounting is
+55 charged invocations of 300 before that R1 dispatch. Historical rewrite usage
+remains three of three; no new rewrite or authority was introduced.

@@ -1,0 +1,65 @@
+{
+  "candidate": "CANDIDATE-TASK-002-a1-460ab567d019",
+  "base": "43c8004c7313105f63d3b8d21726f8a056b96842",
+  "head": "460ab567d01912167557f2f671ed07c63f0a31e7",
+  "fingerprint": "cd07a45f07d55964abcb8b1d0fe84ee44d84a0df2d2af6f3174fc1786524c253",
+  "binary_diff_sha256": "477b5884a49f409e9a7cb990869849567af46ea6b750cca5aaf3221cdc0b8695",
+  "context_hashes_verified": 13,
+  "validation_hashes_verified": 1,
+  "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+  "graph_digest": "5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337",
+  "task_set_sha256": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+  "r1_sha256": "f245d7caec6a76043d051e64616ec7c17bab0591176acb83199ab01077a9b22c",
+  "accepted_dependencies_and_sibling": [
+    {
+      "task": "TASK-001",
+      "accepted_candidate": "d1fc917466410febc6238479e65816dd39591a4f",
+      "unchanged_source": [
+        "src/domain_values.py"
+      ],
+      "passing_r2": "TASK-001-a2-c2-R2.json"
+    },
+    {
+      "task": "TASK-004",
+      "accepted_candidate": "e3c1177f993ee74815639a83ef3333faa4ba3957",
+      "unchanged_source": [
+        "src/contracts.py",
+        "src/validate_foundation.py",
+        "src/install.py"
+      ],
+      "passing_r2": "TASK-004-a2-c3-R2.json"
+    },
+    {
+      "task": "TASK-003",
+      "accepted_candidate": "d51b72ce71ea3ac3ad31adf41e3eddc84738ac0b",
+      "unchanged_source": [
+        "src/workflow_ports.py"
+      ],
+      "passing_r2": "TASK-003-a1-c2-R2.json"
+    }
+  ],
+  "changed_paths": [
+    ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md",
+    "src/local_ports.py",
+    "tests/unit/domain_local_ports/test_local_ports.py"
+  ],
+  "imports": [
+    "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\contracts.py",
+    "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\domain_values.py",
+    "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\local_ports.py",
+    "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-002-a1\\src\\workflow_ports.py"
+  ],
+  "source_state": "clean; exact base/head; allowed diff; historical failed R1 preserved"
+}
+test_cleanup_fencing_and_retention_information_survives_handoff (__main__.ConsistencyScenarios.test_cleanup_fencing_and_retention_information_survives_handoff) ... ok
+test_control_command_evidence_does_not_override_validation_success_rule (__main__.ConsistencyScenarios.test_control_command_evidence_does_not_override_validation_success_rule) ... ok
+test_git_expected_observed_and_unavailable_facts_remain_distinct (__main__.ConsistencyScenarios.test_git_expected_observed_and_unavailable_facts_remain_distinct) ... ok
+test_lifecycle_projection_groups_registry_references_and_manifest (__main__.ConsistencyScenarios.test_lifecycle_projection_groups_registry_references_and_manifest) ... ok
+test_zero_plan_initialization_and_qualified_record_boundary (__main__.ConsistencyScenarios.test_zero_plan_initialization_and_qualified_record_boundary) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.122s
+
+OK
+
+exit=0
