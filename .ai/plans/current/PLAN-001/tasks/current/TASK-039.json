@@ -4,7 +4,7 @@
   "id": "TASK-039",
   "plan_id": "PLAN-001",
   "title": "Freeze orchestration service contracts",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Freeze orchestration service contracts. Implement only this bounded prerequisite.",
   "depends_on": [
@@ -92,7 +92,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-039-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
