@@ -122,3 +122,25 @@ TASK-002 candidate f38680d2d892d38abaf95402f7470c90a838b68c passed 25 declared t
 TASK-002 candidate 460ab567d01912167557f2f671ed07c63f0a31e7 passed 27 declared tests, a fresh R1 with 15 independent probes, and separate R2 with five cross-contract scenarios. It was accepted at 4e4dc60178f073042d989f517ee1d363cbe6777c and its clean merged worktree was removed. Five tasks had then been accepted. The independently reproduced asset-test closure limitation led to the [scoped TASK-005 follow-up decision](assessment/TASK-005-coordinator-follow-up.md); its historical accepted code/reviews remain preserved, but current TASK-005 status was reopened before any descendant dispatch. Four of 39 tasks are therefore currently accepted: TASK-001, TASK-002, TASK-003, and TASK-004.
 
 TASK-005 a2 now changes only its test/handoff, and TASK-013 implements dependency-graph validation in a disjoint worktree. TASK-038 has a clean first repair for its two preserved R1 findings (29 declared tests reported); TASK-008 has a clean initial handoff (19 declared tests reported); TASK-039 has a clean first repair (20 declared tests reported). These queued candidates still require coordinator validation and fresh independent reviews. Manual native accounting is 48 charged invocations of 300 before the next reviewer dispatch. The approved graph/task structure and three-of-three rewrite accounting remain unchanged.
+
+### Configuration accepted; command and scope implementations (2026-09-08)
+
+TASK-038 repaired candidate `6f2b12c3283ed7d6e3d4876020fe690c6e0061a3`
+passed its 29 declared tests and both fresh cycle2 reviews. R1 passed 48
+effective-policy validations and 28 expected rejections; R2 independently passed
+96 validations and 54 rejections, plus actual source and provider installations.
+Both original findings remain preserved and are repaired: source `local_containers`
+loads, and configured invocation limits enforce the schema minimum of one while
+zero rewrites remain valid. Integration commit `ab36f09f7775201882bf863a90bc264be022adbd`
+accepts TASK-038, making five of 39 currently accepted. The clean merged tree was
+removed. Saved configuration persistence remains TASK-009/034 work.
+
+TASK-006 command execution is dispatched at `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f`;
+TASK-014 scope detection at `0881d34129b54584c29ce8db11a66cae7f1bd1be`. Their
+component/path claims are disjoint and their prerequisites are accepted. TASK-005
+a2 is clean at `bc9b5a6e34a2cdb34582fffa09f1d43171820c7d` with 11 reported tests;
+TASK-013 a1 is clean at `8423040c44e24a295a7ebf8027e5dc7d05afb9c6` with 13
+reported tests and an actual 39-node r4 build. They join TASK-008 and TASK-039 in
+the review queue; owner handoffs are not acceptance evidence. Native manual
+accounting is 52 charged invocations of 300 before the next TASK-008 R1 dispatch.
+Graph rewrites remain three of three used, and all 39 outcomes remain required.
