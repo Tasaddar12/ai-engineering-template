@@ -65,13 +65,19 @@ _TASK_LOCATION = re.compile(
     r"(?:completed|archived)"
     r"(?=[\\/](?:TASK-[0-9]{3,}(?:\.json)?(?:$|[\\/])|$))"
 )
-_LIFECYCLE_INPUT_REFERENCE = re.compile(
+_KNOWN_MIXED_CONTRACT_REFERENCE = re.compile(
     r"^(?:\.ai|\.codex|\.claude)[\\/]plans[\\/]"
     r"(?:current|completed|archived)[\\/]PLAN-[0-9]{3,}"
-    r"(?:[\\/].*)?(?:[\\/]|\.[A-Za-z0-9]{1,12})$"
+    r"(?:"
+    r"[\\/](?:plan\.json|plan\.md|spec\.json|spec\.md|graph\.json)"
+    r"|[\\/]tasks[\\/](?:current|completed|archived)"
+    r"(?:[\\/]TASK-[0-9]{3,}\.json|[\\/])"
+    r"|[\\/]"
+    r")\Z"
 )
 _REFERENCE_FIELDS = frozenset({"spec_refs", "adr_refs", "research_refs"})
 _SCOPE_PATH_FIELDS = frozenset({"write_paths", "read_paths", "prohibited_paths"})
+_MIXED_CONTRACT_FIELDS = ("input_contracts", "output_contracts")
 
 
 def _failure(
@@ -380,14 +386,16 @@ def _canonicalize_task_projection(task: Mapping[str, object]) -> dict[str, objec
         for field in _SCOPE_PATH_FIELDS:
             scope[field] = _canonicalize_reference_values(scope[field])
 
-    input_contracts = projected["input_contracts"]
-    if isinstance(input_contracts, list):
-        projected["input_contracts"] = [
-            _canonicalize_location(value)
-            if isinstance(value, str) and _LIFECYCLE_INPUT_REFERENCE.fullmatch(value)
-            else value
-            for value in input_contracts
-        ]
+    for field in _MIXED_CONTRACT_FIELDS:
+        contracts = projected[field]
+        if isinstance(contracts, list):
+            projected[field] = [
+                _canonicalize_location(value)
+                if isinstance(value, str)
+                and _KNOWN_MIXED_CONTRACT_REFERENCE.fullmatch(value)
+                else value
+                for value in contracts
+            ]
     return projected
 
 

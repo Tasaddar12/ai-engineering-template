@@ -28,6 +28,7 @@ from domain_values import (
     PlanId,
     RecordKind,
     RecordRef,
+    ScopePath,
 )
 
 
@@ -266,6 +267,126 @@ class StructuralDigestTests(unittest.TestCase):
             contracts.structural_task_digest([prose]),
         )
 
+    def test_mixed_contracts_recognize_only_closed_whole_value_references(self) -> None:
+        task = read_json(EXAMPLES / "task.json")
+        known = (
+            ".codex/plans/current/PLAN-101/plan.json",
+            ".codex/plans/current/PLAN-101/plan.md",
+            ".codex/plans/current/PLAN-101/spec.json",
+            ".codex/plans/current/PLAN-101/spec.md",
+            ".codex/plans/current/PLAN-101/graph.json",
+            ".codex/plans/current/PLAN-101/",
+            ".codex/plans/current/PLAN-101/tasks/current/TASK-001.json",
+            ".codex/plans/current/PLAN-101/tasks/current/",
+        )
+        for field in ("input_contracts", "output_contracts"):
+            for reference in known:
+                with self.subTest(field=field, reference=reference):
+                    current = copy.deepcopy(task)
+                    current[field] = [reference]
+                    self.assertEqual(
+                        contracts._canonicalize_task_projection(current)[field],
+                        [reference],
+                    )
+                    moved = copy.deepcopy(current)
+                    moved[field][0] = moved[field][0].replace(
+                        "/plans/current/", "/plans/archived/"
+                    ).replace("/tasks/current/", "/tasks/completed/")
+                    self.assertEqual(
+                        contracts.structural_task_digest([moved]),
+                        contracts.structural_task_digest([current]),
+                    )
+
+        unmatched = (
+            ".codex/plans/current/PLAN-101/spec.json: required shape comes from docs/contract.md",
+            ".codex/plans/current/PLAN-101/spec.json requires review.md",
+            ".codex/plans/current/PLAN-101/spec.json.",
+            ".codex/plans/current/PLAN-101/spec.json/",
+            ".codex/plans/current/PLAN-101/notes.json",
+            ".codex/plans/current/PLAN-101/reviews/REVIEW-001.json",
+            ".codex/plans/current/PLAN-101/spec.json — révision nécessaire.md",
+            "https://example.invalid/.codex/plans/current/PLAN-101/spec.json",
+            "config/plans/current/PLAN-101/spec.json",
+            "See .codex/plans/current/PLAN-101/spec.json",
+        )
+        ScopePath(unmatched[1])
+        for field in ("input_contracts", "output_contracts"):
+            for text in unmatched:
+                with self.subTest(field=field, text=text):
+                    current = copy.deepcopy(task)
+                    current[field] = [text]
+                    projection = contracts._canonicalize_task_projection(current)
+                    self.assertEqual(projection[field], [text])
+                    moved = copy.deepcopy(current)
+                    moved[field][0] = text.replace("/current/", "/completed/")
+                    self.assertEqual(
+                        contracts._canonicalize_task_projection(moved)[field],
+                        moved[field],
+                    )
+                    self.assertNotEqual(
+                        contracts.structural_task_digest([moved]),
+                        contracts.structural_task_digest([current]),
+                    )
+
+    def test_mixed_contract_logical_reference_identity_remains_structural(self) -> None:
+        task = read_json(EXAMPLES / "task.json")
+        for field in ("input_contracts", "output_contracts"):
+            with self.subTest(field=field):
+                current = copy.deepcopy(task)
+                current[field] = ["task:PLAN-101:TASK-001"]
+                projection = contracts._canonicalize_task_projection(current)
+                self.assertEqual(projection[field], current[field])
+                changed = copy.deepcopy(current)
+                changed[field] = ["task:PLAN-102:TASK-001"]
+                self.assertNotEqual(
+                    contracts.structural_task_digest([changed]),
+                    contracts.structural_task_digest([current]),
+                )
+
+    def test_all_provider_separator_and_bucket_relocations_are_neutral(self) -> None:
+        task = read_json(EXAMPLES / "task.json")
+        combinations = 0
+        for namespace in (".ai", ".codex", ".claude"):
+            for separator in ("/", "\\"):
+                current = copy.deepcopy(task)
+                task_reference = (
+                    f"{namespace}/plans/current/PLAN-101/tasks/current/TASK-001.json"
+                    .replace("/", separator)
+                )
+                plan_reference = (
+                    f"{namespace}/plans/current/PLAN-101/spec.json".replace(
+                        "/", separator
+                    )
+                )
+                current["input_contracts"] = [task_reference, plan_reference]
+                current["output_contracts"] = [plan_reference, task_reference]
+                current["scope"]["read_paths"] = [
+                    f"{namespace}/plans/current/PLAN-101/tasks/current/".replace(
+                        "/", separator
+                    )
+                ]
+                digest = contracts.structural_task_digest([current])
+                for plan_bucket in ("current", "completed", "archived"):
+                    for task_bucket in ("current", "completed", "archived"):
+                        combinations += 1
+                        moved = copy.deepcopy(current)
+                        moved = replace_strings(
+                            moved,
+                            f"{separator}plans{separator}current{separator}",
+                            f"{separator}plans{separator}{plan_bucket}{separator}",
+                        )
+                        moved = replace_strings(
+                            moved,
+                            f"{separator}tasks{separator}current{separator}",
+                            f"{separator}tasks{separator}{task_bucket}{separator}",
+                        )
+                        self.assertEqual(
+                            contracts.structural_task_digest([moved]),
+                            digest,
+                            (namespace, separator, plan_bucket, task_bucket),
+                        )
+        self.assertEqual(combinations, 54)
+
     def test_approved_graph_rejects_lifecycle_like_objective_prose_change(self) -> None:
         with tempfile.TemporaryDirectory(prefix="approved-digest-test-") as temporary:
             project = Path(temporary) / "project"
@@ -320,6 +441,66 @@ class StructuralDigestTests(unittest.TestCase):
             ):
                 validate_foundation.validate(project)
 
+    def test_approved_graph_rejects_mixed_contract_prose_changes(self) -> None:
+        prose_values = (
+            ".codex/plans/current/PLAN-101/spec.json: required shape comes from docs/contract.md",
+            ".codex/plans/current/PLAN-101/spec.json requires review.md",
+        )
+        for field in ("input_contracts", "output_contracts"):
+            for prose in prose_values:
+                with self.subTest(field=field, prose=prose), tempfile.TemporaryDirectory(
+                    prefix="approved-contract-prose-test-"
+                ) as temporary:
+                    project = Path(temporary) / "project"
+                    install.install(str(project), "codex")
+                    self.assertEqual(
+                        ai.main(
+                            [
+                                "--project",
+                                str(project),
+                                "plan",
+                                "create",
+                                "PLAN-101",
+                                "--title",
+                                "Contract prose boundary",
+                            ]
+                        ),
+                        0,
+                    )
+                    bundle = project / ".codex/plans/current/PLAN-101"
+                    task_path = bundle / "tasks/current/TASK-001.json"
+                    task = read_json(task_path)
+                    task[field] = [prose]
+                    write_json(task_path, task)
+
+                    graph_path = bundle / "graph.json"
+                    graph = read_json(graph_path)
+                    graph["status"] = "approved"
+                    graph["task_set_sha256"] = contracts.structural_task_digest([task])
+                    graph["review_ref"] = (
+                        ".codex/plans/current/PLAN-101/reviews/isolation-review.json"
+                    )
+                    write_json(graph_path, graph)
+                    review = read_json(EXAMPLES / "isolation-review.json")
+                    review["plan_id"] = "PLAN-101"
+                    review["graph_revision"] = graph["revision"]
+                    review["task_set_sha256"] = graph["task_set_sha256"]
+                    review["verdict"] = "pass"
+                    write_json(project / graph["review_ref"], review)
+                    plan_path = bundle / "plan.json"
+                    plan = read_json(plan_path)
+                    plan["isolation_review_ref"] = graph["review_ref"]
+                    write_json(plan_path, plan)
+                    validate_foundation.validate(project)
+
+                    task[field] = [prose.replace("/current/", "/completed/")]
+                    write_json(task_path, task)
+                    with self.assertRaisesRegex(
+                        validate_foundation.ValidationFailure,
+                        "stale structural task digest",
+                    ):
+                        validate_foundation.validate(project)
+
     def test_relocated_bundle_retains_approval_but_structure_change_fails(self) -> None:
         with tempfile.TemporaryDirectory(prefix="digest-relocation-test-") as temporary:
             project = Path(temporary) / "project"
@@ -341,8 +522,9 @@ class StructuralDigestTests(unittest.TestCase):
             current = project / ".codex/plans/current/PLAN-101"
             task_path = current / "tasks/current/TASK-001.json"
             task = read_json(task_path)
-            task["input_contracts"] = [
-                ".codex/plans/current/PLAN-101/tasks/current/TASK-001.json"
+            task["input_contracts"] = ["task:PLAN-101:TASK-001"]
+            task["output_contracts"] = [
+                ".codex/plans/current/PLAN-101/spec.json"
             ]
             task["scope"]["read_paths"] = [
                 ".codex/plans/current/PLAN-101/tasks/current/"
@@ -350,8 +532,22 @@ class StructuralDigestTests(unittest.TestCase):
             write_json(task_path, task)
             graph_path = current / "graph.json"
             graph = read_json(graph_path)
-            graph["task_set_sha256"] = ai.structural_task_digest([task])
+            graph["status"] = "approved"
+            graph["task_set_sha256"] = contracts.structural_task_digest([task])
+            graph["review_ref"] = (
+                ".codex/plans/current/PLAN-101/reviews/isolation-review.json"
+            )
             write_json(graph_path, graph)
+            review = read_json(EXAMPLES / "isolation-review.json")
+            review["plan_id"] = "PLAN-101"
+            review["graph_revision"] = graph["revision"]
+            review["task_set_sha256"] = graph["task_set_sha256"]
+            review["verdict"] = "pass"
+            write_json(project / graph["review_ref"], review)
+            plan_path = current / "plan.json"
+            plan = read_json(plan_path)
+            plan["isolation_review_ref"] = graph["review_ref"]
+            write_json(plan_path, plan)
             validate_foundation.validate(project)
 
             completed = project / ".codex/plans/completed/PLAN-101"
