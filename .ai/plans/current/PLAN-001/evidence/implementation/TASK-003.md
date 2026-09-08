@@ -34,7 +34,9 @@ are limited to:
   the actual schema files and validate representative test-side wire projections.
 - Agent observations retain request/run/attempt/lease/adapter identity, queryable external handles,
   structured model provenance, content-addressed evidence, and explicit queued/running/succeeded/
-  failed/cancelled/unknown states. Success requires a matching structured output and provenance.
+  failed/cancelled/unknown states. Mutually known provider handles must match, while a missing handle
+  can be enriched by a later observation. Structured output is accepted only for `succeeded`; success
+  requires matching output provenance and evidence.
 - Context requests carry project/plan/run/operation identity, task scope, explicit role, required
   reference groups, acceptance IDs, optional references, and token budget. Bundles carry repository-
   relative hashed content references, completeness, omissions, a stable digest, and budget facts.
@@ -57,6 +59,9 @@ are limited to:
   A later adapter must match those fields to the draft before an external write.
 - `PullRequestStateRecord` uses exactly the v1 PR-state properties, including observed base/head,
   current-head check evidence, remote review decision, authorization references, and merge OID.
+- Delivery observations reject conflicting known PR numbers. An initially unknown handle number can
+  be enriched by observed state, and actual remote head/base movement remains representable for later
+  delivery policy checks rather than being rejected or rewritten at the port boundary.
 - `DeliveryObservation` distinguishes observed, ambiguous, unknown, and failed results. Ambiguous
   publication requires an `ambiguous_side_effect` error and retains a queryable handle/idempotency
   key for reconciliation; it never implies a safe blind retry.
@@ -89,7 +94,7 @@ attempt worktree.
 
 | Check | Result |
 | --- | --- |
-| `-m unittest discover -s tests/unit/domain_workflow_ports/ -p test_*.py` | Exit 0; 21 tests; `OK`. This is the exact declared leaf command with the coordinator interpreter substituted for `python`; the test file inserts this worktree's `src` first. |
+| `-m unittest discover -s tests/unit/domain_workflow_ports/ -p test_*.py` | Exit 0; 26 tests; `OK`. This is the exact declared leaf command with the coordinator interpreter substituted for `python`; the test file inserts this worktree's `src` first. |
 | `-m py_compile src/workflow_ports.py tests/unit/domain_workflow_ports/test_workflow_ports.py` | Exit 0. |
 | `git diff --check` | Exit 0. |
 
@@ -97,13 +102,28 @@ The focused suite covers actual v1 schema parity and validation, immutable calle
 unknown agent observations, cancellation before start, unresolved cancellation fencing, context
 budget failure, zero-test rejection, missing/failed validation evidence, independent/R1-bound review
 requirements, required review timestamps, fail-verdict transport, scoped immutable grants, ambiguous
-delivery, remote-state identity binding, and validation-evidence construction before a candidate exists.
+delivery, remote-state identity binding, validation-evidence construction before a candidate exists,
+the full non-success agent-output status matrix, provider-handle mismatch/enrichment, and PR-number
+mismatch/enrichment with remote head/base drift.
 
 The earlier commit `eb74abe54317e0d95fda686ab6e1a7577305a505` was withdrawn before candidate
 freeze or review after an owner-local audit found that validation incorrectly required the final
 candidate fingerprint even though that fingerprint incorporates validation evidence. The repaired
 contract removes that cycle while retaining exact revision, operation, suite, evidence, and error
 binding. It requires a new candidate identity and fresh reviews.
+
+Cycle-1 candidate `b4df629eeccfed55f10ea738cb181b7cca4d8419`, reviewed against exact base
+`3bc1416d9aa9bc36e954c17f35d7e2897a0d81fa`, received the preserved failing R1 at
+`.ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md` / `.json`:
+
+- `R1-TASK-003-001`: repaired by rejecting mismatched mutually known agent external handles while
+  permitting a missing dispatch handle to be enriched by the run observation.
+- `R1-TASK-003-002`: repaired by rejecting structured output for every non-success poll status and
+  retaining the existing successful output, provenance, identity, and evidence guards.
+- `R1-TASK-003-003`: repaired by rejecting mismatched mutually known PR numbers while permitting
+  initially unknown number discovery and observed remote base/head drift.
+
+This repair requires a new candidate plus fresh R1 and R2; the failed cycle remains immutable.
 
 ## Assumptions, deviations, risks, and provenance
 

@@ -401,6 +401,12 @@ class AgentObservation:
             raise ValueError("run adapter_id must match handle")
         if self.run.lease_generation != self.handle.lease_generation:
             raise ValueError("run lease_generation must match handle")
+        if (
+            self.handle.external_handle is not None
+            and self.run.external_handle is not None
+            and self.run.external_handle != self.handle.external_handle
+        ):
+            raise ValueError("known run external_handle must match handle")
         if self.output is not None:
             if not isinstance(self.output, AgentOutputRecord):
                 raise TypeError("output must be an AgentOutputRecord or None")
@@ -408,6 +414,8 @@ class AgentObservation:
                 raise ValueError("output request_id must match handle")
             if self.output.attempt_id != self.handle.attempt_id:
                 raise ValueError("output attempt_id must match handle")
+        if status is not AgentRunStatus.SUCCEEDED and self.output is not None:
+            raise ValueError("structured agent output is valid only for succeeded observations")
         evidence = _evidence(self.evidence_refs, "agent observation evidence_refs")
         terminal = status in {
             AgentRunStatus.SUCCEEDED,
@@ -1159,6 +1167,12 @@ class DeliveryObservation:
                 raise ValueError("delivery state repository must match handle")
             if self.state.head_branch != self.handle.head_branch:
                 raise ValueError("delivery state head_branch must match handle")
+            if (
+                self.handle.number is not None
+                and self.state.number is not None
+                and self.state.number != self.handle.number
+            ):
+                raise ValueError("known delivery state number must match handle")
         evidence = _evidence(self.evidence_refs, "delivery observation evidence_refs")
         if status is DeliveryObservationStatus.OBSERVED:
             if self.state is None or not evidence:

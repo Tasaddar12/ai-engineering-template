@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
-from dataclasses import FrozenInstanceError, fields, is_dataclass
+from dataclasses import FrozenInstanceError, fields, is_dataclass, replace
 from datetime import UTC, datetime
 from enum import Enum
 import json
@@ -105,6 +105,75 @@ def handle() -> AgentHandle:
         "dispatch-1",
         "external-1",
     )
+
+
+def successful_agent_values() -> tuple[AgentHandle, AgentRunRecord, AgentOutputRecord]:
+    agent_handle = handle()
+    run = AgentRunRecord(
+        "agent-run-1",
+        "agent-request:PLAN-001:request-1",
+        agent_handle.attempt_id,
+        AgentRunStatus.SUCCEEDED,
+        agent_handle.adapter_id,
+        agent_handle.external_handle,
+        model(),
+        NOW,
+        NOW,
+        "agent-output:PLAN-001:output-1",
+        None,
+        agent_handle.lease_generation,
+    )
+    output = AgentOutputRecord(
+        "output-1",
+        agent_handle.request_id,
+        agent_handle.attempt_id,
+        AgentOutputStatus.SUCCEEDED,
+        model(),
+        [".ai/evidence/handoff.json"],
+        [],
+        [],
+        [],
+        None,
+        "completed",
+    )
+    return agent_handle, run, output
+
+
+def delivery_values() -> tuple[DeliveryHandle, PullRequestStateRecord]:
+    delivery_handle = DeliveryHandle(
+        "project-1",
+        "PLAN-001",
+        "run-1",
+        "publish-1",
+        "publish-key-1",
+        "owner/repository",
+        "main",
+        "ai/PLAN-001/integration",
+        OID,
+        12,
+        "https://example.invalid/pull/12",
+    )
+    state = PullRequestStateRecord(
+        "pr-state-1",
+        "PLAN-001",
+        "run-1",
+        "owner/repository",
+        12,
+        "https://example.invalid/pull/12",
+        PullRequestStatus.READY,
+        "main",
+        "ai/PLAN-001/integration",
+        "c" * 40,
+        OID,
+        ["unit"],
+        [RemoteCheck("unit", OID, CheckConclusion.SUCCESS, "evidence-check")],
+        PullRequestReviewDecision.APPROVED,
+        None,
+        ["authority-1"],
+        "publish-1",
+        NOW,
+    )
+    return delivery_handle, state
 
 
 def agent_request(spec_refs=None) -> AgentRequest:
@@ -365,34 +434,7 @@ class SchemaShapeTests(unittest.TestCase):
 
 class AgentContractTests(unittest.TestCase):
     def test_success_requires_structured_output_and_terminal_evidence(self) -> None:
-        agent_handle = handle()
-        run = AgentRunRecord(
-            "agent-run-1",
-            "agent-request:PLAN-001:request-1",
-            agent_handle.attempt_id,
-            AgentRunStatus.SUCCEEDED,
-            agent_handle.adapter_id,
-            agent_handle.external_handle,
-            model(),
-            NOW,
-            NOW,
-            "agent-output:PLAN-001:output-1",
-            None,
-            agent_handle.lease_generation,
-        )
-        output = AgentOutputRecord(
-            "output-1",
-            agent_handle.request_id,
-            agent_handle.attempt_id,
-            AgentOutputStatus.SUCCEEDED,
-            model(),
-            [".ai/evidence/handoff.json"],
-            [],
-            [],
-            [],
-            None,
-            "completed",
-        )
+        agent_handle, run, output = successful_agent_values()
         observation = AgentObservation(
             AgentRunStatus.SUCCEEDED, agent_handle, run, output, [evidence()]
         )
@@ -400,6 +442,91 @@ class AgentContractTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "terminal agent observations require evidence"):
             AgentObservation(AgentRunStatus.SUCCEEDED, agent_handle, run, output, [])
+
+    def test_agent_observation_rejects_conflicting_known_external_handles(self) -> None:
+        agent_handle, run, output = successful_agent_values()
+        with self.assertRaisesRegex(ValueError, "external_handle must match"):
+            AgentObservation(
+                AgentRunStatus.SUCCEEDED,
+                agent_handle,
+                replace(run, external_handle="external-other"),
+                output,
+                [evidence("conflicting-external-handle")],
+            )
+
+    def test_agent_observation_allows_unknown_handle_enrichment(self) -> None:
+        agent_handle, run, output = successful_agent_values()
+        unknown_handle = replace(agent_handle, external_handle=None)
+        observation = AgentObservation(
+            AgentRunStatus.SUCCEEDED,
+            unknown_handle,
+            run,
+            output,
+            [evidence("external-handle-enrichment")],
+        )
+        self.assertIsNone(observation.handle.external_handle)
+        self.assertEqual(observation.run.external_handle, "external-1")
+
+    def test_structured_output_is_rejected_for_every_non_success_status(self) -> None:
+        agent_handle, succeeded_run, output = successful_agent_values()
+        non_success_runs = {
+            AgentRunStatus.QUEUED: replace(
+                succeeded_run,
+                status=AgentRunStatus.QUEUED,
+                actual_model=None,
+                started_at=None,
+                finished_at=None,
+                output_ref=None,
+            ),
+            AgentRunStatus.RUNNING: replace(
+                succeeded_run,
+                status=AgentRunStatus.RUNNING,
+                finished_at=None,
+                output_ref=None,
+            ),
+            AgentRunStatus.FAILED: replace(
+                succeeded_run,
+                status=AgentRunStatus.FAILED,
+                output_ref=None,
+                error_category=ErrorCategory.TRANSIENT_PROVIDER.value,
+            ),
+            AgentRunStatus.CANCELLED: replace(
+                succeeded_run,
+                status=AgentRunStatus.CANCELLED,
+                actual_model=None,
+                started_at=None,
+                output_ref=None,
+            ),
+            AgentRunStatus.UNKNOWN: replace(
+                succeeded_run,
+                status=AgentRunStatus.UNKNOWN,
+                actual_model=None,
+                started_at=None,
+                finished_at=None,
+                output_ref=None,
+                error_category=ErrorCategory.TRANSIENT_PROVIDER.value,
+            ),
+        }
+        for status, run in non_success_runs.items():
+            with self.subTest(status=status):
+                observation_error = (
+                    error(ErrorCategory.TRANSIENT_PROVIDER)
+                    if status in {
+                        AgentRunStatus.FAILED,
+                        AgentRunStatus.CANCELLED,
+                        AgentRunStatus.UNKNOWN,
+                    }
+                    else None
+                )
+                with self.assertRaisesRegex(ValueError, "only for succeeded"):
+                    AgentObservation(
+                        status,
+                        agent_handle,
+                        run,
+                        output,
+                        [evidence(f"premature-output-{status.value}")],
+                        observation_error,
+                    )
 
     def test_unknown_agent_state_is_explicit_and_error_backed(self) -> None:
         agent_handle = handle()
@@ -759,39 +886,7 @@ class ReviewAndDeliveryContractTests(unittest.TestCase):
             )
 
     def test_observed_delivery_binds_remote_state_to_expected_head(self) -> None:
-        delivery_handle = DeliveryHandle(
-            "project-1",
-            "PLAN-001",
-            "run-1",
-            "publish-1",
-            "publish-key-1",
-            "owner/repository",
-            "main",
-            "ai/PLAN-001/integration",
-            OID,
-            12,
-            "https://example.invalid/pull/12",
-        )
-        state = PullRequestStateRecord(
-            "pr-state-1",
-            "PLAN-001",
-            "run-1",
-            "owner/repository",
-            12,
-            "https://example.invalid/pull/12",
-            PullRequestStatus.READY,
-            "main",
-            "ai/PLAN-001/integration",
-            "c" * 40,
-            OID,
-            ["unit"],
-            [RemoteCheck("unit", OID, CheckConclusion.SUCCESS, "evidence-check")],
-            PullRequestReviewDecision.APPROVED,
-            None,
-            ["authority-1"],
-            "publish-1",
-            NOW,
-        )
+        delivery_handle, state = delivery_values()
         observation = DeliveryObservation(
             DeliveryObservationStatus.OBSERVED,
             delivery_handle,
@@ -799,6 +894,34 @@ class ReviewAndDeliveryContractTests(unittest.TestCase):
             [evidence("remote-state")],
         )
         self.assertEqual(observation.state.observed_head_oid, delivery_handle.expected_head_oid)
+
+    def test_observed_delivery_rejects_conflicting_known_pr_numbers(self) -> None:
+        delivery_handle, state = delivery_values()
+        with self.assertRaisesRegex(ValueError, "state number must match"):
+            DeliveryObservation(
+                DeliveryObservationStatus.OBSERVED,
+                delivery_handle,
+                replace(state, number=13, url="https://example.invalid/pull/13"),
+                [evidence("wrong-pr-number")],
+            )
+
+    def test_unknown_pr_number_can_be_enriched_while_remote_heads_drift(self) -> None:
+        delivery_handle, state = delivery_values()
+        unknown_number_handle = replace(delivery_handle, number=None, url=None)
+        drifted_state = replace(
+            state,
+            observed_base_oid="d" * 40,
+            observed_head_oid="e" * 40,
+        )
+        observation = DeliveryObservation(
+            DeliveryObservationStatus.OBSERVED,
+            unknown_number_handle,
+            drifted_state,
+            [evidence("pr-number-enrichment-with-drift")],
+        )
+        self.assertIsNone(observation.handle.number)
+        self.assertEqual(observation.state.number, 12)
+        self.assertNotEqual(observation.state.observed_head_oid, observation.handle.expected_head_oid)
 
     def test_grant_has_only_frozen_policy_fields(self) -> None:
         grant = Grant("publish_pr", "owner/repository", "user-grant-1")
