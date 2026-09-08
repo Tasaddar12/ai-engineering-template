@@ -64,3 +64,9 @@ export/venv remain C:/Users/killi/AppData/Local/Temp/plan001-tracked-cdc76829b83
 User was informed in a separate commentary paragraph. If still unresolved at
 final, explain the rejected cleanup and stated reason in a short separate footer.
 The successful narrower action only copied/hash-verified the useful evidence.
+
+While waiting for the three owners, read-only TASK-019 source inspection found
+an applicability question: CandidateContext unconditionally requires nonempty
+ADRs and handoffs, even for a dependency-free first task. The existing tracked
+next-candidate briefing records this for independent review; no source mutation,
+formal finding or repair cycle yet. No additional local helper was created.

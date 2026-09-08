@@ -28,3 +28,17 @@ input independently changed, malformed/full-width OIDs, missing/aliased referenc
 task versus plan identity, registry validation and no self-reference. Keep review
 gate policy, actual Git/command execution, context discovery and storage outside
 this algorithm owner. Return concrete prerequisite gaps instead of editing others.
+
+## Open review question: applicable context roles
+
+The current owner-final CandidateContext constructor requires nonempty ADR and
+handoff collections unconditionally. Independently reconcile this with a first
+dependency-free task and a plan having no ADRs. The approved graph's TASK-001
+has no dependencies, and its accepted v1 candidate is valid without dependency
+handoff material. The candidate schema requires nonempty aggregate context_refs,
+not a fabricated artifact in every role. Determine whether the constructor can
+represent all required review cases while rejecting genuinely missing applicable
+context. Prove a concrete typed case using actual task/plan inputs and cite the
+frozen requirements; do not invent placeholder handoffs or impose an unowned
+context-discovery service. This is a coordinator question for fresh R1/R2, not a
+review verdict or permission to change another task's source.
