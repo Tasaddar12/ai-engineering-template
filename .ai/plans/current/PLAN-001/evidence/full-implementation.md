@@ -333,3 +333,17 @@ consumed single allowance immediately to independent recovery. Production bytes,
 both old attempts and all failed/pass review history are retained. Generation33,
 nine of39 accepted,73/300 native invocations before fresh recovery,3/3 rewrites
 used. TASK-024 continues independently. No further ordinary repair is authorized.
+
+### Terminal command assertion correction authorized (2026-09-08)
+
+The second independent recovery confirmed the unchanged150ms cancellation floor
+as a residual test oracle defect after observed readiness replaced blind timers.
+The [new coordinator decision](recovery/TASK-006-a2-coordinator-decision.md)
+authorizes one terminal fresha3 assertion-region/handoff correction: retain the
+timeout floor, prove observed event ordering for cancellation, preserve production
+and all phase/status/EOF/schema/cleanup assertions and existing bounds. Any further
+test/validation/review failure pauses this path; no automatic additional repair.
+The consumed a2 allowance and all prior reports remain failed immutable history.
+Four exact environments and fresh cumulativec3 R1/R2 remain mandatory. Generation34,
+nine of39 accepted,74/300 charged and77/300 charged or reserved,3/3 rewritesused.
+TASK-024 continues; aftera3 dispatch,017 can enter review independently.

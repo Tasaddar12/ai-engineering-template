@@ -4,7 +4,7 @@
   "id": "TASK-006",
   "plan_id": "PLAN-001",
   "title": "Execute commands with durable evidence",
-  "status": "repairing",
+  "status": "ready",
   "archived": false,
   "objective": "Execute commands with durable evidence. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -102,5 +102,5 @@
     "TASK-006-a2"
   ],
   "superseded_by": [],
-  "resume_state": "The single post-recovery a2 allowance failed coordinator Linux3.12 candidate validation at the inherited cancellation minimum-duration assertion. Source and evidence preserved; independent recovery required before any further action. No c3 reviews or final candidate fingerprint formed."
+  "resume_state": "Second independent recovery decision authorizes one terminal fresh a3 inherited-cancellation assertion correction and handoff only; preserve production and all history, exact four-environment validation then cumulative c3 fresh R1/R2. Any further failure pauses TASK-006 and descendants; no automatic further allowance."
 }
