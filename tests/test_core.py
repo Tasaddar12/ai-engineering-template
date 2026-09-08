@@ -181,6 +181,33 @@ def test_decomposed_plan_requires_tasks_and_features(project):
         store.save(plan)
     with pytest.raises(FrameworkError, match="nonempty"):
         store.create("plans", "PLAN-002", "Approved", "ready", decomposition_status="approved")
+    for tasks, features in [([], ["FEATURE-001"]), (["TASK-001"], [])]:
+        with pytest.raises(FrameworkError, match="nonempty"):
+            store.create(
+                "plans",
+                "PLAN-002",
+                "Approved",
+                "ready",
+                decomposition_status="approved",
+                tasks=tasks,
+                features=features,
+            )
+    approved = store.create(
+        "plans",
+        "PLAN-002",
+        "Approved",
+        "ready",
+        decomposition_status="approved",
+        tasks=["TASK-001"],
+        features=["FEATURE-001"],
+    )
+    before = approved.path.read_bytes()
+    approved.metadata["features"] = []
+    with pytest.raises(FrameworkError):
+        store.save(approved)
+    assert approved.path.read_bytes() == before
+    with pytest.raises(FrameworkError, match="TASK IDs"):
+        store.create("plans", "PLAN-003", "Wrong refs", "ready", tasks=["FEATURE-001"])
 
 
 def test_current_git_head_invalidates_two_matching_stale_metadata_heads(project):
@@ -210,6 +237,30 @@ def test_current_git_head_invalidates_two_matching_stale_metadata_heads(project)
 
     result = reconcile(project, Facts())
     assert "Stale feature review: FEATURE-001" in result["issues"]
+    before = state.path.read_bytes()
+    reconcile(project, Facts())
+    assert state.path.read_bytes() == before
+    result = reconcile(project, Facts(), apply=True)
+    assert "Stale feature review: FEATURE-001" in result["issues"]
+    assert state.load()["worktrees"] == value["worktrees"]
+    assert store.find("FEATURE-001").metadata["review"]["head"] == "old"
+
+    class MissingFacts(Facts):
+        def list_worktrees(self):
+            return []
+
+    assert any(
+        "Review cannot be verified" in issue
+        for issue in reconcile(project, MissingFacts())["issues"]
+    )
+
+    class UnchangedFacts(Facts):
+        def list_worktrees(self):
+            return [{"path": str(project / ".worktrees/feature"), "head": "old"}]
+
+    assert not any(
+        "review" in issue.lower() for issue in reconcile(project, UnchangedFacts())["issues"]
+    )
     feature = store.find("FEATURE-001")
     feature.metadata.pop("worktree")
     store.save(feature)

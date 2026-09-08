@@ -202,6 +202,13 @@ def reconcile(root: Path, git: GitInspector, apply: bool = False) -> dict[str, A
         if not worktrees and feature.metadata.get("worktree"):
             worktrees = [feature.metadata["worktree"]]
         observations = [actual.get((root / str(path)).resolve()) for path in worktrees]
+        if isinstance(review, dict) and feature.status not in {"completed", "superseded"}:
+            if not worktrees or any(observation is None for observation in observations):
+                issues.append(
+                    f"Review cannot be verified (missing worktree evidence): {feature.id}"
+                )
+            if len(worktrees) > 1:
+                issues.append(f"Ambiguous reviewed worktree ownership: {feature.id}")
         heads = [observation.get("head") for observation in observations if observation]
         if not heads:
             heads = [feature.metadata.get("head")]

@@ -243,6 +243,11 @@ class ArtifactStore:
                 not isinstance(x, str) for x in data[key]
             ):
                 raise FrameworkError(f"PLAN document must explicitly reference {key}")
+            prefix = "TASK" if key == "tasks" else "FEATURE"
+            if len(set(data[key])) != len(data[key]) or any(
+                not re.fullmatch(prefix + r"-\d+", identifier) for identifier in data[key]
+            ):
+                raise FrameworkError(f"PLAN {key} must contain unique {prefix} IDs")
             if (
                 data.get("decomposition")
                 or data.get("decomposition_status") == "approved"
