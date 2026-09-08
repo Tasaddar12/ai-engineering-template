@@ -655,7 +655,10 @@ class FakeAgentDispatchTests(unittest.TestCase):
         self.assertIsInstance(adapter, AgentAdapter)
         self.assertEqual(first, second)
         self.assertEqual(provider.effect_count, 1)
-        self.assertTrue(first.external_handle.startswith("fake-agent-"))
+        ordinary_token = hashlib.sha256(
+            b"project-1\ndeterministic-fake-agent\ndispatch-17"
+        ).hexdigest()
+        self.assertEqual(first.external_handle, f"fake-agent-{ordinary_token[:32]}")
         with self.assertRaises(FrozenInstanceError):
             first.adapter_id = "changed"  # type: ignore[misc]
 
@@ -818,6 +821,216 @@ class FakeAgentDispatchTests(unittest.TestCase):
             saved = json.loads(backing_path.read_text(encoding="utf-8"))
             self.assertEqual(saved["format"], "deterministic-fake-agent-state-v1")
             self.assertEqual(saved["simulation_source"], SIMULATION_SOURCE)
+
+    def test_multiline_routing_tuples_do_not_alias_across_recovery(self) -> None:
+        project_settings = settings()
+        adapter_capabilities = capabilities(project_settings)
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            first = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=provider,
+                adapter_id="x\ny",
+            )
+            second = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=provider,
+                adapter_id="x",
+            )
+            first_request = request(request_id="first-request", idempotency_key="z")
+            second_request = request(
+                request_id="second-request",
+                idempotency_key="y\nz",
+            )
+            first_handle = first.start(first_request, first_request.idempotency_key)
+            second_handle = second.start(second_request, second_request.idempotency_key)
+            self.assertNotEqual(
+                first_handle.external_handle,
+                second_handle.external_handle,
+            )
+            self.assertEqual(provider.effect_count, 2)
+            self.assertEqual(
+                first.start(first_request, first_request.idempotency_key),
+                first_handle,
+            )
+            self.assertEqual(
+                second.start(second_request, second_request.idempotency_key),
+                second_handle,
+            )
+
+            first_model = first.expected_model(first_handle)
+            second_model = second.expected_model(second_handle)
+            provider.script(
+                first_handle,
+                polls=(
+                    observation(first_handle, AgentRunStatus.RUNNING, model=first_model),
+                    observation(
+                        first_handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=first_model,
+                        structured_output=output(
+                            first_handle,
+                            first_model,
+                            "first-output",
+                        ),
+                    ),
+                ),
+            )
+            provider.script(
+                second_handle,
+                polls=(
+                    observation(second_handle, AgentRunStatus.RUNNING, model=second_model),
+                    observation(
+                        second_handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=second_model,
+                        structured_output=output(
+                            second_handle,
+                            second_model,
+                            "second-output",
+                        ),
+                    ),
+                ),
+            )
+            self.assertEqual(first.poll(first_handle).status, AgentRunStatus.RUNNING)
+            del first, second, provider
+
+            restored = FakeAgentProviderState(backing_path)
+            first = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=restored,
+                adapter_id="x\ny",
+            )
+            second = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=restored,
+                adapter_id="x",
+            )
+            self.assertEqual(
+                first.start(first_request, first_request.idempotency_key),
+                first_handle,
+            )
+            self.assertEqual(
+                second.start(second_request, second_request.idempotency_key),
+                second_handle,
+            )
+            first_completed = first.poll(first_handle)
+            self.assertEqual(first_completed.status, AgentRunStatus.SUCCEEDED)
+            self.assertEqual(first_completed.output.id.value, "first-output")
+            self.assertEqual(second.poll(second_handle).status, AgentRunStatus.RUNNING)
+            del first, second, restored
+
+            final_provider = FakeAgentProviderState(backing_path)
+            final_first = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=final_provider,
+                adapter_id="x\ny",
+            )
+            final_second = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=final_provider,
+                adapter_id="x",
+            )
+            self.assertEqual(final_first.poll(first_handle), first_completed)
+            second_completed = final_second.poll(second_handle)
+            self.assertEqual(second_completed.status, AgentRunStatus.SUCCEEDED)
+            self.assertEqual(second_completed.output.id.value, "second-output")
+            self.assertEqual(final_provider.effect_count, 2)
+
+    def test_legacy_multiline_hash_state_recovers_with_legacy_evidence(self) -> None:
+        project_settings = settings()
+        adapter_capabilities = capabilities(project_settings)
+        adapter_id = "legacy\nadapter"
+        agent_request = request(idempotency_key="legacy-key")
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=provider,
+                adapter_id=adapter_id,
+            )
+            adapter.start(agent_request, agent_request.idempotency_key)
+            payload = json.loads(backing_path.read_bytes())
+            effect = payload["effects"][0]
+            legacy_token = hashlib.sha256(
+                "\n".join(
+                    ("project-1", adapter_id, agent_request.idempotency_key)
+                ).encode("utf-8")
+            ).hexdigest()
+            effect["handle"]["external_handle"] = f"fake-agent-{legacy_token[:32]}"
+            effect["expected_model"][
+                "invocation_id"
+            ] = f"fake-invocation-{legacy_token[:32]}"
+            backing_path.write_bytes(
+                json.dumps(
+                    payload,
+                    ensure_ascii=True,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            )
+            del adapter, provider
+
+            restored = FakeAgentProviderState(backing_path)
+            restarted = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=restored,
+                adapter_id=adapter_id,
+            )
+            legacy_handle = restarted.start(
+                agent_request,
+                agent_request.idempotency_key,
+            )
+            self.assertEqual(
+                legacy_handle.external_handle,
+                f"fake-agent-{legacy_token[:32]}",
+            )
+            queued = restarted.poll(legacy_handle)
+            evidence_fields = (
+                SIMULATION_SOURCE,
+                "project-1",
+                adapter_id,
+                agent_request.id.value,
+                legacy_handle.external_handle,
+                "poll-queued",
+                "0",
+            )
+            legacy_evidence_digest = hashlib.sha256(
+                "\n".join(evidence_fields).encode("utf-8")
+            ).hexdigest()
+            self.assertEqual(
+                queued.evidence_refs[0].sha256.value,
+                legacy_evidence_digest,
+            )
+            del restarted, restored
+
+            final_provider = FakeAgentProviderState(backing_path)
+            final_adapter = DeterministicFakeAgentAdapter(
+                project_id="project-1",
+                settings=project_settings,
+                capabilities=adapter_capabilities,
+                provider_state=final_provider,
+                adapter_id=adapter_id,
+            )
+            self.assertEqual(final_adapter.poll(legacy_handle), queued)
 
     def test_all_persisted_payload_families_round_trip_losslessly(self) -> None:
         payload = (

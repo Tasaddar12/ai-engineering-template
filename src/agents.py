@@ -70,6 +70,7 @@ _QUIESCED_CANCEL_STATUSES = {
     CancelStatus.CANCELLED,
     CancelStatus.ALREADY_TERMINAL,
 }
+_HASH_FRAME_PREFIX = b"deterministic-fake-agent-framed-hash-v1\0"
 # The prior UTF-8 writer could persist every ordinary Unicode scalar and NUL,
 # but it could not persist an isolated surrogate.  Using one as the private
 # escape therefore keeps legacy state unambiguous while protecting adjacent
@@ -137,13 +138,38 @@ def _failure(
     )
 
 
-def _effect_token(project_id: str, adapter_id: str, idempotency_key: str) -> str:
-    # Frozen workflow text admits individual surrogate code units.  Surrogate
-    # pass keeps their hash representation defined and distinct from scalars.
-    content = "\n".join((project_id, adapter_id, idempotency_key)).encode(
-        "utf-8", errors="surrogatepass"
-    )
+def _hash_fields(
+    values: tuple[str, ...],
+    *,
+    domain: bytes,
+    legacy_framing: bool = False,
+) -> str:
+    """Hash accepted text without delimiter aliases or ordinary hash churn."""
+
+    encoded = tuple(value.encode("utf-8", errors="surrogatepass") for value in values)
+    if legacy_framing or not any("\n" in value for value in values):
+        content = b"\n".join(encoded)
+    else:
+        framed = bytearray(_HASH_FRAME_PREFIX + domain + b"\0")
+        for value in encoded:
+            framed.extend(len(value).to_bytes(8, "big"))
+            framed.extend(value)
+        content = bytes(framed)
     return hashlib.sha256(content).hexdigest()
+
+
+def _effect_token(
+    project_id: str,
+    adapter_id: str,
+    idempotency_key: str,
+    *,
+    legacy_framing: bool = False,
+) -> str:
+    return _hash_fields(
+        (project_id, adapter_id, idempotency_key),
+        domain=b"effect",
+        legacy_framing=legacy_framing,
+    )
 
 
 def _mapping(value: object, label: str) -> Mapping[str, object]:
@@ -682,6 +708,16 @@ class _FakeEffect:
     script_committed: bool = False
     last_observation: AgentObservation | None = None
     quiesced: bool = False
+    legacy_hash_framing: bool = False
+
+
+def _effect_token_for_effect(effect: _FakeEffect) -> str:
+    return _effect_token(
+        effect.handle.project_id.value,
+        effect.handle.adapter_id,
+        effect.handle.idempotency_key,
+        legacy_framing=effect.legacy_hash_framing,
+    )
 
 
 def _simulation_evidence_for_effect(
@@ -690,7 +726,7 @@ def _simulation_evidence_for_effect(
     external = effect.handle.external_handle
     assert external is not None
     path = f".ai/evidence/fake-agent/{external}/{event}-{index}.json"
-    content = "\n".join(
+    digest = _hash_fields(
         (
             SIMULATION_SOURCE,
             effect.handle.project_id.value,
@@ -699,11 +735,13 @@ def _simulation_evidence_for_effect(
             external,
             event,
             str(index),
-        )
-    ).encode("utf-8", errors="surrogatepass")
+        ),
+        domain=b"simulation-evidence",
+        legacy_framing=effect.legacy_hash_framing,
+    )
     return EvidenceRef(
         path=path,
-        sha256=Sha256Digest(hashlib.sha256(content).hexdigest()),
+        sha256=Sha256Digest(digest),
         metadata=FrozenJsonObject(
             {
                 "observation_source": SIMULATION_SOURCE,
@@ -722,11 +760,7 @@ def _simulation_evidence_for_effect(
 
 
 def _queued_observation_for_effect(effect: _FakeEffect) -> AgentObservation:
-    token = _effect_token(
-        effect.handle.project_id.value,
-        effect.handle.adapter_id,
-        effect.handle.idempotency_key,
-    )
+    token = _effect_token_for_effect(effect)
     run = AgentRunRecord(
         id=EntityId(f"fake-run-{token[:32]}"),
         request_ref=(
@@ -985,13 +1019,17 @@ class FakeAgentProviderState:
             or handle.idempotency_key != request.idempotency_key
         ):
             raise ValueError("restored fake handle does not match its immutable request")
-        token = _effect_token(
+        current_token = _effect_token(
             handle.project_id.value,
             handle.adapter_id,
             handle.idempotency_key,
         )
-        if handle.external_handle != f"fake-agent-{token[:32]}":
-            raise ValueError("restored fake handle is not deterministic")
+        legacy_token = _effect_token(
+            handle.project_id.value,
+            handle.adapter_id,
+            handle.idempotency_key,
+            legacy_framing=True,
+        )
         # The request retains a policy-profile name while configured_model
         # retains its resolved provider-profile name.  This provider-only
         # decoder has no settings mapping; the adapter binds both at use time.
@@ -1000,9 +1038,20 @@ class FakeAgentProviderState:
             or expected_model.provider != configured_model.provider
             or expected_model.model_id != configured_model.model_id
             or expected_model.capability_rank != configured_model.capability_rank
-            or expected_model.invocation_id != f"fake-invocation-{token[:32]}"
         ):
             raise ValueError("restored fake model identity does not match its effect")
+        token_encodings = ((current_token, False),)
+        if legacy_token != current_token:
+            token_encodings += ((legacy_token, True),)
+        for token, legacy_hash_framing in token_encodings:
+            if (
+                handle.external_handle == f"fake-agent-{token[:32]}"
+                and expected_model.invocation_id == f"fake-invocation-{token[:32]}"
+            ):
+                effect.legacy_hash_framing = legacy_hash_framing
+                break
+        else:
+            raise ValueError("restored fake handle or model identity is not deterministic")
 
         if not effect.script_committed and (
             effect.poll_script
@@ -1375,10 +1424,10 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         if (
             effect.configured_model != configured
             or effect.expected_model
-            != self._expected_model(
+            != self._model_identity(
                 effect.request,
                 configured,
-                effect.handle.idempotency_key,
+                _effect_token_for_effect(effect),
             )
         ):
             _failure(
@@ -1496,6 +1545,14 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         idempotency_key: str,
     ) -> ModelIdentity:
         token = self._effect_token(idempotency_key)
+        return self._model_identity(request, configured, token)
+
+    @staticmethod
+    def _model_identity(
+        request: AgentRequest,
+        configured: ProviderModelProfile,
+        token: str,
+    ) -> ModelIdentity:
         return ModelIdentity(
             profile=request.model_profile,
             provider=configured.provider,

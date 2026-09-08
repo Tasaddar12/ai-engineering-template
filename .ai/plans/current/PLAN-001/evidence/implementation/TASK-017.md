@@ -83,7 +83,11 @@ source changed.
   so legacy scalar and NUL-bearing payloads remain unambiguous. Deterministic handle
   and simulation-evidence hash inputs use UTF-8 `surrogatepass`, keeping those hashes
   defined for accepted surrogate-bearing adapter IDs and idempotency keys while
-  distinguishing surrogate code units from Unicode scalar values.
+  distinguishing surrogate code units from Unicode scalar values. Hashes retain the
+  prior bytes when no field contains a newline; multiline values use domain-separated,
+  length-prefixed framing so distinct admitted routing tuples cannot alias. Restored
+  legacy multiline effects are recognized from their mutually consistent saved handle
+  and invocation ID, then retain their prior run and simulation-evidence hashes.
 - Terminal results remain frozen. Consumed poll/cancel prefixes, last-observation
   equality, cursor bounds, derived quiescence, no advancement after terminal facts,
   no conflicting terminal histories, no-script/late/empty/exhausted/partial scripts,
@@ -126,12 +130,12 @@ acceptance of an exact candidate.
 | Group | Observable coverage |
 | --- | --- |
 | 1. Real loader and fresh processes | Actual `load_installation_record` and `load_project_settings` for identity and mapped provider-profile controls; separate processes use identical settings bytes, recover one effect/handle, preserve requested/resolved profile names, continue normally, and import every dependency from this worktree. The lossless case performs exact start retries, a materially changed retry that leaves bytes unchanged, validates stored request/output shapes through the accepted registry, preserves multiline/tab/decomposed/isolated-surrogate/paired-surrogate text, and returns an unchanged terminal output-record hash across reopening. |
-| 2. All persisted field families | One compact typed scenario covers request references, role, context, command IDs, criteria, dependency handoffs, checklists, permission subset and idempotency key; ordered output refs/discoveries/scope requests/summary; special adapter/run/error text; optional fields; leading scope/evidence paths; arbitrary nested metadata/details; cancellation evidence; and exact terminal output after two recreations. Its adapter ID and idempotency key include isolated, adjacent-pair and transport-marker surrogate code units, exercising both deterministic hashes and persisted identity. Constructor-negative controls retain surrounding-workflow-space, trailing-path-space, and DomainError-message rejection. |
+| 2. All persisted field families | One compact typed scenario covers request references, role, context, command IDs, criteria, dependency handoffs, checklists, permission subset and idempotency key; ordered output refs/discoveries/scope requests/summary; special adapter/run/error text; optional fields; leading scope/evidence paths; arbitrary nested metadata/details; cancellation evidence; and exact terminal output after two recreations. Its adapter ID and idempotency key include isolated, adjacent-pair and transport-marker surrogate code units, exercising both deterministic hashes and persisted identity. Two formerly aliasing multiline adapter/key tuples coexist, retry and advance independently across two reopenings. A reconstructed prior-format multiline effect retains its old handle and evidence hashes across reopening, while an ordinary handle retains its exact prior digest. Constructor-negative controls retain surrounding-workflow-space, trailing-path-space, and DomainError-message rejection. |
 | 3. Provenance spelling | Real-loader settings select a composed accented model and a true non-BMP model in separate controls. Decomposed and adjacent-surrogate-code-unit observations are unequal before persistence, reject before recreation, remain unequal after recreation, and reject repeatedly with byte-identical state and cursor zero. All five ModelIdentity fields are retained in the scripted run/output records; existing consumed-corruption checks remain active. |
 | 4. Complete configuration binding | Real mapped-profile controls mutate saved provider profile name, both effort fields, provider, model and rank, then verify start/poll/cancel/expected-model all reject without mutation. A terminal-result case changes the actual reloaded selected reasoning effort and verifies all four terminal fast paths reject with the original terminal bytes/cursors/quiescence unchanged. Unconfigured and inadequate-rank controls remain. |
 | 5. Temporal and atomic guarantees | Existing tracked tests retain unknown-to-success reconciliation, pending/confirmed cancellation, stable terminal output, late/unconsumed scripts, default/exhausted polling, forged history/key/shape/cursor/quiescence rejection, exact handle fences and immutable scripts. New rollback coverage exercises start/script/poll/cancel memory rollback, unchanged backing bytes/cursors, retryability after the injected persistence failure, and actual temporary-file cleanup. |
 
-The suite contains 34 discovered tests. Required behavior depends only on tracked
+The suite contains 36 discovered tests. Required behavior depends only on tracked
 task-owned source/tests/handoff and accepted dependencies. Temporary directories,
 the three declared local interpreters, and WSL are disposable execution
 infrastructure; no ignored helper, reviewer script, historical evidence generator,
@@ -186,8 +190,8 @@ but deterministic handle and simulation-evidence hashing still used strict UTF-8
 An actual probe reproduced `UnicodeEncodeError` before persistence. The two hash
 inputs now use `surrogatepass`; the existing all-persisted-families regression now
 uses isolated, adjacent-pair and transport-marker surrogates in both routing values
-and proves exact restart identity. No other bug, accepted-contract mismatch,
-applicable edge failure or scope blocker was found.
+and proves exact restart identity. No other issue was found during that initial
+self-check pass.
 
 | Current self-check command/environment | Observed result |
 | --- | --- |
@@ -208,6 +212,33 @@ matrix on all three runtimes, and this bounded fix affects only deterministic ha
 encoding. The affected lossless regression was rerun on every declared runtime; no
 required check was skipped.
 
+### Multiline hash-framing follow-up
+
+At clean commit `60e54410be2d784d0d7d65c9732a0d08523d44b4`, a coordinator
+probe demonstrated that newline-delimited hashing gave the exact same effect token
+to accepted routing tuples `adapter_id="x\ny", key="z"` and
+`adapter_id="x", key="y\nz"`. The first effect started, while the second distinct
+request failed with an external-handle collision. The common private hash helper now
+uses length-prefixed framing for multiline values and preserves the prior unframed
+bytes for ordinary values. Simulation-evidence hashing uses the same rule. A private
+in-memory legacy marker, inferred only from consistent saved handle/invocation facts,
+keeps prior multiline state readable without adding a persisted or public field.
+
+| Follow-up command/environment | Observed result |
+| --- | --- |
+| Windows Python 3.12.14 `-m unittest discover -s tests/unit/agents/ -p test_*.py` | Exit 0; 36 tests; `OK`; 13.201s. |
+| Windows Python 3.11.16 same discovery with `-k multiline -k all_persisted_payload_families` | Exit 0; 3 affected regressions; `OK`; 0.096s. |
+| Linux Python 3.11.16 through WSL Ubuntu-24.04, exact candidate cwd, same two filters | Exit 0; 3 affected regressions; `OK`; 0.062s. |
+| Windows Python 3.12.14 exact module-origin check | Exit 0; all five task/dependency modules resolved under this a3 worktree's `src`; jsonschema 4.26.0. |
+| Windows Python 3.12.14 `-m py_compile src/agents.py tests/unit/agents/test_agents.py` | Exit 0. |
+| `git diff --check` from both the dispatch base and `60e54410` | Exit 0 across the cumulative candidate and follow-up diffs. |
+
+The focused follow-up review found no further hash-framing alias, persistence
+compatibility issue, contract mismatch or scope blocker. The full 3.11 matrices and
+unrelated suites were not repeated; the changed framing and retained surrogate
+transport cases ran on both minimum-version environments, and the complete declared
+suite ran on the coordinator's Windows 3.12 interpreter.
+
 ## Public interfaces, limitations, and reviewer guidance
 
 Public exports and signatures are unchanged:
@@ -226,9 +257,10 @@ durability service. TASK-009/010/020/021 and later integration tasks retain thos
 boundaries. The internal transport is versioned by the existing private format and
 does not add a v1 public field or schema.
 
-Fresh independent review should focus on the common encoder/decoder boundary rather
-than only the original two prose examples. Reproduce the real-loader fresh-process
-lossless case, decomposed and surrogate-pair provenance negatives, leading
+Fresh independent review should focus on the common encoder/decoder and framed-hash
+boundaries rather than only the original two prose examples. Reproduce the multiline
+tuple non-alias and legacy hash recovery controls, real-loader fresh-process lossless
+case, decomposed and surrogate-pair provenance negatives, leading
 scope/evidence paths, nested arbitrary metadata/error details, full saved profile and
 terminal binding checks, strict malformed private escapes/shapes, and rollback. It
 should also confirm the retained history/cancellation/fault-injection cases and that
@@ -246,3 +278,8 @@ For the later bounded pre-handoff continuation, the coordinator observed native
 invocation `call_VwqMf0CWv9VDBzMy9d4CXMnf` with the same standing
 `gpt-5.6-sol` / `xhigh` selection and implementation rank 3, at conservative charge
 103/300. Separate provider-effective identity/effort remained unavailable.
+
+The multiline hash-framing follow-up used native invocation
+`call_ezbcq68FNOfUD3DqCQPbTqxS` with the same inherited model, effort and rank, at
+conservative charge 105/300. Separate provider-effective identity/effort remained
+unavailable.
