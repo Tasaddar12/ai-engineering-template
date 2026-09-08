@@ -1,0 +1,29 @@
+Harness history: initial run passed the 19-test suite and identity checks, then stopped on a reviewer fixture TypeError (unknown AgentObservation lacked its mandatory AgentRunRecord). Corrected the review-only fixture; this was not a candidate failure.
+R1 request REVIEW-REQUEST-TASK-039-a1-c1-R1; invocation/session /root/r1_039_c1; implementer /root/implement_039
+Coordinator-observed native settings: OpenAI gpt-6-astra/xhigh, review_high rank 4; implementer gpt-5.6-sol/xhigh rank 3. Separate provider-returned identity/effort unavailable.
+PASS candidate: clean HEAD=b54d39eecb862e6020be6fb5614c773d9cdc4b3b; BASE=6023ffaa9f6e5812dade5dc48e193f256f334a6e; fingerprint=8dcea50b055bf8199939becf8df3c12461e9e7480b877cfdae5dfef99df36b89; binary diff, all 12 committed context hashes, ROOT validation hash and policy/model hash match; exactly 3 owned additions
+PASS accepted TASK-003 candidate/integration and shared TASK-001 candidate are ancestors of frozen base
+PASS approved r4 isolation matches recomputed structural task digest c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e
+DECLARED SUITE ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_orchestration_ports/', '-p', 'test_*.py']; exit=0
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 0.008s
+
+OK
+
+PASS imports resolve frozen task-tree src for orchestration_ports, workflow_ports and domain_values
+PASS all 10 exact Protocol method argument/return types, both frozen status vocabularies, accepted-only import surface and no later concrete imports
+PASS guard successful import without evidence: ValueError: successful attempts require imported output and evidence
+PASS guard successful import mismatched external handle: ValueError: agent observation request/lease/attempt handle must match
+PASS guard unknown import forbidden: ValueError: only successful matching attempts can import structured output
+PASS guard unknown cancellation cannot release scope: ValueError: only confirmed cancelled or already-terminal handles are quiesced
+PASS guard execution does not admit completed: ValueError: 'completed' is not a valid ExecutionStatus
+PASS guard completion without authorization evidence: ValueError: completed requires an authorized observed delivery merge with merge_oid
+PASS guard completion with unknown delivery: ValueError: completed requires an authorized observed delivery merge with merge_oid
+PASS guard incomplete dispatch context: ValueError: task attempts require a complete immutable context
+PASS 8 additional identity/evidence/unknown/cancellation/completion guards
+REPRO R1-TASK-039-001: elapsed after resume {'elapsed_seconds': 3601} is rejected before RecoveryRequest can carry actual usage: elapsed_seconds cannot exceed its lineage limit
+REPRO R1-TASK-039-001: actual token usage after completion {'used_tokens': 10001} is rejected before RecoveryRequest can carry actual usage: used_tokens cannot exceed its lineage limit
+REPRO R1-TASK-039-001: cumulative R1 history after bounded repair {'used_review_1_cycles': 3} is rejected before RecoveryRequest can carry actual usage: used_review_1_cycles cannot exceed its lineage limit
+REPRO R1-TASK-039-001: cumulative R2 history after bounded repair {'used_review_2_cycles': 3} is rejected before RecoveryRequest can carry actual usage: used_review_2_cycles cannot exceed its lineage limit
+PASS final worktree clean, HEAD unchanged; exact candidate diff whitespace check exit 0

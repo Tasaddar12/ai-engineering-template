@@ -1,0 +1,8 @@
+ARGV: ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/templates/', '-p', 'test_*.py']
+CWD: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-005-a1
+EXIT: 0
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 1.348s
+
+OK
