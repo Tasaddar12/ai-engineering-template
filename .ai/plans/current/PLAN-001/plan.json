@@ -3,7 +3,7 @@
   "kind": "plan",
   "id": "PLAN-001",
   "title": "Local-first framework MVP with deterministic adapters",
-  "status": "isolation",
+  "status": "approved",
   "archived": false,
   "spec_refs": [
     ".ai/plans/current/PLAN-001/spec.json"
@@ -108,8 +108,8 @@
     "TASK-039"
   ],
   "graph_ref": ".ai/plans/current/PLAN-001/graph.json",
-  "isolation_review_ref": null,
-  "resume_state": "Graph r4 corrects the installed helper dependency closure and specifies digest compatibility; await fresh independent isolation approval.",
+  "isolation_review_ref": ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json",
+  "resume_state": "Independent isolation review passed; begin dependency-ready tasks through the manual coordinator with separate worktrees and two task reviews.",
   "integration_branch": "ai/PLAN-001/integration",
   "target_branch": "main",
   "merge_evidence_ref": null
