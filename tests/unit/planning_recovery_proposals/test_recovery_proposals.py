@@ -6,6 +6,7 @@ import sys
 import unittest
 from copy import deepcopy
 from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -22,6 +23,8 @@ from domain_values import (
     GraphStatus,
     PlanId,
     RecoveryStatus,
+    ReviewCheckStatus,
+    ReviewVerdict,
     Revision,
     ScopeClaim,
     ScopePath,
@@ -35,17 +38,26 @@ from orchestration_ports import (
     RecoveryAction,
     RecoveryRecord,
     RecoveryRequest,
+    ReviewHistoryEntry,
     TaskContractSnapshot,
     TaskGraphRecord,
 )
+from plan_graph import AcceptedDependency
 from recovery_proposals import (
     RecoveryProposalInput,
     RecoveryProposalValidationStatus,
+    RecoveryScopeAuthority,
     TaskSuccessorMapping,
     VerifiedRecordSnapshot,
     validate_recovery_proposal,
 )
-from workflow_ports import ContentRef
+from workflow_ports import (
+    ContentRef,
+    ModelIdentity,
+    ReviewCheck,
+    ReviewResultRecord,
+    ReviewStage,
+)
 
 
 ZERO = "0" * 64
@@ -219,6 +231,52 @@ def evidence() -> EvidenceRef:
     return EvidenceRef(ScopePath.exact_file("evidence/failure.txt"), Sha256Digest(ZERO))
 
 
+def review_histories() -> tuple[tuple[ReviewHistoryEntry, ...], tuple[ReviewHistoryEntry, ...]]:
+    r1_ref = ContentRef("evidence/reviews/r1.json", Sha256Digest(ONE))
+    reviewer = ModelIdentity("review_high", "fake", "fake-reviewer", 4, "invocation-1")
+    created_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    r1 = ReviewResultRecord(
+        "review-r1",
+        ReviewStage.IMPLEMENTATION,
+        "request-r1",
+        "TASK-300",
+        PLAN_ID,
+        "evidence/candidate.json",
+        Sha256Digest(ZERO),
+        ReviewVerdict.FAIL,
+        reviewer,
+        "review-session-r1",
+        "implementation-session",
+        None,
+        "v1",
+        (ReviewCheck("R1-01", ReviewCheckStatus.FAIL, "requires rewrite", ()),),
+        (),
+        created_at,
+    )
+    r2 = ReviewResultRecord(
+        "review-r2",
+        ReviewStage.CONSISTENCY,
+        "request-r2",
+        "TASK-300",
+        PLAN_ID,
+        "evidence/candidate.json",
+        Sha256Digest(ZERO),
+        ReviewVerdict.FAIL,
+        replace(reviewer, invocation_id="invocation-2"),
+        "review-session-r2",
+        "implementation-session",
+        r1_ref.path,
+        "v1",
+        (ReviewCheck("R2-01", ReviewCheckStatus.FAIL, "requires rewrite", ()),),
+        (),
+        created_at,
+    )
+    return (
+        (ReviewHistoryEntry(r1_ref, r1),),
+        (ReviewHistoryEntry(ContentRef("evidence/reviews/r2.json", Sha256Digest(TWO)), r2),),
+    )
+
+
 def issue_codes(result) -> set[str]:
     return {str(item.details["code"]) for item in result.issues}
 
@@ -242,6 +300,7 @@ class ProposalFactory:
         proposed_budget: LineageBudget | None = None,
         permissions: tuple[str, ...] = ("local_execute",),
         proposed_permissions: tuple[str, ...] | None = None,
+        scope_authority: RecoveryScopeAuthority | None = None,
     ) -> RecoveryProposalInput:
         current_snapshots = tuple(verified(item) for item in current_records)
         proposed_snapshots = tuple(verified(item) for item in proposed_records)
@@ -312,6 +371,22 @@ class ProposalFactory:
         )
         current_ids = {str(item["id"]) for item in current_records}
         proposed_ids = {str(item["id"]) for item in proposed_records}
+        if scope_authority is None:
+            resources = sorted(
+                {
+                    str(resource)
+                    for item in current_records
+                    for resource in item["scope"]["resources"]
+                }
+            )
+            scope_authority = RecoveryScopeAuthority(
+                PlanId(PLAN_ID),
+                ScopeClaim(
+                    write_paths=("work/", "shared/"),
+                    prohibited_paths=("private/",),
+                    resources=resources,
+                ),
+            )
         recovery = RecoveryRecord(
             id=EntityId("RECOVERY-001"),
             plan_id=PlanId(PLAN_ID),
@@ -349,6 +424,7 @@ class ProposalFactory:
                 for record, snapshot in zip(proposed_records, proposed_snapshots, strict=True)
             ),
             historical_task_records=historical,
+            scope_authority=scope_authority,
             successor_mapping=successors,
             proposed_permission_subset=(
                 proposed_permissions if proposed_permissions is not None else permissions
@@ -411,6 +487,115 @@ class RecoveryProposalTests(unittest.TestCase):
         self.assertEqual(result.status, RecoveryProposalValidationStatus.ADMISSIBLE)
         self.assertEqual(result.retained_task_history[-1].record["id"], "TASK-100")
 
+    def test_split_dependency_targets_cover_all_successor_completion(self) -> None:
+        source = task_record(
+            "TASK-100",
+            write_paths=["work/source/"],
+            criteria=[criterion("TASK-100-AC1"), criterion("TASK-100-AC2")],
+        )
+        dependent = task_record("TASK-200", depends_on=["TASK-100"], status="backlog")
+        first = task_record(
+            "TASK-300",
+            write_paths=["work/source/first.py"],
+            resources=[],
+            criteria=[criterion("TASK-100-AC1")],
+            status="backlog",
+        )
+        last = task_record(
+            "TASK-301",
+            depends_on=["TASK-300"],
+            write_paths=["work/source/last.py"],
+            resources=[],
+            criteria=[criterion("TASK-100-AC2")],
+            status="backlog",
+        )
+        redirected_early = deepcopy(dependent)
+        redirected_early["depends_on"] = ["TASK-300"]
+        early = self.factory.make(
+            RecoveryAction.SPLIT,
+            [source, dependent],
+            [first, last, redirected_early],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300", "TASK-301"), ("TASK-300",)),),
+            target_by_acceptance={
+                "TASK-100-AC1": ("TASK-300",),
+                "TASK-100-AC2": ("TASK-301",),
+            },
+        )
+
+        early_result = self.validate(early)
+
+        self.assertIn("incomplete_dependency_exit_set", issue_codes(early_result))
+        self.assertIsNotNone(early_result.proposed_graph)
+        first_ref = early_result.proposed_graph.node(
+            next(
+                item
+                for item in early_result.proposed_graph.topological_order
+                if item.local_id.value == "TASK-300"
+            )
+        ).task
+        ready = early_result.proposed_graph.ready_frontier(
+            accepted_integrated=(AcceptedDependency(first_ref, "a" * 40),)
+        )
+        self.assertEqual(
+            {item.task.local_id.value for item in ready},
+            {"TASK-200", "TASK-301"},
+        )
+
+        left = task_record(
+            "TASK-300",
+            write_paths=["work/source/left.py"],
+            resources=[],
+            criteria=[criterion("TASK-100-AC1")],
+            status="backlog",
+        )
+        right = task_record(
+            "TASK-301",
+            write_paths=["work/source/right.py"],
+            resources=[],
+            criteria=[criterion("TASK-100-AC2")],
+            status="backlog",
+        )
+        redirected_incomplete = deepcopy(dependent)
+        redirected_incomplete["depends_on"] = ["TASK-300"]
+        incomplete_exits = self.factory.make(
+            RecoveryAction.SPLIT,
+            [source, dependent],
+            [left, right, redirected_incomplete],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300", "TASK-301"), ("TASK-300",)),),
+            target_by_acceptance={
+                "TASK-100-AC1": ("TASK-300",),
+                "TASK-100-AC2": ("TASK-301",),
+            },
+        )
+        self.assertIn(
+            "incomplete_dependency_exit_set",
+            issue_codes(self.validate(incomplete_exits)),
+        )
+
+        redirected_exits = deepcopy(dependent)
+        redirected_exits["depends_on"] = ["TASK-300", "TASK-301"]
+        multiple_exits = self.factory.make(
+            RecoveryAction.SPLIT,
+            [source, dependent],
+            [left, right, redirected_exits],
+            (
+                TaskSuccessorMapping(
+                    "TASK-100",
+                    ("TASK-300", "TASK-301"),
+                    ("TASK-300", "TASK-301"),
+                ),
+            ),
+            target_by_acceptance={
+                "TASK-100-AC1": ("TASK-300",),
+                "TASK-100-AC2": ("TASK-301",),
+            },
+        )
+        multiple_result = self.validate(multiple_exits)
+        self.assertTrue(
+            multiple_result.admissible,
+            [(item.details["code"], item.message) for item in multiple_result.issues],
+        )
+
     def test_replace_and_augment_are_admissible(self) -> None:
         source, dependent = self.base_tasks()
         replacement = task_record(
@@ -453,6 +638,131 @@ class RecoveryProposalTests(unittest.TestCase):
         augment_result = self.validate(augment_proposal)
         self.assertTrue(replace_result.admissible, [(item.details["code"], item.message) for item in replace_result.issues])
         self.assertTrue(augment_result.admissible, [(item.details["code"], item.message) for item in augment_result.issues])
+
+    def test_augment_then_replace_uses_explicit_acceptance_owners(self) -> None:
+        source, _ = self.base_tasks()
+        follow_up = task_record(
+            "TASK-300",
+            depends_on=["TASK-100"],
+            write_paths=["work/source/follow-up.py"],
+            resources=["component:task-100"],
+            criteria=deepcopy(source["acceptance_criteria"]),
+        )
+        acceptance_targets = {
+            "TASK-100-AC1": ("TASK-300",),
+            "TASK-100-AC2": ("TASK-300",),
+        }
+        augmentation = self.factory.make(
+            RecoveryAction.AUGMENT,
+            [source],
+            [source, follow_up],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
+            target_by_acceptance=acceptance_targets,
+        )
+        self.assertTrue(self.validate(augmentation).admissible)
+
+        replacement = deepcopy(follow_up)
+        replacement["id"] = "TASK-400"
+        lineage_history = (
+            verified(
+                task_record("TASK-250", status="superseded"),
+                ".ai/plans/current/PLAN-900/tasks/archived/TASK-250.json",
+            ),
+        )
+        cumulative_budget = budget(used_rewrites=2)
+        next_rewrite = self.factory.make(
+            RecoveryAction.REPLACE,
+            [source, follow_up],
+            [source, replacement],
+            (TaskSuccessorMapping("TASK-300", ("TASK-400",), ("TASK-400",)),),
+            failed_task_id="TASK-300",
+            historical=lineage_history,
+            current_budget=cumulative_budget,
+            proposed_budget=cumulative_budget,
+            target_by_acceptance={
+                "TASK-100-AC1": ("TASK-400",),
+                "TASK-100-AC2": ("TASK-400",),
+            },
+        )
+        r1_history, r2_history = review_histories()
+        next_rewrite = replace(
+            next_rewrite,
+            request=replace(
+                next_rewrite.request,
+                graph=replace(
+                    augmentation.proposed_graph,
+                    status=GraphStatus.APPROVED,
+                    review_ref=".ai/plans/current/PLAN-900/reviews/rewrite-r2.json",
+                ),
+                review_1_history=r1_history,
+                review_2_history=r2_history,
+            ),
+            proposed_graph=replace(
+                next_rewrite.proposed_graph,
+                id=EntityId("PLAN-900-r3"),
+                revision=Revision(3),
+            ),
+        )
+
+        result = self.validate(next_rewrite)
+
+        self.assertTrue(
+            result.admissible,
+            [(item.details["code"], item.message) for item in result.issues],
+        )
+        self.assertEqual(next_rewrite.request.lineage_budget.used_rewrites, 2)
+        self.assertEqual(next_rewrite.proposed_lineage_budget.used_rewrites, 2)
+        self.assertEqual(next_rewrite.request.review_1_history, r1_history)
+        self.assertEqual(next_rewrite.request.review_2_history, r2_history)
+        self.assertEqual(result.retained_task_history[:1], lineage_history)
+        self.assertEqual(result.retained_task_history[-1].record["id"], "TASK-300")
+
+        missing_owner_mapping = tuple(
+            AcceptanceMapping(item.original_id, (EntityId("TASK-999"),))
+            for item in next_rewrite.request.original_acceptance_mapping
+        )
+        missing_owner = replace(
+            next_rewrite,
+            request=replace(
+                next_rewrite.request,
+                original_acceptance_mapping=missing_owner_mapping,
+            ),
+        )
+        self.assertIn(
+            "invalid_original_acceptance_mapping",
+            issue_codes(self.validate(missing_owner)),
+        )
+
+        conflicting_source = deepcopy(source)
+        conflicting_source["acceptance_criteria"][0] = criterion(
+            "TASK-100-AC1", "Conflicting preserved content"
+        )
+        conflicting_snapshots = (verified(conflicting_source), verified(follow_up))
+        conflicting = replace(
+            next_rewrite,
+            request=replace(
+                next_rewrite.request,
+                graph=graph_record(
+                    [conflicting_source, follow_up],
+                    revision=2,
+                    status=GraphStatus.APPROVED,
+                    review_ref=".ai/plans/current/PLAN-900/reviews/rewrite-r2.json",
+                ),
+                tasks=tuple(
+                    task_contract(record, snapshot)
+                    for record, snapshot in zip(
+                        (conflicting_source, follow_up),
+                        conflicting_snapshots,
+                        strict=True,
+                    )
+                ),
+            ),
+            current_task_records=conflicting_snapshots,
+        )
+        self.assertIn(
+            "conflicting_original_acceptance",
+            issue_codes(self.validate(conflicting)),
+        )
 
     def test_sequence_uses_graph_reachability_to_resolve_scope_conflict(self) -> None:
         first = task_record("TASK-100", write_paths=["shared/value.py"])
@@ -637,29 +947,111 @@ class RecoveryProposalTests(unittest.TestCase):
 
         self.assertIn("dependency_mapping_incomplete", issue_codes(self.validate(proposal)))
 
-    def test_rejects_scope_and_permission_expansion(self) -> None:
+    def test_scope_reassignment_uses_explicit_product_authority(self) -> None:
         source, dependent = self.base_tasks()
-        replacement = task_record(
+        redirected = deepcopy(dependent)
+        redirected["depends_on"] = ["TASK-300"]
+        acceptance_targets = {
+            "TASK-100-AC1": ("TASK-300",),
+            "TASK-100-AC2": ("TASK-300",),
+        }
+
+        reassigned_path = task_record(
             "TASK-300",
-            write_paths=["outside/new.py"],
+            write_paths=["work/reassigned/new.py"],
             resources=["component:task-100"],
             criteria=deepcopy(source["acceptance_criteria"]),
         )
-        redirected = deepcopy(dependent)
-        redirected["depends_on"] = ["TASK-300"]
-        proposal = self.factory.make(
+        path_proposal = self.factory.make(
             RecoveryAction.REPLACE,
             [source, dependent],
-            [replacement, redirected],
+            [reassigned_path, redirected],
             (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
-            target_by_acceptance={
-                "TASK-100-AC1": ("TASK-300",),
-                "TASK-100-AC2": ("TASK-300",),
-            },
-            proposed_permissions=("local_execute", "remote_publish"),
+            target_by_acceptance=acceptance_targets,
+        )
+        self.assertTrue(self.validate(path_proposal).admissible)
+
+        reassigned_resource = task_record(
+            "TASK-300",
+            write_paths=["work/source/new.py"],
+            resources=["component:reassigned-owner"],
+            criteria=deepcopy(source["acceptance_criteria"]),
+        )
+        resource_authority = RecoveryScopeAuthority(
+            PlanId(PLAN_ID),
+            ScopeClaim(
+                write_paths=("work/",),
+                prohibited_paths=("private/",),
+                resources=("component:reassigned-owner",),
+            ),
+        )
+        resource_proposal = self.factory.make(
+            RecoveryAction.REPLACE,
+            [source, dependent],
+            [reassigned_resource, redirected],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
+            target_by_acceptance=acceptance_targets,
+            scope_authority=resource_authority,
+        )
+        self.assertTrue(self.validate(resource_proposal).admissible)
+
+        outside = deepcopy(reassigned_path)
+        outside["scope"]["write_paths"] = ["outside/new.py"]
+        outside_proposal = self.factory.make(
+            RecoveryAction.REPLACE,
+            [source, dependent],
+            [outside, redirected],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
+            target_by_acceptance=acceptance_targets,
+        )
+        self.assertIn(
+            "product_scope_expansion",
+            issue_codes(self.validate(outside_proposal)),
         )
 
-        result = self.validate(proposal)
+        unauthorized_resource = deepcopy(reassigned_path)
+        unauthorized_resource["scope"]["resources"] = ["external:production"]
+        resource_expansion = self.factory.make(
+            RecoveryAction.REPLACE,
+            [source, dependent],
+            [unauthorized_resource, redirected],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
+            target_by_acceptance=acceptance_targets,
+        )
+        self.assertIn(
+            "product_scope_expansion",
+            issue_codes(self.validate(resource_expansion)),
+        )
+
+        omitted_prohibition = deepcopy(reassigned_path)
+        omitted_prohibition["scope"]["write_paths"] = ["private/new.py"]
+        omitted_prohibition["scope"]["prohibited_paths"] = []
+        prohibition_authority = RecoveryScopeAuthority(
+            PlanId(PLAN_ID),
+            ScopeClaim(
+                write_paths=("private/",),
+                prohibited_paths=("private/",),
+                resources=("component:task-100",),
+            ),
+        )
+        prohibited_expansion = self.factory.make(
+            RecoveryAction.REPLACE,
+            [source, dependent],
+            [omitted_prohibition, redirected],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
+            target_by_acceptance=acceptance_targets,
+            scope_authority=prohibition_authority,
+        )
+        self.assertIn(
+            "product_scope_expansion",
+            issue_codes(self.validate(prohibited_expansion)),
+        )
+
+        permission_expansion = replace(
+            path_proposal,
+            proposed_permission_subset=("local_execute", "remote_publish"),
+        )
+        result = self.validate(permission_expansion)
 
         self.assertIn("permission_expansion", issue_codes(result))
         self.assertTrue(any(item.category is ErrorCategory.POLICY_DENIED for item in result.issues))
@@ -802,7 +1194,7 @@ class ActualAcceptedGraphTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.registry = load_contract_registry(ROOT / "schemas" / "v1")
 
-    def test_actual_r4_graph_supports_a_scoped_augmentation(self) -> None:
+    def test_actual_r4_graph_supports_reassigned_path_and_resource_ownership(self) -> None:
         plan_path = ROOT / ".ai" / "plans" / "current" / "PLAN-001" / "plan.json"
         graph_path = ROOT / ".ai" / "plans" / "current" / "PLAN-001" / "graph.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -838,12 +1230,10 @@ class ActualAcceptedGraphTests(unittest.TestCase):
                 "objective": "Exercise a scoped recovery augmentation",
                 "depends_on": ["TASK-024"],
                 "scope": {
-                    "write_paths": [
-                        "tests/unit/planning_recovery_proposals/retained-evidence.py"
-                    ],
+                    "write_paths": ["src/recovery_proposal_acceptance.py"],
                     "read_paths": [],
-                    "prohibited_paths": [],
-                    "resources": [],
+                    "prohibited_paths": deepcopy(source["scope"]["prohibited_paths"]),
+                    "resources": ["component:planning/recovery_proposal_acceptance"],
                 },
                 "acceptance_criteria": deepcopy(source["acceptance_criteria"]),
                 "attempt_ids": [],
@@ -966,6 +1356,14 @@ class ActualAcceptedGraphTests(unittest.TestCase):
                 )
             ),
             historical_task_records=(),
+            scope_authority=RecoveryScopeAuthority(
+                PlanId("PLAN-001"),
+                ScopeClaim(
+                    write_paths=("src/recovery_proposal_acceptance.py",),
+                    prohibited_paths=source["scope"]["prohibited_paths"],
+                    resources=("component:planning/recovery_proposal_acceptance",),
+                ),
+            ),
             successor_mapping=(
                 TaskSuccessorMapping("TASK-024", ("TASK-100",), ("TASK-100",)),
             ),

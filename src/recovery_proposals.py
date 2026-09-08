@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -147,6 +147,25 @@ class TaskSuccessorMapping:
 
 
 @dataclass(frozen=True, slots=True)
+class RecoveryScopeAuthority:
+    """Plan-scoped product ownership that recovery may reassign.
+
+    This is an internal, caller-verified authority fact.  It does not grant an
+    external permission or approve the proposed task ownership; the proposed
+    whole graph must still pass scope-conflict checks and isolation review.
+    """
+
+    plan_id: PlanId
+    scope: ScopeClaim
+
+    def __post_init__(self) -> None:
+        plan_id = self.plan_id if isinstance(self.plan_id, PlanId) else PlanId(self.plan_id)
+        if not isinstance(self.scope, ScopeClaim):
+            raise TypeError("scope must be a ScopeClaim")
+        object.__setattr__(self, "plan_id", plan_id)
+
+
+@dataclass(frozen=True, slots=True)
 class RecoveryProposalInput:
     """Complete, immutable facts needed to validate one graph rewrite proposal."""
 
@@ -161,6 +180,7 @@ class RecoveryProposalInput:
     proposed_task_records: tuple[VerifiedRecordSnapshot, ...]
     proposed_task_contracts: tuple[TaskContractSnapshot, ...]
     historical_task_records: tuple[VerifiedRecordSnapshot, ...]
+    scope_authority: RecoveryScopeAuthority
     successor_mapping: tuple[TaskSuccessorMapping, ...]
     proposed_permission_subset: tuple[str, ...]
     proposed_lineage_budget: LineageBudget
@@ -180,6 +200,8 @@ class RecoveryProposalInput:
             raise TypeError("proposed_graph must be a TaskGraphRecord")
         if not isinstance(self.proposed_graph_ref, ContentRef):
             raise TypeError("proposed_graph_ref must be a ContentRef")
+        if not isinstance(self.scope_authority, RecoveryScopeAuthority):
+            raise TypeError("scope_authority must be a RecoveryScopeAuthority")
         for name, expected in (
             ("current_task_records", VerifiedRecordSnapshot),
             ("proposed_task_records", VerifiedRecordSnapshot),
@@ -408,21 +430,20 @@ def _check_typed_task_bindings(
     return typed_by_id
 
 
-def _criterion_index(
+def _criteria_by_id(
     records: Mapping[str, tuple[VerifiedRecordSnapshot, dict[str, object]]]
-) -> dict[str, tuple[str, dict[str, object]]]:
-    result: dict[str, tuple[str, dict[str, object]]] = {}
-    duplicates: set[str] = set()
+) -> dict[str, dict[str, tuple[dict[str, object], ...]]]:
+    result: dict[str, dict[str, list[dict[str, object]]]] = {}
     for task_id, (_, record) in records.items():
         for criterion in record["acceptance_criteria"]:
             criterion_id = str(criterion["id"])
-            if criterion_id in result:
-                duplicates.add(criterion_id)
-            else:
-                result[criterion_id] = (task_id, criterion)
-    for criterion_id in duplicates:
-        result.pop(criterion_id, None)
-    return result
+            result.setdefault(criterion_id, {}).setdefault(task_id, []).append(criterion)
+    return {
+        criterion_id: {
+            task_id: tuple(criteria) for task_id, criteria in owners.items()
+        }
+        for criterion_id, owners in result.items()
+    }
 
 
 def _mapping_dict(mapping: tuple[AcceptanceMapping, ...]) -> dict[str, tuple[str, ...]]:
@@ -458,18 +479,11 @@ def _resource_key(value: str) -> str:
     return unicodedata.normalize("NFKC", value).casefold()
 
 
-def _scope_is_subset(candidate: ScopeClaim, owner: ScopeClaim) -> bool:
-    if not all(_scope_path_within(path, owner.write_paths) for path in candidate.write_paths):
-        return False
-    if not all(
-        _scope_path_within(path, owner.write_paths + owner.read_paths)
-        for path in candidate.read_paths
-    ):
-        return False
-    owner_resources = {_resource_key(item) for item in owner.resources}
-    if any(_resource_key(item) not in owner_resources for item in candidate.resources):
-        return False
-    for prohibited in owner.prohibited_paths:
+def _preserves_prohibited_paths(
+    candidate: ScopeClaim,
+    required: Sequence[ScopePath],
+) -> bool:
+    for prohibited in required:
         touches_claim = any(
             proposed.overlaps(prohibited)
             for proposed in candidate.write_paths + candidate.read_paths
@@ -479,6 +493,28 @@ def _scope_is_subset(candidate: ScopeClaim, owner: ScopeClaim) -> bool:
         ):
             return False
     return True
+
+
+def _scope_is_authorized(
+    candidate: ScopeClaim,
+    authority: ScopeClaim,
+    *,
+    inherited_prohibited_paths: Sequence[ScopePath],
+) -> bool:
+    if not all(
+        _scope_path_within(path, authority.write_paths) for path in candidate.write_paths
+    ):
+        return False
+    if not all(
+        _scope_path_within(path, authority.write_paths + authority.read_paths)
+        for path in candidate.read_paths
+    ):
+        return False
+    authority_resources = {_resource_key(item) for item in authority.resources}
+    if any(_resource_key(item) not in authority_resources for item in candidate.resources):
+        return False
+    required_prohibited = authority.prohibited_paths + tuple(inherited_prohibited_paths)
+    return _preserves_prohibited_paths(candidate, required_prohibited)
 
 
 def _reject(
@@ -511,6 +547,14 @@ def validate_recovery_proposal(
     request = proposal.request
     record = proposal.record
     plan_id = request.plan_id
+    if proposal.scope_authority.plan_id != plan_id:
+        issues.append(
+            _issue(
+                "scope_authority_plan_mismatch",
+                "scope authority must belong to the recovery plan",
+                category=ErrorCategory.POLICY_DENIED,
+            )
+        )
 
     current_plan = proposal.current_plan.to_record()
     proposed_plan = proposal.proposed_plan.to_record()
@@ -747,7 +791,7 @@ def validate_recovery_proposal(
                 )
             )
 
-    source_criteria = _criterion_index(current_records)
+    source_criteria = _criteria_by_id(current_records)
     proposed_criteria_by_task: dict[str, dict[str, dict[str, object]]] = {}
     for task_id, (_, task_record) in proposed_records.items():
         proposed_criteria_by_task[task_id] = {
@@ -767,45 +811,45 @@ def validate_recovery_proposal(
             )
         )
     for criterion_id, current_targets in original_mapping.items():
-        source = source_criteria.get(criterion_id)
-        if source is None:
-            issues.append(
-                _issue(
-                    "ambiguous_original_acceptance",
-                    f"original acceptance {criterion_id} is missing or ambiguous in full records",
-                    details={"acceptance_id": criterion_id},
-                )
-            )
-            continue
-        source_task_id, source_content = source
-        if source_task_id not in current_targets:
+        owners = source_criteria.get(criterion_id, {})
+        owner_contents: list[dict[str, object]] = []
+        invalid_owners: list[str] = []
+        for target_id in current_targets:
+            target_contents = owners.get(target_id, ())
+            if len(target_contents) != 1:
+                invalid_owners.append(target_id)
+            else:
+                owner_contents.append(target_contents[0])
+        if invalid_owners or not owner_contents:
             issues.append(
                 _issue(
                     "invalid_original_acceptance_mapping",
-                    f"original mapping does not name the task owning {criterion_id}",
-                    details={"acceptance_id": criterion_id, "task_id": source_task_id},
+                    f"original acceptance owners do not uniquely contain {criterion_id}",
+                    details={
+                        "acceptance_id": criterion_id,
+                        "task_ids": sorted(invalid_owners),
+                    },
                 )
             )
-        for target_id in current_targets:
-            current_target = current_records.get(target_id)
-            target_content = None
-            if current_target is not None:
-                target_content = next(
-                    (
-                        item
-                        for item in current_target[1]["acceptance_criteria"]
-                        if str(item["id"]) == criterion_id
-                    ),
-                    None,
+            continue
+        source_content = owner_contents[0]
+        conflicting_owners = [
+            task_id
+            for task_id, contents in owners.items()
+            if len(contents) != 1 or contents[0] != source_content
+        ]
+        if any(content != source_content for content in owner_contents) or conflicting_owners:
+            issues.append(
+                _issue(
+                    "conflicting_original_acceptance",
+                    f"current tasks contain conflicting content for {criterion_id}",
+                    details={
+                        "acceptance_id": criterion_id,
+                        "task_ids": sorted(conflicting_owners),
+                    },
                 )
-            if target_content != source_content:
-                issues.append(
-                    _issue(
-                        "invalid_original_acceptance_mapping",
-                        f"original target {target_id} does not preserve acceptance {criterion_id}",
-                        details={"acceptance_id": criterion_id, "task_id": target_id},
-                    )
-                )
+            )
+            continue
         for target_id in new_mapping.get(criterion_id, ()):
             target_content = proposed_criteria_by_task.get(target_id, {}).get(criterion_id)
             if target_content != source_content:
@@ -907,11 +951,15 @@ def validate_recovery_proposal(
             successor = proposed_typed.get(successor_id.value)
             if successor is None:
                 continue
-            if not _scope_is_subset(successor.scope, source.scope):
+            if not _scope_is_authorized(
+                successor.scope,
+                proposal.scope_authority.scope,
+                inherited_prohibited_paths=source.scope.prohibited_paths,
+            ):
                 issues.append(
                     _issue(
-                        "permission_expansion",
-                        f"successor {successor_id} expands the scope of {source_id}",
+                        "product_scope_expansion",
+                        f"successor {successor_id} exceeds the recovery scope authority",
                         category=ErrorCategory.POLICY_DENIED,
                         details={"source_task_id": source_id, "task_id": successor_id.value},
                     )
@@ -950,6 +998,27 @@ def validate_recovery_proposal(
 
     proposed_ancestors = _ancestors(proposed_graph)
     for source_id, mapping in mappings.items():
+        target_ids = {item.value for item in mapping.dependency_target_ids}
+        uncovered_successors = sorted(
+            successor.value
+            for successor in mapping.successor_task_ids
+            if successor.value not in target_ids
+            and not any(
+                successor.value in proposed_ancestors.get(target_id, frozenset())
+                for target_id in target_ids
+            )
+        )
+        if uncovered_successors:
+            issues.append(
+                _issue(
+                    "incomplete_dependency_exit_set",
+                    f"dependency targets for {source_id} do not wait for every successor",
+                    details={
+                        "source_task_id": source_id,
+                        "task_ids": uncovered_successors,
+                    },
+                )
+            )
         inherited: set[str] = set()
         for dependency in current_dependencies.get(source_id, set()):
             if dependency in mappings and dependency in removed_ids:
@@ -1103,6 +1172,7 @@ def validate_recovery_proposal(
 
 __all__ = [
     "RecoveryProposalInput",
+    "RecoveryScopeAuthority",
     "RecoveryProposalValidation",
     "RecoveryProposalValidationStatus",
     "TaskSuccessorMapping",
