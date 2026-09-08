@@ -2,7 +2,7 @@
 
 Complete the user's entire 39-task implementation request. **14/39 accepted**;
 state generation **50**, integration branch `ai/PLAN-001/integration`.
-ROOT is currently unfrozen at `a9e1688113527230ecce9ae2675ada14d778ab06`.
+ROOT is currently unfrozen; read its current HEAD from Git before the next gate.
 Final combined tests, clean source/wheel/sdist validation and independent combined
 reviews remain. Main remains `501b51276a4d07826afcaa1c0cbf09a24a466587`.
 No remote merge, CI execution, production-provider operation or plan completion
@@ -55,11 +55,13 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   relocation source deletion; snapshot-relative archive manifest incompatibility.
   All fit existing009 scope; no prerequisite/graph change established. Actual
   accepted006/007 composition and038 savedsettings/policy roundtrip pass.
-- **015 implementation active**: `/root/implement_015`, Sol/xhigh rank3, native
+- **015 ready for first review**: `/root/implement_015`, Sol/xhigh rank3, native
   `call_pRwRtyYBRXrXGA7RqWAlbPzz`, charge110. Tree TASK-015-a1, dispatch base
-  `17fb6fff9ffa6b160dc1a09da286e3876ea2d5b6`. Compile and13 current Windows3.12
-  tests pass; stale-during-review hardening, self-check and remaining platforms
-  in progress. No scope blocker reported.
+  `17fb6fff9ffa6b160dc1a09da286e3876ea2d5b6`, clean FINAL head
+  `9dba72717218d0e7c2bca394da40f5fce2f991b7`.14 tests pass on Windows3.12,
+  Windows3.11 and Linux3.11; source origins, compile, foundation and diff pass.
+  Self-check fixed output scope and protected prior review inputs; all context
+  revalidated after completion. No scope blocker. Full handoff and scope read.
 - **020 implementation active**: `/root/repair_019_c1`, inherited Sol/xhigh rank3,
   native `call_IPv5ufcfti6YvOGo5ZGB0pOB`, charge115. Tree TASK-020-a1, dispatch
   base `9614bbf0380b09c4839f340c370538a84279486b`. Read next-review-gates-dispatch.md.
