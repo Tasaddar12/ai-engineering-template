@@ -26,7 +26,7 @@ Graph r3 was proposed at the start of this run. Its independent review failed
 on installed helper dependency ownership and missing digest-compatibility
 requirements. Graph r4 corrects these requirements and passed all 12 ISO
 checks. The original failed graph and review are retained in `history/engine-r3`.
-TASK-001 attempt a2, TASK-003 attempt a1 and TASK-004 attempt a2 are accepted; the remaining 36 tasks are in progress or backlog.
+Accepted prerequisites and subsequent dispatches are recorded in the dated checkpoints below; current task records and project state carry the latest status.
 Task implementations will use separate branches and worktrees, observed test
 results, and independent implementation and consistency review before accepted
 dependency handoffs. Integration, completion, and cleanup will be recorded as
