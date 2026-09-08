@@ -17,6 +17,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from datetime import datetime
 from typing import Protocol
@@ -37,7 +38,7 @@ from local_ports import (
 
 _REDACTION = b"[REDACTED]"
 _READ_SIZE = 8192
-_DRAIN_JOIN_SECONDS = 2.0
+_DRAIN_SETTLE_SECONDS = 0.25
 _POLL_SECONDS = 0.05
 _PORTABLE_ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 
@@ -59,7 +60,33 @@ class CommandLogStore(Protocol):
 class ProcessTreeTerminator(Protocol):
     """Stop a launched process tree and report whether quiescence is confirmed."""
 
-    def terminate(self, process: subprocess.Popen[bytes]) -> bool: ...
+    def observe(self, process: subprocess.Popen[bytes]) -> ProcessTreeObservation: ...
+
+    def terminate(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ProcessTreeObservation:
+    """Host-local process identity captured before the launched process can be reaped."""
+
+    root_pid: int
+    posix_process_group: int | None = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.root_pid, bool) or not isinstance(self.root_pid, int):
+            raise TypeError("root_pid must be an integer")
+        if self.root_pid <= 0:
+            raise ValueError("root_pid must be positive")
+        group = self.posix_process_group
+        if group is not None:
+            if isinstance(group, bool) or not isinstance(group, int):
+                raise TypeError("posix_process_group must be an integer or None")
+            if group <= 0:
+                raise ValueError("posix_process_group must be positive")
 
 
 class NeverCancelled:
@@ -137,15 +164,39 @@ class NativeProcessTreeTerminator:
             raise ValueError("grace_seconds must be positive")
         self._grace_seconds = float(grace_seconds)
 
-    def terminate(self, process: subprocess.Popen[bytes]) -> bool:
-        if os.name == "nt":
-            return self._terminate_windows(process)
-        return self._terminate_posix(process)
+    def observe(self, process: subprocess.Popen[bytes]) -> ProcessTreeObservation:
+        process_group: int | None = None
+        if os.name != "nt":
+            try:
+                observed = os.getpgid(process.pid)
+            except OSError:
+                observed = None
+            if observed == process.pid:
+                process_group = observed
+        return ProcessTreeObservation(process.pid, process_group)
 
-    def _terminate_windows(self, process: subprocess.Popen[bytes]) -> bool:
+    def terminate(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> bool:
+        if observation.root_pid != process.pid:
+            _kill_parent(process, self._grace_seconds)
+            return False
+        if os.name == "nt":
+            return self._terminate_windows(process, observation)
+        return self._terminate_posix(process, observation)
+
+    def _terminate_windows(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> bool:
+        if process.poll() is not None:
+            return False
         try:
             result = subprocess.run(
-                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                ["taskkill", "/PID", str(observation.root_pid), "/T", "/F"],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -161,43 +212,43 @@ class NativeProcessTreeTerminator:
             return False
         return _wait_for_exit(process, self._grace_seconds)
 
-    def _terminate_posix(self, process: subprocess.Popen[bytes]) -> bool:
-        if process.poll() is not None:
+    def _terminate_posix(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> bool:
+        process_group = observation.posix_process_group
+        if process_group is None:
+            _kill_parent(process, self._grace_seconds)
             return False
         try:
-            process_group = os.getpgid(process.pid)
+            os.killpg(process_group, signal.SIGTERM)
         except ProcessLookupError:
             _wait_for_exit(process, self._grace_seconds)
             return False
         except OSError:
             _kill_parent(process, self._grace_seconds)
             return False
-        if process_group != process.pid:
-            _kill_parent(process, self._grace_seconds)
-            return False
-        try:
-            os.killpg(process_group, signal.SIGTERM)
-        except ProcessLookupError:
-            return _wait_for_exit(process, self._grace_seconds)
-        except OSError:
-            _kill_parent(process, self._grace_seconds)
-            return False
         parent_exited = _wait_for_exit(process, self._grace_seconds)
-        if parent_exited and _wait_for_process_group_exit(
+        group_gone = parent_exited and _wait_for_process_group_exit(
             process_group, self._grace_seconds
-        ):
-            return True
+        )
+        if group_gone:
+            return False
         try:
             os.killpg(process_group, signal.SIGKILL)
         except ProcessLookupError:
-            return _wait_for_exit(process, self._grace_seconds)
+            _wait_for_exit(process, self._grace_seconds)
+            return False
         except OSError:
             _kill_parent(process, self._grace_seconds)
             return False
-        parent_exited = _wait_for_exit(process, self._grace_seconds)
-        return parent_exited and _wait_for_process_group_exit(
-            process_group, self._grace_seconds
-        )
+        _wait_for_exit(process, self._grace_seconds)
+        _wait_for_process_group_exit(process_group, self._grace_seconds)
+        # A process group is a signalling boundary, not containment.  A child
+        # can create a new session before cleanup, so group absence alone cannot
+        # establish whole-tree quiescence.
+        return False
 
 
 class LocalCommandRunner:
@@ -322,6 +373,7 @@ class LocalCommandRunner:
             )
 
         assert process.stdout is not None and process.stderr is not None
+        tree_observation = self._observe_tree(process)
         stdout_thread = _start_drain(process.stdout, stdout_capture, "command-stdout")
         stderr_thread = _start_drain(process.stderr, stderr_capture, "command-stderr")
 
@@ -330,22 +382,30 @@ class LocalCommandRunner:
         cleanup_confirmed = True
         deadline = self._monotonic() + request.definition.timeout_seconds
         try:
-            while process.poll() is None:
+            while True:
+                parent_exited = process.poll() is not None
+                drains_finished = not stdout_thread.is_alive() and not stderr_thread.is_alive()
+                if parent_exited and drains_finished:
+                    break
                 if self._cancellation.is_cancelled():
                     status = CommandStatus.CANCELLED
                     error_category = "cancelled"
-                    cleanup_confirmed = self._terminate_confirmed(process)
+                    cleanup_confirmed = self._terminate_confirmed(
+                        process, tree_observation
+                    )
                     break
                 if self._monotonic() >= deadline:
                     status = CommandStatus.TIMED_OUT
                     error_category = "timeout"
-                    cleanup_confirmed = self._terminate_confirmed(process)
+                    cleanup_confirmed = self._terminate_confirmed(
+                        process, tree_observation
+                    )
                     break
                 time.sleep(_POLL_SECONDS)
         except Exception:
             status = CommandStatus.UNKNOWN
             error_category = ErrorCategory.AMBIGUOUS_SIDE_EFFECT.value
-            cleanup_confirmed = self._terminate_confirmed(process)
+            cleanup_confirmed = self._terminate_confirmed(process, tree_observation)
 
         if status is not CommandStatus.EXITED and not cleanup_confirmed:
             status = CommandStatus.UNKNOWN
@@ -353,13 +413,16 @@ class LocalCommandRunner:
         if status is CommandStatus.EXITED:
             process.wait()
 
-        drains_finished = _finish_drains(
-            process, (stdout_thread, stderr_thread), (process.stdout, process.stderr)
-        )
+        drains_finished = _settle_drains((stdout_thread, stderr_thread))
         if not drains_finished or stdout_capture.failed or stderr_capture.failed:
             status = CommandStatus.UNKNOWN
             error_category = ErrorCategory.AMBIGUOUS_SIDE_EFFECT.value
-            self._terminate_confirmed(process)
+            if cleanup_confirmed:
+                cleanup_confirmed = self._terminate_confirmed(
+                    process, tree_observation
+                )
+        stdout = stdout_capture.freeze(complete=not stdout_thread.is_alive())
+        stderr = stderr_capture.freeze(complete=not stderr_thread.is_alive())
 
         exit_code = None if status in {
             CommandStatus.LAUNCH_FAILED,
@@ -374,19 +437,36 @@ class LocalCommandRunner:
             environment_names=environment_names,
             status=status,
             exit_code=exit_code,
-            stdout=stdout_capture.content,
-            stderr=stderr_capture.content,
+            stdout=stdout,
+            stderr=stderr,
             redactions_applied=redaction_state.applied,
             output_truncated=budget.truncated,
             error_category=error_category,
         )
 
-    def _terminate_confirmed(self, process: subprocess.Popen[bytes]) -> bool:
+    def _observe_tree(
+        self, process: subprocess.Popen[bytes]
+    ) -> ProcessTreeObservation | None:
         try:
-            return bool(self._tree_terminator.terminate(process))
+            observation = self._tree_terminator.observe(process)
+        except Exception:
+            return None
+        return observation if isinstance(observation, ProcessTreeObservation) else None
+
+    def _terminate_confirmed(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation | None,
+    ) -> bool:
+        if observation is None:
+            _kill_parent(process, 1.0)
+            return False
+        try:
+            confirmed = bool(self._tree_terminator.terminate(process, observation))
         except Exception:
             _kill_parent(process, 1.0)
             return False
+        return confirmed and process.poll() is not None
 
     def _preflight(
         self, request: CommandRequest
@@ -497,6 +577,10 @@ class _ByteBudget:
                 self._truncated = True
             return accepted
 
+    def mark_truncated(self) -> None:
+        with self._lock:
+            self._truncated = True
+
     @property
     def truncated(self) -> bool:
         with self._lock:
@@ -532,18 +616,36 @@ class _StreamCapture:
         self._pending = bytearray()
         self._content = bytearray()
         self._failed = False
+        self._frozen = False
+        self._lock = threading.Lock()
 
     def feed(self, content: bytes) -> None:
-        self._pending.extend(content)
-        safe_start_count = len(self._pending) - self._maximum_secret + 1
-        if safe_start_count > 0:
-            self._scan(safe_start_count)
+        with self._lock:
+            if self._frozen:
+                return
+            self._pending.extend(content)
+            safe_start_count = len(self._pending) - self._maximum_secret + 1
+            if safe_start_count > 0:
+                self._scan(safe_start_count)
 
     def finish(self) -> None:
-        self._scan(len(self._pending), final=True)
+        with self._lock:
+            if not self._frozen:
+                self._scan(len(self._pending), final=True)
 
     def mark_failed(self) -> None:
-        self._failed = True
+        with self._lock:
+            self._failed = True
+
+    def freeze(self, *, complete: bool) -> bytes:
+        with self._lock:
+            if not complete:
+                self._budget.mark_truncated()
+                self._pending.clear()
+            elif not self._frozen:
+                self._scan(len(self._pending), final=True)
+            self._frozen = True
+            return bytes(self._content)
 
     def _scan(self, safe_start_count: int, *, final: bool = False) -> None:
         position = 0
@@ -565,12 +667,9 @@ class _StreamCapture:
             self._content.extend(self._budget.take(bytes(emitted)))
 
     @property
-    def content(self) -> bytes:
-        return bytes(self._content)
-
-    @property
     def failed(self) -> bool:
-        return self._failed
+        with self._lock:
+            return self._failed
 
 
 def _start_drain(
@@ -587,36 +686,21 @@ def _start_drain(
             capture.mark_failed()
         finally:
             capture.finish()
+            try:
+                pipe.close()  # type: ignore[attr-defined]
+            except (OSError, ValueError):
+                pass
 
     thread = threading.Thread(target=drain, name=name, daemon=True)
     thread.start()
     return thread
 
 
-def _finish_drains(
-    process: subprocess.Popen[bytes],
-    threads: tuple[threading.Thread, threading.Thread],
-    pipes: tuple[object, object],
-) -> bool:
+def _settle_drains(threads: tuple[threading.Thread, threading.Thread]) -> bool:
+    deadline = time.monotonic() + _DRAIN_SETTLE_SECONDS
     for thread in threads:
-        thread.join(_DRAIN_JOIN_SECONDS)
-    finished_without_intervention = all(not thread.is_alive() for thread in threads)
-    if not finished_without_intervention:
-        for pipe in pipes:
-            try:
-                pipe.close()  # type: ignore[attr-defined]
-            except (OSError, ValueError):
-                pass
-        for thread in threads:
-            thread.join(_DRAIN_JOIN_SECONDS)
-    finished_now = all(not thread.is_alive() for thread in threads)
-    if finished_now:
-        for pipe in pipes:
-            try:
-                pipe.close()  # type: ignore[attr-defined]
-            except (OSError, ValueError):
-                pass
-    return finished_without_intervention and process.poll() is not None
+        thread.join(max(0.0, deadline - time.monotonic()))
+    return all(not thread.is_alive() for thread in threads)
 
 
 def _resolve_cwd(request: CommandRequest, configured_root: Path) -> Path:
@@ -799,5 +883,6 @@ __all__ = [
     "LocalCommandRunner",
     "NativeProcessTreeTerminator",
     "NeverCancelled",
+    "ProcessTreeObservation",
     "ProcessTreeTerminator",
 ]

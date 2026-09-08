@@ -9,6 +9,8 @@
 | Logical worktree | `TASK-006-a1` |
 | Dispatch/base commit | `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f` |
 | Linux-correction base | `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` |
+| Failed R1 candidate | `64a48f6bde98f5a09db25ca8ae3e8fd3798ba4d1` |
+| R1 evidence merge | `3bddd68` merged coordinator ROOT commit `214e44d07cbfbd937a86ef74dbc4969792fbf0d6` before repair |
 | Candidate commit | The Git commit containing this handoff; its exact OID is reported after commit because a commit cannot embed its own object ID. |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
@@ -31,6 +33,14 @@ ownership, and a real UTC clock adjustment made the finish sample precede the st
 assessment and raw outputs are retained in coordinator ROOT commit
 `59f3afcfe4805138fccb140efa5bb96b87034605`. This bounded correction does not consume or fabricate an
 independent review cycle.
+
+Independent review `TASK-006-a1-c1-R1` then failed this first attempt with two bounded findings. An
+inherited descendant could keep the parent's output handles open after the parent exited, and the
+main thread could block while closing a buffered reader beyond the command deadline. POSIX group
+absence also did not prove cleanup of a descendant that created a new session. The coordinator
+retained the immutable report, reproductions, and platform outputs in ROOT commit
+`214e44d07cbfbd937a86ef74dbc4969792fbf0d6`; that commit was merged into this task branch before this
+repair. Fresh R1 and R2 reviews are required for the repaired candidate.
 
 ## Behavior and acceptance mapping
 
@@ -83,12 +93,19 @@ independent review cycle.
   cancellation and a one-second timeout use native tree cleanup. On this Windows host, the timeout
   child starts its own 30-second child; `taskkill /T /F` completes, an exit code is observed, and the
   test verifies the descendant PID is no longer active before accepting `timed_out` evidence.
-- On POSIX, the terminator now establishes ownership while the process is observable by requiring
-  `getpgid(pid) == pid` before signaling a group. An exited process or a live process in a group it
-  does not own is stopped at the parent boundary and returns false. A group can be reported quiescent
-  only after that ownership observation, parent reaping, and confirmed group absence. Linux tests
-  cover both an unowned process and a runner-owned new session; the existing timeout regression also
-  confirms cleanup of a real descendant in that owned group.
+- Output readers exclusively own and close their buffered handles. The execution monitor continues
+  checking cancellation and the command deadline until both the parent and readers finish. After a
+  timeout or cancellation it waits only one shared 250 ms reader-settle interval, then freezes the
+  safely redacted prefix, marks output truncated when EOF was not observed, and returns explicit
+  `unknown` if stream completion or cleanup cannot be confirmed. No main-thread pipe close can wait
+  on a reader lock.
+- The terminator captures the root PID and, on POSIX, an owned process group immediately after
+  launch, while that identity is observable. The retained group can still be signaled after the
+  parent exits, which releases inherited pipes for ordinary descendants. Group disappearance is
+  deliberately never treated as whole-tree containment because a descendant may create a new
+  session; POSIX timeout and cancellation therefore return `unknown` after best-effort group cleanup.
+  Windows `taskkill /T /F` confirms cleanup only while the launched parent remains observable. If
+  the parent already exited while an inherited handle remains open, Windows also returns `unknown`.
 - A missing executable returns `launch_failed` with durable sanitized stderr and no inferred exit
   code. An actual parent-only cleanup leaves its spawned child active, and the runner returns
   `unknown`, `exit_code=None`, and `ambiguous_side_effect`; the test then explicitly terminates that
@@ -146,19 +163,32 @@ Working directory:
 | WSL `--exec <Linux interpreter> -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one Windows-only skip; `OK`. Exact declared suite with the declared-dependency Linux environment; 3.918 seconds. |
 | Windows `-W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one POSIX-only skip; `OK`; 4.401 seconds. |
 | WSL `--exec <Linux interpreter> -W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one Windows-only skip; `OK`; 4.319 seconds. |
+| Linux diagnostic after strengthening the inherited-pipe regression | Exit 1; 22 discovered, two assertion failures and one Windows-only skip. The implementation had closed both streams after signaling the ordinary descendant group, so `output_truncated=false`; the test had incorrectly required truncation on both hosts. The expectation was corrected to retain this observed distinction. |
+| Windows exact declared suite after first-R1 repair | Exit 0; 22 discovered, 21 executed, one POSIX-only skip; `OK`; 8.046 seconds. Includes actual inherited-pipe and detached-descendant timeout/cancellation fixtures without a watchdog. |
+| WSL `--exec <Linux interpreter>` exact declared suite after first-R1 repair | Exit 0; 22 discovered, 21 executed, one Windows-only skip; `OK`; 6.730 seconds. Includes the same actual fixtures and explicit PID cleanup. |
 
 Before the Linux correction, the exact Windows task command ran again after the then-final production
-and test edits and passed 18 tests in 4.400 seconds. The current corrected source has the two passing
-20-test cross-platform runs above. No aggregate, foundation, provider, network, remote, or unrelated
-task suite was run.
+and test edits and passed 18 tests in 4.400 seconds. The latest repaired source has the two passing
+22-test cross-platform runs above. The inherited-pipe fixtures returned in under four seconds on both
+platforms without an external watchdog. Each fixture recorded its exact descendant PID; any process
+left live to prove an unknown boundary was killed in fixture teardown and confirmed gone. On Linux,
+the ordinary inherited-pipe descendant was stopped through the retained group, both streams reached
+EOF, and complete empty logs were stored. On Windows the already-exited parent left its ordinary
+descendant and inherited streams active, so evidence stored a safely frozen empty prefix with
+`output_truncated=true` before exact fixture cleanup. On Linux, an actual new-session descendant
+survived group cleanup until explicit teardown, proving the runner did not overclaim quiescence. No
+aggregate, foundation, provider, network, remote, or unrelated task suite was run.
 
 ## Assumptions, limitations, risks, and reviewer guidance
 
 - Windows 11/NTFS behavior is observed locally: direct process execution, large dual-stream output,
   `.cmd` refusal, cancellation, timeout, content-addressed hard-link persistence, and descendant
-  cleanup all ran. Ubuntu-24.04 under WSL directly executed the declared Linux interpreter and
-  observed POSIX owned/unowned group handling, timeout descendant cleanup, direct execution, output,
-  redaction, and persistence. WSL is local Linux preflight rather than final independent platform CI.
+  cleanup all ran. It also observed that an already-exited parent with inherited output handles does
+  not provide a confirmable Windows tree boundary. Ubuntu-24.04 under WSL directly executed the
+  declared Linux interpreter and observed POSIX owned/unowned group handling, best-effort timeout
+  cleanup, a live escaped-session descendant with explicit unknown evidence, direct execution,
+  output, redaction, and persistence. WSL is local Linux preflight rather than final independent
+  platform CI.
 - `FileCommandLogStore` needs same-filesystem hard-link support to publish a new immutable path
   without an overwrite race. If the host filesystem lacks that capability, execution evidence is
   returned as `unknown` rather than claiming durable success.
@@ -172,11 +202,13 @@ task suite was run.
 - Empty sensitive values are permitted but are not usable redaction patterns. Exact sensitive values
   in supported direct encodings are redacted; transformed, encrypted, hashed, or application-derived
   representations cannot be inferred safely by a generic command runner.
-- There are no skipped required checks, scope deviations, shared-interface changes, dependency
-  changes, credentials, external effects, or concrete prerequisite gaps. Fresh Astra/xhigh R1 should
-  independently probe secret/read-boundary handling, combined byte budgeting, cwd symlink/escape
-  refusal, explicit permission/environment inputs, Windows batch behavior, durable identity reuse,
-  and actual child cleanup. Fresh R2 must bind the same exact candidate.
+- There are no skipped required checks, scope deviations, frozen port or DTO changes, dependency
+  changes, credentials, external effects, or concrete prerequisite gaps. The host-local termination
+  collaborator now carries an immutable launch observation; it adds no portable field. Fresh
+  Astra/xhigh R1 should reproduce inherited-pipe and escaped-session boundaries first, then probe
+  secret/read-boundary handling, combined byte budgeting, cwd symlink/escape refusal, explicit
+  permission/environment inputs, Windows batch behavior, durable identity reuse, and actual child
+  cleanup. Fresh R2 must bind the same exact repaired candidate.
 
 Implementation provenance: the coordinator dispatched this attempt with the standing native OpenAI
 `gpt-5.6-sol` / `xhigh` selection. This is the coordinator-observed tool configuration only. No

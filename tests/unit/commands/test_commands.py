@@ -26,6 +26,7 @@ from commands import (
     FileCommandLogStore,
     LocalCommandRunner,
     NativeProcessTreeTerminator,
+    ProcessTreeObservation,
 )
 from config import RunSettings, load_installation_record, load_project_settings
 from contracts import ContractRegistry
@@ -98,7 +99,14 @@ class EventCancellation:
 
 
 class ParentOnlyUnknownTerminator:
-    def terminate(self, process: object) -> bool:
+    def observe(self, process: subprocess.Popen[bytes]) -> ProcessTreeObservation:
+        return ProcessTreeObservation(process.pid)
+
+    def terminate(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> bool:
         process.kill()
         process.wait(timeout=5)
         return False
@@ -474,6 +482,131 @@ class CommandRunnerTests(unittest.TestCase):
         self.assertEqual(self.read_log(evidence.stderr_ref), b"command launch failed\n")
         self.assert_schema(evidence)
 
+    def test_inherited_pipe_descendant_cannot_block_timeout_or_cancellation_return(self) -> None:
+        child_code = "import time; time.sleep(10)"
+        parent_code = (
+            "import os,pathlib,subprocess,sys; "
+            "p=subprocess.Popen([sys.executable,'-c',sys.argv[1]]); "
+            "pathlib.Path(os.environ['PID_FILE']).write_text(str(p.pid))"
+        )
+        for mode in ("timeout", "cancellation"):
+            with self.subTest(mode=mode):
+                pid_file = self.worktree / f"inherited-{mode}.pid"
+                definition = self.definition(
+                    (self.python, "-c", parent_code, child_code),
+                    timeout=1 if mode == "timeout" else 10,
+                    environment=("PID_FILE",),
+                )
+                event = threading.Event()
+                timer = None
+                runner = self.runner()
+                if mode == "cancellation":
+                    timer = threading.Timer(0.25, event.set)
+                    timer.start()
+                    runner = self.runner(cancellation=EventCancellation(event))
+                started = time.monotonic()
+                try:
+                    evidence = runner.execute(
+                        self.request(
+                            definition,
+                            environment=(
+                                EnvironmentBinding("PID_FILE", str(pid_file), False),
+                            ),
+                        )
+                    )
+                    elapsed = time.monotonic() - started
+                    child_pid = int(pid_file.read_text(encoding="utf-8"))
+                    child_alive = self._is_alive(child_pid)
+                    self.assertGreaterEqual(
+                        elapsed, 0.75 if mode == "timeout" else 0.15
+                    )
+                    self.assertLess(elapsed, 4.0)
+                    self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
+                    self.assertIsNone(evidence.exit_code)
+                    self.assertEqual(
+                        evidence.error_category, "ambiguous_side_effect"
+                    )
+                    self.assertEqual(self.read_log(evidence.stdout_ref), b"")
+                    self.assertEqual(self.read_log(evidence.stderr_ref), b"")
+                    if os.name == "nt":
+                        self.assertTrue(evidence.output_truncated)
+                        self.assertTrue(child_alive)
+                    else:
+                        self.assertFalse(evidence.output_truncated)
+                        self.assertFalse(child_alive)
+                    self.assert_schema(evidence)
+                finally:
+                    if timer is not None:
+                        timer.cancel()
+                    if pid_file.exists():
+                        child_pid = int(pid_file.read_text(encoding="utf-8"))
+                        self._kill_pid(child_pid)
+                        self.assertTrue(self._wait_not_alive(child_pid, 5))
+
+    def test_detached_descendant_timeout_and_cancellation_never_overclaim_cleanup(self) -> None:
+        child_code = "import time; time.sleep(30)"
+        parent_code = (
+            "import os,pathlib,subprocess,sys,time; "
+            "flags=(subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS) "
+            "if os.name=='nt' else 0; "
+            "p=subprocess.Popen([sys.executable,'-c',sys.argv[1]], "
+            "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,"
+            "creationflags=flags,start_new_session=os.name!='nt'); "
+            "pathlib.Path(os.environ['PID_FILE']).write_text(str(p.pid)); "
+            "time.sleep(30)"
+        )
+        for mode in ("timeout", "cancellation"):
+            with self.subTest(mode=mode):
+                pid_file = self.worktree / f"detached-{mode}.pid"
+                definition = self.definition(
+                    (self.python, "-c", parent_code, child_code),
+                    timeout=1 if mode == "timeout" else 10,
+                    environment=("PID_FILE",),
+                )
+                event = threading.Event()
+                timer = None
+                runner = self.runner()
+                if mode == "cancellation":
+                    timer = threading.Timer(0.25, event.set)
+                    timer.start()
+                    runner = self.runner(cancellation=EventCancellation(event))
+                started = time.monotonic()
+                try:
+                    evidence = runner.execute(
+                        self.request(
+                            definition,
+                            environment=(
+                                EnvironmentBinding("PID_FILE", str(pid_file), False),
+                            ),
+                        )
+                    )
+                    elapsed = time.monotonic() - started
+                    child_pid = int(pid_file.read_text(encoding="utf-8"))
+                    child_alive = self._is_alive(child_pid)
+                    self.assertLess(elapsed, 4.0)
+                    if os.name == "nt":
+                        expected = (
+                            CommandStatus.TIMED_OUT
+                            if mode == "timeout"
+                            else CommandStatus.CANCELLED
+                        )
+                        self.assertEqual(evidence.status, expected)
+                        self.assertFalse(child_alive)
+                    else:
+                        self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
+                        self.assertEqual(
+                            evidence.error_category, "ambiguous_side_effect"
+                        )
+                        self.assertTrue(child_alive)
+                    self.assert_schema(evidence)
+                finally:
+                    if timer is not None:
+                        timer.cancel()
+                    if pid_file.exists():
+                        child_pid = int(pid_file.read_text(encoding="utf-8"))
+                        self._kill_pid(child_pid)
+                        self.assertTrue(self._wait_not_alive(child_pid, 5))
+
     def test_timeout_terminates_actual_process_tree(self) -> None:
         pid_file = self.worktree / "child.pid"
         child_code = "import time; time.sleep(30)"
@@ -494,9 +627,14 @@ class CommandRunnerTests(unittest.TestCase):
                 environment=(EnvironmentBinding("PID_FILE", str(pid_file), False),),
             )
         )
-        self.assertEqual(evidence.status, CommandStatus.TIMED_OUT)
-        self.assertEqual(evidence.error_category, "timeout")
-        self.assertIsNotNone(evidence.exit_code)
+        if os.name == "nt":
+            self.assertEqual(evidence.status, CommandStatus.TIMED_OUT)
+            self.assertEqual(evidence.error_category, "timeout")
+            self.assertIsNotNone(evidence.exit_code)
+        else:
+            self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
+            self.assertEqual(evidence.error_category, "ambiguous_side_effect")
+            self.assertIsNone(evidence.exit_code)
         child_pid = int(pid_file.read_text(encoding="utf-8"))
         self.assertTrue(self._wait_not_alive(child_pid, 5), f"child {child_pid} survived timeout")
         self.assert_schema(evidence)
@@ -518,9 +656,14 @@ class CommandRunnerTests(unittest.TestCase):
         during = self.runner(cancellation=EventCancellation(event)).execute(
             self.request(self.definition((self.python, "-c", "import time; time.sleep(30)")))
         )
-        self.assertEqual(during.status, CommandStatus.CANCELLED)
-        self.assertEqual(during.error_category, "cancelled")
-        self.assertIsNotNone(during.exit_code)
+        if os.name == "nt":
+            self.assertEqual(during.status, CommandStatus.CANCELLED)
+            self.assertEqual(during.error_category, "cancelled")
+            self.assertIsNotNone(during.exit_code)
+        else:
+            self.assertEqual(during.status, CommandStatus.UNKNOWN)
+            self.assertEqual(during.error_category, "ambiguous_side_effect")
+            self.assertIsNone(during.exit_code)
         self.assert_schema(during)
 
     def test_unconfirmed_parent_only_cleanup_returns_unknown(self) -> None:
@@ -572,10 +715,12 @@ class CommandRunnerTests(unittest.TestCase):
             shell=False,
         )
         process.wait(timeout=5)
-        self.assertFalse(NativeProcessTreeTerminator().terminate(process))
+        terminator = NativeProcessTreeTerminator()
+        observation = terminator.observe(process)
+        self.assertFalse(terminator.terminate(process, observation))
 
     @unittest.skipIf(os.name == "nt", "POSIX process-group ownership is POSIX-specific")
-    def test_posix_terminator_requires_and_confirms_an_owned_process_group(self) -> None:
+    def test_posix_group_cleanup_never_claims_descendant_containment(self) -> None:
         terminator = NativeProcessTreeTerminator(grace_seconds=2)
         unowned = subprocess.Popen(
             (self.python, "-c", "import time; time.sleep(30)"),
@@ -584,7 +729,9 @@ class CommandRunnerTests(unittest.TestCase):
         )
         self.addCleanup(self._kill_process, unowned)
         self.assertNotEqual(os.getpgid(unowned.pid), unowned.pid)
-        self.assertFalse(terminator.terminate(unowned))
+        unowned_observation = terminator.observe(unowned)
+        self.assertIsNone(unowned_observation.posix_process_group)
+        self.assertFalse(terminator.terminate(unowned, unowned_observation))
         self.assertIsNotNone(unowned.poll())
 
         owned = subprocess.Popen(
@@ -595,7 +742,9 @@ class CommandRunnerTests(unittest.TestCase):
         )
         self.addCleanup(self._kill_process, owned)
         self.assertEqual(os.getpgid(owned.pid), owned.pid)
-        self.assertTrue(terminator.terminate(owned))
+        owned_observation = terminator.observe(owned)
+        self.assertEqual(owned_observation.posix_process_group, owned.pid)
+        self.assertFalse(terminator.terminate(owned, owned_observation))
         self.assertIsNotNone(owned.poll())
 
     @staticmethod
