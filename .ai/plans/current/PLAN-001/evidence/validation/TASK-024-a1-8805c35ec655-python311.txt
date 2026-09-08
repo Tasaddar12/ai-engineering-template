@@ -1,0 +1,21 @@
+Task: PLAN-001/TASK-024
+Head: 8805c35ec655ac5c1a8fef24ede1fec1e2bb7129
+Platform: Windows Python3.11.16
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_recovery_proposals/', '-p', 'test_*.py']
+Exit code: 0
+
+Runtime/origin probe exit: 0
+Python: 3.11.16 (main, Sep  1 2026, 14:15:24) [MSC v.1944 64 bit (AMD64)]
+Executable: D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-py311-venv\Scripts\python.exe
+Platform: Windows-10-10.0.26200-SP0
+jsonschema: 4.26.0
+Origins: [('recovery_proposals', 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-024-a1\\src\\recovery_proposals.py')]
+
+
+
+
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.637s
+
+OK
