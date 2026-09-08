@@ -138,7 +138,11 @@ def _failure(
 
 
 def _effect_token(project_id: str, adapter_id: str, idempotency_key: str) -> str:
-    content = "\n".join((project_id, adapter_id, idempotency_key)).encode("utf-8")
+    # Frozen workflow text admits individual surrogate code units.  Surrogate
+    # pass keeps their hash representation defined and distinct from scalars.
+    content = "\n".join((project_id, adapter_id, idempotency_key)).encode(
+        "utf-8", errors="surrogatepass"
+    )
     return hashlib.sha256(content).hexdigest()
 
 
@@ -696,7 +700,7 @@ def _simulation_evidence_for_effect(
             event,
             str(index),
         )
-    ).encode("utf-8")
+    ).encode("utf-8", errors="surrogatepass")
     return EvidenceRef(
         path=path,
         sha256=Sha256Digest(hashlib.sha256(content).hexdigest()),

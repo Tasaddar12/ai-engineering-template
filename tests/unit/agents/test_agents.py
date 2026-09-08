@@ -825,8 +825,12 @@ class FakeAgentDispatchTests(unittest.TestCase):
             "\ud83d\ude00 plus escape \udfff remain exact"
         )
         routing = "routing\n\tCafe\u0301 remains exact"
-        adapter_id = "adapter:" + routing
-        idempotency_key = "key:" + routing
+        hash_routing = (
+            routing
+            + ", isolated \ud800, paired \ud83d\ude00, and escape \udfff remain exact"
+        )
+        adapter_id = "adapter:" + hash_routing
+        idempotency_key = "key:" + hash_routing
         role = "role:" + routing
         command = "command:" + routing
         second_command = "second-command:" + routing
