@@ -1,0 +1,17 @@
+IDENTITY, CONTEXT HASHES, VALIDATION HASH, POLICY HASH, FINGERPRINT, R4 DIGEST, ACCEPTED DEPENDENCY, SCOPE: PASS
+base 6098dcdc58b667d14f1847dbf7b6c2990abb8453 head 7d92dda5237b57087a4c7e869deb72c9028ab82e fingerprint a34899768c50111a454417f76f134e803790bd6625a100ed1b7f04b7d5e5e0d3
+A	.ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md
+A	src/contracts.py
+M	src/install.py
+M	src/validate_foundation.py
+A	tests/unit/schemas/test_contracts.py
+ALL 27 KINDS: immutable example validation and unknown-field rejection PASS
+LOGICAL REF MATRIX: typed valid identity round trips and malformed/bare-local failures PASS
+TRANSITIVE INSTALLER CLOSURE: reachable install.py + two new modules + cycle included; unreachable excluded PASS
+RECORD LOCATION MATRIX: all 3 provider roots, both separators, completed/archived PASS
+DIRECTORY LOCATION PROBE: ['.codex/plans/current/PLAN-101/tasks/current/'] -> ['.codex/plans/completed/PLAN-101/tasks/completed/']
+directory_only_lifecycle_change_retains_digest False
+PROSE PROBE: .codex/plans/current/PLAN-101/spec.json must remain the selected active specification. -> .codex/plans/completed/PLAN-101/spec.json must remain the selected active specification.
+changed_objective_prose_retains_digest True
+APPROVED GRAPH PROBE: validator ACCEPTS changed objective prose with unchanged graph/review digest
+CANDIDATE REMAINS CLEAN

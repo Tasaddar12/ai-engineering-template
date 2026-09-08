@@ -4,7 +4,7 @@
   "id": "TASK-004",
   "plan_id": "PLAN-001",
   "title": "Implement offline contract validation",
-  "status": "backlog",
+  "status": "repairing",
   "archived": false,
   "objective": "Implement offline contract validation. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -102,7 +102,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-004-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Failed review preserved; repair R1-TASK-004-001, R1-TASK-004-002; form a new candidate and rerun both independent reviews."
 }
