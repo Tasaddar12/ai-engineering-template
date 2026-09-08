@@ -114,7 +114,10 @@ class ArtifactStore:
                 continue
             artifact = read_artifact(path)
             self._validate(kind, artifact.metadata)
-            if artifact.id != path.stem or artifact.id in seen:
+            expected_path = safe_path(
+                self.base, f"{_folder(kind, artifact.status)}/{artifact.id}.md"
+            )
+            if artifact.id != path.stem or artifact.id in seen or path != expected_path:
                 raise FrameworkError(f"Duplicate or misplaced ID: {artifact.id}")
             seen.add(artifact.id)
             artifact.metadata.setdefault("kind", kind)
@@ -183,6 +186,11 @@ class ArtifactStore:
             raise FrameworkError("Artifacts must remain under .ai")
         if destination != old and destination.exists():
             raise FrameworkError(f"Duplicate destination: {destination}")
+        original = read_artifact(old)
+        if original.id != artifact.id or old != safe_path(
+            self.base, f"{_folder(kind, original.status)}/{original.id}.md"
+        ):
+            raise FrameworkError("Cannot replace a different or misplaced artifact")
         write_artifact(destination, artifact.metadata, artifact.body)
         if old != destination:
             old.unlink()

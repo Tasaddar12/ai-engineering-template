@@ -30,6 +30,11 @@ class StateStore:
 
     def load(self) -> dict[str, Any]:
         value = read_yaml(self.path)
+        self._validate(value)
+        return value
+
+    @staticmethod
+    def _validate(value: dict[str, Any]) -> None:
         if not isinstance(value.get("project"), dict) or not isinstance(
             value.get("current_focus"), dict
         ):
@@ -48,7 +53,6 @@ class StateStore:
                 raise FrameworkError(f"STATE.{key} must be a list")
         if not isinstance(value.get("generation", 0), int):
             raise FrameworkError("STATE generation must be an integer")
-        return value
 
     @contextmanager
     def lock(self) -> Iterator[None]:
@@ -93,6 +97,7 @@ class StateStore:
             gate.release()
 
     def save(self, value: dict[str, Any]) -> None:
+        self._validate(value)
         with self.lock():
             previous = self.load() if self.path.exists() else {"generation": -1}
             generation = previous.get("generation", 0)
