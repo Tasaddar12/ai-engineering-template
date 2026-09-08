@@ -98,6 +98,271 @@ class EventCancellation:
         return self._event.is_set()
 
 
+class ObservedFixtureCancellation:
+    """Request cancellation only after the exact process phase is observable."""
+
+    def __init__(
+        self,
+        *,
+        pid_file: Path,
+        ready_file: Path,
+        phase: str,
+        cancel_when_ready: bool,
+        startup_seconds: float = 3.0,
+    ) -> None:
+        self.pid_file = pid_file
+        self.ready_file = ready_file
+        self.phase = phase
+        self.cancel_when_ready = cancel_when_ready
+        self.startup_seconds = startup_seconds
+        self.started_monotonic: float | None = None
+        self.startup_deadline: float | None = None
+        self.parent: subprocess.Popen[bytes] | None = None
+        self.parent_observation: ProcessTreeObservation | None = None
+        self.child_pid: int | None = None
+        self.child_process_group: int | None = None
+        self.child_session: int | None = None
+        self.parent_session: int | None = None
+        self.phase_observed_monotonic: float | None = None
+        self.cancellation_monotonic: float | None = None
+        self.completed_monotonic: float | None = None
+        self.startup_expired = False
+        self.identity_error: str | None = None
+        self.watchdog_intervened = False
+        self.native_termination_calls = 0
+        self._lock = threading.Lock()
+
+    def mark_started(self, observation: float) -> None:
+        with self._lock:
+            self.started_monotonic = observation
+            self.startup_deadline = observation + self.startup_seconds
+
+    def register_parent(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> None:
+        with self._lock:
+            if self.parent is not None and self.parent is not process:
+                self.identity_error = "launched parent identity changed"
+                return
+            if observation.root_pid != process.pid:
+                self.identity_error = "terminator returned the wrong parent PID"
+                return
+            self.parent = process
+            self.parent_observation = observation
+            if os.name != "nt":
+                try:
+                    self.parent_session = os.getsid(process.pid)
+                except OSError:
+                    self.parent_session = None
+
+    def note_native_termination(self) -> None:
+        with self._lock:
+            self.native_termination_calls += 1
+
+    def is_cancelled(self) -> bool:
+        ready = self.observe_phase()
+        now = time.monotonic()
+        with self._lock:
+            if ready and self.cancel_when_ready:
+                if self.cancellation_monotonic is None:
+                    self.cancellation_monotonic = now
+                return True
+            deadline = self.startup_deadline
+            if self.cancel_when_ready and deadline is not None and now >= deadline:
+                self.startup_expired = True
+                # This requests native cleanup, but assert_ready() still makes the
+                # test fail. Cleanup cannot turn missing readiness into a pass.
+                return True
+        return False
+
+    def observe_phase(self) -> bool:
+        self._register_child_from(self.pid_file)
+        ready_pid = self._read_pid(self.ready_file)
+        with self._lock:
+            parent = self.parent
+            observation = self.parent_observation
+            child_pid = self.child_pid
+            identity_error = self.identity_error
+        if (
+            identity_error is not None
+            or parent is None
+            or observation is None
+            or child_pid is None
+            or ready_pid != child_pid
+            or not CommandRunnerTests._is_alive(child_pid)
+        ):
+            return False
+
+        child_group: int | None = None
+        child_session: int | None = None
+        if os.name != "nt":
+            try:
+                child_group = os.getpgid(child_pid)
+                child_session = os.getsid(child_pid)
+            except OSError:
+                return False
+            if observation.posix_process_group is None:
+                return False
+
+        parent_live = parent.poll() is None
+        if self.phase == "inherited_after_parent_exit":
+            ready = not parent_live
+            if os.name != "nt":
+                ready = ready and child_group == observation.posix_process_group
+        elif self.phase == "detached_while_parent_live":
+            ready = parent_live
+            if os.name != "nt":
+                ready = (
+                    ready
+                    and child_group != observation.posix_process_group
+                    and child_session != self.parent_session
+                )
+        else:
+            raise AssertionError(f"unknown fixture phase: {self.phase}")
+
+        if ready:
+            with self._lock:
+                self.child_process_group = child_group
+                self.child_session = child_session
+                if self.phase_observed_monotonic is None:
+                    self.phase_observed_monotonic = time.monotonic()
+        return ready
+
+    def _register_child_from(self, path: Path) -> None:
+        pid = self._read_pid(path)
+        if pid is None:
+            return
+        with self._lock:
+            if self.child_pid is None:
+                # The exact descendant identity becomes teardown-owned as soon
+                # as its PID is observable, before any readiness assertion.
+                self.child_pid = pid
+            elif self.child_pid != pid:
+                self.identity_error = (
+                    f"descendant PID changed from {self.child_pid} to {pid}"
+                )
+
+    @staticmethod
+    def _read_pid(path: Path) -> int | None:
+        try:
+            value = int(path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, OSError, UnicodeError, ValueError):
+            return None
+        return value if value > 0 else None
+
+    def assert_ready(self, test: unittest.TestCase) -> None:
+        self.observe_phase()
+        with self._lock:
+            identity_error = self.identity_error
+            phase_observed = self.phase_observed_monotonic
+            started = self.started_monotonic
+            cancellation = self.cancellation_monotonic
+            startup_expired = self.startup_expired
+            termination_calls = self.native_termination_calls
+        test.assertIsNone(identity_error, identity_error)
+        test.assertFalse(startup_expired, "fixture missed its monotonic startup deadline")
+        test.assertFalse(self.watchdog_intervened, "failure watchdog changed fixture state")
+        test.assertIsNotNone(phase_observed, f"fixture phase was not observed: {self.phase}")
+        test.assertIsNotNone(started)
+        test.assertEqual(termination_calls, 1, "native termination did not settle exactly once")
+        assert phase_observed is not None and started is not None
+        test.assertLess(
+            phase_observed - started,
+            self.startup_seconds,
+            "fixture readiness exceeded its explicit startup bound",
+        )
+        if self.cancel_when_ready:
+            test.assertIsNotNone(cancellation, "readiness never requested cancellation")
+            assert cancellation is not None
+            test.assertGreaterEqual(cancellation, phase_observed)
+        else:
+            test.assertIsNone(cancellation, "timeout fixture unexpectedly cancelled")
+
+    def cleanup(self, test: unittest.TestCase) -> dict[str, object]:
+        # A final observation registers a child that became visible while an
+        # assertion or watchdog path was unwinding.
+        self._register_child_from(self.pid_file)
+        with self._lock:
+            parent = self.parent
+            child_pid = self.child_pid
+        if parent is not None and parent.poll() is None:
+            try:
+                parent.kill()
+            except OSError:
+                pass
+            try:
+                parent.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                pass
+        if child_pid is not None:
+            try:
+                CommandRunnerTests._kill_pid(child_pid)
+            except ProcessLookupError:
+                pass
+
+        parent_gone = parent is None or CommandRunnerTests._wait_process_exit(parent, 3)
+        child_gone = child_pid is None or CommandRunnerTests._wait_not_alive(child_pid, 5)
+        readers_gone = CommandRunnerTests._wait_command_readers(2)
+        test.assertTrue(parent_gone, "exact launched parent survived fixture cleanup")
+        test.assertTrue(child_gone, "exact observed descendant survived fixture cleanup")
+        test.assertTrue(readers_gone, "command reader threads did not settle")
+        with self._lock:
+            started = self.started_monotonic
+            ready = self.phase_observed_monotonic
+            cancelled = self.cancellation_monotonic
+            completed = self.completed_monotonic
+            calls = self.native_termination_calls
+            observation = self.parent_observation
+        return {
+            "phase": self.phase,
+            "mode": "cancellation" if self.cancel_when_ready else "timeout",
+            "parent_pid": None if parent is None else parent.pid,
+            "child_pid": child_pid,
+            "startup_seconds": None
+            if started is None or ready is None
+            else round(ready - started, 6),
+            "cancellation_response_seconds": None
+            if cancelled is None or completed is None
+            else round(completed - cancelled, 6),
+            "overall_seconds": None
+            if started is None or completed is None
+            else round(completed - started, 6),
+            "cancellation_observed": cancelled is not None,
+            "native_termination_calls": calls,
+            "parent_process_group": None
+            if observation is None
+            else observation.posix_process_group,
+            "parent_session": self.parent_session,
+            "child_process_group": self.child_process_group,
+            "child_session": self.child_session,
+            "parent_gone": parent_gone,
+            "child_gone": child_gone,
+            "reader_threads_settled": readers_gone,
+            "watchdog_intervened": self.watchdog_intervened,
+        }
+
+
+class ObservedNativeTerminator:
+    def __init__(self, fixture: ObservedFixtureCancellation) -> None:
+        self.fixture = fixture
+        self.native = NativeProcessTreeTerminator()
+
+    def observe(self, process: subprocess.Popen[bytes]) -> ProcessTreeObservation:
+        observation = self.native.observe(process)
+        self.fixture.register_parent(process, observation)
+        return observation
+
+    def terminate(
+        self,
+        process: subprocess.Popen[bytes],
+        observation: ProcessTreeObservation,
+    ) -> bool:
+        self.fixture.note_native_termination()
+        return self.native.terminate(process, observation)
+
+
 class ParentOnlyUnknownTerminator:
     def observe(self, process: subprocess.Popen[bytes]) -> ProcessTreeObservation:
         return ProcessTreeObservation(process.pid)
@@ -483,7 +748,12 @@ class CommandRunnerTests(unittest.TestCase):
         self.assert_schema(evidence)
 
     def test_inherited_pipe_descendant_cannot_block_timeout_or_cancellation_return(self) -> None:
-        child_code = "import time; time.sleep(10)"
+        child_code = (
+            "import os,pathlib,time; "
+            "os.fstat(1); os.fstat(2); "
+            "pathlib.Path(os.environ['READY_FILE']).write_text(str(os.getpid())); "
+            "time.sleep(10)"
+        )
         parent_code = (
             "import os,pathlib,subprocess,sys; "
             "p=subprocess.Popen([sys.executable,'-c',sys.argv[1]]); "
@@ -492,35 +762,47 @@ class CommandRunnerTests(unittest.TestCase):
         for mode in ("timeout", "cancellation"):
             with self.subTest(mode=mode):
                 pid_file = self.worktree / f"inherited-{mode}.pid"
+                ready_file = self.worktree / f"inherited-{mode}.ready"
                 definition = self.definition(
                     (self.python, "-c", parent_code, child_code),
                     timeout=1 if mode == "timeout" else 10,
-                    environment=("PID_FILE",),
+                    environment=("PID_FILE", "READY_FILE"),
                 )
-                event = threading.Event()
-                timer = None
-                runner = self.runner()
-                if mode == "cancellation":
-                    timer = threading.Timer(0.25, event.set)
-                    timer.start()
-                    runner = self.runner(cancellation=EventCancellation(event))
-                started = time.monotonic()
+                fixture = ObservedFixtureCancellation(
+                    pid_file=pid_file,
+                    ready_file=ready_file,
+                    phase="inherited_after_parent_exit",
+                    cancel_when_ready=mode == "cancellation",
+                )
+                runner = self.runner(
+                    cancellation=fixture,
+                    tree_terminator=ObservedNativeTerminator(fixture),
+                )
                 try:
-                    evidence = runner.execute(
+                    evidence, elapsed, completed = self._execute_with_watchdog(
+                        runner,
                         self.request(
                             definition,
                             environment=(
                                 EnvironmentBinding("PID_FILE", str(pid_file), False),
+                                EnvironmentBinding("READY_FILE", str(ready_file), False),
                             ),
-                        )
+                        ),
+                        fixture,
+                        overall_seconds=6,
                     )
-                    elapsed = time.monotonic() - started
-                    child_pid = int(pid_file.read_text(encoding="utf-8"))
+                    fixture.assert_ready(self)
+                    child_pid = fixture.child_pid
+                    self.assertIsNotNone(child_pid)
+                    assert child_pid is not None
                     child_alive = self._is_alive(child_pid)
                     self.assertGreaterEqual(
                         elapsed, 0.75 if mode == "timeout" else 0.15
                     )
                     self.assertLess(elapsed, 4.0)
+                    if mode == "cancellation":
+                        assert fixture.cancellation_monotonic is not None
+                        self.assertLess(completed - fixture.cancellation_monotonic, 3.0)
                     self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
                     self.assertIsNone(evidence.exit_code)
                     self.assertEqual(
@@ -536,15 +818,15 @@ class CommandRunnerTests(unittest.TestCase):
                         self.assertFalse(child_alive)
                     self.assert_schema(evidence)
                 finally:
-                    if timer is not None:
-                        timer.cancel()
-                    if pid_file.exists():
-                        child_pid = int(pid_file.read_text(encoding="utf-8"))
-                        self._kill_pid(child_pid)
-                        self.assertTrue(self._wait_not_alive(child_pid, 5))
+                    cleanup = fixture.cleanup(self)
+                    print("TASK-006-FIXTURE " + json.dumps(cleanup, sort_keys=True))
 
     def test_detached_descendant_timeout_and_cancellation_never_overclaim_cleanup(self) -> None:
-        child_code = "import time; time.sleep(30)"
+        child_code = (
+            "import os,pathlib,time; "
+            "pathlib.Path(os.environ['READY_FILE']).write_text(str(os.getpid())); "
+            "time.sleep(10)"
+        )
         parent_code = (
             "import os,pathlib,subprocess,sys,time; "
             "flags=(subprocess.CREATE_NEW_PROCESS_GROUP|subprocess.DETACHED_PROCESS) "
@@ -558,32 +840,44 @@ class CommandRunnerTests(unittest.TestCase):
         for mode in ("timeout", "cancellation"):
             with self.subTest(mode=mode):
                 pid_file = self.worktree / f"detached-{mode}.pid"
+                ready_file = self.worktree / f"detached-{mode}.ready"
                 definition = self.definition(
                     (self.python, "-c", parent_code, child_code),
                     timeout=1 if mode == "timeout" else 10,
-                    environment=("PID_FILE",),
+                    environment=("PID_FILE", "READY_FILE"),
                 )
-                event = threading.Event()
-                timer = None
-                runner = self.runner()
-                if mode == "cancellation":
-                    timer = threading.Timer(0.25, event.set)
-                    timer.start()
-                    runner = self.runner(cancellation=EventCancellation(event))
-                started = time.monotonic()
+                fixture = ObservedFixtureCancellation(
+                    pid_file=pid_file,
+                    ready_file=ready_file,
+                    phase="detached_while_parent_live",
+                    cancel_when_ready=mode == "cancellation",
+                )
+                runner = self.runner(
+                    cancellation=fixture,
+                    tree_terminator=ObservedNativeTerminator(fixture),
+                )
                 try:
-                    evidence = runner.execute(
+                    evidence, elapsed, completed = self._execute_with_watchdog(
+                        runner,
                         self.request(
                             definition,
                             environment=(
                                 EnvironmentBinding("PID_FILE", str(pid_file), False),
+                                EnvironmentBinding("READY_FILE", str(ready_file), False),
                             ),
-                        )
+                        ),
+                        fixture,
+                        overall_seconds=6,
                     )
-                    elapsed = time.monotonic() - started
-                    child_pid = int(pid_file.read_text(encoding="utf-8"))
+                    fixture.assert_ready(self)
+                    child_pid = fixture.child_pid
+                    self.assertIsNotNone(child_pid)
+                    assert child_pid is not None
                     child_alive = self._is_alive(child_pid)
                     self.assertLess(elapsed, 4.0)
+                    if mode == "cancellation":
+                        assert fixture.cancellation_monotonic is not None
+                        self.assertLess(completed - fixture.cancellation_monotonic, 3.0)
                     if os.name == "nt":
                         expected = (
                             CommandStatus.TIMED_OUT
@@ -600,12 +894,8 @@ class CommandRunnerTests(unittest.TestCase):
                         self.assertTrue(child_alive)
                     self.assert_schema(evidence)
                 finally:
-                    if timer is not None:
-                        timer.cancel()
-                    if pid_file.exists():
-                        child_pid = int(pid_file.read_text(encoding="utf-8"))
-                        self._kill_pid(child_pid)
-                        self.assertTrue(self._wait_not_alive(child_pid, 5))
+                    cleanup = fixture.cleanup(self)
+                    print("TASK-006-FIXTURE " + json.dumps(cleanup, sort_keys=True))
 
     def test_timeout_terminates_actual_process_tree(self) -> None:
         pid_file = self.worktree / "child.pid"
@@ -747,6 +1037,51 @@ class CommandRunnerTests(unittest.TestCase):
         self.assertFalse(terminator.terminate(owned, owned_observation))
         self.assertIsNotNone(owned.poll())
 
+    def _execute_with_watchdog(
+        self,
+        runner: LocalCommandRunner,
+        request: CommandRequest,
+        fixture: ObservedFixtureCancellation,
+        *,
+        overall_seconds: float,
+    ) -> tuple[object, float, float]:
+        result: dict[str, object] = {}
+        done = threading.Event()
+
+        def execute() -> None:
+            try:
+                result["evidence"] = runner.execute(request)
+            except BaseException as error:
+                result["error"] = error
+            finally:
+                result["completed"] = time.monotonic()
+                done.set()
+
+        started = time.monotonic()
+        fixture.mark_started(started)
+        thread = threading.Thread(
+            target=execute,
+            name="task006-fixture-execute",
+            daemon=True,
+        )
+        thread.start()
+        if not done.wait(overall_seconds):
+            fixture.watchdog_intervened = True
+            # Exact fixture teardown is allowed only on this failure path. The
+            # unconditional failure below prevents it from manufacturing a pass.
+            fixture.cleanup(self)
+            thread.join(3)
+            self.fail(f"command execution exceeded {overall_seconds:.1f}s overall bound")
+        thread.join(0.1)
+        self.assertFalse(thread.is_alive(), "test-owned execution thread did not settle")
+        if "error" in result:
+            raise result["error"]  # type: ignore[misc]
+        completed = result["completed"]
+        evidence = result["evidence"]
+        assert isinstance(completed, float)
+        fixture.completed_monotonic = completed
+        return evidence, completed - started, completed
+
     @staticmethod
     def _restore_environment(name: str, value: str | None) -> None:
         if value is None:
@@ -762,6 +1097,33 @@ class CommandRunnerTests(unittest.TestCase):
                 return True
             time.sleep(0.05)
         return not CommandRunnerTests._is_alive(pid)
+
+    @staticmethod
+    def _wait_process_exit(
+        process: subprocess.Popen[bytes], timeout: float
+    ) -> bool:
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            return False
+        return True
+
+    @staticmethod
+    def _wait_command_readers(timeout: float) -> bool:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if not [
+                thread
+                for thread in threading.enumerate()
+                if thread.name.startswith("command-")
+            ]:
+                return True
+            time.sleep(0.02)
+        return not [
+            thread
+            for thread in threading.enumerate()
+            if thread.name.startswith("command-")
+        ]
 
     @staticmethod
     def _is_alive(pid: int) -> bool:

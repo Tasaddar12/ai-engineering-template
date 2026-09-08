@@ -1,46 +1,41 @@
-# PLAN-001 / TASK-006 attempt a1 implementation handoff
+# PLAN-001 / TASK-006 attempt a2 post-recovery implementation handoff
 
 ## Candidate identity and scope
 
 | Field | Value |
 | --- | --- |
-| Attempt | `TASK-006-a1` |
-| Branch | `ai/PLAN-001/TASK-006/a1` |
-| Logical worktree | `TASK-006-a1` |
-| Dispatch/base commit | `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f` |
-| Linux-correction base | `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` |
-| Failed R1 candidate | `64a48f6bde98f5a09db25ca8ae3e8fd3798ba4d1` |
-| R1 evidence merge | `3bddd68` merged coordinator ROOT commit `214e44d07cbfbd937a86ef74dbc4969792fbf0d6` before repair |
+| Attempt | `TASK-006-a2` |
+| Branch | `ai/PLAN-001/TASK-006/a2` |
+| Logical worktree | `TASK-006-a2` |
+| Fresh dispatch/base commit | `a0c6b0c2f8691e1280c1d1272c8124d6a98edaeb` |
+| Authorized unaccepted salvage | Original commits `c3c2ba21c6441abde52f6e340b29d0bf65910f8e`, `86bc27af026d8b7b00303fa6d62b12218e0947b8`, `530cd085166ab51e2814486f4967ab52203375c2`, applied oldest first as `60953e6`, `1403be6`, `e58bb0c` |
+| Retained failed a1 | Clean `ce4c8edb86b02268a856a5f870932ade0e7e9b91`; c1 R1 failed, c2 R1 passed, c2 R2 failed |
 | Candidate commit | The Git commit containing this handoff; its exact OID is reported after commit because a commit cannot embed its own object ID. |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
 | Accepted prerequisites | TASK-002 candidate `460ab567d01912167557f2f671ed07c63f0a31e7`; TASK-004 candidate `e3c1177f993ee74815639a83ef3333faa4ba3957`; TASK-038 candidate `6f2b12c3283ed7d6e3d4876020fe690c6e0061a3`, all integrated in the dispatch base |
 
-Verified candidate paths are limited to TASK-006 ownership:
+Verified base-to-candidate paths are limited to TASK-006 ownership:
 
 - `src/commands.py`
 - `tests/unit/commands/test_commands.py`
 - `.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md`
 
-No port, schema, configuration, package, Git/state/validator service, shared metadata, task record,
-graph, project state, or other task-owned source changed.
+After salvage, this repair changes only the owned test and this handoff. `src/commands.py` retains
+Git blob `39828108eb7d198d81d810c8fd9e136e3f64f8f0` and raw SHA-256
+`700079bb47853a1d4cdebaa89bafcacf03885a81f9ef57687ec7203338ec29d0`. It is the only production
+path that differs from the fresh base. No port, schema, configuration, package,
+Git/state/validator service, shared metadata, task record, graph, project state, or other
+task-owned source changed.
 
-The coordinator ran Linux preflight on the first clean candidate before independent R1. The initial
-system-Python run could not import the declared `referencing` dependency. After the coordinator
-created a Linux virtual environment with the declared dependency, the 18-test suite found one failure
-and one error: POSIX cleanup inferred tree quiescence from an exited parent without prior group
-ownership, and a real UTC clock adjustment made the finish sample precede the start sample. The
-assessment and raw outputs are retained in coordinator ROOT commit
-`59f3afcfe4805138fccb140efa5bb96b87034605`. This bounded correction does not consume or fabricate an
-independent review cycle.
-
-Independent review `TASK-006-a1-c1-R1` then failed this first attempt with two bounded findings. An
-inherited descendant could keep the parent's output handles open after the parent exited, and the
-main thread could block while closing a buffered reader beyond the command deadline. POSIX group
-absence also did not prove cleanup of a descendant that created a new session. The coordinator
-retained the immutable report, reproductions, and platform outputs in ROOT commit
-`214e44d07cbfbd937a86ef74dbc4969792fbf0d6`; that commit was merged into this task branch before this
-repair. Fresh R1 and R2 reviews are required for the repaired candidate.
+This is the single bounded repair authorized by
+`evidence/recovery/TASK-006-coordinator-decision.md` after the independent recovery assessment.
+The lineage is cumulative: a1 c1 R1 failed on the inherited-pipe and escaped-descendant runtime
+defects; the repaired a1 c2 candidate passed R1, then failed R2 only because two tests cancelled at
+a fixed 250 ms before Linux Python 3.11 had published descendant readiness. Both failed cycles and
+all reports remain immutable. This a2 candidate is cumulative c3 and requires a fresh independent
+Astra/xhigh R1 followed by a distinct fresh R2 on the identical commit. Any further validation or
+review failure returns immediately to recovery; this allowance supplies no second repair.
 
 ## Behavior and acceptance mapping
 
@@ -99,6 +94,20 @@ repair. Fresh R1 and R2 reviews are required for the repaired candidate.
   safely redacted prefix, marks output truncated when EOF was not observed, and returns explicit
   `unknown` if stream completion or cleanup cannot be confirmed. No main-thread pipe close can wait
   on a reader lock.
+- The a2 regression fixtures replace their two fixed cancellation timers with a nonblocking
+  cancellation signal that observes process state under a three-second monotonic startup deadline.
+  The inherited-stream fixture records the exact descendant, verifies its stdout/stderr descriptors
+  are open, verifies the launched parent has exited, and on Linux verifies the child remains in the
+  captured parent group. The detached fixture verifies the exact descendant is live while its parent
+  remains live and, on Linux, is in a different group and session. PID publication alone cannot make
+  either phase ready. Cancellation response is bounded to three seconds and the whole execution to
+  six seconds; timeout subcases still use a real one-second command deadline.
+- A test-owned execution watchdog performs exact cleanup only after the six-second overall bound and
+  then fails unconditionally, so external termination cannot manufacture a pass. Each fixture owns
+  the launched `Popen` identity as soon as the native observer sees it and the descendant PID as soon
+  as it is readable. Its unconditional `finally` settles those identities, confirms both gone,
+  confirms command reader threads settled, and emits the observed startup/response/group/session and
+  cleanup facts. Descendant sleeps remain finite as a fallback and never substitute for confirmation.
 - The terminator captures the root PID and, on POSIX, an owned process group immediately after
   launch, while that identity is observable. The retained group can still be signaled after the
   parent exits, which releases inherited pipes for ordinary descendants. Group disappearance is
@@ -142,6 +151,51 @@ records process facts only. TASK-034 remains responsible for runtime constructio
 state, validation, provider, credential, publication, or remote effect is implemented here.
 
 ## Actual validation evidence
+
+### Current a2 post-recovery validation
+
+All four exact task suites ran from
+`D:/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a2` with the named project-local
+interpreter. Linux used `wsl.exe --distribution Ubuntu-24.04 --cd <exact-candidate> --exec
+<interpreter>` rather than WSL's default shell mode. Each origin probe reported `commands`,
+`config`, `contracts`, `domain_values`, and `local_ports` beneath this exact candidate's `src`.
+
+| Environment | Interpreter | Exact `-m unittest discover -s tests/unit/commands/ -p test_*.py` result |
+| --- | --- | --- |
+| Windows | Python 3.12.14 | Exit 0; 22 discovered, 21 non-skipped, one established POSIX-only skip; `OK`; 7.981 s |
+| Windows | Python 3.11.16 | Exit 0; 22 discovered, 21 non-skipped, one established POSIX-only skip; `OK`; 7.963 s |
+| Linux / Ubuntu-24.04 WSL | Python 3.12.3 | Exit 0; 22 discovered, 21 non-skipped, one established Windows-only skip; `OK`; 6.578 s |
+| Linux / Ubuntu-24.04 WSL | Python 3.11.16 | Exit 0; 22 discovered, 21 non-skipped, one established Windows-only skip; `OK`; 10.746 s |
+
+The exact suite output emitted structured facts for both timeout and cancellation modes of both
+fixtures. Every environment reported one native termination call per subcase, both exact identities
+gone in `finally`, command readers settled, and `watchdog_intervened=false`. The bounds and decisive
+observations were:
+
+| Environment | Maximum observed startup | Maximum cancellation response | Maximum overall | Linux group/session proof |
+| --- | ---: | ---: | ---: | --- |
+| Windows 3.12 | 0.125 s | 0.266 s | 1.297 s | Not applicable |
+| Windows 3.11 | 0.110 s | 0.266 s | 1.281 s | Not applicable |
+| Linux 3.12 | 0.103 s | 0.057 s | 1.067 s | Inherited child retained parent group/session; detached child used its own group/session |
+| Linux 3.11 | 0.955 s | 0.062 s | 1.067 s | Inherited child retained parent group/session; detached child used its own group/session |
+
+The previously failing two-test Linux 3.11 focus also passed independently: two tests, four real
+subcases, no skip or watchdog; maximum readiness was 0.855 seconds. A Windows 3.12 focused run passed
+the same two tests and four subcases. These focused checks preceded the exact four-environment runs;
+no test code changed afterward.
+
+| Final check | Observed result |
+| --- | --- |
+| `src/validate_foundation.py` with Windows Python 3.12.14 | Exit 0; 27 schemas, 171 artifacts, 39 tasks, 280 unordered pairs, four archive manifests, 358 local links |
+| `-B -m py_compile src/commands.py tests/unit/commands/test_commands.py` | Exit 0 |
+| `git diff --check` | Exit 0 |
+| Source preservation | `src/commands.py` Git blob `39828108eb7d198d81d810c8fd9e136e3f64f8f0`; raw SHA-256 `700079bb47853a1d4cdebaa89bafcacf03885a81f9ef57687ec7203338ec29d0` |
+| Fresh-base production diff | Only `src/commands.py`; every other production path matches `a0c6b0c2f8691e1280c1d1272c8124d6a98edaeb` |
+
+The earlier c2 R2 Linux 3.11 failure and readiness diagnostic remain preserved and are not relabeled
+as passing evidence.
+
+### Retained a1 implementation validation history
 
 Working directory:
 `D:/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1`. Interpreter:
@@ -187,8 +241,8 @@ aggregate, foundation, provider, network, remote, or unrelated task suite was ru
   not provide a confirmable Windows tree boundary. Ubuntu-24.04 under WSL directly executed the
   declared Linux interpreter and observed POSIX owned/unowned group handling, best-effort timeout
   cleanup, a live escaped-session descendant with explicit unknown evidence, direct execution,
-  output, redaction, and persistence. WSL is local Linux preflight rather than final independent
-  platform CI.
+  output, redaction, and persistence. The four current a2 WSL runs are local Linux validation rather
+  than final independent platform CI.
 - `FileCommandLogStore` needs same-filesystem hard-link support to publish a new immutable path
   without an overwrite race. If the host filesystem lacks that capability, execution evidence is
   returned as `unknown` rather than claiming durable success.
@@ -203,16 +257,15 @@ aggregate, foundation, provider, network, remote, or unrelated task suite was ru
   in supported direct encodings are redacted; transformed, encrypted, hashed, or application-derived
   representations cannot be inferred safely by a generic command runner.
 - There are no skipped required checks, scope deviations, frozen port or DTO changes, dependency
-  changes, credentials, external effects, or concrete prerequisite gaps. The host-local termination
-  collaborator now carries an immutable launch observation; it adds no portable field. Fresh
-  Astra/xhigh R1 should reproduce inherited-pipe and escaped-session boundaries first, then probe
-  secret/read-boundary handling, combined byte budgeting, cwd symlink/escape refusal, explicit
-  permission/environment inputs, Windows batch behavior, durable identity reuse, and actual child
-  cleanup. Fresh R2 must bind the same exact repaired candidate.
+  changes, credentials, external effects, or concrete prerequisite gaps. The repair changes no
+  production behavior. Fresh cumulative c3 Astra/xhigh R1 should verify the exact source identity,
+  independently exercise the two observed fixture phases and failure-only watchdog property, then
+  retain the earlier argv, redaction, byte-budget, cwd, permission/environment, persistence, status,
+  EOF/truncation and cleanup coverage. Distinct R2 must bind the same exact candidate.
 
-Implementation provenance: the coordinator dispatched this attempt with the standing native OpenAI
-`gpt-5.6-sol` / `xhigh` selection. This is the coordinator-observed tool configuration only. No
-provider-returned effective model ID, effort value, provider invocation UUID, production provider
-adapter, credential, or automatic provider configuration was exposed or claimed. The accepted
-configuration currently records gate profiles as `configured: false`, independently of this manual
-native invocation.
+Implementation provenance: the coordinator dispatched `/root/implement_006_a2` as native invocation
+70, call `call_hJEXdaCdsDkchBmgxKhiUZgD`, with the standing OpenAI `gpt-5.6-sol` / `xhigh`
+selection. This records coordinator-observed submission configuration only. No provider-returned
+effective model ID, effort value, provider invocation UUID, production provider adapter, credential,
+or automatic provider configuration was exposed or claimed. The accepted configuration records gate
+profiles as `configured: false`, independently of this manual native invocation.
