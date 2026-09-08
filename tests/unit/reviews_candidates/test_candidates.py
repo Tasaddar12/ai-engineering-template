@@ -22,7 +22,11 @@ from candidates import (  # noqa: E402
     verify_candidate,
 )
 from contracts import ContractRegistry  # noqa: E402
-from domain_values import DomainException, ErrorCategory  # noqa: E402
+from domain_values import (  # noqa: E402
+    DomainException,
+    ErrorCategory,
+    FrozenJsonObject,
+)
 
 
 OID40_A = "a" * 40
@@ -360,6 +364,45 @@ class CandidateTests(unittest.TestCase):
         with self.assertRaises(DomainException) as caught:
             candidate_from_wire(wire, self.registry)
         self.assertEqual(caught.exception.category, ErrorCategory.VALIDATION_FAILED)
+
+    def test_immutable_task_and_plan_wires_parse_and_reverify(self) -> None:
+        for task_id in ("TASK-019", None):
+            with self.subTest(task_id=task_id):
+                current = request(
+                    candidate_id=(
+                        "CANDIDATE-TASK-019-immutable"
+                        if task_id is not None
+                        else "CANDIDATE-PLAN-001-immutable"
+                    ),
+                    task_id=task_id,
+                )
+                candidate = build_candidate(current, self.registry)
+                frozen = FrozenJsonObject(candidate.to_wire())
+
+                self.registry.validate(frozen)
+                self.assertEqual(candidate_from_wire(frozen, self.registry), candidate)
+                self.assertEqual(verify_candidate(frozen, current, self.registry), candidate)
+
+                with self.assertRaises(DomainException) as caught:
+                    verify_candidate(
+                        frozen,
+                        replace(current, diff=b"changed current diff"),
+                        self.registry,
+                    )
+                self.assertEqual(
+                    caught.exception.category,
+                    ErrorCategory.STATE_CONFLICT,
+                )
+
+    def test_immutable_wire_rejects_nested_tampering(self) -> None:
+        candidate = build_candidate(request(), self.registry)
+        wire = candidate.to_wire()
+        wire["context_refs"][0]["sha256"] = "f" * 64
+        frozen = FrozenJsonObject(wire)
+
+        self.registry.validate(frozen)
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            candidate_from_wire(frozen, self.registry)
 
     def test_rejects_tampered_fingerprint_and_has_no_self_reference(self) -> None:
         candidate = build_candidate(request(), self.registry)

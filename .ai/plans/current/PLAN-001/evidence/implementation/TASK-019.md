@@ -8,12 +8,15 @@
 | Branch | `ai/PLAN-001/TASK-019/a1` |
 | Logical worktree | `TASK-019-a1` |
 | Exact dispatch base | `b4fe29bf40bd017d638072ad3920dca8b240a3a3` |
+| Current coordinator/review base | `ed21f7919d589b99a19cdaedafc357b25f5e9e8b` |
+| Failed candidate / c1 correction start | `c56a72b7f1cc413944ac48c5f60e088bd2206677` |
 | Candidate | The clean commit containing this handoff; its object ID is observed and reported after commit because a commit cannot contain its own ID. |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
 | Accepted dependencies | `TASK-001`, `TASK-004`, both present in the dispatch base |
 
-The changed paths are exactly the task-owned module, leaf test directory, and this handoff:
+Against the current coordinator/review base, the changed paths are exactly the task-owned module,
+leaf test directory, and this handoff:
 
 - `src/candidates.py`
 - `tests/unit/reviews_candidates/test_candidates.py`
@@ -26,6 +29,13 @@ This handoff also records a bounded correction made before the first independent
 original owner-final head was `f9e32b0ce8c8950dcb541356cae23a2a7202adc5`; this correction remains
 attempt `TASK-019-a1` and is not a new attempt or a response to a formal review verdict.
 The subsequent clean-source regression repair also remains in this same pre-review correction.
+
+The first formal review then failed candidate `c56a72b7f1cc413944ac48c5f60e088bd2206677`
+with the single preserved finding `R1-TASK-019-001`: `ContractRegistry` accepted a
+`FrozenJsonObject` candidate, but candidate fingerprinting passed its nested immutable mappings and
+tuples directly to `json.dumps`. This c1 work is the one bounded correction of that finding. It keeps
+the same attempt and single review stage; the failed report remains unchanged, and the corrected
+commit requires focused independent verification rather than a new R2 stage.
 
 ## Behavior and acceptance mapping
 
@@ -55,8 +65,10 @@ The subsequent clean-source regression repair also remains in this same pre-revi
 
 ### TASK-019-AC2
 
-- `candidate_from_wire` validates the closed v1 shape, freezes its arrays and references, and
-  recomputes the unsigned fingerprint. Unknown fields and stale/tampered fingerprints fail.
+- `candidate_from_wire` validates the closed v1 shape, recursively detaches accepted immutable
+  `Mapping`/tuple JSON into encoder-native dictionaries/lists for canonical fingerprinting, then
+  freezes its arrays and references. Field names, array order, compact sorted-key UTF-8 encoding,
+  and resulting v1 hashes are unchanged. Unknown fields and stale/tampered fingerprints fail.
 - `verify_candidate` rebuilds from a fresh `CandidateRequest`, validates both artifacts, and raises
   a non-retryable `DomainException` with `state_conflict` when any material field differs. Tests
   independently change base, head, diff, graph revision, each required context role, supplemental
@@ -153,6 +165,26 @@ with 14 tests and `OK` in 0.313 seconds. The unchanged Windows/Linux 3.11 source
 repeated after this test-only self-containment repair, per the coordinator's instruction to avoid an
 unchanged full matrix. No unrelated broad suite was run.
 
+The formal R1 correction produced these final observed results from the same exact worktree, starting
+at clean reviewed head `c56a72b7f1cc413944ac48c5f60e088bd2206677`:
+
+| Command / origin | Observed c1 correction result |
+| --- | --- |
+| Windows Python 3.12 coordinator venv: `-m unittest discover -s tests/unit/reviews_candidates/ -p test_*.py` | Exit 0; 16 tests; `OK`; initial 0.328 seconds and final pre-commit rerun 0.333 seconds. This is the exact declared suite. |
+| Windows Python 3.11.16 minimum-version venv: same exact leaf command | Exit 0; 16 tests; `OK`; 0.295 seconds. |
+| Windows Python 3.12 coordinator venv: `-m py_compile src/candidates.py tests/unit/reviews_candidates/test_candidates.py` | Exit 0. |
+| Direct candidate-origin check in the Python 3.12 coordinator venv | Exit 0; `candidates`, `contracts`, and `domain_values` all resolved from this exact worktree's `src` directory. |
+| `git diff --check` | Exit 0 after the source and test correction; repeated after this handoff update and before commit. |
+
+The two new owned regressions use the accepted TASK-001 `FrozenJsonObject` directly. They parse and
+reverify unchanged immutable task and plan candidates, reject changed current inputs with
+`state_conflict`, and reject a valid-shape nested digest tamper through fingerprint mismatch. The
+existing ordinary-dictionary parse, canonical-hash, stale-input, schema, and mutation defenses remain
+in the same passing suite. Linux, clean-export, foundation, and unrelated broad suites were not
+repeated: this correction changes one pure container-detachment path and its owned tests, while the
+prior clean export and cross-runtime checks already cover the unchanged three-module/27-schema
+closure.
+
 ## Pre-handoff self-check
 
 The full owned base-to-candidate source/test behavior, correction diff, frozen candidate schema,
@@ -165,6 +197,13 @@ on ambient Git history. The final test removes that observer and its subprocess/
 uses bounded tracked data instead. Ordering, raw hashes, alias rejection, defensive copying,
 task/plan identities, both Git OID widths, changed-input invalidation, historical wire compatibility,
 and clean-source execution remain covered. No further in-scope defect was found.
+
+For the formal R1 correction, the final source/test/handoff diff was reviewed again for exact v1
+field preservation, nested array order, ordinary dictionary compatibility, immutable input
+detachment, tamper detection, stale current-input detection, scope, generated files, and undeclared
+imports. The local conversion mirrors the accepted TASK-004 registry boundary without importing its
+private helper or adding a downstream dependency. No additional in-scope defect, contract mismatch,
+scope blocker, generated artifact, secret, or debug output was found.
 
 ## Assumptions, limitations, and reviewer guidance
 
@@ -180,12 +219,14 @@ and clean-source execution remain covered. No further in-scope defect was found.
 - There are no prerequisite gaps, scope deviations, skipped required checks, new dependencies,
   shared-interface changes, or structural discoveries.
 
-Under the user's current single-stage schedule, the coordinator should obtain one fresh independent
-Astra/xhigh task review on the exact corrected candidate. It should recompute the canonical unsigned
-JSON; exercise the dependency-free/no-ADR and missing-applicable-material cases; mutate every material
-category; probe full-width and malformed OIDs; parse a plan candidate with null `task_id`; and confirm
-the unchanged v1 schema, accepted dependency interfaces, alias/mutation defenses, pure-module boundary,
-and downstream DTO compatibility. Final combined reviews remain plan-integration work.
+Under the user's current single-stage schedule, the coordinator should obtain focused independent
+Astra/xhigh verification on the exact corrected candidate within the existing task-review stage. It
+should recompute the canonical unsigned JSON; exercise the dependency-free/no-ADR and
+missing-applicable-material cases; mutate every material category; probe full-width and malformed
+OIDs; parse and reverify immutable task and plan mappings; tamper a nested immutable reference; and
+confirm the unchanged v1 schema, accepted dependency interfaces, alias/mutation defenses,
+pure-module boundary, and downstream DTO compatibility. There is no R2; final combined reviews remain
+plan-integration work.
 
 Implementation provenance: the coordinator dispatched this native Codex invocation with the
 standing OpenAI `gpt-5.6-sol` / `xhigh` selection at capability rank 3. The coordinator-observed
@@ -198,3 +239,8 @@ The clean-source follow-up inherited that same Sol/xhigh rank-3 configured conte
 coordinator-observed native follow-up ID is `call_a4PbUQKFoWQSlfDfUSymhW2f`, with conservative charge
 `104/300`; it is not a fresh context, review stage, or task attempt. No separate provider-effective
 identity was supplied.
+
+The bounded formal-review correction used the standing native Codex Sol/xhigh rank-3 selection. The
+coordinator-observed invocation ID is `call_cH2i1J3u6HgoFD2pSwUP0t9w`, with conservative charge
+`107/300`; separate provider-effective model and effort identity remained unavailable. This is a
+continuation of `TASK-019-a1`, not a new attempt or review stage.

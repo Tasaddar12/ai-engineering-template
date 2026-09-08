@@ -85,10 +85,20 @@ def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def _plain_json(value: object) -> object:
+    """Detach immutable Mapping/tuple JSON into encoder-native containers."""
+
+    if isinstance(value, Mapping):
+        return {key: _plain_json(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain_json(item) for item in value]
+    return value
+
+
 def _canonical_json(value: Mapping[str, object]) -> bytes:
     try:
         text = json.dumps(
-            value,
+            _plain_json(value),
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
