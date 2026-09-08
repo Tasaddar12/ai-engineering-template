@@ -4,7 +4,7 @@
   "id": "TASK-006",
   "plan_id": "PLAN-001",
   "title": "Execute commands with durable evidence",
-  "status": "running",
+  "status": "accepted",
   "archived": false,
   "objective": "Execute commands with durable evidence. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -103,5 +103,5 @@
     "TASK-006-a3"
   ],
   "superseded_by": [],
-  "resume_state": "Continue the single frozen a3 assertion correction validation after diagnosed external import-probe setup error; no task suite had run. Preserve diagnostic and unchanged source/test hashes. Actual candidate validation/review failure still requires terminal pause, with no further source repair."
+  "resume_state": "Candidate b41b37ac6b15ecbdfb55ed26bdc086686f4e9416 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }
