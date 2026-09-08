@@ -67,18 +67,21 @@ def _ancestors(node: str, graph: dict[str, list[str]]) -> set[str]:
 
 
 def _path_parts(value: str) -> tuple[str, ...]:
-    # Case-insensitive ownership is conservative and portable to Windows.
-    return tuple(value.replace("\\", "/").casefold().split("/"))
+    return tuple(value.replace("\\", "/").split("/"))
 
 
 def _covers(parent: str, child: str) -> bool:
+    """Authorize exact-case path descendants consistently on every platform."""
     a, b = _path_parts(parent), _path_parts(child)
     return b[: len(a)] == a
 
 
 def _conflict(left: Record, right: Record) -> bool:
+    # Conflict detection is conservative on Windows; it never grants file authority.
     return bool(set(left["resources"]) & set(right["resources"])) or any(
-        _covers(a, b) or _covers(b, a) for a in left["scope"] for b in right["scope"]
+        _covers(a.casefold(), b.casefold()) or _covers(b.casefold(), a.casefold())
+        for a in left["scope"]
+        for b in right["scope"]
     )
 
 
@@ -476,7 +479,7 @@ def _commit(store: ArtifactStore, changes: list[Artifact], originals: list[Artif
     if len(destinations) != len(changes):
         raise FrameworkError("Duplicate artifact destination")
     paths = destinations | {a.path for a in originals}
-    previous: dict[Path, str | None] = {}
+    previous: dict[Path, bytes | None] = {}
     # Provider strings can include invalid Unicode or unserializable metadata.
     # Exercise the complete serialization boundary before the first disk write.
     for artifact in changes:
@@ -488,7 +491,7 @@ def _commit(store: ArtifactStore, changes: list[Artifact], originals: list[Artif
             raise FrameworkError(f"Artifact cannot be serialized: {artifact.id}") from exc
     for path in paths:
         safe_path(store.base, path.relative_to(store.base))
-        previous[path] = path.read_text(encoding="utf-8") if path.exists() else None
+        previous[path] = path.read_bytes() if path.exists() else None
     for artifact in changes:
         ArtifactStore._validate(artifact.metadata["kind"], artifact.metadata)
         if artifact.path.exists():
@@ -506,7 +509,9 @@ def _commit(store: ArtifactStore, changes: list[Artifact], originals: list[Artif
             if content is None:
                 path.unlink(missing_ok=True)
             else:
-                atomic_write(path, content)
+                # Strict UTF-8 round-trips BOM and mixed line endings. Unlike
+                # read_text, bytes.decode performs no universal-newline conversion.
+                atomic_write(path, content.decode("utf-8"))
         raise
 
 
@@ -543,6 +548,8 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
     them as stopped. Completed work is immutable. Semantic recovery and semantic
     redecomposition must happen in the agent before submission to this function.
     Omit features to use deterministic ownership batching of the revised tasks.
+    Existing feature-only prerequisites are preserved across all replacement
+    owners, even with explicit proposals; this schema does not remove old edges.
     """
     with StateStore(store.root).lock():
         plan, old_tasks, existing = _current(store, plan_id)
@@ -673,6 +680,15 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
             proposal["id"] = local_map[proposal["id"]]
             proposal["dependencies"] = [local_map[d] for d in proposal["dependencies"]]
         proposals = _records(fixed) + proposals
+        for proposal in proposals[: len(fixed)]:
+            # These references use old feature IDs; rebuild them through lineage
+            # below, including incoming edges of features that were replaced.
+            proposal["dependencies"] = []
+        if "features" in revision:
+            if not isinstance(revision["features"], list):
+                raise FrameworkError("Recovery features must be a list of proposals")
+            proposals = _records(revision["features"])
+            _require(validate_features(current, proposals))
         owners = {task: p["id"] for p in proposals for task in p["tasks"]}
         old_feature_targets = {
             f.id: {
@@ -682,31 +698,27 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
             }
             for f in existing
         }
-        for proposal in proposals[: len(fixed)]:
-            proposal["dependencies"] = sorted(
-                {
-                    target
-                    for dependency in proposal["dependencies"]
-                    for target in old_feature_targets.get(dependency, {dependency})
-                    if target != proposal["id"]
-                }
-            )
+        lookup = {p["id"]: p for p in proposals}
+        for old in existing:
+            for dependency in old.metadata["dependencies"]:
+                if dependency not in old_feature_targets:
+                    raise FrameworkError(f"Missing original feature prerequisite: {dependency}")
+                for target in old_feature_targets[old.id]:
+                    lookup[target]["dependencies"] = sorted(
+                        set(lookup[target]["dependencies"])
+                        | (old_feature_targets[dependency] - {target})
+                    )
         task_edges = _task_edges(current, proposals)
         for proposal in proposals:
             proposal["dependencies"] = sorted(
                 set(proposal["dependencies"]) | set(task_edges[proposal["id"]])
             )
         graph = {p["id"]: p["dependencies"] for p in proposals}
-        lookup = {p["id"]: p for p in proposals}
         for before, after in combinations(_order(graph), 2):
             if _conflict(lookup[before], lookup[after]) and before not in _ancestors(after, graph):
                 graph[after].append(before)
         for proposal in proposals:
             proposal["dependencies"] = sorted(graph[proposal["id"]])
-        if "features" in revision:
-            if not isinstance(revision["features"], list):
-                raise FrameworkError("Recovery features must be a list of proposals")
-            proposals = _records(revision["features"])
         result, changes, feature_originals = _prepare(
             store, plan, current, proposals, existing, revision["reason"], set(stopped)
         )

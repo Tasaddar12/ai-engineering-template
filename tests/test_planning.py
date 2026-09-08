@@ -376,11 +376,25 @@ def test_invalid_agent_features_and_missing_template_fail_before_mutation(tmp_pa
     assert snapshot(tmp_path) == before
 
 
-def test_synchronous_write_failure_restores_original_artifacts(tmp_path, monkeypatch):
+@pytest.mark.parametrize("line_endings", ["lf", "crlf", "mixed_bom"])
+def test_synchronous_write_failure_restores_original_artifacts(tmp_path, monkeypatch, line_endings):
     from ai_engineering import planning
 
     store, tasks = installed(tmp_path, [task(1)])
     persist_decomposition(store, "PLAN-001", decompose(tasks))
+    for path in tmp_path.rglob("*.md"):
+        original_bytes = path.read_bytes()
+        if line_endings == "crlf":
+            path.write_bytes(original_bytes.replace(b"\n", b"\r\n"))
+        elif line_endings == "mixed_bom":
+            lines = original_bytes.splitlines(keepends=True)
+            path.write_bytes(
+                b"\xef\xbb\xbf"
+                + b"".join(
+                    line.replace(b"\n", b"\r\n") if index % 2 else line
+                    for index, line in enumerate(lines)
+                )
+            )
     before = snapshot(tmp_path)
     original = planning.write_artifact
     count = 0
@@ -404,6 +418,168 @@ def test_synchronous_write_failure_restores_original_artifacts(tmp_path, monkeyp
             },
         )
     assert snapshot(tmp_path) == before
+
+
+def feature_owner(features, task_id):
+    return next(f for f in features if task_id in f.metadata["tasks"])
+
+
+@pytest.mark.parametrize(
+    "endpoint", ["consumer", "prerequisite", "split_consumer", "split_prerequisite", "merge"]
+)
+def test_recovery_preserves_feature_only_edges_across_replaced_endpoints(tmp_path, endpoint):
+    store, tasks = installed(tmp_path, [task(1, batch="data"), task(2, batch="api")])
+    proposals = decompose(tasks)
+    proposals[1]["dependencies"] = [proposals[0]["id"]]
+    persist_decomposition(store, "PLAN-001", proposals)
+    if endpoint == "merge":
+        replacements = {"TASK-001": ["TASK-003"], "TASK-002": ["TASK-003"]}
+        new_tasks = [task(3, batch="combined").metadata]
+    elif endpoint.endswith("consumer"):
+        replacements = {
+            "TASK-002": ["TASK-003", "TASK-004"] if endpoint.startswith("split") else ["TASK-003"]
+        }
+        new_tasks = [task(3, batch="service").metadata]
+        if endpoint.startswith("split"):
+            new_tasks.append(task(4, batch="endpoint").metadata)
+    else:
+        replacements = {
+            "TASK-001": ["TASK-003", "TASK-004"] if endpoint.startswith("split") else ["TASK-003"]
+        }
+        new_tasks = [task(3, batch="schema").metadata]
+        if endpoint.startswith("split"):
+            new_tasks.append(task(4, batch="migration").metadata)
+    result = apply_revision(
+        store,
+        "PLAN-001",
+        {
+            "reason": "Correct feature boundary",
+            "replacements": replacements,
+            "tasks": new_tasks,
+        },
+    )
+    for consumer in replacements.get("TASK-002", ["TASK-002"]):
+        consumer_feature = feature_owner(result, consumer)
+        for prerequisite in replacements.get("TASK-001", ["TASK-001"]):
+            prerequisite_feature = feature_owner(result, prerequisite)
+            if consumer_feature.id == prerequisite_feature.id:
+                assert consumer_feature.id not in consumer_feature.metadata["dependencies"]
+            else:
+                assert prerequisite_feature.id in consumer_feature.metadata["dependencies"]
+    plan = store.find("PLAN-001")
+    assert validate_features([store.find(t) for t in plan.metadata["tasks"]], result) == []
+    assert parallel_waves(result)
+
+
+@pytest.mark.parametrize("prerequisite_status", ["completed", "in-progress"])
+def test_feature_only_prerequisite_keeps_unaffected_completed_or_active_bytes(
+    tmp_path, prerequisite_status
+):
+    store, tasks = installed(tmp_path, [task(1, batch="data"), task(2, batch="api")])
+    proposals = decompose(tasks)
+    proposals[1]["dependencies"] = [proposals[0]["id"]]
+    original_features = persist_decomposition(store, "PLAN-001", proposals)
+    prerequisite_task = store.transition("TASK-001", prerequisite_status)
+    prerequisite_feature = store.transition(original_features[0].id, prerequisite_status)
+    before = {p: p.read_bytes() for p in [prerequisite_task.path, prerequisite_feature.path]}
+    result = apply_revision(
+        store,
+        "PLAN-001",
+        {
+            "reason": "Replace consumer",
+            "replacements": {"TASK-002": ["TASK-003"]},
+            "tasks": [task(3, batch="api").metadata],
+        },
+    )
+    assert all(path.read_bytes() == contents for path, contents in before.items())
+    assert prerequisite_feature.id in feature_owner(result, "TASK-003").metadata["dependencies"]
+
+
+def test_explicit_recovery_proposals_also_retain_feature_only_prerequisites(tmp_path):
+    store, tasks = installed(tmp_path, [task(1, batch="data"), task(2, batch="api")])
+    proposals = decompose(tasks)
+    proposals[1]["dependencies"] = [proposals[0]["id"]]
+    persist_decomposition(store, "PLAN-001", proposals)
+    replacement = task(3, batch="api")
+    result = apply_revision(
+        store,
+        "PLAN-001",
+        {
+            "reason": "Provider rebatching",
+            "replacements": {"TASK-002": ["TASK-003"]},
+            "tasks": [replacement.metadata],
+            "features": decompose([tasks[0], replacement]),
+        },
+    )
+    assert (
+        feature_owner(result, "TASK-001").id
+        in feature_owner(result, "TASK-003").metadata["dependencies"]
+    )
+
+
+def test_recovery_rejects_cycles_against_preserved_feature_only_edges(tmp_path):
+    store, tasks = installed(tmp_path, [task(1, batch="data"), task(2, batch="api")])
+    proposals = decompose(tasks)
+    proposals[1]["dependencies"] = [proposals[0]["id"]]
+    persist_decomposition(store, "PLAN-001", proposals)
+    before = snapshot(tmp_path)
+    with pytest.raises(FrameworkError, match="cycle"):
+        apply_revision(
+            store,
+            "PLAN-001",
+            {
+                "reason": "Contradictory reordering",
+                "replacements": {"TASK-001": ["TASK-003"], "TASK-002": ["TASK-004"]},
+                "tasks": [
+                    task(3, batch="data", deps=["TASK-004"]).metadata,
+                    task(4, batch="api").metadata,
+                ],
+            },
+        )
+    assert snapshot(tmp_path) == before
+
+
+def test_scope_authority_is_case_sensitive_while_conflict_detection_is_conservative(tmp_path):
+    tasks = [task(1, scope=["src/Approved/one.py"])]
+    feature = decompose(tasks)
+    feature[0]["scope"] = ["src/approved/one.py"]
+    assert any("scope expands" in issue for issue in validate_features(tasks, feature))
+    assert validate_features(tasks, decompose(tasks)) == []
+    different_case = decompose(
+        [
+            task(1, batch="upper", scope=["src/Approved"]),
+            task(2, batch="lower", scope=["src/approved/two.py"]),
+        ]
+    )
+    assert len(parallel_waves(different_case)) == 2
+    store, stored = installed(tmp_path, tasks)
+    plan = store.find("PLAN-001")
+    plan.metadata["scope"] = ["src/Approved"]
+    store.save(plan)
+    persist_decomposition(store, "PLAN-001", decompose(stored))
+    before = snapshot(tmp_path)
+    for scope in ["src/approved/two.py", "src/ApprovedSibling/two.py"]:
+        with pytest.raises(FrameworkError, match="expand"):
+            apply_revision(
+                store,
+                "PLAN-001",
+                {
+                    "reason": "Replace",
+                    "replacements": {"TASK-001": ["TASK-002"]},
+                    "tasks": [task(2, scope=[scope]).metadata],
+                },
+            )
+        assert snapshot(tmp_path) == before
+    result = apply_revision(
+        store,
+        "PLAN-001",
+        {
+            "reason": "Allowed descendant",
+            "replacements": {"TASK-001": ["TASK-002"]},
+            "tasks": [task(2, scope=["src/Approved/child/two.py"]).metadata],
+        },
+    )
+    assert feature_owner(result, "TASK-002").metadata["scope"] == ["src/Approved/child/two.py"]
 
 
 def test_invalid_provider_unicode_is_rejected_before_any_artifact_write(tmp_path):
