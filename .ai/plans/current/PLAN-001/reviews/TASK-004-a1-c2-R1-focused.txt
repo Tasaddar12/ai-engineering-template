@@ -1,0 +1,23 @@
+test_unknown_top_level_and_nested_fields_are_rejected (test_contracts.OfflineContractRegistryTests.test_unknown_top_level_and_nested_fields_are_rejected) ... ok
+test_returned_schema_is_detached_from_the_live_validator (test_contracts.OfflineContractRegistryTests.test_returned_schema_is_detached_from_the_live_validator) ... ok
+test_unsupported_versions_and_kinds_fail_with_typed_errors (test_contracts.OfflineContractRegistryTests.test_unsupported_versions_and_kinds_fail_with_typed_errors) ... ok
+test_registry_rejects_nonlocal_schema_references_without_network_access (test_contracts.OfflineContractRegistryTests.test_registry_rejects_nonlocal_schema_references_without_network_access) ... ok
+test_dynamic_and_broken_local_references_raise_typed_errors (test_contracts.OfflineContractRegistryTests.test_dynamic_and_broken_local_references_raise_typed_errors) ... ok
+test_foundation_validator_discovers_review_subdirectory_artifacts (test_contracts.OfflineContractRegistryTests.test_foundation_validator_discovers_review_subdirectory_artifacts) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.985s
+
+OK
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json

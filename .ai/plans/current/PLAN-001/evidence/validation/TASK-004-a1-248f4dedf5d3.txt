@@ -1,0 +1,47 @@
+Task: PLAN-001/TASK-004
+Head: 248f4dedf5d37d09eb27a3ef08bb63a570359666
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/schemas/', '-p', 'test_*.py']
+Exit code: 0
+
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 7.394s
+
+OK
