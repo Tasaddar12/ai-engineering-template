@@ -3,7 +3,7 @@
   "kind": "plan",
   "id": "PLAN-001",
   "title": "Local-first framework MVP with deterministic adapters",
-  "status": "approved",
+  "status": "running",
   "archived": false,
   "spec_refs": [
     ".ai/plans/current/PLAN-001/spec.json"

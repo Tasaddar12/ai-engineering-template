@@ -4,7 +4,7 @@ Read `.ai/README.md`, `.ai/STATE.json`, the selected plan and task, and only the
 
 ## Current boundary
 
-The reusable installer, focused record CLI, and foundation validator are working bootstrap tools. The autonomous execution, review, recovery, delivery, and completion engine remains unimplemented. The current repository plan has a materially revised proposed graph and cannot resume implementation until a fresh independent isolation review passes.
+The reusable installer, focused record CLI, and foundation validator are working bootstrap tools. PLAN-001 graph r4 has passed independent isolation review. Its autonomous execution, review, recovery, delivery, and completion engine is now being implemented through manually coordinated, isolated task worktrees. Only accepted task handoffs are implemented dependencies; graph approval alone does not prove runtime functionality.
 
 ## Working rules
 

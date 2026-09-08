@@ -1,6 +1,6 @@
 # PLAN-001 — Local deterministic workflow engine
 
-Status: isolation. Graph revision 4 is proposed after repository realignment and has no current isolation approval. Do not resume implementation until a fresh independent isolation review passes against the exact graph and structural task digest.
+Status: implementation. Graph revision 4 passed the [independent isolation review](reviews/r4-isolation-review.md) against the exact graph and structural task digest. Implementation is proceeding through separate task worktrees and candidate-bound review gates.
 
 The working `src/install.py`, `src/ai.py`, and `src/validate_foundation.py` files are corrective bootstrap tools. They install reusable guidance, create plan/task records, and validate them. The autonomous execution, review, recovery, delivery, and completion engine in this plan remains unimplemented.
 
@@ -24,10 +24,10 @@ The 39 task records below describe remaining engine work; the separate completed
 ## Canonical bundle
 
 - [Specification](spec.md) and [machine specification](spec.json)
-- [Machine plan](plan.json) and [proposed graph r4](graph.json)
+- [Machine plan](plan.json) and [approved graph r4](graph.json)
 - `tasks/current/` for all 39 unimplemented task records
 - `commands/` for this plan's future task validation definitions
-- `reviews/` for current candidate reviews; empty until graph r4 is reviewed
+- `reviews/` for immutable isolation and candidate reviews
 - `evidence/` for corrective and future task evidence
 - `history/` for immutable superseded foundation snapshots and reports
 

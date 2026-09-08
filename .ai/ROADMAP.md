@@ -3,7 +3,7 @@
 | Phase | Status | Deliverable / gate |
 | --- | --- | --- |
 | Corrective bootstrap | Complete and integrated | Concrete `docs/agents`, `docs/templates`, `docs/workflows`, and `docs/defaults` installed into a fresh standalone `.codex` for OpenAI or `.claude` for Claude; plan/task creation, validation, preserved history, passing independent reviews, and completed worktree cleanup |
-| PLAN-001 local deterministic MVP | Isolation pending; not implemented | 39 proposed tasks for orchestration and recovery against fake agents/hosting and real local Git |
+| PLAN-001 local deterministic MVP | Graph r4 approved; implementation in progress | 39 isolated tasks for orchestration and recovery against fake agents/hosting and real local Git |
 | Production adapter pilot | Future plan | Select a supported agent/provider, verify actual model identity and higher-review capability, enforce requested sandbox, add resumable adapter; configure credentials and authority outside committed files |
 | Hosting pilot | Future plan | Implement a real PR/CI adapter against verified official provider documentation and run authorized sandbox-repository delivery |
 | Release hardening | Future plan | Real Windows/Linux runtime evidence, migration compatibility, installation UX, performance budgets, license and release decision |
