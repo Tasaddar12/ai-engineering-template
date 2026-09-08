@@ -1,0 +1,8 @@
+FINAL REVIEW SCHEMA: PASS (Draft 2020-12 with format checker)
+All 12 numbered consistency checks: PASS; findings: none
+Exact same-candidate review_1_ref, independent session identities and unchanged R1 hash: PASS
+TASK-008-a1-c1-R2.md SHA256 f5d1a41d9f161c7f667f22517bca2af3baaca990f60ce1b46415d86c5d46d190
+TASK-008-a1-c1-R2.json SHA256 fddcae3718848baaa358a1bc8473065fecb42edb142507763f71783f1f287e63
+TASK-008-a1-c1-R2-evidence.py SHA256 a241c98bb09ba492d99f0508fd63ee52a97fbea30d611c50b8a92e08d088a0a8
+TASK-008-a1-c1-R2-evidence.txt SHA256 e825dcb096a5e222074c3960dd86af305e8bcc087737471bc421375c44bb8fad
+No candidate worktree accessed during final report validation.
