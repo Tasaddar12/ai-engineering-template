@@ -361,3 +361,45 @@ failure still pauses the path. Generation35,nineaccepted,76/300charged.
 The unreviewed017old-base manifest/logs are retained and will be replaced before
 anyR1. Its first reviewer dispatch was rejected for capacity and charged; no
 review session or verdict was fabricated.
+
+### Command runner accepted; fake-agent repair queued (2026-09-08)
+
+TASK-006-a3 candidate `b41b37ac6b15ecbdfb55ed26bdc086686f4e9416` passed
+the coordinator's exact suites on Windows/Linux Python3.11/3.12, each22
+discovered/21non-skipped/one established skip. All16 phase records showed exact
+fixture identities gone, readers settled, one native termination and no watchdog
+intervention. The formerly blocked later assertions executed. Fresh cumulative
+c3 [R1](../reviews/TASK-006-a3-c3-R1.json) and distinct
+[R2](../reviews/TASK-006-a3-c3-R2.json) passed all11/all12 checks with no findings,
+binding fingerprint `3df5453edcaf80c6237f35c5ca1c5adb81adfb9682cae3af95e25091d2435e80`.
+R1 independently ran the22-test Windows suite, two Linux3.11 fixture tests with
+four post-assertion schema checks, and three negative/readiness/storage probes.
+R2 independently ran the22-test Windows suite and five Linux3.11 cross-contract
+probes. All passed. Its actual zero-test child execution remained process evidence,
+not a passing validation suite. Earlier failed attempts/reviews remain preserved.
+
+Acceptance integrated at `37eabb95443e713fe170137bbf00c8d054d9bf1e`; generation37,
+ten of39 accepted. Git removed the clean merged a3 worktree, retaining failed a1/a2
+history. Source and test hashes match the terminal decision; no further repair,
+contract change, graph rewrite, permission or counter reset was used. R1's external
+Windows-path parser diagnostic and distinct corrected verifier are retained; it
+preceded any candidate suite and changed no source or bound evidence. Local WSL
+validation is not remote CI or whole-plan completion.
+
+TASK-017 c1 [R1](../reviews/TASK-017-a1-c1-R1.json) failed two major terminal-state
+and persisted-history checks. The exact failure and companions were preserved
+at `10e27db6472bbf6d9a5a5023233ede12fae5d52d`, generation36. Its first-cycle
+same-attempt bounded repair is now clean owner head
+`7e5bd5fd5d1b36a14cbee6ae911b68a4ec9ffbf8`, verified onlythree owned paths.
+The owner observed27passing tests on Windows3.12/3.11 and Linux3.11, including
+stable terminal facts, rejected impossible restored histories, legitimate queued
+and exhausted states, deliberate unconsumed fault injection and fresh processes.
+An intermediate over-strict late-scripting rejection was corrected and retained
+in its handoff. This is queued implementation evidence, not task acceptance;
+fresh current-base candidate validation and cumulativec2 R1/R2 remain required.
+
+Native accounting80/300 before next dispatch, including rejected calls and one
+continuing coordinator. Historical graph rewrites remain3/3used, zero remaining.
+Observed native model/effort remains distinct from unavailable provider-effective
+identity. TASK-007 and018 are now dependency-ready;007 is the next owner, while017
+enters its fresh review cycle. TASK-024/016/019/005-a2 remain queued for review.
