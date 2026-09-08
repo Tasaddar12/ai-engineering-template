@@ -1,0 +1,173 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-006-a1-c2-R2",
+  "stage": "consistency",
+  "request_id": "REQUEST-TASK-006-a1-c2-R2-93e9b480b534421db3f035a73b2ff172",
+  "task_id": "TASK-006",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-006-a1-ce4c8edb86b0.json",
+  "candidate_fingerprint": "7578a4d2cd986e5b69e7a6e0a6938d279aef2056be4f6130d7e17dccbb89cae4",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r2_006_c2/93e9b480b534421db3f035a73b2ff172"
+  },
+  "independent_session_id": "/root/r2_006_c2",
+  "implementation_session_id": "/root/implement_006",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "One owned local adapter returns process facts through CommandRunner; configuration, authorization, state, validation and CLI wiring retain their declared owners.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-identity.txt",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-candidate.diff"
+      ]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADR-001 through ADR-005 retain flat Python 3.11+ modules, local immutable records, isolated worktree ownership, exact fresh reviews and injected ports. Native submission provenance is explicitly distinguished from unavailable provider confirmation.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-linux311.txt"
+      ]
+    },
+    {
+      "id": "R2-03",
+      "status": "pass",
+      "rationale": "Accepted 002/004/038 commits are ancestors of the exact base; source and handoff bytes match those accepted candidates. Saved configuration, command DTOs and offline validation work together.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-linux311.txt"
+      ]
+    },
+    {
+      "id": "R2-04",
+      "status": "pass",
+      "rationale": "Frozen execute(CommandRequest)->CommandEvidence and direct submodule imports remain intact. Seven significant argv values and project/worktree/control nested cwd, including zero-plan identities, round-trip through actual child processes.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-linux311.txt",
+        "src/local_ports.py",
+        "src/commands.py"
+      ]
+    },
+    {
+      "id": "R2-05",
+      "status": "pass",
+      "rationale": "Observed nonzero exit stays exited; durable-write failure stays unknown with null exit and only a proven stdout ref. Required saved sandbox and explicit deny-all permissions refuse launch without authority inferred from configuration.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-linux311.txt",
+        "src/commands.py"
+      ]
+    },
+    {
+      "id": "R2-06",
+      "status": "pass",
+      "rationale": "No database, schema, migration or serialized field changed. Actual results validate against the exact closed v1 field set; sanitized content refs verify after relocation and partial storage does not fabricate a missing ref.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-linux311.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-foundation.txt"
+      ]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "Only commands.py, its owned leaf tests and task handoff differ. Flat-module imports, plan-local review/evidence paths and existing value/error conventions are preserved.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-candidate.diff"
+      ]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "No duplicate validation, fingerprint, Git, state or policy implementation. A real zero-test exit remains process evidence; the accepted ValidationCheck rejects an asserted positive-count pass for zero tests, leaving TASK-018 evaluation intact.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-probes-linux311.txt",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-018.json"
+      ]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Host-local observation and termination collaborators add no conflicting portable abstraction. Retained POSIX groups support best-effort signalling without claiming containment; uncertain cleanup returns unknown. Frozen redacted capture and durable refs match R1 evidence.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-cancellation-linux311.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R2-10",
+      "status": "fail",
+      "rationale": "The minimum-version suite fails two cancellation subcases because fixed 250 ms timers assume descendant startup/PID publication. The two tests reproduce the errors in isolation. Readiness-based actual cancellation passes; the tests must synchronize on their intended process state.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-suite-linux311.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-focus-linux311.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-cancellation-linux311.txt",
+        "tests/unit/commands/test_commands.py:504",
+        "tests/unit/commands/test_commands.py:570"
+      ]
+    },
+    {
+      "id": "R2-11",
+      "status": "pass",
+      "rationale": "The handoff accurately reports prior platform observations, both lifecycle repairs, unknown cleanup, frozen capture, saved settings and downstream ownership. Newly discovered Linux 3.11 fixture timing failure is preserved here without relabeling earlier passes or claiming integrated engine behavior.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-cancellation-linux311.txt"
+      ]
+    },
+    {
+      "id": "R2-12",
+      "status": "pass",
+      "rationale": "Approved graph r4, all 39 task structural digests, accepted interfaces and validation-before-review/fingerprint bindings remain valid. The finding is bounded to already owned tests; no sandbox, new service, scope expansion or architectural replan is demanded.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-006-a1-ce4c8edb86b0.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R2.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R2-TASK-006-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "The two new descendant cancellation regressions start threading.Timer(0.25, event.set) before execute, then unconditionally read the descendant PID file. On supported Linux Python 3.11.16 the parent had not published that file before cancellation, producing FileNotFoundError at lines 518 and 584. The declared suite discovered 22 tests, executed 21 with one platform skip and two errors; a focused repeat of the two tests reproduced both errors with observed exit 1. Independent readiness-based native probes observed child readiness at 0.504 seconds and returned correct unknown/null-exit evidence in 0.566/0.550 seconds. This is a candidate-owned timing-dependent test failure, not a reproduced command-runner failure.",
+      "paths": [
+        "tests/unit/commands/test_commands.py:504",
+        "tests/unit/commands/test_commands.py:518",
+        "tests/unit/commands/test_commands.py:570",
+        "tests/unit/commands/test_commands.py:584"
+      ],
+      "expected_fix": "Synchronize active cancellation with an observed descendant-ready/PID milestone under a bounded startup deadline instead of assuming readiness after 250 ms. Preserve exact descendant teardown, bounded execute return without a pre-return external killer, and conservative unknown assertions. Validate the repaired tests on Linux Python 3.11 as well as the existing declared platform matrix, then form a new candidate and run fresh R1/R2 through coordinator-owned recovery. No production or shared-contract change is established as necessary.",
+      "acceptance_ids": [
+        "TASK-006-AC2",
+        "AC-02",
+        "AC-09"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T08:00:14.043989+00:00"
+}

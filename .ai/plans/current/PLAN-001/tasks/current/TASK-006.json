@@ -101,5 +101,5 @@
     "TASK-006-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-006-001, R1-TASK-006-002; form a new candidate and rerun both independent reviews."
+  "resume_state": "Failed review preserved; repair R2-TASK-006-001; form a new candidate and rerun both independent reviews."
 }
