@@ -177,3 +177,24 @@ x + y\nz; second legitimate dispatch failed collision. Same owner continuation
 105 (call_ezbcq68FNOfUD3DqCQPbTqxS) now fixes injective framing and directly related
 hash behavior before submission. Existing handoff only, no extra review stage.
 009 concrete state implementation compiled; actual crash/process tests in progress.
+
+ROOT FROZEN ed21f7919d589b99a19cdaedafc357b25f5e9e8b for ACTIVE FIRST019
+review_019_c1, Astra/xhigh rank4, native call_DiX3AwEynoVk7vw2mEoxbuA6,
+charge106/300 (194 remain). Candidate c56a72b7f1cc413944ac48c5f60e088bd2206677,
+FP8afe5cf982ed6ad3b1b91446e7826c0845f5ba9d0fbe0dc8bcc8000419acb859.
+Fresh coordinator14/no skips/0.308s/exit0 with exact candidate origin. Prefix
+TASK-019-a1-c1-R1; full single review, no R2. No ROOT commits/begins until FINAL;
+this note is outside manifest. Owners009 and017 continuation105 keep working.
+
+019 c1 FINAL FAIL: one owned Mapping/FrozenJsonObject deserialization gap.
+Complete reports and6-pass/1-fail probe read; ROOT independently rechecked exact
+HEAD/base/raw diff/all bound hashes. Preserved2b37d6f95ef0cb4665108210ae93d777233fc8fa,
+generation47. Sol repair_019_c1 ACTIVE in samea1, native
+call_cH2i1J3u6HgoFD2pSwUP0t9w, charge107/300 (193 remain). Fix only nested
+JSON detachment before hashing with owned immutable parse/reverify/tamper checks.
+017 a3 FINAL clean1b49b6e926b6077375954d07d030cb7ab673eb0c after105continuation.
+Actual multiline routing alias fixed through domain-separated length-prefix hashes,
+ordinary hashes retained and coherent legacy multiline state recovered. Full36
+Win3.12 pass13.201s; three affected tests pass each Win3.11 andLinux3.11.
+Exact final source/handoff diff and clean cumulative three-path scope read.
+Proceed current017 candidate and focused single review;019 repair and009 continue.
