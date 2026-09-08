@@ -106,3 +106,9 @@ the updated records and links; it is separate from the task behavior suites.
 ### Configuration dispatch and completed candidates (2026-09-08)
 
 Three of 39 tasks remain accepted. TASK-005 and the first bounded TASK-039 repair have clean committed owner handoffs and await exact-candidate independent reviews. TASK-002 remains in implementation. TASK-038 was dispatched from accepted TASK-004 to unblock command, context, agent, and review configuration dependencies; its write paths and component resource are disjoint from the active owners. Manual native accounting is 36 charged invocations of 300, including rejected attempts and the continuing coordinator invocation. Graph rewrite accounting remains 3 of 3 used, with no new rewrite. Production adapter bindings remain unconfigured; this is manually observed native development coordination.
+
+### Fourth task accepted; state-transition dispatch (2026-09-08)
+
+TASK-005 is accepted at integration commit 85f87b3536990970fbcf9d2cf6b299696eb008ec, after exact candidate 0216c03b18698a3ff4bc89c9b0ae9749255425ef passed its 10 declared tests and separate fresh R1/R2. R1 added five independent probe tests and R2 four; both found no defects. The clean merged worktree was removed. Four of 39 tasks are accepted. TASK-008 now implements pure guarded transitions from accepted TASK-001/TASK-004, while TASK-038 implements configuration. Local interfaces TASK-002 and the bounded TASK-039 repair have clean owner handoffs queued for review.
+
+Manual native accounting is 39 charged invocations of 300, including rejected attempts and the continuing root invocation. Graph rewrite accounting remains 3 of 3 used. A [saved-configuration integration note](configuration-resume-clarification.md) records how existing policy and hashed payload references can preserve resumed settings without adding workflow-run fields; TASK-009/TASK-034 still own persistence and composition.
