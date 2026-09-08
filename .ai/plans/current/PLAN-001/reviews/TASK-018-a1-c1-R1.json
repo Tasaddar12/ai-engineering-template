@@ -1,0 +1,180 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-018-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-018-a1-c1-R1-call_42g8KfnroueAXLZb22zQMQDP",
+  "task_id": "TASK-018",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-018-a1-d58925f56afa.json",
+  "candidate_fingerprint": "c052eff5416317e7d9284ec421e5d98ea434bb268753a42e6fcc02f876126685",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_42g8KfnroueAXLZb22zQMQDP"
+  },
+  "independent_session_id": "/root/review_018_c1",
+  "implementation_session_id": "/root/implement_006",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "Authoritative ordered suite and exact before/after revision binding work, but reproduced zero-test false passes violate AC1/AC2. Native Astra/xhigh rank4 submission is independent of retained Sol/xhigh rank3 owner; provider-effective identity/effort unavailable, as detailed in this report.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "fail",
+      "rationale": "Flat Python 3.11 ports and declared exclusions are respected. Persisting sensitive configured argv violates the sanitized command-evidence boundary (002). The user decision supersedes the older manual two-review schedule, without changing frozen runtime ports.",
+      "evidence": [
+        ".ai/shared/architecture/python.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Traced request authority, runner evidence, bounded verified logs, ordered receipts and final result. The regex selects unrelated count text and produces durable false success (001).",
+      "evidence": [
+        "src/validation.py:289",
+        "src/validation.py:396",
+        "src/validation.py:714",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "fail",
+      "rationale": "Execution, revision and persistence failures generally fail closed and temporary receipts are cleaned up. A 5,000-digit matched count escapes run as ValueError before after-observation/finalization (003).",
+      "evidence": [
+        "src/validation.py:174",
+        "src/validation.py:492",
+        "src/validation.py:550",
+        "src/validation.py:716",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Membership/order/rules, stale revision, unknown status, root/environment mismatch, bad receipt digest/read-back and actual child HEAD drift reject appropriately. Unrelated summaries and oversized numeric matches remain defective (001/003).",
+      "evidence": [
+        "tests/unit/validation/test_validation.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "Independent declared leaf passes 10 meaningful tests without skips on exact candidate Windows3.12; hashed Windows3.11/Linux3.11 records likewise show10/no skips. Actual process/Git tests are meaningful, but all three reproduced defects need tracked regressions.",
+      "evidence": [
+        "tests/unit/validation/test_validation.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-leaf.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-018-a1-d58925f56afa-python311.txt",
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-018-a1-d58925f56afa-linux-python311.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Typed internal command catalogue, suite membership, revision observer and local evidence collaborators fit the frozen port and owned validation slice. No downstream concrete Git/state/candidate/review/CLI implementation or dirty-tree policy is demanded.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-018.json",
+        ".ai/shared/architecture/service-contracts.md",
+        "src/validation.py:55",
+        "src/validation.py:240"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Raw binary diff and three added paths verified against frozen base/head; no rename, deletion or unrelated source change. Owner FINAL bytes and accepted003/006 ancestry/bytes match. All context, validation, policy-model, graph/isolation and fingerprint checks pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-identity.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit flat-module typed collaborators directly implement accepted Validator.run and CommandRunner.execute DTOs; ordered results/evidence precede candidate formation without hash cycles. No shared schema fields, port changes or undeclared downstream imports were introduced.",
+      "evidence": [
+        "src/workflow_ports.py:605",
+        "src/workflow_ports.py:668",
+        "src/local_ports.py:629",
+        "src/commands.py:305",
+        "src/validation.py:289",
+        "src/validation.py:550"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "fail",
+      "rationale": "Authoritative argv and environment binding names, accepted shell-free execution, bounded hashes, no-link path guards and durable read-back were checked. Sensitive argv is reintroduced into validation receipts after runner redaction (002).",
+      "evidence": [
+        "src/commands.py:798",
+        "src/validation.py:510",
+        "src/validation.py:634",
+        "src/validation.py:802",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1-probe.json.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "Owned handoff accurately records scope/platforms and dependency limits, but final-standard-summary and handled failure claims are contradicted by001/003; receipt sanitization guidance must reflect002. Older separate R2 language is explicitly superseded by the bound user decision, not treated as an extra gate.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md",
+        ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-018-a1-c1-R1.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-018-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "validation.py:51,491-493,714-716 selects the final regex match after stdout/stderr concatenation instead of complete unittest result evidence. Two actual zero-test TextTestRunner processes exited0 with verified Ran0/NO TESTS RAN output, but unrelated diagnostic Ran7 text in stderr or a trailing historical excerpt produced passed checks and suite receipts with count7.",
+      "paths": ["src/validation.py", "tests/unit/validation/test_validation.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md"],
+      "expected_fix": "Interpret the existing unittest_nonzero_count rule using complete standard summary/status evidence within streams; reject zero, missing, malformed or ambiguous proof without borrowing unrelated counts or treating concatenation as time order. Add tracked actual-process regressions and correct handoff claims; retain normal nonzero/zero discovery behavior and frozen success-rule contract.",
+      "acceptance_ids": ["TASK-018-AC1", "TASK-018-AC2"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-018-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "validation.py:735,802-806 always persists raw configured argv. An actual sensitive-argument probe was redacted by accepted006 in argv/logs and failed validation, but the durable configured_command.argv restored the synthetic sensitive value verbatim. Failed and pre-execution receipt paths can therefore retain credentials despite the accepted sanitized-evidence boundary.",
+      "paths": ["src/validation.py", "tests/unit/validation/test_validation.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md"],
+      "expected_fix": "Sanitize configured argv against authoritative sensitive bindings on every persisted path, including when command evidence is absent; preserve non-sensitive argv exactly and do not allow redacted evidence to pass. Add tracked regressions checking all retained receipts and update the handoff.",
+      "acceptance_ids": ["TASK-018-AC1", "TASK-018-AC2"],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-018-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "validation.py:492,714-716 converts an unrestricted matched count outside the failure boundaries. A real exit-zero child emitted a 5,000-digit count below the configured output byte limit; LocalValidator.run raised Python's conversion-limit ValueError and retained zero validation receipts, also bypassing after-revision observation and remaining-command collection.",
+      "paths": ["src/validation.py", "tests/unit/validation/test_validation.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-018.md"],
+      "expected_fix": "Bound numeric parsing and convert malformed/oversized output into nonpassing typed evidence without global interpreter-limit changes. Add a tracked actual-output regression asserting no exception, durable nonpassing receipts and collection of a later required command; update the handoff.",
+      "acceptance_ids": ["TASK-018-AC2"],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T13:15:10Z"
+}

@@ -50,9 +50,10 @@ are exact via .ai/.gitattributes. Preserve existing history.
 Commit a clean candidate, verify Git state, and send FINAL only when all edits have
 stopped. Do not send an early ready message and then keep editing. Coordinator
 will merge current integration metadata, run declared validation independently,
-freeze a candidate and obtain fresh independent Astra/xhigh R1 then R2. Material
-fixes or integration-base changes invalidate both review gates. Do not self-approve
-or merge. Task acceptance is distinct from final plan completion.
+freeze a candidate and obtain one independent Astra/xhigh task review under the
+[user's single-stage decision](single-stage-review-decision.md). Scoped fixes get
+current validation and focused independent verification, with a new exact-candidate
+report. Do not self-approve or merge. Final combined reviews follow implementation.
 
 ## Local persistence port reminder for TASK-002 and TASK-009
 

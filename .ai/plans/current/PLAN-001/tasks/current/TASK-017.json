@@ -4,7 +4,7 @@
   "id": "TASK-017",
   "plan_id": "PLAN-001",
   "title": "Implement agent dispatch contract and fake adapter",
-  "status": "repairing",
+  "status": "running",
   "archived": false,
   "objective": "Implement agent dispatch contract and fake adapter. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -99,8 +99,9 @@
   ],
   "attempt_ids": [
     "TASK-017-a1",
-    "TASK-017-a2"
+    "TASK-017-a2",
+    "TASK-017-a3"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R2-TASK-017-001; form a new candidate and rerun both independent reviews."
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires actual validation and one independent task review under the user's single-stage decision."
 }

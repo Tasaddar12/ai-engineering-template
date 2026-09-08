@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[6]
 BUNDLE = ROOT / ".ai/plans/current/PLAN-001"
 PYTHON = Path(sys.executable)
 DISPATCH = BUNDLE / "evidence/coordination/dispatch"
+REVIEW_DECISION = BUNDLE / "evidence/coordination/single-stage-review-decision.md"
 
 def git(*args, cwd=ROOT):
     result = subprocess.run(["git", *args], cwd=cwd, text=True, capture_output=True, shell=False)
@@ -69,13 +70,13 @@ def approve():
     write(BUNDLE / "graph.json", graph)
     plan = read(BUNDLE / "plan.json")
     plan.update(status="approved", isolation_review_ref=graph["review_ref"],
-                resume_state="Independent isolation review passed; begin dependency-ready tasks through the manual coordinator with separate worktrees and two task reviews.")
+                resume_state="Independent isolation review passed; begin dependency-ready tasks through the manual coordinator with separate worktrees and one independent task review.")
     write(BUNDLE / "plan.json", plan)
     state = read(ROOT / ".ai/STATE.json")
     state["generation"] += 1
     state["known_blockers"] = []
     state["summary"] = "PLAN-001 graph r4 independently approved. Manual coordination is implementing the local deterministic engine; bootstrap behavior remains verified."
-    state["next_actions"] = ["Implement dependency-ready tasks and accept only after actual validation plus independent implementation and consistency reviews"]
+    state["next_actions"] = ["Implement dependency-ready tasks and accept after actual validation plus one independent task review; final combined reviews follow implementation"]
     state["updated_at"] = datetime.now(UTC).isoformat()
     write(ROOT / ".ai/STATE.json", state)
     return {"approved": graph["id"], "review": graph["review_ref"]}
@@ -93,7 +94,7 @@ def begin(task_id, attempt):
     task["status"] = "running"
     identity = f"{task_id}-a{attempt}"
     task["attempt_ids"].append(identity)
-    task["resume_state"] = "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+    task["resume_state"] = "Manual coordinator dispatched an isolated implementation; acceptance requires actual validation and one independent task review under the user's single-stage decision."
     write(path, task)
     git("add", str(path.relative_to(ROOT)))
     git("commit", "-m", f"Dispatch PLAN-001 {identity}")
@@ -193,7 +194,7 @@ def candidate(task_id, attempt, *, linux=False, py311=False, linux_py311=False):
         validation_evidence.append(minimum_evidence)
     task = read(BUNDLE / "tasks/current" / f"{task_id}.json")
     refs = [BUNDLE / "plan.json", BUNDLE / "spec.json", BUNDLE / "graph.json", BUNDLE / "tasks/current" / f"{task_id}.json",
-            ROOT / ".ai/shared/architecture/service-contracts.md", ROOT / ".ai/shared/workflows/reviews.md"]
+            ROOT / ".ai/shared/architecture/service-contracts.md", ROOT / ".ai/shared/workflows/reviews.md", REVIEW_DECISION]
     refs += [ROOT / ref for ref in task["adr_refs"] + task["research_refs"]]
     refs += [BUNDLE / "evidence/implementation" / f"{dep}.md" for dep in task["depends_on"]]
     def hashrefs(paths, *, committed_context=False):
@@ -217,6 +218,32 @@ def candidate(task_id, attempt, *, linux=False, py311=False, linux_py311=False):
     return {"candidate": str(path), "worktree": str(worktree), "tests": int(counts[-1]),
             "linux_tests": linux_count, "py311_tests": py311_count, "linux_py311_tests": linux_py311_count,
             "base_oid": base, "head_oid": head, "fingerprint": value["fingerprint"]}
+
+def select_task_review(reports, candidate_path, value):
+    """Require the user's single independent stage without hiding known failures."""
+    from jsonschema import Draft202012Validator, FormatChecker
+    validator = Draft202012Validator(read(ROOT / "schemas/v1/review-result.schema.json"), format_checker=FormatChecker())
+    passing = []
+    for path, review in reports:
+        if review.get("kind") != "review-result" or review.get("candidate_fingerprint") != value["fingerprint"]:
+            continue
+        validator.validate(review)
+        assert review["candidate_ref"] == candidate_path.relative_to(ROOT).as_posix()
+        assert review["task_id"] == value["task_id"] and review["plan_id"] == value["plan_id"]
+        assert review["verdict"] == "pass", "The exact candidate has a failed or inconclusive review"
+        assert not any(finding["severity"] in {"blocking", "major"} and not finding["resolved"] for finding in review["findings"])
+        if review["stage"] != "implementation":
+            continue
+        assert review["reviewer"]["model_id"] == "gpt-6-astra"
+        assert review["reviewer"]["capability_rank"] > 3
+        assert review["independent_session_id"] != review["implementation_session_id"]
+        assert review["checklist_version"] == value["checklist_version"]
+        assert len(review["checks"]) == 11
+        assert {check["id"] for check in review["checks"]} == {f"R1-{n:02d}" for n in range(1, 12)}
+        assert all(check["status"] in {"pass", "not_applicable"} and check["rationale"] and (check["evidence"] or check["status"] == "not_applicable") for check in review["checks"])
+        passing.append((path, review))
+    assert len(passing) == 1, "Exactly one passing independent implementation review is required"
+    return passing[0]
 
 def accept(task_id, attempt):
     from jsonschema import Draft202012Validator, FormatChecker
@@ -249,45 +276,23 @@ def accept(task_id, attempt):
     for path in changed:
         assert any(covers(claim, path) for claim in task["scope"]["write_paths"]), f"Out-of-scope change: {path}"
         assert not any(covers(claim, path) for claim in task["scope"]["prohibited_paths"]), f"Prohibited change: {path}"
-    stages = {}
-    for path in (BUNDLE / "reviews").rglob("*.json"):
-        review = read(path)
-        if review.get("kind") != "review-result" or review.get("candidate_fingerprint") != value["fingerprint"]:
-            continue
-        if review["verdict"] != "pass":
-            continue
-        Draft202012Validator(read(ROOT / "schemas/v1/review-result.schema.json"), format_checker=FormatChecker()).validate(review)
-        assert review["candidate_ref"] == candidate_path.relative_to(ROOT).as_posix()
-        assert review["reviewer"]["model_id"] == "gpt-6-astra"
-        assert review["reviewer"]["capability_rank"] > 3
-        assert review["independent_session_id"] != review["implementation_session_id"]
-        prefix, count = ("R1", 11) if review["stage"] == "implementation" else ("R2", 12)
-        assert len(review["checks"]) == count
-        assert {check["id"] for check in review["checks"]} == {f"{prefix}-{n:02d}" for n in range(1, count + 1)}
-        assert all(check["status"] in {"pass", "not_applicable"} and check["rationale"] and (check["evidence"] or check["status"] == "not_applicable") for check in review["checks"])
-        assert not any(finding["severity"] in {"blocking", "major"} and not finding["resolved"] for finding in review["findings"])
-        assert review["stage"] not in stages, "Ambiguous passing reviews"
-        stages[review["stage"]] = (path, review)
-    assert set(stages) == {"implementation", "consistency"}, "Both independent reviews are required"
-    r1_path, r1 = stages["implementation"]
-    r2_path, r2 = stages["consistency"]
-    assert r2["review_1_ref"] == r1_path.relative_to(ROOT).as_posix()
-    assert r1["independent_session_id"] != r2["independent_session_id"]
-    assert r1["reviewer"]["invocation_id"] != r2["reviewer"]["invocation_id"]
+    assert REVIEW_DECISION.relative_to(ROOT).as_posix() in {ref["path"] for ref in value["context_refs"]}, "Candidate must bind the user's single-stage review decision"
+    reports = [(path, read(path)) for path in (BUNDLE / "reviews").rglob("*.json")]
+    r1_path, r1 = select_task_review(reports, candidate_path, value)
     git("merge", "--ff-only", head)
-    task.update(status="accepted", resume_state=f"Candidate {head} passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge.")
+    task.update(status="accepted", resume_state=f"Candidate {head} passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain.")
     write(task_path, task)
     state_path = ROOT / ".ai/STATE.json"
     state = read(state_path)
     state["generation"] += 1
     accepted = [read(path)["id"] for path in (BUNDLE / "tasks/current").glob("*.json") if read(path)["status"] == "accepted"]
-    state["summary"] = f"PLAN-001 graph r4 implementation: {len(accepted)} of 39 tasks accepted after validation and separate R1/R2. Remaining engine work is in progress; completion is not yet established."
+    state["summary"] = f"PLAN-001 graph r4 implementation: {len(accepted)} of 39 tasks accepted. Remaining tasks use validation and one independent review under the user's decision; final combined reviews remain."
     state["updated_at"] = datetime.now(UTC).isoformat()
     write(state_path, state)
-    paths = [task_path, state_path, candidate_path, r1_path, r2_path]
+    paths = [task_path, state_path, candidate_path, r1_path]
     paths += [ROOT / ref["path"] for ref in value["validation_refs"]]
-    paths += [p for p in (r1_path.with_suffix(".md"), r2_path.with_suffix(".md")) if p.exists()]
-    for report_path in (r1_path, r2_path):
+    paths += [p for p in (r1_path.with_suffix(".md"),) if p.exists()]
+    for report_path in (r1_path,):
         paths += [path for path in report_path.parent.glob(report_path.stem + "*") if path.is_file()]
     paths = list(dict.fromkeys(paths))
     git("add", *[path.relative_to(ROOT).as_posix() for path in paths])
@@ -317,7 +322,7 @@ def fail(task_id, attempt):
     findings = [finding["id"] for _, report in reports for finding in report["findings"] if not finding["resolved"]]
     task_path = BUNDLE / "tasks/current" / f"{task_id}.json"
     task = read(task_path)
-    task.update(status="repairing", resume_state="Failed review preserved; repair " + ", ".join(findings) + "; form a new candidate and rerun both independent reviews.")
+    task.update(status="repairing", resume_state="Failed review preserved; repair " + ", ".join(findings) + "; validate a new candidate and obtain focused independent verification under the user's single-stage decision, subject to any applicable recovery boundary.")
     write(task_path, task)
     state_path = ROOT / ".ai/STATE.json"
     state = read(state_path)
