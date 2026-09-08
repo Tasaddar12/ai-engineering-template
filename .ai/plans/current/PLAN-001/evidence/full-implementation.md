@@ -165,3 +165,31 @@ TASK-003/004/038 inputs and disjoint ownership. TASK-039's bounded repair is nex
 for current-base validation and fresh reviews. Native manual accounting is
 55 charged invocations of 300 before that R1 dispatch. Historical rewrite usage
 remains three of three; no new rewrite or authority was introduced.
+
+### Orchestration interfaces accepted; Linux preflight correction (2026-09-08)
+
+TASK-039 repaired candidate `314ef09d59f494223bec02556c6e3d9a8108636f`
+passed its 20 declared tests and both fresh cycle2 reviews, then integrated at
+`bc8a5f47d8e1a66bc2b8929b099349cb199c0100`. R1 passed 30 usage boundaries and
+55 malformed-number probes. R2 independently checked 24 usage boundaries, 44
+numeric rejections, all ten signatures, schema shapes, uneven four-R1/three-R2
+history retention, and compatibility with accepted configuration and completion
+transitions. The old finding is resolved and retained. Seven of 39 tasks are
+accepted; Git removed the clean merged tree.
+
+TASK-019 is dispatched at `b4fe29bf40bd017d638072ad3920dca8b240a3a3`.
+TASK-017 continues its deterministic adapter implementation. TASK-006 returned
+clean candidate `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` with 18 passing
+Windows tests, including actual descendant cleanup. Before its first R1, local
+Ubuntu-24.04 capability was discovered and a project-local Python environment was
+prepared with the declared dependency. The Linux run exposed one cleanup assertion
+failure and one backward-clock evidence error. The [retained preflight and bounded
+correction decision](assessment/TASK-006-linux-preflight.md) records both diagnostics
+and environment setup; the owner is correcting the same attempt's three paths.
+This is not a failed independent-review cycle or a structural rewrite.
+
+Manual native accounting is 59 charged invocations of 300, including the TASK-019
+dispatch and TASK-006 correction invocation. Graph rewrites remain three of three
+used. No candidate review is currently frozen while the three scoped owners work.
+TASK-005 a2, TASK-013 and TASK-014 remain clean in the review queue. Linux and Windows
+validation will be used for applicable process/platform behavior before final gates.
