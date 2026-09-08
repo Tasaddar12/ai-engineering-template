@@ -263,3 +263,24 @@ TASK-016 continues bounded context construction. TASK-014/017/019/005a2 are
 clean review candidates. The repaired006 is prioritized next to unlock007 and
 its durable-state dependency chain. Native accounting is64 charged invocations
 of300 before the next006 R1; historical graph rewrites remain3/3 used.
+
+### Command recovery decision and minimum-version matrix (2026-09-08)
+
+TASK-006 c2 R1 passed all 11 checks; separate R2 failed R2-10 because two
+blind cancellation timers precede fixture readiness on Linux Python 3.11.
+The failed candidate and complete review evidence are preserved at
+`a31474b0927bf85895ec44ef9695bb3a14e05605`. Independent recovery established
+a bounded test synchronization defect without a demonstrated structural gap.
+The [coordinator decision](recovery/TASK-006-coordinator-decision.md) grants
+exactly one fresh a2 test/handoff-only repair, preserving production bytes,
+then actual four-environment validation and cumulative c3 fresh R1/R2.
+Any further candidate failure returns immediately to recovery. No budget resets.
+
+Eight of39 tasks remain accepted, including013. The local Linux Python3.11.16
+[accepted baseline](validation/python311-linux-accepted-baseline-3acfcb0d700b.txt)
+passed194 tests; Windows minimum-version evidence remains preserved. These
+project-local runtimes support3.11/3.12 checks on both hosts. WSL is local
+Linux evidence, not final remoteCI. Native accounting is69/300 charged and
+72/300 charged or reserved for one repair owner and two fresh reviewers;
+structural rewrites remain3/3 used. Generation30 advances to31. TASK-014 review
+can proceed after006a2 dispatch, then007/018 are prioritized after006 acceptance.
