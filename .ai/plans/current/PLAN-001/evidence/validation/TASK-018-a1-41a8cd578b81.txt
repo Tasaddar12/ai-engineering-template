@@ -1,0 +1,20 @@
+Task: PLAN-001/TASK-018
+Head: 41a8cd578b81981e6cda42c88f9377aaec5b1bdd
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/validation/', '-p', 'test_*.py']
+Exit code: 0
+
+Runtime/origin probe exit: 0
+Python: 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]
+Executable: D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-venv\Scripts\python.exe
+Platform: Windows-11-10.0.26200-SP0
+jsonschema: 4.26.0
+Origins: [('validation', 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-018-a1\\src\\validation.py')]
+
+
+
+
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 13.826s
+
+OK

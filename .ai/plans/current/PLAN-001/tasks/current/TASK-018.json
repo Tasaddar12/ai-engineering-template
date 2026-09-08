@@ -4,7 +4,7 @@
   "id": "TASK-018",
   "plan_id": "PLAN-001",
   "title": "Run task validation suites",
-  "status": "repairing",
+  "status": "accepted",
   "archived": false,
   "objective": "Run task validation suites. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,5 +98,5 @@
     "TASK-018-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-018-001, R1-TASK-018-002, R1-TASK-018-003; validate a new candidate and obtain focused independent verification under the user's single-stage decision, subject to any applicable recovery boundary."
+  "resume_state": "Candidate 41a8cd578b81981e6cda42c88f9377aaec5b1bdd passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
 }
