@@ -1,0 +1,137 @@
+{
+  "candidate": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "origins": {
+    "git_ops": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\git_ops.py",
+    "commands": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\commands.py",
+    "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\config.py",
+    "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\domain_values.py",
+    "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\local_ports.py"
+  },
+  "source_sha256": "52e53c95eb165709e8059894c4c2a1c4affe14e30452ae0f5af439775a289737",
+  "tests": [
+    "BranchTests.test_symbolic_target_alias_is_refused_and_preserves_developer_checkout",
+    "BranchTests.test_target_retargeted_to_symbolic_alias_cannot_move_developer_branch",
+    "MergeTests.test_branch_switch_after_publication_is_preserved_without_read_tree",
+    "InspectTests.test_nested_empty_git_directory_cannot_claim_missing_head",
+    "InspectTests.test_inspects_missing_head_explicitly",
+    "InspectTests.test_registered_linked_worktree_is_observed",
+    "MergeTests.test_concurrent_dirty_change_after_ref_publication_is_preserved",
+    "MergeTests.test_concurrent_index_change_after_ref_publication_is_preserved",
+    "MergeTests.test_ref_published_but_checkout_not_advanced_stays_unknown_without_retry",
+    "MergeTests.test_admitted_managed_integration_is_advanced_and_developer_tree_preserved",
+    "BranchTests.test_source_race_aborts_the_guarded_transaction",
+    "BranchTests.test_target_race_preserves_the_concurrent_ref",
+    "BranchTests.test_completed_receipt_does_not_override_a_later_target_move",
+    "BranchTests.test_head_source_is_resolved_and_verified",
+    "BranchTests.test_uncertain_publication_is_reconciled_without_duplicate_effect"
+  ],
+  "tests_run": 15,
+  "skips": 0,
+  "success": true,
+  "elapsed_seconds": 47.75,
+  "unittest_log": "test_symbolic_target_alias_is_refused_and_preserves_developer_checkout (test_git_ops.BranchTests.test_symbolic_target_alias_is_refused_and_preserves_developer_checkout) ... ok\ntest_target_retargeted_to_symbolic_alias_cannot_move_developer_branch (test_git_ops.BranchTests.test_target_retargeted_to_symbolic_alias_cannot_move_developer_branch) ... ok\ntest_branch_switch_after_publication_is_preserved_without_read_tree (test_git_ops.MergeTests.test_branch_switch_after_publication_is_preserved_without_read_tree) ... ok\ntest_nested_empty_git_directory_cannot_claim_missing_head (test_git_ops.InspectTests.test_nested_empty_git_directory_cannot_claim_missing_head) ... ok\ntest_inspects_missing_head_explicitly (test_git_ops.InspectTests.test_inspects_missing_head_explicitly) ... ok\ntest_registered_linked_worktree_is_observed (test_git_ops.InspectTests.test_registered_linked_worktree_is_observed) ... ok\ntest_concurrent_dirty_change_after_ref_publication_is_preserved (test_git_ops.MergeTests.test_concurrent_dirty_change_after_ref_publication_is_preserved) ... ok\ntest_concurrent_index_change_after_ref_publication_is_preserved (test_git_ops.MergeTests.test_concurrent_index_change_after_ref_publication_is_preserved) ... ok\ntest_ref_published_but_checkout_not_advanced_stays_unknown_without_retry (test_git_ops.MergeTests.test_ref_published_but_checkout_not_advanced_stays_unknown_without_retry) ... ok\ntest_admitted_managed_integration_is_advanced_and_developer_tree_preserved (test_git_ops.MergeTests.test_admitted_managed_integration_is_advanced_and_developer_tree_preserved) ... ok\ntest_source_race_aborts_the_guarded_transaction (test_git_ops.BranchTests.test_source_race_aborts_the_guarded_transaction) ... ok\ntest_target_race_preserves_the_concurrent_ref (test_git_ops.BranchTests.test_target_race_preserves_the_concurrent_ref) ... ok\ntest_completed_receipt_does_not_override_a_later_target_move (test_git_ops.BranchTests.test_completed_receipt_does_not_override_a_later_target_move) ... ok\ntest_head_source_is_resolved_and_verified (test_git_ops.BranchTests.test_head_source_is_resolved_and_verified) ... ok\ntest_uncertain_publication_is_reconciled_without_duplicate_effect (test_git_ops.BranchTests.test_uncertain_publication_is_reconciled_without_duplicate_effect) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 47.741s\n\nOK\n",
+  "probes": [
+    {
+      "observation": {
+        "case": "linked-missing-head",
+        "status": "succeeded",
+        "head": "missing",
+        "error": null,
+        "refs": [
+          [
+            "HEAD",
+            "missing",
+            null
+          ]
+        ],
+        "pointer_unchanged": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "status": "exited",
+          "exit_code": 128,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "ad14a02241adcae29bd21e064d5a8da7a9872afa9f4a64e475ecb62e603547bb",
+              "base64": "ZmF0YWw6IG5vdCBhIGdpdCByZXBvc2l0b3J5OiBDOi9Vc2Vycy9raWxsaS9BcHBEYXRhL0xvY2FsL1RlbXAvdGFzay0wMDctN3VqZ19ldXUvLmdpdC93b3JrdHJlZXMvaW50ZWdyYXRpb24K"
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "status": "exited",
+          "exit_code": 128,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "ad14a02241adcae29bd21e064d5a8da7a9872afa9f4a64e475ecb62e603547bb",
+              "base64": "ZmF0YWw6IG5vdCBhIGdpdCByZXBvc2l0b3J5OiBDOi9Vc2Vycy9raWxsaS9BcHBEYXRhL0xvY2FsL1RlbXAvdGFzay0wMDctN3VqZ19ldXUvLmdpdC93b3JrdHJlZXMvaW50ZWdyYXRpb24K"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "observation": {
+        "case": "nested-shaped-metadata",
+        "status": "failed",
+        "head": null,
+        "error": "invalid_input",
+        "refs": [],
+        "git_fallback_head": "e99d0187b62cfc737420d458b8dc565571d01b4a"
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "34983855f8411ec1c784040294d6dc1b8717a4bc79e1e267ce92c5b2651eb40d",
+              "base64": "bmVzdGVkLXdpdGgtZ2l0LXNoYXBlLwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
