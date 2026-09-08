@@ -34,6 +34,7 @@ from local_ports import (
     CommandRootBindings,
     CommandSuccessRule,
     ContentRef,
+    EnvironmentBinding,
     LocalProjectBinding,
     LocalWorktreeBinding,
     PermissionClass,
@@ -437,6 +438,159 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(
             receipt["configured_command"]["argv"], list(nonzero.definition.argv)
         )
+
+    def test_actual_zero_test_summaries_do_not_borrow_unrelated_counts(self) -> None:
+        cases = (
+            (
+                "stdout-zero-stderr-decoy",
+                "import sys, unittest; print('Earlier diagnostic:'); "
+                "sys.stderr.write('Ran 7 tests in 0.001s\\n'); sys.stderr.flush(); "
+                "result=unittest.TextTestRunner(stream=sys.stdout).run(unittest.TestSuite()); "
+                "raise SystemExit(not result.wasSuccessful())",
+                0,
+            ),
+            (
+                "stderr-zero-trailing-decoy",
+                "import sys, unittest; "
+                "result=unittest.TextTestRunner().run(unittest.TestSuite()); "
+                "sys.stderr.write('Historical output excerpt follows:\\n"
+                "Ran 7 tests in 0.001s\\nEnd excerpt\\n'); "
+                "raise SystemExit(not result.wasSuccessful())",
+                0,
+            ),
+            (
+                "ambiguous-complete-results",
+                "import sys, unittest; "
+                "result=unittest.TextTestRunner().run(unittest.TestSuite()); "
+                "sys.stderr.write('\\n'+'-'*70+'\\nRan 7 tests in 0.001s\\n\\nOK\\n'); "
+                "raise SystemExit(not result.wasSuccessful())",
+                None,
+            ),
+            (
+                "missing-result",
+                "print('command completed without unittest result evidence')",
+                None,
+            ),
+            (
+                "failed-result-status",
+                "import unittest; "
+                "case=unittest.FunctionTestCase(lambda: (_ for _ in ()).throw("
+                "AssertionError('failed'))); "
+                "unittest.TextTestRunner().run(unittest.TestSuite((case,))); "
+                "raise SystemExit(0)",
+                None,
+            ),
+        )
+        for name, child_code, expected_count in cases:
+            with self.subTest(name=name):
+                command = ConfiguredCommand(
+                    self.definition(
+                        f"check.{name}",
+                        (sys.executable, "-c", child_code),
+                        CommandSuccessRule.UNITTEST_NONZERO_COUNT,
+                    )
+                )
+                result = self.validator((command,)).run(
+                    self.request((command,), suffix=name)
+                )
+                self.assertEqual(result.status, ValidationStatus.FAILED)
+                self.assertEqual(result.checks[0].status, ValidationStatus.FAILED)
+                self.assertEqual(
+                    result.checks[0].observed_test_count, expected_count
+                )
+
+    def test_actual_oversized_count_fails_and_later_command_is_collected(self) -> None:
+        oversized = ConfiguredCommand(
+            self.definition(
+                "check.oversized-count",
+                (
+                    sys.executable,
+                    "-c",
+                    "print('-'*70); print('Ran '+'9'*5000+' tests in 0.001s'); "
+                    "print(); print('OK')",
+                ),
+                CommandSuccessRule.UNITTEST_NONZERO_COUNT,
+            )
+        )
+        later = ConfiguredCommand(
+            self.definition(
+                "check.after-oversized-count",
+                (
+                    sys.executable,
+                    "-c",
+                    "import pathlib; pathlib.Path('later-ran.txt').write_text('ran')",
+                ),
+            )
+        )
+        configured = (oversized, later)
+        observer = GitRevisionObserver(self.project)
+        result = self.validator(configured, observer=observer).run(
+            self.request(configured, suffix="oversized-count")
+        )
+
+        self.assertEqual(result.status, ValidationStatus.FAILED)
+        self.assertEqual(
+            [check.status for check in result.checks],
+            [ValidationStatus.FAILED, ValidationStatus.PASSED],
+        )
+        self.assertIsNone(result.checks[0].observed_test_count)
+        self.assertEqual(observer.calls, 2)
+        self.assertEqual((self.project / "later-ran.txt").read_text(), "ran")
+        self.assertEqual(len(result.evidence_refs), 3)
+        first_receipt = self.read_receipt(result.evidence_refs[0])
+        later_receipt = self.read_receipt(result.evidence_refs[1])
+        suite_receipt = self.read_receipt(result.evidence_refs[2])
+        self.assertEqual(first_receipt["status"], "failed")
+        self.assertEqual(later_receipt["command_evidence"]["exit_code"], 0)
+        self.assertEqual(
+            [item["status"] for item in suite_receipt["ordered_checks"]],
+            ["failed", "passed"],
+        )
+
+    def test_sensitive_configured_argv_is_sanitized_from_all_receipts(self) -> None:
+        marker = "TASK018_SYNTHETIC_TOKEN_52794"
+        definition = replace(
+            self.definition(
+                "check.sensitive-argv",
+                (sys.executable, "-c", "import sys; print(sys.argv[1])", marker),
+            ),
+            environment_bindings=("REVIEW_TOKEN",),
+        )
+        command = ConfiguredCommand(
+            definition,
+            environment=(EnvironmentBinding("REVIEW_TOKEN", marker, sensitive=True),),
+        )
+
+        executed = self.validator((command,)).run(
+            self.request((command,), suffix="sensitive-executed")
+        )
+        self.assertEqual(executed.status, ValidationStatus.FAILED)
+        executed_receipt = self.read_receipt(executed.evidence_refs[0])
+        self.assertEqual(
+            executed_receipt["configured_command"]["argv"][-1], "[REDACTED]"
+        )
+        self.assertEqual(
+            executed_receipt["command_evidence"]["argv_redacted"][-1], "[REDACTED]"
+        )
+
+        rejected = self.validator((command,)).run(
+            replace(
+                self.request((command,), suffix="sensitive-pre-execution"),
+                worktree_id=EntityId("worktree-other"),
+            )
+        )
+        self.assertEqual(rejected.status, ValidationStatus.FAILED)
+        rejected_receipt = self.read_receipt(rejected.evidence_refs[0])
+        self.assertIsNone(rejected_receipt["command_evidence"])
+        self.assertEqual(
+            rejected_receipt["configured_command"]["argv"][-1], "[REDACTED]"
+        )
+
+        encoded_marker = marker.encode("utf-8")
+        for result in (executed, rejected):
+            for reference in result.evidence_refs:
+                retained = self.receipt_store.read(reference, 1_048_576)
+                self.assertNotIn(encoded_marker, retained)
 
     def test_request_cannot_change_named_suite_membership_order_or_rule(self) -> None:
         first = ConfiguredCommand(

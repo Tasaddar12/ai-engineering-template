@@ -48,7 +48,13 @@ from workflow_ports import (
 
 _GIT_OID = re.compile(r"(?:[a-f0-9]{40}|[a-f0-9]{64})\Z")
 _LABEL = re.compile(r"[a-z][a-z0-9-]*\Z")
-_UNITTEST_COUNT = re.compile(rb"(?m)^Ran ([0-9]+) tests? in [^\r\n]+\r?$")
+_UNITTEST_SEPARATOR = b"-" * 70
+_UNITTEST_SUMMARY = re.compile(rb"Ran ([0-9]+) tests? in [^\r\n]+\Z")
+_UNITTEST_OK = re.compile(rb"OK(?: \([^()\r\n]+\))?\Z")
+_UNITTEST_FAILED = re.compile(rb"FAILED(?: \([^()\r\n]+\))?\Z")
+_UNITTEST_NO_TESTS = b"NO TESTS RAN"
+_MAX_OBSERVED_TEST_COUNT = 1_000_000_000
+_REDACTION = "[REDACTED]"
 _MAX_RECEIPT_BYTES = 1_048_576
 
 
@@ -712,8 +718,45 @@ def _error(category: ErrorCategory, message: str) -> DomainError:
 
 
 def _unittest_count(stdout: bytes, stderr: bytes) -> int | None:
-    matches = _UNITTEST_COUNT.findall(stdout + b"\n" + stderr)
-    return int(matches[-1]) if matches else None
+    summaries: list[int] = []
+    for stream in (stdout, stderr):
+        parsed = _unittest_summaries(stream)
+        if parsed is None:
+            return None
+        summaries.extend(parsed)
+    return summaries[0] if len(summaries) == 1 else None
+
+
+def _unittest_summaries(content: bytes) -> tuple[int, ...] | None:
+    lines = content.splitlines()
+    counts: list[int] = []
+    for index, line in enumerate(lines):
+        if line != _UNITTEST_SEPARATOR or index + 3 >= len(lines):
+            continue
+        if lines[index + 2] != b"":
+            continue
+        status = lines[index + 3]
+        succeeded = (
+            status == _UNITTEST_NO_TESTS
+            or _UNITTEST_OK.fullmatch(status) is not None
+        )
+        failed = _UNITTEST_FAILED.fullmatch(status) is not None
+        if not succeeded and not failed:
+            continue
+        match = _UNITTEST_SUMMARY.fullmatch(lines[index + 1])
+        if match is None or failed:
+            return None
+
+        digits = match.group(1)
+        if len(digits) > len(str(_MAX_OBSERVED_TEST_COUNT)):
+            return None
+        count = int(digits)
+        if count > _MAX_OBSERVED_TEST_COUNT:
+            return None
+        if status == _UNITTEST_NO_TESTS and count != 0:
+            return None
+        counts.append(count)
+    return tuple(counts)
 
 
 def _check_payload(
@@ -803,7 +846,7 @@ def _definition_payload(command: ConfiguredCommand) -> Mapping[str, object]:
     definition = command.definition
     return {
         "id": definition.id.value,
-        "argv": list(definition.argv),
+        "argv": list(_sanitized_configured_argv(command)),
         "cwd_rule": definition.cwd_rule.value,
         "cwd_relative": command.cwd_relative,
         "timeout_seconds": definition.timeout_seconds,
@@ -814,6 +857,25 @@ def _definition_payload(command: ConfiguredCommand) -> Mapping[str, object]:
         "success_rule": definition.success_rule.value,
         "shell": False,
     }
+
+
+def _sanitized_configured_argv(command: ConfiguredCommand) -> tuple[str, ...]:
+    secrets = sorted(
+        {
+            binding.value
+            for binding in command.environment
+            if binding.sensitive and binding.value
+        },
+        key=len,
+        reverse=True,
+    )
+    sanitized: list[str] = []
+    for argument in command.definition.argv:
+        value = argument
+        for secret in secrets:
+            value = value.replace(secret, _REDACTION)
+        sanitized.append(value)
+    return tuple(sanitized)
 
 
 def _command_evidence_payload(evidence: CommandEvidence) -> Mapping[str, object]:
