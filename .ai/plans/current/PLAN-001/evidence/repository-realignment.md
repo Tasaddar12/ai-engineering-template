@@ -1,6 +1,6 @@
 # Repository realignment report
 
-Status: corrective implementation candidate; bootstrap behavior and repository structure validated, final product-document review pending. The future engine graph remains proposed and requires fresh isolation approval.
+Status: corrective implementation integrated into `main` at `14152beff79b2f60dffc178425a2b0ca022cce64`; independent Astra code and product-documentation reviews passed. The merged worktree and temporary verification environment have been removed. The future engine graph remains proposed and requires fresh isolation approval.
 
 The repository now separates reusable product code from its own AI development records. Executable modules are flat under `src/`; internal plans, tasks, decisions, workflows, reviews, and evidence live under `.ai/`; provider entry guidance is limited to `.ai/AGENTS.md` and `.claude/CLAUDE.md` in installed projects.
 

@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "kind": "project-state",
   "project_id": "ai-engineering-framework",
-  "generation": 3,
+  "generation": 4,
   "phase": "foundation",
   "summary": "The docs-first bootstrap installer, plan/task record CLI, standalone provider namespaces, multi-plan layout, and validator are complete and validated. The autonomous workflow engine remains unimplemented, and the revised PLAN-001 graph has no current isolation approval.",
   "control_branch": "ai/state",
@@ -16,11 +16,10 @@
     "PLAN-001 graph r3 requires fresh independent isolation review before implementation"
   ],
   "next_actions": [
-    "Integrate the reviewed repository correction and preserve its validation evidence",
     "Obtain fresh independent isolation approval for PLAN-001 graph r3 before starting any implementation task"
   ],
   "framework_ref": ".ai/framework.json",
   "policy_ref": ".ai/project/policy.json",
   "decision_index_ref": ".ai/decisions/index.json",
-  "updated_at": "2026-09-07T23:54:40Z"
+  "updated_at": "2026-09-08T00:02:32Z"
 }
