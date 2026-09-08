@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "kind": "project-state",
   "project_id": "ai-engineering-framework",
-  "generation": 24,
+  "generation": 28,
   "phase": "implementation",
-  "summary": "PLAN-001 graph r4 implementation: 4 of 39 tasks currently accepted. TASK-002 is accepted; TASK-005 is reopened for a bounded test/context correction with previous accepted evidence preserved. Other tasks continue.",
+  "summary": "PLAN-001 graph r4 implementation: 7 of 39 tasks accepted. TASK-006 is repairing preserved independent review findings; remaining work continues.",
   "control_branch": "ai/state",
   "active_plans": [
     "PLAN-001"
@@ -19,5 +19,5 @@
   "framework_ref": ".ai/framework.json",
   "policy_ref": ".ai/project/policy.json",
   "decision_index_ref": ".ai/decisions/index.json",
-  "updated_at": "2026-09-08T05:32:15.263684+00:00"
+  "updated_at": "2026-09-08T07:03:01.334988+00:00"
 }

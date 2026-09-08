@@ -4,7 +4,7 @@
   "id": "TASK-039",
   "plan_id": "PLAN-001",
   "title": "Freeze orchestration service contracts",
-  "status": "repairing",
+  "status": "accepted",
   "archived": false,
   "objective": "Freeze orchestration service contracts. Implement only this bounded prerequisite.",
   "depends_on": [
@@ -96,5 +96,5 @@
     "TASK-039-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-039-001; form a new candidate and rerun both independent reviews."
+  "resume_state": "Candidate 314ef09d59f494223bec02556c6e3d9a8108636f passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }

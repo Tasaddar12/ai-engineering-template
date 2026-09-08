@@ -116,3 +116,112 @@ Manual native accounting is 39 charged invocations of 300, including rejected at
 ### Local-port argument repair (2026-09-08)
 
 TASK-002 candidate f38680d2d892d38abaf95402f7470c90a838b68c passed 25 declared tests, but fresh R1 found one major representation defect: command definitions and evidence rejected schema-valid multiline and whitespace-significant arguments. The reviewer reproduced real fixed-argv execution success followed by both DTO constructor failures. The immutable failing report and probes were preserved at integration commit 8446225b832db582e49598670ef1f0f3345be415. The owner is performing its first bounded local correction; no schema, signature, graph, or permission change is authorized. Fresh validation and both independent reviews remain required. Manual native accounting is 41 charged invocations of 300; four tasks remain accepted and graph rewrites remain 3 of 3 used.
+
+### Local interfaces accepted; bounded asset-test follow-up (2026-09-08)
+
+TASK-002 candidate 460ab567d01912167557f2f671ed07c63f0a31e7 passed 27 declared tests, a fresh R1 with 15 independent probes, and separate R2 with five cross-contract scenarios. It was accepted at 4e4dc60178f073042d989f517ee1d363cbe6777c and its clean merged worktree was removed. Five tasks had then been accepted. The independently reproduced asset-test closure limitation led to the [scoped TASK-005 follow-up decision](assessment/TASK-005-coordinator-follow-up.md); its historical accepted code/reviews remain preserved, but current TASK-005 status was reopened before any descendant dispatch. Four of 39 tasks are therefore currently accepted: TASK-001, TASK-002, TASK-003, and TASK-004.
+
+TASK-005 a2 now changes only its test/handoff, and TASK-013 implements dependency-graph validation in a disjoint worktree. TASK-038 has a clean first repair for its two preserved R1 findings (29 declared tests reported); TASK-008 has a clean initial handoff (19 declared tests reported); TASK-039 has a clean first repair (20 declared tests reported). These queued candidates still require coordinator validation and fresh independent reviews. Manual native accounting is 48 charged invocations of 300 before the next reviewer dispatch. The approved graph/task structure and three-of-three rewrite accounting remain unchanged.
+
+### Configuration accepted; command and scope implementations (2026-09-08)
+
+TASK-038 repaired candidate `6f2b12c3283ed7d6e3d4876020fe690c6e0061a3`
+passed its 29 declared tests and both fresh cycle2 reviews. R1 passed 48
+effective-policy validations and 28 expected rejections; R2 independently passed
+96 validations and 54 rejections, plus actual source and provider installations.
+Both original findings remain preserved and are repaired: source `local_containers`
+loads, and configured invocation limits enforce the schema minimum of one while
+zero rewrites remain valid. Integration commit `ab36f09f7775201882bf863a90bc264be022adbd`
+accepts TASK-038, making five of 39 currently accepted. The clean merged tree was
+removed. Saved configuration persistence remains TASK-009/034 work.
+
+TASK-006 command execution is dispatched at `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f`;
+TASK-014 scope detection at `0881d34129b54584c29ce8db11a66cae7f1bd1be`. Their
+component/path claims are disjoint and their prerequisites are accepted. TASK-005
+a2 is clean at `bc9b5a6e34a2cdb34582fffa09f1d43171820c7d` with 11 reported tests;
+TASK-013 a1 is clean at `8423040c44e24a295a7ebf8027e5dc7d05afb9c6` with 13
+reported tests and an actual 39-node r4 build. They join TASK-008 and TASK-039 in
+the review queue; owner handoffs are not acceptance evidence. Native manual
+accounting is 52 charged invocations of 300 before the next TASK-008 R1 dispatch.
+Graph rewrites remain three of three used, and all 39 outcomes remain required.
+
+### Guarded transitions accepted; agent adapter dispatch (2026-09-08)
+
+TASK-008 candidate `fcb01a93f0e1022c70fa296f7342ced71bbf3250` passed its
+19 declared tests and separate fresh cycle1 reviews, then integrated at
+`62b899af5c57f651175cd6f304f52218acb12adb`. R1 covered 377 state pairs,
+269 missing and 269 failed guards, all 17 resumable states, and 95 schema-valid
+event mappings. R2 independently passed six consistency tests covering vocabulary,
+generation-checked projection transactions, resume guard rechecks, grouped task
+and plan completion relocation, stale identities and terminal history. Both reports
+have no findings. The clean merged tree was removed; six of 39 tasks are accepted.
+These are pure decision/representation checks, not proof of durable state IO.
+
+TASK-014 has a clean owner candidate `b63735f4da282ad1b0376586683d994b3c8b028f`
+with 17 reported tests and a 64-pair comparison with accepted ScopeClaim behavior;
+it still requires both reviews. TASK-006 continues actual process validation.
+TASK-017 starts at `bd962bd0c68f4803d07a16136d55c2ec8707fba8`, with accepted
+TASK-003/004/038 inputs and disjoint ownership. TASK-039's bounded repair is next
+for current-base validation and fresh reviews. Native manual accounting is
+55 charged invocations of 300 before that R1 dispatch. Historical rewrite usage
+remains three of three; no new rewrite or authority was introduced.
+
+### Orchestration interfaces accepted; Linux preflight correction (2026-09-08)
+
+TASK-039 repaired candidate `314ef09d59f494223bec02556c6e3d9a8108636f`
+passed its 20 declared tests and both fresh cycle2 reviews, then integrated at
+`bc8a5f47d8e1a66bc2b8929b099349cb199c0100`. R1 passed 30 usage boundaries and
+55 malformed-number probes. R2 independently checked 24 usage boundaries, 44
+numeric rejections, all ten signatures, schema shapes, uneven four-R1/three-R2
+history retention, and compatibility with accepted configuration and completion
+transitions. The old finding is resolved and retained. Seven of 39 tasks are
+accepted; Git removed the clean merged tree.
+
+TASK-019 is dispatched at `b4fe29bf40bd017d638072ad3920dca8b240a3a3`.
+TASK-017 continues its deterministic adapter implementation. TASK-006 returned
+clean candidate `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` with 18 passing
+Windows tests, including actual descendant cleanup. Before its first R1, local
+Ubuntu-24.04 capability was discovered and a project-local Python environment was
+prepared with the declared dependency. The Linux run exposed one cleanup assertion
+failure and one backward-clock evidence error. The [retained preflight and bounded
+correction decision](assessment/TASK-006-linux-preflight.md) records both diagnostics
+and environment setup; the owner is correcting the same attempt's three paths.
+This is not a failed independent-review cycle or a structural rewrite.
+
+Manual native accounting is 59 charged invocations of 300, including the TASK-019
+dispatch and TASK-006 correction invocation. Graph rewrites remain three of three
+used. No candidate review is currently frozen while the three scoped owners work.
+TASK-005 a2, TASK-013 and TASK-014 remain clean in the review queue. Linux and Windows
+validation will be used for applicable process/platform behavior before final gates.
+
+TASK-006's bounded pre-R1 correction is now clean at
+`86bc27af026d8b7b00303fa6d62b12218e0947b8`. It requires observed POSIX process-group
+ownership before confirmed cleanup and emits schema-valid unknown evidence with
+retained stream refs for a backward clock observation, without fabricated timestamps.
+The owner ran the declared suite and ResourceWarning-as-error variant on Windows
+and Ubuntu: 20 discovered, 19 executed, one platform-specific skip on each; all pass.
+The coordinator will bind fresh current-base Windows and Linux validation in one
+candidate before independent R1. Native accounting remains 59 before that dispatch.
+
+### Command cleanup review and context dispatch (2026-09-08)
+
+TASK-006 first R1 failed with two independently reproduced major cleanup findings:
+an exited parent can leave inherited pipes blocking the runner on both platforms,
+and a Linux descendant escaping the process group survives while timeout cleanup
+is reported as confirmed. The exact candidate, both platform suites, independent
+probes and complete failed report are preserved at commit
+`214e44d07cbfbd937a86ef74dbc4969792fbf0d6`. The same attempt owner is repairing
+only commands.py, its owned tests and handoff. This is the first failed review
+cycle; earlier coordinator preflight history remains separate. Fresh R1/R2 are
+required on the corrected candidate. Seven of 39 tasks remain accepted.
+
+TASK-017 is clean at `71e0ccf697c132082bb17f7f3814ffb6abee5df6` with 20
+reported tests, including sequential provider-file recovery across three fresh
+Python processes. TASK-019 is clean at `f9e32b0ce8c8950dcb541356cae23a2a7202adc5`
+with 12 reported fingerprint tests. Git and handoffs confirm each changed only its
+three owned paths; both remain review candidates, not accepted dependencies.
+TASK-016 context construction is dispatched at
+`0b918080f30a5b7831ec4c30ae96351282bfc940`, using accepted003/004/038.
+It runs independently of the command repair. TASK-013 is next for candidate
+validation and separate R1/R2. Native manual accounting is 62 charged invocations
+of 300 before the next reviewer; graph rewrites remain three of three used.

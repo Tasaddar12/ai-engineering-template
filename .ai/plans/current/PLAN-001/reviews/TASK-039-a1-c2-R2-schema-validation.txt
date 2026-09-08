@@ -1,0 +1,2 @@
+PASS final R2 JSON: Draft 2020-12 schema, format validation, all 12 complete numbered checks, exact R1 reference, pass verdict and no findings.
+Validation read ROOT report/schema only; candidate access remains stopped.

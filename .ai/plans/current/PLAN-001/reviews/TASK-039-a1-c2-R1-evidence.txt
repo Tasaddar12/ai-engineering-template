@@ -1,0 +1,40 @@
+PASS identity: clean frozen ROOT/base and candidate HEAD; binary diff; 12 committed context hashes; validation hash; policy/model digest; canonical fingerprint; three allowed additions; graph r4 structural digest/isolation; accepted prerequisite ancestry.
+Import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\orchestration_ports.py
+Import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\workflow_ports.py
+Import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\domain_values.py
+Declared command: ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-B', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_orchestration_ports/', '-p', 'test_*.py']
+Exit: 0
+....................
+----------------------------------------------------------------------
+Ran 20 tests in 0.008s
+
+OK
+
+PASS all ten frozen Protocol signatures, complete parameter and return type identity.
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-039-a1-c2-R1-evidence.py", line 159, in <module>
+    unknown_run = replace(good.agent_observation.run, status=d.AgentRunStatus.UNKNOWN, output_ref=None)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\killi\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\dataclasses.py", line 1588, in replace
+PASS four schema-backed DTO field sets plus three nested shapes; only accepted/shared and standard-library imports; exact execution/completion vocabulary.
+PASS repair: 30 independent usage boundary cases across all six counters; 55 malformed numeric cases rejected; unbounded optional tokens retained.
+PASS cumulative 4 R1 / 3 R2 history retention, immutable permission subset, over-limit usage request and evidence-bearing budget_exhausted pause; stage, plan and R2 linkage guards.
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 17, in __init__
+  File "D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\workflow_ports.py", line 372, in __post_init__
+    raise ValueError("failed or unknown agent runs require error_category")
+ValueError: failed or unknown agent runs require error_category
+PASS identity: clean frozen ROOT/base and candidate HEAD; binary diff; 12 committed context hashes; validation hash; policy/model digest; canonical fingerprint; three allowed additions; graph r4 structural digest/isolation; accepted prerequisite ancestry.
+Import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\orchestration_ports.py
+Import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\workflow_ports.py
+Import: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-039-a1\src\domain_values.py
+Independent probes rerun after correcting review fixture error_category; declared 20-test pass above is retained.
+PASS all ten frozen Protocol signatures, complete parameter and return type identity.
+PASS four schema-backed DTO field sets plus three nested shapes; only accepted/shared and standard-library imports; exact execution/completion vocabulary.
+PASS repair: 30 independent usage boundary cases across all six counters; 55 malformed numeric cases rejected; unbounded optional tokens retained.
+PASS cumulative 4 R1 / 3 R2 history retention, immutable permission subset, over-limit usage request and evidence-bearing budget_exhausted pause; stage, plan and R2 linkage guards.
+PASS dispatch evidence and provider request/lease/handle fences; unknown output cannot import; pending/unknown/failed cancellation cannot release scope.
+PASS integration requires observed OID/evidence and consistent re-review status; plan approval requires validation/exact review; completion requires approved integration plus authorized observed merge.
+PASS identity: clean frozen ROOT/base and candidate HEAD; binary diff; 12 committed context hashes; validation hash; policy/model digest; canonical fingerprint; three allowed additions; graph r4 structural digest/isolation; accepted prerequisite ancestry.
+ALL INDEPENDENT CYCLE-2 R1 PROBES PASSED. No candidate source/state mutation or automatic integration performed.

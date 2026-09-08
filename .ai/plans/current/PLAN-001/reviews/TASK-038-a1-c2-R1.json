@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "R1-TASK-038-a1-c2",
+  "stage": "implementation",
+  "request_id": "R1-REQUEST-TASK-038-a1-c2-053911",
+  "task_id": "TASK-038",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-038-a1-6f2b12c3283e.json",
+  "candidate_fingerprint": "b19e2958568f1c67da0c70f28d5e50901143bf9baf627449ae96ea5a39345e0b",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "R1-INVOCATION-TASK-038-a1-c2-053911"
+  },
+  "independent_session_id": "/root/r1_038_c2",
+  "implementation_session_id": "/root/implement_038",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "AC1/AC2 pass after both reproduced c1 repairs. Verified clean exact base/head, all candidate hashes, r4 approval, owned scope and accepted TASK-004 ancestry/source. Fresh rank-4 review exceeds rank-3 implementation; submitted selection and unavailable provider confirmation are documented honestly.",
+      "evidence": [".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt", ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-01/08 and AC-01/08 preserve source .ai and installed provider support, immutable reconstruction and schema compatibility. No credential/provider/remote, policy mutation, new-schema or concrete persistence implementation.",
+      "evidence": [".ai/plans/current/PLAN-001/plan.md", ".ai/plans/current/PLAN-001/spec.md", "src/config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced installation discovery, registry validation, model/policy decoding, recommendation/binding lookups, restrictive resolution, strict hydration and effective serialization. Actual source local_containers now loads; zero configured invocations reject and valid boundaries pass the accepted registry.",
+      "evidence": ["src/config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Explicit non-retryable failures cover missing/malformed/stale/incompatible configuration and prohibited overrides. Decoder only reads files; fresh disposable installation cleanup completed. Path/link guards are unchanged; prior real junction refusal is retained as historical evidence, not a claimed fresh execution.",
+      "evidence": ["src/config.py", "tests/unit/config/test_config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c1-R1-evidence.txt", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Configured minima are 1/1/0/1; 48 source/installed effective snapshots validate. Fresh hydration, immutability, saved precedence and sandbox/broadening cases pass. Declared tests check provider/namespace, stale installation, compatibility, traversal/overlap, model mismatch and unknown fields/profiles.",
+      "evidence": ["schemas/v1/policy.schema.json", "tests/unit/config/test_config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Exact-worktree declared suite passes 29 tests with verified module origins. Added regressions test actual source and registry-valid policy boundaries; independent real installer, saved-default change, 48 snapshot and 28 rejection checks pass. No zero-test or broad bootstrap result substitutes for this task's tests.",
+      "evidence": ["tests/unit/config/test_config.py", ".ai/plans/current/PLAN-001/commands/test.TASK-038.json", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Bounded decoder only. Saved non-record payload IO/hash verification and policy_ref persistence remain TASK-009/034. Current configuration records have no project command-reference field; command DTOs/argv remain TASK-002/006. Observed usage/remaining facts stay TASK-039; no invented schema fields or concrete dispatch.",
+      "evidence": [".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/evidence/configuration-resume-clarification.md", "schemas/v1/workflow-run.schema.json", "src/config.py"]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Exact current-base diff contains precisely three added owned paths: config module, isolated config tests and task handoff. No prohibited/unrelated source or metadata edits. Candidate remains clean at exact head after checks.",
+      "evidence": [".ai/plans/current/PLAN-001/tasks/current/TASK-038.json", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Frozen load_project_settings(root: Path, installation: InstallationRecord) -> ProjectSettings signature verified. Explicit flat imports reuse unchanged accepted registry; typed frozen decoded collections and detached payloads remain maintainable. configured_model is distinct from role recommendations.",
+      "evidence": ["src/config.py", "src/contracts.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Fresh probes reject all nine sensitive autonomous actions, unknown actions, broadened overrides, weakened sandbox and invalid saved payloads. Source/installed loads preserve configuration bytes; invalid native settings confer no automatic binding. Provider/path/ownership guards remain intact; no credentials, authorization effects or environment-based configuration.",
+      "evidence": ["src/config.py", "tests/unit/config/test_config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Updated handoff accurately records repaired source action and configured invocation minimum, valid zero rewrites, 29 tests, immutable saved payload API, provenance limits and separate persistence/argv/runtime-usage ownership. Historical dispatch identity is distinguished from this review's current base.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-038.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1-evidence.txt"]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T05:39:11Z"
+}

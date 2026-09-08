@@ -4,7 +4,7 @@
   "id": "TASK-016",
   "plan_id": "PLAN-001",
   "title": "Build minimal role context bundles",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Build minimal role context bundles. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -97,7 +97,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-016-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
