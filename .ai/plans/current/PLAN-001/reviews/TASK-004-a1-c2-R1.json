@@ -1,0 +1,162 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-004-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "TASK-004-a1-c2-R1",
+  "task_id": "TASK-004",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-004-a1-248f4dedf5d3.json",
+  "candidate_fingerprint": "900aecdaa2a27efbe2bc869df51a5f07f846d492b0523c77ab5673848ef72fec",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_004_c2"
+  },
+  "independent_session_id": "/root/r1_004_c2",
+  "implementation_session_id": "/root/implement_004",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC2 passes: typed domain failures and logical-reference constructor parity are supported. AC1 and AC3 fail because an input-contract prose change retains an approved structural digest. All 27 v1 kinds, current bootstrap compatibility, directory/record relocation, actual scope invalidation and source-isolated installed closure have positive independent evidence.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-004.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "fail",
+      "rationale": "Flat modules, offline scope, frozen schemas and deferred runtime wiring respect the specification exclusions. The specification and frozen semantic invariant nevertheless require structural contract changes to invalidate approval; the reproduced input_contracts collision violates that requirement.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/shared/state/semantic-invariants.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Traced registry loading/dispatch, local reference resolution, shared typed parsing, field-aware projection, validator strict equality and live artifact discovery, and AST-based transitive helper closure. The input-contract path matcher still accepts explanatory prose ending in an extension; the real approved-graph fixture confirms stale approval survives its mutation.",
+      "evidence": [
+        "src/contracts.py:68",
+        "src/contracts.py:383",
+        "src/validate_foundation.py:382",
+        "src/install.py:174",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Unknown kinds/versions, schema violations, malformed logical references, unavailable offline resources and broken local references map to declared nonretryable DomainException categories, translated to the foundation ValidationFailure boundary. Scoped file reads, pre-write installer planning and temporary fixture cleanup are appropriate; no changed-path resource leak was found.",
+      "evidence": [
+        "src/contracts.py:77",
+        "src/contracts.py:262",
+        "src/validate_foundation.py:122",
+        "src/install.py:174",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-focused.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "The exact cycle-1 objective-prose and task bucket directory-prefix cases are repaired. Independent probes confirm all three roots, both separators, all plan/task bucket combinations, real scope invalidation, immutable inputs, bare-local rejection and cyclic helper imports. Mixed input-contract prose remains an incorrect boundary case.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "The exact-candidate coordinator evidence records 17 meaningful focused tests; the handoff records 24 bootstrap tests and foundation validation. R1 independently ran six registry boundary tests successfully and approved-graph/install/digest probes. Existing regressions cover objective prose but miss mixed input-contract prose, for which the approved-graph regression must be added. The reviewer-only example-count diagnostic is preserved separately.",
+      "evidence": [
+        "tests/unit/schemas/test_contracts.py",
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-004-a1-248f4dedf5d3.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-focused.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-diagnostic.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The implementation stays within offline contract validation, typed-reference/digest helpers, the bounded installer catalog and task-owned tests/evidence. It adds no provider integration, schema revision, project-state write, later service DTO or CLI migration and imports only accepted TASK-001 local values.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-004.json",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Git name/status reconstruction yields exactly contracts.py, install.py, validate_foundation.py, tests/unit/schemas/test_contracts.py and the TASK-004 implementation handoff. Each path passes the accepted ScopeClaim permissions; no unrelated, prohibited, historical, shared-contract or TASK-003 file changed. The candidate remains clean.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit public module interfaces reuse immutable shared values and errors, return defensive schema views, and retain a small typed pure digest helper. Installer reachability is bounded to canonical flat source modules with clear missing/unreachable failures. The bounded input-reference defect requires correction but no new abstraction or contract expansion is necessary for this review's finding.",
+      "evidence": [
+        "src/contracts.py",
+        "src/install.py:174",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "fail",
+      "rationale": "Closed registry loading avoids remote retrieval; malformed logical references fail closed, installed tools import from their own payload and unrelated source is excluded. However the structural approval boundary fails closedness: changing explanatory input-contract text is accepted under the old approved graph/review digest.",
+      "evidence": [
+        "src/contracts.py:68",
+        "src/contracts.py:383",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-focused.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "The task handoff accurately documents scope, APIs, accepted dependency, prior failed review, original fixes, validation and deferred work. Its claim that only path-shaped input contract references are canonicalized is too broad given the prose collision. Reviewer provenance separately records coordinator-observed Astra/xhigh configuration and unavailable provider-returned identity/effort without undeclared model fields.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-004-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "At src/contracts.py:68-72 and :383-390, _LIFECYCLE_INPUT_REFERENCE allows arbitrary text after the rooted plan prefix if it ends in an extension or separator. Changing input_contracts from '.codex/plans/current/PLAN-101/spec.json: required shape comes from docs/contract.md' to the completed-path sentence therefore produces the same structural digest. Both records are schema-valid. An independent fresh installed-project fixture confirms validate_foundation accepts this changed explanatory contract under the unchanged approved graph and isolation-review digest ba2964c63714c7a2d8dd10acc55486597cfcca2b85fd170fe1f3db9f90988b07. A substantive input-contract change can retain stale approval.",
+      "paths": [
+        "src/contracts.py",
+        "tests/unit/schemas/test_contracts.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md"
+      ],
+      "expected_fix": "Canonicalize mixed input_contracts entries only when the complete value is a recognized standalone record path, preserving explanatory prose and arbitrary suffixes. Retain current-location bootstrap encoding, lifecycle-only relocation equality and strict digest comparison. Add an approved-graph regression proving this input-contract prose mutation invalidates approval and update the handoff; do not accept stale hashes as fallback.",
+      "acceptance_ids": [
+        "TASK-004-AC1",
+        "TASK-004-AC3"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T03:07:32.793404+00:00"
+}

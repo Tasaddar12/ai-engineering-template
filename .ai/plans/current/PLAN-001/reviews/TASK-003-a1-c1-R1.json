@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-003-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "TASK-003-a1-c1-R1",
+  "task_id": "TASK-003",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+  "candidate_fingerprint": "9de2fbd98f7d1d285df4868848773443a9328db15b82c3a18be8335b752b4259",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_003_c1"
+  },
+  "independent_session_id": "/root/r1_003_c1",
+  "implementation_session_id": "/root/implement_003",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC1 has all four frozen service Protocols and immutable DTOs, but AgentObservation accepts contradictory provider identities and premature structured output (F1/F2). AC2 has typed delivery and safe cancellation/ambiguity vocabulary, but DeliveryObservation accepts another known PR number (F3).",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-003.json",
+        ".ai/shared/architecture/service-contracts.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "fail",
+      "rationale": "The implementation respects the no-IO, no-orchestration, no-concrete-adapter exclusions and spec scope. F2 violates the explicitly referenced architecture/python.md contract that poll returns structured output only on success.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/shared/architecture/python.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Read all three complete Git additions at the exact head. Agent observation identity/status checks and delivery identity checks are incomplete: three independent constructions accepted the contradictory records detailed in F1-F3.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "fail",
+      "rationale": "Cancellation before observed start is representable; only cancelled/already_terminal can be quiesced, confirmed cancellation needs evidence, and unknown/failed cancellation needs a DomainError. Validation rejects zero-test passing checks and non-passing results without error. F1/F3 still allow wrong remote identities across observation boundaries. No resources are acquired by this pure module.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Independent negative probes passed 29 assertions: six invalid Git OIDs; three agent attempt/adapter/lease mismatches; five contradictory cancellation status/quiesced pairs; confirmed cancellation without evidence; three non-passing validation statuses without error; four missing/invalid nonzero test counts; five delivery plan/run/operation/repository/head-branch mismatches; two successful-output model/invocation mismatches. Contradictory external handles, premature successful output, and known PR-number mismatch remained accepted.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "Independently ran the exact declared test.TASK-003 leaf command using the root full-plan-venv interpreter from the frozen worktree: exit 0, 21 tests, OK. Tests cover actual v1 field parity and representative test-only wire projections, immutable input detachment, cancellation, validation and review failure behavior. They omit regressions for F1-F3; the remote identity test is a matching happy-path assertion.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".ai/plans/current/PLAN-001/commands/test.TASK-003.json",
+        ".ai/plans/current/PLAN-001/evidence/validation/TASK-003-a1-b4df629eeccf.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "No scope expansion: the five exact Protocols expose only start/poll/cancel, build, run, evaluate, and prepare/publish/observe. All 27 DTO dataclasses are frozen with slots. No orchestration signatures, concrete services, central registry, runtime wiring, production serialization, or new GitOid abstraction was introduced.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".ai/shared/architecture/service-contracts.md"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Git name/status diff reconstructs exactly three additions: src/workflow_ports.py, tests/unit/domain_workflow_ports/test_workflow_ports.py, and the task-owned TASK-003 handoff. No deletion, rename, prohibited or unrelated change; exact candidate diff whitespace check passes. Every reviewed addition matches Git at the frozen head and the worktree is clean.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit flat-module imports use accepted TASK-001 immutable values; typed dataclasses and small normalization helpers keep field ownership visible. Schema-backed records preserve all declared v1 properties and service error/evidence envelopes stay separate. Validation correctly binds identity/revision/suite/worktree before final candidate hashing; review request and result retain final candidate fingerprint binding. Identity defects are separately recorded in F1-F3.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+        ".ai/shared/architecture/python.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "fail",
+      "rationale": "ContentRef uses repository-relative validated paths; evidence is content-addressed; collections detach into tuples; grants retain scoped action/resource/authority; no filesystem/process/network/clock effects or automatic authority changes exist. However F1 and F3 let observed process/PR facts be associated with a different handle. Provenance: /root/r1_003_c1 is independent of /root/implement_003, coordinator-observed native OpenAI gpt-6-astra/xhigh review_high rank 4 exceeds Sol rank 3. Separate provider-returned model/effort is unavailable, as explicitly documented in the report.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/project/agent-models.json",
+        ".ai/project/policy.json"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Task handoff accurately lists the three owned files, both acceptance mappings, test command and 21-test outcome, pre-freeze corrections, plain v1 OIDs, schema-backed records, test-only projections, native configuration provenance, and downstream ownership. The earlier dispatch base is historical; the exact frozen review base is independently verified here. No bootstrap, concrete adapter, or TASK-002/004 acceptance is assumed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-b4df629eeccf.json",
+        ".worktrees/TASK-003-a1/.ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-003-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/workflow_ports.py:400-403 checks adapter, attempt and lease identity but never compares external_handle. Starting with the valid succeeded observation from the focused test at line 367, replace only run.external_handle with 'external-other' while handle.external_handle remains 'external-1': construction still succeeds with successful output and evidence. The observation now associates completion evidence for one provider process with the query/cancel handle of another; downstream consumers cannot treat this envelope as internally bound.",
+      "paths": [
+        "src/workflow_ports.py",
+        "tests/unit/domain_workflow_ports/test_workflow_ports.py"
+      ],
+      "expected_fix": "Reject conflicting known provider external handles between AgentObservation.handle and AgentObservation.run. Keep genuinely unknown handles representable and define their enrichment consistently. Add negative regression coverage showing that a conflicting handle cannot form a successful observation, while matching and permitted unknown states still work.",
+      "acceptance_ids": [
+        "TASK-003-AC1"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-003-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/workflow_ports.py:404-432 allows a structured output for every observation status; only SUCCEEDED imposes an output-status constraint. Reuse a valid successful output, change its run to RUNNING with finished_at=None and output_ref=None, and construct AgentObservation(RUNNING, handle, run, output, evidence): it succeeds with output.status=SUCCEEDED. The referenced .ai/shared/architecture/python.md explicitly limits poll structured output to success. This exposes successful artifacts while the invocation is still running and before terminal outcome/provenance checks have been applied. A further probe retained invocation_id='invocation-1' in both present ModelIdentity values but set run model_id='fake-model' and output model_id='other-model'; a RUNNING observation also accepted that contradiction. SUCCEEDED observations correctly rejected differing model/invocation identities in two independent checks.",
+      "paths": [
+        "src/workflow_ports.py",
+        "tests/unit/domain_workflow_ports/test_workflow_ports.py"
+      ],
+      "expected_fix": "Enforce the frozen poll contract by rejecting structured output on non-success observations, including queued/running/unknown states, and add status-matrix regression tests. Continue requiring matching successful output/provenance/evidence for successful observations and preserve the existing explicit non-success error/status representation. Keep malformed raw provider details in error/evidence rather than a contradictory structured output envelope.",
+      "acceptance_ids": [
+        "TASK-003-AC1"
+      ],
+      "resolved": false
+    },
+    {
+      "id": "R1-TASK-003-003",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/workflow_ports.py:1149-1161 binds several delivery-state identity fields but omits the known pull request number. Reuse the test at line 761 with handle.number=12 and change state.number to 13 and state.url to /pull/13, keeping the repository/head/run/operation unchanged: DeliveryObservation(OBSERVED, handle, state, evidence) accepts the ready/approved facts of PR #13 under the handle for PR #12. This can attribute review/check/merge facts to the wrong PR.",
+      "paths": [
+        "src/workflow_ports.py",
+        "tests/unit/domain_workflow_ports/test_workflow_ports.py"
+      ],
+      "expected_fix": "When the delivery handle and observed state both carry a PR number, reject a mismatch (or return an explicit unresolved/error outcome without presenting the other PR as the requested observation). Preserve initial discovery when the handle number is unknown. Add tests for mismatched known numbers and valid enrichment; continue allowing observed head/base drift to be represented as remote facts.",
+      "acceptance_ids": [
+        "TASK-003-AC2"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T02:54:31Z"
+}
