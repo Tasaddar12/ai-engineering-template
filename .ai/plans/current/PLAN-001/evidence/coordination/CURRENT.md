@@ -28,12 +28,12 @@ Clean tracked export of 67e41a2 passed 24 bootstrap plus all then-accepted leave
 ## Frozen review and live owners
 
 ROOT: D:/Codex Projects/ai-engineering-template, ai/PLAN-001/integration.
-ROOT is FROZEN at 56187e99b24d86860171a59cad07bc02d16a70fd while verify_018_c2
-runs. No root commits, begins, source or canonical changes before FINAL. This
-unstaged coordination note is outside its manifest. Generation 45.
+ROOT is not frozen. TASK-018 focused verification is FINAL and accepted;
+current integration includes f4bce8ea8b0433e0491b1f29b5197a09f1c16977.
+Generation 46. Freeze again when dispatching the next independent review.
 main remains 501b51276a4d07826afcaa1c0cbf09a24a466587.
 
-- verify_018_c2, Astra/xhigh rank 4, ACTIVE; native
+- verify_018_c2, Astra/xhigh rank 4, FINAL PASS and accepted; native
   call_bIUmqZuLRspmyIIjxLPIRZZx, charge 101/300. Exact candidate
   41a8cd578b81981e6cda42c88f9377aaec5b1bdd, fingerprint
   539d2985edce4cc829db1dea8ebca96486abdf07acd19a9de328d655afceb154.
@@ -51,7 +51,7 @@ main remains 501b51276a4d07826afcaa1c0cbf09a24a466587.
   tests/unit/state_checkpoints/ and own handoff. Full checkpoint/locking/crash/
   relocation/evidence requirements are in next-state-dispatch.md. All actual
   002/004/007/008 dependencies accepted. No new port or ignored helper required.
-- implement_017_a3, Sol/xhigh rank 3, ACTIVE; native
+- implement_017_a3, Sol/xhigh rank 3, original owner FINAL; native
   call_9CNyCdJ6VX2Z8og8qw76ZXtw, charge 95/300. TASK-017-a3 tree/branch,
   dispatch base 9ad611187fd0f07bf8992919f5a4858cf17cf8cc. Exact salvage verified:
   ce1776a -> dd48c2f, 3cdb41e -> 4a56132, f5e2151 -> b7a30be; owned blobs equal
@@ -96,8 +96,8 @@ Final combined platform/source/package verification is still required.
 
 ## Retention, budget and runtime bindings
 
-101/300 conservative native invocations charged (100 spawn/followup plus root);
-199 remain. Three of three structural rewrites used; zero remain. Include old
+103/300 conservative native invocations charged (102 spawn/followup plus root);
+197 remain. Three of three structural rewrites used; zero remain. Include old
 errors/resumes/rejections; do not reset accounting or invent active_run records.
 Use tracked count-native-invocations.py against the original session JSONL.
 Observed native configuration is not separately returned provider-effective identity.
@@ -150,3 +150,13 @@ No extra review stage, agent or separate paperwork. Active owners009/019 notifie
 generation46, 12/39 accepted. Full reports/identity/actual diagnostics read and
 all six closing report hashes verified. Clean integrated018 worktree removed
 non-force; historical branches/reports retained. Root freeze released.
+
+Standing project rule committed f4bce8ea8b0433e0491b1f29b5197a09f1c16977 in
+.ai/AGENTS.md and canonical docs/agents/implementer.md under direct user
+authorization. Foundation passed: 27 schemas,195 artifacts,39 tasks,543 links;
+diff check passed. No separate self-review record added.
+017 implementation handoff is being completed by finish_017_handoff in same a3
+at96a8c9e63a669c86e34cd98f7517dd1179597e93; prior owner context unavailable.
+Native call_VwqMf0CWv9VDBzMy9d4CXMnf, Sol/xhigh rank3, charge103. Bounded
+final-diff/tests/fixes as implementation, brief findings in existing handoff only;
+no separate review stage. Active owners009 and019 already have exact requirement.
