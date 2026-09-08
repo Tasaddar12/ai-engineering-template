@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-013-a1-c1-R2",
+  "stage": "consistency",
+  "request_id": "manual:PLAN-001:TASK-013:a1:c1:R2",
+  "task_id": "TASK-013",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-013-a1-51a94cd050ad.json",
+  "candidate_fingerprint": "9c7b3139798b22e6f1bb30a9d5e5bf9230db0c75a348cdedbc30f472201bd9ae",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r2_013_c1:PLAN-001:TASK-013:a1:c1:R2"
+  },
+  "independent_session_id": "/root/r2_013_c1",
+  "implementation_session_id": "/root/implement_013",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "Pure flat planning computations preserve the frozen boundary. TASK-015 owns isolation attestation; TASK-022 capacity, leases and dispatch; TASK-024 lineage/budgets; TASK-033 draft persistence. No runtime IO or authority changes.",
+      "evidence": [
+        "src/plan_graph.py",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-015.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-022.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADR-001 through ADR-005 remain honored: flat Python/v1 records, plan-qualified identities, single-writer effects, exact independent review gates and injected side-effect ownership. The actual diff adds only three owned paths.",
+      "evidence": [
+        ".ai/decisions/ADR-001.md",
+        ".ai/decisions/ADR-002.md",
+        ".ai/decisions/ADR-003.md",
+        ".ai/decisions/ADR-004.md",
+        ".ai/decisions/ADR-005.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-03",
+      "status": "pass",
+      "rationale": "Accepted TASK-001/TASK-004 source bytes match their accepted commits in base ancestry. Accepted TASK-039 graph/scheduling values also remain unchanged; independently constructed port snapshots preserve graph identity, edges and accepted-integration fact semantics.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-04",
+      "status": "pass",
+      "rationale": "Explicit imports reuse accepted ContractRegistry, structural_task_digest, RecordRef, typed IDs, enums and DomainException. Candidate-local module origins are verified; full 39-node graph and qualified commit conversions agree with frozen orchestration values.",
+      "evidence": [
+        "src/plan_graph.py:15",
+        "src/contracts.py:258",
+        "src/contracts.py:402",
+        "src/domain_values.py:169",
+        "src/orchestration_ports.py:208",
+        "src/orchestration_ports.py:790",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-05",
+      "status": "pass",
+      "rationale": "Schema-shaped v1 and accepted frozen-JSON inputs produce identical graphs. Nine plan/graph/task version, kind and unknown-field failures preserve accepted category, immutable details and retryability. Status alone never proves integrated readiness.",
+      "evidence": [
+        "src/plan_graph.py:271",
+        "src/plan_graph.py:307",
+        "src/contracts.py:258",
+        ".ai/shared/state/transitions.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-06",
+      "status": "pass",
+      "rationale": "No schema, database, storage or migration surface changes. Accepted lifecycle-neutral path/attempt changes preserve the full DAG and reviewed digest; structural contract prose invalidates the old digest. Excluded historical records are separate from live topology.",
+      "evidence": [
+        "schemas/v1/",
+        ".ai/shared/state/semantic-invariants.md",
+        "src/contracts.py:380",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "The three additions follow declared flat source, isolated test and plan-local handoff conventions. Repeated local task IDs across two full plans stay disjoint under accepted reference parsing, lookup and frontier facts.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-013.json",
+        ".ai/shared/architecture/python.md",
+        "src/plan_graph.py:56",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "No parallel registry, digest, error, ID or state implementation was introduced. Existing bootstrap validation and accepted port representations are unchanged; the new immutable DAG is the task-owned computation, not another persisted record format.",
+      "evidence": [
+        "src/plan_graph.py",
+        "src/contracts.py",
+        "src/domain_values.py",
+        ".ai/shared/architecture/python.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Graph values and orchestration record values serve compatible roles. The explicit adapter adds snapshot plan qualification and preserves exact integration OIDs; no missing Git facts are inferred. Derived values are detached and immutable; capacity and scheduling effects remain downstream.",
+      "evidence": [
+        "src/plan_graph.py:146",
+        "src/plan_graph.py:184",
+        "src/orchestration_ports.py:472",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-10",
+      "status": "pass",
+      "rationale": "Observed 13 declared tests and six final independent consistency tests pass. Cross-contract assertions cover real-plan DTO alignment, lifecycle digest neutrality, split coverage, registry failures, two-plan identities and immutable facts. Reviewer fixture diagnostics are retained; no candidate repair occurred.",
+      "evidence": [
+        "tests/unit/planning_dag/test_plan_graph.py",
+        ".ai/plans/current/PLAN-001/commands/test.TASK-013.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-diagnostics.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-11",
+      "status": "pass",
+      "rationale": "Owned handoff accurately states AC1/AC2, public APIs, exact-fact readiness, exclusions and downstream ownership. Its historical dispatch base is distinguished from this current review base. R2 establishes candidate compatibility without claiming integration or future service completion.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-12",
+      "status": "pass",
+      "rationale": "REQ-03/AC-03 and all nine plan criteria remain covered on approved r4; the 39-task digest and isolation approval still match. A 40-node proposed split preserves original coverage/prerequisite bytes and rejects excluded history, stale old-task facts and lost original coverage. Full identity and same-candidate passing R1 remain valid.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/plans/current/PLAN-001/plan.json",
+        ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1.json",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R2-evidence.txt"
+      ]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T07:28:12Z"
+}

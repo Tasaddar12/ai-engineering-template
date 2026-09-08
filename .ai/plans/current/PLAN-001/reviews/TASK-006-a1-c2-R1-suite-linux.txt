@@ -1,0 +1,31 @@
+{
+  "head": "ce4c8edb86b02268a856a5f870932ade0e7e9b91",
+  "platform": "linux",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "cwd": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1",
+  "argv": [
+    "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-venv/bin/python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/unit/commands/",
+    "-p",
+    "test_*.py"
+  ],
+  "origins": {
+    "commands": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/commands.py",
+    "config": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/config.py",
+    "contracts": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/contracts.py",
+    "local_ports": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/local_ports.py"
+  },
+  "exit_code": 0,
+  "discovered": 22,
+  "skipped": 1,
+  "executed": 21
+}
+.....................s
+----------------------------------------------------------------------
+Ran 22 tests in 6.901s
+
+OK (skipped=1)

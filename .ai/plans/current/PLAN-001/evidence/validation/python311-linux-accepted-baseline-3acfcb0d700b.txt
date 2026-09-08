@@ -1,0 +1,183 @@
+Root head: 3acfcb0d700b05fbf78233b575e77db556cd9bcc
+Platform: linux
+Interpreter: 3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]
+Scope: bootstrap and currently accepted task leaves only; not the full unfinished plan.
+{"suite": "bootstrap", "exit_code": 0, "tests": 24}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py']
+Wrote .codex/plans/current/PLAN-501/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-501/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-501/graph.json
+Wrote .codex/plans/current/PLAN-501/history/.gitkeep
+Wrote .codex/plans/current/PLAN-501/plan.json
+Wrote .codex/plans/current/PLAN-501/plan.md
+Wrote .codex/plans/current/PLAN-501/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-501/spec.json
+Wrote .codex/plans/current/PLAN-501/spec.md
+Wrote .codex/plans/current/PLAN-501/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-501/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-501/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-501/graph.json
+Wrote .codex/plans/current/PLAN-501/history/.gitkeep
+Wrote .codex/plans/current/PLAN-501/plan.json
+Wrote .codex/plans/current/PLAN-501/plan.md
+Wrote .codex/plans/current/PLAN-501/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-501/spec.json
+Wrote .codex/plans/current/PLAN-501/spec.md
+Wrote .codex/plans/current/PLAN-501/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-501/tasks/current/TASK-001.json
+........................
+----------------------------------------------------------------------
+Ran 24 tests in 24.963s
+
+OK
+
+{"suite": "TASK-001", "exit_code": 0, "tests": 15}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_values/', '-p', 'test_*.py']
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.006s
+
+OK
+
+{"suite": "TASK-002", "exit_code": 0, "tests": 27}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_local_ports/', '-p', 'test_*.py']
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.245s
+
+OK
+
+{"suite": "TASK-003", "exit_code": 0, "tests": 26}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_workflow_ports/', '-p', 'test_*.py']
+..........................
+----------------------------------------------------------------------
+Ran 26 tests in 0.035s
+
+OK
+
+{"suite": "TASK-004", "exit_code": 0, "tests": 21}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/schemas/', '-p', 'test_*.py']
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+Wrote .codex/plans/current/PLAN-101/commands/test.TASK-001.json
+Wrote .codex/plans/current/PLAN-101/evidence/implementation/.gitkeep
+Wrote .codex/plans/current/PLAN-101/graph.json
+Wrote .codex/plans/current/PLAN-101/history/.gitkeep
+Wrote .codex/plans/current/PLAN-101/plan.json
+Wrote .codex/plans/current/PLAN-101/plan.md
+Wrote .codex/plans/current/PLAN-101/reviews/.gitkeep
+Wrote .codex/plans/current/PLAN-101/spec.json
+Wrote .codex/plans/current/PLAN-101/spec.md
+Wrote .codex/plans/current/PLAN-101/tasks/archived/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/completed/.gitkeep
+Wrote .codex/plans/current/PLAN-101/tasks/current/TASK-001.json
+.....................
+----------------------------------------------------------------------
+Ran 21 tests in 11.663s
+
+OK
+
+{"suite": "TASK-008", "exit_code": 0, "tests": 19}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_transitions/', '-p', 'test_*.py']
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 0.006s
+
+OK
+
+{"suite": "TASK-013", "exit_code": 0, "tests": 13}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_dag/', '-p', 'test_*.py']
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.241s
+
+OK
+
+{"suite": "TASK-038", "exit_code": 0, "tests": 29}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/config/', '-p', 'test_*.py']
+.............................
+----------------------------------------------------------------------
+Ran 29 tests in 16.529s
+
+OK
+
+{"suite": "TASK-039", "exit_code": 0, "tests": 20}
+argv: ['/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_orchestration_ports/', '-p', 'test_*.py']
+....................
+----------------------------------------------------------------------
+Ran 20 tests in 0.017s
+
+OK

@@ -1,0 +1,179 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-006-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-006-a1-c2-R1-1a07ffa4121d35575a9a5",
+  "task_id": "TASK-006",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-006-a1-ce4c8edb86b0.json",
+  "candidate_fingerprint": "7578a4d2cd986e5b69e7a6e0a6938d279aef2056be4f6130d7e17dccbb89cae4",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_006_c2/1a07ffa4121d35575a9a5"
+  },
+  "independent_session_id": "/root/r1_006_c2",
+  "implementation_session_id": "/root/implement_006",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Both task criteria are satisfied: fixed argv/cwd/exit/time evidence and redacted bounded output, launch failures and cancellation. The two real process-lifecycle failures now return bounded, honest evidence.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-suite-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-suite-linux.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-02/REQ-09 process evidence and interruption behavior fit the local-only scope. Unsupported sandboxing and unproven cleanup remain explicit; no provider, authorization or downstream success-rule behavior is invented.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced typed request through preflight, shell=False launch, retained process observation, parent-and-reader monitoring, synchronized capture freeze and durable DTO construction; repaired control flow agrees with real process observations.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-candidate.diff",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Inherited pipes no longer block main-thread close; timeout/cancellation stay active after parent exit. Escaped POSIX descendants produce unknown. Storage failure remains unknown; fixture processes and reader threads were settled explicitly.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Actual inherited EOF, escaped session, late sensitive output after freeze, split encoded secrets/shared byte cap, empty sensitive environment, cwd symlink and backward-clock boundaries pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Each independently rerun declared suite discovered 22 tests and executed 21 with one platform skip. Actual new descendant tests and fresh probes cover both old defects, cancellation, freeze stability and cleanup without pre-return intervention.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-suite-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-suite-linux.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes.py"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Only the owned command adapter, owned leaf tests and task handoff changed. No new concrete dependency, package export, schema, shared port or runtime wiring change.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-identity.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-candidate.diff"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Verified exact clean head/current base, raw binary diff, all 14 context and three validation hashes, fingerprint, policy/model digest, accepted dependency ancestry and r4 task/graph digests. No unrelated changed path.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-identity.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Frozen CommandRunner.execute(CommandRequest)->CommandEvidence and immutable configuration are used directly. The host-local observation/termination collaborator owns its launch facts; stream locks and exclusive pipe ownership are explicit.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-candidate.diff",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Explicit permissions/environment, cwd containment/link refusal, shell=False literal argv, Windows batch refusal, encoded secret redaction and honest unsupported/unknown boundaries pass their relevant platform checks.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-suite-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-suite-linux.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "The handoff accurately explains both failed-history repairs, POSIX group versus containment, Windows exited-parent uncertainty, frozen partial capture, durable evidence and observed clock regression; downstream wiring and success-rule ownership remain explicit.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-windows.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-006-a1-c2-R1-probes-linux.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-006-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved in this candidate. Parent-and-reader monitoring retains timeout/cancellation after parent exit; only drain threads close buffered pipes and shared settlement is 250 ms. Real inherited-pipe timeout returned in 1.266 s on Windows and 1.081 s on Linux without external intervention; cancellation also returned promptly. Frozen partial redacted logs remained immutable after a live escaped child wrote again.",
+      "paths": [
+        "src/commands.py:376",
+        "src/commands.py:385",
+        "src/commands.py:640",
+        "src/commands.py:675",
+        "src/commands.py:699",
+        "tests/unit/commands/test_commands.py:485"
+      ],
+      "expected_fix": "No further repair required for this candidate; retain the real descendant regressions and explicit unknown/truncated result when completion cannot be confirmed.",
+      "acceptance_ids": [
+        "TASK-006-AC1",
+        "TASK-006-AC2",
+        "AC-02"
+      ],
+      "resolved": true
+    },
+    {
+      "id": "R1-TASK-006-002",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved in this candidate. POSIX cleanup retains the observed launch group for best-effort signalling but never promotes group absence to descendant containment. Real new-session children survived timeout and active cancellation in distinct PGIDs while evidence correctly returned unknown/ambiguous_side_effect with null exit code; exact fixture PIDs were then terminated and confirmed gone.",
+      "paths": [
+        "src/commands.py:215",
+        "src/commands.py:385",
+        "tests/unit/commands/test_commands.py:546",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md"
+      ],
+      "expected_fix": "No further repair required for this candidate; retain conservative unknown for unproven descendant cleanup. No new sandbox or containment implementation is required by this task.",
+      "acceptance_ids": [
+        "TASK-006-AC1",
+        "TASK-006-AC2",
+        "AC-02"
+      ],
+      "resolved": true
+    }
+  ],
+  "created_at": "2026-09-08T07:45:02.241Z"
+}
+
