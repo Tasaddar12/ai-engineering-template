@@ -147,6 +147,64 @@ class ScopePathTests(unittest.TestCase):
         right = ScopeClaim(read_paths=[decomposed], resources=["component:domain/values"])
         self.assertTrue(left.conflicts_with(right))
 
+    def test_conflicts_include_exact_file_ancestors_and_all_descendant_kinds(self) -> None:
+        parent = ScopePath("src/generated")
+        child_file = ScopePath("src/generated/value.py")
+        child_directory = ScopePath("src/generated/nested/")
+        for child in (child_file, child_directory):
+            with self.subTest(child=child):
+                self.assertTrue(parent.overlaps(child))
+                self.assertTrue(child.overlaps(parent))
+                self.assertTrue(
+                    ScopeClaim(write_paths=[parent]).conflicts_with(
+                        ScopeClaim(write_paths=[child])
+                    )
+                )
+                self.assertTrue(
+                    ScopeClaim(write_paths=[child]).conflicts_with(
+                        ScopeClaim(write_paths=[parent])
+                    )
+                )
+                self.assertTrue(
+                    ScopeClaim(write_paths=[parent]).conflicts_with(
+                        ScopeClaim(read_paths=[child])
+                    )
+                )
+                self.assertTrue(
+                    ScopeClaim(read_paths=[child]).conflicts_with(
+                        ScopeClaim(write_paths=[parent])
+                    )
+                )
+                self.assertTrue(
+                    ScopeClaim(read_paths=[parent]).conflicts_with(
+                        ScopeClaim(write_paths=[child])
+                    )
+                )
+                self.assertTrue(
+                    ScopeClaim(write_paths=[child]).conflicts_with(
+                        ScopeClaim(read_paths=[parent])
+                    )
+                )
+
+        unicode_parent = ScopePath("SRC/caf\N{LATIN SMALL LETTER E WITH ACUTE}")
+        unicode_child = ScopePath(
+            "src/cafe\N{COMBINING ACUTE ACCENT}/nested/"
+        )
+        self.assertTrue(unicode_parent.overlaps(unicode_child))
+        self.assertTrue(unicode_child.overlaps(unicode_parent))
+        self.assertTrue(
+            ScopeClaim(write_paths=[unicode_parent]).conflicts_with(
+                ScopeClaim(read_paths=[unicode_child])
+            )
+        )
+        self.assertFalse(parent.overlaps("src/generator/value.py"))
+        self.assertFalse(child_file.overlaps("src/generated_other/value.py"))
+        self.assertFalse(
+            ScopeClaim(write_paths=[parent]).conflicts_with(
+                ScopeClaim(write_paths=["src/generator/value.py"])
+            )
+        )
+
     def test_scope_rejects_scalar_collections_instead_of_splitting_characters(self) -> None:
         fields = ("write_paths", "read_paths", "prohibited_paths", "resources")
         for field_name in fields:

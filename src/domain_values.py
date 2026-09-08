@@ -315,11 +315,10 @@ class ScopePath:
 
     def overlaps(self, other: ScopePath | str) -> bool:
         candidate = other if isinstance(other, ScopePath) else ScopePath(other)
-        if self.comparison_key == candidate.comparison_key:
-            return True
-        if self.kind is ScopePathKind.DIRECTORY_PREFIX and self.contains(candidate):
-            return True
-        return candidate.kind is ScopePathKind.DIRECTORY_PREFIX and candidate.contains(self)
+        shorter, longer = sorted(
+            (self.comparison_key, candidate.comparison_key), key=len
+        )
+        return longer[: len(shorter)] == shorter
 
     def __str__(self) -> str:
         return self.as_wire()
