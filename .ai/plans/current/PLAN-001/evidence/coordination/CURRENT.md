@@ -70,3 +70,15 @@ an applicability question: CandidateContext unconditionally requires nonempty
 ADRs and handoffs, even for a dependency-free first task. The existing tracked
 next-candidate briefing records this for independent review; no source mutation,
 formal finding or repair cycle yet. No additional local helper was created.
+
+TASK-017-a2 owner is FINAL atf5e21518f50e96b421ed68175d51acf253053a18;
+clean tree and exactly three owned paths independently observed. Entire handoff
+read. Salvage commits ce1776adb42a06b5a02c7c7e7047e03c8a7f30c2 and
+3cdb41e5698f2cb0c7fc08c36c08d57a28ea1d16 precede correction. All three
+runtimes report29tests and correctcandidateorigins. Candidate formation next
+with --py311 --linux-py311, then fresh cumulative c3 R1/R2; any candidate or
+formalreview failure returns to independent recovery before more repair.
+Owner reports ignored __pycache__ cleanup blocked by command policy; caches
+remain disposable and outside Git, to be handled by eligible normal worktree
+cleanup after acceptance. No permission bypass or required localhelper exists.
+007 and024 owners continue independently.
