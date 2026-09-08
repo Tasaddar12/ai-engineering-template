@@ -4,7 +4,7 @@
   "id": "TASK-005",
   "plan_id": "PLAN-001",
   "title": "Build owned asset catalog",
-  "status": "ready",
+  "status": "running",
   "archived": false,
   "objective": "Build owned asset catalog. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -96,8 +96,9 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-005-a1"
+    "TASK-005-a1",
+    "TASK-005-a2"
   ],
   "superseded_by": [],
-  "resume_state": "Prior accepted code and reviews retained; bounded a2 test/handoff follow-up addresses independently reproduced valid closure-growth failure. Same scope/contracts/graph; fresh validation and R1/R2 required."
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
