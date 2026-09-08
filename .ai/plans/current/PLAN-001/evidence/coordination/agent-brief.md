@@ -126,3 +126,16 @@ Record test results, skips and self-review findings briefly in the existing owne
 implementation handoff. This is part of implementation, not another review stage,
 agent or paperwork. Keep the single independent review. Do not repeat unchanged
 broad suites without cause or create a separate self-review artifact.
+
+## Complete reviews and concise rejection findings
+
+Complete all applicable review checks before issuing the verdict and consolidate
+findings into the existing review report. Continue after individual findings. If a
+failure prevents further checks, list what remains unreviewed and why.
+
+Every rejection includes a concise table with the exact columns Category, Location,
+Exact issue, and Required fix. Use short categories such as Bug, Contract, Tests,
+Documentation, Evidence, or Scope. Give the precise affected location, concrete
+trigger or mismatch and impact, and required correction. Keep the table consistent
+with existing structured findings. Add no separate report, reporting stage, or
+frozen-schema field. Historical finalized reports remain unchanged.
