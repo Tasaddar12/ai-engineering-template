@@ -4,7 +4,7 @@
   "id": "TASK-017",
   "plan_id": "PLAN-001",
   "title": "Implement agent dispatch contract and fake adapter",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Implement agent dispatch contract and fake adapter. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -97,7 +97,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-017-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
