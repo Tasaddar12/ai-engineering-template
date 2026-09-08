@@ -4,7 +4,7 @@
   "id": "TASK-006",
   "plan_id": "PLAN-001",
   "title": "Execute commands with durable evidence",
-  "status": "ready",
+  "status": "running",
   "archived": false,
   "objective": "Execute commands with durable evidence. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,8 +98,9 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-006-a1"
+    "TASK-006-a1",
+    "TASK-006-a2"
   ],
   "superseded_by": [],
-  "resume_state": "Independent recovery decision grants one fresh a2 test/handoff-only repair preserving production bytes and all history; four-platform/version validation and cumulative c3 fresh R1/R2 required. Any further failure returns to recovery."
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
