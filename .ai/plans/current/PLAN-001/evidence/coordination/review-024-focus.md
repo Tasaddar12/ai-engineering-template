@@ -6,7 +6,7 @@ replacement fixtures failed for new semantic resource claims and were changed
 to inherit old resources. This is a reported implementation assumption, not an
 accepted contract conclusion.
 
-R1/R2 should independently reconcile that rule with the actual recovery workflow
+The single task review should reconcile that rule with the actual recovery workflow
 and TASK-024 split/replace/sequence/augment acceptance. The workflow permits new
 prerequisite/follow-up tasks while rejecting expanded product scope and broadened
 permissions. Determine from the frozen plan/ADRs/contracts whether the proposed

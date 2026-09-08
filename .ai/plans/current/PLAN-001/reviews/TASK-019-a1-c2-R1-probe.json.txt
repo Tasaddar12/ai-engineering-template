@@ -1,0 +1,33 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+  "origins": {
+    "candidates": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-019-a1\\src\\candidates.py",
+    "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-019-a1\\src\\contracts.py",
+    "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-019-a1\\src\\domain_values.py"
+  },
+  "results": [
+    {
+      "task_id": "TASK-019",
+      "fingerprint": "6fba1ffe4ecc3df0ca012a6970eee66b201419a50df3dbc1a7230ee56da8e17e",
+      "representation_parse_reverify_passes": 4,
+      "stale_current_rejections": 5,
+      "nested_digest_tamper_rejections": 2,
+      "unchanged_fingerprint_order_rejections": 2,
+      "resigned_order_parse_then_current_rejections": 2,
+      "schema_rejections": 1,
+      "mutation_detachment": true
+    },
+    {
+      "task_id": null,
+      "fingerprint": "d59764521d70bc2b6a7d7df9b60e2745a681eb4411e25775c15e660d94209909",
+      "representation_parse_reverify_passes": 4,
+      "stale_current_rejections": 5,
+      "nested_digest_tamper_rejections": 2,
+      "unchanged_fingerprint_order_rejections": 2,
+      "resigned_order_parse_then_current_rejections": 2,
+      "schema_rejections": 1,
+      "mutation_detachment": true
+    }
+  ]
+}

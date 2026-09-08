@@ -16,4 +16,14 @@ The reusable installer, focused record CLI, and foundation validator are working
 - Preserve failed reviews and superseded graphs as immutable history. Material changes invalidate prior review approval.
 - Local reversible work is allowed by policy. Do not infer credentials, providers, external repositories, paid resources, publishing authority, or destructive permission.
 
+## Before every implementation handoff
+
+The implementer must run relevant tests and review the final diff for bugs, contract mismatches, and applicable edge cases. Fix in-scope issues, add regression tests, and rerun affected checks before submission. Flag scope blockers promptly. Record actual test results, skips, and self-review findings briefly in the existing handoff. Keep the required independent review; this self-check is part of implementation and adds no review stage or separate paperwork. This standing project rule applies to future tasks and corrections, not only the current plan.
+
+## Review verdicts and rejection findings
+
+Complete all applicable review checks before issuing the verdict and consolidate findings into the existing review report. Continue after individual findings. If a failure prevents further checks, list what remains unreviewed and why.
+
+For every rejection, include a concise table with the columns `Category`, `Location`, `Exact issue`, and `Required fix`. Use short categories such as Bug, Contract, Tests, Documentation, Evidence, or Scope. Give the precise affected location, concrete trigger or mismatch and its impact, and the required correction. Keep the table consistent with the existing structured findings. This standing project rule adds no separate report or reporting stage and does not change frozen record schemas.
+
 Run `python src/validate_foundation.py` with the development dependency installed. It validates the repository record layout, schemas, references, graph structure, plan-local IDs, archive manifests, and active documentation links; it is not an implementation test of the planned engine.

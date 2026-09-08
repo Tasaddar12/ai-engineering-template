@@ -59,6 +59,8 @@ The logical role inventory sometimes names a narrower invocation than the guide 
 - Implementation and consistency reviews come from separate fresh invocations using the configured review profile, whose declared capability rank must exceed the implementation profile. There is no silent fallback.
 - Reviews bind the exact candidate identity and relevant digests. A material fix, changed dependency, changed interface, changed scope, or changed relevant context invalidates affected reviews.
 - Reviewers report findings; they do not implement their own fixes. Scope expansion becomes an explicit replan.
+- Complete all applicable review checks before issuing the verdict and consolidate findings in the existing review report. Continue after individual findings; if a failure prevents further checks, list what remains unreviewed and why.
+- Every rejection includes a concise table with `Category`, `Location`, `Exact issue`, and `Required fix`. Use short categories such as Bug, Contract, Tests, Documentation, Evidence, or Scope. Identify the precise affected location, concrete trigger or mismatch and impact, and required correction. Keep it consistent with the existing structured findings; add no separate report, reporting stage, or frozen-schema field.
 - Read active records by default. Load archived or superseded material only when a named question requires it, and record why it was needed.
 - Never report an unexecuted command as passed. Preserve failures, deviations, provenance, and supersession lineage.
 

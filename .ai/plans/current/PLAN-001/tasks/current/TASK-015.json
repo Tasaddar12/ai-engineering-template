@@ -4,7 +4,7 @@
   "id": "TASK-015",
   "plan_id": "PLAN-001",
   "title": "Gate graphs through isolation review",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Gate graphs through isolation review. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -103,7 +103,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-015-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires actual validation and one independent task review under the user's single-stage decision."
 }

@@ -4,7 +4,7 @@
   "id": "TASK-009",
   "plan_id": "PLAN-001",
   "title": "Persist serialized state checkpoints",
-  "status": "backlog",
+  "status": "repairing",
   "archived": false,
   "objective": "Persist serialized state checkpoints. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -99,7 +99,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-009-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Failed review preserved; repair R1-TASK-009-001, R1-TASK-009-002, R1-TASK-009-003, R1-TASK-009-004, R1-TASK-009-005, R1-TASK-009-006; validate a new candidate and obtain focused independent verification under the user's single-stage decision, subject to any applicable recovery boundary."
 }

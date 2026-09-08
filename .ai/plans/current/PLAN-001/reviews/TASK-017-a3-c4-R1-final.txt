@@ -1,0 +1,34 @@
+Final verification UTC: 2026-09-08T14:43:38.602905+00:00
+Runtime: 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]; executable=D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-venv\Scripts\python.exe
+PASS review-result and candidate schemas through accepted ContractRegistry; stage implementation; review_1_ref null; all11 checks pass; no unresolved finding.
+PASS separate reviewer /root/verify_017_c4 native call_nv0VaOyGfO0MhY1RQgxDBPD1; latest owner /root/finish_017_handoff. Native selection Astra/xhigh rank4 versus Sol/xhigh rank3; provider-effective identity/effort unavailable; charge108/300.
+PASS frozen ROOT/base=3e5bf73d8582956d28d853ab722d38d665b2525d; clean exact candidate=eaa80842f695c766dd55ab92e40dcf40874c8471; merge-base/raw binary diff/15 committed contexts/current ROOT validation/policy-model digest/canonical fingerprint unchanged.
+PASS r4 approved graph and39-task structural digest, accepted prerequisites and owned/dependency blobs versus owner-tested1b49b6e; exact three-patch salvage preserved.
+PASS all42 historical review files preserve original verified bytes; all22 c3 files also match preservation checkpoint d41cf4d; c3 R1 remains PASS and R2 remains FAIL. Recovery records unchanged; no historical evidence writer rerun.
+PASS Windows3.12.14 declared suite:36 tests, zero skips, exit0,12.815s; manifest-bound coordinator suite36 tests,12.679s,exit0.
+PASS one independent diagnostic on Windows3.12.14 and Linux3.11.16 via WSL --exec;13 fresh processes per host, exact candidate module origins and per-case identical settings.
+[{"host": "windows", "runtime": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]", "fresh_processes": 13, "future_rejections": 60, "saved_binding_rejections": 24, "terminal_effort_rejections": 12, "strict_profile_rejections": 6, "replacement_rollbacks": 4}, {"host": "linux", "runtime": "3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]", "fresh_processes": 13, "future_rejections": 60, "saved_binding_rejections": 24, "terminal_effort_rejections": 12, "strict_profile_rejections": 6, "replacement_rollbacks": 4}]
+PASS Linux initial harness setup failure preserved: git -C misread Windows absolute linked-worktree pointer; explicit --git-dir fixed preflight; all subsequent behavioral checks passed. Windows and Linux behavioral program is the same; only Git preflight/diagnostic metadata changed after Windows run.
+PASS required runtime source/regressions/handoff tracked; diagnostics use disposable temporary fixtures removed on completion; no .ai/local runtime helper dependency, provider call or remote CI claim.
+PASS report evidence resolves, helper parses, owned diff and report whitespace clean; ROOT index unchanged and only disclosed CURRENT.md tracked progress outside manifest.
+ROOT report packaging foundation validation exit=0
+{
+  "schemas": 27,
+  "validated_artifacts": 199,
+  "plans": 1,
+  "tasks": 39,
+  "unordered_pairs_checked": 280,
+  "archive_manifests": 4,
+  "local_links": 560
+}
+
+
+SHA256 TASK-017-a3-c4-R1-declared.txt: 574ec65423457b17d0451d188fe051caf89f4746b137ea9aec4f5cb6be469e31
+SHA256 TASK-017-a3-c4-R1-identity.json.txt: 9b2c7711625318861dfa9fc43f31cd771633dc064c66c4916263cf581112bbf4
+SHA256 TASK-017-a3-c4-R1-probe-linux.json.txt: 973b8e738a912da23e29ae80f10473e7fc46afc26e316b5b398d48939404fbe9
+SHA256 TASK-017-a3-c4-R1-probe-windows.json.txt: 421c64d8b7f65819b63b9a60477ada24842a07168f46a6f14c80ad261bfa47e9
+SHA256 TASK-017-a3-c4-R1-probe.py: 142d9a0542f7901d2345fc06260ffef632786d4f81fcfbe00e8903ef94d12f35
+SHA256 TASK-017-a3-c4-R1.json: 9a3e737b103d65e3758ef4d7bfe5e3552cb8418978152c9217e8bf73492ad481
+SHA256 TASK-017-a3-c4-R1.md: f45cf921228b63f3a5d5e865ee649a1d42f38ab987accf742fb655123ea6ade4
+PASS closing frozen identity, historical hash and allowed-write inventory rechecks.
+FINAL verification complete. Reviewer stops all ROOT/candidate access and returns PASS to the coordinator under the single-stage user decision; no separate task R2.

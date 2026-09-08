@@ -1,0 +1,66 @@
+{
+  "report_schema": "pass",
+  "evidence_links": "pass",
+  "frozen_identity": "pass",
+  "candidate_clean": true,
+  "identity": {
+    "base": "1e6477285d37c59a35dee4c9951a3c1bfe4be3f1",
+    "head": "44d9481dc6e65a8ae33e2e472c131852813ba913",
+    "raw_diff_sha256": "dda1f63c5fd69045c716d00f175f0a8b2786473e8526e7d5614018d38d45ec42",
+    "fingerprint": "8f38ee9238f404798b4031d08c7724fdfda2286cdad831b0d6d36ede9ffe5abf",
+    "context_validation_hashes": {
+      ".ai/plans/current/PLAN-001/plan.json": "9195d603c9190f859fdcd74ecc47cd441f4b52ed6aa8f2438276ba766b58d72b",
+      ".ai/plans/current/PLAN-001/spec.json": "f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc",
+      ".ai/plans/current/PLAN-001/graph.json": "1b0f207a9a5ea4f9bd96f36f123bd15ce09c2b271fff155d71552caa8758140c",
+      ".ai/plans/current/PLAN-001/tasks/current/TASK-009.json": "fa98a959866cc2695a74c98f14c081665fb4f29bd6b0c91a72bd7decfd44b5ac",
+      ".ai/shared/architecture/service-contracts.md": "9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248",
+      ".ai/shared/workflows/reviews.md": "0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0",
+      ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md": "db59748213f2ef9611f51142f205b8b692f1ff4f9f18bc47befb0e0aff8cd79c",
+      ".ai/decisions/ADR-001.md": "3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4",
+      ".ai/decisions/ADR-002.md": "46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44",
+      ".ai/decisions/ADR-003.md": "2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214",
+      ".ai/decisions/ADR-004.md": "a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5",
+      ".ai/decisions/ADR-005.md": "0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md": "012d614f39c2cd1fab47150446f77bf08ef9eec8ca46db86c78bc54749976c1a",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md": "20d8d02fad6b86f5047f9454c66d661ccfa00b40697d874a4ca3bbda3d016147",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-007.md": "a54386ced980b6a795c3caf014e39d617da70a5c60bfde0fbcf79d49e57275c4",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-008.md": "0daaeb3dd66be94888c0d666491ea89aa024fa64b2e7291ce2027fb6f14a6e09",
+      ".ai/plans/current/PLAN-001/evidence/validation/TASK-009-a1-44d9481dc6e6.txt": "8ac054c7d8305af11b04f90263dc0a1014336512c5470382d75b1fec8589ba6b"
+    },
+    "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+    "graph_canonical_sha256": "0ebfff61512855aea359537c2d24926a8c4e0894cb3decf419ca6b6b7e12ef78",
+    "graph_structural_sha256": "5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337",
+    "task_digest": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+    "owned_and_dependency_blobs_equal_owner_tested_head": {
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-009.md": "279378d8a875a7891b1018caf075a166e584e13d",
+      "src/state.py": "84b2e4bc8ab609aa3f68c08a6b77a680f3a1dcea",
+      "tests/unit/state_checkpoints/test_state.py": "f55e8eee071b4548147a8f411de067a38512d990",
+      "src/local_ports.py": "676b94a65c6a2401329a7ed6c336f76629693655",
+      "src/contracts.py": "aa54deb18b7ce6319c7b5364cae156b50e5bd576",
+      "src/domain_values.py": "9e278e254c6dd80cecd8db15bc7c936e6fff3a2e",
+      "src/transitions.py": "3b154f2ca948f7aee9e4c13e5069a5bb68487d87",
+      "src/git_ops.py": "1dd1c1c9335d14185f18556f5710e1e397c3b825",
+      "src/commands.py": "39828108eb7d198d81d810c8fd9e136e3f64f8f0",
+      "src/config.py": "573a2a77b04bb5ed0802517d1d2599f325b8cec8"
+    },
+    "prerequisite_acceptance": {
+      "TASK-002-a1-c2-R2.json": {
+        "accepted_head": "460ab567d01912167557f2f671ed07c63f0a31e7",
+        "current_dependency_blob_matches": true
+      },
+      "TASK-004-a2-c3-R2.json": {
+        "accepted_head": "e3c1177f993ee74815639a83ef3333faa4ba3957",
+        "current_dependency_blob_matches": true
+      },
+      "TASK-007-a1-c2-R1.json": {
+        "accepted_head": "5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a",
+        "current_dependency_blob_matches": true
+      },
+      "TASK-008-a1-c1-R2.json": {
+        "accepted_head": "fcb01a93f0e1022c70fa296f7342ced71bbf3250",
+        "current_dependency_blob_matches": true
+      }
+    },
+    "candidate_clean": true
+  }
+}

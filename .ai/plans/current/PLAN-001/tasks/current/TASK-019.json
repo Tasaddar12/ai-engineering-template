@@ -4,7 +4,7 @@
   "id": "TASK-019",
   "plan_id": "PLAN-001",
   "title": "Fingerprint code and context candidates",
-  "status": "running",
+  "status": "accepted",
   "archived": false,
   "objective": "Fingerprint code and context candidates. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,5 +98,5 @@
     "TASK-019-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Candidate 04dead96f7fc9fde17081abe7946af01a859b3eb passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
 }

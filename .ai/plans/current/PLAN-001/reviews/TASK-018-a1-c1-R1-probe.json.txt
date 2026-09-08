@@ -1,0 +1,203 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "candidate_origin": "D:/Codex Projects/ai-engineering-template/.worktrees/TASK-018-a1/src",
+  "cases": [
+    {
+      "case": "stdout-zero-stderr-decoy",
+      "actual_child_code": "import sys, unittest; print('Earlier diagnostic:'); sys.stderr.write('Ran 7 tests in 0.001s\\n'); sys.stderr.flush(); result=unittest.TextTestRunner(stream=sys.stdout).run(unittest.TestSuite()); print('ACTUAL_TESTS_RUN='+str(result.testsRun)); raise SystemExit(not result.wasSuccessful())",
+      "requested_oid": "95849c9f553963abea2ecdc2b902fecfca10c677",
+      "status": "passed",
+      "observed_count": 7,
+      "command_evidence": {
+        "argv_redacted": [
+          "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+          "-c",
+          "import sys, unittest; print('Earlier diagnostic:'); sys.stderr.write('Ran 7 tests in 0.001s\\n'); sys.stderr.flush(); result=unittest.TextTestRunner(stream=sys.stdout).run(unittest.TestSuite()); print('ACTUAL_TESTS_RUN='+str(result.testsRun)); raise SystemExit(not result.wasSuccessful())"
+        ],
+        "command_id": "check.stdout-zero-stderr-decoy",
+        "cwd_relative": ".",
+        "cwd_worktree_id": "worktree-validation",
+        "environment_binding_names": [],
+        "error_category": null,
+        "exit_code": 0,
+        "finished_at": "2026-09-08T13:12:45.659578+00:00",
+        "id": "command-evidence-1",
+        "output_truncated": false,
+        "redactions_applied": false,
+        "started_at": "2026-09-08T13:12:45.529042+00:00",
+        "status": "exited",
+        "stderr_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stderr-e7a4cc03da4d62f17a2675c8ef4456a48f7108dcc6a04d9e94ec9e7394ce777e.log",
+          "sha256": "e7a4cc03da4d62f17a2675c8ef4456a48f7108dcc6a04d9e94ec9e7394ce777e"
+        },
+        "stdout_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stdout-e6d64ae32aff579344762757c39fcee76d8ceda8b103aa685fcb79a195d523d0.log",
+          "sha256": "e6d64ae32aff579344762757c39fcee76d8ceda8b103aa685fcb79a195d523d0"
+        }
+      },
+      "receipt_sha256_verified": true,
+      "before_oid": "95849c9f553963abea2ecdc2b902fecfca10c677",
+      "after_oid": "95849c9f553963abea2ecdc2b902fecfca10c677",
+      "stdout_bytes": 154,
+      "stdout": "Earlier diagnostic:\r\n\r\n----------------------------------------------------------------------\r\nRan 0 tests in 0.000s\r\n\r\nNO TESTS RAN\r\nACTUAL_TESTS_RUN=0\r\n",
+      "stderr_bytes": 23,
+      "stderr": "Ran 7 tests in 0.001s\r\n"
+    },
+    {
+      "case": "stderr-zero-trailing-decoy",
+      "actual_child_code": "import sys, unittest; result=unittest.TextTestRunner().run(unittest.TestSuite()); sys.stderr.write('Historical output excerpt follows:\\nRan 7 tests in 0.001s\\nEnd excerpt\\n'); print('ACTUAL_TESTS_RUN='+str(result.testsRun)); raise SystemExit(not result.wasSuccessful())",
+      "requested_oid": "9b98c267330e675c1347beaadaac7a141b6ec5da",
+      "status": "passed",
+      "observed_count": 7,
+      "command_evidence": {
+        "argv_redacted": [
+          "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+          "-c",
+          "import sys, unittest; result=unittest.TextTestRunner().run(unittest.TestSuite()); sys.stderr.write('Historical output excerpt follows:\\nRan 7 tests in 0.001s\\nEnd excerpt\\n'); print('ACTUAL_TESTS_RUN='+str(result.testsRun)); raise SystemExit(not result.wasSuccessful())"
+        ],
+        "command_id": "check.stderr-zero-trailing-decoy",
+        "cwd_relative": ".",
+        "cwd_worktree_id": "worktree-validation",
+        "environment_binding_names": [],
+        "error_category": null,
+        "exit_code": 0,
+        "finished_at": "2026-09-08T13:12:46.637726+00:00",
+        "id": "command-evidence-1",
+        "output_truncated": false,
+        "redactions_applied": false,
+        "started_at": "2026-09-08T13:12:46.516150+00:00",
+        "status": "exited",
+        "stderr_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stderr-613bc7223e7574041b1e4739e3241e0145e323c5be55043b7c5131f6fc7458ec.log",
+          "sha256": "613bc7223e7574041b1e4739e3241e0145e323c5be55043b7c5131f6fc7458ec"
+        },
+        "stdout_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stdout-1a767de74b5848e9d618852a9cf1811c96ab9cfc79b4ff477f2b22e50ae915a1.log",
+          "sha256": "1a767de74b5848e9d618852a9cf1811c96ab9cfc79b4ff477f2b22e50ae915a1"
+        }
+      },
+      "receipt_sha256_verified": true,
+      "before_oid": "9b98c267330e675c1347beaadaac7a141b6ec5da",
+      "after_oid": "9b98c267330e675c1347beaadaac7a141b6ec5da",
+      "stdout_bytes": 20,
+      "stdout": "ACTUAL_TESTS_RUN=0\r\n",
+      "stderr_bytes": 185,
+      "stderr": "\r\n----------------------------------------------------------------------\r\nRan 0 tests in 0.000s\r\n\r\nNO TESTS RAN\r\nHistorical output excerpt follows:\r\nRan 7 tests in 0.001s\r\nEnd excerpt\r\n"
+    },
+    {
+      "case": "malformed-count-overflow",
+      "actual_child_code": "print('Ran '+'9'*5000+' tests in 0.001s')",
+      "requested_oid": "1ea39a570b280efa92ccc0556329c524fe09168a",
+      "raised": "ValueError",
+      "error": "Exceeds the limit (4300 digits) for integer string conversion: value has 5000 digits; use sys.set_int_max_str_digits() to increase the limit",
+      "retained_receipts": 0
+    },
+    {
+      "case": "sensitive-argv",
+      "actual_child_code": "import sys; print(sys.argv[1])",
+      "requested_oid": "14b902cbceaa6a5f33034acdcc2c27c8304d6d11",
+      "status": "failed",
+      "observed_count": null,
+      "command_evidence": {
+        "argv_redacted": [
+          "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+          "-c",
+          "import sys; print(sys.argv[1])",
+          "[REDACTED]"
+        ],
+        "command_id": "check.sensitive-argv",
+        "cwd_relative": ".",
+        "cwd_worktree_id": "worktree-validation",
+        "environment_binding_names": [
+          "REVIEW_TOKEN"
+        ],
+        "error_category": null,
+        "exit_code": 0,
+        "finished_at": "2026-09-08T13:12:48.434567+00:00",
+        "id": "command-evidence-1",
+        "output_truncated": false,
+        "redactions_applied": true,
+        "started_at": "2026-09-08T13:12:48.365044+00:00",
+        "status": "exited",
+        "stderr_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stderr-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stdout-279990a62ec94487394701cdcd860eff824033da4a3fe01156f47db2457bd08b.log",
+          "sha256": "279990a62ec94487394701cdcd860eff824033da4a3fe01156f47db2457bd08b"
+        }
+      },
+      "receipt_sha256_verified": true,
+      "before_oid": "14b902cbceaa6a5f33034acdcc2c27c8304d6d11",
+      "after_oid": "14b902cbceaa6a5f33034acdcc2c27c8304d6d11",
+      "stdout_bytes": 12,
+      "stdout": "[REDACTED]\r\n",
+      "stderr_bytes": 0,
+      "stderr": "",
+      "synthetic_token_in_runner_argv": false,
+      "synthetic_token_in_receipt_configured_argv": true
+    },
+    {
+      "case": "real-git-drift",
+      "actual_child_code": "import pathlib, subprocess; pathlib.Path('changed.txt').write_text('changed'); subprocess.run(['C:\\\\Program Files\\\\Git\\\\cmd\\\\git.EXE','add','changed.txt'],check=True); subprocess.run(['C:\\\\Program Files\\\\Git\\\\cmd\\\\git.EXE','-c','commit.gpgsign=false','commit','--no-verify','-qm','during-validation'],check=True)",
+      "requested_oid": "82cfcc24af6253130f986cd19e729a2d57a66c98",
+      "status": "failed",
+      "observed_count": null,
+      "command_evidence": {
+        "argv_redacted": [
+          "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+          "-c",
+          "import pathlib, subprocess; pathlib.Path('changed.txt').write_text('changed'); subprocess.run(['C:\\\\Program Files\\\\Git\\\\cmd\\\\git.EXE','add','changed.txt'],check=True); subprocess.run(['C:\\\\Program Files\\\\Git\\\\cmd\\\\git.EXE','-c','commit.gpgsign=false','commit','--no-verify','-qm','during-validation'],check=True)"
+        ],
+        "command_id": "check.real-git-drift",
+        "cwd_relative": ".",
+        "cwd_worktree_id": "worktree-validation",
+        "environment_binding_names": [],
+        "error_category": null,
+        "exit_code": 0,
+        "finished_at": "2026-09-08T13:12:49.517577+00:00",
+        "id": "command-evidence-1",
+        "output_truncated": false,
+        "redactions_applied": false,
+        "started_at": "2026-09-08T13:12:49.301150+00:00",
+        "status": "exited",
+        "stderr_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stderr-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_ref": {
+          "path": "evidence/command-logs/e0b995fce5e4adcb-stdout-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "receipt_sha256_verified": true,
+      "before_oid": "82cfcc24af6253130f986cd19e729a2d57a66c98",
+      "after_oid": "784fc7c3e8b29ddf3071ee2bb48ad18a14cfeb85",
+      "stdout_bytes": 0,
+      "stdout": "",
+      "stderr_bytes": 0,
+      "stderr": ""
+    },
+    {
+      "case": "wrong-root",
+      "status": "failed"
+    },
+    {
+      "case": "wrong-env",
+      "status": "failed"
+    },
+    {
+      "case": "running",
+      "status": "unknown"
+    },
+    {
+      "case": "wrong-receipt-digest",
+      "status": "unknown"
+    },
+    {
+      "case": "wrong-receipt-readback",
+      "status": "unknown"
+    }
+  ]
+}

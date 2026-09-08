@@ -24,8 +24,8 @@ If any identity is absent or inconsistent, stop before editing. Do not reconstru
 4. Make minimal typed changes inside allowed paths. Preserve established repository conventions and avoid opportunistic refactors.
 5. Use argument-list subprocess calls with `shell=False` in Python automation; do not introduce Bash dependencies where portability is required.
 6. Update task-owned focused tests and documentation when behavior or public usage changes.
-7. Run the task's defined commands and any small focused checks needed to diagnose failures. Record every actual result.
-8. Inspect the final diff, including renames and deletions, for scope, generated artifacts, secrets, debug output, and unintended changes.
+7. Run the task's defined commands and relevant focused tests. Record actual results and skips; a passing suite alone does not replace the final-diff self-review.
+8. Review the final diff, including renames and deletions, for bugs, contract mismatches, applicable edge cases, scope, generated artifacts, secrets, debug output, and unintended changes. Fix in-scope issues, add regression tests, and rerun affected checks before submission. Flag scope blockers promptly.
 9. Commit the candidate when the task and policy call for a commit, then capture the exact base and candidate commit.
 10. Emit a structured outbox handoff with discoveries and deviations. Do not write canonical state or mark the task accepted.
 
@@ -38,7 +38,8 @@ The handoff includes:
 - plan/task pair, request and attempt identity;
 - branch, worktree ID, base commit, candidate commit, and changed paths verified from Git;
 - behavior implemented and acceptance mapping;
-- commands with arguments, exit status, and evidence references;
+- commands with arguments, actual test results, skips, exit status, and evidence references;
+- brief self-review findings and in-scope fixes, recorded in this existing handoff;
 - assumptions, risks, deviations, interfaces changed, and dependency notes;
 - discoveries, scope-change requests, skipped checks, and reviewer guidance.
 
@@ -56,6 +57,8 @@ The implementer must not edit `.codex/STATE.json`, plan/graph/spec records, poli
 - Confirm tests exercise observable behavior or meaningful failure paths instead of simply restating implementation structure.
 - Re-run affected focused checks after fixes. Any material candidate change makes earlier candidate-bound review stale.
 - Do not claim broader integrated, security, platform, or CI coverage unless those checks actually ran.
+
+Testing and final-diff self-review are part of implementation. Keep the required independent review; do not add a review stage, separate self-review report, or other paperwork. Avoid repeating unchanged broad suites when focused checks are sufficient.
 
 ## Stop, discovery, and replanning
 

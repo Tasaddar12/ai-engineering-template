@@ -50,9 +50,10 @@ are exact via .ai/.gitattributes. Preserve existing history.
 Commit a clean candidate, verify Git state, and send FINAL only when all edits have
 stopped. Do not send an early ready message and then keep editing. Coordinator
 will merge current integration metadata, run declared validation independently,
-freeze a candidate and obtain fresh independent Astra/xhigh R1 then R2. Material
-fixes or integration-base changes invalidate both review gates. Do not self-approve
-or merge. Task acceptance is distinct from final plan completion.
+freeze a candidate and obtain one independent Astra/xhigh task review under the
+[user's single-stage decision](single-stage-review-decision.md). Scoped fixes get
+current validation and focused independent verification, with a new exact-candidate
+report. Do not self-approve or merge. Final combined reviews follow implementation.
 
 ## Local persistence port reminder for TASK-002 and TASK-009
 
@@ -112,3 +113,29 @@ execution/cache; give new helper files a concrete purpose and reuse existing too
 Report useful local discoveries and their tracked disposition in the task handoff.
 See the tracked coordination README and local-material-audit.md for this plan's
 manual tools; those are not installed product dependencies.
+
+## Required pre-handoff testing and self-check
+
+Before handing off any remaining task, the implementer must run relevant tests and
+review the final diff for bugs, contract mismatches and applicable edge cases.
+Fix in-scope issues, add regression tests and rerun affected checks before
+submission. Flag scope blockers promptly; do not repair another owner's scope.
+Tests must use the actual candidate imports. A green suite alone is insufficient.
+
+Record test results, skips and self-review findings briefly in the existing owned
+implementation handoff. This is part of implementation, not another review stage,
+agent or paperwork. Keep the single independent review. Do not repeat unchanged
+broad suites without cause or create a separate self-review artifact.
+
+## Complete reviews and concise rejection findings
+
+Complete all applicable review checks before issuing the verdict and consolidate
+findings into the existing review report. Continue after individual findings. If a
+failure prevents further checks, list what remains unreviewed and why.
+
+Every rejection includes a concise table with the exact columns Category, Location,
+Exact issue, and Required fix. Use short categories such as Bug, Contract, Tests,
+Documentation, Evidence, or Scope. Give the precise affected location, concrete
+trigger or mismatch and impact, and required correction. Keep the table consistent
+with existing structured findings. Add no separate report, reporting stage, or
+frozen-schema field. Historical finalized reports remain unchanged.

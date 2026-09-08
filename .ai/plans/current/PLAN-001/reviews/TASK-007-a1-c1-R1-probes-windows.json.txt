@@ -1,0 +1,2580 @@
+{
+  "candidate": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "origins": {
+    "git_ops": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\git_ops.py",
+    "commands": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\commands.py",
+    "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\local_ports.py"
+  },
+  "source_sha256": "0ac93d037edca19d2c534955b0c509bd3beb4b913f63d13de4963ffbc2ade528",
+  "probes": [
+    {
+      "name": "non-root-missing-head",
+      "observation": {
+        "expected": "reject non-root binding",
+        "status": "succeeded",
+        "head_status": "missing",
+        "returned_refs": [
+          [
+            "HEAD",
+            "missing",
+            null
+          ],
+          [
+            "refs/heads/main",
+            "present",
+            "0f4d235e2915152a7934ad6790e8426cae6087d5"
+          ]
+        ],
+        "actual_git_root": "C:/Users/killi/AppData/Local/Temp/task-007-8n9niool",
+        "requested_root": "C:\\Users\\killi\\AppData\\Local\\Temp\\task-007-8n9niool\\ordinary-subdirectory",
+        "actual_git_head": "0f4d235e2915152a7934ad6790e8426cae6087d5",
+        "defect_reproduced": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-inspect-missing-head",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "not-a-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9a85d195a9ef0a4799aeac05da45fc3702d7172dbbc9e1d63298e9c98ed8fda6",
+              "base64": "MGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/main"
+          ],
+          "cwd_id": "not-a-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/main"
+          ],
+          "cwd_id": "not-a-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9a85d195a9ef0a4799aeac05da45fc3702d7172dbbc9e1d63298e9c98ed8fda6",
+              "base64": "MGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "symbolic-target",
+      "observation": {
+        "expected": "preserve checked-out developer main through symbolic alias",
+        "status": "succeeded",
+        "changed": true,
+        "base": "0f4d235e2915152a7934ad6790e8426cae6087d5",
+        "candidate": "945d3890119b0f85056f375dfe5283e3a6c4aeca",
+        "actual_main": "945d3890119b0f85056f375dfe5283e3a6c4aeca",
+        "alias_target": "refs/heads/main",
+        "index_unchanged": true,
+        "status_after": "1 D. N... 100644 000000 000000 dde7432465ae1c9320b441afcaf18d75d74175c9 0000000000000000000000000000000000000000 candidate.txt\n",
+        "defect_reproduced": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-mutation-repository",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+              "base64": "Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-write-intent",
+          "argv": [
+            "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "eyJhY3Rpb24iOiJ3cml0ZV9pbnRlbnQiLCJyZWNlaXB0IjoiZXlKaVpXWnZjbVZmYjJsa0lqb2lNR1kwWkRJek5XVXlPVEUxTVRVeVlUYzVNelJoWkRZM09UQmxPRFF5Tm1OaFpUWXdPRGRrTlNJc0ltTm9ZVzVuWldRaU9tNTFiR3dzSW1WeWNtOXlYMk5oZEdWbmIzSjVJanB1ZFd4c0xDSm1hVzVuWlhKd2NtbHVkQ0k2SWpZeE1EQXdZalZoTWpSaFpqQTNNV1V5Wm1WaVpEUTBNVGRpTjJKbU5qQTBNVGhqTXpsbE1qRXlNek0yWVRNeE9HUTROVE0zTnpCak5EWXdaRFV6TWpJaUxDSnJhVzVrSWpvaVluSmhibU5vSWl3aWNHaGhjMlVpT2lKcGJuUmxiblFpTENKeVpYTjFiSFJmYjJsa0lqcHVkV3hzTENKemIzVnlZMlZmYjJsa0lqb2lPVFExWkRNNE9UQXhNVGxpTUdZNE5UQTFObVl6TnpWa1ptVTFNamd6WlROaE5tTTBZV1ZqWVNJc0luTnZkWEpqWlY5eVpXWWlPaUp5WldaekwyaGxZV1J6TDJOaGJtUnBaR0YwWlNJc0luUmhjbWRsZEY5eVpXWWlPaUp5WldaekwyaGxZV1J6TDJGc2FXRnpJaXdpZG1WeWMybHZiaUk2TVgwSyIsInJlY2VpcHRfcmVmIjoicmVmcy9haS10b29sa2l0L2dpdC1vcGVyYXRpb25zLzEwMjJlYTBkMGQxMWIyOWQxYjFjNjRhNTZhNDg3MTdhYzg0Njk2MTE5NDBkY2M1ZGQyY2UwZWM0MDc4ZmZhMmYifQ=="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-4",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-5",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "792102c129d79fc340838ed6b025d6eec139b837ec0e62d8a304fbccd4aef4ad",
+              "base64": "MjYwZDQwY2E5YTUxMDYxYTNlMGRkZDY0NGE1M2NkNmUxZGJiZjNhZQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-6",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "260d40ca9a51061a3e0ddd644a53cd6e1dbbf3ae"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "18e7599ce63cc63228486b573e78c06b03f3cdddd1df2b8d3bb255e55014f37b",
+              "base64": "eyJiZWZvcmVfb2lkIjoiMGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNSIsImNoYW5nZWQiOm51bGwsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6IjYxMDAwYjVhMjRhZjA3MWUyZmViZDQ0MTdiN2JmNjA0MThjMzllMjEyMzM2YTMxOGQ4NTM3NzBjNDYwZDUzMjIiLCJraW5kIjoiYnJhbmNoIiwicGhhc2UiOiJpbnRlbnQiLCJyZXN1bHRfb2lkIjpudWxsLCJzb3VyY2Vfb2lkIjoiOTQ1ZDM4OTAxMTliMGY4NTA1NmYzNzVkZmU1MjgzZTNhNmM0YWVjYSIsInNvdXJjZV9yZWYiOiJyZWZzL2hlYWRzL2NhbmRpZGF0ZSIsInRhcmdldF9yZWYiOiJyZWZzL2hlYWRzL2FsaWFzIiwidmVyc2lvbiI6MX0K"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-7",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-8",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2758452fe0bdc78118b576aefceb9f380915ba3e50b52e112d2a20379288e5b6",
+              "base64": "OTQ1ZDM4OTAxMTliMGY4NTA1NmYzNzVkZmU1MjgzZTNhNmM0YWVjYQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-9",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "945d3890119b0f85056f375dfe5283e3a6c4aeca"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-10",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-11",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9a85d195a9ef0a4799aeac05da45fc3702d7172dbbc9e1d63298e9c98ed8fda6",
+              "base64": "MGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-12",
+          "command_id": "git-checked-out-refs",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "worktree",
+            "list",
+            "--porcelain",
+            "-z"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "801ab590557c30aadfe468344b23a6afe92b9cbbaef75ba740bffb928a0ab97f",
+              "base64": "d29ya3RyZWUgQzovVXNlcnMva2lsbGkvQXBwRGF0YS9Mb2NhbC9UZW1wL3Rhc2stMDA3LXI4bjlieHJoAEhFQUQgMGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNQBicmFuY2ggcmVmcy9oZWFkcy9tYWluAAA="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-13",
+          "command_id": "git-publish",
+          "argv": [
+            "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "eyJhY3Rpb24iOiJwdWJsaXNoX2JyYW5jaCIsImZpbmdlcnByaW50IjoiNjEwMDBiNWEyNGFmMDcxZTJmZWJkNDQxN2I3YmY2MDQxOGMzOWUyMTIzMzZhMzE4ZDg1Mzc3MGM0NjBkNTMyMiIsImludGVudF9vaWQiOiIyNjBkNDBjYTlhNTEwNjFhM2UwZGRkNjQ0YTUzY2Q2ZTFkYmJmM2FlIiwibWVzc2FnZSI6IkludGVncmF0ZSA5NDVkMzg5MDExOWIwZjg1MDU2ZjM3NWRmZTUyODNlM2E2YzRhZWNhIChhbGlhcy1icmFuY2gpIiwicGhhc2UiOiJjb21wbGV0ZWQiLCJyZWNlaXB0X3JlZiI6InJlZnMvYWktdG9vbGtpdC9naXQtb3BlcmF0aW9ucy8xMDIyZWEwZDBkMTFiMjlkMWIxYzY0YTU2YTQ4NzE3YWM4NDY5NjExOTQwZGNjNWRkMmNlMGVjNDA3OGZmYTJmIiwic291cmNlX29pZCI6Ijk0NWQzODkwMTE5YjBmODUwNTZmMzc1ZGZlNTI4M2UzYTZjNGFlY2EiLCJzb3VyY2VfcmVmIjoicmVmcy9oZWFkcy9jYW5kaWRhdGUiLCJ0YXJnZXRfb2lkIjoiMGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNSIsInRhcmdldF9yZWYiOiJyZWZzL2hlYWRzL2FsaWFzIiwidGFyZ2V0X3N0YXR1cyI6InByZXNlbnQifQ=="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-14",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-15",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "104344d6e0c1249f4c2cbb201e600326bd282ef0d4f72b6939afda6afeaa5ea7",
+              "base64": "MmNmYmZmZmRlMjcwN2RjZmM2ODc5YmQxOWQ5MzM1YjA1MTI2NjRlYwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-16",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "2cfbfffde2707dcfc6879bd19d9335b0512664ec"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "88959d4c6cc6a9978f708ce7a88795112a733a9b3e31097c9a201dd3464e0786",
+              "base64": "eyJiZWZvcmVfb2lkIjoiMGY0ZDIzNWUyOTE1MTUyYTc5MzRhZDY3OTBlODQyNmNhZTYwODdkNSIsImNoYW5nZWQiOnRydWUsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6IjYxMDAwYjVhMjRhZjA3MWUyZmViZDQ0MTdiN2JmNjA0MThjMzllMjEyMzM2YTMxOGQ4NTM3NzBjNDYwZDUzMjIiLCJraW5kIjoiYnJhbmNoIiwicGhhc2UiOiJjb21wbGV0ZWQiLCJyZXN1bHRfb2lkIjoiOTQ1ZDM4OTAxMTliMGY4NTA1NmYzNzVkZmU1MjgzZTNhNmM0YWVjYSIsInNvdXJjZV9vaWQiOiI5NDVkMzg5MDExOWIwZjg1MDU2ZjM3NWRmZTUyODNlM2E2YzRhZWNhIiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvY2FuZGlkYXRlIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvYWxpYXMiLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-17",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-18",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2758452fe0bdc78118b576aefceb9f380915ba3e50b52e112d2a20379288e5b6",
+              "base64": "OTQ1ZDM4OTAxMTliMGY4NTA1NmYzNzVkZmU1MjgzZTNhNmM0YWVjYQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-19",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-20",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2758452fe0bdc78118b576aefceb9f380915ba3e50b52e112d2a20379288e5b6",
+              "base64": "OTQ1ZDM4OTAxMTliMGY4NTA1NmYzNzVkZmU1MjgzZTNhNmM0YWVjYQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-21",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "945d3890119b0f85056f375dfe5283e3a6c4aeca"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-22",
+          "command_id": "git-inspect-head-symbolic",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "symbolic-ref",
+            "-q",
+            "HEAD"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "599bbcd7b7f94b50d9b83318ba0dd4b8e1ba9e39d1d3ee73d1fbbd70496d0f93",
+              "base64": "cmVmcy9oZWFkcy9tYWluCg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-23",
+          "command_id": "git-inspect-head-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "HEAD^{commit}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2758452fe0bdc78118b576aefceb9f380915ba3e50b52e112d2a20379288e5b6",
+              "base64": "OTQ1ZDM4OTAxMTliMGY4NTA1NmYzNzVkZmU1MjgzZTNhNmM0YWVjYQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "managed-branch-switch",
+      "observation": {
+        "expected": "unknown with switched developer checkout/index preserved",
+        "status": "unknown",
+        "changed": null,
+        "state_after_switch": {
+          "branch": "refs/heads/developer",
+          "index": "decaa212bb3ad5292af3c00120f438b3f4a0d84a",
+          "status": "",
+          "candidate_exists": false
+        },
+        "read_tree_calls": 1,
+        "branch_after": "refs/heads/developer",
+        "status_after": "1 A. N... 000000 100644 100644 0000000000000000000000000000000000000000 dde7432465ae1c9320b441afcaf18d75d74175c9 candidate.txt\n",
+        "index_preserved": false,
+        "candidate_exists_after": true,
+        "defect_reproduced": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-mutation-repository",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+              "base64": "Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-write-intent",
+          "argv": [
+            "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "eyJhY3Rpb24iOiJ3cml0ZV9pbnRlbnQiLCJyZWNlaXB0IjoiZXlKaVpXWnZjbVZmYjJsa0lqb2laREkxWlRsaE1HRXdNek15TlRVM05HSTVZbVZoT1RCbVpqQXlaVE13WkRaaE4ySmtZakJqTnlJc0ltTm9ZVzVuWldRaU9tNTFiR3dzSW1WeWNtOXlYMk5oZEdWbmIzSjVJanB1ZFd4c0xDSm1hVzVuWlhKd2NtbHVkQ0k2SWpVek5qRTFPREF4TkdZeFpHUm1NR1kzTVRFNFpHWTBaVEEzTlRZek9ETTFZbVV6TXpVeFkyVmpabVkwWVdFNE9ERXlZV0ZtWlRBd1pqazNPV0U0WXpNaUxDSnJhVzVrSWpvaWJXVnlaMlVpTENKd2FHRnpaU0k2SW1sdWRHVnVkQ0lzSW5KbGMzVnNkRjl2YVdRaU9tNTFiR3dzSW5OdmRYSmpaVjl2YVdRaU9pSTVOakE1Wm1VM01EQmhNV0ZpWXpNelltUmpNVEZsTldGak9XRXhNRFJoTldRNU5EazBNekU1SWl3aWMyOTFjbU5sWDNKbFppSTZJbkpsWm5NdmFHVmhaSE12WTJGdVpHbGtZWFJsSWl3aWRHRnlaMlYwWDNKbFppSTZJbkpsWm5NdmFHVmhaSE12YVc1MFpXZHlZWFJwYjI0aUxDSjJaWEp6YVc5dUlqb3hmUW89IiwicmVjZWlwdF9yZWYiOiJyZWZzL2FpLXRvb2xraXQvZ2l0LW9wZXJhdGlvbnMvM2NmODk5NjE1MDVmNjFiYTMyZGM0NzM1YmIxM2ZmMzlmM2I1NGVmNzdmMTc4ZTAxZWEwMTFjM2Q5YmZmYjg2ZSJ9"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-4",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-5",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "418a340062ef8357685f1c57b9704896ff05e890431ab65962857461848dd17d",
+              "base64": "MDc2MTFmMDQyNmU2ZjUwOWQ1Y2U1YzlkYzU0OGRiYzdhNzRkMTAxYwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-6",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "07611f0426e6f509d5ce5c9dc548dbc7a74d101c"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "5e76466d3ca095ec940d4688139e553af448d6aa10be72fcc78ba4d488e69b6f",
+              "base64": "eyJiZWZvcmVfb2lkIjoiZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNyIsImNoYW5nZWQiOm51bGwsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6IjUzNjE1ODAxNGYxZGRmMGY3MTE4ZGY0ZTA3NTYzODM1YmUzMzUxY2VjZmY0YWE4ODEyYWFmZTAwZjk3OWE4YzMiLCJraW5kIjoibWVyZ2UiLCJwaGFzZSI6ImludGVudCIsInJlc3VsdF9vaWQiOm51bGwsInNvdXJjZV9vaWQiOiI5NjA5ZmU3MDBhMWFiYzMzYmRjMTFlNWFjOWExMDRhNWQ5NDk0MzE5Iiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvY2FuZGlkYXRlIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvaW50ZWdyYXRpb24iLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-7",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-8",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "038b665192bd47f5a049525a17479ccd867ded1e25763b6666ab7d2381544205",
+              "base64": "OTYwOWZlNzAwYTFhYmMzM2JkYzExZTVhYzlhMTA0YTVkOTQ5NDMxOQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-9",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "9609fe700a1abc33bdc11e5ac9a104a5d9494319"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-10",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-11",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8723daa4c8d38db72c4cff4691b27e27a9c1292f9028b7fd0c977c11744a9793",
+              "base64": "ZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-12",
+          "command_id": "git-checked-out-refs",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "worktree",
+            "list",
+            "--porcelain",
+            "-z"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "14d80147e15c9d1f7edf6cbb286866db47335d796140448b45dcc2111240dcb4",
+              "base64": "d29ya3RyZWUgQzovVXNlcnMva2lsbGkvQXBwRGF0YS9Mb2NhbC9UZW1wL3Rhc2stMDA3LTYyZHMyeGN1AEhFQUQgZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNwBicmFuY2ggcmVmcy9oZWFkcy9tYWluAAB3b3JrdHJlZSBDOi9Vc2Vycy9raWxsaS9BcHBEYXRhL0xvY2FsL1RlbXAvdGFzay0wMDctNjJkczJ4Y3UvLndvcmt0cmVlcy9pbnRlZ3JhdGlvbgBIRUFEIGQyNWU5YTBhMDMzMjU1NzRiOWJlYTkwZmYwMmUzMGQ2YTdiZGIwYzcAYnJhbmNoIHJlZnMvaGVhZHMvaW50ZWdyYXRpb24AAA=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-13",
+          "command_id": "git-managed-head",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8723daa4c8d38db72c4cff4691b27e27a9c1292f9028b7fd0c977c11744a9793",
+              "base64": "ZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-14",
+          "command_id": "git-managed-index",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "write-tree"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "d12f7e4316c6a199ecaeda1e840ebf353bb6c5840e4c354009c207146bfd7637",
+              "base64": "ZGVjYWEyMTJiYjNhZDUyOTJhZjNjMDAxMjBmNDM4YjNmNGEwZDg0YQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-15",
+          "command_id": "git-expected-tree",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "d25e9a0a03325574b9bea90ff02e30d6a7bdb0c7^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "d12f7e4316c6a199ecaeda1e840ebf353bb6c5840e4c354009c207146bfd7637",
+              "base64": "ZGVjYWEyMTJiYjNhZDUyOTJhZjNjMDAxMjBmNDM4YjNmNGEwZDg0YQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-16",
+          "command_id": "git-managed-diff",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "diff",
+            "--quiet",
+            "--no-ext-diff"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-17",
+          "command_id": "git-managed-untracked",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-18",
+          "command_id": "git-publish",
+          "argv": [
+            "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "eyJhY3Rpb24iOiJwdWJsaXNoX21lcmdlIiwiZmluZ2VycHJpbnQiOiI1MzYxNTgwMTRmMWRkZjBmNzExOGRmNGUwNzU2MzgzNWJlMzM1MWNlY2ZmNGFhODgxMmFhZmUwMGY5NzlhOGMzIiwiaW50ZW50X29pZCI6IjA3NjExZjA0MjZlNmY1MDlkNWNlNWM5ZGM1NDhkYmM3YTc0ZDEwMWMiLCJtZXNzYWdlIjoiSW50ZWdyYXRlIDk2MDlmZTcwMGExYWJjMzNiZGMxMWU1YWM5YTEwNGE1ZDk0OTQzMTkgKG1hbmFnZWQtc3dpdGNoKSIsInBoYXNlIjoicmVmX3B1Ymxpc2hlZCIsInJlY2VpcHRfcmVmIjoicmVmcy9haS10b29sa2l0L2dpdC1vcGVyYXRpb25zLzNjZjg5OTYxNTA1ZjYxYmEzMmRjNDczNWJiMTNmZjM5ZjNiNTRlZjc3ZjE3OGUwMWVhMDExYzNkOWJmZmI4NmUiLCJzb3VyY2Vfb2lkIjoiOTYwOWZlNzAwYTFhYmMzM2JkYzExZTVhYzlhMTA0YTVkOTQ5NDMxOSIsInNvdXJjZV9yZWYiOiJyZWZzL2hlYWRzL2NhbmRpZGF0ZSIsInRhcmdldF9vaWQiOiJkMjVlOWEwYTAzMzI1NTc0YjliZWE5MGZmMDJlMzBkNmE3YmRiMGM3IiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvaW50ZWdyYXRpb24iLCJ0YXJnZXRfc3RhdHVzIjoicHJlc2VudCJ9"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-19",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-20",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "817383615ec3280e5a673509969cab917d2d2e47ff59857c248f4e131922cdcc",
+              "base64": "ZDAxNjRjNTFkMzMzOWI5MjAzMGRhZmI0NDJmNTI2ZWQzNzFkOTM5Mwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-21",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "d0164c51d3339b92030dafb442f526ed371d9393"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "db490deb5f1ec203f53a91d4196b0091fe1929e5117d0e87a3a7ab2399a7f235",
+              "base64": "eyJiZWZvcmVfb2lkIjoiZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNyIsImNoYW5nZWQiOnRydWUsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6IjUzNjE1ODAxNGYxZGRmMGY3MTE4ZGY0ZTA3NTYzODM1YmUzMzUxY2VjZmY0YWE4ODEyYWFmZTAwZjk3OWE4YzMiLCJraW5kIjoibWVyZ2UiLCJwaGFzZSI6InJlZl9wdWJsaXNoZWQiLCJyZXN1bHRfb2lkIjoiMTM4MWE4MWJkMDQ4NjZjOWQzY2Q2MzhhNWE1YmUwOWY4NWQ2NTRiYyIsInNvdXJjZV9vaWQiOiI5NjA5ZmU3MDBhMWFiYzMzYmRjMTFlNWFjOWExMDRhNWQ5NDk0MzE5Iiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvY2FuZGlkYXRlIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvaW50ZWdyYXRpb24iLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-22",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-23",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "20a9865c41cf6a823e060aea2c065eba6986693ee17bec0edfff2269ec4a8b36",
+              "base64": "MTM4MWE4MWJkMDQ4NjZjOWQzY2Q2MzhhNWE1YmUwOWY4NWQ2NTRiYwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-24",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-25",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "038b665192bd47f5a049525a17479ccd867ded1e25763b6666ab7d2381544205",
+              "base64": "OTYwOWZlNzAwYTFhYmMzM2JkYzExZTVhYzlhMTA0YTVkOTQ5NDMxOQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-26",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "9609fe700a1abc33bdc11e5ac9a104a5d9494319"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-27",
+          "command_id": "git-commit-parents",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-list",
+            "--parents",
+            "-n",
+            "1",
+            "1381a81bd04866c9d3cd638a5a5be09f85d654bc"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "4ca91993e9346f6c70ffd52cbceb35b67b76c14b77cf60649c3f276d3e2d093e",
+              "base64": "MTM4MWE4MWJkMDQ4NjZjOWQzY2Q2MzhhNWE1YmUwOWY4NWQ2NTRiYyBkMjVlOWEwYTAzMzI1NTc0YjliZWE5MGZmMDJlMzBkNmE3YmRiMGM3IDk2MDlmZTcwMGExYWJjMzNiZGMxMWU1YWM5YTEwNGE1ZDk0OTQzMTkK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-28",
+          "command_id": "git-managed-result-head",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8723daa4c8d38db72c4cff4691b27e27a9c1292f9028b7fd0c977c11744a9793",
+              "base64": "ZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-29",
+          "command_id": "git-managed-result-index",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "write-tree"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "d12f7e4316c6a199ecaeda1e840ebf353bb6c5840e4c354009c207146bfd7637",
+              "base64": "ZGVjYWEyMTJiYjNhZDUyOTJhZjNjMDAxMjBmNDM4YjNmNGEwZDg0YQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-30",
+          "command_id": "git-result-tree",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "1381a81bd04866c9d3cd638a5a5be09f85d654bc^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "44412b26cbc64031d916af9b976d3e3db69f971afe261f3123232481234187e7",
+              "base64": "Y2QyYTg4MzEzMjlhNjY1ZTBhYmY0ODZkZTViZmZlZTg5NjQ5NzE3OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-31",
+          "command_id": "git-before-tree",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "d25e9a0a03325574b9bea90ff02e30d6a7bdb0c7^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "d12f7e4316c6a199ecaeda1e840ebf353bb6c5840e4c354009c207146bfd7637",
+              "base64": "ZGVjYWEyMTJiYjNhZDUyOTJhZjNjMDAxMjBmNDM4YjNmNGEwZDg0YQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-32",
+          "command_id": "git-managed-result-diff",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "diff",
+            "--quiet",
+            "--no-ext-diff"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-33",
+          "command_id": "git-managed-result-untracked",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-34",
+          "command_id": "git-advance-integration",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "read-tree",
+            "-u",
+            "-m",
+            "d25e9a0a03325574b9bea90ff02e30d6a7bdb0c7",
+            "1381a81bd04866c9d3cd638a5a5be09f85d654bc"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-35",
+          "command_id": "git-managed-result-head",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8723daa4c8d38db72c4cff4691b27e27a9c1292f9028b7fd0c977c11744a9793",
+              "base64": "ZDI1ZTlhMGEwMzMyNTU3NGI5YmVhOTBmZjAyZTMwZDZhN2JkYjBjNwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-36",
+          "command_id": "git-managed-result-index",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "write-tree"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "44412b26cbc64031d916af9b976d3e3db69f971afe261f3123232481234187e7",
+              "base64": "Y2QyYTg4MzEzMjlhNjY1ZTBhYmY0ODZkZTViZmZlZTg5NjQ5NzE3OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-37",
+          "command_id": "git-result-tree",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "1381a81bd04866c9d3cd638a5a5be09f85d654bc^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "44412b26cbc64031d916af9b976d3e3db69f971afe261f3123232481234187e7",
+              "base64": "Y2QyYTg4MzEzMjlhNjY1ZTBhYmY0ODZkZTViZmZlZTg5NjQ5NzE3OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-38",
+          "command_id": "git-before-tree",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "d25e9a0a03325574b9bea90ff02e30d6a7bdb0c7^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "d12f7e4316c6a199ecaeda1e840ebf353bb6c5840e4c354009c207146bfd7637",
+              "base64": "ZGVjYWEyMTJiYjNhZDUyOTJhZjNjMDAxMjBmNDM4YjNmNGEwZDg0YQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-39",
+          "command_id": "git-managed-result-diff",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "diff",
+            "--quiet",
+            "--no-ext-diff"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-40",
+          "command_id": "git-managed-result-untracked",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bound-runtime",
+      "observation": {
+        "expected": "trusted candidate module wins over project cwd shadow",
+        "status": "succeeded",
+        "passed": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-mutation-repository",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+              "base64": "Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-write-intent",
+          "argv": [
+            "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "eyJhY3Rpb24iOiJ3cml0ZV9pbnRlbnQiLCJyZWNlaXB0IjoiZXlKaVpXWnZjbVZmYjJsa0lqcHVkV3hzTENKamFHRnVaMlZrSWpwdWRXeHNMQ0psY25KdmNsOWpZWFJsWjI5eWVTSTZiblZzYkN3aVptbHVaMlZ5Y0hKcGJuUWlPaUkyT0RZM1pUTTJPVEEwWmpCaU5qTTRNVEk0TnpZMU1UQm1NR1ptWlRreU9XWTBaRFU1TlRneU16ZGlOemxtWWprNU9UY3lNRFEyTTJZNVltVTNaV0U1SWl3aWEybHVaQ0k2SW1KeVlXNWphQ0lzSW5Cb1lYTmxJam9pYVc1MFpXNTBJaXdpY21WemRXeDBYMjlwWkNJNmJuVnNiQ3dpYzI5MWNtTmxYMjlwWkNJNkltRTJZVGxpWVRka1pXSmxZalptT1RaaE5HSTFZakZsTUdaak0yUmhOREJqTVRjeFpUZGlNRE1pTENKemIzVnlZMlZmY21WbUlqb2ljbVZtY3k5b1pXRmtjeTl0WVdsdUlpd2lkR0Z5WjJWMFgzSmxaaUk2SW5KbFpuTXZhR1ZoWkhNdmRHOXdhV01pTENKMlpYSnphVzl1SWpveGZRbz0iLCJyZWNlaXB0X3JlZiI6InJlZnMvYWktdG9vbGtpdC9naXQtb3BlcmF0aW9ucy8xNjE2NzhkMmU4NzkyYWRhZWMwNTc0MjI3YzA5N2Q3YjQ4NWM4M2M5ZDkwYmQwYzBmNGVlYWYxMDkzY2Y2YjI1In0="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-4",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-5",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "a49469efad53bcd1ce35a961c42c724f3bfd73043ad2ca15d945da0450637a35",
+              "base64": "ZWFjMmNkZjdlYTRiZjFiYWNlM2ZhZDAxZWFmMjVlZWJhNjczMmIwNAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-6",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "eac2cdf7ea4bf1bace3fad01eaf25eeba6732b04"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e840def8eecd30820430b4d82363d2a6f2bbd0a53245fc0fcc934aeb5b6c09cf",
+              "base64": "eyJiZWZvcmVfb2lkIjpudWxsLCJjaGFuZ2VkIjpudWxsLCJlcnJvcl9jYXRlZ29yeSI6bnVsbCwiZmluZ2VycHJpbnQiOiI2ODY3ZTM2OTA0ZjBiNjM4MTI4NzY1MTBmMGZmZTkyOWY0ZDU5NTgyMzdiNzlmYjk5OTcyMDQ2M2Y5YmU3ZWE5Iiwia2luZCI6ImJyYW5jaCIsInBoYXNlIjoiaW50ZW50IiwicmVzdWx0X29pZCI6bnVsbCwic291cmNlX29pZCI6ImE2YTliYTdkZWJlYjZmOTZhNGI1YjFlMGZjM2RhNDBjMTcxZTdiMDMiLCJzb3VyY2VfcmVmIjoicmVmcy9oZWFkcy9tYWluIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvdG9waWMiLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-7",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-8",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9c618e23d9c518da6459a592882c348d859a2dacf2fef7baa5fa59bb2310246b",
+              "base64": "YTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-9",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "a6a9ba7debeb6f96a4b5b1e0fc3da40c171e7b03"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-10",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/topic"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-11",
+          "command_id": "git-inspect-head-symbolic",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "symbolic-ref",
+            "-q",
+            "HEAD"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "599bbcd7b7f94b50d9b83318ba0dd4b8e1ba9e39d1d3ee73d1fbbd70496d0f93",
+              "base64": "cmVmcy9oZWFkcy9tYWluCg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-12",
+          "command_id": "git-inspect-head-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "HEAD^{commit}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9c618e23d9c518da6459a592882c348d859a2dacf2fef7baa5fa59bb2310246b",
+              "base64": "YTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-13",
+          "command_id": "git-checked-out-refs",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "worktree",
+            "list",
+            "--porcelain",
+            "-z"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8aa65ab0680fb2444c630cb2531172146d57e5014829ea98af3083ae405aad51",
+              "base64": "d29ya3RyZWUgQzovVXNlcnMva2lsbGkvQXBwRGF0YS9Mb2NhbC9UZW1wL3Rhc2stMDA3LTF6bF9nNnlrAEhFQUQgYTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMwBicmFuY2ggcmVmcy9oZWFkcy9tYWluAAA="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-14",
+          "command_id": "git-publish",
+          "argv": [
+            "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "eyJhY3Rpb24iOiJwdWJsaXNoX2JyYW5jaCIsImZpbmdlcnByaW50IjoiNjg2N2UzNjkwNGYwYjYzODEyODc2NTEwZjBmZmU5MjlmNGQ1OTU4MjM3Yjc5ZmI5OTk3MjA0NjNmOWJlN2VhOSIsImludGVudF9vaWQiOiJlYWMyY2RmN2VhNGJmMWJhY2UzZmFkMDFlYWYyNWVlYmE2NzMyYjA0IiwibWVzc2FnZSI6IkludGVncmF0ZSBhNmE5YmE3ZGViZWI2Zjk2YTRiNWIxZTBmYzNkYTQwYzE3MWU3YjAzIChib3VuZC1ydW50aW1lKSIsInBoYXNlIjoiY29tcGxldGVkIiwicmVjZWlwdF9yZWYiOiJyZWZzL2FpLXRvb2xraXQvZ2l0LW9wZXJhdGlvbnMvMTYxNjc4ZDJlODc5MmFkYWVjMDU3NDIyN2MwOTdkN2I0ODVjODNjOWQ5MGJkMGMwZjRlZWFmMTA5M2NmNmIyNSIsInNvdXJjZV9vaWQiOiJhNmE5YmE3ZGViZWI2Zjk2YTRiNWIxZTBmYzNkYTQwYzE3MWU3YjAzIiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvbWFpbiIsInRhcmdldF9vaWQiOm51bGwsInRhcmdldF9yZWYiOiJyZWZzL2hlYWRzL3RvcGljIiwidGFyZ2V0X3N0YXR1cyI6Im1pc3NpbmcifQ=="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-15",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-16",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "3b4c137acd40ffcf531982ef58736885210a4d11a4440b48c8c76c3d9da1218f",
+              "base64": "N2E4ZTk3M2NkZDU3ZDE4ZGMyNWFjNjg2N2Q4M2Y3OWM0MzViZGYwNwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-17",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "7a8e973cdd57d18dc25ac6867d83f79c435bdf07"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "47eeb97385562de08d7f3c65fc0306d842f47780612b2dcfd597804981aea182",
+              "base64": "eyJiZWZvcmVfb2lkIjpudWxsLCJjaGFuZ2VkIjp0cnVlLCJlcnJvcl9jYXRlZ29yeSI6bnVsbCwiZmluZ2VycHJpbnQiOiI2ODY3ZTM2OTA0ZjBiNjM4MTI4NzY1MTBmMGZmZTkyOWY0ZDU5NTgyMzdiNzlmYjk5OTcyMDQ2M2Y5YmU3ZWE5Iiwia2luZCI6ImJyYW5jaCIsInBoYXNlIjoiY29tcGxldGVkIiwicmVzdWx0X29pZCI6ImE2YTliYTdkZWJlYjZmOTZhNGI1YjFlMGZjM2RhNDBjMTcxZTdiMDMiLCJzb3VyY2Vfb2lkIjoiYTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMyIsInNvdXJjZV9yZWYiOiJyZWZzL2hlYWRzL21haW4iLCJ0YXJnZXRfcmVmIjoicmVmcy9oZWFkcy90b3BpYyIsInZlcnNpb24iOjF9Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-18",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/topic"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-19",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/topic"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9c618e23d9c518da6459a592882c348d859a2dacf2fef7baa5fa59bb2310246b",
+              "base64": "YTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-20",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-21",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9c618e23d9c518da6459a592882c348d859a2dacf2fef7baa5fa59bb2310246b",
+              "base64": "YTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-22",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "a6a9ba7debeb6f96a4b5b1e0fc3da40c171e7b03"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-23",
+          "command_id": "git-inspect-head-symbolic",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "symbolic-ref",
+            "-q",
+            "HEAD"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "599bbcd7b7f94b50d9b83318ba0dd4b8e1ba9e39d1d3ee73d1fbbd70496d0f93",
+              "base64": "cmVmcy9oZWFkcy9tYWluCg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-24",
+          "command_id": "git-inspect-head-oid",
+          "argv": [
+            "C:\\Program Files\\Git\\cmd\\git.EXE",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "HEAD^{commit}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9c618e23d9c518da6459a592882c348d859a2dacf2fef7baa5fa59bb2310246b",
+              "base64": "YTZhOWJhN2RlYmViNmY5NmE0YjViMWUwZmMzZGE0MGMxNzFlN2IwMwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

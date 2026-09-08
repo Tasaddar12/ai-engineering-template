@@ -1,0 +1,2580 @@
+{
+  "candidate": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1",
+  "python": "3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]",
+  "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "origins": {
+    "git_ops": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/git_ops.py",
+    "commands": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/commands.py",
+    "local_ports": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/local_ports.py"
+  },
+  "source_sha256": "0ac93d037edca19d2c534955b0c509bd3beb4b913f63d13de4963ffbc2ade528",
+  "probes": [
+    {
+      "name": "non-root-missing-head",
+      "observation": {
+        "expected": "reject non-root binding",
+        "status": "succeeded",
+        "head_status": "missing",
+        "returned_refs": [
+          [
+            "HEAD",
+            "missing",
+            null
+          ],
+          [
+            "refs/heads/main",
+            "present",
+            "e4f2167b8617f6d281f63e575539cdc5d1ba4a4f"
+          ]
+        ],
+        "actual_git_root": "/tmp/task-007-5c8w9lzs",
+        "requested_root": "/tmp/task-007-5c8w9lzs/ordinary-subdirectory",
+        "actual_git_head": "e4f2167b8617f6d281f63e575539cdc5d1ba4a4f",
+        "defect_reproduced": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-inspect-missing-head",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "not-a-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "ead2ad901edea7920c00b26b7898a2bb1565e29495ffa6fc5591a88a33bc035d",
+              "base64": "ZTRmMjE2N2I4NjE3ZjZkMjgxZjYzZTU3NTUzOWNkYzVkMWJhNGE0Zgo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/main"
+          ],
+          "cwd_id": "not-a-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/main"
+          ],
+          "cwd_id": "not-a-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "ead2ad901edea7920c00b26b7898a2bb1565e29495ffa6fc5591a88a33bc035d",
+              "base64": "ZTRmMjE2N2I4NjE3ZjZkMjgxZjYzZTU3NTUzOWNkYzVkMWJhNGE0Zgo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "symbolic-target",
+      "observation": {
+        "expected": "preserve checked-out developer main through symbolic alias",
+        "status": "succeeded",
+        "changed": true,
+        "base": "8f8f936859f71817271e4dec6f4393a2ed79b104",
+        "candidate": "0914ffa0d79bc144b2482235edbbce36a06dde63",
+        "actual_main": "0914ffa0d79bc144b2482235edbbce36a06dde63",
+        "alias_target": "refs/heads/main",
+        "index_unchanged": true,
+        "status_after": "1 D. N... 100644 000000 000000 02e8acdcc44da4d68465994d590e44bcab3296b2 0000000000000000000000000000000000000000 candidate.txt\n",
+        "defect_reproduced": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-mutation-repository",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+              "base64": "Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-write-intent",
+          "argv": [
+            "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "/usr/bin/git",
+            "eyJhY3Rpb24iOiJ3cml0ZV9pbnRlbnQiLCJyZWNlaXB0IjoiZXlKaVpXWnZjbVZmYjJsa0lqb2lPR1k0Wmprek5qZzFPV1kzTVRneE56STNNV1UwWkdWak5tWTBNemt6WVRKbFpEYzVZakV3TkNJc0ltTm9ZVzVuWldRaU9tNTFiR3dzSW1WeWNtOXlYMk5oZEdWbmIzSjVJanB1ZFd4c0xDSm1hVzVuWlhKd2NtbHVkQ0k2SW1ReVpERXlZV1JsT0dSaVkySXlOVGd6TTJSbE5qVXhOekUzWkdFM1lXUmlObVF5WTJZMVpEQmhOR05qWXpnd05XSmhNRFUxWW1Nd05UbGxNV000Wm1NaUxDSnJhVzVrSWpvaVluSmhibU5vSWl3aWNHaGhjMlVpT2lKcGJuUmxiblFpTENKeVpYTjFiSFJmYjJsa0lqcHVkV3hzTENKemIzVnlZMlZmYjJsa0lqb2lNRGt4TkdabVlUQmtOemxpWXpFME5HSXlORGd5TWpNMVpXUmlZbU5sTXpaaE1EWmtaR1UyTXlJc0luTnZkWEpqWlY5eVpXWWlPaUp5WldaekwyaGxZV1J6TDJOaGJtUnBaR0YwWlNJc0luUmhjbWRsZEY5eVpXWWlPaUp5WldaekwyaGxZV1J6TDJGc2FXRnpJaXdpZG1WeWMybHZiaUk2TVgwSyIsInJlY2VpcHRfcmVmIjoicmVmcy9haS10b29sa2l0L2dpdC1vcGVyYXRpb25zLzEwMjJlYTBkMGQxMWIyOWQxYjFjNjRhNTZhNDg3MTdhYzg0Njk2MTE5NDBkY2M1ZGQyY2UwZWM0MDc4ZmZhMmYifQ=="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-4",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-5",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2af134e14a4937bacc1f84597b0eec775c4624e41d5492dcdda5b363cab40693",
+              "base64": "NjZlODI3MDg5OTg4NTdkNDA1YWYwYzI3YmJkYzBiNTZkZWQwZDRlYgo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-6",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "66e82708998857d405af0c27bbdc0b56ded0d4eb"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "77f2cc7b90e55ab21ccf32e7b0f27117c8f0f82d8c967f56c9c9e601db795720",
+              "base64": "eyJiZWZvcmVfb2lkIjoiOGY4ZjkzNjg1OWY3MTgxNzI3MWU0ZGVjNmY0MzkzYTJlZDc5YjEwNCIsImNoYW5nZWQiOm51bGwsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6ImQyZDEyYWRlOGRiY2IyNTgzM2RlNjUxNzE3ZGE3YWRiNmQyY2Y1ZDBhNGNjYzgwNWJhMDU1YmMwNTllMWM4ZmMiLCJraW5kIjoiYnJhbmNoIiwicGhhc2UiOiJpbnRlbnQiLCJyZXN1bHRfb2lkIjpudWxsLCJzb3VyY2Vfb2lkIjoiMDkxNGZmYTBkNzliYzE0NGIyNDgyMjM1ZWRiYmNlMzZhMDZkZGU2MyIsInNvdXJjZV9yZWYiOiJyZWZzL2hlYWRzL2NhbmRpZGF0ZSIsInRhcmdldF9yZWYiOiJyZWZzL2hlYWRzL2FsaWFzIiwidmVyc2lvbiI6MX0K"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-7",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-8",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2eb50aaa82f004bea5825dbeb9bf6bb9f066924b57fea91c12749fc73b6eac4c",
+              "base64": "MDkxNGZmYTBkNzliYzE0NGIyNDgyMjM1ZWRiYmNlMzZhMDZkZGU2Mwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-9",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "0914ffa0d79bc144b2482235edbbce36a06dde63"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-10",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-11",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "93e5acc5b721512ea85c121cf8885e7d95a9d66fb772e366e34b2dd6cdf49fcf",
+              "base64": "OGY4ZjkzNjg1OWY3MTgxNzI3MWU0ZGVjNmY0MzkzYTJlZDc5YjEwNAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-12",
+          "command_id": "git-checked-out-refs",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "worktree",
+            "list",
+            "--porcelain",
+            "-z"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "77c0a359568fc8a8ee9b30d67a8ee0bd198759a06273ed6ce7b1b918d44b2b1d",
+              "base64": "d29ya3RyZWUgL3RtcC90YXNrLTAwNy13dzdyY2MybQBIRUFEIDhmOGY5MzY4NTlmNzE4MTcyNzFlNGRlYzZmNDM5M2EyZWQ3OWIxMDQAYnJhbmNoIHJlZnMvaGVhZHMvbWFpbgAA"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-13",
+          "command_id": "git-publish",
+          "argv": [
+            "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "/usr/bin/git",
+            "eyJhY3Rpb24iOiJwdWJsaXNoX2JyYW5jaCIsImZpbmdlcnByaW50IjoiZDJkMTJhZGU4ZGJjYjI1ODMzZGU2NTE3MTdkYTdhZGI2ZDJjZjVkMGE0Y2NjODA1YmEwNTViYzA1OWUxYzhmYyIsImludGVudF9vaWQiOiI2NmU4MjcwODk5ODg1N2Q0MDVhZjBjMjdiYmRjMGI1NmRlZDBkNGViIiwibWVzc2FnZSI6IkludGVncmF0ZSAwOTE0ZmZhMGQ3OWJjMTQ0YjI0ODIyMzVlZGJiY2UzNmEwNmRkZTYzIChhbGlhcy1icmFuY2gpIiwicGhhc2UiOiJjb21wbGV0ZWQiLCJyZWNlaXB0X3JlZiI6InJlZnMvYWktdG9vbGtpdC9naXQtb3BlcmF0aW9ucy8xMDIyZWEwZDBkMTFiMjlkMWIxYzY0YTU2YTQ4NzE3YWM4NDY5NjExOTQwZGNjNWRkMmNlMGVjNDA3OGZmYTJmIiwic291cmNlX29pZCI6IjA5MTRmZmEwZDc5YmMxNDRiMjQ4MjIzNWVkYmJjZTM2YTA2ZGRlNjMiLCJzb3VyY2VfcmVmIjoicmVmcy9oZWFkcy9jYW5kaWRhdGUiLCJ0YXJnZXRfb2lkIjoiOGY4ZjkzNjg1OWY3MTgxNzI3MWU0ZGVjNmY0MzkzYTJlZDc5YjEwNCIsInRhcmdldF9yZWYiOiJyZWZzL2hlYWRzL2FsaWFzIiwidGFyZ2V0X3N0YXR1cyI6InByZXNlbnQifQ=="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-14",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-15",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/1022ea0d0d11b29d1b1c64a56a48717ac8469611940dcc5dd2ce0ec4078ffa2f"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "015a6f191ab2bb8d73e0ac556563375b61339f8a7bfb834b3e22c1bad15062f7",
+              "base64": "OWNkM2Q5MzVlYmJmNzExZGNjZGMxNmVhYjFlMjZkZDNiYTZlMGQzMwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-16",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "9cd3d935ebbf711dccdc16eab1e26dd3ba6e0d33"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e5717bea9bb07fc961a7150cce6b22e84c74f981fe25edf3f61d3cfbd28c5f97",
+              "base64": "eyJiZWZvcmVfb2lkIjoiOGY4ZjkzNjg1OWY3MTgxNzI3MWU0ZGVjNmY0MzkzYTJlZDc5YjEwNCIsImNoYW5nZWQiOnRydWUsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6ImQyZDEyYWRlOGRiY2IyNTgzM2RlNjUxNzE3ZGE3YWRiNmQyY2Y1ZDBhNGNjYzgwNWJhMDU1YmMwNTllMWM4ZmMiLCJraW5kIjoiYnJhbmNoIiwicGhhc2UiOiJjb21wbGV0ZWQiLCJyZXN1bHRfb2lkIjoiMDkxNGZmYTBkNzliYzE0NGIyNDgyMjM1ZWRiYmNlMzZhMDZkZGU2MyIsInNvdXJjZV9vaWQiOiIwOTE0ZmZhMGQ3OWJjMTQ0YjI0ODIyMzVlZGJiY2UzNmEwNmRkZTYzIiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvY2FuZGlkYXRlIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvYWxpYXMiLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-17",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-18",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/alias"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2eb50aaa82f004bea5825dbeb9bf6bb9f066924b57fea91c12749fc73b6eac4c",
+              "base64": "MDkxNGZmYTBkNzliYzE0NGIyNDgyMjM1ZWRiYmNlMzZhMDZkZGU2Mwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-19",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-20",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2eb50aaa82f004bea5825dbeb9bf6bb9f066924b57fea91c12749fc73b6eac4c",
+              "base64": "MDkxNGZmYTBkNzliYzE0NGIyNDgyMjM1ZWRiYmNlMzZhMDZkZGU2Mwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-21",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "0914ffa0d79bc144b2482235edbbce36a06dde63"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-22",
+          "command_id": "git-inspect-head-symbolic",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "symbolic-ref",
+            "-q",
+            "HEAD"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "599bbcd7b7f94b50d9b83318ba0dd4b8e1ba9e39d1d3ee73d1fbbd70496d0f93",
+              "base64": "cmVmcy9oZWFkcy9tYWluCg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-23",
+          "command_id": "git-inspect-head-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "HEAD^{commit}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2eb50aaa82f004bea5825dbeb9bf6bb9f066924b57fea91c12749fc73b6eac4c",
+              "base64": "MDkxNGZmYTBkNzliYzE0NGIyNDgyMjM1ZWRiYmNlMzZhMDZkZGU2Mwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "managed-branch-switch",
+      "observation": {
+        "expected": "unknown with switched developer checkout/index preserved",
+        "status": "unknown",
+        "changed": null,
+        "state_after_switch": {
+          "branch": "refs/heads/developer",
+          "index": "4b36dfd79db36d8c59d1fb032de66b57f0457b65",
+          "status": "",
+          "candidate_exists": false
+        },
+        "read_tree_calls": 1,
+        "branch_after": "refs/heads/developer",
+        "status_after": "1 A. N... 000000 100644 100644 0000000000000000000000000000000000000000 02e8acdcc44da4d68465994d590e44bcab3296b2 candidate.txt\n",
+        "index_preserved": false,
+        "candidate_exists_after": true,
+        "defect_reproduced": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-mutation-repository",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+              "base64": "Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-write-intent",
+          "argv": [
+            "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "/usr/bin/git",
+            "eyJhY3Rpb24iOiJ3cml0ZV9pbnRlbnQiLCJyZWNlaXB0IjoiZXlKaVpXWnZjbVZmYjJsa0lqb2laV1JoTURNell6ZGlZbU01TUdFeE9HRmhaVFV6Wm1FNE1qVXpOekEzTm1VMlpqUXhOVGs1T0NJc0ltTm9ZVzVuWldRaU9tNTFiR3dzSW1WeWNtOXlYMk5oZEdWbmIzSjVJanB1ZFd4c0xDSm1hVzVuWlhKd2NtbHVkQ0k2SWpNME5HRTFaR1E1WWpka01qazJZelV5T0RRNU9XRXdNelUyWkRWaFpqVXlNVEU1T1RBeFlXRmlNemhoT1RNeVpEZGlNRGd5WVRaak5HWm1PRFptWWpZaUxDSnJhVzVrSWpvaWJXVnlaMlVpTENKd2FHRnpaU0k2SW1sdWRHVnVkQ0lzSW5KbGMzVnNkRjl2YVdRaU9tNTFiR3dzSW5OdmRYSmpaVjl2YVdRaU9pSmhaVGcwWW1ZeFpUWm1OV1EyWmpRd05HRTVNbVUxTnpVeU5XWTJNbVppTkdVME9UaG1ZalU1SWl3aWMyOTFjbU5sWDNKbFppSTZJbkpsWm5NdmFHVmhaSE12WTJGdVpHbGtZWFJsSWl3aWRHRnlaMlYwWDNKbFppSTZJbkpsWm5NdmFHVmhaSE12YVc1MFpXZHlZWFJwYjI0aUxDSjJaWEp6YVc5dUlqb3hmUW89IiwicmVjZWlwdF9yZWYiOiJyZWZzL2FpLXRvb2xraXQvZ2l0LW9wZXJhdGlvbnMvM2NmODk5NjE1MDVmNjFiYTMyZGM0NzM1YmIxM2ZmMzlmM2I1NGVmNzdmMTc4ZTAxZWEwMTFjM2Q5YmZmYjg2ZSJ9"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-4",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-5",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "73b1fbc9f0fda4ca51294a6ba4d7de3ca9f0b07addbda05dff5e93f8235fb685",
+              "base64": "ZDJjZTAxNTBhMjA0Y2UwNTk4ZmExM2Y2ZGUxNzlhN2VkZmY1MDYxZQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-6",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "d2ce0150a204ce0598fa13f6de179a7edff5061e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "d87410d275c4026fd39e2ab0e80c5b04a94719a411dc38845e989738102d577b",
+              "base64": "eyJiZWZvcmVfb2lkIjoiZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OCIsImNoYW5nZWQiOm51bGwsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6IjM0NGE1ZGQ5YjdkMjk2YzUyODQ5OWEwMzU2ZDVhZjUyMTE5OTAxYWFiMzhhOTMyZDdiMDgyYTZjNGZmODZmYjYiLCJraW5kIjoibWVyZ2UiLCJwaGFzZSI6ImludGVudCIsInJlc3VsdF9vaWQiOm51bGwsInNvdXJjZV9vaWQiOiJhZTg0YmYxZTZmNWQ2ZjQwNGE5MmU1NzUyNWY2MmZiNGU0OThmYjU5Iiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvY2FuZGlkYXRlIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvaW50ZWdyYXRpb24iLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-7",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-8",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9162cdfcfc463b800585ac8009bd69836fb837db58555d27e61158c4dfe6430b",
+              "base64": "YWU4NGJmMWU2ZjVkNmY0MDRhOTJlNTc1MjVmNjJmYjRlNDk4ZmI1OQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-9",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "ae84bf1e6f5d6f404a92e57525f62fb4e498fb59"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-10",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-11",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8add30d86ae2795f44c3a71b42cfe94a4b57fe77cc3ffb7917ad5c03cd314b14",
+              "base64": "ZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-12",
+          "command_id": "git-checked-out-refs",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "worktree",
+            "list",
+            "--porcelain",
+            "-z"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "febc78000c7a45e4790e9089076a38dc2700168a0092113c4b0e0a9a09c94db8",
+              "base64": "d29ya3RyZWUgL3RtcC90YXNrLTAwNy1wX3AxNGVzagBIRUFEIGVkYTAzM2M3YmJjOTBhMThhYWU1M2ZhODI1MzcwNzZlNmY0MTU5OTgAYnJhbmNoIHJlZnMvaGVhZHMvbWFpbgAAd29ya3RyZWUgL3RtcC90YXNrLTAwNy1wX3AxNGVzai8ud29ya3RyZWVzL2ludGVncmF0aW9uAEhFQUQgZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OABicmFuY2ggcmVmcy9oZWFkcy9pbnRlZ3JhdGlvbgAA"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-13",
+          "command_id": "git-managed-head",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8add30d86ae2795f44c3a71b42cfe94a4b57fe77cc3ffb7917ad5c03cd314b14",
+              "base64": "ZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-14",
+          "command_id": "git-managed-index",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "write-tree"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "194305d384feac33d1e533612c73e0d6c50109e8af8eb30013519e835545006d",
+              "base64": "NGIzNmRmZDc5ZGIzNmQ4YzU5ZDFmYjAzMmRlNjZiNTdmMDQ1N2I2NQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-15",
+          "command_id": "git-expected-tree",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "eda033c7bbc90a18aae53fa82537076e6f415998^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "194305d384feac33d1e533612c73e0d6c50109e8af8eb30013519e835545006d",
+              "base64": "NGIzNmRmZDc5ZGIzNmQ4YzU5ZDFmYjAzMmRlNjZiNTdmMDQ1N2I2NQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-16",
+          "command_id": "git-managed-diff",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "diff",
+            "--quiet",
+            "--no-ext-diff"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-17",
+          "command_id": "git-managed-untracked",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-18",
+          "command_id": "git-publish",
+          "argv": [
+            "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "/usr/bin/git",
+            "eyJhY3Rpb24iOiJwdWJsaXNoX21lcmdlIiwiZmluZ2VycHJpbnQiOiIzNDRhNWRkOWI3ZDI5NmM1Mjg0OTlhMDM1NmQ1YWY1MjExOTkwMWFhYjM4YTkzMmQ3YjA4MmE2YzRmZjg2ZmI2IiwiaW50ZW50X29pZCI6ImQyY2UwMTUwYTIwNGNlMDU5OGZhMTNmNmRlMTc5YTdlZGZmNTA2MWUiLCJtZXNzYWdlIjoiSW50ZWdyYXRlIGFlODRiZjFlNmY1ZDZmNDA0YTkyZTU3NTI1ZjYyZmI0ZTQ5OGZiNTkgKG1hbmFnZWQtc3dpdGNoKSIsInBoYXNlIjoicmVmX3B1Ymxpc2hlZCIsInJlY2VpcHRfcmVmIjoicmVmcy9haS10b29sa2l0L2dpdC1vcGVyYXRpb25zLzNjZjg5OTYxNTA1ZjYxYmEzMmRjNDczNWJiMTNmZjM5ZjNiNTRlZjc3ZjE3OGUwMWVhMDExYzNkOWJmZmI4NmUiLCJzb3VyY2Vfb2lkIjoiYWU4NGJmMWU2ZjVkNmY0MDRhOTJlNTc1MjVmNjJmYjRlNDk4ZmI1OSIsInNvdXJjZV9yZWYiOiJyZWZzL2hlYWRzL2NhbmRpZGF0ZSIsInRhcmdldF9vaWQiOiJlZGEwMzNjN2JiYzkwYTE4YWFlNTNmYTgyNTM3MDc2ZTZmNDE1OTk4IiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvaW50ZWdyYXRpb24iLCJ0YXJnZXRfc3RhdHVzIjoicHJlc2VudCJ9"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-19",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-20",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/3cf89961505f61ba32dc4735bb13ff39f3b54ef77f178e01ea011c3d9bffb86e"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "4e26f1145b7cea7b412aca14480adbf5f7dafca56ee95eb2b514d0ddf4cd82c3",
+              "base64": "Y2QxNmJkODM5NTA0NWZmODVmZmQ0YmVlNjRiZWM3ODEwZGFiMjY5Mwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-21",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "cd16bd8395045ff85ffd4bee64bec7810dab2693"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "002a04b631f7b05b5f89f317e2c1038683900a6434f929655ba5de3cd7e9c357",
+              "base64": "eyJiZWZvcmVfb2lkIjoiZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OCIsImNoYW5nZWQiOnRydWUsImVycm9yX2NhdGVnb3J5IjpudWxsLCJmaW5nZXJwcmludCI6IjM0NGE1ZGQ5YjdkMjk2YzUyODQ5OWEwMzU2ZDVhZjUyMTE5OTAxYWFiMzhhOTMyZDdiMDgyYTZjNGZmODZmYjYiLCJraW5kIjoibWVyZ2UiLCJwaGFzZSI6InJlZl9wdWJsaXNoZWQiLCJyZXN1bHRfb2lkIjoiN2E5YTAxZWFjNGQwMDM0MjRiZTBlODhhY2UyMTA3OWJjZmUwNzM1MiIsInNvdXJjZV9vaWQiOiJhZTg0YmYxZTZmNWQ2ZjQwNGE5MmU1NzUyNWY2MmZiNGU0OThmYjU5Iiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvY2FuZGlkYXRlIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvaW50ZWdyYXRpb24iLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-22",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-23",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/integration"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "c172511ede949000c74cbcc16a9a8b8ca16a18ccd360f253f459a3db89371f60",
+              "base64": "N2E5YTAxZWFjNGQwMDM0MjRiZTBlODhhY2UyMTA3OWJjZmUwNzM1Mgo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-24",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-25",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/candidate"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "9162cdfcfc463b800585ac8009bd69836fb837db58555d27e61158c4dfe6430b",
+              "base64": "YWU4NGJmMWU2ZjVkNmY0MDRhOTJlNTc1MjVmNjJmYjRlNDk4ZmI1OQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-26",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "ae84bf1e6f5d6f404a92e57525f62fb4e498fb59"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-27",
+          "command_id": "git-commit-parents",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-list",
+            "--parents",
+            "-n",
+            "1",
+            "7a9a01eac4d003424be0e88ace21079bcfe07352"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "ad6d412c381c8da016f061725567e59fee567c2cd5f693f2828ca2558eff660a",
+              "base64": "N2E5YTAxZWFjNGQwMDM0MjRiZTBlODhhY2UyMTA3OWJjZmUwNzM1MiBlZGEwMzNjN2JiYzkwYTE4YWFlNTNmYTgyNTM3MDc2ZTZmNDE1OTk4IGFlODRiZjFlNmY1ZDZmNDA0YTkyZTU3NTI1ZjYyZmI0ZTQ5OGZiNTkK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-28",
+          "command_id": "git-managed-result-head",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8add30d86ae2795f44c3a71b42cfe94a4b57fe77cc3ffb7917ad5c03cd314b14",
+              "base64": "ZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-29",
+          "command_id": "git-managed-result-index",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "write-tree"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "194305d384feac33d1e533612c73e0d6c50109e8af8eb30013519e835545006d",
+              "base64": "NGIzNmRmZDc5ZGIzNmQ4YzU5ZDFmYjAzMmRlNjZiNTdmMDQ1N2I2NQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-30",
+          "command_id": "git-result-tree",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "7a9a01eac4d003424be0e88ace21079bcfe07352^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "a8c0dcdb4eeb644c817576b9f34ab461240b0212bc944b76950f420f0ef6245d",
+              "base64": "OGMxN2M4NmIyNjM5YzlkNzVkNTU0YzRlMTNiY2YxYTYyZTFhYWQ0Nwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-31",
+          "command_id": "git-before-tree",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "eda033c7bbc90a18aae53fa82537076e6f415998^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "194305d384feac33d1e533612c73e0d6c50109e8af8eb30013519e835545006d",
+              "base64": "NGIzNmRmZDc5ZGIzNmQ4YzU5ZDFmYjAzMmRlNjZiNTdmMDQ1N2I2NQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-32",
+          "command_id": "git-managed-result-diff",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "diff",
+            "--quiet",
+            "--no-ext-diff"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-33",
+          "command_id": "git-managed-result-untracked",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-34",
+          "command_id": "git-advance-integration",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "read-tree",
+            "-u",
+            "-m",
+            "eda033c7bbc90a18aae53fa82537076e6f415998",
+            "7a9a01eac4d003424be0e88ace21079bcfe07352"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-35",
+          "command_id": "git-managed-result-head",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "HEAD"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "8add30d86ae2795f44c3a71b42cfe94a4b57fe77cc3ffb7917ad5c03cd314b14",
+              "base64": "ZWRhMDMzYzdiYmM5MGExOGFhZTUzZmE4MjUzNzA3NmU2ZjQxNTk5OAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-36",
+          "command_id": "git-managed-result-index",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "write-tree"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "a8c0dcdb4eeb644c817576b9f34ab461240b0212bc944b76950f420f0ef6245d",
+              "base64": "OGMxN2M4NmIyNjM5YzlkNzVkNTU0YzRlMTNiY2YxYTYyZTFhYWQ0Nwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-37",
+          "command_id": "git-result-tree",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "7a9a01eac4d003424be0e88ace21079bcfe07352^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "a8c0dcdb4eeb644c817576b9f34ab461240b0212bc944b76950f420f0ef6245d",
+              "base64": "OGMxN2M4NmIyNjM5YzlkNzVkNTU0YzRlMTNiY2YxYTYyZTFhYWQ0Nwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-38",
+          "command_id": "git-before-tree",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "eda033c7bbc90a18aae53fa82537076e6f415998^{tree}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "194305d384feac33d1e533612c73e0d6c50109e8af8eb30013519e835545006d",
+              "base64": "NGIzNmRmZDc5ZGIzNmQ4YzU5ZDFmYjAzMmRlNjZiNTdmMDQ1N2I2NQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-39",
+          "command_id": "git-managed-result-diff",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "diff",
+            "--quiet",
+            "--no-ext-diff"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-40",
+          "command_id": "git-managed-result-untracked",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z"
+          ],
+          "cwd_id": "integration-worktree",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bound-runtime",
+      "observation": {
+        "expected": "trusted candidate module wins over project cwd shadow",
+        "status": "succeeded",
+        "passed": true
+      },
+      "commands": [
+        {
+          "id": "git-test-evidence-1",
+          "command_id": "git-mutation-repository",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--show-prefix"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+              "base64": "Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-2",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-3",
+          "command_id": "git-write-intent",
+          "argv": [
+            "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "/usr/bin/git",
+            "eyJhY3Rpb24iOiJ3cml0ZV9pbnRlbnQiLCJyZWNlaXB0IjoiZXlKaVpXWnZjbVZmYjJsa0lqcHVkV3hzTENKamFHRnVaMlZrSWpwdWRXeHNMQ0psY25KdmNsOWpZWFJsWjI5eWVTSTZiblZzYkN3aVptbHVaMlZ5Y0hKcGJuUWlPaUk1TlRVNU5XRXpNbU00WkRCa01tVmxZelkzTnpJMVpHWTNaakkyTkdKallUQXlaR1U1TW1KbE1qSXdNak5sTWpZME1qVXhNemd3WlRrd05tWTRNakEwSWl3aWEybHVaQ0k2SW1KeVlXNWphQ0lzSW5Cb1lYTmxJam9pYVc1MFpXNTBJaXdpY21WemRXeDBYMjlwWkNJNmJuVnNiQ3dpYzI5MWNtTmxYMjlwWkNJNklqTTNOVGhtTldNNFpHSTVOelZtWVRaa1lUZGtNR0V5TnpnMk56STROV0kzT1RKbU5tUXlZVGdpTENKemIzVnlZMlZmY21WbUlqb2ljbVZtY3k5b1pXRmtjeTl0WVdsdUlpd2lkR0Z5WjJWMFgzSmxaaUk2SW5KbFpuTXZhR1ZoWkhNdmRHOXdhV01pTENKMlpYSnphVzl1SWpveGZRbz0iLCJyZWNlaXB0X3JlZiI6InJlZnMvYWktdG9vbGtpdC9naXQtb3BlcmF0aW9ucy8xNjE2NzhkMmU4NzkyYWRhZWMwNTc0MjI3YzA5N2Q3YjQ4NWM4M2M5ZDkwYmQwYzBmNGVlYWYxMDkzY2Y2YjI1In0="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-4",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-5",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "3374bbdd27e067047f001e88b41f3a1b6cae8cfb7873e901e21d7d0dc9237fa8",
+              "base64": "NmRmNjYzMjk4NDAwNWQzMjc0N2RmZGM0OWY1MGE0ZjViM2U1YTE3Mgo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-6",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "6df6632984005d32747dfdc49f50a4f5b3e5a172"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "c3ebda53f2afe3584835ccdcd2158d182307e7494c6cdb822af122d7a52ad42c",
+              "base64": "eyJiZWZvcmVfb2lkIjpudWxsLCJjaGFuZ2VkIjpudWxsLCJlcnJvcl9jYXRlZ29yeSI6bnVsbCwiZmluZ2VycHJpbnQiOiI5NTU5NWEzMmM4ZDBkMmVlYzY3NzI1ZGY3ZjI2NGJjYTAyZGU5MmJlMjIwMjNlMjY0MjUxMzgwZTkwNmY4MjA0Iiwia2luZCI6ImJyYW5jaCIsInBoYXNlIjoiaW50ZW50IiwicmVzdWx0X29pZCI6bnVsbCwic291cmNlX29pZCI6IjM3NThmNWM4ZGI5NzVmYTZkYTdkMGEyNzg2NzI4NWI3OTJmNmQyYTgiLCJzb3VyY2VfcmVmIjoicmVmcy9oZWFkcy9tYWluIiwidGFyZ2V0X3JlZiI6InJlZnMvaGVhZHMvdG9waWMiLCJ2ZXJzaW9uIjoxfQo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-7",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-8",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "28d8b46f4703be9919c15d948915fc09b23a72e203cf4e9438b6b57478cde093",
+              "base64": "Mzc1OGY1YzhkYjk3NWZhNmRhN2QwYTI3ODY3Mjg1Yjc5MmY2ZDJhOAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-9",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "3758f5c8db975fa6da7d0a27867285b792f6d2a8"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-10",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/topic"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 1,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-11",
+          "command_id": "git-inspect-head-symbolic",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "symbolic-ref",
+            "-q",
+            "HEAD"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "599bbcd7b7f94b50d9b83318ba0dd4b8e1ba9e39d1d3ee73d1fbbd70496d0f93",
+              "base64": "cmVmcy9oZWFkcy9tYWluCg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-12",
+          "command_id": "git-inspect-head-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "HEAD^{commit}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "28d8b46f4703be9919c15d948915fc09b23a72e203cf4e9438b6b57478cde093",
+              "base64": "Mzc1OGY1YzhkYjk3NWZhNmRhN2QwYTI3ODY3Mjg1Yjc5MmY2ZDJhOAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-13",
+          "command_id": "git-checked-out-refs",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "worktree",
+            "list",
+            "--porcelain",
+            "-z"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "f0bd449e00605ccc43744d4ebe0d4f3067124df68869a5d4b0d647b99f1b3b42",
+              "base64": "d29ya3RyZWUgL3RtcC90YXNrLTAwNy1la3NkdGNlNABIRUFEIDM3NThmNWM4ZGI5NzVmYTZkYTdkMGEyNzg2NzI4NWI3OTJmNmQyYTgAYnJhbmNoIHJlZnMvaGVhZHMvbWFpbgAA"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-14",
+          "command_id": "git-publish",
+          "argv": [
+            "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+            "-P",
+            "-B",
+            "-m",
+            "git_ops",
+            "--git-ops-helper-v1",
+            "/usr/bin/git",
+            "eyJhY3Rpb24iOiJwdWJsaXNoX2JyYW5jaCIsImZpbmdlcnByaW50IjoiOTU1OTVhMzJjOGQwZDJlZWM2NzcyNWRmN2YyNjRiY2EwMmRlOTJiZTIyMDIzZTI2NDI1MTM4MGU5MDZmODIwNCIsImludGVudF9vaWQiOiI2ZGY2NjMyOTg0MDA1ZDMyNzQ3ZGZkYzQ5ZjUwYTRmNWIzZTVhMTcyIiwibWVzc2FnZSI6IkludGVncmF0ZSAzNzU4ZjVjOGRiOTc1ZmE2ZGE3ZDBhMjc4NjcyODViNzkyZjZkMmE4IChib3VuZC1ydW50aW1lKSIsInBoYXNlIjoiY29tcGxldGVkIiwicmVjZWlwdF9yZWYiOiJyZWZzL2FpLXRvb2xraXQvZ2l0LW9wZXJhdGlvbnMvMTYxNjc4ZDJlODc5MmFkYWVjMDU3NDIyN2MwOTdkN2I0ODVjODNjOWQ5MGJkMGMwZjRlZWFmMTA5M2NmNmIyNSIsInNvdXJjZV9vaWQiOiIzNzU4ZjVjOGRiOTc1ZmE2ZGE3ZDBhMjc4NjcyODViNzkyZjZkMmE4Iiwic291cmNlX3JlZiI6InJlZnMvaGVhZHMvbWFpbiIsInRhcmdldF9vaWQiOm51bGwsInRhcmdldF9yZWYiOiJyZWZzL2hlYWRzL3RvcGljIiwidGFyZ2V0X3N0YXR1cyI6Im1pc3NpbmcifQ=="
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "2c64d63a7722739106d43f24fdc94fd3dce0bdde4926cfcffaf255229409ec66",
+              "base64": "c3RhcnQ6IG9rCnByZXBhcmU6IG9rCmNvbW1pdDogb2sK"
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-15",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-16",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/ai-toolkit/git-operations/161678d2e8792adaec0574227c097d7b485c83c9d90bd0c0f4eeaf1093cf6b25"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "b66760a6ab63e5443dc1f937003ec1f5289e3ab99160211ece9419b2018b1bf5",
+              "base64": "MzhiMjRmMDdhMDAzODI4M2EyZDA4MjQwMmE1ZTFkODZhNTY4OTAwNwo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-17",
+          "command_id": "git-read-receipt",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "blob",
+            "38b24f07a0038283a2d082402a5e1d86a5689007"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "daa3646dd411c719b8369f6b9d982a9e446b98e9d851c34706a4b0a90d3ba4a7",
+              "base64": "eyJiZWZvcmVfb2lkIjpudWxsLCJjaGFuZ2VkIjp0cnVlLCJlcnJvcl9jYXRlZ29yeSI6bnVsbCwiZmluZ2VycHJpbnQiOiI5NTU5NWEzMmM4ZDBkMmVlYzY3NzI1ZGY3ZjI2NGJjYTAyZGU5MmJlMjIwMjNlMjY0MjUxMzgwZTkwNmY4MjA0Iiwia2luZCI6ImJyYW5jaCIsInBoYXNlIjoiY29tcGxldGVkIiwicmVzdWx0X29pZCI6IjM3NThmNWM4ZGI5NzVmYTZkYTdkMGEyNzg2NzI4NWI3OTJmNmQyYTgiLCJzb3VyY2Vfb2lkIjoiMzc1OGY1YzhkYjk3NWZhNmRhN2QwYTI3ODY3Mjg1Yjc5MmY2ZDJhOCIsInNvdXJjZV9yZWYiOiJyZWZzL2hlYWRzL21haW4iLCJ0YXJnZXRfcmVmIjoicmVmcy9oZWFkcy90b3BpYyIsInZlcnNpb24iOjF9Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-18",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/topic"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-19",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/topic"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "28d8b46f4703be9919c15d948915fc09b23a72e203cf4e9438b6b57478cde093",
+              "base64": "Mzc1OGY1YzhkYjk3NWZhNmRhN2QwYTI3ODY3Mjg1Yjc5MmY2ZDJhOAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-20",
+          "command_id": "git-observe-ref-exists",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--quiet",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-21",
+          "command_id": "git-observe-ref-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "show-ref",
+            "--verify",
+            "--hash",
+            "refs/heads/main"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "28d8b46f4703be9919c15d948915fc09b23a72e203cf4e9438b6b57478cde093",
+              "base64": "Mzc1OGY1YzhkYjk3NWZhNmRhN2QwYTI3ODY3Mjg1Yjc5MmY2ZDJhOAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-22",
+          "command_id": "git-resolve-ref-type",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "cat-file",
+            "-t",
+            "3758f5c8db975fa6da7d0a27867285b792f6d2a8"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "50836eee574ecff79dea3b4fd40673d7d000f7a5f177d8a6a3000b59c78383b8",
+              "base64": "Y29tbWl0Cg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-23",
+          "command_id": "git-inspect-head-symbolic",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "symbolic-ref",
+            "-q",
+            "HEAD"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "599bbcd7b7f94b50d9b83318ba0dd4b8e1ba9e39d1d3ee73d1fbbd70496d0f93",
+              "base64": "cmVmcy9oZWFkcy9tYWluCg=="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        },
+        {
+          "id": "git-test-evidence-24",
+          "command_id": "git-inspect-head-oid",
+          "argv": [
+            "/usr/bin/git",
+            "--no-optional-locks",
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "HEAD^{commit}"
+          ],
+          "cwd_id": "project-test",
+          "cwd_relative": ".",
+          "status": "exited",
+          "exit_code": 0,
+          "truncated": false,
+          "redacted": false,
+          "streams": {
+            "stdout": {
+              "sha256": "28d8b46f4703be9919c15d948915fc09b23a72e203cf4e9438b6b57478cde093",
+              "base64": "Mzc1OGY1YzhkYjk3NWZhNmRhN2QwYTI3ODY3Mjg1Yjc5MmY2ZDJhOAo="
+            },
+            "stderr": {
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "base64": ""
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
