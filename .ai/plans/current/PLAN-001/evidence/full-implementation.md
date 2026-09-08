@@ -284,3 +284,38 @@ Linux evidence, not final remoteCI. Native accounting is69/300 charged and
 72/300 charged or reserved for one repair owner and two fresh reviewers;
 structural rewrites remain3/3 used. Generation30 advances to31. TASK-014 review
 can proceed after006a2 dispatch, then007/018 are prioritized after006 acceptance.
+
+### Scope accepted and command recovery validation (2026-09-08)
+
+TASK-014 candidate `4bfad8611177959fb99eda01dd3c18077ff55f37` passed17
+declared tests on Windows3.12 and3.11, then fresh c1 R1 and separate R2 with
+all11/all12 checks passing and no findings. It integrated at
+`d6d3e6f94dd355994fb82d8e6a0c1c2546b6c3a3`; generation32, nine of39 accepted.
+R1 independently checked2048 path/access/sequencing cases,200 resource cases,
+1664 changed-endpoint cases and58 invalid inputs. R2 checked all39 actual task
+scopes and741 graph pairs, including280 disjoint unordered pairs and150 ordered
+collisions, actual downstream contract reads, allfour handoff change kinds and
+canonical/other-owner boundaries. Its CRLF-only diagnostic harness correction
+is preserved with the unchanged candidate. Git removed the clean merged tree.
+Foundation passed27schemas/174artifacts/39tasks/280pairs/4manifests/370links.
+
+TASK-006-a2 is in its bounded test-only recovery. The owner reports allfour exact
+platform/version suites pass22 discovered/21executed/one established skip, with
+production bytes preserved. This remains an owner claim pending the final clean
+handoff, coordinator candidate validation and cumulative c3 fresh R1/R2.
+
+Coordinator minimum-version preflights on unchanged clean queued owner heads:
+[TASK-017](validation/TASK-017-a1-linux311-preflight.txt)20tests,
+[TASK-005-a2](validation/TASK-005-a2-linux311-preflight.txt)11tests, and
+[TASK-016](validation/TASK-016-a1-linux311-preflight.txt)17tests, all passed
+on Linux Python3.11.16. Actual interpreter and candidate source origins were
+verified. The005/016 origin-only snippet initially had a quoted-newline syntax
+error; that coordinator diagnostic is retained and corrected without rerunning
+the already-passing suites. These are preflights, not exact future-candidate
+evidence or independent reviews. Future candidates bind fresh observations.
+
+The local candidate helper now records actual interpreter, platform, dependency
+version and owned-source origins with each platform log before fingerprinting.
+Allfour metadata-only probes passed; existing reviewed evidence was unchanged.
+Native accounting72/300 before the next dispatch; graph rewrites remain3/3 used.
+TASK-024 is newly dependency-ready. After006 acceptance,007 and018 remain priorities.
