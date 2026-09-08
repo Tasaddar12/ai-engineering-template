@@ -129,6 +129,24 @@ def _materials(
     return tuple(sorted(material, key=lambda item: (item.alias_key, item.path)))
 
 
+def _required_paths(values: Iterable[str], label: str) -> tuple[str, ...]:
+    paths = _iterable(values, label)
+    normalized: list[tuple[str, tuple[str, ...]]] = []
+    for value in paths:
+        normalized.append(_canonical_path(value, f"{label} path"))
+    aliases: dict[tuple[str, ...], str] = {}
+    for path, alias_key in normalized:
+        prior = aliases.get(alias_key)
+        if prior is not None:
+            raise ValueError(
+                f"{label} contains duplicate or aliased paths {prior!r} and {path!r}"
+            )
+        aliases[alias_key] = path
+    return tuple(
+        path for path, _ in sorted(normalized, key=lambda item: (item[1], item[0]))
+    )
+
+
 def _reject_aliases(values: Iterable[MaterialInput], label: str) -> None:
     seen: dict[tuple[str, ...], str] = {}
     for item in values:
@@ -140,9 +158,35 @@ def _reject_aliases(values: Iterable[MaterialInput], label: str) -> None:
         seen[item.alias_key] = item.path
 
 
+def _require_materials(
+    materials: tuple[MaterialInput, ...],
+    required_paths: tuple[str, ...],
+    label: str,
+) -> None:
+    supplied = {material.alias_key: material.path for material in materials}
+    missing: list[str] = []
+    for required_path in required_paths:
+        _, alias_key = _canonical_path(required_path, f"required {label} path")
+        supplied_path = supplied.get(alias_key)
+        if supplied_path is None:
+            missing.append(required_path)
+        elif supplied_path != required_path:
+            raise ValueError(
+                f"{label} required path {required_path!r} aliases supplied path "
+                f"{supplied_path!r}"
+            )
+    if missing:
+        raise ValueError(f"{label} is missing required material inputs: {missing!r}")
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class CandidateContext:
-    """Required context roles, frozen and ordered independently of caller order."""
+    """Applicable context roles, frozen and ordered independently of caller order.
+
+    Context discovery owns applicability.  The caller must pass every applicable ADR
+    and dependency-handoff path in the corresponding ``required_*_paths`` argument.
+    An empty required-path collection explicitly means that role does not apply.
+    """
 
     plan: MaterialInput
     graph: MaterialInput
@@ -151,6 +195,8 @@ class CandidateContext:
     contracts: tuple[MaterialInput, ...]
     handoffs: tuple[MaterialInput, ...]
     supplemental: tuple[MaterialInput, ...]
+    required_adr_paths: tuple[str, ...]
+    required_handoff_paths: tuple[str, ...]
 
     def __init__(
         self,
@@ -161,6 +207,8 @@ class CandidateContext:
         adrs: Iterable[MaterialInput],
         contracts: Iterable[MaterialInput],
         handoffs: Iterable[MaterialInput],
+        required_adr_paths: Iterable[str],
+        required_handoff_paths: Iterable[str],
         supplemental: Iterable[MaterialInput] = (),
     ) -> None:
         if not isinstance(plan, MaterialInput):
@@ -168,10 +216,17 @@ class CandidateContext:
         if not isinstance(graph, MaterialInput):
             raise TypeError("graph context must be a MaterialInput")
         specs_tuple = _materials(specs, "spec context", required=True)
-        adrs_tuple = _materials(adrs, "ADR context", required=True)
+        adrs_tuple = _materials(adrs, "ADR context", required=False)
         contracts_tuple = _materials(contracts, "contract context", required=True)
-        handoffs_tuple = _materials(handoffs, "handoff context", required=True)
+        handoffs_tuple = _materials(handoffs, "handoff context", required=False)
         supplemental_tuple = _materials(supplemental, "supplemental context", required=False)
+        required_adrs = _required_paths(required_adr_paths, "required ADR context")
+        required_handoffs = _required_paths(
+            required_handoff_paths,
+            "required handoff context",
+        )
+        _require_materials(adrs_tuple, required_adrs, "ADR context")
+        _require_materials(handoffs_tuple, required_handoffs, "handoff context")
         ordered = (
             (plan,)
             + (graph,)
@@ -189,6 +244,8 @@ class CandidateContext:
         object.__setattr__(self, "contracts", contracts_tuple)
         object.__setattr__(self, "handoffs", handoffs_tuple)
         object.__setattr__(self, "supplemental", supplemental_tuple)
+        object.__setattr__(self, "required_adr_paths", required_adrs)
+        object.__setattr__(self, "required_handoff_paths", required_handoffs)
 
     @property
     def ordered(self) -> tuple[MaterialInput, ...]:

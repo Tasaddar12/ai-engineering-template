@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 import sys
 import unittest
 from dataclasses import replace
@@ -29,10 +30,49 @@ OID40_A = "a" * 40
 OID40_B = "b" * 40
 OID64_A = "a" * 64
 OID64_B = "b" * 64
+ADR_PATHS = (
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+)
+HANDOFF_PATHS = (
+    ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+)
+TASK_001_CANDIDATE_PATH = (
+    ".ai/plans/current/PLAN-001/reviews/candidates/"
+    "CANDIDATE-TASK-001-a2-d1fc91746641.json"
+)
 
 
 def material(path: str, content: bytes | bytearray) -> MaterialInput:
     return MaterialInput(path=path, content=content)
+
+
+def git_bytes(*arguments: str) -> bytes:
+    command = ["git"]
+    git_pointer = WORKTREE_ROOT / ".git"
+    if sys.platform.startswith("linux") and git_pointer.is_file():
+        pointer = git_pointer.read_text(encoding="utf-8").strip()
+        git_dir = pointer.removeprefix("gitdir: ")
+        if len(git_dir) >= 3 and git_dir[1:3] == ":/":
+            git_dir = f"/mnt/{git_dir[0].lower()}/{git_dir[3:]}"
+            command.extend(
+                [f"--git-dir={git_dir}", f"--work-tree={WORKTREE_ROOT}"]
+            )
+    completed = subprocess.run(
+        [*command, *arguments],
+        cwd=WORKTREE_ROOT,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        shell=False,
+    )
+    if completed.returncode != 0:
+        raise AssertionError(
+            f"git {' '.join(arguments)} failed with {completed.returncode}: "
+            f"{completed.stderr.decode('utf-8', errors='replace')}"
+        )
+    return completed.stdout
 
 
 def context(**changes: object) -> CandidateContext:
@@ -47,10 +87,12 @@ def context(**changes: object) -> CandidateContext:
         "contracts": [material(".ai/shared/architecture/service-contracts.md", b"contract")],
         "handoffs": [
             material(
-                ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+                HANDOFF_PATHS[0],
                 b"handoff",
             )
         ],
+        "required_adr_paths": ADR_PATHS,
+        "required_handoff_paths": HANDOFF_PATHS,
         "supplemental": [
             material(".ai/shared/workflows/reviews.md", b"reviews"),
             material(".ai/plans/current/PLAN-001/tasks/current/TASK-019.json", b"task"),
@@ -96,6 +138,10 @@ class CandidateTests(unittest.TestCase):
             adrs=reversed(first_request.context.adrs),
             contracts=reversed(first_request.context.contracts),
             handoffs=reversed(first_request.context.handoffs),
+            required_adr_paths=reversed(first_request.context.required_adr_paths),
+            required_handoff_paths=reversed(
+                first_request.context.required_handoff_paths
+            ),
             supplemental=reversed(first_request.context.supplemental),
         )
         second_request = replace(
@@ -174,11 +220,133 @@ class CandidateTests(unittest.TestCase):
         self.assertIsNone(plan_candidate.to_wire()["task_id"])
         self.assertNotEqual(task_candidate.fingerprint, plan_candidate.fingerprint)
 
+    def test_actual_dependency_free_task_context_needs_no_handoff_placeholder(self) -> None:
+        historical_wire = json.loads(
+            (WORKTREE_ROOT / TASK_001_CANDIDATE_PATH).read_bytes()
+        )
+        historical = candidate_from_wire(historical_wire, self.registry)
+        head_oid = historical.head_oid
+        observed = {
+            reference["path"]: material(
+                reference["path"],
+                git_bytes("show", f"{head_oid}:{reference['path']}"),
+            )
+            for reference in historical_wire["context_refs"]
+        }
+        for reference in historical_wire["context_refs"]:
+            self.assertEqual(
+                hashlib.sha256(observed[reference["path"]].content).hexdigest(),
+                reference["sha256"],
+            )
+
+        task_path = ".ai/plans/current/PLAN-001/tasks/current/TASK-001.json"
+        task_record = json.loads(observed[task_path].content)
+        self.assertEqual(task_record["depends_on"], [])
+        required_handoffs = tuple(
+            f".ai/plans/current/PLAN-001/evidence/implementation/{task_id}.md"
+            for task_id in task_record["depends_on"]
+        )
+        actual_context = CandidateContext(
+            plan=observed[".ai/plans/current/PLAN-001/plan.json"],
+            graph=observed[".ai/plans/current/PLAN-001/graph.json"],
+            specs=[observed[".ai/plans/current/PLAN-001/spec.json"]],
+            adrs=[observed[path] for path in task_record["adr_refs"]],
+            contracts=[
+                observed[".ai/shared/architecture/service-contracts.md"]
+            ],
+            handoffs=(),
+            required_adr_paths=task_record["adr_refs"],
+            required_handoff_paths=required_handoffs,
+            supplemental=[
+                observed[task_path],
+                observed[".ai/shared/workflows/reviews.md"],
+            ],
+        )
+        validation_path = historical_wire["validation_refs"][0]["path"]
+        reconstructed = build_candidate(
+            request(
+                candidate_id=historical.candidate_id,
+                task_id=historical.task_id,
+                plan_id=historical.plan_id,
+                graph_revision=historical.graph_revision,
+                base_oid=historical.base_oid,
+                head_oid=historical.head_oid,
+                diff=git_bytes(
+                    "diff",
+                    "--binary",
+                    historical.base_oid,
+                    historical.head_oid,
+                    "--",
+                ),
+                context=actual_context,
+                validation=[
+                    material(
+                        validation_path,
+                        (WORKTREE_ROOT / validation_path).read_bytes(),
+                    )
+                ],
+                checklist_version=historical.checklist_version,
+                policy=git_bytes("show", f"{head_oid}:.ai/project/policy.json"),
+                model_profile=git_bytes(
+                    "show", f"{head_oid}:.ai/project/agent-models.json"
+                ),
+            ),
+            self.registry,
+        )
+        self.assertEqual(len(reconstructed.context_refs), 11)
+        self.assertFalse(
+            any(
+                "/evidence/implementation/" in ref.path
+                for ref in reconstructed.context_refs
+            )
+        )
+
+    def test_plan_without_adrs_is_a_valid_context(self) -> None:
+        no_adr_context = CandidateContext(
+            plan=material(".ai/plans/current/PLAN-002/plan.json", b'{"adr_refs":[]}'),
+            graph=material(".ai/plans/current/PLAN-002/graph.json", b"graph"),
+            specs=[material(".ai/plans/current/PLAN-002/spec.json", b"spec")],
+            adrs=(),
+            contracts=[
+                material(".ai/shared/architecture/service-contracts.md", b"contract")
+            ],
+            handoffs=(),
+            required_adr_paths=(),
+            required_handoff_paths=(),
+        )
+        candidate = build_candidate(
+            request(
+                candidate_id="CANDIDATE-PLAN-002",
+                task_id=None,
+                plan_id="PLAN-002",
+                context=no_adr_context,
+            ),
+            self.registry,
+        )
+        self.assertIsNone(candidate.task_id)
+        self.assertEqual(len(candidate.context_refs), 4)
+
     def test_rejects_missing_required_context_and_validation_evidence(self) -> None:
-        for field in ("specs", "adrs", "contracts", "handoffs"):
+        for field in ("specs", "contracts"):
             with self.subTest(field=field):
                 with self.assertRaises(ValueError):
                     context(**{field: []})
+        with self.assertRaisesRegex(ValueError, "ADR context is missing"):
+            context(adrs=[])
+        with self.assertRaisesRegex(ValueError, "handoff context is missing"):
+            context(handoffs=[])
+        with self.assertRaisesRegex(ValueError, "ADR context is missing"):
+            context(
+                adrs=[material(ADR_PATHS[0], b"adr")],
+                required_adr_paths=[*ADR_PATHS, ".ai/decisions/ADR-003.md"],
+            )
+        with self.assertRaisesRegex(ValueError, "handoff context is missing"):
+            context(
+                required_handoff_paths=[
+                    *HANDOFF_PATHS,
+                    ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+                ]
+            )
         with self.assertRaises(TypeError):
             context(plan=None)
         with self.assertRaises(ValueError):
@@ -199,6 +367,8 @@ class CandidateTests(unittest.TestCase):
                     material(".AI/PLANS/CURRENT/PLAN-001/PLAN.JSON", b"alias")
                 ]
             )
+        with self.assertRaisesRegex(ValueError, "aliases supplied path"):
+            context(required_adr_paths=[path.upper() for path in ADR_PATHS])
 
     def test_registry_validates_emitted_shape_and_wire_input(self) -> None:
         candidate = build_candidate(request(), self.registry)
@@ -264,6 +434,13 @@ class CandidateTests(unittest.TestCase):
                     original_request.context.supplemental[1],
                 ],
             ),
+            "applicable_roles_removed": replace(
+                original_request.context,
+                adrs=(),
+                handoffs=(),
+                required_adr_paths=(),
+                required_handoff_paths=(),
+            ),
         }
         variants = {
             "candidate_id": replace(original_request, candidate_id="different"),
@@ -299,7 +476,8 @@ class CandidateTests(unittest.TestCase):
         validation_bytes = bytearray(b"validation")
         validation = [material("evidence/validation.bin", validation_bytes)]
         adrs = [material(".ai/decisions/ADR-001.md", b"adr")]
-        frozen_context = context(adrs=adrs)
+        required_adrs = [ADR_PATHS[0]]
+        frozen_context = context(adrs=adrs, required_adr_paths=required_adrs)
         frozen_request = request(
             diff=diff,
             policy=policy,
@@ -314,11 +492,13 @@ class CandidateTests(unittest.TestCase):
         validation_bytes[:] = b"xxxxxxxxxx"
         validation.clear()
         adrs.clear()
+        required_adrs.clear()
         detached = candidate.to_wire()
         detached["context_refs"][0]["sha256"] = "f" * 64
 
         self.assertEqual(candidate.to_wire(), before)
         self.assertEqual(build_candidate(frozen_request, self.registry), candidate)
+        self.assertEqual(frozen_context.required_adr_paths, (ADR_PATHS[0],))
 
     def test_current_mutated_inputs_are_rehashed_instead_of_trusted(self) -> None:
         original = request()
