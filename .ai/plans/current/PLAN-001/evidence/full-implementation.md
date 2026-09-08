@@ -202,3 +202,26 @@ The owner ran the declared suite and ResourceWarning-as-error variant on Windows
 and Ubuntu: 20 discovered, 19 executed, one platform-specific skip on each; all pass.
 The coordinator will bind fresh current-base Windows and Linux validation in one
 candidate before independent R1. Native accounting remains 59 before that dispatch.
+
+### Command cleanup review and context dispatch (2026-09-08)
+
+TASK-006 first R1 failed with two independently reproduced major cleanup findings:
+an exited parent can leave inherited pipes blocking the runner on both platforms,
+and a Linux descendant escaping the process group survives while timeout cleanup
+is reported as confirmed. The exact candidate, both platform suites, independent
+probes and complete failed report are preserved at commit
+`214e44d07cbfbd937a86ef74dbc4969792fbf0d6`. The same attempt owner is repairing
+only commands.py, its owned tests and handoff. This is the first failed review
+cycle; earlier coordinator preflight history remains separate. Fresh R1/R2 are
+required on the corrected candidate. Seven of 39 tasks remain accepted.
+
+TASK-017 is clean at `71e0ccf697c132082bb17f7f3814ffb6abee5df6` with 20
+reported tests, including sequential provider-file recovery across three fresh
+Python processes. TASK-019 is clean at `f9e32b0ce8c8950dcb541356cae23a2a7202adc5`
+with 12 reported fingerprint tests. Git and handoffs confirm each changed only its
+three owned paths; both remain review candidates, not accepted dependencies.
+TASK-016 context construction is dispatched at
+`0b918080f30a5b7831ec4c30ae96351282bfc940`, using accepted003/004/038.
+It runs independently of the command repair. TASK-013 is next for candidate
+validation and separate R1/R2. Native manual accounting is 62 charged invocations
+of 300 before the next reviewer; graph rewrites remain three of three used.
