@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "R2-TASK-038-a1-c2",
+  "stage": "consistency",
+  "request_id": "R2-REQUEST-TASK-038-a1-c2-055154",
+  "task_id": "TASK-038",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-038-a1-6f2b12c3283e.json",
+  "candidate_fingerprint": "b19e2958568f1c67da0c70f28d5e50901143bf9baf627449ae96ea5a39345e0b",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "R2-INVOCATION-TASK-038-a1-c2-055154"
+  },
+  "independent_session_id": "/root/r2_038_c2",
+  "implementation_session_id": "/root/implement_038",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "Configuration owns immutable decoding, ownership and compatibility. It performs no dispatch, state transaction, credentials, authorization or downstream runtime implementation; only the three owned paths are added.",
+      "evidence": [".ai/shared/architecture/python.md", ".ai/shared/architecture/service-contracts.md", "src/config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADRs 001–005 retain flat Python/offline JSON, coordinator-owned persistence, isolated worktrees, exact-candidate independent reviews and project ownership. Distinct submitted Astra/xhigh rank-4 review exceeds Sol/xhigh rank-3 implementation; unavailable provider confirmation is documented without invented schema fields.",
+      "evidence": [".ai/decisions/ADR-001.md", ".ai/decisions/ADR-002.md", ".ai/decisions/ADR-003.md", ".ai/decisions/ADR-004.md", ".ai/decisions/ADR-005.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2.md", ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"]
+    },
+    {
+      "id": "R2-03",
+      "status": "pass",
+      "rationale": "Accepted TASK-004 and relevant TASK-002/003 candidates are base ancestors with matching passing review fingerprints and unchanged registry/installer/validator/local/workflow source. Real source and both fresh provider installs load; accepted command argv semantics remain intact.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-04",
+      "status": "pass",
+      "rationale": "The frozen load_project_settings(root: Path, installation: InstallationRecord) -> ProjectSettings signature matches exactly. Explicit flat imports use accepted registry/domain errors; runtime inspection proves candidate-worktree module origins and no later implementation imports.",
+      "evidence": [".ai/shared/architecture/service-contracts.md", "src/config.py", "src/contracts.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-05",
+      "status": "pass",
+      "rationale": "Supported source/provider namespaces, v1 compatibility, upgrade refusal, immutable normalized values and non-retryable decoding errors preserve current API semantics. Recommendations do not create configured bindings; restrictive overrides and saved-value precedence are explicit and verified.",
+      "evidence": ["src/config.py", "tests/unit/config/test_config.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-06",
+      "status": "pass",
+      "rationale": "No schema/database/migration change. Exact installation/policy field parity and 96 effective-policy registry validations pass, including configured invocation minimum 1 and zero rewrites. Existing policy_ref/content refs represent immutable snapshots; undeclared run fields reject. TASK-009/034 own durable storage, verification and restoration.",
+      "evidence": ["schemas/v1/policy.schema.json", "schemas/v1/framework-installation.schema.json", "schemas/v1/workflow-run.schema.json", "schemas/v1/state-event.schema.json", ".ai/plans/current/PLAN-001/evidence/configuration-resume-clarification.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "Flat typed source, isolated unit/config leaf and plan-local handoff match repository conventions and exact task ownership. No shared exports, package metadata, policy, graph or state edits; diff whitespace check passes.",
+      "evidence": [".ai/AGENTS.md", ".ai/shared/architecture/python.md", ".ai/plans/current/PLAN-001/tasks/current/TASK-038.json", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "Reuses TASK-004 schema validation and TASK-001 errors. Semantic settings decoding is separately owned. No duplicate command execution/argv decoding, persistence engine, workflow adapter, runtime wiring or observed usage accounting.",
+      "evidence": ["src/config.py", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-038.md"]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Closed RunSettings is a supporting payload, not a new v1 artifact. Effective policy remains a policy record; action classification is distinct from grants and model defaults from verified binding. Configured invocation limits do not encode remaining/exhausted runtime facts. Host root stays out of portable payloads.",
+      "evidence": ["src/config.py", ".ai/plans/current/PLAN-001/evidence/configuration-resume-clarification.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-10",
+      "status": "pass",
+      "rationale": "Fresh declared suite passes 29 tests with candidate source imports. Independent real source/provider, schema, immutability, saved precedence and accepted-command probes pass with 96 policy validations and 54 rejection checks. Both c1 defects reproduce as repaired behavior; foundation validation passes separately.",
+      "evidence": ["tests/unit/config/test_config.py", ".ai/plans/current/PLAN-001/commands/test.TASK-038.json", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-foundation.txt"]
+    },
+    {
+      "id": "R2-11",
+      "status": "pass",
+      "rationale": "Handoff accurately describes supported source local_containers, repaired configured invocation minimum, immutable encoder/hydrator/effective-policy APIs, 29 tests and provenance limits. Historical dispatch base is distinguished from current candidate base. Persistence/CLI/argv/usage duties are accurately assigned rather than claimed complete.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-038.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2.md", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-12",
+      "status": "pass",
+      "rationale": "AC-01/08 and REQ-01/08 retain typed reconstruction and provider-install compatibility. All hashes, approved graph/task digest, accepted dependencies and same-candidate R1 independently verify. Final candidate is clean/frozen; no scope, signature, schema, dependency or acceptance change and no structural replan is required.",
+      "evidence": [".ai/plans/current/PLAN-001/plan.json", ".ai/plans/current/PLAN-001/spec.json", ".ai/plans/current/PLAN-001/graph.json", ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R1.json", ".ai/plans/current/PLAN-001/reviews/TASK-038-a1-c2-R2-evidence.txt"]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T05:51:54Z"
+}
