@@ -132,3 +132,53 @@ beforeexecution. Nobypass. Export/venvremain
 C:/Users/killi/AppData/Local/Temp/plan001-tracked-cdc76829b83a4c929b47162ea4f7b2c4.
 Userinformed; unresolvedfinalrequiresseparateparagraphnamingrejectedcleanup/reason.
 017owneralsoreportedignoredpycachecleanuprejection;noignoredproductdependency.
+
+
+LATEST: ROOT FROZEN 0f9130229186d97ea89786da1e243b5239c0f377 for active
+review_018_c1 Astra/xhigh, charge97/300. Current018candidate
+ d58925f56afa593a4cb4df0c7377a679b8fbe712, same base, fingerprint
+c052eff5416317e7d9284ec421e5d98ea434bb268753a42e6fcc02f876126685.
+Coordinator10tests PASS on Windows3.12, Windows3.11 and Linux3.11 with no skips.
+Candidate binds the single-stage decision; all contexts checked, clean tree.
+Await FINAL; PASS can accept directly after evidence verification, no taskR2.
+FAIL preserves history and routes scoped correction/focused verification.
+Both017a3 and007repair owners continue independently. No ROOT commits or begins
+until018review FINAL. This note remains unstaged outside its manifest.
+
+
+019 readiness question independently confirmed by coordinator, read-only inline
+probe with actual accepted TASK001 candidate d1fc917466410febc6238479e65816dd39591a4f.
+Current accepted ContractRegistry validates its manifest; actual committed task has
+zero dependencies. All11 original committed contexts supplied by proper roles to
+queued019 CandidateContext, handoffs=(), rejects only with ValueError: handoff
+context must contain at least one material input. No test helper or dummy context
+was used, no product/history changed. After018review FINAL, dispatch a bounded
+019 owner correction before its FIRST single review when a slot is available;
+this avoids a predictable extra review/repair cycle. Samea1, scopeonly, no graph
+change or historicalfailure invented. Keep actual applicable context completeness;
+ADR applicability also requires contract reconciliation, not fabricated placeholders.
+
+
+007 repair checkpoint (owner still ACTIVE, not acceptance): all3 fixes implemented,
+4 actual-repository regressions added (including late symbolic alias retargeting).
+Focused5 cases pass Win3.12 and Linux3.11; full Win3.12 passes33tests/1filename skip
+79.381s. Win3.11 and Linux3.11 full suites running. No scope blocker reported.
+Once FINAL, prioritize current007 candidate and focused verification to unblock009.
+018review is finishing FAIL with3 local findings: false zero-test success from
+unrelated/trailing summary text, unbounded numeric conversion escape, redacted argv
+reintroduced in failure receipt. Wait FINAL before preservation/owner correction.
+
+
+018 R1 FINAL FAIL, all reports/probe outcomes read and all6 final companion hashes
+verified. Preserved5094c75bf052579b4ee5bdf22e2c256cd00b14b8, generation43->44.
+Fresh Sol/xhigh repair_018_c1 ACTIVE, charge98/300, in existing018a1 at
+ d58925f56afa593a4cb4df0c7377a679b8fbe712. Fix three concrete parser/redaction/error
+findings with owned regressions; no new stage or graph. No ROOT freeze now; three
+owners active (007 repair,017a3,018 repair). Counts98/300, rewritesunchanged.
+Prioritize007 FINAL/candidate/focused verification to unblock009.019 correction
+before first review is queued for a free owner slot.024/016/005 remain review queue.
+For corrected sources already tested on all3 runtimes by owners, avoid repeating
+all3 full suites after a metadata-only merge: verify identical owned/dependency
+blobs, bind fresh coordinator declared suite, then independent focused platform
+regressions as warranted. Record exact actual coverage; final combined matrix
+remains required. Do not claim unexecuted current candidate platform results.
