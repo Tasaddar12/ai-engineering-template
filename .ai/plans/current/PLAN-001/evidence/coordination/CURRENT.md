@@ -1,22 +1,72 @@
 # PLAN-001 current checkpoint
 
-Complete the user's entire 39-task implementation request. **15/39 accepted**;
-state generation **52**, integration branch `ai/PLAN-001/integration`.
-ROOT is unfrozen after preserving015 failure at
-`c34ce82a9ea3871c2449dbe58a8dae62e452d732`. Prepare016 for first review next.
-Final combined tests, clean source/wheel/sdist validation and independent combined
-reviews remain. Main remains `501b51276a4d07826afcaa1c0cbf09a24a466587`.
+**HALTED at the user's request: "Store current progress and halt processing".**
+Do not resume implementation, reviews, tests or integration until the user asks.
+All worker activity is stopped: repair_009_c1 was interrupted; the other live
+workers/reviewers are completed. No batch-workflow approval or completion is claimed.
+
+Progress was saved before stopping:
+- Integration baseline:9d8fa977a7f1c4157740438eea7e4e26d22e7bdd;15/39 accepted,
+  canonical state generation53. This checkpoint commit adds no task acceptance.
+- Unfinished manual tooling edits are preserved in isolated branch
+  `ai/PLAN-001/manual-batch-workflow`, checkout `.worktrees/manual-batch-workflow`,
+  WIP commit `50545ef509eadd34811327f560805750812f926c`.
+  Only coordinator.py changed (15 additions,9 deletions). This is an unvalidated
+  partial implementation, not an approved candidate; no new batch tests or
+  independent tooling review have run. Instructions/tooling work remains.
+- TASK-009 repair is stable at fa77907a1981a436f5a8499a38c3a0a8026763d0;
+  TASK-015 repair is stable at edbc147a7dcff4f1b76b6909d689516a2ef6ecc4.
+  Both retain their tests/handoffs and await the new batch approval process.
+- TASK-016's completed rejection is preserved and its two scoped repairs remain
+  pending. TASK-005-a2 and TASK-020 are also stable pending batch review.
+- Native invocation budget remains121/300 used,179 remaining; rewrites3/3 used.
+
+On an explicit resume: finish the isolated manual coordinator/instruction change,
+test member coverage, stale/failed approval rejection and unchanged-evidence reuse,
+obtain one fresh Astra/xhigh independent review of that change, then integrate and
+update canonical workflow resume metadata. Preserve historical reports/decisions,
+runtime two-stage contracts and external authority. Select further PLAN work only
+under the new batch workflow. Do not restart the superseded per-task review loop.
+
+The full 39-task implementation remains pending: **15/39 accepted**;
+state generation **53**, integration branch `ai/PLAN-001/integration`.
+Current user priority: implement and verify small-batch manual coordination,
+superseding per-task independent invocations and automatic unchanged-test reruns.
+ROOT is unfrozen at `9d8fa977a7f1c4157740438eea7e4e26d22e7bdd` after016 closed.
+The final batch review must also assess the assembled whole plan after full
+integration/E2E/clean build-install checks; no duplicate final review invocation.
+Main remains `501b51276a4d07826afcaa1c0cbf09a24a466587`.
 No remote merge, CI execution, production-provider operation or plan completion
 is claimed. Earlier checkpoints and immutable reports remain in Git.
 
 ## Standing user decisions
 
-Use [one independent task review](single-stage-review-decision.md), with focused
-verification of scoped fixes and no task R2. Prefer continuing the same reviewer
-when available; otherwise provide bounded retained findings. Bind a new exact
-candidate and explain reuse of unchanged evidence. Final combined reviews and
-later plan refinements follow implementation. The manual schedule does not
-silently change the frozen runtime product's two-stage review contracts.
+The latest user request supersedes the earlier
+[per-task single-stage decision](single-stage-review-decision.md), which remains
+immutable history. Use small dependency-compatible batches, one Sol/xhigh worker
+by default, one fresh Astra/xhigh reviewer for every included task and combined
+behavior, and focused repair continuation preferably with the same pair. Preserve
+task scopes, dependency ordering and isolated worktrees. Reuse verified tests for
+unchanged material; rerun affected checks for changes, conflicts or insufficient
+evidence. Approval binds every member and exact corrected candidate; preserve
+per-task acceptance, cumulative budgets and existing external authority. This is
+manual coordination only; frozen runtime two-stage review contracts stay intact.
+
+Implementation of that workflow is now halted in `/root/repair_009_c1`, inherited
+Sol/xhigh rank3, native `call_ZFPRFEGLGdbSnEukmGuTYWxi`, charge121, after its009
+repair FINAL. Only manual instructions/coordinator
+tool and one tracked regression test file are authorized; CURRENT/state remain
+ROOT-owned. No additional per-task reviews or new task dispatches while this
+change is implemented. Finish this user request with verified changes, a short
+workflow table, actual validation and limits; do not claim all39 tasks complete.
+Tooling checkout: `.worktrees/manual-batch-workflow`, branch
+`ai/PLAN-001/manual-batch-workflow`, base9d8fa977a7f1c4157740438eea7e4e26d22e7bdd.
+No PLAN task/schema is added for this direct manual-workflow change. One fresh
+Astra/xhigh independent review will assess it before ROOT integration/removal.
+Design: explicit validate/prepare-batch/accept-batch, max3 accepted-frontier tasks,
+isolated combined candidate, one existing-format report covering every task AC
+and all11 checks plus combined behavior. Test reuse is separate from review
+context so bookkeeping changes do not force unchanged code tests to rerun.
 
 Before handoff, implementers run relevant tests and review the final diff for bugs,
 contract mismatches and applicable edge cases. Fix in-scope issues, add regressions,
@@ -46,7 +96,7 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
 
 ## Active and queued work
 
-- **009 repair active**: `/root/repair_009_c1`, fresh Sol/xhigh rank3, native
+- **009 ready for focused verification**: `/root/repair_009_c1`, fresh Sol/xhigh rank3, native
   `call_7Ikkn0lCOhSdmqgGJNmoYbCE`, charge116/300. Tree TASK-009-a1, failed clean
   candidate `44d9481dc6e65a8ae33e2e472c131852813ba913`, reviewed base
   `1e6477285d37c59a35dee4c9951a3c1bfe4be3f1`, FP
@@ -60,7 +110,13 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   relocation source deletion; snapshot-relative archive manifest incompatibility.
   All fit existing009 scope; no prerequisite/graph change established. Actual
   accepted006/007 composition and038 savedsettings/policy roundtrip pass.
-- **015 repair active**: `/root/repair_019_c1`, inherited Sol/xhigh rank3, native
+  Clean corrected FINAL `fa77907a1981a436f5a8499a38c3a0a8026763d0`, parent failed
+  candidate44d9481d. ROOT read full updated handoff and verified exact three-path
+  scope/status. Final17 tests pass Windows3.12,93.001s; affected7 pass Windows3.11,
+ 33.977s and Linux3.11,3.426s. Foundation/compile/diff pass. Self-check also corrected
+  final-view validation after manifest materialization, checklist binding and a
+  permitted nullable output stream. No blocker. Review009 next when016 closes.
+- **015 corrected and ready for a batch**: `/root/repair_019_c1`, inherited Sol/xhigh rank3, native
   `call_ekxbBrQrt3pjDgWB8NqULBg8`, charge119. Same TASK-015-a1 tree, owned three
   paths only. Two major findings: malformed/wrong-kind spec and omitted spec
   document can pass; unchecked N/A can waive every ISO check in new/prior reports.
@@ -80,6 +136,12 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   Windows3.11 and Linux3.11; source origins, compile, foundation and diff pass.
   Self-check fixed output scope and protected prior review inputs; all context
   revalidated after completion. No scope blocker. Full handoff and scope read.
+  Corrected FINAL `edbc147a7dcff4f1b76b6909d689516a2ef6ecc4`, clean exact three-path
+  diff; full updated handoff read.20 tests pass Win3.12(13.965s), Win3.11(12.159s),
+  Linux3.11(15.999s), no skips. Source origins/compile/diff pass. Spec/research
+  schema/kind and bounded reference closure now validated; all12 checks must pass
+  for new/prior approval; nonapproving N/A remains representable. No further task
+  review dispatched; evidence reuse is subject to the new batch verification rules.
 - **020 ready for first review**: `/root/repair_019_c1`, inherited Sol/xhigh rank3,
   native `call_IPv5ufcfti6YvOGo5ZGB0pOB`, charge115. Tree TASK-020-a1, dispatch
   base `9614bbf0380b09c4839f340c370538a84279486b`. Clean FINAL
@@ -103,21 +165,31 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   prehandoff self-check also fixed duplicate original acceptance-owner collapse.
  16 tests pass Win3.12/3.11 and clean tracked export; three owned paths. Latest
   owner followup `call_oae5lrvRcmpc86kaUarnJskQ`, charge109. Final diff read.
-- **016 ready for first review**: tree TASK-016-a1, clean owner head
+- **016 repair pending; review closed FAIL**: `/root/review_016_c1`, fresh Astra/xhigh rank4,
+  native `call_HdCiOZGmqwHKAE7E7lvfgzu4`, charge120. Prefix TASK-016-a1-c1-R1.
+  Candidate `e88e7950fb6bce3656d3de8dad54ace21074d252`, FP
+  `160170998f8906e5c944f91cb0e8c60c92fda221d515e2e5d21f9aabc848a5cc`.
+  Coordinator18 discovered tests, one Windows symlink privilege skip,0.354s.
+  Tree TASK-016-a1, clean owner head
   `0cb81d179b7ffd76012f05f216010ae444f11f98`. Prehandoff self-check fixed visible
   role/acceptance metadata leakage.18 discovered tests on both Windows runtimes
   with1 actual symlink privilege skip; Linux3.11 executes18. Three owned paths.
   Latest owner followup `call_NKsLx2ySQMvDK71Z8WIk7daz`, charge112. Final diff read.
+  All11 checks complete; no unreviewed area. Two findings: malformed handoff/R1
+  schema fragments count as complete context; unsupported surrogate metadata
+  escapes the typed error boundary. Full report/JSON and closing evidence read;
+  frozen candidate/context/validation/policy/fingerprint and two report hashes
+  independently reconciled. Preserved9d8fa977a7f1c4157740438eea7e4e26d22e7bdd.
+  Existing18-test Windows suite and actual Linux1-test link guard pass. No owner
+  dispatched for this repair yet; include in the next compatible implementation batch.
 - **005 a2 ready for review**: tree TASK-005-a2, clean owner head
   `af3e6e5dabc083bd201114f23a9c71efa715a7bc`. No additional self-check defect;
  11 tests pass Win3.12 andLinux3.11. Cumulative scope only owned test and handoff.
   Latest owner followup `call_MdVuOCsWEPqrMvrrgiTLDAlq`, charge114.
 
-When an owner slot frees, form and freeze the next candidate, then use a fresh
-higher-capability review or focused continuation as appropriate.015 is next while
-009 repairs. Before freezing, commit dispatch/current
-coordination changes. No ROOT commits/begins during an active frozen review;
-only disclosed CURRENT.md progress outside the manifest may change.
+After the manual workflow change is verified, select the next compatible small
+batch from stable candidates and pending scoped repairs.009/005/020 are stable;
+015 is finishing and016 needs repair. Preserve task ownership and evidence.
 
 ## Recent integrations, cleanup and counters
 
@@ -133,7 +205,7 @@ cleanliness and retained-branch checks. Heads e79df3b8d071a7e3a3c7874cf0cacb6e70
 and b7593f11961aa6f5c3a927f3c49af32c4fa93971 remain on their named branches.
 All remaining task checkout copies correspond to pending work; history preserved.
 
-**119/300 conservative invocations used,181 remain. Structural rewrites3/3 used.**
+**121/300 conservative invocations used,179 remain. Structural rewrites3/3 used.**
 Use tracked count-native-invocations.py against the current root session; count
 rejected calls and inherited followups honestly. No runtime active_run is fabricated.
 Use coordinator.py status/begin/candidate/accept/fail; preserve failed reports.
