@@ -4,7 +4,7 @@
   "id": "TASK-014",
   "plan_id": "PLAN-001",
   "title": "Detect path and semantic conflicts",
-  "status": "running",
+  "status": "accepted",
   "archived": false,
   "objective": "Detect path and semantic conflicts. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,5 +98,5 @@
     "TASK-014-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Candidate 4bfad8611177959fb99eda01dd3c18077ff55f37 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
 }
