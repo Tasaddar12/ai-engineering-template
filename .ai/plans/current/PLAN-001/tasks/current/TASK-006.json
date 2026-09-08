@@ -103,5 +103,5 @@
     "TASK-006-a3"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Continue the single frozen a3 assertion correction validation after diagnosed external import-probe setup error; no task suite had run. Preserve diagnostic and unchanged source/test hashes. Actual candidate validation/review failure still requires terminal pause, with no further source repair."
 }

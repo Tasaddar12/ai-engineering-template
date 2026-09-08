@@ -347,3 +347,17 @@ The consumed a2 allowance and all prior reports remain failed immutable history.
 Four exact environments and fresh cumulativec3 R1/R2 remain mandatory. Generation34,
 nine of39 accepted,74/300 charged and77/300 charged or reserved,3/3 rewritesused.
 TASK-024 continues; aftera3 dispatch,017 can enter review independently.
+
+### A3 external diagnostic invocation clarified (2026-09-08)
+
+The a3 owner stopped when its standalone import probe omitted candidate src;
+no declared suite or candidate module ran. The coordinator preserved the exact
+argv/traceback/handoff, verified unchanged source/test bytes and observed correct
+candidate imports on allfour runtimes. The [narrow clarification](recovery/TASK-006-a3-harness-clarification.md)
+distinguishes that malformed diagnostic invocation from a candidate behavior
+failure. The single existing correction may proceed to its unexecuted validation;
+no extra source repair or allowance is granted. Any actual validation/review
+failure still pauses the path. Generation35,nineaccepted,76/300charged.
+The unreviewed017old-base manifest/logs are retained and will be replaced before
+anyR1. Its first reviewer dispatch was rejected for capacity and charged; no
+review session or verdict was fabricated.
