@@ -225,3 +225,41 @@ TASK-016 context construction is dispatched at
 It runs independently of the command repair. TASK-013 is next for candidate
 validation and separate R1/R2. Native manual accounting is 62 charged invocations
 of 300 before the next reviewer; graph rewrites remain three of three used.
+
+### Dependency graph accepted; command repair and minimum-version check (2026-09-08)
+
+TASK-013 candidate `51a94cd050ad6c7cb525c6d26c9c7e38e0943c13` passed
+13 declared tests and both fresh cycle1 reviews, then integrated at
+`a089594df19d33250a6218126a6a3fea83ce49f8`. R1 passed ten independent tests,
+including64 directed graph cases and1,024 frontier subsets. R2 passed six
+cross-contract tests covering the actual39-node r4 snapshot, qualified identities,
+accepted port conversion, lifecycle-neutral digests and a40-node proposed split.
+Reviewer-only fixture diagnostics are retained separately from source results.
+Both reviews have no findings. Eight of39 tasks are accepted; Git removed the
+clean merged task worktree. Graph/permission/rewrite budgets remain unchanged.
+
+TASK-006's first-R1 repair is clean at
+`530cd085166ab51e2814486f4967ab52203375c2`, with three owned paths.
+Reader threads own buffered pipe closure; timeout/cancellation monitor both
+parent and streams; bounded settlement freezes incomplete capture honestly.
+Observed group cleanup cannot prove escaped-session descendants are gone, so
+POSIX reports unknown; Windows also reports unknown after losing its parent
+boundary. Both actual platform suites passed22 discovered/21executed/one skip,
+including inherited-pipe and detached-descendant timeout/cancellation fixtures
+without a watchdog. Exact fixture PIDs were cleaned and confirmed gone.
+A coordinator Windows Python3.11 run on the same owner head also passed22 tests
+with one POSIX skip in7.913s. The corrected candidate still needs fresh R1/R2.
+
+Project-local Windows Python3.11.16/jsonschema4.26.0 is now available for the
+existing minimum-version declaration. It was installed through a separate local
+uv0.12.10 environment using explicit local installation, no executable-bin
+registration and no Windows registry registration. The [minimum-version baseline](validation/python311-accepted-baseline-24f7c768f996.txt)
+ran the24 bootstrap tests and all seven then-accepted task leaves on root
+`24f7c768f996c4abf66ed37a5ea1e89b459dd74b`:181 tests, all passed.
+That observation excludes then-unaccepted013 and the unfinished full plan.
+Final packaging and complete platform tests remain required.
+
+TASK-016 continues bounded context construction. TASK-014/017/019/005a2 are
+clean review candidates. The repaired006 is prioritized next to unlock007 and
+its durable-state dependency chain. Native accounting is64 charged invocations
+of300 before the next006 R1; historical graph rewrites remain3/3 used.
