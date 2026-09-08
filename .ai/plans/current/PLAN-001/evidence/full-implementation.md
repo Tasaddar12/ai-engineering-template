@@ -319,3 +319,17 @@ version and owned-source origins with each platform log before fingerprinting.
 Allfour metadata-only probes passed; existing reviewed evidence was unchanged.
 Native accounting72/300 before the next dispatch; graph rewrites remain3/3 used.
 TASK-024 is newly dependency-ready. After006 acceptance,007 and018 remain priorities.
+
+### TASK-006 a2 coordinator validation failure (2026-09-08)
+
+The clean recovery owner head was merged with current integration metadata,
+then Windows3.12 passed22tests/one skip. Linux3.12 failed one inherited-pipe
+cancellation assertion: observed0.109s was below its retained0.15s minimum.
+Fixture readiness and finally cleanup were observed; later status assertions in
+that subcase did not execute after the failure. The remaining two coordinator
+matrix stages were not run, and no final fingerprint or c3 review was formed.
+The [preserved failure](recovery/TASK-006-a2-validation-failure.md) returns the
+consumed single allowance immediately to independent recovery. Production bytes,
+both old attempts and all failed/pass review history are retained. Generation33,
+nine of39 accepted,73/300 native invocations before fresh recovery,3/3 rewrites
+used. TASK-024 continues independently. No further ordinary repair is authorized.
