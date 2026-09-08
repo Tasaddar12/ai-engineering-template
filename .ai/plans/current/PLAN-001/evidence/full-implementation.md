@@ -26,7 +26,7 @@ Graph r3 was proposed at the start of this run. Its independent review failed
 on installed helper dependency ownership and missing digest-compatibility
 requirements. Graph r4 corrects these requirements and passed all 12 ISO
 checks. The original failed graph and review are retained in `history/engine-r3`.
-TASK-001 attempt a2 and TASK-003 attempt a1 are accepted; the remaining 37 tasks are in progress or backlog.
+TASK-001 attempt a2, TASK-003 attempt a1 and TASK-004 attempt a2 are accepted; the remaining 36 tasks are in progress or backlog.
 Task implementations will use separate branches and worktrees, observed test
 results, and independent implementation and consistency review before accepted
 dependency handoffs. Integration, completion, and cleanup will be recorded as
@@ -75,3 +75,30 @@ plus one continuing coordinator invocation:26 charged of300. This includes every
 prior rejected/withdrawn/follow-up call and the new004a2 implementer,003c2 R1/R2,
 and039 implementer. Reserve2 more calls for004a2 R1/R2. Historical rewrite usage
 remains3 of3, not reset. No extra repair beyond the recovery allowance is granted.
+
+## Accepted offline contracts and next implementation group
+
+TASK-004 a2 candidate `e3c1177f993ee74815639a83ef3333faa4ba3957` passed
+cumulative cycle3 R1 and separate R2 after the recorded bounded recovery, then
+integrated at `1ee6b06c46e4c626ab6d63be52bb11d7bdfeb518`. Both earlier
+failed candidates and their reports remain retained. The clean accepted a2
+worktree was removed; the clean failed a1 worktree/branch remains retained.
+
+Actual candidate validation passed21 focused tests. R1 additionally passed24
+bootstrap tests, foundation validation, all27 record kinds,54 relocation cases,
+28 prose cases, physical approval checks, and source-isolated installed imports.
+R2 passed21 declared tests, six accepted workflow-record projections, two-plan
+physical completion/archive relocation with snapshot-byte enforcement, six stale
+approval prose rejections, and a future installed helper dependency cycle check.
+Both reports have all required checks, exact identity, and no unresolved findings.
+
+TASK-002 starts from `29df4a8fa00582614ce2ac36cf0f1803766f8417`; TASK-005
+starts from `7731f1e4118e330c3fe5b5ce7e961fa49050ba6a`. TASK-039 continues
+independently. Native invocation accounting is30 charged of300 (29 conservatively
+counted dispatch/follow-up calls plus the continuing coordinator). The earlier
+reserved004 reviews have now run, and002/005 implementation calls are charged.
+Rewrite usage remains3 of3. Recovery and review histories remain cumulative.
+
+Post-integration foundation validation passed:27 schemas,142 artifacts,39 tasks,
+280 unordered pairs,4 historical manifests and246 local links. This validates
+the updated records and links; it is separate from the task behavior suites.
