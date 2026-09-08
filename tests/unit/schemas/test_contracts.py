@@ -224,9 +224,13 @@ class StructuralDigestTests(unittest.TestCase):
         task["input_contracts"] = [
             ".codex/plans/current/PLAN-101/tasks/current/TASK-001.json"
         ]
+        task["scope"]["read_paths"] = [
+            ".codex/plans/current/PLAN-101/tasks/current/"
+        ]
         current = contracts.structural_task_digest([task])
         moved = replace_strings(task, ".codex/plans/current/PLAN-101", ".codex/plans/completed/PLAN-101")
         moved = replace_strings(moved, "/tasks/current/TASK-001", "/tasks/archived/TASK-001")
+        moved = replace_strings(moved, "/tasks/current/", "/tasks/completed/")
         self.assertEqual(contracts.structural_task_digest([moved]), current)
 
         changed = copy.deepcopy(moved)
@@ -251,6 +255,71 @@ class StructuralDigestTests(unittest.TestCase):
             contracts.structural_task_digest([url]),
         )
 
+        prose = copy.deepcopy(task)
+        prose["objective"] = (
+            ".codex/plans/current/PLAN-101/spec.json must remain the selected active specification."
+        )
+        changed_prose = copy.deepcopy(prose)
+        changed_prose["objective"] = prose["objective"].replace("/current/", "/completed/")
+        self.assertNotEqual(
+            contracts.structural_task_digest([changed_prose]),
+            contracts.structural_task_digest([prose]),
+        )
+
+    def test_approved_graph_rejects_lifecycle_like_objective_prose_change(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="approved-digest-test-") as temporary:
+            project = Path(temporary) / "project"
+            install.install(str(project), "codex")
+            self.assertEqual(
+                ai.main(
+                    [
+                        "--project",
+                        str(project),
+                        "plan",
+                        "create",
+                        "PLAN-101",
+                        "--title",
+                        "Approval boundary",
+                    ]
+                ),
+                0,
+            )
+            bundle = project / ".codex/plans/current/PLAN-101"
+            task_path = bundle / "tasks/current/TASK-001.json"
+            task = read_json(task_path)
+            task["objective"] = (
+                ".codex/plans/current/PLAN-101/spec.json must remain the selected active specification."
+            )
+            write_json(task_path, task)
+
+            graph_path = bundle / "graph.json"
+            graph = read_json(graph_path)
+            graph["status"] = "approved"
+            graph["task_set_sha256"] = contracts.structural_task_digest([task])
+            graph["review_ref"] = (
+                ".codex/plans/current/PLAN-101/reviews/isolation-review.json"
+            )
+            write_json(graph_path, graph)
+            review = read_json(EXAMPLES / "isolation-review.json")
+            review["plan_id"] = "PLAN-101"
+            review["graph_revision"] = graph["revision"]
+            review["task_set_sha256"] = graph["task_set_sha256"]
+            review["verdict"] = "pass"
+            write_json(project / graph["review_ref"], review)
+            plan_path = bundle / "plan.json"
+            plan = read_json(plan_path)
+            plan["isolation_review_ref"] = graph["review_ref"]
+            write_json(plan_path, plan)
+            validate_foundation.validate(project)
+
+            task["objective"] = task["objective"].replace("/current/", "/completed/")
+            write_json(task_path, task)
+            with self.assertRaisesRegex(
+                validate_foundation.ValidationFailure,
+                "stale structural task digest",
+            ):
+                validate_foundation.validate(project)
+
     def test_relocated_bundle_retains_approval_but_structure_change_fails(self) -> None:
         with tempfile.TemporaryDirectory(prefix="digest-relocation-test-") as temporary:
             project = Path(temporary) / "project"
@@ -274,6 +343,9 @@ class StructuralDigestTests(unittest.TestCase):
             task = read_json(task_path)
             task["input_contracts"] = [
                 ".codex/plans/current/PLAN-101/tasks/current/TASK-001.json"
+            ]
+            task["scope"]["read_paths"] = [
+                ".codex/plans/current/PLAN-101/tasks/current/"
             ]
             write_json(task_path, task)
             graph_path = current / "graph.json"

@@ -62,8 +62,16 @@ _PLAN_LOCATION = re.compile(
 _TASK_LOCATION = re.compile(
     r"(?P<prefix>^(?:\.ai|\.codex|\.claude)[\\/]plans[\\/]"
     r"(?:current|completed|archived)[\\/]PLAN-[0-9]{3,}[\\/]tasks[\\/])"
-    r"(?:completed|archived)(?=[\\/]TASK-[0-9]{3,}(?:\.json)?(?:$|[^A-Za-z0-9_.-]))"
+    r"(?:completed|archived)"
+    r"(?=[\\/](?:TASK-[0-9]{3,}(?:\.json)?(?:$|[\\/])|$))"
 )
+_LIFECYCLE_INPUT_REFERENCE = re.compile(
+    r"^(?:\.ai|\.codex|\.claude)[\\/]plans[\\/]"
+    r"(?:current|completed|archived)[\\/]PLAN-[0-9]{3,}"
+    r"(?:[\\/].*)?(?:[\\/]|\.[A-Za-z0-9]{1,12})$"
+)
+_REFERENCE_FIELDS = frozenset({"spec_refs", "adr_refs", "research_refs"})
+_SCOPE_PATH_FIELDS = frozenset({"write_paths", "read_paths", "prohibited_paths"})
 
 
 def _failure(
@@ -354,30 +362,40 @@ def _canonicalize_location(value: str) -> str:
     return _PLAN_LOCATION.sub(lambda match: match.group("prefix") + "current", task_canonical)
 
 
-def _canonicalize_structural_value(value: object) -> object:
+def _canonicalize_reference_values(value: object) -> object:
     if isinstance(value, str):
         return _canonicalize_location(value)
-    if isinstance(value, Mapping):
-        return {
-            str(key): _canonicalize_structural_value(item)
-            for key, item in value.items()
-        }
-    if isinstance(value, (list, tuple)):
-        return [_canonicalize_structural_value(item) for item in value]
+    if isinstance(value, list):
+        return [_canonicalize_reference_values(item) for item in value]
     return value
+
+
+def _canonicalize_task_projection(task: Mapping[str, object]) -> dict[str, object]:
+    projected = {field: _plain_json(task[field]) for field in STRUCTURAL_TASK_FIELDS}
+    for field in _REFERENCE_FIELDS:
+        projected[field] = _canonicalize_reference_values(projected[field])
+
+    scope = projected["scope"]
+    if isinstance(scope, dict):
+        for field in _SCOPE_PATH_FIELDS:
+            scope[field] = _canonicalize_reference_values(scope[field])
+
+    input_contracts = projected["input_contracts"]
+    if isinstance(input_contracts, list):
+        projected["input_contracts"] = [
+            _canonicalize_location(value)
+            if isinstance(value, str) and _LIFECYCLE_INPUT_REFERENCE.fullmatch(value)
+            else value
+            for value in input_contracts
+        ]
+    return projected
 
 
 def structural_task_digest(tasks: Sequence[Mapping[str, object]]) -> str:
     """Hash lifecycle-neutral task structure using the bootstrap wire encoding."""
     try:
         ordered = sorted(tasks, key=lambda item: str(item["id"]))
-        projected = [
-            {
-                field: _canonicalize_structural_value(task[field])
-                for field in STRUCTURAL_TASK_FIELDS
-            }
-            for task in ordered
-        ]
+        projected = [_canonicalize_task_projection(task) for task in ordered]
         payload = json.dumps(
             projected,
             sort_keys=True,
