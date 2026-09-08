@@ -38,9 +38,11 @@ are limited to:
 - Context requests carry project/plan/run/operation identity, task scope, explicit role, required
   reference groups, acceptance IDs, optional references, and token budget. Bundles carry repository-
   relative hashed content references, completeness, omissions, a stable digest, and budget facts.
-- Validation requests bind a named command suite and each declared success rule to an exact candidate
-  fingerprint, Git revision, and worktree. Passed results require every check and suite evidence to
-  pass; `unittest_nonzero_count` requires an observed positive count.
+- Validation requests bind a named command suite and each declared success rule directly to the exact
+  Git revision and worktree. Results produce the hashed validation evidence consumed by later
+  candidate construction; they do not require a candidate reference or fingerprint that cannot exist
+  until validation evidence is known. Passed results require every check and suite evidence to pass;
+  `unittest_nonzero_count` requires an observed positive count.
 - Review requests bind one stage, immutable candidate fingerprint, checklist/version, hashed
   context, implementation session, reviewer profile/capability floor, and R1 evidence for R2.
   Review transport success is separate from the review verdict, so a valid fail verdict remains an
@@ -87,7 +89,7 @@ attempt worktree.
 
 | Check | Result |
 | --- | --- |
-| `-m unittest discover -s tests/unit/domain_workflow_ports/ -p test_*.py` | Exit 0; 20 tests; `OK`. This is the exact declared leaf command with the coordinator interpreter substituted for `python`; the test file inserts this worktree's `src` first. |
+| `-m unittest discover -s tests/unit/domain_workflow_ports/ -p test_*.py` | Exit 0; 21 tests; `OK`. This is the exact declared leaf command with the coordinator interpreter substituted for `python`; the test file inserts this worktree's `src` first. |
 | `-m py_compile src/workflow_ports.py tests/unit/domain_workflow_ports/test_workflow_ports.py` | Exit 0. |
 | `git diff --check` | Exit 0. |
 
@@ -95,7 +97,13 @@ The focused suite covers actual v1 schema parity and validation, immutable calle
 unknown agent observations, cancellation before start, unresolved cancellation fencing, context
 budget failure, zero-test rejection, missing/failed validation evidence, independent/R1-bound review
 requirements, required review timestamps, fail-verdict transport, scoped immutable grants, ambiguous
-delivery, and remote-state identity binding.
+delivery, remote-state identity binding, and validation-evidence construction before a candidate exists.
+
+The earlier commit `eb74abe54317e0d95fda686ab6e1a7577305a505` was withdrawn before candidate
+freeze or review after an owner-local audit found that validation incorrectly required the final
+candidate fingerprint even though that fingerprint incorporates validation evidence. The repaired
+contract removes that cycle while retaining exact revision, operation, suite, evidence, and error
+binding. It requires a new candidate identity and fresh reviews.
 
 ## Assumptions, deviations, risks, and provenance
 

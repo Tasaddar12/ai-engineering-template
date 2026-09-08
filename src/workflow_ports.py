@@ -600,8 +600,6 @@ class ValidationRequest:
     run_id: EntityId
     operation_id: EntityId
     task_id: EntityId | None
-    candidate_ref: str
-    candidate_fingerprint: Sha256Digest
     revision_oid: str
     worktree_id: EntityId
     command_suite_id: EntityId
@@ -613,10 +611,6 @@ class ValidationRequest:
         object.__setattr__(self, "run_id", _entity(self.run_id, "run ID"))
         object.__setattr__(self, "operation_id", _entity(self.operation_id, "operation ID"))
         object.__setattr__(self, "task_id", _task(self.task_id))
-        object.__setattr__(self, "candidate_ref", _text(self.candidate_ref, "candidate_ref"))
-        object.__setattr__(
-            self, "candidate_fingerprint", _digest(self.candidate_fingerprint, "candidate_fingerprint")
-        )
         object.__setattr__(self, "revision_oid", _oid(self.revision_oid, "revision_oid"))
         object.__setattr__(self, "worktree_id", _entity(self.worktree_id, "worktree ID"))
         object.__setattr__(self, "command_suite_id", _entity(self.command_suite_id, "command suite ID"))
@@ -670,7 +664,6 @@ class ValidationResult:
     run_id: EntityId
     operation_id: EntityId
     task_id: EntityId | None
-    candidate_fingerprint: Sha256Digest
     revision_oid: str
     command_suite_id: EntityId
     checks: tuple[ValidationCheck, ...]
@@ -684,9 +677,6 @@ class ValidationResult:
         object.__setattr__(self, "run_id", _entity(self.run_id, "run ID"))
         object.__setattr__(self, "operation_id", _entity(self.operation_id, "operation ID"))
         object.__setattr__(self, "task_id", _task(self.task_id))
-        object.__setattr__(
-            self, "candidate_fingerprint", _digest(self.candidate_fingerprint, "candidate_fingerprint")
-        )
         object.__setattr__(self, "revision_oid", _oid(self.revision_oid, "revision_oid"))
         object.__setattr__(self, "command_suite_id", _entity(self.command_suite_id, "command suite ID"))
         checks = _instances(self.checks, ValidationCheck, "checks", nonempty=True)

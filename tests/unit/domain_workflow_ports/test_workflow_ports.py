@@ -521,8 +521,6 @@ class ContextAndValidationContractTests(unittest.TestCase):
             "run-1",
             "validate-1",
             "TASK-003",
-            "candidate:PLAN-001:candidate-1",
-            DIGEST,
             OID,
             "TASK-003-a1",
             "task-003-suite",
@@ -530,6 +528,45 @@ class ContextAndValidationContractTests(unittest.TestCase):
         )
         self.assertEqual(str(request.revision_oid), OID)
         self.assertEqual(request.commands[0].command_id.value, "test.TASK-003")
+
+    def test_validation_evidence_can_be_created_before_candidate_fingerprinting(self) -> None:
+        request = ValidationRequest(
+            "project-1",
+            "PLAN-001",
+            "run-1",
+            "validate-before-candidate",
+            "TASK-003",
+            OID,
+            "TASK-003-a1",
+            "task-003-suite",
+            [ValidationCommand("test.TASK-003", ValidationSuccessRule.UNITTEST_NONZERO_COUNT)],
+        )
+        check = ValidationCheck(
+            "test.TASK-003",
+            ValidationSuccessRule.UNITTEST_NONZERO_COUNT,
+            ValidationStatus.PASSED,
+            evidence("command-before-candidate"),
+            20,
+        )
+        result = ValidationResult(
+            ValidationStatus.PASSED,
+            request.project_id,
+            request.plan_id,
+            request.run_id,
+            request.operation_id,
+            request.task_id,
+            request.revision_oid,
+            request.command_suite_id,
+            [check],
+            [evidence("suite-before-candidate")],
+        )
+
+        self.assertNotIn("candidate_ref", {item.name for item in fields(ValidationRequest)})
+        self.assertNotIn("candidate_fingerprint", {item.name for item in fields(ValidationResult)})
+        candidate_validation_ref = ContentRef(
+            result.evidence_refs[0].path.as_wire(), result.evidence_refs[0].sha256
+        )
+        self.assertEqual(candidate_validation_ref.sha256.value, DIGEST)
 
     def test_zero_test_discovery_cannot_be_a_passing_check(self) -> None:
         with self.assertRaisesRegex(ValueError, "observed positive test count"):
@@ -556,7 +593,6 @@ class ContextAndValidationContractTests(unittest.TestCase):
             "run-1",
             "validate-1",
             "TASK-003",
-            DIGEST,
             OID,
             "task-003-suite",
             [passed],
@@ -580,7 +616,6 @@ class ContextAndValidationContractTests(unittest.TestCase):
                 "run-1",
                 "validate-1",
                 "TASK-003",
-                DIGEST,
                 OID,
                 "task-003-suite",
                 [failed],
