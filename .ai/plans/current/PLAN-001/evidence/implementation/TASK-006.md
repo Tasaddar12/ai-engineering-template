@@ -1,4 +1,175 @@
-# PLAN-001 / TASK-006 attempt a2 post-recovery implementation handoff
+# PLAN-001 / TASK-006 attempt a3 terminal assertion correction handoff
+
+## A3 disposition and authority
+
+TASK-006-a3 implements the one terminal assertion correction authorized by the
+second recovery decision,
+`.ai/plans/current/PLAN-001/evidence/recovery/TASK-006-a2-coordinator-decision.md`.
+That decision adopted `TASK-006-a2-recovery-assessment.md` after the failed a2
+validation in `TASK-006-a2-validation-failure.md`. The owner initially stopped
+when a malformed standalone import probe failed before loading candidate code.
+The coordinator preserved that stop and then committed the narrow harness
+classification in `TASK-006-a3-harness-clarification.md` at
+`759819dedf2dda010530e124c284f0c63f261d15`: the invocation was not an actual
+task or candidate validation, and the still-unexecuted suites could continue on
+the unchanged hashes. All subsequent actual candidate checks passed. This
+handoff forms an implementation candidate; it does not claim acceptance or
+transfer an old review.
+
+| Field | Observed a3 fact |
+| --- | --- |
+| Attempt / native submission | `TASK-006-a3`; coordinator-observed native invocation 75 of 300, OpenAI `gpt-5.6-sol` / `xhigh`, implementation rank 3 |
+| Branch / worktree | `ai/PLAN-001/TASK-006/a3`; `D:/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a3` |
+| Fresh dispatch base | `995b7624bdbb947642522b2ba0b1f92c41fe15c0` |
+| Frozen failed a2 | `4fe9e7a30378e13b43dc51745593adae2bb8b051` |
+| Authorized salvage | Original a2 commits `60953e6aa33ad45680e1bb7e9873289fbb1d1186`, `1403be69fdab0e753a608bd815b29d8f540a7067`, `e58bb0c699df063c9577ccd8811dce4adb6984c1`, `5e455de46416758f0438c95ecda71c0630dc64a8`, applied oldest first |
+| A3 salvage commits | `64f5d2bfb11734b2a89e243caad539d5d8113f84`, `500f55e5d2016065cee7636fcaba2ba3623fe9a7`, `2042bdd73d19bb58b767310952f0172612143fff`, `2488fc3f63f34154f037e81690b719b28745308c` |
+| Candidate commit | The Git commit containing this handoff; its exact OID is reported after commit because a commit cannot embed its own object ID |
+| Provider provenance limit | Submission model/effort is coordinator-observed native configuration only. No provider-effective model, effort, invocation UUID, automatic binding, production provider adapter, or credential was exposed or claimed. |
+
+Immediately after salvage, all three task-owned paths matched the frozen a2
+head byte-for-byte. The a3 correction changes only the assertion region in
+`test_inherited_pipe_descendant_cannot_block_timeout_or_cancellation_return`:
+the real one-second timeout keeps `elapsed >= 0.75`; cancellation now requires
+present `started`, `phase_observed`, and `cancellation` observations, asserts
+`started <= phase_observed <= cancellation <= completed`, and requires a
+nonnegative response strictly below three seconds. The existing elapsed bound
+below four seconds remains. No wait or positive cancellation-duration minimum
+was added. Helpers, watchdog behavior, the detached fixture, all other tests,
+definitions, native phase/status/error/exit/log/EOF/schema assertions, exact
+identity cleanup, and thread settlement were not edited.
+
+The frozen a2 test blob was
+`ebc1bfe6509b0b029f130a2adf7279b025b459b8`; the corrected working test blob is
+`7bf8228bb4105e72b9f711d9f4e4bf1fc3c2377a`, with raw SHA-256
+`c77171fefa9d43be13c4f06fe11dd49bc741caae267d6232578161248ff9952a`.
+The coordinator verified the raw 2,100-byte a2-to-working Git binary test diff
+has SHA-256
+`dd19ecadc3cac20102165a206d94b6d8bea4db64eb0e06f91c455af7303f1c6e`
+and is 18 insertions / 6 deletions within that one assertion region. An earlier
+owner value,
+`1e684328796f2cb0f11791fedde6510d25f835f05c1b063ee309a3f7db6848fa`,
+hashed a PowerShell text serialization rather than raw Git bytes. Its exact
+construction was `git diff --binary 4fe9e7a30378e13b43dc51745593adae2bb8b051
+-- tests/unit/commands/test_commands.py | Out-File -Encoding utf8NoBOM
+<temporary-path>`, followed by `Get-FileHash -Algorithm SHA256`; PowerShell
+materialized the line stream with host text newlines. That representation is
+not candidate-bound diff evidence and is superseded here by the raw-byte hash.
+`src/commands.py` remains Git blob
+`39828108eb7d198d81d810c8fd9e136e3f64f8f0` and raw SHA-256
+`700079bb47853a1d4cdebaa89bafcacf03885a81f9ef57687ec7203338ec29d0`.
+It is the only production path added relative to the fresh base; every other
+production path matches that base. The full base-to-working scope remains the
+original three owned paths, with working edits after salvage limited to this
+test and handoff. A pre-validation `git diff --check` exited 0.
+
+## Retained malformed probe and coordinator clarification
+
+The first post-freeze command used the configured Windows 3.12 interpreter at
+`D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe`
+to capture actual interpreter, platform, jsonschema, and candidate module
+origins. The standalone `-c` probe attempted to import `commands`, `config`,
+`contracts`, `domain_values`, and `local_ports` without first placing this
+worktree's `src` directory on `sys.path`. It exited 1 with:
+
+```json
+[
+  "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+  "-c",
+  "import json,platform,sys,jsonschema,commands,config,contracts,domain_values,local_ports; print(json.dumps({\"python\":sys.version,\"platform\":platform.platform(),\"jsonschema\":jsonschema.__version__,\"origins\":{name:getattr(sys.modules[name],\"__file__\",None) for name in (\"commands\",\"config\",\"contracts\",\"domain_values\",\"local_ports\")}},sort_keys=True))"
+]
+```
+
+```text
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'commands'
+```
+
+This is a probe construction failure before product behavior or an actual
+interpreter version/origin result was observed. The owner conservatively stopped,
+did not repair or rerun it, and preserved the exact failure. Earlier a2 owner
+passes and the later a2 coordinator failure remain preserved below and are not
+relabeled as a3 evidence.
+
+The coordinator subsequently reported a separate read-only diagnosis from its
+already verified metadata helper: all four runtime probes succeeded and imported
+this exact a3 `commands.py`, with production and test hashes unchanged. That
+diagnosis is retained at the coordinator-local path
+`D:/Codex Projects/ai-engineering-template/.ai/local/TASK-006-a3-runtime-diagnosis.txt`.
+The coordinator then committed the named clarification: the failed standalone
+probe omitted `src`, imported no candidate module, and ran no declared suite,
+so it did not establish a candidate failure or consume another source repair.
+Its four proven metadata probes used explicit candidate `src`, exited 0 on the
+same frozen production/test hashes, and observed jsonschema 4.26.0 plus this
+worktree's exact `src/commands.py` in every environment:
+
+| Environment | Actual interpreter and platform |
+| --- | --- |
+| Windows 3.12 | CPython 3.12.14, `D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe`, Windows 11 build 26200 |
+| Windows 3.11 | CPython 3.11.16, `D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-py311-venv/Scripts/python.exe`, Windows build 26200 |
+| Linux 3.12 | CPython 3.12.3, `/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-venv/bin/python`, Ubuntu-24.04 WSL2 Linux 5.15.167.4 |
+| Linux 3.11 | CPython 3.11.16, `/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python`, Ubuntu-24.04 WSL2 Linux 5.15.167.4 |
+
+No source or test byte changed during this diagnosis or afterward.
+
+## Actual a3 validation
+
+Each environment ran the exact declared argument sequence `-m unittest discover
+-s tests/unit/commands/ -p test_*.py` from the exact a3 worktree. Linux used
+`wsl.exe --distribution Ubuntu-24.04 --cd <exact-a3-worktree> --exec
+<project-local-interpreter>` with no shell mode. Every run exited 0, discovered
+22 tests, executed 21 non-skipped tests, and retained the one established
+platform skip.
+
+| Environment | Suite result | Maximum startup | Maximum cancellation response | Maximum overall |
+| --- | --- | ---: | ---: | ---: |
+| Windows 3.12.14 | `OK (skipped=1)`; 7.678 s | 0.110 s | 0.281 s | 1.297 s |
+| Windows 3.11.16 | `OK (skipped=1)`; 7.441 s | 0.125 s | 0.266 s | 1.281 s |
+| Linux 3.12.3 | `OK (skipped=1)`; 6.545 s | 0.102323 s | 0.057350 s | 1.063353 s |
+| Linux 3.11.16 | `OK (skipped=1)`; 11.065 s | 0.909860 s | 0.063131 s | 1.108933 s |
+
+All four phase summaries were emitted in every environment: detached/live-parent
+timeout, detached/live-parent cancellation, inherited/exited-parent timeout,
+and inherited/exited-parent cancellation. Every subcase recorded one native
+termination call, `parent_gone=true`, `child_gone=true`,
+`reader_threads_settled=true`, and `watchdog_intervened=false`. Cancellation was
+observed only in cancellation modes. Linux retained the parent group/session for
+inherited descendants and observed distinct child group/session identities for
+detached descendants. All startup values stayed below three seconds, timeout
+subcases retained the real one-second deadline and 0.75-second floor,
+cancellation responses were nonnegative and below three seconds, all executions
+were below four seconds, and the six-second watchdog never fired.
+
+The formerly blocked inherited-cancellation subcase completed in all four
+environments. It reached the unchanged assertions after the corrected oracle:
+`unknown` status, null exit code, `ambiguous_side_effect`, empty durable logs,
+Windows incomplete-capture/truncated with a live descendant before teardown,
+Linux EOF/complete capture with the descendant already gone, and schema-valid
+evidence. The detached assertions also passed: Windows observed the expected
+`timed_out`/`cancelled` statuses and confirmed the child gone; Linux retained
+explicit `unknown`/`ambiguous_side_effect` while the escaped child was live
+before exact teardown. Thus the passing cleanup summaries do not substitute for
+the status, EOF, log, or schema checks; those checks actually executed.
+
+Foundation validation with Windows CPython 3.12.14 exited 0: 27 schemas, 174
+artifacts, 39 tasks, 280 unordered task pairs, four archive manifests, and 390
+local links. Final post-handoff scope/hash checks confirmed the original three
+owned paths only, the production/test identities above, the exact one-region
+test diff, and an exit-0 `git diff --check`.
+
+No source/test correction followed validation. The next gate is coordinator
+current-base validation, candidate fingerprinting, fresh cumulative c3
+Astra/xhigh R1, and then distinct fresh c3 R2 on the identical candidate. Any
+actual failure still invokes the terminal pause. This owner does not authorize
+another repair, allowance, counter reset, graph rewrite, acceptance, merge, or
+cleanup.
+
+## Retained a2 implementation handoff
+
+The remaining content is the prior a2 owner handoff salvaged unchanged as
+lineage history. Its reported passes preceded the failed coordinator validation
+and do not supersede that failure or the actual a3 evidence above.
 
 ## Candidate identity and scope
 

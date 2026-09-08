@@ -796,13 +796,25 @@ class CommandRunnerTests(unittest.TestCase):
                     self.assertIsNotNone(child_pid)
                     assert child_pid is not None
                     child_alive = self._is_alive(child_pid)
-                    self.assertGreaterEqual(
-                        elapsed, 0.75 if mode == "timeout" else 0.15
-                    )
+                    if mode == "timeout":
+                        self.assertGreaterEqual(elapsed, 0.75)
+                    else:
+                        started = fixture.started_monotonic
+                        phase_observed = fixture.phase_observed_monotonic
+                        cancellation = fixture.cancellation_monotonic
+                        self.assertIsNotNone(started)
+                        self.assertIsNotNone(phase_observed)
+                        self.assertIsNotNone(cancellation)
+                        assert started is not None
+                        assert phase_observed is not None
+                        assert cancellation is not None
+                        self.assertLessEqual(started, phase_observed)
+                        self.assertLessEqual(phase_observed, cancellation)
+                        self.assertLessEqual(cancellation, completed)
+                        response = completed - cancellation
+                        self.assertGreaterEqual(response, 0.0)
+                        self.assertLess(response, 3.0)
                     self.assertLess(elapsed, 4.0)
-                    if mode == "cancellation":
-                        assert fixture.cancellation_monotonic is not None
-                        self.assertLess(completed - fixture.cancellation_monotonic, 3.0)
                     self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
                     self.assertIsNone(evidence.exit_code)
                     self.assertEqual(
