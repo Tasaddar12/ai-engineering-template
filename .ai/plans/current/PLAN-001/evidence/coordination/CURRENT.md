@@ -82,3 +82,47 @@ Owner reports ignored __pycache__ cleanup blocked by command policy; caches
 remain disposable and outside Git, to be handled by eligible normal worktree
 cleanup after acceptance. No permission bypass or required localhelper exists.
 007 and024 owners continue independently.
+
+ROOT FROZEN b90556d92e0f37e664d685b4af85c43fc8143d81 for ACTIVE fresh
+review_017_c3_r1 Astra/xhigh, charge91/300, nativecall call_mI6rXNxVx2oywJ9qKRH8tyx7.
+Candidate017a2 b7593f11961aa6f5c3a927f3c49af32c4fa93971, FP
+f2f7e852b8eb99345c66a959f15c842f5a2b046631f0b7d349377d3353fec5ac; manifest
+reviews/candidates/CANDIDATE-TASK-017-a2-b7593f11961a.json. Allthreeactual
+coordinatorruntimes PASS29tests, originmetadata and validationbytes bound.
+WaitFINAL/readverify; PASS requires distinctfreshc3R2 sameFP andROOTbase.
+FAIL preserveshistory and returns to independentrecovery before repair.
+No commits or newbegins whilethisreviewpipelinefrozen. This current-note update
+is unstaged coordination progress outside the frozenmanifest; commit after gate.
+
+017 c3 R1 FINALPASS, all11checks/no findings; reportmd/json/final andactual
+Windows/Linuxprobe results read/verified bycoordinator. TwelveWindows andsixLinux
+processes preserveoneeffect/handle/settingshash acrossidentity/alias mappings;
+48binding/32terminalcapabilityrejections,16intrinsiccorruptions,6validhistories,
+5terminalsequences,10futureprovenancefences and4atomicrollbackoperationsbothhosts.
+FreshDISTINCT review_017_c3_r2 ACTIVE on sameb7593f/b90556d/FPf2f7e852;
+charge92/300, nativecall call_xKTFWNRE1BxoqMhanEfHd15D. ROOT remainsFROZEN, no commits/begins.
+
+007ownerFINAL b5ca05a636456f7099f02791b63a9bb7e5f29f45, basee2faa2b8f3ce8f63119227edd35fa837b82d5ee8;
+clean/exact3ownedpaths/fullhandoffread.29discovered tests onWin3.12/Win3.11
+(oneWindowsfilename skip each), all29nativeLinux3.11; actualsuite~70/68/88s.
+Nextcriticalreview007 after017pipeline. 024repairFINAL8607b0f95c32050f39283a96c70109f923e032c0
+base8805c35ec655ac5c1a8fef24ede1fec1e2bb7129; clean/exact3ownedpaths/fullhandoffread.
+15testsWin3.12/3.11 pass. NewRecoveryScopeAuthority(plan_id,scope) explicitverified
+productenvelope; successorcompletioncoverage andmappedcriterionownersfixed. Needs
+cumulativec2freshR1/R2. After017acceptance, begin015a1 beforefreezing007candidate;
+015depends003013014017039 allthenaccepted. After007acceptance begin009critical.
+Allotherowners nowFINAL. Remainingreviewqueue018016019005 asabove.
+
+
+Latest authoritative checkpoint: TASK-017 a2 c3 R2 FINAL FAIL, one common-cause
+payload restoration defect R2-TASK-017-001. Full reports, decoder inventory,
+Windows/Linux observations and final hashes read and independently verified.
+Preserved by d41cf4d088d744a72930c5e7660362764d99038e, generation41.
+No ordinary repair is authorized: return to a fresh independent recovery assessment
+before any further correction. Failed a1 and a2 stay frozen. Prior c3 R1 remains
+immutable PASS but cannot accept this failed candidate. Accepted count10/39.
+The earlier suggestion to start015 before007 review is superseded:017 is not
+accepted. Next form007 current-base candidate and review it while017 recovery
+assessment runs on the same frozen ROOT. Delay adoption or other ROOT commits
+until the active007 review pipeline and017 assessment are both FINAL. Counts92/300;
+historical rewrites3/3, none remaining. Source owners are all FINAL.
