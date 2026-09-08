@@ -1,9 +1,9 @@
 # PLAN-001 current checkpoint
 
 Complete the user's entire 39-task implementation request. **15/39 accepted**;
-state generation **51**, integration branch `ai/PLAN-001/integration`.
-ROOT is unfrozen after accepting024 at `02ad385c19aa8ad0209a6c4548bdab496aa2a06a`.
-Prepare015 for its first independent review next.
+state generation **52**, integration branch `ai/PLAN-001/integration`.
+ROOT is unfrozen after preserving015 failure at
+`c34ce82a9ea3871c2449dbe58a8dae62e452d732`. Prepare016 for first review next.
 Final combined tests, clean source/wheel/sdist validation and independent combined
 reviews remain. Main remains `501b51276a4d07826afcaa1c0cbf09a24a466587`.
 No remote merge, CI execution, production-provider operation or plan completion
@@ -33,6 +33,10 @@ prevents further checks, list what remains unreviewed and why. No separate stage
 or schema field. Saved permanently in .ai/AGENTS.md, shared docs/agents/README.md
 and the existing dispatch brief at `a9e1688113527230ecce9ae2675ada14d778ab06`.
 Foundation validation passed: 27 schemas,203 artifacts,39 tasks,581 links.
+Read-only current asset-catalog verification also passed for both .codex and
+.claude: installed shared reviewer guidance retains the exact rejection columns
+and blocked-check disclosure; installed implementer guidance retains self-review.
+No installation or temporary script file was created for this check.
 
 Required runtime helpers, regressions, build logic and reusable instructions must
 be tracked in owned source/tests/docs and survive clean checkout/install. The
@@ -56,7 +60,20 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   relocation source deletion; snapshot-relative archive manifest incompatibility.
   All fit existing009 scope; no prerequisite/graph change established. Actual
   accepted006/007 composition and038 savedsettings/policy roundtrip pass.
-- **015 ready for first review**: `/root/implement_015`, Sol/xhigh rank3, native
+- **015 repair active**: `/root/repair_019_c1`, inherited Sol/xhigh rank3, native
+  `call_ekxbBrQrt3pjDgWB8NqULBg8`, charge119. Same TASK-015-a1 tree, owned three
+  paths only. Two major findings: malformed/wrong-kind spec and omitted spec
+  document can pass; unchecked N/A can waive every ISO check in new/prior reports.
+  All11 checks completed, independent14 tests pass, four bug reproductions plus
+  seven positive/negative controls through accepted017. No unreviewed area/blocker.
+  Full report/JSON/diagnostic/closing read, ROOT reverified identities and hashes,
+  three closing companion hashes. Preserved c34ce82a9ea3871c2449dbe58a8dae62e452d732.
+  Original reviewer `/root/review_015_c1`, fresh Astra/xhigh rank4,
+  native `call_EzmYq7oQsFHPFn5UhSgNWULo`, charge118. Prefix TASK-015-a1-c1-R1.
+  Candidate `d57d1ad29462c44d0156f1b7c74c3256a339b1c7`, FP
+  `6477f34e30bb3e5eab397898a72489d6edf77b68c62f1711a02f89cf0f86013e`.
+  Coordinator14 tests pass, no skips,8.058s, exact candidate origin.
+  Owner `/root/implement_015`, Sol/xhigh rank3, native
   `call_pRwRtyYBRXrXGA7RqWAlbPzz`, charge110. Tree TASK-015-a1, dispatch base
   `17fb6fff9ffa6b160dc1a09da286e3876ea2d5b6`, clean FINAL head
   `9dba72717218d0e7c2bca394da40f5fce2f991b7`.14 tests pass on Windows3.12,
@@ -68,8 +85,9 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   base `9614bbf0380b09c4839f340c370538a84279486b`. Clean FINAL
   `3f5d8ab11bc7722f81b8cfd3fa0fc68885a5221b`;18 tests pass Windows3.12,
   Windows3.11 and Linux3.11, no skips. Owner reports final scope/compile/diff
-  checks and self-review regressions in the existing handoff; ROOT reconciliation
-  remains. Read next-review-gates-dispatch.md.
+  checks and self-review regressions in the existing handoff. ROOT read the full
+  handoff and verified exact clean head and three-path scope; no known blocker.
+  Read next-review-gates-dispatch.md.
 - **024 accepted after focused c2 PASS**: `/root/verify_024_c2`, fresh Astra/xhigh
   rank4, native `call_IKsYkc5furZCNJo3U3iLcouk`, charge117. Prefix TASK-024-a1-c2-R1.
   Candidate `58cc78312451d7954a4c29b6ba85b6ceec353171`, FP
@@ -115,7 +133,7 @@ cleanliness and retained-branch checks. Heads e79df3b8d071a7e3a3c7874cf0cacb6e70
 and b7593f11961aa6f5c3a927f3c49af32c4fa93971 remain on their named branches.
 All remaining task checkout copies correspond to pending work; history preserved.
 
-**117/300 conservative invocations used,183 remain. Structural rewrites3/3 used.**
+**119/300 conservative invocations used,181 remain. Structural rewrites3/3 used.**
 Use tracked count-native-invocations.py against the current root session; count
 rejected calls and inherited followups honestly. No runtime active_run is fabricated.
 Use coordinator.py status/begin/candidate/accept/fail; preserve failed reports.
