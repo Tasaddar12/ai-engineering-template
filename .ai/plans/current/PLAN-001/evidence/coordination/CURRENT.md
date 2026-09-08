@@ -182,3 +182,16 @@ all3 full suites after a metadata-only merge: verify identical owned/dependency
 blobs, bind fresh coordinator declared suite, then independent focused platform
 regressions as warranted. Record exact actual coverage; final combined matrix
 remains required. Do not claim unexecuted current candidate platform results.
+
+
+007 repair FINAL at0efdcdc8de38f1830550cc63d5ba58ff71427eb8, parentf5f9f8350433010d7c62856e8953b4fcc9097d65.
+Clean and exactly3 owned paths independently observed; updated full handoff read.
+Owner33tests pass Win3.12 (79.381s), Win3.11 (81.663s), Linux3.11 (102.129s);
+Windowsonefilename skip each, Linuxall. Focused5 finding cases pass both hosts.
+Origin/compile/foundation/diff pass. Two corrected harness expectations/import
+setups honestly recorded. Form current candidate with fresh coordinator declared
+suite, then focused independent single-stage verification (no full3matrix repeat
+for identical owned/dependency blobs). Both017a3 and018repair owners continue.
+017salvage checkpoint: ce1776a->dd48c2f,3cdb41e->4a56132,f5e2151->b7a30be;
+all3 salvagedblobs equal faileda2. Full lossless decoder/encoder fix and regressions
+implemented; final matrices pending after correcting a terminal fixture setup.
