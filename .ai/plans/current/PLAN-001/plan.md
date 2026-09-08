@@ -4,6 +4,22 @@ Status: isolation. Graph revision 3 is proposed after repository realignment and
 
 The working `src/install.py`, `src/ai.py`, and `src/validate_foundation.py` files are corrective bootstrap tools. They install reusable guidance, create plan/task records, and validate them. The autonomous execution, review, recovery, delivery, and completion engine in this plan remains unimplemented.
 
+## Completed foundation to preserve
+
+The repository correction is integrated. Its 13 passing tests, independent Astra code/documentation reviews, and cleanup are recorded in [review evidence](evidence/repository-realignment-reviews.md). The following existing behavior is the starting point for this plan:
+
+| Area | Required existing behavior |
+| --- | --- |
+| Reusable product files | Real source files live in `docs/agents/`, `docs/templates/`, `docs/workflows/`, and `docs/defaults/`, including `planner.md` and `PLAN.md`. |
+| Fresh installation | An empty target needs no existing AI folder. The installer creates a self-contained `.ai/` for ChatGPT/Codex or `.claude/` for Claude, with role guides, templates, workflows, tools, schemas, and empty records. Preserve existing project files, dry-run behavior, repeat installation, and failure recovery. |
+| Repository boundaries | Scripts stay directly under `src/`. This toolkit's own plans, tasks, decisions, reviews, and development history stay under `.ai/` or `.claude/`; they are never copied into a fresh installation. |
+| Multiple plans and context | Each plan owns its tasks, commands, reviews, evidence, and history. Current, completed, and archived folders are separate. Load the selected role, plan/task, and explicit references; keep unrelated and archived material out of default context. |
+| Worktree cleanup | Active worktrees belong under the repository's `.worktrees/`. Remove clean merged worktrees through Git and remove the container when empty; preserve unaccepted work through branches or commits. |
+
+TASK-031 extends the existing installer with coordinated initialization/adoption, TASK-034 extends the working record CLI, and TASK-037 packages the complete runtime and document payload. Their remaining work does not require rebuilding the delivered bootstrap. TASK-004, TASK-009, TASK-030, and TASK-036 cover the logical references, transitions, provenance, and verification still needed for whole-plan completion and archival. The current kit supports only the documented bounded manual task-completion move.
+
+The 39 task records below describe remaining engine work; the separate completed correction does not mark those tasks accepted or grant graph isolation approval.
+
 ## Canonical bundle
 
 - [Specification](spec.md) and [machine specification](spec.json)
