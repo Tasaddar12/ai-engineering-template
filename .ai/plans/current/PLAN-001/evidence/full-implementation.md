@@ -22,8 +22,11 @@ was required.
 
 ## Execution boundary
 
-Graph r3 is still proposed at the start of this run. A fresh independent
-isolation review is in progress. No engine task has been started or accepted.
+Graph r3 was proposed at the start of this run. Its independent review failed
+on installed helper dependency ownership and missing digest-compatibility
+requirements. Graph r4 corrects these requirements and passed all 12 ISO
+checks. The original failed graph and review are retained in `history/engine-r3`.
+TASK-001 attempt a2 has been dispatched; no engine task is accepted yet.
 Task implementations will use separate branches and worktrees, observed test
 results, and independent implementation and consistency review before accepted
 dependency handoffs. Integration, completion, and cleanup will be recorded as
