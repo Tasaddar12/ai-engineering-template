@@ -101,5 +101,5 @@
     "TASK-006-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
+  "resume_state": "Coordinator Linux preflight found process-group quiescence and backward-clock evidence failures; bounded same-attempt correction before initial R1/R2. See evidence/assessment/TASK-006-linux-preflight.md."
 }
