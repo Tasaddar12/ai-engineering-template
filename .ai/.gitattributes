@@ -1,0 +1,2 @@
+# Historical manifests describe exact bytes; Git must not rewrite snapshots.
+plans/**/history/** -text
