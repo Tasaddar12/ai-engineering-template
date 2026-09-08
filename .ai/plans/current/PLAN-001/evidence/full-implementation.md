@@ -423,3 +423,16 @@ bytecode caches. [Non-force Git cleanup](worktree-cleanup-2026-09-08.md) removed
 those directories, retaining exact named branch heads and all120 related history
 files. Current017 and allactive/queued worktrees remain. No task/plan completion
 or remote merge is claimed; all39 and finalintegrated validation remain required.
+
+## Required local material moved into version control
+
+The user requested an audit of ignored .ai/local scripts. Active manual coordinator
+and invocation-accounting tools, all 21 dispatch observations, current dispatch
+briefs and Git feasibility evidence now live in [tracked coordination material](coordination/README.md).
+The [audit](coordination/local-material-audit.md) records concrete purposes, obsolete
+one-use scripts and the existing tasks responsible for actual product behavior.
+No source/tests/docs/package references to local directories or the manual helper
+were found. Read-only status parity, exact dispatch preservation and accounting
+metadata filtering passed; foundation passed with 27 schemas, 182 artifacts,
+39 tasks and 459 links. Product packaging without ignored files remains an explicit
+TASK-037 gate. No task acceptance or graph scope changed for this migration.
