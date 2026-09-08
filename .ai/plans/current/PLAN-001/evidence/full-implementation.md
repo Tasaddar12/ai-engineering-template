@@ -403,3 +403,23 @@ continuing coordinator. Historical graph rewrites remain3/3used, zero remaining.
 Observed native model/effort remains distinct from unavailable provider-effective
 identity. TASK-007 and018 are now dependency-ready;007 is the next owner, while017
 enters its fresh review cycle. TASK-024/016/019/005-a2 remain queued for review.
+
+### Mapped-profile recovery and obsolete checkout cleanup (2026-09-08)
+
+TASK-017 c2 R1 failed valid non-identity policy/provider profile recovery; prior
+terminal/history findings are resolved. Independent recovery confirmed the
+failure with real accepted loaders and separate processes, preserved20 historical
+files and verified exact two-commit salvage. The [coordinator decision](recovery/TASK-017-coordinator-decision.md)
+authorizes one fresh a2 bounded correction with unchanged graph/contracts and
+cumulativec3 fresh R1/R2. Generation39,tenof39accepted;87/300charged,90withnext
+owner/reviewer reservations,3/3rewritesused. Usage-interrupted invocations and
+their continuations remain charged and documented; no provider-effective claim.
+Independent007 and018 implementations continue in their original worktrees.
+
+The user asked about retained accepted-task worktrees. Git verified all10 accepted
+candidate commits are integrated into ai/PLAN-001/integration; main is unchanged.
+Three obsolete failed004a1/006a1/006a2 checkouts were clean and held only ignored
+bytecode caches. [Non-force Git cleanup](worktree-cleanup-2026-09-08.md) removed
+those directories, retaining exact named branch heads and all120 related history
+files. Current017 and allactive/queued worktrees remain. No task/plan completion
+or remote merge is claimed; all39 and finalintegrated validation remain required.
