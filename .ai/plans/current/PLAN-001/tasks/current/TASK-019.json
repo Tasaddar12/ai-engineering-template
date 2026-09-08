@@ -4,7 +4,7 @@
   "id": "TASK-019",
   "plan_id": "PLAN-001",
   "title": "Fingerprint code and context candidates",
-  "status": "repairing",
+  "status": "accepted",
   "archived": false,
   "objective": "Fingerprint code and context candidates. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,5 +98,5 @@
     "TASK-019-a1"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-019-001; validate a new candidate and obtain focused independent verification under the user's single-stage decision, subject to any applicable recovery boundary."
+  "resume_state": "Candidate 04dead96f7fc9fde17081abe7946af01a859b3eb passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
 }
