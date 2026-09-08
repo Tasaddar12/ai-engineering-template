@@ -198,3 +198,33 @@ ordinary hashes retained and coherent legacy multiline state recovered. Full36
 Win3.12 pass13.201s; three affected tests pass each Win3.11 andLinux3.11.
 Exact final source/handoff diff and clean cumulative three-path scope read.
 Proceed current017 candidate and focused single review;019 repair and009 continue.
+
+ROOT FROZEN3e5bf73d8582956d28d853ab722d38d665b2525d for ACTIVE017a3c4
+verify_017_c4, Astra/xhigh rank4, native call_nv0VaOyGfO0MhY1RQgxDBPD1,
+charge108/300 (192 remain). Candidateeaa80842f695c766dd55ab92e40dcf40874c8471,
+FP5b69df2036e87a8c7a03c5927d7aa28e5466fe6bfdfa1a1dbb97f90c515f4ce1.
+PrefixTASK-017-a3-c4-R1. Fresh coordinator36/no skips/12.679s/exit0 with exact
+candidate origin. Focus common codec/hash correction and relevant guards, reuse
+unaffected c3R1 reasoning; one stage, no R2. No ROOT commits/begins until FINAL.
+Owners009 and019 repair continue. Accepted12/39, generation47. After017PASS,
+accept then begin015 before freezing next19candidate. Queued005/016/024 still
+need required bounded implementation handoff self-check before review.
+
+017 c4 FINAL PASS accepted at 2c0748444f4982118a04b086bfa6d42d418fd1bd.
+All11 checks, independent36-test suite and both-host focused checks pass; seven
+closing companion hashes verified. Exact candidate integrated, clean a3 worktree
+removed. Accepted13/39, generation48. Single stage; no R2.
+015a1 dispatched at17fb6fff9ffa6b160dc1a09da286e3876ea2d5b6 to implement_015,
+native call_pRwRtyYBRXrXGA7RqWAlbPzz, Sol/xhigh rank3, charge110/300.
+Read next-isolation-dispatch.md; prehandoff tests/self-review are required.
+019 repair FINAL clean4cbdabebf33001ef77b006ccfb7b2b4441059452; recursive JSON detachment
+and two immutable task/plan/tamper regressions,16 tests passed. Final correction
+diff and handoff read; queued for current-candidate focused independent review.
+009 FINAL clean cee6a8261431876c50fd4a64f0c7884992bf4c8d; claims actual
+11-test suite on Windows3.12/3.11 and Linux3.11 plus self-review fixes. Coordinator
+has not yet reconciled full handoff or formed its first reviewed candidate.
+024 bounded prehandoff completion ACTIVE under repair_019_c1 followup,
+native call_oae5lrvRcmpc86kaUarnJskQ, charge109, inherited Sol/xhigh rank3.
+Queued005/016 still need owner self-check before review.110/300 charged,
+190 remaining; structural rewrites remain3/3 used. Permanent project handoff
+rule is committed f4bce8ea8b0433e0491b1f29b5197a09f1c16977.
