@@ -25,7 +25,7 @@ def test_yaml_rejects_silent_duplicate_alias_and_object_construction():
     ):
         with pytest.raises(FrameworkError):
             parse_yaml(text)
-    assert parse_yaml("title: CafÃ©\nitems: [one, two]")["title"] == "CafÃ©"
+    assert parse_yaml("title: Café\nitems: [one, two]")["title"] == "Café"
 
 
 def test_scope_rejects_absolute_traversal_and_links(tmp_path):
@@ -179,6 +179,8 @@ def test_decomposed_plan_requires_tasks_and_features(project):
     plan.metadata.update(tasks=["TASK-001"], decomposition="HANDOFF-001")
     with pytest.raises(FrameworkError, match="features"):
         store.save(plan)
+    with pytest.raises(FrameworkError, match="nonempty"):
+        store.create("plans", "PLAN-002", "Approved", "ready", decomposition_status="approved")
 
 
 def test_current_git_head_invalidates_two_matching_stale_metadata_heads(project):
@@ -206,6 +208,11 @@ def test_current_git_head_invalidates_two_matching_stale_metadata_heads(project)
         def is_ancestor(self, commit, target="HEAD"):
             return False
 
+    result = reconcile(project, Facts())
+    assert "Stale feature review: FEATURE-001" in result["issues"]
+    feature = store.find("FEATURE-001")
+    feature.metadata.pop("worktree")
+    store.save(feature)
     result = reconcile(project, Facts())
     assert "Stale feature review: FEATURE-001" in result["issues"]
 

@@ -180,7 +180,7 @@ class ArtifactStore:
         if path.exists():
             raise FrameworkError(f"Refusing to overwrite artifact: {path}")
         template = TEMPLATES.get(kind)
-        body = f"# {id} â€” {title}\n"
+        body = f"# {id} — {title}\n"
         if template:
             fields = {
                 name: "To be defined."
@@ -244,7 +244,9 @@ class ArtifactStore:
             ):
                 raise FrameworkError(f"PLAN document must explicitly reference {key}")
             if (
-                data.get("decomposition") or data.get("status") in {"in-progress", "completed"}
+                data.get("decomposition")
+                or data.get("decomposition_status") == "approved"
+                or data.get("status") in {"in-progress", "completed"}
             ) and not data[key]:
                 raise FrameworkError(f"An executing or decomposed PLAN requires nonempty {key}")
         if kind in {"tasks", "features"} and not re.fullmatch(
