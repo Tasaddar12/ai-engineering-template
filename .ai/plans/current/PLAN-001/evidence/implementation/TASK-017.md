@@ -7,7 +7,10 @@
 | Attempt | `TASK-017-a1` |
 | Branch | `ai/PLAN-001/TASK-017/a1` |
 | Logical worktree | `TASK-017-a1` |
-| Dispatch base | `bd962bd0c68f4803d07a16136d55c2ec8707fba8` |
+| Original dispatch base | `bd962bd0c68f4803d07a16136d55c2ec8707fba8` |
+| Failed cycle-1 candidate | `d8930f07ca90cd0dc95ccd452a38d8fcfde8e0c4`, fingerprint `982055aa72918305c0c44e310bb7daacfc9c3339e8eaacd474a30f3a7f2f7753` |
+| Coordinator ROOT checkpoint | `10e27db6472bbf6d9a5a5023233ede12fae5d52d` |
+| Repair base | `d1a075ae05020be994c3ae3bd7044ba440ceaa9a` |
 | Candidate commit | The scoped Git commit containing this handoff; its exact OID is reported after commit because a commit cannot contain its own object ID. |
 | Approved graph | `PLAN-001-r4`, revision 4 |
 | Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
@@ -35,8 +38,10 @@ or other task-owned source changed.
   request field returns a non-retryable `state_conflict`.
 - `FakeAgentProviderState.script` detaches caller iterables to immutable tuples and commits one
   poll/cancel script. Poll and cancellation cursors belong to the provider state, so constructing
-  another coordinator-facing adapter cannot reorder or replay earlier steps. A terminal final poll
-  remains stable on repeated observation. Invalid provider data does not advance its cursor.
+  another coordinator-facing adapter cannot reorder or replay earlier steps. The first succeeded,
+  failed, or cancelled poll becomes the stable result; later poll script values cannot replace its
+  status or structured output. Cancellation after that poll returns `already_terminal` without
+  consuming a cancellation value.
 - Poll returns the frozen queued/running/succeeded/failed/cancelled/unknown states. Structured output
   is returned only through a successful accepted `AgentObservation`; output request/attempt/model and
   logical output reference remain bound to the original effect. Unknown poll state can later be
@@ -44,6 +49,9 @@ or other task-owned source changed.
 - Calling cancel without a provider observation returns `pending` with `quiesced=False` and does not
   change poll state. Scripted `unknown` remains non-quiescent. Only confirmed `cancelled`, an explicit
   already-terminal result, or an observed succeeded/failed/cancelled poll establishes quiescence.
+  A confirmed cancellation remains stable on repeated cancel, and later polling is rejected with
+  `state_conflict` without consuming a poll value because no consistent `AgentObservation` can be
+  fabricated from cancellation-only facts.
 - The provider state may be held independently of a coordinator object. With an optional
   provider-owned `backing_path`, it atomically records the original request, handle, configured
   submitted model settings, expected simulated identity, scripts, cursors, last observation, and
@@ -52,6 +60,13 @@ or other task-owned source changed.
   The file is explicitly marked `deterministic-fake-agent-state-v1` and
   `deterministic_fake_agent`; it is not a v1 artifact, canonical workflow journal, or substitute for
   TASK-009/TASK-010 state.
+- Restore strictly decodes private nested request scope and acceptance-criterion shapes, then checks
+  each consumed script prefix, cursor, last observation, terminal ordering, identity, provenance,
+  and derived quiescence before admitting the provider state. Forged quiescence, skipped poll values,
+  changed consumed identities/provenance, and conflicting terminal prefixes fail with
+  `validation_failed`. An unconsumed future fault-injection value remains restorable and is rejected
+  by normal `poll` validation without cursor movement. No-script default queued observations and an
+  exhausted nonterminal script remain recoverable.
 
 ### TASK-017-AC2
 
@@ -106,6 +121,19 @@ a multi-host provider service. Corrupt, unmarked, unknown-field, nondeterministi
 inconsistent saved state fails with `validation_failed`. The caller owns placement and retention of
 this provider simulation file; its absolute host path is never placed in a portable record.
 
+## Failed-review resolution
+
+- `R1-TASK-017-001` is resolved by committing the first terminal poll or confirmed cancellation as
+  the effect's stable terminal fact. Repeated poll/cancel calls preserve that result, and calls that
+  cannot return a consistent cross-method value fail without moving either cursor. Owned regressions
+  cover success-to-running, changed successful output, poll/cancel order, cursor values, and
+  fresh-process recovery.
+- `R1-TASK-017-002` is resolved by strict nested decoding and reconstruction checks over immutable
+  effect identity, consumed prefixes, the recorded last observation, terminal ordering, and derived
+  quiescence. Owned corrupt-state cases cover the reported forged `quiesced=true`, poll cursor 1 with
+  no last observation, and unknown `request.scope` field, plus nested criterion, consumed-handle, and
+  consumed-model corruption. All reject provider construction with `validation_failed`.
+
 ## Actual validation evidence
 
 Working directory:
@@ -115,17 +143,30 @@ Interpreter:
 
 | Command | Observed result |
 | --- | --- |
-| `-m unittest discover -s tests/unit/agents/ -p test_*.py` | Exit 0; 20 tests; `OK`. Exact declared task command with the coordinator interpreter substituted for `python`. The leaf inserts this worktree's `src` first. |
+| Windows Python 3.12.14: `-m unittest discover -s tests/unit/agents/ -p test_*.py` | Exit 0; 27 tests; `OK`. Exact declared task command with the coordinator interpreter substituted for `python`. The leaf inserts this worktree's `src` first. |
+| Windows Python 3.11.16: same leaf command | Exit 0; 27 tests; `OK`; explicit origin probe resolved `agents` to this worktree's `src/agents.py`. |
+| Linux Python 3.11.16 through `wsl.exe -d Ubuntu-24.04 --exec`, exact candidate working directory: same leaf command | Exit 0; 27 tests; `OK`; explicit origin probe resolved `agents` to this worktree's `src/agents.py`. |
 | `-m py_compile src/agents.py tests/unit/agents/test_agents.py` | Exit 0. |
+| `src/validate_foundation.py` with Windows Python 3.12.14 | Exit 0; 27 schemas, 177 live artifacts, 1 plan, 39 tasks, 280 unordered pairs, 4 archive manifests, and 401 local links. |
 | `git diff --check` | Exit 0 before this handoff and repeated after its final edit. |
 
+The first repaired Windows 3.12 suite ran 20 tests and exited 1 with one error: an
+over-strict draft rejected installing a script after a restored default queued poll. That state was
+valid under the existing public fake-provider behavior. The draft restriction was removed, the case
+became an owned recovery regression, and the next run passed all 27 tests. Before the minimum-version
+runs, one standalone origin probe on each platform exited 1 with `ModuleNotFoundError` because those
+two ad hoc `-c` commands omitted the candidate `src` insertion that the test leaf already performs.
+Corrected probes inserted the exact candidate `src` and exited 0 with the origins shown above; neither
+diagnostic failure exercised product behavior.
+
 The focused suite covers exact idempotency and changed-request conflict, immutable values/scripts,
-structured success, stable final observations, shared provider cursors, in-memory adapter recreation,
-provider-file restoration, three separate Python processes starting/polling one effect, malformed
-provider state, poll and cancellation unknowns, non-quiescent cancellation requests, already-terminal
-cancellation, caller and provider handle/request/lease mismatches, unchanged cursors after rejected
-facts, configured-false recommendations, every declared capability class, provider/model/rank
-mismatch, inadequate review rank, changed submitted effort, and invalid observed provenance.
+structured success, terminal result/output freezing, both poll/cancel orders and cursor stability,
+shared provider cursors, in-memory adapter recreation, fresh-process terminal recovery, default queued
+and exhausted nonterminal restoration, malformed and internally forged provider state, strict private
+nested fields, consumed identity/provenance checks, unconsumed fault injection, poll and cancellation
+unknowns, non-quiescent cancellation requests, caller/provider identity fences, configured-false
+recommendations, every declared capability class, model/rank mismatch, inadequate review rank,
+changed submitted effort, and invalid observed provenance.
 
 No optional linter is installed in the coordinator environment (`ruff` and `pyflakes` probes both
 returned unavailable); no lint command is declared for this task. Compilation, the declared suite,
@@ -145,13 +186,17 @@ and whitespace validation all ran locally without network, credentials, or produ
 - Atomic replacement prevents a partially written provider file from being accepted. This local
   fake store deliberately does not implement canonical transaction history, coordinator generation,
   distributed locking, or multi-host durability.
+- The private file contains enough facts for sequential recovery, but no total poll/cancel event
+  order. Restore therefore accepts only combinations consistent with at least one valid ordering and
+  rejects histories in which both methods consumed a terminal value. Future unconsumed scripted
+  values remain fault-injection input rather than accepted history.
 - There are no scope deviations, public frozen-contract changes, new dependencies, skipped required
   checks, production calls, credentials, policy mutations, or concrete prerequisite gaps.
-- R1 should independently change every request identity field under one key; reopen the provider
-  file in a fresh interpreter; mutate saved internal fields; change submitted effort; inject
-  provider/model/rank/invocation/output-reference mismatches; test unknown-to-reconciled polling;
-  and confirm cancellation is not quiescent before an observed confirmation. R2 should bind the
-  same exact candidate and confirm TASK-020/TASK-021 ownership remains separate.
+- Fresh R1 should rerun the preserved terminal and restoration counterexamples, inspect exact cursor
+  non-advancement, reopen the provider file in a fresh interpreter, and distinguish unconsumed fault
+  injection from forged consumed history. It should also retain the prior full request/handle/model
+  fence checks. R2 should bind the same exact candidate and confirm TASK-020/TASK-021 ownership
+  remains separate.
 
 Implementation provenance: the coordinator dispatched this attempt with the standing OpenAI
 `gpt-5.6-sol` / `xhigh` implementation selection. This records coordinator-observed native tool

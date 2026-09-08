@@ -61,6 +61,15 @@ _DEFAULT_REVIEW_ROLES = (
     "security-reviewer",
     "task-isolation-reviewer",
 )
+_TERMINAL_AGENT_STATUSES = {
+    AgentRunStatus.SUCCEEDED,
+    AgentRunStatus.FAILED,
+    AgentRunStatus.CANCELLED,
+}
+_QUIESCED_CANCEL_STATUSES = {
+    CancelStatus.CANCELLED,
+    CancelStatus.ALREADY_TERMINAL,
+}
 
 
 def _text(value: object, label: str) -> str:
@@ -296,20 +305,31 @@ def _decode_request(value: object) -> AgentRequest:
     if item.get("schema_version") != "1.0" or item.get("kind") != "agent-request":
         raise ValueError("fake provider request has unsupported schema identity")
     scope = _mapping(item.get("scope"), "agent request scope")
-    criteria = tuple(
-        AcceptanceCriterion(
-            id=_text(_mapping(raw, "acceptance criterion").get("id"), "criterion ID"),
-            description=_text(
-                _mapping(raw, "acceptance criterion").get("description"),
-                "criterion description",
-            ),
-            verification=_text(
-                _mapping(raw, "acceptance criterion").get("verification"),
-                "criterion verification",
-            ),
-        )
-        for raw in _array(item.get("acceptance_criteria"), "acceptance criteria")
+    _require_keys(
+        scope,
+        {"write_paths", "read_paths", "prohibited_paths", "resources"},
+        "agent request scope",
     )
+    criteria_items = []
+    for raw in _array(item.get("acceptance_criteria"), "acceptance criteria"):
+        criterion = _mapping(raw, "acceptance criterion")
+        _require_keys(
+            criterion,
+            {"id", "description", "verification"},
+            "acceptance criterion",
+        )
+        criteria_items.append(
+            AcceptanceCriterion(
+                id=_text(criterion.get("id"), "criterion ID"),
+                description=_text(
+                    criterion.get("description"), "criterion description"
+                ),
+                verification=_text(
+                    criterion.get("verification"), "criterion verification"
+                ),
+            )
+        )
+    criteria = tuple(criteria_items)
     task_id = item.get("task_id")
     return AgentRequest(
         id=_text(item.get("id"), "request id"),
@@ -554,6 +574,74 @@ class _FakeEffect:
     quiesced: bool = False
 
 
+def _simulation_evidence_for_effect(
+    effect: _FakeEffect, event: str, index: int
+) -> EvidenceRef:
+    external = effect.handle.external_handle
+    assert external is not None
+    path = f".ai/evidence/fake-agent/{external}/{event}-{index}.json"
+    content = "\n".join(
+        (
+            SIMULATION_SOURCE,
+            effect.handle.project_id.value,
+            effect.handle.adapter_id,
+            effect.request.id.value,
+            external,
+            event,
+            str(index),
+        )
+    ).encode("utf-8")
+    return EvidenceRef(
+        path=path,
+        sha256=Sha256Digest(hashlib.sha256(content).hexdigest()),
+        metadata=FrozenJsonObject(
+            {
+                "observation_source": SIMULATION_SOURCE,
+                "adapter_id": effect.handle.adapter_id,
+                "effect_id": external,
+                "simulated": True,
+                "configured_profile": effect.configured_model.name,
+                "submitted_reasoning_effort": (
+                    effect.configured_model.reasoning_effort or "omitted"
+                ),
+                "submitted_effort": effect.configured_model.effort or "omitted",
+                "observed_effort": "not_provider_observed",
+            }
+        ),
+    )
+
+
+def _queued_observation_for_effect(effect: _FakeEffect) -> AgentObservation:
+    token = _effect_token(
+        effect.handle.project_id.value,
+        effect.handle.adapter_id,
+        effect.handle.idempotency_key,
+    )
+    run = AgentRunRecord(
+        id=EntityId(f"fake-run-{token[:32]}"),
+        request_ref=(
+            f"agent-request:{effect.request.plan_id.value}:{effect.request.id.value}"
+        ),
+        attempt_id=effect.request.attempt_id,
+        status=AgentRunStatus.QUEUED,
+        adapter_id=effect.handle.adapter_id,
+        external_handle=effect.handle.external_handle,
+        actual_model=None,
+        started_at=None,
+        finished_at=None,
+        output_ref=None,
+        error_category=None,
+        lease_generation=effect.request.lease_generation,
+    )
+    return AgentObservation(
+        status=AgentRunStatus.QUEUED,
+        handle=effect.handle,
+        run=run,
+        output=None,
+        evidence_refs=(_simulation_evidence_for_effect(effect, "poll-queued", 0),),
+    )
+
+
 class FakeAgentProviderState:
     """State owned by the deterministic fake provider, never by the workflow.
 
@@ -616,7 +704,11 @@ class FakeAgentProviderState:
         with self._lock:
             effect = self._effect_for_external_handle(handle)
             self._require_exact_handle(effect, handle)
-            if effect.script_committed or effect.poll_position or effect.cancel_position:
+            if (
+                effect.script_committed
+                or effect.poll_position
+                or effect.cancel_position
+            ):
                 _failure(
                     ErrorCategory.STATE_CONFLICT,
                     "fake provider script is already committed or observed",
@@ -750,10 +842,7 @@ class FakeAgentProviderState:
             raise ValueError("cancel position is outside the saved script")
         if not script_committed and (poll_script or cancel_script):
             raise ValueError("uncommitted fake provider state cannot contain scripts")
-        self._validate_restored_effect(
-            request, handle, configured_model, expected_model
-        )
-        return _FakeEffect(
+        effect = _FakeEffect(
             request=request,
             handle=handle,
             configured_model=configured_model,
@@ -766,14 +855,15 @@ class FakeAgentProviderState:
             last_observation=last_observation,
             quiesced=quiesced,
         )
+        self._validate_restored_effect(effect)
+        return effect
 
     @staticmethod
-    def _validate_restored_effect(
-        request: AgentRequest,
-        handle: AgentHandle,
-        configured_model: ProviderModelProfile,
-        expected_model: ModelIdentity,
-    ) -> None:
+    def _validate_restored_effect(effect: _FakeEffect) -> None:
+        request = effect.request
+        handle = effect.handle
+        configured_model = effect.configured_model
+        expected_model = effect.expected_model
         if (
             handle.plan_id != request.plan_id
             or handle.run_id != request.run_id
@@ -792,12 +882,103 @@ class FakeAgentProviderState:
             raise ValueError("restored fake handle is not deterministic")
         if (
             expected_model.profile != request.model_profile
+            or configured_model.name != request.model_profile
             or expected_model.provider != configured_model.provider
             or expected_model.model_id != configured_model.model_id
             or expected_model.capability_rank != configured_model.capability_rank
             or expected_model.invocation_id != f"fake-invocation-{token[:32]}"
         ):
             raise ValueError("restored fake model identity does not match its effect")
+
+        if not effect.script_committed and (
+            effect.poll_script
+            or effect.cancel_script
+            or effect.poll_position
+            or effect.cancel_position
+        ):
+            raise ValueError("uncommitted fake provider state contains observed scripts")
+
+        terminal_poll = False
+        if effect.poll_position:
+            consumed_polls = effect.poll_script[: effect.poll_position]
+            for observation in consumed_polls:
+                FakeAgentProviderState._validate_restored_observation(
+                    effect, observation
+                )
+            if any(
+                observation.status in _TERMINAL_AGENT_STATUSES
+                for observation in consumed_polls[:-1]
+            ):
+                raise ValueError("restored poll cursor advanced past a terminal result")
+            last_index = effect.poll_position - 1
+            expected_last = replace(
+                consumed_polls[-1],
+                evidence_refs=consumed_polls[-1].evidence_refs
+                + (_simulation_evidence_for_effect(effect, "poll", last_index),),
+            )
+            if effect.last_observation != expected_last:
+                raise ValueError(
+                    "restored last observation does not match the consumed poll prefix"
+                )
+            terminal_poll = expected_last.status in _TERMINAL_AGENT_STATUSES
+        elif effect.last_observation is not None:
+            if effect.last_observation != _queued_observation_for_effect(effect):
+                raise ValueError(
+                    "restored unconsumed poll state has an unsupported last observation"
+                )
+
+        terminal_cancel = False
+        if effect.cancel_position:
+            consumed_cancellations = effect.cancel_script[: effect.cancel_position]
+            if any(
+                observation.handle != handle for observation in consumed_cancellations
+            ):
+                raise ValueError(
+                    "restored consumed cancellation does not match its effect"
+                )
+            if any(
+                observation.status in _QUIESCED_CANCEL_STATUSES
+                for observation in consumed_cancellations[:-1]
+            ):
+                raise ValueError(
+                    "restored cancellation cursor advanced past a terminal result"
+                )
+            terminal_cancel = (
+                consumed_cancellations[-1].status in _QUIESCED_CANCEL_STATUSES
+            )
+        if terminal_poll and terminal_cancel:
+            raise ValueError("restored effect contains conflicting terminal histories")
+        if effect.quiesced is not (terminal_poll or terminal_cancel):
+            raise ValueError("restored effect quiescence is not supported by its history")
+
+    @staticmethod
+    def _validate_restored_observation(
+        effect: _FakeEffect, observation: AgentObservation
+    ) -> None:
+        if observation.handle != effect.handle:
+            raise ValueError("restored observation handle does not match its effect")
+        expected_request_ref = (
+            f"agent-request:{effect.request.plan_id.value}:{effect.request.id.value}"
+        )
+        if observation.run.request_ref != expected_request_ref:
+            raise ValueError("restored observation request_ref does not match its effect")
+        observed_models = tuple(
+            value
+            for value in (
+                observation.run.actual_model,
+                None if observation.output is None else observation.output.actual_model,
+            )
+            if value is not None
+        )
+        if any(value != effect.expected_model for value in observed_models):
+            raise ValueError("restored observation model provenance is inconsistent")
+        if observation.status is AgentRunStatus.SUCCEEDED:
+            assert observation.output is not None
+            expected_output_ref = (
+                f"agent-output:{effect.request.plan_id.value}:{observation.output.id.value}"
+            )
+            if observation.run.output_ref != expected_output_ref:
+                raise ValueError("restored observation output_ref is inconsistent")
 
     def _persist_locked(self) -> None:
         if self._backing_path is None:
@@ -959,6 +1140,17 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         with self._provider._lock:
             effect = self._provider._effect_for_external_handle(handle)
             self._provider._require_exact_handle(effect, handle)
+            if (
+                effect.last_observation is not None
+                and effect.last_observation.status in _TERMINAL_AGENT_STATUSES
+            ):
+                return effect.last_observation
+            if effect.quiesced:
+                _failure(
+                    ErrorCategory.STATE_CONFLICT,
+                    "cannot poll an effect after confirmed cancellation",
+                    details={"request_id": effect.request.id.value},
+                )
             previous = (
                 effect.poll_position,
                 effect.last_observation,
@@ -997,6 +1189,31 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
         with self._provider._lock:
             effect = self._provider._effect_for_external_handle(handle)
             self._provider._require_exact_handle(effect, handle)
+            if (
+                effect.last_observation is not None
+                and effect.last_observation.status in _TERMINAL_AGENT_STATUSES
+            ):
+                return CancelObservation(
+                    status=CancelStatus.ALREADY_TERMINAL,
+                    handle=effect.handle,
+                    quiesced=True,
+                    evidence_refs=(
+                        self._simulation_evidence(
+                            effect, "cancel-already-terminal", 0
+                        ),
+                    ),
+                )
+            if effect.quiesced:
+                if effect.cancel_position:
+                    prior_index = effect.cancel_position - 1
+                    prior = effect.cancel_script[prior_index]
+                    if prior.status in _QUIESCED_CANCEL_STATUSES:
+                        return self._mark_cancellation(effect, prior, prior_index)
+                _failure(
+                    ErrorCategory.STATE_CONFLICT,
+                    "confirmed quiescence has no consistent terminal observation",
+                    details={"request_id": effect.request.id.value},
+                )
             if effect.cancel_script:
                 previous = (effect.cancel_position, effect.quiesced)
                 index = min(effect.cancel_position, len(effect.cancel_script) - 1)
@@ -1230,29 +1447,7 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
             )
 
     def _queued_observation(self, effect: _FakeEffect) -> AgentObservation:
-        run = AgentRunRecord(
-            id=EntityId(f"fake-run-{self._effect_token(effect.handle.idempotency_key)[:32]}"),
-            request_ref=(
-                f"agent-request:{effect.request.plan_id.value}:{effect.request.id.value}"
-            ),
-            attempt_id=effect.request.attempt_id,
-            status=AgentRunStatus.QUEUED,
-            adapter_id=self._adapter_id,
-            external_handle=effect.handle.external_handle,
-            actual_model=None,
-            started_at=None,
-            finished_at=None,
-            output_ref=None,
-            error_category=None,
-            lease_generation=effect.request.lease_generation,
-        )
-        return AgentObservation(
-            status=AgentRunStatus.QUEUED,
-            handle=effect.handle,
-            run=run,
-            output=None,
-            evidence_refs=(self._simulation_evidence(effect, "poll-queued", 0),),
-        )
+        return _queued_observation_for_effect(effect)
 
     def _mark_observation(
         self,
@@ -1279,38 +1474,9 @@ class DeterministicFakeAgentAdapter(AgentAdapter):
     def _simulation_evidence(
         self, effect: _FakeEffect, event: str, index: int
     ) -> EvidenceRef:
-        external = effect.handle.external_handle
-        assert external is not None
-        path = f".ai/evidence/fake-agent/{external}/{event}-{index}.json"
-        content = "\n".join(
-            (
-                SIMULATION_SOURCE,
-                self._project_id.value,
-                self._adapter_id,
-                effect.request.id.value,
-                external,
-                event,
-                str(index),
-            )
-        ).encode("utf-8")
-        return EvidenceRef(
-            path=path,
-            sha256=Sha256Digest(hashlib.sha256(content).hexdigest()),
-            metadata=FrozenJsonObject(
-                {
-                    "observation_source": SIMULATION_SOURCE,
-                    "adapter_id": self._adapter_id,
-                    "effect_id": external,
-                    "simulated": True,
-                    "configured_profile": effect.configured_model.name,
-                    "submitted_reasoning_effort": (
-                        effect.configured_model.reasoning_effort or "omitted"
-                    ),
-                    "submitted_effort": effect.configured_model.effort or "omitted",
-                    "observed_effort": "not_provider_observed",
-                }
-            ),
-        )
+        assert effect.handle.project_id == self._project_id
+        assert effect.handle.adapter_id == self._adapter_id
+        return _simulation_evidence_for_effect(effect, event, index)
 
     def _effect_token(self, idempotency_key: str) -> str:
         return _effect_token(self._project_id.value, self._adapter_id, idempotency_key)

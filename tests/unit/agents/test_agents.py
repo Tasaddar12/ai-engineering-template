@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import sys
@@ -103,6 +104,54 @@ if action == "start":
     print(handle.external_handle)
 elif action == "poll":
     print(adapter.poll(handle).status.value)
+else:
+    raise ValueError(action)
+"""
+
+TERMINAL_PROCESS_RESTART_SCRIPT = r"""
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+state_path = Path(sys.argv[2])
+action = sys.argv[3]
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tests" / "unit" / "agents"))
+
+from agents import DeterministicFakeAgentAdapter, FakeAgentProviderState
+from domain_values import AgentRunStatus
+from test_agents import capabilities, observation, output, request, settings
+
+project_settings = settings()
+provider = FakeAgentProviderState(state_path)
+adapter = DeterministicFakeAgentAdapter(
+    project_id="project-1",
+    settings=project_settings,
+    capabilities=capabilities(project_settings),
+    provider_state=provider,
+)
+agent_request = request()
+handle = adapter.start(agent_request, agent_request.idempotency_key)
+if action == "start":
+    actual_model = adapter.expected_model(handle)
+    provider.script(
+        handle,
+        polls=(
+            observation(
+                handle,
+                AgentRunStatus.SUCCEEDED,
+                model=actual_model,
+                structured_output=output(handle, actual_model, "output-first"),
+            ),
+            observation(handle, AgentRunStatus.RUNNING, model=actual_model),
+        ),
+    )
+    print("started")
+elif action == "poll":
+    observed = adapter.poll(handle)
+    saved = json.loads(state_path.read_text(encoding="utf-8"))["effects"][0]
+    print(observed.status.value, observed.output.id.value, saved["poll_position"])
 else:
     raise ValueError(action)
 """
@@ -539,6 +588,135 @@ class FakeAgentDispatchTests(unittest.TestCase):
                 lambda: FakeAgentProviderState(backing_path),
             )
 
+    def test_file_backing_rejects_forged_derived_history_and_nested_fields(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            handle = adapter.start(request(), "dispatch-17")
+            original = json.loads(backing_path.read_text(encoding="utf-8"))
+
+            unknown_scope = copy.deepcopy(original)
+            unknown_scope["effects"][0]["request"]["scope"]["unknown"] = True
+            unknown_criterion = copy.deepcopy(original)
+            unknown_criterion["effects"][0]["request"]["acceptance_criteria"][0][
+                "unknown"
+            ] = True
+            forged_quiescence = copy.deepcopy(original)
+            forged_quiescence["effects"][0]["quiesced"] = True
+
+            actual_model = adapter.expected_model(handle)
+            provider.script(
+                handle,
+                polls=(
+                    observation(handle, AgentRunStatus.RUNNING, model=actual_model),
+                ),
+            )
+            scripted = json.loads(backing_path.read_text(encoding="utf-8"))
+            skipped_poll = copy.deepcopy(scripted)
+            skipped_poll["effects"][0]["poll_position"] = 1
+            self.assertEqual(adapter.poll(handle).status, AgentRunStatus.RUNNING)
+            consumed = json.loads(backing_path.read_text(encoding="utf-8"))
+            wrong_handle = copy.deepcopy(consumed)
+            for saved_observation in (
+                wrong_handle["effects"][0]["poll_script"][0],
+                wrong_handle["effects"][0]["last_observation"],
+            ):
+                saved_observation["handle"]["request_id"] = "agent-request-other"
+            wrong_provenance = copy.deepcopy(consumed)
+            for saved_observation in (
+                wrong_provenance["effects"][0]["poll_script"][0],
+                wrong_provenance["effects"][0]["last_observation"],
+            ):
+                saved_observation["run"]["actual_model"]["model_id"] = "other-model"
+
+            cases = {
+                "unknown nested scope field": unknown_scope,
+                "unknown nested criterion field": unknown_criterion,
+                "quiescence without an observed stop": forged_quiescence,
+                "advanced cursor without a last observation": skipped_poll,
+                "consumed observation handle mismatch": wrong_handle,
+                "consumed observation provenance mismatch": wrong_provenance,
+            }
+            del adapter, provider
+            for label, payload in cases.items():
+                with self.subTest(label=label):
+                    backing_path.write_text(json.dumps(payload), encoding="utf-8")
+                    self.assert_category(
+                        ErrorCategory.VALIDATION_FAILED,
+                        lambda: FakeAgentProviderState(backing_path),
+                    )
+
+    def test_file_backing_validates_only_consumed_provider_observations(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            handle = adapter.start(request(), "dispatch-17")
+            expected = adapter.expected_model(handle)
+            wrong = replace(expected, model_id="unverified-model")
+            provider.script(
+                handle,
+                polls=(
+                    observation(
+                        handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=wrong,
+                        structured_output=output(handle, wrong),
+                    ),
+                ),
+            )
+            del adapter, provider
+
+            restored = FakeAgentProviderState(backing_path)
+            restarted, _ = adapter_values(provider=restored)
+            recovered = restarted.start(request(), "dispatch-17")
+            for _ in range(2):
+                self.assert_category(
+                    ErrorCategory.VALIDATION_FAILED,
+                    lambda: restarted.poll(recovered),
+                )
+            saved = json.loads(backing_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["effects"][0]["poll_position"], 0)
+
+    def test_file_backing_restores_default_and_exhausted_nonterminal_polls(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            handle = adapter.start(request(), "dispatch-17")
+            self.assertEqual(adapter.poll(handle).status, AgentRunStatus.QUEUED)
+            del adapter, provider
+
+            restored = FakeAgentProviderState(backing_path)
+            restarted, _ = adapter_values(provider=restored)
+            recovered = restarted.start(request(), "dispatch-17")
+            self.assertEqual(restarted.poll(recovered).status, AgentRunStatus.QUEUED)
+
+            # A script may legitimately be installed after a default queued poll.
+            expected = restarted.expected_model(recovered)
+            restored.script(
+                recovered,
+                polls=(
+                    observation(recovered, AgentRunStatus.RUNNING, model=expected),
+                ),
+            )
+            self.assertEqual(restarted.poll(recovered).status, AgentRunStatus.RUNNING)
+            del restarted, restored
+
+            exhausted = FakeAgentProviderState(backing_path)
+            final_adapter, _ = adapter_values(provider=exhausted)
+            final_handle = final_adapter.start(request(), "dispatch-17")
+            self.assertEqual(
+                final_adapter.poll(final_handle).status, AgentRunStatus.RUNNING
+            )
+            saved = json.loads(backing_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["effects"][0]["poll_position"], 1)
+
     def test_file_backing_reconnects_across_fresh_python_processes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             backing_path = Path(temporary) / "fake-provider-state.json"
@@ -564,6 +742,37 @@ class FakeAgentDispatchTests(unittest.TestCase):
 
             self.assertTrue(outputs[0].startswith("fake-agent-"))
             self.assertEqual(outputs[1:], ["running", "succeeded"])
+
+    def test_terminal_result_remains_stable_across_fresh_python_processes(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            outputs: list[str] = []
+            for action in ("start", "poll", "poll"):
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        "-B",
+                        "-c",
+                        TERMINAL_PROCESS_RESTART_SCRIPT,
+                        str(WORKTREE_ROOT),
+                        str(backing_path),
+                        action,
+                    ],
+                    cwd=WORKTREE_ROOT,
+                    capture_output=True,
+                    text=True,
+                    shell=False,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                outputs.append(completed.stdout.strip())
+
+            self.assertEqual(
+                outputs,
+                ["started", "succeeded output-first 1", "succeeded output-first 1"],
+            )
 
     def test_unknown_poll_is_explicit_and_can_later_reconcile(self) -> None:
         adapter, provider = adapter_values()
@@ -645,6 +854,132 @@ class FakeAgentDispatchTests(unittest.TestCase):
 
         self.assertEqual(cancellation.status, CancelStatus.ALREADY_TERMINAL)
         self.assertTrue(cancellation.quiesced)
+
+    def test_terminal_poll_freezes_output_and_does_not_consume_future_scripts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            handle = adapter.start(request(), "dispatch-17")
+            actual_model = adapter.expected_model(handle)
+            first_output = output(handle, actual_model, "output-first")
+            provider.script(
+                handle,
+                polls=(
+                    observation(
+                        handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=actual_model,
+                        structured_output=first_output,
+                    ),
+                    observation(
+                        handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=actual_model,
+                        structured_output=output(
+                            handle, actual_model, "output-second"
+                        ),
+                    ),
+                    observation(handle, AgentRunStatus.RUNNING, model=actual_model),
+                ),
+                cancellations=(
+                    CancelObservation(
+                        CancelStatus.CANCELLED,
+                        handle,
+                        True,
+                        (evidence("late-cancel"),),
+                    ),
+                ),
+            )
+
+            completed = adapter.poll(handle)
+            self.assertEqual(adapter.poll(handle), completed)
+            self.assertEqual(completed.output, first_output)
+            cancellation = adapter.cancel(handle)
+            self.assertEqual(cancellation.status, CancelStatus.ALREADY_TERMINAL)
+
+            saved = json.loads(backing_path.read_text(encoding="utf-8"))["effects"][0]
+            self.assertEqual(saved["poll_position"], 1)
+            self.assertEqual(saved["cancel_position"], 0)
+
+    def test_confirmed_cancel_is_stable_and_blocks_later_poll_without_consuming(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            handle = adapter.start(request(), "dispatch-17")
+            provider.script(
+                handle,
+                cancellations=(
+                    CancelObservation(
+                        CancelStatus.CANCELLED,
+                        handle,
+                        True,
+                        (evidence("cancelled"),),
+                    ),
+                    CancelObservation(CancelStatus.PENDING, handle, False, ()),
+                ),
+            )
+
+            confirmed = adapter.cancel(handle)
+            self.assertEqual(adapter.cancel(handle), confirmed)
+            self.assert_category(
+                ErrorCategory.STATE_CONFLICT, lambda: adapter.poll(handle)
+            )
+
+            saved = json.loads(backing_path.read_text(encoding="utf-8"))["effects"][0]
+            self.assertEqual(saved["cancel_position"], 1)
+            self.assertEqual(saved["poll_position"], 0)
+            del adapter, provider
+
+            restored = FakeAgentProviderState(backing_path)
+            restarted, _ = adapter_values(provider=restored)
+            recovered = restarted.start(request(), "dispatch-17")
+            self.assertEqual(restarted.cancel(recovered), confirmed)
+            self.assert_category(
+                ErrorCategory.STATE_CONFLICT, lambda: restarted.poll(recovered)
+            )
+
+    def test_pending_cancel_before_terminal_poll_does_not_consume_confirmation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            backing_path = Path(temporary) / "fake-provider-state.json"
+            provider = FakeAgentProviderState(backing_path)
+            adapter, _ = adapter_values(provider=provider)
+            handle = adapter.start(request(), "dispatch-17")
+            actual_model = adapter.expected_model(handle)
+            provider.script(
+                handle,
+                polls=(
+                    observation(
+                        handle,
+                        AgentRunStatus.SUCCEEDED,
+                        model=actual_model,
+                        structured_output=output(handle, actual_model),
+                    ),
+                ),
+                cancellations=(
+                    CancelObservation(CancelStatus.PENDING, handle, False, ()),
+                    CancelObservation(
+                        CancelStatus.CANCELLED,
+                        handle,
+                        True,
+                        (evidence("cancelled"),),
+                    ),
+                ),
+            )
+
+            self.assertEqual(adapter.cancel(handle).status, CancelStatus.PENDING)
+            self.assertEqual(adapter.poll(handle).status, AgentRunStatus.SUCCEEDED)
+            self.assertEqual(adapter.cancel(handle).status, CancelStatus.ALREADY_TERMINAL)
+            saved = json.loads(backing_path.read_text(encoding="utf-8"))["effects"][0]
+            self.assertEqual(saved["cancel_position"], 1)
+            self.assertEqual(saved["poll_position"], 1)
 
     def test_poll_and_cancel_reject_handle_identity_mismatches(self) -> None:
         adapter, _ = adapter_values()
