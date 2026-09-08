@@ -4,7 +4,7 @@
   "id": "TASK-038",
   "plan_id": "PLAN-001",
   "title": "Decode project settings and compatibility",
-  "status": "backlog",
+  "status": "running",
   "archived": false,
   "objective": "Decode project settings and compatibility. Implement only this bounded prerequisite.",
   "depends_on": [
@@ -92,7 +92,9 @@
     "Actual test command evidence and acceptance mapping",
     "Public interface/dependency notes, deviations and risks"
   ],
-  "attempt_ids": [],
+  "attempt_ids": [
+    "TASK-038-a1"
+  ],
   "superseded_by": [],
-  "resume_state": null
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }

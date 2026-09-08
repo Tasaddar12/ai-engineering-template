@@ -1,4 +1,5 @@
 # Historical manifests describe exact bytes; Git must not rewrite snapshots.
-plans/**/history/** -text
-plans/**/reviews/** -text
-plans/**/evidence/** -text
+# Preserved Windows CRLF is a line ending; keep other whitespace checks enabled.
+plans/**/history/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+plans/**/reviews/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+plans/**/evidence/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
