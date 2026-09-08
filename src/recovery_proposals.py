@@ -797,6 +797,20 @@ def validate_recovery_proposal(
         proposed_criteria_by_task[task_id] = {
             str(item["id"]): item for item in task_record["acceptance_criteria"]
         }
+    seen_original_acceptance: set[str] = set()
+    duplicate_original_acceptance: set[str] = set()
+    for item in request.original_acceptance_mapping:
+        if item.original_id in seen_original_acceptance:
+            duplicate_original_acceptance.add(item.original_id)
+        seen_original_acceptance.add(item.original_id)
+    if duplicate_original_acceptance:
+        issues.append(
+            _issue(
+                "duplicate_original_acceptance_mapping",
+                "original acceptance mapping must contain unique identifiers",
+                details={"acceptance_ids": sorted(duplicate_original_acceptance)},
+            )
+        )
     original_mapping = _mapping_dict(request.original_acceptance_mapping)
     new_mapping = _mapping_dict(record.acceptance_mapping)
     if set(original_mapping) != set(new_mapping):

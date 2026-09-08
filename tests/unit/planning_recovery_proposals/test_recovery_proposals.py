@@ -764,6 +764,48 @@ class RecoveryProposalTests(unittest.TestCase):
             issue_codes(self.validate(conflicting)),
         )
 
+    def test_rejects_conflicting_duplicate_original_acceptance_owners(self) -> None:
+        source, dependent = self.base_tasks()
+        replacement = task_record(
+            "TASK-300",
+            write_paths=["work/source/new.py"],
+            resources=["component:task-100"],
+            criteria=deepcopy(source["acceptance_criteria"]),
+        )
+        redirected = deepcopy(dependent)
+        redirected["depends_on"] = ["TASK-300"]
+        proposal = self.factory.make(
+            RecoveryAction.REPLACE,
+            [source, dependent],
+            [replacement, redirected],
+            (TaskSuccessorMapping("TASK-100", ("TASK-300",), ("TASK-300",)),),
+            target_by_acceptance={
+                "TASK-100-AC1": ("TASK-300",),
+                "TASK-100-AC2": ("TASK-300",),
+            },
+        )
+        hidden_conflict = AcceptanceMapping(
+            "TASK-100-AC1",
+            (EntityId("TASK-999"),),
+        )
+        proposal = replace(
+            proposal,
+            request=replace(
+                proposal.request,
+                original_acceptance_mapping=(
+                    hidden_conflict,
+                    *proposal.request.original_acceptance_mapping,
+                ),
+            ),
+        )
+
+        result = self.validate(proposal)
+
+        self.assertEqual(
+            issue_codes(result),
+            {"duplicate_original_acceptance_mapping"},
+        )
+
     def test_sequence_uses_graph_reachability_to_resolve_scope_conflict(self) -> None:
         first = task_record("TASK-100", write_paths=["shared/value.py"])
         second = task_record("TASK-200", write_paths=["SHARED/value.py"])
