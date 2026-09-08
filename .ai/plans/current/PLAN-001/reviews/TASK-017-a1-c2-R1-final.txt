@@ -1,0 +1,7 @@
+Final verification UTC: 2026-09-08T10:05:15.435209+00:00
+PASS: accepted offline ContractRegistry and Draft202012Validator with format checking validate TASK-017-a1-c2-R1.json.
+PASS: all 11 unique sequential checklist items present; one unresolved major finding R1-TASK-017-003; verdict fail; evidence references and companion scripts/results present.
+PASS: ROOT=e2faa2b8f3ce8f63119227edd35fa837b82d5ee8; candidate=e79df3b8d071a7e3a3c7874cf0cacb6e704c0205; candidate clean; frozen base is merge-base; implementation owner head is an ancestor; whitespace check passes.
+PASS: raw binary diff, all 14 committed context hashes, three ROOT validation hashes, raw policy/model digest and canonical fingerprint still match.
+PASS: original six first-cycle review/evidence files in ROOT remain byte-identical committed content to retained checkpoint 10e27db6472bbf6d9a5a5023233ede12fae5d52d.
+FINAL candidate inspection complete. Reviewer stops all candidate access after issuing final handoff; no R2 authorized for this failing candidate.

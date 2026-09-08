@@ -98,8 +98,9 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-017-a1"
+    "TASK-017-a1",
+    "TASK-017-a2"
   ],
   "superseded_by": [],
-  "resume_state": "Failed review preserved; repair R1-TASK-017-001, R1-TASK-017-002; form a new candidate and rerun both independent reviews."
+  "resume_state": "Failed review preserved; repair R2-TASK-017-001; form a new candidate and rerun both independent reviews."
 }

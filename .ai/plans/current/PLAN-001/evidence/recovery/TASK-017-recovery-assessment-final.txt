@@ -1,0 +1,18 @@
+Final recovery verification UTC: 2026-09-08T11:10:26.892277+00:00
+Runtime: 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]; executable=D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-venv\Scripts\python.exe
+PASS ROOT head remains 10b408fa0fd43eafa49acc88dec2c5976be05966; all tracked ROOT bytes unchanged.
+PASS candidate remains clean at e79df3b8d071a7e3a3c7874cf0cacb6e704c0205.
+PASS all 20 historical report/companion hashes remain unchanged.
+PASS immutable 83- and 87-charge budget snapshots remain at their dispatched hashes.
+PASS 7 assessment links resolve (this final evidence file created by this command).
+PASS no temporary fixture remains; no source, commit, canonical graph/task/state, policy, or historical review mutation.
+PASS write inventory contains only three assessment companions plus the two preexisting whitelisted budget snapshots; this final text is the fourth assessment companion.
+Executed once: Windows coordinator Python 3.12.14 -B .ai/plans/current/PLAN-001/evidence/recovery/TASK-017-recovery-assessment-verification.py; observed exit 0. It confirms the unrepaired mapped-profile failure using four fresh processes, not a task acceptance pass.
+No new Windows/Linux 3.11 suite, broad temporal matrix, repaired-source experiment, cherry-pick, or R1/R2 was performed.
+Output SHA-256:
+TASK-017-recovery-assessment.md: 64f3b3bfb6a0949efcd9a37741f8f84fc743d24ab751fec3c0c0a01139a83605
+TASK-017-recovery-assessment-verification.py: c41d8d422fd54b585b031640f03e8a421058e40fac3e8142910e96f592091c9d
+TASK-017-recovery-assessment-verification.json: 814e4c7c567cba5477b9a91479b34dc3826a57c5df78126dd2ab946f0db0c3f0
+Native charged budget at final verification: 87/300; proposed next-step reservation 3; 90 charged or reserved; 3/3 rewrites used, 0 remaining.
+Assessment is a recommendation requiring coordinator adoption; no implementation or review approval is conferred.
+FINAL access inspection complete. Recovery stops all ROOT/candidate access after this command and sends handoff.

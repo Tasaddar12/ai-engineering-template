@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-017-a2-c3-R2",
+  "stage": "consistency",
+  "request_id": "review-request-TASK-017-a2-c3-R2-native92",
+  "task_id": "TASK-017",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-017-a2-b7593f11961a.json",
+  "candidate_fingerprint": "f2f7e852b8eb99345c66a959f15c842f5a2b046631f0b7d349377d3353fec5ac",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_xKTFWNRE1BxoqMhanEfHd15D"
+  },
+  "independent_session_id": "/root/review_017_c3_r2",
+  "implementation_session_id": "/root/implement_017_a2",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "The flat injected adapter implements only dispatch/poll/cancel and private sequential provider simulation. Canonical journals, lease admission, review decisions, runtime wiring and production providers remain with their owners. Only three declared paths are added.",
+      "evidence": ["src/agents.py", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/tasks/current/TASK-017.json", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-identity.json.txt"]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADR-001 through ADR-005 retain flat Python/JSON contracts, single canonical writer, isolated attempt, exact higher-capability independent reviews, bounded recovery and injected ports. This distinct R2 follows the unchanged same-candidate passing R1; its failure returns to recovery without resetting lineage.",
+      "evidence": [".ai/decisions/ADR-001.md", ".ai/decisions/ADR-002.md", ".ai/decisions/ADR-003.md", ".ai/decisions/ADR-004.md", ".ai/decisions/ADR-005.md", ".ai/plans/current/PLAN-001/evidence/recovery/TASK-017-coordinator-decision.md", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2.md"]
+    },
+    {
+      "id": "R2-03",
+      "status": "fail",
+      "rationale": "Accepted 003/004/038 source and handoff bytes match their accepted commits. The full configured provider profile and mapping are respected, but multiline and non-NFC prose admitted by the accepted 003 DTOs and 004 schemas is rejected or changed during private restoration (R2-TASK-017-001).",
+      "evidence": ["src/workflow_ports.py", "src/contracts.py", "src/config.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-038.md", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt"]
+    },
+    {
+      "id": "R2-04",
+      "status": "fail",
+      "rationale": "All three AgentAdapter signatures, explicit imports and immutable DTO shapes match. However, agents._text narrows/normalizes accepted workflow payloads and paths. It can also turn an unequal unconsumed observed model ID into the expected identity during restoration, changing a pre-restart provenance rejection into success (finding 001).",
+      "evidence": ["src/agents.py", "src/workflow_ports.py", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes.py", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-payload-audit.md", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-payload-audit.json.txt"]
+    },
+    {
+      "id": "R2-05",
+      "status": "fail",
+      "rationale": "The unchanged public API accepts and persists valid multiline requests/outputs, then cannot recover them. Non-NFC request prose causes an exact retry conflict; a terminal successful output changes spelling and canonical record hash after restart. This violates stable idempotency and output semantics despite the unchanged version (finding 001).",
+      "evidence": ["src/agents.py", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-linux.json.txt"]
+    },
+    {
+      "id": "R2-06",
+      "status": "fail",
+      "rationale": "No database, shared schema or migration is added, and unknown v1 effort fields reject. Private format v1 nevertheless cannot losslessly round-trip accepted request/output text or significant leading whitespace in ScopePath values. Evidence metadata JSON does preserve arbitrary payload strings; identity/shape checks must remain separate from payload preservation (finding 001).",
+      "evidence": ["schemas/v1/agent-request.schema.json", "schemas/v1/agent-output.schema.json", "schemas/v1/agent-run.schema.json", "src/agents.py", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-payload-audit.md", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-payload-audit.json.txt"]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "The candidate follows flat module, owned leaf test, explicit import and plan-local handoff conventions. Required runtime code/tests/instructions are in tracked owned paths; local interpreters and temporary fixtures are disposable infrastructure. No shared exports or unrelated path changed.",
+      "evidence": [".ai/shared/architecture/python.md", ".ai/plans/current/PLAN-001/tasks/current/TASK-017.json", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-identity.json.txt"]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "The repair reuses ProjectSettings.configured_model and complete ProviderModelProfile equality through one shared settings-bearing binding check. It adds no parallel settings resolver, authorization policy, review gate or lease implementation. Private provider serialization is necessary to its explicitly dispatched simulation boundary; its defect is recorded separately.",
+      "evidence": ["src/agents.py", "src/config.py", ".ai/plans/current/PLAN-001/evidence/recovery/TASK-017-coordinator-decision.md"]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Requested policy profile, resolved provider profile and simulated ModelIdentity remain distinct. Provider-only intrinsic restoration and settings-bearing admission have separate responsibilities; the optional single-live-owner store is not a canonical workflow journal or authority source. No competing public abstraction or unowned service was introduced.",
+      "evidence": ["src/agents.py", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md"]
+    },
+    {
+      "id": "R2-10",
+      "status": "pass",
+      "rationale": "The 29 owned tests meaningfully assert public idempotency, structured results, cancellation, corrupt histories, full bindings and real-loader fresh-process recovery. R2 independently reran them and exercised mapped review-role/schema/fence controls on both catalogs. Their missing multiline/non-NFC regression is the concrete gap identified by finding 001, rather than incidental assertions.",
+      "evidence": ["tests/unit/agents/test_agents.py", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-declared.txt", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes.py", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt"]
+    },
+    {
+      "id": "R2-11",
+      "status": "fail",
+      "rationale": "The handoff accurately records salvage, profile binding, simulation limits and pending gates. Its unqualified complete-request-idempotency and terminal-output-freezing claims exceed observed restoration behavior for valid multiline and non-NFC text (finding 001). It needs corrected implementation evidence before those guarantees hold.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-linux.json.txt"]
+    },
+    {
+      "id": "R2-12",
+      "status": "fail",
+      "rationale": "AC-04/REQ-04 consumers need exact recoverable requests/results. Future 015/020/021 can represent review roles, independent invocation identities, artifact references, task-free isolation and plan/lease/project fences through existing ports, but valid prose can prevent recovery or change committed results. The local defect needs independent recovery assessment, not scope expansion or an ordinary extra repair loop.",
+      "evidence": [".ai/plans/current/PLAN-001/spec.md", ".ai/plans/current/PLAN-001/plan.json", ".ai/plans/current/PLAN-001/tasks/current/TASK-015.json", ".ai/plans/current/PLAN-001/tasks/current/TASK-020.json", ".ai/plans/current/PLAN-001/tasks/current/TASK-021.json", ".ai/plans/current/PLAN-001/reviews/TASK-017-a2-c3-R2-probes-windows.json.txt", ".ai/plans/current/PLAN-001/evidence/recovery/TASK-017-coordinator-decision.md"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R2-TASK-017-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/agents.py:75-82 applies control-character rejection, a global whitespace rule and NFC normalization during private decoding, narrowing or changing accepted TASK-003 DTO and TASK-001 path semantics. Actual-loader, schema-valid multiline descriptions/summaries start and persist but fail restoration; decomposed request prose causes an exact retry conflict; terminal output text and hash change after reopening. Windows fresh processes reproduce all cases with identical settings; Linux 3.11 confirms multiline-request rejection and changed terminal output. A bounded common-cause audit additionally reproduces rejected leading whitespace admitted by ScopePath for scope/evidence paths, and an AC2 provenance failure: an unequal decomposed scripted model ID rejects before restart without cursor movement, but hydration normalizes it into the configured identity and accepts success afterward. Arbitrary evidence metadata payloads round-trip exactly. The companion inventory covers every decoder string family and excludes whitespace/control inputs already rejected upstream. This inherited defect violates exact idempotency, valid recovery, frozen successful outputs and preserved invalid-provenance rejection.",
+      "paths": ["src/agents.py", "tests/unit/agents/test_agents.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md"],
+      "expected_fix": "Return to independent recovery under the adopted one-candidate allowance before repair. Preserve accepted DTO/wire payloads and path values exactly through field-appropriate private decoding; preserve mismatching observed identities for exact rejection rather than normalizing them into acceptance. Do not change accepted schemas/ports. Keep strict nested shapes, consumed-history/quiescence validation, full selected provider/model/effort binding and terminal/capability fences. Add owned multiline/non-NFC payload, significant leading-path-whitespace and invalid-future-provenance regressions, including fresh-process exact retries and identical terminal records; align the handoff. Any changed candidate requires fresh validation and both reviews.",
+      "acceptance_ids": ["TASK-017-AC1", "TASK-017-AC2", "AC-04", "REQ-04"],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T12:17:45Z"
+}

@@ -1,0 +1,593 @@
+{
+  "platform": "windows",
+  "git_version": "git version 2.49.0.windows.1",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "checks": {
+    "direct_stdin_only_no_effect": true,
+    "branch_and_receipt_committed": true,
+    "duplicate_transaction_rejected": true,
+    "receipt_recoverable_after_ignored_result": true,
+    "stale_source_aborts_target_creation": true,
+    "stale_target_preserved": true,
+    "integration_parents_and_observed_ref": true,
+    "checkpoint_separate_index_and_ref": true
+  },
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "--version"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "git version 2.49.0.windows.1\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "init",
+        "-b",
+        "main"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in D:/Codex Projects/ai-engineering-template/.ai/local/git-port-advisory/windows/repo/.git/\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "add",
+        "--",
+        "file.txt"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "commit",
+        "-m",
+        "fixture base"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "[main (root-commit) 4f36cfe] fixture base\n 1 file changed, 1 insertion(+)\n create mode 100644 file.txt\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "4f36cfe518667b82f3f31cf03facf700541a1538\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD^{tree}"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "c15fa92e536c58bee57b9864b758b0a9600268b6\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "commit-tree",
+        "c15fa92e536c58bee57b9864b758b0a9600268b6",
+        "-p",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "-m",
+        "fixture candidate"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "439e3abe298c762f0929409b66c829834d91e449\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "commit-tree",
+        "c15fa92e536c58bee57b9864b758b0a9600268b6",
+        "-p",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "-m",
+        "fixture movement"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "ac1dbc9a27a83f21f8e804457b88718761616507\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/source",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "0000000000000000000000000000000000000000"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/integration",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "0000000000000000000000000000000000000000"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/state",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "0000000000000000000000000000000000000000"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "hash-object",
+        "-w",
+        "--",
+        "receipt.json"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "28894d88a3f717cee4faae39815e8cab216d7759\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "--stdin"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "refs/heads/integration"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "4f36cfe518667b82f3f31cf03facf700541a1538\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "python",
+        "-B",
+        "-c",
+        "import subprocess,sys; r=subprocess.run(['git','update-ref','--stdin'],input=sys.argv[1].encode('ascii'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False); sys.stdout.buffer.write(r.stdout); sys.stderr.buffer.write(r.stderr); sys.exit(r.returncode)",
+        "start\nverify refs/heads/source 4f36cfe518667b82f3f31cf03facf700541a1538\ncreate refs/heads/created 4f36cfe518667b82f3f31cf03facf700541a1538\ncreate refs/advisory/operation-1 28894d88a3f717cee4faae39815e8cab216d7759\nprepare\ncommit\n"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "start: ok\nprepare: ok\ncommit: ok\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "refs/heads/created"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "4f36cfe518667b82f3f31cf03facf700541a1538\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "refs/advisory/operation-1"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "28894d88a3f717cee4faae39815e8cab216d7759\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "python",
+        "-B",
+        "-c",
+        "import subprocess,sys; r=subprocess.run(['git','update-ref','--stdin'],input=sys.argv[1].encode('ascii'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False); sys.stdout.buffer.write(r.stdout); sys.stderr.buffer.write(r.stderr); sys.exit(r.returncode)",
+        "start\nverify refs/heads/source 4f36cfe518667b82f3f31cf03facf700541a1538\ncreate refs/heads/created 4f36cfe518667b82f3f31cf03facf700541a1538\ncreate refs/advisory/operation-1 28894d88a3f717cee4faae39815e8cab216d7759\nprepare\ncommit\n"
+      ],
+      "status": "exited",
+      "exit": 128,
+      "stdout": "start: ok\n",
+      "stderr": "fatal: prepare: cannot lock ref 'refs/heads/created': reference already exists\n",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "cat-file",
+        "blob",
+        "refs/advisory/operation-1"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "{\"request\": \"digest-1\", \"result\": \"4f36cfe518667b82f3f31cf03facf700541a1538\"}",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/source",
+        "ac1dbc9a27a83f21f8e804457b88718761616507",
+        "4f36cfe518667b82f3f31cf03facf700541a1538"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "python",
+        "-B",
+        "-c",
+        "import subprocess,sys; r=subprocess.run(['git','update-ref','--stdin'],input=sys.argv[1].encode('ascii'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False); sys.stdout.buffer.write(r.stdout); sys.stderr.buffer.write(r.stderr); sys.exit(r.returncode)",
+        "start\nverify refs/heads/source 4f36cfe518667b82f3f31cf03facf700541a1538\ncreate refs/heads/stale-source 4f36cfe518667b82f3f31cf03facf700541a1538\nprepare\ncommit\n"
+      ],
+      "status": "exited",
+      "exit": 128,
+      "stdout": "start: ok\n",
+      "stderr": "fatal: prepare: cannot lock ref 'refs/heads/source': is at ac1dbc9a27a83f21f8e804457b88718761616507 but expected 4f36cfe518667b82f3f31cf03facf700541a1538\n",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "show-ref",
+        "--verify",
+        "--quiet",
+        "refs/heads/stale-source"
+      ],
+      "status": "exited",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/source",
+        "439e3abe298c762f0929409b66c829834d91e449",
+        "ac1dbc9a27a83f21f8e804457b88718761616507"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "merge-tree",
+        "--write-tree",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "439e3abe298c762f0929409b66c829834d91e449"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "c15fa92e536c58bee57b9864b758b0a9600268b6\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "commit-tree",
+        "c15fa92e536c58bee57b9864b758b0a9600268b6",
+        "-p",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "-p",
+        "439e3abe298c762f0929409b66c829834d91e449",
+        "-m",
+        "advisory integration"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "c5ee8c20a89317cdb20e5ff706be13ca90b1cc31\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/integration",
+        "ac1dbc9a27a83f21f8e804457b88718761616507",
+        "4f36cfe518667b82f3f31cf03facf700541a1538"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "python",
+        "-B",
+        "-c",
+        "import subprocess,sys; r=subprocess.run(['git','update-ref','--stdin'],input=sys.argv[1].encode('ascii'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False); sys.stdout.buffer.write(r.stdout); sys.stderr.buffer.write(r.stderr); sys.exit(r.returncode)",
+        "start\nverify refs/heads/source 439e3abe298c762f0929409b66c829834d91e449\nupdate refs/heads/integration c5ee8c20a89317cdb20e5ff706be13ca90b1cc31 4f36cfe518667b82f3f31cf03facf700541a1538\nprepare\ncommit\n"
+      ],
+      "status": "exited",
+      "exit": 128,
+      "stdout": "start: ok\n",
+      "stderr": "fatal: prepare: cannot lock ref 'refs/heads/integration': is at ac1dbc9a27a83f21f8e804457b88718761616507 but expected 4f36cfe518667b82f3f31cf03facf700541a1538\n",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "refs/heads/integration"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "ac1dbc9a27a83f21f8e804457b88718761616507\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/integration",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "ac1dbc9a27a83f21f8e804457b88718761616507"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "python",
+        "-B",
+        "-c",
+        "import subprocess,sys; r=subprocess.run(['git','update-ref','--stdin'],input=sys.argv[1].encode('ascii'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=False); sys.stdout.buffer.write(r.stdout); sys.stderr.buffer.write(r.stderr); sys.exit(r.returncode)",
+        "start\nverify refs/heads/source 439e3abe298c762f0929409b66c829834d91e449\nupdate refs/heads/integration c5ee8c20a89317cdb20e5ff706be13ca90b1cc31 4f36cfe518667b82f3f31cf03facf700541a1538\nprepare\ncommit\n"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "start: ok\nprepare: ok\ncommit: ok\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "refs/heads/integration"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "c5ee8c20a89317cdb20e5ff706be13ca90b1cc31\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-list",
+        "--parents",
+        "-n",
+        "1",
+        "c5ee8c20a89317cdb20e5ff706be13ca90b1cc31"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "c5ee8c20a89317cdb20e5ff706be13ca90b1cc31 4f36cfe518667b82f3f31cf03facf700541a1538 439e3abe298c762f0929409b66c829834d91e449\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "read-tree",
+        "4f36cfe518667b82f3f31cf03facf700541a1538"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "add",
+        "--",
+        ".ai/STATE.json"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "write-tree"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "08815643fa57ba2a948251b219e181acb4234d80\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "commit-tree",
+        "08815643fa57ba2a948251b219e181acb4234d80",
+        "-p",
+        "4f36cfe518667b82f3f31cf03facf700541a1538",
+        "-m",
+        "checkpoint operation OP-1"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "5e28ec3b943d455d6f153e917bb479d3930342f5\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "update-ref",
+        "refs/heads/state",
+        "5e28ec3b943d455d6f153e917bb479d3930342f5",
+        "4f36cfe518667b82f3f31cf03facf700541a1538"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "show",
+        "refs/heads/state:.ai/STATE.json"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "{\"generation\":1}\r\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "write-tree"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "c15fa92e536c58bee57b9864b758b0a9600268b6\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "status": "exited",
+      "exit": 0,
+      "stdout": "4f36cfe518667b82f3f31cf03facf700541a1538\n",
+      "stderr": "",
+      "argv_preserved": true,
+      "truncated": false
+    }
+  ],
+  "limits": "Transport/plumbing only; no production adapter, concurrency schedule, crash injection, receipt conflict policy, installed package, or task acceptance suite."
+}
