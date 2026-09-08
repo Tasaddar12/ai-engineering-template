@@ -4,7 +4,7 @@
   "id": "TASK-017",
   "plan_id": "PLAN-001",
   "title": "Implement agent dispatch contract and fake adapter",
-  "status": "ready",
+  "status": "running",
   "archived": false,
   "objective": "Implement agent dispatch contract and fake adapter. Implement only this observable slice using the frozen schema and port contracts.",
   "depends_on": [
@@ -98,8 +98,9 @@
     "Public interface/dependency notes, deviations and risks"
   ],
   "attempt_ids": [
-    "TASK-017-a1"
+    "TASK-017-a1",
+    "TASK-017-a2"
   ],
   "superseded_by": [],
-  "resume_state": "Independent recovery decision grants one fresh a2 mapped-profile repair with only owned source/tests/handoff; preserve failed a1 and both R1 histories, validate actual candidate and require cumulative c3 fresh R1/R2. Further candidate failure returns to recovery; no ordinary additional repair."
+  "resume_state": "Manual coordinator dispatched an isolated implementation; acceptance requires both fresh independent reviews."
 }
