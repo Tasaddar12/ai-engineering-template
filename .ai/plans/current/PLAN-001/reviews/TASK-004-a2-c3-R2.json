@@ -1,0 +1,164 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-004-a2-c3-R2",
+  "stage": "consistency",
+  "request_id": "REQUEST-TASK-004-a2-c3-R2-20260908T035501Z",
+  "task_id": "TASK-004",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-004-a2-e3c1177f993e.json",
+  "candidate_fingerprint": "c8ed5d4ac944b439bcafd1d588f4ccd611d0daafcdd29ef4e430582934192e6c",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "manual-native:/root/r2_004_a2_c3:20260908T035501Z"
+  },
+  "independent_session_id": "/root/r2_004_a2_c3",
+  "implementation_session_id": "/root/implement_004_a2",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "Flat offline contracts own validation and digest only. The validator consumes the common implementation; installer changes remain within r4's bounded helper-closure allowance. No workflow or side-effect port implementation is added.",
+      "evidence": [
+        ".ai/shared/architecture/python.md",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-004.json",
+        "src/contracts.py",
+        "src/install.py",
+        "src/validate_foundation.py"
+      ]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADR-001 through ADR-005 remain honored: flat typed local artifacts, qualified identities, isolated exact candidate, separate higher-capability gates and preserved bounded recovery, plus unchanged project/managed ownership. Native submitted provenance limitations are explicit.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-004-a2-e3c1177f993e.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/plans/current/PLAN-001/evidence/recovery/TASK-004-coordinator-decision.md"
+      ]
+    },
+    {
+      "id": "R2-03",
+      "status": "pass",
+      "rationale": "Accepted TASK-001 is in base ancestry and its source remains byte-identical. Six accepted TASK-003 DTO wire projections pass the new registry using immutable shared JSON. TASK-003 remains an independent sibling, without a new dependency or import.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-04",
+      "status": "pass",
+      "rationale": "Public flat imports reuse TASK-001 values and nonretryable domain errors. Five plan-local reference kinds retain constructor parity and reject missing/wrong qualification; project-unique plan references remain bare. No TASK-002 or TASK-039 implementation is consumed.",
+      "evidence": [
+        ".ai/shared/architecture/service-contracts.md",
+        "src/domain_values.py",
+        "src/contracts.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-05",
+      "status": "pass",
+      "rationale": "v1 schemas and bootstrap public symbol are unchanged. All 39 current tasks reproduce bootstrap and approved r4 digest bytes, including immutable inputs and task-order independence. The validator uses one recomputed digest with no stale fallback; registry errors remain strict and offline.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json",
+        "src/validate_foundation.py"
+      ]
+    },
+    {
+      "id": "R2-06",
+      "status": "pass",
+      "rationale": "No schema migration occurs. Nested live records reject a conflicting plan owner; two plans can reuse local IDs. Physical plan relocation preserves five snapshot files exactly, including legacy JSON/original approval, while historical-byte tampering fails the snapshot-relative content hash.",
+      "evidence": [
+        ".ai/shared/state/persistence.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-030.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt",
+        "src/validate_foundation.py"
+      ]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "The five changed paths exactly match task ownership. Flat modules, separate leaf tests, plan-local handoff, explicit namespaces and qualified-reference spelling follow existing conventions. No wrapper, centralized export or project-owned installation setting is changed.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-004.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md"
+      ]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "No other task's service implementation is duplicated. The old ai.structural_task_digest symbol is intentionally retained as the r4/TASK-034 compatibility boundary; contracts owns the new common projection and the validator now uses it. Installer closure supports future wiring without implementing it.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-034.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-037.json",
+        "src/ai.py",
+        "src/contracts.py"
+      ]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Registry wire validation, common immutable values and service DTO ownership remain separate and compatible. Both mixed arrays use the documented closed whole-value language; unmatched prose remains structural. Explicit scope/reference fields retain declared semantics, without migration or filesystem-dependent inference.",
+      "evidence": [
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/evidence/recovery/TASK-004-recovery-assessment.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+        "src/contracts.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R2-10",
+      "status": "pass",
+      "rationale": "R2 independently ran the declared 21 tests and integration probes for accepted DTOs, physical relocation/history, six actual stale-approval prose rejections and future transitive installed imports with a cycle. R1's 24 bootstrap tests, foundation, 54 relocations and offline boundary evidence were inspected without unnecessary broad repetition.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-declared.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-probes.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-bootstrap.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-foundation.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-relocation.txt"
+      ]
+    },
+    {
+      "id": "R2-11",
+      "status": "pass",
+      "rationale": "The owned handoff accurately describes signatures, recognition limits, exact bootstrap compatibility, transitive helper closure, evidence and retained failures. Documentation keeps later lifecycle/wiring work with its owners. Reports distinguish native submission from unavailable provider confirmation and disclose the corrected reviewer fixture.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R2-12",
+      "status": "pass",
+      "rationale": "Plan AC-01/REQ-01 and all TASK-004 criteria remain intact; approved r4 scope, dependencies and structural digest are unchanged. State/archive/CLI/release sequencing remains viable. Both failed R1 cycles and the single recovery allowance are preserved without budget reset, acceptance waiver or unaccepted dependency.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/plan.json",
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/plans/current/PLAN-001/graph.json",
+        ".ai/plans/current/PLAN-001/evidence/recovery/TASK-004-recovery-assessment.md",
+        ".ai/plans/current/PLAN-001/evidence/recovery/TASK-004-coordinator-decision.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R2-evidence.txt"
+      ]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T03:55:01Z"
+}

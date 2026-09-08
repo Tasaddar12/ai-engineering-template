@@ -2,7 +2,7 @@
 
 Status: implementation. Graph revision 4 passed the [independent isolation review](reviews/r4-isolation-review.md) against the exact graph and structural task digest. Implementation is proceeding through separate task worktrees and candidate-bound review gates.
 
-The working `src/install.py`, `src/ai.py`, and `src/validate_foundation.py` files are corrective bootstrap tools. They install reusable guidance, create plan/task records, and validate them. The autonomous execution, review, recovery, delivery, and completion engine in this plan remains unimplemented.
+The working `src/install.py`, `src/ai.py`, and `src/validate_foundation.py` files are corrective bootstrap tools. They install reusable guidance, create plan/task records, and validate them. The autonomous execution, review, recovery, delivery, and completion engine is being implemented. Current task records and project state identify accepted prerequisites; the [implementation ledger](evidence/full-implementation.md) records actual validation, independent reviews, and integration outcomes.
 
 ## Completed foundation to preserve
 
@@ -25,7 +25,7 @@ The 39 task records below describe remaining engine work; the separate completed
 
 - [Specification](spec.md) and [machine specification](spec.json)
 - [Machine plan](plan.json) and [approved graph r4](graph.json)
-- `tasks/current/` for all 39 unimplemented task records
+- `tasks/current/` for the 39 current task records, including accepted prerequisites
 - `commands/` for this plan's future task validation definitions
 - `reviews/` for immutable isolation and candidate reviews
 - `evidence/` for corrective and future task evidence
@@ -75,7 +75,7 @@ The 39 task records below describe remaining engine work; the separate completed
 | [TASK-038](tasks/current/TASK-038.json) | Project settings decoding | TASK-004 |
 | [TASK-039](tasks/current/TASK-039.json) | Orchestration service contracts | TASK-003 |
 
-All tasks are backlog. TASK-001's earlier implementation attempt is retained only through Git branch `ai/PLAN-001/TASK-001/a1` at commit `f8a6f040fc48e8a237d412379322c5eed66d8cab`; it is interrupted, unaccepted, and incompatible with the flat source layout. See [attempt evidence](evidence/TASK-001-a1.md).
+Current task records are authoritative for progress; acceptance requires actual validation and separate R1/R2 on the integrated candidate. TASK-001's earlier implementation attempt is retained only through Git branch `ai/PLAN-001/TASK-001/a1` at commit `f8a6f040fc48e8a237d412379322c5eed66d8cab`; it is interrupted, unaccepted, and incompatible with the flat source layout. See [attempt evidence](evidence/TASK-001-a1.md).
 
 ## Graph r4 correction
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -51,6 +52,8 @@ TOOLKIT_MARKERS = (
     "requirements.txt",
     ".gitattributes",
 )
+TOOL_ENTRYPOINTS = ("ai.py", "validate_foundation.py")
+REQUIRED_TOOL_MODULES = ("ai.py", "contracts.py", "domain_values.py", "validate_foundation.py")
 
 
 class InstallError(RuntimeError):
@@ -168,6 +171,50 @@ def _source_ref(source: Path, path: Path) -> str:
     return path.relative_to(source).as_posix()
 
 
+def _tool_sources(source: Path) -> list[Path]:
+    """Return the transitive local imports of the installed tool entry points."""
+    source_root = source / "src"
+    modules = {
+        path.stem: path
+        for path in source_root.glob("*.py")
+        if path.is_file()
+    }
+    required = [source_root / name for name in REQUIRED_TOOL_MODULES]
+    missing = [path for path in required if not path.is_file()]
+    if missing:
+        names = ", ".join(path.name for path in missing)
+        raise InstallError(f"installer source is missing required helper modules: {names}")
+
+    pending = [Path(name).stem for name in TOOL_ENTRYPOINTS]
+    included: set[str] = set()
+    while pending:
+        module_name = pending.pop()
+        if module_name in included:
+            continue
+        path = modules.get(module_name)
+        if path is None:
+            raise InstallError(f"installer source is missing helper module: {module_name}.py")
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (OSError, UnicodeError, SyntaxError) as exc:
+            raise InstallError(f"cannot inspect helper module imports in {path}: {exc}") from exc
+        included.add(module_name)
+        for node in ast.walk(tree):
+            imported: list[str] = []
+            if isinstance(node, ast.Import):
+                imported = [alias.name.partition(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                imported = [node.module.partition(".")[0]]
+            pending.extend(name for name in imported if name in modules and name not in included)
+
+    required_names = {Path(name).stem for name in REQUIRED_TOOL_MODULES}
+    unreachable = required_names - included
+    if unreachable:
+        names = ", ".join(f"{name}.py" for name in sorted(unreachable))
+        raise InstallError(f"required helper modules are outside the tool dependency closure: {names}")
+    return [modules[name] for name in sorted(included)]
+
+
 def _planned_payload(
     source: Path, target: Path, assistant: str
 ) -> tuple[dict[str, bytes], dict[str, bytes], str, str]:
@@ -202,10 +249,10 @@ def _planned_payload(
         managed[destination] = _read_product_document(path, namespace, entry_name)
         source_refs[destination] = _source_ref(source, path)
 
-    tool_sources = [source / "src" / name for name in ("ai.py", "validate_foundation.py")]
+    tool_sources = _tool_sources(source)
     schema_sources = sorted((source / "schemas" / "v1").glob("*.schema.json"))
-    if any(not path.is_file() for path in tool_sources) or not schema_sources:
-        raise InstallError("installer source is missing helper tools or canonical schemas")
+    if not schema_sources:
+        raise InstallError("installer source is missing canonical schemas")
     for path in tool_sources:
         destination = f"{namespace}/tools/{path.name}"
         managed[destination] = _normalize_text(path.read_bytes())
