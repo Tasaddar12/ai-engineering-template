@@ -1,8 +1,9 @@
 # PLAN-001 current checkpoint
 
-Complete the user's entire 39-task implementation request. **14/39 accepted**;
-state generation **50**, integration branch `ai/PLAN-001/integration`.
-ROOT is currently unfrozen; read its current HEAD from Git before the next gate.
+Complete the user's entire 39-task implementation request. **15/39 accepted**;
+state generation **51**, integration branch `ai/PLAN-001/integration`.
+ROOT is unfrozen after accepting024 at `02ad385c19aa8ad0209a6c4548bdab496aa2a06a`.
+Prepare015 for its first independent review next.
 Final combined tests, clean source/wheel/sdist validation and independent combined
 reviews remain. Main remains `501b51276a4d07826afcaa1c0cbf09a24a466587`.
 No remote merge, CI execution, production-provider operation or plan completion
@@ -62,10 +63,24 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   Windows3.11 and Linux3.11; source origins, compile, foundation and diff pass.
   Self-check fixed output scope and protected prior review inputs; all context
   revalidated after completion. No scope blocker. Full handoff and scope read.
-- **020 implementation active**: `/root/repair_019_c1`, inherited Sol/xhigh rank3,
+- **020 ready for first review**: `/root/repair_019_c1`, inherited Sol/xhigh rank3,
   native `call_IPv5ufcfti6YvOGo5ZGB0pOB`, charge115. Tree TASK-020-a1, dispatch
-  base `9614bbf0380b09c4839f340c370538a84279486b`. Read next-review-gates-dispatch.md.
-- **024 ready for focused c2 verification**: tree TASK-024-a1, clean owner head
+  base `9614bbf0380b09c4839f340c370538a84279486b`. Clean FINAL
+  `3f5d8ab11bc7722f81b8cfd3fa0fc68885a5221b`;18 tests pass Windows3.12,
+  Windows3.11 and Linux3.11, no skips. Owner reports final scope/compile/diff
+  checks and self-review regressions in the existing handoff; ROOT reconciliation
+  remains. Read next-review-gates-dispatch.md.
+- **024 accepted after focused c2 PASS**: `/root/verify_024_c2`, fresh Astra/xhigh
+  rank4, native `call_IKsYkc5furZCNJo3U3iLcouk`, charge117. Prefix TASK-024-a1-c2-R1.
+  Candidate `58cc78312451d7954a4c29b6ba85b6ceec353171`, FP
+  `8f2ba197a56ab71a60729dc62f23fde758f305bb70759b55e33d35369816083d`.
+  Coordinator current16 tests pass, zero skips,0.803s, exact candidate origin.
+  All11 review checks pass, independent16 tests and41 diagnostic checks pass.
+  ROOT reconciled frozen identities, raw diff, context/validation/policy hashes,
+  owned/dependency bytes, preserved c1 history and3 closing companion hashes.
+  Integrated `02ad385c19aa8ad0209a6c4548bdab496aa2a06a`; clean tree removed.
+  Existing full review is reconciled and affected corrections verified; no R2.
+  Prior clean tested owner head
   `e3770010b6a7d56deda3c851ed6458a8a53d3091`. Existing c1 findings repaired;
   prehandoff self-check also fixed duplicate original acceptance-owner collapse.
  16 tests pass Win3.12/3.11 and clean tracked export; three owned paths. Latest
@@ -81,14 +96,14 @@ Read [agent-brief.md](agent-brief.md) and the selected next-*-dispatch reminder.
   Latest owner followup `call_MdVuOCsWEPqrMvrrgiTLDAlq`, charge114.
 
 When an owner slot frees, form and freeze the next candidate, then use a fresh
-higher-capability review or focused continuation as appropriate.024 is ready for
-focused verification while009 repairs. Before freezing, commit dispatch/current
+higher-capability review or focused continuation as appropriate.015 is next while
+009 repairs. Before freezing, commit dispatch/current
 coordination changes. No ROOT commits/begins during an active frozen review;
 only disclosed CURRENT.md progress outside the manifest may change.
 
 ## Recent integrations, cleanup and counters
 
-Accepted IDs:001,002,003,004,006,007,008,013,014,017,018,019,038,039.
+Accepted IDs:001,002,003,004,006,007,008,013,014,017,018,019,024,038,039.
 017 c4 accepted `2c0748444f4982118a04b086bfa6d42d418fd1bd` after all11 checks,
 36 declared tests and focused both-host checks; seven companion hashes verified.
 019 c2 accepted `606acb8b1047b1a23e93a62778e74933a151b353` after all11 checks,
@@ -100,7 +115,7 @@ cleanliness and retained-branch checks. Heads e79df3b8d071a7e3a3c7874cf0cacb6e70
 and b7593f11961aa6f5c3a927f3c49af32c4fa93971 remain on their named branches.
 All remaining task checkout copies correspond to pending work; history preserved.
 
-**116/300 conservative invocations used,184 remain. Structural rewrites3/3 used.**
+**117/300 conservative invocations used,183 remain. Structural rewrites3/3 used.**
 Use tracked count-native-invocations.py against the current root session; count
 rejected calls and inherited followups honestly. No runtime active_run is fabricated.
 Use coordinator.py status/begin/candidate/accept/fail; preserve failed reports.
