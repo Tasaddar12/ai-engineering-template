@@ -1,0 +1,11 @@
+Task: PLAN-001/TASK-001
+Head: 5ad62eeee5161060ca516ba91fe08674821b64d9
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/domain_values/', '-p', 'test_*.py']
+Exit code: 0
+
+
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 0.002s
+
+OK

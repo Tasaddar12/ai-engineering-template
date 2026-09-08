@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-001-a2-R1",
+  "stage": "implementation",
+  "request_id": "TASK-001-a2-R1",
+  "task_id": "TASK-001",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-001-a2-9f3b2b4b233b.json",
+  "candidate_fingerprint": "01af56398df6292ecf6203e67c1c781832a957ca0942a2e837db9d2a17acacea",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_001_final"
+  },
+  "independent_session_id": "/root/r1_001_final",
+  "implementation_session_id": "/root/implement_001",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "TASK-001-AC1 is incomplete: exact-file ancestor claims miss descendant conflicts (R1-TASK-001-001). AC2 and the remaining identity, revision, immutable envelope and error behavior are supported.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-001.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "fail",
+      "rationale": "The ancestor conflict false negative violates semantic invariant 3. Pure domain scope, flat modules, service ownership and all task exclusions are otherwise respected.",
+      "evidence": [
+        ".ai/shared/state/semantic-invariants.md",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "ScopePath.overlaps at candidate lines 316-322 considers ancestry only for directory-prefix ancestors. ScopeClaim.conflicts_with propagates the reproduced false negative for exact-file ancestor write/write and write/read claims.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.py"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Invalid IDs, revisions, paths, digests, evidence, non-JSON values and cycles fail explicitly. DomainException propagates through a context manager while DomainError stays frozen. Pure values acquire no IO resources requiring cleanup.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Existing exact/prefix, Windows, normalization, cycle and mutation checks pass, but exact-file ancestors versus descendant files or directory claims remain an incorrect filesystem boundary.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.py"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "The exact candidate focused suite passes 14 meaningful behavior/failure tests, and 21 vocabularies match schemas directly. Its missing ancestor-conflict regression allows R1-TASK-001-001; add both orders and write/write plus write/read coverage.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The only production addition is the pure common-value module. Owned tests and handoff are bounded; no ports, service DTOs, adapter, reducer, IO, package or registry changes were introduced.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-001.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Reconstructed Git name/status diff contains exactly the three permitted additions; clean frozen head, no renames, deletions or unrelated/prohibited changes.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit typed flat-module interfaces and exports, frozen dataclass values, detached nested JSON and a separate throwable error wrapper are clear and maintainable; service-specific fields remain in later owners.",
+      "evidence": [
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "fail",
+      "rationale": "Path validation rejects absolute, traversal, Windows-device/ADS and unsafe Unicode forms, but exact-file ancestor scope conflicts can be missed. This weakens downstream isolation/scheduling at the scope trust boundary.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt",
+        ".ai/shared/state/semantic-invariants.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "The task-owned handoff accurately documents identity, immutability, vocabularies, validation and no IO. Its conflict-detection coverage needs the ancestor correction and refreshed regression evidence before acceptance.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-R1-evidence.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-001-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "At src/domain_values.py:316-322, ScopePath.overlaps only follows ancestors marked DIRECTORY_PREFIX. ScopePath(\"src/generated\").overlaps(\"src/generated/value.py\") and corresponding ScopeClaim write/write and write/read checks return false; case-normalized exact ancestors versus child directories also return false. A file at the ancestor cannot coexist with descendant paths, so downstream isolation or scheduling can admit filesystem-incompatible claims contrary to normalized ancestor scope invariants.",
+      "paths": [
+        "src/domain_values.py",
+        "tests/unit/domain_values/test_domain_values.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md"
+      ],
+      "expected_fix": "Detect component-wise ancestor overlap in either direction independently of exact-file versus directory-prefix permission containment. Preserve contains/permits exact-file authorization semantics. Add ancestor file/child file and directory regressions in both orders for write/write and write/read claims, normalization aliases and disjoint siblings; refresh handoff, targeted evidence, candidate identity and both independent review stages.",
+      "acceptance_ids": [
+        "TASK-001-AC1"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T01:45:14.099106+00:00"
+}
