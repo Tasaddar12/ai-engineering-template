@@ -1,0 +1,162 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-019-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-019-a1-c1-R1-call_DiX3AwEynoVk7vw2mEoxbuA6",
+  "task_id": "TASK-019",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-019-a1-c56a72b7f1cc.json",
+  "candidate_fingerprint": "8afe5cf982ed6ad3b1b91446e7826c0845f5ba9d0fbe0dc8bcc8000419acb859",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_DiX3AwEynoVk7vw2mEoxbuA6"
+  },
+  "independent_session_id": "/root/review_019_c1",
+  "implementation_session_id": "/root/correct_019_context",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "AC1 is satisfied. AC2 is incomplete for the accepted immutable Mapping representation: valid candidates cannot reach current-input verification through its advertised Mapping path (R1-TASK-019-001).",
+      "evidence": [
+        "src/candidates.py",
+        "tests/unit/reviews_candidates/test_candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "Pure observed-byte hashing respects REQ-05/AC-05, the frozen v1 format and task exclusions. Git/context/validation observations and runtime review policy remain upstream; the single-stage decision changes this manual review only.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-019.json",
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/shared/architecture/service-contracts.md",
+        "src/candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Raw digests, unsigned canonical fingerprint, stable role ordering and 18 changed-input rejections work. Deserialization hashes nested immutable mappings before converting their valid JSON representation, causing R1-TASK-019-001.",
+      "evidence": [
+        "src/candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Malformed values and fingerprints reject; stale inputs produce immutable, non-retryable state_conflict with changed fields. The algorithm acquires no process, filesystem, clock, network or cleanup resources.",
+      "evidence": [
+        "src/candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Dependency-free TASK-001, no-ADR plan, missing applicable materials, full OIDs, aliases, raw binary bytes and mutation defenses pass. The accepted FrozenJsonObject boundary fails (R1-TASK-019-001).",
+      "evidence": [
+        "tests/unit/reviews_candidates/test_candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        "src/domain_values.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "The declared leaf passes 14 meaningful tests without skips and uses tracked self-contained fixtures. Independent probes pass six groups but expose the missing immutable mapping parse/reverification regression; preserve its correction in the owned test leaf.",
+      "evidence": [
+        "tests/unit/reviews_candidates/test_candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The algorithm owns one pure module; only accepted contracts/domain_values are project imports. No context discovery, Git observation, provider adapter, runtime gate, shared schema or concrete downstream implementation is added.",
+      "evidence": [
+        "src/candidates.py",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-019.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "The complete binary base-to-head diff contains exactly the owned module, owned test file and own handoff. All three and the dependency/schema bytes match owner-final e6960b6f50df1187c6fab69fee621ab88331f628; newer base changes outside this closure are not characterized as metadata-only.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-019.md"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "fail",
+      "rationale": "Explicit immutable constructors, defensive byte copies and detached v1 output are clear. Historical 001/004 candidates and task/plan CandidateRecord conversion pass, but Mapping input semantics conflict with accepted FrozenJsonObject/ContractRegistry support (R1-TASK-019-001).",
+      "evidence": [
+        "src/candidates.py",
+        "src/contracts.py",
+        "src/domain_values.py",
+        "src/orchestration_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "No authority or side effects are introduced. Canonical portable exact paths, cross-role aliases, strict schema shape, full OIDs and fingerprint checks enforce the observed-input boundary; hashing does not attest Git, validation success or context discovery.",
+      "evidence": [
+        "src/candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-019.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "The handoff accurately identifies scope, APIs, caller-owned applicability, raw-byte conventions, current-input observation limits, historical correction/portability results and final self-review. The final tracked fixture has no Git/history/.ai dependency.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-019.md",
+        "tests/unit/reviews_candidates/test_candidates.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-019-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "candidate_from_wire advertises Mapping input, but a schema-valid FrozenJsonObject(candidate.to_wire()) fails with ValueError: Object of type FrozenJsonObject is not JSON serializable. Its top-level unsigned copy retains nested immutable context_refs/validation_refs mappings, then _candidate_from_unsigned hashes them through json.dumps before _refs_from_wire can read them. verify_candidate delegates Mapping input to the same failing path. This prevents valid candidates represented by the accepted TASK-001 immutable JSON type (also used by the accepted VersionedRecord record field) from being parsed or reverified, despite accepted ContractRegistry validation succeeding.",
+      "paths": [
+        "src/candidates.py",
+        "tests/unit/reviews_candidates/test_candidates.py"
+      ],
+      "expected_fix": "Within TASK-019 ownership, detach or normalize schema-valid nested Mapping/tuple JSON values before canonical fingerprint calculation, preserving exact v1 wire fields, list order and fingerprint. Add tracked owned regressions showing FrozenJsonObject candidates parse and reverify unchanged, while tampering and current-input changes still reject; update the existing handoff and validate the corrected candidate. No shared contract or downstream implementation change is required.",
+      "acceptance_ids": [
+        "TASK-019-AC2",
+        "AC-05"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T14:23:58.968909Z"
+}

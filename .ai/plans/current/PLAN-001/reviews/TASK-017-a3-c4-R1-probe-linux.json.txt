@@ -1,0 +1,444 @@
+{
+  "head": "eaa80842f695c766dd55ab92e40dcf40874c8471",
+  "runtime": "3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]",
+  "executable": "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+  "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "origins": {
+    "agents": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-017-a3/src/agents.py",
+    "config": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-017-a3/src/config.py",
+    "contracts": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-017-a3/src/contracts.py",
+    "domain_values": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-017-a3/src/domain_values.py",
+    "workflow_ports": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-017-a3/src/workflow_ports.py"
+  },
+  "groups": [
+    [
+      {
+        "case": "identity",
+        "phase": 0,
+        "pid": 941,
+        "settings_sha256": "9169e3f3913e296a3dab89c3f5a15b166e09d15e0c5f011abd0e182ff1d89de3",
+        "requested_profile": "review_high",
+        "resolved_profile": "review_high",
+        "records": [
+          {
+            "request": 0,
+            "handle": "fake-agent-a01dc3469807869d379047fb7609e4fe",
+            "status": "unknown",
+            "request_exact_digest": "4c102c662d664f2018d0f8a01191aca2ffb44cfbe6869ab14ac2393f88962ff8",
+            "output_exact_digest": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+            "record_exact_digest": "d451d8f0b22a98d59d338577753fe195b2ad271bf9319f7fec17e7bb2e5d2b2b"
+          }
+        ],
+        "effect_count": 1,
+        "state_sha256": "1d1f0f75bcd6cd8e837083c23ee7fb4451e446f1315e1769bcf7c370e2a3aa00"
+      },
+      {
+        "case": "identity",
+        "phase": 1,
+        "pid": 942,
+        "settings_sha256": "9169e3f3913e296a3dab89c3f5a15b166e09d15e0c5f011abd0e182ff1d89de3",
+        "requested_profile": "review_high",
+        "resolved_profile": "review_high",
+        "records": [
+          {
+            "request": 0,
+            "handle": "fake-agent-a01dc3469807869d379047fb7609e4fe",
+            "status": "succeeded",
+            "request_exact_digest": "4c102c662d664f2018d0f8a01191aca2ffb44cfbe6869ab14ac2393f88962ff8",
+            "output_exact_digest": "11a8838d37142df88df5070cb40fa922193a51ba621bd390bad91e810b824fb4",
+            "record_exact_digest": "479989e233c1fde6bcf15ffb8395a304ae0159b5846d3d77c6d5d82434b85a98"
+          }
+        ],
+        "effect_count": 1,
+        "state_sha256": "b8124a69e2750b9ca2dc75b453cdc371e3c4c58af86acf4092653f03fd4c98b8"
+      },
+      {
+        "case": "identity",
+        "phase": 2,
+        "pid": 943,
+        "settings_sha256": "9169e3f3913e296a3dab89c3f5a15b166e09d15e0c5f011abd0e182ff1d89de3",
+        "requested_profile": "review_high",
+        "resolved_profile": "review_high",
+        "records": [
+          {
+            "request": 0,
+            "handle": "fake-agent-a01dc3469807869d379047fb7609e4fe",
+            "status": "succeeded",
+            "request_exact_digest": "4c102c662d664f2018d0f8a01191aca2ffb44cfbe6869ab14ac2393f88962ff8",
+            "output_exact_digest": "11a8838d37142df88df5070cb40fa922193a51ba621bd390bad91e810b824fb4",
+            "record_exact_digest": "479989e233c1fde6bcf15ffb8395a304ae0159b5846d3d77c6d5d82434b85a98"
+          }
+        ],
+        "effect_count": 1,
+        "state_sha256": "b8124a69e2750b9ca2dc75b453cdc371e3c4c58af86acf4092653f03fd4c98b8"
+      }
+    ],
+    [
+      {
+        "case": "mapped",
+        "phase": 0,
+        "pid": 947,
+        "settings_sha256": "2d50f191d9f2327ce90d2df5fefa221402d1bfc8db93c9caa0f8a20b25f53399",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "request": 0,
+            "handle": "fake-agent-972ce4c5a6fc7daf4c41ee4bf16da7d4",
+            "status": "unknown",
+            "request_exact_digest": "5b931c9ee05b425e309f26b3ed01a71da27aa2208772c33cd8021f6b31f2f5da",
+            "output_exact_digest": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+            "record_exact_digest": "3fc37da7463c68ec26e8395757cebf5741ce9f7aee69ca6d3b72eb876fd47f10"
+          },
+          {
+            "request": 1,
+            "handle": "fake-agent-d47b1674b34108d880ae960b9ed7f66b",
+            "status": "unknown",
+            "request_exact_digest": "549a847d03fac8c6be7788645c15905ddd351d2ae6b12103fbff20ac441cbd22",
+            "output_exact_digest": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+            "record_exact_digest": "d99d45871883054e975ae0c1300c3a36e01ccaa17e317abe1ac4e305367683fc"
+          },
+          {
+            "request": 2,
+            "handle": "fake-agent-37c780084bd2239ed41e50c0d3cbc736",
+            "status": "unknown",
+            "request_exact_digest": "c56d23a4a22588ec4d378283965dec3a242b625b327dfd0cf226890fff81034f",
+            "output_exact_digest": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91",
+            "record_exact_digest": "03f1efcc883a99b60262c2a1d9b2969aa464d125a9877094e152109c026dc684"
+          }
+        ],
+        "effect_count": 3,
+        "state_sha256": "e726a6d64d9830e6c74ff5eed848ad8d8bb3c8883519b44a67015a07b4c9589c"
+      },
+      {
+        "case": "mapped",
+        "phase": 1,
+        "pid": 950,
+        "settings_sha256": "2d50f191d9f2327ce90d2df5fefa221402d1bfc8db93c9caa0f8a20b25f53399",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "request": 0,
+            "handle": "fake-agent-972ce4c5a6fc7daf4c41ee4bf16da7d4",
+            "status": "succeeded",
+            "request_exact_digest": "5b931c9ee05b425e309f26b3ed01a71da27aa2208772c33cd8021f6b31f2f5da",
+            "output_exact_digest": "ade86745ac16a80977a8a8190d02c6b3e56dce83131b4d40fce4d5241cddb3ce",
+            "record_exact_digest": "328d77f2ef9b88f598eb642afb234cf3c99245c3b7d72dcceb0745841f83533b"
+          },
+          {
+            "request": 1,
+            "handle": "fake-agent-d47b1674b34108d880ae960b9ed7f66b",
+            "status": "succeeded",
+            "request_exact_digest": "549a847d03fac8c6be7788645c15905ddd351d2ae6b12103fbff20ac441cbd22",
+            "output_exact_digest": "b316b67834eb406655ec3cf3578c7500ba9542198c3d4efba8de2d104c81f8e3",
+            "record_exact_digest": "d2e40635cb95ead222d4cfa405e57997e20a61f2c87f2ee3b8397d1eb72f85ba"
+          },
+          {
+            "request": 2,
+            "handle": "fake-agent-37c780084bd2239ed41e50c0d3cbc736",
+            "status": "succeeded",
+            "request_exact_digest": "c56d23a4a22588ec4d378283965dec3a242b625b327dfd0cf226890fff81034f",
+            "output_exact_digest": "c678b4d87200c1a51398e572635a72a925df2cf6ea48c2b6410b94adfdef3b8d",
+            "record_exact_digest": "2371c313b8bb0dc4358f49886286af0d99164bffa4cc9f405740226da9dd85b6"
+          }
+        ],
+        "effect_count": 3,
+        "state_sha256": "241762f12a0b2d7225c1aca9cc7097c4d11648e748c3170350879b7b8d3a5e0f"
+      },
+      {
+        "case": "mapped",
+        "phase": 2,
+        "pid": 951,
+        "settings_sha256": "2d50f191d9f2327ce90d2df5fefa221402d1bfc8db93c9caa0f8a20b25f53399",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "request": 0,
+            "handle": "fake-agent-972ce4c5a6fc7daf4c41ee4bf16da7d4",
+            "status": "succeeded",
+            "request_exact_digest": "5b931c9ee05b425e309f26b3ed01a71da27aa2208772c33cd8021f6b31f2f5da",
+            "output_exact_digest": "ade86745ac16a80977a8a8190d02c6b3e56dce83131b4d40fce4d5241cddb3ce",
+            "record_exact_digest": "328d77f2ef9b88f598eb642afb234cf3c99245c3b7d72dcceb0745841f83533b"
+          },
+          {
+            "request": 1,
+            "handle": "fake-agent-d47b1674b34108d880ae960b9ed7f66b",
+            "status": "succeeded",
+            "request_exact_digest": "549a847d03fac8c6be7788645c15905ddd351d2ae6b12103fbff20ac441cbd22",
+            "output_exact_digest": "b316b67834eb406655ec3cf3578c7500ba9542198c3d4efba8de2d104c81f8e3",
+            "record_exact_digest": "d2e40635cb95ead222d4cfa405e57997e20a61f2c87f2ee3b8397d1eb72f85ba"
+          },
+          {
+            "request": 2,
+            "handle": "fake-agent-37c780084bd2239ed41e50c0d3cbc736",
+            "status": "succeeded",
+            "request_exact_digest": "c56d23a4a22588ec4d378283965dec3a242b625b327dfd0cf226890fff81034f",
+            "output_exact_digest": "c678b4d87200c1a51398e572635a72a925df2cf6ea48c2b6410b94adfdef3b8d",
+            "record_exact_digest": "2371c313b8bb0dc4358f49886286af0d99164bffa4cc9f405740226da9dd85b6"
+          }
+        ],
+        "effect_count": 3,
+        "state_sha256": "241762f12a0b2d7225c1aca9cc7097c4d11648e748c3170350879b7b8d3a5e0f"
+      }
+    ],
+    [
+      {
+        "case": "decomposed",
+        "phase": 0,
+        "pid": 953,
+        "settings_sha256": "0a340739b5fa5ac6382e5a19536200c0c6f6d9c4f4f1922fe38b070b60b9554c",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "field": "profile",
+            "rejected_twice": true,
+            "handle": "fake-agent-8c6a00475c00a13f459bfa3ccdd7bec7"
+          },
+          {
+            "field": "provider",
+            "rejected_twice": true,
+            "handle": "fake-agent-c25fcc43f2e25d72e798523ef0e6c577"
+          },
+          {
+            "field": "model_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-fbbd427c5df163e9c3a676af10e55b9a"
+          },
+          {
+            "field": "capability_rank",
+            "rejected_twice": true,
+            "handle": "fake-agent-c026fb16ff03c90328c4d6b98b331535"
+          },
+          {
+            "field": "invocation_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-2d3e4eb373d557425cad2ccf52b6be1b"
+          }
+        ],
+        "effect_count": 5,
+        "state_sha256": "ac320f0a7a6f2c6e2fd5b51770631964eb7ac53b8d1b49fe4a53021c81e58e4e"
+      },
+      {
+        "case": "decomposed",
+        "phase": 1,
+        "pid": 954,
+        "settings_sha256": "0a340739b5fa5ac6382e5a19536200c0c6f6d9c4f4f1922fe38b070b60b9554c",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "field": "profile",
+            "rejected_twice": true,
+            "handle": "fake-agent-8c6a00475c00a13f459bfa3ccdd7bec7"
+          },
+          {
+            "field": "provider",
+            "rejected_twice": true,
+            "handle": "fake-agent-c25fcc43f2e25d72e798523ef0e6c577"
+          },
+          {
+            "field": "model_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-fbbd427c5df163e9c3a676af10e55b9a"
+          },
+          {
+            "field": "capability_rank",
+            "rejected_twice": true,
+            "handle": "fake-agent-c026fb16ff03c90328c4d6b98b331535"
+          },
+          {
+            "field": "invocation_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-2d3e4eb373d557425cad2ccf52b6be1b"
+          }
+        ],
+        "effect_count": 5,
+        "state_sha256": "ac320f0a7a6f2c6e2fd5b51770631964eb7ac53b8d1b49fe4a53021c81e58e4e"
+      },
+      {
+        "case": "decomposed",
+        "phase": 2,
+        "pid": 955,
+        "settings_sha256": "0a340739b5fa5ac6382e5a19536200c0c6f6d9c4f4f1922fe38b070b60b9554c",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "field": "profile",
+            "rejected_twice": true,
+            "handle": "fake-agent-8c6a00475c00a13f459bfa3ccdd7bec7"
+          },
+          {
+            "field": "provider",
+            "rejected_twice": true,
+            "handle": "fake-agent-c25fcc43f2e25d72e798523ef0e6c577"
+          },
+          {
+            "field": "model_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-fbbd427c5df163e9c3a676af10e55b9a"
+          },
+          {
+            "field": "capability_rank",
+            "rejected_twice": true,
+            "handle": "fake-agent-c026fb16ff03c90328c4d6b98b331535"
+          },
+          {
+            "field": "invocation_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-2d3e4eb373d557425cad2ccf52b6be1b"
+          }
+        ],
+        "effect_count": 5,
+        "state_sha256": "ac320f0a7a6f2c6e2fd5b51770631964eb7ac53b8d1b49fe4a53021c81e58e4e"
+      }
+    ],
+    [
+      {
+        "case": "pair",
+        "phase": 0,
+        "pid": 956,
+        "settings_sha256": "cd68880ab2eb83b68c0970a4cdb8efd08a365f28b20f40901698014caf38c8b5",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "field": "profile",
+            "rejected_twice": true,
+            "handle": "fake-agent-8c6a00475c00a13f459bfa3ccdd7bec7"
+          },
+          {
+            "field": "provider",
+            "rejected_twice": true,
+            "handle": "fake-agent-c25fcc43f2e25d72e798523ef0e6c577"
+          },
+          {
+            "field": "model_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-fbbd427c5df163e9c3a676af10e55b9a"
+          },
+          {
+            "field": "capability_rank",
+            "rejected_twice": true,
+            "handle": "fake-agent-c026fb16ff03c90328c4d6b98b331535"
+          },
+          {
+            "field": "invocation_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-2d3e4eb373d557425cad2ccf52b6be1b"
+          }
+        ],
+        "effect_count": 5,
+        "state_sha256": "870c65de0778d1d3818a3c39bee10c4253d1d5bd72555cdb06cdde0fe8b17df8"
+      },
+      {
+        "case": "pair",
+        "phase": 1,
+        "pid": 957,
+        "settings_sha256": "cd68880ab2eb83b68c0970a4cdb8efd08a365f28b20f40901698014caf38c8b5",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "field": "profile",
+            "rejected_twice": true,
+            "handle": "fake-agent-8c6a00475c00a13f459bfa3ccdd7bec7"
+          },
+          {
+            "field": "provider",
+            "rejected_twice": true,
+            "handle": "fake-agent-c25fcc43f2e25d72e798523ef0e6c577"
+          },
+          {
+            "field": "model_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-fbbd427c5df163e9c3a676af10e55b9a"
+          },
+          {
+            "field": "capability_rank",
+            "rejected_twice": true,
+            "handle": "fake-agent-c026fb16ff03c90328c4d6b98b331535"
+          },
+          {
+            "field": "invocation_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-2d3e4eb373d557425cad2ccf52b6be1b"
+          }
+        ],
+        "effect_count": 5,
+        "state_sha256": "870c65de0778d1d3818a3c39bee10c4253d1d5bd72555cdb06cdde0fe8b17df8"
+      },
+      {
+        "case": "pair",
+        "phase": 2,
+        "pid": 958,
+        "settings_sha256": "cd68880ab2eb83b68c0970a4cdb8efd08a365f28b20f40901698014caf38c8b5",
+        "requested_profile": "review_high",
+        "resolved_profile": "independent_review",
+        "records": [
+          {
+            "field": "profile",
+            "rejected_twice": true,
+            "handle": "fake-agent-8c6a00475c00a13f459bfa3ccdd7bec7"
+          },
+          {
+            "field": "provider",
+            "rejected_twice": true,
+            "handle": "fake-agent-c25fcc43f2e25d72e798523ef0e6c577"
+          },
+          {
+            "field": "model_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-fbbd427c5df163e9c3a676af10e55b9a"
+          },
+          {
+            "field": "capability_rank",
+            "rejected_twice": true,
+            "handle": "fake-agent-c026fb16ff03c90328c4d6b98b331535"
+          },
+          {
+            "field": "invocation_id",
+            "rejected_twice": true,
+            "handle": "fake-agent-2d3e4eb373d557425cad2ccf52b6be1b"
+          }
+        ],
+        "effect_count": 5,
+        "state_sha256": "870c65de0778d1d3818a3c39bee10c4253d1d5bd72555cdb06cdde0fe8b17df8"
+      }
+    ]
+  ],
+  "terminal_effort": {
+    "case": "mapped",
+    "phase": 3,
+    "pid": 952,
+    "settings_sha256": "a58e1f263cfe38c13a6c8635345a5dfccf547f8744f3f7366e7bd85972fc15c1",
+    "requested_profile": "review_high",
+    "resolved_profile": "independent_review",
+    "records": [
+      {
+        "request": 0,
+        "terminal_binding_rejections": 4
+      },
+      {
+        "request": 1,
+        "terminal_binding_rejections": 4
+      },
+      {
+        "request": 2,
+        "terminal_binding_rejections": 4
+      }
+    ],
+    "effect_count": 3,
+    "state_sha256": "241762f12a0b2d7225c1aca9cc7097c4d11648e748c3170350879b7b8d3a5e0f"
+  },
+  "boundaries": {
+    "saved_binding_rejections": 24,
+    "strict_profile_rejections": 6,
+    "atomic_replace_rollbacks": 4,
+    "confirmed_cancel_stable": true
+  },
+  "initial_harness_setup_failure": "Initial git -C identity preflight failed before behavioral checks because the linked .git pointer contains a Windows absolute path. Explicit Git directory fixed harness setup; no source defect or historical writer execution."
+}
