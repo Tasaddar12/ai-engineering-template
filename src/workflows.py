@@ -41,12 +41,17 @@ def _workflow_name(name: str) -> str:
 
 def workflow_text(root: Path, name: str) -> str:
     selected = _workflow_name(name)
-    installed = safe_path(Path(root).absolute(), f".ai/workflows/{selected}.md")
+    root = Path(root).absolute()
+    installed = safe_path(root, f".ai/workflows/{selected}.md")
     if installed.is_file():
         try:
             return installed.read_text(encoding="utf-8-sig")
         except OSError as exc:
             raise FrameworkError(f"Cannot read installed workflow: {selected}") from exc
+    if safe_path(root, ".ai/workflows").is_dir() or safe_path(
+        root, ".ai/framework-manifest.yaml"
+    ).is_file():
+        raise FrameworkError(f"Installed workflow is missing: {selected}")
     return asset_text(f"workflows/{selected}.md")
 
 
@@ -70,6 +75,9 @@ def _dispatch(
     from .agents import dispatch
     from .handoffs import contained, read_markdown
 
+    unknown = sorted(set(options) - {"assignment", "worktree", "run_dir", "provider", "session_id", "phase"})
+    if unknown:
+        raise FrameworkError(f"Unknown dispatch options: {', '.join(unknown)}")
     assignment = Path(_required(options, "assignment"))
     if not assignment.is_absolute():
         assignment = root / assignment
@@ -89,8 +97,6 @@ def _dispatch(
         options.pop("session_id", None),
         phase=options.pop("phase", None),
     )
-    if options:
-        raise FrameworkError(f"Unknown dispatch options: {', '.join(sorted(options))}")
     return {
         "status": result.status,
         "output": str(result.output),
@@ -116,6 +122,9 @@ def validate(root: Path, subject: str | None = None, **options: Any) -> dict[str
         raise FrameworkError("Validation dry_run must be boolean")
     if (
         not isinstance(role, str)
+        or isinstance(grants, (str, bytes))
+        or not isinstance(grants, (list, tuple, set))
+        or any(not isinstance(grant, str) for grant in grants)
         or isinstance(tasks, (str, bytes))
         or not isinstance(tasks, (list, tuple, set))
         or any(not isinstance(task, str) for task in tasks)
@@ -125,8 +134,14 @@ def validate(root: Path, subject: str | None = None, **options: Any) -> dict[str
     named = config.get("commands", config)
     if not isinstance(named, dict) or not named:
         raise FrameworkError("No named validation commands are configured")
+    if isinstance(selected, (str, bytes)):
+        raise FrameworkError("Validation commands must be a list of configured names")
     names = list(named) if selected is None else list(selected)
-    if not names or any(not isinstance(name, str) or name not in named for name in names):
+    if (
+        not names
+        or len(names) != len(set(names))
+        or any(not isinstance(name, str) or name not in named for name in names)
+    ):
         raise FrameworkError("Validation commands must be configured names")
     run_dir = Path(root) / ".ai/local/validation" / uuid4().hex
     runner = CommandRunner(
@@ -176,7 +191,11 @@ def route(root: Path, name: str, subject: str | None = None, **options: Any) -> 
     root = Path(root).expanduser().absolute()
     normalized = name.strip().lower().replace("_", "-") if isinstance(name, str) else name
     selected = _workflow_name(name)
-    workflow_text(root, selected)  # Missing installed/shipped contracts fail before effects.
+    if selected == "project-init":
+        # Initialization is the repair path for a missing managed workflow copy.
+        asset_text("workflows/project-init.md")
+    else:
+        workflow_text(root, selected)  # Missing installed contracts fail before effects.
 
     if selected == "project-init":
         from .project import initialize
@@ -197,9 +216,13 @@ def route(root: Path, name: str, subject: str | None = None, **options: Any) -> 
         elif normalized == "plan-revise":
             action = "revise"
         if action == "create":
-            return orchestrator.create_plan(
-                root, _required(options, "title"), _required(options, "scope")
-            )
+            title = _required(options, "title")
+            scope = _required(options, "scope")
+            if options:
+                raise FrameworkError(
+                    f"Unknown plan creation options: {', '.join(sorted(options))}"
+                )
+            return orchestrator.create_plan(root, title, scope)
         if action == "revise":
             plan_id = subject or _required(options, "plan_id")
             return orchestrator.revise_plan(root, plan_id, **options)

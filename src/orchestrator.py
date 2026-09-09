@@ -17,7 +17,8 @@ from .artifacts import Artifact, ArtifactStore
 from .config import load_config
 from .errors import FrameworkError
 from .git import Git
-from .handoffs import read_markdown, scope_paths, write_handoff
+from .handoffs import contained, read_markdown, scope_paths, write_handoff
+from .io import utc_now
 from .planning import apply_plan_changes, apply_revision
 from .planning_intent import (
     grant_implementation,
@@ -145,6 +146,7 @@ def _register_worktree(
     branch: str,
     purpose: str,
     session_id: str,
+    base_revision: str,
     revision: str | None = None,
 ) -> None:
     def change(value: Record) -> None:
@@ -162,8 +164,13 @@ def _register_worktree(
                 "subject": subject,
                 "purpose": purpose,
                 "session_id": session_id,
+                "base_branch": "main",
+                "base_revision": base_revision,
+                "head": base_revision,
+                "stage": "created",
                 "planning_revision": revision,
                 "status": "in-progress",
+                "created_at": utc_now(),
             }
         )
 
@@ -178,11 +185,80 @@ def _existing_worktree(root: Path, subject: str, purpose: str) -> Record | None:
         if isinstance(record, dict)
         and record.get("subject") == subject
         and record.get("purpose") == purpose
-        and record.get("status") in {"in-progress", "repair", "review"}
+        and record.get("status")
+        in {"in-progress", "repair", "review", "delivery", "merged", "cleanup_failed"}
     ]
     if len(matches) > 1:
         raise FrameworkError(f"Ambiguous worktree ownership for {subject}")
     return matches[0] if matches else None
+
+
+def _verified_worktree(root: Path, record: Record) -> Path:
+    raw = record.get("path")
+    branch = record.get("branch")
+    session_id = record.get("session_id")
+    if (
+        not isinstance(raw, str)
+        or not isinstance(branch, str)
+        or not branch.startswith("codex/")
+        or not isinstance(session_id, str)
+        or not session_id
+    ):
+        raise FrameworkError("Managed worktree ownership record is malformed")
+    worktree = contained(root, raw, directory=".worktrees")
+    _, git = _runtime(root, f"ownership-{record.get('subject', 'unknown')}")
+    matches = [
+        fact
+        for fact in git.list_worktrees()
+        if Path(str(fact.get("path", ""))).absolute() == worktree
+    ]
+    if (
+        len(matches) != 1
+        or matches[0].get("branch") != branch
+        or matches[0].get("locked")
+        or matches[0].get("prunable")
+    ):
+        raise FrameworkError("Managed worktree ownership or branch has drifted")
+    return worktree
+
+
+def _update_worktree(root: Path, subject: str, status: str, **updates: Any) -> Record:
+    def change(value: Record) -> Record:
+        matches = [
+            record
+            for record in value.setdefault("worktrees", [])
+            if isinstance(record, dict)
+            and record.get("subject") == subject
+            and record.get("purpose") == "implementation"
+        ]
+        if len(matches) != 1:
+            raise FrameworkError(f"Expected one implementation worktree for {subject}")
+        matches[0].update(updates, status=status, updated_at=utc_now())
+        return dict(matches[0])
+
+    return _change_state(root, change)
+
+
+def _forget_worktree(root: Path, subject: str, retirement: Any) -> None:
+    def change(value: Record) -> None:
+        records = value.setdefault("worktrees", [])
+        matches = [
+            record
+            for record in records
+            if isinstance(record, dict)
+            and record.get("subject") == subject
+            and record.get("purpose") == "implementation"
+        ]
+        if len(matches) > 1:
+            raise FrameworkError(f"Ambiguous retired worktree ownership for {subject}")
+        if matches:
+            record = matches[0]
+            records.remove(record)
+            value.setdefault("retired_worktrees", []).append(
+                {**record, "status": "retired", "retired_at": utc_now(), "retirement": retirement}
+            )
+
+    _change_state(root, change)
 
 
 def _create_worktree(
@@ -199,6 +275,7 @@ def _create_worktree(
     _, git = _runtime(root, f"worktree-{name}")
     session_id = uuid.uuid4().hex
     worktree = git.create_worktree(name, branch, "main")
+    base_revision = git.head(worktree)
     _register_worktree(
         root,
         subject=subject,
@@ -206,6 +283,7 @@ def _create_worktree(
         branch=branch,
         purpose=purpose,
         session_id=session_id,
+        base_revision=base_revision,
         revision=revision,
     )
     return worktree, session_id
@@ -325,9 +403,7 @@ def revise_plan(root: Path | str, plan_id: str, **changes: Any) -> Record:
 def _implementation_worktree(root: Path, subject: Artifact) -> tuple[Path, str, str]:
     existing = _existing_worktree(root, subject.id, "implementation")
     if existing is not None:
-        worktree = root / existing["path"]
-        if not worktree.is_dir():
-            raise FrameworkError(f"Registered worktree is missing for {subject.id}")
+        worktree = _verified_worktree(root, existing)
         return worktree, str(existing["branch"]), str(existing["session_id"])
     name = subject.id.lower()
     branch = f"codex/{name}"
@@ -344,7 +420,7 @@ def _record_run(root: Path, record: Record) -> None:
         if matches:
             matches[0].update(record)
         else:
-            runs.append(record)
+            runs.append({**record, "started_at": utc_now()})
 
     _change_state(root, change)
 
@@ -355,8 +431,10 @@ def _finish_run(root: Path, run_id: str, result: AgentResult | None, error: str 
             if isinstance(record, dict) and record.get("id") == run_id:
                 record["status"] = result.status if result is not None else "failed"
                 record["error"] = error
+                record["finished_at"] = utc_now()
                 if result is not None:
                     record["output"] = _relative(root, result.output)
+                    record["session_id"] = result.session_id
                 return
         raise FrameworkError(f"Active run disappeared: {run_id}")
 
@@ -375,6 +453,28 @@ def _resume_record(root: Path, subject: str, action: str) -> Record | None:
     return candidates[-1] if candidates else None
 
 
+def _dispatch_worktree(
+    root: Path,
+    role: str,
+    worktree: Path,
+    session_id: str | None,
+    subject: str,
+    phase: str | None,
+) -> None:
+    modifying = role == "implementation" or (role == "bugfix" and phase != "investigation")
+    reviewing = role == "critical_review"
+    if not modifying and not reviewing:
+        return
+    record = _existing_worktree(root, subject, "implementation")
+    if record is None:
+        raise FrameworkError(f"{subject} has no active implementation worktree owner")
+    owned = _verified_worktree(root, record)
+    if owned != Path(worktree).absolute():
+        raise FrameworkError("Dispatch worktree differs from durable feature ownership")
+    if modifying and record.get("session_id") != session_id:
+        raise FrameworkError("Repair/resume must retain the assigned implementation session")
+
+
 def _dispatch_assignment(
     root: Path,
     role: str,
@@ -387,10 +487,16 @@ def _dispatch_assignment(
     phase: str | None = None,
     resume: bool = False,
 ) -> AgentResult:
+    _dispatch_worktree(root, role, worktree, session_id, subject, phase)
     previous = _resume_record(root, subject, action) if resume else None
     if previous is not None:
-        assignment = root / previous["assignment"]
-        run_dir = root / previous["run_dir"]
+        assignment = contained(root, previous["assignment"], directory=".ai")
+        run_dir = contained(root, previous["run_dir"], directory=".ai/runs")
+        recorded_worktree = contained(root, previous["worktree"], directory=".worktrees")
+        if recorded_worktree != Path(worktree).absolute():
+            raise FrameworkError("Resumed run belongs to a different worktree")
+        if session_id is not None and previous.get("session_id") != session_id:
+            raise FrameworkError("Resumed run belongs to a different implementation session")
         run_id = previous["id"]
     else:
         run_id = uuid.uuid4().hex
@@ -489,13 +595,21 @@ def _run_validation(root: Path, worktree: Path, subject: Artifact) -> list[Recor
     )
     evidence = []
     for name in names:
-        command = configured.get(name)
-        if not isinstance(command, dict) or not isinstance(command.get("argv"), list):
+        if not isinstance(name, str) or name not in configured:
             raise FrameworkError(f"Unknown validation command: {name}")
+        argv, timeout = runner.policy.named_command(
+            name,
+            "orchestrator",
+            workflow="validation",
+            selected_commands=names,
+        )
         result = runner.run(
-            command["argv"],
+            argv,
             cwd=worktree,
-            timeout=command.get("timeout", 120),
+            timeout=timeout,
+            workflow="validation",
+            command_name=name,
+            selected_commands=names,
         )
         item = {
             "command": name,

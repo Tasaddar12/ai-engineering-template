@@ -1,6 +1,6 @@
 ---
 name: research
-provider: command
+provider: codex
 model: gpt-5.6-sol
 reasoning: xhigh
 capability: 3

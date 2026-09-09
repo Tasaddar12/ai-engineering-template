@@ -141,6 +141,8 @@ def initialize(root: Path, **options: Any) -> dict[str, Any]:
     ai_dir = target / ".ai"
     manifest_path = target / MANIFEST
     existing_manifest = _manifest(manifest_path) if target.exists() else None
+    if ai_dir.exists() and not ai_dir.is_dir():
+        raise FrameworkError(f"Project control path is not a directory: {ai_dir}")
     if ai_dir.exists() and existing_manifest is None:
         entries = list(ai_dir.iterdir())
         if entries and not adopt:
