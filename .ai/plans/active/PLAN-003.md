@@ -2,8 +2,9 @@
 id: PLAN-003
 kind: plans
 title: Flat layout, explicit workflows and complete cleanup
-status: draft
+status: in-progress
 tasks:
+- TASK-093
 - TASK-063
 - TASK-064
 - TASK-065
@@ -35,6 +36,7 @@ tasks:
 - TASK-091
 - TASK-092
 features:
+- FEATURE-018
 - FEATURE-008
 - FEATURE-009
 - FEATURE-010
@@ -46,7 +48,7 @@ features:
 - FEATURE-016
 - FEATURE-017
 decomposition_status: proposed
-execution_authorized: false
+execution_authorized: true
 implementation_gate: Separate explicit instruction to implement PLAN-003; plan/decomposition
   approval is insufficient.
 supersedes_on_implementation:
@@ -86,7 +88,7 @@ acceptance:
   and independent work continues.
 - Explicit plan creation/revision has its own managed planning worktree and reviewed
   PR-to-main delivery; merged planning artifacts never authorize or start implementation.
-implementation_blocked_by_user: true
+implementation_blocked_by_user: false
 continuation_policy: Continue authorized work; hard-block metadata only; no blocked
   folders; explicit stop instructions take precedence.
 planning_delivery_authorized: true
@@ -97,8 +99,27 @@ planning_delivery_mode: local_reviewed_merge
 planning_worktree: .worktrees/plan-003-planning
 change_lifecycle: Worktree -> changes -> validation and independent review -> merge
   -> delete merged worktree and branch
+baseline_recovery_status: approved
+implementation_repository: Tasaddar12/ai-engineering-template
+implementation_target: main
+implementation_instruction: 'User: Implement plan 3; explicit subsequent instruction
+  to merge to main.'
+implementation_models:
+  subagents: gpt-5.6-sol/xhigh
+  reviewers: gpt-6-astra/xhigh
 ---
 # PLAN-003 — Flat layout, explicit workflows and complete cleanup
+
+## Current implementation authority and baseline recovery
+
+The user explicitly authorized implementation of PLAN-003, selected GPT-5.6 Sol at xhigh for subagents and GPT-6 Astra at xhigh for reviewers, supplied Tasaddar12/ai-engineering-template, and instructed delivery to main. This section supersedes the historical planning-only holds below. Original planning-delivery descriptions remain historical evidence; they do not revoke current authority.
+
+The Work Decomposition Agent approved the bounded [TASK-093](../../tasks/in-progress/TASK-093.md) / [FEATURE-018](../../features/in-progress/FEATURE-018.md) prerequisite after complete retained-baseline review found BASELINE-SEC-001. FEATURE-018 begins the sequence; FEATURE-008 depends on it and TASK-063 depends on TASK-093. There are now 31 tasks and eleven serial features. The original graph below remains the unchanged remainder. Only this recovery has semantic approval; full remaining decomposition stays pending.
+
+FEATURE-018 repairs the central Git inspection boundary in the existing dedicated baseline checkout from c31d9af, then delivers the entire independently reviewed retained baseline through a PR to main. This is the TASK-063 transition checkout exception; every subsequent feature starts from synchronized main. Scope is src/ai_engineering, tests and docs, with product edits restricted to runner.py, optional constraints.py, test_execution.py and docs/git-inspection.md. Coordinator-only .ai revisions carry this recovery. No FEATURE-005 candidate or obsolete-content purge is included.
+
+Actual enforced-host verification precedes the Sol repair dispatch. Current execution evidence and all rejected review/profiles are preserved under .ai. Planning merge and model selection do not bypass runtime confinement or exact-head review.
+
 
 ## Status and authority
 

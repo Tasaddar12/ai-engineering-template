@@ -118,6 +118,19 @@ def _git_guard(tokens: list[str]) -> None:
         or any(token.startswith("-") and token not in worktree_flags for token in args)
     ):
         raise PolicyError("Forced worktree operations are forbidden")
+    status_options = args[: args.index("--")] if "--" in args else args
+    if command == "status" and any(
+        (
+            token.startswith("--")
+            and (
+                "--verbose".startswith(token.split("=", 1)[0])
+                or token.split("=", 1)[0].startswith("--verbose")
+            )
+        )
+        or (token.startswith("-") and not token.startswith("--") and "v" in token[1:])
+        for token in status_options
+    ):
+        raise PolicyError("Verbose Git status is not a safe diff inspection")
     if command in _GIT_READ and any(
         token.startswith("--")
         and len(token) > 2

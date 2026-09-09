@@ -2,6 +2,8 @@
 
 Trusted commands are not an OS sandbox. POSIX process groups and Windows taskkill
 stop ordinary descendants; a hostile process needs provider-level containment.
+Diff-producing Git inspections run with text conversion and external diff helpers
+disabled, and command evidence records the normalized argv that was executed.
 """
 
 from __future__ import annotations
@@ -22,6 +24,22 @@ from typing import Any, BinaryIO
 from .constraints import ConstraintPolicy, command_tokens
 from .errors import FrameworkError, PolicyError
 from .io import reject_links, safe_path, utc_now, write_yaml
+
+_GIT_DIFF_INSPECTIONS = frozenset({"diff", "log"})
+_GIT_DIFF_SUPPRESSIONS = ("--no-ext-diff", "--no-textconv")
+
+
+def _is_git_argv(tokens: Sequence[str]) -> bool:
+    return bool(tokens) and Path(tokens[0]).stem.lower() == "git"
+
+
+def _inspection_argv(tokens: list[str]) -> list[str]:
+    """Add non-overridable helper suppression to supported Git inspections."""
+    if not _is_git_argv(tokens) or len(tokens) < 2 or tokens[1] not in _GIT_DIFF_INSPECTIONS:
+        return tokens
+    # Always insert both flags. An identical later token may be an option value or
+    # a path operand after ``--`` and therefore provides no suppression at all.
+    return [*tokens[:2], *_GIT_DIFF_SUPPRESSIONS, *tokens[2:]]
 
 
 @dataclass(frozen=True)
@@ -421,7 +439,7 @@ class CommandRunner:
 
     def _environment(self, argv: list[str]) -> dict[str, str]:
         env = dict(os.environ)
-        if command_tokens(argv)[0] == "git":
+        if _is_git_argv(command_tokens(argv)):
             env = {key: value for key, value in env.items() if not key.startswith("GIT_")}
             # Neither local hooks nor external diff/fsmonitor helpers belong to a Git primitive.
             configs = {
@@ -493,6 +511,7 @@ class CommandRunner:
         except PolicyError as exc:
             finish("denied", None, stderr=str(exc))
             raise
+        tokens = _inspection_argv(tokens)
         if self.dry_run:
             return finish("dry_run", None)
         process: subprocess.Popen[bytes] | None = None

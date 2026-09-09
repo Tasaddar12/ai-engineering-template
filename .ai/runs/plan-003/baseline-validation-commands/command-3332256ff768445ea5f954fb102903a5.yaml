@@ -1,0 +1,17 @@
+argv:
+- python
+- -m
+- pytest
+- -q
+- tests/test_execution.py
+cwd: D:\Codex Projects\ai-engineering-template\.worktrees\plan-003-baseline
+started_at: '2026-09-09T12:48:43.778608+00:00'
+finished_at: '2026-09-09T12:49:30.226391+00:00'
+returncode: 0
+stdout: "................................s..................                     \
+  \ [100%]\r\n50 passed, 1 skipped in 46.02s\r\n"
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

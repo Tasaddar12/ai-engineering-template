@@ -1,0 +1,23 @@
+argv:
+- python
+- -m
+- ruff
+- format
+- --check
+- src/ai_engineering
+- tests
+cwd: D:\Codex Projects\ai-engineering-template\.worktrees\plan-003-baseline
+started_at: '2026-09-09T12:49:05.592830+00:00'
+finished_at: '2026-09-09T12:49:05.805985+00:00'
+returncode: 1
+stdout: "unformatted: File would be reformatted\n   --> tests\\test_execution.py:382:32\n\
+  \    |\n381 |     (root / \".gitattributes\").write_text(\n    -         \"*.secure\
+  \ diff=marker\\n\"\n    -         \"--no-textconv diff=marker\\n\"\n    -      \
+  \   \"--no-ext-diff diff=marker\\n\",\n382 +         \"*.secure diff=marker\\n--no-textconv\
+  \ diff=marker\\n--no-ext-diff diff=marker\\n\",\n383 |         encoding=\"utf-8\"\
+  ,\n    |\n\n1 file would be reformatted, 52 files already formatted\n"
+stderr: ''
+status: failed
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

@@ -1,0 +1,50 @@
+subject: FEATURE-018
+host: WSL Ubuntu-24.04; official Codex0.153.4 + bubblewrap
+model: gpt-5.6-sol
+reasoning: xhigh
+session: 01a08622-48a7-7472-b1e0-405453b5269d
+independent_host_verdict: PASS
+reviewer: plan003_baseline_critical
+reviewer_model: gpt-6-astra/xhigh
+filesystem_profile:
+  :root: deny
+  :minimal: read
+  :tmpdir: deny
+  :slash_tmp: deny
+  /mnt/d/Codex Projects/ai-engineering-template/.ai/local/plan-003-resume/toolchain: read
+  /mnt/d/Codex Projects/ai-engineering-template/.ai/local/plan-002-linux-venv: read
+  :workspace_roots:
+    .: read
+    src/ai_engineering: write
+    tests: write
+    docs: write
+    .ai/local: write
+    .git: read
+independent_denial_checks:
+- Primary and sibling checkout read/write
+- Shared Git and assigned .git write
+- README.md/SECURITY.md/.ai/STATE.yaml write
+- Symlink outside read and descendant outside read
+- AF_INET socket creation
+positive_checks:
+- Assigned source read
+- Assigned src/tests/docs/scratch write
+rejected_approaches:
+- Native Windows allowed outside reads; not used for authoring.
+- Exact-file writable roots fail closed ENOTDIR; replaced with explicitly decomposed directory roots plus
+  strict final diff scope.
+- First CLI turn could not call tools because code-mode host disabled; no source changes.
+runtime_repair: Matching official code-mode host installed and enabled; OSfilesystem/network profile unchanged;
+  same session resumed.
+runtime_digests:
+  codex: f479424eca092484dc40d87ae28c44f4cc40234a60045d6131e493800d814a30
+  bwrap: e7d65c75e05637e42b93f6abf9222fa0d26b537648a7a34c122b75021d41756d
+  code_mode_host: f95830a869590957664bbfc67bccb08773806b693670baf15908176f89b4cd31
+artifact_source: https://github.com/openai/codex/releases/tag/rust-v0.153.4
+evidence: Coordinator command receipts under .ai/local/plan-003-resume; no credentials copied or included.
+verified_prior_launch_sha256: 13a2a6442d7bfa05cd83d65cefea38444f5de04120a4ab31c1f5e3549c4f3ba8
+current_launch_sha256: e64b29cebe583b70c35d4e692f9a5190b6fe37b1aefdd19004dd13a2f5a27fd0
+verified_os_profile_sha256: 36ea2fb3b01c9a80671e216e407e7673d33317063533f15192ee8c03324a3697
+verification_binding: Independent denial probes verify the unchanged filesystem/network profile. The prior
+  launch hash predates enabling the matching command host; current launch hash records that runtime adjustment
+  separately.

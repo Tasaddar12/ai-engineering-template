@@ -1,0 +1,22 @@
+tasks: 31
+features: 11
+errors: []
+waves:
+- - FEATURE-018
+- - FEATURE-008
+- - FEATURE-009
+- - FEATURE-010
+- - FEATURE-011
+- - FEATURE-012
+- - FEATURE-013
+- - FEATURE-014
+- - FEATURE-015
+- - FEATURE-016
+- - FEATURE-017
+initial_failure: 'FEATURE-018 scope expands included task ownership: coordinator-only
+  .ai scope was omitted from TASK-093 aggregate; corrected explicitly without granting
+  agent control writes.'
+decomposition_agent: plan003_baseline_decomposition
+decomposition_model: gpt-5.6-sol/xhigh
+semantic_decision: Approved bounded recovery and directory-host scope refinement;
+  no remaining-plan semantic or source approval.

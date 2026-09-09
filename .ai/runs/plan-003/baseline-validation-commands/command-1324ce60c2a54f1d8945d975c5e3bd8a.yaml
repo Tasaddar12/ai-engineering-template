@@ -1,0 +1,15 @@
+argv:
+- python
+- -m
+- mypy
+- src/ai_engineering
+cwd: D:\Codex Projects\ai-engineering-template\.worktrees\plan-003-baseline
+started_at: '2026-09-09T12:49:05.784883+00:00'
+finished_at: '2026-09-09T12:49:07.875285+00:00'
+returncode: 0
+stdout: "Success: no issues found in 13 source files\r\n"
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

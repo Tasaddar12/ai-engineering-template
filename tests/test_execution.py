@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import shlex
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -50,6 +52,12 @@ def config() -> dict[str, Any]:
         ["git", "diff", "--output=../stolen"],
         ["git", "diff", "--out=../stolen"],
         ["git", "diff", "--ext-diff"],
+        ["git", "log", "--textconv", "-1"],
+        ["git", "log", "--textco", "-1"],
+        ["git", "status", "-v"],
+        ["git", "status", "-sbv"],
+        ["git", "status", "--verbose"],
+        ["git", "status", "--verb"],
         ["git", "branch", "-D", "main"],
         ["git", "branch", "-vD", "main"],
         ["git", "worktree", "remove", "--force", "tree"],
@@ -345,6 +353,145 @@ def test_git_disables_repo_hooks_and_inherited_git_context(
     tree = git.create_worktree("feature-e", "codex/feature-e")
     (tree / "base.txt").write_text("updated\n")
     assert git.commit(tree, "Internal commit skips untrusted hooks")
+
+
+def test_git_diff_inspections_never_execute_configured_helpers(
+    repo: tuple[Path, CommandRunner, Git],
+    config: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, runner, _git = repo
+    local = root / ".ai/local"
+    local.mkdir(parents=True, exist_ok=True)
+    marker = local / "diff-helper-executed"
+    helper = local / "diff-helper.py"
+    helper.write_text(
+        "from pathlib import Path\n"
+        "import sys\n"
+        "Path(sys.argv[1]).write_text('executed\\n', encoding='utf-8')\n"
+        "candidate = Path(sys.argv[-1])\n"
+        "if candidate.is_file():\n"
+        "    print(candidate.read_text(encoding='utf-8'), end='')\n",
+        encoding="utf-8",
+    )
+    helper_command = shlex.join(
+        [Path(sys.executable).as_posix(), helper.as_posix(), marker.as_posix()]
+    )
+
+    (root / ".gitattributes").write_text(
+        "*.secure diff=marker\n--no-textconv diff=marker\n--no-ext-diff diff=marker\n",
+        encoding="utf-8",
+    )
+    inspected = [
+        root / "inspected.secure",
+        root / "--no-textconv",
+        root / "--no-ext-diff",
+    ]
+    for path in inspected:
+        path.write_text("before\n", encoding="utf-8")
+    assert runner.run(["git", "add", "--all"]).ok
+    assert runner.run(["git", "commit", "-m", "Add inspected file"], action="commit").ok
+    for key in ("diff.marker.textconv", "diff.marker.command"):
+        assert runner.run(["git", "config", key, helper_command]).ok
+    for path in inspected:
+        path.write_text("after\n", encoding="utf-8")
+    assert runner.run(["git", "add", "--all"]).ok
+    assert runner.run(
+        ["git", "commit", "-m", "Update --no-textconv and --no-ext-diff"], action="commit"
+    ).ok
+
+    log = runner.run(["git", "log", "-p", "-1"], role="critical_review")
+    assert log.ok, log.stderr
+    assert log.argv == ["git", "log", "--no-ext-diff", "--no-textconv", "-p", "-1"]
+    assert "-before" in log.stdout and "+after" in log.stdout
+    assert not marker.exists()
+
+    inspected[0].write_text("working tree\n", encoding="utf-8")
+    diff = runner.run(["git", "diff"], role="critical_review")
+    assert diff.ok, diff.stderr
+    assert diff.argv == ["git", "diff", "--no-ext-diff", "--no-textconv"]
+    assert "-after" in diff.stdout and "+working tree" in diff.stdout
+    assert not marker.exists()
+
+    for command in (
+        ["git", "log", "-p", "-1", "--", "--no-textconv"],
+        ["git", "log", "-p", "-1", "--grep", "--no-textconv"],
+        ["git", "log", "-p", "-1", "--grep", "--no-ext-diff"],
+    ):
+        result = runner.run(command, role="critical_review")
+        assert result.ok, result.stderr
+        assert result.argv[2:4] == ["--no-ext-diff", "--no-textconv"]
+        assert "-before" in result.stdout and "+after" in result.stdout
+        assert not marker.exists()
+
+    for name in ("--no-textconv", "--no-ext-diff"):
+        (root / name).write_text("working operand\n", encoding="utf-8")
+        result = runner.run(["git", "diff", "--", name], role="critical_review")
+        assert result.ok, result.stderr
+        assert result.argv[2:4] == ["--no-ext-diff", "--no-textconv"]
+        assert "-after" in result.stdout and "+working operand" in result.stdout
+        assert not marker.exists()
+
+    git_executable = shutil.which("git")
+    assert git_executable is not None
+    git_executable = str(Path(git_executable).resolve())
+    config["commands"]["rules"] += [
+        {"argv_prefix": [git_executable, "log"], "effect": "allow"},
+        {"argv_prefix": [git_executable, "diff"], "effect": "allow"},
+    ]
+    monkeypatch.setenv("GIT_DIR", str(root / "wrong"))
+    absolute_log = runner.run([git_executable, "log", "-p", "-1"], role="orchestrator")
+    assert absolute_log.ok, absolute_log.stderr
+    assert absolute_log.argv == [
+        git_executable,
+        "log",
+        "--no-ext-diff",
+        "--no-textconv",
+        "-p",
+        "-1",
+    ]
+    assert "-before" in absolute_log.stdout and "+after" in absolute_log.stdout
+    assert not marker.exists()
+    for command in (
+        [git_executable, "log", "--textconv", "-1"],
+        [git_executable, "diff", "--ext-diff"],
+    ):
+        with pytest.raises(PolicyError):
+            runner.run(command, role="orchestrator")
+    assert not marker.exists()
+
+
+def test_git_status_treats_verbose_name_after_separator_as_path(
+    repo: tuple[Path, CommandRunner, Git],
+) -> None:
+    root, runner, _git = repo
+    (root / "-v").write_text("path, not an option\n", encoding="utf-8")
+    result = runner.run(["git", "status", "--short", "--", "-v"], role="critical_review")
+    assert result.ok, result.stderr
+    assert result.stdout == "?? -v\n"
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["git", "status", "-v"],
+        ["git", "status", "-sbv"],
+        ["git", "status", "--verbose"],
+        ["git", "status", "--verb"],
+    ],
+)
+def test_unsupported_diff_inspections_are_denied_before_process_creation(
+    tmp_path: Path,
+    config: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+) -> None:
+    def unexpected_process(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("denied command reached process creation")
+
+    monkeypatch.setattr("ai_engineering.runner.subprocess.Popen", unexpected_process)
+    with pytest.raises(PolicyError, match="not a safe diff inspection"):
+        CommandRunner(tmp_path, config).run(argv, role="critical_review")
 
 
 def test_cleanup_refuses_hidden_index_changes_and_active_subject(

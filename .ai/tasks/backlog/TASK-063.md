@@ -9,12 +9,14 @@ context:
 - .ai/plans/active/PLAN-003.md
 - AGENTS.md
 - ARCHITECTURE.md
+- .ai/tasks/in-progress/TASK-093.md
 validation:
 - tests
 - lint
 - format
 - types
-depends_on: []
+depends_on:
+- TASK-093
 scope:
 - .ai
 - AGENTS.md
@@ -49,7 +51,7 @@ PLAN-003 draft only. This task is not authorized for execution. The user require
 
 ## Dependencies and ownership
 
-Feature: [FEATURE-008](../../features/blocked/FEATURE-008.md). First task; no requirement to finish PLAN-002. Scope and exclusive resources are declared in front matter. The coordinator owns lifecycle changes. This task executes only after a separate explicit instruction to implement PLAN-003. Do not finish PLAN-002 automatically.
+Feature: [FEATURE-008](../../features/blocked/FEATURE-008.md). Follows TASK-093 / FEATURE-018 retained-baseline recovery; no requirement to finish PLAN-002. Scope and exclusive resources are declared in front matter. The coordinator owns lifecycle changes. This task executes only after a separate explicit instruction to implement PLAN-003. Do not finish PLAN-002 automatically.
 
 ## Validation
 

@@ -1,0 +1,20 @@
+argv:
+- python
+- -m
+- ruff
+- format
+- --check
+- src/ai_engineering
+- tests
+cwd: D:\Codex Projects\ai-engineering-template\.worktrees\plan-003-baseline
+started_at: '2026-09-09T12:51:47.889322+00:00'
+finished_at: '2026-09-09T12:51:48.073992+00:00'
+returncode: 0
+stdout: '53 files already formatted
+
+  '
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

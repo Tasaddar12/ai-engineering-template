@@ -1,0 +1,19 @@
+argv:
+- python
+- -m
+- pytest
+- -q
+- tests/test_execution.py
+- -k
+- git_diff_inspections or unsupported_diff_inspections or forbidden_cannot_be_overridden
+cwd: D:\Codex Projects\ai-engineering-template\.worktrees\plan-003-baseline
+started_at: '2026-09-09T12:39:00.798602+00:00'
+finished_at: '2026-09-09T12:39:03.470407+00:00'
+returncode: 0
+stdout: "................................                                        \
+  \ [100%]\r\n32 passed, 18 deselected in 2.29s\r\n"
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

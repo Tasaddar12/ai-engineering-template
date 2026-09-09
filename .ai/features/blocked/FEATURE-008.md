@@ -18,7 +18,8 @@ tasks:
 - TASK-063
 - TASK-064
 - TASK-065
-dependencies: []
+dependencies:
+- FEATURE-018
 scope:
 - .ai
 - .ai/AGENTS.md
@@ -93,7 +94,7 @@ acceptance:
   subsequent framework migration.
 batch: plan-003-feature-008
 effort: 7
-blocked_reason: awaiting_explicit_plan_implementation
+blocked_reason: awaiting_reviewed_retained_baseline
 decomposition_status: proposed
 merged_worktree_cleanup_authorized: true
 obsolete_content_cleanup_authorized: false

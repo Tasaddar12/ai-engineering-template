@@ -3,8 +3,9 @@ project:
   framework_version: 0.2.0
   phase: implementation
 current_focus:
-  plan: PLAN-002
-active_features: []
+  plan: PLAN-003
+active_features:
+- FEATURE-018
 waiting_features:
 - FEATURE-006
 - FEATURE-007
@@ -49,6 +50,13 @@ worktrees:
   head: 29303075b01d33328d1830307404689080428eef
   status: blocked
   base_branch: codex/plan-002-framework-reset
+- path: .worktrees/plan-003-baseline
+  branch: codex/plan-003-baseline
+  subject: FEATURE-018
+  head: c31d9af8daf732abb977c5f19076dfd4f2b6b04b
+  status: in-progress
+  base_branch: main
+  purpose: retained_baseline_transition
 reviews:
   FEATURE-005:
     status: CHANGES_REQUIRED
@@ -73,13 +81,20 @@ reviews:
 pull_requests: {}
 active_runs: []
 blockers:
-- plan: PLAN-002
-  subject: FEATURE-005
-  reason: One critical-review issue; further implementation held pending user direction.
-    PLAN-003 remains draft and unexecuted.
+- plan: PLAN-003
+  subject: FEATURE-018
+  reason: BASELINE-SEC-001 returned to bounded recovery; independent host verification
+    then repair/full review/PR merge.
 next_actions:
-- Resolve whether PLAN-002 should continue or remain held while PLAN-003 is refined
-- If PLAN-002 continuation is requested, return FEATURE-005-review-repair-2.md to
-  the same implementation session and repeat the complete critical review
-generation: 44
-updated_at: '2026-09-09T02:25:40.545890+00:00'
+- Repair and independently review FEATURE-018; deliver baseline and PLAN-003 information
+  to main.
+- After verified baseline merge, continue PLAN-003 from synchronized main; do not
+  resume waiting PLAN-002 workers.
+generation: 45
+updated_at: '2026-09-09T12:24:46.406805+00:00'
+execution_authority:
+  PLAN-003:
+    authorized: true
+    source: Current user implementation and merge-to-main instructions
+    reviewed_plan_revision: c31d9af8daf732abb977c5f19076dfd4f2b6b04b
+    bounded_recovery: FEATURE-018
