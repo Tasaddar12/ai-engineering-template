@@ -2,14 +2,14 @@
 
 ## Now
 
-[PLAN-001](../plans/review/PLAN-001-minimal-ai-contracts.md) is a scaffold draft in review.
-The assigned worktree is `ai-contract-scaffold` on `codex/ai-contract-scaffold`.
-The user authorized drafting, committing and pushing this branch; merging is excluded.
+[PLAN-001](../plans/review/PLAN-001-minimal-ai-contracts.md) is a published scaffold draft
+awaiting user review. The assigned worktree is `ai-contract-scaffold` on
+`codex/ai-contract-scaffold`. Publication evidence is in the daily journal.
 
 ## Next
 
-Finish the documentation checks and push the draft branch. Then await the user's
-review, yes/no decision or requested alterations using the decision-summary template.
+Await the user's yes, no or requested alterations to the proposed contracts. Return
+any revised proposal using the decision-summary template. No merge is authorized.
 
 ## Blockers
 

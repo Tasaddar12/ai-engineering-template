@@ -30,7 +30,7 @@ PR, merging, installing dependencies and implementing an application or automati
   record, a current SPEC, a draft ADR, an intake report and an append-only journal.
 - [x] T03 (F02): Add flat templates, coordinator/implementer/reviewer definitions and
   short report/plan/execute/deliver workflows. Label hooks as manual checkpoints.
-- [ ] T04 (F01, F02): Check directory coverage, links, record names and the final diff;
+- [x] T04 (F01, F02): Check directory coverage, links, record names and the final diff;
   commit and push the branch, verify the remote tip, then stop for review.
 
 ## Risks and dependencies
@@ -45,8 +45,9 @@ access is needed only for the authorized push. No new tool installation is requi
 Run read-only documentation checks for required folders, internal links, IDs and
 unresolved draft placeholders outside templates. Run `git diff --check` on the staged
 change. Compare the remote branch tip with the committed local head after pushing.
-No application test suite exists or is claimed to pass. Results will be appended to
-the journal; missing or failed checks will be stated explicitly.
+No application test suite exists or is claimed to pass. The documentation and staged whitespace checks passed, and the first remote draft
+tip matched its local commit. The journal records that observation; this final
+review-state update will be pushed and its remote tip checked again.
 
 ## Decision and delivery
 
