@@ -1,7 +1,7 @@
 ---
 id: FEATURE-005
 title: Concurrent implementation, repair and delivery
-status: review
+status: blocked
 plan: PLAN-002
 tasks:
 - TASK-052
@@ -77,9 +77,11 @@ completion: .ai/handoffs/FEATURE-005-implementation-2.md
 repair_session: native-execution-orchestration
 review:
   status: CHANGES_REQUIRED
-  head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
-  path: .ai/reviews/FEATURE-005-critical-1.md
+  head: 29303075b01d33328d1830307404689080428eef
+  path: .ai/reviews/FEATURE-005-critical-2.md
 repair_handoff: .ai/handoffs/FEATURE-005-review-repair-1.md
+blocker: Critical review iteration2 requires preserving distinct SSH destination path
+  semantics; repair dispatch held pending continuation direction.
 ---
 # FEATURE-005 — Concurrent implementation, repair and delivery
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-055
 title: Prepare gated PR delivery and merged completion
-status: in-progress
+status: blocked
 plan: PLAN-002
 depends_on:
 - TASK-054
@@ -39,6 +39,8 @@ context:
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
 kind: tasks
+blocker: FEATURE-005 critical review requires repair; further implementation held
+  pending direction.
 ---
 # TASK-055 — Prepare gated PR delivery and merged completion
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-053
 title: Run validation and complete-diff repair cycles
-status: in-progress
+status: blocked
 plan: PLAN-002
 depends_on:
 - TASK-052
@@ -29,6 +29,8 @@ context:
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
 kind: tasks
+blocker: FEATURE-005 critical review requires repair; further implementation held
+  pending direction.
 ---
 # TASK-053 — Run validation and complete-diff repair cycles
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-052
 title: Schedule dependency-ready features concurrently
-status: in-progress
+status: blocked
 plan: PLAN-002
 depends_on:
 - TASK-051
@@ -31,6 +31,8 @@ context:
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
 kind: tasks
+blocker: FEATURE-005 critical review requires repair; further implementation held
+  pending direction.
 ---
 # TASK-052 — Schedule dependency-ready features concurrently
 

@@ -1,7 +1,7 @@
 ---
 id: PLAN-002
 title: Streamlined autonomous Python engineering framework
-status: in-progress
+status: blocked
 tasks:
 - TASK-040
 - TASK-041
@@ -61,6 +61,8 @@ features:
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
 decomposition_status: approved
 kind: plans
+blocker: FEATURE-005 has one unresolved critical-review issue. Awaiting user direction
+  before further implementation because newer PLAN-003 proposes conflicting architecture.
 ---
 # PLAN-002 — Streamlined autonomous Python engineering framework
 
@@ -90,7 +92,7 @@ The Work Decomposition Agent approved exact coverage of 23 tasks in seven batche
 | [FEATURE-002](../../features/completed/FEATURE-002.md) — Constrained commands and managed Git worktrees | [TASK-043](../../tasks/completed/TASK-043.md), [TASK-044](../../tasks/completed/TASK-044.md), [TASK-045](../../tasks/completed/TASK-045.md) | FEATURE-001 | 8 |
 | [FEATURE-003](../../features/completed/FEATURE-003.md) — Validated task decomposition and feature graphs | [TASK-046](../../tasks/completed/TASK-046.md), [TASK-047](../../tasks/completed/TASK-047.md), [TASK-048](../../tasks/completed/TASK-048.md) | FEATURE-001 | 8 |
 | [FEATURE-004](../../features/completed/FEATURE-004.md) — Configured agents, durable handoffs and critical review | [TASK-049](../../tasks/completed/TASK-049.md), [TASK-050](../../tasks/completed/TASK-050.md), [TASK-051](../../tasks/completed/TASK-051.md) | FEATURE-002 | 8 |
-| [FEATURE-005](../../features/review/FEATURE-005.md) — Concurrent implementation, repair and delivery | [TASK-052](../../tasks/in-progress/TASK-052.md), [TASK-053](../../tasks/in-progress/TASK-053.md), [TASK-054](../../tasks/in-progress/TASK-054.md), [TASK-055](../../tasks/in-progress/TASK-055.md) | FEATURE-003, FEATURE-004 | 8 |
+| [FEATURE-005](../../features/blocked/FEATURE-005.md) — Concurrent implementation, repair and delivery | [TASK-052](../../tasks/blocked/TASK-052.md), [TASK-053](../../tasks/blocked/TASK-053.md), [TASK-054](../../tasks/blocked/TASK-054.md), [TASK-055](../../tasks/blocked/TASK-055.md) | FEATURE-003, FEATURE-004 | 8 |
 | [FEATURE-006](../../features/ready/FEATURE-006.md) — Lightweight bugfix and structural recovery | [TASK-056](../../tasks/ready/TASK-056.md), [TASK-057](../../tasks/ready/TASK-057.md), [TASK-058](../../tasks/ready/TASK-058.md) | FEATURE-005 | 7 |
 | [FEATURE-007](../../features/ready/FEATURE-007.md) — Project installation, CLI and acceptance | [TASK-059](../../tasks/ready/TASK-059.md), [TASK-060](../../tasks/ready/TASK-060.md), [TASK-061](../../tasks/ready/TASK-061.md), [TASK-062](../../tasks/ready/TASK-062.md) | FEATURE-006 | 8 |
 

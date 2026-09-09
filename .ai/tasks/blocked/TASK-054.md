@@ -1,7 +1,7 @@
 ---
 id: TASK-054
 title: Persist resumable run intent and recovery triggers
-status: in-progress
+status: blocked
 plan: PLAN-002
 depends_on:
 - TASK-053
@@ -29,6 +29,8 @@ context:
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
 kind: tasks
+blocker: FEATURE-005 critical review requires repair; further implementation held
+  pending direction.
 ---
 # TASK-054 — Persist resumable run intent and recovery triggers
 

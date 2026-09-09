@@ -4,12 +4,12 @@ project:
   phase: implementation
 current_focus:
   plan: PLAN-002
-active_features:
-- FEATURE-005
+active_features: []
 waiting_features:
 - FEATURE-006
 - FEATURE-007
 blocked_features:
+- FEATURE-005
 - FEATURE-008
 - FEATURE-009
 - FEATURE-010
@@ -47,9 +47,13 @@ worktrees:
   branch: codex/plan-002-orchestration
   subject: FEATURE-005
   head: 29303075b01d33328d1830307404689080428eef
-  status: review
+  status: blocked
   base_branch: codex/plan-002-framework-reset
 reviews:
+  FEATURE-005:
+    status: CHANGES_REQUIRED
+    head: 29303075b01d33328d1830307404689080428eef
+    path: .ai/reviews/FEATURE-005-critical-2.md
   FEATURE-001:
     status: PASS
     head: 274ca00bb42e3ea96db7f60dc189633e0651f633
@@ -66,21 +70,16 @@ reviews:
     status: PASS
     head: 4b2e2af641691a6a274a8c004705f00340614585
     path: .ai/reviews/FEATURE-004-critical-2.md
-  FEATURE-005:
-    status: CHANGES_REQUIRED
-    head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
-    path: .ai/reviews/FEATURE-005-critical-1.md
 pull_requests: {}
-active_runs:
-- .ai/runs/PLAN-002-bootstrap.yaml
+active_runs: []
 blockers:
 - plan: PLAN-002
-  scope: Starting further feature implementation
-  reason: Awaiting user direction after discovery of a newer conflicting PLAN-003
-    draft in the shared checkout; current candidate review may finish.
+  subject: FEATURE-005
+  reason: One critical-review issue; further implementation held pending user direction.
+    PLAN-003 remains draft and unexecuted.
 next_actions:
-- Complete independent critical review of the existing FEATURE-005 candidate
-- Clarify whether to continue PLAN-002 before starting FEATURE-006; newer PLAN-003
-  remains a draft without execution authority
-generation: 42
-updated_at: '2026-09-09T02:21:19.229351+00:00'
+- Resolve whether PLAN-002 should continue or remain held while PLAN-003 is refined
+- If PLAN-002 continuation is requested, return FEATURE-005-review-repair-2.md to
+  the same implementation session and repeat the complete critical review
+generation: 44
+updated_at: '2026-09-09T02:25:40.545890+00:00'
