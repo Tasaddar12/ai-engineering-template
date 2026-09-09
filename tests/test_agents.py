@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -16,14 +17,14 @@ from ai_engineering.agents import (
     dispatch,
     resolve_agent,
 )
-from ai_engineering.artifacts import ArtifactStore
+from ai_engineering.artifacts import Artifact, ArtifactStore
 from ai_engineering.errors import FrameworkError, PolicyError
 from ai_engineering.git import Git
 from ai_engineering.handoffs import immutable_write, read_markdown, write_handoff
 from ai_engineering.io import read_yaml, write_yaml
 from ai_engineering.review import read_review, review_assignment
-from ai_engineering.runner import CommandRunner
-from ai_engineering.templates import asset_root
+from ai_engineering.runner import CommandResult, CommandRunner
+from ai_engineering.templates import asset_root, render
 
 
 @pytest.fixture
@@ -675,7 +676,9 @@ def test_review_dispatch_fresh_sessions_and_caller_identity_rejection(project: P
         )
 
 
-def test_review_assignment_binds_complete_committed_diff(project: Path) -> None:
+def committed_feature(
+    project: Path, content: str = "value = 1\n"
+) -> tuple[Git, Path, str, str, Artifact, Path]:
     constraints = read_yaml(project / ".ai/constraints.yaml")
     constraints["commands"]["rules"] += [
         {"argv_prefix": ["git", "init"], "effect": "allow"},
@@ -695,7 +698,7 @@ def test_review_assignment_binds_complete_committed_diff(project: Path) -> None:
     git = Git(project, runner)
     base = git.head()
     tree = git.create_worktree("review", "codex/review")
-    (tree / "code.py").write_text("value = 1\n")
+    (tree / "code.py").write_text(content, encoding="utf-8")
     head = git.commit(tree, "Feature")
     subject = ArtifactStore(project).create(
         "features",
@@ -720,8 +723,13 @@ def test_review_assignment_binds_complete_committed_diff(project: Path) -> None:
         {},
     )
     completed = emit_output(request, completion(request))
+    return git, tree, base, head, subject, completed.output
+
+
+def test_review_assignment_binds_complete_committed_diff(project: Path) -> None:
+    _, tree, base, head, subject, completed = committed_feature(project)
     review = review_assignment(
-        project, subject, tree, base, head, completed.output, [{"status": "success"}], 1
+        project, subject, tree, base, head, completed, [{"status": "success"}], 1
     )
     metadata, _ = read_markdown(review)
     assert metadata["base"] == base and metadata["head"] == head
@@ -729,15 +737,215 @@ def test_review_assignment_binds_complete_committed_diff(project: Path) -> None:
     assert "+value = 1" in (project / metadata["diff"]).read_text()
     assert metadata["implementer_session"] == "implementation-session"
     with pytest.raises(FrameworkError, match="Validation"):
-        review_assignment(
-            project, subject, tree, base, head, completed.output, [{"status": "failed"}], 2
-        )
+        review_assignment(project, subject, tree, base, head, completed, [{"status": "failed"}], 2)
     with pytest.raises(FrameworkError, match="current clean"):
         review_assignment(
-            project, subject, tree, base, "b" * 40, completed.output, [{"status": "success"}], 2
+            project, subject, tree, base, "b" * 40, completed, [{"status": "success"}], 2
         )
     (tree / "code.py").write_text("uncommitted edit")
     with pytest.raises(FrameworkError, match="current clean"):
-        review_assignment(
-            project, subject, tree, base, head, completed.output, [{"status": "success"}], 2
+        review_assignment(project, subject, tree, base, head, completed, [{"status": "success"}], 2)
+
+
+@pytest.mark.parametrize(
+    "changed",
+    ["private", "private/code.py", "private\\code.py", "private\\nested/code.py"],
+)
+def test_completion_rejects_prohibited_separator_aliases(project: Path, changed: str) -> None:
+    handoff = assignment(project, allowed_scope=["."], prohibited_scope=["private"])
+    run = project / ".ai/runs/prohibited"
+    with pytest.raises(FrameworkError, match="prohibited scope"):
+        dispatch(
+            project,
+            "implementation",
+            handoff,
+            project / ".worktrees/feature",
+            run,
+            ControlledProvider(changed_files=[changed]),
         )
+    assert not (run / "result.yaml").exists()
+
+
+def test_completion_scope_uses_platform_case_and_preserves_true_siblings(project: Path) -> None:
+    handoff = assignment(project, allowed_scope=["."], prohibited_scope=["private"])
+    run = project / ".ai/runs/case-alias"
+
+    def claim_case_alias() -> AgentResult:
+        return dispatch(
+            project,
+            "implementation",
+            handoff,
+            project / ".worktrees/feature",
+            run,
+            ControlledProvider(changed_files=["PRIVATE\\nested/code.py"]),
+        )
+
+    if os.name == "nt":
+        with pytest.raises(FrameworkError, match="prohibited scope"):
+            claim_case_alias()
+        assert not (run / "result.yaml").exists()
+    else:
+        assert claim_case_alias().status == "COMPLETE"
+    result = dispatch(
+        project,
+        "implementation",
+        handoff,
+        project / ".worktrees/feature",
+        project / ".ai/runs/true-siblings",
+        ControlledProvider(changed_files=["private-other/code.py", "code.py"]),
+    )
+    assert result.status == "COMPLETE"
+
+
+@pytest.mark.parametrize("status", ["PASS", "CHANGES_REQUIRED"])
+def test_dedicated_review_template_preserves_structured_multiline_findings(
+    project: Path, status: str
+) -> None:
+    issues = (
+        [
+            {
+                "id": "REVIEW-001",
+                "category": "correctness",
+                "files": ["code.py", "tests/test_code.py"],
+                "explanation": "Observed: truncated evidence.\nThe last change is absent.",
+                "required_change": "Record complete capture.\nRefuse an incomplete diff.",
+                "validation_required": "Use a large committed diff.\nCheck its final statement.",
+            }
+        ]
+        if status == "CHANGES_REQUIRED"
+        else []
+    )
+    data = review_metadata(
+        status=status,
+        issues=issues,
+        summary="Review result:\nComplete updated diff examined.",
+        security_findings=["Relevant boundary:\nEvidence must be complete."],
+        documentation_findings=["Template now carries the complete metadata mapping."],
+        validation=[{"command": "tests", "status": "success"}],
+    )
+    name = resolve_agent(project, "critical_review")["output_template"]
+    assert name == "reviews/critical-review.md"
+    content = render(
+        project,
+        name,
+        {
+            **data,
+            "metadata_yaml": yaml.safe_dump(data, sort_keys=False),
+            "blocking_issues": issues or "No blocking issues.",
+        },
+    )
+    path = project / ".ai/reviews/templated.md"
+    immutable_write(path, content)
+    assert (
+        read_review(
+            path,
+            expected_subject="FEATURE-001",
+            expected_head="a" * 40,
+            implementer_session="implementation-session",
+        )
+        == data
+    )
+    assert "## Blocking issues" in content
+    assert "## Security findings" in content
+    assert "## Documentation findings" in content
+
+
+@pytest.mark.parametrize(
+    ("payload", "secret", "truncated"),
+    [
+        ("x" * 512, "", False),  # Exactly at the display bound, complete EOF.
+        ("x" * 513, "", True),  # Display truncation without raw byte truncation.
+        ("x" * 3000, "", True),  # Raw byte truncation.
+        ("\U0001f642" * 512, "", False),  # Exactly at the UTF-8 capture/display bounds.
+        ("\U0001f642" * 513, "", True),
+        ("\u754c" * 1000, "", True),  # Raw cutoff inside a multibyte character.
+        ("unit-secret\nfinal statement\n", "unit-secret", False),
+        ("unit-secret" * 400 + "\nfinal statement\n", "unit-secret", True),
+        ("z" * 100, "z", True),  # Redaction can expand beyond the display bound.
+    ],
+)
+def test_command_evidence_reports_raw_and_redacted_bounds(
+    project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    payload: str,
+    secret: str,
+    truncated: bool,
+) -> None:
+    monkeypatch.setenv("AI_TEST_REDACTION", secret)
+    constraints = read_yaml(project / ".ai/constraints.yaml")
+    constraints["execution"] = {"max_output_chars": 512, "redact_env": ["AI_TEST_REDACTION"]}
+    constraints["commands"]["rules"].append({"argv_prefix": ["python", "-c"], "effect": "allow"})
+    runner = CommandRunner(project, constraints)
+    result = runner.run(
+        ["python", "-c", "import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())"],
+        input_text=payload,
+    )
+    assert result.ok
+    assert result.stdout_truncated is truncated
+    assert not result.stderr_truncated
+    assert result.output_complete is (not truncated)
+    assert len(result.stdout) <= 512
+    if not truncated:
+        assert result.stdout == (payload.replace(secret, "[REDACTED]") if secret else payload)
+    evidence = read_yaml(next(runner.run_dir.glob("command-*.yaml")))
+    assert evidence["stdout_truncated"] is truncated
+    assert evidence["output_complete"] is (not truncated)
+
+
+def test_command_stderr_overflow_and_unverified_capture_fail_git_closed(
+    project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    constraints = read_yaml(project / ".ai/constraints.yaml")
+    constraints["execution"] = {"max_output_chars": 512, "redact_env": []}
+    constraints["commands"]["rules"].append({"argv_prefix": ["python", "-c"], "effect": "allow"})
+    runner = CommandRunner(project, constraints)
+    result = runner.run(["python", "-c", "import sys; sys.stderr.write('x' * 3000)"])
+    assert result.ok and result.stderr_truncated and not result.stdout_truncated
+    assert not result.output_complete
+    monkeypatch.setattr(runner, "run", lambda *args, **kwargs: result)
+    with pytest.raises(FrameworkError, match="exceeded evidence limit"):
+        Git(project, runner).head()
+    incomplete = CommandResult(
+        ["git", "rev-parse", "HEAD"],
+        str(project),
+        "",
+        "",
+        0,
+        "a" * 40,
+        "",
+        "success",
+        output_complete=False,
+    )
+    monkeypatch.setattr(runner, "run", lambda *args, **kwargs: incomplete)
+    with pytest.raises(FrameworkError, match="capture incomplete"):
+        Git(project, runner).head()
+
+
+@pytest.mark.parametrize("redacted", [False, True])
+def test_review_never_publishes_a_truncated_committed_diff(
+    project: Path, monkeypatch: pytest.MonkeyPatch, redacted: bool
+) -> None:
+    secret = "UNIT-SYNTHETIC-SECRET-" * 8
+    repeated = secret if redacted else "ordinary source content"
+    sentinel = "final_changed_statement = 'must be reviewed'\n"
+    content = (f"# {repeated}\n" * 300) + sentinel
+    git, tree, base, head, subject, completed = committed_feature(project, content)
+    complete_diff = git.diff(tree, base)
+    assert f"+{sentinel}" in complete_diff
+    assert len(complete_diff.encode("utf-8")) > 6000
+    constraints = read_yaml(project / ".ai/constraints.yaml")
+    constraints["execution"] = {"max_output_chars": 512, "redact_env": ["AI_TEST_REDACTION"]}
+    monkeypatch.setenv("AI_TEST_REDACTION", secret if redacted else "")
+    write_yaml(project / ".ai/constraints.yaml", constraints)
+    runner = CommandRunner(project, constraints)
+    captured = runner.run(
+        ["git", "diff", "--no-ext-diff", "--no-textconv", f"{base}..{head}", "--"], cwd=tree
+    )
+    assert captured.ok and captured.stdout_truncated and not captured.output_complete
+    assert sentinel.strip() not in captured.stdout
+    if redacted:
+        assert len(captured.stdout) < runner.limit  # Old length sentinel silently passed.
+        assert "[REDACTED]" in captured.stdout and secret not in captured.stdout
+    with pytest.raises(FrameworkError, match="exceeded evidence limit"):
+        review_assignment(project, subject, tree, base, head, completed, [{"status": "success"}], 1)
+    assert not list((project / ".ai/reviews").glob("*.patch"))

@@ -2,7 +2,7 @@ name: critical_review
 prompt_template: agents/critical-review.md
 model_profile: review_high
 assignment_template: handoffs/implementation-to-review.md
-output_template: handoffs/agent-critical-review.md
+output_template: reviews/critical-review.md
 permissions:
   modify_files: false
   run_commands: true

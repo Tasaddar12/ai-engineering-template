@@ -52,10 +52,12 @@ class Git:
         )
         if not result.ok:
             raise FrameworkError(f"Git {args[0]} {result.status}: {result.stderr.strip()}")
-        if len(result.stdout) >= self.runner.limit:
+        if result.stdout_truncated or result.stderr_truncated:
             raise FrameworkError(
                 "Git output exceeded evidence limit; refusing incomplete observation"
             )
+        if not result.output_complete:
+            raise FrameworkError("Git output capture incomplete; refusing unverified observation")
         return result
 
     def list_worktrees(self) -> list[dict[str, Any]]:

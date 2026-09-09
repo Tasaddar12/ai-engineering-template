@@ -271,11 +271,13 @@ def _validate_result(root: Path, request: AgentRequest, result: AgentResult) -> 
         policy = ConstraintPolicy(load_config(root, "constraints"))
         policy.root = request.worktree
         policy.check_paths(metadata["changed_files"], request.permissions["allowed_scope"])
-        for changed in metadata["changed_files"]:
-            if any(
-                scope == "." or changed == scope or changed.startswith(scope.rstrip("/") + "/")
-                for scope in request.permissions["prohibited_scope"]
-            ):
+        prohibited = [
+            request.worktree if scope == "." else contained(request.worktree, scope)
+            for scope in request.permissions["prohibited_scope"]
+        ]
+        for changed in scope_paths(request.worktree, metadata["changed_files"]):
+            path = contained(request.worktree, changed)
+            if any(path == scope or path.is_relative_to(scope) for scope in prohibited):
                 raise FrameworkError("Completion claims changes inside prohibited scope")
     if result.status == "COMPLETE" and request.role in {"implementation", "bugfix"}:
         completed_tasks = metadata.get("tasks_completed", [])
