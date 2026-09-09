@@ -2,15 +2,18 @@
 
 ## Now
 
-[PLAN-001](../plans/review/PLAN-001-minimal-ai-contracts.md) is a published scaffold draft
-awaiting user review. The assigned worktree is `ai-contract-scaffold` on
-`codex/ai-contract-scaffold`. Publication evidence is in the daily journal.
+[PLAN-001](../plans/review/PLAN-001-minimal-ai-contracts.md) contains draft refinements
+for workflows, research, policies, PASS/FAIL gates, eight agent roles and project
+context under state, following
+[INTAKE-002](../plans/intake/INTAKE-002-expand-operating-documents.md).
+The assigned worktree remains ai-contract-scaffold on codex/ai-contract-scaffold.
+The user explicitly authorized committing and pushing this draft; merge remains excluded.
 
 ## Next
 
-Await the user's yes, no or requested alterations to the proposed contracts. Return
-any revised proposal using the decision-summary template. No merge is authorized.
+Review the role boundaries, named workflows, parallel assignments, research format,
+policy requirements, gate criteria and PROJECT context. Await the user's feedback on the draft branch. Git owns the exact published revision.
 
 ## Blockers
 
-None recorded. No product implementation or automated enforcement is underway.
+None recorded. The contracts remain a documentation draft with manual checkpoints.

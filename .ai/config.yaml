@@ -4,7 +4,7 @@ paths:
   rules: .ai/RULES.md
   truth_map: .ai/truth-map.md
   config: .ai/config.yaml
-  intent: .ai/intent/INTENT.md
+  project: .ai/state/PROJECT.md
   state: .ai/state/STATE.md
   journal: .ai/state/journal
   specs: .ai/specs
@@ -17,6 +17,10 @@ paths:
   agents: .ai/agents
   hooks: .ai/hooks
   commands: .ai/commands
+  workflows: .ai/workflows
+  research: .ai/research
+  policies: .ai/policies
+  gates: .ai/gates
   plan_phases:
     backlog: .ai/plans/backlog
     active: .ai/plans/active
@@ -30,6 +34,7 @@ ids:
   amendment: 'AMD-{nnn}-{slug}.md'
   intake: 'INTAKE-{nnn}-{slug}.md'
   plan: 'PLAN-{nnn}-{slug}.md'
+  research: 'RES-{nnn}-{slug}.md'
   journal: '{date}.md'
   number_pattern: '[0-9]{3}'
   slug_pattern: '[a-z0-9]+(?:-[a-z0-9]+)*'

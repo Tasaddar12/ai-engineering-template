@@ -7,12 +7,17 @@ choices and describing the current project. Start at [AGENTS.md](AGENTS.md).
 - [One owner per fact](.ai/truth-map.md)
 - [Paths and file IDs](.ai/config.yaml)
 - [Now / Next / Blockers](.ai/state/STATE.md)
-- [Project intent](.ai/intent/INTENT.md)
+- [Workflows](.ai/workflows/README.md) and [command entry points](.ai/commands/README.md)
+- [Research records](.ai/research/README.md)
+- [Firm policies](.ai/policies/README.md) and [PASS/FAIL gates](.ai/gates/README.md)
+- [Project context](.ai/state/PROJECT.md)
+- [Eight agent roles](.ai/agents/README.md)
 - [Current project specification](.ai/specs/SPEC-001-project-contracts.md)
 - [Draft plan and delivery scope](.ai/plans/review/PLAN-001-minimal-ai-contracts.md)
 
 The requested folder structure lives entirely under `.ai`. Templates are flat;
-agent definitions and basic workflows are short Markdown documents. Empty lifecycle
+agent definitions and basic workflows are short Markdown documents. Policies own
+requirements, gates check transitions, and research keeps evidence separate from decisions. Empty lifecycle
 folders use `.gitkeep` so they survive a clone.
 
 This branch contains documentation and configuration only. It has no application,

@@ -2,6 +2,8 @@
 name: {{ role }}
 description: {{ one_sentence_description }}
 mode: {{ role_mode }}
+workflows: [{{ workflow_names }}]
+report_template: {{ report_template }}
 ---
 # {{ role }}
 
