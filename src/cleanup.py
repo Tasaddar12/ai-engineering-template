@@ -19,8 +19,6 @@ _REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9/_.-]*\Z")
 _PROTECTED = {
     ".git",
     ".ai/STATE.yaml",
-    ".ai/plans/active/PLAN-003.md",
-    ".ai/local/runtime",
 }
 _SECRET_PATTERNS = {".env", ".env.*", "*.pem", "*.key"}
 
@@ -218,7 +216,7 @@ def retire_worktree(
     if not branch.startswith("codex/") or not _OID.fullmatch(merged_revision):
         raise PolicyError("Retirement requires a managed branch and full merged revision")
     constraints = load_config(root, "constraints")
-    runner = CommandRunner(root, constraints, grants={"branch_retirement", "push"})
+    runner = CommandRunner(root, constraints, grants={"branch_retirement", "push", "credentials"})
     runner.policy.check_cleanup("merged_worktree_retirement", [str(worktree), branch])
     git = Git(root, runner)
     path = git._managed(worktree)
@@ -231,7 +229,7 @@ def retire_worktree(
             and previous.get("head") == merged_revision
             and previous.get("merge_confirmed") is True
         ):
-            if git.branch() != base or git.status():
+            if git.branch() != base or not git.clean_except(git.coordinator_changes()):
                 raise FrameworkError(
                     "Local integration checkout must remain clean for retirement reconciliation"
                 )
@@ -259,8 +257,10 @@ def retire_worktree(
         raise FrameworkError("Retirement requires an exact stopped owned worktree")
     if git.head(path) != merged_revision or git.branch(path) != branch:
         raise FrameworkError("Retirement target moved after merge")
-    if git.branch() != base or git.status():
-        raise FrameworkError("Coordinator checkout must be clean and on the integration branch")
+    if git.branch() != base or not git.clean_except(git.coordinator_changes()):
+        raise FrameworkError(
+            "Coordinator checkout has unexpected changes or is not on the integration branch"
+        )
     if not git.is_ancestor(merged_revision, base):
         raise FrameworkError("Reviewed revision is not present on the integration branch")
     if not git.cleanup(path, base=base, active=False):

@@ -129,7 +129,7 @@ files:
     sha256: e583aa8b1601eab681b1e9db06981b6a5b8dc8714e01591d73d72dbb1173f350
   constraints/commands.yaml:
     source: constraints/commands.yaml
-    sha256: afebd03867603a46fc54e94cb7dc5665bc1e11b88b8c45f187438a4a42d6ab5d
+    sha256: 2a7fc84afe6bc9200f2f69cde5efe8ed40badc18900bffec7381b9ab0aef28bc
   constraints/limits.yaml:
     source: constraints/limits.yaml
     sha256: 350bc074fbeb7507c1dc3a4e683160228924a7839ee8f619cedf6adb3ff9ff18
@@ -143,4 +143,4 @@ files:
     source: templates/project/AGENTS.md
     sha256: 8022309f34211a26ef68f74c5d4d5270e53d545bfad42d93c0a3d7c7deec20cb
 initialized_at: '2026-09-09T14:33:28.484111+00:00'
-updated_at: '2026-09-09T14:46:06.042258+00:00'
+updated_at: '2026-09-09T15:03:30.349199+00:00'

@@ -374,7 +374,10 @@ def _prepare(
     if reserved_feature_ids is not None and (
         len(reserved_feature_ids) != len(set(reserved_feature_ids))
         or any(not re.fullmatch(r"FEATURE-\d+", identifier) for identifier in reserved_feature_ids)
-        or any(identifier in {feature.id for feature in existing} for identifier in reserved_feature_ids)
+        or any(
+            identifier in {feature.id for feature in store.list("features")}
+            for identifier in reserved_feature_ids
+        )
     ):
         raise FrameworkError("Recovery feature reservation is invalid")
     reserved = iter(reserved_feature_ids or [])
@@ -991,4 +994,25 @@ def apply_plan_changes(
     """
 
     with StateStore(store.root).lock():
-        return _apply_plan_changes_unlocked(store, plan_id, changes, reservation)
+        paths = {
+            path
+            for kind in ("plans", "tasks", "features")
+            for path in [*safe_path(store.base, kind).glob("*.md"), *safe_path(store.base, kind).glob("*/*.md")]
+        }
+        previous = {path: path.read_bytes() for path in paths}
+        try:
+            return _apply_plan_changes_unlocked(store, plan_id, changes, reservation)
+        except Exception:
+            current = {
+                path
+                for kind in ("plans", "tasks", "features")
+                for path in [
+                    *safe_path(store.base, kind).glob("*.md"),
+                    *safe_path(store.base, kind).glob("*/*.md"),
+                ]
+            }
+            for path in current - paths:
+                path.unlink(missing_ok=True)
+            for path, content in previous.items():
+                atomic_write(path, content.decode("utf-8"))
+            raise

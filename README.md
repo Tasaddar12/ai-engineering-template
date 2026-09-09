@@ -29,6 +29,8 @@ subprocesses, including Git, validation, delivery and provider bridges, pass thr
 the central command runner. Hard blocks are metadata on the current lifecycle phase;
 there are no blocked lifecycle folders.
 
+Configure the provider using [Provider setup](docs/providers.md) before dispatching agents.
+
 ## Development state
 
 Current implementation work is described only by `.ai/plans/active/PLAN-003.md` in

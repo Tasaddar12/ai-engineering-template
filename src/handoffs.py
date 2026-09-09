@@ -145,7 +145,20 @@ def write_handoff(
         else ".ai/constraints.yaml#coding",
     )
     metadata.setdefault("command_policy", command_reference)
-    metadata.setdefault("commands", command_reference)
+    selected_commands = metadata.get("commands")
+    if selected_commands is None:
+        validation = metadata.get("validation", [])
+        selected_commands = (
+            list(validation)
+            if isinstance(validation, list)
+            and all(isinstance(item, str) for item in validation)
+            else []
+        )
+    if not isinstance(selected_commands, list) or not all(
+        isinstance(item, str) and item for item in selected_commands
+    ):
+        raise FrameworkError("Handoff commands must be a list of named commands")
+    metadata["commands"] = list(dict.fromkeys(selected_commands))
     references = metadata.get("context_refs", [])
     if not isinstance(references, list) or len(references) > 64:
         raise FrameworkError("Context references must be a bounded list")

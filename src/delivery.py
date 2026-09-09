@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 from typing import Any, Sequence
 
-from .cleanup import retire_worktree
 from .config import load_config
 from .errors import FrameworkError
 from .git import Git
@@ -200,14 +199,14 @@ def deliver(
     review: Path | str | dict[str, Any] | None = None,
     run_tests: bool = False,
 ) -> dict[str, Any]:
-    """Push, create/reconcile, merge, synchronize, and retire one exact branch."""
+    """Push, reconcile, merge and synchronize one exact branch; the coordinator retires it."""
 
     root = Path(root).absolute()
     constraints = load_config(root, "constraints")
     runner = CommandRunner(
         root,
         constraints,
-        grants={"push", "pull_request", "merge", "branch_retirement"},
+        grants={"push", "pull_request", "merge", "branch_retirement", "credentials"},
     )
     git = Git(root, runner)
     configuration = load_config(root, "framework").get("delivery", {})
@@ -376,10 +375,10 @@ def deliver(
             raise FrameworkError("Merge result is uncertain and remains unconfirmed")
     if pr.get("state") != "MERGED" or pr.get("headRefOid") != head or not pr.get("mergedAt"):
         raise FrameworkError("Hosted merge is not confirmed for the reviewed head")
-    synchronized = git.synchronize(base, remote)
+    synchronized = git.synchronize(base, remote, allowed_dirty=git.coordinator_changes())
     if not git.is_ancestor(head, synchronized):
         raise FrameworkError("Synchronized main does not contain the delivered head")
-    cleanup = retire_worktree(root, path, branch, head, base=base, remote=True)
+    cleanup = {"status": "pending", "worktree": str(path), "branch": branch}
     result = {
         **binding,
         "status": "merged",

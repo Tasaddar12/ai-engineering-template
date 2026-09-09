@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import re
+import shlex
+import shutil
+import os
+import stat
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -146,6 +150,12 @@ class Git:
         for name in files:
             safe_path(path, name)
         return files
+
+    def dirty_files(self, path: Path | None = None) -> list[str]:
+        return self.changed_files(path or self.root, "HEAD")
+
+    def clean_except(self, paths: set[str], path: Path | None = None) -> bool:
+        return set(self.dirty_files(path)) <= paths
 
     def is_ancestor(self, commit: str, target: str = "HEAD") -> bool:
         return self._run(
@@ -327,17 +337,47 @@ class Git:
         self._run(["fetch", "--no-tags", remote, branch], action="push")
         return self.resolve(f"{remote}/{branch}")
 
+    def _push(self, remote: str, arguments: list[str], path: Path, *, action: str) -> CommandResult:
+        """Use existing GitHub CLI auth only for this exact authorized push."""
+        identity = self.repository_identity(remote)
+        if not identity.casefold().startswith("github.com/"):
+            return self.runner.run(["git", "push", "--porcelain", remote, *arguments], cwd=path, action=action)
+        repository = identity.partition("/")[2]
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
+            raise FrameworkError("GitHub push requires an exact owner/repository")
+        self.runner.policy.check_action("credentials")
+        helper = Path(self.runner._executable(["gh"])[0]).resolve(strict=True)
+        if helper.is_relative_to(self.root.resolve(strict=True)):
+            raise PolicyError("GitHub credential helper must be installed outside the project")
+        argv = ["git", "push", "--porcelain", f"https://github.com/{repository}.git", *arguments]
+        helper_command = "!" + shlex.quote(helper.as_posix()) + " auth git-credential"
+
+        class AuthenticatedPush(CommandRunner):
+            def _environment(self, tokens: list[str]) -> dict[str, str]:
+                env = super()._environment(tokens)
+                if tokens != argv:
+                    return env
+                count = int(env.get("GIT_CONFIG_COUNT", "0"))
+                for key, value in (
+                    ("credential.https://github.com.helper", helper_command),
+                    ("credential.https://github.com.useHttpPath", "true"),
+                ):
+                    env[f"GIT_CONFIG_KEY_{count}"] = key
+                    env[f"GIT_CONFIG_VALUE_{count}"] = value
+                    count += 1
+                env["GIT_CONFIG_COUNT"] = str(count)
+                return env
+
+        runner = AuthenticatedPush(self.root, self.runner.policy.config, run_dir=self.runner.run_dir,
+                                   dry_run=self.runner.dry_run, grants=self.runner.policy.grants)
+        return runner.run(argv, cwd=path, action=action)
+
     def push_branch(self, path: Path, remote: str, branch: str, expected_head: str) -> None:
         path = self._managed(path)
         remote, branch, expected_head = _ref(remote), _ref(branch), _oid(expected_head)
         if self.branch(path) != branch or self.head(path) != expected_head:
             raise FrameworkError("Refusing to push a moved worktree branch")
-        result = self.runner.run(
-            ["git", "push", "--set-upstream", remote, branch],
-            cwd=path,
-            role="orchestrator",
-            action="push",
-        )
+        result = self._push(remote, [f"{expected_head}:refs/heads/{branch}"], path, action="push")
         observed = self.remote_head(remote, branch)
         if observed != expected_head:
             detail = result.stderr.strip() or result.stdout.strip()
@@ -362,15 +402,76 @@ class Git:
             raise FrameworkError("Remote branch observation returned an unexpected ref")
         return _oid(observed)
 
-    def synchronize(self, base: str, remote: str = "origin") -> str:
+    def coordinator_changes(self) -> set[str]:
+        controls = (".ai/plans/", ".ai/tasks/", ".ai/features/", ".ai/bugs/", ".ai/reviews/", ".ai/handoffs/")
+        return {name for name in self.dirty_files()
+                if name == ".ai/STATE.yaml" or name.startswith(controls)}
+
+    def has_product_changes(self) -> bool:
+        return bool(set(self.dirty_files()) - self.coordinator_changes())
+
+    def _clear_owned_scratch(self, path: Path) -> bool:
+        ignored = self._run(["ls-files", "--others", "--ignored", "--exclude-standard", "-z"], path).stdout
+        targets: set[Path] = set()
+        for name in filter(None, ignored.split("\0")):
+            item = Path(name)
+            if item.name.startswith(".env") or item.suffix.lower() in {".key", ".pem"}:
+                return False
+            parts = item.parts
+            if name.startswith(".ai/local/"):
+                relative = Path(".ai/local")
+            elif parts[0] in {".pytest_cache", ".mypy_cache", ".ruff_cache"}:
+                relative = Path(parts[0])
+            elif "__pycache__" in parts:
+                relative = Path(*parts[:parts.index("__pycache__") + 1])
+            else:
+                return False
+            targets.add(safe_path(path, relative))
+        for target in sorted(targets, key=lambda value: len(value.parts), reverse=True):
+            if not target.exists():
+                continue
+            checked = target.resolve(strict=True)
+            if checked == path.resolve(strict=True) or not checked.is_relative_to(path.resolve(strict=True)):
+                raise PolicyError("Owned scratch cleanup escaped its managed worktree")
+            def retry(func: Any, candidate: str, error: Any) -> None:
+                if not isinstance(error[1], PermissionError) or not Path(candidate).absolute().is_relative_to(checked):
+                    raise error[1]
+                os.chmod(candidate, stat.S_IREAD | stat.S_IWRITE)
+                func(candidate)
+            shutil.rmtree(checked, onerror=retry)
+        return True
+
+    def synchronize(
+        self,
+        base: str,
+        remote: str = "origin",
+        *,
+        allowed_dirty: set[str] | None = None,
+    ) -> str:
         base, remote = _ref(base), _ref(remote)
         remote_head = self.fetch(remote, base)
-        if self.branch() != base or self.status():
-            raise FrameworkError("Local integration checkout must be clean and on the base branch")
+        permitted = allowed_dirty or set()
+        dirty = set(self.dirty_files())
+        if self.branch() != base or not dirty <= permitted:
+            raise FrameworkError(
+                "Local integration checkout has unexpected changes or is not on the base branch"
+            )
         local = self.head()
         if local != remote_head:
             if not self.is_ancestor(local, f"{remote}/{base}"):
                 raise FrameworkError("Local integration branch has diverged from its remote")
+            changed = set(
+                filter(
+                    None,
+                    self._run(
+                        ["diff", "--name-only", "-z", local, remote_head, "--"]
+                    ).stdout.split("\0"),
+                )
+            )
+            if dirty & changed:
+                raise FrameworkError(
+                    "Remote integration changes overlap coordinator-owned local state"
+                )
             self._run(["merge", "--ff-only", f"{remote}/{base}"], action="merge")
         if self.head() != remote_head:
             raise FrameworkError("Local integration branch did not synchronize exactly")
@@ -397,12 +498,7 @@ class Git:
             return True
         if observed != expected_head:
             raise FrameworkError("Remote branch advanced after merge; refusing deletion")
-        result = self.runner.run(
-            ["git", "push", remote, "--delete", branch],
-            cwd=self.root,
-            role="orchestrator",
-            action="branch_retirement",
-        )
+        result = self._push(remote, ["--delete", branch], self.root, action="branch_retirement")
         remaining = self.remote_head(remote, branch)
         if remaining is None:
             return True
@@ -443,7 +539,7 @@ class Git:
         index_flags = self._run(["ls-files", "-v", "-z"], path).stdout
         if any(item and (item[0].islower() or item[0] == "S") for item in index_flags.split("\0")):
             return False
-        if self.status(path, ignored=True):
+        if self.dirty_files(path):
             return False
         head = self.head(path)
         if merged_revision is not None and head != _oid(merged_revision):
@@ -460,6 +556,8 @@ class Git:
             "disposition": disposition,
             "checked_at": utc_now(),
         }
+        if not self._clear_owned_scratch(path):
+            return False
         write_yaml(receipt, audit)
         self._run(["worktree", "remove", str(path)])
         write_yaml(receipt, {**audit, "status": "removed", "removed_at": utc_now()})

@@ -6,6 +6,7 @@ import json
 import os
 import re
 import uuid
+import hashlib
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Protocol, Sequence
@@ -14,8 +15,16 @@ from .config import load_config
 from .constraints import ConstraintPolicy
 from .errors import FrameworkError
 from .git import Git
-from .handoffs import contained, digest, immutable_yaml, read_markdown, reject_secrets, scope_paths
-from .io import read_yaml, safe_path, utc_now, write_yaml
+from .handoffs import (
+    contained,
+    digest,
+    immutable_write,
+    immutable_yaml,
+    read_markdown,
+    reject_secrets,
+    scope_paths,
+)
+from .io import MAX_RECORD_BYTES, read_yaml, safe_path, utc_now, write_yaml
 from .planning_intent import require_implementation_authority
 from .review import SESSION, read_review
 from .runner import CommandRunner
@@ -441,9 +450,15 @@ class CommandAgentProvider:
                 f"model_reasoning_effort={json.dumps(request.model['reasoning'])}",
             ]
             if provider_session:
-                command = [*common, "exec", "resume", "--json", provider_session, "-"]
+                command = [*common, "exec", "--json", "-C", str(request.worktree), "resume", provider_session, "-"]
             else:
                 command = [*common, "exec", "--json", "-C", str(request.worktree), "-"]
+            codex_options: dict[str, Any] = {}
+            if os.name == "nt":
+                configuration = bridge.get("confinement")
+                if not isinstance(configuration, dict):
+                    raise FrameworkError("Windows Codex provider requires a confinement mapping")
+                codex_options["configuration"] = configuration
             confined = codex_confinement(
                 executable,
                 command,
@@ -451,6 +466,7 @@ class CommandAgentProvider:
                 writable_roots=writable,
                 read_only_roots=runtime,
                 permissions_profile=profile,
+                **codex_options,
             )
         else:
             raw = bridge.get("argv")
@@ -495,6 +511,7 @@ class CommandAgentProvider:
         return confined.argv, evidence, prompt
 
     def preflight(self, request: AgentRequest) -> list[str]:
+        request.output.parent.mkdir(parents=True, exist_ok=True)
         invocation, _, _ = self._confinement(request)
         return invocation
 
@@ -600,6 +617,129 @@ def _worktree_binding(
     return git, bound_session
 
 
+def _snapshot_assignment(
+    root: Path,
+    worktree: Path,
+    assignment: Path,
+    requested_run_dir: Path,
+) -> tuple[Path, Path]:
+    """Copy coordinator context into an immutable in-worktree provider snapshot."""
+
+    if assignment.is_relative_to(worktree) and requested_run_dir.is_relative_to(worktree):
+        return assignment, requested_run_dir
+    fingerprint = digest(assignment)
+    snapshot_root = safe_path(worktree, f".ai/local/context/{fingerprint}")
+    metadata, body = read_markdown(assignment)
+    references = metadata.get("context_refs", [])
+    if not isinstance(references, list) or len(references) > 128:
+        raise FrameworkError("Assignment context_refs must be a bounded list")
+    copied: list[str] = []
+    for index, reference in enumerate(references):
+        if not isinstance(reference, str):
+            raise FrameworkError("Assignment context references must be strings")
+        raw_path, separator, anchor = reference.partition("#")
+        source = contained(root, raw_path)
+        if not source.is_file() or source.stat().st_size > MAX_RECORD_BYTES:
+            raise FrameworkError(f"Assignment context is missing or too large: {raw_path}")
+        try:
+            content = source.read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeError) as exc:
+            raise FrameworkError(f"Assignment context must be readable UTF-8: {raw_path}") from exc
+        destination = safe_path(
+            worktree,
+            f".ai/local/context/{fingerprint}/files/{index:03d}-{source.name}",
+        )
+        if destination.exists():
+            if destination.read_text(encoding="utf-8") != content:
+                raise FrameworkError("Existing context snapshot differs from its source binding")
+        else:
+            immutable_write(destination, content)
+        relative = destination.relative_to(worktree).as_posix()
+        copied.append(relative + ("#" + anchor if separator else ""))
+    state = StateStore(root).load()
+    matches: list[dict[str, Any]] = []
+    for record in state.get("worktrees", []):
+        if not isinstance(record, dict) or not isinstance(record.get("path"), str):
+            continue
+        path = Path(record["path"])
+        candidate = path.absolute() if path.is_absolute() else (root / path).absolute()
+        if candidate == worktree:
+            matches.append(record)
+    if len(matches) != 1:
+        raise FrameworkError("Managed worktree requires one coordinator ownership record")
+    ownership = matches[0]
+    framework = load_config(root, "framework")
+    remote = framework.get("delivery", {}).get("remote", "origin")
+    if not isinstance(remote, str):
+        raise FrameworkError("Framework delivery remote must be a string")
+    git = Git(root, CommandRunner(root, load_config(root, "constraints")))
+    required = {
+        "worktree": str(worktree),
+        "branch": ownership.get("branch", metadata.get("branch")),
+        "repository": git.repository_identity(remote),
+        "purpose": ownership.get("purpose"),
+        "worktree_session": ownership.get("session_id"),
+        "context_refs": copied,
+    }
+    if not all(isinstance(required[field], str) and required[field] for field in (
+        "branch",
+        "repository",
+        "purpose",
+        "worktree_session",
+    )):
+        raise FrameworkError("Coordinator worktree record lacks fixed assignment identity")
+    selected = metadata.get("commands", [])
+    if not isinstance(selected, list):
+        raise FrameworkError("Assignment commands must be a list")
+    snapshot_metadata = {**metadata, **required, "commands": selected}
+    reject_secrets(root, snapshot_metadata)
+    import yaml
+
+    snapshot_text = (
+        "---\n"
+        + yaml.safe_dump(snapshot_metadata, sort_keys=False, allow_unicode=True)
+        + "---\n"
+        + body
+    )
+    snapshot = snapshot_root / "assignment.md"
+    if snapshot.exists():
+        if snapshot.read_text(encoding="utf-8") != snapshot_text:
+            raise FrameworkError("Existing assignment snapshot has a different binding")
+    else:
+        immutable_write(snapshot, snapshot_text)
+    run_key = hashlib.sha256(str(requested_run_dir).encode("utf-8")).hexdigest()[:24]
+    run_dir = safe_path(worktree, f".ai/local/runs/{run_key}")
+    return snapshot, run_dir
+
+
+def _collect_result(
+    root: Path,
+    worktree: Path,
+    provider_result: AgentResult,
+    collection_dir: Path,
+) -> AgentResult:
+    if collection_dir.is_relative_to(worktree):
+        return provider_result
+    if not collection_dir.is_relative_to(safe_path(root, ".ai/runs")):
+        raise FrameworkError("Coordinator collection directory must stay under .ai/runs")
+    destination = collection_dir / "output.md"
+    try:
+        content = provider_result.output.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise FrameworkError("Provider result could not be collected as UTF-8") from exc
+    if destination.exists():
+        if digest(destination) != digest(provider_result.output):
+            raise FrameworkError("Collected output differs from its in-worktree source")
+    else:
+        immutable_write(destination, content)
+    return AgentResult(
+        provider_result.status,
+        destination,
+        provider_result.session_id,
+        provider_result.metadata,
+    )
+
+
 def dispatch(
     root: Path,
     role: str,
@@ -617,12 +757,15 @@ def dispatch(
     definition = resolve_agent(root, role, phase=phase)
     worktree = _worktree(root, worktree, modify=definition["permissions"]["modify_files"])
     assignment = contained(root, assignment)
+    run_dir = contained(root, run_dir)
+    collection_dir = run_dir
+    if worktree != root:
+        assignment, run_dir = _snapshot_assignment(root, worktree, assignment, run_dir)
     context, _ = read_markdown(assignment)
     if context.get("role") != role or not isinstance(context.get("subject"), str) or not context["subject"]:
         raise FrameworkError("Assignment must identify the dispatched role and subject")
     if context.get("worktree") and _worktree(root, context["worktree"], modify=definition["permissions"]["modify_files"]) != worktree:
         raise FrameworkError("Assignment worktree differs from dispatch")
-    run_dir = contained(root, run_dir)
     if worktree != root and (
         not assignment.is_relative_to(worktree) or not run_dir.is_relative_to(worktree)
     ):
@@ -676,10 +819,16 @@ def dispatch(
             saved = read_yaml(result_path)
             if saved.get("output_sha256") != digest(output) or read_yaml(request_path) != record:
                 raise FrameworkError("Completed invocation evidence changed")
-            restored = AgentResult(
+            provider_result = AgentResult(
                 saved["status"], Path(saved["output"]), saved["session_id"], saved["metadata"]
             )
-            return _validate_result(root, request, restored)
+            provider_result = _validate_result(root, request, provider_result)
+            restored = _collect_result(root, worktree, provider_result, collection_dir)
+            if saved.get("collected_output") != str(restored.output) or saved.get(
+                "collected_sha256"
+            ) != digest(restored.output):
+                raise FrameworkError("Collected provider evidence changed")
+            return restored
         if any(path.exists() for path in (request_path, output, result_path, run_dir / "response.yaml")):
             raise FrameworkError("Dispatch directory contains unowned provider evidence")
         if isinstance(selected_provider, CommandAgentProvider):
@@ -700,7 +849,7 @@ def dispatch(
     if git is not None and owner_session is not None:
         git.mark_owner(worktree, owner_session, "running")
     try:
-        result = _validate_result(root, request, selected_provider.invoke(request))
+        provider_result = _validate_result(root, request, selected_provider.invoke(request))
     finally:
         if git is not None and owner_session is not None:
             git.mark_owner(worktree, owner_session, "stopped")
@@ -708,12 +857,15 @@ def dispatch(
         _worktree_binding(root, worktree, context, session, role)
     if digest(assignment) != binding["assignment_sha256"] or read_yaml(request_path) != record or read_yaml(intent_path) != binding:
         raise FrameworkError("Provider changed immutable assignment/invocation evidence")
+    result = _collect_result(root, worktree, provider_result, collection_dir)
     saved = {
-        "status": result.status,
-        "output": str(result.output),
-        "session_id": result.session_id,
-        "metadata": result.metadata,
-        "output_sha256": digest(result.output),
+        "status": provider_result.status,
+        "output": str(provider_result.output),
+        "session_id": provider_result.session_id,
+        "metadata": provider_result.metadata,
+        "output_sha256": digest(provider_result.output),
+        "collected_output": str(result.output),
+        "collected_sha256": digest(result.output),
     }
     immutable_yaml(result_path, saved)
     return result
