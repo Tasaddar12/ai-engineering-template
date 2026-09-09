@@ -443,9 +443,13 @@ class CommandRunner:
         return [executable, *tokens[1:]]
 
     def _environment(self, argv: list[str]) -> dict[str, str]:
-        env = dict(os.environ)
+        # Alternate Git metadata and interpreter roots never cross the runner boundary.
+        env = {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith("GIT_") and key not in {"PYTHONHOME", "PYTHONPATH"}
+        }
         if _is_git_argv(command_tokens(argv)):
-            env = {key: value for key, value in env.items() if not key.startswith("GIT_")}
             # Neither local hooks nor external diff/fsmonitor helpers belong to a Git primitive.
             configs = {
                 "core.hooksPath": os.devnull,
@@ -621,12 +625,13 @@ class CommandRunner:
     ) -> CommandResult:
         """Run an exact configured command; assignments may only narrow its selection."""
 
+        selected = tuple(selected_commands) if selected_commands is not None else None
         argv, timeout = self.policy.named_command(
             name,
             role,
             workflow=workflow,
             task=task,
-            selected_commands=selected_commands,
+            selected_commands=selected,
         )
         return self.run(
             argv,
@@ -637,5 +642,5 @@ class CommandRunner:
             workflow=workflow,
             task=task,
             command_name=name,
-            selected_commands=selected_commands,
+            selected_commands=selected,
         )

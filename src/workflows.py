@@ -81,7 +81,7 @@ def _dispatch(
     assignment = Path(_required(options, "assignment"))
     if not assignment.is_absolute():
         assignment = root / assignment
-    assignment = contained(root, assignment, directory=".ai")
+    assignment = contained(root, assignment)
     metadata, _ = read_markdown(assignment)
     if subject is not None and metadata.get("subject") != subject:
         raise FrameworkError("CLI subject differs from the assigned workflow subject")
@@ -115,7 +115,7 @@ def validate(root: Path, subject: str | None = None, **options: Any) -> dict[str
     selected = options.pop("commands", None)
     cwd_value = options.pop("cwd", root)
     role = options.pop("role", "orchestrator")
-    tasks = options.pop("tasks", ())
+    task = options.pop("task", None)
     if options:
         raise FrameworkError(f"Unknown validation options: {', '.join(sorted(options))}")
     if not isinstance(dry_run, bool):
@@ -125,11 +125,9 @@ def validate(root: Path, subject: str | None = None, **options: Any) -> dict[str
         or isinstance(grants, (str, bytes))
         or not isinstance(grants, (list, tuple, set))
         or any(not isinstance(grant, str) for grant in grants)
-        or isinstance(tasks, (str, bytes))
-        or not isinstance(tasks, (list, tuple, set))
-        or any(not isinstance(task, str) for task in tasks)
+        or (task is not None and not isinstance(task, str))
     ):
-        raise FrameworkError("Validation role/tasks are malformed")
+        raise FrameworkError("Validation role/task/grants are malformed")
     config = load_config(root, "project/commands")
     named = config.get("commands", config)
     if not isinstance(named, dict) or not named:
@@ -149,20 +147,14 @@ def validate(root: Path, subject: str | None = None, **options: Any) -> dict[str
     )
     results: list[dict[str, Any]] = []
     for name in names:
-        command = named[name]
-        if not isinstance(command, dict):
-            raise FrameworkError(f"Named command {name} must be a mapping")
-        if command.get("roles") and role not in command["roles"]:
-            raise FrameworkError(f"Named command {name} is not allowed for role {role}")
-        if command.get("workflows") and "validation" not in command["workflows"]:
-            raise FrameworkError(f"Named command {name} is not allowed for validation")
-        if command.get("tasks") and not set(tasks).intersection(command["tasks"]):
-            raise FrameworkError(f"Named command {name} is not allowed for the assigned tasks")
-        argv = command.get("argv")
-        timeout = command.get("timeout", 120)
-        if not isinstance(argv, list) or not all(isinstance(token, str) for token in argv):
-            raise FrameworkError(f"Named command {name} requires argv")
-        result = runner.run(argv, cwd=Path(cwd_value), timeout=timeout, role=role)
+        result = runner.run_named(
+            name,
+            cwd=Path(cwd_value),
+            role=role,
+            workflow="validation",
+            task=task,
+            selected_commands=names,
+        )
         results.append({"name": name, **asdict(result)})
         if result.status not in {"success", "expected_failure", "dry_run"}:
             break

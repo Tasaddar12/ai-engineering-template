@@ -8,10 +8,21 @@ max_review_iterations: 3
 max_recovery_attempts: 3
 agent_timeout: 1800
 providers:
+  codex:
+    executable: codex
+    configured: false
+    permissions_profiles:
+      workspace_write: ai-engineering-workspace-write
+      output_only: ai-engineering-output-only
+    read_only_runtime: []
+    uses_credentials: true
+    paid: true
   command:
     argv: []
     configured: false
-    confinement: required
+    confinement:
+      mechanism: bubblewrap
+    read_only_runtime: []
     uses_credentials: false
     paid: false
 delivery:

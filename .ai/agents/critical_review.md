@@ -1,6 +1,6 @@
 ---
 name: critical_review
-provider: command
+provider: codex
 model: gpt-6-astra
 reasoning: xhigh
 capability: 4

@@ -184,7 +184,7 @@ class Git:
         branch: str,
         base: str = "HEAD",
         *,
-        purpose: str = "implementation",
+        purpose: str | None = None,
         subject: str | None = None,
         session_id: str | None = None,
         remote: str = "origin",
@@ -195,7 +195,7 @@ class Git:
         branch, base, remote = _ref(branch), _ref(base), _ref(remote)
         if not branch.startswith("codex/"):
             raise PolicyError("Managed branches must start with codex/")
-        if purpose not in {"planning", "implementation", "bugfix", "recovery"}:
+        if purpose is not None and purpose not in {"planning", "implementation", "bugfix", "recovery"}:
             raise PolicyError("Managed worktree has an unsupported purpose")
         if subject is not None and (not isinstance(subject, str) or not subject.strip()):
             raise FrameworkError("Managed worktree subject must be nonempty")
@@ -276,6 +276,18 @@ class Git:
             "purpose": record.get("purpose"),
             "session_id": record.get("session_id"),
         }
+        if (
+            record.get("owner_status") == "unassigned"
+            and actual["branch"] == expected["branch"]
+            and actual["repository"] == expected["repository"]
+            and actual["purpose"] is None
+            and actual["session_id"] is None
+        ):
+            # Older create_worktree callers use the preserved three-argument API.
+            # Bind its otherwise-unassigned receipt exactly once before provider launch.
+            record = {**record, "purpose": purpose, "session_id": session_id}
+            write_yaml(self._receipt(path), record)
+            actual = expected
         if actual != expected or record.get("locked") or record.get("prunable"):
             raise FrameworkError("Assignment no longer matches its fixed worktree ownership")
         if self.branch(path) != expected["branch"]:
@@ -320,7 +332,19 @@ class Git:
         remote, branch, expected_head = _ref(remote), _ref(branch), _oid(expected_head)
         if self.branch(path) != branch or self.head(path) != expected_head:
             raise FrameworkError("Refusing to push a moved worktree branch")
-        self._run(["push", "--set-upstream", remote, branch], path, action="push")
+        result = self.runner.run(
+            ["git", "push", "--set-upstream", remote, branch],
+            cwd=path,
+            role="orchestrator",
+            action="push",
+        )
+        observed = self.remote_head(remote, branch)
+        if observed != expected_head:
+            detail = result.stderr.strip() or result.stdout.strip()
+            raise FrameworkError(
+                "Pushed branch is not confirmed at the expected head; "
+                f"reconcile before another write ({detail})"
+            )
 
     def remote_head(self, remote: str, branch: str) -> str | None:
         remote, branch = _ref(remote), _ref(branch)
@@ -373,8 +397,21 @@ class Git:
             return True
         if observed != expected_head:
             raise FrameworkError("Remote branch advanced after merge; refusing deletion")
-        self._run(["push", remote, "--delete", branch], action="branch_retirement")
-        return self.remote_head(remote, branch) is None
+        result = self.runner.run(
+            ["git", "push", remote, "--delete", branch],
+            cwd=self.root,
+            role="orchestrator",
+            action="branch_retirement",
+        )
+        remaining = self.remote_head(remote, branch)
+        if remaining is None:
+            return True
+        if remaining != expected_head:
+            raise FrameworkError("Remote branch advanced during retirement")
+        detail = result.stderr.strip() or result.stdout.strip()
+        raise FrameworkError(
+            "Remote branch deletion is not confirmed; reconcile before retry " f"({detail})"
+        )
 
     def cleanup(
         self,

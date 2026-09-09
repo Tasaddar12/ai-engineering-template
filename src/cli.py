@@ -55,6 +55,7 @@ def _parser() -> argparse.ArgumentParser:
     validation.add_argument("subject", nargs="?")
     validation.add_argument("--command", action="append", dest="validation_commands")
     validation.add_argument("--cwd", type=Path)
+    validation.add_argument("--task")
     validation.add_argument("--dry-run", action="store_true")
     validation.add_argument("--grant", action="append", default=[])
 
@@ -157,6 +158,7 @@ def _execute(args: argparse.Namespace) -> dict[str, Any]:
             cwd=args.cwd or root,
             dry_run=args.dry_run,
             grants=args.grant,
+            task=args.task,
         )
     if args.command in {"review", "recovery", "research"}:
         return route(root, args.command, args.subject, **_dispatch_options(args))

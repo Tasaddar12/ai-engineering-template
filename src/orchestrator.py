@@ -186,7 +186,15 @@ def _existing_worktree(root: Path, subject: str, purpose: str) -> Record | None:
         and record.get("subject") == subject
         and record.get("purpose") == purpose
         and record.get("status")
-        in {"in-progress", "repair", "review", "delivery", "merged", "cleanup_failed"}
+        in {
+            "in-progress",
+            "repair",
+            "review",
+            "delivery",
+            "merged",
+            "cleanup_failed",
+            "blocked",
+        }
     ]
     if len(matches) > 1:
         raise FrameworkError(f"Ambiguous worktree ownership for {subject}")
@@ -313,17 +321,18 @@ def create_plan(root: Path | str, title: str, scope: list[str]) -> Record:
         branch,
         revision=reservation["revision"],
     )
-    plan = ArtifactStore(worktree).create(
-        "plans",
-        plan_id,
-        title,
-        "draft",
-        scope=approved_scope,
-        planning_revision=reservation["revision"],
-        planning_purpose=True,
-        tasks=[],
-        features=[],
-    )
+    with StateStore(worktree).lock():
+        plan = ArtifactStore(worktree).create(
+            "plans",
+            plan_id,
+            title,
+            "draft",
+            scope=approved_scope,
+            planning_revision=reservation["revision"],
+            planning_purpose=True,
+            tasks=[],
+            features=[],
+        )
     return {
         "status": "planning_worktree_ready",
         "plan": plan_id,
@@ -350,6 +359,9 @@ def _delivered_revision(root: Path, plan: Artifact, scope: list[str]) -> str:
     if isinstance(current, dict):
         revision = current.get("delivery", {}).get("revision")
         if isinstance(revision, str):
+            planning_revision = plan.metadata.get("planning_revision")
+            if planning_revision is not None and planning_revision != current.get("revision"):
+                raise FrameworkError("Canonical PLAN differs from its delivered planning revision")
             return revision
         raise FrameworkError("Delivered planning provenance is malformed")
     _, git = _runtime(root, f"plan-provenance-{plan.id.lower()}")
@@ -363,6 +375,12 @@ def revise_plan(root: Path | str, plan_id: str, **changes: Any) -> Record:
     root = _root(root)
     store = ArtifactStore(root)
     plan = store.find(plan_id)
+    if plan.metadata.get("kind") != "plans" or plan.status in {
+        "completed",
+        "archived",
+        "superseded",
+    }:
+        raise FrameworkError("Planning revision requires a current PLAN")
     scope = scope_paths(root, changes.get("scope", _plan_scope(store, plan)))
     _delivered_revision(root, plan, _plan_scope(store, plan))
     preparation = prepare_intent(
@@ -387,7 +405,12 @@ def revise_plan(root: Path | str, plan_id: str, **changes: Any) -> Record:
         branch,
         revision=reservation["revision"],
     )
-    revised = apply_plan_changes(ArtifactStore(worktree), plan_id, changes, reservation)
+    normalized_changes = dict(changes)
+    if "scope" in changes:
+        normalized_changes["scope"] = scope
+    revised = apply_plan_changes(
+        ArtifactStore(worktree), plan_id, normalized_changes, reservation
+    )
     return {
         "status": "planning_revision_ready",
         "plan": plan_id,
@@ -586,7 +609,12 @@ def _run_validation(root: Path, worktree: Path, subject: Artifact) -> list[Recor
     names = subject.metadata.get("validation") or [
         name for name in ("format", "lint", "types", "tests") if name in configured
     ]
-    if not names:
+    if (
+        not isinstance(names, list)
+        or not names
+        or not all(isinstance(name, str) and name for name in names)
+        or len(names) != len(set(names))
+    ):
         raise FrameworkError("Validation requested but no named commands are configured")
     runner = CommandRunner(
         root,
@@ -627,6 +655,96 @@ def _run_validation(root: Path, worktree: Path, subject: Artifact) -> list[Recor
 
 def _deferred_validation() -> list[Record]:
     return [{"command": "validation", "status": "DEFERRED_BY_USER"}]
+
+
+def _scope_contains(scope: list[str], path: str) -> bool:
+    normalized = tuple(path.replace("\\", "/").split("/"))
+    for parent in scope:
+        if parent == ".":
+            return True
+        prefix = tuple(parent.replace("\\", "/").split("/"))
+        if normalized[: len(prefix)] == prefix:
+            return True
+    return False
+
+
+def _commit_agent_changes(
+    root: Path,
+    subject: Artifact,
+    worktree: Path,
+    git: Git,
+    base: str,
+    message: str,
+) -> str:
+    dirty = git.status(worktree)
+    current_head = git.head(worktree)
+    record = _existing_worktree(root, subject.id, "implementation")
+    if not dirty:
+        if (
+            record is not None
+            and record.get("stage") == "committed"
+            and record.get("head") == current_head
+            and current_head != base
+        ):
+            return current_head
+        raise FrameworkError("Agent completed without an uncommitted source change")
+    changed = git.changed_files(worktree, base)
+    allowed = _work_scope(root, subject)
+    outside = [path for path in changed if not _scope_contains(allowed, path)]
+    if outside:
+        raise FrameworkError(
+            "Agent changed files outside canonical work scope: " + ", ".join(outside)
+        )
+    head = git.commit(worktree, message)
+    if git.status(worktree):
+        raise FrameworkError("Coordinator commit left the managed worktree dirty")
+    _update_worktree(
+        root,
+        subject.id,
+        "in-progress",
+        head=head,
+        stage="committed",
+    )
+    return head
+
+
+def _start_feature(root: Path, feature_id: str) -> Artifact:
+    with StateStore(root).lock():
+        store = ArtifactStore(root)
+        feature = store.find(feature_id)
+        if feature.status == "ready":
+            feature = store.transition(feature.id, "in-progress")
+        if feature.status not in {"in-progress", "review"}:
+            raise FrameworkError(f"Feature phase cannot start implementation: {feature.status}")
+        for task_id in feature.metadata.get("tasks", []):
+            task = store.find(task_id)
+            if task.metadata.get("hard_block") is not None:
+                raise FrameworkError(f"Assigned task is hard-blocked: {task.id}")
+            if task.status in {"backlog", "ready"}:
+                store.transition(task.id, "in-progress")
+            elif task.status not in {"in-progress", "completed"}:
+                raise FrameworkError(f"Assigned task phase is ineligible: {task.id}/{task.status}")
+    refresh_index(root)
+    return ArtifactStore(root).find(feature_id)
+
+
+def _clear_block(root: Path, identifier: str) -> None:
+    with StateStore(root).lock():
+        store = ArtifactStore(root)
+        artifact = store.find(identifier)
+        if artifact.metadata.get("hard_block") is not None:
+            store.clear_hard_block(identifier)
+        state = StateStore(root)
+        value = state.load()
+        blockers = value.setdefault("blockers", [])
+        filtered = [
+            item
+            for item in blockers
+            if not isinstance(item, dict) or item.get("subject") != identifier
+        ]
+        if filtered != blockers:
+            value["blockers"] = filtered
+            state.save(value)
 
 
 def _review_feature(
@@ -708,7 +826,11 @@ def _record_block(root: Path, subject: Artifact, error: Exception) -> Record:
             )
         state = StateStore(root)
         value = state.load()
-        blocker = {"subject": subject.id, **current.metadata["hard_block"]}
+        blocker = {
+            "subject": subject.id,
+            **current.metadata["hard_block"],
+            "recorded_at": utc_now(),
+        }
         value.setdefault("blockers", [])[:] = [
             item
             for item in value.get("blockers", [])
@@ -716,6 +838,8 @@ def _record_block(root: Path, subject: Artifact, error: Exception) -> Record:
         ]
         value["blockers"].append(blocker)
         state.save(value)
+    if _existing_worktree(root, subject.id, "implementation") is not None:
+        _update_worktree(root, subject.id, "blocked", error=reason)
     return blocker
 
 
@@ -770,8 +894,7 @@ def _deliver_work(
     branch: str,
     *,
     review: Path | None,
-) -> Record:
-    from .cleanup import retire_worktree
+) -> tuple[Record, str]:
     from .delivery import deliver
 
     outcome = deliver(
@@ -787,15 +910,53 @@ def _deliver_work(
     merged = outcome.get("merged_revision") or outcome.get("merge_commit") or outcome.get("head")
     if not isinstance(merged, str):
         raise FrameworkError("Delivery did not return a merged revision")
+    return outcome, merged
+
+
+def _retire_work(
+    root: Path,
+    subject: str,
+    worktree: Path,
+    branch: str,
+    merged_revision: str,
+) -> Any:
+    from .cleanup import retire_worktree
+
     retired = retire_worktree(
         root,
         worktree,
         branch,
-        merged,
+        merged_revision,
         base="main",
         remote=True,
     )
-    return {"delivery": outcome, "cleanup": retired}
+    if retired is False or retired is None:
+        raise FrameworkError("Merged worktree retirement did not complete")
+    _forget_worktree(root, subject, retired)
+    return retired
+
+
+def _resume_cleanup(root: Path, plan: Artifact) -> list[Record]:
+    subjects = set(plan.metadata.get("features", []))
+    records = [
+        record
+        for record in StateStore(root).load().get("worktrees", [])
+        if isinstance(record, dict)
+        and record.get("subject") in subjects
+        and record.get("purpose") == "implementation"
+        and record.get("status") in {"merged", "cleanup_failed"}
+    ]
+    outcomes: list[Record] = []
+    for record in records:
+        subject = str(record["subject"])
+        worktree = _verified_worktree(root, record)
+        merged = record.get("merged_revision")
+        branch = record.get("branch")
+        if not isinstance(merged, str) or not isinstance(branch, str):
+            raise FrameworkError(f"Cleanup evidence is incomplete for {subject}")
+        retired = _retire_work(root, subject, worktree, branch, merged)
+        outcomes.append({"subject": subject, "cleanup": retired})
+    return outcomes
 
 
 def _complete_feature(
@@ -808,10 +969,15 @@ def _complete_feature(
     deliver_changes: bool,
     resume: bool,
 ) -> Record:
+    feature = _start_feature(root, feature.id)
     worktree, branch, session_id = _implementation_worktree(root, feature)
     action = "resume" if resume else "implement"
-    assignment = _feature_assignment(
-        root, plan, feature, worktree, branch, action, revision
+    _update_worktree(root, feature.id, "in-progress", action=action)
+    previous = _resume_record(root, feature.id, action) if resume else None
+    assignment = (
+        contained(root, previous["assignment"], directory=".ai")
+        if previous is not None
+        else _feature_assignment(root, plan, feature, worktree, branch, action, revision)
     )
     result = _dispatch_assignment(
         root,
@@ -829,14 +995,39 @@ def _complete_feature(
         raise FrameworkError(f"Implementation returned unsupported status: {result.status}")
 
     _, git = _runtime(root, f"complete-{feature.id.lower()}")
-    base = git.head(worktree)
-    if not git.status(worktree):
-        raise FrameworkError("Implementation completed without a source change")
-    head = git.commit(worktree, f"Implement {feature.id}")
+    ownership = _existing_worktree(root, feature.id, "implementation")
+    if ownership is None:
+        raise FrameworkError("Implementation worktree ownership disappeared")
+    base = ownership.get("base_revision")
+    if not isinstance(base, str):
+        raise FrameworkError("Implementation worktree has no durable base revision")
+    head = _commit_agent_changes(
+        root,
+        feature,
+        worktree,
+        git,
+        base,
+        f"Implement {feature.id}",
+    )
     validation = _run_validation(root, worktree, feature) if validate else _deferred_validation()
     review_output: Path | None = None
     if validate:
-        for iteration in range(1, 4):
+        with StateStore(root).lock():
+            current = ArtifactStore(root).find(feature.id)
+            if current.status != "review":
+                ArtifactStore(root).transition(
+                    feature.id,
+                    "review",
+                    head=head,
+                    validation=validation,
+                )
+        _update_worktree(root, feature.id, "review", head=head, stage="committed")
+        review_limit = load_config(root, "constraints").get("strategies", {}).get(
+            "review_iterations", 3
+        )
+        if not isinstance(review_limit, int) or isinstance(review_limit, bool):
+            raise FrameworkError("Review iteration limit must be an integer")
+        for iteration in range(1, review_limit + 1):
             review_result, _ = _review_feature(
                 root, feature, worktree, base, head, result.output, validation, iteration
             )
@@ -849,11 +1040,16 @@ def _complete_feature(
                     implementer_session=session_id,
                 )
                 break
-            if iteration == 3:
+            if iteration == review_limit:
                 raise FrameworkError("Critical review repair budget exhausted")
             grant_implementation(
-                StateStore(root), plan.id, "repair", revision, _plan_scope(ArtifactStore(root), plan)
+                StateStore(root),
+                plan.id,
+                "repair",
+                revision,
+                _plan_scope(ArtifactStore(root), plan),
             )
+            _update_worktree(root, feature.id, "repair", head=head, stage="reviewed")
             repair = _repair_assignment(
                 root,
                 plan,
@@ -875,14 +1071,35 @@ def _complete_feature(
             )
             if result.status != "COMPLETE":
                 raise FrameworkError("Repair did not return COMPLETE")
-            head = git.commit(worktree, f"Repair {feature.id} review {iteration}")
+            head = _commit_agent_changes(
+                root,
+                feature,
+                worktree,
+                git,
+                base,
+                f"Repair {feature.id} review {iteration}",
+            )
             validation = _run_validation(root, worktree, feature)
+            _update_worktree(root, feature.id, "review", head=head, stage="committed")
 
-    delivery = (
-        _deliver_work(root, worktree, branch, review=review_output)
-        if deliver_changes
-        else {"delivery": "deferred", "cleanup": "deferred"}
-    )
+    delivery_evidence: Any = {"status": "DEFERRED_BY_USER"}
+    merged_revision: str | None = None
+    if deliver_changes:
+        _update_worktree(root, feature.id, "delivery", head=head, stage="committed")
+        delivery_evidence, merged_revision = _deliver_work(
+            root, worktree, branch, review=review_output
+        )
+        _update_worktree(
+            root,
+            feature.id,
+            "merged",
+            head=head,
+            merged_revision=merged_revision,
+            delivery=delivery_evidence,
+            stage="merged",
+        )
+    else:
+        _update_worktree(root, feature.id, "completed", head=head, stage="delivery_deferred")
     with StateStore(root).lock():
         store = ArtifactStore(root)
         for task_id in feature.metadata.get("tasks", []):
@@ -896,15 +1113,42 @@ def _complete_feature(
             handoff=_relative(root, result.output),
             validation=validation,
             review=_relative(root, review_output) if review_output else None,
-            delivery=delivery,
+            delivery=delivery_evidence,
+            cleanup={"status": "pending" if deliver_changes else "DEFERRED_BY_USER"},
         )
     refresh_index(root)
+    cleanup: Any = {"status": "DEFERRED_BY_USER"}
+    blocker: Record | None = None
+    if deliver_changes:
+        assert merged_revision is not None
+        try:
+            cleanup = _retire_work(
+                root,
+                feature.id,
+                worktree,
+                branch,
+                merged_revision,
+            )
+        except Exception as exc:
+            _update_worktree(
+                root,
+                feature.id,
+                "cleanup_failed",
+                cleanup_error=str(exc),
+            )
+            blocker = _record_block(
+                root,
+                ArtifactStore(root).find(plan.id),
+                FrameworkError(f"Cleanup failed after merging {feature.id}: {exc}"),
+            )
     return {
-        "status": "completed",
+        "status": "completed" if blocker is None else "completed_cleanup_pending",
         "feature": completed.id,
         "head": head,
         "validation": validation,
-        **delivery,
+        "delivery": delivery_evidence,
+        "cleanup": cleanup,
+        "blocker": blocker,
     }
 
 
@@ -927,7 +1171,7 @@ def implement_plan(
         "completed",
     }:
         raise FrameworkError("Implementation requires a current delivered non-draft PLAN")
-    if plan.metadata.get("hard_block") is not None:
+    if plan.metadata.get("hard_block") is not None and not resume:
         raise FrameworkError("PLAN has unresolved hard-block metadata")
     scope = _plan_scope(store, plan)
     revision = _delivered_revision(root, plan, scope)
@@ -935,9 +1179,42 @@ def implement_plan(
     grant_implementation(StateStore(root), plan.id, action, revision, scope)
     outcomes: list[Record] = []
     blockers: list[Record] = []
+    cleanup_outcomes: list[Record] = []
+
+    if resume:
+        if plan.metadata.get("hard_block") is not None:
+            _clear_block(root, plan.id)
+        for feature_id in plan.metadata.get("features", []):
+            feature = ArtifactStore(root).find(feature_id)
+            if feature.metadata.get("hard_block") is not None:
+                _clear_block(root, feature.id)
+            for task_id in feature.metadata.get("tasks", []):
+                task = ArtifactStore(root).find(task_id)
+                if task.metadata.get("hard_block") is not None:
+                    _clear_block(root, task.id)
+        try:
+            cleanup_outcomes = _resume_cleanup(root, plan)
+        except Exception as exc:
+            blocker = _record_block(
+                root,
+                ArtifactStore(root).find(plan.id),
+                FrameworkError(f"Resumed cleanup failed: {exc}"),
+            )
+            return {
+                "status": "hard_blocked",
+                "plan": plan_id,
+                "approved_revision": revision,
+                "validation": "DEFERRED_BY_USER" if not validate else "not_started",
+                "features": [],
+                "remaining_features": list(plan.metadata.get("features", [])),
+                "cleanup": cleanup_outcomes,
+                "blockers": [blocker],
+            }
 
     while True:
         plan = ArtifactStore(root).find(plan_id)
+        if plan.metadata.get("hard_block") is not None:
+            break
         features = [ArtifactStore(root).find(identifier) for identifier in plan.metadata["features"]]
         pending = [feature for feature in features if feature.status != "completed"]
         if not pending:
@@ -953,6 +1230,7 @@ def implement_plan(
         if not ready:
             break
         progressed = False
+        stop = False
         for feature in ready:
             try:
                 outcome = _complete_feature(
@@ -966,11 +1244,14 @@ def implement_plan(
                 )
                 outcomes.append(outcome)
                 progressed = True
+                if isinstance(outcome.get("blocker"), dict):
+                    blockers.append(outcome["blocker"])
+                    stop = True
+                    break
             except Exception as exc:
                 blockers.append(_record_block(root, feature, exc))
-        if not progressed:
+        if not progressed or stop:
             break
-        resume = False
 
     current = ArtifactStore(root).find(plan_id)
     remaining = [
@@ -978,21 +1259,45 @@ def implement_plan(
         for identifier in current.metadata["features"]
         if ArtifactStore(root).find(identifier).status != "completed"
     ]
-    if not remaining:
+    known = {item.get("subject") for item in blockers}
+    for identifier in [plan_id, *remaining]:
+        artifact = ArtifactStore(root).find(identifier)
+        block = artifact.metadata.get("hard_block")
+        if isinstance(block, dict) and identifier not in known:
+            blockers.append({"subject": identifier, **block})
+            known.add(identifier)
+    if not remaining and not blockers and current.metadata.get("hard_block") is None:
+        plan_validation = (
+            _deferred_validation()
+            if not validate
+            else [
+                evidence
+                for identifier in current.metadata["features"]
+                for evidence in ArtifactStore(root).find(identifier).metadata.get("validation", [])
+            ]
+        )
         with StateStore(root).lock():
             ArtifactStore(root).transition(
                 plan_id,
                 "completed",
-                validation=_deferred_validation() if not validate else [{"status": "success"}],
+                validation=plan_validation,
             )
         refresh_index(root)
+    workflow_status = (
+        "hard_blocked"
+        if blockers
+        else "completed"
+        if not remaining
+        else "waiting"
+    )
     return {
-        "status": "completed" if not remaining else "hard_blocked" if blockers else "waiting",
+        "status": workflow_status,
         "plan": plan_id,
         "approved_revision": revision,
         "validation": "executed" if validate else "DEFERRED_BY_USER",
         "features": outcomes,
         "remaining_features": remaining,
+        "cleanup": cleanup_outcomes,
         "blockers": blockers,
     }
 

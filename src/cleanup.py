@@ -11,7 +11,7 @@ from typing import Any, Iterable
 from .config import load_config
 from .errors import FrameworkError, PolicyError
 from .git import Git
-from .io import is_link, safe_path, utc_now, write_yaml
+from .io import is_link, read_yaml, safe_path, utc_now, write_yaml
 from .runner import CommandRunner
 
 _OID = re.compile(r"[a-f0-9]{40}(?:[a-f0-9]{24})?\Z")
@@ -222,6 +222,38 @@ def retire_worktree(
     runner.policy.check_cleanup("merged_worktree_retirement", [str(worktree), branch])
     git = Git(root, runner)
     path = git._managed(worktree)
+    ownership_receipt = git._receipt(path)
+    if not path.exists() and ownership_receipt.exists():
+        previous = read_yaml(ownership_receipt)
+        if (
+            previous.get("status") == "removed"
+            and previous.get("branch") == branch
+            and previous.get("head") == merged_revision
+            and previous.get("merge_confirmed") is True
+        ):
+            if git.branch() != base or git.status():
+                raise FrameworkError(
+                    "Local integration checkout must remain clean for retirement reconciliation"
+                )
+            local_removed = git.delete_local_branch(branch, merged_revision, base=base)
+            remote_name = load_config(root, "framework").get("delivery", {}).get(
+                "remote", "origin"
+            )
+            remote_removed = True
+            if remote:
+                if not isinstance(remote_name, str):
+                    raise FrameworkError("Delivery remote must be a Git remote name")
+                remote_removed = git.delete_remote_branch(remote_name, branch, merged_revision)
+            if not local_removed or not remote_removed:
+                raise FrameworkError("Previously removed worktree still has an exact branch")
+            return {
+                "status": "already_retired",
+                "worktree": str(path),
+                "branch": branch,
+                "merged_revision": merged_revision,
+                "local_branch_removed": True,
+                "remote_branch_removed": True,
+            }
     record = git._owned(path)
     if not record or record.get("branch") != branch or record.get("owner_status") != "stopped":
         raise FrameworkError("Retirement requires an exact stopped owned worktree")

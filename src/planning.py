@@ -19,6 +19,7 @@ import yaml
 from .artifacts import Artifact, ArtifactStore, _folder, write_artifact
 from .errors import FrameworkError
 from .io import atomic_write, parse_yaml, safe_path, utc_now
+from .planning_intent import prepare_intent
 from .state import StateStore
 from .templates import render
 
@@ -360,6 +361,7 @@ def _prepare(
     existing: list[Artifact],
     reason: str = "Agent-proposed decomposition",
     stopped: set[str] | None = None,
+    reserved_feature_ids: list[str] | None = None,
 ) -> tuple[list[Artifact], list[Artifact], list[Artifact]]:
     _require(validate_features(tasks, proposals))
     stopped = stopped or set()
@@ -369,15 +371,33 @@ def _prepare(
         old = old_by_tasks.get(frozenset(proposal["tasks"]))
         if old and all(old.metadata.get(k) == proposal.get(k) for k in FIELDS if k != "tasks"):
             reused[proposal["id"]] = old
+    if reserved_feature_ids is not None and (
+        len(reserved_feature_ids) != len(set(reserved_feature_ids))
+        or any(not re.fullmatch(r"FEATURE-\d+", identifier) for identifier in reserved_feature_ids)
+        or any(identifier in {feature.id for feature in existing} for identifier in reserved_feature_ids)
+    ):
+        raise FrameworkError("Recovery feature reservation is invalid")
+    reserved = iter(reserved_feature_ids or [])
     next_number = int(store.next_id("FEATURE").split("-")[-1])
+
+    def allocate() -> str:
+        nonlocal next_number
+        if reserved_feature_ids is not None:
+            identifier = next(reserved, None)
+            if identifier is None:
+                raise FrameworkError("Recovery feature reservation has too few IDs")
+            return identifier
+        identifier = f"FEATURE-{next_number:03}"
+        next_number += 1
+        return identifier
+
     mapping: dict[str, str] = {}
     for proposal in proposals:
         key = proposal["id"]
         if key in reused:
             mapping[key] = reused[key].id
         else:
-            mapping[key] = f"FEATURE-{next_number:03}"
-            next_number += 1
+            mapping[key] = allocate()
     # Dependencies are part of an immutable started feature's contract too.
     changed = True
     while changed:
@@ -391,8 +411,7 @@ def _prepare(
                         f"Cannot change started/completed feature dependencies: {old.id}"
                     )
                 del reused[proposal["id"]]
-                mapping[proposal["id"]] = f"FEATURE-{next_number:03}"
-                next_number += 1
+                mapping[proposal["id"]] = allocate()
                 changed = True
     retained = {old.id for old in reused.values()}
     superseded: list[Artifact] = []

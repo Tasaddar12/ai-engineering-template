@@ -23,7 +23,16 @@ package-dir = { ai_engineering = "src" }
 include-package-data = true
 
 [tool.setuptools.package-data]
-ai_engineering = ["_assets/framework.yaml", "_assets/**/*.md", "_assets/**/*.yaml", "_assets/**/*.yml"]
+ai_engineering = [
+  "_assets/framework.yaml",
+  "_assets/agents/*.md",
+  "_assets/workflows/*.md",
+  "_assets/constraints/*.yaml",
+  "_assets/constraints/*.yml",
+  "_assets/templates/*/*.md",
+  "_assets/templates/*/*.yaml",
+  "_assets/templates/*/*.yml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

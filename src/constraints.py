@@ -210,7 +210,9 @@ class ConstraintPolicy:
                     f"Task assignment did not select named command {command_name!r}"
                 )
         # A reviewer never gets arbitrary interpreter/formatter/source-writing commands.
-        if (role == "critical_review" or permissions.get("modify_files") is False) and (
+        if role != "orchestrator" and (
+            role == "critical_review" or permissions.get("modify_files") is False
+        ) and (
             tokens[0] != "git" or len(tokens) < 2 or tokens[1] not in _GIT_READ
         ):
             raise PolicyError("Read-only roles may only inspect Git through this runner")
