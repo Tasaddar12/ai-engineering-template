@@ -11,6 +11,7 @@ scope:
 - src/ai_engineering/__main__.py
 - tests/test_cli.py
 - pyproject.toml
+- src/ai_engineering/agents.py
 resources:
 - cli-api
 acceptance:
@@ -21,6 +22,9 @@ acceptance:
 - All creation commands enforce .ai-only planning artifacts; plan creation records
   task/feature collections and implementation refuses an incomplete or unapproved
   graph.
+- Serialized provider requests explicitly identify project_root for coordinator-relative
+  context references; worktree remains the code/command base and the output path remains
+  the exact return-file exception.
 validation:
 - tests
 - lint
@@ -32,6 +36,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-060 — Expose streamlined package CLI
 

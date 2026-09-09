@@ -25,6 +25,7 @@ scope:
 - tests/test_acceptance.py
 - tests/test_cli.py
 - src/ai_engineering/templates/plans/plan.md
+- src/ai_engineering/agents.py
 resources:
 - cli-api
 acceptance:
@@ -54,6 +55,9 @@ acceptance:
   no task list, plan-specific contract or feature graph.
 - Installed PLAN template uses valid UTF-8 title text and explicit .ai task/feature
   references.
+- Serialized provider requests explicitly identify project_root for coordinator-relative
+  context references; worktree remains the code/command base and the output path remains
+  the exact return-file exception.
 validation:
 - tests
 - lint

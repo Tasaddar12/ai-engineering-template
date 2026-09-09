@@ -44,6 +44,9 @@ acceptance:
   uncertain delivery state for reconciliation.
 - Review PASS or PR creation leaves work awaiting merge; only observed merge evidence
   completes included tasks/features and permits checked worktree cleanup.
+- Implementation scope cannot grant writes to coordinator-owned plan/task/feature/bug/run/review/handoff
+  directories; preserve only the exact assigned-output exception and scoped knowledge/template
+  authoring.
 validation:
 - tests
 - lint

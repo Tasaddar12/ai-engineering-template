@@ -188,3 +188,15 @@ Independent decomposition approved TASK-052 / FEATURE-005 ownership of `template
 ## Approved remote observation prerequisite
 
 Independent decomposition approved TASK-055 / FEATURE-005 ownership of the packaged constraints seed solely to allow the exact `git ls-remote --heads` prefix for the orchestrator role with the existing credentials action requirement. Delivery supplies a validated configured remote and exact branch reference. This permits reconciliation of an uncertain push after configured authority; it performs no network action during implementation. Forbidden operations still win. The coordinator synchronizes the installed seed only after verifying its unchanged prior copy. No task, dependency, effort or concurrency change.
+
+## Approved coordinator control protection
+
+The same TASK-055 / FEATURE-005 seed ownership also protects `.ai/plans`, `.ai/tasks`, `.ai/features`, `.ai/bugs`, `.ai/runs`, `.ai/reviews` and `.ai/handoffs` from implementation writes, even within broad `.ai` scope. Independent decomposition confirmed that review approval does not transfer coordinator authority. The trusted bridge retains only the single assigned output-file exception. Decisions, research and templates remain authorable within declared scope. No graph or batch change.
+
+## Merge observation boundary
+
+The selected local base must contain the exact independently reviewed commit. This version neither fetches remote refs nor treats a hosting-service PR status as proof that local dependencies are available. Ancestry-preserving merges are recognized; squash/rebase merges that discard the reviewed commit need explicit reconciliation support before they can be considered complete. Public operating documentation must state this boundary and the resume command, rather than imply background remote merge watching.
+
+## Approved installed bridge context base
+
+Independent decomposition approved TASK-060 / FEATURE-007 ownership of `agents.py` solely to add `project_root: str(root)` to serialized provider request records, without changing the AgentRequest constructor. Handoff references resolve against this read-only coordinator context base; source edits and commands use worktree. The output path remains the exact return-file exception. This grants no root-write authority. CLI/acceptance coverage must include `.ai` absent from the worktree. Old persisted bindings that differ remain fail-closed rather than being silently replayed. Dependencies serialize this narrow prerequisite after FEATURE-004; no task/batch change.
