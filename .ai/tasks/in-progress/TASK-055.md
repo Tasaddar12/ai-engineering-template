@@ -1,7 +1,7 @@
 ---
 id: TASK-055
 title: Prepare gated PR delivery and merged completion
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-054
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-055 — Prepare gated PR delivery and merged completion
 

@@ -1,0 +1,12 @@
+checked_at: '2026-09-09T00:45:50.177060+00:00'
+source_revision: 90ab58b
+platform: Windows Python 3.13.14
+tests:
+  passed: 129
+  skipped: 2
+  skip_reason: Windows symlink privilege unavailable
+lint: PASS
+format: PASS
+typing: PASS (13 modules)
+scope: Integrated FEATURE-001 through FEATURE-004; no actual external provider or
+  remote write.

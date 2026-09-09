@@ -1,7 +1,7 @@
 ---
 id: TASK-054
 title: Persist resumable run intent and recovery triggers
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-053
@@ -28,6 +28,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-054 — Persist resumable run intent and recovery triggers
 

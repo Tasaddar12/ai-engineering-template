@@ -1,7 +1,7 @@
 ---
 id: TASK-052
 title: Schedule dependency-ready features concurrently
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-051
@@ -29,6 +29,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-052 — Schedule dependency-ready features concurrently
 

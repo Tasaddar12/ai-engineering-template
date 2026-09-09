@@ -1,7 +1,7 @@
 ---
 id: TASK-053
 title: Run validation and complete-diff repair cycles
-status: ready
+status: in-progress
 plan: PLAN-002
 depends_on:
 - TASK-052
@@ -28,6 +28,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-053 — Run validation and complete-diff repair cycles
 

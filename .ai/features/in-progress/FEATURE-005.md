@@ -1,7 +1,7 @@
 ---
 id: FEATURE-005
 title: Concurrent implementation, repair and delivery
-status: ready
+status: in-progress
 plan: PLAN-002
 tasks:
 - TASK-052
@@ -57,6 +57,12 @@ context:
 batch: orchestration
 effort: 8
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
+kind: features
+worktree: .worktrees/plan-002-orchestration
+branch: codex/plan-002-orchestration
+base: 90ab58b39f1a84ab1827ef0b72a25c72159447eb
+head: 90ab58b39f1a84ab1827ef0b72a25c72159447eb
+assignment: .ai/handoffs/FEATURE-005-assignment.md
 ---
 # FEATURE-005 — Concurrent implementation, repair and delivery
 
