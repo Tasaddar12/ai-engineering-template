@@ -1,9 +1,0 @@
-include README.md
-include framework.yaml
-recursive-include agents *.md
-recursive-include templates *.md *.yaml *.yml
-recursive-include workflows *.md
-recursive-include constraints *.yaml *.yml
-recursive-include src *.py
-prune .ai
-global-exclude __pycache__ *.py[cod]

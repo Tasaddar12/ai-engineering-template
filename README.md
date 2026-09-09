@@ -1,42 +1,20 @@
-# AI Engineering Framework
+# Minimal AI project contracts
 
-AI Engineering Framework is a Python 3.11+ coordinator for explicit planning,
-fixed-worktree implementation, validation, independent review, recovery and PR delivery
-to `main`.
+A small, Markdown-first draft for recording intent, planning changes, explaining
+choices and describing the current project. Start at [AGENTS.md](AGENTS.md).
 
-Authored Python modules live directly in `src` and install as the `ai_engineering`
-namespace. Reusable project defaults have one authored source in `agents/`, `templates/`,
-`workflows/`, `constraints/` and `framework.yaml`. `ai init` installs derived copies of
-those assets into a project's `.ai` directory without copying framework development
-history or granting implementation authority.
+- [Rules of engagement](.ai/RULES.md)
+- [One owner per fact](.ai/truth-map.md)
+- [Paths and file IDs](.ai/config.yaml)
+- [Now / Next / Blockers](.ai/state/STATE.md)
+- [Project intent](.ai/intent/INTENT.md)
+- [Current project specification](.ai/specs/SPEC-001-project-contracts.md)
+- [Draft plan and delivery scope](.ai/plans/review/PLAN-001-minimal-ai-contracts.md)
 
-## Install
+The requested folder structure lives entirely under `.ai`. Templates are flat;
+agent definitions and basic workflows are short Markdown documents. Empty lifecycle
+folders use `.gitkeep` so they survive a clone.
 
-From this checkout, run `python -m pip install .` using Python 3.11 or newer.
-
-## Command line
-
-```text
-ai init . --name example
-ai --root . status
-ai --root . plan create "Add a feature" --scope src
-ai --root . plan implement PLAN-001
-python -m ai_engineering --help
-```
-
-Planning delivery never starts implementation. `plan implement`, `plan resume` and
-`bugfix` are explicit operations and remain subject to the current plan, revision,
-scope and provider authority recorded by the coordinator.
-
-Dedicated operating contracts are installed under `.ai/workflows/`. All product
-subprocesses, including Git, validation, delivery and provider bridges, pass through
-the central command runner. Hard blocks are metadata on the current lifecycle phase;
-there are no blocked lifecycle folders.
-
-Configure the provider using [Provider setup](docs/providers.md) before dispatching agents.
-
-## Development state
-
-The completed implementation is recorded in `.ai/plans/completed/PLAN-003.md` in
-this repository. Validation for the consolidated implementation pass is explicitly
-deferred by the user and is not represented as passing.
+This branch contains documentation and configuration only. It has no application,
+package installer, automatic agent dispatcher or installed Git/CI hooks. Hook checks
+are manual conventions until a separately approved implementation adds enforcement.

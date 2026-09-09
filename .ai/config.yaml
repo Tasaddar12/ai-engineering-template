@@ -1,0 +1,42 @@
+version: 1
+paths:
+  root: .ai
+  rules: .ai/RULES.md
+  truth_map: .ai/truth-map.md
+  config: .ai/config.yaml
+  intent: .ai/intent/INTENT.md
+  state: .ai/state/STATE.md
+  journal: .ai/state/journal
+  specs: .ai/specs
+  decisions: .ai/decisions
+  amendments: .ai/decisions/amendments
+  retired_decisions: .ai/decisions/retired
+  plans: .ai/plans
+  intake: .ai/plans/intake
+  templates: .ai/templates
+  agents: .ai/agents
+  hooks: .ai/hooks
+  commands: .ai/commands
+  plan_phases:
+    backlog: .ai/plans/backlog
+    active: .ai/plans/active
+    review: .ai/plans/review
+    blocked: .ai/plans/blocked
+    abandoned: .ai/plans/abandoned
+    done: .ai/plans/done
+ids:
+  spec: 'SPEC-{nnn}-{slug}.md'
+  decision: 'ADR-{nnn}-{slug}.md'
+  amendment: 'AMD-{nnn}-{slug}.md'
+  intake: 'INTAKE-{nnn}-{slug}.md'
+  plan: 'PLAN-{nnn}-{slug}.md'
+  journal: '{date}.md'
+  number_pattern: '[0-9]{3}'
+  slug_pattern: '[a-z0-9]+(?:-[a-z0-9]+)*'
+  date_format: YYYY-MM-DD
+  first_number: '001'
+  allocation: next_unused_per_kind_across_all_lifecycle_folders
+  reuse: false
+journal:
+  timezone: America/New_York
+  entry_time_format: 'HH:mm:ss Z'
