@@ -282,7 +282,14 @@ def _create_worktree(
         raise FrameworkError(f"{subject} already has an active {purpose} worktree")
     _, git = _runtime(root, f"worktree-{name}")
     session_id = uuid.uuid4().hex
-    worktree = git.create_worktree(name, branch, "main")
+    worktree = git.create_worktree(
+        name,
+        branch,
+        "main",
+        purpose=purpose,
+        subject=subject,
+        session_id=session_id,
+    )
     base_revision = git.head(worktree)
     _register_worktree(
         root,
@@ -295,6 +302,11 @@ def _create_worktree(
         revision=revision,
     )
     return worktree, session_id
+
+
+def _mark_owner(root: Path, worktree: Path, session_id: str, status: str) -> None:
+    _, git = _runtime(root, f"owner-{worktree.name}")
+    git.mark_owner(worktree, session_id, status)
 
 
 def create_plan(root: Path | str, title: str, scope: list[str]) -> Record:
@@ -333,6 +345,7 @@ def create_plan(root: Path | str, title: str, scope: list[str]) -> Record:
             tasks=[],
             features=[],
         )
+    _mark_owner(root, worktree, session_id, "stopped")
     return {
         "status": "planning_worktree_ready",
         "plan": plan_id,
@@ -411,6 +424,7 @@ def revise_plan(root: Path | str, plan_id: str, **changes: Any) -> Record:
     revised = apply_plan_changes(
         ArtifactStore(worktree), plan_id, normalized_changes, reservation
     )
+    _mark_owner(root, worktree, session_id, "stopped")
     return {
         "status": "planning_revision_ready",
         "plan": plan_id,
@@ -471,7 +485,18 @@ def _resume_record(root: Path, subject: str, action: str) -> Record | None:
         if isinstance(record, dict)
         and record.get("subject") == subject
         and record.get("action") == action
-        and record.get("status") in {"dispatching", "failed", "COMPLETE"}
+        and record.get("status")
+        in {
+            "dispatching",
+            "failed",
+            "COMPLETE",
+            "INVESTIGATED",
+            "ESCALATE",
+            "STRUCTURAL_FAILURE",
+            "REPLAN",
+            "PASS",
+            "CHANGES_REQUIRED",
+        }
     ]
     return candidates[-1] if candidates else None
 
@@ -781,6 +806,8 @@ def _repair_assignment(
     action: str,
     revision: str,
     iteration: int,
+    *,
+    role: str = "implementation",
 ) -> Path:
     review, _ = read_markdown(review_output)
     issues = review.get("issues", [])
@@ -789,9 +816,10 @@ def _repair_assignment(
         root,
         "handoffs/review-to-implementation.md",
         {
-            "role": "implementation",
+            "role": role,
             "subject": feature.id,
             "feature": feature.id,
+            "bug": feature.id if feature.id.startswith("BUG-") else None,
             "plan": plan.id,
             "action": action,
             "approved_revision": revision,
@@ -914,6 +942,7 @@ def _recover_feature(
         revision,
         reservation,
     )
+    _mark_owner(root, planning_worktree, planning_session, "stopped")
     blocker = _record_block(
         root,
         feature,
@@ -957,7 +986,10 @@ def _deliver_work(
     merged = outcome.get("merged_revision") or outcome.get("merge_commit") or outcome.get("head")
     if not isinstance(merged, str):
         raise FrameworkError("Delivery did not return a merged revision")
-    return outcome, merged
+    from .cleanup import retire_worktree
+
+    retirement = retire_worktree(root, worktree, branch, merged, base="main", remote=True)
+    return {**outcome, "cleanup": retirement}, merged
 
 
 def _retire_work(
@@ -1130,12 +1162,19 @@ def _complete_feature(
             _update_worktree(root, feature.id, "review", head=head, stage="committed")
 
     delivery_evidence: Any = {"status": "DEFERRED_BY_USER"}
+    cleanup: Any = {"status": "DEFERRED_BY_USER"}
     merged_revision: str | None = None
     if deliver_changes:
         _update_worktree(root, feature.id, "delivery", head=head, stage="committed")
         delivery_evidence, merged_revision = _deliver_work(
             root, worktree, branch, review=review_output
         )
+        cleanup = delivery_evidence.get("cleanup")
+        if not isinstance(cleanup, dict) or cleanup.get("status") not in {
+            "complete",
+            "already_retired",
+        }:
+            raise FrameworkError("Delivery did not return complete cleanup evidence")
         _update_worktree(
             root,
             feature.id,
@@ -1161,41 +1200,19 @@ def _complete_feature(
             validation=validation,
             review=_relative(root, review_output) if review_output else None,
             delivery=delivery_evidence,
-            cleanup={"status": "pending" if deliver_changes else "DEFERRED_BY_USER"},
+            cleanup=cleanup,
         )
     refresh_index(root)
-    cleanup: Any = {"status": "DEFERRED_BY_USER"}
-    blocker: Record | None = None
     if deliver_changes:
-        assert merged_revision is not None
-        try:
-            cleanup = _retire_work(
-                root,
-                feature.id,
-                worktree,
-                branch,
-                merged_revision,
-            )
-        except Exception as exc:
-            _update_worktree(
-                root,
-                feature.id,
-                "cleanup_failed",
-                cleanup_error=str(exc),
-            )
-            blocker = _record_block(
-                root,
-                ArtifactStore(root).find(plan.id),
-                FrameworkError(f"Cleanup failed after merging {feature.id}: {exc}"),
-            )
+        _forget_worktree(root, feature.id, cleanup)
     return {
-        "status": "completed" if blocker is None else "completed_cleanup_pending",
+        "status": "completed",
         "feature": completed.id,
         "head": head,
         "validation": validation,
         "delivery": delivery_evidence,
         "cleanup": cleanup,
-        "blocker": blocker,
+        "blocker": None,
     }
 
 
@@ -1387,6 +1404,17 @@ def _bug_assignment(
     )
 
 
+def _saved_investigation(root: Path, bug: Artifact) -> tuple[Record, Path] | None:
+    reference = bug.metadata.get("investigation")
+    if not isinstance(reference, str):
+        return None
+    output = contained(root, reference, directory=".ai")
+    metadata, _ = read_markdown(output)
+    if metadata.get("status") != "INVESTIGATED" or metadata.get("subject") != bug.id:
+        raise FrameworkError("Stored bug investigation is malformed or belongs to another bug")
+    return metadata, output
+
+
 def implement_bug(
     root: Path | str,
     bug_id: str,
@@ -1400,62 +1428,93 @@ def implement_bug(
     bug = store.find(bug_id)
     if bug.metadata.get("kind") != "bugs" or bug.status not in {"open", "in-progress", "review"}:
         raise FrameworkError("Bug implementation requires a current BUG artifact")
-    investigation_assignment = _bug_assignment(
-        root, bug, root, "", phase="investigation"
-    )
-    investigation = _dispatch_assignment(
-        root,
-        "bugfix",
-        investigation_assignment,
-        root,
-        uuid.uuid4().hex,
-        bug.id,
-        "inspection",
-        phase="investigation",
-    )
-    if investigation.status == "ESCALATE":
-        return {
-            "status": "escalated",
-            "bug": bug.id,
-            "investigation": investigation.metadata,
-        }
-    if investigation.status != "INVESTIGATED":
-        raise FrameworkError("Bug investigation returned an unsupported result")
-    scope = scope_paths(root, investigation.metadata.get("scope", []))
-    if not scope:
-        raise FrameworkError("Bug investigation did not produce a bounded fix scope")
-    with StateStore(root).lock():
-        bug = ArtifactStore(root).find(bug.id)
-        bug.metadata.update(
-            scope=scope,
-            acceptance=investigation.metadata.get("acceptance", []),
-            validation=investigation.metadata.get("validation", []),
-            investigation=_relative(root, investigation.output),
-        )
-        ArtifactStore(root).save(bug)
-        if bug.status == "open":
-            bug = ArtifactStore(root).transition(bug.id, "in-progress")
-
-    state_value = StateStore(root).load()
-    plan_id = bug.metadata.get("plan") or state_value.get("current_focus", {}).get("plan")
-    if not isinstance(plan_id, str):
-        raise FrameworkError("Bug fix requires a current PLAN authority context")
-    plan = ArtifactStore(root).find(plan_id)
-    plan_scope = _plan_scope(ArtifactStore(root), plan)
-    revision = _delivered_revision(root, plan, plan_scope)
-    grant_implementation(StateStore(root), plan_id, "repair", revision, plan_scope)
-    worktree, branch, session_id = _implementation_worktree(root, bug)
-    fix_assignment = _bug_assignment(
-        root,
-        bug,
-        worktree,
-        branch,
-        phase="fix",
-        plan=plan_id,
-        revision=revision,
-        investigation=investigation.metadata,
-    )
     try:
+        if bug.metadata.get("hard_block") is not None:
+            _clear_block(root, bug.id)
+            bug = ArtifactStore(root).find(bug.id)
+        saved = _saved_investigation(root, bug)
+        if saved is None:
+            previous = _resume_record(root, bug.id, "inspection")
+            investigation_assignment = (
+                contained(root, previous["assignment"], directory=".ai")
+                if previous is not None
+                else _bug_assignment(root, bug, root, "", phase="investigation")
+            )
+            investigation_session = (
+                str(previous["session_id"]) if previous is not None else uuid.uuid4().hex
+            )
+            investigation = _dispatch_assignment(
+                root,
+                "bugfix",
+                investigation_assignment,
+                root,
+                investigation_session,
+                bug.id,
+                "inspection",
+                phase="investigation",
+                resume=True,
+            )
+            if investigation.status == "ESCALATE":
+                reason = investigation.metadata.get("escalation", {}).get(
+                    "reason", "Bug investigation requires external direction"
+                )
+                blocker = _record_block(root, bug, FrameworkError(str(reason)))
+                return {
+                    "status": "escalated",
+                    "bug": bug.id,
+                    "investigation": investigation.metadata,
+                    "blocker": blocker,
+                }
+            if investigation.status != "INVESTIGATED":
+                raise FrameworkError("Bug investigation returned an unsupported result")
+            investigation_metadata = investigation.metadata
+            investigation_output = investigation.output
+        else:
+            investigation_metadata, investigation_output = saved
+        scope = scope_paths(root, investigation_metadata.get("scope", []))
+        if not scope:
+            raise FrameworkError("Bug investigation did not produce a bounded fix scope")
+        with StateStore(root).lock():
+            bug = ArtifactStore(root).find(bug.id)
+            bug.metadata.update(
+                scope=scope,
+                acceptance=investigation_metadata.get("acceptance", []),
+                validation=investigation_metadata.get("validation", []),
+                investigation=_relative(root, investigation_output),
+            )
+            ArtifactStore(root).save(bug)
+            if bug.status == "open":
+                bug = ArtifactStore(root).transition(bug.id, "in-progress")
+
+        state_value = StateStore(root).load()
+        plan_id = bug.metadata.get("plan") or state_value.get("current_focus", {}).get("plan")
+        if not isinstance(plan_id, str):
+            raise FrameworkError("Bug fix requires a current PLAN authority context")
+        plan = ArtifactStore(root).find(plan_id)
+        if plan.status not in {"ready", "in-progress"}:
+            raise FrameworkError("Bug fix requires a current active PLAN authority context")
+        if plan.metadata.get("hard_block") is not None:
+            raise FrameworkError("Bug fix PLAN authority context is hard-blocked")
+        plan_scope = _plan_scope(ArtifactStore(root), plan)
+        revision = _delivered_revision(root, plan, plan_scope)
+        grant_implementation(StateStore(root), plan_id, "repair", revision, plan_scope)
+        worktree, branch, session_id = _implementation_worktree(root, bug)
+        _update_worktree(root, bug.id, "in-progress", action="repair")
+        previous = _resume_record(root, bug.id, "repair")
+        fix_assignment = (
+            contained(root, previous["assignment"], directory=".ai")
+            if previous is not None
+            else _bug_assignment(
+                root,
+                bug,
+                worktree,
+                branch,
+                phase="fix",
+                plan=plan_id,
+                revision=revision,
+                investigation=investigation_metadata,
+            )
+        )
         result = _dispatch_assignment(
             root,
             "bugfix",
@@ -1465,39 +1524,144 @@ def implement_bug(
             bug.id,
             "repair",
             phase="fix",
+            resume=True,
         )
         if result.status != "COMPLETE":
             raise FrameworkError("Bug fix did not return COMPLETE")
         _, git = _runtime(root, f"bug-{bug.id.lower()}")
-        if not git.status(worktree):
-            raise FrameworkError("Bug fix completed without a source change")
-        head = git.commit(worktree, f"Fix {bug.id}")
+        ownership = _existing_worktree(root, bug.id, "implementation")
+        base = ownership.get("base_revision") if ownership is not None else None
+        if not isinstance(base, str):
+            raise FrameworkError("Bugfix worktree has no durable base revision")
+        head = _commit_agent_changes(root, bug, worktree, git, base, f"Fix {bug.id}")
         validation = _run_validation(root, worktree, bug) if validate else _deferred_validation()
-        delivery = (
-            _deliver_work(root, worktree, branch, review=None)
-            if deliver
-            else {"delivery": "deferred", "cleanup": "deferred"}
-        )
+        review_output: Path | None = None
+        if validate:
+            with StateStore(root).lock():
+                ArtifactStore(root).transition(
+                    bug.id,
+                    "review",
+                    head=head,
+                    validation=validation,
+                )
+            _update_worktree(root, bug.id, "review", head=head, stage="committed")
+            review_limit = load_config(root, "constraints").get("strategies", {}).get(
+                "review_iterations", 3
+            )
+            if not isinstance(review_limit, int) or isinstance(review_limit, bool):
+                raise FrameworkError("Review iteration limit must be an integer")
+            for iteration in range(1, review_limit + 1):
+                review_result, _ = _review_feature(
+                    root,
+                    bug,
+                    worktree,
+                    base,
+                    head,
+                    result.output,
+                    validation,
+                    iteration,
+                )
+                review_output = review_result.output
+                if review_result.status == "PASS":
+                    read_review(
+                        review_output,
+                        expected_subject=bug.id,
+                        expected_head=head,
+                        implementer_session=session_id,
+                    )
+                    break
+                if iteration == review_limit:
+                    raise FrameworkError("Critical review repair budget exhausted")
+                _update_worktree(root, bug.id, "repair", head=head, stage="reviewed")
+                repair_assignment = _repair_assignment(
+                    root,
+                    plan,
+                    bug,
+                    worktree,
+                    review_output,
+                    "repair",
+                    revision,
+                    iteration,
+                    role="bugfix",
+                )
+                result = _dispatch_assignment(
+                    root,
+                    "bugfix",
+                    repair_assignment,
+                    worktree,
+                    session_id,
+                    bug.id,
+                    "repair",
+                    phase="fix",
+                )
+                if result.status != "COMPLETE":
+                    raise FrameworkError("Bug repair did not return COMPLETE")
+                head = _commit_agent_changes(
+                    root,
+                    bug,
+                    worktree,
+                    git,
+                    base,
+                    f"Repair {bug.id} review {iteration}",
+                )
+                validation = _run_validation(root, worktree, bug)
+                _update_worktree(root, bug.id, "review", head=head, stage="committed")
+
+        delivery_evidence: Any = {"status": "DEFERRED_BY_USER"}
+        cleanup: Any = {"status": "DEFERRED_BY_USER"}
+        merged_revision: str | None = None
+        if deliver:
+            _update_worktree(root, bug.id, "delivery", head=head, stage="committed")
+            delivery_evidence, merged_revision = _deliver_work(
+                root,
+                worktree,
+                branch,
+                review=review_output,
+            )
+            cleanup = delivery_evidence.get("cleanup")
+            if not isinstance(cleanup, dict) or cleanup.get("status") not in {
+                "complete",
+                "already_retired",
+            }:
+                raise FrameworkError("Delivery did not return complete cleanup evidence")
+            _update_worktree(
+                root,
+                bug.id,
+                "merged",
+                head=head,
+                merged_revision=merged_revision,
+                delivery=delivery_evidence,
+                stage="merged",
+            )
+        else:
+            _update_worktree(root, bug.id, "completed", head=head, stage="delivery_deferred")
         with StateStore(root).lock():
-            ArtifactStore(root).transition(
+            completed = ArtifactStore(root).transition(
                 bug.id,
                 "completed",
                 head=head,
                 handoff=_relative(root, result.output),
                 validation=validation,
-                delivery=delivery,
+                review=_relative(root, review_output) if review_output else None,
+                delivery=delivery_evidence,
+                cleanup=cleanup,
             )
         refresh_index(root)
+        if deliver:
+            _forget_worktree(root, bug.id, cleanup)
         return {
             "status": "completed",
-            "bug": bug.id,
+            "bug": completed.id,
             "head": head,
             "validation": validation,
-            **delivery,
+            "delivery": delivery_evidence,
+            "cleanup": cleanup,
+            "blocker": None,
         }
     except Exception as exc:
         return {
             "status": "hard_blocked",
             "bug": bug.id,
-            "blocker": _record_block(root, bug, exc),
+            "validation": "DEFERRED_BY_USER" if not validate else "incomplete",
+            "blocker": _record_block(root, ArtifactStore(root).find(bug.id), exc),
         }

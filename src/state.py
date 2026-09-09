@@ -44,6 +44,7 @@ class StateStore:
             "waiting_features",
             "open_bugs",
             "worktrees",
+            "retired_worktrees",
             "active_runs",
             "blockers",
             "next_actions",
@@ -52,6 +53,20 @@ class StateStore:
                 raise FrameworkError(f"STATE.{key} must be a list")
         if not isinstance(value.get("generation", 0), int):
             raise FrameworkError("STATE generation must be an integer")
+        for key in ("planning_intent", "implementation_authority"):
+            if key in value and not isinstance(value[key], dict):
+                raise FrameworkError(f"STATE.{key} must be a mapping")
+        worktrees = value.get("worktrees", [])
+        paths = [record.get("path") for record in worktrees if isinstance(record, dict)]
+        branches = [record.get("branch") for record in worktrees if isinstance(record, dict)]
+        if (
+            len(paths) != len(worktrees)
+            or any(not isinstance(path, str) or not path for path in paths)
+            or any(not isinstance(branch, str) or not branch for branch in branches)
+            or len(paths) != len(set(paths))
+            or len(branches) != len(set(branches))
+        ):
+            raise FrameworkError("STATE worktrees require unique path and branch ownership")
 
     @contextmanager
     def lock(self) -> Iterator[None]:
@@ -115,7 +130,6 @@ def refresh_index(root: Path) -> dict[str, Any]:
         features = store.list("features")
         value["active_features"] = [a.id for a in features if a.status in {"in-progress", "review"}]
         value["waiting_features"] = [a.id for a in features if a.status == "ready"]
-        value.pop("blocked_features", None)
         value["open_bugs"] = [
             a.id
             for a in store.list("bugs")

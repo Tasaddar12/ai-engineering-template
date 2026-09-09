@@ -237,6 +237,29 @@ def record_planning_delivery(
         )
         provenance = deepcopy(record)
         ledger["delivered"][record["plan"]] = provenance
+        worktrees = value.setdefault("worktrees", [])
+        owners = [
+            item
+            for item in worktrees
+            if isinstance(item, dict)
+            and item.get("purpose") == "planning"
+            and item.get("subject") == record["plan"]
+            and item.get("planning_revision") == reservation
+        ]
+        if len(owners) > 1:
+            raise FrameworkError("Planning delivery has ambiguous worktree ownership")
+        if owners:
+            owner = owners[0]
+            worktrees.remove(owner)
+            value.setdefault("retired_worktrees", []).append(
+                {
+                    **owner,
+                    "status": "retired",
+                    "delivered_revision": delivered_revision,
+                    "merge_commit": merge_commit,
+                    "retired_at": utc_now(),
+                }
+            )
         state.save(value)
         return provenance
 

@@ -18,6 +18,8 @@ active_features:
 waiting_features: []
 open_bugs:
 - BUG-001
+- BUG-002
+- BUG-003
 worktrees:
 - path: .worktrees/plan-003-intent
   branch: codex/plan-003-intent
@@ -26,29 +28,10 @@ worktrees:
   base_branch: main
 reviews: {}
 pull_requests: {}
-active_runs:
-- subject: PLAN-003
-  worker: core
-  status: implementing
-  model: gpt-5.6-sol
-  reasoning: xhigh
-  testing: deferred_by_user
-- subject: PLAN-003
-  worker: runtime
-  status: implementing
-  model: gpt-5.6-sol
-  reasoning: xhigh
-  testing: deferred_by_user
-- subject: PLAN-003
-  worker: packaging
-  status: implementing
-  model: gpt-5.6-sol
-  reasoning: xhigh
-  testing: deferred_by_user
+active_runs: []
 blockers: []
 next_actions:
-- Implement all remaining features; no tests or compatibility probes.
-- Document unresolved bugs and deliver to main.
+- Merge the final integration changes and retire the managed checkout.
 generation: 0
 user_directive:
   testing: deferred
