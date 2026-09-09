@@ -1,11 +1,5 @@
 ---
-subject: {{ subject }}
-iteration: {{ iteration }}
-status: {{ status }}
-head: {{ head }}
-reviewer_session: {{ reviewer_session }}
-implementer_session: {{ implementer_session }}
-issues: {{ issues_yaml }}
+{{ metadata_yaml }}
 ---
 # Critical Change Review
 

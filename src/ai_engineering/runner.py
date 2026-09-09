@@ -34,6 +34,11 @@ class CommandResult:
     stdout: str
     stderr: str
     status: str
+    # A stream is truncated if raw bytes were discarded OR its redacted display
+    # was bounded. Complete output additionally requires successful EOF capture.
+    stdout_truncated: bool = False
+    stderr_truncated: bool = False
+    output_complete: bool = True
 
     @property
     def ok(self) -> bool:
@@ -45,16 +50,28 @@ class _Capture:
         self.limit = limit
         self.data = bytearray()
         self.lock = threading.Lock()
+        self.truncated = False
+        self.finished = False
+        self.failed = False
 
     def drain(self, stream: BinaryIO) -> None:
         try:
             while chunk := stream.read(4096):
                 with self.lock:
-                    self.data.extend(chunk[: max(0, self.limit - len(self.data))])
+                    remaining = max(0, self.limit - len(self.data))
+                    self.truncated |= len(chunk) > remaining
+                    self.data.extend(chunk[:remaining])
         except (OSError, ValueError):
-            pass
+            with self.lock:
+                self.failed = True
         finally:
-            stream.close()
+            try:
+                stream.close()
+            except (OSError, ValueError):
+                with self.lock:
+                    self.failed = True
+            with self.lock:
+                self.finished = True
 
     def text(self) -> str:
         with self.lock:
@@ -369,7 +386,7 @@ class CommandRunner:
             raise PolicyError(f"Command cwd is not a directory: {target}")
         return target
 
-    def _redact(self, text: str) -> str:
+    def _redact(self, text: str, *, bounded: bool = True) -> str:
         for secret in self.secrets:
             text = text.replace(secret, "[REDACTED]")
             # The bounded capture can end midway through a secret.
@@ -377,7 +394,7 @@ class CommandRunner:
                 if text.endswith(secret[:length]):
                     text = text[:-length] + "[REDACTED]"
                     break
-        return text[: self.limit]
+        return text[: self.limit] if bounded else text
 
     def _executable(self, argv: Sequence[str]) -> list[str]:
         tokens = command_tokens(argv)
@@ -440,19 +457,31 @@ class CommandRunner:
         directory = self._contained(cwd or self.root)
         # Validate before logging; never serialize a caller-supplied shell string.
         tokens = command_tokens(argv)
+        captures: list[_Capture] = []
 
         def finish(
             status: str, code: int | None, stdout: str = "", stderr: str = ""
         ) -> CommandResult:
+            displayed = [self._redact(value, bounded=False) for value in (stdout, stderr)]
+            truncated = [len(value) > self.limit for value in displayed]
+            complete = bool(captures) and status in {"success", "expected_failure", "failed"}
+            for index, capture in enumerate(captures):
+                with capture.lock:
+                    truncated[index] |= capture.truncated
+                    complete &= capture.finished and not capture.failed
+            complete &= not any(truncated)
             result = CommandResult(
                 [self._redact(token) for token in tokens],
                 self._redact(str(directory)),
                 started,
                 utc_now(),
                 code,
-                self._redact(stdout),
-                self._redact(stderr),
+                displayed[0][: self.limit],
+                displayed[1][: self.limit],
                 status,
+                truncated[0],
+                truncated[1],
+                complete,
             )
             if not self.dry_run:
                 destination = self._contained(self.run_dir, exists=False)

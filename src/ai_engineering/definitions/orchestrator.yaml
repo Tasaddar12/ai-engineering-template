@@ -2,7 +2,7 @@ name: orchestrator
 prompt_template: agents/orchestrator.md
 model_profile: orchestrator_high
 assignment_template: handoffs/orchestrator-to-decomposition.md
-output_template: handoffs/decomposition.md
+output_template: handoffs/agent-decomposition.md
 permissions:
   modify_files: false
   run_commands: true
@@ -18,3 +18,17 @@ constraints:
 - workflow
 - external_actions
 max_concurrency: 1
+output_schema:
+  statuses:
+  - APPROVED
+  - CHANGES_REQUIRED
+  fields:
+    subject: string
+    session_id: string
+    status: string
+    summary: string
+    issues: list
+    rationale: string
+  by_status:
+    APPROVED:
+      features: list

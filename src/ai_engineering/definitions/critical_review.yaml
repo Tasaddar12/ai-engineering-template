@@ -18,3 +18,19 @@ constraints:
 - workflow
 - external_actions
 max_concurrency: 1
+output_schema:
+  statuses:
+  - PASS
+  - CHANGES_REQUIRED
+  fields:
+    subject: string
+    iteration: integer
+    status: string
+    head: string
+    reviewer_session: string
+    implementer_session: string
+    issues: list
+    summary: string
+    security_findings: list
+    documentation_findings: list
+    validation: list
