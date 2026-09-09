@@ -19,6 +19,8 @@ acceptance:
 - Dry-run reports intended changes without writes, Git mutation or process launch.
 - Installed PLAN template uses valid UTF-8 title text and explicit .ai task/feature
   references.
+- After decomposition, the plan body refers to current explicit front-matter task/feature
+  collections and does not retain frozen empty creation-time lists.
 validation:
 - tests
 - lint
@@ -45,3 +47,7 @@ kind: tasks
 Do not package the active PLAN-002 or tests as installed project history.
 
 Follow the public contract and task/feature references in [PLAN-002](../../plans/active/PLAN-002.md). Historical implementations are evidence only.
+
+## Approved acceptance clarification
+
+After decomposition, the plan body refers to current explicit front-matter task/feature collections and does not retain frozen empty creation-time lists.

@@ -58,6 +58,8 @@ acceptance:
 - Serialized provider requests explicitly identify project_root for coordinator-relative
   context references; worktree remains the code/command base and the output path remains
   the exact return-file exception.
+- After decomposition, the plan body refers to current explicit front-matter task/feature
+  collections and does not retain frozen empty creation-time lists.
 validation:
 - tests
 - lint
@@ -116,3 +118,7 @@ Run relevant behavioral tests, then tests/lint/format/types from .ai/project/com
 ## Context
 
 Read the plan contract, included tasks, dependency completion handoffs and listed context only. The coordinator supplies applicable role/model/policy configuration in the assignment.
+
+## Approved acceptance clarification
+
+After decomposition, the plan body refers to current explicit front-matter task/feature collections and does not retain frozen empty creation-time lists.

@@ -24,6 +24,9 @@ acceptance:
 - Implementation scope cannot grant writes to coordinator-owned plan/task/feature/bug/run/review/handoff
   directories; preserve only the exact assigned-output exception and scoped knowledge/template
   authoring.
+- Bind every effective fetch/push destination and explicit PR repository/head identity;
+  reject incompatible reconciliation targets and keep credential-bearing remote output
+  out of durable logs.
 validation:
 - tests
 - lint
@@ -50,3 +53,7 @@ kind: tasks
 No remote writes are authorized by this implementation plan; controlled delivery adapters verify policy and idempotency.
 
 Follow the public contract and task/feature references in [PLAN-002](../../plans/active/PLAN-002.md). Historical implementations are evidence only.
+
+## Approved acceptance clarification
+
+Bind every effective fetch/push destination and explicit PR repository/head identity; reject incompatible reconciliation targets and keep credential-bearing remote output out of durable logs.

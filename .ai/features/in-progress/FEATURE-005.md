@@ -49,6 +49,9 @@ acceptance:
 - Implementation scope cannot grant writes to coordinator-owned plan/task/feature/bug/run/review/handoff
   directories; preserve only the exact assigned-output exception and scoped knowledge/template
   authoring.
+- Bind every effective fetch/push destination and explicit PR repository/head identity;
+  reject incompatible reconciliation targets and keep credential-bearing remote output
+  out of durable logs.
 validation:
 - tests
 - lint
@@ -119,3 +122,7 @@ Run relevant behavioral tests, then tests/lint/format/types from .ai/project/com
 ## Context
 
 Read the plan contract, included tasks, dependency completion handoffs and listed context only. The coordinator supplies applicable role/model/policy configuration in the assignment.
+
+## Approved acceptance clarification
+
+Bind every effective fetch/push destination and explicit PR repository/head identity; reject incompatible reconciliation targets and keep credential-bearing remote output out of durable logs.
