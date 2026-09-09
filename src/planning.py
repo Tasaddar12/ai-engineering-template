@@ -552,7 +552,12 @@ def persist_decomposition(
         return result
 
 
-def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list[Artifact]:
+def apply_revision(
+    store: ArtifactStore,
+    plan_id: str,
+    revision: Record,
+    reservation: Record | None = None,
+) -> list[Artifact]:
     """Validate a recovery proposal completely before changing durable artifacts.
 
     Schema: ``reason: str``, ``replacements: {old TASK ID: [new TASK IDs]}``,
@@ -572,6 +577,27 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
     Existing feature-only prerequisites are preserved across all replacement
     owners, even with explicit proposals; this schema does not remove old edges.
     """
+    revision = deepcopy(revision)
+    if reservation is None:
+        preview = store.find(plan_id)
+        new_tasks = revision.get("tasks") if isinstance(revision, dict) else None
+        explicit_features = revision.get("features", []) if isinstance(revision, dict) else []
+        if not isinstance(new_tasks, list) or not isinstance(explicit_features, list):
+            raise FrameworkError("Recovery requires task and feature proposal lists")
+        preparation = prepare_intent(
+            StateStore(store.root),
+            "revise_plan",
+            plan_id=plan_id,
+            task_count=len(new_tasks),
+            feature_count=max(
+                len(explicit_features),
+                len(preview.metadata.get("tasks", [])) + len(new_tasks),
+            ),
+            scope=preview.metadata.get("scope", []),
+        )
+        reservation = preparation.reservation
+    if reservation is None:
+        raise FrameworkError("Recovery planning reservation was not created")
     with StateStore(store.root).lock():
         plan, old_tasks, existing = _current(store, plan_id)
         if (
@@ -592,8 +618,52 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
             raise FrameworkError(
                 "Recovery requires replacements, new tasks and valid stopped_features"
             )
+        reserved_tasks = reservation.get("tasks")
+        reserved_features = reservation.get("features")
+        if (
+            reservation.get("purpose") != "planning"
+            or reservation.get("action") != "revise_plan"
+            or reservation.get("plan") != plan_id
+            or reservation.get("status") != "RESERVED"
+            or not isinstance(reservation.get("revision"), str)
+            or not isinstance(reserved_tasks, list)
+            or not isinstance(reserved_features, list)
+            or len(reserved_tasks) != len(new_data)
+        ):
+            raise FrameworkError("Recovery differs from its planning reservation")
+        proposed_ids = [
+            item.get("id") if isinstance(item, dict) else None for item in new_data
+        ]
+        if (
+            any(not isinstance(identifier, str) for identifier in proposed_ids)
+            or len(proposed_ids) != len(set(proposed_ids))
+            or len(reserved_tasks) != len(set(reserved_tasks))
+            or any(not re.fullmatch(r"TASK-\d+", identifier) for identifier in reserved_tasks)
+        ):
+            raise FrameworkError("Recovery task proposal or reservation IDs are invalid")
+        task_mapping = dict(zip(proposed_ids, reserved_tasks, strict=True))
+        for item in new_data:
+            item["id"] = task_mapping[item["id"]]
+            dependencies = item.get("depends_on", [])
+            if isinstance(dependencies, list):
+                item["depends_on"] = [task_mapping.get(key, key) for key in dependencies]
+        replacements = {
+            key: [task_mapping.get(target, target) for target in targets]
+            if isinstance(targets, list)
+            else targets
+            for key, targets in replacements.items()
+        }
+        revision["replacements"] = replacements
+        if "features" in revision:
+            for proposal in revision["features"]:
+                if isinstance(proposal, dict) and isinstance(proposal.get("tasks"), list):
+                    proposal["tasks"] = [
+                        task_mapping.get(task_id, task_id) for task_id in proposal["tasks"]
+                    ]
         old_by_id = {t.id: t for t in old_tasks}
         all_task_ids = {t.id for t in store.list("tasks")}
+        if any(identifier in all_task_ids for identifier in reserved_tasks):
+            raise FrameworkError("Recovery task reservation is no longer fresh")
         new_tasks: list[Artifact] = []
         for item in new_data:
             if (
@@ -741,8 +811,19 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
         for proposal in proposals:
             proposal["dependencies"] = sorted(graph[proposal["id"]])
         result, changes, feature_originals = _prepare(
-            store, plan, current, proposals, existing, revision["reason"], set(stopped)
+            store,
+            plan,
+            current,
+            proposals,
+            existing,
+            revision["reason"],
+            set(stopped),
+            reserved_features,
         )
+        for change in changes:
+            if change.id == plan.id:
+                change.metadata["planning_revision"] = reservation["revision"]
+                change.metadata["planning_purpose"] = True
         _commit(store, [*task_changes, *changes], [*originals, *feature_originals])
         return result
 

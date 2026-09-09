@@ -879,12 +879,59 @@ def _recover_feature(
     revision = recovery.metadata.get("revision")
     if recovery.status != "REPLAN" or not isinstance(revision, dict):
         raise FrameworkError("Recovery provider did not return a valid replan")
-    revised = apply_revision(ArtifactStore(root), plan.id, revision)
+    new_tasks = revision.get("tasks", [])
+    proposed_features = revision.get("features", [])
+    if not isinstance(new_tasks, list) or not isinstance(proposed_features, list):
+        raise FrameworkError("Recovery replan requires task and feature proposal lists")
+    preparation = prepare_intent(
+        StateStore(root),
+        "revise_plan",
+        plan_id=plan.id,
+        task_count=len(new_tasks),
+        feature_count=max(
+            len(proposed_features),
+            len(plan.metadata.get("tasks", [])) + len(new_tasks),
+        ),
+        scope=_plan_scope(ArtifactStore(root), plan),
+    )
+    reservation = preparation.reservation
+    if reservation is None:
+        raise FrameworkError("Recovery planning revision was not reserved")
+    suffix = reservation["revision"].rsplit("-", 1)[-1]
+    name = f"{plan.id.lower()}-recovery-{suffix}"
+    branch = f"codex/{name}"
+    planning_worktree, planning_session = _create_worktree(
+        root,
+        plan.id,
+        "planning",
+        name,
+        branch,
+        revision=reservation["revision"],
+    )
+    revised = apply_revision(
+        ArtifactStore(planning_worktree),
+        plan.id,
+        revision,
+        reservation,
+    )
+    blocker = _record_block(
+        root,
+        feature,
+        FrameworkError(
+            f"Structural recovery prepared {reservation['revision']}; deliver it before resuming"
+        ),
+    )
     return {
-        "status": "recovered",
+        "status": "planning_revision_ready",
         "feature": feature.id,
         "replacement_features": [item.id for item in revised],
         "output": str(recovery.output),
+        "planning_revision": reservation["revision"],
+        "worktree": str(planning_worktree),
+        "branch": branch,
+        "session_id": planning_session,
+        "implementation_authorized": False,
+        "blocker": blocker,
     }
 
 

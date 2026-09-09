@@ -383,6 +383,7 @@ def deliver(
     result = {
         **binding,
         "status": "merged",
+        "merged_revision": head,
         "pull_request": number,
         "url": pr.get("url"),
         "merge_commit": (pr.get("mergeCommit") or {}).get("oid") if isinstance(pr.get("mergeCommit"), dict) else None,
