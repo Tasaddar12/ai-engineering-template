@@ -9,7 +9,17 @@ active_features:
 waiting_features:
 - FEATURE-006
 - FEATURE-007
-blocked_features: []
+blocked_features:
+- FEATURE-008
+- FEATURE-009
+- FEATURE-010
+- FEATURE-011
+- FEATURE-012
+- FEATURE-013
+- FEATURE-014
+- FEATURE-015
+- FEATURE-016
+- FEATURE-017
 open_bugs: []
 worktrees:
 - path: .worktrees/plan-002-execution
@@ -36,8 +46,8 @@ worktrees:
 - path: .worktrees/plan-002-orchestration
   branch: codex/plan-002-orchestration
   subject: FEATURE-005
-  head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
-  status: in-progress
+  head: 29303075b01d33328d1830307404689080428eef
+  status: review
   base_branch: codex/plan-002-framework-reset
 reviews:
   FEATURE-001:
@@ -65,8 +75,7 @@ active_runs:
 - .ai/runs/PLAN-002-bootstrap.yaml
 blockers: []
 next_actions:
-- Repair FEATURE-005 critical findings in the same implementation session
-- Review the complete updated feature diff
+- Critical review of complete updated FEATURE-005 diff
 - Start FEATURE-006 after approved integration
-generation: 39
-updated_at: '2026-09-09T01:40:11.652788+00:00'
+generation: 41
+updated_at: '2026-09-09T02:17:05.504103+00:00'
