@@ -8,8 +8,8 @@ its [workflow](workflows/README.md) owns the steps.
 
 ## Hard requirement: report, summary, user decision
 
-Follow the [approval policy](policies/approval.md) before action. Capture new problems
-in intake, return the [decision summary](templates/decision-summary.md), and wait for
+Follow the [approval policy](policies/approval.md) before action. Capture reports using the
+[report workflow](workflows/report.md), return the [decision summary](templates/decision-summary.md), and wait for
 the user's decision unless their explicit instruction already authorizes that exact
 action and scope. A workflow or gate PASS cannot expand that authority.
 
@@ -19,7 +19,7 @@ action and scope. A workflow or gate PASS cannot expand that authority.
 [Gates](gates/README.md) evaluate PASS/FAIL before a workflow advances.
 [Hooks](hooks/README.md) identify when a gate is evaluated.
 
-Use the gate named by the workflow and record its evidence in the subject plan/intake.
+Use the gate named by the workflow and record its evidence in the subject PLAN, FIX or INTAKE.
 These are manual contracts, not installed enforcement or executable commands.
 
 ## Mutability and amendments

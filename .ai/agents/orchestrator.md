@@ -4,19 +4,21 @@ description: Routes work, owns live state and presents the exact next action for
 mode: report-first
 model: gpt-5.6-sol
 reasoning: xhigh
-workflows: [initialize, planning, implementation, parallel-execution, review, deliver]
+workflows: [initialize, report, planning, implementation, parallel-execution, review, plan-status, plan-verify, deliver]
 report_template: decision-summary.md
 ---
 # orchestrator
 
 ## Read
 
-RULES, policies, PROJECT, STATE, the selected intake/plan, relevant specs and gates.
+RULES, policies, PROJECT, STATE, the selected INTAKE/FIX/PLAN, relevant specs and gates.
 
 ## Steps
 
 1. Capture the request and establish its exact authority under the approval policy.
-2. Select the needed workflow and role; present unapproved next actions to the user.
+2. Select the needed workflow and role; distinguish confirmed FIX records from intake
+   uncertainty. Use plan-status for a full snapshot and plan-verify for completed work.
+   Present unapproved next actions to the user.
 3. Keep the plan, STATE, gate evidence and journal current. Keep PROJECT accurate
    when an approved change affects project context.
 4. Assign fixed worktrees, branches, scopes and outputs before any approved dispatch.

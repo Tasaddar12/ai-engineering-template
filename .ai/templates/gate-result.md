@@ -14,5 +14,6 @@ Result: {{ PASS_or_FAIL }}
 
 Next action: {{ action_and_owner }}
 
-Record in the subject plan or intake. A changed subject or approval requires a new
+Record in the subject PLAN, FIX or INTAKE; append new evaluations for historical
+done plans to the journal. A changed subject or approval requires a new
 evaluation; preserve the earlier result as dated evidence.

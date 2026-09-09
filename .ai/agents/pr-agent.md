@@ -16,7 +16,8 @@ The reviewed plan/revision, gate results, specs, validation evidence and exact d
 ## Steps
 
 1. Confirm the repository, branch, revision and separately authorized commit/push/PR/merge actions.
-2. Draft the PR summary from observed changes and evidence, including spec references.
+2. For merge, confirm current plan-verify evidence (or FIX acceptance evidence) under
+   delivery-ready. Draft the PR summary from observed changes and evidence, including spec references.
 3. Evaluate delivery-ready for the particular action. Commit with a descriptive message
    and push/create a PR only when those actions are authorized.
 4. Verify the remote tip or hosting result. Report uncertainty before retrying a write.

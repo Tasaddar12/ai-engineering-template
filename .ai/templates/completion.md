@@ -1,6 +1,6 @@
 # Completion report
 
-Subject and revision: {{ plan_tasks_and_revision }}
+Subject and revision: {{ plan_tasks_or_fix_and_revision }}
 
 ## Changes and acceptance
 

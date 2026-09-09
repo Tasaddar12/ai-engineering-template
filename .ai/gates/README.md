@@ -17,7 +17,8 @@ only when the definition permits it; record the reason. There is no implied pass
 
 Use [gate-result.md](../templates/gate-result.md). Record the subject, revision, each
 criterion's evidence, overall result, evaluator and next action in the selected plan
-or intake. A journal entry links to that evaluation. Re-evaluate after relevant
+or FIX/INTAKE; append new verification of a historical done plan to the journal.
+Journal other evaluations by linking their owning records. Re-evaluate after relevant
 content, scope or approval changes. PASS never supplies new user authority.
 
 These checks are manual. A FAIL stops the specified transition; it does not require

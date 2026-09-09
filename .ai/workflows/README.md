@@ -7,13 +7,15 @@ check readiness to advance.
 | Workflow | Lead / handoff | Result |
 | --- | --- | --- |
 | [Initialize](initialize.md) | orchestrator | Project context, live state and initial record scaffold. |
-| [Report](report.md) | orchestrator, with bug-reviewer for bugs | Intake and next decision. |
+| [Report](report.md) | orchestrator, with bug-reviewer for bugs | Intake or confirmed FIX and next decision. |
 | [Research](research.md) | researcher to orchestrator | Sources, findings, uncertainty and recommendation. |
 | [Planning](planning.md) | planner to orchestrator | Bounded proposal and user decision. |
 | [Implementation](implementation.md) | implementor, tester, orchestrator | Changes, specs and final test evidence. |
 | [Review](review.md) | reviewer to orchestrator | One verdict with actionable findings. |
 | [Parallel execution](parallel-execution.md) | orchestrator with assigned workers | Independent results, combined validation and review. |
 | [Deliver](deliver.md) | pr-agent under orchestrator coordination | The approved Git action and observed outcome. |
+| [Plan status](plan-status.md) | orchestrator | Every plan by stage, live state, blockers and suspected drift. |
+| [Plan verification](plan-verify.md) | orchestrator with agreed tester/e2e/reviewer inputs | Completed work checked against acceptance, specs and observations. |
 
 Use only the operations needed for the request. These are manual procedures and role
 handoffs; defining them does not launch agents or authorize product work.

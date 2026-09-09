@@ -21,13 +21,14 @@ Running additional checks also needs authority under [action-approved](../gates/
    inspect the entire diff and actual validation evidence.
 3. Return one PASS or CHANGES_REQUIRED report using the review template. Each issue
    needs a location, impact and remedy; state the review's limits.
-4. The orchestrator records or links the report in the selected plan's validation
-   section, journals the observation and presents a user decision summary.
+4. The orchestrator records or links the report in the selected PLAN or FIX validation
+   section, or appends to the journal for a historical done record. Journal the
+   observation and present a user decision summary.
 5. Changed content requires a fresh review of the revised subject.
 
 ## Output and handoff
 
-One review report and a bounded repair, acceptance or delivery decision. A small review can live in its plan; no extra tracker is needed.
+One review report and a bounded repair, acceptance or delivery decision. A small review can live in its PLAN or FIX; no extra tracker is needed.
 
 ## Stop conditions
 

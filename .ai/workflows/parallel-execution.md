@@ -17,7 +17,8 @@ Before combined review: [review-ready](../gates/review-ready.md).
 
 ## Steps
 
-1. The planner identifies independent tasks and ownership in the plan. Use a small
+1. The planner incorporates any decoupler proposal and identifies independent tasks
+   and ownership in the plan. Use a small
    table: task IDs, agent, worktree, branch, files/specs, dependencies and expected output.
 2. The orchestrator checks the wave's gates and issues an assignment to each worker
    using assignment.md. A workflow document is not authority to dispatch agents.
@@ -27,7 +28,7 @@ Before combined review: [review-ready](../gates/review-ready.md).
    Keep unrelated authorized work intact; do not silently move its ownership.
 5. Collect completion reports and combine changes only under the approved integration
    action. Resolve shared-document changes through their one assigned owner.
-6. The tester runs agreed final checks on the combined revision. The independent
+6. The tester and, where agreed, e2e run final checks on the combined revision. The independent
    reviewer inspects the combined result, then the orchestrator presents the decision.
 
 ## Output and handoff

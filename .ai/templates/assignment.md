@@ -2,7 +2,7 @@
 
 Agent: {{ role }}
 
-Plan and task IDs: {{ references }}
+Plan and task IDs, or bounded FIX: {{ references }}
 
 Authority: {{ user_decision_reference }}
 

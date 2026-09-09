@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An intake or plan needs evidence before a choice can be made.
+An INTAKE, FIX or PLAN needs evidence before a choice can be made.
 
 ## Inputs
 
@@ -22,7 +22,7 @@ Before formal review: [review-ready](../gates/review-ready.md), using research c
 4. Answer with source-linked findings. Label inference, conflicting evidence and
    unknowns. Stop at the agreed scope or limit.
 5. Mark the record complete when the investigation is finished, even if more evidence
-   is needed. Link it from the intake or plan.
+   is needed. Link it from the INTAKE, FIX or PLAN.
 
 ## Output and handoff
 

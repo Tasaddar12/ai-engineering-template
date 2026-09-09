@@ -9,9 +9,11 @@ choices and describing the current project. Start at [AGENTS.md](AGENTS.md).
 - [Now / Next / Blockers](.ai/state/STATE.md)
 - [Workflows](.ai/workflows/README.md) and [command entry points](.ai/commands/README.md)
 - [Research records](.ai/research/README.md)
+- [Confirmed bugs and small defects](.ai/fixes/README.md)
+- [Plan status](.ai/commands/plan-status.md) and [plan verification](.ai/commands/plan-verify.md)
 - [Firm policies](.ai/policies/README.md) and [PASS/FAIL gates](.ai/gates/README.md)
 - [Project context](.ai/state/PROJECT.md)
-- [Eight agent roles](.ai/agents/README.md)
+- [Agent roles](.ai/agents/README.md)
 - [Current project specification](.ai/specs/SPEC-001-project-contracts.md)
 - [Draft plan and delivery scope](.ai/plans/review/PLAN-001-minimal-ai-contracts.md)
 

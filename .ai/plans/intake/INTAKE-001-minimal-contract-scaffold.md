@@ -3,6 +3,7 @@ id: INTAKE-001
 title: Minimal contract scaffold
 status: planned
 plan: PLAN-001
+fix: null
 ---
 # Minimal contract scaffold
 

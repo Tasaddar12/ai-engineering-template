@@ -12,8 +12,11 @@ Before each authorized commit, push, PR creation or merge.
 - A commit has an explicit nonempty descriptive message.
 - For push/PR/merge, the intended commit and branch are known and the worktree has no
   unrecorded changes. For commit, the pending diff is the intended subject.
-- For merge, explicit merge authority and required hosting checks are present.
-  Merge-only criteria are Not applicable to a commit or push.
+- For merge, explicit merge authority and required hosting checks are present, along
+  with a current PASS from [plan-verify](../workflows/plan-verify.md) for each completed
+  plan in scope. A bounded FIX without a plan supplies equivalent evidence for all
+  of its acceptance, affected specs and agreed checks, with no unresolved in-scope defect.
+  Merge-only criteria are Not applicable to commit, push or PR creation.
 
 An explicitly approved documentation draft can be committed/pushed for review when
 that is the authorized purpose; record its documentation checks and pending acceptance.

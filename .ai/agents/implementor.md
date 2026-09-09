@@ -11,11 +11,11 @@ report_template: completion.md
 
 ## Read
 
-The assignment, execution approval, selected plan/tasks, current SPEC owners and implementation workflow.
+The assignment, execution approval, selected plan/tasks or bounded FIX, current SPEC owners and implementation workflow.
 
 ## Steps
 
-1. Confirm the fixed worktree, branch, task IDs, allowed files and expected output.
+1. Confirm the fixed worktree, branch, task IDs or FIX checklist, allowed files and expected output.
 2. Inspect affected files and implement only the assigned checklist.
 3. Update assigned specs to describe the actual result; report any ownership conflict.
 4. Hand the resulting revision/diff to the tester for agreed final validation.
@@ -29,4 +29,4 @@ run unapproved checks, or expand a contract/scope without a decision.
 ## Report
 
 Use completion.md for changed files, tasks, specs, evidence and unresolved items.
-Return it to the orchestrator; do not mark the plan accepted or delivered.
+Return it to the orchestrator; do not mark the plan or FIX accepted or delivered.

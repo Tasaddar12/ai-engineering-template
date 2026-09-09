@@ -11,14 +11,16 @@ report_template: plan.md
 
 ## Read
 
-PROJECT, the intake, current specs, related ADRs/AMDs and relevant research.
+PROJECT, the intake or FIX, current specs, related ADRs/AMDs and relevant research.
 
 ## Steps
 
 1. Establish the desired outcome and what is outside the proposal.
 2. Define small checklist tasks, feature references, affected files/specs and acceptance.
 3. Record dependencies, risks and validation to perform at the end.
-4. For proposed parallel work, name assignments and nonoverlapping ownership in the plan.
+4. Use the decoupler's proposed task boundaries when needed; name dependencies,
+   interfaces and nonoverlapping ownership in the plan. Definition alone does not
+   authorize dispatch. Keep coupled tasks sequential.
 5. Return the proposal to the orchestrator for the user decision.
 
 ## Do not

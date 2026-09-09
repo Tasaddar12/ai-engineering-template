@@ -14,8 +14,11 @@
    and gate results.
 5. Every commit needs a nonempty descriptive message. Push only to the approved
    destination and verify that the remote branch tip matches the local commit.
-6. Creating a PR or merging requires authority for that action. Never force-push or
-   treat a push as merge approval.
+6. Creating a PR or merging requires authority for that action. Before merging a
+   completed plan, require [plan-verify](../workflows/plan-verify.md) evidence for the
+   intended revision, covering acceptance, affected specs and observed behavior.
+   For a bounded FIX without a plan, apply the same evidence coverage to its acceptance.
+   Never force-push or treat a push as merge approval.
 7. After an authorized merge, verify the hosting result and synchronize the target.
    Only after the worktree-only assignment ends may the orchestrator use its integration
    checkout for authorized synchronization and retirement.

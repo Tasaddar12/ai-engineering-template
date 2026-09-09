@@ -12,13 +12,13 @@ Before starting the particular action, including research, planning, execution o
 - If the action changes an accepted obligation, the relevant AMD is accepted.
   This criterion is Not applicable to unaccepted draft refinements or unchanged contracts.
 
-Report-only inspection and intake drafting are already permitted by the
+Report-only inspection and INTAKE/FIX drafting are already permitted by the
 [approval policy](../policies/approval.md); record that basis rather than demanding
 another approval for those activities.
 
 ## Evidence
 
-Link the user decision record, selected plan/intake, scope and any accepted AMD.
+Link the user decision record, selected PLAN/FIX/INTAKE, scope and any accepted AMD.
 
 ## On FAIL
 

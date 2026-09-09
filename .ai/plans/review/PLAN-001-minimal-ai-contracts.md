@@ -4,10 +4,11 @@ title: Minimal AI contracts
 status: review
 review_type: result
 intake: INTAKE-001
+fixes: []
 specs: [SPEC-001]
-features: [F01, F02, F03, F04]
-tasks: [T01, T02, T03, T04, T05, T06, T07, T08]
-draft_revision: 2
+features: [F01, F02, F03, F04, F05]
+tasks: [T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11]
+draft_revision: 3
 related_intake: [INTAKE-002]
 approval: explicit_user_instructions_for_initial_scaffold_and_local_draft_refinements
 ---
@@ -18,7 +19,8 @@ approval: explicit_user_instructions_for_initial_scaffold_and_local_draft_refine
 Draft the exact requested `.ai` tree and a minimal set of contracts in the assigned
 `ai-contract-scaffold` worktree. F01 is the record structure and ownership model;
 F02 is the initial agent/workflow draft. F03 adds workflow and research ownership;
-F04 adds firm policies and PASS/FAIL gates. Feature and task IDs are local to this plan.
+F04 adds firm policies and PASS/FAIL gates. F05 adds confirmed-defect tracking,
+e2e/decoupler roles and plan status/verification. Feature and task IDs are local to this plan.
 
 The authorized action includes replacing this worktree's project contents, drafting
 files, making a descriptive commit and pushing `codex/ai-contract-scaffold` to the
@@ -52,6 +54,14 @@ no accepted baseline contract is being amended because the scaffold remains a dr
 - [x] T07 (F03, F04): Check draft links, record/template structure and whitespace;
   present the refinements for user review.
 
+- [x] T09 (F05): Add fixes/open and fixes/done, a flat FIX template, lifecycle and
+  evidence-based intake distinction; connect bounded repairs to existing workflows.
+- [x] T10 (F05): Add e2e and decoupler roles plus plan-status and plan-verify commands,
+  workflows and compact reports. Link pre-merge verification to the delivery gate.
+- [x] T11 (F05): Validate the final draft and prepare descriptive commit/push delivery
+  under the publication gates below. Git owns the subsequent commit and remote-tip
+  observations; user contract acceptance and merge stay pending.
+
 ## Risks and dependencies
 
 The branch intentionally removes the former application and all of its tracked
@@ -77,6 +87,14 @@ workflows, configured paths, internal links, record IDs, required template headi
 and whitespace. Git whitespace inspection also passed. Formal user review remains
 pending; no product tests or agent processes were run.
 
+Draft revision 3 follows the user's explicit instruction to add confirmed-defect
+tracking, e2e/decoupler roles and both plan commands, and to commit and push everything.
+Documentation checks passed across 94 files and all ten agents: configured paths,
+internal links, IDs/frontmatter, template sections, command/workflow/report references,
+whitespace and append-only journal preservation. The Git whitespace check passed.
+The final staged version is checked again before commit. No product tests or agents
+were run; independent contract acceptance remains pending.
+
 ## Decision and delivery
 
 Authority: the user's explicit numbered instruction to create this worktree, clear
@@ -100,3 +118,42 @@ Subject: PLAN-001, draft revision 2; evaluator: orchestrator.
   pending under the documentation-publication provision of the delivery gate.
 - Delivery-ready for push: evaluate the resulting commit and clean worktree before
   the write; verify the remote tip after it. Git owns the final revision identity.
+
+## Draft revision 3 publication gates
+
+Gate: [action-approved](../../gates/action-approved.md)
+
+Subject and revision: PLAN-001 draft revision 3, pending diff on codex/ai-contract-scaffold.
+
+Evaluator and time: orchestrator, 2026-09-09 15:24:24 -0400.
+
+| Criterion | Met / unmet / not applicable | Evidence or reason |
+| --- | --- | --- |
+| Exact action, scope and destination | Met | The user requested fixes/open and fixes/done, e2e/decoupler roles, plan-status/plan-verify, and explicitly said to commit and push everything in this worktree. |
+| Excluded actions and current authority | Met | Same assigned branch; PR creation and merge remain excluded. |
+| Accepted obligation amendment | Not applicable | Explicit refinement of an unaccepted documentation draft. |
+
+Result: PASS.
+
+Next action: orchestrator coordinates the authorized documentation publication.
+
+Gate: [delivery-ready](../../gates/delivery-ready.md)
+
+Subject and revision: the same draft diff, then its resulting clean commit for push.
+
+Evaluator and time: orchestrator, 2026-09-09 15:24:24 -0400.
+
+| Criterion | Met / unmet / not applicable | Evidence or reason |
+| --- | --- | --- |
+| Action approval and destination | Met | Action-approved above; origin, codex/ai-contract-scaffold. |
+| Scope and specification owners | Met | T09-T11 and updated SPEC-001 describe the actual document additions. |
+| Draft review and validation | Met | Documentation checks recorded above; publication is explicitly for user review under the draft provision. |
+| Descriptive commit message | Met | Add PLAN-001 defect tracking and plan verification contracts. |
+| Commit subject | Met | All scoped draft changes are the intended diff; inspect the staged version before commit. |
+| Merge-only verification and hosting checks | Not applicable | Push-only draft; no merge authority. |
+
+Result for draft commit: PASS, subject to the final staged whitespace check.
+
+Next action: commit, then evaluate push against the actual clean commit and approved
+branch before writing. Verify its remote tip afterward. Git owns those observed
+revision facts; the draft remains in review.

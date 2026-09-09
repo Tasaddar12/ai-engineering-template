@@ -3,6 +3,7 @@ id: INTAKE-002
 title: Expand operating documents
 status: planned
 plan: PLAN-001
+fix: null
 ---
 # Expand operating documents
 
@@ -16,6 +17,12 @@ They then named eight roles: orchestrator, researcher, planner, implementor, rev
 tester, bug-reviewer and pr-agent. They requested initialize, planning, implementation,
 review and parallel-execution workflows, and replacement of the intent folder with
 PROJECT.md beside STATE.md in state.
+
+The next refinement requests fixes/open and fixes/done for confirmed bugs and small
+defects, with intake reserved for unconfirmed/waiting details and suspected drift.
+It also adds e2e and decoupler roles, plan-status for all plan stages and live status,
+and plan-verify for completed work checked against specs and observations.
+The user explicitly requested committing and pushing all of these additions.
 
 Previously commands contained the procedures, and hooks listed manual checks. The
 requested additions need clear ownership so the same requirement is not defined in

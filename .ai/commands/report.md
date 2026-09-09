@@ -1,10 +1,11 @@
-# Report a problem or request
+# Report
 
-Use when: A problem, bug, drift observation or change request needs a clear record before action.
+Use when: a problem, waiting question, suspected drift, confirmed defect or request needs triage.
 
-Inputs: The request and read-only access to relevant fact owners.
+Inputs: the request and available read-only evidence.
 
-Follow [the report workflow](../workflows/report.md). It owns the procedure;
+Follow [report](../workflows/report.md). It owns the procedure;
 [RULES](../RULES.md) owns authority.
 
-Return: the output named in that workflow, using its reporting template.
+Return: intake.md for unconfirmed/waiting items or fix.md for a confirmed defect,
+followed by decision-summary.md.

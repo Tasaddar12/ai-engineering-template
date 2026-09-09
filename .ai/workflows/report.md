@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A problem, bug, drift observation or change request needs a clear record before action.
+An observation, confirmed defect or change request needs a clear record before action.
 
 ## Inputs
 
@@ -14,19 +14,25 @@ Before the proposed next action: [action-approved](../gates/action-approved.md).
 
 ## Steps
 
-1. The orchestrator reads the current owners. For bugs, the bug-reviewer inspects
-   evidence and recommends a bounded next action without fixing the product.
-2. Allocate an intake ID and use the intake template under plans/intake.
-3. Describe observed behavior, expected outcome, impact and unknowns. Include a
-   reproduction only if known; distinguish observation from assumption.
-4. Link related records and propose one bounded next action.
+1. The orchestrator reads the current owners. For suspected bugs, the bug-reviewer
+   inspects evidence and recommends a bounded next action without fixing the product.
+2. Follow the [record policy](../policies/records.md): use intake.md under plans/intake
+   for uncertainty, waiting questions, suspected drift or requests awaiting planning.
+   Use fix.md under fixes/open when evidence confirms a bug or small defect.
+3. Describe observed and expected behavior, impact and unknowns. Include reproduction
+   or other confirming evidence for a FIX; distinguish observation from hypothesis.
+4. When confirming an existing intake, link the FIX in its fix field and set status
+   to confirmed. Preserve the original evidence; the FIX references it. Link any PLAN
+   that owns execution and propose one bounded next action.
 5. Return the decision summary and wait under RULES. The orchestrator records the
    user decision in the journal and updates STATE when focus changes.
 
 ## Output and handoff
 
-A linked intake and a decision summary. Research or planning can be a proposed next action.
+A linked INTAKE or FIX and a decision summary. Research, a bounded repair or planning
+can be proposed; creating a defect record does not authorize repair.
 
 ## Stop conditions
 
-Wait when the next action needs approval. Missing evidence remains Unknown; it does not justify a speculative fix.
+Wait when the next action needs approval. Missing evidence remains Unknown; it does
+not justify a speculative fix or a confirmed-defect label.

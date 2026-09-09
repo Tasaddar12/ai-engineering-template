@@ -15,7 +15,7 @@ decision before any action that has not already been explicitly authorized.
 ## Context and boundaries
 
 The owner requested this fresh draft in an isolated worktree after finding the earlier
-framework unnecessarily complex. Keep refinements small and reviewable. The eight
+framework unnecessarily complex. Keep refinements small and reviewable. The
 agent roles and manual workflows describe responsibilities and handoffs; they do not
 start provider processes, install software or automatically execute commands.
 

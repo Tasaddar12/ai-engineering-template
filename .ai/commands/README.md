@@ -11,3 +11,5 @@ shell commands or grant authority.
 - [Review](review.md)
 - [Parallel execution](parallel-execution.md)
 - [Deliver](deliver.md)
+- [Plan status](plan-status.md)
+- [Plan verification](plan-verify.md)

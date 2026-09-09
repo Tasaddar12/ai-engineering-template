@@ -3,7 +3,8 @@
 ## Requirements
 
 1. For a new problem, bug, drift item or proposed change, inspect read-only and capture
-   an intake report. Present the decision-summary template before the proposed action.
+   a report through the [report workflow](../workflows/report.md). Present the
+   decision-summary template before the proposed action.
 2. Wait for the user's yes, no or requested changes. A yes approves only the exact
    action and scope stated. A no stops it; alterations require a revised summary.
 3. Before approval, only read-only inspection and report/plan drafting are permitted.
@@ -19,4 +20,4 @@
 ## Evidence
 
 Record the user instruction or decision, its scope and excluded actions in the plan
-or intake; append the decision event to the journal. Apply the action-approved gate.
+or FIX/INTAKE; append the decision event to the journal. Apply the action-approved gate.

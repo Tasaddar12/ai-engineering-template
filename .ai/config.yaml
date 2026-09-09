@@ -13,6 +13,10 @@ paths:
   retired_decisions: .ai/decisions/retired
   plans: .ai/plans
   intake: .ai/plans/intake
+  fixes: .ai/fixes
+  fix_phases:
+    open: .ai/fixes/open
+    done: .ai/fixes/done
   templates: .ai/templates
   agents: .ai/agents
   hooks: .ai/hooks
@@ -33,6 +37,7 @@ ids:
   decision: 'ADR-{nnn}-{slug}.md'
   amendment: 'AMD-{nnn}-{slug}.md'
   intake: 'INTAKE-{nnn}-{slug}.md'
+  fix: 'FIX-{nnn}-{slug}.md'
   plan: 'PLAN-{nnn}-{slug}.md'
   research: 'RES-{nnn}-{slug}.md'
   journal: '{date}.md'
