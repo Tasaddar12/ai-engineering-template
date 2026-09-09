@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-007",
+  "plan_id": "PLAN-001",
+  "title": "Implement observed Git operations",
+  "status": "accepted",
+  "archived": false,
+  "objective": "Implement observed Git operations. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-002",
+    "TASK-006"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/git_ops.py",
+      "tests/unit/git/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-007.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/commands.py",
+      "src/local_ports.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:git"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-007-AC1",
+      "description": "Inspect real refs, worktrees, dirty files and ancestry using validated Git argv",
+      "verification": "TASK-007 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-007-AC2",
+      "description": "Create branches and integration commits conditionally on expected heads and return observed facts",
+      "verification": "TASK-007 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-02"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-002",
+    "handoff:TASK-006"
+  ],
+  "output_contracts": [
+    "git public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-007"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [
+    "TASK-007-a1"
+  ],
+  "superseded_by": [],
+  "resume_state": "Candidate 5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
+}

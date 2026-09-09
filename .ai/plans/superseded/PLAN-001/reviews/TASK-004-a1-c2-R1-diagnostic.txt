@@ -1,0 +1,15 @@
+ROOT/FROZEN BYTE DIFFERENCE .ai/plans/current/PLAN-001/plan.json CRLF-only True
+ROOT/FROZEN BYTE DIFFERENCE .ai/plans/current/PLAN-001/graph.json CRLF-only True
+ROOT/FROZEN BYTE DIFFERENCE .ai/plans/current/PLAN-001/tasks/current/TASK-004.json CRLF-only True
+IDENTITY, FROZEN CONTEXT, VALIDATION HASH, POLICY HASH, FINGERPRINT, R4 DIGEST, ACCEPTED TASK-001, SCOPE: PASS
+base 77502377774bd5294ae0857035d40fe1698742c0 head 248f4dedf5d37d09eb27a3ef08bb63a570359666 fingerprint 900aecdaa2a27efbe2bc869df51a5f07f846d492b0523c77ab5673848ef72fec
+A	.ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md
+A	src/contracts.py
+M	src/install.py
+M	src/validate_foundation.py
+A	tests/unit/schemas/test_contracts.py
+Traceback (most recent call last):
+  File "D:\Codex Projects\ai-engineering-template\.ai\plans\current\PLAN-001\reviews\TASK-004-a1-c2-R1-evidence.py", line 82, in <module>
+    assert len(registry.kinds) == len(examples) == 27
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

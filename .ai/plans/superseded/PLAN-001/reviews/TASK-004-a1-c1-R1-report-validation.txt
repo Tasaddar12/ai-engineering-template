@@ -1,0 +1,1 @@
+PASS: review-result v1 schema, exact R1-01..R1-11 sequence, candidate binding, independent invocation, checklist version, two unresolved findings, fail verdict.

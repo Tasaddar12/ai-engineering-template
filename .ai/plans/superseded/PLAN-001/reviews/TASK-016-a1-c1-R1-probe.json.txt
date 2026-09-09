@@ -1,0 +1,266 @@
+{
+  "runtime": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "origins": {
+    "context": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\context.py",
+    "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\workflow_ports.py",
+    "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\contracts.py",
+    "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\domain_values.py"
+  },
+  "groups": [
+    {
+      "name": "schema_valid_full_records_raw_hash_independent_manifest",
+      "status": "pass",
+      "detail": {
+        "digest": "22aab626640f7bc6f5364b314adcf1acf918c4b698f5054bfd76f6175b567f98",
+        "estimated": 2844,
+        "selected_raw_bytes": 1770,
+        "complete_manifest_preimage_bytes": 1120,
+        "actual_wire_bytes": 944
+      }
+    },
+    {
+      "name": "required_multi_file_metadata_and_optional_after_omission",
+      "status": "pass",
+      "detail": {
+        "required_exact": 2844,
+        "below": {
+          "category": "budget_exhausted",
+          "details": {
+            "reason": "required_context_over_budget"
+          }
+        },
+        "optional_selected": [
+          "records/task.md",
+          "records/z-small.md"
+        ],
+        "metadata_only": {
+          "category": "budget_exhausted",
+          "details": {
+            "reason": "required_context_over_budget"
+          }
+        }
+      }
+    },
+    {
+      "name": "scope_alias_plan_record_identity_boundaries",
+      "status": "pass",
+      "detail": [
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "invalid_portable_path",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "invalid_portable_path",
+            "reference_group": "optional",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "duplicate_of_documents",
+            "reference_group": "optional",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "duplicate_of_documents",
+            "reference_group": "optional",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "outside_read_scope",
+            "reference_group": "optional",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "cross_plan_reference",
+            "reference_group": "dependency_handoffs",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "wrong_review_task",
+            "reference_group": "review_1",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "wrong_review_stage",
+            "reference_group": "review_1",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "invalid_handoff_commit",
+            "reference_group": "dependency_handoffs",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "invalid_input",
+          "details": {
+            "reason": "self_handoff",
+            "reference_group": "dependency_handoffs",
+            "reference_index": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "known_secrets_host_paths_metadata_before_reads_sanitized_errors",
+      "status": "pass",
+      "detail": [
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "secret_metadata",
+            "reference_group": "role"
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "secret_metadata",
+            "reference_group": "acceptance_ids",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "host_path_metadata",
+            "reference_group": "role"
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "host_path_metadata",
+            "reference_group": "acceptance_ids",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "secret_reference",
+            "reference_group": "optional",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "secret_content",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "secret_content",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "host_path_content",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        },
+        {
+          "category": "policy_denied",
+          "details": {
+            "reason": "host_path_content",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "explicit_only_binary_size_and_raw_material_change",
+      "status": "pass",
+      "detail": {
+        "opened": [
+          "records/task.md"
+        ],
+        "binary": {
+          "category": "invalid_input",
+          "details": {
+            "reason": "non_utf8_content",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        },
+        "over_budget": {
+          "category": "budget_exhausted",
+          "details": {
+            "reason": "required_context_over_budget",
+            "reference_group": "documents",
+            "reference_index": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "schema_invalid_handoff_required_input_rejected",
+      "status": "fail",
+      "error_type": "AssertionError",
+      "error": "build unexpectedly returned a successful complete bundle",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 126, in probe\n    detail = fn()\n             ^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 228, in schema_invalid_handoff\n    return rejects(base)\n           ^^^^^^^^^^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 138, in rejects\n    raise AssertionError('build unexpectedly returned a successful complete bundle')\nAssertionError: build unexpectedly returned a successful complete bundle\n"
+    },
+    {
+      "name": "schema_invalid_review_required_input_rejected",
+      "status": "fail",
+      "error_type": "AssertionError",
+      "error": "build unexpectedly returned a successful complete bundle",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 126, in probe\n    detail = fn()\n             ^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 237, in schema_invalid_review\n    return rejects(base)\n           ^^^^^^^^^^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 138, in rejects\n    raise AssertionError('build unexpectedly returned a successful complete bundle')\nAssertionError: build unexpectedly returned a successful complete bundle\n"
+    },
+    {
+      "name": "bounded_deep_json_returns_typed_sanitized_error",
+      "status": "pass",
+      "detail": {
+        "category": "invalid_input",
+        "details": {
+          "reason": "invalid_handoff_task",
+          "reference_group": "dependency_handoffs",
+          "reference_index": 0
+        }
+      }
+    },
+    {
+      "name": "dto_accepted_non_utf8_metadata_returns_typed_error",
+      "status": "fail",
+      "error_type": "UnicodeEncodeError",
+      "error": "'utf-8' codec can't encode character '\\ud800' in position 342: surrogates not allowed",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 126, in probe\n    detail = fn()\n             ^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 245, in surrogate_metadata\n    return rejects(request(role='reviewer\\ud800'))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-016-a1-c1-R1-probe.py\", line 132, in rejects\n    (builder or RepositoryContextBuilder(root)).build(req)\n  File \"D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\context.py\", line 263, in build\n    required_estimate = self._estimate(\n                        ^^^^^^^^^^^^^^^\n  File \"D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\context.py\", line 707, in _estimate\n    _canonical_bytes(\n  File \"D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1\\src\\context.py\", line 107, in _canonical_bytes\n    ).encode(\"utf-8\")\n      ^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'utf-8' codec can't encode character '\\ud800' in position 342: surrogates not allowed\n"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+issues: []
+worktrees:
+- path: D:/Codex Projects/ai-engineering-template
+  branch: codex/plan-002-framework-reset
+  head: 93fbdbdd7d4c65025150827c761300c86110889a
+  locked: false
+  prunable: false
+- path: D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-agents
+  branch: codex/plan-002-agents
+  head: 4b2e2af641691a6a274a8c004705f00340614585
+  locked: false
+  prunable: false
+- path: D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-execution
+  branch: codex/plan-002-execution
+  head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+  locked: false
+  prunable: false
+- path: D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-planning
+  branch: codex/plan-002-planning
+  head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
+  locked: false
+  prunable: false
+merged:
+- FEATURE-002
+- FEATURE-003
+- FEATURE-004

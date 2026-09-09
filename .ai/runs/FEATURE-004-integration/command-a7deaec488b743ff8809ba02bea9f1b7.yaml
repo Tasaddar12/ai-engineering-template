@@ -1,0 +1,16 @@
+argv:
+- git
+- merge-base
+- --is-ancestor
+- fd2539c654f820a1ddf51a24dc28c74dd585fdbe
+- codex/plan-002-framework-reset
+cwd: D:\Codex Projects\ai-engineering-template
+started_at: '2026-09-09T00:42:31.112596+00:00'
+finished_at: '2026-09-09T00:42:31.249000+00:00'
+returncode: 0
+stdout: ''
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

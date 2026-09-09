@@ -1,0 +1,28 @@
+argv:
+- python
+- -m
+- pytest
+- -q
+- --capture=sys
+- --basetemp
+- .ai/local/task-093-pytest
+- -o
+- cache_dir=.ai/local/task-093-pytest-cache
+- tests/test_execution.py
+- -k
+- git_diff_inspections or git_status_treats_verbose or unsupported_diff_inspections
+  or forbidden_cannot_be_overridden
+cwd: /mnt/d/Codex Projects/ai-engineering-template/.worktrees/plan-003-baseline
+started_at: '2026-09-09T12:48:30.986746+00:00'
+finished_at: '2026-09-09T12:48:38.294642+00:00'
+returncode: 0
+stdout: '.................................                                        [100%]
+
+  33 passed, 18 deselected in 6.33s
+
+  '
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

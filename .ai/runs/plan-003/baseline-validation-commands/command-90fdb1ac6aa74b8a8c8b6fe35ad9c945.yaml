@@ -1,0 +1,18 @@
+argv:
+- python
+- -m
+- mypy
+- src/ai_engineering
+cwd: /mnt/d/Codex Projects/ai-engineering-template/.worktrees/plan-003-baseline
+started_at: '2026-09-09T12:49:00.197390+00:00'
+finished_at: '2026-09-09T12:49:00.229660+00:00'
+returncode: 1
+stdout: ''
+stderr: '/mnt/d/Codex Projects/ai-engineering-template/.ai/local/plan-002-linux-venv/bin/python:
+  No module named mypy
+
+  '
+status: failed
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

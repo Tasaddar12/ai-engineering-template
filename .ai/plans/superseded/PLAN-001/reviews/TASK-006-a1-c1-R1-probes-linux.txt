@@ -1,0 +1,98 @@
+[
+  {
+    "case": "typed_api",
+    "result": "PASS; actual Protocol instance; dict rejected"
+  },
+  {
+    "case": "cwd_symlink",
+    "result": "PASS",
+    "status": "launch_failed"
+  },
+  {
+    "case": "encoded_streaming_redaction_and_shared_budget",
+    "result": "PASS",
+    "bytes": [
+      8199,
+      0
+    ],
+    "redacted": true,
+    "truncated": true
+  },
+  {
+    "case": "existing_content_corruption",
+    "result": "PASS; rejected mismatched immutable destination without overwrite"
+  },
+  {
+    "case": "clock_regression",
+    "result": "PASS",
+    "evidence": {
+      "id": "R1-EVIDENCE",
+      "command_id": "r1.probe",
+      "argv_redacted": [
+        "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-venv/bin/python",
+        "-c",
+        "print('retained')"
+      ],
+      "cwd_worktree_id": "WT-R1",
+      "cwd_relative": ".",
+      "started_at": "2026-09-08T12:00:00+00:00",
+      "finished_at": null,
+      "exit_code": null,
+      "status": "unknown",
+      "stdout_ref": {
+        "path": "logs/8a69694a5e0b980e-stdout-d25a40aa4f234dff3cf60d2afe65a6596d7232e6603ef7cf36984836fd6046aa.log",
+        "sha256": "d25a40aa4f234dff3cf60d2afe65a6596d7232e6603ef7cf36984836fd6046aa"
+      },
+      "stderr_ref": {
+        "path": "logs/8a69694a5e0b980e-stderr-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "redactions_applied": false,
+      "output_truncated": false,
+      "environment_binding_names": [],
+      "error_category": "clock_regression",
+      "schema_version": "1.0",
+      "kind": "command-evidence"
+    }
+  },
+  {
+    "case": "detached_descendant_timeout",
+    "result": "DEFECT",
+    "status": "timed_out",
+    "exit_code": -15,
+    "error_category": "timeout",
+    "child_pid": 349,
+    "child_pgid": 349,
+    "child_alive_after_return": true
+  },
+  {
+    "case": "detached_descendant_fixture_cleanup",
+    "pid": 349,
+    "confirmed_gone": true
+  },
+  {
+    "case": "parent_exits_descendant_keeps_pipes",
+    "result": "DEFECT",
+    "elapsed_seconds": 7.122,
+    "configured_timeout": 1,
+    "status": "unknown",
+    "error_category": "ambiguous_side_effect",
+    "watchdog_at_seconds": 7,
+    "observation": {
+      "child_pid": 354,
+      "child_alive": true,
+      "main_stack": [
+        "  File \"/mnt/d/Codex Projects/ai-engineering-template/.ai/plans/current/PLAN-001/reviews/TASK-006-a1-c1-R1-probes.py\", line 189, in <module>\n    e=runner().execute(request(parent,names=('PID_FILE',),env=(EnvironmentBinding('PID_FILE',str(pid_file),False),),timeout=1))\n",
+        "  File \"/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/commands.py\", line 356, in execute\n    drains_finished = _finish_drains(\n",
+        "  File \"/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/commands.py\", line 607, in _finish_drains\n    pipe.close()  # type: ignore[attr-defined]\n"
+      ],
+      "fixture_cleanup_confirmed": true
+    }
+  },
+  {
+    "case": "probe_completion",
+    "result": "COMPLETE",
+    "platform": "linux",
+    "source": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/commands.py"
+  }
+]

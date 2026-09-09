@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-004-a2-c3-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-004-a2-c3-R1-20260908T034456Z",
+  "task_id": "TASK-004",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-004-a2-e3c1177f993e.json",
+  "candidate_fingerprint": "c8ed5d4ac944b439bcafd1d588f4ccd611d0daafcdd29ef4e430582934192e6c",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "manual-native:/root/r1_004_a2_c3:20260908T034456Z"
+  },
+  "independent_session_id": "/root/r1_004_a2_c3",
+  "implementation_session_id": "/root/implement_004_a2",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "AC1: all 27 v1 kinds, strict offline validation, qualified references and common structural digest pass. AC2: typed failures and shared constructor parity pass. AC3: exact bootstrap hash, genuine relocation, structural invalidation and standalone transitive closure pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-004.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-relocation.txt"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-01 and all task exclusions respected. The explicit post-recovery allowance retains both failed R1 cycles and zero R2, without changing graph r4, scope, dependencies, criteria, shared contracts or authority.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/plans/current/PLAN-001/evidence/recovery/TASK-004-recovery-assessment.md",
+        ".ai/plans/current/PLAN-001/evidence/recovery/TASK-004-coordinator-decision.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced local schema loading and validation, digest projection and wire encoding, validator use and installer import closure. Both physical installed plan relocations and changed approved-graph structure produce the required outcomes.",
+      "evidence": [
+        "src/contracts.py",
+        "src/validate_foundation.py",
+        "src/install.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-relocation.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Invalid artifacts/references, unsupported versions and unavailable resources map to nonretryable domain errors; local reference resolution failures are typed. Missing required installed helpers fail explicitly. Temporary fixtures and processes completed and cleaned up.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-bootstrap.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Closed whole-value reference recognition covers both mixed arrays. All 54 namespace/separator/bucket combinations pass; 28 unmatched prose/suffix values stay byte-exact and structural. Objective, task-bucket directory, both prior contract sentences and output-only relocation regressions pass.",
+      "evidence": [
+        "tests/unit/schemas/test_contracts.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-relocation.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Exact declared suite ran 21 tests and bootstrap ran 24 tests on the frozen candidate, both exit 0. Foundation and independent registry/reference/digest/installation/actual-approval probes also passed with confirmed candidate import origins.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-declared.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-bootstrap.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-foundation.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The three production files, owned schema tests and task handoff fit TASK-004's five permitted paths and bounded installer allowance. Only accepted TASK-001 values are imported; no later consumer, provider or lifecycle engine is implemented.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-004.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Reconstructed exact base/head diff contains only the five handoff-listed paths. No renames, deletions, unrelated source or canonical-record changes; candidate remains clean and whitespace checks pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-004-a2-e3c1177f993e.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit flat-module interfaces reuse accepted common values/errors. Schema views are detached, pure digest helpers preserve the bootstrap projection, and deterministic AST closure follows actual imports with an explicit required-module floor.",
+      "evidence": [
+        "src/contracts.py",
+        "src/install.py",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Closed registry has no network retrieval callback; unknown fields and unsupported versions fail. Plan-local identities are qualified. One recomputed digest governs approval without stale-hash fallback. Both candidate and fresh installed import origins were independently checked.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1-relocation.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Handoff accurately records recognition limits, public signatures, dependency closure, acceptance and preserved recovery lineage. Independent exact-head runs support its behavioral claims. Native submitted Astra/xhigh rank4 provenance is distinguished from unavailable provider-returned identity/effort; implementation was Sol/xhigh rank3 in a separate session.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-004-a2-c3-R1.md"
+      ]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T03:44:56Z"
+}

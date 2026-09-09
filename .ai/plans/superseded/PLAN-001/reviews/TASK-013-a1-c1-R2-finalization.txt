@@ -1,0 +1,25 @@
+FINAL: identity PASS; clean exact head/base; 13 context hashes; validation hash; raw diff/policy/model/fingerprint; passing same-candidate R1; r4 digest; unchanged accepted 001/004/039 code.
+Changed paths: ['A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md', 'A\tsrc/plan_graph.py', 'A\ttests/unit/planning_dag/test_plan_graph.py']
+Candidate imports: {'contracts': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\contracts.py', 'domain_values': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\domain_values.py', 'plan_graph': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\plan_graph.py', 'orchestration_ports': 'D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-013-a1\\src\\orchestration_ports.py'}
+R2 schema, all twelve unique passing checks, exact R1 link and distinct session: PASS
+SUPPLEMENTAL committed context SHA256 39b10bbe0487a712529d3bc06e382837d62e7cc11a6ec34e346a5ae1e1cbf3e2 docs/agents/consistency-reviewer.md
+SUPPLEMENTAL committed context SHA256 9afdbbadb976d0abf95184cb03f3ab1b454793c9e6397c78d8ca1cc613f62d66 .ai/shared/architecture/python.md
+SUPPLEMENTAL committed context SHA256 babb0a1a088c80118a0eb60bd3d06cf92a836dc78d78e31811dff112d510ab8a .ai/shared/architecture/overview.md
+SUPPLEMENTAL committed context SHA256 257d0d1b416477218c333e9a54337fd3fc73517f2a6fcd3becc16e55271ce7e5 .ai/shared/state/semantic-invariants.md
+SUPPLEMENTAL committed context SHA256 ca86f0db8c610fd96c166d635158a31514c5a80463838527b8f27a2324770bf8 .ai/shared/state/transitions.md
+SUPPLEMENTAL committed context SHA256 6ad90efaeeedf0de58d119b1c70d5ca91ac04fb2715f38a7f41b6410aa1e7ecb .ai/shared/workflows/plan-implementation.md
+SUPPLEMENTAL committed context SHA256 f45b8c30e14891ab11466a62003c5bd5101305a34281b44081d4ddbeb7ef3fad .ai/shared/workflows/recovery.md
+SUPPLEMENTAL committed context SHA256 6a202793d74b739f59d646628d0276d652a7ccdaac0bee1247ec514fbf5408f2 .ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md
+SUPPLEMENTAL committed context SHA256 cbc4ab723d576041c7f28272e0680f8f7bb52828a06a59f881c8941cd9699ae1 .ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md
+SUPPLEMENTAL committed context SHA256 c64669eab0c20242c67ced9a3481ce124cfbe29f57fe0ac8095c30939b46d3fd .ai/plans/current/PLAN-001/evidence/implementation/TASK-039.md
+SUPPLEMENTAL committed context SHA256 33a07284ce7a42f090ec2121be394c74cae16ed1030de0d2fec87348d53415a5 .ai/plans/current/PLAN-001/evidence/full-implementation.md
+SUPPLEMENTAL committed context SHA256 81ac9d02bf86f3ac70b4fefe496015b706fdd362189d59bd75aba9e45613b41a .ai/plans/current/PLAN-001/tasks/current/TASK-015.json
+SUPPLEMENTAL committed context SHA256 654ab6b875ec63b6a46a96e3867899d00ab2b2d76e92e11f8e7a0f5427928739 .ai/plans/current/PLAN-001/tasks/current/TASK-022.json
+SUPPLEMENTAL committed context SHA256 1c260896bf5e6e5c4a0eff2279593b316fb87b80784504f61e1cf5e124fd8e8e .ai/plans/current/PLAN-001/tasks/current/TASK-024.json
+SUPPLEMENTAL committed context SHA256 59ea5af50927c3bede675da38a22e73da53bd632a3bd7773f850937c74e889cb .ai/plans/current/PLAN-001/tasks/current/TASK-033.json
+SUPPLEMENTAL committed context SHA256 7f8230f4038cfb179a4490939fca6bd5466575a5f63d6f1f4cd919821f295f96 src/contracts.py
+SUPPLEMENTAL committed context SHA256 57329ee0235a564365d91a944b8ff1f7dabe6bc276910bfaba157a39fb26ef69 src/domain_values.py
+SUPPLEMENTAL committed context SHA256 dbd16491fc2890fb54115faa60845bb04eb0a5c67f2a4d81da840cd40b139a90 src/orchestration_ports.py
+SUPPLEMENTAL committed context SHA256 0cba92f07fa67c43aad209d2f3c686a72e4c4619f32555ec4f4e76413b574f97 src/workflow_ports.py
+Final report SHA256 73a93c82e60359f99cd394e6613d8bed5be5d36d6cbedcb82f6e7d3a9793078e
+Candidate access stopped after this process; no further access after FINAL.

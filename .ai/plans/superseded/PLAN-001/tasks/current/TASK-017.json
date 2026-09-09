@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-017",
+  "plan_id": "PLAN-001",
+  "title": "Implement agent dispatch contract and fake adapter",
+  "status": "accepted",
+  "archived": false,
+  "objective": "Implement agent dispatch contract and fake adapter. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-003",
+    "TASK-004",
+    "TASK-038"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/agents.py",
+      "tests/unit/agents/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/config.py",
+      "src/workflow_ports.py",
+      "src/contracts.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:agents"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-017-AC1",
+      "description": "Provide deterministic fake start/poll/cancel behavior with idempotent handles and structured outputs",
+      "verification": "TASK-017 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-017-AC2",
+      "description": "Reject invalid provenance, missing capabilities and lower-capability review profile bindings",
+      "verification": "TASK-017 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-04"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-003",
+    "handoff:TASK-004",
+    "handoff:TASK-038"
+  ],
+  "output_contracts": [
+    "agents public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-017"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [
+    "TASK-017-a1",
+    "TASK-017-a2",
+    "TASK-017-a3"
+  ],
+  "superseded_by": [],
+  "resume_state": "Candidate eaa80842f695c766dd55ab92e40dcf40874c8471 passed actual task validation and one independent review under the user's single-stage decision, then integrated locally. Final combined review and completion gates remain."
+}

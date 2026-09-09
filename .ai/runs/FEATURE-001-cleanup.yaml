@@ -1,0 +1,9 @@
+subject: FEATURE-001
+path: .worktrees/plan-002-core
+branch_retained: codex/plan-002-core
+head: 274ca00bb42e3ea96db7f60dc189633e0651f633
+merged_into: codex/plan-002-framework-reset
+clean: true
+ignored_generated_files: 99
+removed: true
+force_used: false

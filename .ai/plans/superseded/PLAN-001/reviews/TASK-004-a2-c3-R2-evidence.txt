@@ -1,0 +1,16 @@
+PASS identity: exact clean head/base, accepted TASK-001 ancestry and unchanged bytes; binary diff, 12 context refs, validation ref, policy/model hash, fingerprint, five paths; schema-valid same-candidate 11-check R1 pass
+PASS origins: every R2 production import is from frozen TASK-004-a2/src; schemas, accepted values/workflow ports, and bootstrap CLI are unchanged
+PASS common digest: 39 current tasks reproduce bootstrap and approved r4 hash, including immutable task inputs and reordered task collection
+PASS reference compatibility: five plan-local kinds preserve TASK-001 constructors, differ across plans, and reject bare or wrong-plan identities with nonretryable typed errors; project-unique plan reference remains bare
+PASS accepted TASK-003 compatibility: immutable wire projections for agent-request, agent-run, agent-output, context-bundle, review-result, pr-state validate through the new offline registry; no TASK-003 dependency/import added
+PASS declared task suite: exact command with required root interpreter, 21 tests, exit 0; full output in TASK-004-a2-c3-R2-declared.txt
+HARNESS CORRECTION: initial integration fixture omitted the archived_plans registry update; candidate correctly rejected it. Corrected fixture now updates all three registries. Prior declared 21-test pass is retained; no suite rerun.
+PASS identity: exact clean head/base, accepted TASK-001 ancestry and unchanged bytes; binary diff, 12 context refs, validation ref, policy/model hash, fingerprint, five paths; schema-valid same-candidate 11-check R1 pass
+PASS origins: every R2 production import is from frozen TASK-004-a2/src; schemas, accepted values/workflow ports, and bootstrap CLI are unchanged
+PASS common digest: 39 current tasks reproduce bootstrap and approved r4 hash, including immutable task inputs and reordered task collection
+PASS reference compatibility: five plan-local kinds preserve TASK-001 constructors, differ across plans, and reject bare or wrong-plan identities with nonretryable typed errors; project-unique plan reference remains bare
+PASS accepted TASK-003 compatibility: immutable wire projections for agent-request, agent-run, agent-output, context-bundle, review-result, pr-state validate through the new offline registry; no TASK-003 dependency/import added
+PASS physical lifecycle/history integration: two plans reuse TASK-001 safely; wrong-plan nested live artifact rejects; approved current/completed/archived PLAN-101 passes; five snapshot files remain byte-exact; six prose changes reject stale approval; one historical-byte mutation rejects its content hash
+PASS future flat-module integration: installed two new transitive modules with an import cycle into fresh Claude target, excluded unreachable source, and imported/validated only installed origins under isolated Python from an unrelated directory
+PASS final candidate is clean and unchanged; all temporary integration fixtures cleaned up; R2 probes exit 0
+PASS final report validation: v1 review-result schema, all 12 R2 checks, evidence paths, exact same-candidate R1, three distinct sessions, unchanged context/policy and clean frozen head. No further worktree access after final handoff.

@@ -1,0 +1,235 @@
+[
+  {
+    "case": "identity",
+    "expected_head": "ce4c8edb86b02268a856a5f870932ade0e7e9b91",
+    "platform": "linux",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "origins": {
+      "commands": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/commands.py",
+      "config": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/config.py",
+      "contracts": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/contracts.py",
+      "local_ports": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src/local_ports.py"
+    }
+  },
+  {
+    "case": "inherited_parent_exit_timeout",
+    "elapsed_seconds": 1.081,
+    "status": "unknown",
+    "exit_code": null,
+    "error_category": "ambiguous_side_effect",
+    "output_truncated": false,
+    "redactions_applied": false,
+    "root_pid": 331,
+    "launch_pgid": 331,
+    "cleanup_claim": false,
+    "child_pid": 334,
+    "child_alive_after_return": false,
+    "child_pgid": null,
+    "log_bytes": [
+      0,
+      0
+    ],
+    "external_intervention_before_return": false
+  },
+  {
+    "case": "fixture_cleanup",
+    "pid": 334,
+    "was_alive": false,
+    "confirmed_gone": true
+  },
+  {
+    "case": "inherited_parent_exit_cancellation",
+    "elapsed_seconds": 0.414,
+    "status": "unknown",
+    "exit_code": null,
+    "error_category": "ambiguous_side_effect",
+    "output_truncated": false,
+    "redactions_applied": false,
+    "root_pid": 335,
+    "launch_pgid": 335,
+    "cleanup_claim": false,
+    "child_pid": 338,
+    "child_alive_after_return": false,
+    "child_pgid": null,
+    "log_bytes": [
+      0,
+      0
+    ],
+    "external_intervention_before_return": false
+  },
+  {
+    "case": "fixture_cleanup",
+    "pid": 338,
+    "was_alive": false,
+    "confirmed_gone": true
+  },
+  {
+    "case": "detached_parent_alive_timeout",
+    "elapsed_seconds": 1.033,
+    "status": "unknown",
+    "exit_code": null,
+    "error_category": "ambiguous_side_effect",
+    "output_truncated": false,
+    "redactions_applied": false,
+    "root_pid": 339,
+    "launch_pgid": 339,
+    "cleanup_claim": false,
+    "child_pid": 342,
+    "child_alive_after_return": true,
+    "child_pgid": 342,
+    "log_bytes": [
+      0,
+      0
+    ],
+    "external_intervention_before_return": false
+  },
+  {
+    "case": "fixture_cleanup",
+    "pid": 342,
+    "was_alive": true,
+    "confirmed_gone": true
+  },
+  {
+    "case": "detached_parent_alive_cancellation",
+    "elapsed_seconds": 0.365,
+    "status": "unknown",
+    "exit_code": null,
+    "error_category": "ambiguous_side_effect",
+    "output_truncated": false,
+    "redactions_applied": false,
+    "root_pid": 343,
+    "launch_pgid": 343,
+    "cleanup_claim": false,
+    "child_pid": 346,
+    "child_alive_after_return": true,
+    "child_pgid": 346,
+    "log_bytes": [
+      0,
+      0
+    ],
+    "external_intervention_before_return": false
+  },
+  {
+    "case": "fixture_cleanup",
+    "pid": 346,
+    "was_alive": true,
+    "confirmed_gone": true
+  },
+  {
+    "case": "incomplete_capture_freeze_with_late_secret",
+    "elapsed_seconds": 1.286,
+    "status": "unknown",
+    "exit_code": null,
+    "error_category": "ambiguous_side_effect",
+    "output_truncated": true,
+    "redactions_applied": true,
+    "log_bytes": [
+      16320,
+      0
+    ],
+    "late_write_observed": true,
+    "durable_refs_unchanged": true,
+    "child_alive": true
+  },
+  {
+    "case": "fixture_cleanup",
+    "pid": 350,
+    "was_alive": true,
+    "confirmed_gone": true
+  },
+  {
+    "case": "natural_inherited_eof",
+    "status": "exited",
+    "exit_code": 0,
+    "error_category": null,
+    "output_truncated": false,
+    "redactions_applied": false
+  },
+  {
+    "case": "fixture_cleanup",
+    "pid": 354,
+    "was_alive": false,
+    "confirmed_gone": true
+  },
+  {
+    "case": "typed_api_literal_argv_zero_plan_and_cwd",
+    "result": "PASS",
+    "argument_count": 7,
+    "cwd_rules": 3
+  },
+  {
+    "case": "explicit_environment_permission_sandbox",
+    "result": "PASS",
+    "empty_sensitive_preserved": true,
+    "ambient_absent": true
+  },
+  {
+    "case": "real_cwd_symlink_refusal",
+    "result": "PASS"
+  },
+  {
+    "case": "encoded_split_read_shared_byte_cap",
+    "status": "exited",
+    "exit_code": 0,
+    "error_category": null,
+    "output_truncated": true,
+    "redactions_applied": true,
+    "bytes": [
+      8199,
+      0
+    ]
+  },
+  {
+    "case": "immutable_log_identity_and_corruption_refusal",
+    "result": "PASS"
+  },
+  {
+    "case": "unavailable_durable_store",
+    "status": "unknown",
+    "exit_code": null,
+    "error_category": "internal_error",
+    "output_truncated": false,
+    "redactions_applied": false
+  },
+  {
+    "case": "backward_clock_observation",
+    "evidence": {
+      "id": "R1C2-17",
+      "command_id": "r1.c2.probe",
+      "argv_redacted": [
+        "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-venv/bin/python",
+        "-c",
+        "print('clock-evidence-retained')"
+      ],
+      "cwd_worktree_id": "WT-R1C2",
+      "cwd_relative": ".",
+      "started_at": "2026-09-08T12:00:00+00:00",
+      "finished_at": null,
+      "exit_code": null,
+      "status": "unknown",
+      "stdout_ref": {
+        "path": "logs/78d8cda0bceffe62-stdout-bff448b5dc21295de20e8d4deef21896685ea797f673350d76ab624e47030e62.log",
+        "sha256": "bff448b5dc21295de20e8d4deef21896685ea797f673350d76ab624e47030e62"
+      },
+      "stderr_ref": {
+        "path": "logs/78d8cda0bceffe62-stderr-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "redactions_applied": false,
+      "output_truncated": false,
+      "environment_binding_names": [],
+      "error_category": "clock_regression",
+      "schema_version": "1.0",
+      "kind": "command-evidence"
+    }
+  },
+  {
+    "case": "drain_threads_settled_after_fixture_cleanup",
+    "remaining": []
+  },
+  {
+    "case": "completion",
+    "result": "PASS",
+    "expected_head": "ce4c8edb86b02268a856a5f870932ade0e7e9b91"
+  }
+]

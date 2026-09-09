@@ -1,0 +1,11 @@
+Task: PLAN-001/TASK-014
+Head: 4bfad8611177959fb99eda01dd3c18077ff55f37
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_ownership/', '-p', 'test_*.py']
+Exit code: 0
+
+
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.002s
+
+OK

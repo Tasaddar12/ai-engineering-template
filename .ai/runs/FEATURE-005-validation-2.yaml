@@ -1,0 +1,38 @@
+subject: FEATURE-005
+head: 29303075b01d33328d1830307404689080428eef
+base: 90ab58b39f1a84ab1827ef0b72a25c72159447eb
+checked_at: '2026-09-09T02:17:05.075218+00:00'
+classification: Python runtime and controlled-provider validation; not live model
+  instruction-following evaluation
+validation:
+- 'Windows complete orchestration before fixture correction: 29 passed, 1 stale-path
+  fixture failed in529.81s; the three replacement isolated cases passed in65.97s.
+  Together cover final32 cases.'
+- 'Independent Linux complete orchestration before fixture correction: 29 passed,
+  1 stale-path fixture failed in125.46s; the three replacement isolated cases passed
+  in15.17s. Together cover final32 cases.'
+- Runtime/template hashes unchanged across both orchestration runs; only the faulty
+  test fixture was replaced with three independently parametrized cases.
+- 'Windows affected baseline: 129 passed, 2 symlink-privilege skips in119.22s.'
+- Targeted Ruff lint/format passed (56 active Python files); native mypy15 modules
+  and Linux-target mypy4 affected modules passed; git diff --check passed.
+files:
+- path: src/ai_engineering/orchestrator.py
+  sha256: 7dd8d109fdeb4d3f7af69fb03b6e63f9690b1232bb34bfd5f03eea6ee834fa8c
+- path: src/ai_engineering/delivery.py
+  sha256: 32a332b40eec3e154e54a8cfda50529df9cd5f1fbc1dbcf9575934a0ebc8f4fc
+- path: src/ai_engineering/runner.py
+  sha256: 58b4581c5562ca4e0e70a608cce1a826f6554b95eaaa2ee246c1fd9b82c86257
+- path: src/ai_engineering/constraints.py
+  sha256: 2d3eb374a2a1eef38caa0559d6a83ddb6b2352bb31a338d5eedf6d64d02a4807
+- path: tests/test_orchestration.py
+  sha256: 0e3aba14955cd6b297f232256fe7696b2ba600aa7d55a76f6938c0a9023676ef
+- path: src/ai_engineering/templates/project/constraints.yaml
+  sha256: 1cd8a182cbeaf7eadbd6913167da8f54b2c44f5942b3447ed6fba01b5072bcb1
+- path: src/ai_engineering/templates/handoffs/agent-decomposition.md
+  sha256: bddccdef8955b9b35f389b95920b91c1f2d22d56d89f308626fa0a42c295bf04
+external_actions: No external network/provider/credential/paid calls
+deviations:
+- A broad formatter traversed historical copies in the feature checkout; all128 out-of-scope
+  changes were restored to their original HEAD before final verification. Root archive/state
+  untouched.

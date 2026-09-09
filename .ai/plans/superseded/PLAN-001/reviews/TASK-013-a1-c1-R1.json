@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-013-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "manual:PLAN-001:TASK-013:a1:c1:R1",
+  "task_id": "TASK-013",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-013-a1-51a94cd050ad.json",
+  "candidate_fingerprint": "9c7b3139798b22e6f1bb30a9d5e5bf9230db0c75a348cdedbc30f472201bd9ae",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_013_c1:PLAN-001:TASK-013:a1:c1:R1"
+  },
+  "independent_session_id": "/root/r1_013_c1",
+  "implementation_session_id": "/root/implement_013",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "AC1 and AC2 pass: one plan-qualified namespace, exact membership/edges and acceptance coverage, cycle rejection, deterministic order, and accepted-integrated direct-dependency frontier.",
+      "evidence": [".ai/plans/current/PLAN-001/tasks/current/TASK-013.json", "src/plan_graph.py:307", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "REQ-03/AC-03 and ADR-001 through ADR-005 are respected. Pure flat planning behavior uses frozen accepted contracts; state, scheduling, recovery, isolation attestation and adapters remain separately owned.",
+      "evidence": [".ai/plans/current/PLAN-001/spec.md", ".ai/shared/architecture/service-contracts.md", ".ai/shared/architecture/python.md", "src/plan_graph.py"]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Full source trace agrees with an exhaustive permutation oracle for all 64 directed three-node graphs: 25 valid DAGs and 39 cycle rejections. Thirty-two shuffled five-node DAGs and 1,024 fact subsets produce correct deterministic order and readiness with exact direct facts.",
+      "evidence": ["src/plan_graph.py:261", "src/plan_graph.py:307", "src/plan_graph.py:507", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Fourteen schema/membership/edge/digest failures return immutable structured domain errors. Invalid, unknown, foreign and duplicate accepted facts fail closed; OID syntax is checked. Pure graph computation acquires no resources or runtime IO requiring cleanup.",
+      "evidence": ["src/plan_graph.py:37", "src/plan_graph.py:153", "src/plan_graph.py:271", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Qualified lookup separates repeated local IDs. All 11 non-superseded statuses obey frontier rules; accepted/completed status alone never unlocks a dependent. Proposed replacement topology retains completed prerequisites and remaps successors; superseded and archived live inputs reject separately. Contracts require live topology, not loading excluded history.",
+      "evidence": [".ai/shared/state/semantic-invariants.md", ".ai/shared/state/transitions.md", ".ai/shared/workflows/recovery.md", ".ai/shared/workflows/plan-implementation.md", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Declared suite ran 13 tests, exit 0, with the required interpreter and candidate-local module origins. Independent suite ran 10 tests, exit 0, using permutation and set-based expectations plus negative and immutable-value checks. Nonzero counts were observed; Windows execution is recorded without an unrun Linux claim.",
+      "evidence": ["tests/unit/planning_dag/test_plan_graph.py", ".ai/plans/current/PLAN-001/commands/test.TASK-013.json", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Only three declared owned additions, with accepted TASK-001/TASK-004 prerequisites. Recomputed 39-task structural digest matches approved r4 isolation; no scope, shared contract or dependency expansion.",
+      "evidence": [".ai/plans/current/PLAN-001/tasks/current/TASK-013.json", ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Verified actual root base, candidate head/merge-base/cleanliness, raw binary diff, all 13 committed context hashes, validation hash, raw policy/model digest and canonical fingerprint. Exact diff has only source, owned tests and handoff additions; no deletions, renames or unrelated changes.",
+      "evidence": [".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-013-a1-51a94cd050ad.json", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit typed builder and immutable graph/node/coverage/fact/frontier values reuse accepted registry, digest, identity, enum and error implementations. Public imports remain flat and task-owned, with no central exports or duplicate contract layer.",
+      "evidence": ["src/plan_graph.py", "src/contracts.py", "src/domain_values.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Qualified identities, offline strict schemas, immutable snapshots and full OID validation preserve the pure boundary. Accepted-integration objects are supplied factual attestations; this module does not observe Git or infer authorization. Native reviewer/implementer submission provenance and unavailable provider confirmation are recorded honestly.",
+      "evidence": ["src/plan_graph.py", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1.md", ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Owned handoff accurately documents both ACs, public interfaces, topology/digest/coverage semantics, required integrated facts, actual implementation validation and downstream ownership. Review distinguishes its historical dispatch base from the exact current merged review base.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-013.md", ".ai/plans/current/PLAN-001/reviews/TASK-013-a1-c1-R1.md"]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T07:10:46Z"
+}

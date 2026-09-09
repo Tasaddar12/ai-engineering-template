@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "REVIEW-TASK-019-a1-c2-R1",
+  "stage": "implementation",
+  "request_id": "REQUEST-TASK-019-a1-c2-R1-call_3tS71ksLw7WPIoCmPOTdD4ip",
+  "task_id": "TASK-019",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-019-a1-04dead96f7fc.json",
+  "candidate_fingerprint": "b9661f82614f13da077d62fb6a6966be4ada91a78df3536b2ea173bd1cde87c8",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "call_3tS71ksLw7WPIoCmPOTdD4ip"
+  },
+  "independent_session_id": "/root/verify_017_c4",
+  "implementation_session_id": "/root/repair_019_c1",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "AC1 exact raw/canonical hashing remains verified. Current task/plan immutable parsing and reverification resolve R1-TASK-019-001; tampered fingerprints and current material changes still reject, satisfying AC2.",
+      "evidence": [".ai/plans/current/PLAN-001/tasks/current/TASK-019.json", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt", "tests/unit/reviews_candidates/test_candidates.py"]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "Reused c1 REQ-05/AC-05 and exclusion reasoning after unchanged specification, ADR and frozen interface reconciliation. The single-stage decision governs manual review; runtime ports and policy are unchanged.",
+      "evidence": [".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md", ".ai/plans/current/PLAN-001/spec.json", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-identity.json.txt"]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "The only changed existing production function detaches Mapping/list/tuple containers before canonical JSON encoding. Current independent hashes and parse/reverify comparisons preserve exact wire fields, Unicode spelling, array order and fingerprints. The other 28 function bodies retain c1 correctness reasoning.",
+      "evidence": ["src/candidates.py", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-identity.json.txt"]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Current immutable tamper/schema/order cases reject; five changed current inputs per candidate yield immutable non-retryable state_conflict. Reused c1 error and cleanup reasoning: this pure algorithm owns no filesystem, process, network or clock resource.",
+      "evidence": ["src/candidates.py", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt"]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Current dictionary/FrozenJsonObject/mixed/MappingProxyType inputs, nested list/tuple order and mutation detachment pass for task and plan records. Reused verified unchanged c1 applicability, missing-material, alias and full-OID boundary evidence.",
+      "evidence": [".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.py", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt", "tests/unit/reviews_candidates/test_candidates.py"]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Exact declared Windows 3.12 candidate leaf passed 16 tests, zero skips, exit 0 in 0.327s; the bound coordinator log independently reports 16 in 0.328s. Two meaningful tracked immutable regressions were added without changing the original 14 tests. One independent focused diagnostic passes; no broad platform matrix or historical writer rerun.",
+      "evidence": [".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-declared.txt", ".ai/plans/current/PLAN-001/evidence/validation/TASK-019-a1-04dead96f7fc.txt", "tests/unit/reviews_candidates/test_candidates.py", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt"]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Reused c1 pure-module scope reasoning. The local detachment helper imports no private prerequisite helper or downstream module; exact owned scope and unchanged accepted 001/004 runtime closure are verified. No required local helper or untracked fixture dependency was added.",
+      "evidence": ["src/candidates.py", ".ai/plans/current/PLAN-001/tasks/current/TASK-019.json", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-identity.json.txt"]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Recomputed clean head/base, raw binary diff, 14 committed contexts, current ROOT validation, policy/model digest and canonical fingerprint. Exactly three owned additions match tested repair 4cbdabeb; accepted dependencies, 27 schemas and approved 39-task graph match. Other accepted changes in the newer base are not claimed metadata-only.",
+      "evidence": [".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-identity.json.txt", ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-019-a1-04dead96f7fc.json"]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Actual accepted FrozenJsonObject and ContractRegistry Mapping semantics now agree with parser/verifier behavior. Ordinary v1 output and signatures are unchanged. Reconciled unchanged CandidateRecord/VersionedRecord interfaces and retained c1 historical candidate/DTO compatibility evidence; no concrete downstream implementation required.",
+      "evidence": ["src/candidates.py", "src/contracts.py", "src/domain_values.py", "src/orchestration_ports.py", "src/local_ports.py", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1-probe.json.txt"]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Current immutable nested tamper, array-order, unknown-field and stale-material checks preserve fingerprint/schema admission. Reused unchanged c1 canonical path, cross-role alias and raw-input observation boundary reasoning. Detachment adds no authority or external observations.",
+      "evidence": ["src/candidates.py", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-probe.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c1-R1.md"]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Full tracked handoff accurately records the bounded correction, tests, previous failures, current coverage and caller-owned observation/applicability limits. All five c1 review files retain their preservation-checkpoint bytes. Native follow-up is inherited Astra/xhigh rank 4, separate from the Sol/xhigh owner; provider-effective identity/effort remain unavailable.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-019.md", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1-identity.json.txt", ".ai/plans/current/PLAN-001/reviews/TASK-019-a1-c2-R1.md", ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T14:56:38Z"
+}

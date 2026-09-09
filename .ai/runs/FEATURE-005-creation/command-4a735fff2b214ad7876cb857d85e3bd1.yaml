@@ -1,0 +1,17 @@
+argv:
+- git
+- rev-parse
+- --abbrev-ref
+- HEAD
+cwd: D:\Codex Projects\ai-engineering-template\.worktrees\plan-002-orchestration
+started_at: '2026-09-09T00:42:46.651524+00:00'
+finished_at: '2026-09-09T00:42:46.796026+00:00'
+returncode: 0
+stdout: 'codex/plan-002-orchestration
+
+  '
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

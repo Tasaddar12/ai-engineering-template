@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-008",
+  "plan_id": "PLAN-001",
+  "title": "Implement pure guarded transitions",
+  "status": "accepted",
+  "archived": false,
+  "objective": "Implement pure guarded transitions. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-001",
+    "TASK-004"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/transitions.py",
+      "tests/unit/domain_transitions/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-008.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/domain_values.py",
+      "src/contracts.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:domain/transitions"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-008-AC1",
+      "description": "Reject illegal entity state transitions and missing evidence guards",
+      "verification": "TASK-008 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-008-AC2",
+      "description": "Make transition decisions deterministic with immutable events and no IO",
+      "verification": "TASK-008 failure-case tests and structured handoff evidence"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-01"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-001",
+    "handoff:TASK-004"
+  ],
+  "output_contracts": [
+    "domain/transitions public behavior described by this task acceptance; use predeclared ports"
+  ],
+  "validation_commands": [
+    "test.TASK-008"
+  ],
+  "estimated_production_files": 3,
+  "size_rationale": "One component outcome with two bounded acceptance checks; no central registry edits. Split further through isolation review if implementation exceeds this estimate.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [
+    "TASK-008-a1"
+  ],
+  "superseded_by": [],
+  "resume_state": "Candidate fcb01a93f0e1022c70fa296f7342ced71bbf3250 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
+}

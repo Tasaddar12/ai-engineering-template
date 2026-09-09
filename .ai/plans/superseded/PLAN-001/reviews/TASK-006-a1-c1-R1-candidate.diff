@@ -1,0 +1,1670 @@
+diff --git a/.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md b/.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md
+new file mode 100644
+index 0000000..f639a44
+--- /dev/null
++++ b/.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md
+@@ -0,0 +1,186 @@
++# PLAN-001 / TASK-006 attempt a1 implementation handoff
++
++## Candidate identity and scope
++
++| Field | Value |
++| --- | --- |
++| Attempt | `TASK-006-a1` |
++| Branch | `ai/PLAN-001/TASK-006/a1` |
++| Logical worktree | `TASK-006-a1` |
++| Dispatch/base commit | `e9bb424e9fadaa1845b5f5b146cbb4c576b7b10f` |
++| Linux-correction base | `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` |
++| Candidate commit | The Git commit containing this handoff; its exact OID is reported after commit because a commit cannot embed its own object ID. |
++| Approved graph | `PLAN-001-r4`, revision 4 |
++| Structural task digest | `c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e` |
++| Accepted prerequisites | TASK-002 candidate `460ab567d01912167557f2f671ed07c63f0a31e7`; TASK-004 candidate `e3c1177f993ee74815639a83ef3333faa4ba3957`; TASK-038 candidate `6f2b12c3283ed7d6e3d4876020fe690c6e0061a3`, all integrated in the dispatch base |
++
++Verified candidate paths are limited to TASK-006 ownership:
++
++- `src/commands.py`
++- `tests/unit/commands/test_commands.py`
++- `.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md`
++
++No port, schema, configuration, package, Git/state/validator service, shared metadata, task record,
++graph, project state, or other task-owned source changed.
++
++The coordinator ran Linux preflight on the first clean candidate before independent R1. The initial
++system-Python run could not import the declared `referencing` dependency. After the coordinator
++created a Linux virtual environment with the declared dependency, the 18-test suite found one failure
++and one error: POSIX cleanup inferred tree quiescence from an exited parent without prior group
++ownership, and a real UTC clock adjustment made the finish sample precede the start sample. The
++assessment and raw outputs are retained in coordinator ROOT commit
++`59f3afcfe4805138fccb140efa5bb96b87034605`. This bounded correction does not consume or fabricate an
++independent review cycle.
++
++## Behavior and acceptance mapping
++
++### TASK-006-AC1
++
++- `LocalCommandRunner.execute(request: CommandRequest) -> CommandEvidence` consumes the accepted
++  TASK-002 immutable values directly. There is no mapping/dict execution API and no added serialized
++  field. A zero-plan request with `plan_id=None`, project cwd policy, and `cwd_relative='.'` executes
++  at the bound project root and records the project binding identity.
++- The runner passes `CommandDefinition.argv` unchanged as an argument array to
++  `subprocess.Popen(..., shell=False)`. A real Python child round-trips leading/trailing spaces,
++  embedded newline and tab values, ordering, and repeated arguments. A separate real child exits 7;
++  evidence reports `status=exited` and `exit_code=7` without interpreting the definition's
++  `success_rule`, which remains TASK-018 validation behavior.
++- Project, task-worktree, and control cwd rules execute against distinct actual local directories.
++  The selected binding, relative cwd, and injected `ProjectSettings.project_root` must resolve to
++  existing non-link directories within the configured project and selected root. Missing bindings
++  fail in the accepted request DTO; traversal and an independently rooted worktree are rejected
++  before launch.
++- Host platform membership is checked before launch. On Windows, direct or resolved `.bat`/`.cmd`
++  execution is rejected because the platform can route it through an implicit command shell despite
++  Python's `shell=False`. The Windows test creates a real batch wrapper and proves its marker is not
++  written.
++- `allowed_permissions` is an explicit constructor input, including the useful empty deny-all set;
++  decoded configuration alone grants no command class. The injected immutable `RunSettings` is
++  consumed, and a required sandbox returns `unsupported_capability` because this local adapter has no
++  sandbox boundary it can honestly confirm.
++- The child environment is built only from an explicitly injected base mapping plus request
++  `EnvironmentBinding` values already permitted by the definition. It never copies the ambient
++  environment. A real child proves an unrelated host secret is absent, an empty sensitive value is
++  preserved, and a NUL-bearing value fails before launch.
++- Started/finished UTC-aware timestamps and the observed exit code are returned in the accepted
++  evidence DTO. `FileCommandLogStore` fsyncs bounded redacted bytes and creates a no-overwrite hard
++  link at a project-relative path containing the content digest. Reusing one evidence ID with
++  different bytes produces distinct immutable refs; each returned digest is recomputed from the
++  durable bytes in tests.
++
++### TASK-006-AC2
++
++- Stdout and stderr are drained concurrently in fixed-size reads. A shared synchronized byte budget
++  bounds their combined retained bytes to `max_output_bytes` while the readers continue draining the
++  child to avoid pipe deadlock. A real child emits 400,000 combined bytes; stored output remains at
++  most 4,096 bytes and `output_truncated=true`.
++- Non-empty sensitive environment values are removed from argv evidence and from UTF-8, filesystem,
++  UTF-16LE, and UTF-16BE output bytes. The streaming scanner retains enough uncommitted input to
++  recognize secrets split across reads before it spends the output budget. The real regression puts
++  a secret across the 8,192-byte read boundary and truncates within the replacement; neither the
++  secret nor its tested prefix appears, while `redactions_applied` and `output_truncated` are true.
++- Pre-launch cancellation returns terminal `cancelled` evidence without invoking the child. Active
++  cancellation and a one-second timeout use native tree cleanup. On this Windows host, the timeout
++  child starts its own 30-second child; `taskkill /T /F` completes, an exit code is observed, and the
++  test verifies the descendant PID is no longer active before accepting `timed_out` evidence.
++- On POSIX, the terminator now establishes ownership while the process is observable by requiring
++  `getpgid(pid) == pid` before signaling a group. An exited process or a live process in a group it
++  does not own is stopped at the parent boundary and returns false. A group can be reported quiescent
++  only after that ownership observation, parent reaping, and confirmed group absence. Linux tests
++  cover both an unowned process and a runner-owned new session; the existing timeout regression also
++  confirms cleanup of a real descendant in that owned group.
++- A missing executable returns `launch_failed` with durable sanitized stderr and no inferred exit
++  code. An actual parent-only cleanup leaves its spawned child active, and the runner returns
++  `unknown`, `exit_code=None`, and `ambiguous_side_effect`; the test then explicitly terminates that
++  known child PID. If either output drain fails or durable log storage is unavailable, the result is
++  also not reported as success. The storage failure test returns `unknown` with `internal_error` and
++  no fabricated refs.
++- The start and finish wall-clock calls remain direct observations from the injected TASK-002
++  `Clock`. If the finish sample is earlier, the runner does not clamp or replace it: the unrepresentable
++  finish sample is omitted, status becomes `unknown`, exit code becomes null as required by the frozen
++  DTO, and `error_category=clock_regression`. The already durable stdout/stderr refs and observed start
++  remain attached. A deterministic two-sample clock proves this boundary while retaining real child
++  output.
++- Evidence for exited-zero, exited-nonzero, launch failure, timeout, cancellation, escaped cwd,
++  clock regression, redaction/truncation, unconfirmed cleanup, and unavailable durable storage is
++  validated against the accepted offline `command-evidence` v1 schema.
++
++## Public interfaces and dependency notes
++
++The frozen port signature is unchanged:
++
++```text
++LocalCommandRunner.execute(request: CommandRequest) -> CommandEvidence
++```
++
++`LocalCommandRunner` is runtime-compatible with `local_ports.CommandRunner`. Its constructor takes
++the accepted `ProjectSettings` and resolved `RunSettings`, an explicit permission-class collection,
++TASK-002 `IdFactory` and `Clock` ports, and host-local `CommandLogStore`, `CancellationSignal`, and
++`ProcessTreeTerminator` collaborators. `FileCommandLogStore`, `NativeProcessTreeTerminator`, and the
++no-op `NeverCancelled` implementation are provided in this flat module. These collaborators add no
++portable schema fields and do not change another owner's port.
++
++TASK-018 remains responsible for evaluating `exit_zero` and `unittest_nonzero_count`; this task
++records process facts only. TASK-034 remains responsible for runtime construction/wiring. No Git,
++state, validation, provider, credential, publication, or remote effect is implemented here.
++
++## Actual validation evidence
++
++Working directory:
++`D:/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1`. Interpreter:
++`D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe`.
++
++| Command | Observed result |
++| --- | --- |
++| `-m unittest discover -s tests/unit/commands/ -p test_*.py` | Initial diagnostic exit 1 after 16 tests: one test expected `nested/` although the accepted DTO canonicalizes `cwd_relative` to `nested`; runtime checks passed, but unclosed pipe `ResourceWarning` values were also exposed. Both issues were corrected. |
++| `-m unittest discover -s tests/unit/commands/ -p test_*.py` | Exit 0; 16 tests; `OK` after the first correction. |
++| `-W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` | Exit 0; 16 tests; `OK`; proves the pipe-handle warning was removed. |
++| `-m unittest discover -s tests/unit/commands/ -p test_*.py` | Final exit 0; 18 tests; `OK` after adding explicit nonzero-exit and unavailable-durable-store cases and after the final directory/termination hardening. This is the exact declared task command with a nonzero observed count. |
++| `-W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` | Final exit 0; 18 tests in 4.399 seconds; `OK`. |
++| `-m py_compile src/commands.py tests/unit/commands/test_commands.py` | Exit 0 after final source/test edits. |
++| `git diff --cached --check` | Exit 0 before this handoff was added; repeated for the complete candidate before commit. |
++| Local `ruff` / `mypy` discovery | Both executables were unavailable; neither optional check is claimed. |
++| Coordinator Linux system-Python preflight on `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` | Exit 1; import failed because system jsonschema 4.10.3 lacked its `referencing` dependency. Retained coordinator output: `TASK-006-linux-dependency-preflight.txt`. |
++| Coordinator Linux declared-dependency preflight on `c3c2ba21c6441abde52f6e340b29d0bf65910f8e` | Exit 1; 18 tests, one failure, one error, one Windows-only skip. Retained coordinator output: `TASK-006-linux-behavior-preflight.txt`. This occurred before R1. |
++| Windows `-m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one POSIX-only skip; `OK`. Exact declared suite with the coordinator Windows interpreter; 4.470 seconds. |
++| WSL `--exec <Linux interpreter> -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one Windows-only skip; `OK`. Exact declared suite with the declared-dependency Linux environment; 3.918 seconds. |
++| Windows `-W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one POSIX-only skip; `OK`; 4.401 seconds. |
++| WSL `--exec <Linux interpreter> -W error::ResourceWarning -m unittest discover -s tests/unit/commands/ -p test_*.py` after bounded correction | Exit 0; 20 discovered, 19 executed, one Windows-only skip; `OK`; 4.319 seconds. |
++
++Before the Linux correction, the exact Windows task command ran again after the then-final production
++and test edits and passed 18 tests in 4.400 seconds. The current corrected source has the two passing
++20-test cross-platform runs above. No aggregate, foundation, provider, network, remote, or unrelated
++task suite was run.
++
++## Assumptions, limitations, risks, and reviewer guidance
++
++- Windows 11/NTFS behavior is observed locally: direct process execution, large dual-stream output,
++  `.cmd` refusal, cancellation, timeout, content-addressed hard-link persistence, and descendant
++  cleanup all ran. Ubuntu-24.04 under WSL directly executed the declared Linux interpreter and
++  observed POSIX owned/unowned group handling, timeout descendant cleanup, direct execution, output,
++  redaction, and persistence. WSL is local Linux preflight rather than final independent platform CI.
++- `FileCommandLogStore` needs same-filesystem hard-link support to publish a new immutable path
++  without an overwrite race. If the host filesystem lacks that capability, execution evidence is
++  returned as `unknown` rather than claiming durable success.
++- `required_sandbox=true` is deliberately unsupported by this adapter because neither
++  `ProjectSettings` nor `RunSettings` proves an active process sandbox. A future explicitly injected
++  sandbox-capable adapter can satisfy that setting without changing the frozen port.
++- Fixed argv remains byte-for-byte meaningful except documented sensitive-value redaction in the
++  returned evidence. The runner adds no host absolute cwd or environment value to portable evidence;
++  command authors and TASK-034 wiring remain responsible for keeping persisted command definitions
++  portable.
++- Empty sensitive values are permitted but are not usable redaction patterns. Exact sensitive values
++  in supported direct encodings are redacted; transformed, encrypted, hashed, or application-derived
++  representations cannot be inferred safely by a generic command runner.
++- There are no skipped required checks, scope deviations, shared-interface changes, dependency
++  changes, credentials, external effects, or concrete prerequisite gaps. Fresh Astra/xhigh R1 should
++  independently probe secret/read-boundary handling, combined byte budgeting, cwd symlink/escape
++  refusal, explicit permission/environment inputs, Windows batch behavior, durable identity reuse,
++  and actual child cleanup. Fresh R2 must bind the same exact candidate.
++
++Implementation provenance: the coordinator dispatched this attempt with the standing native OpenAI
++`gpt-5.6-sol` / `xhigh` selection. This is the coordinator-observed tool configuration only. No
++provider-returned effective model ID, effort value, provider invocation UUID, production provider
++adapter, credential, or automatic provider configuration was exposed or claimed. The accepted
++configuration currently records gate profiles as `configured: false`, independently of this manual
++native invocation.
+diff --git a/src/commands.py b/src/commands.py
+new file mode 100644
+index 0000000..fe8e897
+--- /dev/null
++++ b/src/commands.py
+@@ -0,0 +1,803 @@
++"""Local command execution with bounded, content-addressed evidence.
++
++The runner consumes the immutable command values from :mod:`local_ports` and
++keeps host paths, environment values, and process handles outside portable
++evidence.  It never invokes a shell.
++"""
++from __future__ import annotations
++
++import hashlib
++import os
++import re
++import shutil
++import signal
++import subprocess
++import sys
++import threading
++import time
++import uuid
++from collections.abc import Callable, Iterable, Mapping
++from pathlib import Path
++from datetime import datetime
++from typing import Protocol
++
++from config import ProjectSettings, RunSettings
++from domain_values import CommandStatus, EntityId, ErrorCategory, ScopePath, Sha256Digest
++from local_ports import (
++    Clock,
++    CommandEvidence,
++    CommandPlatform,
++    CommandRequest,
++    ContentRef,
++    IdFactory,
++    LocalProjectBinding,
++    PermissionClass,
++)
++
++
++_REDACTION = b"[REDACTED]"
++_READ_SIZE = 8192
++_DRAIN_JOIN_SECONDS = 2.0
++_POLL_SECONDS = 0.05
++_PORTABLE_ENVIRONMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
++
++
++class CancellationSignal(Protocol):
++    """Host-local cancellation observation supplied by the coordinator."""
++
++    def is_cancelled(self) -> bool: ...
++
++
++class CommandLogStore(Protocol):
++    """Persist already bounded and redacted bytes behind a portable reference."""
++
++    def write(
++        self, evidence_id: EntityId, stream: str, content: bytes
++    ) -> ContentRef: ...
++
++
++class ProcessTreeTerminator(Protocol):
++    """Stop a launched process tree and report whether quiescence is confirmed."""
++
++    def terminate(self, process: subprocess.Popen[bytes]) -> bool: ...
++
++
++class NeverCancelled:
++    def is_cancelled(self) -> bool:
++        return False
++
++
++class FileCommandLogStore:
++    """Write immutable command logs beneath a project-relative directory.
++
++    Filenames contain the content digest, so reusing an evidence identity with
++    different bytes cannot overwrite or falsely reference an older artifact.
++    """
++
++    def __init__(self, project_root: Path, relative_directory: str) -> None:
++        root = _absolute_directory(project_root, "log project root")
++        relative = _portable_directory(relative_directory)
++        directory = root.joinpath(*relative.split("/"))
++        _create_unlinked_directories(root, relative.split("/"))
++        resolved = directory.resolve(strict=True)
++        if not resolved.is_relative_to(root) or _contains_link(root, directory):
++            raise ValueError("command log directory must remain inside the project root")
++        self._root = root
++        self._directory = resolved
++        self._relative = relative
++
++    @property
++    def project_root(self) -> Path:
++        return self._root
++
++    def write(self, evidence_id: EntityId, stream: str, content: bytes) -> ContentRef:
++        if not isinstance(evidence_id, EntityId):
++            raise TypeError("evidence_id must be an EntityId")
++        if stream not in {"stdout", "stderr"}:
++            raise ValueError("stream must be 'stdout' or 'stderr'")
++        if not isinstance(content, bytes):
++            raise TypeError("command log content must be bytes")
++        if _contains_link(self._root, self._directory):
++            raise OSError("command log directory contains a symbolic link")
++
++        digest = hashlib.sha256(content).hexdigest()
++        identity = hashlib.sha256(evidence_id.value.encode("utf-8")).hexdigest()[:16]
++        filename = f"{identity}-{stream}-{digest}.log"
++        destination = self._directory / filename
++        temporary = self._directory / f".{filename}.{uuid.uuid4().hex}.tmp"
++
++        try:
++            with temporary.open("xb") as handle:
++                handle.write(content)
++                handle.flush()
++                os.fsync(handle.fileno())
++            try:
++                os.link(temporary, destination)
++            except FileExistsError:
++                if destination.is_symlink() or destination.read_bytes() != content:
++                    raise OSError("existing command log does not match its content digest")
++            _sync_directory(self._directory)
++        finally:
++            try:
++                temporary.unlink()
++            except FileNotFoundError:
++                pass
++
++        portable_path = f"{self._relative}/{filename}"
++        return ContentRef(portable_path, Sha256Digest(digest))
++
++
++class NativeProcessTreeTerminator:
++    """Best-effort native tree termination with an explicit confirmation result."""
++
++    def __init__(self, *, grace_seconds: float = 1.0) -> None:
++        if isinstance(grace_seconds, bool) or not isinstance(grace_seconds, (int, float)):
++            raise TypeError("grace_seconds must be a number")
++        if grace_seconds <= 0:
++            raise ValueError("grace_seconds must be positive")
++        self._grace_seconds = float(grace_seconds)
++
++    def terminate(self, process: subprocess.Popen[bytes]) -> bool:
++        if os.name == "nt":
++            return self._terminate_windows(process)
++        return self._terminate_posix(process)
++
++    def _terminate_windows(self, process: subprocess.Popen[bytes]) -> bool:
++        try:
++            result = subprocess.run(
++                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
++                stdin=subprocess.DEVNULL,
++                stdout=subprocess.DEVNULL,
++                stderr=subprocess.DEVNULL,
++                timeout=self._grace_seconds,
++                shell=False,
++                check=False,
++            )
++        except (OSError, subprocess.SubprocessError):
++            _kill_parent(process, self._grace_seconds)
++            return False
++        if result.returncode != 0:
++            _kill_parent(process, self._grace_seconds)
++            return False
++        return _wait_for_exit(process, self._grace_seconds)
++
++    def _terminate_posix(self, process: subprocess.Popen[bytes]) -> bool:
++        if process.poll() is not None:
++            return False
++        try:
++            process_group = os.getpgid(process.pid)
++        except ProcessLookupError:
++            _wait_for_exit(process, self._grace_seconds)
++            return False
++        except OSError:
++            _kill_parent(process, self._grace_seconds)
++            return False
++        if process_group != process.pid:
++            _kill_parent(process, self._grace_seconds)
++            return False
++        try:
++            os.killpg(process_group, signal.SIGTERM)
++        except ProcessLookupError:
++            return _wait_for_exit(process, self._grace_seconds)
++        except OSError:
++            _kill_parent(process, self._grace_seconds)
++            return False
++        parent_exited = _wait_for_exit(process, self._grace_seconds)
++        if parent_exited and _wait_for_process_group_exit(
++            process_group, self._grace_seconds
++        ):
++            return True
++        try:
++            os.killpg(process_group, signal.SIGKILL)
++        except ProcessLookupError:
++            return _wait_for_exit(process, self._grace_seconds)
++        except OSError:
++            _kill_parent(process, self._grace_seconds)
++            return False
++        parent_exited = _wait_for_exit(process, self._grace_seconds)
++        return parent_exited and _wait_for_process_group_exit(
++            process_group, self._grace_seconds
++        )
++
++
++class LocalCommandRunner:
++    """Execute a typed command request and return portable observed evidence."""
++
++    def __init__(
++        self,
++        *,
++        project_settings: ProjectSettings,
++        run_settings: RunSettings,
++        allowed_permissions: Iterable[PermissionClass],
++        id_factory: IdFactory,
++        clock: Clock,
++        log_store: CommandLogStore,
++        cancellation: CancellationSignal | None = None,
++        tree_terminator: ProcessTreeTerminator | None = None,
++        base_environment: Mapping[str, str] | None = None,
++        monotonic: Callable[[], float] = time.monotonic,
++    ) -> None:
++        if not isinstance(project_settings, ProjectSettings):
++            raise TypeError("project_settings must be ProjectSettings")
++        if not isinstance(run_settings, RunSettings):
++            raise TypeError("run_settings must be RunSettings")
++        try:
++            permissions = frozenset(PermissionClass(value) for value in allowed_permissions)
++        except TypeError as exc:
++            raise TypeError("allowed_permissions must be iterable") from exc
++        if not callable(monotonic):
++            raise TypeError("monotonic must be callable")
++        if cancellation is None:
++            cancellation = NeverCancelled()
++        if tree_terminator is None:
++            tree_terminator = NativeProcessTreeTerminator()
++        environment = {} if base_environment is None else dict(base_environment)
++        _validate_environment(environment, "base environment")
++        if (
++            isinstance(log_store, FileCommandLogStore)
++            and log_store.project_root
++            != _absolute_directory(project_settings.project_root, "configured project root")
++        ):
++            raise ValueError("file command log store must belong to the configured project")
++
++        self._project_settings = project_settings
++        self._run_settings = run_settings
++        self._allowed_permissions = permissions
++        self._id_factory = id_factory
++        self._clock = clock
++        self._log_store = log_store
++        self._cancellation = cancellation
++        self._tree_terminator = tree_terminator
++        self._base_environment = environment
++        self._monotonic = monotonic
++
++    def execute(self, request: CommandRequest) -> CommandEvidence:
++        if not isinstance(request, CommandRequest):
++            raise TypeError("request must be a CommandRequest")
++        evidence_id = self._id_factory.new("command-evidence", request.plan_id)
++        if not isinstance(evidence_id, EntityId):
++            raise TypeError("id_factory must return an EntityId")
++        started_at = self._clock.now()
++        argv_redacted, argv_changed = _redact_argv(request)
++        environment_names = tuple(binding.name for binding in request.environment)
++
++        preflight = self._preflight(request)
++        if preflight is not None:
++            status, category = preflight
++            return self._finish(
++                request=request,
++                evidence_id=evidence_id,
++                started_at=started_at,
++                argv_redacted=argv_redacted,
++                environment_names=environment_names,
++                status=status,
++                exit_code=None,
++                stdout=b"",
++                stderr=_generic_failure(category),
++                redactions_applied=argv_changed,
++                output_truncated=False,
++                error_category=category,
++            )
++
++        environment = dict(self._base_environment)
++        environment.update({binding.name: binding.value for binding in request.environment})
++        secrets = _secret_bytes(request)
++        budget = _ByteBudget(request.definition.max_output_bytes)
++        redaction_state = _RedactionState(argv_changed)
++        stdout_capture = _StreamCapture(budget, secrets, redaction_state)
++        stderr_capture = _StreamCapture(budget, secrets, redaction_state)
++        process: subprocess.Popen[bytes] | None = None
++        stdout_thread: threading.Thread | None = None
++        stderr_thread: threading.Thread | None = None
++
++        try:
++            cwd = _resolve_cwd(request, self._project_settings.project_root)
++            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
++            process = subprocess.Popen(
++                request.definition.argv,
++                cwd=cwd,
++                env=environment,
++                stdin=subprocess.DEVNULL,
++                stdout=subprocess.PIPE,
++                stderr=subprocess.PIPE,
++                shell=False,
++                close_fds=True,
++                creationflags=creationflags,
++                start_new_session=os.name != "nt",
++            )
++        except (OSError, ValueError):
++            return self._finish(
++                request=request,
++                evidence_id=evidence_id,
++                started_at=started_at,
++                argv_redacted=argv_redacted,
++                environment_names=environment_names,
++                status=CommandStatus.LAUNCH_FAILED,
++                exit_code=None,
++                stdout=b"",
++                stderr=b"command launch failed\n",
++                redactions_applied=argv_changed,
++                output_truncated=False,
++                error_category=ErrorCategory.INVALID_INPUT.value,
++            )
++
++        assert process.stdout is not None and process.stderr is not None
++        stdout_thread = _start_drain(process.stdout, stdout_capture, "command-stdout")
++        stderr_thread = _start_drain(process.stderr, stderr_capture, "command-stderr")
++
++        status = CommandStatus.EXITED
++        error_category: str | None = None
++        cleanup_confirmed = True
++        deadline = self._monotonic() + request.definition.timeout_seconds
++        try:
++            while process.poll() is None:
++                if self._cancellation.is_cancelled():
++                    status = CommandStatus.CANCELLED
++                    error_category = "cancelled"
++                    cleanup_confirmed = self._terminate_confirmed(process)
++                    break
++                if self._monotonic() >= deadline:
++                    status = CommandStatus.TIMED_OUT
++                    error_category = "timeout"
++                    cleanup_confirmed = self._terminate_confirmed(process)
++                    break
++                time.sleep(_POLL_SECONDS)
++        except Exception:
++            status = CommandStatus.UNKNOWN
++            error_category = ErrorCategory.AMBIGUOUS_SIDE_EFFECT.value
++            cleanup_confirmed = self._terminate_confirmed(process)
++
++        if status is not CommandStatus.EXITED and not cleanup_confirmed:
++            status = CommandStatus.UNKNOWN
++            error_category = ErrorCategory.AMBIGUOUS_SIDE_EFFECT.value
++        if status is CommandStatus.EXITED:
++            process.wait()
++
++        drains_finished = _finish_drains(
++            process, (stdout_thread, stderr_thread), (process.stdout, process.stderr)
++        )
++        if not drains_finished or stdout_capture.failed or stderr_capture.failed:
++            status = CommandStatus.UNKNOWN
++            error_category = ErrorCategory.AMBIGUOUS_SIDE_EFFECT.value
++            self._terminate_confirmed(process)
++
++        exit_code = None if status in {
++            CommandStatus.LAUNCH_FAILED,
++            CommandStatus.RUNNING,
++            CommandStatus.UNKNOWN,
++        } else process.returncode
++        return self._finish(
++            request=request,
++            evidence_id=evidence_id,
++            started_at=started_at,
++            argv_redacted=argv_redacted,
++            environment_names=environment_names,
++            status=status,
++            exit_code=exit_code,
++            stdout=stdout_capture.content,
++            stderr=stderr_capture.content,
++            redactions_applied=redaction_state.applied,
++            output_truncated=budget.truncated,
++            error_category=error_category,
++        )
++
++    def _terminate_confirmed(self, process: subprocess.Popen[bytes]) -> bool:
++        try:
++            return bool(self._tree_terminator.terminate(process))
++        except Exception:
++            _kill_parent(process, 1.0)
++            return False
++
++    def _preflight(
++        self, request: CommandRequest
++    ) -> tuple[CommandStatus, str] | None:
++        if request.definition.permission_class not in self._allowed_permissions:
++            return CommandStatus.LAUNCH_FAILED, ErrorCategory.POLICY_DENIED.value
++        if self._run_settings.required_sandbox:
++            return CommandStatus.LAUNCH_FAILED, ErrorCategory.UNSUPPORTED_CAPABILITY.value
++        platform = CommandPlatform.WINDOWS if os.name == "nt" else CommandPlatform.LINUX
++        if platform not in request.definition.platforms:
++            return CommandStatus.LAUNCH_FAILED, ErrorCategory.UNSUPPORTED_CAPABILITY.value
++        try:
++            if self._cancellation.is_cancelled():
++                return CommandStatus.CANCELLED, "cancelled"
++            _validate_environment(
++                {binding.name: binding.value for binding in request.environment},
++                "command environment",
++            )
++            if os.name == "nt":
++                folded = [binding.name.casefold() for binding in request.environment]
++                if len(folded) != len(set(folded)):
++                    raise ValueError("environment names alias on Windows")
++            _resolve_cwd(request, self._project_settings.project_root)
++            _reject_implicit_batch(request.definition.argv[0], {
++                **self._base_environment,
++                **{binding.name: binding.value for binding in request.environment},
++            })
++        except (OSError, TypeError, ValueError):
++            return CommandStatus.LAUNCH_FAILED, ErrorCategory.INVALID_INPUT.value
++        except Exception:
++            return CommandStatus.UNKNOWN, ErrorCategory.AMBIGUOUS_SIDE_EFFECT.value
++        return None
++
++    def _finish(
++        self,
++        *,
++        request: CommandRequest,
++        evidence_id: EntityId,
++        started_at: datetime,
++        argv_redacted: tuple[str, ...],
++        environment_names: tuple[str, ...],
++        status: CommandStatus,
++        exit_code: int | None,
++        stdout: bytes,
++        stderr: bytes,
++        redactions_applied: bool,
++        output_truncated: bool,
++        error_category: str | None,
++    ) -> CommandEvidence:
++        maximum = request.definition.max_output_bytes
++        bounded_stdout = stdout[:maximum]
++        bounded_stderr = stderr[: max(0, maximum - len(bounded_stdout))]
++        output_truncated = output_truncated or (
++            len(bounded_stdout) != len(stdout) or len(bounded_stderr) != len(stderr)
++        )
++        stdout_ref: ContentRef | None = None
++        stderr_ref: ContentRef | None = None
++        try:
++            stdout_ref = self._log_store.write(evidence_id, "stdout", bounded_stdout)
++            stderr_ref = self._log_store.write(evidence_id, "stderr", bounded_stderr)
++        except (OSError, TypeError, ValueError):
++            status = CommandStatus.UNKNOWN
++            exit_code = None
++            error_category = ErrorCategory.INTERNAL_ERROR.value
++
++        binding = request.cwd_binding
++        root_id = (
++            binding.project_id
++            if isinstance(binding, LocalProjectBinding)
++            else binding.worktree_id
++        )
++        finished_at = self._clock.now()
++        if finished_at < started_at:
++            status = CommandStatus.UNKNOWN
++            finished_at = None
++            exit_code = None
++            error_category = "clock_regression"
++        return CommandEvidence(
++            id=evidence_id,
++            command_id=request.definition.id,
++            argv_redacted=argv_redacted,
++            cwd_worktree_id=root_id,
++            cwd_relative=request.cwd_relative,
++            started_at=started_at,
++            finished_at=finished_at,
++            exit_code=exit_code,
++            status=status,
++            stdout_ref=stdout_ref,
++            stderr_ref=stderr_ref,
++            redactions_applied=redactions_applied,
++            output_truncated=output_truncated,
++            environment_binding_names=environment_names,
++            error_category=error_category,
++        )
++
++
++class _ByteBudget:
++    def __init__(self, maximum: int) -> None:
++        self._remaining = maximum
++        self._truncated = False
++        self._lock = threading.Lock()
++
++    def take(self, content: bytes) -> bytes:
++        with self._lock:
++            accepted = content[: self._remaining]
++            self._remaining -= len(accepted)
++            if len(accepted) != len(content):
++                self._truncated = True
++            return accepted
++
++    @property
++    def truncated(self) -> bool:
++        with self._lock:
++            return self._truncated
++
++
++class _RedactionState:
++    def __init__(self, applied: bool = False) -> None:
++        self._applied = applied
++        self._lock = threading.Lock()
++
++    def mark(self) -> None:
++        with self._lock:
++            self._applied = True
++
++    @property
++    def applied(self) -> bool:
++        with self._lock:
++            return self._applied
++
++
++class _StreamCapture:
++    def __init__(
++        self,
++        budget: _ByteBudget,
++        secrets: tuple[bytes, ...],
++        redaction_state: _RedactionState,
++    ) -> None:
++        self._budget = budget
++        self._secrets = tuple(sorted(set(secrets), key=len, reverse=True))
++        self._maximum_secret = max((len(secret) for secret in self._secrets), default=1)
++        self._redaction_state = redaction_state
++        self._pending = bytearray()
++        self._content = bytearray()
++        self._failed = False
++
++    def feed(self, content: bytes) -> None:
++        self._pending.extend(content)
++        safe_start_count = len(self._pending) - self._maximum_secret + 1
++        if safe_start_count > 0:
++            self._scan(safe_start_count)
++
++    def finish(self) -> None:
++        self._scan(len(self._pending), final=True)
++
++    def mark_failed(self) -> None:
++        self._failed = True
++
++    def _scan(self, safe_start_count: int, *, final: bool = False) -> None:
++        position = 0
++        emitted = bytearray()
++        while position < len(self._pending) and (final or position < safe_start_count):
++            match = next(
++                (secret for secret in self._secrets if self._pending.startswith(secret, position)),
++                None,
++            )
++            if match is not None:
++                emitted.extend(_REDACTION)
++                position += len(match)
++                self._redaction_state.mark()
++            else:
++                emitted.append(self._pending[position])
++                position += 1
++        if position:
++            del self._pending[:position]
++            self._content.extend(self._budget.take(bytes(emitted)))
++
++    @property
++    def content(self) -> bytes:
++        return bytes(self._content)
++
++    @property
++    def failed(self) -> bool:
++        return self._failed
++
++
++def _start_drain(
++    pipe: object, capture: _StreamCapture, name: str
++) -> threading.Thread:
++    def drain() -> None:
++        try:
++            while True:
++                content = pipe.read(_READ_SIZE)  # type: ignore[attr-defined]
++                if not content:
++                    break
++                capture.feed(content)
++        except Exception:
++            capture.mark_failed()
++        finally:
++            capture.finish()
++
++    thread = threading.Thread(target=drain, name=name, daemon=True)
++    thread.start()
++    return thread
++
++
++def _finish_drains(
++    process: subprocess.Popen[bytes],
++    threads: tuple[threading.Thread, threading.Thread],
++    pipes: tuple[object, object],
++) -> bool:
++    for thread in threads:
++        thread.join(_DRAIN_JOIN_SECONDS)
++    finished_without_intervention = all(not thread.is_alive() for thread in threads)
++    if not finished_without_intervention:
++        for pipe in pipes:
++            try:
++                pipe.close()  # type: ignore[attr-defined]
++            except (OSError, ValueError):
++                pass
++        for thread in threads:
++            thread.join(_DRAIN_JOIN_SECONDS)
++    finished_now = all(not thread.is_alive() for thread in threads)
++    if finished_now:
++        for pipe in pipes:
++            try:
++                pipe.close()  # type: ignore[attr-defined]
++            except (OSError, ValueError):
++                pass
++    return finished_without_intervention and process.poll() is not None
++
++
++def _resolve_cwd(request: CommandRequest, configured_root: Path) -> Path:
++    project_root = _absolute_directory(configured_root, "configured project root")
++    request_project = _absolute_directory(request.roots.project.root, "request project root")
++    if request_project != project_root:
++        raise ValueError("request project root does not match injected project settings")
++    binding_root = _absolute_directory(request.cwd_binding.root, "command root")
++    if not binding_root.is_relative_to(project_root):
++        raise ValueError("command root escapes the configured project")
++    relative_parts = () if request.cwd_relative == "." else tuple(
++        request.cwd_relative.replace("\\", "/").split("/")
++    )
++    lexical = binding_root.joinpath(*relative_parts)
++    resolved = lexical.resolve(strict=True)
++    if not resolved.is_dir() or not resolved.is_relative_to(binding_root):
++        raise ValueError("command cwd escapes its selected binding")
++    if _contains_link(binding_root, lexical):
++        raise ValueError("command cwd cannot traverse a symbolic link")
++    return resolved
++
++
++def _absolute_directory(value: Path, label: str) -> Path:
++    if not isinstance(value, Path):
++        value = Path(value)
++    if not value.is_absolute():
++        raise ValueError(f"{label} must be absolute")
++    absolute = Path(os.path.abspath(value))
++    if not absolute.is_dir():
++        raise ValueError(f"{label} must be an existing directory")
++    resolved = absolute.resolve(strict=True)
++    if absolute != resolved or absolute.is_symlink():
++        raise ValueError(f"{label} cannot be a symbolic link")
++    return resolved
++
++
++def _contains_link(root: Path, target: Path) -> bool:
++    root = Path(os.path.abspath(root))
++    target = Path(os.path.abspath(target))
++    try:
++        relative = target.relative_to(root)
++    except ValueError:
++        return True
++    current = root
++    if current.is_symlink():
++        return True
++    for part in relative.parts:
++        current = current / part
++        if current.is_symlink():
++            return True
++    return False
++
++
++def _create_unlinked_directories(root: Path, parts: Iterable[str]) -> None:
++    current = root
++    for part in parts:
++        current = current / part
++        try:
++            current.mkdir()
++        except FileExistsError:
++            pass
++        if current.is_symlink() or not current.is_dir():
++            raise ValueError("command log directory cannot traverse a symbolic link")
++        resolved = current.resolve(strict=True)
++        if not resolved.is_relative_to(root):
++            raise ValueError("command log directory must remain inside the project root")
++
++
++def _portable_directory(value: str) -> str:
++    if not isinstance(value, str) or not value or value != value.strip():
++        raise ValueError("relative log directory must be non-empty without surrounding whitespace")
++    return ScopePath.directory(value).value
++
++
++def _validate_environment(environment: Mapping[str, str], label: str) -> None:
++    for name, value in environment.items():
++        if not isinstance(name, str) or _PORTABLE_ENVIRONMENT_NAME.fullmatch(name) is None:
++            raise ValueError(f"{label} contains a non-portable name")
++        if not isinstance(value, str):
++            raise TypeError(f"{label} values must be strings")
++        if "\0" in value:
++            raise ValueError(f"{label} values cannot contain NUL")
++
++
++def _reject_implicit_batch(executable: str, environment: Mapping[str, str]) -> None:
++    if os.name != "nt":
++        return
++    path = environment.get("PATH") or environment.get("Path")
++    resolved = shutil.which(executable, path=path)
++    candidate = resolved or executable
++    if Path(candidate).suffix.casefold() in {".bat", ".cmd"}:
++        raise ValueError("Windows batch commands require implicit shell execution")
++
++
++def _redact_argv(request: CommandRequest) -> tuple[tuple[str, ...], bool]:
++    secrets = sorted(
++        {binding.value for binding in request.environment if binding.sensitive and binding.value},
++        key=len,
++        reverse=True,
++    )
++    changed = False
++    redacted: list[str] = []
++    for argument in request.definition.argv:
++        value = argument
++        for secret in secrets:
++            replaced = value.replace(secret, _REDACTION.decode("ascii"))
++            changed = changed or replaced != value
++            value = replaced
++        redacted.append(value)
++    return tuple(redacted), changed
++
++
++def _secret_bytes(request: CommandRequest) -> tuple[bytes, ...]:
++    result: set[bytes] = set()
++    for binding in request.environment:
++        if not binding.sensitive or not binding.value:
++            continue
++        result.add(binding.value.encode("utf-8"))
++        result.add(binding.value.encode("utf-16-le"))
++        result.add(binding.value.encode("utf-16-be"))
++        encoded = os.fsencode(binding.value)
++        if encoded:
++            result.add(encoded)
++    return tuple(result)
++
++
++def _generic_failure(category: str) -> bytes:
++    return f"command was not launched ({category})\n".encode("ascii")
++
++
++def _wait_for_exit(process: subprocess.Popen[bytes], timeout: float) -> bool:
++    try:
++        process.wait(timeout=timeout)
++        return True
++    except subprocess.TimeoutExpired:
++        return False
++
++
++def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
++    deadline = time.monotonic() + timeout
++    while time.monotonic() < deadline:
++        try:
++            os.killpg(process_group, 0)
++        except ProcessLookupError:
++            return True
++        except OSError:
++            return False
++        time.sleep(_POLL_SECONDS)
++    try:
++        os.killpg(process_group, 0)
++    except ProcessLookupError:
++        return True
++    except OSError:
++        return False
++    return False
++
++
++def _kill_parent(process: subprocess.Popen[bytes], timeout: float) -> None:
++    try:
++        process.kill()
++    except OSError:
++        return
++    _wait_for_exit(process, timeout)
++
++
++def _sync_directory(directory: Path) -> None:
++    if os.name == "nt":
++        return
++    descriptor = os.open(directory, os.O_RDONLY)
++    try:
++        os.fsync(descriptor)
++    finally:
++        os.close(descriptor)
++
++
++__all__ = [
++    "CancellationSignal",
++    "CommandLogStore",
++    "FileCommandLogStore",
++    "LocalCommandRunner",
++    "NativeProcessTreeTerminator",
++    "NeverCancelled",
++    "ProcessTreeTerminator",
++]
+diff --git a/tests/unit/commands/test_commands.py b/tests/unit/commands/test_commands.py
+new file mode 100644
+index 0000000..1982490
+--- /dev/null
++++ b/tests/unit/commands/test_commands.py
+@@ -0,0 +1,663 @@
++from __future__ import annotations
++
++import ctypes
++import dataclasses
++import hashlib
++import json
++import os
++import subprocess
++import sys
++import tempfile
++import threading
++import time
++import unittest
++from dataclasses import replace
++from datetime import datetime, timezone
++from enum import Enum
++from pathlib import Path
++
++
++WORKTREE_ROOT = Path(__file__).resolve().parents[3]
++SRC_ROOT = WORKTREE_ROOT / "src"
++if str(SRC_ROOT) not in sys.path:
++    sys.path.insert(0, str(SRC_ROOT))
++
++from commands import (
++    FileCommandLogStore,
++    LocalCommandRunner,
++    NativeProcessTreeTerminator,
++)
++from config import RunSettings, load_installation_record, load_project_settings
++from contracts import ContractRegistry
++from domain_values import CommandStatus, EntityId, PlanId, Revision, Sha256Digest
++from local_ports import (
++    CommandCwdRule,
++    CommandDefinition,
++    CommandPlatform,
++    CommandRequest,
++    CommandRootBindings,
++    CommandRunner,
++    CommandSuccessRule,
++    ContentRef,
++    EnvironmentBinding,
++    LocalControlBinding,
++    LocalProjectBinding,
++    LocalWorktreeBinding,
++    PermissionClass,
++)
++
++
++def wire(value: object) -> object:
++    if isinstance(value, (EntityId, PlanId, Revision, Sha256Digest)):
++        return value.value
++    if isinstance(value, Enum):
++        return value.value
++    if isinstance(value, datetime):
++        return value.isoformat()
++    if isinstance(value, ContentRef):
++        return {"path": value.path, "sha256": value.sha256.value}
++    if isinstance(value, tuple):
++        return [wire(item) for item in value]
++    if dataclasses.is_dataclass(value):
++        return {
++            field.name: wire(getattr(value, field.name))
++            for field in dataclasses.fields(value)
++        }
++    return value
++
++
++class UtcClock:
++    def now(self) -> datetime:
++        return datetime.now(timezone.utc)
++
++
++class SequenceClock:
++    def __init__(self, *observations: datetime) -> None:
++        self._observations = iter(observations)
++
++    def now(self) -> datetime:
++        return next(self._observations)
++
++
++class SequentialIds:
++    def __init__(self) -> None:
++        self._next = 0
++
++    def new(self, kind: str, plan_id: PlanId | None = None) -> EntityId:
++        self._next += 1
++        plan = "PROJECT" if plan_id is None else plan_id.value
++        return EntityId(f"{kind}-{plan}-{self._next}")
++
++
++class EventCancellation:
++    def __init__(self, event: threading.Event) -> None:
++        self._event = event
++
++    def is_cancelled(self) -> bool:
++        return self._event.is_set()
++
++
++class ParentOnlyUnknownTerminator:
++    def terminate(self, process: object) -> bool:
++        process.kill()
++        process.wait(timeout=5)
++        return False
++
++
++class FailingLogStore:
++    def write(self, evidence_id: EntityId, stream: str, content: bytes) -> ContentRef:
++        raise OSError("durable store unavailable")
++
++
++class CommandRunnerTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls) -> None:
++        cls.registry = ContractRegistry(WORKTREE_ROOT / "schemas" / "v1")
++        installation = load_installation_record(WORKTREE_ROOT)
++        cls.source_settings = load_project_settings(WORKTREE_ROOT, installation)
++
++    def setUp(self) -> None:
++        self.temporary = tempfile.TemporaryDirectory()
++        self.addCleanup(self.temporary.cleanup)
++        self.project = Path(self.temporary.name).resolve()
++        self.worktree = self.project / ".worktrees" / "task"
++        self.control = self.project / ".worktrees" / "control"
++        self.worktree.mkdir(parents=True)
++        self.control.mkdir(parents=True)
++        self.settings = replace(self.source_settings, project_root=self.project)
++        self.ids = SequentialIds()
++        self.base_environment = {"PATH": str(Path(sys.executable).parent)}
++        if os.name == "nt":
++            self.base_environment["SystemRoot"] = os.environ["SystemRoot"]
++
++    def roots(
++        self,
++        *,
++        worktree: Path | None = None,
++        include_worktree: bool = True,
++        include_control: bool = True,
++    ) -> CommandRootBindings:
++        return CommandRootBindings(
++            LocalProjectBinding("project", self.project),
++            LocalWorktreeBinding(
++                "project", "WT-TASK", self.worktree if worktree is None else worktree
++            )
++            if include_worktree
++            else None,
++            LocalControlBinding("project", "WT-CONTROL", self.control)
++            if include_control
++            else None,
++        )
++
++    def definition(
++        self,
++        argv: tuple[str, ...],
++        *,
++        cwd_rule: CommandCwdRule = CommandCwdRule.WORKTREE,
++        timeout: int = 10,
++        maximum: int = 1024 * 1024,
++        permission: PermissionClass = PermissionClass.LOCAL_EXECUTE,
++        environment: tuple[str, ...] = (),
++        platforms: tuple[CommandPlatform, ...] = (
++            CommandPlatform.LINUX,
++            CommandPlatform.WINDOWS,
++        ),
++    ) -> CommandDefinition:
++        return CommandDefinition(
++            id="test.command",
++            argv=argv,
++            cwd_rule=cwd_rule,
++            timeout_seconds=timeout,
++            max_output_bytes=maximum,
++            permission_class=permission,
++            environment_bindings=environment,
++            platforms=platforms,
++            success_rule=CommandSuccessRule.EXIT_ZERO,
++        )
++
++    def request(
++        self,
++        definition: CommandDefinition,
++        *,
++        roots: CommandRootBindings | None = None,
++        cwd_relative: str = ".",
++        environment: tuple[EnvironmentBinding, ...] = (),
++        plan_id: str | None = "PLAN-001",
++    ) -> CommandRequest:
++        return CommandRequest(
++            project_id="project",
++            plan_id=plan_id,
++            run_id="RUN-001",
++            operation_id="OP-001",
++            definition=definition,
++            roots=self.roots() if roots is None else roots,
++            cwd_relative=cwd_relative,
++            environment=environment,
++        )
++
++    def runner(self, **overrides: object) -> LocalCommandRunner:
++        arguments = {
++            "project_settings": self.settings,
++            "run_settings": RunSettings(),
++            "allowed_permissions": (PermissionClass.LOCAL_EXECUTE,),
++            "id_factory": self.ids,
++            "clock": UtcClock(),
++            "log_store": FileCommandLogStore(self.project, "evidence/command-logs"),
++            "base_environment": self.base_environment,
++        }
++        arguments.update(overrides)
++        return LocalCommandRunner(**arguments)
++
++    @property
++    def python(self) -> str:
++        return Path(sys.executable).name
++
++    def read_log(self, reference: ContentRef | None) -> bytes:
++        self.assertIsNotNone(reference)
++        assert reference is not None
++        content = (self.project / reference.path).read_bytes()
++        self.assertEqual(hashlib.sha256(content).hexdigest(), reference.sha256.value)
++        return content
++
++    def assert_schema(self, evidence: object) -> None:
++        self.registry.validate(wire(evidence), source="observed command evidence")
++
++    def test_actual_argv_is_preserved_and_zero_plan_project_root_is_valid(self) -> None:
++        arguments = ("  leading", "trailing  ", "line one\nline two", "tab\tvalue", "same", "same")
++        code = "import json,sys; print(json.dumps(sys.argv[1:], ensure_ascii=False))"
++        definition = self.definition(
++            (self.python, "-c", code, *arguments),
++            cwd_rule=CommandCwdRule.PROJECT,
++        )
++
++        evidence = self.runner().execute(self.request(definition, plan_id=None))
++
++        self.assertEqual(evidence.status, CommandStatus.EXITED)
++        self.assertEqual(evidence.exit_code, 0)
++        self.assertIsInstance(self.runner(), CommandRunner)
++        self.assertEqual(evidence.argv_redacted, definition.argv)
++        self.assertEqual(json.loads(self.read_log(evidence.stdout_ref)), list(arguments))
++        self.assertEqual(evidence.cwd_worktree_id, EntityId("project"))
++        self.assertEqual(evidence.cwd_relative, ".")
++        self.assertFalse(evidence.redactions_applied)
++        self.assertFalse(evidence.output_truncated)
++        self.assertIsNotNone(evidence.finished_at)
++        self.assertGreaterEqual(evidence.finished_at, evidence.started_at)
++        self.assert_schema(evidence)
++
++    def test_actual_nonzero_exit_status_is_observed_without_interpreting_success_rule(self) -> None:
++        evidence = self.runner().execute(
++            self.request(
++                self.definition((self.python, "-c", "raise SystemExit(7)"))
++            )
++        )
++        self.assertEqual(evidence.status, CommandStatus.EXITED)
++        self.assertEqual(evidence.exit_code, 7)
++        self.assertIsNone(evidence.error_category)
++        self.assert_schema(evidence)
++
++    def test_backward_clock_returns_unknown_without_fabricating_finish_time(self) -> None:
++        started = datetime(2026, 9, 8, 12, 0, 1, tzinfo=timezone.utc)
++        moved_backward = datetime(2026, 9, 8, 12, 0, 0, tzinfo=timezone.utc)
++        evidence = self.runner(clock=SequenceClock(started, moved_backward)).execute(
++            self.request(self.definition((self.python, "-c", "print('process-observed')")))
++        )
++        self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
++        self.assertEqual(evidence.started_at, started)
++        self.assertIsNone(evidence.finished_at)
++        self.assertIsNone(evidence.exit_code)
++        self.assertEqual(evidence.error_category, "clock_regression")
++        self.assertEqual(self.read_log(evidence.stdout_ref).strip(), b"process-observed")
++        self.assertEqual(self.read_log(evidence.stderr_ref), b"")
++        self.assert_schema(evidence)
++
++    def test_project_worktree_and_control_cwd_policies_use_actual_bound_roots(self) -> None:
++        cases = (
++            (CommandCwdRule.PROJECT, self.project.name, EntityId("project")),
++            (CommandCwdRule.WORKTREE, self.worktree.name, EntityId("WT-TASK")),
++            (CommandCwdRule.CONTROL, self.control.name, EntityId("WT-CONTROL")),
++        )
++        code = "from pathlib import Path; print(Path.cwd().name)"
++        runner = self.runner()
++
++        for rule, expected_name, expected_id in cases:
++            with self.subTest(rule=rule):
++                evidence = runner.execute(self.request(self.definition((self.python, "-c", code), cwd_rule=rule)))
++                self.assertEqual(evidence.status, CommandStatus.EXITED)
++                self.assertEqual(self.read_log(evidence.stdout_ref).decode().strip(), expected_name)
++                self.assertEqual(evidence.cwd_worktree_id, expected_id)
++                self.assert_schema(evidence)
++
++    def test_relative_cwd_stays_beneath_selected_binding(self) -> None:
++        nested = self.worktree / "nested"
++        nested.mkdir()
++        code = "from pathlib import Path; print(Path.cwd().name)"
++        evidence = self.runner().execute(
++            self.request(self.definition((self.python, "-c", code)), cwd_relative="nested")
++        )
++        self.assertEqual(evidence.status, CommandStatus.EXITED)
++        self.assertEqual(self.read_log(evidence.stdout_ref), b"nested\r\n" if os.name == "nt" else b"nested\n")
++        self.assertEqual(evidence.cwd_relative, "nested")
++
++    def test_absent_and_escaped_bindings_are_rejected_before_launch(self) -> None:
++        definition = self.definition((self.python, "-c", "raise SystemExit(99)"))
++        with self.assertRaisesRegex(ValueError, "no local binding"):
++            self.request(definition, roots=self.roots(include_worktree=False))
++        with self.assertRaises((TypeError, ValueError)):
++            self.request(definition, cwd_relative="../outside")
++
++        outside_temporary = tempfile.TemporaryDirectory()
++        self.addCleanup(outside_temporary.cleanup)
++        outside = Path(outside_temporary.name).resolve()
++        escaped = self.request(definition, roots=self.roots(worktree=outside))
++        evidence = self.runner().execute(escaped)
++        self.assertEqual(evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(evidence.error_category, "invalid_input")
++        self.assert_schema(evidence)
++
++    def test_permission_platform_and_sandbox_restrictions_prevent_launch(self) -> None:
++        marker = self.worktree / "marker"
++        code = "import os,pathlib; pathlib.Path(os.environ['MARKER']).write_text('launched')"
++        denied = self.definition(
++            (self.python, "-c", code),
++            permission=PermissionClass.DESTRUCTIVE,
++            environment=("MARKER",),
++        )
++        denied_evidence = self.runner().execute(
++            self.request(
++                denied,
++                environment=(EnvironmentBinding("MARKER", str(marker), False),),
++            )
++        )
++        self.assertEqual(denied_evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(denied_evidence.error_category, "policy_denied")
++
++        no_permissions = self.runner(allowed_permissions=()).execute(
++            self.request(
++                self.definition(
++                    (self.python, "-c", code), environment=("MARKER",)
++                ),
++                environment=(EnvironmentBinding("MARKER", str(marker), False),),
++            )
++        )
++        self.assertEqual(no_permissions.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(no_permissions.error_category, "policy_denied")
++
++        other = CommandPlatform.LINUX if os.name == "nt" else CommandPlatform.WINDOWS
++        unsupported = self.definition(
++            (self.python, "-c", code), environment=("MARKER",), platforms=(other,)
++        )
++        platform_evidence = self.runner().execute(
++            self.request(
++                unsupported,
++                environment=(EnvironmentBinding("MARKER", str(marker), False),),
++            )
++        )
++        self.assertEqual(platform_evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(platform_evidence.error_category, "unsupported_capability")
++
++        sandbox_evidence = self.runner(run_settings=RunSettings(required_sandbox=True)).execute(
++            self.request(
++                self.definition((self.python, "-c", code), environment=("MARKER",)),
++                environment=(EnvironmentBinding("MARKER", str(marker), False),),
++            )
++        )
++        self.assertEqual(sandbox_evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(sandbox_evidence.error_category, "unsupported_capability")
++        self.assertFalse(marker.exists())
++
++    @unittest.skipUnless(os.name == "nt", "Windows batch behavior is Windows-specific")
++    def test_windows_batch_wrapper_is_rejected_without_invocation(self) -> None:
++        marker = self.worktree / "batch-marker"
++        wrapper = self.worktree / "unsafe.cmd"
++        wrapper.write_text(f"@echo launched>{marker}\n", encoding="utf-8")
++        evidence = self.runner().execute(self.request(self.definition((wrapper.name,))))
++        self.assertEqual(evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(evidence.error_category, "invalid_input")
++        self.assertFalse(marker.exists())
++
++    def test_environment_is_explicit_allows_empty_and_does_not_inherit_host_secret(self) -> None:
++        host_name = "TASK006_HOST_SECRET"
++        previous = os.environ.get(host_name)
++        os.environ[host_name] = "must-not-be-inherited"
++        self.addCleanup(self._restore_environment, host_name, previous)
++        code = "import os; print(repr(os.environ.get('EMPTY'))); print(os.environ.get('TASK006_HOST_SECRET', 'missing'))"
++        definition = self.definition(
++            (self.python, "-c", code), environment=("EMPTY",)
++        )
++        evidence = self.runner().execute(
++            self.request(definition, environment=(EnvironmentBinding("EMPTY", ""),))
++        )
++        self.assertEqual(evidence.status, CommandStatus.EXITED)
++        self.assertEqual(self.read_log(evidence.stdout_ref).decode().splitlines(), ["''", "missing"])
++        self.assertEqual(evidence.environment_binding_names, ("EMPTY",))
++        self.assertFalse(evidence.redactions_applied)
++
++    def test_missing_durable_log_storage_cannot_be_reported_as_success(self) -> None:
++        evidence = self.runner(log_store=FailingLogStore()).execute(
++            self.request(self.definition((self.python, "-c", "print('observed')")))
++        )
++        self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
++        self.assertIsNone(evidence.exit_code)
++        self.assertIsNone(evidence.stdout_ref)
++        self.assertIsNone(evidence.stderr_ref)
++        self.assertEqual(evidence.error_category, "internal_error")
++        self.assert_schema(evidence)
++
++    def test_nul_environment_value_fails_before_process_launch(self) -> None:
++        marker = self.worktree / "nul-marker"
++        code = "import os,pathlib; pathlib.Path(os.environ['MARKER']).touch()"
++        definition = self.definition(
++            (self.python, "-c", code), environment=("MARKER", "TOKEN")
++        )
++        evidence = self.runner().execute(
++            self.request(
++                definition,
++                environment=(
++                    EnvironmentBinding("MARKER", str(marker), False),
++                    EnvironmentBinding("TOKEN", "bad\0value"),
++                ),
++            )
++        )
++        self.assertEqual(evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertEqual(evidence.error_category, "invalid_input")
++        self.assertFalse(marker.exists())
++
++    def test_secret_is_redacted_across_reads_and_truncation_reveals_no_prefix(self) -> None:
++        secret = "Unique-Secret-0123456789"
++        code = (
++            "import os,sys; "
++            "os.write(1,b'x'*8190); "
++            "os.write(1,os.environ['TOKEN'].encode()); "
++            "os.write(1,sys.argv[1].encode())"
++        )
++        definition = self.definition(
++            (self.python, "-c", code, secret),
++            maximum=8197,
++            environment=("TOKEN",),
++        )
++        evidence = self.runner().execute(
++            self.request(definition, environment=(EnvironmentBinding("TOKEN", secret),))
++        )
++        content = self.read_log(evidence.stdout_ref)
++        combined = content + "\n".join(evidence.argv_redacted).encode()
++        self.assertEqual(evidence.status, CommandStatus.EXITED)
++        self.assertLessEqual(
++            len(content) + len(self.read_log(evidence.stderr_ref)),
++            definition.max_output_bytes,
++        )
++        self.assertNotIn(secret.encode(), combined)
++        self.assertNotIn(secret[:12].encode(), combined)
++        self.assertIn("[REDACTED]", evidence.argv_redacted)
++        self.assertTrue(evidence.redactions_applied)
++        self.assertTrue(evidence.output_truncated)
++        self.assert_schema(evidence)
++
++    def test_combined_output_cap_drains_large_stdout_and_stderr(self) -> None:
++        code = "import os; os.write(1,b'A'*200000); os.write(2,b'B'*200000)"
++        definition = self.definition((self.python, "-c", code), maximum=4096)
++        evidence = self.runner().execute(self.request(definition))
++        stdout = self.read_log(evidence.stdout_ref)
++        stderr = self.read_log(evidence.stderr_ref)
++        self.assertEqual(evidence.status, CommandStatus.EXITED)
++        self.assertEqual(evidence.exit_code, 0)
++        self.assertLessEqual(len(stdout) + len(stderr), 4096)
++        self.assertTrue(evidence.output_truncated)
++
++    def test_launch_failure_returns_durable_schema_valid_evidence(self) -> None:
++        definition = self.definition(("task006-command-that-does-not-exist",))
++        evidence = self.runner().execute(self.request(definition))
++        self.assertEqual(evidence.status, CommandStatus.LAUNCH_FAILED)
++        self.assertIsNone(evidence.exit_code)
++        self.assertEqual(evidence.error_category, "invalid_input")
++        self.assertEqual(self.read_log(evidence.stdout_ref), b"")
++        self.assertEqual(self.read_log(evidence.stderr_ref), b"command launch failed\n")
++        self.assert_schema(evidence)
++
++    def test_timeout_terminates_actual_process_tree(self) -> None:
++        pid_file = self.worktree / "child.pid"
++        child_code = "import time; time.sleep(30)"
++        parent_code = (
++            "import os,pathlib,subprocess,sys,time; "
++            "p=subprocess.Popen([sys.executable,'-c',sys.argv[1]]); "
++            "pathlib.Path(os.environ['PID_FILE']).write_text(str(p.pid)); "
++            "time.sleep(30)"
++        )
++        definition = self.definition(
++            (self.python, "-c", parent_code, child_code),
++            timeout=1,
++            environment=("PID_FILE",),
++        )
++        evidence = self.runner().execute(
++            self.request(
++                definition,
++                environment=(EnvironmentBinding("PID_FILE", str(pid_file), False),),
++            )
++        )
++        self.assertEqual(evidence.status, CommandStatus.TIMED_OUT)
++        self.assertEqual(evidence.error_category, "timeout")
++        self.assertIsNotNone(evidence.exit_code)
++        child_pid = int(pid_file.read_text(encoding="utf-8"))
++        self.assertTrue(self._wait_not_alive(child_pid, 5), f"child {child_pid} survived timeout")
++        self.assert_schema(evidence)
++
++    def test_cancellation_before_and_after_launch_is_explicit(self) -> None:
++        pre_cancelled = threading.Event()
++        pre_cancelled.set()
++        definition = self.definition((self.python, "-c", "raise SystemExit(99)"))
++        before = self.runner(cancellation=EventCancellation(pre_cancelled)).execute(
++            self.request(definition)
++        )
++        self.assertEqual(before.status, CommandStatus.CANCELLED)
++        self.assertIsNone(before.exit_code)
++
++        event = threading.Event()
++        timer = threading.Timer(0.2, event.set)
++        timer.start()
++        self.addCleanup(timer.cancel)
++        during = self.runner(cancellation=EventCancellation(event)).execute(
++            self.request(self.definition((self.python, "-c", "import time; time.sleep(30)")))
++        )
++        self.assertEqual(during.status, CommandStatus.CANCELLED)
++        self.assertEqual(during.error_category, "cancelled")
++        self.assertIsNotNone(during.exit_code)
++        self.assert_schema(during)
++
++    def test_unconfirmed_parent_only_cleanup_returns_unknown(self) -> None:
++        pid_file = self.worktree / "unknown-child.pid"
++        child_code = "import time; time.sleep(30)"
++        parent_code = (
++            "import os,pathlib,subprocess,sys,time; "
++            "p=subprocess.Popen([sys.executable,'-c',sys.argv[1]], "
++            "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); "
++            "pathlib.Path(os.environ['PID_FILE']).write_text(str(p.pid)); "
++            "time.sleep(30)"
++        )
++        definition = self.definition(
++            (self.python, "-c", parent_code, child_code),
++            timeout=1,
++            environment=("PID_FILE",),
++        )
++        evidence = self.runner(tree_terminator=ParentOnlyUnknownTerminator()).execute(
++            self.request(
++                definition,
++                environment=(EnvironmentBinding("PID_FILE", str(pid_file), False),),
++            )
++        )
++        child_pid = int(pid_file.read_text(encoding="utf-8"))
++        try:
++            self.assertTrue(self._is_alive(child_pid))
++            self.assertEqual(evidence.status, CommandStatus.UNKNOWN)
++            self.assertIsNone(evidence.exit_code)
++            self.assertEqual(evidence.error_category, "ambiguous_side_effect")
++            self.assert_schema(evidence)
++        finally:
++            self._kill_pid(child_pid)
++
++    def test_content_addressing_does_not_overwrite_on_identity_reuse(self) -> None:
++        store = FileCommandLogStore(self.project, "evidence/command-logs")
++        identity = EntityId("EVIDENCE-REUSED")
++        first = store.write(identity, "stdout", b"first")
++        second = store.write(identity, "stdout", b"second")
++        repeated = store.write(identity, "stdout", b"first")
++        self.assertNotEqual(first.path, second.path)
++        self.assertEqual(first, repeated)
++        self.assertEqual(self.read_log(first), b"first")
++        self.assertEqual(self.read_log(second), b"second")
++
++    def test_native_terminator_does_not_infer_tree_quiescence_from_parent_exit(self) -> None:
++        process = subprocess.Popen(
++            (self.python, "-c", "pass"),
++            env=self.base_environment,
++            shell=False,
++        )
++        process.wait(timeout=5)
++        self.assertFalse(NativeProcessTreeTerminator().terminate(process))
++
++    @unittest.skipIf(os.name == "nt", "POSIX process-group ownership is POSIX-specific")
++    def test_posix_terminator_requires_and_confirms_an_owned_process_group(self) -> None:
++        terminator = NativeProcessTreeTerminator(grace_seconds=2)
++        unowned = subprocess.Popen(
++            (self.python, "-c", "import time; time.sleep(30)"),
++            env=self.base_environment,
++            shell=False,
++        )
++        self.addCleanup(self._kill_process, unowned)
++        self.assertNotEqual(os.getpgid(unowned.pid), unowned.pid)
++        self.assertFalse(terminator.terminate(unowned))
++        self.assertIsNotNone(unowned.poll())
++
++        owned = subprocess.Popen(
++            (self.python, "-c", "import time; time.sleep(30)"),
++            env=self.base_environment,
++            shell=False,
++            start_new_session=True,
++        )
++        self.addCleanup(self._kill_process, owned)
++        self.assertEqual(os.getpgid(owned.pid), owned.pid)
++        self.assertTrue(terminator.terminate(owned))
++        self.assertIsNotNone(owned.poll())
++
++    @staticmethod
++    def _restore_environment(name: str, value: str | None) -> None:
++        if value is None:
++            os.environ.pop(name, None)
++        else:
++            os.environ[name] = value
++
++    @staticmethod
++    def _wait_not_alive(pid: int, timeout: float) -> bool:
++        deadline = time.monotonic() + timeout
++        while time.monotonic() < deadline:
++            if not CommandRunnerTests._is_alive(pid):
++                return True
++            time.sleep(0.05)
++        return not CommandRunnerTests._is_alive(pid)
++
++    @staticmethod
++    def _is_alive(pid: int) -> bool:
++        if os.name != "nt":
++            try:
++                os.kill(pid, 0)
++            except ProcessLookupError:
++                return False
++            except PermissionError:
++                return True
++            return True
++        process = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
++        if not process:
++            return False
++        try:
++            exit_code = ctypes.c_ulong()
++            if not ctypes.windll.kernel32.GetExitCodeProcess(process, ctypes.byref(exit_code)):
++                return False
++            return exit_code.value == 259
++        finally:
++            ctypes.windll.kernel32.CloseHandle(process)
++
++    @staticmethod
++    def _kill_pid(pid: int) -> None:
++        if not CommandRunnerTests._is_alive(pid):
++            return
++        if os.name == "nt":
++            __import__("subprocess").run(
++                ("taskkill", "/PID", str(pid), "/T", "/F"),
++                stdin=__import__("subprocess").DEVNULL,
++                stdout=__import__("subprocess").DEVNULL,
++                stderr=__import__("subprocess").DEVNULL,
++                shell=False,
++                check=False,
++                timeout=5,
++            )
++        else:
++            os.kill(pid, 9)
++
++    @staticmethod
++    def _kill_process(process: subprocess.Popen[bytes]) -> None:
++        if process.poll() is None:
++            process.kill()
++            process.wait(timeout=5)
++
++
++if __name__ == "__main__":
++    unittest.main()

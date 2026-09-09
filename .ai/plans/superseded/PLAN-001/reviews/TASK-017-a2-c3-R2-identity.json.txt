@@ -1,0 +1,99 @@
+{
+  "utc": "2026-09-08T12:13:19.822788+00:00",
+  "runtime": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "root_head": "b90556d92e0f37e664d685b4af85c43fc8143d81",
+  "candidate_head": "b7593f11961aa6f5c3a927f3c49af32c4fa93971",
+  "clean": true,
+  "fingerprint": "f2f7e852b8eb99345c66a959f15c842f5a2b046631f0b7d349377d3353fec5ac",
+  "raw_diff_sha256": "0946efd22b5f1f705f1547af1ad7fe19b6fbb4d4c138460f78555b3834a89ea7",
+  "raw_diff_lines": 3106,
+  "owned_paths": [
+    ".ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md",
+    "src/agents.py",
+    "tests/unit/agents/test_agents.py"
+  ],
+  "context_hashes_verified": 14,
+  "validation_refs": [
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/validation/TASK-017-a2-b7593f11961a.txt",
+      "sha256": "548cc0e67f9546e52b347cd68250ab8d7c84790a2e38d3e02b2e2a73debe4c29"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/validation/TASK-017-a2-b7593f11961a-python311.txt",
+      "sha256": "fd673b61454dc42706fa50f0bc77c46f92b40fc11499b7e5f65a498f1cf13fa8"
+    },
+    {
+      "path": ".ai/plans/current/PLAN-001/evidence/validation/TASK-017-a2-b7593f11961a-linux-python311.txt",
+      "sha256": "39b847d383c109decaf7fbf7e34730be2775b0188a23050bc7f3f64125f385f6"
+    }
+  ],
+  "policy_model_digest": "b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42",
+  "task_digest": "c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e",
+  "graph_digest": "5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337",
+  "accepted_dependencies": {
+    "TASK-003": [
+      "d51b72ce71ea3ac3ad31adf41e3eddc84738ac0b",
+      "src/workflow_ports.py"
+    ],
+    "TASK-004": [
+      "e3c1177f993ee74815639a83ef3333faa4ba3957",
+      "src/contracts.py"
+    ],
+    "TASK-038": [
+      "6f2b12c3283ed7d6e3d4876020fe690c6e0061a3",
+      "src/config.py"
+    ]
+  },
+  "salvage_pairs": [
+    [
+      "71e0ccf697c132082bb17f7f3814ffb6abee5df6",
+      "ce1776adb42a06b5a02c7c7e7047e03c8a7f30c2"
+    ],
+    [
+      "7e5bd5fd5d1b36a14cbee6ae911b68a4ec9ffbf8",
+      "3cdb41e5698f2cb0c7fc08c36c08d57a28ea1d16"
+    ]
+  ],
+  "history_hashes": {
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1-checks.py": "a2a55b4b46a0de143fb0e0942b243f9a34374d102058c479bc54773f517bc982",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1-checks.txt": "75c94a54a069e077dab0b16297869e2149ce5b43046579d15e8f07741b329f3d",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1-recovery.py": "3649f3a7abd4ea2560c0b978cb4244ac868d86087528dc3f3991c7beb03937ab",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1-recovery.txt": "6d7ff69a62f964bef78f74c8323104a5fa8a28f702125482d6018019bcefc497",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1-schema.txt": "3484a5c9a24d62bc4de6567da3a2b98943b2780dcee1201302dc0c96a4bfe7f1",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1.json": "4fb5f068d29a157176f423a79cb154c99779f36b10fabf46103defb6e4495f6f",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c1-R1.md": "3242dd86dec712e7ed8560bf638ee6d12e502d812cb93e0ae9413e3eb7e56722",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-checks.py": "77ea26152bcce959374d0b66e68b79e7963f7ba2705ec47e7ee83a7c40f01df9",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-checks.txt": "d9fabfea25adf8a73e6c7fe2a23ec59a1735a7de6e5025dd73ab72795d8dd86e",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-edges.py": "cce24d0116edfd66cd25ed784195c4b86e40bff424eb3701c1a202293f80c31c",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-edges.txt": "065a221c10b81bca3f4b4a54e432b409dfde8b441393c93b00508f6dfaf582f5",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-final.txt": "5a60ef1d81fd72edd3ad971315545290fb5956399c466004cf9af912e99f2cd4",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.py": "52b2fde4384ac55af4c894f69cf9e3e72c7111baa05003134d6975e9ec32340a",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-mapping.txt": "8368faf5cbd72e0316dda6474d1f48eb817fa767f9f986300e07014fc2831828",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-recovery.py": "472dfbd8fe5b37df86e2bd81e36aa93fc00c10745a00350cbc8488af5c483840",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-recovery.txt": "6d7ff69a62f964bef78f74c8323104a5fa8a28f702125482d6018019bcefc497",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-temporal.py": "7250d2eb2d3ec87393fc9fdb28f25551e1bfe1d84fcde9c3becc0b87eb5e1f4b",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1-temporal.txt": "9a4f54d5543a3a5df7553ae491bce7ecfcf9e43b55123822eccd6e6d1a14c575",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1.json": "b19a697900d09188f501431496281cb2ba2b413d81b8077740417003294a4faa",
+    ".ai/plans/current/PLAN-001/reviews/TASK-017-a1-c2-R1.md": "0349c6aa81b63f3c8f2f5822424125815d544a0cb440ced4268c01b63f903deb"
+  },
+  "r1_hashes": {
+    "TASK-017-a2-c3-R1-final.py": "2be1a173ea16075ec54c9a4f3828abfb29ed463718e6756c0a704051edc5044e",
+    "TASK-017-a2-c3-R1-final.txt": "77ee1352d56845c89686c831f49f7571d220c0c5c7d72aac0fdba95e08214e4d",
+    "TASK-017-a2-c3-R1-identity.py": "b16628e924faa5a0d5654d5aac7f47c940f0065d27c7bd8adc7e39d772d30c55",
+    "TASK-017-a2-c3-R1-identity.txt": "6e28147eee8fe48bfadc77dd9747d1c7c7248f53c9b334c525a449dbd2669d95",
+    "TASK-017-a2-c3-R1-probes-linux.json.txt": "81918f0b59435e3fda3ae375f49edf2c93d64f829438eae8def1cbcd569084b7",
+    "TASK-017-a2-c3-R1-probes-windows.json.txt": "fff350c86bfd900ab9fc56fa30247fe9ca59d48f6a615abdcdb7531adf725b2e",
+    "TASK-017-a2-c3-R1-probes.py": "290e2f1cccd0dc782e3513c5ffc5a2d15fc590cec6b4ff1fa1f001c8d30f241d",
+    "TASK-017-a2-c3-R1.json": "ba98e1557a81672266f85f82ddbeba9569ccb2703745c5d5d5921d6932af7b58",
+    "TASK-017-a2-c3-R1.md": "b95530042975e485a527a530d9238cb007e787e734fb17b7254b99b35136b379"
+  },
+  "origins": {
+    "agents": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\agents.py",
+    "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\config.py",
+    "contracts": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\contracts.py",
+    "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\domain_values.py",
+    "workflow_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-017-a2\\src\\workflow_ports.py"
+  }
+}

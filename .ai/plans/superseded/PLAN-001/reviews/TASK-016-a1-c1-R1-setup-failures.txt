@@ -1,0 +1,62 @@
+Independent reviewer setup history, retained without changing product source.
+
+1. Command from ROOT:
+   .ai/local/full-plan-venv/Scripts/python.exe -B .ai/plans/current/PLAN-001/reviews/TASK-016-a1-c1-R1-probe.py identity
+   Exit 1. The review program temporarily used parents[4] for ROOT, which resolved
+   to .ai rather than the repository root. Import failed at line 26:
+   ModuleNotFoundError: No module named 'context'
+   Corrected only the review program to parents[5]. No candidate code executed.
+
+2. Repeated identity command above after that correction:
+   Exit 1. The initial assertion incorrectly expected all source/test bytes in
+   owner 0cb81d179b7ffd76012f05f216010ae444f11f98 and candidate e88e7950fb6bce3656d3de8dad54ace21074d252
+   to match. Git reported the following newer accepted integration additions:
+   A src/agents.py
+   A src/candidates.py
+   A src/commands.py
+   A src/git_ops.py
+   A src/plan_graph.py
+   A src/recovery_proposals.py
+   A src/scope.py
+   A src/validation.py
+   A tests/unit/agents/test_agents.py
+   A tests/unit/commands/test_commands.py
+   A tests/unit/git/test_git_ops.py
+   A tests/unit/planning_dag/test_plan_graph.py
+   A tests/unit/planning_ownership/test_scope.py
+   A tests/unit/planning_recovery_proposals/test_recovery_proposals.py
+   A tests/unit/reviews_candidates/test_candidates.py
+   A tests/unit/validation/test_validation.py
+   Corrected the review assertion to verify every addition against frozen ROOT,
+   while requiring exact owner equality for TASK-016 source/test/handoff and
+   accepted dependency source/handoff equality against their acceptance commits.
+   The next identity execution passed; its captured result is retained separately.
+
+3. Candidate cwd command:
+   git diff --check e44eeb2b4197774a57d03918518381962aa37c20 e88e7950fb6bce3656d3de8dad54ace21074d252
+   Exit 0, no output.
+   git diff --numstat e44eeb2b4197774a57d03918518381962aa37c20 e88e7950fb6bce3656d3de8dad54ace21074d252
+   Exit 0:
+   179 0 .ai/plans/current/PLAN-001/evidence/implementation/TASK-016.md
+   731 0 src/context.py
+   445 0 tests/unit/context/test_context.py
+
+4. Initial reference-read command addressed coordination/*.md directly under
+   PLAN-001; three Get-Content errors reported nonexistent paths for agent-brief.md,
+   single-stage-review-decision.md and next-context-dispatch.md. The same command
+   successfully read the candidate manifest, whose explicit references supplied
+   the correct evidence/coordination/ location. All three correct files were then
+   read in full. This was a reviewer path mistake, not missing candidate evidence.
+
+5. Final source-line locator succeeded (fixture handoff line 67, review line 82,
+   metadata regression line 296; canonical encoder line 101 and metadata screening
+   line 354). A redundant metadata read in the same candidate-cwd command used the
+   ROOT-only review result's relative path and exited 1 with Get-Content missing
+   path. The result had already been captured/read from ROOT. No evidence was
+   missing or regenerated; report source-line references were corrected.
+
+6. First closing-mode invocation exited 1 at the dependency_acceptance_and_blobs
+   comparison: freshly constructed tuples were compared directly with JSON-loaded
+   arrays from opening evidence. The preceding identity assertions passed. Changed
+   only that evidence comparison to canonical JSON equality, preserving values
+   and order. No product or bound candidate material changed.

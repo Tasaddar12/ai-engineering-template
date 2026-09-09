@@ -1,0 +1,7 @@
+The first independent probe-script invocation on Windows and Linux exited 1 at
+the redaction test's output_truncated assertion. The harness incorrectly set an
+8230-byte cap while the post-redaction content totaled only 8221 bytes. This was
+a reviewer harness expectation error, not a candidate defect. The cap was reduced
+to 8199 before the final recorded reruns. No candidate file changed. The initial
+invocations completed only typed-API and cwd-symlink checks and did not launch
+either descendant probe.

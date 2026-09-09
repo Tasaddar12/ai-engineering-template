@@ -1,0 +1,29 @@
+name: recovery
+prompt_template: agents/recovery.md
+model_profile: planning_high
+assignment_template: handoffs/orchestrator-to-recovery.md
+output_template: handoffs/agent-recovery.md
+permissions:
+  modify_files: false
+  run_commands: false
+  spawn_agents: false
+expected_inputs:
+- assignment
+- context_refs
+- constraints
+constraints:
+- coding
+- commands
+- files
+- workflow
+- external_actions
+max_concurrency: 1
+output_schema:
+  statuses:
+  - REPLAN
+  fields:
+    subject: string
+    session_id: string
+    status: string
+    summary: string
+    revision: mapping

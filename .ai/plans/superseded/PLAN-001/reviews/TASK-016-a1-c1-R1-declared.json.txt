@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/unit/context/",
+    "-p",
+    "test_*.py"
+  ],
+  "cwd": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-016-a1",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "...........s......\n----------------------------------------------------------------------\nRan 18 tests in 0.377s\n\nOK (skipped=1)\n"
+}

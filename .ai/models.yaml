@@ -1,0 +1,41 @@
+agents:
+  orchestrator:
+    model_profile: orchestrator_high
+  work_decomposition:
+    model_profile: planning_high
+  implementation:
+    model_profile: coding_medium
+  bugfix:
+    model_profile: coding_medium
+  research:
+    model_profile: research_medium
+  critical_review:
+    model_profile: review_high
+  recovery:
+    model_profile: planning_high
+profiles:
+  orchestrator_high:
+    provider: command
+    model: null
+    reasoning: high
+    capability: 3
+  planning_high:
+    provider: command
+    model: gpt-5.6-sol
+    reasoning: xhigh
+    capability: 3
+  coding_medium:
+    provider: command
+    model: gpt-5.6-sol
+    reasoning: xhigh
+    capability: 2
+  research_medium:
+    provider: command
+    model: gpt-5.6-sol
+    reasoning: xhigh
+    capability: 2
+  review_high:
+    provider: command
+    model: gpt-6-astra
+    reasoning: xhigh
+    capability: 4

@@ -1,0 +1,150 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-002-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "manual:PLAN-001:TASK-002:a1:c1:R1",
+  "task_id": "TASK-002",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-002-a1-f38680d2d892.json",
+  "candidate_fingerprint": "124b498bc325109f4bdac71c3821e64ae82db308143ea2d98f754f9acf13b325",
+  "verdict": "fail",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_002_c1:PLAN-001:TASK-002:a1:c1:R1"
+  },
+  "independent_session_id": "/root/r1_002_c1",
+  "implementation_session_id": "/root/implement_002",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "fail",
+      "rationale": "TASK-002-AC1 fails on schema-valid argv rejection (finding R1-TASK-002-001); AC2 and the remaining AC1 port surfaces have evidence.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt",
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "Interface-only scope respects applicable REQ-01/02 and ADR-001-005 boundaries; no concrete adapters or excluded external effects were added.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-002.json",
+        ".ai/shared/architecture/service-contracts.md"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "fail",
+      "rationale": "Tracing both argv fields through _strings to _text confirms valid fixed argument data is rejected before request/evidence construction.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Typed conflict/ambiguous outcomes, missing evidence rejection, expected identities and non-force cleanup guards are present; cleanup and fresh observation algorithms remain adapter-owned.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt",
+        "src/local_ports.py",
+        ".ai/shared/state/persistence.md"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "fail",
+      "rationale": "Independent space-significant and multiline argument probes fail in both DTOs; other state, Git, command-state and worktree boundaries pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "fail",
+      "rationale": "Declared 25 tests pass and exercise meaningful failures, but omit the reproduced argv/schema mismatch required by the downstream command contract.",
+      "evidence": [
+        "tests/unit/domain_local_ports/test_local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1.md"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "One task-owned production module plus owned tests/handoff; no shared interface, dependency or algorithm scope expansion.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-002.json"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Verified exact diff adds only src/local_ports.py, its owned leaf tests and its handoff.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit immutable DTOs reuse accepted common values; all 11 frozen method signatures and annotations match without central exports or adapters.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt",
+        ".ai/shared/architecture/service-contracts.md"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "No concrete IO; fixed shell=False, cwd root selection/traversal rejection, permitted environment names and secret repr omission checked; adapters must re-observe security facts.",
+      "evidence": [
+        "src/local_ports.py",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "fail",
+      "rationale": "Handoff accurately reports focused/aggregate test limits and adapter ownership, but its downstream-ready claim omits the reproduced argv restriction; repair evidence must update it.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-002-a1-c1-R1-probes.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-002-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "src/local_ports.py:508 and :675 apply _strings/_text metadata-label constraints to CommandDefinition.argv and CommandEvidence.argv_redacted. A whitespace-significant argument '  payload  ' and multiline Python -c code both validate against frozen v1 schemas and execute successfully through shell=False argv, but both DTOs raise ValueError. This prevents TASK-006 from executing and accurately recording valid fixed command definitions through its required port.",
+      "paths": [
+        "src/local_ports.py",
+        "tests/unit/domain_local_ports/test_local_ports.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md"
+      ],
+      "expected_fix": "Separate argv validation from metadata labels. Preserve permitted argument contents exactly, including significant surrounding whitespace and embedded newlines, while retaining immutable sequences and schema constraints; handle process-invalid NUL at the appropriate boundary. Add both DTO regressions and update the handoff with actual repair evidence. No new schema fields or public signatures are required.",
+      "acceptance_ids": [
+        "TASK-002-AC1",
+        "AC-02"
+      ],
+      "resolved": false
+    }
+  ],
+  "created_at": "2026-09-08T04:57:42Z"
+}

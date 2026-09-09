@@ -1,0 +1,2 @@
+PASS: approved r4 structural graph digest 5fa7578c40f6897562a450aaa933f2b2fc307db2dbc6e415483c03abe4c24337
+PASS: five unconsumed model-identity mutations survive restore after queued/late-script/unknown; every invalid poll rejected twice across sequential provider recreation, with byte-identical backing state and cursor 1.

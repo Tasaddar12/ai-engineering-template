@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.0",
+  "kind": "task",
+  "id": "TASK-004",
+  "plan_id": "PLAN-001",
+  "title": "Implement offline contract validation",
+  "status": "accepted",
+  "archived": false,
+  "objective": "Implement offline contract validation. Implement only this observable slice using the frozen schema and port contracts.",
+  "depends_on": [
+    "TASK-001"
+  ],
+  "scope": {
+    "write_paths": [
+      "src/contracts.py",
+      "src/validate_foundation.py",
+      "src/install.py",
+      "tests/unit/schemas/",
+      ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md"
+    ],
+    "read_paths": [
+      "docs/agents/",
+      ".ai/shared/architecture/",
+      ".ai/shared/state/",
+      ".ai/shared/workflows/",
+      "schemas/v1/",
+      "src/validate_foundation.py",
+      "tests/test_bootstrap_acceptance.py",
+      "src/domain_values.py"
+    ],
+    "prohibited_paths": [
+      ".ai/STATE.json",
+      ".ai/framework.json",
+      ".ai/AGENTS.md",
+      ".ai/project/",
+      ".ai/decisions/",
+      ".ai/research/",
+      ".ai/shared/",
+      ".ai/plans/current/PLAN-001/plan.json",
+      ".ai/plans/current/PLAN-001/graph.json",
+      ".ai/plans/current/PLAN-001/spec.json",
+      "ARCHITECTURE.md",
+      "README.md"
+    ],
+    "resources": [
+      "component:schemas"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "TASK-004-AC1",
+      "description": "Validate every v1 artifact and plan-qualified logical reference through an offline registry, reject unknown fields or unsupported versions, and expose a lifecycle-neutral structural task digest used by state, graph, archive, CLI, and validator consumers",
+      "verification": "TASK-004 owned behavior tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-004-AC2",
+      "description": "Map validation failures to typed domain errors and check typed-value parsing parity",
+      "verification": "TASK-004 failure-case tests and structured handoff evidence"
+    },
+    {
+      "id": "TASK-004-AC3",
+      "description": "Preserve the complete standalone installed helper dependency closure as flat runtime modules are introduced, using a bounded installer catalog update and a fresh-target test without source-tree imports. Canonicalize only known plan/task lifecycle locations in structural task digests so current-location records reproduce the bootstrap digest and unchanged relocated records retain approval; changed structure still invalidates approval.",
+      "verification": "TASK-004 installed-tool isolation and lifecycle-neutral digest compatibility tests plus the existing bootstrap acceptance suite"
+    }
+  ],
+  "plan_acceptance_ids": [
+    "AC-01"
+  ],
+  "spec_refs": [
+    ".ai/plans/current/PLAN-001/spec.json"
+  ],
+  "adr_refs": [
+    ".ai/decisions/ADR-001.md",
+    ".ai/decisions/ADR-002.md",
+    ".ai/decisions/ADR-003.md",
+    ".ai/decisions/ADR-004.md",
+    ".ai/decisions/ADR-005.md"
+  ],
+  "research_refs": [],
+  "input_contracts": [
+    "schemas/v1/",
+    ".ai/shared/architecture/service-contracts.md",
+    "handoff:TASK-001"
+  ],
+  "output_contracts": [
+    "schemas public behavior described by this task acceptance; use predeclared ports",
+    "structural_task_digest projection and hash contract that includes scope/dependency/acceptance/contracts/logical references while excluding status, attempts, and current/completed/archived physical locations",
+    "Installer catalog copies the full canonical flat runtime dependency closure throughout implementation, before final TASK-037 packaging; no project-owned content or native provider settings are changed. Canonical digest preserves existing current-location digests and never accepts a stale hash as a fallback."
+  ],
+  "validation_commands": [
+    "test.TASK-004"
+  ],
+  "estimated_production_files": 4,
+  "size_rationale": "One contract-validation outcome with three bounded checks across contracts.py, validate_foundation.py and the install.py helper catalog. Installer edits only keep standalone tools complete; TASK-031/037 own later lifecycle and release changes and are already sequenced after TASK-004.",
+  "out_of_scope": [
+    "Other task-owned modules and tests",
+    "Changing shared contracts without a new prerequisite task",
+    "Production provider integration, paid services, remote publication and product-scope changes"
+  ],
+  "handoff_requirements": [
+    "Exact base/commit and verified changed paths",
+    "Actual test command evidence and acceptance mapping",
+    "Public interface/dependency notes, deviations and risks"
+  ],
+  "attempt_ids": [
+    "TASK-004-a1",
+    "TASK-004-a2"
+  ],
+  "superseded_by": [],
+  "resume_state": "Candidate e3c1177f993ee74815639a83ef3333faa4ba3957 passed actual task validation and independent R1/R2, then integrated locally. Plan completion still requires the final integrated gate and observed merge."
+}

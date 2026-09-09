@@ -1,0 +1,144 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-001-a2-c2-R1",
+  "stage": "implementation",
+  "request_id": "TASK-001-a2-c2-R1",
+  "task_id": "TASK-001",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-001-a2-d1fc91746641.json",
+  "candidate_fingerprint": "34f8bc7eb179c08bae4d4f60593927bcb61fe65dfdf5072a61b54540cd708926",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "openai",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r1_001_cycle2"
+  },
+  "independent_session_id": "/root/r1_001_cycle2",
+  "implementation_session_id": "/root/implement_001",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Both TASK-001-AC1 and AC2 are supported: immutable qualified identity/revisions, repaired scope conflict values, common evidence/error/result envelopes and complete no-IO lifecycle vocabularies.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "Frozen service ownership, specification exclusions and normalized ancestor scope invariant are respected. Project-wide allocation uniqueness remains a later store/validator invariant; this value module performs no IO.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Entire candidate module traced. ScopePath.overlaps at lines 316-321 detects normalized equality/ancestry independently of claim kind; ScopeClaim.conflicts_with applies that to both write/read directions. Independent matrix probes pass.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Invalid IDs, revisions, paths, digests, evidence, scalar collections, non-JSON/cyclic values and contradictory result states fail explicitly. DomainError remains frozen while its ordinary exception wrapper propagates with traceback. No IO resources are acquired.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Both overlap orders, write/write and both write/read directions, exact ancestor files and child directories, case/NFKC aliases, equal locations, siblings and read/read cases pass. Exact-file containment and permissions remain narrow; nested JSON stays detached.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "Exact frozen command reran with exit 0 and 15 meaningful tests. Independent evidence also compares 21 schema vocabularies plus two service statuses, nested JSON and identity behavior, and 90 overlap/access/read-only assertions.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "The diff adds only one common-value production module, its owned tests and handoff. No service-specific DTO, port, adapter, reducer, shared registry, IO, dependency or contract expansion.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Independent Git name/status reconstruction with rename detection proves exactly the three permitted additions. Base ancestry, clean frozen head, hashes and scope checks pass; no unrelated, prohibited, renamed or deleted paths.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Typed explicit flat-module exports, frozen values and detached JSON, focused normalization helpers and separate throwable error wrapper provide maintainable public interfaces without central export changes.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Portable path validation rejects traversal/absolute/drive/UNC, Windows device/ADS and unsafe Unicode forms. Conservative normalized ancestor conflicts close the prior scope gap. Scope remains lexical with no external effects; runtime filesystem checks belong to later owners.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "Task-owned handoff accurately records interfaces, acceptance, immutable values, no IO, repaired conflict-versus-permission behavior and previous failure lineage. Frozen candidate and independent evidence provide exact final identity and current validation.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R1-verified.txt"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1-TASK-001-001",
+      "severity": "major",
+      "category": "defect",
+      "description": "Resolved on d1fc917466410febc6238479e65816dd39591a4f: ScopePath.overlaps now recognizes normalized component ancestry for exact-file ancestors and descendant files/directories in either order. ScopeClaim write/write and both write/read directions pass independent probes; exact-file authorization remains unchanged. Prior failed review remains preserved.",
+      "paths": [
+        "src/domain_values.py",
+        "tests/unit/domain_values/test_domain_values.py",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md"
+      ],
+      "expected_fix": "No further implementation correction required for this finding. The candidate includes the conservative overlap repair, meaningful regressions and updated handoff; obtain the fresh independent R2 review for the same fingerprint.",
+      "acceptance_ids": [
+        "TASK-001-AC1"
+      ],
+      "resolved": true
+    }
+  ],
+  "created_at": "2026-09-08T01:59:37.381Z"
+}

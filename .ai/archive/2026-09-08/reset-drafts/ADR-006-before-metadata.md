@@ -1,0 +1,7 @@
+# ADR-006 — Feature orchestration and readable state
+
+Status: accepted, 2026-09-08. Supersedes ADR-001 through ADR-004 and conflicting portions of ADR-005 in the reset archive. Authority: today's user request and Git Repo Layouts project discussion.
+
+Use a Python 3.11+ package, `.ai/STATE.yaml` as the workflow index, Markdown artifacts with YAML metadata, and `.ai/` for all providers. Tasks are planning units; feature batches own worktrees and implementation sessions. Decomposition validates both task and feature DAGs and serializes shared file/schema/interface ownership. One independent Critical Change Reviewer evaluates the full changed diff for correctness, relevant security, and documentation. Recovery repairs structure and redecomposes automatically; ordinary defects return to the same implementer. Bugs get a smaller investigation/fix/review route.
+
+Git remains authoritative for branches, commits and worktrees. A coordinator serializes state mutations with atomic writes and a local lock. No hosted database, event-sourcing system, dual reviews, task-per-agent rule, or mandatory plan integration review. Keep bounded retry budgets and explicit external-action permissions. Templates and model profiles are separate from agent behavior. Provider execution requires configured adapters; never report a simulated run as real work.

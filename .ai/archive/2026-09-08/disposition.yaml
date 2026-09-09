@@ -1,0 +1,269 @@
+date: '2026-09-08'
+superseded_by: PLAN-002
+tasks:
+- id: TASK-001
+  title: Define immutable domain values
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-002
+  title: Freeze local persistence and process ports
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-003
+  title: Freeze agent and workflow service ports
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-004
+  title: Implement offline contract validation
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-005
+  title: Build owned asset catalog
+  previous_status: running
+  disposition: superseded
+- id: TASK-006
+  title: Execute commands with durable evidence
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-007
+  title: Implement observed Git operations
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-008
+  title: Implement pure guarded transitions
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-009
+  title: Persist serialized state checkpoints
+  previous_status: repairing
+  disposition: superseded
+- id: TASK-010
+  title: Reconcile interrupted side-effect intents
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-011
+  title: Manage one worktree per attempt
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-012
+  title: Reconcile worktree records with Git
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-013
+  title: Build validated dependency graph
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-014
+  title: Detect path and semantic conflicts
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-015
+  title: Gate graphs through isolation review
+  previous_status: repairing
+  disposition: superseded
+- id: TASK-016
+  title: Build minimal role context bundles
+  previous_status: repairing
+  disposition: superseded
+- id: TASK-017
+  title: Implement agent dispatch contract and fake adapter
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-018
+  title: Run task validation suites
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-019
+  title: Fingerprint code and context candidates
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-020
+  title: Enforce independent two-stage review gates
+  previous_status: running
+  disposition: superseded
+- id: TASK-021
+  title: Dispatch fenced task attempts
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-022
+  title: Schedule independent task attempts
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-023
+  title: Integrate accepted task candidates
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-024
+  title: Validate recovery graph proposals
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-025
+  title: Apply isolated recovery and restart
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-026
+  title: Compose resumable plan execution steps
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-027
+  title: Gate combined plan acceptance
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-028
+  title: Implement delivery intent and fake hosting adapter
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-029
+  title: Handle CI and remote review repairs
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-030
+  title: Reconcile completed work and archive
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-031
+  title: Initialize or adopt a project safely
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-032
+  title: Upgrade owned assets with migration checks
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-033
+  title: Persist research, decisions and plan drafts
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-034
+  title: Wire the six major CLI workflows
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-035
+  title: Verify parallel execution and crash resume
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-036
+  title: Verify recovery and delivery lifecycle
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-037
+  title: Package assets and configure platform CI
+  previous_status: backlog
+  disposition: superseded
+- id: TASK-038
+  title: Decode project settings and compatibility
+  previous_status: accepted
+  disposition: historical-completed
+- id: TASK-039
+  title: Freeze orchestration service contracts
+  previous_status: accepted
+  disposition: historical-completed
+worktrees:
+- path: .worktrees/manual-batch-workflow
+  branch: refs/heads/ai/PLAN-001/manual-batch-workflow
+  head: 50545ef509eadd34811327f560805750812f926c
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files: []
+- path: .worktrees/TASK-005-a2
+  branch: refs/heads/ai/PLAN-001/TASK-005/a2
+  head: af3e6e5dabc083bd201114f23a9c71efa715a7bc
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/ai.cpython-312.pyc
+  - src/__pycache__/assets.cpython-311.pyc
+  - src/__pycache__/assets.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/install.cpython-311.pyc
+  - src/__pycache__/install.cpython-312.pyc
+  - src/__pycache__/validate_foundation.cpython-312.pyc
+  - tests/__pycache__/test_agent_model_defaults.cpython-312.pyc
+  - tests/__pycache__/test_bootstrap_acceptance.cpython-312.pyc
+  - tests/__pycache__/test_validator_safety.cpython-312.pyc
+  - tests/unit/templates/__pycache__/test_assets.cpython-311.pyc
+  - tests/unit/templates/__pycache__/test_assets.cpython-312.pyc
+- path: .worktrees/TASK-009-a1
+  branch: refs/heads/ai/PLAN-001/TASK-009/a1
+  head: fa77907a1981a436f5a8499a38c3a0a8026763d0
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/local_ports.cpython-311.pyc
+  - src/__pycache__/local_ports.cpython-312.pyc
+  - src/__pycache__/state.cpython-311.pyc
+  - src/__pycache__/state.cpython-312.pyc
+  - src/__pycache__/transitions.cpython-311.pyc
+  - src/__pycache__/transitions.cpython-312.pyc
+  - tests/unit/state_checkpoints/__pycache__/test_state.cpython-311.pyc
+  - tests/unit/state_checkpoints/__pycache__/test_state.cpython-312.pyc
+- path: .worktrees/TASK-015-a1
+  branch: refs/heads/ai/PLAN-001/TASK-015/a1
+  head: edbc147a7dcff4f1b76b6909d689516a2ef6ecc4
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/agents.cpython-311.pyc
+  - src/__pycache__/agents.cpython-312.pyc
+  - src/__pycache__/config.cpython-311.pyc
+  - src/__pycache__/config.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/isolation.cpython-311.pyc
+  - src/__pycache__/isolation.cpython-312.pyc
+  - src/__pycache__/orchestration_ports.cpython-311.pyc
+  - src/__pycache__/orchestration_ports.cpython-312.pyc
+  - src/__pycache__/plan_graph.cpython-311.pyc
+  - src/__pycache__/plan_graph.cpython-312.pyc
+  - src/__pycache__/scope.cpython-311.pyc
+  - src/__pycache__/scope.cpython-312.pyc
+  - src/__pycache__/workflow_ports.cpython-311.pyc
+  - src/__pycache__/workflow_ports.cpython-312.pyc
+  - tests/unit/planning_isolation/__pycache__/test_isolation.cpython-311.pyc
+  - tests/unit/planning_isolation/__pycache__/test_isolation.cpython-312.pyc
+- path: .worktrees/TASK-016-a1
+  branch: refs/heads/ai/PLAN-001/TASK-016/a1
+  head: e88e7950fb6bce3656d3de8dad54ace21074d252
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/context.cpython-311.pyc
+  - src/__pycache__/context.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/workflow_ports.cpython-311.pyc
+  - src/__pycache__/workflow_ports.cpython-312.pyc
+  - tests/unit/context/__pycache__/test_context.cpython-311.pyc
+  - tests/unit/context/__pycache__/test_context.cpython-312.pyc
+- path: .worktrees/TASK-020-a1
+  branch: refs/heads/ai/PLAN-001/TASK-020/a1
+  head: 3f5d8ab11bc7722f81b8cfd3fa0fc68885a5221b
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/agents.cpython-311.pyc
+  - src/__pycache__/agents.cpython-312.pyc
+  - src/__pycache__/candidates.cpython-311.pyc
+  - src/__pycache__/candidates.cpython-312.pyc
+  - src/__pycache__/config.cpython-311.pyc
+  - src/__pycache__/config.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/reviews.cpython-311.pyc
+  - src/__pycache__/reviews.cpython-312.pyc
+  - src/__pycache__/workflow_ports.cpython-311.pyc
+  - src/__pycache__/workflow_ports.cpython-312.pyc
+  - tests/unit/reviews_gates/__pycache__/test_reviews.cpython-311.pyc
+  - tests/unit/reviews_gates/__pycache__/test_reviews.cpython-312.pyc

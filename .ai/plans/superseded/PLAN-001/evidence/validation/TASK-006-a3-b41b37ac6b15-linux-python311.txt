@@ -1,0 +1,25 @@
+Task: PLAN-001/TASK-006
+Head: b41b37ac6b15ecbdfb55ed26bdc086686f4e9416
+Platform: Ubuntu-24.04 Python3.11.16 via WSL --exec
+Command: ['python', '-m', 'unittest', 'discover', '-s', 'tests/unit/commands/', '-p', 'test_*.py']
+Exit code: 0
+
+Runtime/origin probe exit: 0
+Python: 3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]
+Executable: /mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python
+Platform: Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39
+jsonschema: 4.26.0
+Origins: [('commands', '/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a3/src/commands.py')]
+
+
+
+TASK-006-FIXTURE {"cancellation_observed": false, "cancellation_response_seconds": null, "child_gone": true, "child_pid": 506, "child_process_group": 506, "child_session": 506, "mode": "timeout", "native_termination_calls": 1, "overall_seconds": 1.022397, "parent_gone": true, "parent_pid": 503, "parent_process_group": 503, "parent_session": 503, "phase": "detached_while_parent_live", "reader_threads_settled": true, "startup_seconds": 0.9046, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": true, "cancellation_response_seconds": 0.007853, "child_gone": true, "child_pid": 511, "child_process_group": 511, "child_session": 511, "mode": "cancellation", "native_termination_calls": 1, "overall_seconds": 0.862225, "parent_gone": true, "parent_pid": 508, "parent_process_group": 508, "parent_session": 508, "phase": "detached_while_parent_live", "reader_threads_settled": true, "startup_seconds": 0.854372, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": false, "cancellation_response_seconds": null, "child_gone": true, "child_pid": 519, "child_process_group": 516, "child_session": 516, "mode": "timeout", "native_termination_calls": 1, "overall_seconds": 1.089553, "parent_gone": true, "parent_pid": 516, "parent_process_group": 516, "parent_session": 516, "phase": "inherited_after_parent_exit", "reader_threads_settled": true, "startup_seconds": 0.854085, "watchdog_intervened": false}
+TASK-006-FIXTURE {"cancellation_observed": true, "cancellation_response_seconds": 0.061629, "child_gone": true, "child_pid": 527, "child_process_group": 521, "child_session": 521, "mode": "cancellation", "native_termination_calls": 1, "overall_seconds": 0.915783, "parent_gone": true, "parent_pid": 521, "parent_process_group": 521, "parent_session": 521, "phase": "inherited_after_parent_exit", "reader_threads_settled": true, "startup_seconds": 0.854153, "watchdog_intervened": false}
+
+.....................s
+----------------------------------------------------------------------
+Ran 22 tests in 10.614s
+
+OK (skipped=1)

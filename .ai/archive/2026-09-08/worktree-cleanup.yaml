@@ -1,0 +1,113 @@
+removed:
+- path: .worktrees/manual-batch-workflow
+  branch: refs/heads/ai/PLAN-001/manual-batch-workflow
+  head: 50545ef509eadd34811327f560805750812f926c
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files: []
+- path: .worktrees/TASK-005-a2
+  branch: refs/heads/ai/PLAN-001/TASK-005/a2
+  head: af3e6e5dabc083bd201114f23a9c71efa715a7bc
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/ai.cpython-312.pyc
+  - src/__pycache__/assets.cpython-311.pyc
+  - src/__pycache__/assets.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/install.cpython-311.pyc
+  - src/__pycache__/install.cpython-312.pyc
+  - src/__pycache__/validate_foundation.cpython-312.pyc
+  - tests/__pycache__/test_agent_model_defaults.cpython-312.pyc
+  - tests/__pycache__/test_bootstrap_acceptance.cpython-312.pyc
+  - tests/__pycache__/test_validator_safety.cpython-312.pyc
+  - tests/unit/templates/__pycache__/test_assets.cpython-311.pyc
+  - tests/unit/templates/__pycache__/test_assets.cpython-312.pyc
+- path: .worktrees/TASK-009-a1
+  branch: refs/heads/ai/PLAN-001/TASK-009/a1
+  head: fa77907a1981a436f5a8499a38c3a0a8026763d0
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/local_ports.cpython-311.pyc
+  - src/__pycache__/local_ports.cpython-312.pyc
+  - src/__pycache__/state.cpython-311.pyc
+  - src/__pycache__/state.cpython-312.pyc
+  - src/__pycache__/transitions.cpython-311.pyc
+  - src/__pycache__/transitions.cpython-312.pyc
+  - tests/unit/state_checkpoints/__pycache__/test_state.cpython-311.pyc
+  - tests/unit/state_checkpoints/__pycache__/test_state.cpython-312.pyc
+- path: .worktrees/TASK-015-a1
+  branch: refs/heads/ai/PLAN-001/TASK-015/a1
+  head: edbc147a7dcff4f1b76b6909d689516a2ef6ecc4
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/agents.cpython-311.pyc
+  - src/__pycache__/agents.cpython-312.pyc
+  - src/__pycache__/config.cpython-311.pyc
+  - src/__pycache__/config.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/isolation.cpython-311.pyc
+  - src/__pycache__/isolation.cpython-312.pyc
+  - src/__pycache__/orchestration_ports.cpython-311.pyc
+  - src/__pycache__/orchestration_ports.cpython-312.pyc
+  - src/__pycache__/plan_graph.cpython-311.pyc
+  - src/__pycache__/plan_graph.cpython-312.pyc
+  - src/__pycache__/scope.cpython-311.pyc
+  - src/__pycache__/scope.cpython-312.pyc
+  - src/__pycache__/workflow_ports.cpython-311.pyc
+  - src/__pycache__/workflow_ports.cpython-312.pyc
+  - tests/unit/planning_isolation/__pycache__/test_isolation.cpython-311.pyc
+  - tests/unit/planning_isolation/__pycache__/test_isolation.cpython-312.pyc
+- path: .worktrees/TASK-016-a1
+  branch: refs/heads/ai/PLAN-001/TASK-016/a1
+  head: e88e7950fb6bce3656d3de8dad54ace21074d252
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/context.cpython-311.pyc
+  - src/__pycache__/context.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/workflow_ports.cpython-311.pyc
+  - src/__pycache__/workflow_ports.cpython-312.pyc
+  - tests/unit/context/__pycache__/test_context.cpython-311.pyc
+  - tests/unit/context/__pycache__/test_context.cpython-312.pyc
+- path: .worktrees/TASK-020-a1
+  branch: refs/heads/ai/PLAN-001/TASK-020/a1
+  head: 3f5d8ab11bc7722f81b8cfd3fa0fc68885a5221b
+  merged: false
+  disposition: superseded; branch retained; clean checkout removable
+  ignored_files:
+  - src/__pycache__/agents.cpython-311.pyc
+  - src/__pycache__/agents.cpython-312.pyc
+  - src/__pycache__/candidates.cpython-311.pyc
+  - src/__pycache__/candidates.cpython-312.pyc
+  - src/__pycache__/config.cpython-311.pyc
+  - src/__pycache__/config.cpython-312.pyc
+  - src/__pycache__/contracts.cpython-311.pyc
+  - src/__pycache__/contracts.cpython-312.pyc
+  - src/__pycache__/domain_values.cpython-311.pyc
+  - src/__pycache__/domain_values.cpython-312.pyc
+  - src/__pycache__/reviews.cpython-311.pyc
+  - src/__pycache__/reviews.cpython-312.pyc
+  - src/__pycache__/workflow_ports.cpython-311.pyc
+  - src/__pycache__/workflow_ports.cpython-312.pyc
+  - tests/unit/reviews_gates/__pycache__/test_reviews.cpython-311.pyc
+  - tests/unit/reviews_gates/__pycache__/test_reviews.cpython-312.pyc
+branches_deleted: []
+reason: User explicitly superseded task-level execution; all files committed, branches
+  retained, ignored files only bytecode.

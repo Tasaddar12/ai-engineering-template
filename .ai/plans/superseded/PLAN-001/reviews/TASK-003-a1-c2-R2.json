@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-003-a1-c2-R2",
+  "stage": "consistency",
+  "request_id": "TASK-003-a1-c2-R2",
+  "task_id": "TASK-003",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-d51b72ce71ea.json",
+  "candidate_fingerprint": "7eed3420cb4bf419205dd2a64d08acfab8cf7d75f7068b7a8b28e7c6ff5f420f",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/r2_003_c2"
+  },
+  "independent_session_id": "/root/r2_003_c2",
+  "implementation_session_id": "/root/implement_003",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "The complete three-file addition supplies 27 frozen DTO dataclasses and five Protocols in one pure flat module. Its only repository import is accepted domain_values; there is no IO, canonical-state writer, concrete provider, scheduler, dispatcher, completion service or runtime wiring. The fresh R2 invocation is separate from the implementer and R1, using the authorized higher-rank native configuration described in this report.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/shared/architecture/python.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADR-001's flat Python and JSON 2020-12 contracts, ADR-002's plan-qualified identities and single canonical writer, ADR-003's exact isolated candidate lineage, ADR-004's independent higher-capability reviews, and ADR-005's injected adapters and ownership boundaries are preserved. No ADR, shared contract, schema, policy or authority was modified.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/decisions/ADR-001.md",
+        ".ai/decisions/ADR-002.md",
+        ".ai/decisions/ADR-003.md",
+        ".ai/decisions/ADR-004.md",
+        ".ai/decisions/ADR-005.md",
+        ".ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md"
+      ]
+    },
+    {
+      "id": "R2-03",
+      "status": "pass",
+      "rationale": "TASK-001 is the sole accepted prerequisite. Its accepted candidate d1fc917466410febc6238479e65816dd39591a4f is an ancestor of the exact base; its source, tests and handoff are byte-identical at this head. Runtime identity checks confirm that common IDs, revisions, scope, evidence, errors and lifecycle enums are the accepted objects, not replacements. TASK-002 and TASK-004 are not treated as implemented dependencies.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-001.json",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R2.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-04",
+      "status": "pass",
+      "rationale": "Independent introspection verifies all nine exact method signatures and resolved annotations across AgentAdapter, ContextBuilder, Validator, ReviewService and DeliveryAdapter. Actual task scope/criteria/reference values form schema-valid context and agent requests. Validation carries revision, suite and operation identity before a candidate exists; R1/R2 requests and results carry the final candidate fingerprint. Explicit workflow_ports imports allow TASK-039 to reuse cancellation without importing an implementation.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-039.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-05",
+      "status": "pass",
+      "rationale": "The API addition leaves existing modules and versioned schemas unchanged. Six schema-backed DTO property sets match v1. Known agent handles and PR numbers are bound; unknown identifiers can be discovered. Poll output is accepted only on success. Cancellation before start and unresolved cancellation fencing remain representable. The independent scenarios verify these repaired boundaries without requiring unowned provider behavior.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        "schemas/v1/agent-request.schema.json",
+        "schemas/v1/agent-run.schema.json",
+        "schemas/v1/agent-output.schema.json",
+        "schemas/v1/context-bundle.schema.json",
+        "schemas/v1/review-result.schema.json",
+        "schemas/v1/pr-state.schema.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-06",
+      "status": "pass",
+      "rationale": "There is no database, persistence mutation or migration in this pure interface task. Independent test-side projections of all six serialized record types validate against local v1 schemas; the actual passing R1 JSON roundtrips exactly through ReviewResultRecord. Nested grants match policy schema and model shapes exclude undeclared effort fields. The operational envelopes preserve evidence/errors outside fixed wire records; production decoding and semantic validation remain TASK-004-owned.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        "schemas/v1/policy.schema.json",
+        "schemas/v1/review-result.schema.json",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "The diff contains only src/workflow_ports.py, tests/unit/domain_workflow_ports/test_workflow_ports.py and the declared plan-local TASK-003 handoff. Flat explicit module imports, frozen dataclasses with slots, shared StrEnum values, repository-relative content references and exact worktree bindings match current conventions. No package wrapper, centralized export, shared fixture or metadata was changed; git diff --check passes.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/shared/architecture/python.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-003.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "TASK-003 owns only its service DTOs, lexical value invariants and Protocols. It imports TASK-001 common values rather than defining new common IDs/errors. It does not implement TASK-004 record decoding, TASK-016 context resolution, TASK-017 dispatch, TASK-018 command execution, TASK-019 fingerprint generation, TASK-020 gate policy, TASK-028 publication or TASK-039 orchestration. The wire projection used in tests is explicitly test-only.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-016.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-017.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-018.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-019.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-020.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-028.json",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-039.json"
+      ]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Serialized records and service envelopes have distinct purposes: transport success can contain a fail review verdict, while missing/failed observations retain DomainError. ContentRef and shared EvidenceRef preserve their different wire shapes. Delivery retains expected identity separately from actual remote base/head/check facts, enabling later stale-head and authorization policy. Independent ambiguity-to-discovery scenarios retain the idempotency handle and allow remote drift without accepting contradictory known PR identities.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/shared/architecture/service-contracts.md",
+        ".ai/shared/architecture/overview.md",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-10",
+      "status": "pass",
+      "rationale": "The complete task suite was read and the exact declared command independently passed with 26 observed tests. Seven additional independent tests use actual task/candidate/R1 documents and the accepted common values to check dependency identity, signatures, context composition, validation-before-fingerprint, exact R1 roundtrip, cancellation and delivery reconciliation shapes. They also reject wrong known identities, premature structured output, premature quiescence and merged state without a merge OID. R1's 118-case result was inspected, not rerun or claimed as this invocation's result.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/plans/current/PLAN-001/commands/test.TASK-003.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py"
+      ]
+    },
+    {
+      "id": "R2-11",
+      "status": "pass",
+      "rationale": "The task-owned handoff accurately describes its three files, two acceptance criteria, frozen record shapes, accepted dependency, repaired identity rules, cancellation and ambiguity semantics, actual 26-test validation, and downstream responsibilities. Historical dispatch/failed-candidate details are distinguished from the exact current base/head in this review. It does not claim concrete adapters, TASK-002/004 acceptance, automatic provider provenance, or a complete engine. Unchanged plan narrative is historical context; current task/state/graph records determine acceptance.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md",
+        ".ai/plans/current/PLAN-001/plan.md",
+        ".ai/plans/current/PLAN-001/tasks/current/TASK-003.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.md"
+      ]
+    },
+    {
+      "id": "R2-12",
+      "status": "pass",
+      "rationale": "AC-01/AC-04 and REQ-01/REQ-04 remain supported at the authorized interface-only boundary, with compatible evidence and fencing fields for later review/delivery services. Candidate code/context/validation/policy fingerprints and the current R1 bind the same exact head/base. Approved graph r4, its 39-task structural digest and sole prerequisite remain intact. The validation-before-fingerprint ordering removes a dependency cycle without changing the frozen graph. All 12 R2 checks pass; no structural discovery or replan is required.",
+      "evidence": [
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-verified.txt",
+        ".ai/plans/current/PLAN-001/plan.json",
+        ".ai/plans/current/PLAN-001/spec.json",
+        ".ai/plans/current/PLAN-001/graph.json",
+        ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json",
+        ".ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.json",
+        ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-d51b72ce71ea.json"
+      ]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T03:32:30Z"
+}
+

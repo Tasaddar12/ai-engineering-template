@@ -1,0 +1,26 @@
+UTC 2026-09-08T11:56:33.164713+00:00
+Runtime 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]; executable=D:\Codex Projects\ai-engineering-template\.ai\local\full-plan-venv\Scripts\python.exe; platform=Windows-11-10.0.26200-SP0; jsonschema=4.26.0
+PASS exact clean head=b7593f11961aa6f5c3a927f3c49af32c4fa93971; frozen merge-base=b90556d92e0f37e664d685b4af85c43fc8143d81
+PASS raw binary diff SHA256=0946efd22b5f1f705f1547af1ad7fe19b6fbb4d4c138460f78555b3834a89ea7; changed paths=['A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-017.md', 'A\tsrc/agents.py', 'A\ttests/unit/agents/test_agents.py']
+PASS 14 context_refs raw hashes
+PASS 3 validation_refs raw hashes
+PASS raw policy/model digest=b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42
+PASS canonical fingerprint=f2f7e852b8eb99345c66a959f15c842f5a2b046631f0b7d349377d3353fec5ac
+PASS graph r4 / 39-node dependencies / accepted 003,004,038 / unchanged prerequisite sources / task digest=c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e
+PASS 20 historical review companions byte-identical to original preservation checkpoints and frozen ROOT; packaged original recovery hashes; zero TASK-017 R2
+PASS exact owned patch salvage 71e0ccf697c132082bb17f7f3814ffb6abee5df6 -> ce1776adb42a06b5a02c7c7e7047e03c8a7f30c2
+PASS exact owned patch salvage 7e5bd5fd5d1b36a14cbee6ae911b68a4ec9ffbf8 -> 3cdb41e5698f2cb0c7fc08c36c08d57a28ea1d16
+PASS all three pre-correction salvage blobs equal frozen unaccepted a1; final owner blobs equal current-base candidate
+Origin agents=D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2\src\agents.py
+Origin config=D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2\src\config.py
+Origin contracts=D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2\src\contracts.py
+Origin domain_values=D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2\src\domain_values.py
+Origin workflow_ports=D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2\src\workflow_ports.py
+Declared argv=['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-B', '-m', 'unittest', 'discover', '-s', 'tests/unit/agents/', '-p', 'test_*.py']; cwd=D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2; exit=0
+
+.............................
+----------------------------------------------------------------------
+Ran 29 tests in 5.112s
+
+OK
+

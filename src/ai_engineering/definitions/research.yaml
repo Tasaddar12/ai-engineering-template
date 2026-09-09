@@ -1,0 +1,31 @@
+name: research
+prompt_template: agents/research.md
+model_profile: research_medium
+assignment_template: handoffs/orchestrator-to-research.md
+output_template: handoffs/agent-research.md
+permissions:
+  modify_files: false
+  run_commands: false
+  spawn_agents: false
+expected_inputs:
+- assignment
+- context_refs
+- constraints
+constraints:
+- coding
+- commands
+- files
+- workflow
+- external_actions
+max_concurrency: 1
+output_schema:
+  statuses:
+  - COMPLETE
+  fields:
+    subject: string
+    session_id: string
+    status: string
+    summary: string
+    evidence: list
+    conclusions: string
+    uncertainties: list

@@ -1,0 +1,35 @@
+TASK-014-a1-c1-R2 independent cross-contract evidence
+Python: 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]
+Native submission: /root/review_014_c1_r2, OpenAI gpt-6-astra/xhigh, review_high rank 4; no separately provider-confirmed effective configuration
+PASS frozen root/base/head; clean candidate and root tracked tree; raw binary diff 40627 1f54c7dca78f0c858129c7ecd92a1a856d7ced3cb854fcce3bb816b037613f94
+Import origin: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1\src\scope.py
+Import origin: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1\src\domain_values.py
+Import origin: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1\src\contracts.py
+PASS 13 committed context refs, 2 bound validation logs, policy/model digest, accepted ancestry, candidate schema, exact unchanged passing R1 and fingerprint 4d8084b230013e6688039c87c6925cab747b7eab61e4754481449add3e5eee33
+PASS approved r4 structural graph/task identities and all 39 registry-valid task scope wire roundtrips
+PASS actual graph: 741 pairs; 280 unordered pairs remain disjoint; 150 ordered collisions satisfy sequencing but still block concurrency
+PASS 3 actual consumer contract-read relationships; supplied ordering changes satisfaction only
+PASS recovery/isolation probe: schema-valid scope mutation invalidates digest; shared resource needs ordering, never grants concurrency
+PASS exact 3-file candidate scope; prerequisite delete and both canonical/other-owner rename boundaries; accepted error-to-result propagation
+PASS frozen handoff vocabulary/keys, full registry validation and 4-kind JSON-to-typed roundtrip; semantic rename coherence rejects incomplete schema-valid facts
+PASS explicit flat import closure; no graph, scheduler, Git, persistence, provider, schema mutation or dynamic IO calls
+Declared command: ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-m', 'unittest', 'discover', '-s', 'tests/unit/planning_ownership/', '-p', 'test_*.py'] 
+Candidate cwd: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1 
+Exit: 0
+.................
+
+----------------------------------------------------------------------
+
+Ran 17 tests in 0.002s
+
+
+
+OK
+
+
+PASS frozen root/base/head; clean candidate and root tracked tree; raw binary diff 40627 1f54c7dca78f0c858129c7ecd92a1a856d7ced3cb854fcce3bb816b037613f94
+Import origin: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1\src\scope.py
+Import origin: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1\src\domain_values.py
+Import origin: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-014-a1\src\contracts.py
+PASS 13 committed context refs, 2 bound validation logs, policy/model digest, accepted ancestry, candidate schema, exact unchanged passing R1 and fingerprint 4d8084b230013e6688039c87c6925cab747b7eab61e4754481449add3e5eee33
+PASS all independent R2 cross-contract checks; exact candidate remains unchanged

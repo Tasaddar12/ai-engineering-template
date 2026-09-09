@@ -1,0 +1,36 @@
+name: critical_review
+prompt_template: agents/critical-review.md
+model_profile: review_high
+assignment_template: handoffs/implementation-to-review.md
+output_template: reviews/critical-review.md
+permissions:
+  modify_files: false
+  run_commands: true
+  spawn_agents: false
+expected_inputs:
+- assignment
+- context_refs
+- constraints
+constraints:
+- coding
+- commands
+- files
+- workflow
+- external_actions
+max_concurrency: 1
+output_schema:
+  statuses:
+  - PASS
+  - CHANGES_REQUIRED
+  fields:
+    subject: string
+    iteration: integer
+    status: string
+    head: string
+    reviewer_session: string
+    implementer_session: string
+    issues: list
+    summary: string
+    security_findings: list
+    documentation_findings: list
+    validation: list

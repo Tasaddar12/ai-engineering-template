@@ -1,0 +1,73 @@
+Final independent R2 frozen-candidate verification
+Observed UTC: 2026-09-08T03:36:09.982282+00:00
+Worktree: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-003-a1
+Base: 3c8092625812b86a1e9bc7c7bfd454c38ee759e0
+Head: d51b72ce71ea3ac3ad31adf41e3eddc84738ac0b
+Fingerprint: 7eed3420cb4bf419205dd2a64d08acfab8cf7d75f7068b7a8b28e7c6ff5f420f
+Diff SHA256: 35422b84ab7f85eb4445c0f7ccd3d1f4aa06c0a4afbc0782df5cc2528c17a8bb
+Policy/model SHA256: b8d895be89333b372c65f1f95c3e7e2b911b850a44be3ec8f64dc344ca806a42
+Graph revision: 4
+Structural task SHA256: c84fdf4e0affcb8d329e8fc7ce2ae928410b44a21238304b3348b2e7d1b75c9e
+39 task structural contracts match graph r4 and passing isolation review.
+Current ROOT graph equals frozen graph. Only TASK-001 is accepted in this frozen snapshot.
+Final tracked/untracked Git status: clean. Reviewed addition content matches committed bytes after checkout line-ending normalization.
+
+COMMITTED HEAD CONTEXT: raw Git blob SHA256; source and canonical context are the frozen task tree.
+08417b40be7a526e73a82e43ad0c56500e429d2ac5e6646dfa007901e5ffa9d8  .ai/AGENTS.md
+2e82ccab9a96018bf437c605d28d52c6bea75f1ddbeb698a60b8b347ae191d33  .ai/README.md
+591ad3f7af7c327e17956046d4d00280ff355468ab1a4f3c5c2a0190b24b7f62  .ai/STATE.json
+3a669bb2c1b4e97156eefdb3fd5310a918f30529ac999f70ba9349d640b433a4  .ai/decisions/ADR-001.md
+46354f2814b3ccff1f2a719d2485816e1a2733b2362f90554d01fbf7fc427e44  .ai/decisions/ADR-002.md
+2ce9257c50618e7075264098ab4859c202b180db8dc5c6047b50eb2a363f0214  .ai/decisions/ADR-003.md
+a7fc7ddd03b9474369dd9c73ac64703f866407ca34901a1328d84e471a4d92a5  .ai/decisions/ADR-004.md
+0306dcd044ed95ee6f5ce189c2965cd8f5da1a5ae73811df096a4fbadcdc87f2  .ai/decisions/ADR-005.md
+094369fa2d530a44fd1afaaec69f2571ae226ea0aa3ce846519549070ca8c88e  .ai/plans/current/PLAN-001/commands/test.TASK-003.json
+4fda15d6cf78c7d53088d47bdab935692cae24e69318325384bd151ce6bc6c06  .ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md
+65290c9ad64e0f15b0b54d5d248a94ecb715b54f24e77b8f1a7f6bd3997bffde  .ai/plans/current/PLAN-001/evidence/implementation/TASK-003.md
+1b0f207a9a5ea4f9bd96f36f123bd15ce09c2b271fff155d71552caa8758140c  .ai/plans/current/PLAN-001/graph.json
+9195d603c9190f859fdcd74ecc47cd441f4b52ed6aa8f2438276ba766b58d72b  .ai/plans/current/PLAN-001/plan.json
+80dafd2466f382d78400b995a99a5d1fe2c7393c507f5e106e0e2f0fd5b24620  .ai/plans/current/PLAN-001/plan.md
+873d6ad8441e90571de035891085db2b4a3b73626f308bef6383c27c5a487473  .ai/plans/current/PLAN-001/reviews/TASK-001-a2-c2-R2.json
+4ab3f9aa85a66c5cc0aeaf34f583ce104ba8977daf6ec2906326aeb4ebbec79a  .ai/plans/current/PLAN-001/reviews/r4-isolation-review.json
+f1d763caf0ab6662ba5c9677162fc30dd8816d5c17b64375e2217f26f5ee35bc  .ai/plans/current/PLAN-001/spec.json
+9c4db8f2b83d8174879daea377da4c795247457095462a5b750eb94ea216448f  .ai/plans/current/PLAN-001/spec.md
+606eb913a6e32ed58f47b998d6b91642e13eb9357736ac5555b6a11ecb1080d4  .ai/plans/current/PLAN-001/tasks/current/TASK-001.json
+0f2f136d7084d31447459830e524c66320189565bbde8ae240f79e97fd2ac37f  .ai/plans/current/PLAN-001/tasks/current/TASK-003.json
+907814931ee6ef04ad3de725515b1fc366362b39bc85dffeded0f88bfa319b7f  .ai/plans/current/PLAN-001/tasks/current/TASK-016.json
+ee3a4c247eabca54e9a4b0b3ee137c272f5ccdda35b1376398712403075c6244  .ai/plans/current/PLAN-001/tasks/current/TASK-017.json
+cdaa577ab74b055b42e311fcbe5aefbaaa7825f83cd976b430f20c436ef128a9  .ai/plans/current/PLAN-001/tasks/current/TASK-018.json
+48d8e11633a9daa559a684bee4b1328a4a73dc46b1d68eb1827b4dc2deaf7346  .ai/plans/current/PLAN-001/tasks/current/TASK-019.json
+a8632ad87a4b2a31bb33033fc682f3170c3f054cabfa419e1ff46312ecd64a27  .ai/plans/current/PLAN-001/tasks/current/TASK-020.json
+2da7fe5989e038b2935549a90fde5a556109f24702dc0caab398b48ce9d16bd4  .ai/plans/current/PLAN-001/tasks/current/TASK-028.json
+6f292f8e3a14ce853e88dd0de49010d1025b3bba85738a8353a3a5445a06831b  .ai/plans/current/PLAN-001/tasks/current/TASK-039.json
+babb0a1a088c80118a0eb60bd3d06cf92a836dc78d78e31811dff112d510ab8a  .ai/shared/architecture/overview.md
+9afdbbadb976d0abf95184cb03f3ab1b454793c9e6397c78d8ca1cc613f62d66  .ai/shared/architecture/python.md
+9bf834812f6c1a5720f331fdf9c42fcc12d9f4d49c0eab4eb9afadab430ad248  .ai/shared/architecture/service-contracts.md
+0689263a266368e4c3e49d4e98f274e37fe86c4c58c578ea71b1b12c59b4fce0  .ai/shared/workflows/reviews.md
+39b10bbe0487a712529d3bc06e382837d62e7cc11a6ec34e346a5ae1e1cbf3e2  docs/agents/consistency-reviewer.md
+5a148af76c2a0c8957193bbde9a4944203331fe9d1599ac52a38b70ee5f0f5c6  schemas/v1/agent-output.schema.json
+8b8c9ed1275e4e698dc4ac3d6dc0eb2b847457f59b8f5db20be221e2ea1a02c4  schemas/v1/agent-request.schema.json
+0a56377724fcb23dc68a0c9c0a36e7544ad2628295b1d2774723459361dee054  schemas/v1/agent-run.schema.json
+a52b06d264aa276b2533815552595baf302236419785eec732c5236771a6dbbf  schemas/v1/candidate.schema.json
+7527b54c420326fa3f5360c0453304f4a649501313bafcd46eefbd4fc3217321  schemas/v1/context-bundle.schema.json
+2999de4a86c55717a444af02ce88b2833e36c2e904b5a3fc34651cabdd8b7b8e  schemas/v1/policy.schema.json
+58fc7016364e11de18ee42a043321b59f2e3103675961546ef92708b082a3f2f  schemas/v1/pr-state.schema.json
+63faa65bccd32971f37e183fb48641b73307ce7797910726fe8c26e4ad4692a1  schemas/v1/review-result.schema.json
+c114385f6c9639a1e513ebff2ea04925049bb700af24c8d9a10a0bf602634070  src/ai.py
+57329ee0235a564365d91a944b8ff1f7dabe6bc276910bfaba157a39fb26ef69  src/domain_values.py
+0cba92f07fa67c43aad209d2f3c686a72e4c4619f32555ec4f4e76413b574f97  src/workflow_ports.py
+fc208f2090af155676902b462631a396a394b6c7e7c47d4f585fc13c1e4216dd  tests/unit/domain_values/test_domain_values.py
+e7e91de1639059df660f9e12323c7a410509477773e5d4e43cf1dfcd1aeaac24  tests/unit/domain_workflow_ports/test_workflow_ports.py
+
+ROOT EVIDENCE: raw file SHA256; immutable R1, candidate, validation and R2 evidence.
+6a202793d74b739f59d646628d0276d652a7ccdaac0bee1247ec514fbf5408f2  .ai/plans/current/PLAN-001/evidence/effort-provenance-clarification.md
+2982ad22f14ea7271a286419f708d115cb9149b91b49b6b16420dc33cf9ed208  .ai/plans/current/PLAN-001/evidence/validation/TASK-003-a1-d51b72ce71ea.txt
+c92e100c2163ae4c322ac433858a18374573a9d5e8b3497ef9ba4a11d5d835bb  .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.json
+70bac85c059a54f68b6e560602ba59cb58bceab1a3b95007c6123e45e208be5c  .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R1.md
+6b15328da71698239597e8a784169ad7a457d832b835cb83870c4dfe8861c1f4  .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.py
+d2deddb72d224b61e7af77126c6695b2d88cb85b5a6d3bba35daba950cae686b  .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2-evidence.txt
+e6414cab1b1e574b06ff02aff34e21e6de8a3d498eb5ca3ab402d3e6c31b7352  .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.json
+407a735ad6cb6daae2e1185ac6c962249d7a40407fe4e683e89169b55a41cfe2  .ai/plans/current/PLAN-001/reviews/TASK-003-a1-c2-R2.md
+1ad48117811590cc86147903252bc04ae41751f83c4d2f4a0db455750177e294  .ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-003-a1-d51b72ce71ea.json
+b89737d6a33411484129f2d8912b55a1e5ae3aaddc07a48886b172408c7039ac  .ai/project/agent-models.json
+875531c19af9a9ef187d39cfbcd209bf546e23bb19ecbe619985ee3d849b989c  .ai/project/policy.json

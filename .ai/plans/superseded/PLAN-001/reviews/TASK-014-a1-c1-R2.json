@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-014-a1-c1-R2",
+  "stage": "consistency",
+  "request_id": "REQ-TASK-014-a1-c1-R2-native",
+  "task_id": "TASK-014",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-014-a1-4bfad8611177.json",
+  "candidate_fingerprint": "4d8084b230013e6688039c87c6925cab747b7eab61e4754481449add3e5eee33",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/review_014_c1_r2:initial"
+  },
+  "independent_session_id": "/root/review_014_c1_r2",
+  "implementation_session_id": "/root/implement_014",
+  "review_1_ref": ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1.json",
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R2-01",
+      "status": "pass",
+      "rationale": "The new flat ownership module is pure planning logic over accepted domain values. Its exact import closure contains only standard-library modules and domain_values; no graph reachability, Git classification, scheduling, persistence, provider execution or wiring is implemented. Three downstream consumers explicitly depend on TASK-014 and read src/scope.py; supplied sequencing avoids reverse dependencies.",
+      "evidence": ["src/scope.py", ".ai/shared/architecture/service-contracts.md", ".ai/shared/architecture/python.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-02",
+      "status": "pass",
+      "rationale": "ADR-001 through ADR-005 remain satisfied: Python 3.11-compatible flat modules, plan-local evidence and single canonical writer, isolated exact-candidate review after base reconciliation, independent higher-rank R1/R2, and unchanged asset/adapter ownership. Recomputed all candidate identity inputs and verified the unchanged passing R1. Native submission provenance is distinguished from unavailable provider-confirmed effective settings in the report.",
+      "evidence": [".ai/decisions/ADR-001.md", ".ai/decisions/ADR-002.md", ".ai/decisions/ADR-003.md", ".ai/decisions/ADR-004.md", ".ai/decisions/ADR-005.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1.json"]
+    },
+    {
+      "id": "R2-03",
+      "status": "pass",
+      "rationale": "TASK-001 and TASK-004 records are accepted and their exact accepted commits are ancestors of the frozen base. Their source and handoffs are unchanged. All 39 actual task scope records round-trip through ScopeClaim and validate through ContractRegistry. Across 741 graph pairs, report collision presence agrees with accepted ScopeClaim behavior; all 280 unordered pairs remain disjoint.",
+      "evidence": ["src/domain_values.py", "src/contracts.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md", ".ai/plans/current/PLAN-001/evidence/full-implementation.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-04",
+      "status": "pass",
+      "rationale": "Explicit scope imports expose immutable typed reports and pure functions without changing a frozen port signature or centralized export. ScopePath and ScopeClaim retain normalization and permission ownership. Independent probes confirm TASK-015/022/024's actual read relationships with TASK-014: ordering satisfies the ownership requirement while preserving collision facts and blocking concurrency.",
+      "evidence": ["src/scope.py", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/tasks/current/TASK-015.json", ".ai/plans/current/PLAN-001/tasks/current/TASK-022.json", ".ai/plans/current/PLAN-001/tasks/current/TASK-024.json", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-05",
+      "status": "pass",
+      "rationale": "The additive API preserves v1 change names and exactly the handoff path/change/previous_path keys. Four change kinds survive full ContractRegistry validation and JSON-to-typed round-trip. A schema-valid incomplete rename is rejected at the typed semantic boundary. Nonretryable SCOPE_CONFLICT exceptions propagate into accepted ResultEnvelope with detached immutable error/payload details.",
+      "evidence": ["src/scope.py", "src/domain_values.py", "schemas/v1/handoff.schema.json", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-06",
+      "status": "pass",
+      "rationale": "Serialized compatibility is preserved: no database, schema, migration, persisted identity or lifecycle location changes occur. Existing task, candidate, R1 and synthetic handoff records validate through the accepted offline registry; both approved structural digests remain exact. A schema-valid resource-scope mutation changes the structural task digest, so the new logic does not bypass stale-approval detection.",
+      "evidence": ["src/contracts.py", "schemas/v1/handoff.schema.json", ".ai/plans/current/PLAN-001/graph.json", ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-07",
+      "status": "pass",
+      "rationale": "The diff contains exactly the owned src/scope.py, isolated planning_ownership test file and plan-local TASK-014 handoff additions. Typed dataclasses, StrEnum vocabulary, explicit flat imports and common errors match accepted source conventions. The actual three additions pass the candidate's own declared scope; canonical paths and prerequisite source remain prohibited or unowned.",
+      "evidence": ["src/scope.py", "tests/unit/planning_ownership/test_scope.py", ".ai/plans/current/PLAN-001/tasks/current/TASK-014.json", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-08",
+      "status": "pass",
+      "rationale": "The module adds detailed collision and endpoint reports to the accepted boolean ScopeClaim checks; it delegates path overlap, resource equivalence and write authorization rather than duplicating normalization. Source search finds these public report functions only in scope.py. Graph/isolation/scheduler/recovery services, Git observations and schema validation retain their separately owned responsibilities.",
+      "evidence": ["src/scope.py", "src/domain_values.py", ".ai/plans/current/PLAN-001/tasks/current/TASK-014.json", ".ai/shared/architecture/service-contracts.md"]
+    },
+    {
+      "id": "R2-09",
+      "status": "pass",
+      "rationale": "Collision overlap remains conservative and symmetric while permission containment stays kind-sensitive, matching TASK-001. Report sequencing_satisfied is separate from blocks_concurrency: all 150 ordered collisions in the approved graph preserve that distinction. Supplied changes are observations, not authority; independent rename/delete probes reject both other-owner and canonical endpoints and preserve the accepted error abstraction.",
+      "evidence": ["src/domain_values.py", "src/scope.py", ".ai/shared/workflows/plan-implementation.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-10",
+      "status": "pass",
+      "rationale": "Owned tests assert observable collisions, reader direction, ordering, prohibited overrides, all change kinds and immutable errors. The declared command independently passes 17 tests on Windows Python 3.12.14 with candidate imports; both bound coordinator logs, including Python 3.11.16, hash-verify. Independent R2 probes exercise the actual 39-task graph, schema/typed round-trips, stale-digest detection and error consumers rather than repeating R1's synthetic matrices.",
+      "evidence": ["tests/unit/planning_ownership/test_scope.py", ".ai/plans/current/PLAN-001/commands/test.TASK-014.json", ".ai/plans/current/PLAN-001/evidence/validation/TASK-014-a1-4bfad8611177-python311.txt", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    },
+    {
+      "id": "R2-11",
+      "status": "pass",
+      "rationale": "The handoff accurately describes the additive API, accepted dependencies, exact ownership, actual tests and diagnostic history, caller-supplied ordering/Git facts, and next independent gates. The documented original dispatch base is distinguished from this cumulative candidate base in the review. Existing product documentation continues to describe unfinished runtime wiring honestly; no claim of implemented scheduler or automatic enforcement is introduced.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md", ".ai/plans/current/PLAN-001/plan.md", "README.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2.md"]
+    },
+    {
+      "id": "R2-12",
+      "status": "pass",
+      "rationale": "The pure ownership slice advances AC-03/REQ-03 without claiming complete graph validation or later runtime behavior. Approved r4 topology and task structure remain unchanged; all 280 unordered pairs remain isolated. The existing consumers can supply ordering and changes without new ports, dependencies or permissions. No structural discovery or replan is required; coordinator verification and integration remain separate gates.",
+      "evidence": [".ai/plans/current/PLAN-001/spec.json", ".ai/plans/current/PLAN-001/plan.json", ".ai/plans/current/PLAN-001/graph.json", ".ai/plans/current/PLAN-001/reviews/r4-isolation-review.json", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R2-evidence.txt"]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T08:31:30Z"
+}

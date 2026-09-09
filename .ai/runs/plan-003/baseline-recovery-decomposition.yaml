@@ -1,0 +1,33 @@
+subject: PLAN-003
+scope:
+  os_write:
+  - src/ai_engineering
+  - tests
+  - docs
+  - .ai/local scratch
+  allowed_product_diff:
+  - src/ai_engineering/runner.py
+  - src/ai_engineering/constraints.py
+  - tests/test_execution.py
+  - docs/git-inspection.md
+  coordinator_only:
+  - .ai
+agent: plan003_baseline_decomposition
+model: gpt-5.6-sol
+reasoning: xhigh
+decision: approved
+original_messages:
+- APPROVED for bounded structural recovery, not remaining-plan or source approval.
+- 'PASS: scope refinement valid for bounded recovery.'
+rationale: The independently reproduced Git-inspection defect must be repaired before
+  the retained baseline reaches main. A separate effort2 predecessor preserves FEATURE008effort7
+  and all later serial ownership.
+graph:
+  tasks: 31
+  features: 11
+  task_edge: TASK-093 -> TASK-063
+  feature_edge: FEATURE-018 -> FEATURE-008
+validation_refinement: Complete suite may be exhaustive non-overlapping groups after
+  preserved aggregate1024descendant ceiling failure.
+schema_normalization: Canonical hyphenatedIDs retained. Independent critical-code
+  verdict remains PASS or CHANGES_REQUIRED.

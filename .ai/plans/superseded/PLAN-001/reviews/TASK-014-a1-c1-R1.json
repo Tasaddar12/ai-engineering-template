@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0",
+  "kind": "review-result",
+  "id": "TASK-014-a1-c1-R1",
+  "stage": "implementation",
+  "request_id": "REQ-TASK-014-a1-c1-R1-native",
+  "task_id": "TASK-014",
+  "plan_id": "PLAN-001",
+  "candidate_ref": ".ai/plans/current/PLAN-001/reviews/candidates/CANDIDATE-TASK-014-a1-4bfad8611177.json",
+  "candidate_fingerprint": "4d8084b230013e6688039c87c6925cab747b7eab61e4754481449add3e5eee33",
+  "verdict": "pass",
+  "reviewer": {
+    "profile": "review_high",
+    "provider": "OpenAI",
+    "model_id": "gpt-6-astra",
+    "capability_rank": 4,
+    "invocation_id": "/root/review_014_c1_r1:initial"
+  },
+  "independent_session_id": "/root/review_014_c1_r1",
+  "implementation_session_id": "/root/implement_014",
+  "review_1_ref": null,
+  "checklist_version": "PLAN-001-v1",
+  "checks": [
+    {
+      "id": "R1-01",
+      "status": "pass",
+      "rationale": "Both TASK-014 acceptance criteria are satisfied: exact/ancestor/case/Unicode writes and directional contract readers collide; read/read remains concurrent; shared resources require supplied sequencing; every delete and both rename endpoints are checked against writes and prohibitions. Independent behavioral matrices and 17 declared tests passed.",
+      "evidence": ["src/scope.py", "tests/unit/planning_ownership/test_scope.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-02",
+      "status": "pass",
+      "rationale": "The pure planning slice implements PLAN-001 AC-03/REQ-03 within the frozen service boundaries. Caller-supplied sequencing and observed changes preserve graph, scheduler and Git ownership. Verified exact fingerprint, raw binary diff, 13 context hashes, both validation hashes, policy/model digest, accepted dependency ancestry and approved r4 structural digests. Native submission provenance and its limits are recorded explicitly.",
+      "evidence": [".ai/plans/current/PLAN-001/tasks/current/TASK-014.json", ".ai/shared/architecture/service-contracts.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-03",
+      "status": "pass",
+      "rationale": "Traced all three write/write or write/read Cartesian products and semantic resource matching at scope.py:168, endpoint enforcement at :358, and structured rejection at :387. Independent expected results and accepted ScopeClaim behavior agree across 2,048 path/access/sequencing, 200 resource and 1,664 change-scope cases; mixed reports retain all seven collisions deterministically.",
+      "evidence": ["src/scope.py", "src/domain_values.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-04",
+      "status": "pass",
+      "rationale": "Malformed values and contradictory endpoints fail explicitly; unowned changes raise immutable nonretryable DomainException/SCOPE_CONFLICT details identifying the denied endpoint. Successful and empty inputs return permitted reports. The module acquires no external resources and performs no IO, so no cleanup path is required.",
+      "evidence": ["src/scope.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-05",
+      "status": "pass",
+      "rationale": "Independent checks cover component boundaries, exact-file ancestors versus directory permission, same-named prefix/file, slash aliases, NFC/NFKC and casefold aliases, resource equality without prefix inference, read-only claims, denied old/new rename endpoints and prohibited overrides. Fifty-eight invalid-input cases passed.",
+      "evidence": ["src/domain_values.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-06",
+      "status": "pass",
+      "rationale": "The declared nonzero-count command passed independently on Windows Python 3.12.14 with 17 tests and candidate src imports. Both candidate-bound coordinator logs passed hash verification, including the Windows Python 3.11.16 run. Independent behavioral and negative probes supplement tests with explicit expected results rather than only implementation mirroring.",
+      "evidence": ["tests/unit/planning_ownership/test_scope.py", ".ai/plans/current/PLAN-001/commands/test.TASK-014.json", ".ai/plans/current/PLAN-001/evidence/validation/TASK-014-a1-4bfad8611177-python311.txt", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-07",
+      "status": "pass",
+      "rationale": "Only the ownership module, its isolated unit tests and required handoff were added. No graph reachability, scheduling, Git classification, provider execution, registry, schema or runtime wiring was introduced.",
+      "evidence": ["src/scope.py", ".ai/plans/current/PLAN-001/tasks/current/TASK-014.json", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-08",
+      "status": "pass",
+      "rationale": "Git reconstructs exactly the three handoff-declared additions, all permitted by TASK-014 scope. No unrelated changes, renames or deletions exist in the candidate. The actual candidate worktree remained clean and the root remained at the dispatched frozen base throughout validation.",
+      "evidence": [".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-09",
+      "status": "pass",
+      "rationale": "Explicit flat-submodule functions and frozen typed reports keep sequencing, collision facts and endpoint violations distinct. Existing ScopePath/ScopeClaim helpers own normalization and permission rules; no alternate public comparison contract or new runtime dependency was introduced. Collections and nested error details are detached and immutable.",
+      "evidence": ["src/scope.py", "src/domain_values.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-001.md", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-004.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-10",
+      "status": "pass",
+      "rationale": "Every supplied changed path is validated by the accepted portable exact-file boundary; traversal, absolute/drive/UNC paths, ADS, devices, globs, nulls and directory endpoints were independently rejected. Prohibited paths override writable claims at both rename endpoints. Reports grant no side effects or execution authority, and sequencing must be an actual boolean supplied by the caller.",
+      "evidence": ["src/scope.py", "src/domain_values.py", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    },
+    {
+      "id": "R1-11",
+      "status": "pass",
+      "rationale": "The owned handoff accurately states the new API, both acceptance mappings, dependency boundary, validation and diagnostic history, normalization/containment distinction, caller obligations and next review gate. Docstrings match implemented behavior. No wider product documentation is owned or needed for this isolated module.",
+      "evidence": ["src/scope.py", ".ai/plans/current/PLAN-001/evidence/implementation/TASK-014.md", ".ai/plans/current/PLAN-001/reviews/TASK-014-a1-c1-R1-evidence.txt"]
+    }
+  ],
+  "findings": [],
+  "created_at": "2026-09-08T08:22:19Z"
+}

@@ -1,0 +1,354 @@
+{
+  "head": "5e06fe8d227e9f5c02f7d19762bbb0e38bd3294a",
+  "base": "cae2df550126b7ed78162a8aa03c2c3dd946bbff",
+  "fingerprint": "704f1ef2363241c5e0643ed9d06680e737ea870d326a31957ed888c3a45736f7",
+  "checks": {
+    "head": true,
+    "clean": true,
+    "root_head": true,
+    "base_ancestor": true,
+    "diff_sha256": true,
+    "context:.ai/plans/current/PLAN-001/plan.json": true,
+    "context:.ai/plans/current/PLAN-001/spec.json": true,
+    "context:.ai/plans/current/PLAN-001/graph.json": true,
+    "context:.ai/plans/current/PLAN-001/tasks/current/TASK-007.json": true,
+    "context:.ai/shared/architecture/service-contracts.md": true,
+    "context:.ai/shared/workflows/reviews.md": true,
+    "context:.ai/plans/current/PLAN-001/evidence/coordination/single-stage-review-decision.md": true,
+    "context:.ai/decisions/ADR-001.md": true,
+    "context:.ai/decisions/ADR-002.md": true,
+    "context:.ai/decisions/ADR-003.md": true,
+    "context:.ai/decisions/ADR-004.md": true,
+    "context:.ai/decisions/ADR-005.md": true,
+    "context:.ai/plans/current/PLAN-001/evidence/implementation/TASK-002.md": true,
+    "context:.ai/plans/current/PLAN-001/evidence/implementation/TASK-006.md": true,
+    "validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-5e06fe8d227e.txt": true,
+    "policy_model_digest": true,
+    "fingerprint": true,
+    "scope": true,
+    "owner_tested_bytes:src/git_ops.py": true,
+    "owner_tested_bytes:tests/unit/git/test_git_ops.py": true,
+    "owner_tested_bytes:.ai/plans/current/PLAN-001/evidence/implementation/TASK-007.md": true,
+    "owner_tested_bytes:src/local_ports.py": true,
+    "owner_tested_bytes:src/commands.py": true,
+    "dependency_ancestor:002": true,
+    "dependency_bytes:002": true,
+    "dependency_ancestor:006": true,
+    "dependency_bytes:006": true,
+    "graph_isolation": true,
+    "retained_stream_digests:-probes-windows.json.txt": true,
+    "retained_stream_digests:-probes-linux.json.txt": true,
+    "old_bound_validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-f5f9f8350433.txt": true,
+    "old_bound_validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-f5f9f8350433-python311.txt": true,
+    "old_bound_validation:.ai/plans/current/PLAN-001/evidence/validation/TASK-007-a1-f5f9f8350433-linux-python311.txt": true
+  },
+  "changed": "A\t.ai/plans/current/PLAN-001/evidence/implementation/TASK-007.md\nA\tsrc/git_ops.py\nA\ttests/unit/git/test_git_ops.py\n",
+  "correction": " .../PLAN-001/evidence/implementation/TASK-007.md   | 312 ++++++++++-----------\n src/git_ops.py                                     |  94 ++++++-\n tests/unit/git/test_git_ops.py                     |  94 ++++++-\n 3 files changed, 321 insertions(+), 179 deletions(-)\n",
+  "historical": {
+    "TASK-007-a1-c1-R1.md": {
+      "sha256": "8c25f471b9c2c3deaf4fca1644c840471dac6a18f71062358d9198b5cc16e0b3"
+    },
+    "TASK-007-a1-c1-R1.json": {
+      "sha256": "bfa405e39f85548523031ebdf2b7f3dfc3dc0e1cb2495a1f86413659b6796e6a"
+    },
+    "TASK-007-a1-c1-R1-validation.txt": {
+      "sha256": "f96b0a649da3027165e341ee0e4155aa66ee16b9c4e652962386873e9355a46e"
+    },
+    "TASK-007-a1-c1-R1-probes.py": {
+      "sha256": "4aad8248d87aa98e12dbceabf0bfa453ad40ce2c3d10a15c4805695b2a002201"
+    },
+    "TASK-007-a1-c1-R1-probes-windows.json.txt": {
+      "sha256": "aaaef530f0064a4d9879222ef072c7321257d6a900d6cff79d3650d4ae616839",
+      "observations": [
+        {
+          "name": "non-root-missing-head",
+          "observation": {
+            "expected": "reject non-root binding",
+            "status": "succeeded",
+            "head_status": "missing",
+            "returned_refs": [
+              [
+                "HEAD",
+                "missing",
+                null
+              ],
+              [
+                "refs/heads/main",
+                "present",
+                "0f4d235e2915152a7934ad6790e8426cae6087d5"
+              ]
+            ],
+            "actual_git_root": "C:/Users/killi/AppData/Local/Temp/task-007-8n9niool",
+            "requested_root": "C:\\Users\\killi\\AppData\\Local\\Temp\\task-007-8n9niool\\ordinary-subdirectory",
+            "actual_git_head": "0f4d235e2915152a7934ad6790e8426cae6087d5",
+            "defect_reproduced": true
+          },
+          "commands": 3
+        },
+        {
+          "name": "symbolic-target",
+          "observation": {
+            "expected": "preserve checked-out developer main through symbolic alias",
+            "status": "succeeded",
+            "changed": true,
+            "base": "0f4d235e2915152a7934ad6790e8426cae6087d5",
+            "candidate": "945d3890119b0f85056f375dfe5283e3a6c4aeca",
+            "actual_main": "945d3890119b0f85056f375dfe5283e3a6c4aeca",
+            "alias_target": "refs/heads/main",
+            "index_unchanged": true,
+            "status_after": "1 D. N... 100644 000000 000000 dde7432465ae1c9320b441afcaf18d75d74175c9 0000000000000000000000000000000000000000 candidate.txt\n",
+            "defect_reproduced": true
+          },
+          "commands": 23
+        },
+        {
+          "name": "managed-branch-switch",
+          "observation": {
+            "expected": "unknown with switched developer checkout/index preserved",
+            "status": "unknown",
+            "changed": null,
+            "state_after_switch": {
+              "branch": "refs/heads/developer",
+              "index": "decaa212bb3ad5292af3c00120f438b3f4a0d84a",
+              "status": "",
+              "candidate_exists": false
+            },
+            "read_tree_calls": 1,
+            "branch_after": "refs/heads/developer",
+            "status_after": "1 A. N... 000000 100644 100644 0000000000000000000000000000000000000000 dde7432465ae1c9320b441afcaf18d75d74175c9 candidate.txt\n",
+            "index_preserved": false,
+            "candidate_exists_after": true,
+            "defect_reproduced": true
+          },
+          "commands": 40
+        },
+        {
+          "name": "bound-runtime",
+          "observation": {
+            "expected": "trusted candidate module wins over project cwd shadow",
+            "status": "succeeded",
+            "passed": true
+          },
+          "commands": 24
+        }
+      ]
+    },
+    "TASK-007-a1-c1-R1-probes-linux.json.txt": {
+      "sha256": "6c0de0dc42f5a0ed9dae14f132e07278f24f1c4747b39802a482da5edf5628bf",
+      "observations": [
+        {
+          "name": "non-root-missing-head",
+          "observation": {
+            "expected": "reject non-root binding",
+            "status": "succeeded",
+            "head_status": "missing",
+            "returned_refs": [
+              [
+                "HEAD",
+                "missing",
+                null
+              ],
+              [
+                "refs/heads/main",
+                "present",
+                "e4f2167b8617f6d281f63e575539cdc5d1ba4a4f"
+              ]
+            ],
+            "actual_git_root": "/tmp/task-007-5c8w9lzs",
+            "requested_root": "/tmp/task-007-5c8w9lzs/ordinary-subdirectory",
+            "actual_git_head": "e4f2167b8617f6d281f63e575539cdc5d1ba4a4f",
+            "defect_reproduced": true
+          },
+          "commands": 3
+        },
+        {
+          "name": "symbolic-target",
+          "observation": {
+            "expected": "preserve checked-out developer main through symbolic alias",
+            "status": "succeeded",
+            "changed": true,
+            "base": "8f8f936859f71817271e4dec6f4393a2ed79b104",
+            "candidate": "0914ffa0d79bc144b2482235edbbce36a06dde63",
+            "actual_main": "0914ffa0d79bc144b2482235edbbce36a06dde63",
+            "alias_target": "refs/heads/main",
+            "index_unchanged": true,
+            "status_after": "1 D. N... 100644 000000 000000 02e8acdcc44da4d68465994d590e44bcab3296b2 0000000000000000000000000000000000000000 candidate.txt\n",
+            "defect_reproduced": true
+          },
+          "commands": 23
+        },
+        {
+          "name": "managed-branch-switch",
+          "observation": {
+            "expected": "unknown with switched developer checkout/index preserved",
+            "status": "unknown",
+            "changed": null,
+            "state_after_switch": {
+              "branch": "refs/heads/developer",
+              "index": "4b36dfd79db36d8c59d1fb032de66b57f0457b65",
+              "status": "",
+              "candidate_exists": false
+            },
+            "read_tree_calls": 1,
+            "branch_after": "refs/heads/developer",
+            "status_after": "1 A. N... 000000 100644 100644 0000000000000000000000000000000000000000 02e8acdcc44da4d68465994d590e44bcab3296b2 candidate.txt\n",
+            "index_preserved": false,
+            "candidate_exists_after": true,
+            "defect_reproduced": true
+          },
+          "commands": 40
+        },
+        {
+          "name": "bound-runtime",
+          "observation": {
+            "expected": "trusted candidate module wins over project cwd shadow",
+            "status": "succeeded",
+            "passed": true
+          },
+          "commands": 24
+        }
+      ]
+    }
+  }
+}
+
+Unaffected reasoning reuse and accepted prerequisites:
+{
+  "affected_functions": [
+    "LocalGitRepository.inspect",
+    "LocalGitRepository._preflight_mutation",
+    "LocalGitRepository._managed_after_state",
+    "LocalGitRepository._head_file_missing",
+    "_update_transaction"
+  ],
+  "added_function": [
+    "LocalGitRepository._symbolic_ref"
+  ],
+  "unchanged_function_count": 67,
+  "accepted_checks": {
+    "002 accepted ancestry": true,
+    "002 accepted and prior-reviewed bytes": true,
+    "006 accepted ancestry": true,
+    "006 accepted and prior-reviewed bytes": true
+  },
+  "correction_raw_diff_sha256": "5a4b6e78f6085a1701e5fca36c8715b4ab0a9b0a6b7feb9caa0983ba2d0b7f08"
+}
+
+Actual focused validation:
+{
+  "execution": [
+    {
+      "host": "windows",
+      "path": "TASK-007-a1-c2-R1-probes-windows.json.txt",
+      "sha256": "c25445a216c5527fd4b06d4b3cc8d3a4da0efdf9db1f972e75d03c9ba21e5dd2",
+      "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "origins": {
+        "git_ops": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\git_ops.py",
+        "commands": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\commands.py",
+        "config": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\config.py",
+        "domain_values": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\domain_values.py",
+        "local_ports": "D:\\Codex Projects\\ai-engineering-template\\.worktrees\\TASK-007-a1\\src\\local_ports.py"
+      },
+      "source_sha256": "52e53c95eb165709e8059894c4c2a1c4affe14e30452ae0f5af439775a289737",
+      "tests_run": 15,
+      "skips": 0,
+      "elapsed_seconds": 47.75,
+      "supplemental_observations": [
+        {
+          "case": "linked-missing-head",
+          "status": "succeeded",
+          "head": "missing",
+          "error": null,
+          "refs": [
+            [
+              "HEAD",
+              "missing",
+              null
+            ]
+          ],
+          "pointer_unchanged": true
+        },
+        {
+          "case": "nested-shaped-metadata",
+          "status": "failed",
+          "head": null,
+          "error": "invalid_input",
+          "refs": [],
+          "git_fallback_head": "e99d0187b62cfc737420d458b8dc565571d01b4a"
+        }
+      ],
+      "outer_command_count": 3,
+      "exit_code": 0
+    },
+    {
+      "host": "linux",
+      "path": "TASK-007-a1-c2-R1-probes-linux.json.txt",
+      "sha256": "fc7682b78d789dfc48e24d729e7718383c7514e43a0b45ef0025241379094dfc",
+      "python": "3.11.16 (main, Sep  1 2026, 14:18:37) [Clang 22.1.3 ]",
+      "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "origins": {
+        "git_ops": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/git_ops.py",
+        "commands": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/commands.py",
+        "config": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/config.py",
+        "domain_values": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/domain_values.py",
+        "local_ports": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1/src/local_ports.py"
+      },
+      "source_sha256": "52e53c95eb165709e8059894c4c2a1c4affe14e30452ae0f5af439775a289737",
+      "tests_run": 15,
+      "skips": 0,
+      "elapsed_seconds": 56.22557253300329,
+      "supplemental_observations": [
+        {
+          "case": "linked-missing-head",
+          "status": "succeeded",
+          "head": "missing",
+          "error": null,
+          "refs": [
+            [
+              "HEAD",
+              "missing",
+              null
+            ]
+          ],
+          "pointer_unchanged": true
+        },
+        {
+          "case": "nested-shaped-metadata",
+          "status": "failed",
+          "head": null,
+          "error": "invalid_input",
+          "refs": [],
+          "git_fallback_head": "8031295b1aeb47378d6e67c4506d74512a860877"
+        }
+      ],
+      "outer_command_count": 3,
+      "exit_code": 0
+    }
+  ],
+  "probe_program_sha256": "27a28900228b8b2071fb21daafb32d651fed163e140a1271b329b8f511b35aa5",
+  "commands": {
+    "windows": [
+      "D:/Codex Projects/ai-engineering-template/.ai/local/full-plan-venv/Scripts/python.exe",
+      "-B",
+      "D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-007-a1-c2-R1-probes.py",
+      "D:/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1",
+      "D:\\Codex Projects\\ai-engineering-template\\.ai\\plans\\current\\PLAN-001\\reviews\\TASK-007-a1-c2-R1-probes-windows.json.txt"
+    ],
+    "linux": [
+      "wsl.exe",
+      "-d",
+      "Ubuntu-24.04",
+      "--cd",
+      "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1",
+      "--exec",
+      "/mnt/d/Codex Projects/ai-engineering-template/.ai/local/full-plan-linux-py311-venv/bin/python",
+      "-B",
+      "/mnt/d/Codex Projects/ai-engineering-template/.ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes.py",
+      "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-007-a1",
+      "/mnt/d/Codex Projects/ai-engineering-template/.ai/plans/current/PLAN-001/reviews/TASK-007-a1-c2-R1-probes-linux.json.txt"
+    ]
+  }
+}
+
+Final verification: PASS Draft202012 review-result schema and date format; implementation stage, all 11 R1 IDs, three resolved findings; unchanged frozen ROOT and clean exact candidate; repeated raw diff/context/validation/policy/fingerprint checks; prior finalized report/evidence hashes unchanged; git diff --check passed. Reviewer native call_9o7ufIDb4liERCrzTpbyNOLW, Astra/xhigh rank4, charge99/300; separate repair owner call_C7b4NpOGclIdLKMwJ3Wb9MCx, Sol/xhigh rank3. Separate provider-effective identity/effort unavailable.
