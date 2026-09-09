@@ -11,6 +11,7 @@ scope:
 - tests/test_orchestration.py
 - src/ai_engineering/templates/project/constraints.yaml
 - src/ai_engineering/constraints.py
+- src/ai_engineering/runner.py
 resources:
 - orchestration-api
 acceptance:

@@ -18,6 +18,7 @@ scope:
 - src/ai_engineering/templates/handoffs/agent-decomposition.md
 - src/ai_engineering/templates/project/constraints.yaml
 - src/ai_engineering/constraints.py
+- src/ai_engineering/runner.py
 resources:
 - orchestration-api
 acceptance:
@@ -67,8 +68,15 @@ kind: features
 worktree: .worktrees/plan-002-orchestration
 branch: codex/plan-002-orchestration
 base: 90ab58b39f1a84ab1827ef0b72a25c72159447eb
-head: 90ab58b39f1a84ab1827ef0b72a25c72159447eb
+head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
 assignment: .ai/handoffs/FEATURE-005-assignment.md
+completion: .ai/handoffs/FEATURE-005-implementation.md
+repair_session: native-execution-orchestration
+review:
+  status: CHANGES_REQUIRED
+  head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
+  path: .ai/reviews/FEATURE-005-critical-1.md
+repair_handoff: .ai/handoffs/FEATURE-005-review-repair-1.md
 ---
 # FEATURE-005 — Concurrent implementation, repair and delivery
 

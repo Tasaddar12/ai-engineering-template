@@ -210,3 +210,9 @@ Initial decomposition uses bounded structured retries for rejected or invalid pr
 ## Approved exact remote observation guard
 
 Independent decomposition approved TASK-055 / FEATURE-005 ownership of `constraints.py` solely to guard `git ls-remote --heads <named-remote> refs/heads/<branch>`. Reject URL/path remotes, extra operands, option abbreviations, upload-pack and any additional options. This closes the suffix gap in a token-prefix policy while retaining the orchestrator-only credentials rule and forbidden-wins semantics. Regressions remain in `tests/test_orchestration.py`; no generalized policy or graph change.
+
+## Approved critical-review destination and decomposition repairs
+
+FEATURE-005 critical review iteration 1 reproduced four failures; the immutable return artifact is `.ai/reviews/FEATURE-005-critical-1.md`. Repair all findings in the same implementation session and review the entire updated diff again. Independent decomposition approved TASK-055 / FEATURE-005 extension of its existing constraints/seed ownership to a strictly guarded read-only query of every effective push URL (reject unsupported multiple destinations). It also approved `runner.py` solely to sanitize credential-bearing URL output before durable command evidence is written. Preserve capture, timeout/error and completeness behavior. Bind delivery with a safe repository identity and destination fingerprint; raw destinations and credentials must not enter journals/errors.
+
+Expose `Orchestrator.decompose(plan_id)` as the public semantic decomposition-only entry point using the same locks, journal setup and bounded repair logic. It may write planning artifacts but cannot create worktrees, dispatch feature agents or deliver changes. If Git/base selection is deferred for planning, implementation establishes and verifies that binding before execution. These are bounded repairs/clarifications inside the existing graph, not additional workflows.

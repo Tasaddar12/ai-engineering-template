@@ -36,7 +36,7 @@ worktrees:
 - path: .worktrees/plan-002-orchestration
   branch: codex/plan-002-orchestration
   subject: FEATURE-005
-  head: 90ab58b39f1a84ab1827ef0b72a25c72159447eb
+  head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
   status: in-progress
   base_branch: codex/plan-002-framework-reset
 reviews:
@@ -56,11 +56,17 @@ reviews:
     status: PASS
     head: 4b2e2af641691a6a274a8c004705f00340614585
     path: .ai/reviews/FEATURE-004-critical-2.md
+  FEATURE-005:
+    status: CHANGES_REQUIRED
+    head: 9eef3fc1b2d23fcfb42d5034a9a784c707e852a2
+    path: .ai/reviews/FEATURE-005-critical-1.md
 pull_requests: {}
 active_runs:
 - .ai/runs/PLAN-002-bootstrap.yaml
 blockers: []
 next_actions:
-- Implement and review FEATURE-005
-generation: 35
-updated_at: '2026-09-09T00:42:47.055502+00:00'
+- Repair FEATURE-005 critical findings in the same implementation session
+- Review the complete updated feature diff
+- Start FEATURE-006 after approved integration
+generation: 39
+updated_at: '2026-09-09T01:40:11.652788+00:00'
