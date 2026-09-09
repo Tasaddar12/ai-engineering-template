@@ -1,7 +1,0 @@
-{
-  "schemas": 26,
-  "validated_artifacts": 114,
-  "tasks": 39,
-  "unordered_pairs_checked": 281,
-  "local_links": 88
-}

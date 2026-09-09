@@ -1,3 +1,0 @@
-PASS: review-result schema with FormatChecker; all 11 R1 keys exactly once; complete rationale/evidence; exact candidate binding; one unresolved major finding; frozen candidate unchanged and clean
-created_at: 2026-09-08T03:07:32.793404+00:00
-report_sha256: a2731a7fdea29fa5800ee6df721bf0596f810ff99e399e8c493f0192d0f9b1c7

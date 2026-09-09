@@ -1,5 +1,0 @@
-PASS: failed start replacement rolls back effect count, leaves no file or temporary file, and normal retry succeeds
-PASS: failed script replacement rolls back immutable-script commit and permits one successful retry
-PASS: failed poll replacement rolls back cursor and last observation; retry still returns running
-PASS: failed cancellation replacement rolls back cancellation cursor and quiescence; retry returns confirmed cancellation
-PASS: four separate Python processes recover exactly one handle/effect: start -> unknown/pending -> succeeded/already_terminal -> stable succeeded/already_terminal

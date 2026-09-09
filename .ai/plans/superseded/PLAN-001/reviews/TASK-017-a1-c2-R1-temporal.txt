@@ -1,2 +1,0 @@
-PASS: 35 poll/cancel script combinations; 249 reachable saved states; 498 public transitions checked against independent status/terminal expectations.
-PASS: finite admission matrix: 249 reachable combinations admitted, 1363 unreachable cursor/last/quiescence combinations rejected with validation_failed. Included every poll status, every cancel status, changed successful output, empty/exhausted/partial scripts, both terminal orderings, and default queued before script.

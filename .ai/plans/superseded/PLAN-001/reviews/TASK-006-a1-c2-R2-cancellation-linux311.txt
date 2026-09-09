@@ -1,6 +1,0 @@
-{"case": "runtime", "python": "3.11.16", "platform": "linux", "candidate_src": "/mnt/d/Codex Projects/ai-engineering-template/.worktrees/TASK-006-a1/src", "all_six_origins_verified": true}
-{"case": "ready_cancellation_inherited", "root_pid": 349, "root_pgid": 349, "child_pid": 352, "child_pgid": 349, "child_alive_at_cancel": true, "ready_seconds": 0.5038961410173215, "cleanup_claim": false, "elapsed_seconds": 0.5663588030147366, "status": "unknown", "exit_code": null, "child_alive_after_return": false, "stdout_bytes": 0, "stderr_bytes": 0, "external_intervention_before_return": false}
-{"case": "fixture_cleanup", "pid": 352, "confirmed_gone": true}
-{"case": "ready_cancellation_detached", "root_pid": 353, "root_pgid": 353, "child_pid": 356, "child_pgid": 356, "child_alive_at_cancel": true, "ready_seconds": 0.503310252999654, "cleanup_claim": false, "elapsed_seconds": 0.5501270969980396, "status": "unknown", "exit_code": null, "child_alive_after_return": true, "stdout_bytes": 0, "stderr_bytes": 0, "external_intervention_before_return": false}
-{"case": "fixture_cleanup", "pid": 356, "confirmed_gone": true}
-PASS readiness-based actual minimum-version cancellation; no reader threads remain.

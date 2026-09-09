@@ -1,3 +1,0 @@
-PASS: review and candidate validate against frozen v1 schemas. All 11 R1 checks are present/passing; no findings.
-PASS: exact frozen ROOT base, candidate head, clean source, candidate/context/evidence binding and committed context/changed-file blob identities reverified.
-PASS: git diff --check. No candidate source or canonical ROOT metadata edited.

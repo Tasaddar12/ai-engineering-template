@@ -1,9 +1,0 @@
-subject: FEATURE-003
-worktree: .worktrees/plan-002-planning
-branch: codex/plan-002-planning
-head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
-merged_into: codex/plan-002-framework-reset
-cleanup: deferred
-reason: Generated test caches retained; no force cleanup. Branch and committed work
-  preserved.
-checked_at: '2026-09-08T23:53:13.292195+00:00'
