@@ -1,0 +1,23 @@
+argv:
+- git
+- worktree
+- list
+- --porcelain
+- -z
+cwd: D:\Codex Projects\ai-engineering-template
+started_at: '2026-09-09T00:42:30.285234+00:00'
+finished_at: '2026-09-09T00:42:30.428928+00:00'
+returncode: 0
+stdout: "worktree D:/Codex Projects/ai-engineering-template\0HEAD 93fbdbdd7d4c65025150827c761300c86110889a\0\
+  branch refs/heads/codex/plan-002-framework-reset\0\0worktree D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-agents\0\
+  HEAD 4b2e2af641691a6a274a8c004705f00340614585\0branch refs/heads/codex/plan-002-agents\0\
+  \0worktree D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-execution\0\
+  HEAD fd2539c654f820a1ddf51a24dc28c74dd585fdbe\0branch refs/heads/codex/plan-002-execution\0\
+  \0worktree D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-planning\0\
+  HEAD 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9\0branch refs/heads/codex/plan-002-planning\0\
+  \0"
+stderr: ''
+status: success
+stdout_truncated: false
+stderr_truncated: false
+output_complete: true

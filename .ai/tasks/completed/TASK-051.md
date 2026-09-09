@@ -1,13 +1,16 @@
 ---
 id: TASK-051
 title: Enforce one complete-diff critical review contract
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-050
 scope:
 - src/ai_engineering/review.py
 - tests/test_agents.py
+- src/ai_engineering/runner.py
+- src/ai_engineering/git.py
+- src/ai_engineering/templates/reviews/critical-review.md
 resources:
 - agents-api
 acceptance:
@@ -18,6 +21,11 @@ acceptance:
   are explicit.
 - Review assignment covers the complete base-to-head feature diff, acceptance, completion
   and actual validation; one stage is reused after repair with a fresh reviewer session.
+- Command evidence explicitly records completeness before redaction; Git observations
+  and review preparation reject truncated output even if redaction shortens returned
+  text.
+- Dedicated critical review template uses a complete serialized frontmatter mapping;
+  multiline findings and empty PASS findings render and parse correctly.
 validation:
 - tests
 - lint

@@ -1,7 +1,7 @@
 ---
 id: TASK-049
 title: Resolve model profiles and invoke provider bridge
-status: in-progress
+status: completed
 plan: PLAN-002
 depends_on:
 - TASK-045

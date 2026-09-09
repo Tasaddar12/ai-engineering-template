@@ -1,0 +1,3 @@
+removed: false
+reason: Git output exceeded evidence limit; refusing incomplete observation
+decision: Preserve tree; no generated-cache removal or force retry.

@@ -2,12 +2,12 @@ issues: []
 worktrees:
 - path: D:/Codex Projects/ai-engineering-template
   branch: codex/plan-002-framework-reset
-  head: 4819e52a82351a892e457c49f5d1950682a02c9f
+  head: 93fbdbdd7d4c65025150827c761300c86110889a
   locked: false
   prunable: false
 - path: D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-agents
   branch: codex/plan-002-agents
-  head: 49f1230224e518ca1d594aeee613612763c9e042
+  head: 4b2e2af641691a6a274a8c004705f00340614585
   locked: false
   prunable: false
 - path: D:/Codex Projects/ai-engineering-template/.worktrees/plan-002-execution

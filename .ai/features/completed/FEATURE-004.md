@@ -1,7 +1,7 @@
 ---
 id: FEATURE-004
 title: Configured agents, durable handoffs and critical review
-status: in-progress
+status: completed
 plan: PLAN-002
 tasks:
 - TASK-049
@@ -16,6 +16,9 @@ scope:
 - tests/test_agents.py
 - src/ai_engineering/templates/handoffs
 - src/ai_engineering/definitions
+- src/ai_engineering/runner.py
+- src/ai_engineering/git.py
+- src/ai_engineering/templates/reviews/critical-review.md
 resources:
 - agents-api
 acceptance:
@@ -38,6 +41,11 @@ acceptance:
   are explicit.
 - Review assignment covers the complete base-to-head feature diff, acceptance, completion
   and actual validation; one stage is reused after repair with a fresh reviewer session.
+- Command evidence explicitly records completeness before redaction; Git observations
+  and review preparation reject truncated output even if redaction shortens returned
+  text.
+- Dedicated critical review template uses a complete serialized frontmatter mapping;
+  multiline findings and empty PASS findings render and parse correctly.
 validation:
 - tests
 - lint
@@ -57,8 +65,15 @@ kind: features
 worktree: .worktrees/plan-002-agents
 branch: codex/plan-002-agents
 base: 49f1230224e518ca1d594aeee613612763c9e042
-head: 49f1230224e518ca1d594aeee613612763c9e042
+head: 4b2e2af641691a6a274a8c004705f00340614585
 assignment: .ai/handoffs/FEATURE-004-assignment.md
+completion: .ai/handoffs/FEATURE-004-implementation-2.md
+review:
+  status: PASS
+  head: 4b2e2af641691a6a274a8c004705f00340614585
+  path: .ai/reviews/FEATURE-004-critical-2.md
+repair_session: native-execution-agents
+merged: true
 ---
 # FEATURE-004 — Configured agents, durable handoffs and critical review
 
@@ -68,9 +83,9 @@ Implement the agents public boundaries in [PLAN-002](../../plans/active/PLAN-002
 
 ## Included tasks
 
-- [TASK-049](../../tasks/ready/TASK-049.md) — Resolve model profiles and invoke provider bridge
-- [TASK-050](../../tasks/ready/TASK-050.md) — Render bounded durable agent assignments
-- [TASK-051](../../tasks/ready/TASK-051.md) — Enforce one complete-diff critical review contract
+- [TASK-049](../../tasks/completed/TASK-049.md) — Resolve model profiles and invoke provider bridge
+- [TASK-050](../../tasks/completed/TASK-050.md) — Render bounded durable agent assignments
+- [TASK-051](../../tasks/completed/TASK-051.md) — Enforce one complete-diff critical review contract
 
 ## Dependencies and ownership
 
