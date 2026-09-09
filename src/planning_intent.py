@@ -333,6 +333,8 @@ def grant_implementation(
 
 def revoke_implementation(state: StateStore, plan_id: str, action: str, reason: str) -> None:
     normalized = _action(action)
+    if _ACTIONS[normalized] is not IntentKind.IMPLEMENTATION:
+        raise FrameworkError("Only implementation authority can be revoked")
     if not isinstance(reason, str) or not reason.strip():
         raise FrameworkError("Authority revocation requires a reason")
     with state.lock():

@@ -728,22 +728,21 @@ def apply_revision(store: ArtifactStore, plan_id: str, revision: Record) -> list
         return result
 
 
-def apply_plan_changes(
+def _apply_plan_changes_unlocked(
     store: ArtifactStore,
     plan_id: str,
     changes: Record,
     reservation: Record,
 ) -> Artifact:
-    """Apply an explicit planning-only revision inside its assigned worktree.
-
-    New task and feature IDs must come from the coordinator's reservation. Existing
-    current records may be revised in place in the planning checkout. The resulting
-    plan remains a draft/ready planning artifact and cannot create implementation
-    authority.
-    """
     if not isinstance(changes, dict) or not isinstance(reservation, dict):
         raise FrameworkError("Planning changes and reservation must be mappings")
-    if reservation.get("plan") != plan_id or reservation.get("purpose") != "planning":
+    if (
+        reservation.get("plan") != plan_id
+        or reservation.get("purpose") != "planning"
+        or reservation.get("action") != "revise_plan"
+        or reservation.get("status") != "RESERVED"
+        or not isinstance(reservation.get("revision"), str)
+    ):
         raise FrameworkError("Planning revision differs from its reservation")
     forbidden = {
         "execution_authorized",
@@ -751,9 +750,20 @@ def apply_plan_changes(
         "implementation_gate",
         "delivery_grant",
     }
+    protected = {
+        "id",
+        "kind",
+        "status",
+        "tasks",
+        "features",
+        "planning_revision",
+        "planning_purpose",
+    }
     metadata_changes = changes.get("metadata", {})
-    if not isinstance(metadata_changes, dict) or forbidden & (
-        set(changes) | set(metadata_changes)
+    if (
+        not isinstance(metadata_changes, dict)
+        or forbidden & (set(changes) | set(metadata_changes))
+        or protected & set(metadata_changes)
     ):
         raise FrameworkError("Planning changes cannot grant implementation authority")
     unknown = set(changes) - {
@@ -767,6 +777,9 @@ def apply_plan_changes(
     }
     if unknown:
         raise FrameworkError(f"Unsupported planning changes: {', '.join(sorted(unknown))}")
+    target_status = changes.get("status", "draft")
+    if target_status not in {"draft", "ready"}:
+        raise FrameworkError("Planning revisions may only produce draft or ready plans")
     plan = store.find(plan_id)
     if plan.metadata.get("kind") != "plans" or plan.status in HISTORICAL:
         raise FrameworkError("Planning revision requires a current PLAN artifact")
@@ -777,12 +790,26 @@ def apply_plan_changes(
         if not isinstance(specifications, list):
             raise FrameworkError(f"Planning {kind} must be a list")
         prefix = "TASK" if kind == "tasks" else "FEATURE"
-        reserved = iter(reservation.get(kind, []))
+        reserved_values = reservation.get(kind)
+        if (
+            not isinstance(reserved_values, list)
+            or len(reserved_values) != len(set(reserved_values))
+            or any(
+                not isinstance(identifier, str)
+                or not re.fullmatch(prefix + r"-\d+", identifier)
+                for identifier in reserved_values
+            )
+        ):
+            raise FrameworkError(f"Planning reservation has invalid {kind} IDs")
+        reserved = iter(reserved_values)
         identifiers: list[str] = []
         for specification in specifications:
             if isinstance(specification, str):
                 artifact = store.find(specification)
-                if artifact.metadata.get("plan") != plan_id:
+                if (
+                    artifact.metadata.get("kind") != kind
+                    or artifact.metadata.get("plan") != plan_id
+                ):
                     raise FrameworkError(f"{specification} belongs to another plan")
                 identifiers.append(specification)
                 continue
@@ -798,14 +825,24 @@ def apply_plan_changes(
                 if not isinstance(title, str) or not title.strip():
                     raise FrameworkError(f"New {prefix} requires a title")
                 status = data.pop("status", "backlog" if kind == "tasks" else "draft")
+                allowed = {"backlog", "ready"} if kind == "tasks" else {"draft", "ready"}
+                if status not in allowed:
+                    raise FrameworkError(f"New planning {kind} must remain unstarted")
                 data["plan"] = plan_id
                 store.create(kind, identifier, title, status, **data)
             else:
                 artifact = store.find(str(identifier))
-                if artifact.metadata.get("plan") != plan_id or artifact.status in HISTORICAL:
+                eligible = {"backlog", "ready"} if kind == "tasks" else {"draft", "ready"}
+                if (
+                    artifact.metadata.get("kind") != kind
+                    or artifact.metadata.get("plan") != plan_id
+                    or artifact.status not in eligible
+                ):
                     raise FrameworkError(f"Cannot revise historical or foreign {identifier}")
                 if any(key in data for key in ("kind", "plan")):
                     raise FrameworkError("Planning entries cannot change identity or plan")
+                if "status" in data and data["status"] not in eligible:
+                    raise FrameworkError(f"Planning {kind} must remain unstarted")
                 body = data.pop("body", None)
                 artifact.metadata.update(data)
                 if body is not None:
@@ -831,10 +868,27 @@ def apply_plan_changes(
         plan.metadata["scope"] = changes["scope"]
     plan.metadata["planning_revision"] = reservation["revision"]
     plan.metadata["planning_purpose"] = True
-    plan.metadata["status"] = changes.get("status", "draft")
+    plan.metadata["status"] = target_status
     if "body" in changes:
         if not isinstance(changes["body"], str) or not changes["body"].strip():
             raise FrameworkError("PLAN body must be nonempty")
         plan.body = changes["body"]
     store.save(plan)
     return plan
+
+
+def apply_plan_changes(
+    store: ArtifactStore,
+    plan_id: str,
+    changes: Record,
+    reservation: Record,
+) -> Artifact:
+    """Apply a planning-only revision under the assigned worktree's state lock.
+
+    New task and feature IDs must come from the coordinator reservation. Existing
+    records must still be unstarted, and the resulting plan remains draft/ready;
+    this path cannot create implementation authority.
+    """
+
+    with StateStore(store.root).lock():
+        return _apply_plan_changes_unlocked(store, plan_id, changes, reservation)

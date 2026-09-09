@@ -176,7 +176,7 @@ class ArtifactStore:
         if not kind:
             raise FrameworkError(f"Unknown ID prefix: {prefix}")
         numbers = [int(a.id.split("-")[-1]) for a in self.list(kind)]
-        # Historical bundles reserve their IDs even when their records predate Markdown.
+        # IDs remain reserved across all canonical lifecycle folders.
         directory = safe_path(self.base, kind)
         for entry in directory.glob("*/*"):
             if re.fullmatch(prefix + r"-\d+", entry.stem):

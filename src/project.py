@@ -96,6 +96,16 @@ def _legacy_present(root: Path) -> list[str]:
     return legacy
 
 
+def _existing_ancestor(path: Path) -> Path:
+    candidate = path
+    while not candidate.exists() and candidate != candidate.parent:
+        candidate = candidate.parent
+    if not candidate.is_dir():
+        raise FrameworkError(f"Project root has no usable parent directory: {path}")
+    reject_links(candidate)
+    return candidate
+
+
 def initialize(root: Path, **options: Any) -> dict[str, Any]:
     """Install current reusable assets and create empty coordinator state.
 
@@ -114,6 +124,7 @@ def initialize(root: Path, **options: Any) -> dict[str, Any]:
         raise FrameworkError("adopt and dry_run must be booleans")
 
     target = Path(root).expanduser().absolute()
+    _existing_ancestor(target)
     if target.exists():
         if not target.is_dir():
             raise FrameworkError(f"Project root is not a directory: {target}")
@@ -238,7 +249,13 @@ def initialize(root: Path, **options: Any) -> dict[str, Any]:
                 atomic_write(path, content.decode("utf-8"))
         raise
     return {
-        "status": "INITIALIZED" if existing_manifest is None else "UPDATED",
+        "status": (
+            "INITIALIZED"
+            if existing_manifest is None
+            else "UPDATED"
+            if actions
+            else "UNCHANGED"
+        ),
         "root": str(target),
         "framework_version": FRAMEWORK_VERSION,
         "actions": actions,
