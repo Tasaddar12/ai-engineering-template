@@ -1,5 +1,5 @@
-# Current project control
+# Project control
 
-Read `STATE.yaml`, [PLAN-003](plans/active/PLAN-003.md), and its task/feature references. Current project configuration uses `framework.yaml`, `constraints/`, inline agent Markdown under `agents/`, reusable `templates/` and dedicated `workflows/`.
+`STATE.yaml` is ready for the next explicit task. [PLAN-003](plans/completed/PLAN-003.md) records the completed implementation and GitHub delivery. Known deferred defects are under `bugs/open`.
 
-This directory contains only current project work. Obsolete plans, archives, execution history and legacy model/constraint copies were removed. The current user instruction is to implement and deliver to main, defer testing and compatibility validation, and record unresolved bugs under `bugs/open`.
+Project configuration uses `framework.yaml`, focused `constraints/`, inline agent Markdown under `agents/`, reusable `templates/` and dedicated `workflows/`. Obsolete project history and configuration were deleted. Tests and validation remain deferred by the user.

@@ -10,4 +10,4 @@ Every product subprocess passes through `CommandRunner`. Focused constraint docu
 
 The workflow layer connects initialization, research, planning, implementation, validation, review, bugfix, recovery, delivery, cleanup and state reconciliation. Delivery targets a reviewed or explicitly authorized implementation revision, creates a PR to main, observes merge and retires the exact merged worktree and branch. Validation and review are configurable workflow stages; the current implementation pass explicitly defers testing and compatibility checks at the user's request.
 
-Current implementation scope is [PLAN-003](.ai/plans/active/PLAN-003.md). Obsolete project history is deleted. Unresolved implementation defects are recorded under `.ai/bugs/open`.
+Current implementation scope is [PLAN-003](.ai/plans/completed/PLAN-003.md). Obsolete project history is deleted. Unresolved implementation defects are recorded under `.ai/bugs/open`.

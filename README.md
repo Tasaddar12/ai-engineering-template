@@ -10,6 +10,10 @@ namespace. Reusable project defaults have one authored source in `agents/`, `tem
 those assets into a project's `.ai` directory without copying framework development
 history or granting implementation authority.
 
+## Install
+
+From this checkout, run `python -m pip install .` using Python 3.11 or newer.
+
 ## Command line
 
 ```text
@@ -33,6 +37,6 @@ Configure the provider using [Provider setup](docs/providers.md) before dispatch
 
 ## Development state
 
-Current implementation work is described only by `.ai/plans/active/PLAN-003.md` in
+The completed implementation is recorded in `.ai/plans/completed/PLAN-003.md` in
 this repository. Validation for the consolidated implementation pass is explicitly
 deferred by the user and is not represented as passing.
