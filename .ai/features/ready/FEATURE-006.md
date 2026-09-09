@@ -13,6 +13,7 @@ scope:
 - src/ai_engineering/workflows.py
 - tests/test_workflows.py
 - src/ai_engineering/state.py
+- src/ai_engineering/templates/handoffs/agent-recovery.md
 resources:
 - workflows-api
 acceptance:

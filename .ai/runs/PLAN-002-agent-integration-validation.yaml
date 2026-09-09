@@ -10,3 +10,7 @@ format: PASS
 typing: PASS (13 modules)
 scope: Integrated FEATURE-001 through FEATURE-004; no actual external provider or
   remote write.
+linux:
+  platform: Ubuntu 24.04 / Python 3.12.3 / WSL
+  passed: 131
+  skipped: 0

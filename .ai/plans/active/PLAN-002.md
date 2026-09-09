@@ -174,3 +174,17 @@ Critical review of FEATURE-004 reproduced truncation hidden by redaction in the 
 `Orchestrator.execute_subject(subject: Artifact | str, *, role='implementation', phase=None, session_id=None, investigation: Path | None=None) -> dict` owns locking and subject lifecycle transitions. The bug workflow supplies `role='bugfix'`, `phase='fix'`, its stable investigation session and the durable investigation reference. The implementation/review/delivery loop is shared with features.
 
 The late recovery hook is `workflows.recover(root, subject: Artifact, reason: str, reviews: list[Path], provider: AgentProvider) -> list[Artifact]`, returning the validated revised feature graph. Before calling it, the coordinator drains running workers, records which assignments have stopped, blocks affected active work and persists the plan-wide recovery budget. Recovery verifies that evidence; a model's `stopped_features` assertion cannot itself authorize replacing active work. The scheduler reloads and validates the resulting graph before resuming.
+
+The coordinator's quiescence receipt binds the plan, run, recovery attempt, state generation, confirmed stopped feature IDs and invocation outcomes. Recovery substitutes verified IDs from that receipt for model claims and refuses uncertain invocations. Blocked artifact status alone does not prove quiescence.
+
+Bug investigation is read-only and assigns no artificial tasks. Its escalation proposal states the reason, proposed scope, expected behavior and whether the change materially expands authorized product scope. In-scope structural work may become a normal plan automatically. Material expansion creates a blocked draft with explicit task/feature lists and a visible authorization requirement. Persist `bug.escalated_plan` before dispatch; retries reuse that plan and escalation does not mark the bug fixed.
+
+Project initialization may seed a directory without Git, but must report that worktree execution requires a Git repository with a committed base. Plan creation captures scope and acceptance before readiness; draft lists may be empty until semantic decomposition. CLI status labels ancestry observations separately from independently approved, merged completion.
+
+## Approved installed proposal schema clarification
+
+Independent decomposition approved TASK-052 / FEATURE-005 ownership of `templates/handoffs/agent-decomposition.md` to document nested feature/task/revision fields for installed agents. TASK-058 / FEATURE-006 owns `templates/handoffs/agent-recovery.md` for revision lineage and trusted quiescence guidance. These are reusable runtime contracts; PLAN-002-specific planning stays here. Keep the existing template variables unchanged and align documentation with actual validators. Exact task coverage, feature dependencies, effort bounds and concurrency are unchanged.
+
+## Approved remote observation prerequisite
+
+Independent decomposition approved TASK-055 / FEATURE-005 ownership of the packaged constraints seed solely to allow the exact `git ls-remote --heads` prefix for the orchestrator role with the existing credentials action requirement. Delivery supplies a validated configured remote and exact branch reference. This permits reconciliation of an uncertain push after configured authority; it performs no network action during implementation. Forbidden operations still win. The coordinator synchronizes the installed seed only after verifying its unchanged prior copy. No task, dependency, effort or concurrency change.

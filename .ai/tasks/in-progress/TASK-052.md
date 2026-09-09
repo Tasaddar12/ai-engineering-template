@@ -9,6 +9,7 @@ depends_on:
 scope:
 - src/ai_engineering/orchestrator.py
 - tests/test_orchestration.py
+- src/ai_engineering/templates/handoffs/agent-decomposition.md
 resources:
 - orchestration-api
 acceptance:
