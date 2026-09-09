@@ -1,0 +1,14 @@
+checked_at: '2026-09-09T02:21:19.210805+00:00'
+plan: PLAN-002
+classification: Artifact validation
+canonical_ai_plan_document: .ai/plans/active/PLAN-002.md
+tasks: 23
+features: 7
+issues: []
+checks:
+- Canonical .ai placement and parsed Markdown frontmatter
+- Explicit plan task/feature references
+- Exact feature task coverage
+- Dependency graphs, batch bounds and ownership serialization
+limits: These structural checks do not measure AI instruction-following or approve
+  runtime changes.

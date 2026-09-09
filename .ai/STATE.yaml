@@ -73,9 +73,14 @@ reviews:
 pull_requests: {}
 active_runs:
 - .ai/runs/PLAN-002-bootstrap.yaml
-blockers: []
+blockers:
+- plan: PLAN-002
+  scope: Starting further feature implementation
+  reason: Awaiting user direction after discovery of a newer conflicting PLAN-003
+    draft in the shared checkout; current candidate review may finish.
 next_actions:
-- Critical review of complete updated FEATURE-005 diff
-- Start FEATURE-006 after approved integration
-generation: 41
-updated_at: '2026-09-09T02:17:05.504103+00:00'
+- Complete independent critical review of the existing FEATURE-005 candidate
+- Clarify whether to continue PLAN-002 before starting FEATURE-006; newer PLAN-003
+  remains a draft without execution authority
+generation: 42
+updated_at: '2026-09-09T02:21:19.229351+00:00'
