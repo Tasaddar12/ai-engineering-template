@@ -1,11 +1,12 @@
 [build-system]
 requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+build-backend = "build_backend"
+backend-path = ["src"]
 
 [project]
 name = "ai-engineering-framework"
-version = "0.2.0"
-description = "Constrained, feature-based AI engineering orchestration"
+version = "0.3.0"
+description = "Constrained, resumable AI engineering workflows"
 requires-python = ">=3.11"
 readme = "README.md"
 dependencies = ["PyYAML>=6.0,<7"]
@@ -16,13 +17,13 @@ dev = ["pytest>=8", "ruff>=0.9", "mypy>=1.14", "types-PyYAML", "build"]
 [project.scripts]
 ai = "ai_engineering.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["ai_engineering", "ai_engineering.*"]
-namespaces = true
+[tool.setuptools]
+packages = ["ai_engineering"]
+package-dir = { ai_engineering = "src" }
+include-package-data = true
 
 [tool.setuptools.package-data]
-ai_engineering = ["templates/**/*.md", "templates/**/*.yaml", "definitions/*.yaml"]
+ai_engineering = ["_assets/**/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

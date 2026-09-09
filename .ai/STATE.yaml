@@ -1,16 +1,10 @@
 project:
   name: ai-engineering-framework
-  framework_version: 0.2.0
+  framework_version: 0.3.0
   phase: implementation
 current_focus:
   plan: PLAN-003
 active_features:
-- FEATURE-018
-waiting_features:
-- FEATURE-006
-- FEATURE-007
-blocked_features:
-- FEATURE-005
 - FEATURE-008
 - FEATURE-009
 - FEATURE-010
@@ -21,80 +15,42 @@ blocked_features:
 - FEATURE-015
 - FEATURE-016
 - FEATURE-017
-open_bugs: []
+waiting_features: []
+open_bugs:
+- BUG-001
 worktrees:
-- path: .worktrees/plan-002-execution
-  branch: codex/plan-002-execution
-  subject: FEATURE-002
-  head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
-  status: completed
-  base_branch: codex/plan-002-framework-reset
-  cleanup: 'deferred: automatic approval review rejected generated-cache removal'
-- path: .worktrees/plan-002-planning
-  branch: codex/plan-002-planning
-  subject: FEATURE-003
-  head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
-  status: completed
-  base_branch: codex/plan-002-framework-reset
-  cleanup: 'deferred: generated test caches retained'
-- path: .worktrees/plan-002-agents
-  branch: codex/plan-002-agents
-  subject: FEATURE-004
-  head: 4b2e2af641691a6a274a8c004705f00340614585
-  status: completed
-  base_branch: codex/plan-002-framework-reset
-  cleanup: Git output exceeded evidence limit; refusing incomplete observation
-- path: .worktrees/plan-002-orchestration
-  branch: codex/plan-002-orchestration
-  subject: FEATURE-005
-  head: 29303075b01d33328d1830307404689080428eef
-  status: blocked
-  base_branch: codex/plan-002-framework-reset
-- path: .worktrees/plan-003-baseline
-  branch: codex/plan-003-baseline
-  subject: FEATURE-018
-  head: c31d9af8daf732abb977c5f19076dfd4f2b6b04b
+- path: .worktrees/plan-003-intent
+  branch: codex/plan-003-intent
+  subject: PLAN-003
   status: in-progress
   base_branch: main
-  purpose: retained_baseline_transition
-reviews:
-  FEATURE-005:
-    status: CHANGES_REQUIRED
-    head: 29303075b01d33328d1830307404689080428eef
-    path: .ai/reviews/FEATURE-005-critical-2.md
-  FEATURE-001:
-    status: PASS
-    head: 274ca00bb42e3ea96db7f60dc189633e0651f633
-    path: .ai/reviews/FEATURE-001-critical-3.md
-  FEATURE-002:
-    status: PASS
-    head: fd2539c654f820a1ddf51a24dc28c74dd585fdbe
-    path: .ai/reviews/FEATURE-002-critical-1.md
-  FEATURE-003:
-    status: PASS
-    head: 03ba9a2f35f5d5bb12573eee5eb49e53e7ae59c9
-    path: .ai/reviews/FEATURE-003-critical-2.md
-  FEATURE-004:
-    status: PASS
-    head: 4b2e2af641691a6a274a8c004705f00340614585
-    path: .ai/reviews/FEATURE-004-critical-2.md
+reviews: {}
 pull_requests: {}
-active_runs: []
-blockers:
-- plan: PLAN-003
-  subject: FEATURE-018
-  reason: BASELINE-SEC-001 returned to bounded recovery; independent host verification
-    then repair/full review/PR merge.
+active_runs:
+- subject: PLAN-003
+  worker: core
+  status: implementing
+  model: gpt-5.6-sol
+  reasoning: xhigh
+  testing: deferred_by_user
+- subject: PLAN-003
+  worker: runtime
+  status: implementing
+  model: gpt-5.6-sol
+  reasoning: xhigh
+  testing: deferred_by_user
+- subject: PLAN-003
+  worker: packaging
+  status: implementing
+  model: gpt-5.6-sol
+  reasoning: xhigh
+  testing: deferred_by_user
+blockers: []
 next_actions:
-- Repair and independently review FEATURE-018; deliver baseline and PLAN-003 information
-  to main.
-- After verified baseline merge, continue PLAN-003 from synchronized main; do not
-  resume waiting PLAN-002 workers.
-generation: 45
-updated_at: '2026-09-09T12:24:46.406805+00:00'
-execution_authority:
-  PLAN-003:
-    authorized: true
-    source: Current user implementation and merge-to-main instructions
-    reviewed_plan_revision: c31d9af8daf732abb977c5f19076dfd4f2b6b04b
-    bounded_recovery: FEATURE-018
+- Implement all remaining features; no tests or compatibility probes.
+- Document unresolved bugs and deliver to main.
+generation: 0
+user_directive:
+  testing: deferred
+  legacy_data: delete
+  delivery: main

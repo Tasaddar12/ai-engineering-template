@@ -1,7 +1,36 @@
 # AI Engineering Framework
 
-A Python framework for planning work as small tasks and executing related tasks as feature batches, each with one agent and Git worktree.
+AI Engineering Framework is a Python 3.11+ coordinator for explicit planning,
+fixed-worktree implementation, validation, independent review, recovery and PR delivery
+to `main`.
 
-The 2026-09-08 architecture reset is recorded in `.ai/plans/active/PLAN-002.md`. `.ai/STATE.yaml` is the current workflow index. PLAN-001 is superseded; its source, tests, reviews and evidence remain in the reset archive.
+Authored Python modules live directly in `src` and install as the `ai_engineering`
+namespace. Reusable project defaults have one authored source in `agents/`, `templates/`,
+`workflows/`, `constraints/` and `framework.yaml`. `ai init` installs derived copies of
+those assets into a project's `.ai` directory without copying framework development
+history or granting implementation authority.
 
-The revised runtime is under implementation. See `ARCHITECTURE.md` for its authority model, `AGENTS.md` for the operating index and `docs/workflows.md` for the workflow catalog. All plans, plan-specific contracts, features and tasks belong under `.ai/`.
+## Command line
+
+```text
+ai init . --name example
+ai status --root .
+ai plan create "Add a feature" --scope src
+ai plan implement PLAN-001
+python -m ai_engineering --help
+```
+
+Planning delivery never starts implementation. `plan implement`, `plan resume` and
+`bugfix` are explicit operations and remain subject to the current plan, revision,
+scope and provider authority recorded by the coordinator.
+
+Dedicated operating contracts are installed under `.ai/workflows/`. All product
+subprocesses, including Git, validation, delivery and provider bridges, pass through
+the central command runner. Hard blocks are metadata on the current lifecycle phase;
+there are no blocked lifecycle folders.
+
+## Development state
+
+Current implementation work is described only by `.ai/plans/active/PLAN-003.md` in
+this repository. Validation for the consolidated implementation pass is explicitly
+deferred by the user and is not represented as passing.

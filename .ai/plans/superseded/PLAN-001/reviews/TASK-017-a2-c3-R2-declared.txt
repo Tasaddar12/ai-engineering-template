@@ -1,9 +1,0 @@
-R2 independent declared suite: ['D:\\Codex Projects\\ai-engineering-template\\.ai\\local\\full-plan-venv\\Scripts\\python.exe', '-B', '-m', 'unittest', 'discover', '-s', 'tests/unit/agents/', '-p', 'test_*.py']
-Cwd: D:\Codex Projects\ai-engineering-template\.worktrees\TASK-017-a2
-Runtime: 3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]
-Exit: 0
-.............................
-----------------------------------------------------------------------
-Ran 29 tests in 5.140s
-
-OK

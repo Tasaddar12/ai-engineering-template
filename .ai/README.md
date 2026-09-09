@@ -1,5 +1,5 @@
-# Workflow index
+# Current project control
 
-Read `STATE.yaml`, the current PLAN document in `plans/active/`, and its task/feature references. Plans and their implementation contracts MUST stay under `.ai/`; tasks and features do too. `constraints.yaml`, `models.yaml`, `framework.yaml`, `agents/` and `project/commands.yaml` define current operation. `templates/` contains editable durable artifact and handoff formats.
+Read `STATE.yaml`, [PLAN-003](plans/active/PLAN-003.md), and its task/feature references. Current project configuration uses `framework.yaml`, `constraints/`, inline agent Markdown under `agents/`, reusable `templates/` and dedicated `workflows/`.
 
-`archive/2026-09-08/` and `plans/superseded/PLAN-001/` preserve history and never drive active work. The revised runtime is being implemented through PLAN-002.
+This directory contains only current project work. Obsolete plans, archives, execution history and legacy model/constraint copies were removed. The current user instruction is to implement and deliver to main, defer testing and compatibility validation, and record unresolved bugs under `bugs/open`.

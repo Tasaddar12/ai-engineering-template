@@ -1,9 +1,0 @@
-{
-  "schemas": 27,
-  "validated_artifacts": 160,
-  "plans": 1,
-  "tasks": 39,
-  "unordered_pairs_checked": 280,
-  "archive_manifests": 4,
-  "local_links": 290
-}

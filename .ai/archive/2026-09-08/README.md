@@ -1,5 +1,0 @@
-# Framework reset archive
-
-Historical evidence only. Today's requirements supersede the old task-per-worktree engine, provider-specific namespaces, JSON record schemas, flat packaging, 22-role catalog, and multiple review contracts. PLAN-001 is preserved under `.ai/plans/superseded/PLAN-001/`. Original file hashes and per-task/worktree dispositions accompany this archive. No branch or commit was deleted.
-
-Compatible mechanisms to carry forward: explicit argv with no shell; timeouts and process cleanup; path containment and symlink rejection; bounded command evidence; immutable review attempts; dependency cycle detection and file/resource ownership checks; safe idempotent installation; configurable providers; serialized state writes. Reuse their algorithms and regression cases while removing legacy record coupling. Old source and tests are retained here for comparison, excluded from current packaging and test discovery. ADR-005's ownership/provider boundaries remain conceptually valid; ADR-001 through ADR-004 are superseded by ADR-006. Protocol research is retained with its original dates and uncertainties.

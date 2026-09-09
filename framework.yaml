@@ -1,0 +1,29 @@
+version: 0.3.0
+base_branch: main
+max_parallel: 3
+batching:
+  max_tasks: 5
+  max_effort: 8
+max_review_iterations: 3
+max_recovery_attempts: 3
+agent_timeout: 1800
+providers:
+  command:
+    argv: []
+    configured: false
+    confinement: required
+    uses_credentials: false
+    paid: false
+delivery:
+  remote: origin
+  base_branch: main
+  create_pr: true
+  required_checks: []
+  required_approvals: 0
+assets:
+  manifest: .ai/framework-manifest.yaml
+  roots:
+  - agents
+  - templates
+  - workflows
+  - constraints

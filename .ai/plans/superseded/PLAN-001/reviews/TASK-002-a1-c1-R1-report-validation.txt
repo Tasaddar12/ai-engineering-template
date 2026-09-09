@@ -1,5 +1,0 @@
-PASS: accepted ContractRegistry review-result validation.
-PASS: JSON Schema 2020-12 with date-time format checking.
-PASS: all 11 unique R1 checklist IDs and independent session identity.
-PASS: final exact candidate HEAD, clean worktree, binary diff digest and diff --check.
-Report verdict: fail; one unresolved major defect R1-TASK-002-001.

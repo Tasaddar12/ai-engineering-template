@@ -1,3 +1,0 @@
-PASS review-result schema and date-time format validation; exactly R1-01 through R1-11, all pass with evidence; no findings; separate sessions; exact candidate fingerprint; all referenced evidence exists.
-PASS independent probe outputs; final frozen HEAD, clean worktree, and binary diff hash unchanged.
-FINAL ACCESS BOUNDARY: reviewer has finished candidate access; reports are now immutable.

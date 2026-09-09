@@ -1,1 +1,0 @@
-PASS: review-result.schema.json and date-time format; exactly R1-01 through R1-11; every check passed with evidence; no findings; independent session. Candidate access had already stopped.

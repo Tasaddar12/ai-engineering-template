@@ -1,8 +1,0 @@
-{
-  "result": "PASS",
-  "root_head": "3acfcb0d700b05fbf78233b575e77db556cd9bcc",
-  "candidate_head": "ce4c8edb86b02268a856a5f870932ade0e7e9b91",
-  "candidate_clean": true,
-  "cycle_1_history_unchanged": true,
-  "candidate_access_stopped_at": "2026-09-08T07:46:12.498794+00:00"
-}

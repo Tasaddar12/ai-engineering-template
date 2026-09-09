@@ -1,8 +1,0 @@
-Coordination material migration verification
-Syntax: both tracked tools parse.
-Status: old/new read-only observations identical; ROOT resolved to actual checkout.
-Interpreter: candidate default is invoking Python.
-Dispatch: all 21 preserved byte-for-byte, lookup now tracked.
-Accounting: synthetic spawn/followup counted; non-invocation and malformed lines ignored; prompts absent from retained metadata.
-Tracked source/tests/docs/package text scan: no local-directory/manual-coordinator dependencies.
-No product test suite, task candidate validation or task approval claimed.

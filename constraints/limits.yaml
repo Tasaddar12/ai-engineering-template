@@ -1,0 +1,10 @@
+version: 1
+execution:
+  max_output_chars: 65536
+  max_input_bytes: 2000000
+  max_timeout: 86400
+  redact_env: [OPENAI_API_KEY, ANTHROPIC_API_KEY, GH_TOKEN, GITHUB_TOKEN]
+strategies:
+  review_iterations: 3
+  repair_attempts: 3
+  recovery_attempts: 3
