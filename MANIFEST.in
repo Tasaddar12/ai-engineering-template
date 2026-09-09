@@ -5,5 +5,5 @@ recursive-include templates *.md *.yaml *.yml
 recursive-include workflows *.md
 recursive-include constraints *.yaml *.yml
 recursive-include src *.py
-prune src/_assets
+prune .ai
 global-exclude __pycache__ *.py[cod]

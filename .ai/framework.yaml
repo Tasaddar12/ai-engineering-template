@@ -1,5 +1,5 @@
-version: 0.2.0
-base_branch: null
+version: 0.3.0
+base_branch: main
 max_parallel: 3
 batching:
   max_tasks: 5
@@ -11,7 +11,19 @@ providers:
   command:
     argv: []
     configured: false
-    enforces_permissions: false
+    confinement: required
+    uses_credentials: false
+    paid: false
 delivery:
   remote: origin
+  base_branch: main
   create_pr: true
+  required_checks: []
+  required_approvals: 0
+assets:
+  manifest: .ai/framework-manifest.yaml
+  roots:
+  - agents
+  - templates
+  - workflows
+  - constraints

@@ -68,11 +68,12 @@ def _dispatch(
     root: Path, role: str, options: dict[str, Any], subject: str | None = None
 ) -> dict[str, Any]:
     from .agents import dispatch
-    from .handoffs import read_markdown
+    from .handoffs import contained, read_markdown
 
     assignment = Path(_required(options, "assignment"))
     if not assignment.is_absolute():
         assignment = root / assignment
+    assignment = contained(root, assignment, directory=".ai")
     metadata, _ = read_markdown(assignment)
     if subject is not None and metadata.get("subject") != subject:
         raise FrameworkError("CLI subject differs from the assigned workflow subject")

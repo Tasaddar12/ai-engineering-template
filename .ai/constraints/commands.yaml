@@ -1,0 +1,163 @@
+version: 1
+default: deny
+named:
+  tests:
+    argv: [python, -m, pytest, -q]
+    timeout: 1800
+    roles: [orchestrator, implementation, bugfix]
+    workflows: [validation]
+  lint:
+    argv: [python, -m, ruff, check, src, tests]
+    timeout: 120
+    roles: [orchestrator, implementation, bugfix]
+    workflows: [validation]
+  format:
+    argv: [python, -m, ruff, format, --check, src, tests]
+    timeout: 120
+    roles: [orchestrator, implementation, bugfix]
+    workflows: [validation]
+  types:
+    argv: [python, -m, mypy, src]
+    timeout: 120
+    roles: [orchestrator, implementation, bugfix]
+    workflows: [validation]
+rules:
+- id: forbid_reset
+  argv_prefix: [git, reset]
+  effect: forbid
+- id: forbid_checkout
+  argv_prefix: [git, checkout]
+  effect: forbid
+- id: forbid_switch
+  argv_prefix: [git, switch]
+  effect: forbid
+- id: forbid_restore
+  argv_prefix: [git, restore]
+  effect: forbid
+- id: forbid_clean
+  argv_prefix: [git, clean]
+  effect: forbid
+- id: forbid_force_push
+  argv_prefix: [git, push, --force]
+  effect: forbid
+- id: git_status
+  argv_prefix: [git, status]
+  effect: allow
+- id: git_diff
+  argv_prefix: [git, diff]
+  effect: allow
+- id: git_log
+  argv_prefix: [git, log]
+  effect: allow
+- id: git_rev_parse
+  argv_prefix: [git, rev-parse]
+  effect: allow
+- id: git_merge_base
+  argv_prefix: [git, merge-base]
+  effect: allow
+- id: git_show_ref
+  argv_prefix: [git, show-ref]
+  effect: allow
+- id: git_check_ref
+  argv_prefix: [git, check-ref-format]
+  effect: allow
+- id: git_ls_files
+  argv_prefix: [git, ls-files]
+  effect: allow
+- id: git_worktree
+  argv_prefix: [git, worktree]
+  effect: allow
+  roles: [orchestrator]
+- id: git_branch
+  argv_prefix: [git, branch]
+  effect: allow
+  roles: [orchestrator]
+- id: git_add
+  argv_prefix: [git, add]
+  effect: allow
+  roles: [orchestrator]
+- id: git_commit
+  argv_prefix: [git, commit]
+  effect: approval
+  action: commit
+  roles: [orchestrator]
+- id: git_fetch
+  argv_prefix: [git, fetch]
+  effect: approval
+  action: push
+  roles: [orchestrator]
+- id: git_push
+  argv_prefix: [git, push]
+  effect: approval
+  action: push
+  roles: [orchestrator]
+- id: git_merge
+  argv_prefix: [git, merge]
+  effect: approval
+  action: merge
+  roles: [orchestrator]
+- id: git_remote
+  argv_prefix: [git, remote, get-url]
+  effect: allow
+  roles: [orchestrator]
+- id: git_ls_remote
+  argv_prefix: [git, ls-remote]
+  effect: approval
+  action: push
+  roles: [orchestrator]
+- id: gh_repo_view
+  argv_prefix: [gh, repo, view]
+  effect: approval
+  action: pull_request
+  roles: [orchestrator]
+- id: gh_pr_list
+  argv_prefix: [gh, pr, list]
+  effect: approval
+  action: pull_request
+  roles: [orchestrator]
+- id: gh_pr_view
+  argv_prefix: [gh, pr, view]
+  effect: approval
+  action: pull_request
+  roles: [orchestrator]
+- id: gh_pr_create
+  argv_prefix: [gh, pr, create]
+  effect: approval
+  action: pull_request
+  roles: [orchestrator]
+- id: gh_pr_checks
+  argv_prefix: [gh, pr, checks]
+  effect: approval
+  action: pull_request
+  roles: [orchestrator]
+- id: gh_pr_merge
+  argv_prefix: [gh, pr, merge]
+  effect: approval
+  action: merge
+  roles: [orchestrator]
+- id: provider_codex
+  argv_prefix: [codex]
+  effect: approval
+  action: provider_execution
+  roles: [orchestrator]
+- id: provider_bwrap
+  argv_prefix: [bwrap]
+  effect: approval
+  action: provider_execution
+  roles: [orchestrator]
+- id: validate_pytest
+  argv_prefix: [python, -m, pytest]
+  effect: allow
+  roles: [orchestrator, implementation, bugfix]
+  workflows: [validation]
+- id: validate_ruff
+  argv_prefix: [python, -m, ruff]
+  effect: allow
+  roles: [orchestrator, implementation, bugfix]
+  workflows: [validation]
+- id: validate_mypy
+  argv_prefix: [python, -m, mypy]
+  effect: allow
+  roles: [orchestrator, implementation, bugfix]
+  workflows: [validation]
+

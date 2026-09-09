@@ -14,9 +14,9 @@ history or granting implementation authority.
 
 ```text
 ai init . --name example
-ai status --root .
-ai plan create "Add a feature" --scope src
-ai plan implement PLAN-001
+ai --root . status
+ai --root . plan create "Add a feature" --scope src
+ai --root . plan implement PLAN-001
 python -m ai_engineering --help
 ```
 

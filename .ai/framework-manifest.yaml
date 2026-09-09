@@ -1,0 +1,164 @@
+manifest_version: 1
+framework_version: 0.3.0
+files:
+  agents/bugfix.md:
+    source: agents/bugfix.md
+    sha256: 0e61bfb06b064022a426180f686283c5ad989a5e751d7d2930b744d555ebeb4c
+  agents/critical_review.md:
+    source: agents/critical_review.md
+    sha256: b0becd9338266830c77ca07d3d79d0cc8758312b4ec6f0897fcfb6ed1cd23342
+  agents/implementation.md:
+    source: agents/implementation.md
+    sha256: 88bea2aa7df74d6186aa2640dfb8a3a46215c9c12c9fd1357c32bad6d94f2aba
+  agents/orchestrator.md:
+    source: agents/orchestrator.md
+    sha256: 4f7ecc2c795f9eb763ce581af940edbbc8d5c06e31e906af514e558bdd89c7cc
+  agents/recovery.md:
+    source: agents/recovery.md
+    sha256: 9103ea967ddafbd04b2c4c6da886c1333b04ef063ef02a5187b6ad26403f4873
+  agents/research.md:
+    source: agents/research.md
+    sha256: 02db9a531ef729065a1079a578810f02ed3b6fa103884d901e82a9d03adc73ca
+  agents/work_decomposition.md:
+    source: agents/work_decomposition.md
+    sha256: 6225c185776935603524160acfc5e8b4ceb76fed576e1d3de5921df3933fea0f
+  templates/bugs/bug.md:
+    source: templates/bugs/bug.md
+    sha256: b08bf1b9a3cd7a241a894febf823b10612373e2d8682e34011224ee1768445b0
+  templates/decisions/adr.md:
+    source: templates/decisions/adr.md
+    sha256: 2d6df2b13a50c9ad21feacf0ae161346294cbf8e2f2fe3501ef4211603f031ef
+  templates/features/feature.md:
+    source: templates/features/feature.md
+    sha256: 8acc83865bb118e1429cf6cea9e2323e6fba2a474f36ef3094be47c121d0c372
+  templates/handoffs/agent-completion.md:
+    source: templates/handoffs/agent-completion.md
+    sha256: 67d36bff2175552bf3b536aab49f49e0454c3ba17219fdc32195661b58e3ebb6
+  templates/handoffs/agent-critical-review.md:
+    source: templates/handoffs/agent-critical-review.md
+    sha256: 7ccb647e941e5e4b258882f4d0dbc0d9cc9c33224d758fc1c84b3ea4afd7604c
+  templates/handoffs/agent-decomposition.md:
+    source: templates/handoffs/agent-decomposition.md
+    sha256: 1c3a81301de5c8b0f5b06ba85174f8f79d9ccf32454c30cc53fcc768cf82bbf5
+  templates/handoffs/agent-investigation.md:
+    source: templates/handoffs/agent-investigation.md
+    sha256: 641d70b5119dec2df6aa6eda0ba0a1a0052e6785f8879d2e898256fbe75b930b
+  templates/handoffs/agent-recovery.md:
+    source: templates/handoffs/agent-recovery.md
+    sha256: 2ca92091fc23444bd89f73bf37ac883d50c121a9bb2743e23a4f423c37126231
+  templates/handoffs/agent-research.md:
+    source: templates/handoffs/agent-research.md
+    sha256: 502555278229cd471de8ac1877dea5570d1ccdc4e60e1ae9d4a694e028101a24
+  templates/handoffs/bug-investigation.md:
+    source: templates/handoffs/bug-investigation.md
+    sha256: c8c2c987c361d009c584afd2f217414ca6978adaa214ab823c619e79573c9521
+  templates/handoffs/bug-to-bugfix-agent.md:
+    source: templates/handoffs/bug-to-bugfix-agent.md
+    sha256: aebd66cd1b75a86bbe227e080a5172ee800c0df0fbb50814302d68e6e2bc7068
+  templates/handoffs/decomposition.md:
+    source: templates/handoffs/decomposition.md
+    sha256: e7d6bf423b739c2520825e24e7cf4db869c622b6c3d8d5756a9c8d90e0498b3d
+  templates/handoffs/dependency-to-feature.md:
+    source: templates/handoffs/dependency-to-feature.md
+    sha256: 4bba5a975e4a7c125f6b6de452ee20ec7d56147b5580c07652d66a77d3a0edc1
+  templates/handoffs/feature-complete.md:
+    source: templates/handoffs/feature-complete.md
+    sha256: 17eaf81f6ad8f93a0b878d536fdefef7afde15aa83fa3e68c8b42e96c792e4ba
+  templates/handoffs/implementation-to-review.md:
+    source: templates/handoffs/implementation-to-review.md
+    sha256: 0508fe022796834368ee312df5798b107ebadfd2e5d0b0063e1f7d8e8180e413
+  templates/handoffs/orchestrator-to-decomposition.md:
+    source: templates/handoffs/orchestrator-to-decomposition.md
+    sha256: 6bf213eed32bcb91e5f1c66e3ae4bc0e943613daa6d05d91831e3fd57b5b4cf2
+  templates/handoffs/orchestrator-to-feature-agent.md:
+    source: templates/handoffs/orchestrator-to-feature-agent.md
+    sha256: 0960c59d015a93a1a62577cfa89c2a959c6f98d46c5f3c6cb29817dd0da4315b
+  templates/handoffs/orchestrator-to-recovery.md:
+    source: templates/handoffs/orchestrator-to-recovery.md
+    sha256: fec33d6b2e32076bf746b0dcef2b5fafacd2ba7b6c1b3f2c403cdd02e90f20ec
+  templates/handoffs/orchestrator-to-research.md:
+    source: templates/handoffs/orchestrator-to-research.md
+    sha256: f34a5363021bbbd2a2106261132c00aeef11e1a9fc621cd1b737c6d2231a0dcc
+  templates/handoffs/recovery-to-decomposition.md:
+    source: templates/handoffs/recovery-to-decomposition.md
+    sha256: b43da1186a16723c159493fec8bf44b9f30b6a9fa576656e3b9e412990fefaf0
+  templates/handoffs/research-complete.md:
+    source: templates/handoffs/research-complete.md
+    sha256: 266898c0cb2f552682368b3dba614b2918f337599eb57c7b5758096682d6a8b9
+  templates/handoffs/review-to-implementation.md:
+    source: templates/handoffs/review-to-implementation.md
+    sha256: d347436e207208d4e34d0a1c3adb4855586ec512d68c91b6e7f2ad597ed95eb6
+  templates/plans/plan.md:
+    source: templates/plans/plan.md
+    sha256: cf5e29fd1205338d32999235c10f214126c735854c2eff66b6e92e1555a56c63
+  templates/project/AGENTS.md:
+    source: templates/project/AGENTS.md
+    sha256: 8022309f34211a26ef68f74c5d4d5270e53d545bfad42d93c0a3d7c7deec20cb
+  templates/pull_requests/pull-request.md:
+    source: templates/pull_requests/pull-request.md
+    sha256: 5bc6572615f91eb4df500b08ca14521f4dd2ae248e119ee4a777345e4baa0133
+  templates/research/research.md:
+    source: templates/research/research.md
+    sha256: 45f453b1262aee8c2392fccd9b80b24b6871f816f18f6ce8479a322a4ab69c78
+  templates/reviews/critical-review.md:
+    source: templates/reviews/critical-review.md
+    sha256: af77792a907a41e504786acefc77063a8ba560eff9f0a734f4aa9148b17017e5
+  templates/specs/spec.md:
+    source: templates/specs/spec.md
+    sha256: f9154a8e6eddf9e009cf0cb8af3b30f738503efbef04a9dbf39532f4357e5074
+  templates/tasks/task.md:
+    source: templates/tasks/task.md
+    sha256: 6dfce5681736a129866273ce23776b2f21914ad911c5ef6a242370d6a67ea765
+  workflows/bugfix.md:
+    source: workflows/bugfix.md
+    sha256: e19eed036113238ade8a6bebdc004ba8091405c897894235a0f35659d221ffec
+  workflows/cleanup.md:
+    source: workflows/cleanup.md
+    sha256: 6ae281561fa01feedc116bfa20bf7db8a62b0c219b5d1911e88bcf64470e1a2d
+  workflows/critical-review.md:
+    source: workflows/critical-review.md
+    sha256: 8b9566654d0b43a41a9e710d3e45f373ded477c536da020c6165d72241633aaa
+  workflows/delivery.md:
+    source: workflows/delivery.md
+    sha256: ca27598a5c0aaf073376defbc8f9d38e6a58de0b8666676c47d92081721ebf1a
+  workflows/implementation.md:
+    source: workflows/implementation.md
+    sha256: b6481bd88a3e66c51976a516da40e7cf45127ed4fcdf6a5d6edf0eb89d4952a1
+  workflows/planning.md:
+    source: workflows/planning.md
+    sha256: 8977ec725ab41125b9421d2100de37a703b1f454dbd2c760a09672bf35f40624
+  workflows/project-init.md:
+    source: workflows/project-init.md
+    sha256: a41b24aaf84521f6d9d0873e0fd1e6789c1a0414c2f1bd722768b6588914d8b0
+  workflows/recovery.md:
+    source: workflows/recovery.md
+    sha256: e1126b9e44cd1da8a9af74b5225cd0d742600e646769a8172f273d246d8ad3d6
+  workflows/research.md:
+    source: workflows/research.md
+    sha256: 1a80cd3b5c5ecf9b9e8032d904b9740528425669f083f03398a3fb5ab1ef1524
+  workflows/state-reconciliation.md:
+    source: workflows/state-reconciliation.md
+    sha256: d17b6298d67e156ef5b3b778ae5c3c1a122d38cd53dfb52ca41743d0e5ba246e
+  workflows/validation.md:
+    source: workflows/validation.md
+    sha256: 06c619a445482bb691448672899e6f9ea287440c0d9f937e465a5a85ecbc3eaf
+  constraints/coding.yaml:
+    source: constraints/coding.yaml
+    sha256: e583aa8b1601eab681b1e9db06981b6a5b8dc8714e01591d73d72dbb1173f350
+  constraints/commands.yaml:
+    source: constraints/commands.yaml
+    sha256: afebd03867603a46fc54e94cb7dc5665bc1e11b88b8c45f187438a4a42d6ab5d
+  constraints/limits.yaml:
+    source: constraints/limits.yaml
+    sha256: 350bc074fbeb7507c1dc3a4e683160228924a7839ee8f619cedf6adb3ff9ff18
+  constraints/permissions.yaml:
+    source: constraints/permissions.yaml
+    sha256: cbac5e474e3dac3fbd0d6b11863c916b34689f06bde517d0c144f56dd0f68188
+  framework.yaml:
+    source: framework.yaml
+    sha256: 1da206285b37f2c886ecc2e55386db625158ae107623bb07f0f5d9e295158f45
+  AGENTS.md:
+    source: templates/project/AGENTS.md
+    sha256: 8022309f34211a26ef68f74c5d4d5270e53d545bfad42d93c0a3d7c7deec20cb
+initialized_at: '2026-09-09T14:33:28.484111+00:00'
+updated_at: '2026-09-09T14:33:28.484111+00:00'

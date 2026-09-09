@@ -10,7 +10,7 @@ from typing import Any, BinaryIO
 import yaml
 
 from .errors import FrameworkError
-from .io import safe_path
+from .io import reject_links, safe_path
 
 VARIABLE = re.compile(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}")
 ASSET_DIRECTORIES = ("agents", "templates", "workflows", "constraints")
@@ -20,9 +20,10 @@ ASSET_FILES = ("framework.yaml",)
 def asset_root() -> Any:
     """Return the source/editable root or the derived installed resource root."""
     source = Path(__file__).resolve().parent.parent
-    if (source / "framework.yaml").is_file() and all(
+    if (source / "pyproject.toml").is_file() and (source / "framework.yaml").is_file() and all(
         (source / name).is_dir() for name in ASSET_DIRECTORIES
     ):
+        reject_links(source)
         return source
     packaged = resources.files("ai_engineering").joinpath("_assets")
     if not packaged.joinpath("framework.yaml").is_file():
@@ -46,6 +47,10 @@ def asset_file(relative: str) -> Any:
     candidate = asset_root()
     for part in _relative_asset(relative):
         candidate = candidate.joinpath(part)
+    if isinstance(candidate, Path):
+        reject_links(candidate.absolute())
+        if not candidate.resolve().is_relative_to(Path(asset_root()).resolve()):
+            raise FrameworkError(f"Framework asset escapes its root: {relative}")
     if not candidate.is_file():
         raise FrameworkError(f"Missing framework asset: {relative}")
     return candidate
@@ -78,6 +83,8 @@ def iter_asset_files(directory: str) -> list[str]:
 
     def visit(node: Any, prefix: tuple[str, ...]) -> None:
         for child in sorted(node.iterdir(), key=lambda item: item.name):
+            if isinstance(child, Path):
+                reject_links(child.absolute())
             relative = (*prefix, child.name)
             if child.is_dir():
                 visit(child, relative)
