@@ -10,6 +10,7 @@ scope:
 - src/ai_engineering/orchestrator.py
 - tests/test_orchestration.py
 - src/ai_engineering/templates/project/constraints.yaml
+- src/ai_engineering/constraints.py
 resources:
 - orchestration-api
 acceptance:

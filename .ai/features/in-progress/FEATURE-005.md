@@ -17,6 +17,7 @@ scope:
 - tests/test_orchestration.py
 - src/ai_engineering/templates/handoffs/agent-decomposition.md
 - src/ai_engineering/templates/project/constraints.yaml
+- src/ai_engineering/constraints.py
 resources:
 - orchestration-api
 acceptance:

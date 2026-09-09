@@ -200,3 +200,13 @@ The selected local base must contain the exact independently reviewed commit. Th
 ## Approved installed bridge context base
 
 Independent decomposition approved TASK-060 / FEATURE-007 ownership of `agents.py` solely to add `project_root: str(root)` to serialized provider request records, without changing the AgentRequest constructor. Handoff references resolve against this read-only coordinator context base; source edits and commands use worktree. The output path remains the exact return-file exception. This grants no root-write authority. CLI/acceptance coverage must include `.ai` absent from the worktree. Old persisted bindings that differ remain fail-closed rather than being silently replayed. Dependencies serialize this narrow prerequisite after FEATURE-004; no task/batch change.
+
+## Recovery receipt integration format
+
+FEATURE-005 writes `.ai/runs/<plan-id-lower>/recovery-NNN/quiescence.yaml` after draining workers. Fields: `plan`, `run` (orchestration journal path), `attempt`, `subject`, `status: quiescent`, `stopped_features`, `subjects` (subject/journal/session_id/stage), `invocations` (subject/invocation/result/result_sha256/status/session_id), `outcomes`, `generation`, `recorded_at`. Invocation status is verified only after checking saved output digest and session. The subject carries `recovery: {quiescence, attempt}`. Recovery verifies these bindings and refuses uncertain or unmanaged execution. The hook must not infer quiescence from model output or blocked status.
+
+Initial decomposition uses bounded structured retries for rejected or invalid proposals, retaining every output and using a fresh dispatch directory. Only proven synchronous preflight/rollback failures may retry automatically; uncertain application state stays visible. Runtime context resolution follows canonical PLAN/TASK/FEATURE/BUG IDs when lifecycle folders change, while arbitrary missing or escaping paths remain errors.
+
+## Approved exact remote observation guard
+
+Independent decomposition approved TASK-055 / FEATURE-005 ownership of `constraints.py` solely to guard `git ls-remote --heads <named-remote> refs/heads/<branch>`. Reject URL/path remotes, extra operands, option abbreviations, upload-pack and any additional options. This closes the suffix gap in a token-prefix policy while retaining the orchestrator-only credentials rule and forbidden-wins semantics. Regressions remain in `tests/test_orchestration.py`; no generalized policy or graph change.
