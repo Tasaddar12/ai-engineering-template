@@ -1,0 +1,13 @@
+plan: PLAN-002
+status: in-progress
+coordinator: native-root
+implementation_mechanism: Authorized native feature agents in managed worktrees while
+  runtime is being built
+current_feature: FEATURE-004
+updated_at: '2026-09-08T23:57:52.578437+00:00'
+completed_features:
+- FEATURE-001
+- FEATURE-002
+- FEATURE-003
+decomposition: .ai/handoffs/PLAN-002-decomposition.md
+graph_validation: .ai/runs/PLAN-002-runtime-graph-validation.yaml

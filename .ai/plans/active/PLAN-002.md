@@ -150,3 +150,17 @@ TASK-050 / FEATURE-004 also owns packaged handoff templates and agent definition
 ## Approved contract clarification - bug state evidence
 
 TASK-058 / FEATURE-006 additionally owns `src/ai_engineering/state.py` solely to index bug review and PR metadata alongside feature evidence. Regression coverage remains in `tests/test_workflows.py`. Independent decomposition approved this on 2026-09-08: serialized after core and orchestration; unchanged 23-task/seven-feature graph and FEATURE-006 effort 7.
+
+## Approved contract clarification - installed seed and platform typing
+
+Independent decomposition approved TASK-059 / FEATURE-007 ownership of only `src/ai_engineering/templates/plans/plan.md` to repair its misdecoded title separator. The coordinator synchronizes the project copy. TASK-058 / FEATURE-006 may add narrow type annotations to guarded Windows locking calls in its already approved state.py scope. No behavioral expansion, effort increase, dependency or concurrency change.
+
+## Coordinator execution details
+
+All agent outputs are Markdown with small YAML front matter matching AgentResult.metadata. Common output identity is subject/session/status; critical reviews use reviewer_session and implementer_session. Each unique dispatch directory has deterministic request, response, invocation, result and output paths. Resume reuses validated evidence for identical bindings; an uncertain invocation is reported without blind redispatch. Structured assignment scope and the output-only write exception accompany role permissions.
+
+The coordinator owns STATE and lifecycle transitions. Concurrent feature workers own separate run evidence and return outcomes to that coordinator. Worktree creation intent precedes Git changes. All ready graph ownership/dependency checks occur before scheduling. Validation and review bind to the committed complete feature revision; source or branch drift invalidates that evidence. Stable implementation sessions receive repairs; new review attempts use distinct sessions.
+
+Initial task creation may use an approved semantic revision with empty replacements, fresh tasks and feature proposals through the same validated planning transaction. Existing approved graphs are reused only with current bindings; semantic decomposition never silently disappears behind a deterministic heuristic. Structural recovery waits for affected running assignments to stop, validates scope and budgets, redecomposes, then resumes the scheduler. Ordinary exhausted code repairs remain explicit blockers.
+
+PR bodies are prepared as durable templated artifacts before external action checks. Delivery journals distinguish pending, confirmed and uncertain effects. Approved or published features stay in review until the reviewed commit is observed on the selected base; only then are tasks/features completed and clean, unreferenced worktrees eligible for removal. Dry runs read artifacts and report proposed work without provider calls, process launches, state writes or checkout mutations.

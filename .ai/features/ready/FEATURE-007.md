@@ -24,6 +24,7 @@ scope:
 - src/ai_engineering/project.py
 - tests/test_acceptance.py
 - tests/test_cli.py
+- src/ai_engineering/templates/plans/plan.md
 resources:
 - cli-api
 acceptance:
@@ -51,6 +52,8 @@ acceptance:
   and distinguish configured CI from executed platform evidence.
 - Product docs link to .ai PLAN artifacts for implementation planning and contain
   no task list, plan-specific contract or feature graph.
+- Installed PLAN template uses valid UTF-8 title text and explicit .ai task/feature
+  references.
 validation:
 - tests
 - lint
@@ -66,6 +69,7 @@ context:
 batch: cli
 effort: 8
 decomposition: .ai/handoffs/PLAN-002-decomposition.md
+kind: features
 ---
 # FEATURE-007 — Project installation, CLI and acceptance
 

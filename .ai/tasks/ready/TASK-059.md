@@ -8,6 +8,7 @@ depends_on:
 scope:
 - src/ai_engineering/project.py
 - tests/test_cli.py
+- src/ai_engineering/templates/plans/plan.md
 resources:
 - cli-api
 acceptance:
@@ -16,6 +17,8 @@ acceptance:
 - Preflight destination links/escapes/collisions, preserve user content on repeat
   installation and add .worktrees ignore safely.
 - Dry-run reports intended changes without writes, Git mutation or process launch.
+- Installed PLAN template uses valid UTF-8 title text and explicit .ai task/feature
+  references.
 validation:
 - tests
 - lint
@@ -27,6 +30,7 @@ context:
 - ARCHITECTURE.md
 - .ai/decisions/ADR-006.md
 - .ai/plans/active/PLAN-002.md
+kind: tasks
 ---
 # TASK-059 — Initialize and adopt projects with packaged assets
 
