@@ -1,37 +1,49 @@
-# Initialize project records
+---
+tier: contract
+authority: agent
+title: Initialize a project
+---
+> Contract: follow these steps within the approved scope.
+
+# Initialize a project
 
 ## Purpose
 
-Create or refine the approved operating scaffold without inventing product behavior.
+Establish truthful context without inventing intent or overwriting an existing
+project's knowledge.
 
 ## Inputs
 
-An explicit initialization scope, the target worktree and known project facts.
-An existing project also supplies its current records and contracts.
+PROJECT, config, current repository, existing instructions and the user's
+initialization scope.
 
 ## Gates
 
-Before creating or changing files: [action-approved](../gates/action-approved.md).
-Use the user's direct instruction as evidence when no records exist yet.
+Use [action-approved](../gates/action-approved.md) before changes.
 
 ## Steps
 
-1. The orchestrator inspects the target and identifies existing files to preserve.
-   Initialization never implies permission to delete or overwrite an existing project.
-2. Create only the approved structure and templates, using the paths in config.
-3. Populate state/PROJECT.md with known purpose, users, context and boundaries.
-   Keep unknown product facts explicit; point implementation details to the owning SPEC.
-4. Populate state/STATE.md with Now / Next / Blockers and link the initial intake/plan.
-5. Describe the actual scaffold in its SPEC, link draft decisions, and append the
-   initialization event and authority to the journal.
-6. Return a decision summary of created/refined records and unresolved choices.
+1. Inspect the assigned repository first. If already initialized, brief yourself
+   and restructure nothing unless requested.
+2. Read PROJECT and existing instructions; surface contradictory permissions or
+   duplicated fact owners.
+3. Ask only for missing human purpose, non-goals or constraints. Keep known
+   facts in state/PROJECT.md; its location does not make intent freely writable.
+4. Adopt existing records by linking or reconciling their owning facts. Keep
+   meeting discussion as evidence rather than authoritative requirements.
+5. Write specs only for current behavior in the area being adopted. Put
+   decided-but-unbuilt changes into plans.
+6. Set real verification commands or state that manual checks remain necessary.
+   Populate current STATE and journal only observed actions.
+7. Return the result and bounded next decision; publication uses its own granted
+   scope.
 
 ## Output and handoff
 
-A small, reviewable document scaffold and project context. Planning or product work
-starts only under its own approved action.
+A current context, verified record ownership and a decision summary. No empty
+project needs invented product specs.
 
 ## Stop conditions
 
-Pause on conflicting ownership, unclear overwrite scope or missing project facts.
-Do not install dependencies, launch agents or claim executable enforcement exists.
+Do not infer intent, add a runtime or replace unrelated project files from
+initialization alone.

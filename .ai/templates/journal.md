@@ -1,9 +1,18 @@
+---
+tier: log
+authority: agent
+title: {{ date }}
+---
+> Log: preserve evidence; append corrections.
+
 # {{ date }}
 
-## {{ time_with_offset }} — {{ event }}
+## {{ time }} - {{ event }}
 
-- Action or observation: {{ fact }}
-- Evidence: {{ reference }}
-- User decision and scope, if any: {{ decision }}
+- Did: {{ action }}
+- Evidence: {{ owning_record_and_observation }}
+- Learned: {{ supported_finding }}
+- Next: {{ next_action_and_owner }}
 
-Append new timestamped entries. Correct an old entry with a new linked entry.
+<!-- YYYY-MM-DD.md. Append entries. Correct with a new timestamp;
+never replace an older observation or turn a planned check into evidence. -->

@@ -1,33 +1,50 @@
+---
+tier: contract
+authority: agent
+title: One owner per fact
+---
+> Contract: link to the owner; reconcile ownership before changing copies.
+
 # One owner per fact
 
-| Fact | Owner | Other files should |
-| --- | --- | --- |
-| Starting context and navigation through engagement contracts | RULES.md | Follow its links to the owning policy. |
-| Firm action/approval requirements | policies/approval.md | Apply the policy; do not grant exceptions implicitly. |
-| Record mutability, amendment obligations and history requirements | policies/records.md | Reference its requirements. |
-| Parallel assignment and concurrent ownership requirements | policies/parallel-execution.md | Apply the requirements before each wave. |
-| Worktree, validation, review and Git delivery requirements | policies/execution.md | Apply them in the relevant workflow. |
-| Paths, filename formats and ID patterns | config.yaml | Use the configured values. |
-| Project purpose, users, desired outcome and background | state/PROJECT.md | Link to stable project context. |
-| Current implemented behavior and limitations | specs/SPEC-*.md, split by declared scope | Link to the one spec owning the behavior. |
-| Why an approach was chosen | decisions/ADR-*.md | Link to the rationale. |
-| Why an accepted contract changed | decisions/amendments/AMD-*.md | Link to the amendment. |
-| Unconfirmed observations, waiting questions and suspected drift | plans/intake/INTAKE-*.md | Link evidence and any confirmed FIX or planned successor. |
-| Confirmed defect, expected behavior and repair outcome | fixes/{open,done}/FIX-*.md | Reference the defect; do not duplicate intake/research evidence. |
-| Fix lifecycle transitions | fixes/README.md | Follow its open/done conventions. |
-| Investigation question, sources, findings and uncertainty | research/RES-*.md | Cite the research; do not treat a recommendation as a decision. |
-| Approved change scope, acceptance and task checklist | Selected PLAN; for a bounded repair without a PLAN, its FIX | Reference the single execution owner. |
-| Current focus, next action and blockers | state/STATE.md | Read live coordination. |
-| Historical events and recorded user decisions | state/journal/{date}.md | Append and link; do not rewrite earlier entries. |
-| Role-specific responsibilities and reporting | agents/{role}.md | Follow policies for authority. |
-| Which operation an entry point selects | commands/{operation}.md | Follow its linked workflow. |
-| Steps and handoffs for an operation | workflows/{operation}.md | Link to the procedure instead of copying it. |
-| PASS/FAIL criteria for a transition | gates/{gate}.md | Evaluate those criteria against current evidence. |
-| A subject's gate results and review evidence | Its PLAN validation section; otherwise FIX or INTAKE. New verification of a historical done plan belongs in an appended journal entry | Link to the dated evaluation and subject revision. |
-| When a manual checkpoint runs | hooks/README.md | Link to the gate; do not duplicate its criteria. |
-| Required document/report sections | templates/{type}.md | Instantiate the template. |
-| Source revisions, remote refs and PR merge state | Git and GitHub | Observe directly; record dated observations. |
+| Fact | Owner |
+| --- | --- |
+| Purpose, non-goals and hard constraints | state/PROJECT.md |
+| Entry point and engagement protocol | RULES.md |
+| User authority and action boundaries | policies/approval.md |
+| Mutability, amendments, tense and record routing | policies/records.md |
+| Validation, Git delivery and cleanup requirements | policies/execution.md |
+| Concurrent ownership requirements | policies/parallel-execution.md |
+| Paths, ID formats and operating settings | config.yaml |
+| Current correct behavior and acceptance | specs/SPEC-*.md by declared scope |
+| Behavior intended but not built | Selected PLAN's Contract changes |
+| How implementation works | Source and tests; link rather than restate |
+| Why a decision was made | Accepted ADR; superseded rationale stays intact |
+| Why a contract changed and its old wording | decisions/amendments/AMD-*.md |
+| What was said in a meeting | decisions/meetings/MEET-*.md |
+| Proposed scope, dependencies and task order | Selected PLAN |
+| A confirmed defect and its repair proof | Selected FIX |
+| Unconfirmed observations and waiting questions | Selected INTAKE |
+| PLAN/FIX lifecycle stage | Its directory alone |
+| Current focus, blockers and linked drift | state/STATE.md |
+| Historical events and user decisions | state/journal/{date}.md |
+| Investigation sources, findings and uncertainty | research/RES-*.md |
+| Run schedule, reservations and assignments | state/orchestration/ORCH-*.md |
+| A track's review rounds and terminal report | Its run's track evidence file |
+| Role responsibilities and write scope | agents/{role}.md |
+| Workflow steps and handoffs | workflows/{operation}.md |
+| Operation selected by a command | commands/{operation}.md |
+| PASS/FAIL transition criteria | gates/{gate}.md |
+| Gate/test/review evidence for a subject | Selected PLAN/FIX evidence section |
+| New evidence concerning a historical record | Appended journal entry |
+| Checkpoint timing | hooks/README.md |
+| Required report fields | templates/{type}.md |
+| Revisions, branch tips and merge state | Git and the hosting service |
 
-This map assigns ownership; it does not make stale content correct. Report conflicting
-facts as drift. A new spec declares bounded ownership that does not overlap an existing
-spec. A gate checks a policy; it cannot weaken that policy.
+Specs own behavior, not their own history. Plans own intended changes, not
+proof they shipped. Research and meetings own evidence, not permission.
+A status report is a dated view of these owners, not another database.
+
+Declare a bounded scope for each new SPEC. If two specs own the same fact,
+choose its owner and link the other. Code alone cannot establish which side
+of a contradiction is correct; use the record policy's evidence protocol.

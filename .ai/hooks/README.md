@@ -1,18 +1,22 @@
-# Manual checkpoints
+---
+tier: contract
+authority: agent
+title: Manual checkpoints
+---
+> Contract: amend with evidence inside the approved scope.
 
-Hooks identify when to evaluate a gate. The linked gate owns its PASS/FAIL criteria;
-the policy it cites owns the requirement.
+# Manual checkpoints
 
 | Event | Gate |
 | --- | --- |
-| Before a proposed action begins | [Action approved](../gates/action-approved.md) |
-| Before starting a concurrent wave | [Parallel ready](../gates/parallel-ready.md) |
-| Before handing a subject to review | [Review ready](../gates/review-ready.md) |
-| Before each commit, push, PR creation or merge | [Delivery ready](../gates/delivery-ready.md) |
-| Before removing a merged worktree/local branch | [Retirement ready](../gates/retirement-ready.md) |
+| Before a new action | [Action approved](../gates/action-approved.md) |
+| Before dispatching a wave | [Parallel ready](../gates/parallel-ready.md) |
+| Before review | [Review ready](../gates/review-ready.md) |
+| Before done | [Completion ready](../gates/completion-ready.md) |
+| Before Git delivery | [Delivery ready](../gates/delivery-ready.md) |
+| Before exact cleanup | [Retirement ready](../gates/retirement-ready.md) |
 
-Record the result with [gate-result.md](../templates/gate-result.md). Follow the gate's
-failure handoff when it returns FAIL.
-
-No executable hooks are installed. Automating a checkpoint requires a separately
-approved change; these definitions alone do not enforce the requirements.
+These are checkpoints, not installed hooks. They make missing evidence
+visible without pretending that a document can enforce a sandbox.
+Use the appropriate gate-result report; a failing gate holds that transition,
+not every independent action in the project.

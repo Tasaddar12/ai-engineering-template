@@ -1,10 +1,18 @@
-# Initialize project records
+---
+tier: contract
+authority: agent
+description: Inspect and initialize the assigned project.
+argument_hint: Repository context and initialization scope.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: Create or refine an explicitly approved scaffold.
+# initialize
 
-Inputs: Target worktree, approved scope and known project facts.
+Use when: Inspect and initialize the assigned project.
 
-Follow [the workflow](../workflows/initialize.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Repository context and initialization scope.
 
-Return: Project context, live state and a decision summary.
+Follow [initialize](../workflows/initialize.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Known context, current owners and decision summary.

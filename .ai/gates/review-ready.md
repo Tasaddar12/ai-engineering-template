@@ -1,28 +1,33 @@
+---
+tier: contract
+authority: agent
+title: Review ready
+---
+> Contract: amend with evidence inside the approved scope.
+
 # Review ready
 
 ## Transition
 
-Before reviewing a proposal, research record or implementation result.
+Before handing a proposal or implementation result to its reviewer.
 
 ## PASS criteria
 
-- The subject and its commit or draft revision are identified and stable.
-- Its required template sections, scope and review question are complete.
-- A proposal identifies acceptance, affected specs and planned final validation.
-- A research record links consulted sources and states uncertainty.
-- An implementation supplies its full diff, matching specs and passing evidence for
-  the agreed validation. Missing/unrun required checks fail this criterion.
-
-Apply only the subject-type criteria that match this review; record why the others
-are Not applicable. Planned validation is appropriate for a proposal, not proof that
-an implementation passed.
+- The subject, purpose and stable draft revision or commit are identified.
+- A proposal has usable Contract changes, observable acceptance, dependencies
+  and planned checks.
+- An implementation has the full relevant diff, current specs and actual
+  evidence for agreed checks.
+- The review packet and independent role are identified; cold-review limits are
+  disclosed.
 
 ## Evidence
 
-Link the subject, revision, sources or diff, and applicable validation records.
-Follow the [record](../policies/records.md) and [execution](../policies/execution.md) policies.
+Link the subject, packet, diff and applicable evidence. Proposal and
+implementation criteria apply only to that subject type; mark the others N/A
+with a reason.
 
 ## On FAIL
 
-List missing evidence or incomplete sections and return the subject to its owner.
-Do not report a review-ready PASS while the required evidence is missing.
+Name incomplete evidence. Do not represent planned validation as an executed
+pass.

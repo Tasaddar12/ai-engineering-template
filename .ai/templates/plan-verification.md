@@ -1,37 +1,42 @@
+---
+tier: log
+authority: agent
+title: Plan verification
+---
+> Log: preserve evidence; append corrections.
+
 # Plan verification
 
-Plan and completion evidence: {{ plan_link_and_completion }}
+Subject / revision / base: {{ exact_subject }}
 
-Revision / baseline / pending diff: {{ exact_subject }}
+Evaluator, time, environment and authority: {{ evaluation_context }}
 
-Evaluator, time and environment: {{ evaluator_time_environment }}
+## Current contract and observed behavior
 
-Validation authority: {{ approved_scope_reference }}
+| Criterion / invariant | Check | Observed result | Outcome | Evidence |
+| --- | --- | --- | --- | --- |
+| {{ spec_criterion }} | {{ command }} | {{ actual }} | {{ result }} | {{ ref }} |
 
-## Acceptance, specs and observed behavior
+Use PASS, FAIL or NOT_RUN per check; N/A requires a scope-based reason.
+Include approved outcomes; predicted steps alone do not define correctness.
 
-| Feature / task / acceptance | Owning spec | Check / journey | Expected | Observed | PASS / FAIL / NOT_RUN / N/A | Evidence |
-| --- | --- | --- | --- | --- | --- | --- |
-| {{ acceptance }} | {{ spec }} | {{ check }} | {{ expected }} | {{ actual }} | {{ outcome }} | {{ reference }} |
+## Contract changes reconciliation
 
-Include every acceptance condition, affected spec and agreed regression check.
-Each evidence reference identifies its revision/environment; explain each N/A.
+For each create/amend/retire/decision promise, show the actual record and
+whether it was delivered or explicitly reconciled. For FIX, link before/after
+proof and demonstrate that required behavior was not silently changed.
 
-## Review and findings
+## Review, defects and record drift
 
-Link independent review when required. Separate confirmed defects (FIX links when
-recorded) from suspected drift or unresolved questions (INTAKE links when recorded).
+Link independent review, confirmed FIX and suspected INTAKE evidence.
+Check current tense, duplication and unsupported claims as well as code.
 
 ## Result and limits
 
-Overall: {{ PASS_or_FAIL }}
+Overall: {{ PASS_FAIL_or_CANNOT_VERIFY }}
 
-Missing, failed, stale or unrun required checks prevent PASS. Record untested scope
-and remaining defects. A completed checklist alone is not verification.
+Missing required evidence cannot yield PASS. State inspection boundaries and
+the exact next action. Verification supplies no repair or merge authority.
 
-## Next action
-
-{{ action_and_owner }}
-
-Link the decision summary. Verification does not authorize repairs, record transitions
-or merge. Keep historical done plans intact.
+<!-- Returned evidence report. Grade behavior against current contracts,
+not plan checkbox completion. Historical records receive appended evidence. -->

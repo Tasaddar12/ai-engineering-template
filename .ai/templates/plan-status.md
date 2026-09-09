@@ -1,37 +1,39 @@
+---
+tier: status
+authority: agent
+title: Plan status
+---
+> Status: replace stale coordination with current observations.
+
 # Plan status
 
-Observed at: {{ timestamp }}
+Observed at / revision / scope: {{ snapshot_context }}
 
-Revision and inspection scope: {{ revision_and_limits }}
+## Plans by directory
 
-## Plans by stage
+| Stage | Plan ID / title / link, or None | Progress / blocker |
+| --- | --- | --- |
+| {{ configured_stage }} | {{ record_or_none }} | {{ evidence }} |
 
-Show every configured stage, including empty stages, and every plan within it.
-Intake is reported separately from plan stages.
+Include every configured stage and every PLAN. Intake is not a plan stage.
 
-| Stage | Plan / title / link, or None | Recorded status / review type | Recorded progress |
-| --- | --- | --- | --- |
-| {{ stage }} | {{ plan_or_none }} | {{ status }} | {{ progress_or_unknown }} |
+## Now and next
 
-## Current state and blockers
+Link STATE's current focus and next action.
 
-Now: {{ state_reference_and_now }}
+## Blockers and drift
 
-Next: {{ state_reference_and_next }}
+Link owners, questions and resume conditions. Separate suspected drift and
+waiting intake from confirmed open FIX records.
 
-| Scope / plan | Blocker | Owner | Resume condition | Evidence |
-| --- | --- | --- | --- | --- |
-| {{ scope }} | {{ blocker_or_none }} | {{ owner }} | {{ condition }} | {{ reference }} |
+## Things worth attention
 
-## Intake and suspected drift
+Supported signs of stale activity, aging review, capacity pressure, repeated
+defect causes, missing FIX proof or untriaged intake. State what was not read.
 
-Waiting/unconfirmed intake, suspected discrepancy, supporting observation, uncertainty
-and proposed next action. State what was not inspected.
+## Recommendation
 
-## Confirmed defects
+One bounded next action. This snapshot changes no records.
 
-Link open FIX records separately; do not present suspicions as confirmed defects.
-
-## Next decision
-
-One bounded next action and its required authority. This snapshot grants no approval.
+<!-- Returned snapshot. Directory owns stage; do not trust duplicated
+status/stage metadata or infer absence of drift from missing evidence. -->

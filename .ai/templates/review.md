@@ -1,23 +1,36 @@
+---
+tier: log
+authority: agent
+title: Review result
+---
+> Log: preserve evidence; append corrections.
+
 # Review result
 
-Subject: {{ plan_or_report_link }}
+Subject and revision: {{ subject_revision }}
 
-Reviewed revision: {{ commit_or_draft_revision }}
+Independence and inspection scope: {{ context_and_limits }}
 
-Verdict: {{ PASS_or_CHANGES_REQUIRED }}
+Verdict: {{ PASS_CHANGES_REQUIRED_CANNOT_VERIFY_or_proposal_verdict }}
 
 ## Findings
 
-| Location | Issue and impact | Required change |
-| --- | --- | --- |
-| {{ location }} | {{ issue }} | {{ remedy }} |
+| Severity | Location | Concrete failure / expected result | Evidence |
+| --- | --- | --- | --- |
+| {{ severity }} | {{ path_line }} | {{ issue }} | {{ reference }} |
 
-For PASS, write None instead of an empty table. Put all findings in this one report.
+Critical means plausible data loss, security exposure or unusable core behavior.
+Major means an in-scope required behavior is wrong. Minor means a nonblocking
+improvement. Do not inflate preferences or reduce severity to finish a loop.
 
-## Evidence and limits
+## Evidence
 
-What was inspected, what checks actually ran, and what remains unknown.
+Checks actually run, current specs, relevant diff and exclusions.
+For proposals use READY, NEEDS_REVISION or NEEDS_HUMAN.
 
-## Next decision
+## Next action
 
-The exact repair, acceptance or delivery decision. A review does not grant authority.
+One actionable handoff with the missing evidence or bounded repair.
+
+<!-- Returned report. Every finding needs a concrete consequence.
+No repository writes from the reviewer role; coordinator records evidence. -->

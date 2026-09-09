@@ -1,35 +1,52 @@
 ---
+tier: plan
+authority: agent
 id: FIX-{{ nnn }}
+found: {{ date }}
+found_by: {{ role }}
+severity: {{ critical_major_or_minor }}
+violates: []
+links: []
 title: {{ title }}
-status: open
-intake: null
-plan: null
-specs: []
-approval: pending
 ---
+> Plan: revise the proposed route as evidence changes; preserve accepted
+> results.
+
 # {{ title }}
 
-## Confirmed defect
+## Symptom
 
-Expected and observed behavior; affected scope; reproduction or other confirming
-evidence, revision and environment. Link original intake or research without
-duplicating its evidence. State uncertainty about cause separately from confirmation.
+Describe the failure from outside in: expected/observed behavior, affected
+revision/environment and confirming evidence. Do not diagnose in this section.
 
-## Repair scope and acceptance
+## Root cause
 
-Smallest proposed repair, exclusions, affected specs and observable acceptance.
-Record exact execution and delivery authority when received. If a PLAN is linked,
-it owns execution tasks and approval; reference it instead of copying its checklist.
+Name the mechanism and location. State Unknown until established; never
+confuse the location of a symptom with its cause.
 
-- [ ] T01: Bounded repair and acceptance condition, unless owned by a linked PLAN.
+## Change and scope
 
-## Validation and delivery
+The smallest conformance repair, affected files and exclusions. State exact
+execution/delivery authority. Behavior or intent changes escalate to a PLAN.
 
-Agreed checks, actual commands/results and subject revision; use test-result.md for
-evidence. Record review, user acceptance and authorized delivery references before done.
-A failed, stale or unrun required check keeps the fix open.
+## Proof
 
-## Remaining work and links
+Name the repeatable regression guard and record the actual command/output
+against unfixed behavior, then fixed behavior. Include revision/environment
+and relevant regression results. A check that never failed proves less than
+a check that demonstrates the defect. Missing proof keeps this record open.
 
-Remaining work, blocker/owner/resume condition if any, and related records.
-When complete, state what closed the defect and link a successor for later recurrence.
+## Contract
+
+Name the existing requirement violated. Distinguish restoring it from
+clarifying an already agreed but undocumented behavior or changing behavior.
+A clarification needs evidence and an AMD; a new behavior needs a PLAN.
+Update current SPEC verification_refs without altering valid criteria.
+
+## Related and closure
+
+Link originating INTAKE, PLAN if escalated, review, user acceptance and
+authorized delivery. Name remaining blockers or a linked recurrence.
+
+<!-- FIX-{nnn}-{slug}.md. Directory owns stage. Write the symptom first;
+unknown cause stays unknown; no before/after proof means no closure. -->

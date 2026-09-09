@@ -1,10 +1,18 @@
-# Draft or revise a plan
+---
+tier: contract
+authority: agent
+description: Draft an outcome and contract change.
+argument_hint: Request or INTAKE/FIX and current contracts.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: The user requested a small proposal for a specific change.
+# planning
 
-Inputs: A linked intake, current PROJECT/specs/decisions and relevant research.
+Use when: Draft an outcome and contract change.
 
-Follow [the plan workflow](../workflows/planning.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Request or INTAKE/FIX and current contracts.
 
-Return: the output named in that workflow, using its reporting template.
+Follow [planning](../workflows/planning.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: PLAN proposal and decision summary.

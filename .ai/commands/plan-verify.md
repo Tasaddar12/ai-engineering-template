@@ -1,11 +1,18 @@
-# Plan verification
+---
+tier: contract
+authority: agent
+description: Verify actual behavior against current contracts.
+argument_hint: PLAN or FIX, revision, environment and check authority.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: a completed implementation needs validation against specs and observed
-behavior before merge, or a done plan needs retrospective verification.
+# plan-verify
 
-Inputs: selected plan, exact revision, current specs, acceptance and agreed validation scope.
+Use when: Verify actual behavior against current contracts.
 
-Follow [plan-verify](../workflows/plan-verify.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: PLAN or FIX, revision, environment and check authority.
 
-Return: plan-verification.md report followed by decision-summary.md.
+Follow [plan-verify](../workflows/plan-verify.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Plan-verification report with actual evidence.

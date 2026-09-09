@@ -1,35 +1,61 @@
+---
+tier: contract
+authority: agent
+title: Review a proposal or result
+---
+> Contract: follow these steps within the approved scope.
+
 # Review a proposal or result
 
 ## Purpose
 
-A proposal, recommendation or implementation is ready for inspection.
+Challenge unsupported premises and concrete defects independently of
+implementation.
 
 ## Inputs
 
-The subject, review type, exact commit or identified draft revision, and available evidence.
+A stable subject, current contracts, approved outcome, review type and
+authorized checks.
 
 ## Gates
 
-Before inspection: [review-ready](../gates/review-ready.md).
-Running additional checks also needs authority under [action-approved](../gates/action-approved.md).
+Use [review-ready](../gates/review-ready.md); additional execution follows [action-approved](../gates/action-approved.md).
 
 ## Steps
 
-1. Confirm the subject and revision. For implementation, use a reviewer independent
-   of the implementor.
-2. Inspect scope, acceptance, fact ownership and documentation. For implementation,
-   inspect the entire diff and actual validation evidence.
-3. Return one PASS or CHANGES_REQUIRED report using the review template. Each issue
-   needs a location, impact and remedy; state the review's limits.
-4. The orchestrator records or links the report in the selected PLAN or FIX validation
-   section, or appends to the journal for a historical done record. Journal the
-   observation and present a user decision summary.
-5. Changed content requires a fresh review of the revised subject.
+1. For a proposal, use plan-checker. For implementation, use a reviewer
+   independent of the implementor and preferably in a fresh context.
+2. Prepare the review packet: PLAN/FIX, PROJECT, RULES, truth-map, current
+   specs, accepted ADRs, user documentation, surrounding code and relevant
+   tests.
+3. For cold review, exclude research briefs, earlier round logs and
+   implementor/scribe reports. Use the filtered diff below; do not follow links
+   into excluded evidence.
+4. Inspect contracts and outcomes before code, then the entire relevant diff and
+   commit slices. Check invariants and stale-document workaround signatures.
+5. Run agreed checks and return actionable findings: path/location, concrete
+   failure, expected outcome, severity and evidence. Say CANNOT_VERIFY when
+   required evidence is missing.
+6. The coordinator records the report. Bug-reviewer can inspect earlier evidence
+   to triage recurrence; the cold reviewer cannot.
+7. Recheck affected evidence after changes. Report degraded independence if a
+   fresh context was unavailable instead of claiming cold review.
 
 ## Output and handoff
 
-One review report and a bounded repair, acceptance or delivery decision. A small review can live in its PLAN or FIX; no extra tracker is needed.
+Use review.md. The packet's diff command is:
+
+```text
+git diff <base>...HEAD -- . ':(exclude).ai/research/' ':(exclude).ai/state/orchestration/'
+```
+
+Supply the actual base and inspect pending changes separately when reviewing an
+uncommitted draft. Exclusions concern review-process artifacts, not product
+files.
+The coordinator separately validates any excluded operating documents changed
+by the work so exclusion never becomes an unreviewed-change loophole.
 
 ## Stop conditions
 
-Do not edit implementation, run unapproved checks or treat PASS as user approval. Missing evidence or an unstable revision must be reported.
+Do not alter the reviewed result or approve to end a loop. Minor preferences do
+not block; missing required evidence does.

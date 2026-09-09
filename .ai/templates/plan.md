@@ -1,37 +1,75 @@
 ---
+tier: plan
+authority: agent
 id: PLAN-{{ nnn }}
-title: {{ title }}
-status: backlog
-intake: null
-fixes: []
-specs: []
+owner: {{ owner }}
+created: {{ date }}
+links: []
 features: []
 tasks: []
-approval: pending
+title: {{ title }}
 ---
+> Plan: revise the proposed route as evidence changes; preserve accepted
+> results.
+
 # {{ title }}
 
-## Outcome and scope
+## Goal and scope
 
-Link the originating intake or FIX if present. What changes, what is excluded, and
-which feature/checklist IDs belong to this plan?
+The approved outcome, exclusions, originating records and feature references.
+A changed route can be rewritten; a changed outcome needs a user decision.
 
-## Tasks and acceptance
+## Depends on
 
-- [ ] T01 (F01): One bounded step and its observable acceptance condition.
+List prerequisite plans and evidence. Distinguish dependency (needs a result)
+from contention (edits the same files). State None when independent.
 
-## Risks and dependencies
+## Contract changes
 
-Known risks, prerequisites and unanswered questions.
+### Specs to create
 
-## Validation at the end
+Draft exact present-tense wording to land with working behavior, or None.
 
-Exact checks to run after implementation, and how results will be recorded.
-Map acceptance to affected specs, observations and any agreed end-to-end journeys.
-Use plan-verification.md for completed work before merge.
+### Specs to amend
+
+For each SPEC: current wording, proposed wording and why. Keep proposed
+behavior here until implemented. A pure repair keeps valid criteria intact.
+
+### Specs to retire
+
+Name the SPEC or criteria and why they no longer apply, or None.
+
+### Decisions
+
+Name ADRs to create, confirm or supersede, and AMDs needed for corrections.
+Only accepted ADRs carry authority; do not treat a proposal as settled.
+
+## Approach and tasks
+
+Explain the approach and bounded slices with task/feature IDs, owned files
+and observable results. Steps should be independently understandable.
+
+- [ ] T01 (F01): One coherent slice and its acceptance condition.
+
+## Acceptance and validation
+
+State user-visible outcomes, invariants and commands or repeatable checks.
+Use configured checks plus relevant targeted coverage. Grade the result
+against current contracts, not whether the predicted steps were followed.
+
+## Risks and unknowns
+
+Name assumptions, unresolved decisions and the work independent of them.
 
 ## Decision and delivery
 
-Exact action awaiting approval, approval evidence if received, and delivery limits.
-For review add review_type: proposal or result. For blocked add previous_phase,
-blocker, owner and resume_condition. Record completion evidence before done.
+Exact execution and delivery authority, worktree/branch and next decision.
+For blocked work, name the question, owner and resume condition here.
+
+## Evidence and notes
+
+Link actual observations, review and verification. Record route changes
+without claiming an unrun check passed. Preserve completion evidence.
+
+<!-- PLAN-{nnn}-{slug}.md. Directory owns stage; no status/stage field.
+Contract changes contains future wording; specs describe current behavior. -->

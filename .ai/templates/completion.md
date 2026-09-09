@@ -1,17 +1,31 @@
+---
+tier: log
+authority: agent
+title: Completion report
+---
+> Log: preserve evidence; append corrections.
+
 # Completion report
 
-Subject and revision: {{ plan_tasks_or_fix_and_revision }}
+Subject / revision / assignment: {{ context }}
 
 ## Changes and acceptance
 
-Completed task IDs, affected files/specs and observed acceptance outcomes.
+What changed and what was observed, with task/feature or FIX references.
+
+## Contract reconciliation
+
+Actual SPEC/AMD/ADR changes and each PLAN promise delivered or reconciled.
 
 ## Validation
 
-Link actual test/gate evidence. Distinguish passed, failed and unrun checks.
+Commands actually run, results, environment, before/after FIX proof and limits.
 
-## Remaining work and limits
+## Remaining work and handoff
 
-Unfinished tasks, assumptions, deviations and requested next decision.
+Deferred INTAKE, open FIX, blockers, independent next work and required
+decision.
+Return to the coordinator; completion is not acceptance or delivery authority.
 
-Return to the orchestrator; completion of an assignment is not acceptance or delivery.
+<!-- Returned report. Describe actual results, not intended execution.
+Only the coordinator writes shared state and journals. -->

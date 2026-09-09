@@ -1,10 +1,18 @@
-# Deliver the approved result
+---
+tier: contract
+authority: agent
+description: Perform the exact authorized Git delivery.
+argument_hint: Revision, authority, evidence and destination.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: A reviewed result has explicit authority for a commit, push or merge.
+# deliver
 
-Inputs: The reviewed revision, validation evidence, branch identity and delivery limits.
+Use when: Perform the exact authorized Git delivery.
 
-Follow [the deliver workflow](../workflows/deliver.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Revision, authority, evidence and destination.
 
-Return: the output named in that workflow, using its reporting template.
+Follow [deliver](../workflows/deliver.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Observed delivery references and summary.

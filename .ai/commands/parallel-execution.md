@@ -1,10 +1,18 @@
-# Run independent assignments in parallel
+---
+tier: contract
+authority: agent
+description: Schedule explicitly approved parallel work.
+argument_hint: Selected plans, base and scope; dry-run when only proposing.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: Execute an explicitly approved set of independent assignments.
+# parallel-execution
 
-Inputs: Approved plan, assignment table, prerequisite evidence and fixed worktrees.
+Use when: Schedule explicitly approved parallel work.
 
-Follow [the workflow](../workflows/parallel-execution.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Selected plans, base and scope; dry-run when only proposing.
 
-Return: Combined result and test/review evidence.
+Follow [parallel-execution](../workflows/parallel-execution.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Run board, assignments and terminal reports.

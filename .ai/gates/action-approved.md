@@ -1,26 +1,30 @@
+---
+tier: contract
+authority: agent
+title: Action approved
+---
+> Contract: amend with evidence inside the approved scope.
+
 # Action approved
 
 ## Transition
 
-Before starting the particular action, including research, planning, execution or delivery.
+Before a new proposed action.
 
 ## PASS criteria
 
-- A user decision or direct instruction names the action and bounded scope.
-- The proposed action, destination and affected records match that authority.
-- Excluded actions are respected; approval has not been withdrawn or made stale.
-- If the action changes an accepted obligation, the relevant AMD is accepted.
-  This criterion is Not applicable to unaccepted draft refinements or unchanged contracts.
-
-Report-only inspection and INTAKE/FIX drafting are already permitted by the
-[approval policy](../policies/approval.md); record that basis rather than demanding
-another approval for those activities.
+- The user instruction or decision names the action and bounded scope.
+- The assignment and destination match that scope; excluded actions remain
+  excluded.
+- Human intent changes have explicit authority. Ordinary contract correction
+  inside approved work follows the amendment protocol without a second blanket
+  approval.
 
 ## Evidence
 
-Link the user decision record, selected PLAN/FIX/INTAKE, scope and any accepted AMD.
+Link the selected record and exact authority. Report/proposal drafting is
+already permitted by approval policy; state that basis rather than asking again.
 
 ## On FAIL
 
-Return a decision summary naming the missing decision or scope clarification. Do not
-perform the action while waiting.
+Return the concrete missing decision and continue independent approved work.

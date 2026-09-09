@@ -1,23 +1,37 @@
+---
+tier: contract
+authority: agent
+title: Parallel ready
+---
+> Contract: amend with evidence inside the approved scope.
+
 # Parallel ready
 
 ## Transition
 
-Before starting a wave of concurrent assignments.
+Before creating or dispatching the current wave.
 
 ## PASS criteria
 
-- Action-approved covers parallel dispatch and the proposed assignments.
-- Every worker has a role, task IDs, fixed worktree/branch, file/spec ownership and output.
-- Concurrent write scopes do not overlap; shared files have one designated writer.
-- Prerequisites are complete and read-only subjects are stable.
-- Shared-state ownership and the combined validation/review handoff are assigned.
+- The schedule and dispatch are authorized, including exact ownership and
+  destinations.
+- Dependencies and contention include source and contracts; inferred edges have
+  evidence and no unresolved cycle.
+- Each track has nonoverlapping owned paths or explicitly sequential shared
+  work.
+- Nonoverlapping ID ranges are reserved in the sole-owned manifest before
+  branching.
+- Prerequisite waves have merged and current plans have been checked against
+  that base.
+- Each assignment names absolute root/branch, scope, output, check authority and
+  resource limits.
 
 ## Evidence
 
-Link the plan's assignment table and prerequisite observations. Apply the
-[parallel execution policy](../policies/parallel-execution.md).
+Use the run manifest, assignments, Git observations and current proposal checks.
+A dry-run schedule is evidence of a proposal, not dispatch approval.
 
 ## On FAIL
 
-Resolve missing assignments or serialize overlapping/dependent work. Do not start the
-wave and hope that ownership or dependencies will sort themselves out.
+Return the invalid edge, ownership collision or missing authority. Serialize
+work or revise the proposal rather than guessing.

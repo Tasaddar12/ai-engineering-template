@@ -1,18 +1,35 @@
+---
+tier: status
+authority: agent
+title: Project state
+---
+> Status: replace stale coordination with current observations.
+
 # Project state
 
 ## Now
 
-[PLAN-001](../plans/review/PLAN-001-minimal-ai-contracts.md) draft revision 3 adds
-confirmed-defect records, e2e and decoupler roles, and plan-status/plan-verify operations,
-following [INTAKE-002](../plans/intake/INTAKE-002-expand-operating-documents.md).
-The assigned worktree remains ai-contract-scaffold on codex/ai-contract-scaffold.
-The user explicitly authorized committing and pushing these additions; merge remains excluded.
+[PLAN-002](../plans/review/PLAN-002-adopt-reference-contracts.md) adapts the
+supplied reconstruction on the existing ai-contract-scaffold worktree and
+codex/ai-contract-scaffold branch. The user authorized the change directly.
 
 ## Next
 
-Await the user's review of the draft, including FIX/intake boundaries, task decoupling,
-end-to-end validation and plan verification. Git owns the exact published revision.
+Return the validated draft through the authorized commit/push and await the
+user's feedback. Git owns the exact publication revision.
 
 ## Blockers
 
-None recorded. The contracts remain a documentation draft with manual checkpoints.
+| Blocks | Question or condition | Owner / resume condition |
+| --- | --- | --- |
+| None recorded | No external dependency for document drafting | Orchestrator |
+
+## Recently landed
+
+The preceding scaffold additions are published in fe374d3. Delivery facts
+belong to Git; detailed observations belong in the journal.
+
+## Known drift
+
+No confirmed unresolved document drift is recorded in this adaptation.
+Runtime-specific dispatch and prompt installation are outside its scope.

@@ -1,11 +1,18 @@
-# Report
+---
+tier: contract
+authority: agent
+description: Capture a problem or request.
+argument_hint: Observation and read-only evidence.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: a problem, waiting question, suspected drift, confirmed defect or request needs triage.
+# report
 
-Inputs: the request and available read-only evidence.
+Use when: Capture a problem or request.
 
-Follow [report](../workflows/report.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Observation and read-only evidence.
 
-Return: intake.md for unconfirmed/waiting items or fix.md for a confirmed defect,
-followed by decision-summary.md.
+Follow [report](../workflows/report.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: INTAKE or FIX and decision summary.

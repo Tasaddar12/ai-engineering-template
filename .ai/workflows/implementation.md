@@ -1,36 +1,49 @@
-# Implementation
+---
+tier: contract
+authority: agent
+title: Implement an approved plan
+---
+> Contract: follow these steps within the approved scope.
+
+# Implement an approved plan
 
 ## Purpose
 
-The user explicitly approved implementation of an identified scope.
+Make the approved outcome true while keeping code and contracts consistent.
 
 ## Inputs
 
-Execution approval, a plan or bounded FIX with acceptance/final checks, and an assigned worktree.
+Execution authority, PLAN, assigned root/branch, current specs and relevant
+evidence.
 
 ## Gates
 
-Before active work: [action-approved](../gates/action-approved.md).
-Before implementation review: [review-ready](../gates/review-ready.md).
+Use [action-approved](../gates/action-approved.md) before work and [review-ready](../gates/review-ready.md) before handing the result to
+review.
 
 ## Steps
 
-1. Record approval evidence. Confirm the fixed worktree/branch. Move a plan to active;
-   a bounded FIX stays open until the fix lifecycle's closure conditions are met.
-   The orchestrator updates STATE.
-2. The implementor inspects affected files and performs the approved checklist in that worktree.
-3. Update the owning specs to describe the actual result. Report new scope or an
-   accepted contract change before acting; use an AMD where required.
-4. The tester, with e2e for agreed journeys, runs validation at the end using
-   test-result.md; record commands, actual results and limits. Repairs return to the implementor within the same scope.
-   Changed content requires fresh affected checks before independent review.
-5. Move a plan result to review with review_type: result; a FIX remains open with
-   linked evidence. Return a completion summary for independent review.
+1. Confirm the root and branch. Move the authorized PLAN to active; the
+   orchestrator owns shared coordination.
+2. Inspect the surrounding code and recorded contradictions before
+   implementation.
+3. Use implementor to build coherent slices. Correct the wrong side of each
+   contradiction under records policy; continue independent work if a human
+   decision is needed.
+4. Land changed SPEC criteria, AMDs and decision records with the behavior they
+   describe. Keep current verification_refs for the actual checks.
+5. Run targeted validation and affected regressions with tester and e2e where
+   agreed. Inspect the full diff; checks do not replace reasoning about callers.
+6. Reconcile the plan's Contract changes with what was actually built. A changed
+   route may be rewritten; changed user outcomes need approval.
+7. Move the result to review and return completion evidence. Commit or push only
+   when already authorized.
 
 ## Output and handoff
 
-An implementation diff, matching specs and evidence for review. Only the orchestrator updates live state and records the handoff.
+Working behavior, current specs and actual validation for independent review.
 
 ## Stop conditions
 
-Pause affected work for new authority or a real blocker. Record blocker, owner, previous phase and resume condition. Execution grants no implicit delivery.
+Do not contort code for stale prose or edit human intent to excuse a result.
+Report unrun checks and unresolved in-scope defects.

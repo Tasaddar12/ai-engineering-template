@@ -1,16 +1,20 @@
-# Research records
+---
+tier: contract
+authority: agent
+title: Research evidence
+---
+> Contract: amend with evidence inside the approved scope.
 
-Use [the research template](../templates/research.md) and
-[research workflow](../workflows/research.md). Filenames and IDs belong to [config](../config.yaml).
+# Research evidence
 
-A record owns one question, its consulted sources, findings and uncertainty.
-Recommendations are not accepted decisions, plans or implemented facts. Link accepted
-rationale from an ADR and implemented behavior from its owning SPEC.
+Use [research.md](../templates/research.md) for bounded investigations and
+configured RES IDs. Research owns inspected sources, findings and uncertainty.
+It cannot authorize a requirement or implementation.
 
-Use draft while investigating, complete when the bounded investigation is finished,
-and superseded when a newer record replaces it. Complete can include unanswered
-questions; state them plainly. Correct a completed record with a dated addendum or
-linked follow-up, rather than silently rewriting its conclusion.
+Place contradictions and useful local code/test knowledge in the brief.
+A completed brief is log-tier evidence: append corrections or link a successor
+instead of rewriting the premise another worker used.
 
-No investigations have been performed for this draft. Do not seed example findings
-as though they were observed.
+Cold review excludes these briefs; the reviewer should challenge the result
+without inheriting the implementation's assumptions. Triage can read them
+after review to explain recurring or already-answered findings.

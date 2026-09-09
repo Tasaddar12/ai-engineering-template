@@ -1,21 +1,32 @@
 ---
+tier: log
+authority: agent
 id: AMD-{{ nnn }}
+amends: {{ owning_record }}
+raised_by: {{ role }}
+links: []
 title: {{ title }}
-status: proposed
-contract: {{ contract_path }}
-decision: null
 ---
+> Log: preserve evidence; append corrections.
+
 # {{ title }}
 
-## Old and proposed obligation
+## What the document said
 
-Describe the exact contract change.
+Exact owning document and prior wording.
 
-## Reason and impact
+## What is supported now
 
-Why change it? Which specs, workflows and users are affected?
+Evidence establishing which side of the contradiction is wrong.
 
-## User decision and application
+## Why they diverged
 
-Pending / accepted / rejected; decision evidence and approved application steps.
-Do not change the accepted contract until the user approves this amendment.
+Stale documentation, approved behavior change or another evidenced cause.
+
+## Replacement and effect
+
+Exact replacement or deletion, downstream records and authority reference.
+Land the contract with the behavior that makes it true.
+
+<!-- AMD-{nnn}-{slug}.md. Write before changing the contract. Keep history
+here; never weaken a valid requirement to make broken code conform. -->

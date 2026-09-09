@@ -1,23 +1,34 @@
+---
+tier: contract
+authority: agent
+title: Retirement ready
+---
+> Contract: amend with evidence inside the approved scope.
+
 # Retirement ready
 
 ## Transition
 
-Before removing the exact merged worktree and local branch.
+Before removing an exact merged worktree and its local branch.
 
 ## PASS criteria
 
-- The host confirms the authorized merge for the expected branch and revision.
-- The target has been synchronized and contains the delivered work.
-- The worktree-only assignment has ended, the owner is stopped and the worktree is clean.
-- The exact owned path and branch are known; neither has advanced beyond the verified work.
-- The target is not the base branch or another person's checkout.
+- The host confirms the authorized merge for the intended branch/revision.
+- The synchronized target contains the work, with ancestry supporting non-forced
+  branch deletion.
+- The worktree-only assignment has ended, all writers are stopped and
+  tracked/untracked state is clean.
+- Exact absolute path and owned branch are known, with no later unmerged commits
+  or open request requiring them.
+- The target is not the base branch, another checkout or unrelated work.
 
 ## Evidence
 
-Record the hosting merge observation, synchronized target, branch tip, clean status
-and ownership under the [execution policy](../policies/execution.md).
+Record merge result, synchronized target, ancestry, clean status and ownership.
+Squash/rebase outcomes with inconclusive ancestry require further inspection,
+not forced deletion.
 
 ## On FAIL
 
-Retain the worktree/branch and report the exact reason. A push-only draft fails this
-gate because it has no authorized, verified merge.
+Retain uncertain work and state the specific remaining cleanup. Never substitute
+force to make the gate pass.

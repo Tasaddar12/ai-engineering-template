@@ -1,0 +1,7 @@
+# Nested worktrees must never become part of a committed scaffold.
+.worktrees/
+# Local agent settings and operating-system/editor noise.
+.codex/settings.local.*
+.DS_Store
+Thumbs.db
+*.swp

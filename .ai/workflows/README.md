@@ -1,21 +1,31 @@
+---
+tier: contract
+authority: agent
+title: Workflows
+---
+> Contract: follow linked owners rather than duplicating requirements.
+
 # Workflows
 
-Workflows own steps; [commands](../commands/README.md) select operations.
-[Policies](../policies/README.md) own requirements and [gates](../gates/README.md)
-check readiness to advance.
+Each workflow owns its steps. Commands select it; policies and gates govern its
+transitions.
 
-| Workflow | Lead / handoff | Result |
-| --- | --- | --- |
-| [Initialize](initialize.md) | orchestrator | Project context, live state and initial record scaffold. |
-| [Report](report.md) | orchestrator, with bug-reviewer for bugs | Intake or confirmed FIX and next decision. |
-| [Research](research.md) | researcher to orchestrator | Sources, findings, uncertainty and recommendation. |
-| [Planning](planning.md) | planner to orchestrator | Bounded proposal and user decision. |
-| [Implementation](implementation.md) | implementor, tester, orchestrator | Changes, specs and final test evidence. |
-| [Review](review.md) | reviewer to orchestrator | One verdict with actionable findings. |
-| [Parallel execution](parallel-execution.md) | orchestrator with assigned workers | Independent results, combined validation and review. |
-| [Deliver](deliver.md) | pr-agent under orchestrator coordination | The approved Git action and observed outcome. |
-| [Plan status](plan-status.md) | orchestrator | Every plan by stage, live state, blockers and suspected drift. |
-| [Plan verification](plan-verify.md) | orchestrator with agreed tester/e2e/reviewer inputs | Completed work checked against acceptance, specs and observations. |
-
-Use only the operations needed for the request. These are manual procedures and role
-handoffs; defining them does not launch agents or authorize product work.
+- [Deliver the approved result](deliver.md)
+- [Repair a confirmed defect](fix.md)
+- [Harvest discussion into records](harvest.md)
+- [Implement an approved plan](implementation.md)
+- [Initialize a project](initialize.md)
+- [Retire exact merged work](orchestrate-clean.md)
+- [Show run status](orchestrate-status.md)
+- [Run one assigned track](orchestrate-track.md)
+- [Schedule independent tracks](parallel-execution.md)
+- [Reconcile the plan backlog](plan-archive.md)
+- [Record a real blocker](plan-block.md)
+- [Close accepted work](plan-done.md)
+- [Show plan status](plan-status.md)
+- [Verify current behavior](plan-verify.md)
+- [Plan a behavior change](planning.md)
+- [Report and route a finding](report.md)
+- [Research a bounded question](research.md)
+- [Review a proposal or result](review.md)
+- [Correct a contract](spec-amend.md)

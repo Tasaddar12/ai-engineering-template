@@ -1,10 +1,18 @@
-# Plan status
+---
+tier: contract
+authority: agent
+description: Show every plan by stage and current coordination.
+argument_hint: Configured folders, STATE and linked findings.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: the user wants every plan by stage, current focus, blockers and suspected drift.
+# plan-status
 
-Inputs: configured plan folders, STATE, current specs and linked intake/FIX evidence.
+Use when: Show every plan by stage and current coordination.
 
-Follow [plan-status](../workflows/plan-status.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Configured folders, STATE and linked findings.
 
-Return: plan-status.md report followed by decision-summary.md.
+Follow [plan-status](../workflows/plan-status.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Plan-status report and one recommendation.

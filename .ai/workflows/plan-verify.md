@@ -1,58 +1,53 @@
-# Verify a completed plan
+---
+tier: contract
+authority: agent
+title: Verify current behavior
+---
+> Contract: follow these steps within the approved scope.
+
+# Verify current behavior
 
 ## Purpose
 
-Check that a completed plan's delivered work matches its acceptance, current specs
-and observed behavior. Use before merge or for retrospective verification.
+Determine whether the result satisfies current contracts and the approved
+outcome, not whether a prediction's boxes are all checked.
 
 ## Inputs
 
-A plan with implementation complete in review (review_type: result), or a done plan;
-its task/feature references, affected specs, exact branch/revision, environment,
-agreed checks and available review/test evidence.
+The selected plan or FIX, exact revision/environment, relevant specs and agreed
+verification commands.
 
 ## Gates
 
-Before running checks: [action-approved](../gates/action-approved.md) for the agreed
-validation scope. Additional inspection can identify missing evidence without executing.
-Before merge: [delivery-ready](../gates/delivery-ready.md), using this verification
-report as evidence. Verification supplies no merge authority.
+Use [action-approved](../gates/action-approved.md) for checks. Before delivery apply [delivery-ready](../gates/delivery-ready.md).
 
 ## Steps
 
-1. The orchestrator identifies the plan, checked-out revision, baseline/diff and
-   completion evidence. If the plan is incomplete, report FAIL with remaining work.
-   Record the exact revision and any pending diff; before merge use a clean commit.
-2. Map every task and acceptance condition to its feature, owning spec and required
-   observation. Include every affected spec and agreed regression check; never infer
-   completion from checked boxes alone.
-3. The tester runs agreed checks; e2e covers agreed journeys across system boundaries.
-   Reuse evidence only when its revision, environment and scope still apply.
-   A documentation-only plan uses agreed document checks; explain why product
-   journeys are not applicable. Never describe them as executed tests.
-4. Compare actual results with both the approved outcome and current specs. The
-   reviewer inspects the full relevant diff independently of the implementor when
-   implementation review is required. Link that review rather than treating
-   verification as a substitute for it.
-5. Return plan-verification.md with PASS only when every required acceptance,
-   spec comparison and check passes with current evidence and no unresolved
-   in-scope defect. Failed, unavailable, stale or unrun required checks produce FAIL.
-   Not applicable needs a scope-based reason; it cannot waive a required check.
-6. Separate confirmed defects from suspected drift. Recommend linked FIX or INTAKE
-   records through the report workflow. Propose repairs without performing them.
-7. The orchestrator returns a decision summary. Record authorized evidence in the
-   mutable plan's validation section. For a done plan, append a journal entry linked
-   to the plan and revision; preserve its historical record. A report-only request
-   returns the report without changing repository files.
+1. Identify the revision, base and pending diff. Read current specs and the
+   approved outcome; treat the plan's route as revisable evidence.
+2. Walk each contract criterion and invariant against observed behavior. An
+   obsolete predicted step is not itself a product failure; a silently dropped
+   approved outcome is.
+3. Run configured and relevant targeted checks. With no configured commands,
+   identify actual manual checks and limits; an empty list is not a pass.
+4. Use tester and e2e as needed. For FIX, prove the guard failed before and
+   passed after, the cause was addressed and no unapproved behavior changed.
+5. Walk Contract changes against the repository: every create, amendment,
+   retirement and decision must be delivered or explicitly reconciled.
+6. Check record drift, tense, duplicated ownership and signatures of a
+   stale-spec workaround. Record drift is a finding, not a footnote.
+7. Return PASS, FAIL or CANNOT_VERIFY with per-criterion evidence. Missing
+   required evidence prevents a passing delivery gate.
+8. Store authorized evidence in the selected record; append evidence for
+   historical done records to the journal. A report-only request changes no
+   files.
 
 ## Output and handoff
 
-An evidence matrix, overall PASS/FAIL, limits and next action. Before merge, delivery
-uses this report for the exact intended revision and required hosting checks.
-A later relevant change invalidates affected verification and requires rechecking.
+A plan-verification.md report linking current behavior, contract reconciliation,
+actual checks and limits. A relevant change invalidates affected evidence.
 
 ## Stop conditions
 
-Do not repair code/specs, rewrite historical plans, move stages or merge from this
-command. Missing scope or authority leaves the affected check NOT_RUN and the overall
-verification FAIL; report what would resolve it.
+Do not repair code/specs or merge from verification. Preserve incomplete checks
+and return the precise missing action.

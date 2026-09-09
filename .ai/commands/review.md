@@ -1,10 +1,18 @@
-# Review a proposal or result
+---
+tier: contract
+authority: agent
+description: Inspect a proposal or implementation independently.
+argument_hint: Stable subject, current contracts and check scope.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: A proposal, recommendation or implementation is ready for inspection.
+# review
 
-Inputs: The subject, review type, exact commit or identified draft revision, and available evidence.
+Use when: Inspect a proposal or implementation independently.
 
-Follow [the review workflow](../workflows/review.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Stable subject, current contracts and check scope.
 
-Return: the output named in that workflow, using its reporting template.
+Follow [review](../workflows/review.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Review verdict and actionable findings.

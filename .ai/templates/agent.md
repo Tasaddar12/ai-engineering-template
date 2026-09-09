@@ -1,26 +1,41 @@
 ---
-name: {{ role }}
-description: {{ one_sentence_description }}
-mode: {{ role_mode }}
-workflows: [{{ workflow_names }}]
-report_template: {{ report_template }}
+tier: contract
+authority: agent
+name: {{ name }}
+description: {{ when_to_use }}
+reads: []
+writes: []
+workflows: []
+report_template: {{ template_name }}
 ---
-# {{ role }}
+> Contract: amend with evidence inside the approved scope.
 
-## Read
+# {{ name }}
 
-Relevant owners and workflow inputs.
+## Purpose and traps
 
-## Steps
+When this role helps, the failure it prevents and its route forward.
 
-1. Follow the RULES approval gate and confirm the assigned scope.
-2. Perform only the role's authorized action.
-3. Return the required report.
+## Read first
 
-## Do not
+RULES, the assigned record, current owners and the selected workflow.
+The read/write lists are instructions, not installed permission enforcement.
 
-Role-specific prohibited actions.
+## You may write
+
+Exact allowed paths and artifacts within the approved assignment.
+
+## You must not write
+
+Excluded paths, human intent and other worktrees; name the handoff instead.
+
+## How you work
+
+Numbered steps covering evidence, contradictions, ownership and completion.
 
 ## Report
 
-Use decision-summary.md; include evidence, actual status and the exact next decision.
+Exact report template, evidence, limits, destination and next action.
+
+<!-- {role}.md. Include description and positive read/write scope.
+Role definitions do not authorize execution or create independent review. -->

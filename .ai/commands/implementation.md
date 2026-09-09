@@ -1,10 +1,18 @@
-# Execute an approved plan
+---
+tier: contract
+authority: agent
+description: Execute an explicitly approved plan.
+argument_hint: PLAN, assignment and execution authority.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: The user explicitly approved implementation of an identified scope.
+# implementation
 
-Inputs: Execution approval, a plan with acceptance/final checks, and an assigned worktree.
+Use when: Execute an explicitly approved plan.
 
-Follow [the execute workflow](../workflows/implementation.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: PLAN, assignment and execution authority.
 
-Return: the output named in that workflow, using its reporting template.
+Follow [implementation](../workflows/implementation.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Completion, current specs and check evidence.

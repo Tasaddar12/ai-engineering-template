@@ -1,21 +1,36 @@
-# Project context
+---
+tier: intent
+authority: human
+title: {{ title }}
+---
+> Intent: the user owns this content; propose changes outside explicit
+> authority.
 
-## Purpose and users
+# {{ title }}
 
-Why the project exists and who it serves.
+## Why this exists
 
-## Desired outcome
+Purpose, users and the problem being addressed, from user-provided facts.
 
-Stable goals and the owner's priorities.
+## What success looks like
 
-## Context and boundaries
+Observable outcomes rather than an invented feature list.
 
-Background, constraints and explicit exclusions. Current work belongs in STATE.
+## Non-goals
 
-## System overview
+What the project should deliberately avoid.
 
-Link current SPEC owners, policies, workflows and decisions rather than copying them.
+## Hard constraints
 
-## Open decisions
+Firm requirements and the user's authority boundaries.
 
-Unresolved choices that need an owner decision; link relevant plans or intake.
+## Out of bounds for agents
+
+Actions requiring a new user decision.
+
+## Stakeholders and context
+
+Known stakeholders, system context and unresolved human decisions.
+
+<!-- PROJECT.md lives in state; its tier is intent regardless of directory.
+Do not invent purpose or constraints to fill an unknown. -->

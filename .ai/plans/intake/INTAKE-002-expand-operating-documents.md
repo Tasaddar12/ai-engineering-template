@@ -1,43 +1,34 @@
 ---
+tier: plan
+authority: agent
 id: INTAKE-002
+found_while: Successive scaffold refinement requests
+kind: idea
+disposition: planned
+links: [PLAN-001]
 title: Expand operating documents
-status: planned
-plan: PLAN-001
-fix: null
 ---
+> Plan: revise the proposed route as evidence changes; preserve accepted
+> results.
+
 # Expand operating documents
 
-## Report
+## What's uncertain
 
-The user explicitly requested workflows and research folders in the existing scaffold
-worktree, with modest detail for review. They then requested policies for firm
-requirements and gates for PASS/FAIL conditions before workflows advance.
+The user requested workflows/research, policies/gates, named roles, project
+context in state, confirmed fixes, e2e/decoupler and plan-status/plan-verify.
+The record captures the request, not evidence of an application defect.
 
-They then named eight roles: orchestrator, researcher, planner, implementor, reviewer,
-tester, bug-reviewer and pr-agent. They requested initialize, planning, implementation,
-review and parallel-execution workflows, and replacement of the intent folder with
-PROJECT.md beside STATE.md in state.
+## Where and evidence
 
-The next refinement requests fixes/open and fixes/done for confirmed bugs and small
-defects, with intake reserved for unconfirmed/waiting details and suspected drift.
-It also adds e2e and decoupler roles, plan-status for all plan stages and live status,
-and plan-verify for completed work checked against specs and observations.
-The user explicitly requested committing and pushing all of these additions.
+User instructions in this thread and the linked plan/draft Git history.
 
-Previously commands contained the procedures, and hooks listed manual checks. The
-requested additions need clear ownership so the same requirement is not defined in
-several places.
+## Why deferred and impact
 
-## Impact and unknowns
+The request required a bounded draft and user review. Fine-grained wording
+remains available for feedback; no unsupported product behavior is claimed.
 
-These are draft documentation changes only. No investigation, automatic enforcement
-or product implementation is being performed. Fine-grained policy and gate wording
-remains open for review.
+## Next action and links
 
-## Proposed next action
-
-Refine the existing [PLAN-001](../review/PLAN-001-minimal-ai-contracts.md) draft under
-the user's direct instructions. Add the directories, roles and workflows, consolidate
-project context under state, link their owners, and
-present the draft for feedback. After drafting, the user explicitly authorized
-committing and pushing it to the existing branch. No PR creation or merge is authorized.
+The requested work is planned under PLAN-001. The subsequent reference
+adaptation is owned by PLAN-002. Preserve this originating request as evidence.

@@ -1,33 +1,43 @@
-# Investigate a bounded question
+---
+tier: contract
+authority: agent
+title: Research a bounded question
+---
+> Contract: follow these steps within the approved scope.
+
+# Research a bounded question
 
 ## Purpose
 
-An INTAKE, FIX or PLAN needs evidence before a choice can be made.
+Gather evidence that helps the next worker act without inheriting an unsupported
+premise.
 
 ## Inputs
 
-A question, related record, approved investigation scope and source/time limits.
+The assigned question, source scope, relevant records and allowed observations.
 
 ## Gates
 
-Before investigation: [action-approved](../gates/action-approved.md).
-Before formal review: [review-ready](../gates/review-ready.md), using research criteria.
+Use [action-approved](../gates/action-approved.md) for the investigation and any side-effecting checks.
 
 ## Steps
 
-1. The researcher reads existing research and relevant fact owners before starting another investigation.
-2. Allocate a research ID and fill the research template under research.
-3. Consult permitted sources. Record locations, access dates and limitations; prefer
-   direct project evidence and primary sources where applicable.
-4. Answer with source-linked findings. Label inference, conflicting evidence and
-   unknowns. Stop at the agreed scope or limit.
-5. Mark the record complete when the investigation is finished, even if more evidence
-   is needed. Link it from the INTAKE, FIX or PLAN.
+1. Verify the assignment and existing evidence before opening new sources.
+2. Use researcher to inspect actual call paths, surrounding patterns, tests and
+   hidden invariants.
+3. Record sources actually consulted and distinguish evidence from inference.
+4. Put contradictions in a Document / Says / Observed / Uncertainty table. Do
+   not silently settle a behavior decision from the research seat.
+5. Capture unrelated findings as intake and return the smallest useful brief.
+6. Preserve delivered research as log evidence; append corrections and link the
+   successor finding.
 
 ## Output and handoff
 
-A research record and decision summary. Propose a choice, more research or a plan. Accepted rationale belongs in an ADR.
+A research.md record under research, returned to planner or implementor with
+known limits.
 
 ## Stop conditions
 
-Pause for new access, spending, installation or wider scope. Do not turn research into implementation or silently rewrite a completed conclusion.
+Stop at the agreed scope or resource limit. Missing evidence is an uncertainty,
+not a license to invent.

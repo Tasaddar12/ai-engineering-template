@@ -1,4 +1,7 @@
-version: 1
+# Contract configuration: amend in approved scope; never infer user authority.
+version: 2
+mode: standard
+# This scaffold has no dispatcher. Commands are Markdown workflow entry points.
 paths:
   root: .ai
   rules: .ai/RULES.md
@@ -11,12 +14,10 @@ paths:
   decisions: .ai/decisions
   amendments: .ai/decisions/amendments
   retired_decisions: .ai/decisions/retired
+  meetings: .ai/decisions/meetings
   plans: .ai/plans
   intake: .ai/plans/intake
   fixes: .ai/fixes
-  fix_phases:
-    open: .ai/fixes/open
-    done: .ai/fixes/done
   templates: .ai/templates
   agents: .ai/agents
   hooks: .ai/hooks
@@ -25,6 +26,7 @@ paths:
   research: .ai/research
   policies: .ai/policies
   gates: .ai/gates
+  orchestration: .ai/state/orchestration
   plan_phases:
     backlog: .ai/plans/backlog
     active: .ai/plans/active
@@ -32,6 +34,13 @@ paths:
     blocked: .ai/plans/blocked
     abandoned: .ai/plans/abandoned
     done: .ai/plans/done
+  fix_phases:
+    open: .ai/fixes/open
+    done: .ai/fixes/done
+lifecycle:
+  # The directory is the only PLAN/FIX stage; this is advisory capacity.
+  max_active: 2
+  archive_partition: none
 ids:
   spec: 'SPEC-{nnn}-{slug}.md'
   decision: 'ADR-{nnn}-{slug}.md'
@@ -40,6 +49,8 @@ ids:
   fix: 'FIX-{nnn}-{slug}.md'
   plan: 'PLAN-{nnn}-{slug}.md'
   research: 'RES-{nnn}-{slug}.md'
+  meeting: 'MEET-{date}-{slug}.md'
+  orchestration: 'ORCH-{nnn}.md'
   journal: '{date}.md'
   number_pattern: '[0-9]{3}'
   slug_pattern: '[a-z0-9]+(?:-[a-z0-9]+)*'
@@ -47,6 +58,24 @@ ids:
   first_number: '001'
   allocation: next_unused_per_kind_across_all_lifecycle_folders
   reuse: false
+verification:
+  # Select real project commands during initialization. Empty is not a PASS.
+  commands: []
+  targeted_commands: []
+  empty_commands: report_manual_checks_and_limits
+orchestration:
+  dispatch: manual
+  worktree_root: .worktrees
+  max_parallel_tracks: 3
+  id_block_size: 20
+  base_branch: ''
+  # Resolve the real base branch before a run; never guess it.
+  branch_prefix: codex
+  review:
+    max_rounds: 3
+    blocking_severity: major
+  auto_merge: never
+  cleanup_on_merge: true
 journal:
   timezone: America/New_York
   entry_time_format: 'HH:mm:ss Z'

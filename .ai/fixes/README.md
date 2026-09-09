@@ -1,23 +1,25 @@
-# Confirmed defects
+---
+tier: contract
+authority: agent
+title: Fix lifecycle
+---
+> Contract: amend with evidence inside the approved scope.
 
-Use this area for confirmed bugs and small defects. Unconfirmed reports, waiting
-questions and suspected differences between documentation and behavior stay in
-[intake](../plans/README.md) until evidence establishes a defect. The
-[record policy](../policies/records.md) owns that distinction.
+# Fix lifecycle
 
-| Folder | Meaning | Exit condition |
-| --- | --- | --- |
-| open | Confirmed defect awaiting an approved repair, validation or acceptance | Agreed checks pass and the user accepts the result and its authorized delivery. |
-| done | Accepted, validated repair with delivery evidence | Historical; a recurrence gets a new linked FIX. |
+A FIX restores existing correct behavior. A PLAN changes it. Use
+[records](../policies/records.md) for routing and [fix](../workflows/fix.md)
+for the procedure.
 
-Create records with [fix.md](../templates/fix.md), using the filename and ID format
-in [config](../config.yaml). An open record can be blocked; name the owner and resume
-condition in its remaining-work section instead of adding more folders.
+| Directory | Meaning |
+| --- | --- |
+| open | Confirmed defect awaiting repair, proof, acceptance or delivery. |
+| done | Accepted repair with actual before/after proof and delivery. |
 
-Link an originating intake when there is one; a directly confirmed defect needs no
-duplicate intake. A bounded repair can use its FIX checklist and approval. Work with
-multiple features or dependencies needs a linked PLAN owning that execution scope.
-Use the existing implementation, review and delivery workflows.
+Use [fix.md](../templates/fix.md) and configured IDs. The directory is the
+stage; no status/stage frontmatter. Keep unknown causes explicit. A recurrence
+gets a linked new FIX, preserving the prior repair evidence.
 
-Move a completed record with its ID/slug intact, repair links and journal the
-transition. A commit or push alone does not close it. Empty folders retain .gitkeep.
+Use [completion-ready](../gates/completion-ready.md) before moving to done.
+A commit or push alone does not close a defect. Unconfirmed observations and
+suspected drift remain in intake until evidence establishes the defect.

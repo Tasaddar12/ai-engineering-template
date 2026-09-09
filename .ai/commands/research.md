@@ -1,10 +1,18 @@
-# Investigate a bounded question
+---
+tier: contract
+authority: agent
+description: Investigate a bounded question.
+argument_hint: Question, source scope and authority.
+---
+> Contract: this entry point selects a workflow; it grants no new authority.
 
-Use when: An intake or plan needs evidence before a choice can be made.
+# research
 
-Inputs: A question, related record, approved investigation scope and source/time limits.
+Use when: Investigate a bounded question.
 
-Follow [the research workflow](../workflows/research.md). It owns the procedure;
-[RULES](../RULES.md) owns authority.
+Inputs: Question, source scope and authority.
 
-Return: the output named in that workflow, using its reporting template.
+Follow [research](../workflows/research.md). That workflow owns the steps.
+Read [RULES](../RULES.md) for the engagement protocol.
+
+Return: Research record with sources and uncertainty.

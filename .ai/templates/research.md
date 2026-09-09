@@ -1,31 +1,42 @@
 ---
+tier: log
+authority: agent
 id: RES-{{ nnn }}
+question: {{ bounded_question }}
+links: []
 title: {{ title }}
-status: draft
-related: []
-supersedes: null
 ---
+> Log: preserve evidence; append corrections.
+
 # {{ title }}
 
 ## Question and scope
 
-One question, why it matters, and the investigation's boundaries.
+What decision needs evidence and the authorized investigation boundary.
 
-## Sources
+## Where the change lands
 
-| Source | Location or URL | Access date | Relevance and limitations |
-| --- | --- | --- | --- |
-| {{ source }} | {{ reference }} | {{ date }} | {{ relevance }} |
+Relevant files, call paths, surrounding patterns and existing test commands.
 
-## Findings
+## Findings and sources
 
-Separate supported facts from inference. Link important claims to sources.
+Sources actually inspected, supported findings and explicit uncertainty.
 
-## Unknowns and limits
+## Contradictions
 
-Missing evidence, conflicts, outdated information and unanswered questions.
+| Document / claim | Observed evidence | Uncertainty / next decision |
+| --- | --- | --- |
+| {{ reference }} | {{ observed }} | {{ uncertainty }} |
 
-## Recommendation and next decision
+## Risks and deferred findings
 
-A bounded recommendation, tradeoffs and next decision. No implementation authority
-is implied.
+Link intake for out-of-scope problems. Research identifies contradictions;
+the authorized implementor resolves them with the relevant code in view.
+
+## Handoff
+
+What the planner or implementor needs, including targeted checks and limits.
+A recommendation is not a requirement or authority.
+
+<!-- RES-{nnn}-{slug}.md. Completed research is evidence, not a contract.
+Append a correction rather than silently replacing its premise. -->

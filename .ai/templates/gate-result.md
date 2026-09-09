@@ -1,19 +1,26 @@
+---
+tier: log
+authority: agent
+title: Gate result
+---
+> Log: preserve evidence; append corrections.
+
 # Gate result
 
-Gate: {{ gate_definition_link }}
+Gate: {{ definition_link }}
 
-Subject and revision: {{ record_and_revision }}
+Subject / revision / evaluator / time: {{ evaluation_context }}
 
-Evaluator and time: {{ evaluator_and_timestamp }}
-
-| Criterion | Met / unmet / not applicable | Evidence or reason |
+| Criterion | Met / unmet / N/A | Evidence or permitted exception |
 | --- | --- | --- |
-| {{ criterion }} | {{ outcome }} | {{ reference }} |
+| {{ criterion }} | {{ result }} | {{ reference }} |
 
 Result: {{ PASS_or_FAIL }}
 
-Next action: {{ action_and_owner }}
+Next action and owner: {{ bounded_handoff }}
 
-Record in the subject PLAN, FIX or INTAKE; append new evaluations for historical
-done plans to the journal. A changed subject or approval requires a new
-evaluation; preserve the earlier result as dated evidence.
+Record in the selected PLAN/FIX evidence section. Append new evidence for a
+historical record to the journal. Missing evidence cannot produce PASS.
+
+<!-- Evidence report. A changed relevant subject or authority needs a fresh
+evaluation. A passing gate grants no additional action authority. -->

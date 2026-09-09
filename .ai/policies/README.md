@@ -1,12 +1,20 @@
-# Policies
+---
+tier: contract
+authority: agent
+title: Policy index
+---
+> Contract: amend with evidence inside the approved scope.
 
-Policies own firm requirements. Workflows describe steps; gates check whether the
-requirements for a transition are met. Neither can override a policy.
+# Policy index
 
-- [Approval](approval.md): report-first operation and explicit action authority.
-- [Records](records.md): fact ownership, templates, mutability and amendments.
-- [Execution](execution.md): worktree boundaries, validation, review and Git delivery.
-- [Parallel execution](parallel-execution.md): assignment ownership and safe concurrent work.
+Policies own firm requirements. Workflows refer to them rather than making
+weaker copies.
 
-These contracts remain drafts for user review. Changes to an accepted obligation use
-the amendment protocol. This directory defines requirements; it does not install enforcement.
+- [Approval](approval.md): user decisions, scope and publication authority.
+- [Records](records.md): tiers, amendments, tense, routing and evidence.
+- [Execution](execution.md): validation, review, commits and delivery.
+- [Parallel execution](parallel-execution.md): waves, tracks and ownership.
+
+Read the policy's correction route before treating a contradiction as a
+blocker. Human intent remains under the approval policy; an in-scope stale
+contract has an evidenced amendment route.

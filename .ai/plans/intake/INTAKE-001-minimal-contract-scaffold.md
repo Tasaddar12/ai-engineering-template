@@ -1,32 +1,34 @@
 ---
+tier: plan
+authority: agent
 id: INTAKE-001
+found_while: Initial scaffold request
+kind: idea
+disposition: planned
+links: [PLAN-001]
 title: Minimal contract scaffold
-status: planned
-plan: PLAN-001
-fix: null
 ---
+> Plan: revise the proposed route as evidence changes; preserve accepted
+> results.
+
 # Minimal contract scaffold
 
-## Report
+## What's uncertain
 
-The user requested a new Git worktree, removal of its existing project contents,
-a precise `.ai` folder layout, draft rules/truth map/config/state, compact templates,
-and basic agents/workflows. The user explicitly authorized pushing that worktree's
-branch to GitHub and explicitly prohibited merging it.
+The user requested a fresh .ai scaffold in an isolated worktree after the
+earlier framework accumulated complexity.
+The record captures the request, not evidence of an application defect.
 
-The expected result is an isolated, reviewable draft. The original checkout must
-remain unchanged. The linked worktree's `.git` administrative file is retained so
-Git can track and push the requested branch.
+## Where and evidence
 
-## Impact and unknowns
+User instructions in this thread and the linked plan/draft Git history.
 
-The new branch replaces the old framework with a documentation scaffold. Detailed
-contracts and future executable behavior still require user review. The other
-project mentioned by the user was not inspected or copied; only the supplied
-structure and instructions inform this draft.
+## Why deferred and impact
 
-## Proposed next action
+The request required a bounded draft and user review. Fine-grained wording
+remains available for feedback; no unsupported product behavior is claimed.
 
-The explicit scaffold-and-push action is tracked by
-[PLAN-001](../review/PLAN-001-minimal-ai-contracts.md). After pushing, present the draft
-for user review and wait for requested alterations. No merge is authorized.
+## Next action and links
+
+The requested work is planned under PLAN-001. The subsequent reference
+adaptation is owned by PLAN-002. Preserve this originating request as evidence.
