@@ -8,8 +8,23 @@ title: Command procedures
 
 Each file owns the detailed steps of its named operation. Slash-style names
 refer to these Markdown procedures, not registered tools. Supply the input
-placeholders explicitly. [Workflows](../workflows/README.md) compose procedures;
-[approval](../policies/approval.md) governs action scope.
+placeholders explicitly. [Approval](../policies/approval.md) governs action scope;
+[roles](../agents/README.md) define who performs the assigned work.
+
+## Common tasks
+
+These routes link to the owning procedures and gates; they do not grant action
+authority or replace those instructions.
+
+| Task | Entry points and handoff |
+| --- | --- |
+| Initialize or adopt | [onboard](onboard.md), with [ADOPTING](../../docs/ADOPTING.md); return the [decision summary](../templates/decision-summary.md), then use [onboard-pr](onboard-pr.md) for authorized publication. |
+| Plan a change | [report](report.md) routes findings to [fix](fix.md) or [plan-new](plan-new.md). Use [plan-checker](../agents/plan-checker.md) and [review-ready](../gates/review-ready.md), return the decision summary, then [plan-start](plan-start.md) after implementation approval. |
+| Implement and close | [plan-start](plan-start.md) or [fix](fix.md); [tester](../agents/tester.md) and [e2e](../agents/e2e.md) cover assigned checks. For plans, use [plan-review](plan-review.md), then [plan-done](plan-done.md); [deliver](deliver.md) handles authorized Git delivery. |
+| Review or verify | [plan-checker](../agents/plan-checker.md) reviews proposals; [reviewer](../agents/reviewer.md) reviews implementations. Use [plan-verify](plan-verify.md) for verification without lifecycle changes. |
+| Execute independent tracks | Follow the [orchestration guide](../../docs/ORCHESTRATION.md) and [parallel policy](../policies/parallel-execution.md): [orchestrate](orchestrate.md), [orchestrate-track](orchestrate-track.md), [orchestrate-status](orchestrate-status.md), and [orchestrate-clean](orchestrate-clean.md). |
+
+## Procedures
 
 | Name | Purpose |
 | --- | --- |

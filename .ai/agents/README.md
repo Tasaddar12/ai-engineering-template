@@ -21,7 +21,6 @@ orchestrate and orchestrate-track are the two coordinating command procedures.
 | [orchestrator](orchestrator.md) | Works out which plans can be built at the same time and which have to wait. Produces the wave and track plan for an /orchestrate run. Read-only over the codebase — it schedules work, it never does it. |
 | [plan-checker](plan-checker.md) | Reviews a plan for internal consistency and conflicts with specs, intent, and the existing code before any implementation starts. Read-only. Use after planner, before implementor, on anything non-trivial. |
 | [planner](planner.md) | Turns a request or backlog item into an executable plan in .ai/plans/. Use when work needs breaking down before implementation, or when an existing plan has gone stale. Writes plans and specs; does not write code. |
-| [pr-agent](pr-agent.md) | Prepares reviewable delivery and performs only the granted commit, push, PR or merge actions. |
 | [researcher](researcher.md) | Gathers bounded evidence about the actual code and records useful findings without deciding behavior. |
 | [reviewer](reviewer.md) | Independently reviews the actual result against current contracts and reports actionable defects. |
 | [scribe](scribe.md) | Keeps human-facing documentation true after the code has changed, and hunts duplicated facts. Use after work lands, or when docs are suspected of being stale. |

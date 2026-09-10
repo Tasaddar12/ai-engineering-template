@@ -8,7 +8,7 @@ reads: ["proposed PLAN records","SPEC/ADR dependencies","assigned source/tests"]
 writes: ["proposed assignment sections in the selected PLAN"]
 model: gpt-5.6-sol
 reasoning: xhigh
-procedures: ["planning","parallel-execution"]
+procedures: ["plan-new","orchestrate"]
 report_template: assignment.md
 ---
 > Contract: follow this role inside its approved assignment.
@@ -23,7 +23,7 @@ one contract creates coordination cost rather than parallel progress.
 ## Read first
 
 Read RULES, the owning policies, your assigned records and the selected
-workflow. Confirm the absolute worktree and branch before using relative
+command. Confirm the absolute worktree and branch before using relative
 paths. Read/write lists are instructions, not enforced permissions.
 
 ## You may write

@@ -45,7 +45,8 @@ copy is technically satisfied. Neither is what you wanted.
 | Commit/delivery and parallel ownership requirements | `policies/execution.md`, `policies/parallel-execution.md` for their named scopes | Link to the relevant scope |
 | Pass/fail transition criteria | `gates/*.md` | Report evidence against the gate |
 | Role scope and role-specific reports | `agents/<role>.md` | Select a role rather than inventing permissions |
-| Detailed steps for an operation | `commands/<command>.md` | Workflows compose commands; indexes only navigate |
+| Detailed steps for an operation | `commands/<command>.md` | Indexes link the procedures for common tasks |
+| Review packet and evidence exclusions | `agents/reviewer.md` | Link to the packet; keep track-specific scope in its role |
 | Paths, ID formats and configured options | `config.yaml` | Read values from it |
 | General investigation evidence | `research/RES-*.md` | Link; never treat a brief as authority |
 | Whether a PR merged or a branch exists | Git and the forge | Record the observed revision and URL |

@@ -14,57 +14,11 @@ Read `.ai/RULES.md`, and `.ai/agents/implementor.md` for the contract
 authority you carry — the section on **Fixes** there is the boundary you work
 inside, and being in a worktree does not change it.
 
-## Where you work
+## Track assignment
 
-You are given the **absolute** path of your worktree, for example
-`C:/proj/.worktrees/ORCH-001-w1t1`. **`cd` into it before anything else, and
-stay there:**
-
-```bash
-cd "<the absolute worktree path you were given>"
-pwd && git rev-parse --show-toplevel && git branch --show-current
-```
-
-The toplevel must be your worktree and the branch must be your track's. If
-either is wrong, **stop and say so.**
-
-This matters more than it looks. A subagent may inherit its caller's working directory rather than
-your assigned worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
-`.ai/config.yaml` — resolves against wherever you actually are. Those files
-exist in both checkouts with plausible content, so reading the wrong one raises
-no error: it quietly hands you the base branch's version of a document your
-track has already changed. After the `cd`, the relative paths below are correct.
-
-Never read or write a sibling worktree under `.worktrees/`. Another track is
-mid-change there, and what you would find is neither the base branch nor
-anything that will exist after the merge.
-
-Never touch the run manifest, and never merge or pull the base branch into
-yours.
-
-## Ids come from your reserved block
-
-You are given a **reserved id block** — a range such as `INTAKE 40-59`. Take
-every new id from inside it, lowest unused first, and record which you used.
-
-**Do not allocate by "highest existing number plus one."** Your track is one of
-several branched from the same commit, so every track computes the same next
-number and writes it under a different slug. Git then merges both files without
-a conflict, leaving two records sharing an id and no error anywhere. The block
-is what keeps ids unique without tracks having to coordinate.
-
-If you exhaust your block, say so and stop allocating rather than spilling into
-the next track's range.
-
-## You do not write STATE.md or the journal
-
-`.ai/state/STATE.md` and `.ai/state/journal/**` are **out of scope inside a
-track**, whichever agent file you inherit from and whatever it says. They are
-single shared files that every parallel track would edit, so the second track
-to merge conflicts in them.
-
-Report what would have gone in them instead. The main session writes it on the
-base branch once your track merges.
+Follow the [common track rules](../policies/parallel-execution.md#common-track-rules)
+before using relative paths or starting work. They narrow inherited permissions;
+the role-specific read/write scope below still applies.
 
 ## What you are given
 
