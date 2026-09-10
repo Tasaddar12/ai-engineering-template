@@ -1,81 +1,162 @@
-# Contract configuration: amend in approved scope; never infer user authority.
-version: 2
+# Project-level configuration for the .ai/ orchestration structure.
+# Edit this once when you drop the template into a project.
+
+project:
+  name: CHANGEME
+  # One line. What this project is, for an agent that has never seen it.
+  summary: CHANGEME
+
+# ---------------------------------------------------------------------------
+# mode — how much process this project gets. Same template either way; the
+# mode decides which documents are required and which commands are in play.
+#
+#   light     Small or short-lived work. One plan at a time in plans/active/.
+#             No specs required — acceptance criteria live in the plan itself.
+#             Agents in play: executor, verifier.
+#             Skip: specs/, ROADMAP, plan-checker, roadmapper.
+#
+#   standard  Default. Specs are the contract; plans move through the full
+#             lifecycle; amendments are recorded.
+#             Agents in play: planner, plan-checker, executor, verifier, scribe.
+#
+#   full      Long-running or multi-team work. Adds a roadmap of phases above
+#             plans, and an explicit acceptance/UAT gate before done.
+#             Agents in play: all of them, roadmapper included.
+#
+# Raising the mode later is additive — nothing has to be rewritten.
+# ---------------------------------------------------------------------------
 mode: standard
-# This scaffold has no dispatcher. Commands are Markdown workflow entry points.
+
+# Where things live. Paths are relative to the repository root.
+# Change these only if the project already has a conflicting convention.
 paths:
-  root: .ai
-  rules: .ai/RULES.md
-  truth_map: .ai/truth-map.md
-  config: .ai/config.yaml
-  project: .ai/state/PROJECT.md
-  state: .ai/state/STATE.md
-  journal: .ai/state/journal
+  intent: .ai/intent
   specs: .ai/specs
   decisions: .ai/decisions
   amendments: .ai/decisions/amendments
-  retired_decisions: .ai/decisions/retired
-  meetings: .ai/decisions/meetings
   plans: .ai/plans
-  intake: .ai/plans/intake
   fixes: .ai/fixes
+  state: .ai/state
+  journal: .ai/state/journal
   templates: .ai/templates
-  agents: .ai/agents
-  hooks: .ai/hooks
-  commands: .ai/commands
-  workflows: .ai/workflows
-  research: .ai/research
-  policies: .ai/policies
-  gates: .ai/gates
-  orchestration: .ai/state/orchestration
-  plan_phases:
-    backlog: .ai/plans/backlog
-    active: .ai/plans/active
-    review: .ai/plans/review
-    blocked: .ai/plans/blocked
-    abandoned: .ai/plans/abandoned
-    done: .ai/plans/done
-  fix_phases:
-    open: .ai/fixes/open
-    done: .ai/fixes/done
+  docs: docs
+
+# Plan lifecycle stages, in order. A plan's stage is the directory it sits in.
+# `done` is partitioned by period so it stays browsable for years.
 lifecycle:
-  # The directory is the only PLAN/FIX stage; this is advisory capacity.
+  stages: [intake, backlog, active, blocked, review, done, abandoned]
+  # Concurrency guidance, not enforcement. Exceeding it is a smell worth
+  # mentioning to the user, not an error.
   max_active: 2
-  archive_partition: none
+  done_partition: quarter   # quarter | month | year  -> done/2026-Q3/
+
+  # Bug fixes run a shorter lifecycle of the same kind — the stage is still the
+  # directory. A fix restores conformance with the contract; anything that
+  # changes what conformance means is a plan. See .ai/RULES.md#bug-fixes.
+  # Fixes are live in every mode, light included.
+  fix_stages: [open, done]
+
+# Identifier formats. Numbers are zero-padded and allocated by taking the
+# highest existing number and adding one.
 ids:
-  spec: 'SPEC-{nnn}-{slug}.md'
-  decision: 'ADR-{nnn}-{slug}.md'
-  amendment: 'AMD-{nnn}-{slug}.md'
-  intake: 'INTAKE-{nnn}-{slug}.md'
-  fix: 'FIX-{nnn}-{slug}.md'
-  plan: 'PLAN-{nnn}-{slug}.md'
-  research: 'RES-{nnn}-{slug}.md'
-  meeting: 'MEET-{date}-{slug}.md'
-  orchestration: 'ORCH-{nnn}.md'
-  journal: '{date}.md'
-  number_pattern: '[0-9]{3}'
-  slug_pattern: '[a-z0-9]+(?:-[a-z0-9]+)*'
-  date_format: YYYY-MM-DD
-  first_number: '001'
-  allocation: next_unused_per_kind_across_all_lifecycle_folders
-  reuse: false
+  spec: SPEC-{nnn}-{slug}
+  plan: PLAN-{nnn}-{slug}
+  decision: ADR-{nnnn}-{slug}
+  amendment: AMD-{nnn}-{slug}
+  intake: INTAKE-{nnn}-{slug}
+  fix: FIX-{nnn}-{slug}
+
+# Enforcement posture. Advisory means hooks inform and never block; the
+# behavior in RULES.md is carried by agent prompts, not by walls.
+# Walls are what produce refusals.
+enforcement: advisory
+
+# Commands the verifier should run to check reality. Fill these in per project;
+# an empty list means the verifier inspects behavior manually and says so.
 verification:
-  # Select real project commands during initialization. Empty is not a PASS.
   commands: []
-  targeted_commands: []
-  empty_commands: report_manual_checks_and_limits
+    # - pytest -q
+    # - npm test
+    # - ruff check .
+
+# ---------------------------------------------------------------------------
+# orchestration — settings for /orchestrate, which builds several plans at once
+# in parallel git worktrees. See docs/ORCHESTRATION.md for the whole flow.
+#
+# Vocabulary, because the rest of this block is meaningless without it:
+#   run    One /orchestrate invocation. ORCH-{nnn}, manifest in state/.
+#   wave   A dependency layer. Wave N+1 starts only after every wave-N track
+#          has merged, so a dependent plan is always built on top of code that
+#          already contains what it depends on.
+#   track  A group of plans sharing one worktree, one branch, one PR. Plans in
+#          a track run in sequence; tracks in a wave run in parallel.
+# ---------------------------------------------------------------------------
 orchestration:
-  dispatch: manual
+  # Where worktrees are created, relative to the repository root. This path
+  # MUST be in .gitignore — a worktree committed into the base branch is a
+  # mess to unpick.
   worktree_root: .worktrees
+
+  # How a wave's tracks are started.
+  #   background  /orchestrate launches a session per track and is woken as each
+  #               exits, so a run finishes without anyone watching for a wave to
+  #               complete. Needs `claude` on PATH.
+  #   manual      /orchestrate prints the commands and stops. Every wave
+  #               boundary then needs a person.
+  # Background tracks run unattended, so they must not hit a permission prompt —
+  # pair this with the worktree confinement hook rather than waiving prompts on
+  # their own.
+  dispatch: background     # background | manual
+
+  # How many tracks may be in flight at once within a wave. This is the real
+  # cost dial: each track is a full pipeline of subagents. Raising it past the
+  # number of genuinely independent plans buys nothing.
   max_parallel_tracks: 3
-  id_block_size: 20
-  base_branch: ''
-  # Resolve the real base branch before a run; never guess it.
-  branch_prefix: codex
+
+  # Branch the run starts from and merges back into. Empty means whatever
+  # branch /orchestrate was invoked on.
+  base_branch: ""
+
+  # Branch naming for tracks. {run} -> ORCH-007, {track} -> w1t2
+  branch_prefix: orch
+
+  # review — the fix/re-review loop after a PR opens.
   review:
+    # Hard ceiling on review rounds before the run stops and asks for a human.
+    # Round 1 is the first review. Three rounds of an agent failing to satisfy
+    # a reviewer means the problem is not one more round will solve.
     max_rounds: 3
-    blocking_severity: major
-  auto_merge: never
+    # Only findings at or above this severity restart the loop. Everything
+    # below is captured as an INTAKE item and does not block the merge —
+    # without this line the loop never terminates on style disagreements.
+    blocking_severity: major   # critical | major | minor
+
+  # forge — where the pull request or merge request is opened.
+  #   auto    Detect from `git remote get-url origin`: github.com or a
+  #           GitHub Enterprise host -> gh; gitlab.com or a self-hosted GitLab
+  #           -> glab. Falls back to `none` if neither CLI is present or authed.
+  #   none    Skip PR creation. The run continues and reports the branch.
+  forge: auto              # auto | github | gitlab | none
+
+  # How a cleared track lands. `squash` keeps the base branch history one
+  # commit per track; `merge` preserves the per-step commits the implementor
+  # made, which is usually what you want when reviewing agent work later.
+  merge_strategy: merge    # squash | merge | rebase
+
+  # Applies to the scheduler, which is the only thing that merges — a track
+  # never merges itself, so an `ask` here cannot hang an unattended track.
+  #   ask     Ask once per wave, listing every track that cleared together.
+  #   auto    Merge as each track reports ready. Hands-off end to end.
+  #   never   Leave the PR open and report it. Nothing is merged.
+  auto_merge: ask          # ask | auto | never
+
+  # Remove the worktree and delete the track branch after a successful merge.
+  # Worktrees for tracks that stopped for a human are always kept.
   cleanup_on_merge: true
-journal:
-  timezone: America/New_York
-  entry_time_format: 'HH:mm:ss Z'
+
+  # Commands the track pipeline may use to run only the tests affected by a
+  # change. Left empty, agents fall back to `verification.commands` in full and
+  # say that they did. {files} is replaced with the changed paths.
+  targeted_tests: []
+    # - pytest -q {files}
+    # - npm test -- --findRelatedTests {files}

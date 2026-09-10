@@ -1,67 +1,373 @@
 ---
 tier: intent
 authority: human
-title: Rules of engagement
+id: RULES
+title: Rules of engagement for AI agents
 ---
-> Intent: the user owns these boundaries. Propose changes unless their
-> instruction already authorizes the exact edit.
 
-# Rules of engagement
+# Rules of Engagement
 
-Read [PROJECT](state/PROJECT.md), [STATE](state/STATE.md), the selected record,
-[truth-map](truth-map.md), and the relevant role and workflow. Reading a
-plausible file in the wrong checkout can silently supply the wrong contract;
-confirm your assigned root and branch first.
+Every agent working in this repository reads this file before touching anything
+else. It defines what may change, who may change it, and — most importantly —
+what to do when the written record and reality disagree.
 
-## Report, summary, decision
+---
 
-Follow [approval](policies/approval.md). Report the need, use
-[decision-summary](templates/decision-summary.md), then follow the user's
-decision. Direct instructions authorize their stated action. Once execution
-is approved, finish that scope without asking again for each ordinary step.
+## The Prime Rule
 
-Scope changes, human-owned intent changes and delivery beyond the granted
-action need a new decision. A role definition or PASS cannot supply it.
+**Writing code you know contradicts a written document is the only forbidden
+move.**
 
-## Resolve contradictions instead of working around them
+Documents here are versioned, not sacred. When you find that a spec, plan, or
+doc is wrong, stale, incomplete, or incompatible with the change you are
+making:
 
-During approved work, identify the conflicting statements and inspect their
-evidence. A failing implementation does not authorize weakening a valid
-requirement. A stale document does not justify preserving a broken design.
+1. **Fix the document.**
+2. **Record why**, in the same change.
+3. **Continue the work.**
 
-Use the [record policy](policies/records.md) to correct the wrong side and
-record why. If you cannot establish which side is right, state the conflict,
-your recommendation and the missing decision; continue independent work.
-This prevents refusal, silent workarounds and code/document divergence.
+Three specific failures this rule exists to prevent:
 
-## Read each document for the fact it owns
+- **Silent workaround.** Contorting an implementation so a stale requirement is
+  technically satisfied. This is how bugs get manufactured. If a requirement is
+  wrong, it is wrong — say so and change it.
+- **Refusal.** Declining to make a change because a document describes the old
+  behavior. Check the tier table below: nearly everything here is yours to
+  amend. A document describing the past is not an instruction to preserve it.
+- **Divergence.** Changing the code and leaving the document behind. The next
+  agent inherits a contradiction and no way to tell which side is true.
 
-| Document | Read it for |
-| --- | --- |
-| PROJECT | Purpose, hard constraints, non-goals and human authority. |
-| SPEC | Current correct behavior, observable criteria and invariants. |
-| ADR | Why a decision was made; only accepted ADRs carry authority. |
-| PLAN | Proposed work, dependencies and contract changes to land. |
-| FIX | A confirmed defect and proof that its repair restores conformance. |
-| INTAKE | Uncertainty, waiting questions and discrepancies needing triage. |
-| STATE | Current coordination, blockers and linked suspected drift. |
-| Journal, research, meetings | Evidence and history, never new authority. |
+If you are unsure whether a document is stale or you are wrong, **the answer is
+never to guess quietly.** State the contradiction plainly, say which side you
+believe, and either amend or ask — but surface it.
 
-Use [records](policies/records.md) for tiers, tense and amendments. Use
-[truth-map](truth-map.md) for ownership. Repeating a requirement in several
-files makes later corrections disagree; link to its owner instead.
+---
 
-## Advance on evidence
+## What each document is for
 
-[Workflows](workflows/README.md) own steps, [policies](policies/README.md)
-own firm requirements, and [gates](gates/README.md) own PASS/FAIL criteria.
-[Commands](commands/README.md) select a workflow; [hooks](hooks/README.md)
-name checkpoints. These documents do not install executable enforcement.
+Three document types carry almost all the weight, and keeping them apart is
+what stops the record from becoming an archaeology exercise.
 
-A plan is a prediction. Verify the actual result against current specs and
-approved outcomes. Checked boxes alone prove nothing. Correct the plan when
-the approved route changes; do not silently abandon an approved outcome.
+| Document | Tense | Holds |
+|---|---|---|
+| `specs/SPEC-*.md` | **present** | What correct behavior *is*, right now |
+| `decisions/ADR-*.md` | past | Why we chose this, and what it replaced |
+| `plans/**/PLAN-*.md` | future | What we intend to build next |
 
-Use [execution](policies/execution.md) for validation, descriptive commits,
-delivery and exact cleanup after merge. Use
-[parallel execution](policies/parallel-execution.md) for independent tracks.
+**A spec describes the system as it is.** Read cold, with nothing else open, it
+must be a true statement about the software today. That has one strict
+consequence:
+
+> A spec never records its own history. No "removed in v2", no "deprecated",
+> no "no longer applies", no "not yet implemented", no "was previously 300ms",
+> no strikethrough, no commented-out criteria, no `TODO`.
+
+When a requirement changes, **rewrite the spec so it states the new requirement
+and nothing else.** When a requirement goes away, **delete it** — the
+criterion, the section, or the whole spec file. Nothing is lost by deleting it:
+the amendment record says what the spec used to say and why it moved, the ADR
+says why the decision changed, and git holds every previous version. Leaving
+the old wording behind as an annotation is how a spec turns into something an
+agent has to interpret instead of read — and an agent interpreting a spec is an
+agent guessing.
+
+**A spec never describes behavior that does not exist yet.** A spec asserting
+the target state makes every verification fail, which teaches everyone to
+ignore the verifier. Unbuilt behavior lives in the plan that will build it,
+under its **Contract changes** section — the exact wording the spec will carry
+once the code works. The executor lands that wording in the same change as the
+code, so every spec is true at every commit.
+
+**An ADR is the opposite of a spec** — a dated record, and allowed to be about
+the past. That is why superseding an ADR means writing a new one that points at
+it, never rewriting the old one, and why only an ADR with `status: accepted` is
+authority.
+
+**A plan is a prediction**, and predictions are allowed to have been wrong.
+
+---
+
+## Mutability tiers
+
+Every file under `.ai/` declares a tier in its frontmatter. The tier tells you
+what you may do without asking.
+
+| Tier | What it holds | Examples | You may |
+|---|---|---|---|
+| `intent` | Why this project exists; hard constraints; non-goals | `intent/PROJECT.md`, this file | **Stop and ask.** Human authority. Propose, never edit. |
+| `contract` | What "correct" means right now | `specs/SPEC-*.md`, `decisions/ADR-*.md` | **Amend freely, with a recorded amendment.** See protocol below. |
+| `plan` | How we intend to get there | `plans/**/PLAN-*.md`, `fixes/**/FIX-*.md` | **Rewrite freely.** Plans are disposable. |
+| `status` | Where things stand | `state/STATE.md` | **Overwrite freely.** Expected to churn every session. |
+| `log` | What happened | `state/journal/*.md`, `decisions/amendments/*.md` | **Append only.** Never edit or delete past entries. |
+
+Frontmatter on every `.ai/` document:
+
+```yaml
+---
+tier: contract          # intent | contract | plan | status | log
+authority: agent        # human | agent  — who has final say
+id: SPEC-004
+title: Short human-readable title
+links: [ADR-0002, PLAN-011]
+---
+```
+
+Two things deliberately absent from plan frontmatter: a `status:` field and a
+`stage:` field. **A plan's stage is its directory.** Duplicating it in
+frontmatter creates a second version of the truth that will eventually
+disagree with the first. The same holds for a fix.
+
+---
+
+## Plans move the contract with them
+
+A plan is not only a to-do list. Most plans change what "correct" means, and a
+plan that changes behavior without moving the contract leaves the specs
+describing software that no longer exists.
+
+So every plan declares, up front, in its **Contract changes** section:
+
+- **Specs it creates** — with the acceptance criteria drafted in the plan, in
+  present tense, ready to land verbatim.
+- **Specs it amends** — the criterion that moves, and its replacement wording.
+  Also drafted in the plan, not written into `specs/` ahead of the code.
+- **Decisions it needs** — a new ADR when the plan embodies reasoning that
+  outlives it; an existing ADR it *confirms*, cited by id; or an existing ADR
+  it **supersedes**.
+
+That section is what the plan-checker reviews and what closing the plan is
+graded against. A plan that changes behavior and lists nothing there is either
+mislabelled or has not been thought through.
+
+**Superseding an ADR** takes a new ADR that names the old one in its
+`supersedes:` frontmatter. On the old ADR, set `status: superseded` and
+`superseded_by:` — that is the one edit to a `contract`-tier file that needs no
+amendment record, because the new ADR *is* the record. Never rewrite the old
+ADR's Context, Decision or Alternatives; its whole value is being an accurate
+account of what was decided at the time.
+
+---
+
+## The amendment protocol
+
+Use this whenever you change a `contract`-tier file: a spec, or an ADR.
+
+1. Write the amendment record first: copy `templates/AMENDMENT.md` to
+   `decisions/amendments/AMD-<nnn>-<slug>.md`. It captures four things — what
+   the document said, what is actually true, why they diverged, and what you
+   changed it to.
+2. Rewrite the spec so it states the new truth and nothing else — replace the
+   wording, never annotate it, and delete the criterion outright if the
+   requirement is gone. On an ADR, correct a factual error only; changing the
+   decision is a new ADR, not an edit.
+3. Add the amendment id to the affected document's `links:`.
+4. Include both files in the same commit as the code change. One commit, one
+   coherent story.
+
+The record exists so a human can audit *why* the contract moved, not to slow
+you down. It is three sentences, not an essay. **An amendment is never a
+failure**; it is the system working. A project whose specs never get amended is
+a project whose specs are being ignored.
+
+Amendments are `log` tier — append only. If a later amendment supersedes an
+earlier one, write a new record that says so.
+
+**An amendment records the change, so the spec does not have to.** Rewrite the
+spec to state the new truth cleanly and leave no trace of the old wording in
+it. If you find yourself wanting to annotate the spec so a reader can tell
+what changed, that is the amendment's job and it is already done.
+
+---
+
+## Bug fixes
+
+Not every change needs a plan. A **bug fix** is a change that makes the code do
+what the record already says it should, and the line is exactly that:
+
+> A fix restores conformance with the contract. A plan changes what
+> conformance means.
+
+If the specs, ADRs and intent already describe the behavior you want and the
+code simply does not do it, that is a fix. Nothing in `contract` tier moves, so
+there is no spec to amend, no ADR to write, and no reason to spend the whole
+plan lifecycle on it.
+
+A fix gets a short record at `fixes/FIX-{nnn}-{slug}.md` from
+`templates/FIX.md`, and a two-stage lifecycle of the same kind as a plan — the
+stage is the directory: `fixes/open/` while it is being worked,
+`fixes/done/<period>/` once it holds. [`/fix`](../.claude/commands/fix.md) runs
+the whole loop.
+
+Four things go in the record: the symptom, the root cause, the change, and the
+check that fails before and passes after. **A fix is not done without that
+check** — a fix with no regression test is a fix with a scheduled recurrence.
+And the record exists because a defect nobody wrote down is a defect that gets
+reintroduced by the next agent, who has no way to know it was ever considered.
+
+Three things look like fixes and need care:
+
+- **The spec is silent on the case.** Then you are not restoring conformance,
+  you are deciding what correct means. Add the criterion to the spec through
+  the amendment protocol and cite the amendment id in the fix record. This is
+  the common case and it stays a fix.
+- **The spec is wrong.** Amend it. But if the corrected behavior is something
+  anyone depends on, that is a change of contract with consequences — write a
+  plan.
+- **The fix needs an ADR, a spec rewrite, or more than a handful of files.**
+  Promote it with `/plan-new` and link the fix record from the plan. A fix that
+  grows into a plan is normal and expected; a plan disguised as a fix skips the
+  checker and the verifier, which is the failure this route can produce.
+
+Do not use a fix to sneak a behavior change past review, and do not open a plan
+for a one-line defect the specs already condemn. Both waste the distinction.
+
+---
+
+## Meeting notes and design documents are not contracts
+
+A meeting note, a design doc, a whiteboard write-up, an email thread: all `log`
+tier. They record what was said on a date. **Nothing in them is authoritative,
+including sentences that begin "we will".**
+
+Never implement from one. A note where three options were debated is a debate,
+not a specification, and the wording in the room does not distinguish a
+decision from a strong opinion. Two specific failures:
+
+- **Reading discussion as a requirement.** The rejected option is written down
+  in the same prose as the chosen one.
+- **Reading a decision as reality.** A meeting decided to move to a new
+  architecture; the code is still the old one. The note describes neither the
+  present nor a lie — it describes an intention. An agent that treats it as
+  current will "fix" working code to match something nobody has built.
+
+Decisions become real by landing in `decisions/ADR-*.md`. Constraints and scope
+changes become real by landing in `intent/PROJECT.md`, which takes a human.
+Until then, an agent that finds a note describing something that ought to be
+true should **raise the gap, not act on it**.
+
+Turning notes into contracts is what [`/harvest`](../.claude/commands/harvest.md)
+does. A note carries `harvested:` in its frontmatter so you can tell whether
+its contents are in effect yet.
+
+## Precedence when documents disagree
+
+Reality first, then intent, then recency:
+
+1. **Working, tested code** beats any document describing it. Documents follow
+   reality — but only after you have *confirmed* the code is right; a bug in
+   the code does not license amending the spec to match the bug.
+2. **`intent/PROJECT.md`** beats specs. A spec that violates a stated non-goal
+   or hard constraint is the thing that is wrong.
+3. **The more recent `contract`** beats the older one. Check the amendment log
+   before assuming a spec is current.
+4. **A plan never beats a spec.** If a plan step would violate a spec, the plan
+   is wrong. Rewrite the plan.
+5. **A meeting note beats nothing.** It is evidence, and it loses to every
+   tier above it. A note that contradicts a spec means someone needs to
+   harvest it, not that the spec is wrong.
+
+If two documents at the same tier disagree and you cannot tell which is
+correct, that is a `truth-map.md` violation — two files own the same fact. Fix
+the ownership, not just the wording. See [truth-map.md](truth-map.md).
+
+---
+
+## Writing specs that survive
+
+Most spec churn is self-inflicted, caused by specs that describe an
+implementation instead of a requirement. A spec that names a file, a function,
+or a constant is falsified by the next refactor.
+
+Write **acceptance criteria and invariants**, not instructions:
+
+| Don't | Do |
+|---|---|
+| "Use a 300ms debounce in `useSearch.ts`" | "Typing quickly issues at most one request per burst" |
+| "Store the token in `localStorage`" | "A returning user is still signed in; the token is never readable by third-party script" |
+| "Add a `retry_count` column" | "A failed job is retried at most 3 times, and its attempt count survives a restart" |
+
+The second cause of churn is specs that narrate their own history. Same table,
+different failure:
+
+| Don't | Do |
+|---|---|
+| "Sessions last 30 days (was 7 days before ADR-0012)" | "A session lasts 30 days" |
+| "~~Passwords must be 8 characters~~ **Deprecated — see below**" | Delete the line. Write the current rule once. |
+| "Export to CSV. *(XML export removed in v3.)*" | "Export produces CSV." |
+| "Rate limiting — not yet implemented" | Delete it. It belongs in the plan that will build it. |
+| "Retries: 3 (TODO: confirm with ops)" | Put it under **Open questions**, or leave it out. |
+
+Two tests, and a spec has to pass both:
+
+1. *Could this stay true through a rewrite of the module?* If not, it belongs in
+   a plan or an ADR.
+2. *Is every sentence in it true of the software right now?* If not, either the
+   code is wrong or the spec is — resolve it, do not annotate it.
+
+---
+
+## Definition of done
+
+A task is done when **the software behaves correctly**, not when the plan's
+checkboxes are ticked.
+
+Verification grades work against `specs/` and against observed behavior — never
+against the plan that produced it. A plan is a prediction; predictions are
+allowed to have been wrong. If the plan was wrong and the outcome is right,
+the plan gets rewritten and the work still ships.
+
+Before calling anything done:
+
+- The specs it touches describe what the code now actually does — in present
+  tense, with no annotation about what they used to say.
+- Everything the plan listed under **Contract changes** has landed: specs
+  written or amended, ADRs written, superseded ADRs marked.
+- Any contract change has an amendment record.
+- A fix has a check that fails before it and passes after.
+- `state/STATE.md` reflects the new present.
+- A journal entry exists for the session.
+
+---
+
+## Problems you find but are not going to fix
+
+Scope discipline says don't fix what the current change isn't about. That is
+correct, and it is not permission to let the finding evaporate. **A problem
+mentioned only in a session summary is lost**, and the next agent will
+rediscover it and quietly work around it — which is the failure at the top of
+this file, arriving by a slower route.
+
+So: capture, don't fix, and don't merely mention. Write it to
+`plans/intake/INTAKE-{nnn}-{slug}.md` from `templates/INTAKE.md` — five lines,
+or use `/defer`. Captured items are triaged by `/plan-archive`, and get
+promoted by the route their `kind` calls for: a `bug` — code that contradicts a
+spec — through `/fix`, everything else through `/plan-new INTAKE-{nnn}`.
+
+Two things are **always in scope** and get fixed rather than captured, because
+leaving them is what corrupts everyone's future work:
+
+- a document that contradicts reality → amend it, with a record
+- the same fact restated in two documents → collapse it into a link
+
+And if what you found is severe — data loss, a security hole, a broken build —
+capture it *and* say so plainly. Filing an urgent problem is not the same as
+handling it; say which one you did.
+
+## When you are genuinely blocked
+
+Blocked means: you cannot proceed without a decision that is not yours to make.
+That is `intent`-tier questions, and irreversible or outward-facing actions.
+Everything else — a wrong spec, a bad plan, a missing doc, a contradiction — has
+a path above and is not a blocker.
+
+When blocked:
+
+1. Move the plan to `plans/blocked/`.
+2. Add a `## Blocked` section to it: the question, the options you see, and
+   your recommendation.
+3. Record it under blockers in `state/STATE.md`.
+4. **Do every part of the task that does not depend on the answer**, then
+   report what you finished and what is waiting.
+
+Do not sit idle on a blocker, and do not silently pick an answer to an
+`intent`-tier question.

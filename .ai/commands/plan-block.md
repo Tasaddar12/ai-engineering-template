@@ -1,18 +1,36 @@
 ---
-tier: contract
-authority: agent
-description: Record a real decision blocking work.
-argument_hint: PLAN ID, question and recommended answer.
+description: Park a plan on a decision only a human can make
+argument-hint: <plan-id> <the question>
 ---
-> Contract: this entry point selects a workflow; it grants no new authority.
 
-# plan-block
+Arguments: **$ARGUMENTS** — the first token is the plan id; everything after it
+is the blocking question. If no id was given, infer it from the plan currently
+in `.ai/plans/active/` and say which one you picked.
 
-Use when: Record a real decision blocking work.
+First, check that this is genuinely a blocker. Per `.ai/RULES.md`, blocked
+means you cannot proceed without a decision that is not yours to make —
+`intent`-tier questions, and irreversible or outward-facing actions. These are
+**not** blockers:
 
-Inputs: PLAN ID, question and recommended answer.
+- a spec is wrong → amend it with a record, and continue
+- a plan is wrong → rewrite it, and continue
+- a document contradicts the code → resolve it, and continue
+- a doc is missing → write it, and continue
+- the blocker is a defect the specs already condemn → `/fix` it, and continue
 
-Follow [plan-block](../workflows/plan-block.md). That workflow owns the steps.
-Read [RULES](../RULES.md) for the engagement protocol.
+If it is one of those, say so and do that instead of blocking.
 
-Return: Blocker, resume condition and independent next work.
+If it is a real blocker:
+
+1. `git mv` the plan into `.ai/plans/blocked/`.
+2. Add a `## Blocked` section to the plan with the question, the options you
+   see, your recommendation, and what you already finished.
+3. Add a row to the **Blockers** table in `.ai/state/STATE.md`, and move
+   **Now** on to something else if there is other work.
+4. Append a journal entry.
+5. **Do every part of the task that does not depend on the answer**, then
+   report what landed and what is waiting.
+
+Report the question in one sentence, the options, and your recommendation — the
+user should be able to unblock this in a single reply. Then `/plan-start $1`
+resumes it.
