@@ -1,28 +1,32 @@
 # Agent entry point
 
 Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/state/PROJECT.md),
-[STATE](.ai/state/STATE.md), the selected record and your
-[role](.ai/agents/README.md) before acting.
+[STATE](.ai/state/STATE.md), the selected record, and the relevant
+[command](.ai/commands/README.md) and [role](.ai/agents/README.md).
 
-**Report, return the decision-summary template, then follow the user's
-decision.** An explicit instruction already authorizes its exact scope;
-see [approval](.ai/policies/approval.md). Do not turn a report into execution.
+**Default: inspect, report, and return the
+[decision-summary template](.ai/templates/decision-summary.md). Do not implement
+until the user says yes or explicitly instructs the action.** A request to
+review or report authorizes that only. A direct instruction already authorizes
+its exact scope; do not ask again for the same action. Follow the
+[approval policy](.ai/policies/approval.md).
 
-During approved work, resolve contradictions through the
-[record policy](.ai/policies/records.md). Establish whether the code or the
-document is wrong. Correct the wrong side with evidence; never bend code to
-satisfy a stale sentence or rewrite a valid requirement to excuse a bug.
+Within approved work, resolve contradictions through the
+[RULES amendment protocol](.ai/RULES.md#the-amendment-protocol). Establish which
+side is wrong; do not change a valid requirement to excuse a bug. Use the
+[truth map](.ai/truth-map.md) to locate each fact's owner.
 
-Specs describe current behavior. Plans propose future changes and carry
-their exact contract wording. ADRs explain decisions; amendments and the
-journal retain history. Plan and FIX stages come from their directories.
-Use [truth-map](.ai/truth-map.md) to find each fact's single owner.
+Verify the assigned absolute worktree and branch before writes. Keep that
+ownership fixed. The coordinator owns shared state, commits and delivery;
+track roles have the narrower scopes in their role files. Report unrelated
+findings through [report](.ai/commands/report.md).
 
-Use the selected role's positive read/write scope. Report unrelated findings
-through [report](.ai/workflows/report.md). Work only in the assigned checkout;
-verify its absolute root and branch before writes. Roles are instructions,
-not an installed dispatcher or permission system.
+Use [plan-verify](.ai/commands/plan-verify.md) before delivery and
+[deliver](.ai/commands/deliver.md) for Git publication and exact cleanup.
+Every commit has a descriptive message. Keep the affected current SPEC in
+feature and fix PRs under the [record policy](.ai/policies/records.md).
+After an authorized merge, pull the target, confirm the merge and contents,
+then remove only the clean, merged worktree and its branch.
 
-Start with [initialize](.ai/commands/initialize.md) for project context,
-[plan-status](.ai/commands/plan-status.md) for a snapshot, and
-[plan-verify](.ai/commands/plan-verify.md) for evidence before delivery.
+These are instruction files, not an installed dispatcher or sandbox. Consult
+[adoption](docs/ADOPTING.md) and [hooks](.ai/hooks/README.md) for integration limits.

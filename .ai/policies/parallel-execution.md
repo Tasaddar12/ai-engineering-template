@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Parallel execution policy
+links: [AMD-002]
 ---
 > Contract: reserve ownership before approved dispatch; report uncertain
 > scheduling instead of guessing.
@@ -27,12 +28,13 @@ The approved run names each track's absolute worktree, branch, plan/task
 scope, file/spec ownership, prerequisites, validation and report destination.
 Create only the current wave's worktrees after checking its plans again.
 
-Allocate nonoverlapping ID blocks from config for each record kind before
+Use config's ID formats to allocate nonoverlapping blocks for each record kind before
 branching; reserve them in the run manifest and never reuse them. Computing
 highest-plus-one independently in sibling worktrees produces duplicate IDs
 that Git may merge without a conflict.
 
-The orchestrator alone owns the run manifest, shared STATE and journal.
+The scheduler session alone owns shared STATE and the journal, and coordinates
+manifest writes. The orchestrator role may draft that manifest when assigned.
 Tracks return events and only update assigned records in their own worktree.
 No worker may merge itself or pull the base branch during an active track.
 

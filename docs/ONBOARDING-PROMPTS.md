@@ -1,6 +1,6 @@
 # Onboarding starter prompts
 
-Paste-ready prompts for the first message of a fresh Claude Code session in the
+Paste-ready prompts for the first message of a fresh agent session in the
 adoption worktree (see [ADOPTING.md](ADOPTING.md)). They differ in how much
 they do in one pass and in what they ask you to decide.
 
@@ -39,11 +39,11 @@ requirements instead of correcting them.
 Read .ai/RULES.md first so you know what the target state is. Then audit,
 without changing anything:
 
-1. Every agent definition in .claude/agents/ — does its `tools:` list include
+1. Every agent definition in .ai/agents/ — does its `tools:` list include
    Write and Edit? An agent without them cannot edit and will narrate a refusal.
-2. CLAUDE.md, AGENTS.md, and any instruction file — quote every line that
+2. AGENTS.md, and any instruction file — quote every line that
    forbids or discourages changing documentation, specs, plans or requirements.
-3. .claude/settings.json hooks — anything that blocks writes to md files or
+3. Host hook registration, if any — anything that blocks writes to md files or
    doc directories, and whether its denial message names what IS allowed.
 4. Requirements that appear in more than one place. For the top few, list every
    file that states them. This is the cause I most expect to find.
@@ -68,19 +68,19 @@ The default. Expect a real conversation: it will interview you for intent and
 ask for a decision on every requirement-bearing document it finds.
 
 ```
-This worktree has just had the .ai/ and .claude/ orchestration structure
+This worktree has just had the .ai/ orchestration structure
 copied in. Onboard this project onto it.
 
 Run /onboard and work through every step, including the retrofit steps —
 adopting existing requirement documents rather than duplicating them, auditing
-CLAUDE.md and the existing agents for language that contradicts .ai/RULES.md,
+AGENTS.md and the existing agents for language that contradicts .ai/RULES.md,
 sweeping known problems into .ai/plans/intake/, and capturing architectural
 decisions that were made but never written down.
 
 Read the repo thoroughly before you ask me anything, so your questions are
 informed ones. Then:
 
-- Interview me for .ai/intent/PROJECT.md. Push hard on non-goals and hard
+- Interview me for .ai/state/PROJECT.md. Push hard on non-goals and hard
   constraints; do not fill them in by guessing.
 - Show me the promote/leave/retire recommendation for each existing doc and
   wait for my call before moving or deleting anything.
@@ -103,20 +103,20 @@ For a new or nearly-empty repo. Skips the reconciliation work, spends the time
 on intent instead.
 
 ```
-This is a new project with the .ai/ and .claude/ structure just copied in.
+This is a new project with the .ai/ structure just copied in.
 Onboard it.
 
 Run /onboard. There is little or no existing code, so skip the document
 adoption and issue sweep, and spend the effort on:
 
-- .ai/intent/PROJECT.md — interview me properly. Ask about non-goals and hard
+- .ai/state/PROJECT.md — interview me properly. Ask about non-goals and hard
   constraints until they are specific enough to reject a plan.
 - .ai/config.yaml — recommend a mode and say why. Fill in project name, summary
   and the real test/lint commands under verification.commands.
 - The first specs, as acceptance criteria for what we are about to build.
 - A first plan in .ai/plans/backlog/, checked by plan-checker.
 
-Then append .ai/templates/CLAUDE.snippet.md to CLAUDE.md, creating it if
+Then reconcile .ai/templates/AGENTS.snippet.md with AGENTS.md, creating it if
 absent. Do not commit.
 ```
 
@@ -134,14 +134,14 @@ real verification commands. In light mode there are no specs — acceptance
 criteria live in the plan.
 
 Keep it minimal:
-- Fill .ai/intent/PROJECT.md from a short interview. Non-goals and hard
+- Fill .ai/state/PROJECT.md from a short interview. Non-goals and hard
   constraints still matter; the rest can be brief.
 - One plan in .ai/plans/active/ for the work in hand.
 - Sweep obvious TODO/FIXME and known-broken things into .ai/plans/intake/,
   clustered, shown to me before you write them.
-- Append .ai/templates/CLAUDE.snippet.md to CLAUDE.md.
+- Reconcile .ai/templates/AGENTS.snippet.md with AGENTS.md.
 
-Skip the roadmap, skip retro-specs, skip anything the mode does not require.
+Skip retro-specs, skip anything the mode does not require.
 Tell me if you think light mode is the wrong call for this repo. Do not commit.
 ```
 
@@ -156,13 +156,13 @@ For when you want the refuse/contort behavior fixed and nothing else. Leaves
 Do a minimal adoption: I want the document-mutability rules in effect, and
 nothing else yet.
 
-1. Append .ai/templates/CLAUDE.snippet.md to CLAUDE.md (create it if absent).
-2. Audit CLAUDE.md and .claude/agents/ for anything that now contradicts
+1. Reconcile .ai/templates/AGENTS.snippet.md with AGENTS.md (create it if absent).
+2. Audit AGENTS.md and .ai/agents/ for anything that now contradicts
    .ai/RULES.md — prohibitions on editing docs or specs, and agent `tools:`
    lists missing Write/Edit. Show me each one with the proposed edit.
 3. Fill in .ai/config.yaml: project name, summary, mode: light, and the real
    verification commands.
-4. Leave .ai/specs/, .ai/plans/ and .ai/ROADMAP.md alone entirely.
+4. Leave .ai/specs/, .ai/plans/ and other project records alone entirely.
 
 Then tell me, in a few lines, what changes about how agents will behave on this
 repo and what does not. Do not commit.
@@ -214,7 +214,7 @@ Reconcile this project's existing documentation against .ai/truth-map.md,
 without adopting the rest of the structure yet.
 
 1. Inventory every document that states a requirement, threshold, limit, or
-   business rule — README, docs/, design notes, CLAUDE.md, docstrings.
+   business rule — README, docs/, design notes, AGENTS.md, docstrings.
 2. Build the ownership table: for each fact, which document should own it, and
    which files currently restate it. Duplicated facts are what force agents to
    contort code, so this table is the deliverable.
@@ -237,7 +237,8 @@ else started.
 Run /onboard. This project already has .ai/ set up, so brief me rather than
 restructuring anything.
 
-Read RULES.md, truth-map.md, config.yaml, intent/PROJECT.md, STATE.md and the
+Read .ai/RULES.md, .ai/truth-map.md, .ai/config.yaml,
+.ai/state/PROJECT.md, .ai/state/STATE.md and the
 latest journal entry, then the specs and the plans in active/, review/ and
 blocked/, then skim intake/.
 
@@ -274,7 +275,7 @@ what was said on a date, never a requirement — so:
 - Write ADRs only for real decisions, with the rejected options in the
   Alternatives table.
 - Flag scope, non-goal and constraint changes for my approval — do not edit
-  .ai/intent/PROJECT.md yourself.
+  .ai/state/PROJECT.md yourself.
 - Do NOT write specs for architecture we decided on but have not built. Specs
   describe what is correct now; the migration goes in plans.
 - Give me an explicit "decided but not built" list at the end. That gap is

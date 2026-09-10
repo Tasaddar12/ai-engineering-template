@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Build several plans at once — schedule them into dependency waves, run each track in its own worktree session, and merge as they clear
 argument-hint: [plan-ids | --all-backlog | --dry-run]
 ---
@@ -15,9 +18,8 @@ their state at once, which fills its context, forces every track to wait for
 the slowest at each stage, and leaves nothing recoverable when the session
 ends. Keep your side small.
 
-**Once the user has approved the schedule, the run is yours to finish.** Tracks
-are launched in the background and wake you as they exit, so you find out a
-wave has completed without anyone watching for it. Do not stop between waves to
+**Once the user has approved the schedule, the run is yours to finish.** Use the dispatch posture in config. Manual sessions require a handoff; a
+background host must supply its own tested launcher and completion signaling. Do not stop between waves to
 ask permission to continue — come back when something needs a decision, when
 the run is finished, or when what remains is blocked on a human, and say
 plainly which of those it is.
@@ -44,10 +46,10 @@ git remote -v
   say so and point at `/orchestrate-clean`. Never reuse one.
 - **Base branch behind its remote** — `git fetch && git status -sb`. Pull
   first, or every track builds on stale code.
-- **`claude` not on `PATH`** — not fatal, but it decides how the run works. With
-  it, you launch tracks yourself and drive the run to the end. Without it, you
-  can only print the commands for the user to run by hand, and the run needs a
-  person at every wave boundary. Say which mode you are in, up front.
+- **Dispatch support** — the configured default is manual. Background mode
+  requires an available launcher, fixed worktree roots, scoped permissions and
+  completion signaling tested in the chosen host. If any are missing, report
+  the limitation and use manual handoffs; do not invent launch flags.
 
 Detect the forge from `git remote get-url origin`, unless
 `orchestration.forge` overrides it:
@@ -62,8 +64,8 @@ A self-hosted host is not identifiable by name. If the remote is neither
 `github.com` nor `gitlab.com`, try both CLIs and believe whichever answers.
 
 **A missing or unauthenticated CLI is not an error.** Record `forge: none` in
-the manifest, tell the user once, and continue — tracks still branch, commit,
-review and merge locally.
+the manifest, tell the user once, and continue — tracks may still build and review locally under their granted scope. A requested
+PR/merge remains blocked; never silently substitute a local merge.
 
 ## 2. Choose the plans
 
@@ -81,7 +83,10 @@ Delegate to the **orchestrator** agent with the plan list. It builds the
 dependency graph, assigns waves and tracks, and writes
 `.ai/state/orchestration/ORCH-{nnn}.md` from `.ai/templates/ORCH-RUN.md`.
 
-**Show the user the layout and get a yes before creating anything.** Show the
+**Report the layout using the decision-summary template before dispatch.**
+Obtain the user's approval unless their existing instruction already covers
+this schedule and scope. `--dry-run` returns a proposed manifest in the report
+without writing files, allocating IDs, committing or creating worktrees. Show the
 waves, the tracks, the plans in each, and — separately — **every dependency the
 orchestrator inferred rather than read**, because those are the ones that can
 be wrong.
@@ -96,15 +101,14 @@ documentor, one reviewer. Each review round that finds something adds a triage,
 a fixer, a documentor and another reviewer.
 
 ```
-floor    = tracks x (plans_in_track + 3)
+floor    = total_plans + 3 x tracks
 ceiling  = floor + tracks x 4 x (max_rounds - 1)
 ```
 
 Present both, and the shape:
 
-> 3 tracks, 5 plans, 2 waves. **17 agent runs if every track passes review
-> first time, up to 41 if all three go the full 3 rounds.** Wave 2 cannot start
-> until wave 1 merges.
+> 3 tracks, 5 plans, 2 waves. **14 agent runs if every track passes review
+> first time, up to 38 if all three go the full 3 rounds.** Wave 2 waits for its prerequisites to merge and the prior wave to finish.
 
 Then two judgements the numbers do not show, and say them plainly:
 
@@ -138,10 +142,10 @@ Commit the manifest to the base branch.
 
 ## 5. Create the wave's worktrees
 
-**Only the current wave.** Wave N+1's worktrees are not created until every
-wave-N track has merged — that is what makes a dependency safe, since a wave-2
-track is then branched from a base that already contains wave 1. Creating them
-early silently produces a track building against code that does not exist.
+**Only the current wave.** After the previous wave is terminal, create only
+tracks whose own prerequisites have merged. Park dependents of stopped or failed
+tracks, while allowing unrelated ready work to continue. Each new worktree is
+branched from the synchronized base containing its prerequisites.
 
 ### Check the plans first
 
@@ -162,7 +166,7 @@ Act on what it reports:
 
 | Finding | Do |
 |---|---|
-| Conflicts with a spec or `intent/` | Pull the plan from the wave. Say why. |
+| Conflicts with a spec or `state/PROJECT.md` | Pull the plan from the wave. Say why. |
 | Premise invalidated by an earlier wave | Pull it, and offer to re-run `/plan-new` on it |
 | Internally inconsistent, or too vague to slice | Pull it — an implementor cannot build it |
 | Nits only | Proceed, and pass them to the track |
@@ -187,33 +191,22 @@ and commit it there.
 
 ## 6. Dispatch the wave
 
-**Launch every track in the wave as a background session, then wait.** A
-backgrounded command keeps running across turns and **re-invokes you when it
-exits** — that is how you find out a track finished without anyone watching.
+For each track, provide a separate session rooted at the verified absolute
+worktree, `.ai/commands/orchestrate-track.md`, run/track IDs, its reserved ID
+ranges, base revision and granted actions. The role and command files are
+instructions; copying them does not register slash commands or launch workers.
 
-```bash
-cd "<absolute worktree path>" && claude -p "/orchestrate-track ORCH-001 w1t1"
-```
+With `dispatch: manual`, return those handoff packets and the resume action.
+With a separately configured background host, launch through its supported
+interface and use its completion events. Do not waive permissions because a
+hook example exists. Report the actual confinement and review-isolation limits.
 
-Run each with `run_in_background`. One command per track, all launched in the
-same message so they start together.
-
-Three things decide whether this actually runs unattended:
-
-- **A background session that hits a permission prompt hangs forever.** Launch
-  tracks with a non-interactive permission posture (`--permission-mode`). This
-  is where the worktree confinement hook earns its place: it is what makes
-  running a track with prompts waived a reasonable thing to do.
-- **`claude` must be on `PATH`.** Check in preflight. If it is not, fall back
-  to printing the commands for the user to run by hand, and say why.
-- **Never run a track's pipeline inside this session.** One session driving
-  several tracks is the thing the split exists to prevent.
-
-Then stop and wait. **Do not poll.** You will be re-invoked.
+Keep each track's pipeline in its own session. Wait using the host's available
+completion mechanism, preserving the manifest so manual resumption is possible.
 
 ## 7. When a track exits
 
-You are woken by each background session as it finishes. Its output is the
+When a session returns, or the user resumes a manual run, its output is the
 track's report; its durable state is on its branch.
 
 Work out the terminal state from git, not from memory:
@@ -226,7 +219,7 @@ git show orch/ORCH-001/w1t1:.ai/state/orchestration/ORCH-001/w1t1/REVIEW-LOG.md
 
 | Terminal state | Means | You do |
 |---|---|---|
-| `ready` | Review clear, pushed, PR open | Merge it — step 8 |
+| `ready` | Review clear, pushed, and required delivery prerequisites met | Merge it — step 8 |
 | `stopped` | Hit the round ceiling, or a question only a human can answer | Record it; **do not merge** |
 | `failed` | The session died, or the branch has no commits | Say so plainly; offer to relaunch |
 
@@ -244,34 +237,37 @@ session the user is actually talking to.
 
 Honour `orchestration.auto_merge`:
 
-- **`ask`** — ask **once per wave**, listing every ready track together. One
+- **`ask`** — if merge is not already authorized, ask **once per wave**, listing every ready track together. One
   question, not one per track, and nothing is blocked while tracks are still
   running.
-- **`auto`** — merge as each track reports ready.
+- **`auto`** — merge cleared tracks only under the user's existing merge authority.
 - **`never`** — leave the PRs open and report them.
 
 ```bash
-gh pr merge <n> --merge --delete-branch          # or --squash / --rebase
-glab mr merge <n> --remove-source-branch
+gh pr merge <n> --merge --match-head-commit <reviewed-sha>
+# For another forge, use its supported exact-revision merge procedure.
 ```
 
-No forge: merge locally using `orchestration.merge_strategy`, one at a time.
+No forge: local merge is permitted only if explicitly included in the approved
+delivery scope. Otherwise report delivery blocked while preserving local work.
 
 **A merge conflict should not happen** — tracks in a wave were separated by file
 contention precisely so they would not. If one does, stop, name both tracks,
 and say it is a scheduling error rather than resolving it quietly.
 
-Then per merged track: remove the worktree and delete the branch if
-`cleanup_on_merge`, and move its plans to `.ai/plans/done/<period>/` with the
-reviewer's verdict recorded as the verification evidence.
+Before merging, have the track record verified plans in done with delivery
+still pending; those records land with the track. After each merge, follow
+`/deliver`: confirm the forge result, pull the target with `--ff-only`, compare
+Git ancestry and tracked contents, then use `/orchestrate-clean` if
+`cleanup_on_merge`. Keep run-wide STATE and journal events with the scheduler.
 
 ## 9. Close the wave, start the next
 
 A wave is done when every track is terminal — merged, stopped, or failed. Then:
 
 1. **Check nothing escaped.** `git status --porcelain` on this checkout must be
-   empty. Anything here means an agent wrote outside its worktree — **stop and
-   report it** rather than merging over it.
+   empty relative to the recorded preflight state. Unexpected changes need
+   investigation; do not assume an agent caused them or merge over them.
 2. **Write `.ai/state/STATE.md` and the journal** from what the tracks
    reported. Tracks are told not to touch either: they are single shared files,
    and parallel tracks editing them makes the second merge conflict. **You are
@@ -307,7 +303,8 @@ left is blocked on a human — and say which.
   result is yours. Its research, its code, its review rounds are not — if you
   find yourself tracking which stage three tracks are at, you have taken on the
   job this command was split to avoid.
-- **Never poll a running track.** Background sessions wake you when they exit.
+- **Use the host's completion mechanism.** Manual dispatch needs a return
+  handoff; automatic wakeups require a configured host.
 - **You merge; tracks do not.** Concurrent merges into one base branch race
   each other, and merging here serialises them.
 - **You alone write the manifest, `STATE.md` and the journal**, and only on the

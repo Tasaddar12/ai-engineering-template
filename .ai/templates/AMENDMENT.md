@@ -22,7 +22,7 @@ that a reader can find it in the history.
 ## What is actually true
 
 The reality that contradicts it, and how you established it — a test, observed
-behavior, a constraint in `intent/PROJECT.md`, a decision made with the user.
+behavior, a constraint in `state/PROJECT.md`, a decision made with the user.
 
 ## Why they diverged
 

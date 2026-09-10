@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Completion ready
+links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 
@@ -17,9 +18,10 @@ Before moving a PLAN or FIX to done.
   required checks.
 - The PLAN's Contract changes are delivered or explicitly reconciled within the
   approved outcome; a FIX has real before/after proof.
-- Required independent review is complete and user acceptance is evidenced.
-- The delivery the user authorized is complete and observed; a pushed draft
-  alone is not acceptance.
+- The required review and acceptance checks pass; reviewer independence and
+  any limits are disclosed. No review result grants new implementation authority.
+- Any pending delivery is explicit. Done records implementation verification;
+  the delivery and retirement gates separately require observed Git/forge outcomes.
 - Current records and links agree, and remaining unrelated work has an owning
   record.
 

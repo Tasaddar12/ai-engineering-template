@@ -13,10 +13,21 @@ what to do when the written record and reality disagree.
 
 ---
 
+## Approval before action
+
+The [approval policy](policies/approval.md) owns the report, templated summary
+and user-decision boundary. These rules apply inside the scope already
+authorized by the user; they do not turn an inspection into implementation.
+An explicit instruction to correct a named intent document is its approval.
+Otherwise propose intent changes and await the user's decision.
+
+For this documentation repository, implementation means the delivered files
+and procedures. Use document checks where a software example below calls for
+an application test; never claim runtime execution from a prose inspection.
+
 ## The Prime Rule
 
-**Writing code you know contradicts a written document is the only forbidden
-move.**
+**Do not knowingly leave implementation and its governing documents in conflict.**
 
 Documents here are versioned, not sacred. When you find that a spec, plan, or
 doc is wrong, stale, incomplete, or incompatible with the change you are
@@ -75,7 +86,7 @@ agent guessing.
 the target state makes every verification fail, which teaches everyone to
 ignore the verifier. Unbuilt behavior lives in the plan that will build it,
 under its **Contract changes** section — the exact wording the spec will carry
-once the code works. The executor lands that wording in the same change as the
+once the code works. The implementor lands that wording in the same change as the
 code, so every spec is true at every commit.
 
 **An ADR is the opposite of a spec** — a dated record, and allowed to be about
@@ -89,18 +100,20 @@ authority.
 
 ## Mutability tiers
 
-Every file under `.ai/` declares a tier in its frontmatter. The tier tells you
-what you may do without asking.
+Markdown records, policies, roles and commands declare a tier and authority.
+The tier describes mutability within approved scope. Templates model their
+output record; configuration, scripts, snippets and empty directory markers
+use their native format. Legacy journal files inherit log tier from their path.
 
 | Tier | What it holds | Examples | You may |
 |---|---|---|---|
-| `intent` | Why this project exists; hard constraints; non-goals | `intent/PROJECT.md`, this file | **Stop and ask.** Human authority. Propose, never edit. |
+| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | **Propose; edit only under explicit human instruction.** |
 | `contract` | What "correct" means right now | `specs/SPEC-*.md`, `decisions/ADR-*.md` | **Amend freely, with a recorded amendment.** See protocol below. |
 | `plan` | How we intend to get there | `plans/**/PLAN-*.md`, `fixes/**/FIX-*.md` | **Rewrite freely.** Plans are disposable. |
 | `status` | Where things stand | `state/STATE.md` | **Overwrite freely.** Expected to churn every session. |
 | `log` | What happened | `state/journal/*.md`, `decisions/amendments/*.md` | **Append only.** Never edit or delete past entries. |
 
-Frontmatter on every `.ai/` document:
+Example frontmatter for a record:
 
 ```yaml
 ---
@@ -150,7 +163,10 @@ account of what was decided at the time.
 
 ## The amendment protocol
 
-Use this whenever you change a `contract`-tier file: a spec, or an ADR.
+Use this when changing an existing contract: a spec, an operating rule or
+a factual correction to an ADR. One AMD may cover a coherent set of related
+changes. New specs land with their authorizing plan; superseding an ADR follows
+the exception above. Pure verification-reference updates retain valid criteria.
 
 1. Write the amendment record first: copy `templates/AMENDMENT.md` to
    `decisions/amendments/AMD-<nnn>-<slug>.md`. It captures four things — what
@@ -160,7 +176,8 @@ Use this whenever you change a `contract`-tier file: a spec, or an ADR.
    wording, never annotate it, and delete the criterion outright if the
    requirement is gone. On an ADR, correct a factual error only; changing the
    decision is a new ADR, not an edit.
-3. Add the amendment id to the affected document's `links:`.
+3. Add the amendment id to the affected document's `links:`. For files without
+   record frontmatter, link their paths from the AMD instead.
 4. Include both files in the same commit as the code change. One commit, one
    coherent story.
 
@@ -192,10 +209,10 @@ code simply does not do it, that is a fix. Nothing in `contract` tier moves, so
 there is no spec to amend, no ADR to write, and no reason to spend the whole
 plan lifecycle on it.
 
-A fix gets a short record at `fixes/FIX-{nnn}-{slug}.md` from
+A fix gets a short record at `fixes/open/FIX-{nnn}-{slug}.md` from
 `templates/FIX.md`, and a two-stage lifecycle of the same kind as a plan — the
 stage is the directory: `fixes/open/` while it is being worked,
-`fixes/done/<period>/` once it holds. [`/fix`](../.claude/commands/fix.md) runs
+`fixes/done/<period>/` once it holds. [`/fix`](commands/fix.md) runs
 the whole loop.
 
 Four things go in the record: the symptom, the root cause, the change, and the
@@ -206,10 +223,10 @@ reintroduced by the next agent, who has no way to know it was ever considered.
 
 Three things look like fixes and need care:
 
-- **The spec is silent on the case.** Then you are not restoring conformance,
-  you are deciding what correct means. Add the criterion to the spec through
-  the amendment protocol and cite the amendment id in the fix record. This is
-  the common case and it stays a fix.
+- **The spec is silent on the case.** Existing human intent and evidence must
+  establish the required behavior before this is treated as a fix. Clarify an
+  omission through the amendment protocol; if deciding a new rule is necessary,
+  write a plan and request the missing decision instead.
 - **The spec is wrong.** Amend it. But if the corrected behavior is something
   anyone depends on, that is a change of contract with consequences — write a
   plan.
@@ -241,11 +258,11 @@ decision from a strong opinion. Two specific failures:
   current will "fix" working code to match something nobody has built.
 
 Decisions become real by landing in `decisions/ADR-*.md`. Constraints and scope
-changes become real by landing in `intent/PROJECT.md`, which takes a human.
+changes become real by landing in `state/PROJECT.md`, which takes a human.
 Until then, an agent that finds a note describing something that ought to be
 true should **raise the gap, not act on it**.
 
-Turning notes into contracts is what [`/harvest`](../.claude/commands/harvest.md)
+Turning notes into contracts is what [`/harvest`](commands/harvest.md)
 does. A note carries `harvested:` in its frontmatter so you can tell whether
 its contents are in effect yet.
 
@@ -256,7 +273,7 @@ Reality first, then intent, then recency:
 1. **Working, tested code** beats any document describing it. Documents follow
    reality — but only after you have *confirmed* the code is right; a bug in
    the code does not license amending the spec to match the bug.
-2. **`intent/PROJECT.md`** beats specs. A spec that violates a stated non-goal
+2. **`state/PROJECT.md`** beats specs. A spec that violates a stated non-goal
    or hard constraint is the thing that is wrong.
 3. **The more recent `contract`** beats the older one. Check the amendment log
    before assuming a spec is current.
@@ -340,10 +357,10 @@ this file, arriving by a slower route.
 So: capture, don't fix, and don't merely mention. Write it to
 `plans/intake/INTAKE-{nnn}-{slug}.md` from `templates/INTAKE.md` — five lines,
 or use `/defer`. Captured items are triaged by `/plan-archive`, and get
-promoted by the route their `kind` calls for: a `bug` — code that contradicts a
-spec — through `/fix`, everything else through `/plan-new INTAKE-{nnn}`.
+promoted by the route their `kind` calls for: a suspected `bug` is confirmed
+before repair through `/fix`, everything else through `/plan-new INTAKE-{nnn}`.
 
-Two things are **always in scope** and get fixed rather than captured, because
+During approved implementation, two record corrections belong with the change, because
 leaving them is what corrupts everyone's future work:
 
 - a document that contradicts reality → amend it, with a record

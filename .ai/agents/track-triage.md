@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 name: track-triage
 description: Turns a reviewer's findings into fix records a fresh agent can act on, separating what blocks the merge from what gets captured. Runs inside the track worktree, between the reviewer and the fixer. Writes records, never code.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -30,8 +33,8 @@ pwd && git rev-parse --show-toplevel && git branch --show-current
 The toplevel must be your worktree and the branch must be your track's. If
 either is wrong, **stop and say so.**
 
-This matters more than it looks. A subagent starts in the **main checkout**, not
-your worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
+This matters more than it looks. A subagent may inherit its caller's working directory rather than
+your assigned worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
 `.ai/config.yaml` — resolves against wherever you actually are. Those files
 exist in both checkouts with plausible content, so reading the wrong one raises
 no error: it quietly hands you the base branch's version of a document your
@@ -175,5 +178,6 @@ report.
   restores conformance with the contract; a change to what conformance means
   is a plan, and one arriving through the review loop skips the checker
   entirely. Say it plainly if you see it.
-- The count of blocking fixes going to the fixer. If it is zero, the track is
-  clear to merge and you should say so unambiguously.
+- The count of blocking fixes going to the fixer. If it is zero, findings are
+  cleared only to the extent supported by evidence. Verification, complete
+  review and delivery gates still determine whether the track is ready.

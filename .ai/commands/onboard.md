@@ -1,11 +1,14 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Set up the .ai/ structure for this project, or brief yourself on an existing one
 ---
 
 Bring this project's `.ai/` structure to life. Behave differently depending on
 what you find.
 
-## If `.ai/intent/PROJECT.md` still says `CHANGEME`
+## If `.ai/state/PROJECT.md` still says `CHANGEME`
 
 This is a fresh drop-in. Set it up:
 
@@ -15,18 +18,17 @@ This is a fresh drop-in. Set it up:
 2. **Pick a mode** and say why, then confirm with the user:
    - `light` — small or short-lived. No specs, one plan at a time.
    - `standard` — default for real projects.
-   - `full` — long-running or multi-team. Adds a roadmap of phases.
    Write it into `.ai/config.yaml`, along with `project.name`,
    `project.summary`, and `verification.commands` (the real test and lint
    commands for this repo — an empty list makes the verifier much weaker).
-3. **Interview the user for `.ai/intent/PROJECT.md`.** This is `intent` tier and
+3. **Interview the user for `.ai/state/PROJECT.md`.** This is `intent` tier and
    human authority, so ask rather than invent. Push hardest on **Non-goals**
    and **Hard constraints** — those are what keep agents from confidently
    building the wrong thing. Draft from what they say, then have them confirm.
 4. **Adopt what the project already has.** On a project already in flight this
    is the step that decides whether the structure helps or hurts. Requirements
    are already written down somewhere — `README.md`, `docs/`, design notes, a
-   `CLAUDE.md`, comments, ticket links. Copying `.ai/` in beside them creates a
+   `AGENTS.md`, comments, ticket links. Copying `.ai/` in beside them creates a
    *second* home for the same facts, which is the exact duplicated-fact failure
    `.ai/truth-map.md` exists to prevent.
 
@@ -57,7 +59,7 @@ This is a fresh drop-in. Set it up:
    user at `/harvest` for the ones covering the area about to be worked on.
    Harvesting a backlog of them during onboarding produces a pile of ADRs
    nobody has verified.
-5. **Audit the existing `CLAUDE.md` and `.claude/agents/` for contradictions.**
+5. **Audit the existing `AGENTS.md` and `.ai/agents/` for contradictions.**
    This is the other retrofit trap. Look for language that forbids editing
    documentation — "never modify the spec", "the plan is the source of truth",
    "do not change requirements" — and for agent definitions whose `tools:` list
@@ -71,7 +73,7 @@ This is a fresh drop-in. Set it up:
    requirement". Those read as prudence and produce the specs-as-archaeology
    problem instead, and they will fight the present-tense rule. Propose moving
    that history into `docs/`, where it belongs, and out of the specs.
-6. **Write the first specs** for behavior that already exists and matters, if
+6. **Write the first specs** from `.ai/templates/SPEC.md` for behavior that already exists and matters, if
    the mode calls for specs. Acceptance criteria, not implementation, and
    **present tense only** — every sentence has to be true of the code as it is
    today. Not what the team wishes were true, not what is half-built behind a
@@ -105,7 +107,7 @@ This is a fresh drop-in. Set it up:
 8. **Capture decisions that were made but never written down.** Ask the user
    what the project's real architectural commitments are — and check the git
    history and any design notes for choices that clearly got made. Anything
-   still live and load-bearing becomes an ADR in `.ai/decisions/`. Write only
+   still live and load-bearing becomes an ADR from `.ai/templates/ADR.md` in `.ai/decisions/`. Write only
    the ones the user confirms; inventing a rationale for a past decision is
    worse than leaving it unrecorded.
 
@@ -114,13 +116,13 @@ This is a fresh drop-in. Set it up:
    dated record and is allowed to describe the past, which is the one place in
    `.ai/` where history belongs. Only `status: accepted` is authority, so this
    is what stops a fresh agent implementing from an obsolete decision.
-9. **Seed the backlog** with plans for what is obviously next. In `full` mode,
-   run the **roadmapper** agent first. Work already in progress becomes a plan
+9. **Seed the backlog** with plans for what is explicitly agreed next.
+   Work already in progress becomes a plan
    in `.ai/plans/active/` describing the remaining steps, not the finished ones.
-10. **Initialize `.ai/state/STATE.md`** with the real present — including
+10. **Initialize `.ai/state/STATE.md`** from `.ai/templates/state.md` with the real present — including
    anything you noticed under **Known drift**.
-11. **Wire up the root `CLAUDE.md`.** Append
-   `.ai/templates/CLAUDE.snippet.md`; if the project has no `CLAUDE.md`, create
+11. **Wire up the root `AGENTS.md`.** Append
+   `.ai/templates/AGENTS.snippet.md`; if the project has no `AGENTS.md`, create
    one from it. An agent that never reads `RULES.md` will fall back to exactly
    the refuse-or-contort behavior the structure exists to prevent, so do not
    finish onboarding without this.
@@ -132,7 +134,7 @@ Report the mode, what you wrote, and what still needs the user's input.
 Brief yourself and report — do not restructure anything:
 
 1. Read `.ai/RULES.md`, `.ai/truth-map.md`, `.ai/config.yaml`,
-   `.ai/intent/PROJECT.md`, `.ai/state/STATE.md`, and the latest journal entry.
+   `.ai/state/PROJECT.md`, `.ai/state/STATE.md`, and the latest journal entry.
 2. Read the specs, and the plans in `active/`, `review/` and `blocked/`. For
    the active plans, read their **Contract changes** section — that is what the
    specs are about to say.
@@ -148,5 +150,5 @@ Brief yourself and report — do not restructure anything:
 
 Report: what this project is, where it stands, what is next, what is blocked,
 and any drift you spotted between the documents and the code. List drift as
-candidate work — under `.ai/RULES.md` reconciling it is always in scope.
-Capture with `/defer` anything you find that you are not about to fix.
+candidate work. An orientation request does not authorize restructuring;
+return proposed intake items if record writes have not been requested.

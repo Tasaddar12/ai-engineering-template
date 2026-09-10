@@ -1,7 +1,7 @@
 ---
 tier: log
 authority: agent
-title: {{ change_title }}
+title: "{{ change_title }}"
 ---
 > Log: follow the owning policy within approved scope.
 

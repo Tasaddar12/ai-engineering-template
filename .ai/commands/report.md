@@ -1,18 +1,48 @@
 ---
 tier: contract
 authority: agent
-description: Capture a problem or request.
-argument_hint: Observation and read-only evidence.
+links: [AMD-002]
+description: Inspect and route a finding without repairing it.
+title: Report and route a finding
 ---
-> Contract: this entry point selects a workflow; it grants no new authority.
+> Contract: follow these steps within the approved scope.
 
-# report
+# Report and route a finding
 
-Use when: Capture a problem or request.
+## Purpose
 
-Inputs: Observation and read-only evidence.
+Keep uncertainty and confirmed defects distinct, and preserve findings that
+would otherwise vanish with the session.
 
-Follow [report](../workflows/report.md). That workflow owns the steps.
-Read [RULES](../RULES.md) for the engagement protocol.
+## Inputs
 
-Return: INTAKE or FIX and decision summary.
+The observation, available evidence, current specs and the approved work
+boundary.
+
+## Gates
+
+Report drafting is permitted by [action-approved](../gates/action-approved.md); repairs need their own scope.
+
+## Steps
+
+1. Inspect read-only and check existing records before allocating an ID.
+2. Use INTAKE for unconfirmed behavior, waiting questions and suspected drift.
+   Use FIX for a confirmed contract violation; a directly confirmed defect needs
+   no duplicate intake.
+3. Capture the symptom, evidence, uncertainty and impact. State severe risks
+   plainly; filing them is not resolving them.
+4. Link an originating intake when promoted and update its disposition. Use PLAN
+   for changed behavior; size alone does not determine the route.
+5. For stale documents or duplicate facts in approved scope, follow spec-amend
+   or record reconciliation. Otherwise capture the bounded correction for a
+   decision.
+6. Return decision-summary.md. The orchestrator records material user decisions
+   and changes of focus.
+
+## Output and handoff
+
+A short INTAKE or actionable FIX linked to its evidence and next action.
+
+## Stop conditions
+
+Do not patch while reporting or treat a hypothesis as a confirmed root cause.

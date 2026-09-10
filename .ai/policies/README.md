@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Policy index
+links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 
@@ -11,7 +12,8 @@ Policies own firm requirements. Workflows refer to them rather than making
 weaker copies.
 
 - [Approval](approval.md): user decisions, scope and publication authority.
-- [Records](records.md): tiers, amendments, tense, routing and evidence.
+- [Records](records.md): lifecycle maintenance, evidence and specification updates per PR;
+  [RULES](../RULES.md) owns tiers, amendments, tense and defect routing.
 - [Execution](execution.md): validation, review, commits and delivery.
 - [Parallel execution](parallel-execution.md): waves, tracks and ownership.
 

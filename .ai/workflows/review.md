@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Review a proposal or result
+links: [AMD-002]
 ---
 > Contract: follow these steps within the approved scope.
 
@@ -24,7 +25,9 @@ Use [review-ready](../gates/review-ready.md); additional execution follows [acti
 ## Steps
 
 1. For a proposal, use plan-checker. For implementation, use a reviewer
-   independent of the implementor and preferably in a fresh context.
+   independent of the implementor and preferably in a fresh context when
+   authorized and available. Otherwise disclose a separate self-review pass;
+   it cannot satisfy a mandatory external-review requirement.
 2. Prepare the review packet: PLAN/FIX, PROJECT, RULES, truth-map, current
    specs, accepted ADRs, user documentation, surrounding code and relevant
    tests.

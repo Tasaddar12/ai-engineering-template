@@ -1,13 +1,15 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: e2e
+tools: Read, Grep, Glob, Bash, Write, Edit
 description: Checks agreed user journeys across system boundaries and records observable end-to-end outcomes.
 reads: ["approved journeys","current SPECs","assigned PLAN/FIX","test environment documentation"]
 writes: ["assigned e2e tests and fixtures only when authorized"]
 model: gpt-5.6-sol
 reasoning: xhigh
-workflows: ["implementation","fix","plan-verify","parallel-execution"]
+procedures: ["implementation","fix","plan-verify","parallel-execution"]
 report_template: test-result.md
 ---
 > Contract: follow this role inside its approved assignment.

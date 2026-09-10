@@ -1,13 +1,15 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: decoupler
+tools: Read, Grep, Glob, Bash, Write, Edit
 description: Separates dependency from contention and proposes bounded tasks with clear interfaces and ownership.
 reads: ["proposed PLAN records","SPEC/ADR dependencies","assigned source/tests"]
 writes: ["proposed assignment sections in the selected PLAN"]
 model: gpt-5.6-sol
 reasoning: xhigh
-workflows: ["planning","parallel-execution"]
+procedures: ["planning","parallel-execution"]
 report_template: assignment.md
 ---
 > Contract: follow this role inside its approved assignment.

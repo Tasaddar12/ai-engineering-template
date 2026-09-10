@@ -63,9 +63,10 @@ Which of the three cases this was:
 
 - **The spec already forbade this.** Cite it under `violates:` above. Nothing
   in `contract` tier moves. This is the normal case.
-- **The spec was silent on the case.** Add the criterion to the spec through
+- **The spec was silent on the case.** When existing intent and evidence establish
+  the required behavior, add the criterion through
   the [amendment protocol](../RULES.md#the-amendment-protocol) and cite the
-  amendment id here. Still a fix.
+  amendment id here. A new behavior decision requires a plan.
 - **The spec was wrong.** Amend it, and cite the amendment. If anyone depends
   on the behavior being corrected, stop — that is a plan.
 
@@ -80,8 +81,8 @@ cause is a signal that the real work is a plan.
 - 
 
 <!--
-Naming: FIX-{nnn}-{slug}.md, next number after the highest anywhere under
-.ai/fixes/ (including done/ — numbers are never reused).
+Naming: FIX-{nnn}-{slug}.md. Allocate IDs under .ai/config.yaml,
+including current records, Git history and reserved run blocks.
 
 Run /fix, which does the whole loop: diagnose, record, change, prove, close.
 

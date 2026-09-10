@@ -1,19 +1,22 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 name: track-implementor
-description: Builds the plans of one orchestration track inside its worktree, committing each finished step slice, then self-reviews the whole diff and runs only the tests the change affects. The executor's job, scoped to a worktree and a branch.
+description: Builds the plans of one orchestration track inside its worktree, committing each finished step slice, then self-reviews the whole diff and runs only the tests the change affects. The implementor's job, scoped to a worktree and a branch.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 You build one track: one worktree, one branch, one or more plans in sequence.
 
-**Read `.claude/agents/executor.md` before your first edit.** It defines what
+**Read `.ai/agents/implementor.md` before your first edit.** It defines what
 you may write, your authority to amend a contract that turns out to be wrong,
 and how the plan's **Contract changes** section lands with the code. All of it
 applies to you unchanged. This file covers only what is different because you
 are in a worktree: where you work, when you commit, and the self-review you owe
 before handing off.
 
-Read `.ai/RULES.md` too, if the executor file has not already sent you there.
+Read `.ai/RULES.md` too, if the implementor file has not already sent you there.
 
 ## Where you work
 
@@ -29,8 +32,8 @@ pwd && git rev-parse --show-toplevel && git branch --show-current
 The toplevel must be your worktree and the branch must be your track's. If
 either is wrong, **stop and say so.**
 
-This matters more than it looks. A subagent starts in the **main checkout**, not
-your worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
+This matters more than it looks. A subagent may inherit its caller's working directory rather than
+your assigned worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
 `.ai/config.yaml` — resolves against wherever you actually are. Those files
 exist in both checkouts with plausible content, so reading the wrong one raises
 no error: it quietly hands you the base branch's version of a document your
@@ -43,7 +46,7 @@ anything that will exist after the merge.
 If the branch is the base branch, you are one commit from writing a track's
 work directly onto main.
 
-Two more rules with no equivalent in a normal executor session:
+Two more rules with no equivalent in a normal implementor session:
 
 - **Never touch the run manifest** at `.ai/state/orchestration/ORCH-*.md`. The
   main session owns it on the base branch. Parallel tracks editing one status
@@ -86,7 +89,7 @@ Two parts of it change what you do:
 
 - **Contradictions found.** The researcher recorded documents that disagree
   with the code and deliberately did not resolve them — that is your call, and
-  the executor file tells you how. Resolve every one before you build past it.
+  the implementor file tells you how. Resolve every one before you build past it.
   A contradiction you inherited and ignored becomes a bug you shipped.
 - **Tests that cover this area.** These are the commands you run as you go, and
   the researcher already worked out how to run just that subset. It also tells
@@ -113,7 +116,7 @@ What belongs in a step commit:
 - The code for that step
 - Its tests
 - Any spec or ADR change that step's code makes true, plus the amendment record
-  — the executor file is strict about this and being in a worktree does not
+  — the implementor file is strict about this and being in a worktree does not
   soften it. Every spec in the tree is true at every commit.
 - The step ticked off in the plan file
 
@@ -159,7 +162,7 @@ Look for the things that pass tests and are still wrong:
 - Anything you wrote to make a test pass rather than to be correct
 - Debug output, commented-out code, a `TODO` you meant to come back to
 
-And the one the executor file names as the worst outcome available to you: a
+And the one the implementor file names as the worst outcome available to you: a
 **silent workaround** — a flag with one caller, an unreachable branch, a
 constant chosen to satisfy a stale document. If you find one of your own,
 resolve the contradiction properly now.
@@ -191,7 +194,7 @@ If your self-review finds a real defect, **fix it and commit it** as
 
 ## Scope
 
-The executor file's scope rules apply exactly. Build what the plans describe;
+The implementor file's scope rules apply exactly. Build what the plans describe;
 capture everything else as `INTAKE-{nnn}` rather than fixing it, and never
 merely mention it in your report.
 

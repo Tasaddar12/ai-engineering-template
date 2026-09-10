@@ -11,7 +11,7 @@ Subject and revision: {{ subject_revision }}
 
 Independence and inspection scope: {{ context_and_limits }}
 
-Verdict: {{ PASS_CHANGES_REQUIRED_CANNOT_VERIFY_or_proposal_verdict }}
+Verdict: {{ approved_changes_requested_cannot_review_or_proposal_verdict }}
 
 ## Findings
 
@@ -26,7 +26,7 @@ improvement. Do not inflate preferences or reduce severity to finish a loop.
 ## Evidence
 
 Checks actually run, current specs, relevant diff and exclusions.
-For proposals use READY, NEEDS_REVISION or NEEDS_HUMAN.
+For proposals use ready, needs revision or blocked on a human.
 
 ## Next action
 
