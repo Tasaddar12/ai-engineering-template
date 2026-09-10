@@ -1,0 +1,55 @@
+{
+  "run_id": "ORCH-001",
+  "repository": "/absolute/path/to/project",
+  "base_branch": "main",
+  "remote": "origin",
+  "github_repo": "OWNER/REPOSITORY",
+  "branch_prefix": "orch",
+  "max_parallel_tracks": 3,
+  "residual_findings": "merge",
+  "worker_command": [
+    "codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "{sandbox}",
+    "-C", "{worktree}", "--output-schema", "{schema_file}",
+    "--output-last-message", "{result_file}", "-"
+  ],
+  "required_commands": [["python", "-m", "unittest", "discover", "-s", "tests", "-v"]],
+  "required_status_checks": ["validate"],
+  "worker_timeout_seconds": 3600,
+  "check_timeout_seconds": 900,
+  "github_timeout_seconds": 900,
+  "tracks": [
+    {
+      "id": "api",
+      "title": "Build the planned API changes",
+      "plans": [".ai/plans/backlog/PLAN-001-api.md"],
+      "depends_on": [],
+      "owned_paths": ["src/api/", "tests/api/", ".ai/plans/backlog/PLAN-001-api.md"],
+      "code_paths": ["src/api/", "tests/api/"],
+      "resources": ["database:api-test", "port:8101"],
+      "environment": {"TEST_DATABASE": "api_test", "PORT": "8101"},
+      "ids": {"FIX": [1, 20], "INTAKE": [1, 20]}
+    },
+    {
+      "id": "ui",
+      "title": "Build the planned UI changes",
+      "plans": [".ai/plans/backlog/PLAN-002-ui.md"],
+      "depends_on": [],
+      "owned_paths": ["src/ui/", "tests/ui/", ".ai/plans/backlog/PLAN-002-ui.md"],
+      "code_paths": ["src/ui/", "tests/ui/"],
+      "resources": ["port:8102"],
+      "environment": {"PORT": "8102"},
+      "ids": {"FIX": [21, 40], "INTAKE": [21, 40]}
+    },
+    {
+      "id": "integration",
+      "title": "Connect the delivered API and UI",
+      "plans": [".ai/plans/backlog/PLAN-003-integration.md"],
+      "depends_on": ["api", "ui"],
+      "owned_paths": ["tests/integration/", ".ai/plans/backlog/PLAN-003-integration.md"],
+      "code_paths": ["tests/integration/"],
+      "resources": ["database:api-test", "port:8101", "port:8102"],
+      "environment": {},
+      "ids": {"FIX": [41, 60], "INTAKE": [41, 60]}
+    }
+  ]
+}

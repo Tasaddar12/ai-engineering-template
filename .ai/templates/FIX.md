@@ -8,6 +8,7 @@ found_by: <agent or person>
 severity: minor      # critical | major | minor | cosmetic
 violates: SPEC-{nnn} # the spec the code contradicts, or `none` — see below
 links: []
+deferred_until: none # all-other-plans-complete for deferred orchestration defects
 ---
 
 # FIX-{nnn}: <the defect, in a few words>
@@ -59,17 +60,13 @@ verification performed, and treat that as a known weakness rather than a pass.
 
 ## Contract
 
-Which of the three cases this was:
+FIX items correct code only. Cite the existing spec or acceptance criterion
+that establishes the defect under `violates:`. If a document or contract also
+needs correction, create a separate INTAKE and link it here. Do not amend a
+spec to make this FIX pass. If correctness needs a decision, leave the FIX open
+pending that INTAKE.
 
-- **The spec already forbade this.** Cite it under `violates:` above. Nothing
-  in `contract` tier moves. This is the normal case.
-- **The spec was silent on the case.** Add the criterion to the spec through
-  the [amendment protocol](../RULES.md#the-amendment-protocol) and cite the
-  amendment id here. Still a fix.
-- **The spec was wrong.** Amend it, and cite the amendment. If anyone depends
-  on the behavior being corrected, stop — that is a plan.
-
-- Amendment: AMD-
+- Related documentation/contract INTAKE: <id, or none>
 
 ## Related
 

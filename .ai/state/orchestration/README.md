@@ -20,4 +20,8 @@ not a ready result: name ready, stopped or failed with evidence and a reason.
 
 [Review](../../agents/track-reviewer.md) owns the cold packet and exclusions.
 [Parallel execution](../../commands/orchestrate.md) owns scheduling.
-These documents do not start a process or enforce filesystem confinement.
+The [runtime](../../runtime/README.md) starts worker processes and stores durable
+phase/merge receipts in the Git common directory. Runtime mode uses those
+receipts instead of track-written review logs. It audits declared paths and
+resources; host permissions still provide sandboxing. Two reviews are the
+ceiling, and residual code FIX/doc-contract INTAKE queues survive the run.

@@ -137,7 +137,8 @@ If your self-review finds a real defect, **fix it and commit it** as
 ## Scope
 
 The implementor file's scope rules apply exactly. Build what the plans describe;
-capture everything else as `INTAKE-{nnn}` rather than fixing it, and never
+capture other code defects as FIX and documentation/contract corrections as
+separate INTAKE items rather than fixing them, and never
 merely mention it in your report.
 
 One addition specific to a run: if you find that another track's plan is going

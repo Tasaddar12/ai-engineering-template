@@ -12,7 +12,8 @@ Two things you decide:
 
 1. **Is this finding real?** The reviewer read the change cold, which is what
    makes it valuable and also what makes it wrong sometimes.
-2. **Does it block the merge, or get captured?** Rounds are scarce and capped.
+2. **Is it code, documentation or contract work?** Code defects are FIX items;
+   documentation and contract corrections each become their own INTAKE.
 
 Read `.ai/RULES.md`, and the reviewer's findings in full.
 
@@ -50,12 +51,12 @@ Three verdicts per finding:
 **`already answered`** — the code is right and the reviewer lacked the context
 to see it. This is a legitimate outcome and it is *not* a free pass. Ask why
 the reviewer could not tell: almost always the answer is that a comment, a
-doc or a spec is missing. **The missing explanation is itself the fix** —
-write a record for it. A reviewer that had to guess once will have to guess
-again next round, and you will spend a round on the same finding.
+doc or a spec is missing. Capture that correction as a documentation or
+contract INTAKE for later. Cite the evidence that answers the code finding.
 
 **`out of scope`** — real, but not something this track introduced or should
-carry. Capture as `INTAKE-{nnn}` and say so. Do not quietly drop it.
+carry. Code defects still get `FIX-{nnn}`; documentation/contract corrections
+get `INTAKE-{nnn}`. Scope changes scheduling, not record type.
 
 Be honest about the second verdict. Marking a real defect `already answered`
 to save a round merges the defect, and you are the only agent that sees both
@@ -69,9 +70,10 @@ the only one who can tell which:
 
 - **The fix did not land.** Check the diff. Reopen the fix record with what was
   actually attempted and why it failed.
-- **The fix landed and was wrong.** Write a new record citing the old one.
+- **The fix landed and was wrong.** Reuse the open record for the same root
+  cause and add evidence; a distinct root cause gets a linked new FIX.
 - **It was marked `already answered` and the explanation was never added.**
-  Your miss, last round. Write the record now.
+  Keep or create the documentation/contract INTAKE; do not turn it into a FIX.
 
 Say explicitly in your report which findings are repeats and which of these it
 was. A finding raised twice and dismissed twice is how a defect merges with two
@@ -79,9 +81,15 @@ reviews behind it.
 
 ## What blocks, and what does not
 
-Anything at or above `orchestration.review.blocking_severity` in
-`.ai/config.yaml` blocks the merge and gets a fix record. Below it, capture and
-move on.
+Every confirmed code defect gets a FIX, including minor and out-of-scope bugs.
+Attempt in-scope code corrections once after review 1. At review 2, defer all
+residual findings until the other PLANs complete. Documentation/contract INTAKE
+items are deferred from the first review. Severity sets priority; it never
+changes record type or resets the two-round ceiling.
+
+The coordinator determines readiness from completion, PR and required check
+evidence. Residual findings can be `ready_with_followups` under the authorized
+merge policy. Failed required checks or `cannot_review` park the track.
 
 But **do not just pass the reviewer's severity through** — you know things it
 did not. Adjust in either direction and say why:
@@ -141,5 +149,5 @@ report.
   restores conformance with the contract; a change to what conformance means
   is a plan, and one arriving through the review loop skips the checker
   entirely. Say it plainly if you see it.
-- The count of blocking fixes going to the fixer. If it is zero, the track is
-  clear to merge and you should say so unambiguously.
+- Code FIX items eligible for the single immediate fixer pass, and deferred
+  FIX/INTAKE items. Zero eligible fixes does not establish merge readiness.

@@ -43,6 +43,21 @@ scheduled a wave too early builds against code that does not exist.
 |---|---|
 | PLAN- | |
 
+## Concurrent execution scope
+
+Declare this before scheduling parallel work. List exact files or directory
+prefixes ending in `/`, including this PLAN, promised specs, ADRs and docs.
+The scheduler audits actual changed paths against this ownership. Shared STATE,
+journal and run manifests belong to the coordinator.
+
+- **Owned paths:** <source, tests, PLAN and contract/document paths>
+- **Code paths:** <subset the review fixer may edit; no docs/contracts>
+- **Exclusive resources:** <ports, databases, caches, accounts; `none` if none>
+- **Environment:** <unique per-track port/database/cache settings>
+
+Overlapping ownership is grouped in one track or serialized. Declare shared
+resources even when file ownership is disjoint; worktrees do not isolate them.
+
 ## Contract changes
 
 What this plan makes the contract say once it lands. Specs describe the present,

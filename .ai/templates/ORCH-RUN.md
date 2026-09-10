@@ -46,7 +46,7 @@ can audit is a guess that will strand a plan a wave too late.
 |---|---|---|---|
 | PLAN- | PLAN- | declared in `## Depends on` | certain |
 | PLAN- | PLAN- | amends SPEC-004, which PLAN-011 creates | certain |
-| PLAN- | PLAN- | both rewrite `src/auth/session.ts` | inferred |
+| PLAN- | PLAN- | calls the API the other PLAN introduces | inferred |
 
 ## Contention
 
@@ -61,6 +61,21 @@ instead of `src/`.
 | Track | Plans | Overlapping paths | Overlapping contracts |
 |---|---|---|---|
 | w1t1 | PLAN-011, PLAN-014 | `src/auth/**` | SPEC-004, ADR-0012 |
+
+## Execution scope
+
+The coordinator compiles this into the [runtime JSON schedule](../runtime/schedule.example.json).
+Waves show dependency depth; only a track's own dependencies gate readiness.
+
+| Track | Depends on tracks | Owned paths | Code-only fixer paths | Exclusive resources | Environment |
+|---|---|---|---|---|---|
+| w1t1 | none | <exact files or directory prefixes/> | <subset> | <ports/databases/cache keys> | <assignments> |
+
+- Required local commands: <nonempty argv arrays>
+- Required GitHub checks: <names; strict up-to-date branch protection required>
+- Runtime schedule and receipt locations: <paths outside tracked content>
+- Residual policy: `merge` with passing required checks; retain actual verdict
+- Review ceiling: 2; deferred code FIX and documentation/contract INTAKE queues
 
 ## Reserved id blocks
 
@@ -93,9 +108,9 @@ with the table.
 
 ### Wave 2 — pending
 
-Waves after the first stay empty until the wave before them merges. Their
-worktrees do not exist yet, deliberately: a dependent plan is built on top of
-the code it depends on, not alongside it.
+Unstarted tracks have no worktree until their own dependencies merge and sync
+and their owned paths/resources are available. Other tracks in an earlier
+display wave need not finish first.
 
 ## Review rounds
 
@@ -103,8 +118,11 @@ Summarised here from each track's own
 `.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md`, which is the durable
 record — it lives on the track branch, so it has one writer and survives a lost
 session. The ceiling is `orchestration.review.max_rounds` in
-[config.yaml](../config.yaml); a track that hits it stops for a human rather
-than starting another round.
+[config.yaml](../config.yaml): two reviews, then deferred code FIX and separate
+documentation/contract INTAKE reports. Runtime receipts in the Git common
+directory replace track-written logs in executable mode. Required check or PR
+failures park the track; residual findings with passing checks may proceed as
+`ready_with_followups` under the authorized policy.
 
 | Track | Round | Verdict | Blocking findings | Fixes raised |
 |---|---|---|---|---|

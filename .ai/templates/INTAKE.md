@@ -6,8 +6,9 @@ title: <the problem, in a few words>
 found: YYYY-MM-DD
 found_by: <agent or person>
 found_while: PLAN-{nnn}
-kind: bug            # bug | drift | debt | idea | question
+kind: documentation  # documentation | contract | debt | idea | question
 links: []
+deferred_until: none # all-other-plans-complete for deferred review corrections
 ---
 
 # INTAKE-{nnn}: <the problem, in a few words>
@@ -38,9 +39,9 @@ picked up, so be honest rather than dramatic — "cosmetic" is a valid answer.
 Naming: INTAKE-{nnn}-{slug}.md in .ai/plans/intake/, numbered in its own
 sequence.
 
-Promotion goes by `kind`:
-  bug  — code that contradicts a spec        -> /fix INTAKE-{nnn}
-  anything that changes what correct means   -> /plan-new INTAKE-{nnn}
+Documentation and contract corrections become their own planned work through
+/plan-new INTAKE-{nnn}. Confirmed code defects go directly to FIX, not INTAKE.
+If investigating a question proves a code defect, create a linked FIX then.
 
 Either way the new record gets a fresh number and links back to this id; this
 file then moves to plans/abandoned/ once the work lands, or if planning it

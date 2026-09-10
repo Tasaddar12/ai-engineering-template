@@ -86,9 +86,13 @@ are bounded; a stopped track does not erase independent progress.
 [Cleanup](.ai/commands/orchestrate-clean.md) uses actual merge, ancestry,
 cleanliness and ownership evidence before removing an exact worktree/branch.
 
-These procedures describe coordination; they do not dispatch processes.
-Runtime-specific launch and confinement must be chosen for the consuming
-project. Prompt wording does not enforce a filesystem boundary.
+The [executable runner](.ai/runtime/README.md) dispatches worker processes from
+an approved JSON schedule, audits owned paths/resources and serializes tested
+GitHub merges, target sync and cleanup. It permits two reviews with one code-fix
+pass. Remaining code defects become FIX reports; documentation/contract
+corrections become separate INTAKE items for after the other PLANs complete.
+The consuming project supplies its worker permissions, checks and service
+namespaces. Prompt wording and Git worktrees do not provide a sandbox.
 
 ## Adopt it into an existing project
 

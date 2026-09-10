@@ -72,6 +72,12 @@ where the work resumes, and the manifest points at it.
 
 ## 4. Remove
 
+For an already authorized standard cleanup, no repeated approval is needed for
+the exact clean, merged worktree and branch. Fetch and fast-forward the target
+first; verify local/remote HEAD equality, merged ancestry and the expected
+contents. A remote PR marked merged alone is insufficient. Preserve unrelated,
+dirty, ignored or advanced work and report why it cannot be removed safely.
+
 ```bash
 git worktree remove .worktrees/<name>        # add --force only if the user said so
 git branch -d orch/<run>/<track>             # -d refuses unmerged; that is the point

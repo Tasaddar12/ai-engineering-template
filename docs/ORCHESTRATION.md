@@ -5,6 +5,11 @@ same time and which have to wait. Each group then gets its own git worktree and
 its own session, which drives it through research, implementation,
 documentation, a pull request, and a review loop with a hard ceiling.
 
+The [Python runtime](../.ai/runtime/README.md) provides executable background
+dispatch, durable receipts and serialized GitHub delivery. The coordinator
+compiles approved PLAN scope into its JSON schedule. Worktrees isolate Git
+changes; declared paths and resources let the scheduler prevent known overlaps.
+
 It exists because the obvious way to parallelize agent work — several sessions
 in one checkout — does not work. They overwrite each other, and nothing that
 comes out is separately reviewable.
@@ -20,11 +25,11 @@ most, because it surfaces as a merge conflict hours later rather than as an
 error up front.
 
 **A wave** is a dependency layer. Plan B is in a later wave than A when B
-cannot be *built or verified* until A's code exists. Waves are strictly
-ordered: **wave N+1's worktrees are not created until every wave-N track has
-merged into the base branch.** A wave-2 track is therefore branched from a base
-that already contains all of wave 1, and its pull request diffs against a base
-where its dependencies are already present.
+cannot be *built or verified* until A's code exists. Waves display dependency
+depth. **A track waits for its own dependencies to merge and sync**, not every
+unrelated track in the earlier wave. Its checkout starts at the verified target
+SHA containing those dependencies. Ownership/resource availability also gates
+dispatch; an unrelated slow track does not create a global barrier.
 
 **A track** is a group of plans that would fight over the same files. They
 share one worktree, one branch, one PR, and are built one after the other by
@@ -38,10 +43,10 @@ one implementor. Tracks within a wave run in parallel.
 | Neither? | same wave, different tracks |
 
 ```
-base ──┬── w1t1 ──PR──┐
-       └── w1t2 ──PR──┴──> base updated
-                             ├── w2t1 ──PR──┐
-                             └── w2t2 ──PR──┴──> base
+base ──┬── track A ── PR merge + sync ──> dependent C
+       └── independent B ─────────────── PR merge + sync
+
+All deliveries are serialized; B need not finish before C starts.
 ```
 
 The alternative — stacking wave 2 on wave 1's unmerged branch — buys wall-clock
@@ -54,18 +59,14 @@ The seats are separated by **what they are allowed to know**, not just by task.
 That is what makes the review meaningful.
 
 ```
-track-researcher  ──>  track-implementor  ──>  track-documentor  ──>  PR
-                                                                       │
-                        ┌──────────────────────────────────────────────┘
-                        v
-                  track-reviewer  ──approved──>  merge
-                        │
-                   findings
-                        v
-                  track-triage  ──>  track-fixer  ──>  track-documentor
-                        ^                                     │
-                        └──────────── round + 1 ──────────────┘
-                                  (ceiling: 3 rounds)
+research → implement → original PLAN documentation → PR → review 1
+                                                           │
+                       code findings → one fix pass → review 2
+                                                           │
+                         required checks + integrated tests → delivery
+
+Code defects: FIX. Documentation/contract corrections: separate INTAKE.
+Residual findings wait until all other PLANs complete; never a third review.
 ```
 
 | Agent | Sees | Deliberately does not see |
@@ -104,7 +105,7 @@ and the spec change that step makes true, together.
 
 This is not tidiness. A reviewer arriving cold reads the branch commit by
 commit; one 40-file commit is unreviewable and gets rubber-stamped. And when a
-fixer goes back into the branch three rounds later, per-step history is what
+fixer goes back into the branch after review, per-step history is what
 lets it find where a behavior was introduced.
 
 ---
@@ -126,19 +127,20 @@ wave layout, the tracks, and — listed separately — every dependency the
 orchestrator *inferred* rather than read from a plan. Those are the ones that
 can be wrong, and checking them costs a minute against a run that costs hours.
 
-Without `--dry-run` it also creates the wave's worktrees, reserves each track's
-id block, and prints the commands to build them. Then it stops.
+Without `--dry-run`, an authorized background run reserves IDs and starts the
+runtime. A manual host prints worktree/session instructions instead.
 
-**2. It runs itself from there.** `/orchestrate` launches a background session
-per track and is **re-invoked when each one exits**, so it learns that a wave
-finished without anyone watching for it. As tracks clear it merges them,
-writes `STATE.md` and the journal, re-checks the next wave's plans against
-anything the last wave changed, and dispatches the next wave.
+**2. It runs itself from there.** The runtime launches separate worker
+processes, waits for completion and saves phase receipts. As tracks clear it
+integrates, tests, merges, syncs and verifies each one before dispatching new
+dependents. Shared STATE/journal/run-board updates remain the coordinator's
+responsibility; workers never race to write them.
 
 You said go once. It comes back when something needs a decision, when the run
 is done, or when what is left is blocked on a human.
 
-This needs an agent launcher. Without it, set `dispatch: manual` and run each
+This needs a configured worker command; the example supplies a Codex CLI
+adapter. Without one, set `dispatch: manual` and run each
 track by hand, in its own session started in that track's worktree:
 
 ```text
@@ -157,25 +159,24 @@ Any time:
 
 ### Tracks never merge themselves
 
-A track pushes, updates its PR, and exits `ready` or `stopped`. The **scheduler**
+A track reports `ready`, `ready_with_followups` or `stopped`. The **scheduler**
 merges. Two reasons, and both are load-bearing:
 
 - Tracks finish at unpredictable times. Two merging into the same base branch
   concurrently race each other; serialising it in one place removes that.
-- A background track has nobody to answer a question. If `auto_merge: ask`
-  prompted inside a track, it would hang forever. Asked by the scheduler
-  instead, it is one question per wave, and nothing is blocked while other
-  tracks are still running.
+- The authorized workflow is autonomous. Reviews do not ask permission to fix
+  code once or defer remaining reports after the second review.
 
 **One stuck track does not stall the run.** Whatever is `ready` merges; only
 the plans that genuinely depend on a `stopped` track have to wait.
 
 ### Resuming
 
-There is no resume command. `/orchestrate-track` works out its own stage from
-git — which briefs exist, which plans have moved, what the branch contains,
-what the review log says — and continues from there. Run it again and it picks
-up.
+Re-run the same runtime schedule to resume delivery from durable receipts.
+The runner verifies Git and PR state. It never resets the two-review count or
+replays an interrupted writer whose last operation is uncertain. Such a track
+is parked for process/result reconciliation while independent work continues.
+Manual hosts use the Git/evidence procedure in `/orchestrate-track`.
 
 ## Why it is split in two
 
@@ -189,21 +190,22 @@ session:
 | Tracks wait at every stage | One session can only batch by stage, so all tracks pause for the slowest, eight times | Independent sessions have no shared scheduler to wait on |
 | Nothing survives the session | Stage, round counts and PR numbers live in context | State is derived from git; the manifest is a static schedule |
 
-Confinement is then enforced by a `PreToolUse` hook,
+An optional `PreToolUse` accident guard is supplied as
 [`worktree-confine.sh`](../.ai/hooks/worktree-confine.sh), which blocks a write
 landing outside the checkout the session is in. It derives that boundary from
 `git rev-parse` rather than a host-provided project directory that may still
 point at the project root, and it allows the shared `.git` because a
 worktree's own `.git` is only a pointer into it.
 
-That is a wall for `Write`/`Edit`, and narrow best-effort for `Bash` — shell
+This is best-effort for file tools and simple `Bash` patterns — shell
 cannot be parsed reliably, and a false block would stop a run that was doing
 the right thing. So it stops mistakes, not a determined escape. `/orchestrate`
 also checks `git status --porcelain` on the base between waves, since anything
 that does get through is otherwise silent.
 
-The cost is that a run is no longer one button press: something has to launch
-the per-track sessions, and `/orchestrate` is re-invoked between waves.
+The runtime supplies process dispatch and diff auditing. The consuming host
+still supplies authentication and sandbox permissions. It must keep the runner
+alive; a Markdown prompt cannot install that host integration.
 
 ## Declaring dependencies
 
@@ -234,38 +236,33 @@ In `.ai/config.yaml`, under `orchestration`:
 | `worktree_root` | `.worktrees` | Where checkouts go. **Must be gitignored.** |
 | `max_parallel_tracks` | `3` | The real cost dial — each track is a full agent pipeline |
 | `base_branch` | *current* | What tracks branch from and merge into |
-| `review.max_rounds` | `3` | Rounds before the track stops for a human |
-| `review.blocking_severity` | `major` | Below this, findings are captured, not fixed |
-| `forge` | `auto` | `gh` / `glab` detection, or `none` |
+| `review.max_rounds` | `2` | One immediate code-fix pass between two reviews |
+| `review.residual_findings` | `merge` | Merge with follow-ups only when required checks pass; `park` keeps the PR open |
+| `forge` | `github` | Executable GitHub adapter; other forges require a manual host |
 | `merge_strategy` | `merge` | `merge` keeps the per-step commits |
-| `auto_merge` | `ask` | `ask` confirms each merge; `auto` is hands-off |
+| `auto_merge` | `auto` | Authorized autonomous delivery; manual hosts may use `ask` or `never` |
 | `targeted_tests` | *empty* | How to run only the tests a change affects |
 
-Two worth thinking about before a first run:
-
-**`auto_merge`.** The default stops and asks before each merge. Set it to
-`auto` for a fully hands-off run — the pipeline is designed to be safe there,
-but merging is hard to undo and the default should not assume you want it.
-
-**`review.blocking_severity`.** This is what makes the loop terminate.
-Everything at or above it sends the track back for another round; everything
-below is captured as an intake item and does not block. Set to `minor` and a
-track can burn all three rounds on naming disagreements.
+Before the first run, name the required local commands and GitHub checks.
+Autonomous delivery rejects empty check lists and requires strict up-to-date
+branch protection. Severity prioritizes reports; it never changes code FIX
+items into INTAKE or extends the two-review ceiling.
 
 ## When a run stops
 
-Three rounds of an agent failing to satisfy a reviewer means the problem is not
-one more round. The track stops, posts a summary to the PR, and appears under
-**Needs a human** in the manifest. Its worktree and branch stay in place so you
-can pick up where it stopped. Other tracks carry on.
+After review 2, residual code defects remain open FIX reports; documentation
+and contract corrections remain separate INTAKE items. Passing required checks
+permit `ready_with_followups` under the default policy, with the actual review
+verdict disclosed. No third review is started. After the other PLANs complete,
+the runtime looks through the deferred FIX queue in a fresh read-only audit.
 
 Other stopping points: the implementor hits a question only a human can answer
 (`intent`-tier), a merge conflict between two tracks (a scheduling error worth
 knowing about), or a dependency cycle the orchestrator found before starting.
 
-Things that **do not** stop a run: no `gh`/`glab`, no auth, no network. The
-pull request is a review surface, not the work. The run says so once and
-continues locally.
+Failed required checks, inconclusive review and PR/auth/network failures park
+the affected track. Its branch and worktree remain for recovery; independent
+work continues. A failed PR never silently becomes a local merge.
 
 ## What a run leaves behind
 

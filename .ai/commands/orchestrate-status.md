@@ -78,8 +78,10 @@ is how a run quietly dies.
 - A PR merged that the manifest still shows open.
 
 **Cost so far** — tracks completed, review rounds spent, tracks at the ceiling.
-A run whose tracks are all on round 3 is a run to stop and look at, not to let
-finish.
+The ceiling is two reviews. Report residual code FIX and documentation/contract
+INTAKE items separately; a third round is a workflow defect, not progress.
+In runtime mode inspect the Git-common-directory receipts and `followups.json`
+as well as Git/PR state. `ready_with_followups` is not an approved review.
 
 Each track is driven by its own `/orchestrate-track` session, normally launched
 in the background by the scheduler. A track with no recent activity is either

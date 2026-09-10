@@ -18,9 +18,10 @@ Tidy the plan lifecycle. Period: **$ARGUMENTS** (default: the current one from
 3. **Triage `intake/`.** This is the pile that rots fastest, and an intake
    pile nobody reads is the same as never having captured anything. For each
    item, propose one of:
-   - **fix** — `kind: bug`, and the specs already say what should happen; the
-     user runs `/fix INTAKE-{nnn}`. Cheaper than a plan and the common case.
-   - **promote** — worth doing, and it changes what correct means; the user
+   - **fix** — investigation confirms a code defect; create a linked code-only
+     FIX and use `/fix`. Legacy `kind: bug` INTAKE items can be migrated this way.
+     New confirmed code defects go directly to FIX.
+   - **promote** — documentation, contract or other work worth doing; the user
      runs `/plan-new INTAKE-{nnn}`
    - **abandon** — no longer matters, or was fixed incidentally. Verify it was
      actually fixed before saying so.

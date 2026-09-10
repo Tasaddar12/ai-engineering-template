@@ -25,6 +25,14 @@ plainly which of those it is.
 Read `.ai/config.yaml` (the `orchestration` block) and `.ai/RULES.md` first.
 See [docs/ORCHESTRATION.md](../../docs/ORCHESTRATION.md) for the model.
 
+For executable background dispatch use [the runtime](../runtime/README.md).
+Compile the approved manifest/configuration into its JSON schedule, validate,
+then run it. It owns worker completion, durable review counts and serialized
+delivery. The host must keep the scheduler process alive; completion is a
+process result, not an assumed chat wake-up. Manual hosts follow the same
+outcome rules below. An instruction already authorizing the chosen PLANs and
+delivery is sufficient; do not ask for the same approval again.
+
 ---
 
 ## 1. Preflight
@@ -61,9 +69,10 @@ Detect the forge from `git remote get-url origin`, unless
 A self-hosted host is not identifiable by name. If the remote is neither
 `github.com` nor `gitlab.com`, try both CLIs and believe whichever answers.
 
-**A missing or unauthenticated CLI is not an error.** Record `forge: none` in
-the manifest, tell the user once, and continue — tracks still branch, commit,
-review and merge locally.
+**A missing or unauthenticated CLI blocks PR delivery.** Preserve local work
+and report the failure. A local merge cannot substitute for the requested PR.
+The executable adapter supports GitHub merge commits and requires named checks
+with strict up-to-date branch protection; other forges need a manual adapter.
 
 ## 2. Choose the plans
 
@@ -81,7 +90,7 @@ Delegate to the **orchestrator** agent with the plan list. It builds the
 dependency graph, assigns waves and tracks, and writes
 `.ai/state/orchestration/ORCH-{nnn}.md` from `.ai/templates/ORCH-RUN.md`.
 
-**Show the user the layout and get a yes before creating anything.** Show the
+**Show the layout; obtain authorization only if it is not already provided.** Show the
 waves, the tracks, the plans in each, and — separately — **every dependency the
 orchestrator inferred rather than read**, because those are the ones that can
 be wrong.
@@ -91,20 +100,20 @@ be wrong.
 A run is approved on one screen and then consumes agents for hours. Nobody can
 consent to that from a wave diagram alone, so put a number on it.
 
-Each track costs, at minimum: one researcher per plan, one implementor, one
-documentor, one reviewer. Each review round that finds something adds a triage,
-a fixer, a documentor and another reviewer.
+The executable adapter uses one build process per track for research,
+implementation and original PLAN documentation, then one cold reviewer.
+Code findings add one fixer and one final reviewer. Manual role-per-session
+hosts may use more sessions; identify the adapter in the estimate.
 
 ```
-floor    = tracks x (plans_in_track + 3)
-ceiling  = floor + tracks x 4 x (max_rounds - 1)
+floor    = tracks x 2
+ceiling  = tracks x 4
 ```
 
 Present both, and the shape:
 
-> 3 tracks, 5 plans, 2 waves. **17 agent runs if every track passes review
-> first time, up to 41 if all three go the full 3 rounds.** Wave 2 cannot start
-> until wave 1 merges.
+> 3 tracks, 5 plans, 2 display waves: 6–12 worker processes, plus scheduling
+> and the later defect audit. Each track waits only for its own dependencies.
 
 Then two judgements the numbers do not show, and say them plainly:
 
@@ -138,10 +147,11 @@ Commit the manifest to the base branch.
 
 ## 5. Create the wave's worktrees
 
-**Only the current wave.** Wave N+1's worktrees are not created until every
-wave-N track has merged — that is what makes a dependency safe, since a wave-2
-track is then branched from a base that already contains wave 1. Creating them
-early silently produces a track building against code that does not exist.
+**Only ready tracks.** Create a track after its own dependencies have merged,
+the target has synced and their contents are verified. Waves are a display
+grouping; unrelated earlier-wave tracks do not block it. Also require available
+capacity and nonoverlapping owned paths and exclusive resources. New worktrees
+must start at that verified target SHA.
 
 ### Check the plans first
 
@@ -182,14 +192,18 @@ git worktree add .worktrees/ORCH-001-w1t1 -b orch/ORCH-001/w1t1
 git -C .worktrees/ORCH-001-w1t1 rev-parse --show-toplevel   # absolute path
 ```
 
-Then `git mv` the track's plans into `.ai/plans/active/` inside that worktree
-and commit it there.
+Manual hosts then move the track's plans into `.ai/plans/active/` and commit
+there. Runtime workers keep assigned PLAN paths fixed; the coordinator performs
+the final lifecycle moves so all phases use the same inputs.
 
-## 6. Dispatch the wave
+## 6. Dispatch ready tracks
 
-**Launch every track in the wave as a background session, then wait.** A
-backgrounded command keeps running across turns and **re-invokes you when it
-exits** — that is how you find out a track finished without anyone watching.
+**Runtime mode:** invoke the approved JSON schedule once. The runner manages
+child processes and completion notifications internally; keep its host process
+alive. It does not depend on a chat session being re-invoked automatically.
+
+**Manual host mode:** launch each ready track in its assigned worktree using
+the host's documented background/completion mechanism, for example:
 
 ```text
 Start a background agent session in "<absolute worktree path>" with:
@@ -203,19 +217,21 @@ Three things decide whether this actually runs unattended:
 
 - **A background session that hits a permission prompt hangs forever.** Launch
   tracks with a non-interactive permission posture (the host's permission-mode setting). This
-  is where the worktree confinement hook earns its place: it is what makes
-  running a track with prompts waived a reasonable thing to do.
+  requires configured host permissions. The optional confinement hook is an
+  accident guard, not authority to bypass permission failures.
 - **The agent launcher must be available.** Check in preflight. If it is not, fall back
   to printing the commands for the user to run by hand, and say why.
 - **Never run a track's pipeline inside this session.** One session driving
   several tracks is the thing the split exists to prevent.
 
-Then stop and wait. **Do not poll.** You will be re-invoked.
+Wait for the runner result or the host's actual completion event. Do not claim
+an unattended continuation mechanism unless the selected host supplies it.
 
 ## 7. When a track exits
 
-You are woken by each background session as it finishes. Its output is the
-track's report; its durable state is on its branch.
+The runtime receives each process result and updates its durable receipt. In
+manual mode the host supplies completion, and the track's evidence is on its
+branch. Missing/invalid output is a failed outcome, never readiness.
 
 Work out the terminal state from git, not from memory:
 
@@ -227,8 +243,9 @@ git show orch/ORCH-001/w1t1:.ai/state/orchestration/ORCH-001/w1t1/REVIEW-LOG.md
 
 | Terminal state | Means | You do |
 |---|---|---|
-| `ready` | Review clear, pushed, PR open | Merge it — step 8 |
-| `stopped` | Hit the round ceiling, or a question only a human can answer | Record it; **do not merge** |
+| `ready` | Review approved, required checks pass, pushed head matches open PR | Validate integration and deliver — step 8 |
+| `ready_with_followups` | Code FIX/doc-contract INTAKE reports retained; required checks pass | Deliver under the authorized residual policy |
+| `stopped` | Incomplete work, inconclusive review, failed required checks/PR or unresolved decision | Record it; **do not merge** |
 | `failed` | The session died, or the branch has no commits | Say so plainly; offer to relaunch |
 
 **A track that is not `ready` does not stall the run.** Merge everything that
@@ -252,23 +269,32 @@ Honour `orchestration.auto_merge`:
 - **`never`** — leave the PRs open and report them.
 
 ```bash
-gh pr merge <n> --merge --delete-branch          # or --squash / --rebase
+gh pr merge <n> --merge --match-head-commit <tested-head>
 glab mr merge <n> --remove-source-branch
 ```
 
-No forge: merge locally using `orchestration.merge_strategy`, one at a time.
+No forge means no PR delivery. Do not fall back to a local merge.
+
+For each ready track, serialize the entire sequence: refresh the target; merge
+it into the completed track; test the combined tree; push that head; wait for
+all named required GitHub checks; verify target/head have not advanced; merge
+the exact head without bypassing protection. A target advance requires fresh
+integration tests, not reuse of earlier evidence. Missing, failed or inconclusive
+checks are not success. The runtime enforces this sequence.
 
 **A merge conflict should not happen** — tracks in a wave were separated by file
 contention precisely so they would not. If one does, stop, name both tracks,
 and say it is a scheduling error rather than resolving it quietly.
 
-Then per merged track: remove the worktree and delete the branch if
-`cleanup_on_merge`, and move its plans to `.ai/plans/done/<period>/` with the
-reviewer's verdict recorded as the verification evidence.
+Then fetch and fast-forward the target, verify local/remote HEAD equality,
+merged ancestry and the tested integration tree. Only after that verification
+release dependents and remove the clean, merged worktree/branch. Preserve any
+dirty work or advanced branch. Record the real review verdict, required checks
+and deferred FIX/INTAKE IDs; never call residual findings an approved review.
 
-## 9. Close the wave, start the next
+## 9. Record completion and dispatch newly ready tracks
 
-A wave is done when every track is terminal — merged, stopped, or failed. Then:
+Process each terminal track without waiting for an unrelated wave barrier:
 
 1. **Check nothing escaped.** `git status --porcelain` on this checkout must be
    empty. Anything here means an agent wrote outside its worktree — **stop and
@@ -283,17 +309,28 @@ A wave is done when every track is terminal — merged, stopped, or failed. Then
 5. **Drop any plan whose dependency did not land.** If a wave-2 plan depended
    on a stopped wave-1 track, it cannot be built — move it back to
    `backlog/`, say why, and carry on with the rest of the wave.
-6. Go to step 5 and dispatch the next wave.
+6. Go to step 5 and dispatch tracks whose own dependencies are now verified.
 
 Keep going until every wave is done or nothing is left that can proceed. **The
 user said go once; do not come back for permission to continue.** Come back
 when something needs a decision, when everything is finished, or when what is
 left is blocked on a human — and say which.
 
+### Post-PLAN defect pass
+
+After all other PLANs are complete, look through the deferred code FIX queue:
+deduplicate root causes, reproduce against the now-integrated target, inspect
+any earlier fix proof and identify which reports remain actionable. Do not
+close a FIX just because a later review omitted it. Documentation and contract
+corrections stay as their own INTAKE items for later planning. The runtime
+produces `followups.json` and an automatic read-only defect audit when eligible;
+it never starts a third review of the original track. Report blocked PLANs
+that prevent the post-PLAN pass becoming eligible.
+
 ## Close out
 
 - Every plan: merged, stopped for a human, or excluded — and why
-- Review rounds each track took. Three is worth a look even though it passed.
+- Review rounds each track took, capped at two, and residual FIX/INTAKE IDs.
 - Specs created, amended or deleted, with amendment ids
 - Intake and fix ids opened
 - Worktrees still on disk, and why
@@ -313,9 +350,8 @@ left is blocked on a human — and say which.
   each other, and merging here serialises them.
 - **You alone write the manifest, `STATE.md` and the journal**, and only on the
   base branch.
-- **A wave never starts early.** If asked to overlap waves to save time,
-  explain what breaks: the dependent track builds against code that is not
-  there yet.
+- **A dependent track never starts early.** Require its own dependencies to be
+  merged and synced; display-wave boundaries do not block independent work.
 - **One stuck track does not stop the run.** Merge what is ready, park only the
   plans that actually depend on what stalled, and keep going.
 - **Report failures as failures.** A track that stopped for a human is not a
