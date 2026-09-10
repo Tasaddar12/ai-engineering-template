@@ -16,6 +16,7 @@ halfway and the specs are satisfied, it is.
 
 - `.ai/state/STATE.md`, `.ai/state/journal/**`
 - Plan files, to record the verification result
+- FIX and INTAKE reports, to capture findings through [defer](../commands/defer.md)
 
 ## You must not write
 
@@ -102,11 +103,14 @@ things and nothing else:
 
 Verification surfaces problems outside the plan you are grading — an unrelated
 failing test, a spec nobody is satisfying, dead code, a criterion no test
-covers. Do not fix them, and do not leave them in your report only: write each
-to `.ai/plans/intake/INTAKE-{nnn}-{slug}.md` from `.ai/templates/INTAKE.md`.
+covers. Do not fix them, and do not leave them in your report only: use
+[defer](../commands/defer.md). Confirmed code defects get FIX reports;
+documentation and contract corrections get separate INTAKE items.
 
 Defects *inside* the plan you are grading belong in the verdict below, not in
 intake — they block this work rather than deferring it.
+For autonomous tracks, apply the bounded review and deferred-work outcomes in
+[RULES](../RULES.md#autonomous-review-and-fix).
 
 On `verified`, update `.ai/state/STATE.md` and tell the user to run
 `/plan-done <id>`. On defects, recommend `/plan-start` again or a new plan, and

@@ -23,6 +23,8 @@ to build and publish the selected PLANs. Run it from a clean checkout of the
 target branch. That checkout is reserved for the scheduler until it exits.
 The same command resumes delivery receipts after interruption. Exit 0 means
 every scheduled track merged; exit 1 preserves blocked work and reports why.
+Recovery commands below update a receipt and exit; invoke the normal run command
+afterward to continue scheduling.
 
 ## Worker contract
 
@@ -61,6 +63,11 @@ or dirty files after read-only phases.
 - Confirmed code defects produce `FIX` files in `.ai/fixes/open/`, including
   minor and out-of-scope defects. Documentation and contract corrections each
   produce their own `INTAKE` in `.ai/plans/intake/`; questions also use INTAKE.
+  Valid findings survive blocked results and failed edit audits in durable
+  `deferred/<track>/` FIX/INTAKE copies under the run directory. `report_file`
+  in the queue identifies the readable copy. Reports enter the worktree only
+  after its edits pass audit. Repeated findings update severity and location,
+  retaining each round's evidence and any attempted correction summary.
 - The fixer can edit only `code_paths`. A missing or wrong contract is an
   INTAKE, not permission to redefine correctness during a fix. Original PLAN
   documentation promises remain part of the build phase.
@@ -73,10 +80,13 @@ or dirty files after read-only phases.
   Independent tracks continue. Dependencies of blocked tracks wait.
 - Records remain open until a later defect pass verifies before/after proof.
   A cold review omitting an earlier finding does not silently close its FIX.
-  After every PLAN in this run has merged and no other project PLANs remain
-  in backlog/active/review/blocked, `followups.json` marks the queue eligible.
+  After other PLAN work finishes, `followups.json` marks the queue eligible.
+  A parked track with findings and its waiting dependents are listed explicitly
+  and do not prevent examination of those findings. Other unfinished scheduled
+  or project PLANs in backlog/active/review/blocked still delay eligibility.
   A fresh read-only worker looks through the code FIX reports, attempted proof
-  and current code, recording per-FIX assessment in the receipt. This audit
+  and current code, including preserved unmerged worktrees, recording which
+  tree was examined and the per-FIX assessment in the receipt. This audit
   does not restart the original track's review/fix loop or close unproved FIXes.
   Open reports from earlier runs are included, so finishing the last PLAN run
   does not lose defects deferred by an earlier one.
@@ -100,16 +110,18 @@ reservation; investigate its processes before reusing it.
 
 ## Delivery and recovery
 
-Only the scheduler delivers. It refreshes the target, merges that exact revision
+One delivery worker refreshes the target, merges that exact revision
 into the completed track, runs the required commands on the integrated tree,
-pushes that head, and waits for the named GitHub checks. Branch protection must
+pushes that head, and waits for configured and protected required GitHub checks.
+Optional checks do not gate delivery. CI waits leave the dispatch loop free to
+start independent work; target Git operations remain serialized. Branch protection must
 require those checks with **Require branches to be up to date before merging**.
 Protection must also apply to administrators; the runner rejects a bypassable
 administrator configuration for this guarantee.
 This server-side condition prevents a target advance between local validation
 and the merge request from silently bypassing integration checks. The runtime
 supports GitHub merge commits, not squash/rebase or merge queues. It never uses
-an administrator bypass or treats absent/skipped checks as passed.
+an administrator bypass or treats absent/skipped required checks as passed.
 
 The PR records the reviewed source SHA separately from the integrated head.
 Only mechanically generated finding records and PLAN lifecycle moves may follow the last source review;
@@ -123,9 +135,14 @@ fast-forwards the target, verifies commit ancestry and compares the remote merge
 tree with the tested tree. Only then can dependents start or cleanup occur.
 
 Cleanup uses non-forced worktree removal and branch deletion, and refuses dirty
-or ignored local files and advanced remote branches. No unrelated branches or
-worktrees are deleted. Check commands should put disposable output in temporary
-directories outside the worktree or remove it themselves.
+files, undeclared ignored output and advanced remote branches. Python bytecode
+is disabled for workers/checks, and Python cache, temporary-directory and XDG
+cache environment variables point to run-owned scratch directories outside the
+worktree. Other tools can declare generated directories in a track's optional
+`disposable_paths`, for example `[".pytest_cache/"]`. These must be absent at
+allocation, ignored by Git, contain no tracked files and have no redirected
+paths. Only those directories are removed automatically. No unrelated branches,
+worktrees or ignored local files are deleted.
 
 Receipts and worker output live under `<git-common-dir>/orchestration/<run>/`.
 An OS lock excludes concurrent schedulers for the same repository. Atomic JSON
@@ -135,7 +152,31 @@ Unfinished earlier runs must be reconciled before a different run starts.
 An interrupted writer is **not automatically replayed**: its child process may
 still exist and its last commit may have succeeded. The run parks it and keeps
 the receipt. Reconcile the process, result and Git state before recovery; never
-delete a receipt to reset the review counter. A completed remote merge with a
+delete a receipt to reset the review counter.
+
+```text
+python .ai/runtime/orchestrate.py schedule.json --retry api
+python .ai/runtime/orchestrate.py schedule.json --reconcile api --expected-head <sha> --workers-stopped
+python .ai/runtime/orchestrate.py schedule.json --abandon api --expected-head <sha> --workers-stopped
+```
+
+`--retry` resumes a clean blocked track at its saved coordinator checkpoint,
+such as after a PR service outage or check infrastructure failure. Completed
+phases are reused. `--reconcile` requires the exact inspected worktree HEAD and
+confirmation that its workers/resource users have stopped; it consumes the saved
+result without launching another worker. A failed build with no edits may be
+retried explicitly. A missing or blocked fix/review result remains parked;
+recovery never grants another fix/review attempt. Changed HEADs, partial edits
+and unfinished Git operations require reconciliation before retrying.
+
+`--abandon` releases reservations while preserving all files, branches, PRs and
+findings. It never satisfies dependencies or marks work merged. Omit the SHA
+only if allocation failed before creating a worktree. A new run may start once
+every earlier track is cleaned after merge or explicitly abandoned and released;
+previously issued ID ranges remain reserved. The coordinator can run these
+commands within existing authorization after establishing their preconditions.
+
+A completed remote merge with a
 lost response resumes at sync/verification/cleanup, without another review or PR.
 Fix or check failures preserve the branch and its open records for the later
 defect pass. The coordinator reports unresolved recovery work explicitly.
