@@ -61,7 +61,8 @@ field() {
 # collapse doubled slashes, strip a trailing slash, lowercase (Windows paths
 # are case-insensitive and git and the tool layer disagree on drive-letter case).
 norm() {
-  local p="${1//\\//}"
+  local p
+  p=$(printf '%s' "$1" | tr '\\' '/')
   while [[ "$p" == *"//"* ]]; do p="${p//\/\//\/}"; done
   p="${p%/}"
   printf '%s' "$p" | tr '[:upper:]' '[:lower:]'
@@ -69,7 +70,8 @@ norm() {
 
 # Resolve a possibly-relative path against $cwd and flatten any ".." segments.
 resolve() {
-  local p="${1//\\//}"
+  local p
+  p=$(printf '%s' "$1" | tr '\\' '/')
   case "$p" in
     /*|?:/*) ;;                 # already absolute (POSIX or C:/...)
     *) p="$cwd/$p" ;;
@@ -90,7 +92,13 @@ resolve() {
 deny() {
   # permissionDecisionReason is shown to the user and fed back to the agent, so
   # it says what to do instead rather than only that this was refused.
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+  local reason=$1
+  reason=${reason//\\/\\\\}
+  reason=${reason//\"/\\\"}
+  reason=${reason//$'\n'/\\n}
+  reason=${reason//$'\r'/\\r}
+  reason=${reason//$'\t'/\\t}
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$reason"
   exit 0
 }
 

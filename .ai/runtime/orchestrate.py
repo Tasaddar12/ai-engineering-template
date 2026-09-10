@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -44,6 +45,14 @@ def state_locked(method):
     @wraps(method)
     def call(self, *args, **kwargs):
         with self.mutex:
+            return method(self, *args, **kwargs)
+    return call
+
+
+def repo_locked(method):
+    @wraps(method)
+    def call(self, *args, **kwargs):
+        with self.repo_mutex:
             return method(self, *args, **kwargs)
     return call
 
@@ -134,6 +143,10 @@ def validate(config):
                 all(isinstance(x, str) and x for x in track['resources']), 'Declare exclusive resources')
         require(all(isinstance(k, str) and isinstance(v, str)
                     for k, v in track.get('environment', {}).items()), 'Environment values must be strings')
+        for path in track.get('disposable_paths', []):
+            relative_path(path)
+            require(path.endswith('/') and not path.casefold().startswith(('.git/', '.worktrees/')),
+                    'Disposable paths must be explicit generated directories')
         for kind in reservations:
             start, end = track['ids'][kind]
             require(type(start) is int and type(end) is int and 0 < start <= end, 'Invalid ID range')
@@ -212,6 +225,7 @@ class Runner:
         self.directory.mkdir(parents=True, exist_ok=True)
         self.state_path = self.directory / 'state.json'
         self.mutex = threading.RLock()
+        self.repo_mutex = threading.RLock()
         fingerprint = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
         self.fingerprint = fingerprint
         if self.state_path.exists():
@@ -219,7 +233,8 @@ class Runner:
             require(self.state['config_hash'] == fingerprint, 'Schedule changed; use a new run id')
         else:
             self.state = {'config_hash': fingerprint, 'tracks': {
-                t['id']: {'status': 'pending', 'completed_phases': {}, 'findings': {}}
+                t['id']: {'status': 'pending', 'completed_phases': {}, 'findings': {},
+                          'plans': t['plans'], 'ids': t['ids']}
                 for t in config['tracks']}}
         self.schema = self.directory / 'result-schema.json'
         atomic_json(self.schema, RESULT_SCHEMA)
@@ -239,6 +254,7 @@ class Runner:
     def api(self, suffix):
         return json.loads(self.gh('api', f"repos/{self.config['github_repo']}/{suffix}"))
 
+    @repo_locked
     def sync(self):
         cfg = self.config
         require(git(self.root, 'branch', '--show-current') == cfg['base_branch'], 'Base branch changed')
@@ -261,8 +277,14 @@ class Runner:
             if receipt == self.state_path:
                 continue
             previous = json.loads(receipt.read_text(encoding='utf-8'))
-            require(all(s['status'] == 'merged' and s.get('cleaned') for s in previous['tracks'].values()),
+            require(all((s['status'] == 'merged' and s.get('cleaned')) or
+                        (s['status'] == 'abandoned' and s.get('released'))
+                        for s in previous['tracks'].values()),
                     f'An earlier run still owns worktrees/resources: {receipt.parent.name}')
+            for state in previous['tracks'].values():
+                for kind, (start, end) in state.get('ids', {}).items():
+                    require(not any(start <= t['ids'][kind][1] and t['ids'][kind][0] <= end
+                                    for t in cfg['tracks']), f'{kind} reservation reused from {receipt.parent.name}')
         # Strict checks make a target advance reject the merge on the server.
         protection = self.api(f"branches/{quote(cfg['base_branch'], safe='')}/protection")
         checks = protection.get('required_status_checks') or {}
@@ -270,6 +292,32 @@ class Runner:
         require(checks.get('strict') is True and set(cfg['required_status_checks']) <= contexts and
                 protection.get('enforce_admins', {}).get('enabled') is True,
                 'Autonomous merge requires strict named checks enforced for administrators too')
+        self.protected_checks = contexts
+
+    def worker_environment(self, track):
+        # Interpreter caches and temporary files belong to this run, outside Git worktrees.
+        directory = self.directory / 'scratch' / track['id']
+        directory.mkdir(parents=True, exist_ok=True)
+        return {**os.environ, **track.get('environment', {}),
+                'PYTHONDONTWRITEBYTECODE': '1', 'PYTHONPYCACHEPREFIX': str(directory / 'pycache'),
+                'TMPDIR': str(directory), 'TEMP': str(directory), 'TMP': str(directory),
+                'XDG_CACHE_HOME': str(directory / 'cache')}
+
+    def discard_generated(self, track):
+        """Remove only declared, initially absent, ignored output; preserve everything else."""
+        path, _ = self.location(track)
+        state = self.state['tracks'][track['id']]
+        for name in state.get('disposable_paths', []):
+            target = path / name
+            require(target.resolve() == target and target.is_relative_to(path), 'Generated path redirected')
+            if not target.exists():
+                continue
+            require(target.is_dir(), 'Generated directory replaced by a file')
+            require(not git(path, '--literal-pathspecs', 'ls-files', '--', name), 'Generated directory contains tracked files')
+            git(path, 'check-ignore', str(target))
+            for child in target.rglob('*'):
+                require(child.resolve() == child and not child.is_symlink(), 'Generated output contains a redirected path')
+            shutil.rmtree(target)
 
     def location(self, track):
         path = self.root / '.worktrees' / f"{self.config['run_id']}-{track['id']}"
@@ -299,7 +347,9 @@ class Runner:
     def phase(self, track, name, *, readonly=False, extra=''):
         state = self.state['tracks'][track['id']]
         if name in state['completed_phases']:
-            return state['completed_phases'][name]
+            result = state['completed_phases'][name]
+            require(result['status'] == 'complete', result['summary'])
+            return result
         path, _ = self.location(track)
         self.audit(track, path)
         before = git(path, 'rev-parse', 'HEAD')
@@ -342,15 +392,56 @@ class Runner:
                'in this phase. Return any unresolved or out-of-scope code defects as findings. ')
             + '\nAssignment:\n' + json.dumps(context, indent=2) + '\n' + extra
             + '\nReturn JSON matching the supplied schema in the configured result file.')
-        self.update(state, inflight_phase=name)
-        output = command(argv, path, input=prompt, timeout=self.config.get('worker_timeout_seconds', 3600),
-                         env={**os.environ, **track.get('environment', {}), 'ORCH_CONTEXT': json.dumps(context),
-                              'ORCH_RESULT': str(result_file)})
+        attempts = state.setdefault('phase_attempts', {})
+        require(name == 'build' or not attempts.get(name), 'Cannot repeat a fix or review attempt')
+        attempts[name] = attempts.get(name, 0) + 1
+        self.update(state, inflight_phase=name, worker_stopped=False,
+                    inflight={'name': name, 'before': before, 'result_file': str(result_file), 'readonly': readonly})
+        try:
+            output = command(argv, path, input=prompt, timeout=self.config.get('worker_timeout_seconds', 3600),
+                             env={**self.worker_environment(track), 'ORCH_CONTEXT': json.dumps(context),
+                                  'ORCH_RESULT': str(result_file)})
+        except Exception:
+            # command() waits for termination before returning an error. A process crash
+            # of this scheduler leaves this flag absent and requires explicit reconciliation.
+            self.update(state, worker_stopped=True)
+            if result_file.is_file():
+                result = json.loads(result_file.read_text(encoding='utf-8'))
+                self.validate_result(result)
+                self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before)
+            raise
         (self.directory / f'{token}.log').write_text(output, encoding='utf-8')
+        self.update(state, worker_stopped=True)
+        return self.consume_result(track)
+
+    @staticmethod
+    def phase_round(name):
+        return 2 if name == 'review-2' else 0 if name == 'build' else 1
+
+    @staticmethod
+    def validate_result(result):
+        require(isinstance(result, dict) and result.get('status') in ('complete', 'blocked') and
+                isinstance(result.get('findings'), list) and isinstance(result.get('summary'), str) and
+                result.get('verdict') in RESULT_SCHEMA['properties']['verdict']['enum'], 'Malformed worker result')
+        for finding in result['findings']:
+            require(isinstance(finding, dict) and set(FINDING['required']) <= finding.keys() and
+                    all(isinstance(finding[k], str) and finding[k].strip() for k in FINDING['required']),
+                    'Finding needs a key, kind, severity, title, path and evidence')
+            require(finding['kind'] in ('code', 'documentation', 'contract', 'question'), 'Invalid finding kind')
+            require(finding['severity'] in ('critical', 'major', 'minor', 'cosmetic'), 'Invalid severity')
+
+    def consume_result(self, track):
+        state = self.state['tracks'][track['id']]
+        path, _ = self.location(track)
+        phase = state['inflight']
+        name, before, readonly = phase['name'], phase['before'], phase['readonly']
+        result_file = Path(phase['result_file'])
         require(result_file.is_file(), 'Worker did not produce its result')
         result = json.loads(result_file.read_text(encoding='utf-8'))
-        require(result.get('status') == 'complete', result.get('summary', 'Worker blocked'))
-        require(isinstance(result.get('findings'), list) and isinstance(result.get('summary'), str), 'Malformed worker result')
+        self.validate_result(result)
+        # Queue confirmed findings even if the worker is blocked or its edits fail audit.
+        self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before)
+        require(result['status'] == 'complete', result['summary'])
         require(git(path, 'rev-parse', 'HEAD') == before, 'Worker changed HEAD; coordinator owns commits')
         if readonly:
             require(result.get('verdict') in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
@@ -363,6 +454,9 @@ class Runner:
             state.setdefault('phase_heads', {})[name] = before
             state['completed_phases'][name] = result
             state.pop('inflight_phase', None)
+            state.pop('inflight', None)
+            state.pop('worker_stopped', None)
+            state['checkpoint_head'] = git(path, 'rev-parse', 'HEAD')
             self.save()
         return result
 
@@ -384,60 +478,89 @@ class Runner:
             git(path, 'commit', '-m', f"{phase.capitalize()} planned track {track['id']}")
 
     @state_locked
-    def record_findings(self, track, result, round_number):
+    def record_findings(self, track, result, round_number, *, publish=True, source_head=None):
         path, _ = self.location(track)
         state = self.state['tracks'][track['id']]
-        additions = []
+        self.validate_result(result)
+        source_head = source_head or git(path, 'rev-parse', 'HEAD')
         for finding in result['findings']:
-            require(set(FINDING['required']) <= finding.keys() and
-                    all(isinstance(finding[k], str) and finding[k].strip() for k in FINDING['required']),
-                    'Finding needs a key, kind, severity, title, path and evidence')
-            require(finding['kind'] in ('code', 'documentation', 'contract', 'question'), 'Invalid finding kind')
-            require(finding['severity'] in ('critical', 'major', 'minor', 'cosmetic'), 'Invalid severity')
             key = finding['key']
             if key in state['findings']:
-                require(state['findings'][key]['kind'] == finding['kind'], 'Finding changed classification')
-                continue
-            kind = 'FIX' if finding['kind'] == 'code' else 'INTAKE'
-            start, end = track['ids'][kind]
-            used = {int(f['id'].split('-')[1]) for f in state['findings'].values() if f['id'].startswith(kind + '-')}
-            number = next((n for n in range(start, end + 1) if n not in used), None)
-            require(number is not None, f'{kind} ID block exhausted')
-            record_id = f'{kind}-{number:03d}'
-            require(not list((path / '.ai').rglob(f'{record_id}-*.md')), f'ID already exists: {record_id}')
-            folder = '.ai/fixes/open' if kind == 'FIX' else '.ai/plans/intake'
-            record = f'{folder}/{record_id}-review.md'
-            item = {**finding, 'id': record_id, 'record': record, 'round': round_number,
-                    'reviewed_sha': git(path, 'rev-parse', 'HEAD')}
-            state['findings'][key] = item
-            # JSON quoting is also valid YAML scalar quoting.
-            front = {'tier': 'plan', 'authority': 'agent', 'id': record_id, 'title': finding['title'],
-                     'found': str(date.today()), 'found_by': 'orchestration review',
-                     'found_while': track['plans'], 'severity': finding['severity'],
-                     'deferred_until': 'all-other-plans-complete', 'run': self.config['run_id'],
-                     'links': []}
-            front['violates' if kind == 'FIX' else 'kind'] = 'none' if kind == 'FIX' else finding['kind']
-            text = '---\n' + ''.join(f'{k}: {json.dumps(v)}\n' for k, v in front.items()) + '---\n\n'
-            text += f"# {record_id}: {finding['title']}\n\n"
-            if kind == 'FIX':
-                text += f"## Symptom\n\n{finding['detail']}\n\n## Root cause\n\nLocation: {finding['path']}. Confirm the mechanism before fixing.\n\n## The change\n\nDeferred for the post-PLAN defect pass.\n\n## Proof\n\nNot yet verified; keep open until a regression check proves the correction.\n\n## Contract\n\nCode only. Any documentation or contract correction requires a separate INTAKE.\n"
+                item = state['findings'][key]
+                require(item['kind'] == finding['kind'], 'Finding changed classification')
+                if 'history' not in item:
+                    item['history'] = [{k: item[k] for k in (*FINDING['required'], 'round', 'reviewed_sha')}]
             else:
-                text += f"## What's wrong\n\n{finding['detail']}\n\n## Where\n\n{finding['path']}\n\n## Why it wasn't fixed then\n\nSeparate {finding['kind']} work after the PLAN queue.\n\n## What it costs to leave\n\nSeverity: {finding['severity']}.\n"
-            text += f"\n## Review evidence\n\nRun {self.config['run_id']}, track {track['id']}, round {round_number}, source {item['reviewed_sha']}.\n"
-            target = path / record
+                kind = 'FIX' if finding['kind'] == 'code' else 'INTAKE'
+                start, end = track['ids'][kind]
+                used = {int(f['id'].split('-')[1]) for f in state['findings'].values() if f['id'].startswith(kind + '-')}
+                number = next((n for n in range(start, end + 1) if n not in used), None)
+                require(number is not None, f'{kind} ID block exhausted')
+                record_id = f'{kind}-{number:03d}'
+                require(not list((path / '.ai').rglob(f'{record_id}-*.md')), f'ID already exists: {record_id}')
+                folder = '.ai/fixes/open' if kind == 'FIX' else '.ai/plans/intake'
+                item = {'id': record_id, 'record': f'{folder}/{record_id}-review.md',
+                        'history': [], 'found': str(date.today())}
+                state['findings'][key] = item
+            evidence = {**finding, 'round': round_number, 'reviewed_sha': source_head}
+            # Re-entering a completed phase is not a new review observation.
+            fields = (*FINDING['required'], 'round')
+            if not any(all(old[k] == evidence[k] for k in fields) for old in item['history']):
+                item['history'].append(evidence)
+                item.update(finding, round=round_number, reviewed_sha=source_head)
+        self.write_reports(track, publish=publish)
+
+    def render_finding(self, track, item):
+        kind = 'FIX' if item['kind'] == 'code' else 'INTAKE'
+        front = {'tier': 'plan', 'authority': 'agent', 'id': item['id'], 'title': item['title'],
+                 'found': item.get('found', str(date.today())), 'found_by': 'orchestration review',
+                 'found_while': track['plans'], 'severity': item['severity'],
+                 'deferred_until': 'all-other-plans-complete', 'run': self.config['run_id'], 'links': []}
+        front['violates' if kind == 'FIX' else 'kind'] = 'none' if kind == 'FIX' else item['kind']
+        text = '---\n' + ''.join(f'{k}: {json.dumps(v)}\n' for k, v in front.items()) + '---\n\n'
+        text += f"# {item['id']}: {item['title']}\n\n"
+        if kind == 'FIX':
+            text += f"## Symptom\n\n{item['detail']}\n\n## Root cause\n\nLocation: {item['path']}. Confirm the mechanism before fixing.\n\n## The change\n\nDeferred for the post-PLAN defect pass.\n\n## Proof\n\nNot yet verified; keep open until a regression check proves the correction.\n\n## Contract\n\nCode only. Any documentation or contract correction requires a separate INTAKE.\n"
+        else:
+            text += f"## What's wrong\n\n{item['detail']}\n\n## Where\n\n{item['path']}\n\n## Why it wasn't fixed then\n\nSeparate {item['kind']} work after the PLAN queue.\n\n## What it costs to leave\n\nSeverity: {item['severity']}.\n"
+        text += '\n## Review evidence\n'
+        for evidence in item.get('history', [item]):
+            text += (f"\nRound {evidence['round']}, source {evidence['reviewed_sha']}, "
+                     f"severity {evidence['severity']}, location {evidence['path']}.\n\n{evidence['detail']}\n")
+        for attempt in item.get('attempts', []):
+            text += ('\n## Attempted correction\n\n' + attempt +
+                     '\n\nWorker phase summary only; verify per-FIX proof in the post-PLAN pass before closing.\n')
+        return text
+
+    def write_reports(self, track, *, publish):
+        path, _ = self.location(track)
+        state = self.state['tracks'][track['id']]
+        for item in state['findings'].values():
+            target = self.directory / 'deferred' / track['id'] / item['record']
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(text, encoding='utf-8')
-            additions.append(record)
-        if additions:
-            git(path, 'add', '--', *additions)
-            git(path, 'commit', '-m', f"Record deferred review findings for {track['id']}")
+            target.write_text(self.render_finding(track, item), encoding='utf-8')
+            item.update(report_file=str(target), source_worktree=str(path))
+        # The durable queue exists before any attempt to write into a dirty worktree.
         self.save()
+        if not publish or not state['findings']:
+            return
+        self.audit(track, path)
+        for item in state['findings'].values():
+            target = path / item['record']
+            require(target.resolve() == target, 'Finding record path redirected')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(self.render_finding(track, item), encoding='utf-8')
+        records = [f['record'] for f in state['findings'].values()]
+        git(path, '--literal-pathspecs', 'add', '--', *records)
+        if git(path, 'diff', '--cached', '--name-only'):
+            git(path, 'commit', '-m', f"Record deferred review findings for {track['id']}")
+        self.update(state, checkpoint_head=git(path, 'rev-parse', 'HEAD'))
 
     def checks(self, path, track):
         head = git(path, 'rev-parse', 'HEAD')
         for argv in self.config['required_commands']:
             command(argv, path, timeout=self.config.get('check_timeout_seconds', 900),
-                    env={**os.environ, **track.get('environment', {})})
+                    env=self.worker_environment(track))
         require(git(path, 'rev-parse', 'HEAD') == head and not git(path, 'status', '--porcelain'),
                 'Checks modified tracked files or left untracked artifacts')
 
@@ -505,15 +628,11 @@ class Runner:
         if state.get('attempt_recorded'):
             return
         path, _ = self.location(track)
-        records = [f['record'] for f in state['findings'].values() if f['kind'] == 'code']
-        for record in records:
-            target = path / record
-            with target.open('a', encoding='utf-8') as handle:
-                handle.write('\n## Attempted correction\n\n' + result['summary'] +
-                             '\n\nCoordinator has not closed this report; verify the proof in the post-PLAN pass.\n')
-        if records:
-            git(path, 'add', '--', *records)
-            git(path, 'commit', '-m', f"Record attempted code corrections for {track['id']}")
+        attempted = {f['key'] for f in state['completed_phases']['review-1']['findings']
+                     if f['kind'] == 'code' and any(covers(s, f['path']) for s in track['code_paths'])}
+        for key in attempted:
+            state['findings'][key].setdefault('attempts', []).append(result['summary'])
+        self.write_reports(track, publish=True)
         state['attempt_recorded'] = True
         self.save()
 
@@ -538,9 +657,11 @@ class Runner:
         if moves:
             git(path, 'commit', '-m', f"Archive completed plans for {track['id']}")
         state['plan_moves'] = moves
+        state['checkpoint_head'] = git(path, 'rev-parse', 'HEAD')
         self.save()
 
     def wait_checks(self, pr, head):
+        required = set(self.config['required_status_checks']) | getattr(self, 'protected_checks', set())
         deadline = time.monotonic() + self.config.get('github_timeout_seconds', 900)
         while True:
             data = json.loads(self.gh('pr', 'view', str(pr), '--repo', self.config['github_repo'],
@@ -551,6 +672,8 @@ class Runner:
             names, pending = set(), False
             for check in checks:
                 name = check.get('name', check.get('context'))
+                if name not in required:
+                    continue
                 names.add(name)
                 status = check.get('status', check.get('state'))
                 result = check.get('conclusion', check.get('state'))
@@ -558,25 +681,31 @@ class Runner:
                     require(result == 'SUCCESS', f'GitHub check did not pass: {name}: {result}')
                 else:
                     pending = True
-            if set(self.config['required_status_checks']) <= names and not pending:
+            if required <= names and not pending:
                 return
             require(time.monotonic() < deadline, 'Required GitHub checks missing or timed out')
             time.sleep(2)
 
     def deliver(self, track):
-        """Only called by the scheduler thread, never by concurrent build workers."""
+        """One delivery worker; CI waits never occupy the dispatch thread."""
         state = self.state['tracks'][track['id']]
         path, branch = self.location(track)
+        require(state.get('review_verdict') in ('approved', 'changes_requested'), 'No conclusive review for delivery')
+        require(not state.get('residual_findings') or self.config.get('residual_findings', 'merge') == 'merge',
+                'Residual findings parked until the post-PLAN pass')
         self.ownership(track, path)
         require(not git(path, 'status', '--porcelain'), 'Dirty track cannot be delivered')
         if state.get('delivery_head'):
             require(git(path, 'rev-parse', 'HEAD') == state['delivery_head'], 'Delivery HEAD changed')
         else:
             self.audit(track, path)
-            require(git(path, 'rev-parse', 'HEAD') == state['prepared_head'], 'Source changed after review')
+            require(git(path, 'rev-parse', 'HEAD') == state.get('integration_head', state['prepared_head']),
+                    'Source changed after review')
         base = self.sync()
         # Integration happens in the completed track. No worker is still writing it.
         git(path, 'merge', '--no-edit', base)
+        self.update(state, integration_head=git(path, 'rev-parse', 'HEAD'),
+                    checkpoint_head=git(path, 'rev-parse', 'HEAD'))
         self.checks(path, track)
         head = git(path, 'rev-parse', 'HEAD')
         self.update(state, status='delivering', delivery_head=head, tested_base=base,
@@ -590,11 +719,13 @@ class Runner:
                         ('\n'.join('- ' + f['record'] for f in state['findings'].values()) or 'None.') + '\n', encoding='utf-8')
         self.gh('pr', 'edit', str(state['pr']), '--repo', self.config['github_repo'], '--body-file', str(body))
         self.wait_checks(state['pr'], head)
-        require(self.sync() == base, 'Target advanced during validation; retry delivery against latest target')
-        self.gh('pr', 'merge', str(state['pr']), '--repo', self.config['github_repo'],
-                '--merge', '--match-head-commit', head)
-        self.finish_merge(track)
+        with self.repo_mutex:
+            require(self.sync() == base, 'Target advanced during validation; retry delivery against latest target')
+            self.gh('pr', 'merge', str(state['pr']), '--repo', self.config['github_repo'],
+                    '--merge', '--match-head-commit', head)
+            self.finish_merge(track)
 
+    @repo_locked
     def finish_merge(self, track):
         state = self.state['tracks'][track['id']]
         data = json.loads(self.gh('pr', 'view', str(state['pr']), '--repo', self.config['github_repo'],
@@ -610,6 +741,7 @@ class Runner:
         self.update(state, status='merged', merge_commit=merge)
         self.cleanup(track)
 
+    @repo_locked
     def cleanup(self, track):
         state = self.state['tracks'][track['id']]
         require(state['status'] == 'merged', 'Only merged tracks may be cleaned')
@@ -617,6 +749,7 @@ class Runner:
         path, branch = self.location(track)
         if path.exists():
             self.ownership(track, path)
+            self.discard_generated(track)
             require(not git(path, 'status', '--porcelain', '--ignored'), 'Worktree has local files; preserving it')
             git(self.root, 'merge-base', '--is-ancestor', branch, 'HEAD')
             git(self.root, 'worktree', 'remove', str(path))
@@ -637,20 +770,26 @@ class Runner:
 
     def audit_followups(self, queue):
         """Look through deferred bugs once the project's other PLAN work is done."""
-        if not queue['eligible'] or not queue['FIX'] or self.state.get('followup_audit'):
+        if not queue['eligible'] or not queue['FIX']:
             return
         head = self.sync()
+        fingerprint = hashlib.sha256(json.dumps([head, queue], sort_keys=True).encode()).hexdigest()
+        if self.state.get('followup_audit', {}).get('fingerprint') == fingerprint:
+            return
         token = f'defect-audit-{time.time_ns()}'
         result_file = self.directory / f'{token}.json'
         mapping = {'worktree': str(self.root), 'phase': 'defect-audit', 'sandbox': 'read-only',
                    'schema_file': str(self.schema), 'result_file': str(result_file)}
         argv = [arg.format_map(mapping) for arg in self.config['worker_command']]
         context = {'phase': 'defect-audit', 'worktree': str(self.root), 'run': self.config['run_id'],
-                   'base_sha': head, 'FIX': queue['FIX'], 'INTAKE': queue['INTAKE']}
+                   'base_sha': head, 'FIX': queue['FIX'], 'INTAKE': queue['INTAKE'],
+                   'parked_tracks': queue['parked_tracks']}
         prompt = (
             'Perform the post-PLAN defect audit, read-only, without launching other agents. '
-            'All scheduled plans and the other project PLANs are complete. Read the listed code FIX '
-            'reports and their attempted correction proof against current code. For each, summarize '
+            'Other runnable PLAN work is finished; listed parked tracks and their dependencies remain incomplete. '
+            'Read each report_file and its attempted correction proof. Inspect integrated code at base_sha '
+            'and, for unmerged defects, the preserved source_worktree read-only. State which tree was tested. '
+            'Do not assume parked changes are present on the target. For each report, summarize '
             'whether it still reproduces, is a duplicate, appears fixed with proof, or is unverified. '
             'Prioritize remaining code defects. Do not edit code, close records, commit, or change '
             'documentation/contracts. Those corrections remain separate INTAKE items for later. '
@@ -659,112 +798,219 @@ class Runner:
             'queue, not a third review or another fix loop.\n' + json.dumps(context, indent=2))
         output = command(argv, self.root, input=prompt,
                          timeout=self.config.get('worker_timeout_seconds', 3600),
-                         env={**os.environ, 'ORCH_CONTEXT': json.dumps(context), 'ORCH_RESULT': str(result_file)})
+                         env={**self.worker_environment({'id': 'defect-audit'}),
+                              'ORCH_CONTEXT': json.dumps(context), 'ORCH_RESULT': str(result_file)})
         (self.directory / f'{token}.log').write_text(output, encoding='utf-8')
         require(git(self.root, 'rev-parse', 'HEAD') == head and not git(self.root, 'status', '--porcelain'),
                 'Defect auditor changed the base checkout')
         result = json.loads(result_file.read_text(encoding='utf-8'))
         require(result.get('status') == 'complete' and isinstance(result.get('summary'), str) and
                 result['summary'].strip(), 'Post-PLAN defect audit incomplete')
-        self.state['followup_audit'] = {'head': head, 'result': result}
+        self.state['followup_audit'] = {'head': head, 'fingerprint': fingerprint, 'result': result}
         self.save()
+
+    def reload(self):
+        if self.state_path.exists():
+            self.state = json.loads(self.state_path.read_text(encoding='utf-8'))
+            require(self.state['config_hash'] == self.fingerprint, 'Schedule changed before lock acquisition')
+
+    def recover(self, action, track_id, *, expected_head=None, workers_stopped=False):
+        """Explicit recovery never resets review counts, rewrites Git or deletes work."""
+        with run_lock(self.runtime):
+            self.reload()
+            track = next((t for t in self.config['tracks'] if t['id'] == track_id), None)
+            require(track is not None, 'Unknown recovery track')
+            state = self.state['tracks'][track_id]
+            require(state['status'] in ('blocked', 'running', 'pending'),
+                    'Resume uncertain delivery or merged cleanup with the normal run command')
+            path, _ = self.location(track)
+            if path.exists():
+                self.ownership(track, path)
+                head = git(path, 'rev-parse', 'HEAD')
+            else:
+                head = None
+            if action in ('reconcile', 'abandon'):
+                require(workers_stopped, 'Confirm all track workers and resource users have stopped')
+                require(head == expected_head, 'Supply the exact current worktree HEAD for recovery')
+            if action == 'abandon':
+                self.update(state, status='abandoned', released=True, reason='Explicitly abandoned; all work preserved')
+                return
+            require(head is not None, 'No worktree to retry; abandon this allocation and use a new run')
+            if action == 'reconcile' and state.get('inflight_phase'):
+                phase = state.get('inflight')
+                require(phase is not None, 'Legacy interrupted phase has no result receipt; preserve and abandon it')
+                require(head == phase['before'], 'Phase HEAD changed; reconcile Git against the saved receipt first')
+                result_file = Path(phase['result_file'])
+                result = json.loads(result_file.read_text(encoding='utf-8')) if result_file.is_file() else None
+                if result is not None:
+                    self.validate_result(result)
+                    self.record_findings(track, result, self.phase_round(phase['name']), publish=False,
+                                         source_head=phase['before'])
+                if result is not None and result['status'] == 'complete':
+                    self.consume_result(track)
+                else:
+                    require(phase['name'] == 'build', 'Failed fix/review attempt stays parked for the deferred pass')
+                    self.audit(track, path)
+                    state.pop('inflight_phase', None)
+                    state.pop('inflight', None)
+                    state['checkpoint_head'] = head
+            require(not state.get('inflight_phase'), 'Reconcile the interrupted phase before retrying')
+            require(all(r['verdict'] != 'cannot_review' for r in state['completed_phases'].values()),
+                    'Inconclusive review stays parked; do not reset its review count')
+            require(git(path, 'rev-parse', 'HEAD') == state.get('checkpoint_head', state['base']),
+                    'Track HEAD differs from the last coordinator checkpoint')
+            self.audit(track, path)
+            for marker in ('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-merge', 'rebase-apply'):
+                require(not Path(git(path, 'rev-parse', '--path-format=absolute', '--git-path', marker)).exists(),
+                        'Finish or abort the interrupted Git operation before retrying')
+            state.pop('worker_stopped', None)
+            status = (('ready_with_followups' if state['findings'] else 'ready')
+                      if state.get('prepared_head') and state.get('review_verdict') else 'pending')
+            self.update(state, status=status, reason='Recovered without replaying completed phases')
+
+    @repo_locked
+    def start(self, track):
+        state = self.state['tracks'][track['id']]
+        path, branch = self.location(track)
+        if 'base' in state:
+            self.audit(track, path)
+            require(git(path, 'rev-parse', 'HEAD') == state.get('checkpoint_head', state['base']),
+                    'Recovery checkpoint changed')
+        else:
+            base = self.sync()
+            require(not path.exists(), 'Assigned worktree already exists')
+            git(self.root, 'check-ignore', str(path))
+            git(self.root, 'worktree', 'add', '-b', branch, str(path), base)
+            # Save ownership even if artifact registration fails after worktree creation.
+            self.update(state, base=base, checkpoint_head=base)
+            for name in track.get('disposable_paths', []):
+                require(not (path / name).exists(), f'Disposable path already exists: {name}')
+                require(not git(path, '--literal-pathspecs', 'ls-files', '--', name), 'Disposable path contains tracked files')
+            self.update(state, disposable_paths=track.get('disposable_paths', []))
+        self.update(state, status='running')
+
+    def followup_queue(self):
+        states = self.state['tracks']
+        # A defect and the PLANs waiting on it cannot be prerequisites for examining that defect.
+        parked = {key for key, state in states.items() if state['status'] in ('blocked', 'abandoned')
+                  and state['findings']}
+        while True:
+            waiting = {t['id'] for t in self.config['tracks'] if states[t['id']]['status'] == 'pending'
+                       and any(dep in parked for dep in t['depends_on'])}
+            if waiting <= parked:
+                break
+            parked.update(waiting)
+        complete = all(s['status'] == 'merged' or key in parked for key, s in states.items())
+        queue = {'eligible': complete, 'reason': 'Other scheduled PLAN work finished' if complete else 'PLAN queue unfinished',
+                 'FIX': [], 'INTAKE': [], 'parked_tracks': [
+                     {'track': t['id'], 'plans': t['plans'], 'depends_on': t['depends_on'],
+                      'worktree': str(self.location(t)[0]), 'status': states[t['id']]['status'],
+                      'reason': states[t['id']].get('reason', 'Waiting on a parked dependency')}
+                     for t in self.config['tracks'] if t['id'] in parked]}
+        all_states = list(states.values())
+        for receipt in self.runtime.glob('*/state.json'):
+            if receipt != self.state_path:
+                all_states.extend(json.loads(receipt.read_text(encoding='utf-8'))['tracks'].values())
+        for state in all_states:
+            for item in state['findings'].values():
+                report = self.root / item['record']
+                if state['status'] == 'merged':
+                    if not report.is_file():
+                        continue  # A closed/moved report must not be resurrected from an old receipt.
+                    item = {**item, 'report_file': str(report), 'source_worktree': str(self.root)}
+                queue['FIX' if item['kind'] == 'code' else 'INTAKE'].append(dict(item))
+        for kind, folder in (('FIX', '.ai/fixes/open'), ('INTAKE', '.ai/plans/intake')):
+            known = {item['id'] for item in queue[kind]}
+            for report in (self.root / folder).glob(f'{kind}-*.md'):
+                record_id = '-'.join(report.stem.split('-')[:2])
+                if record_id not in known:
+                    queue[kind].append({'id': record_id, 'record': report.relative_to(self.root).as_posix(),
+                                        'report_file': str(report), 'kind': 'code' if kind == 'FIX' else 'intake',
+                                        'title': report.stem})
+        excluded = {p for t in self.config['tracks'] if t['id'] in parked for p in t['plans']}
+        other_plans = [p.relative_to(self.root).as_posix() for stage in ('backlog', 'active', 'review', 'blocked')
+                       for p in (self.root / '.ai/plans' / stage).glob('PLAN-*.md')
+                       if p.relative_to(self.root).as_posix() not in excluded]
+        if other_plans:
+            queue.update(eligible=False, reason='Other project PLANs remain', waiting_for=other_plans)
+        return queue
 
     def run(self):
         with run_lock(self.runtime):
-            # Another scheduler may have completed between construction and locking.
-            if self.state_path.exists():
-                self.state = json.loads(self.state_path.read_text(encoding='utf-8'))
-                require(self.state['config_hash'] == self.fingerprint, 'Schedule changed before lock acquisition')
+            self.reload()
             self.preflight()
-            # Never replay an interrupted writer or consume a third review round.
-            # Completed phase receipts survive; uncertain worker outcomes are parked.
             for track in self.config['tracks']:
                 state = self.state['tracks'][track['id']]
-                if state['status'] == 'merged' and not state.get('cleaned'):
-                    try:
+                try:
+                    if state['status'] == 'merged' and not state.get('cleaned'):
                         self.cleanup(track)
-                    except Exception as exc:
-                        self.update(state, reason=str(exc))
-                elif state['status'] == 'delivering':
-                    data = json.loads(self.gh('pr', 'view', str(state['pr']), '--repo', self.config['github_repo'], '--json', 'state'))
-                    if data['state'] == 'MERGED':
-                        self.finish_merge(track)
-                    else:
-                        state['status'] = 'ready_with_followups' if state['findings'] else 'ready'
-                elif state['status'] == 'running':
-                    state.update(status='blocked', reason='Interrupted worker: reconcile its process, HEAD and result before recovery')
+                    elif state['status'] == 'delivering':
+                        data = json.loads(self.gh('pr', 'view', str(state['pr']), '--repo', self.config['github_repo'], '--json', 'state'))
+                        if data['state'] == 'MERGED':
+                            self.finish_merge(track)
+                        else:
+                            state['status'] = 'ready_with_followups' if state['findings'] else 'ready'
+                    elif state['status'] == 'running':
+                        state.update(status='blocked', reason='Interrupted worker: reconcile its process, HEAD and result before recovery')
+                except Exception as exc:
+                    self.update(state, reason=str(exc))
             self.save()
-            with ThreadPoolExecutor(max_workers=self.config['max_parallel_tracks']) as pool:
-                active = {}
+            with ThreadPoolExecutor(max_workers=self.config['max_parallel_tracks']) as pool, ThreadPoolExecutor(max_workers=1) as delivery:
+                active, delivering = {}, {}
                 while True:
+                    busy = {t['id'] for t in [*active.values(), *delivering.values()]}
                     for track in self.config['tracks']:
                         state = self.state['tracks'][track['id']]
+                        if track['id'] in busy:
+                            continue
                         if state['status'] in ('ready', 'ready_with_followups'):
-                            try:
-                                self.deliver(track)
-                            except Exception as exc:
-                                # Retain delivery receipt if the remote merge outcome is uncertain.
-                                self.update(state, status='merged' if state['status'] == 'merged' else
-                                            'delivering' if state.get('delivery_head') else 'blocked', reason=str(exc))
+                            delivering[delivery.submit(self.deliver, track)] = track
                         if state['status'] != 'pending' or len(active) >= self.config['max_parallel_tracks']:
                             continue
                         if not all(self.state['tracks'][dep]['status'] == 'merged' for dep in track['depends_on']):
                             continue
-                        # Parked tracks retain their resources; don't reuse an uncertain service/port.
                         others = [t for t in self.config['tracks'] if t['id'] != track['id'] and
                                   self.state['tracks'][t['id']]['status'] != 'pending' and
-                                  not self.state['tracks'][t['id']].get('cleaned')]
+                                  not self.state['tracks'][t['id']].get('cleaned') and
+                                  not self.state['tracks'][t['id']].get('released')]
                         if any(self.conflict(track, other) for other in others):
                             continue
                         try:
-                            base = self.sync()
-                            path, branch = self.location(track)
-                            require(not path.exists(), 'Assigned worktree already exists')
-                            git(self.root, 'check-ignore', str(path))
-                            git(self.root, 'worktree', 'add', '-b', branch, str(path), base)
-                            self.update(state, status='running', base=base)
+                            self.start(track)
                             active[pool.submit(self.build, track)] = track
                         except Exception as exc:
                             self.update(state, status='blocked', reason=str(exc))
-                    if not active:
+                    futures = {*active, *delivering}
+                    if not futures:
                         break
-                    finished, _ = wait(active, return_when=FIRST_COMPLETED)
+                    finished, _ = wait(futures, return_when=FIRST_COMPLETED)
                     for future in finished:
-                        track = active.pop(future)
+                        is_delivery = future in delivering
+                        track = (delivering if is_delivery else active).pop(future)
+                        state = self.state['tracks'][track['id']]
                         try:
                             future.result()
                         except Exception as exc:
-                            self.update(self.state['tracks'][track['id']], status='blocked', reason=str(exc))
-            complete = all(s['status'] == 'merged' for s in self.state['tracks'].values())
-            queue = {'eligible': complete, 'reason': 'All scheduled PLANs merged' if complete else 'PLAN queue unfinished',
-                     'FIX': [], 'INTAKE': []}
-            for state in self.state['tracks'].values():
-                for item in state['findings'].values():
-                    queue['FIX' if item['kind'] == 'code' else 'INTAKE'].append(item)
-            # Earlier completed runs may have deferred their audit while other
-            # PLANs were still waiting. Include the project's open reports too.
-            for kind, folder in (('FIX', '.ai/fixes/open'), ('INTAKE', '.ai/plans/intake')):
-                known = {item['record'] for item in queue[kind]}
-                for report in (self.root / folder).glob(f'{kind}-*.md'):
-                    relative = report.relative_to(self.root).as_posix()
-                    if relative not in known:
-                        queue[kind].append({'id': '-'.join(report.stem.split('-')[:2]),
-                                            'record': relative, 'kind': 'code' if kind == 'FIX' else 'intake',
-                                            'title': report.stem})
-            other_plans = [str(p.relative_to(self.root)) for stage in ('backlog', 'active', 'review', 'blocked')
-                           for p in (self.root / '.ai/plans' / stage).glob('PLAN-*.md')]
-            if other_plans:
-                queue.update(eligible=False, reason='Other project PLANs remain', waiting_for=other_plans)
+                            status = ('merged' if state['status'] == 'merged' else
+                                      'delivering' if is_delivery and state.get('delivery_head') else 'blocked')
+                            self.update(state, status=status, reason=str(exc))
+            queue = self.followup_queue()
             atomic_json(self.directory / 'followups.json', queue)
             self.audit_followups(queue)
             self.save()
-            return complete and all(s.get('cleaned') for s in self.state['tracks'].values())
+            return all(s['status'] == 'merged' and s.get('cleaned') for s in self.state['tracks'].values())
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('schedule', type=Path)
     parser.add_argument('--validate', action='store_true', help='Validate JSON without Git/network/writes')
+    recovery = parser.add_mutually_exclusive_group()
+    recovery.add_argument('--retry', metavar='TRACK', help='Retry a clean blocked track at its saved checkpoint')
+    recovery.add_argument('--reconcile', metavar='TRACK', help='Consume an interrupted result after checking its worker and HEAD')
+    recovery.add_argument('--abandon', metavar='TRACK', help='Release reservations while preserving all work')
+    parser.add_argument('--expected-head', help='Exact worktree HEAD inspected before reconciliation or abandonment')
+    parser.add_argument('--workers-stopped', action='store_true', help='Attest that all track processes and resource users stopped')
     args = parser.parse_args()
     try:
         config = validate(json.loads(args.schedule.read_text(encoding='utf-8')))
@@ -772,6 +1018,11 @@ def main():
             print('Schedule valid')
             return 0
         runner = Runner(config)
+        action = next((name for name in ('retry', 'reconcile', 'abandon') if getattr(args, name)), None)
+        if action:
+            runner.recover(action, getattr(args, action), expected_head=args.expected_head, workers_stopped=args.workers_stopped)
+            print(json.dumps(runner.state, indent=2))
+            return 0
         complete = runner.run()
         print(json.dumps(runner.state, indent=2))
         print(f'Follow-up queue: {runner.directory / "followups.json"}')

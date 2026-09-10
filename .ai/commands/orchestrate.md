@@ -16,8 +16,8 @@ the slowest at each stage, and leaves nothing recoverable when the session
 ends. Keep your side small.
 
 **Once the user has approved the schedule, the run is yours to finish.** Tracks
-are launched in the background and wake you as they exit, so you find out a
-wave has completed without anyone watching for it. Do not stop between waves to
+are launched in the background; receive completion through the runtime or the
+host's documented completion mechanism. Do not stop between waves to
 ask permission to continue — come back when something needs a decision, when
 the run is finished, or when what remains is blocked on a human, and say
 plainly which of those it is.
@@ -324,8 +324,9 @@ any earlier fix proof and identify which reports remain actionable. Do not
 close a FIX just because a later review omitted it. Documentation and contract
 corrections stay as their own INTAKE items for later planning. The runtime
 produces `followups.json` and an automatic read-only defect audit when eligible;
-it never starts a third review of the original track. Report blocked PLANs
-that prevent the post-PLAN pass becoming eligible.
+it never starts a third review of the original track. A parked defect and the
+PLANs waiting on it are listed for the audit, not prerequisites for examining
+that defect. Other unfinished PLANs still delay eligibility; report them.
 
 ## Close out
 
@@ -345,7 +346,8 @@ that prevent the post-PLAN pass becoming eligible.
   result is yours. Its research, its code, its review rounds are not — if you
   find yourself tracking which stage three tracks are at, you have taken on the
   job this command was split to avoid.
-- **Never poll a running track.** Background sessions wake you when they exit.
+- **Use actual completion events.** Keep the runtime alive, or use the manual
+  host's documented notification mechanism; do not assume a chat wake-up.
 - **You merge; tracks do not.** Concurrent merges into one base branch race
   each other, and merging here serialises them.
 - **You alone write the manifest, `STATE.md` and the journal**, and only on the

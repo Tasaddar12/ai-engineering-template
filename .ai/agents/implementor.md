@@ -155,9 +155,10 @@ Build what the plan describes. Refactoring beyond it, unrelated cleanups, and
 
 **But do not merely mention them either.** A finding that exists only in your
 final summary is gone when the session ends, and the next agent will
-rediscover it and work around it. Capture each one as
-`.ai/plans/intake/INTAKE-{nnn}-{slug}.md` from `.ai/templates/INTAKE.md` — five
-lines: what's wrong, where, why not now, what it costs to leave. That is a
+rediscover it and work around it. Use [defer](../commands/defer.md): confirmed
+code defects get FIX reports; documentation, contract corrections and other
+unplanned work get separate INTAKE items. Capture what's wrong, where, why not
+now and what it costs to leave. That is a
 short interruption; fixing it is what turns one reviewable change into an
 unreviewable one.
 
