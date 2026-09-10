@@ -38,6 +38,19 @@ from config (for example `orch/<run>/<track>`). If it is the base branch, **stop
 Then read the manifest at `.ai/state/orchestration/ORCH-{nnn}.md` for your
 plans and **your reserved id block**.
 
+### Track scope
+
+Every track agent works in its assigned absolute worktree and branch, verified
+before using relative paths. Never read or write a sibling worktree. Do not
+merge, rebase or pull the base branch into an active track; the scheduler owns
+integration. Use the assigned base revision for any permitted Git reads.
+
+Writers use only their reserved IDs, lowest unused first, and report IDs used.
+Stop allocating and report an exhausted block. The run manifest, shared STATE
+and journal remain outside track write scope, even when an inherited role or
+lifecycle command allows them. Return those events to the scheduler. Each
+role's narrower read/write scope still applies.
+
 ### Work out the stage from git, not from memory
 
 There is no checkpoint file, and you may be resuming after an interrupted
@@ -123,6 +136,9 @@ git diff <base>...HEAD -- . ':(exclude).ai/research/' ':(exclude).ai/state/orche
 
 Give the reviewer that command, not the unfiltered one. Without this the
 isolation the whole review design rests on is defeated by default.
+
+The coordinator separately validates changed operating documents excluded by
+the filter; exclusions must not leave delivered changes unreviewed.
 
 ### Record the round
 

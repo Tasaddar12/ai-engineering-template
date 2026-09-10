@@ -81,8 +81,7 @@ contains other merged work, explain the difference rather than claiming equality
 Resolve each absolute worktree path, verify it against the run's recorded
 ownership, and ensure it is not the primary checkout or a sibling. Inspect
 untracked and ignored files as well as tracked changes; stop all writers and
-run the removal from outside that worktree. Apply
-[retirement-ready](../gates/retirement-ready.md).
+run the removal from outside that worktree.
 
 
 ```bash

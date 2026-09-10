@@ -20,8 +20,8 @@ Read `.ai/RULES.md`, and the reviewer's findings in full.
 
 ## Track assignment
 
-Follow the [common track rules](../policies/parallel-execution.md#common-track-rules)
-before using relative paths or starting work. They narrow inherited permissions;
+Follow the [track scope](../commands/orchestrate-track.md#track-scope)
+before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
 
 ## You may write
@@ -143,5 +143,5 @@ report.
   is a plan, and one arriving through the review loop skips the checker
   entirely. Say it plainly if you see it.
 - The count of blocking fixes going to the fixer. If it is zero, findings are
-  cleared only to the extent supported by evidence. Verification, complete
-  review and delivery gates still determine whether the track is ready.
+  cleared only to the extent supported by evidence. The track command's
+  verification, review and delivery requirements still determine readiness.

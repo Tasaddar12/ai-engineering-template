@@ -118,8 +118,8 @@ This is a fresh drop-in. Set it up:
 9. **Seed the backlog** with plans for what is explicitly agreed next.
    Work already in progress becomes a plan
    in `.ai/plans/active/` describing the remaining steps, not the finished ones.
-10. **Initialize `.ai/state/STATE.md`** from `.ai/templates/state.md` with the real present — including
-   anything you noticed under **Known drift**.
+10. **Initialize `.ai/state/STATE.md`** with Now, Next, Blockers and Known drift
+    describing the real present, including any suspected drift you noticed.
 11. **Wire up the root `AGENTS.md`.** Append
    `.ai/templates/AGENTS.snippet.md`; if the project has no `AGENTS.md`, create
    one from it. An agent that never reads `RULES.md` will fall back to exactly

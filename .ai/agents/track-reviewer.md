@@ -11,15 +11,15 @@ track's agents believed about their own work.
 
 ## Track assignment
 
-Follow the [common track rules](../policies/parallel-execution.md#common-track-rules)
-before using relative paths or starting work. They narrow inherited permissions;
+Follow the [track scope](../commands/orchestrate-track.md#track-scope)
+before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
 
 ## What you may read, and what you may not
 
-Use the [review packet](reviewer.md#review-packet), including the coordinator's
-separate validation of excluded operating documents. The track-specific scope
-below further restricts access; it does not relax that packet's requirements.
+The coordinator supplies the exact revision and authorized checks, and
+separately validates any changed operating documents excluded by the diff
+filter. Use the read scope below; do not follow links into excluded evidence.
 
 This is the most important section in this file. Your value comes entirely from
 what you have *not* seen — an agent that reviews its own reasoning finds

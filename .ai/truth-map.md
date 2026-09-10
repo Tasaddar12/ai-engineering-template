@@ -40,17 +40,16 @@ copy is technically satisfied. Neither is what you wanted.
 | How to use the product | `docs/` | Link to it |
 | Which instructions to read first | `AGENTS.md` at repo root | Link to it |
 | Mutability and amendment protocols | `RULES.md` | Link to the relevant section |
-| User action/publication authority | `policies/approval.md` | Record the actual grant in the selected PLAN/FIX |
-| Record maintenance and specification updates per PR | `policies/records.md` | Link to it |
-| Commit/delivery and parallel ownership requirements | `policies/execution.md`, `policies/parallel-execution.md` for their named scopes | Link to the relevant scope |
-| Pass/fail transition criteria | `gates/*.md` | Report evidence against the gate |
+| User action/publication authority | root `AGENTS.md` and the user's instruction | Record the actual grant in the selected PLAN/FIX when applicable |
+| Record maintenance and current specifications | `RULES.md` | Link to the relevant section |
+| Track ownership and handoff | `commands/orchestrate-track.md` | Roles apply their narrower scope within that assignment |
 | Role scope and role-specific reports | `agents/<role>.md` | Select a role rather than inventing permissions |
 | Detailed steps for an operation | `commands/<command>.md` | Indexes link the procedures for common tasks |
-| Review packet and evidence exclusions | `agents/reviewer.md` | Link to the packet; keep track-specific scope in its role |
+| Track review scope and evidence exclusions | `agents/track-reviewer.md` | The track coordinator supplies the permitted packet |
 | Paths, ID formats and configured options | `config.yaml` | Read values from it |
 | General investigation evidence | `research/RES-*.md` | Link; never treat a brief as authority |
 | Whether a PR merged or a branch exists | Git and the forge | Record the observed revision and URL |
-| Reusable record/report shape | `templates/` | Copy and complete the appropriate template |
+| Reusable record shape | `templates/` | Copy and complete the appropriate template; reports follow their role or command |
 
 Note the split inside the decision block: a meeting note owns *what was said on
 a date*, an ADR owns *what we decided*. They are different facts, and

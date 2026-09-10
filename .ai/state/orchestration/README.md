@@ -12,7 +12,7 @@ The orchestrator role can draft the board when assigned; tracks cannot edit it.
 
 Each track owns `<run>/<track>/RESEARCH-PLAN-{nnn}.md` and
 `<run>/<track>/REVIEW-LOG.md` in its branch. Use the
-[research template](../../templates/research.md) for a brief; the
+[track-researcher](../../agents/track-researcher.md) guidance for a brief; the
 [track command](../../commands/orchestrate-track.md) defines review-round and
 terminal formats. Run/track/plan together identify a brief.
 

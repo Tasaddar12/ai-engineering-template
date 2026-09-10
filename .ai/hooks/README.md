@@ -12,7 +12,7 @@ explicitly connect its tool events to the scripts and interpret their output.
 
 | Script | Input and behavior |
 | --- | --- |
-| [ai-tier-notice.sh](ai-tier-notice.sh) | Reads JSON containing file_path, emits advisory tier reminders, exits zero. PROJECT, RULES and approval policy use intent reminders. |
+| [ai-tier-notice.sh](ai-tier-notice.sh) | Reads JSON containing file_path, emits advisory tier reminders, exits zero. PROJECT and RULES use intent reminders. |
 | [worktree-confine.sh](worktree-confine.sh) | Reads cwd, tool_name and tool_input JSON. Some Write/Edit/NotebookEdit targets and obvious Bash redirects outside the checkout produce a PreToolUse denial response. Shared Git and supplied scratch space are allowed. |
 
 Neither script is a sandbox. Missing context can fail open. Path checks are
@@ -23,5 +23,4 @@ reminder also uses a simple parser. Keep the host's actual permissions in force.
 
 Configuration's `enforcement: advisory` describes the tier reminder; it does
 not install either script or disable a separately registered confinement hook.
-Use [gates](../gates/README.md) for the manual transition requirements. Test
-any host integration in its actual environment before relying on it.
+Test any host integration in its actual environment before relying on it.

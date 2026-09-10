@@ -82,7 +82,7 @@ Delegate to the **orchestrator** agent with the plan list. It builds the
 dependency graph, assigns waves and tracks, and writes
 `.ai/state/orchestration/ORCH-{nnn}.md` from `.ai/templates/ORCH-RUN.md`.
 
-**Report the layout using the decision-summary template before dispatch.**
+**Report the proposed layout, scope and cost before dispatch.**
 Obtain the user's approval unless their existing instruction already covers
 this schedule and scope. `--dry-run` returns a proposed manifest in the report
 without writing files, allocating IDs, committing or creating worktrees. Show the
@@ -255,9 +255,9 @@ contention precisely so they would not. If one does, stop, name both tracks,
 and say it is a scheduling error rather than resolving it quietly.
 
 Before merging, have the track record verified plans in done with delivery
-still pending; those records land with the track. After each merge, follow
-`/deliver`: confirm the forge result, pull the target with `--ff-only`, compare
-Git ancestry and tracked contents, then use `/orchestrate-clean` if
+still pending; those records land with the track. After each merge, confirm
+the forge result, pull the target with `--ff-only`, compare Git ancestry and
+tracked contents, then use `/orchestrate-clean` if
 `cleanup_on_merge`. Keep run-wide STATE and journal events with the scheduler.
 
 ## 9. Close the wave, start the next
