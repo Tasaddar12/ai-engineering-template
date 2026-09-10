@@ -57,9 +57,10 @@ Everything about your seat follows from that line:
   the plan-checker and the verifier. Fix what you can, and report the rest
   plainly rather than growing the change to fit.
 
-Where the spec is simply **silent** on the case, amend it through the amendment
-protocol and cite the amendment id in the fix record's **Contract** section.
-That is still a fix, and it is the common case.
+Where the spec is silent or wrong, capture the needed contract correction as
+its own INTAKE. FIX changes are code-only; do not amend documentation, specs
+or ADRs in this pass. Use existing acceptance criteria where they establish
+the code defect. Otherwise keep the FIX open pending the contract decision.
 
 ## Every fix needs its check
 
@@ -86,8 +87,9 @@ One commit per fix record, as you finish it:
 FIX-{nnn}: <what was wrong, in the imperative>
 ```
 
-The code, the regression check, the completed record, and any spec amendment
-with its record — all in the same commit. A reviewer arriving next round reads
+The code, the regression check and its proof belong together. In runtime mode
+return proof to the coordinator, which owns FIX/INTAKE files. In manual mode
+include the completed FIX record in the commit. A reviewer arriving next round reads
 these commits to establish whether each finding was addressed, and a single
 lumped commit makes that impossible.
 
@@ -128,8 +130,9 @@ not.
 
 ## Scope
 
-Everything you find that is not in a record gets `INTAKE-{nnn}` from the
-template, not a fix. You are inside a review loop with a hard round ceiling;
+New code defects get deferred FIX records; new documentation/contract
+corrections get separate INTAKE records. In runtime mode return structured
+findings for the coordinator to allocate. You are inside a review loop with a hard round ceiling;
 every unplanned change you make is another thing the next reviewer has to
 evaluate, and it spends a round that a real defect needed.
 
@@ -146,5 +149,7 @@ say so plainly. Filing it is not handling it.
 - Records you left open, with your reasoning
 - Intake ids you opened
 
-Move each closed record to `.ai/fixes/done/<period>/`, commit that move, and
-stop. You do not re-review your own work and you do not merge.
+In manual mode move only proven, closed records to `.ai/fixes/done/<period>/`
+and commit. In runtime mode leave records to the coordinator and return proof;
+open reports are re-examined after all other PLANs complete. There is one
+immediate fixer pass, then review 2; no third review and no merge by the fixer.

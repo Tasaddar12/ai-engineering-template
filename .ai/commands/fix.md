@@ -6,8 +6,8 @@ argument-hint: <what's broken, or a FIX/INTAKE id>
 Fix: **$ARGUMENTS**
 
 If the argument is a `FIX-{nnn}` id, resume that record in `.ai/fixes/open/`.
-If it is an `INTAKE-{nnn}` id, read that file in `.ai/plans/intake/` and fix
-the defect it describes.
+If it is an `INTAKE-{nnn}` id, read it first. A confirmed code defect gets a
+linked FIX; documentation or contract work stays INTAKE for `/plan-new`.
 
 This is the short route, for a change that makes the code do what the record
 already says it should. **A fix restores conformance with the contract; a plan
@@ -20,12 +20,12 @@ and use `/plan-new`.
 Find the spec, ADR, or intent statement the code contradicts. Then one of:
 
 - **A spec forbids the observed behavior** → a defect. Proceed.
-- **No spec covers the case** → still a fix, but you are also deciding what
-  correct means. Amend the spec through the amendment protocol as part of this
-  work, and cite the amendment in the record.
+- **No spec covers the case** → use existing PLAN acceptance if it establishes
+  the code defect. Any missing contract decision gets a separate INTAKE; do
+  not decide what correct means inside a FIX.
 - **A spec permits or requires the observed behavior** → not a defect yet.
-  Either the spec is wrong (amend it, and if anyone depends on the behavior,
-  stop and write a plan) or the request is a behavior change (`/plan-new`).
+  Either the spec is wrong (capture a contract INTAKE for later) or the request
+  is a behavior change (`/plan-new`).
   Say which, and do not proceed as though it were a bug.
 
 Check `.ai/fixes/` and `.ai/plans/intake/` for the same defect already
@@ -91,6 +91,11 @@ Leave it in `open/` and say so if you could not finish — could not reproduce,
 blocked on a decision, or it grew past what a fix should be.
 
 ## When it is not a fix
+
+FIX items are code-only. Documentation and contract corrections each become
+their own INTAKE. The autonomous review loop attempts code corrections once
+between reviews 1 and 2, then leaves residual FIX items open for after all
+other PLANs complete. It does not repeatedly invoke `/fix` to evade the ceiling.
 
 Escalate to `/plan-new` and link the fix record from the plan when the work
 needs an ADR, a spec rewrite, or more than a handful of files. A fix growing

@@ -108,8 +108,9 @@ not change what conformance means.** See `.ai/RULES.md#bug-fixes`.
 - Add the check that fails before your change and passes after it, and record
   it under **Proof** with the pre-fix failure output. A fix is not finished
   without it.
-- If the spec was silent on the case, amend it — that is still a fix, and the
-  amendment id goes in the record's **Contract** section. If the work turns out
+- If the spec is silent or wrong, capture a separate contract INTAKE. FIX
+  changes are code-only; use existing acceptance to establish correctness and
+  leave unresolved contract decisions for later. If the work turns out
   to need an ADR, a spec rewrite, or more than a handful of files, stop and say
   it should be a plan. A behavior change landing as a fix skips the checker and
   the verifier.
@@ -160,11 +161,16 @@ lines: what's wrong, where, why not now, what it costs to leave. That is a
 short interruption; fixing it is what turns one reviewable change into an
 unreviewable one.
 
-Two things that are **always in scope** and should be fixed rather than
+Outside autonomous review, two things are **always in scope** and should be fixed rather than
 captured:
 
 - A duplicated fact in the documents — delete the copy, replace it with a link.
 - A spec or doc that contradicts reality — amend it with a record.
+
+During autonomous review, follow [RULES](../RULES.md#autonomous-review-and-fix):
+incidental documentation/contract corrections are deferred INTAKE items,
+confirmed code defects are FIX items, and the original PLAN promises remain
+in scope. The runtime assignment further restricts writers to declared paths.
 
 If something you find is severe enough that leaving it is a bad idea — data
 loss, a security hole, a broken build — capture it and then say so plainly in

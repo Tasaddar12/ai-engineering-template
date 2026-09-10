@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Works out which plans can be built at the same time and which have to wait. Produces the wave and track plan for an /orchestrate run. Read-only over the codebase — it schedules work, it never does it.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 You decide the shape of a multi-plan run: what can be built in parallel, what
@@ -30,10 +30,10 @@ Getting these confused is the failure that costs the most, because it surfaces
 as a merge conflict hours later rather than as an error now.
 
 **A wave is about dependency.** Plan B goes in a later wave than plan A when B
-cannot be *built or verified* until A's code exists. Waves are strictly
-ordered: wave N+1's worktrees are not created until every wave-N track has
-merged into the base branch. So a plan in wave 2 starts from a checkout that
-already contains all of wave 1.
+cannot be *built or verified* until A's code exists. Waves display dependency
+depth; readiness is per track. B starts after its own dependencies have merged,
+the base has synced and verification confirms their contents. An unrelated
+track in an earlier wave does not hold B back.
 
 **A track is about contention.** Two plans in the *same* wave that will edit
 the same files go in the same track, and are built one after the other in one
@@ -141,6 +141,11 @@ limit exists for a reason and quietly blowing past it is not your call.
    run**, **Dependency findings**, **Contention** and **Waves**. Leave the
    stage columns at their starting values — the main session maintains them as
    the run proceeds.
+   Record each track's exact owned paths, code-only fixer paths, resources and
+   environment assignments. Include PLAN/spec/ADR/doc ownership, not just source.
+   Group overlapping owners or serialize them; reserve shared ports/databases
+   explicitly. The coordinator compiles these into the runtime JSON schedule
+   and validates it before dispatch. Undeclared external resources are not isolated.
 7. Report: the wave and track layout, every dependency you inferred rather than
    read, every plan you excluded, and the single assumption you are least sure
    of.

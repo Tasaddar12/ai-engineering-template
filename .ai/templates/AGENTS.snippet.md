@@ -77,7 +77,9 @@ and never add a `status:` field. Every fact has exactly one owning document; see
 
 **Found a problem that isn't this task?** Don't fix it, and don't just mention
 it — a finding that lives only in a session summary is lost. Capture it with
-`/defer`, which writes a five-line record to `.ai/plans/intake/`. Bugs there
-get promoted with `/fix`, everything else with `/plan-new`.
+`/defer`: confirmed code bugs go to `.ai/fixes/open/` as FIX items; documentation
+and contract corrections get separate INTAKE items in `.ai/plans/intake/`.
+Autonomous review follows [RULES](.ai/RULES.md#autonomous-review-and-fix): at
+most two reviews, then residual findings wait until all other PLANs complete.
 
 Run `/plan-status` to see where the project stands, `/onboard` to get briefed.

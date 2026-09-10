@@ -86,7 +86,7 @@ ids:
 enforcement: advisory
 
 # Commands the verifier should run to check reality. Fill these in per project;
-# an empty list means the verifier inspects behavior manually and says so.
+# an empty list permits manual inspection but cannot authorize autonomous merge.
 verification:
   commands: []
     # - pytest -q
@@ -99,9 +99,8 @@ verification:
 #
 # Vocabulary, because the rest of this block is meaningless without it:
 #   run    One /orchestrate invocation. ORCH-{nnn}, manifest in state/.
-#   wave   A dependency layer. Wave N+1 starts only after every wave-N track
-#          has merged, so a dependent plan is always built on top of code that
-#          already contains what it depends on.
+#   wave   A display grouping by dependency depth. A track waits only for its
+#          own dependencies to merge and sync, plus ownership/resource availability.
 #   track  A group of plans sharing one worktree, one branch, one PR. Plans in
 #          a track run in sequence; tracks in a wave run in parallel.
 # ---------------------------------------------------------------------------
@@ -114,12 +113,12 @@ orchestration:
   # How a wave's tracks are started.
   #   background  /orchestrate launches a session per track and is woken as each
   #               exits, so a run finishes without anyone watching for a wave to
-  #               complete. Needs a host-provided agent launcher.
+  #               complete. Use .ai/runtime/orchestrate.py and its worker adapter.
   #   manual      /orchestrate prints the commands and stops. Every wave
   #               boundary then needs a person.
   # Background tracks run unattended, so they must not hit a permission prompt —
-  # pair this with the worktree confinement hook rather than waiving prompts on
-  # their own.
+  # configure the host's worktree permissions. Hooks are optional accident guards;
+  # they are not a sandbox or permission to bypass the host's controls.
   dispatch: background     # background | manual
 
   # How many tracks may be in flight at once within a wave. This is the real
@@ -136,37 +135,42 @@ orchestration:
 
   # review — the fix/re-review loop after a PR opens.
   review:
-    # Hard ceiling on review rounds before the run stops and asks for a human.
-    # Round 1 is the first review. Three rounds of an agent failing to satisfy
-    # a reviewer means the problem is not one more round will solve.
-    max_rounds: 3
-    # Only findings at or above this severity restart the loop. Everything
-    # below is captured as an INTAKE item and does not block the merge —
-    # without this line the loop never terminates on style disagreements.
-    blocking_severity: major   # critical | major | minor
+    # One review, one code-fix attempt, one final review. Never reset on resume.
+    max_rounds: 2
+    # All code defects are FIX; docs/contracts are separate INTAKE items.
+    # Residual findings wait until all other PLANs complete. Required checks
+    # must pass even when the authorized policy permits merging with follow-ups.
+    residual_findings: merge   # merge | park
 
   # forge — where the pull request or merge request is opened.
   #   auto    Detect from `git remote get-url origin`: github.com or a
   #           GitHub Enterprise host -> gh; gitlab.com or a self-hosted GitLab
-  #           -> glab. Falls back to `none` if neither CLI is present or authed.
-  #   none    Skip PR creation. The run continues and reports the branch.
-  forge: auto              # auto | github | gitlab | none
+  #           -> glab for a manual host adapter. Missing PR capability blocks
+  #           delivery; never silently fall back to a local merge.
+  #   none    Local-only work; cannot satisfy an autonomous PR/merge request.
+  forge: github            # github runtime; auto | gitlab | none for manual hosts
 
   # How a cleared track lands. `squash` keeps the base branch history one
   # commit per track; `merge` preserves the per-step commits the implementor
   # made, which is usually what you want when reviewing agent work later.
-  merge_strategy: merge    # squash | merge | rebase
+  merge_strategy: merge    # runtime requires merge commits for ancestry verification
 
   # Applies to the scheduler, which is the only thing that merges — a track
   # never merges itself, so an `ask` here cannot hang an unattended track.
   #   ask     Ask once per wave, listing every track that cleared together.
   #   auto    Merge as each track reports ready. Hands-off end to end.
   #   never   Leave the PR open and report it. Nothing is merged.
-  auto_merge: ask          # ask | auto | never
+  auto_merge: auto         # authorized runs; ask | never remain manual-host options
 
   # Remove the worktree and delete the track branch after a successful merge.
   # Worktrees for tracks that stopped for a human are always kept.
   cleanup_on_merge: true
+
+  # The coordinator copies these settings and approved PLAN scope into a JSON
+  # execution snapshot. See runtime/schedule.example.json; the Python runner
+  # deliberately does not interpret this YAML or infer project test commands.
+  runtime: .ai/runtime/orchestrate.py
+  required_status_checks: [] # fill per project; autonomous delivery rejects empty
 
   # Commands the track pipeline may use to run only the tests affected by a
   # change. Left empty, agents fall back to `verification.commands` in full and

@@ -204,15 +204,13 @@ check** — a fix with no regression test is a fix with a scheduled recurrence.
 And the record exists because a defect nobody wrote down is a defect that gets
 reintroduced by the next agent, who has no way to know it was ever considered.
 
-Three things look like fixes and need care:
+Three things look like fixes and need care. **FIX items are code-only:**
 
-- **The spec is silent on the case.** Then you are not restoring conformance,
-  you are deciding what correct means. Add the criterion to the spec through
-  the amendment protocol and cite the amendment id in the fix record. This is
-  the common case and it stays a fix.
-- **The spec is wrong.** Amend it. But if the corrected behavior is something
-  anyone depends on, that is a change of contract with consequences — write a
-  plan.
+- **The spec is silent on the case.** Capture the contract decision as its own
+  INTAKE. If an existing acceptance criterion establishes a code defect, record
+  that separately as a FIX; otherwise do not invent correctness in a fix.
+- **The spec or documentation is wrong.** Capture an INTAKE for the correction.
+  It becomes planned documentation/contract work later, not a code FIX.
 - **The fix needs an ADR, a spec rewrite, or more than a handful of files.**
   Promote it with `/plan-new` and link the fix record from the plan. A fix that
   grows into a plan is normal and expected; a plan disguised as a fix skips the
@@ -337,17 +335,36 @@ mentioned only in a session summary is lost**, and the next agent will
 rediscover it and quietly work around it — which is the failure at the top of
 this file, arriving by a slower route.
 
-So: capture, don't fix, and don't merely mention. Write it to
-`plans/intake/INTAKE-{nnn}-{slug}.md` from `templates/INTAKE.md` — five lines,
-or use `/defer`. Captured items are triaged by `/plan-archive`, and get
-promoted by the route their `kind` calls for: a `bug` — code that contradicts a
-spec — through `/fix`, everything else through `/plan-new INTAKE-{nnn}`.
+So: capture, don't fix, and don't merely mention. Use `/defer`. Confirmed code
+defects go directly to `fixes/open/FIX-{nnn}-{slug}.md`, at every severity and
+even when out of scope. Documentation and contract corrections each get their
+own `plans/intake/INTAKE-{nnn}-{slug}.md`; other unplanned work also uses INTAKE.
+Use the corresponding template. FIX work proceeds through `/fix`; INTAKE work
+is triaged through `/plan-archive` and `/plan-new`.
 
-Two things are **always in scope** and get fixed rather than captured, because
+Outside autonomous review, two things are **always in scope** and get fixed rather than captured, because
 leaving them is what corrupts everyone's future work:
 
 - a document that contradicts reality → amend it, with a record
 - the same fact restated in two documents → collapse it into a link
+
+### Autonomous review and fix
+
+The autonomous review workflow takes precedence over the incidental amendment
+and always-in-scope rules above. The original PLAN's promised documentation
+and contracts still land with its implementation. New review findings that
+require documentation or contract corrections become separate INTAKE items
+for later; do not expand the review fix pass to edit them.
+
+Run at most **two reviews**, with one immediate code-fix pass after the first.
+At the second failure, or for other residual defects, retain code FIX reports
+and documentation/contract INTAKE reports for after all other PLANs complete.
+No third review, repeated permission request or severity downgrade ends the
+loop. Preserve the actual verdict and proof. A track with findings may be
+`ready_with_followups` when required checks pass; it is not an approved review.
+Required check failures, incomplete work and `cannot_review` park that track
+while independent PLANs continue. See [the runtime](runtime/README.md) for the
+enforced delivery conditions and post-PLAN queue handoff.
 
 And if what you found is severe — data loss, a security hole, a broken build —
 capture it *and* say so plainly. Filing an urgent problem is not the same as

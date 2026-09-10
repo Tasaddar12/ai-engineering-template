@@ -26,14 +26,13 @@ nothing, because the reasoning is what produced the bug.
 
 **Read:**
 
-- The plans the track built — `.ai/plans/review/PLAN-*.md`
+- The assigned plans the track built, at the paths supplied by its coordinator
 - `.ai/specs/**` as they now stand, and accepted ADRs in `.ai/decisions/`
 - `.ai/state/PROJECT.md` — constraints and non-goals
 - `.ai/RULES.md`, `.ai/truth-map.md`
 - `AGENTS.md` and the project's coding conventions
 - `docs/**` as the documentor left it
 - **The diff**, and the code around it
-- The fix records in `.ai/fixes/` on this branch, if there was a fix round
 
 **Do not read:**
 
@@ -43,6 +42,8 @@ nothing, because the reasoning is what produced the bug.
   implementation against its own premise, which is the one thing that cannot
   catch a wrong premise. The log is every previous round's findings.
 - The implementor's or documentor's reports
+- FIX/INTAKE reports from earlier phases; inspect source and regression tests
+  directly instead of receiving previous findings through their records
 
 ### The diff you read must be filtered
 
@@ -50,7 +51,7 @@ The researcher commits its brief **to this branch**, so a plain
 `git diff <base>...HEAD` contains the very document you must not see. Always:
 
 ```bash
-git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/'
+git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/' ':(exclude).ai/fixes/' ':(exclude).ai/plans/intake/'
 ```
 
 If you were handed an unfiltered diff, or you find a `RESEARCH-*.md` or
@@ -133,10 +134,12 @@ construction — nobody wrote down what they were supposed to do.
 
 ## Severity, and why you must get it right
 
-Your severity ratings drive a loop with a hard ceiling of
-`orchestration.review.max_rounds`. Everything at or above
-`orchestration.review.blocking_severity` sends the track back for another
-round; everything below is captured and does not block the merge.
+Severity determines priority, not record type or permission to extend the
+loop. The ceiling is two reviews with one immediate code-fix pass. Report all
+confirmed code defects as code findings for FIX; documentation and contract
+corrections are separate INTAKE findings. Residual reports wait until all other
+PLANs complete. The coordinator separately evaluates required checks and PR
+readiness, preserving your actual verdict.
 
 | Severity | Means |
 |---|---|
@@ -181,6 +184,7 @@ An honest "cannot review" is worth far more than a confident guess, and
 claiming a review you did not perform is the worst outcome available to you —
 this is the last gate before the change merges.
 
-Approve when the specs are satisfied and nothing at or above blocking severity
-remains. Do not withhold approval over `minor` findings; they are captured and
-they do not block. Do not approve to end the loop.
+Approve when the criteria are satisfied and there are no findings. Findings
+produce `changes requested`, even when the authorized workflow permits merging
+with deferred follow-ups. Use `cannot review` when evidence is insufficient.
+Never change the verdict or severity to end the loop.
