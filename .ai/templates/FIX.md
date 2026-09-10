@@ -1,0 +1,95 @@
+---
+tier: plan
+authority: agent
+id: FIX-{nnn}
+title: <the defect, in a few words>
+found: YYYY-MM-DD
+found_by: <agent or person>
+severity: minor      # critical | major | minor | cosmetic
+violates: SPEC-{nnn} # the spec the code contradicts, or `none` — see below
+links: []
+---
+
+# FIX-{nnn}: <the defect, in a few words>
+
+> **`plan` tier. Its stage is its directory** — `fixes/open/` while it is being
+> worked, `fixes/done/<period>/` once the check passes. No `status:` field.
+> Once it is in `done/`, treat it as history: append, do not rewrite.
+>
+> A fix **restores conformance with the contract.** If this change would move
+> what "correct" means, it is a plan — see [RULES.md](../RULES.md#bug-fixes).
+
+## Symptom
+
+What was observed, from the outside. Inputs, environment, and what happened
+instead of what should have happened. No diagnosis yet — that is the next
+section, and mixing them is how the wrong cause gets fixed.
+
+## Root cause
+
+Why it happened, in the code. Name the file and the mechanism. "Off-by-one in
+the pagination cursor" — not "pagination was broken", which is the symptom
+again.
+
+If the honest answer is that you could not find the cause and treated the
+symptom, **say so here.** A recorded guess is useful; a guess presented as a
+diagnosis is what makes the recurrence baffling.
+
+## The change
+
+What was actually changed, and why this is the correct fix rather than the one
+that makes the symptom stop.
+
+- `path/to/file.ext` — <what changed>
+
+## Proof
+
+The check that fails before the change and passes after it. **A fix is not done
+without this** — a fix with no regression test is a fix with a scheduled
+recurrence.
+
+```
+<command, and the failing output from before the fix>
+```
+
+- **Regression test:** `path/to/test.ext::test_name`
+
+If no automated check is possible, say exactly why, describe the manual
+verification performed, and treat that as a known weakness rather than a pass.
+
+## Contract
+
+Which of the three cases this was:
+
+- **The spec already forbade this.** Cite it under `violates:` above. Nothing
+  in `contract` tier moves. This is the normal case.
+- **The spec was silent on the case.** Add the criterion to the spec through
+  the [amendment protocol](../RULES.md#the-amendment-protocol) and cite the
+  amendment id here. Still a fix.
+- **The spec was wrong.** Amend it, and cite the amendment. If anyone depends
+  on the behavior being corrected, stop — that is a plan.
+
+- Amendment: AMD-
+
+## Related
+
+Delete when empty. Other fixes with the same root cause, the intake item this
+came from, the plan that introduced the defect. Three fixes pointing at one
+cause is a signal that the real work is a plan.
+
+- 
+
+<!--
+Naming: FIX-{nnn}-{slug}.md, next number after the highest anywhere under
+.ai/fixes/ (including done/ — numbers are never reused).
+
+Run /fix, which does the whole loop: diagnose, record, change, prove, close.
+
+Escalate to /plan-new if the fix turns out to need an ADR, a spec rewrite, or
+more than a handful of files. That is normal. What is not normal is a behavior
+change landing as a fix, because it skips the plan-checker and the verifier.
+
+Write the Symptom and Root cause sections BEFORE changing code. A fix record
+written afterwards reliably describes the change and forgets the defect, which
+is the half that stops it happening again.
+-->

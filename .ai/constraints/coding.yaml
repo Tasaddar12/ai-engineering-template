@@ -1,8 +1,0 @@
-version: 1
-python: '>=3.11'
-principles:
-- Keep public boundaries typed and structured records explicit.
-- Raise actionable FrameworkError failures; never invent success.
-- Route every product subprocess through CommandRunner.
-- Keep generated data and secrets out of authored source and durable evidence.
-
