@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import subprocess
 import time
 
 context = json.loads(os.environ['ORCH_CONTEXT'])
@@ -22,6 +23,10 @@ if phase == 'build':
         assert (root / required).is_file(), required
     time.sleep(float(os.environ.get('WORKER_DELAY', '0')))
     write('foreign.txt' if mode == 'outside' else f'src/{context["track"]}.txt', 'built\n')
+    if mode == 'staged-outside':
+        write('foreign.txt', 'must not commit\n')
+        subprocess.run(['git', 'add', 'foreign.txt'], check=True)
+        (root / 'foreign.txt').unlink()
 elif phase == 'fix':
     write('docs.md' if mode == 'fix-doc' else f'src/{context["track"]}.txt', 'fixed\n')
 elif phase.startswith('review'):

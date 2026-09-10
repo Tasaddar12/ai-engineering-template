@@ -273,7 +273,8 @@ class Runner:
 
     def location(self, track):
         path = self.root / '.worktrees' / f"{self.config['run_id']}-{track['id']}"
-        require(path.resolve().parent == (self.root / '.worktrees').resolve(), 'Worktree path escaped')
+        require((self.root / '.worktrees').resolve() == self.root / '.worktrees' and
+                path.resolve() == path, 'Worktree path escaped or was redirected')
         branch = f"{self.config['branch_prefix']}/{self.config['run_id']}/{track['id']}"
         return path, branch
 
@@ -368,6 +369,7 @@ class Runner:
     def commit_worker_changes(self, track, phase):
         path, _ = self.location(track)
         self.ownership(track, path)
+        require(not git(path, 'diff', '--cached', '--name-only'), 'Worker staged files; coordinator owns the index')
         changed = set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z', 'HEAD').split('\0')))
         changed.update(filter(None, git(path, 'ls-files', '--others', '--exclude-standard', '-z').split('\0')))
         scopes = track['code_paths'] if phase == 'fix' else track['owned_paths']
@@ -624,7 +626,9 @@ class Runner:
         remote = git(self.root, 'ls-remote', '--heads', self.config['remote'], f'refs/heads/{branch}')
         if remote:
             require(remote.split()[0] == state['delivery_head'], 'Remote branch advanced; preserving it')
-            git(self.root, 'push', self.config['remote'], '--delete', branch)
+            ref = f'refs/heads/{branch}'
+            git(self.root, 'push', self.config['remote'],
+                f"--force-with-lease={ref}:{state['delivery_head']}", f':{ref}')
         self.update(state, cleaned=True)
 
     def conflict(self, a, b):

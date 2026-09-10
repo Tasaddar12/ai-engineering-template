@@ -8,6 +8,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 RUNTIME = Path(__file__).resolve().parents[1] / '.ai/runtime/orchestrate.py'
 SPEC = importlib.util.spec_from_file_location('orchestrate', RUNTIME)
@@ -200,6 +201,45 @@ class RuntimeTests(unittest.TestCase):
                 runner.preflight = runner.sync
                 self.assertFalse(runner.run())
                 self.assertEqual(runner.state['tracks']['a']['status'], 'blocked')
+
+    def test_worker_cannot_smuggle_a_staged_file_into_coordinator_commit(self):
+        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'staged-outside'
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        track = self.config['tracks'][0]
+        head = orch.git(runner.location(track)[0], 'rev-parse', 'HEAD')
+        self.assertEqual(head, runner.state['tracks']['a']['base'])
+
+    def test_worktree_root_cannot_redirect_outside_repository(self):
+        outside = self.directory / 'outside'
+        outside.mkdir()
+        try:
+            (self.root / '.worktrees').symlink_to(outside, target_is_directory=True)
+        except OSError:
+            self.skipTest('Creating a directory symlink is unavailable on this host')
+        runner = self.runner()
+        with self.assertRaises(orch.Blocked):
+            runner.location(self.config['tracks'][0])
+
+    def test_remote_branch_advance_during_cleanup_is_preserved(self):
+        runner = self.runner()
+        real_git = orch.git
+        branch = runner.location(self.config['tracks'][0])[1]
+        advanced = []
+        def racing_git(root, *args):
+            output = real_git(root, *args)
+            if args == ('ls-remote', '--heads', 'origin', f'refs/heads/{branch}') and not advanced:
+                (self.forge / 'precious.txt').write_text('a later commit\n', encoding='utf-8')
+                real_git(self.forge, 'add', 'precious.txt')
+                real_git(self.forge, 'commit', '-m', 'Advance branch after cleanup checks it')
+                real_git(self.forge, 'push', 'origin', f'HEAD:refs/heads/{branch}')
+                advanced.append(real_git(self.forge, 'rev-parse', 'HEAD'))
+            return output
+        with patch.object(orch, 'git', racing_git):
+            complete = runner.run()
+        self.assertFalse(complete)
+        self.assertEqual(real_git(self.root, 'ls-remote', '--heads', 'origin',
+                                  f'refs/heads/{branch}').split()[0], advanced[0])
 
     def test_required_command_failure_cannot_merge(self):
         self.config['required_commands'] = [[sys.executable, '-c', 'raise SystemExit(3)']]
