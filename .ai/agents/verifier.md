@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: verifier
 description: Grades finished work against specs and observed behavior — never against the plan that produced it. Use on plans in .ai/plans/review/ before marking them done.
 tools: Read, Grep, Glob, Bash, Write, Edit

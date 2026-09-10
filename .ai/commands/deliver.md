@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Commit and publish approved work, confirm merge, and retire its exact checkout.
 title: Deliver the approved result
 ---
@@ -24,10 +23,14 @@ Use [delivery-ready](../gates/delivery-ready.md) before each action and [retirem
 
 ## Steps
 
-1. Confirm the fixed checkout, exact branch and separately granted
-   commit/push/PR/merge scope.
-2. Inspect the final diff and current specs. Prepare a PR summary leading with
-   the resulting behavior and review decisions.
+1. The session coordinator confirms the fixed checkout, exact branch, revision
+   and granted commit/push/PR/merge scope. Delivery changes Git and hosting
+   state; it does not grant permission to change product code or accept its
+   own result for merge.
+2. Inspect the final diff, current specs, contract changes and required
+   verification. Use the [pull-request template](../templates/pull-request.md)
+   for a summary leading with the concrete problem, resulting behavior and
+   decisions the reviewer must check, followed by actual validation and limits.
 3. Commit authorized coherent slices with a descriptive PLAN/FIX message. Push
    only the intended branch and verify its remote tip.
 4. For push-only delivery, return the branch and retain the worktree. A draft
@@ -46,10 +49,12 @@ Use [delivery-ready](../gates/delivery-ready.md) before each action and [retirem
 
 ## Output and handoff
 
-Observed commit/branch/PR outcomes, exact remaining work and
-decision-summary.md.
+Observed commit/branch/PR outcomes, remote-tip and cleanup evidence, exact
+remaining work and the [decision summary](../templates/decision-summary.md).
+The coordinator owns accepted state transitions.
 
 ## Stop conditions
 
-Never force-push, silently retry an uncertain write or delete advanced/unrelated
-work.
+Never force-push, create a PR under push-only authority or delete
+advanced/unrelated work. Inspect an uncertain write's actual Git/hosting outcome
+before retrying it. Delivery never substitutes for the required review.

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Show every plan by stage, plus current state, blockers and suspected drift
 allowed-tools: Read, Grep, Glob, Bash
 ---

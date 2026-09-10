@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Park a plan on a decision only a human can make
 argument-hint: <plan-id> <the question>
 ---

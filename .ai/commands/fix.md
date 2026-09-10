@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Diagnose, record and fix a single defect, with the check that stops it coming back
 argument-hint: <what's broken, or a FIX/INTAKE id>
 ---

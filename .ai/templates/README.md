@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Flat templates
-links: [AMD-002]
 ---
 
 # Flat templates

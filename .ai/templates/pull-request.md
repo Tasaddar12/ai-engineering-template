@@ -24,5 +24,5 @@ Known limitations and any explicitly deferred work.
 
 Commit / push / PR / merge actions authorized by the user, plus any exclusions.
 
-<!-- Use the owning workflow and complete the report fields.
+<!-- Use the owning command and complete the report fields.
 Do not invent evidence or user authority to fill a template. -->

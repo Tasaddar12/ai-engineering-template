@@ -19,5 +19,5 @@ Decision: {{ yes_no_or_changes_for_exact_action }}
 
 Execution: {{ not_started_or_actual_authorized_result }}
 
-<!-- Use the owning workflow and complete the report fields.
+<!-- Use the owning command and complete the report fields.
 Do not invent evidence or user authority to fill a template. -->

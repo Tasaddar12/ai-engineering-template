@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Parallel execution policy
-links: [AMD-002]
 ---
 > Contract: reserve ownership before approved dispatch; report uncertain
 > scheduling instead of guessing.
@@ -38,12 +37,38 @@ manifest writes. The orchestrator role may draft that manifest when assigned.
 Tracks return events and only update assigned records in their own worktree.
 No worker may merge itself or pull the base branch during an active track.
 
+### Common track rules
+
+These requirements apply to every track role, including roles that inherit
+broader permissions from another agent file. The role's own read/write scope
+still applies; this policy grants no additional write access.
+
+- Enter the assigned **absolute worktree path** before reading relative project
+  paths or making changes. Verify it with `git rev-parse --show-toplevel` and
+  verify the branch with `git branch --show-current`. Both must match the
+  assignment; stop and report a mismatch or a track assigned to the base branch.
+  Keep this worktree and branch fixed for the assignment. Inheriting a caller's
+  directory can silently read plausible files from the wrong checkout.
+- Never read or write a sibling worktree. Use Git at the assigned base revision
+  when base content is needed, within the role's permitted read scope.
+  Do not merge, rebase or pull the base branch into an active track; the
+  scheduler starts it from the revision containing its prerequisites.
+- Writers use only their reserved ID ranges, lowest unused first, and report
+  the IDs consumed. Never compute highest-plus-one independently or use a
+  sibling's range. If a range is exhausted, report it and stop allocating.
+- The run manifest, `.ai/state/STATE.md` and `.ai/state/journal/**` are outside
+  track write scope, even when an inherited role or lifecycle command allows
+  them. Return the events that belong there to the scheduler for recording on
+  the base branch. Track evidence stays in the assigned track's paths.
+
 ### Bound review and recovery
 
 Use a fresh reviewer context with the review packet defined in
-[review](../workflows/review.md). Keep research and previous review discussion
-out of that packet; otherwise the reviewer may inherit the same wrong
-premise. Store rounds durably; triage compares recurring findings.
+[reviewer](../agents/reviewer.md#review-packet), including its evidence exclusions
+and separate coordinator check of excluded operating documents. Apply the
+track-reviewer role's narrower scope. Store rounds durably; triage compares
+recurring findings. Disclose any unavailable review isolation; it does not
+satisfy a mandatory independent-review requirement.
 
 Stop a track at the configured round limit with an explicit reason and
 remaining defects. A stopped track does not prevent independent ready tracks

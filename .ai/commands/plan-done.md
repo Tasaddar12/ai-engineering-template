@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Close out a verified plan
 argument-hint: <plan-id>
 ---

@@ -19,8 +19,8 @@ the owner of each fact; [config](.ai/config.yaml) defines paths and identifiers.
 | Coordinate several worktrees | [orchestration guide](docs/ORCHESTRATION.md) |
 | Publish and clean up merged work | [deliver](.ai/commands/deliver.md) |
 
-Commands own the detailed procedures. The five [workflows](.ai/workflows/README.md)
-compose those commands; [agents](.ai/agents/README.md) define role scopes.
+[Commands](.ai/commands/README.md) own the detailed procedures and show how to
+combine them for common tasks; [agents](.ai/agents/README.md) define role scopes.
 [Policies](.ai/policies/README.md) hold firm requirements and
 [gates](.ai/gates/README.md) define pass/fail transitions. Copy a
 [flat template](.ai/templates/README.md) when creating a record or report.

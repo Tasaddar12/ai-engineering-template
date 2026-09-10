@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: e2e
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Checks agreed user journeys across system boundaries and records observable end-to-end outcomes.
@@ -9,7 +8,7 @@ reads: ["approved journeys","current SPECs","assigned PLAN/FIX","test environmen
 writes: ["assigned e2e tests and fixtures only when authorized"]
 model: gpt-5.6-sol
 reasoning: xhigh
-procedures: ["implementation","fix","plan-verify","parallel-execution"]
+procedures: ["plan-start","fix","plan-verify","orchestrate-track"]
 report_template: test-result.md
 ---
 > Contract: follow this role inside its approved assignment.
@@ -24,7 +23,7 @@ establish that their integration works.
 ## Read first
 
 Read RULES, the owning policies, your assigned records and the selected
-workflow. Confirm the absolute worktree and branch before using relative
+command. Confirm the absolute worktree and branch before using relative
 paths. Read/write lists are instructions, not enforced permissions.
 
 ## You may write

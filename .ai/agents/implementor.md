@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: implementor
 description: Builds what an active plan describes. Use when a plan in .ai/plans/active/ is ready to implement. Has authority to amend specs it finds to be wrong — this is the agent that does the actual work.
 tools: Read, Grep, Glob, Bash, Write, Edit

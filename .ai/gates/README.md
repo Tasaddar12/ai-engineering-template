@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Readiness gates
-links: [AMD-002]
 ---
 > Contract: follow linked owners rather than duplicating requirements.
 

@@ -3,15 +3,14 @@ tier: contract
 authority: human
 id: AI-README
 title: How .ai/ works
-links: [RULES, TRUTH-MAP, AMD-002]
 ---
 
 # `.ai/`
 
 The working memory of this project: intent, contracts, plans, state, history.
 [Agents](agents/README.md) define role scopes and [commands](commands/README.md)
-own detailed procedures. [Workflows](workflows/README.md) compose those steps;
-[policies](policies/README.md) and [gates](gates/README.md) define requirements
+own detailed procedures and provide entry points for common tasks.
+[Policies](policies/README.md) and [gates](gates/README.md) define requirements
 and pass/fail transitions. Project records and templates also live here.
 
 **Agents: read [RULES.md](RULES.md) first.** It answers the question that
@@ -45,7 +44,6 @@ requires a report and templated decision summary before unapproved action.
 │   └── done/2026-Q3/   Fixed and proved by a check.
 ├── agents/             Detailed role prompts.
 ├── commands/           Authoritative command procedures.
-├── workflows/          Initialize, planning, implementation, review, parallel execution.
 ├── policies/           Firm cross-cutting requirements.
 ├── gates/              Pass/fail transition checks.
 ├── hooks/              Optional, unregistered Bash examples.

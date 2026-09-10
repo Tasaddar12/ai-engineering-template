@@ -11,7 +11,7 @@ Subject and revision: {{ subject_revision }}
 
 Independence and inspection scope: {{ context_and_limits }}
 
-Verdict: {{ approved_changes_requested_cannot_review_or_proposal_verdict }}
+Verdict: {{ verdict_from_the_selected_review_role }}
 
 ## Findings
 
@@ -27,6 +27,7 @@ improvement. Do not inflate preferences or reduce severity to finish a loop.
 
 Checks actually run, current specs, relevant diff and exclusions.
 For proposals use ready, needs revision or blocked on a human.
+For implementation use the selected review role's verdict vocabulary.
 
 ## Next action
 

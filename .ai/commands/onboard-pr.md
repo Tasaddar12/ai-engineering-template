@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Review the onboarding change, commit it, and open a merge request
 argument-hint: [target-branch]
 ---

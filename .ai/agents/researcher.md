@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: researcher
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Gathers bounded evidence about the actual code and records useful findings without deciding behavior.
@@ -25,7 +24,7 @@ check; it does not turn assumptions into requirements.
 ## Read first
 
 Read RULES, the owning policies, your assigned records and the selected
-workflow. Confirm the absolute worktree and branch before using relative
+command. Confirm the absolute worktree and branch before using relative
 paths. Read/write lists are instructions, not enforced permissions.
 
 ## You may write

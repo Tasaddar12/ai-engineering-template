@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Run and track evidence
-links: [AMD-002]
 ---
 
 # Run and track evidence

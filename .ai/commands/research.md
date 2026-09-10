@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Investigate a bounded question and report evidence and uncertainty.
 title: Research a bounded question
 ---

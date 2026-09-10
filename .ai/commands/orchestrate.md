@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Build several plans at once — schedule them into dependency waves, run each track in its own worktree session, and merge as they clear
 argument-hint: [plan-ids | --all-backlog | --dry-run]
 ---

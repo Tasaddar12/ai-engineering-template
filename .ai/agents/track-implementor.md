@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-implementor
 description: Builds the plans of one orchestration track inside its worktree, committing each finished step slice, then self-reviews the whole diff and runs only the tests the change affects. The implementor's job, scoped to a worktree and a branch.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -11,74 +10,18 @@ You build one track: one worktree, one branch, one or more plans in sequence.
 
 **Read `.ai/agents/implementor.md` before your first edit.** It defines what
 you may write, your authority to amend a contract that turns out to be wrong,
-and how the plan's **Contract changes** section lands with the code. All of it
-applies to you unchanged. This file covers only what is different because you
-are in a worktree: where you work, when you commit, and the self-review you owe
+and how the plan's **Contract changes** section lands with the code. Those
+responsibilities apply here; the track assignment below narrows inherited
+access. This file covers track-specific commits and the self-review you owe
 before handing off.
 
 Read `.ai/RULES.md` too, if the implementor file has not already sent you there.
 
-## Where you work
+## Track assignment
 
-You are given the **absolute** path of your worktree, for example
-`C:/proj/.worktrees/ORCH-001-w1t1`. **`cd` into it before anything else, and
-stay there:**
-
-```bash
-cd "<the absolute worktree path you were given>"
-pwd && git rev-parse --show-toplevel && git branch --show-current
-```
-
-The toplevel must be your worktree and the branch must be your track's. If
-either is wrong, **stop and say so.**
-
-This matters more than it looks. A subagent may inherit its caller's working directory rather than
-your assigned worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
-`.ai/config.yaml` — resolves against wherever you actually are. Those files
-exist in both checkouts with plausible content, so reading the wrong one raises
-no error: it quietly hands you the base branch's version of a document your
-track has already changed. After the `cd`, the relative paths below are correct.
-
-Never read or write a sibling worktree under `.worktrees/`. Another track is
-mid-change there, and what you would find is neither the base branch nor
-anything that will exist after the merge.
-
-If the branch is the base branch, you are one commit from writing a track's
-work directly onto main.
-
-Two more rules with no equivalent in a normal implementor session:
-
-- **Never touch the run manifest** at `.ai/state/orchestration/ORCH-*.md`. The
-  main session owns it on the base branch. Parallel tracks editing one status
-  file is a merge conflict in the one document that has to stay readable.
-- **Never merge, rebase or pull the base branch into your worktree** unless you
-  are told to. Your track was branched from a base that already contains
-  everything it depends on — that is what waves are for. Pulling mid-flight
-  imports another track's half-reviewed work into yours.
-
-## Ids come from your reserved block
-
-You are given a **reserved id block** — a range such as `INTAKE 40-59`. Take
-every new id from inside it, lowest unused first, and record which you used.
-
-**Do not allocate by "highest existing number plus one."** Your track is one of
-several branched from the same commit, so every track computes the same next
-number and writes it under a different slug. Git then merges both files without
-a conflict, leaving two records sharing an id and no error anywhere. The block
-is what keeps ids unique without tracks having to coordinate.
-
-If you exhaust your block, say so and stop allocating rather than spilling into
-the next track's range.
-
-## You do not write STATE.md or the journal
-
-`.ai/state/STATE.md` and `.ai/state/journal/**` are **out of scope inside a
-track**, whichever agent file you inherit from and whatever it says. They are
-single shared files that every parallel track would edit, so the second track
-to merge conflicts in them.
-
-Report what would have gone in them instead. The main session writes it on the
-base branch once your track merges.
+Follow the [common track rules](../policies/parallel-execution.md#common-track-rules)
+before using relative paths or starting work. They narrow inherited permissions;
+the role-specific read/write scope below still applies.
 
 ## Start from the research
 

@@ -7,9 +7,9 @@ Do not replace existing project content without the user's authorized scope.
 Copy `.ai/` and the useful guides from `docs/`. Reconcile existing instructions
 with [AGENTS.snippet.md](../.ai/templates/AGENTS.snippet.md) in the destination
 root AGENTS.md. Keep established fact owners rather than creating duplicate
-requirements. This repository's own PROJECT, STATE, SPEC-002, PLAN-004,
-amendments and journal describe this template; do not adopt them as the new
-project's history or intent. Create the destination records from templates.
+requirements. Fill PROJECT and STATE for the destination project and create
+its records from templates. This source repository contains reusable guidance,
+not an established project history to copy into the destination.
 
 Use [onboard](../.ai/commands/onboard.md) to inspect the destination, draft its
 PROJECT from confirmed user intent, choose the supported mode, set paths and

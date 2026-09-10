@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: bug-reviewer
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Triages evidence into confirmed defects, unanswered questions or contract changes without repairing them.
@@ -24,7 +23,7 @@ findings may expose a bad repair, missing explanation or a wrong premise.
 ## Read first
 
 Read RULES, the owning policies, your assigned records and the selected
-workflow. Confirm the absolute worktree and branch before using relative
+command. Confirm the absolute worktree and branch before using relative
 paths. Read/write lists are instructions, not enforced permissions.
 
 ## You may write

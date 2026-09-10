@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: planner
 description: Turns a request or backlog item into an executable plan in .ai/plans/. Use when work needs breaking down before implementation, or when an existing plan has gone stale. Writes plans and specs; does not write code.
 tools: Read, Grep, Glob, Bash, Write, Edit

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Write a new plan into .ai/plans/backlog/
 argument-hint: <what needs building>
 ---

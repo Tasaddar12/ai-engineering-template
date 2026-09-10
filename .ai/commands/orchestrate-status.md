@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Show where an orchestration run stands — waves, tracks, review rounds and what is waiting on a human
 argument-hint: [run-id]
 ---
