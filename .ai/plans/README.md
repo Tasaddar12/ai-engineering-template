@@ -24,10 +24,9 @@ repair live links and record the transition. No status/stage frontmatter.
 Record proposal checks in the plan without moving an unbuilt proposal to review.
 
 Intake is a separate record kind for uncertainty, waiting questions and
-suspected drift. Confirmed defects use [FIX](../fixes/README.md).
+suspected drift. Confirmed defects use the [fix command](../commands/fix.md).
 
 [Plan status](../commands/plan-status.md) shows the full lifecycle.
-[Plan verification](../commands/plan-verify.md) checks behavior;
+[Verifier](../agents/verifier.md) checks behavior;
 [plan done](../commands/plan-done.md) applies closure criteria.
-See the [record policy](../policies/records.md) for the distinction between
-verification and Git delivery.
+Verification establishes behavior; Git and the forge establish delivery.

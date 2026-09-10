@@ -14,9 +14,9 @@ not an established project history to copy into the destination.
 Use [onboard](../.ai/commands/onboard.md) to inspect the destination, draft its
 PROJECT from confirmed user intent, choose the supported mode, set paths and
 real verification commands, and identify current specs. Preserve existing logs
-and decisions; classify old documents before moving or deleting them. Return
-the [decision summary](../.ai/templates/decision-summary.md) for approval of
-changes not already authorized.
+and decisions; classify old documents before moving or deleting them. Report
+the proposed changes, scope and validation for approval of actions not already
+authorized.
 
 Command files are Markdown procedures. A slash-style name means to follow the
 matching file under `.ai/commands/`; it is not a shell command. `$1`, `$2` and
@@ -36,5 +36,6 @@ launcher and completion mechanism. Validate that integration in its real host
 before switching the destination's config to background dispatch.
 
 Use [onboard-pr](../.ai/commands/onboard-pr.md) for an authorized adoption PR.
-Use [deliver](../.ai/commands/deliver.md) for merge confirmation, pulling the
-target and removing only the verified merged worktree and branch.
+Follow the destination's AGENTS.md for authorized publication. Confirm the
+merge and pull the target before removing only the verified merged worktree
+and branch.

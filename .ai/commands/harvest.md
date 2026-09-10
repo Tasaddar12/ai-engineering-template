@@ -16,9 +16,9 @@ effect, no matter how it is phrased.
 
 Read the whole document. If it is not already under
 `.ai/decisions/meetings/`, `git mv` it there as
-`MEET-YYYY-MM-DD-{slug}.md` and add the frontmatter from
-`.ai/templates/MEETING.md` — keep the original text intact below it. Use the
-date the meeting happened, not today.
+`MEET-YYYY-MM-DD-{slug}.md`. Add frontmatter with `tier: log`, `authority: agent`,
+the meeting ID, meeting date and `harvested: false`; keep the original text
+intact below it. Use the date the meeting happened, not today.
 
 If a directory was given, list what you found and harvest **oldest first**, so
 later notes can supersede earlier ones rather than the reverse.

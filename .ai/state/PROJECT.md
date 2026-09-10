@@ -34,12 +34,11 @@ requirements, or source-project configuration that is not used here.
 
 ## Hard constraints
 
-The [approval policy](../policies/approval.md) owns the user's report, summary
-and decision requirement. The chosen structure keeps PROJECT beside STATE,
-flat templates, detailed role files, command procedures, policies and gates.
-Worktree ownership and authorized publication follow the
-[execution policy](../policies/execution.md). Record guidance for projects
-adopting the template is in the [record policy](../policies/records.md).
+The root [AGENTS.md](../../AGENTS.md) owns the user's report, decision and
+publication boundaries. The structure keeps PROJECT beside STATE, core record
+templates, role files and command procedures. The gates and policies folders
+are empty placeholders. [RULES](../RULES.md) describes record maintenance for
+adopting projects; coordinating commands define worktree assignments.
 
 ## Out of bounds for agents
 

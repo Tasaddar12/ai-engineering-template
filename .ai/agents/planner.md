@@ -67,7 +67,8 @@ matter how good the approach is.
    other direction.
 6. **Size it.** One plan is one coherent, shippable change — a few hours to a
    couple of days of work. If it does not fit, split it into several plans and
-   order them. Use the decoupler role for uncertain boundaries or dependencies.
+   order them. Use the orchestrator role when a multi-plan schedule needs
+   dependency or contention analysis.
 7. **Write it** from `.ai/templates/PLAN.md`. Allocate the ID under
    `.ai/config.yaml`, including Git history and reserved run blocks;
    issued identifiers are never reused.

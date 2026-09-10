@@ -15,9 +15,9 @@ what to do when the written record and reality disagree.
 
 ## Approval before action
 
-The [approval policy](policies/approval.md) owns the report, templated summary
-and user-decision boundary. These rules apply inside the scope already
-authorized by the user; they do not turn an inspection into implementation.
+The root [AGENTS.md](../AGENTS.md) owns the report and user-decision boundary.
+These rules apply inside the scope already authorized by the user; they do not
+turn an inspection into implementation.
 An explicit instruction to correct a named intent document is its approval.
 Otherwise propose intent changes and await the user's decision.
 
@@ -100,7 +100,7 @@ authority.
 
 ## Mutability tiers
 
-Markdown records, policies, roles and commands declare a tier and authority.
+Markdown records, roles and commands declare a tier and authority.
 The tier describes mutability within approved scope. Templates model their
 output record; configuration, scripts, snippets and empty directory markers
 use their native format. Legacy journal files inherit log tier from their path.

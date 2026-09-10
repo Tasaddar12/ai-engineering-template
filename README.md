@@ -12,18 +12,17 @@ the owner of each fact; [config](.ai/config.yaml) defines paths and identifiers.
 | Need | Entry point |
 | --- | --- |
 | Understand this checkout | [onboard](.ai/commands/onboard.md) |
-| Report a finding for a decision | [report](.ai/commands/report.md) |
+| Capture a finding for later work | [defer](.ai/commands/defer.md) |
 | See every plan and current blockers | [plan-status](.ai/commands/plan-status.md) |
 | Plan a change or repair a defect | [plan-new](.ai/commands/plan-new.md), [fix](.ai/commands/fix.md) |
-| Verify before delivery | [plan-verify](.ai/commands/plan-verify.md) |
+| Verify before delivery | [verifier](.ai/agents/verifier.md) |
 | Coordinate several worktrees | [orchestration guide](docs/ORCHESTRATION.md) |
-| Publish and clean up merged work | [deliver](.ai/commands/deliver.md) |
+| Clean up a merged run | [orchestrate-clean](.ai/commands/orchestrate-clean.md) |
 
 [Commands](.ai/commands/README.md) own the detailed procedures and show how to
 combine them for common tasks; [agents](.ai/agents/README.md) define role scopes.
-[Policies](.ai/policies/README.md) hold firm requirements and
-[gates](.ai/gates/README.md) define pass/fail transitions. Copy a
-[flat template](.ai/templates/README.md) when creating a record or report.
+[RULES](.ai/RULES.md) governs record maintenance. Copy a
+[core template](.ai/templates/README.md) when creating a record.
 
 To use this in another project, follow [ADOPTING.md](docs/ADOPTING.md).
 The slash-style names in these documents identify Markdown procedures;

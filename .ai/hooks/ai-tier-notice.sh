@@ -24,7 +24,7 @@ path="${path//\\\\//}"
 path="${path//\\//}"
 
 case "$path" in
-  .ai/state/PROJECT.md|*/.ai/state/PROJECT.md|.ai/RULES.md|*/.ai/RULES.md|.ai/policies/approval.md|*/.ai/policies/approval.md)
+  .ai/state/PROJECT.md|*/.ai/state/PROJECT.md|.ai/RULES.md|*/.ai/RULES.md)
     echo "NOTICE  intent tier — human authority. Edit only under explicit human instruction; otherwise propose and wait. Surface any unauthorized edit to the user. See .ai/RULES.md#mutability-tiers"
     ;;
   */.ai/specs/*)

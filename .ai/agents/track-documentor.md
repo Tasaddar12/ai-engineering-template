@@ -21,8 +21,8 @@ Read `.ai/RULES.md` and `.ai/truth-map.md` too.
 
 ## Track assignment
 
-Follow the [common track rules](../policies/parallel-execution.md#common-track-rules)
-before using relative paths or starting work. They narrow inherited permissions;
+Follow the [track scope](../commands/orchestrate-track.md#track-scope)
+before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
 
 ## You may write

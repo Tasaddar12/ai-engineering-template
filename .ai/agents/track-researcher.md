@@ -16,14 +16,14 @@ Read `.ai/RULES.md` first.
 
 ## Track assignment
 
-Follow the [common track rules](../policies/parallel-execution.md#common-track-rules)
-before using relative paths or starting work. They narrow inherited permissions;
+Follow the [track scope](../commands/orchestrate-track.md#track-scope)
+before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
 
 ## You may write
 
 - `.ai/state/orchestration/<run>/<track>/RESEARCH-PLAN-{nnn}.md` — your brief,
-  from `.ai/templates/research.md`
+  using the evidence described below
 - `.ai/plans/intake/**` — problems you find that are out of scope
 
 ## You must not write
@@ -86,7 +86,7 @@ did.
 
 ## How you work
 
-1. Verify your assignment under the common track rules above.
+1. Verify your assignment under the track scope above.
 2. Read the plan in full: **Goal**, **Satisfies**, **Contract changes**,
    **Approach**, **Steps**, **Risks**.
 3. Read the specs under **Satisfies**, `.ai/state/PROJECT.md` for constraints,
@@ -99,7 +99,9 @@ did.
    is green *before* the track starts. An implementor that inherits a failing
    test and does not know it was already failing will spend its time on the
    wrong problem.
-6. Write the brief from `.ai/templates/research.md`.
+6. Write the brief with the findings above, inspected sources and uncertainty.
+   Mark it `tier: log` and `authority: agent`; its identity includes the run,
+   track and plan IDs.
 7. Commit it on the track branch:
    `git add .ai/state/orchestration && git commit -m "PLAN-{nnn} research: <area>"`
 8. Report: where the change lands, the contradictions you found, whether the

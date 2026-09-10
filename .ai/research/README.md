@@ -7,9 +7,9 @@ title: Research evidence
 
 # Research evidence
 
-Use [research.md](../templates/research.md) for bounded investigations and
-configured RES IDs. Research owns inspected sources, findings and uncertainty.
-It cannot authorize a requirement or implementation.
+Use configured RES IDs for bounded investigation records. Include the question,
+scope, inspected sources, findings and uncertainty.
+Research cannot authorize a requirement or implementation.
 
 Place contradictions and useful local code/test knowledge in the brief.
 A completed brief is log-tier evidence: append corrections or link a successor

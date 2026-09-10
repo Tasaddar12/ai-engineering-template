@@ -10,14 +10,14 @@ title: How .ai/ works
 The working memory of this project: intent, contracts, plans, state, history.
 [Agents](agents/README.md) define role scopes and [commands](commands/README.md)
 own detailed procedures and provide entry points for common tasks.
-[Policies](policies/README.md) and [gates](gates/README.md) define requirements
-and pass/fail transitions. Project records and templates also live here.
+[RULES](RULES.md) defines record requirements. Project records and core
+templates also live here.
 
 **Agents: read [RULES.md](RULES.md) first.** It answers the question that
 matters most — what you are allowed to change, and what to do when a document
 contradicts reality. The short version: fix the document, record why, keep
-going within the user-approved scope. The [approval policy](policies/approval.md)
-requires a report and templated decision summary before unapproved action.
+going within the user-approved scope. [AGENTS.md](../AGENTS.md) defines the
+report and decision boundary before unapproved action.
 
 ## Layout
 
@@ -44,8 +44,8 @@ requires a report and templated decision summary before unapproved action.
 │   └── done/2026-Q3/   Fixed and proved by a check.
 ├── agents/             Detailed role prompts.
 ├── commands/           Authoritative command procedures.
-├── policies/           Firm cross-cutting requirements.
-├── gates/              Pass/fail transition checks.
+├── policies/           Empty placeholder (.gitkeep only).
+├── gates/              Empty placeholder (.gitkeep only).
 ├── hooks/              Optional, unregistered Bash examples.
 ├── research/           General research evidence.
 ├── state/
@@ -80,7 +80,7 @@ read; keep them apart and every spec is true at every commit. See
 
 | Tier | Files | Agent may |
 |---|---|---|
-| `intent` | `state/PROJECT.md`, `RULES.md`, approval policy | Edit only under explicit human instruction |
+| `intent` | `state/PROJECT.md`, `RULES.md` | Edit only under explicit human instruction |
 | `contract` | Specs, ADRs and operating contracts | Follow the amendment protocol |
 | `plan` | `plans/`, `fixes/` | Rewrite |
 | `status` | `state/STATE.md`, `state/orchestration/ORCH-*.md` | Overwrite |

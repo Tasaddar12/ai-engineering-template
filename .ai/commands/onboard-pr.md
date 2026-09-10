@@ -46,10 +46,11 @@ the adoption, stop and tell the user rather than sweeping them in.
 
 ## 3. Prepare the authorized delivery
 
-Follow [deliver](deliver.md) for the commit, push and PR mechanics. The
-[approval policy](../policies/approval.md) applies: existing explicit authority
-is sufficient; without publication authority, prepare the reviewable result and
-return the decision summary. Do not merge unless merge is also authorized.
+Follow the publication scope in the root [AGENTS.md](../../AGENTS.md).
+Commit the intended changes with descriptive messages, push only the assigned
+branch, verify its remote tip, and open the PR against the agreed target.
+Without publication authority, return the reviewable result and proposed next
+action. Do not merge unless merge is also authorized.
 
 ## 4. Write the description
 

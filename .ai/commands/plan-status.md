@@ -52,5 +52,5 @@ Close with anything that looks wrong and is worth acting on:
 - a fix in `done/` with an empty **Proof** section: it will recur
 - `.ai/state/PROJECT.md` still containing `CHANGEME`
 
-Use `.ai/templates/plan-status.md` for the report; the compact totals above
-fit its Plans by directory section. Be brief; this is a status check, not an audit.
+Use the compact totals and observations above for the report. Be brief; this
+is a status check, not an audit.
