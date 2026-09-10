@@ -2,52 +2,29 @@
 tier: intent
 authority: human
 id: PROJECT
-title: AI engineering orchestration template
+title: CHANGEME
+links: []
 ---
 
-# AI engineering orchestration template
+# CHANGEME
+
+> **Fill this in before the first plan.** Copy the structure from
+> [../templates/PROJECT.md](../templates/PROJECT.md), which carries the
+> guidance for each section.
+>
+> **`intent` tier — human authority.** Agents propose changes here and stop for
+> an answer; they do not edit it. Everything else under `.ai/` is downstream of
+> this file, so an empty or vague version of it produces vague specs and
+> unfocused plans.
 
 ## Why this exists
 
-This repository is a reusable operating structure for engineering agents. It
-keeps project context, current specifications, proposed work, defect reports,
-decisions and evidence in Git alongside the project they describe. The user's
-copied material supplies the detailed command and role guidance.
-
-The project is the template itself. There are no project-specific specs,
-decisions, amendments or delivery records for this repository. Navigation
-starts at [AGENTS.md](../../AGENTS.md); adoption into a different codebase uses
-[ADOPTING.md](../../docs/ADOPTING.md) and a newly completed PROJECT template.
-
 ## What success looks like
-
-A person can understand the project, ask for a report or plan, approve a
-bounded change, and follow its evidence through verification and Git delivery.
-Agents can find the relevant instructions and fact owners without interpreting
-obsolete scaffolding or guessing which competing document is current.
 
 ## Non-goals
 
-Building an application or a new orchestration runtime in this repository.
-Restoring the removed Python framework, deleted project history as live
-requirements, or source-project configuration that is not used here.
-
 ## Hard constraints
-
-The root [AGENTS.md](../../AGENTS.md) owns the user's report, decision and
-publication boundaries. The structure keeps PROJECT beside STATE, core record
-templates, role files and command procedures. The gates and policies folders
-are empty placeholders. [RULES](../RULES.md) describes record maintenance for
-adopting projects; coordinating commands define worktree assignments.
 
 ## Out of bounds for agents
 
-Inventing project purpose or broadening the approved outcome. Treating copied
-examples as installed tools or proof of a completed run. Touching unrelated
-checkouts or deleting files outside the assigned cleanup scope.
-
 ## Stakeholders
-
-The repository owner sets intent and action authority. People and agents
-adopting the template need accurate instructions, usable reports and clear
-limits. No additional stakeholder roles have been specified.

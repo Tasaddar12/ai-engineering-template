@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: track-fixer
 description: Fixes the defects triage recorded for a track, working from the original plan and research brief with no memory of the review. Adds the regression check for each, tests only what it changed, and commits per fix.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -19,6 +17,7 @@ inside, and being in a worktree does not change it.
 Follow the [track scope](../commands/orchestrate-track.md#track-scope)
 before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
+
 
 ## What you are given
 

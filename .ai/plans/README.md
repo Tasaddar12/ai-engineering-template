@@ -14,19 +14,19 @@ future wording; current specs describe behavior that already exists.
 | --- | --- |
 | backlog | Proposed or accepted work awaiting execution authority. |
 | active | Authorized work in progress. |
-| review | Built work awaiting verification; proposal checking happens in backlog. |
+| review | A proposal or result awaiting a stated decision. |
 | blocked | Work requiring a named answer and resume condition. |
 | abandoned | Intentionally stopped work, retained as history. |
-| done | Verified work; pending Git delivery is recorded separately. |
+| done | Verified, accepted work with authorized delivery complete. |
 
 The directory alone owns stage. Move the existing file with its ID/slug,
 repair live links and record the transition. No status/stage frontmatter.
-Record proposal checks in the plan without moving an unbuilt proposal to review.
+Describe proposal versus result review in the record's decision section.
 
 Intake is a separate record kind for uncertainty, waiting questions and
-suspected drift. Confirmed defects use the [fix command](../commands/fix.md).
+suspected drift. Confirmed defects use [FIX](../commands/fix.md).
 
 [Plan status](../commands/plan-status.md) shows the full lifecycle.
-[Verifier](../agents/verifier.md) checks behavior;
+[verifier](../agents/verifier.md) checks behavior;
 [plan done](../commands/plan-done.md) applies closure criteria.
-Verification establishes behavior; Git and the forge establish delivery.
+A push-only draft remains in review until the user accepts its result.

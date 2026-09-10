@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: plan-checker
 description: Reviews a plan for internal consistency and conflicts with specs, intent, and the existing code before any implementation starts. Read-only. Use after planner, before implementor, on anything non-trivial.
 tools: Read, Grep, Glob, Bash

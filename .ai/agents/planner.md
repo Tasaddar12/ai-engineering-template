@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: planner
 description: Turns a request or backlog item into an executable plan in .ai/plans/. Use when work needs breaking down before implementation, or when an existing plan has gone stale. Writes plans and specs; does not write code.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -67,11 +65,10 @@ matter how good the approach is.
    other direction.
 6. **Size it.** One plan is one coherent, shippable change — a few hours to a
    couple of days of work. If it does not fit, split it into several plans and
-   order them. Use the orchestrator role when a multi-plan schedule needs
-   dependency or contention analysis.
-7. **Write it** from `.ai/templates/PLAN.md`. Allocate the ID under
-   `.ai/config.yaml`, including Git history and reserved run blocks;
-   issued identifiers are never reused.
+   order them.
+7. **Write it** from `.ai/templates/PLAN.md`. Number it after the highest
+   existing `PLAN-` anywhere under `.ai/plans/`, including `done/` and
+   `abandoned/` — numbers are never reused.
 8. **Name the risk.** The **Risks and unknowns** section should say which
    assumption you are least sure of. This is what tells the implementor where to
    stop and check.

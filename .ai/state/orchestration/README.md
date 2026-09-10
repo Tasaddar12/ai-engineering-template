@@ -3,20 +3,21 @@ tier: contract
 authority: agent
 title: Run and track evidence
 ---
+> Contract: amend with evidence inside the approved scope.
 
 # Run and track evidence
 
-The [ORCH-RUN template](../../templates/ORCH-RUN.md) creates
-`ORCH-{nnn}.md` here. The scheduler owns the board, shared STATE and journal.
-The orchestrator role can draft the board when assigned; tracks cannot edit it.
+Use [ORCH-RUN.md](../../templates/ORCH-RUN.md) for the run board
+and [orchestrate-track](../../commands/orchestrate-track.md) for track evidence.
 
-Each track owns `<run>/<track>/RESEARCH-PLAN-{nnn}.md` and
-`<run>/<track>/REVIEW-LOG.md` in its branch. Use the
-[track-researcher](../../agents/track-researcher.md) guidance for a brief; the
-[track command](../../commands/orchestrate-track.md) defines review-round and
-terminal formats. Run/track/plan together identify a brief.
+The run coordinator alone writes ORCH-NNN.md, shared STATE and the journal.
+Each track coordinator owns `<run>/<track>/REVIEW-LOG.md` in its assigned branch.
+No worker guesses IDs outside reserved ranges.
 
-Read actual Git and forge state when resuming; after branch cleanup, use the
-recorded merge revision. A missing terminal result is unknown, not ready.
-Cold review excludes these evidence files. The coordinator still reviews
-changes to operating documents here separately so exclusions hide no changes.
+A board is mutable status; a track's review rounds are append-only evidence.
+On resume, inspect Git and records before deciding a stage. A silent exit is
+not a ready result: name ready, stopped or failed with evidence and a reason.
+
+[Review](../../agents/track-reviewer.md) owns the cold packet and exclusions.
+[Parallel execution](../../commands/orchestrate.md) owns scheduling.
+These documents do not start a process or enforce filesystem confinement.

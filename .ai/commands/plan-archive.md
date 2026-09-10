@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Sweep finished plans into their period folder, and abandon stale ones
 argument-hint: [period]
 ---
@@ -45,7 +43,7 @@ Tidy the plan lifecycle. Period: **$ARGUMENTS** (default: the current one from
    gets flagged, not moved. A plan stuck in `blocked/` usually means the
    question never reached a human.
 7. **Prune `.ai/state/STATE.md`.** It is `status` tier and describes only the
-   present: trim **Recently verified** to the last handful and drop anything
+   present: trim **Recently landed** to the last handful and drop anything
    already visible in `done/`. History belongs in the journal.
 8. Append a journal entry recording the sweep.
 

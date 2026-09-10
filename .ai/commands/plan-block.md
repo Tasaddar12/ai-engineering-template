@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Park a plan on a decision only a human can make
 argument-hint: <plan-id> <the question>
 ---

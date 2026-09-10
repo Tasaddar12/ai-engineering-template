@@ -1,7 +1,7 @@
 # Onboarding starter prompts
 
 Paste-ready prompts for the first message of a fresh agent session in the
-adoption worktree (see [ADOPTING.md](ADOPTING.md)). They differ in how much
+adoption worktree (see [onboard](../.ai/commands/onboard.md)). They differ in how much
 they do in one pass and in what they ask you to decide.
 
 If you are not sure, use **B**. If agents on this project are already refusing
@@ -20,7 +20,7 @@ cause, and the cause is often something the copy alone will not fix.
 | H | [Brief me](#h--brief-me-on-an-existing-setup) | `.ai/` is already set up; resuming |
 | I | [Harvest meeting notes](#i--harvest-meeting-and-design-notes) | Piles of architecture/design meeting docs |
 
-Each prompt assumes the two folders are already copied and committed. None of
+Each prompt assumes the template files are already copied and committed. None of
 them should be run in your main checkout.
 
 ---
@@ -43,7 +43,7 @@ without changing anything:
    Write and Edit? An agent without them cannot edit and will narrate a refusal.
 2. AGENTS.md, and any instruction file — quote every line that
    forbids or discourages changing documentation, specs, plans or requirements.
-3. Host hook registration, if any — anything that blocks writes to md files or
+3. The host's hook settings — anything that blocks writes to md files or
    doc directories, and whether its denial message names what IS allowed.
 4. Requirements that appear in more than one place. For the top few, list every
    file that states them. This is the cause I most expect to find.
@@ -116,7 +116,7 @@ adoption and issue sweep, and spend the effort on:
 - The first specs, as acceptance criteria for what we are about to build.
 - A first plan in .ai/plans/backlog/, checked by plan-checker.
 
-Then reconcile .ai/templates/AGENTS.snippet.md with AGENTS.md, creating it if
+Then append .ai/templates/AGENTS.snippet.md to AGENTS.md, creating it if
 absent. Do not commit.
 ```
 
@@ -139,9 +139,9 @@ Keep it minimal:
 - One plan in .ai/plans/active/ for the work in hand.
 - Sweep obvious TODO/FIXME and known-broken things into .ai/plans/intake/,
   clustered, shown to me before you write them.
-- Reconcile .ai/templates/AGENTS.snippet.md with AGENTS.md.
+- Append .ai/templates/AGENTS.snippet.md to AGENTS.md.
 
-Skip retro-specs, skip anything the mode does not require.
+Skip the roadmap, skip retro-specs, skip anything the mode does not require.
 Tell me if you think light mode is the wrong call for this repo. Do not commit.
 ```
 
@@ -156,13 +156,13 @@ For when you want the refuse/contort behavior fixed and nothing else. Leaves
 Do a minimal adoption: I want the document-mutability rules in effect, and
 nothing else yet.
 
-1. Reconcile .ai/templates/AGENTS.snippet.md with AGENTS.md (create it if absent).
+1. Append .ai/templates/AGENTS.snippet.md to AGENTS.md (create it if absent).
 2. Audit AGENTS.md and .ai/agents/ for anything that now contradicts
    .ai/RULES.md — prohibitions on editing docs or specs, and agent `tools:`
    lists missing Write/Edit. Show me each one with the proposed edit.
 3. Fill in .ai/config.yaml: project name, summary, mode: light, and the real
    verification commands.
-4. Leave .ai/specs/, .ai/plans/ and other project records alone entirely.
+4. Leave .ai/specs/ and .ai/plans/ alone entirely.
 
 Then tell me, in a few lines, what changes about how agents will behave on this
 repo and what does not. Do not commit.
@@ -237,8 +237,7 @@ else started.
 Run /onboard. This project already has .ai/ set up, so brief me rather than
 restructuring anything.
 
-Read .ai/RULES.md, .ai/truth-map.md, .ai/config.yaml,
-.ai/state/PROJECT.md, .ai/state/STATE.md and the
+Read RULES.md, truth-map.md, config.yaml, state/PROJECT.md, STATE.md and the
 latest journal entry, then the specs and the plans in active/, review/ and
 blocked/, then skim intake/.
 

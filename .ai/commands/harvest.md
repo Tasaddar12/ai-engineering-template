@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Turn a meeting or design document into ADRs, intent changes and intake items
 argument-hint: <path to the document, or a directory of them>
 ---
@@ -16,9 +14,9 @@ effect, no matter how it is phrased.
 
 Read the whole document. If it is not already under
 `.ai/decisions/meetings/`, `git mv` it there as
-`MEET-YYYY-MM-DD-{slug}.md`. Add frontmatter with `tier: log`, `authority: agent`,
-the meeting ID, meeting date and `harvested: false`; keep the original text
-intact below it. Use the date the meeting happened, not today.
+`MEET-YYYY-MM-DD-{slug}.md` and add meeting-note frontmatter — keep the original
+text intact below it. Use the
+date the meeting happened, not today.
 
 If a directory was given, list what you found and harvest **oldest first**, so
 later notes can supersede earlier ones rather than the reverse.
@@ -33,7 +31,7 @@ reliable. Ask if you cannot tell.
   `.ai/decisions/`, `status: accepted`. Say in **Context** which meeting it
   came from.
 - **Decided, but not built yet** → an ADR *plus* work in `.ai/plans/intake/`
-  or a plan. See the trap in step 4 — this is the case that goes wrong.
+  or the roadmap. See the trap in step 4 — this is the case that goes wrong.
 - **Discussed, not decided** → stays in the note. Fold the options and the
   arguments into the relevant ADR's **Alternatives considered** table, since
   that is exactly what that table wants and meetings are where it comes from.
@@ -50,8 +48,8 @@ reliable. Ask if you cannot tell.
 
 Before writing anything:
 
-- Does an ADR already cover this? Link additional evidence from the meeting without rewriting the accepted ADR,
-  or supersede it — write a new ADR with the old id in `supersedes:`, then
+- Does an ADR already cover this? Then either the note adds alternatives to it,
+  or it supersedes it — write a new ADR with the old id in `supersedes:`, then
   set `status: superseded` and `superseded_by:` on the old one and change
   nothing else in it. Never rewrite a past ADR's Context, Decision or
   Alternatives; its value is being an accurate account of what was decided at

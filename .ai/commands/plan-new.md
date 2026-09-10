@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Write a new plan into .ai/plans/backlog/
 argument-hint: <what needs building>
 ---
@@ -25,11 +23,11 @@ means. See `.ai/RULES.md#bug-fixes`.
    hard constraint, say so before writing anything and ask whether to proceed.
 2. Check `.ai/plans/intake/` and `.ai/plans/backlog/` for the same problem
    already captured. Fold it in rather than opening a second thread on it.
-3. Allocate a PLAN ID under `.ai/config.yaml`, including current records,
-   Git history and reserved run blocks. Never reuse a deleted identifier.
+3. Allocate the next id: the highest `PLAN-` number anywhere under `.ai/plans/`
+   — including `done/` and `abandoned/` — plus one. Numbers are never reused.
 4. Delegate to the **planner** agent to write
    `.ai/plans/backlog/PLAN-{nnn}-{slug}.md` from `.ai/templates/PLAN.md`.
-   In `standard` mode the planner identifies the governing specs and
+   In `standard` and `full` mode the planner identifies the governing specs and
    fills in **Contract changes** — the specs this plan will create, amend or
    retire, with their wording drafted in present tense, plus any ADR it needs
    or supersedes. That section is the plan's contract with the future and the

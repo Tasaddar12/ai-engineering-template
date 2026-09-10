@@ -2,24 +2,28 @@
 # Edit this once when you drop the template into a project.
 
 project:
-  name: ai-engineering-template
+  name: CHANGEME
   # One line. What this project is, for an agent that has never seen it.
-  summary: Markdown instructions and records for approved engineering orchestration.
+  summary: CHANGEME
 
 # ---------------------------------------------------------------------------
 # mode — how much process this project gets. Same template either way; the
 # mode decides which documents are required and which commands are in play.
 #
 #   light     Small or short-lived work. One plan at a time in plans/active/.
-#             A consuming project may keep acceptance criteria in its plans.
+#             No specs required — acceptance criteria live in the plan itself.
 #             Agents in play: implementor, verifier.
-#             Skip: spec creation and plan-checker when the chosen scope permits.
+#             Skip: specs/, plan-checker.
 #
 #   standard  Default. Specs are the contract; plans move through the full
 #             lifecycle; amendments are recorded.
 #             Agents in play: planner, plan-checker, implementor, verifier, scribe.
 #
-# Only light and standard are supported by the supplied roles and commands.
+#   full      Long-running or multi-team work. Adds a roadmap of phases above
+#             plans, and an explicit acceptance/UAT gate before done.
+#             Agents in play: all of them.
+#
+# Raising the mode later is additive — nothing has to be rewritten.
 # ---------------------------------------------------------------------------
 mode: standard
 
@@ -63,8 +67,7 @@ lifecycle:
   fix_stages: [open, done]
 
 # Identifier formats. Numbers are zero-padded and allocated by taking the
-# highest issued number in current files, Git history and reserved run blocks.
-# Never reuse a deleted identifier; allocate sibling track blocks before branching.
+# highest existing number and adding one.
 ids:
   spec: SPEC-{nnn}-{slug}
   plan: PLAN-{nnn}-{slug}
@@ -77,16 +80,15 @@ ids:
   meeting: MEET-{date}-{slug}
   journal: "{date}"
 
-# The tier reminder is advisory. No hook is registered by this YAML file.
-# The optional confinement example can deny some writes in a compatible host;
-# it is not a sandbox. See .ai/hooks/README.md.
+# Enforcement posture. Advisory means hooks inform and never block; the
+# behavior in RULES.md is carried by agent prompts, not by walls.
+# Walls are what produce refusals.
 enforcement: advisory
 
 # Commands the verifier should run to check reality. Fill these in per project;
 # an empty list means the verifier inspects behavior manually and says so.
 verification:
-  commands:
-    - git diff --check
+  commands: []
     # - pytest -q
     # - npm test
     # - ruff check .
@@ -97,8 +99,9 @@ verification:
 #
 # Vocabulary, because the rest of this block is meaningless without it:
 #   run    One /orchestrate invocation. ORCH-{nnn}, manifest in state/.
-#   wave   A dependency layer. After the prior wave is terminal, start only
-#          tracks whose own prerequisites have merged; park blocked dependents.
+#   wave   A dependency layer. Wave N+1 starts only after every wave-N track
+#          has merged, so a dependent plan is always built on top of code that
+#          already contains what it depends on.
 #   track  A group of plans sharing one worktree, one branch, one PR. Plans in
 #          a track run in sequence; tracks in a wave run in parallel.
 # ---------------------------------------------------------------------------
@@ -108,11 +111,16 @@ orchestration:
   # mess to unpick.
   worktree_root: .worktrees
 
-  # Manual dispatch: open a separate host session rooted in each assigned
-  # worktree and give it .ai/commands/orchestrate-track.md plus run/track IDs.
-  # Background dispatch requires a separately configured, tested launcher,
-  # permissions and completion signaling. This repository supplies none.
-  dispatch: manual         # manual | background (host integration required)
+  # How a wave's tracks are started.
+  #   background  /orchestrate launches a session per track and is woken as each
+  #               exits, so a run finishes without anyone watching for a wave to
+  #               complete. Needs a host-provided agent launcher.
+  #   manual      /orchestrate prints the commands and stops. Every wave
+  #               boundary then needs a person.
+  # Background tracks run unattended, so they must not hit a permission prompt —
+  # pair this with the worktree confinement hook rather than waiving prompts on
+  # their own.
+  dispatch: background     # background | manual
 
   # How many tracks may be in flight at once within a wave. This is the real
   # cost dial: each track is a full pipeline of subagents. Raising it past the
@@ -121,7 +129,7 @@ orchestration:
 
   # Branch the run starts from and merges back into. Empty means whatever
   # branch /orchestrate was invoked on.
-  base_branch: main
+  base_branch: ""
 
   # Branch naming for tracks. {run} -> ORCH-007, {track} -> w1t2
   branch_prefix: orch
@@ -141,9 +149,8 @@ orchestration:
   #   auto    Detect from `git remote get-url origin`: github.com or a
   #           GitHub Enterprise host -> gh; gitlab.com or a self-hosted GitLab
   #           -> glab. Falls back to `none` if neither CLI is present or authed.
-  #   none    Skip PR creation. Report local review results; do not silently
-  #           substitute a local merge for a requested PR delivery.
-  forge: github            # auto | github | gitlab | none
+  #   none    Skip PR creation. The run continues and reports the branch.
+  forge: auto              # auto | github | gitlab | none
 
   # How a cleared track lands. `squash` keeps the base branch history one
   # commit per track; `merge` preserves the per-step commits the implementor
@@ -152,8 +159,8 @@ orchestration:
 
   # Applies to the scheduler, which is the only thing that merges — a track
   # never merges itself, so an `ask` here cannot hang an unattended track.
-  #   ask     Ask once per wave only if the user has not already authorized it.
-  #   auto    Merge cleared tracks only under existing user merge authority.
+  #   ask     Ask once per wave, listing every track that cleared together.
+  #   auto    Merge as each track reports ready. Hands-off end to end.
   #   never   Leave the PR open and report it. Nothing is merged.
   auto_merge: ask          # ask | auto | never
 

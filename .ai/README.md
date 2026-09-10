@@ -3,21 +3,19 @@ tier: contract
 authority: human
 id: AI-README
 title: How .ai/ works
+links: [RULES, TRUTH-MAP]
 ---
 
 # `.ai/`
 
 The working memory of this project: intent, contracts, plans, state, history.
-[Agents](agents/README.md) define role scopes and [commands](commands/README.md)
-own detailed procedures and provide entry points for common tasks.
-[RULES](RULES.md) defines record requirements. Project records and core
-templates also live here.
+Agent *behavior* lives in [agents](agents/) and [commands](commands/); the project's *content*
+lives here.
 
 **Agents: read [RULES.md](RULES.md) first.** It answers the question that
 matters most — what you are allowed to change, and what to do when a document
 contradicts reality. The short version: fix the document, record why, keep
-going within the user-approved scope. [AGENTS.md](../AGENTS.md) defines the
-report and decision boundary before unapproved action.
+going. Working around a stale document is the only forbidden move.
 
 ## Layout
 
@@ -25,11 +23,10 @@ report and decision boundary before unapproved action.
 .ai/
 ├── RULES.md            Rules of engagement. Mutability tiers, amendment protocol.
 ├── truth-map.md        Which file owns which fact. One owner per fact, always.
-├── config.yaml         Mode (light/standard), paths, id formats.
+├── config.yaml         Mode (light/standard/full), paths, id formats.
 ├── specs/              What "correct" means. SPEC-{nnn}-{slug}.md
 ├── decisions/          Why we chose an approach. ADR-{nnnn}-{slug}.md
 │   ├── amendments/     Why a contract changed. AMD-{nnn}-{slug}.md
-│   ├── retired/        Superseded ADRs, with their rationale intact.
 │   └── meetings/       What was said, and when. Never a requirement.
 ├── plans/              How we get there — stage is the directory:
 │   ├── intake/         Captured problems, not yet planned.
@@ -42,14 +39,8 @@ report and decision boundary before unapproved action.
 ├── fixes/              Single defects. Short lifecycle, same idea:
 │   ├── open/           Being diagnosed or fixed.
 │   └── done/2026-Q3/   Fixed and proved by a check.
-├── agents/             Detailed role prompts.
-├── commands/           Authoritative command procedures.
-├── policies/           Empty placeholder (.gitkeep only).
-├── gates/              Empty placeholder (.gitkeep only).
-├── hooks/              Optional, unregistered Bash examples.
-├── research/           General research evidence.
 ├── state/
-│   ├── PROJECT.md      Purpose, non-goals and human constraints.
+│   ├── PROJECT.md      Why we're building this. Human authority.
 │   ├── STATE.md        Now / next / blockers. Churns constantly.
 │   ├── journal/        Append-only daily log.
 │   └── orchestration/  One board per /orchestrate run; per-track research
@@ -80,8 +71,8 @@ read; keep them apart and every spec is true at every commit. See
 
 | Tier | Files | Agent may |
 |---|---|---|
-| `intent` | `state/PROJECT.md`, `RULES.md` | Edit only under explicit human instruction |
-| `contract` | Specs, ADRs and operating contracts | Follow the amendment protocol |
+| `intent` | `state/PROJECT.md`, `RULES.md` | Ask |
+| `contract` | `specs/`, `decisions/` | Amend, with a record |
 | `plan` | `plans/`, `fixes/` | Rewrite |
 | `status` | `state/STATE.md`, `state/orchestration/ORCH-*.md` | Overwrite |
 | `log` | `state/journal/`, `amendments/`, research briefs | Append |
@@ -112,17 +103,16 @@ read; keep them apart and every spec is true at every commit. See
 lifecycle. It works out which plans can be built in parallel and which have to
 wait, then creates a git worktree per group; `/orchestrate-track` builds one of
 those groups, in its own session — see
-[docs/ORCHESTRATION.md](../docs/ORCHESTRATION.md). For one plan, `/plan-start` is the single-plan route. A worktree or PR is still
-required when the user's instruction or project policy calls for it.
+[docs/ORCHESTRATION.md](../docs/ORCHESTRATION.md). For one plan, `/plan-start`
+is still the right thing; a single plan does not need a worktree and a PR loop.
 
-Slash-style names above identify the Markdown files in commands; they are not
-registered tools in this checkout. The default dispatch is manual. There is no
-build step or launcher. Optional [hooks](hooks/README.md) need Bash and a
-compatible host; copying the files does not activate them.
+Everything is plain `git mv` and markdown underneath. There is no build step,
+no dependency, and nothing to install — you can drive the whole lifecycle by
+hand if you prefer.
 
 ## Scaling down
 
-A consuming project can choose less ceremony for a small change. Set `mode: light`
+A one-afternoon project does not need specs and a roadmap. Set `mode: light`
 in [config.yaml](config.yaml) and use `plans/active/` with acceptance criteria
 written directly in the plan. The rules in `RULES.md` still apply — they are
 what stops an agent from bending code around a stale note, and that failure

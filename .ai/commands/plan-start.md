@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Move a plan to active and implement it
 argument-hint: <plan-id>
 ---
@@ -11,8 +9,7 @@ Start work on: **$1**
    blocking question has actually been answered before proceeding — and record
    the answer in the plan.
 2. Check `lifecycle.max_active` in `.ai/config.yaml`. If `active/` is already
-   at the limit, report the contention and honor the approved concurrency scope;
-   this is advisory guidance, not a new permission gate.
+   at the limit, say which plans are there and ask before adding another.
 3. `git mv` the file into `.ai/plans/active/`. Do not add a status field —
    the directory is the stage.
 4. Update **Now** and **Next** in `.ai/state/STATE.md`.

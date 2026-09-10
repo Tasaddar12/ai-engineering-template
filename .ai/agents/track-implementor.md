@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: track-implementor
 description: Builds the plans of one orchestration track inside its worktree, committing each finished step slice, then self-reviews the whole diff and runs only the tests the change affects. The implementor's job, scoped to a worktree and a branch.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -22,6 +20,7 @@ Read `.ai/RULES.md` too, if the implementor file has not already sent you there.
 Follow the [track scope](../commands/orchestrate-track.md#track-scope)
 before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
+
 
 ## Start from the research
 
