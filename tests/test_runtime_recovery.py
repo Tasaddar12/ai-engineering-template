@@ -44,20 +44,37 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(len(runner.prs), 1)
 
     def test_retry_failed_integration_checks_reuses_review(self):
+        self.config['tracks'].append(self.track('b', 21))
         runner = self.runner()
-        checks = runner.checks
+        checks, phase, finish = runner.checks, runner.phase, runner.finish_merge
         calls = []
+        allocated, merged = threading.Event(), threading.Event()
+        def ordered_phase(track, name, **kwargs):
+            if name == 'build':
+                if track['id'] == 'b':
+                    allocated.set()
+                else:
+                    self.assertTrue(allocated.wait(10))
+            if track['id'] == 'b' and name == 'review-1':
+                self.assertTrue(merged.wait(30))
+            return phase(track, name, **kwargs)
+        def after_merge(track):
+            finish(track)
+            if track['id'] == 'a':
+                merged.set()
         def fail_integration(path, track):
-            calls.append(path)
-            if len(calls) == 2:
-                raise orch.Blocked('Temporary check infrastructure failure')
+            if track['id'] == 'b':
+                calls.append(path)
+                if len(calls) == 2:
+                    self.assertTrue((path / 'src/a.txt').exists())
+                    raise orch.Blocked('Temporary check infrastructure failure')
             checks(path, track)
-        runner.checks = fail_integration
+        runner.checks, runner.phase, runner.finish_merge = fail_integration, ordered_phase, after_merge
         self.assertFalse(runner.run())
-        before = copy.deepcopy(runner.state['tracks']['a']['phase_attempts'])
-        runner.recover('retry', 'a')
+        before = copy.deepcopy(runner.state['tracks']['b']['phase_attempts'])
+        runner.recover('retry', 'b')
         self.assertTrue(runner.run())
-        self.assertEqual(before, runner.state['tracks']['a']['phase_attempts'])
+        self.assertEqual(before, runner.state['tracks']['b']['phase_attempts'])
 
     def test_reconcile_completed_interrupted_writer_without_replay(self):
         runner = self.runner()
@@ -239,6 +256,41 @@ class RecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(orch.Blocked, 'redirected'):
             runner.discard_generated(track)
         self.assertEqual((outside / 'notes').read_text(), 'keep')
+
+    def test_definitive_ci_failure_can_release_reservations(self):
+        runner = self.runner()
+        def failed(pr, head):
+            raise orch.Blocked('GitHub check did not pass: validate: FAILURE')
+        runner.wait_checks = failed
+        self.assertFalse(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(state['status'], 'blocked')
+        self.assertEqual(runner.prs[state['pr']]['state'], 'OPEN')
+        path, _ = runner.location(self.config['tracks'][0])
+        runner.recover('abandon', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        self.assertTrue(runner.state['tracks']['a']['released'])
+        self.assertTrue(path.is_dir())
+
+    def test_resource_waiter_does_not_block_parked_defect_audit(self):
+        self.config.update(residual_findings='park', tracks=[
+            self.track('a', 1, resources=['port:test'], env={'WORKER_MODE': 'residual'}),
+            self.track('b', 21, resources=['port:test']), self.track('c', 41)])
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        queue = runner.followup_queue()
+        self.assertTrue(queue['eligible'])
+        self.assertEqual({t['track'] for t in queue['parked_tracks']}, {'a', 'b'})
+        self.assertEqual(runner.state['tracks']['c']['status'], 'merged')
+        self.assertIn('followup_audit', runner.state)
+
+    def test_sync_updates_base_outside_clone_fetch_filter(self):
+        (self.forge / 'new-target.txt').write_text('new target', encoding='utf-8')
+        orch.git(self.forge, 'add', '.')
+        orch.git(self.forge, 'commit', '-m', 'Advance the filtered target branch')
+        orch.git(self.forge, 'push')
+        expected = orch.git(self.forge, 'rev-parse', 'HEAD')
+        orch.git(self.root, 'config', 'remote.origin.fetch', '+refs/heads/unrelated:refs/remotes/origin/unrelated')
+        self.assertEqual(self.runner().sync(), expected)
 
 
 if __name__ == '__main__':

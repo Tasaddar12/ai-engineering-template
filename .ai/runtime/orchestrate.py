@@ -30,6 +30,10 @@ class Blocked(RuntimeError):
     """Preserve this track for recovery; independent tracks may continue."""
 
 
+class RetryDelivery(Blocked):
+    """A target advance requires fresh integration, without another source review."""
+
+
 def require(condition, message):
     if not condition:
         raise Blocked(message)
@@ -203,6 +207,8 @@ FINDING = {
     'properties': {k: {'type': 'string'} for k in
                    ('key', 'kind', 'severity', 'title', 'path', 'detail')},
     'required': ['key', 'kind', 'severity', 'title', 'path', 'detail']}
+FINDING['properties']['kind']['enum'] = ['code', 'documentation', 'contract', 'question']
+FINDING['properties']['severity']['enum'] = ['critical', 'major', 'minor', 'cosmetic']
 RESULT_SCHEMA = {
     'type': 'object', 'additionalProperties': False,
     'properties': {
@@ -259,8 +265,8 @@ class Runner:
         cfg = self.config
         require(git(self.root, 'branch', '--show-current') == cfg['base_branch'], 'Base branch changed')
         require(not git(self.root, 'status', '--porcelain'), 'Base checkout is dirty')
-        git(self.root, 'fetch', cfg['remote'], cfg['base_branch'])
         ref = f"refs/remotes/{cfg['remote']}/{cfg['base_branch']}"
+        git(self.root, 'fetch', cfg['remote'], f"refs/heads/{cfg['base_branch']}:{ref}")
         git(self.root, 'merge', '--ff-only', ref)
         head = git(self.root, 'rev-parse', 'HEAD')
         require(head == git(self.root, 'rev-parse', ref), 'Base has local commits; not synchronized')
@@ -334,7 +340,9 @@ class Runner:
     def audit(self, track, path):
         self.ownership(track, path)
         state = self.state['tracks'][track['id']]
-        paths = git(path, 'diff', '--name-only', '--no-renames', '-z', state['base'], 'HEAD').split('\0')
+        # Imported target commits are owned by the target, not by this track.
+        baseline = state.get('integration_base', state['base'])
+        paths = git(path, 'diff', '--name-only', '--no-renames', '-z', baseline, 'HEAD').split('\0')
         records = {f['record'] for f in state['findings'].values()}
         records.update(state.get('plan_moves', {}).values())
         for changed in filter(None, paths):
@@ -696,15 +704,17 @@ class Runner:
         self.ownership(track, path)
         require(not git(path, 'status', '--porcelain'), 'Dirty track cannot be delivered')
         if state.get('delivery_head'):
-            require(git(path, 'rev-parse', 'HEAD') == state['delivery_head'], 'Delivery HEAD changed')
+            require(git(path, 'rev-parse', 'HEAD') == state.get('integration_head', state['delivery_head']),
+                    'Delivery HEAD changed')
         else:
             self.audit(track, path)
             require(git(path, 'rev-parse', 'HEAD') == state.get('integration_head', state['prepared_head']),
                     'Source changed after review')
+        self.update(state, delivery_stage='validating')
         base = self.sync()
         # Integration happens in the completed track. No worker is still writing it.
         git(path, 'merge', '--no-edit', base)
-        self.update(state, integration_head=git(path, 'rev-parse', 'HEAD'),
+        self.update(state, integration_base=base, integration_head=git(path, 'rev-parse', 'HEAD'),
                     checkpoint_head=git(path, 'rev-parse', 'HEAD'))
         self.checks(path, track)
         head = git(path, 'rev-parse', 'HEAD')
@@ -720,7 +730,9 @@ class Runner:
         self.gh('pr', 'edit', str(state['pr']), '--repo', self.config['github_repo'], '--body-file', str(body))
         self.wait_checks(state['pr'], head)
         with self.repo_mutex:
-            require(self.sync() == base, 'Target advanced during validation; retry delivery against latest target')
+            if self.sync() != base:
+                raise RetryDelivery('Target advanced during validation; retry delivery against latest target')
+            self.update(state, delivery_stage='merging')
             self.gh('pr', 'merge', str(state['pr']), '--repo', self.config['github_repo'],
                     '--merge', '--match-head-commit', head)
             self.finish_merge(track)
@@ -789,6 +801,7 @@ class Runner:
             'Other runnable PLAN work is finished; listed parked tracks and their dependencies remain incomplete. '
             'Read each report_file and its attempted correction proof. Inspect integrated code at base_sha '
             'and, for unmerged defects, the preserved source_worktree read-only. State which tree was tested. '
+            'Do not execute checks in a parked worktree whose workers_stopped flag is false; mark it unverified. '
             'Do not assume parked changes are present on the target. For each report, summarize '
             'whether it still reproduces, is a duplicate, appears fixed with proof, or is unverified. '
             'Prioritize remaining code defects. Do not edit code, close records, commit, or change '
@@ -895,8 +908,12 @@ class Runner:
         parked = {key for key, state in states.items() if state['status'] in ('blocked', 'abandoned')
                   and state['findings']}
         while True:
+            owners = [t for t in self.config['tracks'] if t['id'] in parked and
+                      states[t['id']]['status'] != 'pending' and not states[t['id']].get('cleaned') and
+                      not states[t['id']].get('released')]
             waiting = {t['id'] for t in self.config['tracks'] if states[t['id']]['status'] == 'pending'
-                       and any(dep in parked for dep in t['depends_on'])}
+                       and (any(dep in parked for dep in t['depends_on']) or
+                            any(self.conflict(t, owner) for owner in owners))}
             if waiting <= parked:
                 break
             parked.update(waiting)
@@ -905,6 +922,8 @@ class Runner:
                  'FIX': [], 'INTAKE': [], 'parked_tracks': [
                      {'track': t['id'], 'plans': t['plans'], 'depends_on': t['depends_on'],
                       'worktree': str(self.location(t)[0]), 'status': states[t['id']]['status'],
+                      'workers_stopped': not states[t['id']].get('inflight_phase') or
+                                         states[t['id']].get('worker_stopped', False),
                       'reason': states[t['id']].get('reason', 'Waiting on a parked dependency')}
                      for t in self.config['tracks'] if t['id'] in parked]}
         all_states = list(states.values())
@@ -991,8 +1010,9 @@ class Runner:
                         try:
                             future.result()
                         except Exception as exc:
-                            status = ('merged' if state['status'] == 'merged' else
-                                      'delivering' if is_delivery and state.get('delivery_head') else 'blocked')
+                            uncertain_merge = is_delivery and state.get('delivery_stage') == 'merging'
+                            status = ('merged' if state['status'] == 'merged' else 'delivering'
+                                      if uncertain_merge or isinstance(exc, RetryDelivery) else 'blocked')
                             self.update(state, status=status, reason=str(exc))
             queue = self.followup_queue()
             atomic_json(self.directory / 'followups.json', queue)
