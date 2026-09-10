@@ -25,7 +25,7 @@ project:
 #
 # Raising the mode later is additive — nothing has to be rewritten.
 # ---------------------------------------------------------------------------
-mode: standard
+mode: light
 
 # Where things live. Paths are relative to the repository root.
 # Change these only if the project already has a conflicting convention.
