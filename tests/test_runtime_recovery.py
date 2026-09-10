@@ -240,6 +240,56 @@ class RecoveryTests(unittest.TestCase):
         orch.git(self.root, 'push')
         self.assertEqual(runner.followup_queue()['FIX'], [])
 
+    def test_closed_abandoned_reports_are_not_resurrected_from_receipts(self):
+        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'blocked-findings'
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        path, _ = runner.location(self.config['tracks'][0])
+        runner.recover('abandon', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        findings = runner.state['tracks']['a']['findings']
+        self.seed({
+            f".ai/fixes/done/2026-Q3/{findings['code']['id']}-proven.md": '# Closed with regression proof\n',
+            f".ai/plans/abandoned/{findings['documentation']['id']}-promoted.md": '# Promoted to a PLAN\n',
+        })
+        config = copy.deepcopy(self.config)
+        config.update(run_id='ORCH-002', tracks=[self.track('b', 21)])
+        later = FakeForge(config, self.forge)
+        self.assertTrue(later.run())
+        for origin in (runner, later):
+            with self.subTest(run=origin.config['run_id']):
+                queue = origin.followup_queue()
+                self.assertEqual([item['id'] for item in queue['FIX']], [])
+                self.assertEqual([item['id'] for item in queue['INTAKE']], [])
+        self.assertTrue((path / 'src/a.txt').is_file())
+
+    def test_abandoned_findings_use_current_open_reports(self):
+        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'blocked-findings'
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        path, _ = runner.location(self.config['tracks'][0])
+        runner.recover('abandon', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        findings = runner.state['tracks']['a']['findings']
+        queue = runner.followup_queue()
+        self.assertEqual(queue['FIX'], [findings['code']])
+        self.assertEqual(queue['INTAKE'], [findings['documentation']])
+        record = f".ai/fixes/open/{findings['code']['id']}-current-evidence.md"
+        self.seed({record: '# Current evidence after the abandoned attempt\n'})
+        config = copy.deepcopy(self.config)
+        config.update(run_id='ORCH-002', tracks=[self.track('b', 21)])
+        later = FakeForge(config, self.forge)
+        self.assertTrue(later.run())
+        for origin in (runner, later):
+            with self.subTest(run=origin.config['run_id']):
+                queue = origin.followup_queue()
+                self.assertEqual(len(queue['FIX']), 1)
+                current = queue['FIX'][0]
+                self.assertEqual(current['report_file'], str(self.root / record))
+                self.assertEqual(current['record'], record)
+                self.assertEqual(current['source_worktree'], str(self.root))
+                self.assertEqual(queue['INTAKE'], [findings['documentation']])
+        self.assertTrue(Path(findings['code']['report_file']).is_file())
+        self.assertTrue((path / 'src/a.txt').is_file())
+
     def test_generated_directory_symlink_is_preserved(self):
         runner = self.runner()
         track = self.config['tracks'][0]

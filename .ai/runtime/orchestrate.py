@@ -930,13 +930,22 @@ class Runner:
         for receipt in self.runtime.glob('*/state.json'):
             if receipt != self.state_path:
                 all_states.extend(json.loads(receipt.read_text(encoding='utf-8'))['tracks'].values())
+        open_reports = {'-'.join(report.stem.split('-')[:2]): report
+                        for kind, folder in (('FIX', '.ai/fixes/open'), ('INTAKE', '.ai/plans/intake'))
+                        for report in (self.root / folder).glob(f'{kind}-*.md')}
+        closed = {'-'.join(report.stem.split('-')[:2])
+                  for kind, folder in (('FIX', '.ai/fixes/done'), ('INTAKE', '.ai/plans/abandoned'))
+                  for report in (self.root / folder).rglob(f'{kind}-*.md')}
         for state in all_states:
             for item in state['findings'].values():
-                report = self.root / item['record']
-                if state['status'] == 'merged':
-                    if not report.is_file():
-                        continue  # A closed/moved report must not be resurrected from an old receipt.
-                    item = {**item, 'report_file': str(report), 'source_worktree': str(self.root)}
+                if item['id'] in closed:
+                    continue  # Record lifecycle wins over every receipt, including abandoned tracks.
+                report = open_reports.get(item['id'])
+                if report is not None:
+                    item = {**item, 'record': report.relative_to(self.root).as_posix(),
+                            'report_file': str(report), 'source_worktree': str(self.root)}
+                elif state['status'] == 'merged':
+                    continue
                 queue['FIX' if item['kind'] == 'code' else 'INTAKE'].append(dict(item))
         for kind, folder in (('FIX', '.ai/fixes/open'), ('INTAKE', '.ai/plans/intake')):
             known = {item['id'] for item in queue[kind]}

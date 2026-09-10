@@ -34,7 +34,7 @@ resolve 'src\..\file.py'; printf '\n'
 resolve '/repo/src/../file.py'; printf '\n'
 """), ['C:/Repo/worktree/src/file.py', 'C:/Repo/sibling/file.py', 'C:/Repo/worktree/file.py', '/repo/file.py'])
 
-    def test_hook_accepts_owned_paths_and_rejects_sibling_prefixes(self):
+    def invoke_hook(self, tool, **tool_input):
         script = r'''
 git() {
   case "$*" in
@@ -45,6 +45,11 @@ git() {
 }
 source "$1"
 '''
+        payload = json.dumps({'cwd': 'C:/Repo/worktree', 'tool_name': tool, 'tool_input': tool_input})
+        return subprocess.run([BASH, '-c', script, 'hook-test', HOOK.as_posix()], input=payload,
+                              text=True, capture_output=True, check=True).stdout.strip()
+
+    def test_hook_accepts_owned_paths_and_rejects_sibling_prefixes(self):
         for path, denied in [('C:/Repo/worktree/src/a.py', False),
                              (r'C:\Repo\worktree\src\a.py', False),
                              ('C:/Repo/worktree-other/a.py', True),
@@ -52,12 +57,25 @@ source "$1"
                              ('C:/Repo/sibling/a"quoted.py', True),
                              ('../sibling/a.py', True)]:
             with self.subTest(path=path):
-                payload = json.dumps({'cwd': 'C:/Repo/worktree', 'tool_name': 'Write', 'tool_input': {'file_path': path}})
-                output = subprocess.run([BASH, '-c', script, 'hook-test', HOOK.as_posix()], input=payload,
-                                        text=True, capture_output=True, check=True).stdout.strip()
+                output = self.invoke_hook('Write', file_path=path)
                 self.assertEqual(bool(output), denied)
                 if denied:
                     self.assertEqual(json.loads(output)['hookSpecificOutput']['permissionDecision'], 'deny')
+
+    def test_standard_devices_are_allowed(self):
+        for path in ('/dev/null', '/dev/zero', '/dev/full', '/dev/random', '/dev/urandom',
+                     '/dev/stdout', '/dev/stdin', '/dev/stderr', '/dev/tty',
+                     '/dev/fd/0', '/dev/fd/1', '/dev/fd/2', '/dev/fd/63'):
+            with self.subTest(path=path):
+                self.assertEqual(self.invoke_hook('Write', file_path=path), '')
+                self.assertEqual(self.invoke_hook('Bash', command=f"printf x > '{path}'"), '')
+
+    def test_device_exemption_keeps_normal_paths_confined(self):
+        for path in ('/dev/null-output', '/dev/fd/not-a-number', '/dev/fd/1/file.txt',
+                     '/DEV/STDOUT', '/tmp/outside.txt', '/dev/zero/../outside.txt'):
+            with self.subTest(path=path):
+                output = self.invoke_hook('Bash', command=f"printf x > '{path}'")
+                self.assertEqual(json.loads(output)['hookSpecificOutput']['permissionDecision'], 'deny')
 
 
 if __name__ == '__main__':

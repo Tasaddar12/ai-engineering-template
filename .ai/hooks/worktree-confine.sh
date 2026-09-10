@@ -120,7 +120,17 @@ n_root="$(norm "$root")"
 n_gitdir="$(norm "$gitdir")"
 n_scratch="$(norm "$(field scratchpad_dir)")"
 
+device_path() {
+  # Standard stream devices and numeric process file descriptors.
+  case "$1" in
+    /dev/null|/dev/zero|/dev/full|/dev/random|/dev/urandom|\
+    /dev/stdin|/dev/stdout|/dev/stderr|/dev/tty) return 0 ;;
+  esac
+  [[ "$1" =~ ^/dev/fd/[0-9]+$ ]]
+}
+
 inside() {
+  device_path "$1" && return 0
   local p; p="$(norm "$1")"
   [[ "$p" == "$n_root" || "$p" == "$n_root"/* ]] && return 0
   [[ -n "$n_gitdir" && ( "$p" == "$n_gitdir" || "$p" == "$n_gitdir"/* ) ]] && return 0
