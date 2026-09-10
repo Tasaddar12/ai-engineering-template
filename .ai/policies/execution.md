@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Execution and delivery policy
-links: [AMD-002]
 ---
 > Contract: follow the approved scope and document evidence for each handoff.
 

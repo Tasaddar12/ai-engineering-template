@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Plan lifecycle
-links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 

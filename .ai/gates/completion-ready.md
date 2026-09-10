@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Completion ready
-links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 

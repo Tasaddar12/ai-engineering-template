@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-triage
 description: Turns a reviewer's findings into fix records a fresh agent can act on, separating what blocks the merge from what gets captured. Runs inside the track worktree, between the reviewer and the fixer. Writes records, never code.
 tools: Read, Grep, Glob, Bash, Write, Edit

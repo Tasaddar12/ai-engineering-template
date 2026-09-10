@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Workflows
-links: [AMD-002]
 ---
 
 # Workflows

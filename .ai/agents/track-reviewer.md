@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-reviewer
 description: Reviews a track's pull request cold — the plan, the contracts, the documentation and the diff, and deliberately nothing else. Never sees the research or the implementor's reasoning. Read-only; it reports findings and does not fix them.
 tools: Read, Grep, Glob, Bash

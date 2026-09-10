@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Implement a bounded change
-links: [AMD-002]
 ---
 
 # Implement a bounded change

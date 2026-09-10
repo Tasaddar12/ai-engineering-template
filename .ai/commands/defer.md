@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Capture a problem you found but should not fix now, so it survives the session
 argument-hint: <what's wrong, and where>
 ---

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Move a plan to active and implement it
 argument-hint: <plan-id>
 ---

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: tester
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Verifies approved outcomes and invariants using actual checks on an identified revision.

@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Optional hook examples
-links: [AMD-002]
 ---
 
 # Optional hook examples

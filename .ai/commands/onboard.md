@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Set up the .ai/ structure for this project, or brief yourself on an existing one
 ---
 

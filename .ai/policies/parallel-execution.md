@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Parallel execution policy
-links: [AMD-002]
 ---
 > Contract: reserve ownership before approved dispatch; report uncertain
 > scheduling instead of guessing.

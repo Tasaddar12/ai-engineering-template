@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: decoupler
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Separates dependency from contention and proposes bounded tasks with clear interfaces and ownership.

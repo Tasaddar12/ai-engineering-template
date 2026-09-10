@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Sweep finished plans into their period folder, and abandon stale ones
 argument-hint: [period]
 ---

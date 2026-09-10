@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Execute independent tracks
-links: [AMD-002]
 ---
 
 # Execute independent tracks

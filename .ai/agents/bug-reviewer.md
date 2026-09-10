@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: bug-reviewer
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Triages evidence into confirmed defects, unanswered questions or contract changes without repairing them.

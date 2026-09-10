@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Remove worktrees and branches left by an orchestration run, after checking nothing unmerged is lost
 argument-hint: [run-id | --all | --dry-run]
 ---

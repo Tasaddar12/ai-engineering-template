@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: e2e
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Checks agreed user journeys across system boundaries and records observable end-to-end outcomes.

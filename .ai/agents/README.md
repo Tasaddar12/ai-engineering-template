@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Agent roles
-links: [AMD-002]
 ---
 
 # Agent roles

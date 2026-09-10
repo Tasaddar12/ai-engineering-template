@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-documentor
 description: Makes the record true before a track's work is reviewed — specs describe what shipped, docs describe how to use it — then validates its own output against the code. Runs inside the track worktree, after the implementor and after every round of fixes.
 tools: Read, Grep, Glob, Bash, Write, Edit

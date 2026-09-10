@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Initialize project context
-links: [AMD-002]
 ---
 
 # Initialize project context

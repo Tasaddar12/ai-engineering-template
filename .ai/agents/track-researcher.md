@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-researcher
 description: Researches one plan inside its orchestration worktree and writes the brief the implementor and later the bug-fixer both work from. Read-only over code — it investigates, it never changes anything.
 tools: Read, Grep, Glob, Bash, Write, Edit

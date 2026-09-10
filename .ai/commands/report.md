@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Inspect and route a finding without repairing it.
 title: Report and route a finding
 ---

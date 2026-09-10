@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Turn a meeting or design document into ADRs, intent changes and intake items
 argument-hint: <path to the document, or a directory of them>
 ---

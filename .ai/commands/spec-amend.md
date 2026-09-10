@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Correct a spec or ADR that turns out to be wrong, with a recorded amendment
 argument-hint: <spec-id> <what's wrong with it>
 ---

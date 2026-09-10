@@ -1,5 +1,17 @@
 # Agent entry point
 
+This repository is being prepared as a reusable template. Do not create
+repo-specific plans, specs, decisions, amendments or journal entries for
+template cleanup unless the user explicitly requests them. The record workflows
+describe how an adopting project uses the template.
+
+**Always commit the changes made for a task before your final response, with a
+nonempty, descriptive commit message.** This is standing authorization for
+local commits: do not leave completed work uncommitted or ask for commit
+permission again. This requirement overrides role or command instructions
+that say to commit only when separately asked. Honor an explicit user
+instruction not to commit; read-only tasks need no empty commit.
+
 Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/state/PROJECT.md),
 [STATE](.ai/state/STATE.md), the selected record, and the relevant
 [command](.ai/commands/README.md) and [role](.ai/agents/README.md).

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Build one orchestration track in its worktree — research, implement, document, PR, review loop — then report ready or stopped
 argument-hint: <run-id> <track-id>
 ---

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-implementor
 description: Builds the plans of one orchestration track inside its worktree, committing each finished step slice, then self-reviews the whole diff and runs only the tests the change affects. The implementor's job, scoped to a worktree and a branch.
 tools: Read, Grep, Glob, Bash, Write, Edit

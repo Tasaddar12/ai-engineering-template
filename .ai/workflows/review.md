@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Review a proposal or result
-links: [AMD-002]
 ---
 > Contract: follow these steps within the approved scope.
 

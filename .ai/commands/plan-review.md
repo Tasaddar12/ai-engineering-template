@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 description: Verify a finished plan against specs and observed behavior
 argument-hint: <plan-id>
 ---

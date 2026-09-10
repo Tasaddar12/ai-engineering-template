@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: reviewer
 tools: Read, Grep, Glob, Bash
 description: Independently reviews the actual result against current contracts and reports actionable defects.

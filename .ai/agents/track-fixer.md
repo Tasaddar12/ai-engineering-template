@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: track-fixer
 description: Fixes the defects triage recorded for a track, working from the original plan and research brief with no memory of the review. Adds the regression check for each, tests only what it changed, and commits per fix.
 tools: Read, Grep, Glob, Bash, Write, Edit

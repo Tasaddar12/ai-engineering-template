@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: pr-agent
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Prepares reviewable delivery and performs only the granted commit, push, PR or merge actions.

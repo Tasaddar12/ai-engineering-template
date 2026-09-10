@@ -3,7 +3,6 @@ tier: contract
 authority: agent
 description: Verify a PLAN or FIX against current specs and observed behavior, including before merge.
 argument-hint: <PLAN-or-FIX-id> [revision]
-links: [AMD-002]
 ---
 
 # Verify a plan or fix

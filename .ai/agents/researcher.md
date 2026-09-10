@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: researcher
 tools: Read, Grep, Glob, Bash, Write, Edit
 description: Gathers bounded evidence about the actual code and records useful findings without deciding behavior.

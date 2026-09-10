@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Command procedures
-links: [AMD-002]
 ---
 
 # Command procedures

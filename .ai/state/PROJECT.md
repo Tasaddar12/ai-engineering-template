@@ -3,7 +3,6 @@ tier: intent
 authority: human
 id: PROJECT
 title: AI engineering orchestration template
-links: [RULES]
 ---
 
 # AI engineering orchestration template
@@ -15,8 +14,8 @@ keeps project context, current specifications, proposed work, defect reports,
 decisions and evidence in Git alongside the project they describe. The user's
 copied material supplies the detailed command and role guidance.
 
-The project is the template itself. Its current interfaces are specified in
-[SPEC-002](../specs/SPEC-002-orchestration-template.md). Repository navigation
+The project is the template itself. There are no project-specific specs,
+decisions, amendments or delivery records for this repository. Navigation
 starts at [AGENTS.md](../../AGENTS.md); adoption into a different codebase uses
 [ADOPTING.md](../../docs/ADOPTING.md) and a newly completed PROJECT template.
 
@@ -39,8 +38,8 @@ The [approval policy](../policies/approval.md) owns the user's report, summary
 and decision requirement. The chosen structure keeps PROJECT beside STATE,
 flat templates, detailed role files, command procedures, policies and gates.
 Worktree ownership and authorized publication follow the
-[execution policy](../policies/execution.md). Current specifications and their
-PR updates follow the [record policy](../policies/records.md).
+[execution policy](../policies/execution.md). Record guidance for projects
+adopting the template is in the [record policy](../policies/records.md).
 
 ## Out of bounds for agents
 

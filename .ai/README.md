@@ -3,7 +3,6 @@ tier: contract
 authority: human
 id: AI-README
 title: How .ai/ works
-links: [RULES, TRUTH-MAP, AMD-002]
 ---
 
 # `.ai/`

@@ -1,7 +1,6 @@
 ---
 tier: contract
 authority: agent
-links: [AMD-002]
 name: orchestrator
 description: Works out which plans can be built at the same time and which have to wait. Produces the wave and track plan for an /orchestrate run. Read-only over the codebase — it schedules work, it never does it.
 tools: Read, Grep, Glob, Bash, Write, Edit

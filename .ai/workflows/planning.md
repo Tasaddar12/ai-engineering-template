@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Plan approved outcomes
-links: [AMD-002]
 ---
 
 # Plan approved outcomes

@@ -2,7 +2,6 @@
 tier: contract
 authority: agent
 title: Record maintenance policy
-links: [AMD-002]
 ---
 
 # Record maintenance policy

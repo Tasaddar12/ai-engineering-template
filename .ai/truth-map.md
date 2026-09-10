@@ -3,7 +3,6 @@ tier: contract
 authority: human
 id: TRUTH-MAP
 title: Which file owns which fact
-links: [RULES, AMD-002]
 ---
 
 # Truth Map
