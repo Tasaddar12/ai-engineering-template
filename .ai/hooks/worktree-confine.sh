@@ -61,8 +61,7 @@ field() {
 # collapse doubled slashes, strip a trailing slash, lowercase (Windows paths
 # are case-insensitive and git and the tool layer disagree on drive-letter case).
 norm() {
-  local p
-  p=$(printf '%s' "$1" | tr '\\' '/')
+  local p="${1//\\//}"
   while [[ "$p" == *"//"* ]]; do p="${p//\/\//\/}"; done
   p="${p%/}"
   printf '%s' "$p" | tr '[:upper:]' '[:lower:]'
@@ -70,8 +69,7 @@ norm() {
 
 # Resolve a possibly-relative path against $cwd and flatten any ".." segments.
 resolve() {
-  local p
-  p=$(printf '%s' "$1" | tr '\\' '/')
+  local p="${1//\\//}"
   case "$p" in
     /*|?:/*) ;;                 # already absolute (POSIX or C:/...)
     *) p="$cwd/$p" ;;
