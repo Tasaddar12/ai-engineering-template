@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Correct a spec or ADR that turns out to be wrong, with a recorded amendment
 argument-hint: <spec-id> <what's wrong with it>
 ---
@@ -22,8 +20,8 @@ project whose specs are being ignored.
      constraints and non-goals outrank any spec. If it does, this is a blocker
      for a human, not an amendment.
 2. **Write the record first.** Copy `.ai/templates/AMENDMENT.md` to
-   `.ai/decisions/amendments/AMD-{nnn}-{slug}.md`, using config's ID allocation rules,
-   including Git history and reserved blocks. Fill in all four sections: what the document said, what is
+   `.ai/decisions/amendments/AMD-{nnn}-{slug}.md`, numbering after the highest
+   existing. Fill in all four sections: what the document said, what is
    actually true, why they diverged, what you changed it to.
 3. **Rewrite the document so it states the new truth — and only that.**
    - **Replace the wording; never annotate it.** Do not add "was previously",

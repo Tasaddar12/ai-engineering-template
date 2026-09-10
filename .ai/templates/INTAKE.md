@@ -6,7 +6,7 @@ title: <the problem, in a few words>
 found: YYYY-MM-DD
 found_by: <agent or person>
 found_while: PLAN-{nnn}
-kind: bug            # suspected bug | drift | debt | idea | question
+kind: bug            # bug | drift | debt | idea | question
 links: []
 ---
 
@@ -39,7 +39,7 @@ Naming: INTAKE-{nnn}-{slug}.md in .ai/plans/intake/, numbered in its own
 sequence.
 
 Promotion goes by `kind`:
-  bug  — suspected nonconformance, awaiting confirmation        -> /fix INTAKE-{nnn}
+  bug  — code that contradicts a spec        -> /fix INTAKE-{nnn}
   anything that changes what correct means   -> /plan-new INTAKE-{nnn}
 
 Either way the new record gets a fresh number and links back to this id; this

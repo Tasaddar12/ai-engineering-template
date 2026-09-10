@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: scribe
 description: Keeps human-facing documentation true after the code has changed, and hunts duplicated facts. Use after work lands, or when docs are suspected of being stale.
 tools: Read, Grep, Glob, Bash, Write, Edit

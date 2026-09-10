@@ -3,26 +3,20 @@ tier: contract
 authority: agent
 title: Flat templates
 ---
+> Contract: follow linked owners rather than duplicating requirements.
 
 # Flat templates
 
-Copy a template and complete every applicable section. These templates
-define core records; roles and commands describe their reports.
-Remove example rows and instructional comments from completed records. PLAN
-and FIX stages come from their directories, not a metadata field.
+Copy the selected template and complete its fields. Templates model the output
+tier; no nested single-file folders are needed.
 
-Paths in inline code name repository-root destinations unless explicitly
-qualified. When copying a template to another depth, adjust relative Markdown
-links for the destination. AGENTS.snippet.md is intended for the repository
-root. Templates contain intentional placeholders; live records do not.
-
-- [ADR](ADR.md)
+- [Adr](ADR.md)
+- [Amendment](AMENDMENT.md)
+- [Fix](FIX.md)
+- [Intake](INTAKE.md)
+- [Journal](JOURNAL.md)
+- [Orchestration](ORCH-RUN.md)
+- [Plan](PLAN.md)
+- [Project](PROJECT.md)
+- [Spec](SPEC.md)
 - [AGENTS.snippet](AGENTS.snippet.md)
-- [AMENDMENT](AMENDMENT.md)
-- [FIX](FIX.md)
-- [INTAKE](INTAKE.md)
-- [JOURNAL](JOURNAL.md)
-- [ORCH-RUN](ORCH-RUN.md)
-- [PLAN](PLAN.md)
-- [PROJECT](PROJECT.md)
-- [SPEC](SPEC.md)

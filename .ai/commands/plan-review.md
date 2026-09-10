@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Verify a finished plan against specs and observed behavior
 argument-hint: <plan-id>
 ---
@@ -12,7 +10,8 @@ Verify **$1**.
 2. Delegate to the **verifier** agent. It grades against `.ai/specs/` and
    against observed behavior — **not** against the plan's checklist. Ticked
    boxes are not evidence.
-3. Confirm any additional acceptance gate explicitly named by the plan.
+3. If the project is in `mode: full`, also confirm the acceptance gate named by
+   the plan or the phase.
 4. Append a journal entry with the verdict.
 
 Report the verifier's verdict verbatim, including any failing command output.

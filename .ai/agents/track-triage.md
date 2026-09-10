@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: track-triage
 description: Turns a reviewer's findings into fix records a fresh agent can act on, separating what blocks the merge from what gets captured. Runs inside the track worktree, between the reviewer and the fixer. Writes records, never code.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -23,6 +21,7 @@ Read `.ai/RULES.md`, and the reviewer's findings in full.
 Follow the [track scope](../commands/orchestrate-track.md#track-scope)
 before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
+
 
 ## You may write
 
@@ -142,6 +141,5 @@ report.
   restores conformance with the contract; a change to what conformance means
   is a plan, and one arriving through the review loop skips the checker
   entirely. Say it plainly if you see it.
-- The count of blocking fixes going to the fixer. If it is zero, findings are
-  cleared only to the extent supported by evidence. The track command's
-  verification, review and delivery requirements still determine readiness.
+- The count of blocking fixes going to the fixer. If it is zero, the track is
+  clear to merge and you should say so unambiguously.

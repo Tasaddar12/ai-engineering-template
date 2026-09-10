@@ -3,13 +3,13 @@ tier: contract
 authority: human
 id: TRUTH-MAP
 title: Which file owns which fact
+links: [RULES]
 ---
 
 # Truth Map
 
 Every fact in this project has **exactly one owner**. Other documents may link
-to it. Explanations and examples link to their governing owner; they do not
-introduce a competing requirement or an independent copy to maintain.
+to it; none may restate it.
 
 Duplicated facts are the single largest cause of AI agents producing bad work.
 When the same requirement appears in four files, no change can satisfy all
@@ -38,26 +38,15 @@ copy is technically satisfied. Neither is what you wanted.
 | What happened on a given day | `state/journal/YYYY-MM-DD.md` | Link to it |
 | How the code actually works | **the code** | Describe, never duplicate |
 | How to use the product | `docs/` | Link to it |
-| Which instructions to read first | `AGENTS.md` at repo root | Link to it |
-| Mutability and amendment protocols | `RULES.md` | Link to the relevant section |
-| User action/publication authority | root `AGENTS.md` and the user's instruction | Record the actual grant in the selected PLAN/FIX when applicable |
-| Record maintenance and current specifications | `RULES.md` | Link to the relevant section |
-| Track ownership and handoff | `commands/orchestrate-track.md` | Roles apply their narrower scope within that assignment |
-| Role scope and role-specific reports | `agents/<role>.md` | Select a role rather than inventing permissions |
-| Detailed steps for an operation | `commands/<command>.md` | Indexes link the procedures for common tasks |
-| Track review scope and evidence exclusions | `agents/track-reviewer.md` | The track coordinator supplies the permitted packet |
-| Paths, ID formats and configured options | `config.yaml` | Read values from it |
-| General investigation evidence | `research/RES-*.md` | Link; never treat a brief as authority |
-| Whether a PR merged or a branch exists | Git and the forge | Record the observed revision and URL |
-| Reusable record shape | `templates/` | Copy and complete the appropriate template; reports follow their role or command |
+| Coding conventions, tooling | `AGENTS.md` at repo root | Link to it |
 
 Note the split inside the decision block: a meeting note owns *what was said on
 a date*, an ADR owns *what we decided*. They are different facts, and
 conflating them is how a debate about three options becomes a requirement. A
 meeting note is evidence for an ADR, never a substitute for one — see
-[`/harvest`](commands/harvest.md).
+[`/harvest`](../.ai/commands/harvest.md).
 
-The orchestration board is `status` tier; research and review logs are `log`. All
+The two orchestration rows are `status` and `log` tier respectively, and both
 sit *below* every contract in [the precedence order](RULES.md#precedence-when-documents-disagree).
 A research brief records what one agent believed about the code on one day —
 like a meeting note, it is evidence and never a requirement. An implementor
@@ -79,11 +68,10 @@ implemented" are truth-map violations and not merely untidy. See
 2. **Numbers and rules live once.** Any threshold, limit, timeout, or business
    rule appears in exactly one document. If you need it in a second place,
    reference it.
-3. **Specify observable behavior and link its verification.** Keep incidental
-   implementation mechanics in code; use a test or document check as evidence.
+3. **Never describe code behavior in prose you could assert in a test.** A test
+   cannot go stale silently; a paragraph can.
 4. **Found a duplicate?** Delete the copy, replace it with a link, and note it
-   in the journal. This belongs to approved record reconciliation. A report-only request
-   reports the duplicate instead of editing it.
+   in the journal. This is always in scope and never needs permission.
 
 ## Adding a new kind of fact
 

@@ -1,26 +1,22 @@
 ---
 tier: contract
 authority: agent
-title: Optional hook examples
+title: Manual checkpoints
 ---
+> Contract: amend with evidence inside the approved scope.
 
-# Optional hook examples
+# Manual checkpoints
 
-These Bash scripts are present but unregistered. No settings file, hook
-installer or dispatcher is supplied. Run with Bash; a compatible host must
-explicitly connect its tool events to the scripts and interpret their output.
-
-| Script | Input and behavior |
+| Event | Procedure |
 | --- | --- |
-| [ai-tier-notice.sh](ai-tier-notice.sh) | Reads JSON containing file_path, emits advisory tier reminders, exits zero. PROJECT and RULES use intent reminders. |
-| [worktree-confine.sh](worktree-confine.sh) | Reads cwd, tool_name and tool_input JSON. Some Write/Edit/NotebookEdit targets and obvious Bash redirects outside the checkout produce a PreToolUse denial response. Shared Git and supplied scratch space are allowed. |
+| Before a new action | [Agent entry point](../../AGENTS.md) |
+| Before dispatching a wave | [Orchestrate](../commands/orchestrate.md) |
+| Before review | [Track reviewer](../agents/track-reviewer.md) |
+| Before done | [Plan done](../commands/plan-done.md) |
+| Before Git delivery | [Onboarding PR](../commands/onboard-pr.md) |
+| Before exact cleanup | [Orchestration cleanup](../commands/orchestrate-clean.md) |
 
-Neither script is a sandbox. Missing context can fail open. Path checks are
-lexical, do not resolve symlinks or junctions, and fold case on every platform.
-The confinement script cannot reliably parse arbitrary shell commands. Its
-JSON parser prefers jq, then Python, then a weaker sed fallback. The tier
-reminder also uses a simple parser. Keep the host's actual permissions in force.
-
-Configuration's `enforcement: advisory` describes the tier reminder; it does
-not install either script or disable a separately registered confinement hook.
-Test any host integration in its actual environment before relying on it.
+These are checkpoints, not installed hooks. They make missing evidence
+visible without pretending that a document can enforce a sandbox.
+Report the checkpoint result; a failing checkpoint holds that transition,
+not every independent action in the project.

@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Diagnose, record and fix a single defect, with the check that stops it coming back
 argument-hint: <what's broken, or a FIX/INTAKE id>
 ---
@@ -22,9 +20,9 @@ and use `/plan-new`.
 Find the spec, ADR, or intent statement the code contradicts. Then one of:
 
 - **A spec forbids the observed behavior** → a defect. Proceed.
-- **No spec covers the case** → a fix only when existing intent and evidence establish
-  the required behavior. Clarify that omission through an amendment. If a new
-  behavior decision is needed, use `/plan-new` and seek the missing decision.
+- **No spec covers the case** → still a fix, but you are also deciding what
+  correct means. Amend the spec through the amendment protocol as part of this
+  work, and cite the amendment in the record.
 - **A spec permits or requires the observed behavior** → not a defect yet.
   Either the spec is wrong (amend it, and if anyone depends on the behavior,
   stop and write a plan) or the request is a behavior change (`/plan-new`).
@@ -44,8 +42,8 @@ document, and stop rather than changing code speculatively.
 
 ## 3. Write the record first
 
-Allocate a FIX ID under `.ai/config.yaml`, including Git history and reserved
-run blocks. Never reuse an issued identifier. Copy
+Allocate the next id — the highest `FIX-` anywhere under `.ai/fixes/`,
+including `done/`, plus one. Numbers are never reused. Copy
 `.ai/templates/FIX.md` to `.ai/fixes/open/FIX-{nnn}-{slug}.md` and fill in
 **Symptom** and **Root cause** *now*, before touching code.
 

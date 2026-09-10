@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Show every plan by stage, plus current state, blockers and suspected drift
 allowed-tools: Read, Grep, Glob, Bash
 ---
@@ -8,13 +6,14 @@ allowed-tools: Read, Grep, Glob, Bash
 Report where this project stands. Read, do not change anything.
 
 1. List plan files in each stage directory under `.ai/plans/` — `intake/`,
-   `backlog/`, `active/`, `blocked/`, `review/`, `done/` (all partitions), and `abandoned/`. Take each plan's title from its frontmatter.
-2. List fix files in `.ai/fixes/open/` and `.ai/fixes/done/` (all partitions), with their `severity`.
+   `backlog/`, `active/`, `blocked/`, `review/`, `done/` (newest partition
+   only), and `abandoned/`. Take each plan's title from its frontmatter.
+2. List fix files in `.ai/fixes/open/` and `.ai/fixes/done/` (newest partition
+   only), with their `severity`.
 3. Read `.ai/state/STATE.md`.
 4. Read the most recent file in `.ai/state/journal/`.
 
-List every PLAN by ID, title and stage, grouping done records by partition.
-Intake and fix records retain their own kinds. Then output the compact totals:
+Then output:
 
 ```
 ACTIVE      PLAN-nnn  <title>          (n of max_active)
@@ -23,7 +22,7 @@ BLOCKED     PLAN-nnn  <title>  — <the question>
 BACKLOG     n plans   (next up: PLAN-nnn <title>)
 INTAKE      n captured, unplanned  (oldest: <date>)
 FIXES       FIX-nnn  <title>  [severity]        (n open)
-DONE        n plans, n fixes across listed partitions
+DONE        n plans, n fixes this quarter
 ABANDONED   n
 ```
 
@@ -52,5 +51,4 @@ Close with anything that looks wrong and is worth acting on:
 - a fix in `done/` with an empty **Proof** section: it will recur
 - `.ai/state/PROJECT.md` still containing `CHANGEME`
 
-Use the compact totals and observations above for the report. Be brief; this
-is a status check, not an audit.
+Be brief. This is a status check, not an audit.

@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 description: Review the onboarding change, commit it, and open a merge request
 argument-hint: [target-branch]
 ---
@@ -20,11 +18,11 @@ problem here:
 - **`.ai/specs/`** — nothing asserted that has not been checked against the
   code. A spec claiming untrue things is worse than no spec; say so plainly if
   any were retro-written from a document rather than verified.
-- **`AGENTS.md`** — the snippet is reconciled with existing instructions, and no surviving language
+- **`AGENTS.md`** — the snippet is appended, and no surviving language
   contradicts `.ai/RULES.md`. Grep for "never modify", "source of truth", "do
   not change" and quote whatever you find.
-- **`.ai/agents/`** — any pre-existing agent that writes files has a declared write scope and corresponding
-  capabilities in the chosen host; metadata alone is not enforcement.
+- **`.ai/agents/`** — any pre-existing agent that writes files has `Write`
+  and `Edit` in its `tools:` list.
 - **`.ai/plans/intake/`** — a readable set of clustered items, not one file per
   `TODO`.
 - **`.ai/config.yaml`** — `verification.commands` holds the project's real test
@@ -37,20 +35,33 @@ Group the change so a reviewer can follow it. If the template copy was already
 committed separately, this is one commit of onboarding decisions; if not, split
 it:
 
-1. the approved template copy, excluding this source repository's project records
+1. the `.ai/` copy, unmodified
 2. everything `/onboard` decided — intent, specs, promotions, deletions,
    `AGENTS.md`, intake
 
 Do not include unrelated work. If the worktree has changes that are not part of
 the adoption, stop and tell the user rather than sweeping them in.
 
-## 3. Prepare the authorized delivery
+## 3. Push and open the merge request
 
-Follow the publication scope in the root [AGENTS.md](../../AGENTS.md).
-Commit the intended changes with descriptive messages, push only the assigned
-branch, verify its remote tip, and open the PR against the agreed target.
-Without publication authority, return the reviewable result and proposed next
-action. Do not merge unless merge is also authorized.
+Neither `gh` nor `glab` is assumed to be installed. On GitLab, push options
+create the MR with no CLI:
+
+```
+git push -u origin HEAD \
+  -o merge_request.create \
+  -o merge_request.target=<target-branch> \
+  -o merge_request.title="Adopt .ai/ orchestration structure" \
+  -o merge_request.description="<description>" \
+  -o merge_request.remove_source_branch
+```
+
+Check the remote host first. If it is GitHub and `gh` is available, use
+`gh pr create` instead. If neither route is available, push the branch and give
+the user the compare URL to open it themselves.
+
+**Confirm with the user before pushing.** Pushing is outward-facing, and the
+description below is a claim about work they have not read yet.
 
 ## 4. Write the description
 

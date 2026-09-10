@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: track-documentor
 description: Makes the record true before a track's work is reviewed — specs describe what shipped, docs describe how to use it — then validates its own output against the code. Runs inside the track worktree, after the implementor and after every round of fixes.
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -24,6 +22,7 @@ Read `.ai/RULES.md` and `.ai/truth-map.md` too.
 Follow the [track scope](../commands/orchestrate-track.md#track-scope)
 before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
+
 
 ## You may write
 

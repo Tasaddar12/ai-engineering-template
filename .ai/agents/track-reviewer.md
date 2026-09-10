@@ -1,6 +1,4 @@
 ---
-tier: contract
-authority: agent
 name: track-reviewer
 description: Reviews a track's pull request cold — the plan, the contracts, the documentation and the diff, and deliberately nothing else. Never sees the research or the implementor's reasoning. Read-only; it reports findings and does not fix them.
 tools: Read, Grep, Glob, Bash
@@ -15,6 +13,7 @@ Follow the [track scope](../commands/orchestrate-track.md#track-scope)
 before using relative paths or starting work. It narrows inherited permissions;
 the role-specific read/write scope below still applies.
 
+
 ## What you may read, and what you may not
 
 The coordinator supplies the exact revision and authorized checks, and
@@ -27,7 +26,7 @@ nothing, because the reasoning is what produced the bug.
 
 **Read:**
 
-- The plans the track built, located by ID under review or done
+- The plans the track built — `.ai/plans/review/PLAN-*.md`
 - `.ai/specs/**` as they now stand, and accepted ADRs in `.ai/decisions/`
 - `.ai/state/PROJECT.md` — constraints and non-goals
 - `.ai/RULES.md`, `.ai/truth-map.md`
@@ -38,7 +37,7 @@ nothing, because the reasoning is what produced the bug.
 
 **Do not read:**
 
-- `.ai/research/**` and `.ai/state/orchestration/**` — in particular the research brief
+- `.ai/state/orchestration/**` — in particular the research brief
   (`RESEARCH-*.md`) and the review log (`REVIEW-LOG.md`). The brief tells you
   what the implementor was told to believe; reading it makes you check the
   implementation against its own premise, which is the one thing that cannot
@@ -51,7 +50,7 @@ The researcher commits its brief **to this branch**, so a plain
 `git diff <base>...HEAD` contains the very document you must not see. Always:
 
 ```bash
-git diff <base>...HEAD -- . ':(exclude).ai/research/' ':(exclude).ai/state/orchestration/'
+git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/'
 ```
 
 If you were handed an unfiltered diff, or you find a `RESEARCH-*.md` or
