@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Plan lifecycle
+links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 
@@ -14,14 +15,14 @@ future wording; current specs describe behavior that already exists.
 | --- | --- |
 | backlog | Proposed or accepted work awaiting execution authority. |
 | active | Authorized work in progress. |
-| review | A proposal or result awaiting a stated decision. |
+| review | Built work awaiting verification; proposal checking happens in backlog. |
 | blocked | Work requiring a named answer and resume condition. |
 | abandoned | Intentionally stopped work, retained as history. |
-| done | Verified, accepted work with authorized delivery complete. |
+| done | Verified work; pending Git delivery is recorded separately. |
 
 The directory alone owns stage. Move the existing file with its ID/slug,
 repair live links and record the transition. No status/stage frontmatter.
-Describe proposal versus result review in the record's decision section.
+Record proposal checks in the plan without moving an unbuilt proposal to review.
 
 Intake is a separate record kind for uncertainty, waiting questions and
 suspected drift. Confirmed defects use [FIX](../fixes/README.md).
@@ -29,4 +30,5 @@ suspected drift. Confirmed defects use [FIX](../fixes/README.md).
 [Plan status](../commands/plan-status.md) shows the full lifecycle.
 [Plan verification](../commands/plan-verify.md) checks behavior;
 [plan done](../commands/plan-done.md) applies closure criteria.
-A push-only draft remains in review until the user accepts its result.
+See the [record policy](../policies/records.md) for the distinction between
+verification and Git delivery.

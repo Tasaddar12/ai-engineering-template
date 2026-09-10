@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Show every plan by stage, plus current state, blockers and suspected drift
 allowed-tools: Read, Grep, Glob, Bash
 ---
@@ -6,14 +9,13 @@ allowed-tools: Read, Grep, Glob, Bash
 Report where this project stands. Read, do not change anything.
 
 1. List plan files in each stage directory under `.ai/plans/` — `intake/`,
-   `backlog/`, `active/`, `blocked/`, `review/`, `done/` (newest partition
-   only), and `abandoned/`. Take each plan's title from its frontmatter.
-2. List fix files in `.ai/fixes/open/` and `.ai/fixes/done/` (newest partition
-   only), with their `severity`.
+   `backlog/`, `active/`, `blocked/`, `review/`, `done/` (all partitions), and `abandoned/`. Take each plan's title from its frontmatter.
+2. List fix files in `.ai/fixes/open/` and `.ai/fixes/done/` (all partitions), with their `severity`.
 3. Read `.ai/state/STATE.md`.
 4. Read the most recent file in `.ai/state/journal/`.
 
-Then output:
+List every PLAN by ID, title and stage, grouping done records by partition.
+Intake and fix records retain their own kinds. Then output the compact totals:
 
 ```
 ACTIVE      PLAN-nnn  <title>          (n of max_active)
@@ -22,7 +24,7 @@ BLOCKED     PLAN-nnn  <title>  — <the question>
 BACKLOG     n plans   (next up: PLAN-nnn <title>)
 INTAKE      n captured, unplanned  (oldest: <date>)
 FIXES       FIX-nnn  <title>  [severity]        (n open)
-DONE        n plans, n fixes this quarter
+DONE        n plans, n fixes across listed partitions
 ABANDONED   n
 ```
 
@@ -49,6 +51,7 @@ Close with anything that looks wrong and is worth acting on:
 - several fixes pointing at the same root cause — that is a plan nobody has
   written, being paid for one defect at a time
 - a fix in `done/` with an empty **Proof** section: it will recur
-- `.ai/intent/PROJECT.md` still containing `CHANGEME`
+- `.ai/state/PROJECT.md` still containing `CHANGEME`
 
-Be brief. This is a status check, not an audit.
+Use `.ai/templates/plan-status.md` for the report; the compact totals above
+fit its Plans by directory section. Be brief; this is a status check, not an audit.

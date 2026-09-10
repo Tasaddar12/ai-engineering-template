@@ -21,10 +21,10 @@ error up front.
 
 **A wave** is a dependency layer. Plan B is in a later wave than A when B
 cannot be *built or verified* until A's code exists. Waves are strictly
-ordered: **wave N+1's worktrees are not created until every wave-N track has
-merged into the base branch.** A wave-2 track is therefore branched from a base
-that already contains all of wave 1, and its pull request diffs against a base
-where its dependencies are already present.
+ordered: **wave N+1's worktrees are not created until the previous wave has
+reached a terminal state and this track's prerequisites have merged.** A new
+track starts from the synchronized base containing its dependencies; dependents
+of stopped tracks stay parked while independent work can continue.
 
 **A track** is a group of plans that would fight over the same files. They
 share one worktree, one branch, one PR, and are built one after the other by
@@ -53,20 +53,20 @@ lands, and any change during wave-1 review cascades a rebase down the stack.
 The seats are separated by **what they are allowed to know**, not just by task.
 That is what makes the review meaningful.
 
+```mermaid
+flowchart LR
+    research[track-researcher] --> implement[track-implementor]
+    implement --> document[track-documentor]
+    document --> review[track-reviewer]
+    review -->|approved and verified| ready[Ready for scheduler delivery]
+    review -->|findings| triage[track-triage]
+    triage --> fix[track-fixer]
+    fix --> document
 ```
-track-researcher  ──>  track-implementor  ──>  track-documentor  ──>  PR
-                                                                       │
-                        ┌──────────────────────────────────────────────┘
-                        v
-                  track-reviewer  ──approved──>  merge
-                        │
-                   findings
-                        v
-                  track-triage  ──>  track-fixer  ──>  track-documentor
-                        ^                                     │
-                        └──────────── round + 1 ──────────────┘
-                                  (ceiling: 3 rounds)
-```
+
+The initial documentation pass precedes PR creation and review. Every repeat
+review observes the configured round limit.
+
 
 | Agent | Sees | Deliberately does not see |
 |---|---|---|
@@ -87,7 +87,7 @@ reviewer the very document it must not see. The reviewer is always given a
 filtered diff:
 
 ```bash
-git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/'
+git diff <base>...HEAD -- . ':(exclude).ai/research/' ':(exclude).ai/state/orchestration/'
 ```
 
 The same filter hides the review log, which is where earlier rounds live.
@@ -116,40 +116,37 @@ It is two commands, and the split matters — see
 
 **1. Schedule.** In the main checkout:
 
-```bash
+```text
 /orchestrate --all-backlog --dry-run       # just the schedule, nothing created
 /orchestrate PLAN-011 PLAN-014 PLAN-018    # schedule and create wave-1 worktrees
 ```
 
-**Start with `--dry-run`.** It produces the manifest and stops. You get the
+**Start with `--dry-run`.** It returns a proposed manifest in the report
+without writing files and stops. You get the
 wave layout, the tracks, and — listed separately — every dependency the
 orchestrator *inferred* rather than read from a plan. Those are the ones that
 can be wrong, and checking them costs a minute against a run that costs hours.
 
-Without `--dry-run` it also creates the wave's worktrees, reserves each track's
-id block, and prints the commands to build them. Then it stops.
+Without `--dry-run`, the scheduler follows the approval boundary, reserves
+IDs and creates only the current wave's worktrees. The detailed procedure is
+[orchestrate](../.ai/commands/orchestrate.md).
 
-**2. It runs itself from there.** `/orchestrate` launches a background session
-per track and is **re-invoked when each one exits**, so it learns that a wave
-finished without anyone watching for it. As tracks clear it merges them,
-writes `STATE.md` and the journal, re-checks the next wave's plans against
-anything the last wave changed, and dispatches the next wave.
+**2. Build each track in its own session.** Manual dispatch is configured here.
+Open a session rooted at the assigned absolute worktree and provide
+[orchestrate-track](../.ai/commands/orchestrate-track.md), the run/track IDs,
+base revision, ID ranges and granted actions. Return its terminal report to the
+scheduler, then resume scheduling at the wave boundary.
 
-You said go once. It comes back when something needs a decision, when the run
-is done, or when what is left is blocked on a human.
+A separately configured host can launch background sessions and provide
+completion events. This repository contains no launcher, registration or
+automatic wakeup mechanism. Do not claim an unattended run from the presence
+of Markdown instructions or optional hooks.
 
-This needs `claude` on `PATH`. Without it, set `dispatch: manual` and run each
-track by hand, in its own session started in that track's worktree:
-
-```bash
-cd .worktrees/ORCH-001-w1t1 && claude    # then: /orchestrate-track ORCH-001 w1t1
-```
-
-Then re-run `/orchestrate` at each wave boundary.
+The slash-style invocations below are procedure names, not shell commands.
 
 Any time:
 
-```bash
+```text
 /orchestrate-status            # where everything stands, checked against git
 /orchestrate-clean --dry-run   # what cleanup would remove, and what it would lose
 ```
@@ -188,21 +185,11 @@ session:
 | Tracks wait at every stage | One session can only batch by stage, so all tracks pause for the slowest, eight times | Independent sessions have no shared scheduler to wait on |
 | Nothing survives the session | Stage, round counts and PR numbers live in context | State is derived from git; the manifest is a static schedule |
 
-Confinement is then enforced by a `PreToolUse` hook,
-[`worktree-confine.sh`](../.claude/hooks/README.md), which blocks a write
-landing outside the checkout the session is in. It derives that boundary from
-`git rev-parse` rather than `$CLAUDE_PROJECT_DIR`, which in a worktree still
-points at the project root, and it allows the shared `.git` because a
-worktree's own `.git` is only a pointer into it.
-
-That is a wall for `Write`/`Edit`, and narrow best-effort for `Bash` — shell
-cannot be parsed reliably, and a false block would stop a run that was doing
-the right thing. So it stops mistakes, not a determined escape. `/orchestrate`
-also checks `git status --porcelain` on the base between waves, since anything
-that does get through is otherwise silent.
-
-The cost is that a run is no longer one button press: something has to launch
-the per-track sessions, and `/orchestrate` is re-invoked between waves.
+The optional [hook examples](../.ai/hooks/README.md) illustrate advisory tier
+notices and limited checks for writes outside a checkout. They are unregistered
+and are not a sandbox. Actual session roots, permission controls and completion
+signaling come from the host. The scheduler compares base status with its
+preflight snapshot to detect unexpected changes without guessing who made them.
 
 ## Declaring dependencies
 
@@ -226,30 +213,14 @@ one track.
 
 ## Settings
 
-In `.ai/config.yaml`, under `orchestration`:
+[Config](../.ai/config.yaml) owns the paths, concurrency limit, review ceiling,
+blocking severity, forge, dispatch and merge posture. Consult its comments for
+the available settings instead of maintaining a second default-value table.
 
-| Setting | Default | What it controls |
-|---|---|---|
-| `worktree_root` | `.worktrees` | Where checkouts go. **Must be gitignored.** |
-| `max_parallel_tracks` | `3` | The real cost dial — each track is a full agent pipeline |
-| `base_branch` | *current* | What tracks branch from and merge into |
-| `review.max_rounds` | `3` | Rounds before the track stops for a human |
-| `review.blocking_severity` | `major` | Below this, findings are captured, not fixed |
-| `forge` | `auto` | `gh` / `glab` detection, or `none` |
-| `merge_strategy` | `merge` | `merge` keeps the per-step commits |
-| `auto_merge` | `ask` | `ask` confirms each merge; `auto` is hands-off |
-| `targeted_tests` | *empty* | How to run only the tests a change affects |
-
-Two worth thinking about before a first run:
-
-**`auto_merge`.** The default stops and asks before each merge. Set it to
-`auto` for a fully hands-off run — the pipeline is designed to be safe there,
-but merging is hard to undo and the default should not assume you want it.
-
-**`review.blocking_severity`.** This is what makes the loop terminate.
-Everything at or above it sends the track back for another round; everything
-below is captured as an intake item and does not block. Set to `minor` and a
-track can burn all three rounds on naming disagreements.
+Merge posture never grants authority. With `ask`, a scheduler requests a merge
+decision only if the user has not already provided it; `auto` likewise needs
+existing merge authority. Missing required verification or a required PR keeps
+a track stopped regardless of the count of blocking findings.
 
 ## When a run stops
 
@@ -259,16 +230,16 @@ one more round. The track stops, posts a summary to the PR, and appears under
 can pick up where it stopped. Other tracks carry on.
 
 Other stopping points: the implementor hits a question only a human can answer
-(`intent`-tier), a merge conflict between two tracks (a scheduling error worth
-knowing about), or a dependency cycle the orchestrator found before starting.
+(`intent`-tier), a merge conflict between tracks that needs investigation,
+or a dependency cycle found before starting.
 
-Things that **do not** stop a run: no `gh`/`glab`, no auth, no network. The
-pull request is a review surface, not the work. The run says so once and
-continues locally.
+A missing forge CLI, authentication or network can leave local building and
+review available. A requested PR or hosted merge remains incomplete; preserve
+the branch and report the delivery blocker instead of substituting a local merge.
 
 ## What a run leaves behind
 
-- **Merged commits** on the base branch, one per step slice
+- **Commits** on track branches, merged into base when delivery is authorized
 - **`.ai/state/orchestration/ORCH-{nnn}.md`** — the manifest: why the waves
   were shaped that way, what each track did, every review round. Kept after the
   run closes; it is the first thing to read when a later run hits the same
@@ -277,8 +248,8 @@ continues locally.
   `.ai/state/orchestration/<run>/<track>/`, merged with their track. The log is
   the durable round count: it lives on the track branch, so it has one writer,
   cannot conflict with another track, and survives a lost session.
-- **Plans** in `.ai/plans/done/<period>/`, carrying the reviewer's verdict as
-  verification evidence
+- **Plans** in `.ai/plans/done/<period>/` after verification; Git and the forge
+  separately establish merge, while records retain the reviewer's evidence
 - **Fix records** in `.ai/fixes/done/`, each with the check that fails before it
   and passes after
 - **Intake items** in `.ai/plans/intake/` for everything found and deliberately
@@ -291,7 +262,7 @@ continues locally.
   stops rather than hiding it.
 - **Replace `/plan-new`.** It builds plans; it does not write them. A vague
   plan is excluded from the run rather than built badly.
-- **Replace `/plan-start`** for one plan. A single plan does not need a
-  worktree, a wave or a PR loop.
+- **Replace `/plan-start`** for one plan. Use its bounded flow while
+  honoring any worktree or PR requirement in the user's assignment.
 - **Guarantee parallelism.** Eight plans that all touch the same module is one
   track wearing a costume, and the orchestrator will say so.

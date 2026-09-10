@@ -11,7 +11,7 @@ started: YYYY-MM-DD
 # ORCH-{nnn}: <what this run is building>
 
 > **`status` tier.** The board for one `/orchestrate` run. What happened goes
-> in [the journal](../journal/); what was decided goes in the plans and their
+> in `.ai/state/journal/`; what was decided goes in the plans and their
 > PRs.
 >
 > **Only `/orchestrate` writes this file, and only on the base branch.** No
@@ -46,7 +46,7 @@ can audit is a guess that will strand a plan a wave too late.
 |---|---|---|---|
 | PLAN- | PLAN- | declared in `## Depends on` | certain |
 | PLAN- | PLAN- | amends SPEC-004, which PLAN-011 creates | certain |
-| PLAN- | PLAN- | both rewrite `src/auth/session.ts` | inferred |
+| PLAN- | PLAN- | calls the interface introduced by the earlier plan | inferred |
 
 ## Contention
 
@@ -93,9 +93,8 @@ with the table.
 
 ### Wave 2 — pending
 
-Waves after the first stay empty until the wave before them merges. Their
-worktrees do not exist yet, deliberately: a dependent plan is built on top of
-the code it depends on, not alongside it.
+Schedule later waves now, but create their worktrees only after the prior wave
+is terminal and their own prerequisites have merged. Park blocked dependents.
 
 ## Review rounds
 
@@ -103,7 +102,7 @@ Summarised here from each track's own
 `.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md`, which is the durable
 record — it lives on the track branch, so it has one writer and survives a lost
 session. The ceiling is `orchestration.review.max_rounds` in
-[config.yaml](../../config.yaml); a track that hits it stops for a human rather
+`.ai/config.yaml`; a track that hits it stops for a human rather
 than starting another round.
 
 | Track | Round | Verdict | Blocking findings | Fixes raised |
@@ -126,4 +125,4 @@ Plans left out of the run, and problems found during it that were captured
 rather than fixed. Intake and fix ids, so nothing depends on someone rereading
 this file later.
 
-- 
+-

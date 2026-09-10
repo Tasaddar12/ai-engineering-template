@@ -2,38 +2,39 @@
 tier: contract
 authority: agent
 title: Flat templates
+links: [AMD-002]
 ---
-> Contract: follow linked owners rather than duplicating requirements.
 
 # Flat templates
 
-Copy the selected template and complete its fields. Templates model the output
-tier; no nested single-file folders are needed.
+Copy a template and complete every applicable section. Core records use the
+uppercase templates; concise lowercase files format reports and assignments.
+Remove example rows and instructional comments from completed records. PLAN
+and FIX stages come from their directories, not a metadata field.
 
-- [Adr](adr.md)
-- [Agent](agent.md)
-- [Amendment](amendment.md)
-- [Agent assignment](assignment.md)
-- [Command](command.md)
-- [Completion report](completion.md)
+Paths in inline code name repository-root destinations unless explicitly
+qualified. When copying a template to another depth, adjust relative Markdown
+links for the destination. AGENTS.snippet.md is intended for the repository
+root. Templates contain intentional placeholders; live records do not.
+
+- [ADR](ADR.md)
+- [AGENTS.snippet](AGENTS.snippet.md)
+- [AMENDMENT](AMENDMENT.md)
+- [assignment](assignment.md)
 - [decision-summary](decision-summary.md)
-- [Fix](fix.md)
-- [Gate result](gate-result.md)
-- [Gate](gate.md)
-- [Intake](intake.md)
-- [Journal](journal.md)
-- [Meeting](meeting.md)
-- [Orchestration](orchestration.md)
-- [Plan status](plan-status.md)
-- [Plan verification](plan-verification.md)
-- [Plan](plan.md)
-- [Policy](policy.md)
-- [Project](project.md)
-- [Pull Request](pull-request.md)
-- [Research](research.md)
-- [Review result](review.md)
-- [Spec](spec.md)
-- [Project state](state.md)
-- [Test result](test-result.md)
-- [Track evidence](track-result.md)
-- [Workflow](workflow.md)
+- [FIX](FIX.md)
+- [gate-result](gate-result.md)
+- [INTAKE](INTAKE.md)
+- [JOURNAL](JOURNAL.md)
+- [MEETING](MEETING.md)
+- [ORCH-RUN](ORCH-RUN.md)
+- [plan-status](plan-status.md)
+- [plan-verification](plan-verification.md)
+- [PLAN](PLAN.md)
+- [PROJECT](PROJECT.md)
+- [pull-request](pull-request.md)
+- [research](research.md)
+- [review](review.md)
+- [SPEC](SPEC.md)
+- [state](state.md)
+- [test-result](test-result.md)

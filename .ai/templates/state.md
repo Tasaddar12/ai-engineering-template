@@ -1,6 +1,9 @@
 ---
 tier: status
 authority: agent
+id: STATE
+links: []
+updated: YYYY-MM-DD
 title: Project state
 ---
 > Status: replace stale coordination with current observations.
@@ -21,9 +24,10 @@ One concrete next action and owner.
 | --- | --- | --- |
 | {{ scope_or_none }} | {{ question }} | {{ owner_and_condition }} |
 
-## Recently landed
+## Recently verified
 
-Only current useful delivery references. Historical detail is in the journal.
+Current verified work, with pending delivery stated explicitly. Git and the
+forge own merge facts; historical detail is in the journal.
 
 ## Known drift
 

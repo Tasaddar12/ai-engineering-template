@@ -1,13 +1,15 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: researcher
+tools: Read, Grep, Glob, Bash, Write, Edit
 description: Gathers bounded evidence about the actual code and records useful findings without deciding behavior.
 reads: [".ai/**","assigned source and tests","approved sources"]
 writes: [".ai/research/RES-*.md","assigned INTAKE records"]
 model: gpt-5.6-sol
 reasoning: xhigh
-workflows: ["research","orchestrate-track"]
+procedures: ["research","orchestrate-track"]
 report_template: research.md
 ---
 > Contract: follow this role inside its approved assignment.

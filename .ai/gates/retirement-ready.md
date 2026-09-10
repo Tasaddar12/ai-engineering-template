@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Retirement ready
+links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 
@@ -15,7 +16,8 @@ Before removing an exact merged worktree and its local branch.
 
 - The host confirms the authorized merge for the intended branch/revision.
 - The synchronized target contains the work, with ancestry supporting non-forced
-  branch deletion.
+  branch deletion. Compare tracked trees and file contents; account for any
+  independently merged target changes before declaring an exact match.
 - The worktree-only assignment has ended, all writers are stopped and
   tracked/untracked state is clean.
 - Exact absolute path and owned branch are known, with no later unmerged commits

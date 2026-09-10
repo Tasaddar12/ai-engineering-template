@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Delivery ready
+links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 
@@ -20,7 +21,7 @@ Before each commit, push, PR creation or merge.
 - Every commit has a nonempty descriptive PLAN/FIX message.
 - For commit, identify the intended staged diff. For push/PR/merge, identify the
   clean commit, branch and destination.
-- Before merge, required hosting checks, independent review, current
+- Before merge, required hosting checks, the required review with independence disclosed, current
   verification and explicit merge authority are present. Merge criteria are N/A
   for commit/push/PR creation.
 

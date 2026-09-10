@@ -1,13 +1,15 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: pr-agent
+tools: Read, Grep, Glob, Bash, Write, Edit
 description: Prepares reviewable delivery and performs only the granted commit, push, PR or merge actions.
 reads: ["approved PLAN/FIX","Git and hosting state","current specs","review/verification evidence"]
 writes: ["Git metadata for the assigned delivery","authorized remote branch or pull request"]
 model: gpt-5.6-sol
 reasoning: xhigh
-workflows: ["deliver","orchestrate-clean"]
+procedures: ["deliver","orchestrate-clean"]
 report_template: pull-request.md
 ---
 > Contract: follow this role inside its approved assignment.

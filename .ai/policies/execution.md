@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Execution and delivery policy
+links: [AMD-002]
 ---
 > Contract: follow the approved scope and document evidence for each handoff.
 
@@ -20,9 +21,10 @@ title: Execution and delivery policy
 4. A FIX needs a guard that fails against the unfixed behavior and passes
    after repair. Documentation defects can use an appropriate repeatable
    document check. A failing environment is not proof of a product defect.
-5. Review the complete relevant diff independently of its implementor. Use a
-   fresh reviewer context when available; report reduced independence when
-   unavailable. Never invent independent review or use it to bypass approval.
+5. Review the complete relevant diff. Use an independent reviewer in a fresh
+   context when authorized and available; otherwise conduct a separate review
+   pass and disclose that it is self-review. A mandatory external review still
+   needs the actual external reviewer; self-review cannot satisfy that gate. Never invent independent review or use it to bypass approval.
 6. Every authorized commit has a nonempty descriptive message and the PLAN
    or FIX ID. Prefer coherent reviewable slices carrying code, tests and
    current specs together; do not create knowingly broken intermediate work.
@@ -33,7 +35,8 @@ title: Execution and delivery policy
 8. After an authorized merge, verify the hosting result and synchronize the
    target. Only after a worktree-only assignment ends may its coordinator use
    an integration checkout for that synchronization and retirement.
-9. Delete the exact clean, stopped, merged local worktree and branch after
+9. Confirm the target and worktree have matching tracked trees and contents.
+   Delete the exact clean, stopped, merged local worktree and branch after
    successful delivery. Inspect untracked files, open requests and branch
    advancement first. Use non-forced removal and git branch -d. If a squash
    or rebase makes ancestry inconclusive, report the remaining cleanup rather

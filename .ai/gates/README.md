@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Readiness gates
+links: [AMD-002]
 ---
 > Contract: follow linked owners rather than duplicating requirements.
 
@@ -17,3 +18,7 @@ exception. A gate cannot grant authority.
 - [Parallel ready](parallel-ready.md)
 - [Retirement ready](retirement-ready.md)
 - [Review ready](review-ready.md)
+
+Use [gate-result](../templates/gate-result.md) to report an evaluated gate
+inside the selected record or user-facing report; do not create a separate
+file for every routine transition.

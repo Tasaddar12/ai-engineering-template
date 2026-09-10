@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Capture a problem you found but should not fix now, so it survives the session
 argument-hint: <what's wrong, and where>
 ---
@@ -12,19 +15,14 @@ the next agent rediscovers it and improvises around it.
 1. **Check it isn't already captured.** Search `.ai/plans/intake/` and
    `.ai/plans/backlog/` for the same problem. If it is there, add what is new
    to that file instead of creating a second one.
-2. **Decide whether it belongs here at all:**
-   - A wrong spec or doc → this is not a deferral. Amend it now with
-     `/spec-amend`; that is always in scope.
-   - A duplicated fact across documents → collapse it into a link now. Also
-     always in scope.
-   - A question only a human can answer, blocking current work → `/plan-block`.
-   - Anything you can fix in the change you are already making → just fix it.
-   - Everything else → capture it here. A defect the specs already condemn
-     still gets captured rather than fixed on the spot: it is out of scope for
-     the change in hand, and `kind: bug` is what tells the next reader it can
-     be promoted with `/fix` instead of a plan.
+2. **Route the finding without repairing it.** Unconfirmed observations,
+   waiting questions and suspected drift belong in INTAKE. A confirmed
+   conformance defect belongs in a FIX record through `/report`; that does not
+   authorize the repair. For a question blocking approved work, use `/plan-block`.
+   If an already authorized correction is the next action, report that route
+   rather than silently treating this capture command as implementation.
 3. **Write it** to `.ai/plans/intake/INTAKE-{nnn}-{slug}.md` from
-   `.ai/templates/INTAKE.md`, numbered after the highest existing. Fill in
+   `.ai/templates/INTAKE.md`, using config's ID allocation rules. Fill in
    what's wrong, where, why not now, and what it costs to leave. Five lines.
 4. **Do not fix it.** Not a small version of it either. The point of capturing
    is that the current change stays reviewable.
@@ -37,8 +35,7 @@ the next agent rediscovers it and improvises around it.
 Report the intake id, the one-line problem, and your read on urgency. Then
 carry on with what you were doing.
 
-Intake items get promoted by the route their `kind` calls for: a `bug` — code
-that contradicts a spec — through `/fix INTAKE-{nnn}`, which is one command end
+Intake items get promoted by the route their `kind` calls for: a `bug` — suspected code nonconformance — through `/fix INTAKE-{nnn}`, which is one command end
 to end; anything that changes what correct means through
 `/plan-new INTAKE-{nnn}`, where it gets sized, spec'd and checked. Nothing in
 `intake/` is a commitment to do the work — `/plan-archive` reviews the pile and

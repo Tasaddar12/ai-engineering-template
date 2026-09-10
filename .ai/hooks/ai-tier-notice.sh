@@ -8,7 +8,7 @@
 # The behavior in .ai/RULES.md is carried by the agent prompts; this hook only
 # makes the tier visible in the transcript.
 #
-# Wire it up via .claude/settings.template.json.
+# Optional JSON hook example; registration is not supplied. See README.md.
 
 set -u
 
@@ -24,8 +24,8 @@ path="${path//\\\\//}"
 path="${path//\\//}"
 
 case "$path" in
-  */.ai/intent/*)
-    echo "NOTICE  intent tier — human authority. Agents propose changes here and stop for an answer; they do not edit. If this was your edit, surface it to the user explicitly. See .ai/RULES.md#mutability-tiers"
+  .ai/state/PROJECT.md|*/.ai/state/PROJECT.md|.ai/RULES.md|*/.ai/RULES.md|.ai/policies/approval.md|*/.ai/policies/approval.md)
+    echo "NOTICE  intent tier — human authority. Edit only under explicit human instruction; otherwise propose and wait. Surface any unauthorized edit to the user. See .ai/RULES.md#mutability-tiers"
     ;;
   */.ai/specs/*)
     echo "NOTICE  contract tier — amendable, but the change needs a record. Write .ai/decisions/amendments/AMD-{nnn}-{slug}.md from the template, add its id to this document's links:, and commit both with the code change. See .ai/RULES.md#the-amendment-protocol"

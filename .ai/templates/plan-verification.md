@@ -28,14 +28,14 @@ proof and demonstrate that required behavior was not silently changed.
 
 ## Review, defects and record drift
 
-Link independent review, confirmed FIX and suspected INTAKE evidence.
+Link review with its independence disclosed, confirmed FIX and suspected INTAKE evidence.
 Check current tense, duplication and unsupported claims as well as code.
 
 ## Result and limits
 
-Overall: {{ PASS_FAIL_or_CANNOT_VERIFY }}
+Overall: {{ verified_or_defects_found_or_cannot_verify }}
 
-Missing required evidence cannot yield PASS. State inspection boundaries and
+Missing required evidence cannot yield verified. State inspection boundaries and
 the exact next action. Verification supplies no repair or merge authority.
 
 <!-- Returned evidence report. Grade behavior against current contracts,

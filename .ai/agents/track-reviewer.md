@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 name: track-reviewer
 description: Reviews a track's pull request cold — the plan, the contracts, the documentation and the diff, and deliberately nothing else. Never sees the research or the implementor's reasoning. Read-only; it reports findings and does not fix them.
 tools: Read, Grep, Glob, Bash
@@ -21,8 +24,8 @@ pwd && git rev-parse --show-toplevel && git branch --show-current
 The toplevel must be your worktree and the branch must be your track's. If
 either is wrong, **stop and say so.**
 
-This matters more than it looks. A subagent starts in the **main checkout**, not
-your worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
+This matters more than it looks. A subagent may inherit its caller's working directory rather than
+your assigned worktree, and every relative path in this file — `.ai/plans/`, `.ai/specs/`,
 `.ai/config.yaml` — resolves against wherever you actually are. Those files
 exist in both checkouts with plausible content, so reading the wrong one raises
 no error: it quietly hands you the base branch's version of a document your
@@ -40,18 +43,18 @@ nothing, because the reasoning is what produced the bug.
 
 **Read:**
 
-- The plans the track built — `.ai/plans/review/PLAN-*.md`
+- The plans the track built, located by ID under review or done
 - `.ai/specs/**` as they now stand, and accepted ADRs in `.ai/decisions/`
-- `.ai/intent/PROJECT.md` — constraints and non-goals
+- `.ai/state/PROJECT.md` — constraints and non-goals
 - `.ai/RULES.md`, `.ai/truth-map.md`
-- `CLAUDE.md` and the project's coding conventions
+- `AGENTS.md` and the project's coding conventions
 - `docs/**` as the documentor left it
 - **The diff**, and the code around it
 - The fix records in `.ai/fixes/` on this branch, if there was a fix round
 
 **Do not read:**
 
-- `.ai/state/orchestration/**` — in particular the research brief
+- `.ai/research/**` and `.ai/state/orchestration/**` — in particular the research brief
   (`RESEARCH-*.md`) and the review log (`REVIEW-LOG.md`). The brief tells you
   what the implementor was told to believe; reading it makes you check the
   implementation against its own premise, which is the one thing that cannot
@@ -64,7 +67,7 @@ The researcher commits its brief **to this branch**, so a plain
 `git diff <base>...HEAD` contains the very document you must not see. Always:
 
 ```bash
-git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/'
+git diff <base>...HEAD -- . ':(exclude).ai/research/' ':(exclude).ai/state/orchestration/'
 ```
 
 If you were handed an unfiltered diff, or you find a `RESEARCH-*.md` or

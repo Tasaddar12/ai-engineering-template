@@ -1,10 +1,10 @@
 ---
 tier: log
 authority: agent
-id: RES-{{ nnn }}
-question: {{ bounded_question }}
+id: <RES-{nnn} or RESEARCH-PLAN-{nnn}>
+question: "{{ bounded_question }}"
 links: []
-title: {{ title }}
+title: "{{ title }}"
 ---
 > Log: preserve evidence; append corrections.
 
@@ -38,5 +38,7 @@ the authorized implementor resolves them with the relevant code in view.
 What the planner or implementor needs, including targeted checks and limits.
 A recommendation is not a requirement or authority.
 
-<!-- RES-{nnn}-{slug}.md. Completed research is evidence, not a contract.
+<!-- General research: .ai/research/RES-{nnn}-{slug}.md.
+Track brief: .ai/state/orchestration/<run>/<track>/RESEARCH-PLAN-{nnn}.md;
+its composite identity includes run and track, so no extra global RES ID is needed. Completed research is evidence, not a contract.
 Append a correction rather than silently replacing its premise. -->

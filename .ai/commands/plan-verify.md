@@ -1,18 +1,23 @@
 ---
 tier: contract
 authority: agent
-description: Verify actual behavior against current contracts.
-argument_hint: PLAN or FIX, revision, environment and check authority.
+description: Verify a PLAN or FIX against current specs and observed behavior, including before merge.
+argument-hint: <PLAN-or-FIX-id> [revision]
+links: [AMD-002]
 ---
-> Contract: this entry point selects a workflow; it grants no new authority.
 
-# plan-verify
+# Verify a plan or fix
 
-Use when: Verify actual behavior against current contracts.
+Identify the selected record, base, revision and any pending diff. Use the
+[verifier](../agents/verifier.md) procedure and its verdict format. Grade the
+current specs and approved outcome, including every promised Contract change;
+then run configured checks and the checks named by the record. Read-only
+requests return the report without moving a file or recording new evidence.
 
-Inputs: PLAN or FIX, revision, environment and check authority.
+Return **verified**, **defects found**, or **cannot verify**, with per-criterion
+evidence, actual commands/results, record drift and limitations. Use the
+[plan-verification report](../templates/plan-verification.md) to retain evidence
+when record writes are authorized. Missing required evidence prevents a pass.
 
-Follow [plan-verify](../workflows/plan-verify.md). That workflow owns the steps.
-Read [RULES](../RULES.md) for the engagement protocol.
-
-Return: Plan-verification report with actual evidence.
+For lifecycle changes use [plan-review](plan-review.md); for Git publication
+use [deliver](deliver.md). Verification itself never repairs or merges.

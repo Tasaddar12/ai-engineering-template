@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Show where an orchestration run stands — waves, tracks, review rounds and what is waiting on a human
 argument-hint: [run-id]
 ---
@@ -26,9 +29,9 @@ git show <branch>:.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md
 ```
 
 The review log is the durable round count — it lives on the track branch, so it
-survives a lost session and cannot conflict with another track. Read it from
-the branch rather than the worktree, so the answer is the same whether or not
-the worktree still exists.
+survives a lost session and cannot conflict with another track. Read it from the branch when present. After confirmed merge and branch
+deletion, read it from the recorded merge revision on base; a deleted merged
+branch is successful cleanup, not missing work.
 
 Check nothing escaped its worktree, too:
 
@@ -37,8 +40,8 @@ git status --porcelain                        # base checkout must be empty
 ```
 
 Tracks are confined to their worktrees by instruction, not by a sandbox. A
-dirty base checkout during a run means an agent wrote outside its track — say
-so loudly and name the files, because nothing else will catch it.
+dirty base checkout is a reason to compare with preflight and investigate.
+Name the files without assuming which person or process changed them.
 
 And the requests, if a forge is configured:
 
@@ -81,9 +84,9 @@ is how a run quietly dies.
 A run whose tracks are all on round 3 is a run to stop and look at, not to let
 finish.
 
-Each track is driven by its own `/orchestrate-track` session, normally launched
-in the background by the scheduler. A track with no recent activity is either
-still working or has no session — read its `TRACK STATE` line to tell:
+Each track is driven by its own `/orchestrate-track` session, handed off
+manually by default or launched through a separately configured host. A track with no recent activity is either
+still working or has no session — inspect its `TRACK STATE` line and host session status:
 
 | TRACK STATE | Means |
 |---|---|

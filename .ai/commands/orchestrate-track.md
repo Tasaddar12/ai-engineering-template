@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Build one orchestration track in its worktree — research, implement, document, PR, review loop — then report ready or stopped
 argument-hint: <run-id> <track-id>
 ---
@@ -11,7 +14,7 @@ You drive **one track and nothing else**: research → implement → document �
 does the merging; other tracks are being built by other sessions and are none
 of your business.
 
-**Assume nobody is watching.** You are usually launched in the background, so
+**Assume nobody is watching.** Your session may be unattended, so
 there is no one to answer a question — anything that needs a human is
 `stopped` with a reason, which lets the rest of the run carry on without you.
 
@@ -30,7 +33,8 @@ both trees.
 pwd && git rev-parse --show-toplevel && git branch --show-current
 ```
 
-The branch must be `orch/<run>/<track>`. If it is the base branch, **stop.**
+The branch must match the manifest, using `orchestration.branch_prefix`
+from config (for example `orch/<run>/<track>`). If it is the base branch, **stop.**
 
 Then read the manifest at `.ai/state/orchestration/ORCH-{nnn}.md` for your
 plans and **your reserved id block**.
@@ -60,7 +64,7 @@ Pass each one, explicitly:
   starts wherever this session is, and a relative `.ai/plans/...` that resolves
   to the main checkout returns plausible content with no error.
 - **Its id block**, from the manifest.
-- **The run id, track id, and base branch.**
+- **The run id, track id, base revision, and explicit commit/push/PR scope.**
 
 ---
 
@@ -115,7 +119,7 @@ The researcher committed its brief to this branch, so a plain
 reviewer must not see. Exclude it:
 
 ```bash
-git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/'
+git diff <base>...HEAD -- . ':(exclude).ai/research/' ':(exclude).ai/state/orchestration/'
 ```
 
 Give the reviewer that command, not the unfiltered one. Without this the
@@ -138,10 +142,14 @@ This file is why round counting survives a lost session. It lives on the track
 branch, so it has exactly one writer and cannot conflict with another track.
 **The reviewer never reads it** — it is excluded by the filter above.
 
-Post the verdict to the PR if there is one.
+Update the PR review-log section within granted PR-update authority. Sending
+separate messages or review comments requires explicit communication authority.
 
 **Approved, nothing at or above `orchestration.review.blocking_severity`** →
 step 10.
+
+**Cannot review or missing required verification** → step 10, `stopped`.
+No finding count can turn an incomplete review into approval.
 
 ## 8. Triage
 
@@ -149,7 +157,9 @@ step 10.
 Writes one `.ai/fixes/open/FIX-{nnn}-{slug}.md` per real blocking finding,
 `INTAKE-{nnn}` for the rest, taking ids **from your block**.
 
-Zero blocking fixes → step 10.
+Zero blocking fixes only clears findings that triage resolved with evidence.
+If review could not complete, verification failed, or a required PR is absent,
+exit `stopped`; otherwise record the disposition and proceed to step 10.
 
 ## 9. Fix, then round again
 
@@ -181,7 +191,10 @@ base concurrently and race each other — and you are very likely running
 unattended in the background, where an `auto_merge: ask` prompt would hang
 forever with nobody to answer it.
 
-So: push, make sure the PR is current, and exit with a clear terminal state.
+Before the final push, record verification and move verified plans to done
+inside this branch using `/plan-done`, without editing shared STATE or journal.
+Record pending delivery explicitly. Push, confirm the remote tip and required
+PR, then exit with a clear terminal state.
 
 ```bash
 git push -u origin orch/<run>/<track>
@@ -198,8 +211,8 @@ this is what the scheduler reads, and it survives your session ending:
 
 | State | When |
 |---|---|
-| `ready` | Review clear, nothing at or above blocking severity, branch pushed |
-| `stopped` | Round ceiling hit, or a question only a human can answer |
+| `ready` | Review and verification complete, blocking findings resolved, branch pushed, required PR open |
+| `stopped` | Round ceiling, missing verification/required PR, or a human decision |
 
 **Never exit without writing one.** A session that ends silently looks like a
 crash, and the scheduler has to guess whether you got anywhere.

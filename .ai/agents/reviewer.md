@@ -1,13 +1,15 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: reviewer
+tools: Read, Grep, Glob, Bash
 description: Independently reviews the actual result against current contracts and reports actionable defects.
 reads: ["assigned code/tests/diff","PLAN/FIX records","current SPECs","accepted ADRs","PROJECT/RULES/truth-map","user-facing documentation"]
 writes: []
 model: gpt-6-astra
 reasoning: xhigh
-workflows: ["review","plan-verify","orchestrate-track"]
+procedures: ["review","plan-verify","orchestrate-track"]
 report_template: review.md
 ---
 > Contract: follow this role inside its approved assignment.

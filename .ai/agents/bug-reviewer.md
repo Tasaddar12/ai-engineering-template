@@ -1,14 +1,16 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: bug-reviewer
+tools: Read, Grep, Glob, Bash, Write, Edit
 description: Triages evidence into confirmed defects, unanswered questions or contract changes without repairing them.
 reads: ["reports and current code/specs","research and previous review rounds","assigned PLAN/FIX/INTAKE"]
 writes: ["assigned FIX/INTAKE records","triage notes on the selected PLAN"]
 model: gpt-6-astra
 reasoning: xhigh
-workflows: ["report","fix","orchestrate-track"]
-report_template: fix.md
+procedures: ["report","fix","orchestrate-track"]
+report_template: FIX.md
 ---
 > Contract: follow this role inside its approved assignment.
 
@@ -51,5 +53,5 @@ merely to finish a review loop. You do not guess a root cause.
 
 ## Report
 
-Use fix.md for confirmed defects and intake.md for uncertainty. Summarize
+Use FIX.md for confirmed defects and INTAKE.md for uncertainty. Summarize
 evidence, severity, repair scope and remaining questions in decision-summary.md.

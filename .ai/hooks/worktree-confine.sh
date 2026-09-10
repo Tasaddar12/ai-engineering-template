@@ -1,33 +1,11 @@
 #!/usr/bin/env bash
-# PreToolUse hook. Blocks file writes that land outside the checkout this
-# session is working in.
-#
-# Why this exists: /orchestrate runs each track in its own git worktree, and a
-# track writing into the main checkout or a sibling worktree corrupts work
-# nobody is reviewing. Confinement was previously carried only by the agent
-# prompts, which cannot stop a mistake. Background tracks run unattended with
-# prompts waived, so this hook is what makes that posture safe.
-#
-# The boundary is derived from git, NOT from $CLAUDE_PROJECT_DIR — the hooks
-# documentation is explicit that in a worktree that variable stays at the
-# project root, which is exactly the case this hook exists for. Two things are
-# allowed:
-#
-#   1. Anything under this checkout's toplevel   (git rev-parse --show-toplevel)
-#   2. Anything under the shared git directory   (git rev-parse --git-common-dir)
-#
-# (2) is not optional. A worktree's .git is a *file* pointing into the main
-# repository's .git/worktrees/<name>, so every git command needs write access
-# there. Deny it and git stops working entirely.
-#
-# Enforcement is honest about its limits:
-#   Write / Edit / NotebookEdit  hard-blocked, from a real file_path field
-#   Bash                         narrow best-effort — an unambiguous redirect
-#                                to somewhere outside. Shell cannot be parsed
-#                                reliably, so this catches accidents, not a
-#                                determined escape.
-#
-# Wire it up via .claude/settings.template.json.
+# Optional JSON PreToolUse example. No host registration is supplied.
+# Reads cwd/tool_name/tool_input and emits a deny response for some obvious
+# writes outside git's checkout root, shared Git directory or scratchpad_dir.
+# This is an accident guard, not a sandbox. It fails open on missing context;
+# lexical path checks do not resolve symlinks/junctions and lowercase paths
+# even on case-sensitive filesystems. Shell checks cover only some redirects.
+# It cannot justify bypassing the host's permission controls. See README.md.
 
 set -u
 

@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Remove worktrees and branches left by an orchestration run, after checking nothing unmerged is lost
 argument-hint: [run-id | --all | --dry-run]
 ---
@@ -8,7 +11,7 @@ Clean up: **${1:-the most recent run}**
 **This deletes work.** A worktree holds a full checkout, and a track branch may
 hold commits that exist nowhere else. Removing one that was not merged destroys
 it. So the order here is fixed: **find out what would be lost, show the user,
-then delete.**
+then delete within existing cleanup authority.**
 
 Default to `--dry-run` behaviour when the argument is ambiguous. Deleting less
 than the user wanted costs one more command; deleting more costs a track.
@@ -72,17 +75,31 @@ where the work resumes, and the manifest points at it.
 
 ## 4. Remove
 
+First confirm the intended PR is merged at the reviewed revision and pull the
+base checkout with `git pull --ff-only`. Check the exact assigned branch is an
+ancestor of that target. Compare tracked trees and contents; if the base also
+contains other merged work, explain the difference rather than claiming equality.
+Resolve each absolute worktree path, verify it against the run's recorded
+ownership, and ensure it is not the primary checkout or a sibling. Inspect
+untracked and ignored files as well as tracked changes; stop all writers and
+run the removal from outside that worktree. Apply
+[retirement-ready](../gates/retirement-ready.md).
+
+
 ```bash
-git worktree remove .worktrees/<name>        # add --force only if the user said so
+git worktree remove <verified-absolute-worktree>
 git branch -d orch/<run>/<track>             # -d refuses unmerged; that is the point
-git worktree prune                           # clears stale administrative files
+
 ```
 
-Use `git branch -d`, never `-D`, unless the user explicitly confirmed losing
-that branch. The refusal is a safety check, not an obstacle to route around.
+Use non-forced removal and `git branch -d` for merged-work cleanup.
+Abandoning unmerged work is a separate decision, not a cleanup shortcut. The refusal is a safety check, not an obstacle to route around.
 
 If `git worktree remove` reports the worktree is dirty, **do not reach for
 `--force`.** Go back to step 3 and show the user what is in it.
+
+If remote branch deletion is authorized, verify its tip is still the merged
+revision and delete that exact ref. Do not delete an advanced remote branch.
 
 ## 5. Close the run
 

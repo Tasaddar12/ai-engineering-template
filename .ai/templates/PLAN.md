@@ -32,7 +32,7 @@ there are none — an empty list and an absent section mean the same thing.
 
 Declare a dependency only where this plan genuinely cannot be **built or
 verified** until the other's code exists. Two plans touching the same files is
-not a dependency; it is contention, and [`/orchestrate`](../../.claude/commands/orchestrate.md)
+not a dependency; it is contention, and [`/orchestrate`](../commands/orchestrate.md)
 resolves it by putting them in one worktree rather than one after the other.
 
 Declaring this is worth thirty seconds: without it the orchestrator infers the
@@ -47,7 +47,7 @@ scheduled a wave too early builds against code that does not exist.
 
 What this plan makes the contract say once it lands. Specs describe the present,
 so **nothing here is written into `.ai/specs/` or `.ai/decisions/` until the
-code works** — this section holds the wording, and the executor lands it in the
+code works** — this section holds the wording, and the implementor lands it in the
 same change as the code. Delete any subsection that does not apply; a plan that
 changes behavior and declares nothing here has not been thought through.
 
@@ -122,8 +122,8 @@ Discoveries made while executing. Append as you go — this is what makes the
 plan useful to the next agent even after it is archived.
 
 <!--
-Naming: PLAN-{nnn}-{slug}.md, next number after the highest anywhere under
-.ai/plans/ (including done/ and abandoned/ — numbers are never reused).
+Naming: PLAN-{nnn}-{slug}.md. Allocate IDs under .ai/config.yaml,
+including current records, Git history and reserved run blocks.
 
 Moving a plan between stages is a `git mv` plus a journal line. See the
 /plan-* commands.

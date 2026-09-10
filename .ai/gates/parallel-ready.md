@@ -2,6 +2,7 @@
 tier: contract
 authority: agent
 title: Parallel ready
+links: [AMD-002]
 ---
 > Contract: amend with evidence inside the approved scope.
 
@@ -21,8 +22,8 @@ Before creating or dispatching the current wave.
   work.
 - Nonoverlapping ID ranges are reserved in the sole-owned manifest before
   branching.
-- Prerequisite waves have merged and current plans have been checked against
-  that base.
+- The prior wave is terminal and this track's prerequisites have merged;
+  current plans have been checked against that synchronized base.
 - Each assignment names absolute root/branch, scope, output, check authority and
   resource limits.
 

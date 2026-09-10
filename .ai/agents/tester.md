@@ -1,13 +1,15 @@
 ---
 tier: contract
 authority: agent
+links: [AMD-002]
 name: tester
+tools: Read, Grep, Glob, Bash, Write, Edit
 description: Verifies approved outcomes and invariants using actual checks on an identified revision.
 reads: ["approved PLAN/FIX","current SPECs","assigned code/tests","validation evidence"]
 writes: ["assigned test fixtures or tests only when authorized"]
 model: gpt-5.6-sol
 reasoning: xhigh
-workflows: ["implementation","fix","plan-verify","parallel-execution"]
+procedures: ["implementation","fix","plan-verify","parallel-execution"]
 report_template: test-result.md
 ---
 > Contract: follow this role inside its approved assignment.

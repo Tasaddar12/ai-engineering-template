@@ -1,4 +1,7 @@
 ---
+tier: contract
+authority: agent
+links: [AMD-002]
 description: Turn a meeting or design document into ADRs, intent changes and intake items
 argument-hint: <path to the document, or a directory of them>
 ---
@@ -31,13 +34,13 @@ reliable. Ask if you cannot tell.
   `.ai/decisions/`, `status: accepted`. Say in **Context** which meeting it
   came from.
 - **Decided, but not built yet** → an ADR *plus* work in `.ai/plans/intake/`
-  or the roadmap. See the trap in step 4 — this is the case that goes wrong.
+  or a plan. See the trap in step 4 — this is the case that goes wrong.
 - **Discussed, not decided** → stays in the note. Fold the options and the
   arguments into the relevant ADR's **Alternatives considered** table, since
   that is exactly what that table wants and meetings are where it comes from.
 - **A change to scope, non-goals, constraints or priorities** → `intent` tier.
   Draft the wording, show the user, and **do not edit
-  `.ai/intent/PROJECT.md` without their explicit approval.**
+  `.ai/state/PROJECT.md` without their explicit approval.**
 - **A statement of current behavior** → check it against the code. If it holds
   and matters, it may become a spec. If it does not hold, it is stale
   discussion, not a requirement — say so.
@@ -48,8 +51,8 @@ reliable. Ask if you cannot tell.
 
 Before writing anything:
 
-- Does an ADR already cover this? Then either the note adds alternatives to it,
-  or it supersedes it — write a new ADR with the old id in `supersedes:`, then
+- Does an ADR already cover this? Link additional evidence from the meeting without rewriting the accepted ADR,
+  or supersede it — write a new ADR with the old id in `supersedes:`, then
   set `status: superseded` and `superseded_by:` on the old one and change
   nothing else in it. Never rewrite a past ADR's Context, Decision or
   Alternatives; its value is being an accurate account of what was decided at
@@ -60,7 +63,7 @@ Before writing anything:
   user. Do not silently pick the more recent one.
 - Does the note contradict a live spec? Follow the amendment protocol in
   `.ai/RULES.md` — with the note as the evidence, not as the authority.
-- Does it contradict `.ai/intent/PROJECT.md`? Stop and ask. Intent outranks
+- Does it contradict `.ai/state/PROJECT.md`? Stop and ask. Intent outranks
   every meeting.
 
 ## 4. The trap: decisions that aren't built yet
