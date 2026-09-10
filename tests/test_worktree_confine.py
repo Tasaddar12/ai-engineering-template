@@ -15,7 +15,9 @@ class ConfinementTests(unittest.TestCase):
     def functions(self, commands):
         source = HOOK.read_text(encoding='utf-8')
         functions = source[source.index('norm()'):source.index('\ndeny()')]
-        result = subprocess.run([BASH, '-c', functions + '\n' + commands], text=True, capture_output=True, check=True)
+        # Stdin preserves Bash escapes that Windows command-line quoting can alter.
+        result = subprocess.run([BASH, '-s'], input=functions + '\n' + commands,
+                                text=True, capture_output=True, check=True)
         return result.stdout.splitlines()
 
     def test_norm_preserves_slashes_and_converts_backslashes(self):
