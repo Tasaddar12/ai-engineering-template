@@ -23,7 +23,7 @@ One or two sentences. What you observed, not what you would do about it.
 
 ## Where
 
-`path/to/file.ext:42`, or the spec or document id.
+`path/to/file.ext` and the relevant symbol/general area, or the document id.
 
 ## Why it wasn't fixed then
 
@@ -44,8 +44,8 @@ Documentation and contract corrections become their own planned work through
 If investigating a question proves a code defect, create a linked FIX then.
 
 Either way the new record gets a fresh number and links back to this id; this
-file then moves to plans/abandoned/ once the work lands, or if planning it
-reveals it is not worth doing.
+file moves to plans/done/<period>/ once evidence proves the work resolved it.
+Use plans/abandoned/ for a human decision not to pursue it.
 
 Do NOT fix the thing while writing this. Capturing is a five-line interruption;
 fixing is scope creep, and it is what turns one reviewable change into an

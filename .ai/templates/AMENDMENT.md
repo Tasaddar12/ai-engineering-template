@@ -48,8 +48,10 @@ Delete unless applicable. Amendment ids this record replaces, and why.
 <!--
 Naming: AMD-{nnn}-{slug}.md in .ai/decisions/amendments/.
 
-Write this BEFORE editing the spec, then add this id to the spec's `links:`,
-then commit all of it together with the code change. Three sentences per
+The documentation agent writes this before editing the SPEC, after code review.
+Link the affected SPEC from this AMD; the SPEC has no document references.
+Commit it with the corresponding PLAN documentation step in the same PR as code.
+Three sentences per
 section is plenty — the record exists so a human can audit why the contract
 moved, not to slow you down.
 

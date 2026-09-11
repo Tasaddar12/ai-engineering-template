@@ -7,6 +7,9 @@ Arguments: **$ARGUMENTS** — the first token is the spec or ADR id; everything
 after it describes what is wrong with it. If no id was given, work out which
 document is at fault and confirm it before amending.
 
+Read and follow [RULES](../RULES.md). Assign this procedure to a documentation
+agent after the code-review handoff.
+
 This is the mechanism that keeps stale documents from forcing bad code. Using
 it is normal and expected — a project whose specs are never amended is a
 project whose specs are being ignored.
@@ -16,13 +19,10 @@ project whose specs are being ignored.
      license amending the spec to match the bug.** If the code is wrong, stop
      here and run `/fix` instead — that is the route for code that fails to do
      what the record already says it should.
-   - Does the correction violate anything in `.ai/state/PROJECT.md`? Hard
-     constraints and non-goals still govern behavior outside a PLAN's declared
-     target. When a PLAN declares the contract transition, its authority to
-     change the affected SPEC, ADR or amendment is unconditional; a conflict
-     with the current PROJECT wording does not veto that document transition.
-     A genuinely new intent or behavior outside the PLAN remains a human
-     decision.
+   - Does the correction request a change to human intent? Check the PLAN's
+     recorded human resolutions under
+     [Intent and PLAN approval](../RULES.md#intent-and-plan-approval).
+     Investigate and report any unresolved request before implementation.
 2. **Write the record first.** Copy `.ai/templates/AMENDMENT.md` to
    `.ai/decisions/amendments/AMD-{nnn}-{slug}.md`, numbering after the highest
    existing. Fill in all four sections: what the document said, what is
@@ -47,13 +47,15 @@ project whose specs are being ignored.
      amendment; changing the decision is a *new* ADR that names this one in
      `supersedes:`, plus `status: superseded` and `superseded_by:` here. That
      status flip needs no amendment record — the new ADR is the record.
-4. **Add the amendment id** to the document's `links:` frontmatter.
+4. **Link the affected document from the AMD.** For an ADR, add the amendment
+   ID to its links. Keep the SPEC self-contained without document references.
 5. **Follow the change downstream.** Other specs, plans, docs, or tests that
    depended on the old wording. Check `.ai/truth-map.md` — if the same fact was
    restated elsewhere, collapse the copies into links now.
 6. Land the spec, amendment and any related ADR in the final documentation
-   batch after code review two, in one documentation commit. The implementation
-   may be a separate commit in the same PR.
+   batch after code review two. Commit each assigned PLAN documentation step
+   under [PLAN records and commits](../RULES.md#plan-records-and-commits),
+   in the same PR as the implementation.
 7. Append a journal entry, and clear the matching line from **Known drift** in
    `.ai/state/STATE.md` if there is one.
 

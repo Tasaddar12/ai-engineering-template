@@ -3,16 +3,13 @@ tier: contract
 authority: agent
 title: Plan lifecycle
 ---
-> Contract: amend with evidence within the PLAN's declared target, following
-> [RULES](../RULES.md).
+> Follow [RULES](../RULES.md); use the relevant agent file for role scope.
 
 # Plan lifecycle
 
-A plan defines a desired future outcome, including while it is still a draft or
-unapproved. Its Contract changes holds future wording; current specs describe
-behavior that already exists. See [RULES](../RULES.md) for the authority split:
-document conflicts never block the PLAN, while execution remains a separate
-lifecycle decision.
+Use [Intent and PLAN approval](../RULES.md#intent-and-plan-approval) for
+proposal authority and [PLAN records and commits](../RULES.md#plan-records-and-commits)
+for the execution contract.
 
 | Directory | Meaning |
 | --- | --- |

@@ -3,6 +3,8 @@ description: Capture a problem you found but should not fix now, so it survives 
 argument-hint: <what's wrong, and where>
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Capture, without fixing: **$ARGUMENTS**
 
 This exists so a discovered problem outlives the session that found it. A

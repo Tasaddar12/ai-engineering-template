@@ -10,9 +10,8 @@ created: YYYY-MM-DD
 
 # PLAN-{nnn}: <What this delivers>
 
-> **`plan` tier.** Disposable. Rewrite this freely as reality is discovered —
-> a plan that turned out to be wrong is not a failure, it is information. Its
-> stage is the directory it sits in; there is deliberately no `status:` field.
+> Use [RULES](../RULES.md#plan-records-and-commits) for shared PLAN policy and
+> [planner](../agents/planner.md) for the drafting procedure.
 
 ## Goal
 
@@ -52,7 +51,10 @@ journal and run manifests belong to the coordinator.
 
 - **Owned paths:** <source, tests, PLAN and contract/document paths>
 - **Code paths:** <subset the review fixer may edit; no docs/contracts>
-- **Documentation paths:** <explicit list; subset of owned paths, disjoint from code paths; may be empty>
+- **Documentation paths:** <owned SPEC/ADR/AMD/PLAN and guide paths>
+- **Research paths:** <optional separate owned `.ai/research/*.md` paths>
+- **Source documentation paths:** <optional exact source files for comments/docstrings>
+- **Source documentation check:** <non-Python behavior-equivalence argv, if needed>
 - **Exclusive resources:** <ports, databases, caches, accounts; `none` if none>
 - **Environment:** <unique per-track port/database/cache settings>
 
@@ -61,15 +63,9 @@ resources even when file ownership is disjoint; worktrees do not isolate them.
 
 ## Contract changes
 
-What this plan makes the contract say once it lands. Every PLAN, including a
-draft or unapproved PLAN, always has authority to require changes to any
-contract in its declared target because it defines desired future state. Keep
-exact target wording here until the final documentation batch. Document
-conflicts never block creating, refining, reviewing, approving or implementing
-the PLAN on that ground; permission to start work remains a separate lifecycle
-decision. The documentor lands
-promised specs, amendments and ADR decisions after both code reviews, in the
-same PR as code. Existing contracts govern behavior the PLAN does not change.
+Exact future contract wording proposed by this PLAN, for the documentation
+agent's implementation handoff. Intent requests and their human resolutions
+are recorded separately in **Execution contract**.
 
 ### Specs to create
 
@@ -117,11 +113,37 @@ paragraph to the shape of the work.
 
 ## Steps
 
-Ordered, each independently verifiable. Check them off as you go.
+Details for each stable step ID in **Execution contract**, including its
+work and verification command. The documentor records delivery notes from
+implementation/review evidence.
 
-- [ ] 
-- [ ] 
-- [ ] 
+- **implement** — <source/test slice and check>
+- **document** — <SPEC/ADR/AMD/PLAN updates based on reviewed code>
+
+## Execution contract
+
+```json
+{
+  "intent_changes": [],
+  "steps": [
+    {"id": "implement", "phase": "build", "title": "Implement and verify the behavior"},
+    {"id": "document", "phase": "document", "title": "Document the reviewed implementation"}
+  ],
+  "completed_intake": []
+}
+```
+
+An intent-change entry has `request`, `decision` (`pending`, `approved` or
+`rejected`) and `human_resolution`. Example proposed entry:
+
+```json
+{"request": "<requested intent change>", "decision": "pending", "human_resolution": ""}
+```
+
+`completed_intake` contains original `.ai/plans/intake/INTAKE-*.md` paths.
+Fill the list with captures this work is expected to resolve. See
+[RULES](../RULES.md#intent-and-plan-approval) for the human decision gate and
+[the runtime](../runtime/README.md#worker-contract) for the execution interface.
 
 ## Acceptance
 
@@ -138,17 +160,8 @@ What could make this plan wrong. Name the assumption you are least sure of.
 
 ## Notes
 
-Discoveries made while executing. Append as you go — this is what makes the
-plan useful to the next agent even after it is archived.
+Implementation and review discoveries, recorded by the documentation agent
+from the code-review handoff.
 
-<!--
-Naming: PLAN-{nnn}-{slug}.md, next number after the highest anywhere under
-.ai/plans/ (including done/ and abandoned/ — numbers are never reused).
-
-Moving a plan between stages is a `git mv` plus a journal line. See the
-/plan-* commands.
-
-If this is a single defect and the specs already say what should happen, this
-is the wrong document — a fix restores conformance with the contract, a plan
-changes what conformance means. Use /fix. See RULES.md#bug-fixes.
--->
+Record naming and lifecycle follow [config](../config.yaml) and
+[RULES](../RULES.md#plan-records-and-commits).

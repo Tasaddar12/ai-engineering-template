@@ -3,6 +3,8 @@ description: Build several plans at once — schedule them into dependency waves
 argument-hint: [plan-ids | --all-backlog | --dry-run]
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Schedule a multi-plan build: **$ARGUMENTS**
 
 You are the **scheduler**. You work out what can be built in parallel, create
@@ -55,7 +57,7 @@ git remote -v
 - **Agent launcher not available** — not fatal, but it decides how the run works. With
   it, you launch tracks yourself and drive the run to the end. Without it, you
   can only print the commands for the user to run by hand, and the run needs a
-  person at every wave boundary. Say which mode you are in, up front.
+  person to dispatch newly ready tracks. Say which mode you are in, up front.
 
 Detect the forge from `git remote get-url origin`, unless
 `orchestration.forge` overrides it:
@@ -113,7 +115,7 @@ ceiling  = tracks x 8
 
 Present both, and the shape:
 
-> 3 tracks, 5 plans, 2 display waves: 6–12 worker processes, plus scheduling
+> 3 tracks, 5 plans, 2 display waves: 18–24 worker processes, plus scheduling
 > and the later defect audit. Each track waits only for its own dependencies.
 
 Then two judgements the numbers do not show, and say them plainly:
@@ -146,7 +148,7 @@ waves — carry on from the highest issued.
 
 Commit the manifest to the base branch.
 
-## 5. Create the wave's worktrees
+## 5. Create ready tracks' worktrees
 
 **Only ready tracks.** Create a track after its own dependencies have merged,
 the target has synced and their contents are verified. Waves are a display
@@ -156,7 +158,7 @@ must start at that verified target SHA.
 
 ### Check the plans first
 
-**Delegate this wave's plans to the `plan-checker` agent before creating
+**Delegate ready tracks' plans to the `plan-checker` agent before creating
 anything.** It is read-only and cheap, and it is the only thing standing
 between a wrong plan and a whole track spent building it.
 
@@ -173,7 +175,8 @@ Act on what it reports:
 
 | Finding | Do |
 |---|---|
-| Conflicts with any existing project document (SPEC, ADR, AMD, intent or other) | Preserve the PLAN's declared target, record the necessary document transition, and continue per [RULES](../RULES.md); the conflict never vetoes the PLAN. If the target creates concrete critical functionality breakage, route supporting PLANs through an ORCH dependency; retain unrelated scheduling checks. |
+| Requests a human-intent change | Check the PLAN's Execution contract against [Intent and PLAN approval](../RULES.md#intent-and-plan-approval); wait for the unresolved human decision before dispatching that PLAN. |
+| Changes existing non-intent contracts | Pass the declared target and transition evidence through the code-to-documentation handoff in [RULES](../RULES.md#review-and-documentation). |
 | Premise invalidated by an earlier wave | Pull it, and offer to re-run `/plan-new` on it |
 | Internally inconsistent, or too vague to slice | Pull it — an implementor cannot build it |
 | Nits only | Proceed, and pass them to the track |
@@ -245,11 +248,11 @@ git show orch/ORCH-001/w1t1:.ai/state/orchestration/ORCH-001/w1t1/REVIEW-LOG.md
 | Terminal state | Means | You do |
 |---|---|---|
 | `ready` | Review approved, required checks pass, pushed head matches open PR | Validate integration and deliver — step 8 |
-| `ready_with_followups` | Code FIX/doc-contract INTAKE reports retained; required checks pass | Deliver under the authorized residual policy |
+| `ready_with_followups` | Implementation and overall SPEC coverage complete; editorial/unrelated reports retained | Validate and deliver under [Definition of done](../RULES.md#definition-of-done) |
 | `stopped` | Incomplete work, inconclusive review, failed required checks/PR or unresolved decision | Record it; **do not merge** |
 | `failed` | The session died, or the branch has no commits | Say so plainly; offer to relaunch |
 
-**A track that is not `ready` does not stall the run.** Merge everything that
+Use [Scheduling and IDs](../RULES.md#scheduling-and-ids) for ready-track dispatch. Merge everything that
 is ready, and carry on. Only the plans that genuinely *depend* on a stopped
 track have to wait — everything else proceeds. Sitting idle because one track
 of four needs a human is the failure this whole step exists to avoid.
@@ -263,9 +266,8 @@ session the user is actually talking to.
 
 Honour `orchestration.auto_merge`:
 
-- **`ask`** — ask **once per wave**, listing every ready track together. One
-  question, not one per track, and nothing is blocked while tracks are still
-  running.
+- **`ask`** — present the currently ready tracks together when delivery
+  authorization is missing; continue independent work while it is pending.
 - **`auto`** — merge as each track reports ready.
 - **`never`** — leave the PRs open and report them.
 
@@ -305,8 +307,8 @@ Process each terminal track without waiting for an unrelated wave barrier:
    and parallel tracks editing them makes the second merge conflict. **You are
    the only writer**, on the base branch.
 3. **Update the manifest** — which tracks merged, rounds each took, ids used.
-4. **Re-check the next wave's plans** — that is step 5's `plan-checker` gate,
-   and it is the reason the gate runs per wave rather than once at the top.
+4. **Re-check newly ready tracks' plans** — that is step 5's `plan-checker` gate,
+   and it is the reason the gate runs per ready track rather than once at the top.
 5. **Drop any plan whose dependency did not land.** If a wave-2 plan depended
    on a stopped wave-1 track, it cannot be built — move it back to
    `backlog/`, say why, and carry on with the rest of the wave.

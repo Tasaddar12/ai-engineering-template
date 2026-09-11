@@ -3,6 +3,8 @@ description: Sweep finished plans into their period folder, and abandon stale on
 argument-hint: [period]
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Tidy the plan lifecycle. Period: **$ARGUMENTS** (default: the current one from
 `lifecycle.done_partition` in `.ai/config.yaml`, e.g. `2026-Q3`).
 
@@ -23,8 +25,9 @@ Tidy the plan lifecycle. Period: **$ARGUMENTS** (default: the current one from
      New confirmed code defects go directly to FIX.
    - **promote** — documentation, contract or other work worth doing; the user
      runs `/plan-new INTAKE-{nnn}`
-   - **abandon** — no longer matters, or was fixed incidentally. Verify it was
-     actually fixed before saying so.
+   - **complete** — evidence establishes that the captured problem is resolved;
+     move it to `done/<period>/`
+   - **abandon** — no longer wanted; record the human scope decision and reason
    - **keep** — still real, still not now
 
    Group them by `kind` and lead with anything marked severe. Say plainly if

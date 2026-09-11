@@ -10,10 +10,9 @@ project:
 # mode — how much process this project gets. Same template either way; the
 # mode decides which documents are required and which commands are in play.
 #
-#   light     Small or short-lived work. One plan at a time in plans/active/.
-#             No specs required — acceptance criteria live in the plan itself.
-#             Agents in play: implementor, verifier.
-#             Skip: specs/, plan-checker.
+#   light     Small or short-lived work with compact planning.
+#             Acceptance criteria begin in the plan; actual-code SPEC coverage
+#             is completed after code review. See RULES.md for shared policy.
 #
 #   standard  Default. Specs are the contract; plans move through the full
 #             lifecycle; amendments are recorded.
@@ -110,12 +109,12 @@ orchestration:
   # mess to unpick.
   worktree_root: .worktrees
 
-  # How a wave's tracks are started.
+  # How ready tracks are started.
   #   background  /orchestrate launches a session per track and is woken as each
   #               exits, so a run finishes without anyone watching for a wave to
   #               complete. Use .ai/runtime/orchestrate.py and its worker adapter.
   #   manual      /orchestrate prints the commands and stops. Every wave
-  #               boundary then needs a person.
+  #               dispatch decision then needs a person.
   # Background tracks run unattended, so they must not hit a permission prompt —
   # configure the host's worktree permissions. Hooks are optional accident guards;
   # they are not a sandbox or permission to bypass the host's controls.
@@ -137,10 +136,7 @@ orchestration:
   review:
     # Both cold code reviews always run, with at most one correction between.
     max_rounds: 2
-    # All code defects are FIX; docs/contracts are separate INTAKE items.
-    # Residual findings wait until all other PLANs complete. Required checks
-    # must pass even when the authorized policy permits merging with follow-ups.
-    residual_findings: merge   # merge | park
+    # Completion and retained findings follow RULES.md#definition-of-done.
 
   # Consolidate documentation only after both code reviews. Both documentation
   # reviews always run, with at most one documentation-only correction between.
@@ -182,7 +178,7 @@ orchestration:
 
   # Applies to the scheduler, which is the only thing that merges — a track
   # never merges itself, so an `ask` here cannot hang an unattended track.
-  #   ask     Ask once per wave, listing every track that cleared together.
+  #   ask     Request missing delivery authorization for currently ready tracks.
   #   auto    Merge as each track reports ready. Hands-off end to end.
   #   never   Leave the PR open and report it. Nothing is merged.
   auto_merge: auto         # authorized runs; ask | never remain manual-host options

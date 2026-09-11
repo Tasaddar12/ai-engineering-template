@@ -3,6 +3,8 @@ description: Show where an orchestration run stands — waves, tracks, review ro
 argument-hint: [run-id]
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Report the state of: **${1:-the most recent run}**
 
 Read the manifest, then **check it against reality**. The manifest is what the
