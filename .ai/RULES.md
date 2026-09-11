@@ -28,9 +28,10 @@ making:
 1. **Preserve the PLAN's declared target wording.** During the working branch,
    the current spec may intentionally lag that target until the final
    documentation batch.
-2. **The documentor fixes and records every newly discovered document
-   transition after code review two**, in the same PR. This is a delivery
-   obligation, not a precondition to implementation.
+2. **The documentor fixes and records every document transition required by
+   the authorized PLAN target, including consequences discovered later, after
+   code review two**, in the same PR. This is a delivery obligation, not a
+   precondition to implementation.
 3. **Continue the work without a silent workaround.** Preserve the PLAN's
    original outcome and continue independent work while the documentation
    transition is recorded.
@@ -404,9 +405,12 @@ explicit exception: preserve them until the final documentation batch:
 
 The autonomous review workflow takes precedence over the incidental amendment
 and always-in-scope rules above. The original PLAN's promised documentation
-and contracts still land with its implementation. New review findings that
-require documentation or contract corrections become separate INTAKE items
-for later; do not expand the review fix pass to edit them.
+and contracts still land with its implementation. Document and contract
+transitions necessary to the authorized target, including consequences
+discovered in review, remain in that PLAN's final documentation batch. Only
+unrelated or independently proposed documentation and contract review findings
+become separate INTAKE items for later; do not expand the review fix pass to
+edit documentation.
 
 Run at most **two reviews**, with one immediate code-fix pass after the first.
 At the second failure, or for other residual defects, retain code FIX reports
