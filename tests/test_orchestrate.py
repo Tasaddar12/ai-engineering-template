@@ -38,8 +38,14 @@ class FakeForge(orch.Runner):
             return json.dumps([{'number': n, 'state': p['state']} for n, p in self.prs.items() if p['branch'] == branch])
         if args[:2] == ('pr', 'create'):
             with self.guard:
+                branch = args[args.index('--head') + 1]
+                base = args[args.index('--base') + 1]
+                remote = Path(orch.git(self.forge_root, 'remote', 'get-url', 'origin'))
+                orch.require(orch.git(remote, 'rev-list', '--count', f'{base}..{branch}') != '0' and
+                             orch.git(remote, 'diff', '--name-only', f'{base}...{branch}'),
+                             'GitHub rejected PR: no commits or changes between base and head')
                 number = len(self.prs) + 1
-                self.prs[number] = {'state': 'OPEN', 'branch': args[args.index('--head') + 1]}
+                self.prs[number] = {'state': 'OPEN', 'branch': branch}
             return f'https://github.com/fixture/repo/pull/{number}'
         number = int(args[2])
         pr = self.prs[number]

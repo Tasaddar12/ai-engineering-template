@@ -349,6 +349,29 @@ class DocumentationTests(unittest.TestCase):
     track = fixture.RuntimeTests.track
     runner = fixture.RuntimeTests.runner
 
+    def test_code_owned_configuration_in_documentation_directories_can_ship(self):
+        paths = ['docs/conf.py', 'docs/requirements.txt', 'doc/conf.py', 'documentation/CMakeLists.txt']
+        track = self.track('a', 1, docs=True, env={'WORKER_MODE': 'code-documentation-config'})
+        track.update(code_paths=paths, owned_paths=paths + ['PLAN-a.md', 'docs.md'])
+        self.config['tracks'] = [track]
+        runner = self.runner()
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertEqual((self.root / path).read_text(), 'planned configuration\n')
+                self.assertEqual(orch.git(self.root, 'diff', state['code_reviewed_sha'],
+                                         state['documentation_reviewed_sha'], '--', path), '')
+
+    def test_code_owned_markdown_remains_readonly_during_build(self):
+        track = self.track('a', 1, env={'WORKER_MODE': 'code-documentation-config'})
+        track.update(code_paths=['docs/README.md'], owned_paths=['PLAN-a.md', 'docs/README.md'])
+        self.config['tracks'] = [track]
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        self.assertIn('Code worker cannot change docs/contracts', runner.state['tracks']['a']['reason'])
+        self.assertFalse(runner.events)
+
     def test_executable_text_configuration_cannot_be_declared_documentation(self):
         for name in ('CMakeLists.txt', 'requirements.txt', 'docs/CMakeLists.txt', 'docs/requirements.txt'):
             config = copy.deepcopy(self.config)
@@ -380,12 +403,57 @@ class DocumentationTests(unittest.TestCase):
         self.config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': 'no-code'})]
         self.config['tracks'][0]['code_paths'] = []
         runner = self.runner()
+        create_after = []
+        original = runner.gh
+
+        def observe(*args):
+            if args[:2] == ('pr', 'create'):
+                create_after.append(list(runner.state['tracks']['a']['completed_phases']))
+            return original(*args)
+
+        runner.gh = observe
         self.assertTrue(runner.run())
         state = runner.state['tracks']['a']
         self.assertEqual(state['code_reviewed_sha'], state['base'])
         self.assertTrue(all(name in state['completed_phases'] for name in orch.REVIEW_PHASES))
         self.assertFalse((self.root / 'src/a.txt').exists())
         self.assertEqual((self.root / 'docs.md').read_text(), 'documented\n')
+        self.assertEqual(create_after, [['build', 'review-1', 'review-2', 'document']])
+
+    def test_no_change_track_is_preserved_without_fabricating_a_commit_or_pr(self):
+        self.config['tracks'] = [self.track('a', 1, env={'WORKER_MODE': 'no-code'})]
+        self.config['tracks'][0]['code_paths'] = []
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        state = runner.state['tracks']['a']
+        path, _ = runner.location(self.config['tracks'][0])
+        self.assertEqual(orch.git(path, 'rev-parse', 'HEAD'), state['base'])
+        self.assertEqual(list(state['completed_phases']), ['build', 'review-1', 'review-2', 'document'])
+        self.assertIn('No changes available for a pull request', state['reason'])
+        self.assertFalse(runner.prs)
+        self.assertFalse(runner.events)
+
+    def test_documentation_only_pr_retry_reuses_completed_reviews_and_documentation(self):
+        self.config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': 'no-code'})]
+        self.config['tracks'][0]['code_paths'] = []
+        runner = self.runner()
+        original = runner.gh
+
+        def unavailable(*args):
+            if args[:2] == ('pr', 'create'):
+                raise orch.Blocked('Temporary documentation PR outage')
+            return original(*args)
+
+        runner.gh = unavailable
+        self.assertFalse(runner.run())
+        before = copy.deepcopy(runner.state['tracks']['a']['phase_attempts'])
+        self.assertEqual(before, {'build': 1, 'review-1': 1, 'review-2': 1, 'document': 1})
+        runner.gh = original
+        runner.recover('retry', 'a')
+        self.assertTrue(runner.run())
+        self.assertEqual(runner.state['tracks']['a']['phase_attempts'],
+                         {**before, 'docs-review-1': 1, 'docs-review-2': 1})
+        self.assertEqual(len(runner.prs), 1)
 
     def test_two_code_and_two_documentation_reviews_use_separate_models(self):
         self.config['tracks'] = [self.track('a', 1, docs=True)]

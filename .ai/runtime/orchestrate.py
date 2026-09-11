@@ -551,7 +551,7 @@ class Runner:
                 require(documentation_path(name), f'Documentation worker cannot change source: {name}')
             else:
                 require(not documentation_path(name) and
-                        not name.casefold().startswith(('docs/', 'doc/', 'documentation/', '.ai/specs/', '.ai/decisions/')),
+                        not name.casefold().startswith(('.ai/specs/', '.ai/decisions/')),
                         f'Code worker cannot change docs/contracts: {name}')
         if changed:
             git(path, '--literal-pathspecs', 'add', '--', *sorted(changed))
@@ -647,6 +647,8 @@ class Runner:
     def pull_request(self, track):
         path, branch = self.location(track)
         state = self.state['tracks'][track['id']]
+        require(git(path, 'diff', '--name-only', state['base'], 'HEAD'),
+                'No changes available for a pull request; preserve the track without an empty commit')
         git(path, 'push', '-u', self.config['remote'], f'HEAD:refs/heads/{branch}')
         prs = json.loads(self.gh('pr', 'list', '--repo', self.config['github_repo'], '--head', branch,
                                 '--base', self.config['base_branch'], '--state', 'all', '--json', 'number,state'))
@@ -668,7 +670,8 @@ class Runner:
         path, _ = self.location(track)
         result = self.phase(track, 'build')
         self.record_findings(track, result, 0, phase_name='build', source_head=state['phase_heads']['build'])
-        self.pull_request(track)
+        if git(path, 'diff', '--name-only', state['base'], 'HEAD'):
+            self.pull_request(track)
         first = self.phase(track, 'review-1', readonly=True)
         self.record_findings(track, first, 1, phase_name='review-1', source_head=state['phase_heads']['review-1'])
         require(first['verdict'] != 'cannot_review', 'Reviewer cannot review')
@@ -684,6 +687,8 @@ class Runner:
         documented = self.phase(track, 'document')
         self.record_findings(track, documented, 0, phase_name='document', source_head=state['phase_heads']['document'])
         require(documented.get('documentation_complete') is True, 'Original PLAN documentation is incomplete or unverified')
+        if not state.get('pr'):
+            self.pull_request(track)
         docs_first = self.phase(track, 'docs-review-1', readonly=True)
         self.record_findings(track, docs_first, 1, phase_name='docs-review-1', source_head=state['phase_heads']['docs-review-1'])
         require(docs_first['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')

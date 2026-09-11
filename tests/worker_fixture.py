@@ -25,7 +25,10 @@ if phase == 'build':
     for required in json.loads(os.environ.get('REQUIRE_FILES', '[]')):
         assert (root / required).is_file(), required
     time.sleep(float(os.environ.get('WORKER_DELAY', '0')))
-    if mode != 'no-code':
+    if mode == 'code-documentation-config':
+        for config_path in context['code_paths']:
+            write(config_path, 'planned configuration\n')
+    elif mode != 'no-code':
         write('foreign.txt' if mode == 'outside' else f'src/{context["track"]}.txt', 'built\n')
     if mode == 'staged-outside':
         write('foreign.txt', 'must not commit\n')
