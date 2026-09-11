@@ -2,8 +2,9 @@
 
 `/orchestrate` takes a set of plans and works out which can be built at the
 same time and which have to wait. Each group then gets its own git worktree and
-its own session, which drives it through research, implementation,
-documentation, a pull request, and a review loop with a hard ceiling.
+its own session, which drives it through research and implementation, two cold
+code reviews, a consolidated documentation batch, two documentation reviews,
+and final delivery.
 
 The [Python runtime](../.ai/runtime/README.md) provides executable background
 dispatch, durable receipts and serialized GitHub delivery. The coordinator
@@ -64,8 +65,11 @@ build (research + implement) → PR when there is a diff → code review 1
                        → documentation batch → docs review 1
                        → optional docs fix → docs review 2 → delivery
 
-Code defects: FIX. Documentation/contract corrections: separate INTAKE.
-Residual findings wait until all other PLANs complete; never a third review.
+Code defects are FIX items. Incidental documentation/contract corrections are
+INTAKE items; actionable findings against the original documentation promises
+may receive the single documentation correction pass between documentation
+reviews. Residual findings follow the configured merge policy; never a third
+review of either kind.
 ```
 
 | Agent | Sees | Deliberately does not see |
