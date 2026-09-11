@@ -270,7 +270,7 @@ class RecoveryTests(unittest.TestCase):
         runner.recover('abandon', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
         findings = runner.state['tracks']['a']['findings']
         queue = runner.followup_queue()
-        self.assertEqual(queue['FIX'], [findings['code']])
+        self.assertEqual(queue['FIX'], [{**findings['code'], 'audit_ready': True}])
         self.assertEqual(queue['INTAKE'], [findings['documentation']])
         record = f".ai/fixes/open/{findings['code']['id']}-current-evidence.md"
         self.seed({record: '# Current evidence after the abandoned attempt\n'})

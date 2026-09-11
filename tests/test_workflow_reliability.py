@@ -44,6 +44,70 @@ class ReliabilityTests(unittest.TestCase):
     track = fixture.RuntimeTests.track
     runner = fixture.RuntimeTests.runner
 
+    def test_interrupted_readiness_requires_reconciliation_and_reuses_valid_result(self):
+        runner = self.runner()
+        consume = runner.consume_readiness
+
+        def interrupted(track):
+            raise orch.Blocked('Readiness scheduler interrupted before ingestion')
+
+        runner.consume_readiness = interrupted
+        self.assertFalse(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(state['inflight_phase'], 'readiness')
+        self.assertTrue(Path(state['inflight']['result_file']).is_file())
+        state['worker_stopped'] = False
+        runner.save()
+        with self.assertRaisesRegex(orch.Blocked, 'confirming its worker stopped'):
+            runner.recover('retry', 'a')
+        with self.assertRaisesRegex(orch.Blocked, 'confirming its worker stopped'):
+            runner.recover('reconcile', 'a', expected_head=orch.git(self.root, 'rev-parse', 'HEAD'))
+        runner.consume_readiness = consume
+        runner.recover('reconcile', 'a', expected_head=orch.git(self.root, 'rev-parse', 'HEAD'), workers_stopped=True)
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(sum(state['readiness_attempts'].values()), 1)
+        self.assertEqual(len(state['readiness_history']), 1)
+
+    def test_completed_readiness_rejection_is_preserved_until_revision_changes(self):
+        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'readiness-reject'
+        runner = self.runner()
+        self.assertFalse(runner.run())
+        state = runner.state['tracks']['a']
+        receipt = copy.deepcopy(state['readiness'])
+        with self.assertRaisesRegex(orch.Blocked, 'changed revision'):
+            runner.recover('retry', 'a')
+        self.assertEqual(state['readiness'], receipt)
+        self.assertEqual(len(state['readiness_history']), 1)
+        self.assertFalse(runner.location(self.config['tracks'][0])[0].exists())
+        (self.forge / 'resolved-decision.md').write_text('Recorded revised proposal\n')
+        orch.git(self.forge, 'add', '.')
+        orch.git(self.forge, 'commit', '-m', 'Revise readiness evidence')
+        orch.git(self.forge, 'push')
+        runner.recover('retry', 'a')
+        self.assertFalse(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(len(state['readiness_history']), 2)
+        self.assertEqual(state['readiness_history'][0], receipt)
+
+    def test_lost_readiness_results_have_a_bounded_retry_budget(self):
+        runner = self.runner()
+
+        def lost(track):
+            phase = runner.state['tracks']['a']['inflight']
+            Path(phase['result_file']).unlink()
+            raise orch.Blocked('Readiness result lost')
+
+        runner.consume_readiness = lost
+        self.assertFalse(runner.run())
+        head = orch.git(self.root, 'rev-parse', 'HEAD')
+        runner.recover('reconcile', 'a', expected_head=head, workers_stopped=True)
+        self.assertFalse(runner.run())
+        with self.assertRaisesRegex(orch.Blocked, 'budget exhausted'):
+            runner.recover('reconcile', 'a', expected_head=head, workers_stopped=True)
+        self.assertEqual(runner.state['tracks']['a']['readiness_attempts'][head], 2)
+        self.assertFalse(runner.location(self.config['tracks'][0])[0].exists())
+
     def test_failed_readiness_allocates_nothing_and_independent_track_merges(self):
         self.config['tracks'] = [self.track('a', 1, env={'WORKER_MODE': 'readiness-reject'}), self.track('b', 21)]
         runner = self.runner()

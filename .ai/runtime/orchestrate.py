@@ -461,6 +461,7 @@ class Runner:
 
     def readiness(self, track, base, contracts):
         state = self.state['tracks'][track['id']]
+        require(not state.get('inflight_phase'), 'Reconcile the unfinished readiness worker before retrying')
         receipt = state.get('readiness')
         if receipt and receipt['base_sha'] == base:
             require(receipt['result']['status'] == 'complete' and receipt['result']['verdict'] == 'approved' and
@@ -488,16 +489,37 @@ class Runner:
                   'approved with no findings means ready; changes_requested or cannot_review parks the PLAN.\n' +
                   json.dumps(context, indent=2))
         argv = [arg.format_map(mapping) for arg in self.config.get('readiness_worker_command', self.config['worker_command'])]
-        output = command(argv, self.root, input=prompt, timeout=self.config.get('worker_timeout_seconds', 3600),
-                         env={**self.worker_environment(track), 'ORCH_CONTEXT': json.dumps(context),
-                              'ORCH_RESULT': str(result_file)})
+        attempts = state.setdefault('readiness_attempts', {})
+        require(attempts.get(base, 0) < self.config.get('max_process_attempts', 2), 'Readiness process retry budget exhausted')
+        attempts[base] = attempts.get(base, 0) + 1
+        self.update(state, inflight_phase='readiness', worker_stopped=False,
+                    inflight={'name': 'readiness', 'before': base, 'result_file': str(result_file),
+                              'readonly': True, 'argv': argv})
+        try:
+            output = command(argv, self.root, input=prompt, timeout=self.config.get('worker_timeout_seconds', 3600),
+                             env={**self.worker_environment(track), 'ORCH_CONTEXT': json.dumps(context),
+                                  'ORCH_RESULT': str(result_file)})
+        finally:
+            self.update(state, worker_stopped=True)
         (self.directory / f'{token}.log').write_text(output, encoding='utf-8')
-        result = json.loads(result_file.read_text(encoding='utf-8'))
+        self.consume_readiness(track)
+
+    def consume_readiness(self, track):
+        state = self.state['tracks'][track['id']]
+        phase = state['inflight']
+        result = json.loads(Path(phase['result_file']).read_text(encoding='utf-8'))
         self.validate_result(result)
         with self.repo_mutex:
             require(not git(self.root, 'status', '--porcelain'), 'Readiness worker changed the primary checkout')
             self.sync()
-        self.update(state, readiness={'base_sha': base, 'result': result, 'result_file': str(result_file)})
+        receipt = {'base_sha': phase['before'], 'result': result, 'result_file': phase['result_file']}
+        with self.mutex:
+            state['readiness'] = receipt
+            state.setdefault('readiness_history', []).append(receipt)
+            state.pop('inflight_phase', None)
+            state.pop('inflight', None)
+            state.pop('worker_stopped', None)
+            self.save()
         require(result['status'] == 'complete' and result['verdict'] == 'approved' and not result['findings'],
                 f"PLAN readiness failed: {result['summary']}")
 
@@ -1191,6 +1213,32 @@ class Runner:
             state = self.state['tracks'][track_id]
             require(state['status'] in ('blocked', 'running', 'pending'),
                     'Resume uncertain delivery or merged cleanup with the normal run command')
+            if state.get('inflight_phase') == 'readiness':
+                require(action in ('reconcile', 'abandon') and workers_stopped,
+                        'Reconcile readiness after confirming its worker stopped')
+                require(git(self.root, 'rev-parse', 'HEAD') == expected_head,
+                        'Supply the exact primary checkout HEAD for readiness recovery')
+                if action == 'abandon':
+                    self.update(state, status='abandoned', released=True, reason='Readiness abandoned; all evidence preserved')
+                    return
+                phase = state['inflight']
+                require(not git(self.root, 'status', '--porcelain'), 'Readiness left changes in the primary checkout')
+                try:
+                    result = json.loads(Path(phase['result_file']).read_text(encoding='utf-8'))
+                    self.validate_result(result)
+                except (OSError, ValueError, TypeError, KeyError, Blocked):
+                    require(expected_head == phase['before'], 'Readiness revision changed; inspect before recovery')
+                    require(state.get('readiness_attempts', {}).get(phase['before'], 0) < self.config.get('max_process_attempts', 2),
+                            'Readiness process retry budget exhausted')
+                    state.setdefault('failed_processes', []).append(dict(phase))
+                    state.pop('inflight_phase', None)
+                    state.pop('inflight', None)
+                    state.pop('worker_stopped', None)
+                    self.update(state, status='pending', reason='Readiness infrastructure failure reconciled without losing prior evidence')
+                    return
+                self.consume_readiness(track)
+                self.update(state, status='pending', reason='Completed readiness result reconciled without replay')
+                return
             path, _ = self.location(track)
             if path.exists():
                 self.ownership(track, path)
@@ -1207,7 +1255,11 @@ class Runner:
                 require(not state.get('base') and not git(self.root, 'branch', '--list', self.location(track)[1]),
                         'Allocated branch is missing its worktree; inspect and reconcile it before recovery')
                 require(action == 'retry', 'Use retry for readiness or preallocation failures')
-                state.pop('readiness', None)
+                receipt = state.get('readiness')
+                if receipt and (receipt['result']['status'] != 'complete' or receipt['result']['verdict'] != 'approved' or
+                                receipt['result']['findings']):
+                    require(self.sync() != receipt['base_sha'],
+                            'Completed readiness rejection requires a changed revision; preserve its decision')
                 self.update(state, status='pending', reason='Retry readiness against the synchronized target')
                 return
             if action == 'reconcile' and state.get('inflight_phase'):
@@ -1431,7 +1483,8 @@ def read_status(config):
         head = git(path, 'rev-parse', 'HEAD') if path.exists() else None
         dirty = git(path, 'status', '--porcelain') if path.exists() else ''
         if current.get('inflight_phase'):
-            action = f"Inspect worker processes and Git, then --reconcile {track['id']} --expected-head {head} --workers-stopped"
+            recovery_head = git(root, 'rev-parse', 'HEAD') if current['inflight_phase'] == 'readiness' else head
+            action = f"Inspect worker processes and Git, then --reconcile {track['id']} --expected-head {recovery_head} --workers-stopped"
         elif current['status'] == 'blocked':
             content_failure = any(r['status'] != 'complete' or r['verdict'] == 'cannot_review' or
                                   (name in ('build', 'review-2') and not r['implementation_complete']) or
