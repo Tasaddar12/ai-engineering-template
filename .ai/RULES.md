@@ -15,11 +15,12 @@ what to do when the written record and reality disagree.
 
 ## The Prime Rule
 
-**Implement an authorized PLAN's target even when it conflicts with any
-existing SPEC, ADR, amendment, or other project document.** No document
-conflict, whether enumerated in the PLAN or discovered later as a consequence
-of its authorized target, may by itself prevent, pause, or force redesign of
-the PLAN. Preserve behavior outside the PLAN's declared target.
+**Every PLAN, including a draft or unapproved PLAN, always has authority to
+define and require changes to any SPEC, ADR, AMD, amendment, or other project
+document within its declared target.** A conflict, whether enumerated in the
+PLAN or discovered later as a consequence of its target, never blocks creating,
+refining, reviewing, approving, or implementing a PLAN on that ground. Preserve
+behavior outside the PLAN's declared target.
 
 Documents here are versioned, not sacred. When you find that a spec, plan, or
 doc is wrong, stale, incomplete, or incompatible with the change you are
@@ -29,7 +30,7 @@ making:
    the current spec may intentionally lag that target until the final
    documentation batch.
 2. **The documentor fixes and records every document transition required by
-   the authorized PLAN target, including consequences discovered later, after
+   the PLAN's target, including consequences discovered later, after
    code review two**, in the same PR. This is a delivery obligation, not a
    precondition to implementation.
 3. **Continue the work without a silent workaround.** Preserve the PLAN's
@@ -48,24 +49,26 @@ Three specific failures this rule exists to prevent:
   agent inherits a contradiction and no way to tell which side is true.
 
 If you are unsure whether a document is stale or you are wrong, **the answer is
-never to guess quietly.** State the contradiction plainly, preserve the
-authorized target, and record the document transition. Ask only when a new
-intent outside the authorized target or an explicit later human instruction
-requires a decision; a document conflict does not create repeat approval.
+never to guess quietly.** State the contradiction plainly, preserve the PLAN's
+target, and record the document transition. Ask only when a new intent outside
+the target or an explicit later human instruction requires a decision; a
+document conflict does not create repeat approval.
 
-### Authorized PLANs and the critical-functionality exception
+### PLAN authority and the critical-functionality exception
 
-An **authorized PLAN** is a PLAN selected and approved by the applicable
-workflow or explicitly authorized by a human. A draft or otherwise unapproved
-proposed PLAN has no execution authority. A later direct human instruction
-that explicitly changes or cancels the work governs that scope; a document
-conflict does not create another approval loop.
+The PLAN's authority over its target documents is unconditional. A draft or
+otherwise unapproved PLAN does not itself authorize execution, launch work, or
+external action; lifecycle scheduling and permission to execute remain separate
+from whether the PLAN can define its target contracts. A later direct human
+instruction that explicitly changes or cancels the work governs that scope; a
+document conflict does not create another approval loop.
 
-The only reason to prevent an authorized PLAN step is concrete evidence that
-the PLAN itself would break critical project functionality. Examples include
-data loss, a security failure, unrecoverable corruption, an inability to build
-or start, or loss of a core user-visible capability. A stale, contradictory,
-incomplete, or otherwise mismatched document is not critical breakage.
+The only reason to prevent an implementation step once work is authorized to
+execute is concrete evidence that the PLAN itself would break critical project
+functionality. Examples include data loss, a security failure, unrecoverable
+corruption, an inability to build or start, or loss of a core user-visible
+capability. A stale, contradictory, incomplete, or otherwise mismatched
+document is not critical breakage.
 
 When a PLAN step is unsafe on that evidence, do not abandon the PLAN or change
 its intended outcome. Scope one or more supporting PLANs under a new or
@@ -116,8 +119,8 @@ the past. That is why superseding an ADR means writing a new one that points at
 it, never rewriting the old one, and why only an ADR with `status: accepted` is
 authority.
 
-**A proposed plan is a prediction; an authorized PLAN carries an intended
-outcome that implementation and verification must preserve.**
+**A PLAN carries an intended future outcome; once execution is authorized,
+implementation and verification must preserve it.**
 
 ---
 
@@ -128,7 +131,7 @@ what you may do without asking.
 
 | Tier | What it holds | Examples | You may |
 |---|---|---|---|
-| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | Human authority. Stop and ask before changing intent outside an authorized target. Explicit authorization of a PLAN target also authorizes the necessary document transitions within that target; only the critical-functionality exception above can prevent its implementation. |
+| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | Human authority. Stop and ask before changing intent outside a PLAN target. Every PLAN authorizes the necessary document transitions within its declared target; only the critical-functionality exception above can prevent implementation. |
 | `contract` | What "correct" means right now | `specs/SPEC-*.md`, `decisions/ADR-*.md` | **Amend freely, with a recorded amendment.** See protocol below. |
 | `plan` | How we intend to get there | `plans/**/PLAN-*.md`, `fixes/**/FIX-*.md` | **Rewrite freely.** Plans are disposable. |
 | `status` | Where things stand | `state/STATE.md` | **Overwrite freely.** Expected to churn every session. |
@@ -204,9 +207,9 @@ you down. It is three sentences, not an essay. **An amendment is never a
 failure**; it is the system working. A project whose specs never get amended is
 a project whose specs are being ignored.
 
-For an authorized PLAN, this protocol records the transition after code review
-two and does not block implementation. The PLAN's declared target remains the
-authority while the working branch is in flight.
+For a PLAN, this protocol records the transition after code review two and does
+not block implementation. The PLAN's declared target remains the authority
+while the working branch is in flight.
 
 Amendments are `log` tier — append only. If a later amendment supersedes an
 earlier one, write a new record that says so.
@@ -277,8 +280,13 @@ decision from a strong opinion. Two specific failures:
   present nor a lie — it describes an intention. An agent that treats it as
   current will "fix" working code to match something nobody has built.
 
-Decisions become real by landing in `decisions/ADR-*.md`. Constraints and scope
-changes become real by landing in `state/PROJECT.md`, which takes a human.
+Decisions become real by landing in `decisions/ADR-*.md`. Meeting notes alone
+do not authorize intent or scope changes: a change outside a PLAN's declared
+target must land in `state/PROJECT.md` with human authority. Every PLAN,
+including a draft or unapproved PLAN, always authorizes the SPEC, ADR, AMD and
+other document transitions required within its declared target, and a document
+conflict never creates an approval gate. Execution permission remains a
+separate lifecycle decision, and a later direct human instruction governs.
 Until then, an agent that finds a note describing something that ought to be
 true should **raise the gap, not act on it**.
 
@@ -291,12 +299,12 @@ its contents are in effect yet.
 Reality first, then the declared target contract, then human intent for
 behavior the PLAN does not change:
 
-1. **Working, tested code** is evidence of present behavior, not a veto over an
-   authorized future target. Documents follow reality for behavior already
+1. **Working, tested code** is evidence of present behavior, not a veto over a
+   PLAN's declared future target. Documents follow reality for behavior already
    delivered — but only after you have *confirmed* the code is right; a bug in
    the code does not license amending the spec to match the bug. Existing code
-   cannot veto an authorized PLAN's target.
-2. **An authorized PLAN's Contract changes section governs its explicitly
+   cannot veto a PLAN's target.
+2. **A PLAN's Contract changes section governs its explicitly
    declared target changes, even when it conflicts with any existing spec, ADR,
    amendment, or other document.** A PLAN may always require a change to any
    contract. Its exact future wording remains in the PLAN until implementation
@@ -311,7 +319,7 @@ behavior the PLAN does not change:
 
 If two documents at the same tier disagree and you cannot tell which is
 correct, that is a `truth-map.md` violation — two files own the same fact. Fix
-the ownership, not just the wording, after preserving the authorized PLAN's
+the ownership, not just the wording, after preserving the PLAN's
 target. See [truth-map.md](truth-map.md).
 
 ---
@@ -352,11 +360,11 @@ Two tests, and a spec has to pass both:
 
 ## Definition of done
 
-A task is done when **the software satisfies the authorized intended outcome**
+A task is done when **the software satisfies the PLAN's intended outcome**
 and the updated specs truthfully describe the delivered behavior.
 
-Verification checks observed behavior against the authorized target and the
-truthful updated specs. Never weaken or rewrite the authorized target to excuse
+Verification checks observed behavior against the PLAN's target and the
+truthful updated specs. Never weaken or rewrite the PLAN's target to excuse
 missing or incorrect implementation. If implementation is incomplete or
 incorrect, fix it or use the critical-functionality procedure above; preserve
 the target.
@@ -373,7 +381,7 @@ Before calling anything done:
 - A journal entry exists for the session.
 
 These are required verification and delivery conditions for completion. They
-are not preconditions to implementing an authorized PLAN, and a document
+are not preconditions to implementing a PLAN, and a document
 mismatch by itself is never evidence of critical breakage.
 
 ---
@@ -395,8 +403,8 @@ is triaged through `/plan-archive` and `/plan-new`.
 
 Outside autonomous review, two things are **always in scope** and get fixed
 rather than captured, because leaving them is what corrupts everyone's future
-work. An approved PLAN's promised contract/documentation changes are the
-explicit exception: preserve them until the final documentation batch:
+work. A PLAN's promised contract/documentation changes are the explicit
+exception: preserve them until the final documentation batch:
 
 - a document that contradicts reality → amend it, with a record
 - the same fact restated in two documents → collapse it into a link
@@ -406,7 +414,7 @@ explicit exception: preserve them until the final documentation batch:
 The autonomous review workflow takes precedence over the incidental amendment
 and always-in-scope rules above. The original PLAN's promised documentation
 and contracts still land with its implementation. Document and contract
-transitions necessary to the authorized target, including consequences
+transitions necessary to the PLAN's target, including consequences
 discovered in review, remain in that PLAN's final documentation batch. Only
 unrelated or independently proposed documentation and contract review findings
 become separate INTAKE items for later; do not expand the review fix pass to
@@ -433,7 +441,7 @@ handling it; say which one you did.
 ## When you are genuinely blocked
 
 Blocked means only that a genuinely missing human decision is required and was
-not supplied by the authorized PLAN. A conflict with an existing intent or
+not supplied by the PLAN. A conflict with an existing intent or
 other document is not such a question. An explicit later human instruction or
 cancellation is honored as given and does not create supporting PLANs to evade
 it. Concrete evidence of critical breakage follows the supporting-PLAN/ORCH

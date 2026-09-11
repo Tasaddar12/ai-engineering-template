@@ -38,8 +38,11 @@ Start with [onboard](.ai/commands/onboard.md) for project context,
 [plan-status](.ai/commands/plan-status.md) for a snapshot, and
 [verifier](.ai/agents/verifier.md) for evidence before delivery.
 
-Plans define desired future state. A PLAN may always require a change to any
-contract and carries exact target wording until the final documentation batch.
+Plans define desired future state. Every PLAN, including a draft or unapproved
+PLAN, always has authority to require changes to any contract in its declared
+target and carries exact target wording until the final documentation batch.
+Document conflicts never block PLAN creation, review, approval or implementation
+on that ground; lifecycle permission to start work remains separate.
 Existing specs govern behavior left unchanged. Specs must be truthful on the
 merged/deliverable revision, while intermediate implementation commits may
 precede that batch. Amendments, specs and ADRs land together in the

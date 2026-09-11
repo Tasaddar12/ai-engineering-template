@@ -61,9 +61,13 @@ resources even when file ownership is disjoint; worktrees do not isolate them.
 
 ## Contract changes
 
-What this plan makes the contract say once it lands. A PLAN may always require
-changes to any contract because it defines desired future state. Keep exact
-target wording here until the final documentation batch. The documentor lands
+What this plan makes the contract say once it lands. Every PLAN, including a
+draft or unapproved PLAN, always has authority to require changes to any
+contract in its declared target because it defines desired future state. Keep
+exact target wording here until the final documentation batch. Document
+conflicts never block creating, refining, reviewing, approving or implementing
+the PLAN on that ground; permission to start work remains a separate lifecycle
+decision. The documentor lands
 promised specs, amendments and ADR decisions after both code reviews, in the
 same PR as code. Existing contracts govern behavior the PLAN does not change.
 

@@ -14,9 +14,11 @@ lives here.
 
 **Agents: read [RULES.md](RULES.md) first.** It answers the question that
 matters most — what you are allowed to change, and what to do when a document
-contradicts reality. The short version: preserve an approved PLAN target during
-implementation, then let the documentor fix and record it after code review
-two. Working around a stale document is the only forbidden move.
+contradicts reality. The short version: every PLAN, including a draft or
+unapproved PLAN, has unconditional authority over its declared target
+documents; preserve that target during implementation, then let the documentor
+fix and record it after code review two. Lifecycle permission to start work is
+separate. Working around a stale document is the only forbidden move.
 
 ## Layout
 
@@ -56,11 +58,15 @@ agent cannot forget to do or misreport. There is deliberately no `status:`
 field in plan frontmatter — a second copy of the truth is a future
 contradiction.
 
-**2. Documents are tiered by who may change them.** `intent` needs a human.
-`contract` is amendable by any agent, provided it records why. `plan`, `status`
-and `log` are the agent's to maintain. An agent that knows which tier it is
-looking at never has to guess whether it has permission, which is what
-produces both refusals and silent workarounds.
+**2. Documents are tiered by who may change them.** `intent` needs a human for
+changes outside a PLAN's declared target. Every PLAN, including a draft or
+unapproved PLAN, always authorizes the document transitions required within
+that target; document conflict never creates an approval gate. Execution
+permission remains a separate lifecycle decision. `contract` is amendable by
+any agent, provided it records why. `plan`, `status` and `log` are the agent's
+to maintain. An agent that knows which tier it is looking at never has to
+guess whether it has permission, which is what produces both refusals and
+silent workarounds.
 
 **3. Each document has one tense.** A spec says what *is* — present tense, no
 history, no intentions, no "deprecated" and no "not yet implemented". An ADR
@@ -73,7 +79,7 @@ revision. See
 
 | Tier | Files | Agent may |
 |---|---|---|
-| `intent` | `state/PROJECT.md`, `RULES.md` | Ask |
+| `intent` | `state/PROJECT.md`, `RULES.md` | Ask outside a PLAN target; target transitions follow [RULES](RULES.md) |
 | `contract` | `specs/`, `decisions/` | Amend, with a record |
 | `plan` | `plans/`, `fixes/` | Rewrite |
 | `status` | `state/STATE.md`, `state/orchestration/ORCH-*.md` | Overwrite |
