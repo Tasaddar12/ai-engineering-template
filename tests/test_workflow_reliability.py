@@ -258,6 +258,7 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(len(state['failed_processes']), 1)
         runner.consume_result = consume
         self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
         self.assertEqual(state['process_attempts']['review-1'], 2)
         self.assertEqual(state['phase_attempts']['review-1'], 1)
         result = copy.deepcopy(state['completed_phases']['review-1'])
