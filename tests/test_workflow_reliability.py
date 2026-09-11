@@ -108,6 +108,33 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(runner.state['tracks']['a']['readiness_attempts'][head], 2)
         self.assertFalse(runner.location(self.config['tracks'][0])[0].exists())
 
+    def test_lost_readiness_can_reconcile_after_target_advances(self):
+        runner = self.runner()
+        consume = runner.consume_readiness
+
+        def lost(track):
+            phase = runner.state['tracks']['a']['inflight']
+            Path(phase['result_file']).unlink()
+            raise orch.Blocked('Readiness result lost')
+
+        runner.consume_readiness = lost
+        self.assertFalse(runner.run())
+        previous = orch.git(self.root, 'rev-parse', 'HEAD')
+        receipt = copy.deepcopy(runner.state['tracks']['a']['inflight'])
+        (self.forge / 'independent-change.txt').write_text('Independent delivery\n')
+        orch.git(self.forge, 'add', '.')
+        orch.git(self.forge, 'commit', '-m', 'Advance target after interrupted readiness')
+        orch.git(self.forge, 'push')
+        current = runner.sync()
+        self.assertNotEqual(previous, current)
+        runner.recover('reconcile', 'a', expected_head=current, workers_stopped=True)
+        runner.consume_readiness = consume
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertIn(receipt, state['failed_processes'])
+        self.assertEqual(state['readiness_attempts'], {previous: 1, current: 1})
+        self.assertEqual(state['readiness']['base_sha'], current)
+
     def test_failed_readiness_allocates_nothing_and_independent_track_merges(self):
         self.config['tracks'] = [self.track('a', 1, env={'WORKER_MODE': 'readiness-reject'}), self.track('b', 21)]
         runner = self.runner()
@@ -208,6 +235,36 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(orch.git(path, 'rev-parse', 'HEAD'), head)
         self.assertEqual(runner.state['tracks']['a']['process_attempts']['build'], 1)
 
+    def test_malformed_review_verdict_can_use_bounded_process_retry(self):
+        runner = self.runner()
+        consume = runner.consume_result
+
+        def malformed(track):
+            phase = runner.state['tracks']['a']['inflight']
+            if phase['name'] == 'review-1':
+                output = Path(phase['result_file'])
+                result = json.loads(output.read_text())
+                result['verdict'] = 'not_applicable'
+                output.write_text(json.dumps(result))
+            return consume(track)
+
+        runner.consume_result = malformed
+        self.assertFalse(runner.run())
+        path, _ = runner.location(self.config['tracks'][0])
+        head = orch.git(path, 'rev-parse', 'HEAD')
+        runner.recover('reconcile', 'a', expected_head=head, workers_stopped=True)
+        state = runner.state['tracks']['a']
+        self.assertNotIn('review-1', state['completed_phases'])
+        self.assertEqual(len(state['failed_processes']), 1)
+        runner.consume_result = consume
+        self.assertTrue(runner.run())
+        self.assertEqual(state['process_attempts']['review-1'], 2)
+        self.assertEqual(state['phase_attempts']['review-1'], 1)
+        result = copy.deepcopy(state['completed_phases']['review-1'])
+        result['verdict'] = 'changes_requested'
+        with self.assertRaisesRegex(orch.Blocked, 'Inconsistent review verdict'):
+            runner.validate_phase_result(result, 'review-1')
+
     def test_linked_checkout_cannot_become_a_nested_scheduler_root(self):
         outer = self.root / '.worktrees/outer'
         orch.git(self.root, 'worktree', 'add', '-b', 'outer', str(outer))
@@ -230,6 +287,16 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(orch.read_status(config)['status'], 'not_started')
         self.assertFalse((self.root / '.git/orchestration').exists())
         self.assertEqual(orch.git(self.root, 'status', '--porcelain'), '')
+
+    def test_abandoned_status_retains_inflight_evidence_without_recovery_advice(self):
+        runner = self.runner()
+        runner.update(runner.state['tracks']['a'], status='abandoned', inflight_phase='readiness')
+        before = runner.state_path.read_bytes()
+        report = orch.read_status(runner.config)['tracks'][0]
+        self.assertEqual(report['phase'], 'readiness')
+        self.assertIn('Preserved and incomplete', report['next_action'])
+        self.assertNotIn('--reconcile', report['next_action'])
+        self.assertEqual(runner.state_path.read_bytes(), before)
 
     def test_status_reports_receipt_and_live_git_drift_without_writes(self):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'cannot-review'

@@ -508,7 +508,7 @@ class Runner:
         state = self.state['tracks'][track['id']]
         phase = state['inflight']
         result = json.loads(Path(phase['result_file']).read_text(encoding='utf-8'))
-        self.validate_result(result)
+        self.validate_phase_result(result, 'readiness')
         with self.repo_mutex:
             require(not git(self.root, 'status', '--porcelain'), 'Readiness worker changed the primary checkout')
             self.sync()
@@ -693,6 +693,18 @@ class Runner:
             require(finding['kind'] != 'code' or finding['impact'] in ('missing_code', 'missing_functionality', 'unrelated'),
                     'A code defect cannot be dismissed as editorial')
 
+    @classmethod
+    def validate_phase_result(cls, result, name):
+        cls.validate_result(result)
+        if result['status'] != 'complete' or name not in (*REVIEW_PHASES, 'readiness'):
+            return
+        require(result['verdict'] in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
+        if result['verdict'] != 'cannot_review':
+            require((result['verdict'] == 'approved') == (len(result['findings']) == 0), 'Inconsistent review verdict')
+        if name != 'readiness':
+            kinds = ('documentation', 'contract', 'question') if name in DOCUMENT_PHASES else ('code', 'question')
+            require(all(f['kind'] in kinds for f in result['findings']), 'Reviewer crossed its code/documentation scope')
+
     def consume_result(self, track):
         state = self.state['tracks'][track['id']]
         path, _ = self.location(track)
@@ -701,7 +713,7 @@ class Runner:
         result_file = Path(phase['result_file'])
         require(result_file.is_file(), 'Worker did not produce its result')
         result = json.loads(result_file.read_text(encoding='utf-8'))
-        self.validate_result(result)
+        self.validate_phase_result(result, name)
         # Queue confirmed findings even if the worker is blocked or its edits fail audit.
         self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before, phase_name=name)
         require(result['status'] == 'complete', result['summary'])
@@ -710,11 +722,6 @@ class Runner:
                     'Documentation phase must explicitly verify original PLAN promises')
         if readonly:
             require(git(path, 'rev-parse', 'HEAD') == before, 'Read-only worker changed HEAD')
-            require(result.get('verdict') in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
-            if result['verdict'] != 'cannot_review':
-                require((result['verdict'] == 'approved') == (len(result['findings']) == 0), 'Inconsistent review verdict')
-            kinds = ('documentation', 'contract', 'question') if name in DOCUMENT_PHASES else ('code', 'question')
-            require(all(f['kind'] in kinds for f in result['findings']), 'Reviewer crossed its code/documentation scope')
         else:
             self.commit_worker_changes(track, name, before)
         self.audit(track, path)
@@ -1225,10 +1232,11 @@ class Runner:
                 require(not git(self.root, 'status', '--porcelain'), 'Readiness left changes in the primary checkout')
                 try:
                     result = json.loads(Path(phase['result_file']).read_text(encoding='utf-8'))
-                    self.validate_result(result)
+                    self.validate_phase_result(result, 'readiness')
                 except (OSError, ValueError, TypeError, KeyError, Blocked):
-                    require(expected_head == phase['before'], 'Readiness revision changed; inspect before recovery')
-                    require(state.get('readiness_attempts', {}).get(phase['before'], 0) < self.config.get('max_process_attempts', 2),
+                    require(self.sync() == expected_head, 'Target advanced during recovery; inspect its new HEAD')
+                    git(self.root, 'merge-base', '--is-ancestor', phase['before'], expected_head)
+                    require(state.get('readiness_attempts', {}).get(expected_head, 0) < self.config.get('max_process_attempts', 2),
                             'Readiness process retry budget exhausted')
                     state.setdefault('failed_processes', []).append(dict(phase))
                     state.pop('inflight_phase', None)
@@ -1271,7 +1279,7 @@ class Runner:
                 try:
                     result = json.loads(result_file.read_text(encoding='utf-8')) if result_file.is_file() else None
                     if result is not None:
-                        self.validate_result(result)
+                        self.validate_phase_result(result, phase['name'])
                 except (ValueError, TypeError, KeyError, Blocked):
                     result = None
                 if result is not None:
@@ -1482,7 +1490,9 @@ def read_status(config):
         require(path.resolve() == path, 'Worktree path was redirected')
         head = git(path, 'rev-parse', 'HEAD') if path.exists() else None
         dirty = git(path, 'status', '--porcelain') if path.exists() else ''
-        if current.get('inflight_phase'):
+        if current['status'] == 'abandoned':
+            action = 'Preserved and incomplete; delivery still requires a reviewed PR, merge, sync and cleanup'
+        elif current.get('inflight_phase'):
             recovery_head = git(root, 'rev-parse', 'HEAD') if current['inflight_phase'] == 'readiness' else head
             action = f"Inspect worker processes and Git, then --reconcile {track['id']} --expected-head {recovery_head} --workers-stopped"
         elif current['status'] == 'blocked':
@@ -1498,8 +1508,6 @@ def read_status(config):
                       f"Resolve the recorded blocker, then --retry {track['id']} at the saved checkpoint")
         elif current['status'] == 'merged' and current.get('cleaned'):
             action = 'Complete: PR merged, target synced, worktree and branch cleaned'
-        elif current['status'] == 'abandoned':
-            action = 'Preserved and incomplete; delivery still requires a reviewed PR, merge, sync and cleanup'
         else:
             action = 'Use the original schedule to continue; inspect process liveness before restarting a running scheduler'
         tracks.append({'track': track['id'], 'status': current['status'], 'phase': current.get('inflight_phase'),
