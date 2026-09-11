@@ -68,6 +68,9 @@ elif phase in ('document', 'docs-fix'):
         documentation_complete = False
 elif phase.startswith('docs-review'):
     assert sys.argv[1] == context['model'] == context['documentation_model']
+    if mode == 'source-doc-corrected' and phase == 'docs-review-1':
+        findings = [dict(key='source-doc', kind='documentation', severity='minor', title='Source documentation finding',
+                         path=context['source_documentation_paths'][0], detail='Module documentation needs correction', impact='editorial')]
     if mode == 'docs-corrected' and phase == 'docs-review-1':
         documentation_complete = False
     if mode in ('residual', 'unrelated', 'fix-doc', 'docs-only', 'escalating', 'docs-fix-code', 'docs-corrected'):
@@ -105,8 +108,9 @@ if 'review-' in phase and mode == 'research':
 if phase == 'build' and mode == 'direct-finding':
     record_id = f"FIX-{context['reserved_ids']['FIX'][0]:03d}"
     write(f'.ai/fixes/open/{record_id}-worker.md', f'---\nid: {record_id}\ntier: plan\n---\n# Coding issue\n\nConfirmed fixture defect.\n')
-if phase in ('document', 'docs-fix') and mode in ('source-doc', 'source-doc-code'):
-    write(context['source_documentation_paths'][0], '\"\"\"Runtime module.\"\"\"\nVALUE = ' + ('2' if mode == 'source-doc-code' else '1') + '\n')
+if phase in ('document', 'docs-fix') and mode in ('source-doc', 'source-doc-code', 'source-doc-corrected'):
+    title = 'Corrected runtime module.' if phase == 'docs-fix' else 'Runtime module.'
+    write(context['source_documentation_paths'][0], '\"\"\"' + title + '\"\"\"\nVALUE = ' + ('2' if mode == 'source-doc-code' else '1') + '\n')
 if phase in ('document', 'docs-fix') and mode == 'plan-notes':
     target = root / context['plans'][0]
     target.write_text(target.read_text() + '\n## Notes\n\nImplementation and SPEC coverage verified.\n')

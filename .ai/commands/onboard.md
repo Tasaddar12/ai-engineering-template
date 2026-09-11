@@ -104,9 +104,10 @@ This is a fresh drop-in. Set it up:
    in `.ai/plans/active/` describing the remaining steps, not the finished ones.
 10. **Initialize `.ai/state/STATE.md`** with the real present — including
    anything you noticed under **Known drift**.
-11. **Wire up the root `AGENTS.md`.** Append
-   `.ai/templates/AGENTS.snippet.md`; if the project has no `AGENTS.md`, create
-   one from it. An agent that never reads `RULES.md` will fall back to exactly
+11. **Wire up the root `AGENTS.md`.** Append the contents of
+   `.ai/templates/AGENTS.snippet.md` verbatim; if the project has no `AGENTS.md`,
+   create one from it. This root-target copy is the explicit exception to
+   source-relative template link rebasing. An agent that never reads `RULES.md` will fall back to exactly
    the refuse-or-contort behavior the structure exists to prevent, so do not
    finish onboarding without this.
 

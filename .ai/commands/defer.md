@@ -25,8 +25,10 @@ the next agent rediscovers it and improvises around it.
    - A question only a human can answer, blocking current work → `/plan-block`.
    - Uncertain defect → INTAKE with `kind: question`; do not label a guess a bug.
    - Other unplanned work → INTAKE with the appropriate kind.
-3. **Write non-code findings** to `.ai/plans/intake/INTAKE-{nnn}-{slug}.md` from
-   `.ai/templates/INTAKE.md`, numbered after the highest existing. Fill in
+3. **Write non-code findings** to `.ai/plans/intake/INTAKE-{nnn}-{slug}.md` by
+   rendering `.ai/templates/INTAKE.md` with `.ai/runtime/render_record.py`, using
+   a coordinator-issued INTAKE id block or serialized standalone allocation.
+   Fill in
    what's wrong, where, why not now, and what it costs to leave. Five lines.
 4. **Do not fix it.** Not a small version of it either. The point of capturing
    is that the current change stays reviewable.

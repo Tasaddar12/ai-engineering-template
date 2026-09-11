@@ -12,6 +12,20 @@ orch = fixture.orch
 
 
 class ContractTests(unittest.TestCase):
+    def test_supplied_plan_template_has_a_readable_execution_contract(self):
+        text = fixture.RUNTIME.parents[1].joinpath('templates/PLAN.md').read_text(encoding='utf-8')
+        contract = orch.execution_contract(text)
+        self.assertEqual([step['id'] for step in contract['steps']], ['implement', 'document'])
+        self.assertEqual(contract['intent_changes'], [])
+
+    def test_execution_contract_cannot_borrow_json_from_another_section(self):
+        block = fixture.plan_text('Example').split('## Execution contract\n')[1]
+        for heading in ('# Appendix', '## Acceptance'):
+            with self.subTest(heading=heading), self.assertRaisesRegex(orch.Blocked, 'missing its explicit'):
+                orch.execution_contract('## Execution contract\nInstructions only.\n\n' + heading + '\n' + block)
+        with self.assertRaises(json.JSONDecodeError):
+            orch.execution_contract('## Execution contract\nGuidance.\n```json\n{invalid}\n```\n')
+
     def test_interleaved_steps_are_rejected_instead_of_reordered(self):
         text = fixture.plan_text('Invalid order', [
             {'id': 'docs', 'phase': 'document', 'title': 'Document'},

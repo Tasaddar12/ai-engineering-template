@@ -100,5 +100,8 @@ the review sequence, retained findings and incomplete-work handling.
 Run `/plan-status` to see where the project stands, `/onboard` to get briefed.
 Commit each PLAN step using
 [PLAN records and commits](.ai/RULES.md#plan-records-and-commits).
+Runtime fix/docs-fix workers return scoped edits uncommitted for coordinator
+audit and commit; standalone task authors commit their own work, per
+[session and authorization](.ai/RULES.md#session-and-authorization).
 Pass implementation reports, Research notes and review evidence to the
 documentation agent for SPEC/ADR/AMD/PLAN updates after code review.

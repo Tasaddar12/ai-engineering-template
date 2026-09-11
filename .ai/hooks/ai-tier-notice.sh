@@ -25,25 +25,22 @@ path="${path//\\//}"
 
 case "$path" in
   .ai/state/PROJECT.md|*/.ai/state/PROJECT.md|.ai/RULES.md|*/.ai/RULES.md)
-    echo "NOTICE  intent tier — human authority. Edit only under explicit human instruction; otherwise propose and wait. Surface any unauthorized edit to the user. See .ai/RULES.md#mutability-tiers"
+    echo "NOTICE  intent tier. Follow human authorization and .ai/RULES.md#intent-and-plan-approval within your assigned role."
     ;;
-  */.ai/specs/*)
-    echo "NOTICE  contract tier — amendable, but the change needs a record. Write .ai/decisions/amendments/AMD-{nnn}-{slug}.md from the template, add its id to this document's links:, and commit both with the code change. See .ai/RULES.md#the-amendment-protocol"
-    echo "NOTICE  a spec states what IS — present tense, no history, no intentions. Replace wording, never annotate it: no 'deprecated', 'removed in v2', 'was previously', 'not yet implemented', TODO or strikethrough. If a requirement is gone, delete it; the amendment record holds what it said. See .ai/RULES.md#what-each-document-is-for"
+  .ai/specs/*|*/.ai/specs/*)
+    echo "NOTICE  contract tier. Follow .ai/RULES.md#the-amendment-protocol and .ai/RULES.md#review-and-documentation within your assigned role."
     ;;
-  */.ai/decisions/ADR-*)
-    echo "NOTICE  contract tier — amendable, but the change needs a record. Write .ai/decisions/amendments/AMD-{nnn}-{slug}.md from the template, add its id to this document's links:, and commit both with the code change. See .ai/RULES.md#the-amendment-protocol"
-    echo "NOTICE  an ADR is a dated record and may describe the past. Changing the decision means a NEW ADR naming this one in supersedes:, plus status: superseded and superseded_by: here — never a rewrite of the Context, Decision or Alternatives. That status flip needs no amendment record."
+  .ai/decisions/ADR-*|*/.ai/decisions/ADR-*)
+    echo "NOTICE  contract tier. Follow ADR ownership and supersession in .ai/RULES.md#what-each-document-is-for within your assigned role."
     ;;
-  */.ai/decisions/amendments/*|*/.ai/state/journal/*)
-    echo "NOTICE  log tier — append only. Do not edit or delete earlier entries; supersede them with a new one."
+  .ai/decisions/amendments/*|*/.ai/decisions/amendments/*|.ai/state/journal/*|*/.ai/state/journal/*)
+    echo "NOTICE  log tier. Follow .ai/RULES.md#mutability-tiers within your assigned role."
     ;;
-  */.ai/plans/*)
-    echo "NOTICE  plan tier — rewrite freely. A plan's stage is its directory: move it with 'git mv', and never add a status: field."
-    echo "NOTICE  a plan carries the contract change it will make, under Contract changes: specs to create, amend or retire with the wording drafted, plus any ADR it needs, cites or supersedes. Nothing there is written into .ai/specs/ until the code works."
+  .ai/plans/*|*/.ai/plans/*)
+    echo "NOTICE  plan tier. Follow .ai/RULES.md#plan-records-and-commits and .ai/RULES.md#review-and-documentation within your assigned role."
     ;;
-  */.ai/fixes/*)
-    echo "NOTICE  plan tier — a fix restores conformance with the contract; anything that changes what conformance means is a plan. Its stage is its directory ('git mv' between open/ and done/<period>/), no status: field. A fix is not done without a check that fails before it and passes after. See .ai/RULES.md#bug-fixes"
+  .ai/fixes/*|*/.ai/fixes/*)
+    echo "NOTICE  plan tier. Follow .ai/RULES.md#bug-fixes within your assigned role."
     ;;
 esac
 

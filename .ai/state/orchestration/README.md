@@ -7,13 +7,16 @@ title: Run and track evidence
 
 # Run and track evidence
 
-Use [ORCH-RUN.md](../../templates/ORCH-RUN.md) for the run board
+Use [ORCH-RUN.md](../../templates/ORCH-RUN.md) for the run board. Render it
+with `python .ai/runtime/render_record.py TEMPLATE DESTINATION`; the helper
+prints source-relative content to stdout and creates no record. Save successful
+output in the assigned worktree, and prepare incoming links before final review.
 and [orchestrate-track](../../commands/orchestrate-track.md) for track evidence.
 
 Use [orchestrate](../../commands/orchestrate.md) for the run board and shared
 state procedure, and each [agent file](../../agents/README.md) for role scope.
 [RULES](../../RULES.md#delivery-recovery-and-cleanup) defines shared recovery
-and delivery policy.
+and delivery policy, including [related-task batching](../../RULES.md#related-work-and-delivery-ownership).
 
 [Review](../../agents/track-reviewer.md) owns the cold packet and exclusions.
 [Parallel execution](../../commands/orchestrate.md) owns scheduling.

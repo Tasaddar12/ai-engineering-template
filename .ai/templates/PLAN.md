@@ -67,6 +67,12 @@ Exact future contract wording proposed by this PLAN, for the documentation
 agent's implementation handoff. Intent requests and their human resolutions
 are recorded separately in **Execution contract**.
 
+For a conformance-only coordination PLAN, state explicitly that **no contract
+changes** are proposed, link each governed FIX record, and name the unchanged
+acceptance criteria. Do not invent future wording merely because the PLAN
+coordinates large or multiple repairs; actual-code SPEC coverage remains
+required at closeout.
+
 ### Specs to create
 
 New spec ids and the criteria they will carry, drafted in present tense so they
@@ -127,6 +133,10 @@ silently reordering build and document steps is invalid. Runtime PLAN paths are
 limited to `backlog/`, `active/` and `review/`; pure documentation tracks have
 empty `code_paths` and `source_documentation_paths` and contain no build or
 research writes.
+
+The runtime reads the first JSON code fence inside this named level-two section;
+guidance may precede it, and parsing stops before the next level-one or level-two
+heading. Keep the contract shape below and do not rely on line counts.
 
 ```json
 {

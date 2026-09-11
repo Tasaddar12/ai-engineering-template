@@ -1,8 +1,11 @@
 # Onboarding starter prompts
 
 Paste-ready prompts for the first message of a fresh agent session in the
-adoption worktree (see [onboard](../.ai/commands/onboard.md)). They differ in how much
-they do in one pass and in what they ask you to decide.
+adoption worktree (see [onboard](../.ai/commands/onboard.md)). Each names an
+adoption scope so `/onboard-pr --scope full|rules-only|issue-sweep|docs-reconciliation`
+applies the named procedure. Full adoption requires filled intent,
+configuration and structure; narrow scopes check their own content plus
+required repository verification and do not claim those gates.
 
 If you are not sure, use **B**. If agents on this project are already refusing
 to edit docs or bending code around stale specs, run **A** first — it finds the
@@ -156,7 +159,7 @@ For when you want the refuse/contort behavior fixed and nothing else. Leaves
 `specs/`, `plans/` and the lifecycle unused until you want them.
 
 ```
-Do a minimal adoption: I want the document-mutability rules in effect, and
+Use `/onboard-pr --scope rules-only`. I want the document-mutability rules in effect, and
 nothing else yet.
 
 1. Append .ai/templates/AGENTS.snippet.md to AGENTS.md (create it if absent).
@@ -168,8 +171,9 @@ nothing else yet.
 4. Leave .ai/specs/ and .ai/plans/ alone entirely.
 
 Then tell me, in a few lines, what changes about how agents will behave on this
-repo and what does not. Prepare approved records in the assigned worktree and
-use `/onboard-pr` for reviewed delivery.
+repo and what does not. Run the repository's required verification commands and
+prepare approved records in the assigned worktree. Use `/onboard-pr --scope
+rules-only` for reviewed delivery; required CI still gates delivery.
 ```
 
 ---
@@ -180,7 +184,8 @@ When the thing you actually want is every deferred and current problem written
 down where an agent will find it.
 
 ```
-Capture the project's known problems in FIX/INTAKE records under .ai/RULES.md,
+Use `/onboard-pr --scope issue-sweep` after capturing the project's known
+problems in FIX/INTAKE records under .ai/RULES.md,
 without adopting the rest of the structure yet.
 
 Sweep for:
@@ -203,8 +208,10 @@ Report which confirmed code bugs are ready for /fix and which INTAKE fragments
 need investigation or /plan-new.
 
 Finish with two lists — the three items most worth a plan, and the ones that
-are same-day /fix candidates — and why. Do not fix anything; capture approved
-records in the assigned worktree and use `/onboard-pr` for reviewed delivery.
+are same-day /fix candidates — and why. Do not fix anything; run required
+repository checks, capture approved records in the assigned worktree and use
+`/onboard-pr --scope issue-sweep` for reviewed delivery. Required CI still
+gates delivery.
 ```
 
 ---
@@ -215,7 +222,8 @@ For a project carrying a lot of documentation that disagrees with itself or
 with the code.
 
 ```
-Reconcile this project's existing documentation against .ai/truth-map.md,
+Use `/onboard-pr --scope docs-reconciliation` to reconcile this project's
+existing documentation against .ai/truth-map.md,
 without adopting the rest of the structure yet.
 
 1. Inventory every document that states a requirement, threshold, limit, or
@@ -230,8 +238,10 @@ without adopting the rest of the structure yet.
    following RULES; existing documents are not SPEC sources.
 
 Show me all of that before changing a single file. Then make only the changes I
-approve, collapsing duplicates into links to the owning document. Prepare these
-approved edits in the assigned worktree and use `/onboard-pr` for reviewed delivery.
+approve, collapsing duplicates into links to the owning document. Run required
+repository checks, prepare these approved edits in the assigned worktree and
+use `/onboard-pr --scope docs-reconciliation` for reviewed delivery. Required
+CI still gates delivery.
 ```
 
 ---

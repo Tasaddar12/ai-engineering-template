@@ -66,8 +66,9 @@ lifecycle:
   # Fixes are live in every mode, light included.
   fix_stages: [open, done]
 
-# Identifier formats. Numbers are zero-padded and allocated by taking the
-# highest existing number and adding one.
+# Identifier formats. Numbers are zero-padded. The coordinator allocates
+# disjoint reviewed blocks across lifecycle inventories and receipts; the
+# record_ids helper only proposes a range and never reserves it.
 ids:
   spec: SPEC-{nnn}-{slug}
   plan: PLAN-{nnn}-{slug}
@@ -89,9 +90,9 @@ enforcement: advisory
 # an empty list permits manual inspection but cannot authorize autonomous merge.
 verification:
   commands: []
-    # - pytest -q
-    # - npm test
-    # - ruff check .
+    # - [pytest, -q]
+    # - [npm, test]
+    # - [ruff, check, .]
 
 # ---------------------------------------------------------------------------
 # orchestration — settings for /orchestrate, which builds several plans at once
@@ -184,9 +185,9 @@ orchestration:
   # Successful merged worktrees are removed; stopped or unmerged work is kept.
   cleanup_on_merge: true
 
-  # The coordinator copies these settings and approved PLAN scope into a JSON
-  # execution snapshot. See runtime/schedule.example.json; the Python runner
-  # deliberately does not interpret this YAML or infer project test commands.
+  # prepare.py reads this committed configuration and the manifest's first
+  # Execution schedule JSON fence at one immutable ref, then emits the JSON
+  # execution snapshot. The Python runner consumes JSON and never parses YAML.
   runtime: .ai/runtime/orchestrate.py
   required_status_checks: [] # fill per project; autonomous delivery rejects empty
 
@@ -194,5 +195,5 @@ orchestration:
   # change. Left empty, agents fall back to `verification.commands` in full and
   # say that they did. {files} is replaced with the changed paths.
   targeted_tests: []
-    # - pytest -q {files}
-    # - npm test -- --findRelatedTests {files}
+    # - [pytest, -q, "{files}"]
+    # - [npm, test, --, --findRelatedTests, "{files}"]

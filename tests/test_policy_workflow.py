@@ -91,9 +91,10 @@ class PolicyWorkflowTests(unittest.TestCase):
         intake = '.ai/plans/intake/INTAKE-901-request.md'
         untouched = '.ai/plans/intake/INTAKE-902-later.md'
         plan = '.ai/plans/backlog/PLAN-001-request.md'
-        self.seed({intake: '# Implement the request\n', untouched: '# Future fragment\n',
+        self.seed({intake: '# Implement the request\n\n[PLAN](../backlog/PLAN-001-request.md)\n', untouched: '# Future fragment\n',
                    plan: fixture.plan_text('Implement request', [
-                       {'id': 'implement', 'phase': 'build', 'title': 'Implement request'}], completed_intake=[intake])})
+                       {'id': 'implement', 'phase': 'build', 'title': 'Implement request'}], completed_intake=[intake]) +
+                   '\n[SPEC](../../specs/SPEC-001-behavior.md)\n[Request](../intake/INTAKE-901-request.md)\n'})
         track = self.config['tracks'][0]
         track['plans'] = [plan]
         track['owned_paths'] += [plan, intake]
@@ -103,6 +104,11 @@ class PolicyWorkflowTests(unittest.TestCase):
         self.assertEqual(len(list((self.root / '.ai/plans/done').rglob('INTAKE-901-request.md'))), 1)
         self.assertEqual(len(list((self.root / '.ai/plans/done').rglob('PLAN-001-request.md'))), 1)
         self.assertTrue((self.root / untouched).is_file())
+        delivered = next((self.root / '.ai/plans/done').rglob('PLAN-001-request.md')).read_text()
+        self.assertIn('[SPEC](../../../specs/SPEC-001-behavior.md)', delivered)
+        self.assertIn('[Request](INTAKE-901-request.md)', delivered)
+        capture = next((self.root / '.ai/plans/done').rglob('INTAKE-901-request.md')).read_text()
+        self.assertIn('[PLAN](PLAN-001-request.md)', capture)
 
     def test_implementor_can_create_a_reserved_code_finding(self):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'direct-finding'
@@ -155,6 +161,23 @@ class PolicyWorkflowTests(unittest.TestCase):
         self.assertFalse(runner.run())
         self.assertIn('changed executable behavior', runner.state['tracks']['a']['reason'])
         self.assertFalse(runner.events)
+
+    def test_source_documentation_findings_receive_correction_and_proof(self):
+        self.seed({'src/module.py': 'VALUE = 1\n'})
+        track = self.config['tracks'][0]
+        track['source_documentation_paths'] = ['src/module.py']
+        track['code_paths'].append('src/module.py')
+        track['owned_paths'].append('src/module.py')
+        track['environment']['WORKER_MODE'] = 'source-doc-corrected'
+        runner = self.runner()
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(state['phase_attempts']['docs-fix'], 1)
+        self.assertEqual(state['documentation_review_verdict'], 'approved')
+        self.assertEqual((self.root / 'src/module.py').read_text(), '\"\"\"Corrected runtime module.\"\"\"\nVALUE = 1\n')
+        finding = state['findings']['source-doc']
+        self.assertEqual(finding['attempts'], ['Completed docs-fix'])
+        self.assertIn('Completed docs-fix', (self.root / finding['record']).read_text())
 
     def test_missing_human_evidence_and_short_id_blocks_are_rejected(self):
         self.seed({'.ai/plans/backlog/PLAN-001-a.md': fixture.plan_text('Unresolved intent', [], [

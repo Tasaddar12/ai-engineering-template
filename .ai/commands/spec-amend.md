@@ -26,9 +26,10 @@ project whose specs are being ignored.
      recorded human resolutions under
      [Intent and PLAN approval](../RULES.md#intent-and-plan-approval).
      Investigate and report any unresolved request before implementation.
-2. **Write the record first.** Copy `.ai/templates/AMENDMENT.md` to
-   `.ai/decisions/amendments/AMD-{nnn}-{slug}.md`, numbering after the highest
-   existing. Fill in all four sections: what the document said, what is
+2. **Write the record first.** Render `.ai/templates/AMENDMENT.md` with
+   `.ai/runtime/render_record.py` and save it as
+   `.ai/decisions/amendments/AMD-{nnn}-{slug}.md`, using a coordinator-issued
+   AMD id block or serialized standalone allocation. Fill in all four sections: what the document said, what is
    actually true, why they diverged, what you changed it to.
 3. **Rewrite the document so it states the new truth — and only that.**
    - **Replace the wording; never annotate it.** Do not add "was previously",

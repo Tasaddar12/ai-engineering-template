@@ -1,20 +1,24 @@
 ---
-description: Review the onboarding change, commit it, and open a merge request
-argument-hint: [target-branch]
+description: Review onboarding, prepare its reviewed delivery, and report the publication path
+argument-hint: [--scope full|rules-only|issue-sweep|docs-reconciliation] [target-branch]
 ---
 
 Read and follow [RULES](../RULES.md).
 
-Land this adoption. Target branch: **$ARGUMENTS** (default: the repository's
-default branch — check `git remote show origin` or `git symbolic-ref
-refs/remotes/origin/HEAD` rather than assuming `main`).
+Land this adoption with an explicit scope on **$ARGUMENTS** (default:
+`--scope full`; inspect the remote default branch and never assume `main`). The
+scope is one of `full`, `rules-only`, `issue-sweep`, or `docs-reconciliation`.
+Full adoption checks intent, configuration, structure, records and code-backed
+documentation. Each narrow scope checks only its named content plus repository
+required checks; it does not bypass CI or claim full-adoption completion.
 
-## 1. Check the work before offering it
+## 1. Inspect and prepare in the assigned worktree
 
-Report on each of these, and **stop if any looks wrong** — do not commit past a
-problem here:
+Inspect the content selected by the scope, report evidence, and prepare the
+concrete change in the assigned worktree. Do not require a clean HEAD before
+committing the current authorized change:
 
-- **`.ai/state/PROJECT.md`** — filled in, no `CHANGEME`, and the non-goals and
+- **Full scope: `.ai/state/PROJECT.md`** — filled in, no `CHANGEME`, and the non-goals and
   hard constraints are specific enough to reject a plan. Everything downstream
   is graded against this file.
 - **`.ai/specs/`** — nothing asserted that has not been checked against the
@@ -27,11 +31,16 @@ problem here:
   and `Edit` in its `tools:` list.
 - **`.ai/plans/intake/`** — a readable set of clustered items, not one file per
   `TODO`.
-- **`.ai/config.yaml`** — `verification.commands` holds the project's real test
+- **Full scope: `.ai/config.yaml`** — `verification.commands` holds the project's real test
   and lint commands, not an empty list.
-- **Deletions** — every retired document was one the user explicitly approved.
+- **Deletions** — every retired document was explicitly approved.
 
-## 2. Commit in a reviewed worktree
+Run relevant local checks and the repository's required verification commands
+for every scope. Prepare a concise description covering scope, decisions,
+contradictions corrected, captured findings and anything still open. Keep
+unrelated edits out of the assigned worktree.
+
+## 2. Commit, review and describe
 
 Group the change so a reviewer can follow it. If the template copy was already
 committed separately, this is one commit of onboarding decisions; if not, split
@@ -41,12 +50,18 @@ it:
 2. everything `/onboard` decided — intent, specs, promotions, deletions,
    `AGENTS.md`, intake
 
-Do not include unrelated work. Prepare these commits in an assigned sibling
-worktree, review and open the PR, then merge and synchronize the primary target
-before continuing. If the worktree has changes that are not part of
-the adoption, stop and tell the user rather than sweeping them in.
+Do not include unrelated work. Review the resulting commits and write the
+concrete publication description before target integration. If the worktree has
+changes that are not part of the adoption, stop and report them rather than
+sweeping them in.
 
-## 3. Push and open the merge request
+## 3. Integrate and publish only with authority
+
+Refresh the target branch in the assigned delivery worktree. If it advanced,
+integrate that target into the reviewed onboarding branch and rerun the
+relevant local checks on the resulting tree. Preserve the exact checked head
+for publication; a later target advance requires the same integrate-and-check
+cycle again.
 
 Neither `gh` nor `glab` is assumed to be installed. On GitLab, push options
 create the MR with no CLI:
@@ -61,15 +76,25 @@ git push -u origin HEAD \
 ```
 
 Check the remote host first. If it is GitHub and `gh` is available, use
-`gh pr create` instead. If neither route is available, push the branch and give
-the user the compare URL to open it themselves.
+`gh pr create` instead. If neither route is available, report that publication
+is unavailable and preserve the branch for an authorized retry; do not claim
+delivery from a compare URL alone.
 
-**Confirm with the user before pushing.** Pushing is outward-facing, and the
-description below is a claim about work they have not read yet.
+Existing explicit authority to push and merge persists. If push, PR creation or
+merge authority is missing, ask at this concrete publication step. If
+publication or PR creation fails, report the failure and preserve the branch;
+it is not a delivered adoption and must not fall back to a local merge.
 
-## 4. Write the description
+## 4. Merge and verify
 
-Cover, briefly:
+After the authorized push and single PR creation above, wait for required CI
+and formal review, and merge the exact reviewed head. Fast-forward sync the
+primary target and verify ancestry and that its tree equals the tested tree.
+Run fresh required checks only if the integrated tree changed; otherwise retain
+the checks tied to the exact reviewed head. Then clean up only the exact clean
+merged worktree and branch. Report the PR URL and evidence.
+
+The description covers, briefly:
 
 - What the structure is, and a one-line pointer to `.ai/README.md`
 - **Decisions the reviewer should check** — SPECs derived from reviewed code,
@@ -83,4 +108,4 @@ Cover, briefly:
   why
 - Anything still open: unanswered questions, `.ai/plans/blocked/` entries
 
-Then report the MR or PR URL, or the compare URL if you could not open it.
+Then report the MR or PR URL and the synchronized verification evidence.

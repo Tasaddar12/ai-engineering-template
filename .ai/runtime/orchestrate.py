@@ -17,6 +17,7 @@ from functools import wraps
 import json
 import os
 from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import shutil
 import signal
@@ -24,7 +25,9 @@ import subprocess
 import sys
 import threading
 import time
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit
+
+from markdown_it import MarkdownIt
 
 
 class Blocked(RuntimeError):
@@ -121,10 +124,99 @@ def documentation_path(path):
     return path.casefold().endswith(DOCUMENT_SUFFIXES)
 
 
+def rebase_record_links(text, source, target, moves=None):
+    moves = moves or {}
+    source_dir, target_dir = posixpath.dirname(source), posixpath.dirname(target)
+    parser = MarkdownIt('commonmark')
+
+    def snapshot(markdown):
+        environment, urls = {}, []
+
+        def tokens_shape(tokens):
+            shape = []
+            for token in tokens:
+                attrs = dict(token.attrs)
+                for key in ('href', 'src'):
+                    if key in attrs:
+                        urls.append(attrs[key])
+                        attrs[key] = None
+                shape.append((token.type, token.tag, token.nesting, token.hidden, token.markup, token.info, attrs,
+                              None if token.type == 'inline' else token.content,
+                              tokens_shape(token.children) if token.children else None))
+            return shape
+
+        shape = tokens_shape(parser.parse(markdown, environment))
+        references = [(('reference', key), value) for key, value in sorted(environment.get('references', {}).items())]
+        references += [(('duplicate', index), value) for index, value in enumerate(environment.get('duplicate_refs', []))]
+        reference_shape = []
+        for key, value in references:
+            urls.append(value['href'])
+            reference_shape.append((key, {k: v for k, v in value.items() if k not in ('href', 'map')}))
+        return (shape, reference_shape), urls
+
+    def destination(link):
+        try:
+            parts = urlsplit(link)
+        except ValueError:
+            return None
+        if not parts.path or parts.scheme or parts.netloc or parts.path.startswith('/'):
+            return None
+        resolved = posixpath.normpath(posixpath.join(source_dir, unquote(parts.path)))
+        if resolved == '..' or resolved.startswith('../'):
+            return None
+        rebased = posixpath.relpath(moves.get(resolved, resolved), target_dir)
+        if parts.path.endswith('/'):
+            rebased += '/'
+        rebased = quote(rebased, safe="/@!$&'*+,;=-._~")
+        if parts.query:
+            rebased += '?' + quote(parts.query, safe="/?:@!$&'*+,;=-._~%")
+        if parts.fragment:
+            rebased += '#' + quote(parts.fragment, safe="/?:@!$&'*+,;=-._~%")
+        return rebased
+
+    current = text
+    shape, urls = snapshot(current)
+    candidates = set()
+    for match in re.finditer(r'\][(:]', text):
+        start = match.end()
+        while start < len(text):
+            while start < len(text) and text[start] in ' \t\r\n':
+                start += 1
+            candidates.add(start)
+            if start == len(text) or text[start] != '>':
+                break
+            # Container markers are absent from parsed inline/reference text.
+            # Try each raw position; the rendered-content check rejects guesses.
+            start += 1
+    for start in sorted(candidates, reverse=True):
+        parsed = parser.helpers.parseLinkDestination(text, start, len(text))
+        if not parsed.ok:
+            continue
+        replacement = destination(parsed.str)
+        if replacement is None:
+            continue
+        old_url, new_url = parser.normalizeLink(parsed.str), parser.normalizeLink(replacement)
+        if text[start:parsed.pos].startswith('<'):
+            replacement = '<' + replacement + '>'
+        candidate = current[:start] + replacement + current[parsed.pos:]
+        candidate_shape, candidate_urls = snapshot(candidate)
+        if candidate_shape != shape or len(candidate_urls) != len(urls):
+            continue
+        changed = [(before, after) for before, after in zip(urls, candidate_urls) if before != after]
+        if changed and all(before == old_url and after == new_url for before, after in changed):
+            current, urls = candidate, candidate_urls
+    return current
+
+
+def json_section(text, heading):
+    section = re.search(r'^## ' + re.escape(heading) + r'[ \t]*\r?\n(.*?)(?=^#{1,2}[ \t]|\Z)', text, re.M | re.S)
+    match = re.search(r'^```json[ \t]*\r?\n(.*?)\r?\n```[ \t]*$', section[1], re.M | re.S) if section else None
+    require(match is not None, f'Record is missing its explicit {heading}')
+    return json.loads(match[1])
+
+
 def execution_contract(text):
-    match = re.search(r'^## Execution contract\s*\n```json\s*\n(.*?)\n```', text, re.M | re.S)
-    require(match is not None, 'PLAN is missing its explicit Execution contract')
-    contract = json.loads(match[1])
+    contract = json_section(text, 'Execution contract')
     require(isinstance(contract, dict) and isinstance(contract.get('intent_changes'), list) and
             isinstance(contract.get('steps'), list) and isinstance(contract.get('completed_intake'), list),
             'Execution contract needs intent_changes, steps and completed_intake lists')
@@ -926,9 +1018,9 @@ class Runner:
         require(docs_first['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')
         docs_findings = [f for f in docs_first['findings'] if f['kind'] in ('documentation', 'contract') and
                         f['impact'] != 'unrelated' and
-                        any(covers(s, f['path']) for s in track['documentation_paths'])]
+                        any(covers(s, f['path']) for s in track['documentation_paths'] + track.get('source_documentation_paths', []))]
         require(docs_first.get('documentation_complete') is True or docs_findings,
-                'Missing documentation promises require actionable findings within documentation_paths')
+                'Missing documentation promises require actionable findings within assigned documentation scopes')
         if docs_findings:
             fixed = self.phase(track, 'docs-fix', extra='Documentation findings to attempt once:\n' + json.dumps(docs_findings))
             self.record_findings(track, fixed, 1, phase_name='docs-fix', source_head=state['phase_heads']['docs-fix'])
@@ -999,7 +1091,7 @@ class Runner:
         path, _ = self.location(track)
         review = 'docs-review-1' if documentation else 'review-1'
         kinds = ('documentation', 'contract') if documentation else ('code',)
-        scopes = track['documentation_paths'] if documentation else track['code_paths']
+        scopes = track['documentation_paths'] + track.get('source_documentation_paths', []) if documentation else track['code_paths']
         attempted = {f['key'] for f in state['completed_phases'][review]['findings']
                       if f['kind'] in kinds and f['impact'] != 'unrelated' and any(covers(s, f['path']) for s in scopes)}
         for key in attempted:
@@ -1035,11 +1127,19 @@ class Runner:
             target = f'.ai/plans/done/{period}/{PurePosixPath(source).name}'
             moves[source] = target
         require(len(set(moves.values())) == len(moves), 'Lifecycle destinations collide')
+        contents = {}
         for source, target in moves.items():
             require((path / source).is_file() and not (path / target).exists(), f'Cannot close record: {source}')
+            original = (path / source).read_text(encoding='utf-8')
+            contents[target] = (original, rebase_record_links(original, source, target, moves))
         for source, target in moves.items():
             (path / target).parent.mkdir(parents=True, exist_ok=True)
             git(path, 'mv', '--', source, target)
+            record = path / target
+            original, rebased = contents[target]
+            if rebased != original:
+                record.write_text(rebased, encoding='utf-8')
+                git(path, 'add', '--', target)
         if moves:
             git(path, 'commit', '-m', f"Archive completed plans for {track['id']}")
         state['plan_moves'] = moves

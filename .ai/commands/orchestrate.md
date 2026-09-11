@@ -35,6 +35,13 @@ process result, not an assumed chat wake-up. Manual hosts follow the same
 outcome rules below. An instruction already authorizing the chosen PLANs and
 delivery is sufficient; do not ask for the same approval again.
 
+When `$ARGUMENTS` contains `--dry-run`, enter read-only planning mode before
+preflight bootstrap or delegation. Read the plans and configuration, then pass
+`--dry-run` to the orchestrator role. It reports waves, tracks, inferred
+dependencies, exclusions and cost without writing a manifest, changing ignore
+metadata, reserving IDs, creating worktrees or opening a PR. Stop after that
+report.
+
 ---
 
 ## 1. Preflight
@@ -92,9 +99,13 @@ Never include `.ai/plans/blocked/` — those are waiting on a human.
 
 ## 3. Schedule
 
-Delegate to the **orchestrator** agent with the plan list. It builds the
-dependency graph, assigns waves and tracks, and writes
-`.ai/state/orchestration/ORCH-{nnn}.md` from `.ai/templates/ORCH-RUN.md`.
+For a real run, delegate to the **orchestrator** agent with the plan list. It builds the
+dependency graph, assigns waves and tracks, and renders
+`.ai/templates/ORCH-RUN.md` to `.ai/state/orchestration/ORCH-{nnn}.md` with
+`python .ai/runtime/render_record.py TEMPLATE DESTINATION`, saving stdout only
+after successful completion. The helper creates no record; source-relative
+links are rebased for the destination; follow [record templates and moves](../RULES.md#record-templates-and-moves).
+Incoming links are prepared before final review.
 
 **Show the layout; obtain authorization only if it is not already provided.** Show the
 waves, the tracks, the plans in each, and — separately — **every dependency the
@@ -130,17 +141,17 @@ Then two judgements the numbers do not show, and say them plainly:
 - **Is a wave worth its overhead?** A wave with one track in it is a plan with
   extra ceremony.
 
-On `--dry-run`, stop here. The manifest and this estimate are the deliverable.
+The read-only `--dry-run` path has already stopped before this mutation-capable
+section. A real run persists reviewed preparation only after applicable
+authorization.
 
 ## 4. Prepare and review the manifest
 
-Every record type is numbered "highest existing plus one". Tracks branch from
-the same commit, so they all compute the same next number, write it under
-different slugs, and **git merges both without a conflict** — two records
-sharing an id, no error anywhere.
-
-So allocate up front. For each id type, find the highest number in use across
-the whole repository and give every track a contiguous block of 20:
+The coordinator allocates disjoint blocks up front across lifecycle records,
+registered worktrees, reviewed issued blocks and common receipts. Templates and
+examples are excluded. The `record_ids.py` helper only proposes a range and
+does not reserve it. For each id type, give every track a contiguous block of
+20:
 
 | Track | INTAKE | FIX | AMD | SPEC | ADR |
 |---|---|---|---|---|---|

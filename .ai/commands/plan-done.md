@@ -21,8 +21,12 @@ Use `/plan-review` evidence or the existing coordinator receipts.
    FIX IDs for confirmed bugs and any supporting PLAN needed; return missing
    SPEC coverage to the documentation agent.
 4. On a complete result, create `.ai/plans/done/<period>/` using
-   `lifecycle.done_partition` in `.ai/config.yaml`, then `git mv` the PLAN
-   and proven INTAKE items into it. Commit the mechanical lifecycle moves.
+   `lifecycle.done_partition` in `.ai/config.yaml`. Build the whole closing-set
+   source-to-destination mapping; before any move, call pure
+   `rebase_record_links(text, source, target, moves)` for every source and retain
+   each returned string. Then `git mv` the validated PLAN and proven INTAKE
+   items, write the returned UTF-8 text at their targets, stage and commit the
+   mechanical lifecycle moves.
 5. Complete authorized clean delivery using
    [Delivery, recovery and cleanup](../RULES.md#delivery-recovery-and-cleanup).
    The coordinator records the resulting present and history.

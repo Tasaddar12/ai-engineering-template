@@ -10,6 +10,11 @@ must run from an assigned immediate-child worktree under the configured
 before writing. A linked worker that needs another checkout creates a sibling
 from the primary absolute root; it never creates a nested worktree.
 
+Related lifecycle, STATE, journal and defer bookkeeping reuses the parent task's
+worktree and PR. Standalone commands own separate delivery; runtime preparation
+and finalization remain separate synchronization boundaries. See
+[Record templates and moves](../RULES.md#record-templates-and-moves).
+
 The primary checkout is read-only for tracked content: it may inspect, fetch and
 fast-forward to a verified merged target. The worker worktree owns edits and
 commits. Coordinator preparation uses a sibling worktree and reviewed PR before

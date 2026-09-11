@@ -1,6 +1,6 @@
 ---
 name: track-fixer
-description: Fixes the defects triage recorded for a track, working from the original plan and research brief with no memory of the review. Adds the regression check for each, tests only what it changed, and commits per fix.
+description: Fixes the defects triage recorded for a track, working from the original plan and research brief with no memory of the review. Adds the regression check for each and tests only what it changed.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
@@ -53,9 +53,10 @@ Everything about your seat follows from that line:
   and it is there because the finding came from an agent that did not know what
   was deliberate.
 - **If a fix needs a spec rewrite, an ADR, or more than a handful of files,
-  stop and say it should be a plan.** A behavior change landing as a fix skips
-  the plan-checker and the verifier. Fix what you can, and report the rest
-  plainly rather than growing the change to fit.
+  stop and say it should be coordinated by a plan.** An approved plan may link
+  multiple or large conformance FIX records; each retains reproduction, cause
+  and proof. A behavior change still belongs in the plan's explicit Contract
+  changes and intent-resolution path.
 
 Where the spec is silent or wrong, capture the needed contract correction as
 its own INTAKE. FIX changes are code-only; do not amend documentation, specs
@@ -81,14 +82,15 @@ the thing — say so rather than recording a test that proves nothing.
 
 ## Commit per fix
 
-One commit per fix record, as you finish it:
+Standalone/manual authors make one commit per fix record, as they finish it:
 
 ```
 FIX-{nnn}: <what was wrong, in the imperative>
 ```
 
-The code, the regression check and its proof belong together. In runtime mode return proof and scoped code edits to the coordinator for
-its audited correction commit. You may create new assigned FIX/INTAKE files;
+The code, the regression check and its proof belong together. In runtime mode
+return proof and scoped code edits uncommitted to the coordinator for its
+audited correction commit. You may create new assigned FIX/INTAKE files;
 existing record updates go in the documentation/coordinator handoff. In manual mode
 include the completed FIX record in the commit. A reviewer arriving next round reads
 these commits to establish whether each finding was addressed, and a single

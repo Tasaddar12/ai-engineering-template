@@ -11,18 +11,50 @@ started: YYYY-MM-DD
 # ORCH-{nnn}: <what this run is building>
 
 > **`status` tier.** The board for one `/orchestrate` run. What happened goes
-> in [the journal](../journal/); what was decided goes in the plans and their
+> in [the journal](../state/journal/); what was decided goes in the plans and their
 > PRs.
 >
 > **The coordinator owns this file.** Prepare and finalize it in an assigned
 > sibling worktree through a reviewed PR; synchronize the primary target before
 > runtime allocation. No track edits it directly.
 >
-> **The schedule is authoritative; the stage columns are not.** Waves, tracks
+> **The Execution schedule is authoritative; the board tables are projections
+> and stage columns are not.** Waves, tracks
 > and id blocks are decided once and fixed. A track's _stage_ is derived from
 > git — its branch, its commits, its plans' directory, its review log — so
 > treat the columns below as a last-known summary and check reality with
 > `/orchestrate-status` before acting on them.
+
+## Execution schedule
+
+The coordinator compiles this reviewed manifest and committed configuration
+into an immutable JSON snapshot before a real run. This illustrative fence
+contains schedule-owned fields only; configuration-owned values are read from
+the committed configuration during preparation.
+
+```json
+{
+  "run_id": "ORCH-000",
+  "remote": "origin",
+  "github_repo": "ORG/REPOSITORY",
+  "worker_command": ["codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "{sandbox}", "-C", "{worktree}", "--output-schema", "{schema_file}", "--output-last-message", "{result_file}", "-"],
+  "tracks": [{
+    "id": "example",
+    "title": "Example planned work",
+    "plans": [".ai/plans/backlog/PLAN-001-example.md"],
+    "depends_on": [],
+    "owned_paths": [".ai/plans/backlog/PLAN-001-example.md", "docs/example/"],
+    "code_paths": [],
+    "documentation_paths": [".ai/plans/backlog/PLAN-001-example.md", "docs/example/"],
+    "resources": [],
+    "environment": {},
+    "ids": {"FIX": [1, 20], "INTAKE": [1, 20], "SPEC": [1, 20], "ADR": [1, 20], "AMD": [1, 20]}
+  }],
+  "worker_timeout_seconds": 3600,
+  "check_timeout_seconds": 900,
+  "github_timeout_seconds": 900
+}
+```
 
 ## Plans in this run
 
@@ -61,22 +93,14 @@ instead of `src/`.
 | ----- | ------------------ | ----------------- | --------------------- |
 | w1t1  | PLAN-nnn, PLAN-nnn | `src/auth/**`     | SPEC-nnn, ADR-nnnn    |
 
-## Reserved id blocks
+## Reserved id blocks (projection of `Execution schedule`)
 
-Allocated by the coordinator before any track starts, and never reused — a
-later wave carries on from the highest block issued here.
-
-Tracks branch from the same commit, so "highest existing number plus one" makes
-every track pick the same one. Two tracks then write that id under different
-slugs, git merges both without a conflict, and two records share an id with no
-error raised anywhere. The blocks are what prevent that.
-
-| Track | INTAKE | FIX   | AMD   | SPEC | ADR | Used |
-| ----- | ------ | ----- | ----- | ---- | --- | ---- |
-| w1t1  | 40–59  | 40–59 | 12–31 | 8–27 | 5–24 |      |
-
-Allocation rules are in [RULES: Scheduling and IDs](../../RULES.md#scheduling-and-ids).
-Use the coordinator's issued-block ledger when filling this table.
+The `ids` blocks inside each `tracks[]` schedule entry are canonical. The board
+tables below are explanatory projections of that schedule, never independent
+schedule facts. The
+coordinator allocates them before dispatch, retains them during finalization,
+and never reuses them. Allocation rules are in
+[RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
 
 ## Waves
 
@@ -97,7 +121,7 @@ documentation-only track whose branch still has no net diff
  preserves its checkout, and creates no empty commit or PR; it does not proceed
  to docs reviews or delivery. Code-only tracks may already have a valid code
  diff/PR and may continue without documentation edits. Incomplete work or an inconclusive review is parked; residual
-findings are classified through [Definition of done](../../RULES.md#definition-of-done).
+findings are classified through [Definition of done](../RULES.md#definition-of-done).
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees
@@ -106,7 +130,7 @@ with the table.
 ### Wave 2 — pending
 
 List each track's own prerequisites and current wait reason. Dispatch readiness
-uses [RULES: Scheduling and IDs](../../RULES.md#scheduling-and-ids).
+uses [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
 
 ## Review rounds
 
@@ -117,7 +141,7 @@ and each permits at most one correction between rounds. Review two of each pair
 is mandatory whenever preceding work is complete and conclusive, including
 after an approved first review or zero eligible fixes. Inconclusive work parks.
 Record the actual completeness evidence and retained follow-ups under
-[Definition of done](../../RULES.md#definition-of-done).
+[Definition of done](../RULES.md#definition-of-done).
 
 > **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
 > `INTAKE-nnn` in this template and never as plausible numbers: a scheduler

@@ -22,7 +22,8 @@ ADR/AMD/SPEC changes after the code-review handoff.
 ## 1. Read it, and place it
 
 Read the whole document. If it is not already under
-`.ai/decisions/meetings/`, `git mv` it there as
+`.ai/decisions/meetings/`, render any new record from its source-relative
+template with `.ai/runtime/render_record.py`, then `git mv` it there as
 `MEET-YYYY-MM-DD-{slug}.md` and add meeting-note frontmatter — keep the original
 text intact below it. Use the
 date the meeting happened, not today.

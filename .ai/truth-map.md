@@ -29,7 +29,8 @@ This index locates project facts and instruction owners.
 | Why a multi-plan run was sequenced that way | `state/orchestration/ORCH-*.md` | Link by run id |
 | What one agent found out about the code before building | `research/*.md` | Link — never a requirement |
 | What each review round of a track found | Runtime phase receipts under the Git common directory; manual `state/orchestration/<run>/<track>/REVIEW-LOG.md` | Runtime receipts are authoritative in runtime mode; the manual log is authoritative only for manual runs |
-| What is happening right now | `state/STATE.md` | Link to it |
+| Human-facing current summary | `state/STATE.md` | Link to it |
+| Authoritative in-run phase, checkpoint, PR and original PLAN mapping | Runtime receipts and the original immutable execution snapshot in the Git common directory | Use `/plan-status`/`orchestrate.py --status`; do not infer liveness from STATE |
 | What happened on a given day | `state/journal/YYYY-MM-DD.md` | Link to it |
 | How the code actually works | **the code** | Describe, never duplicate |
 | How to use the product | `docs/` | Link to it |
