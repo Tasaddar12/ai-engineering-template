@@ -130,17 +130,18 @@ Then two judgements the numbers do not show, and say them plainly:
 - **Is a wave worth its overhead?** A wave with one track in it is a plan with
   extra ceremony.
 
-On `--dry-run`, stop here. The manifest and this estimate are the deliverable.
+On `--dry-run`, stop here. It is read-only: report layout, cost, inferred
+dependencies and exclusions, and create no manifest, worktree, ID reservation
+or PR. A real run persists reviewed preparation only after applicable
+authorization.
 
 ## 4. Prepare and review the manifest
 
-Every record type is numbered "highest existing plus one". Tracks branch from
-the same commit, so they all compute the same next number, write it under
-different slugs, and **git merges both without a conflict** — two records
-sharing an id, no error anywhere.
-
-So allocate up front. For each id type, find the highest number in use across
-the whole repository and give every track a contiguous block of 20:
+The coordinator allocates disjoint blocks up front across lifecycle records,
+registered worktrees, reviewed issued blocks and common receipts. Templates and
+examples are excluded. The `record_ids.py` helper only proposes a range and
+does not reserve it. For each id type, give every track a contiguous block of
+20:
 
 | Track | INTAKE | FIX | AMD | SPEC | ADR |
 |---|---|---|---|---|---|

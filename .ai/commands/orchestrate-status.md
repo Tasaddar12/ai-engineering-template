@@ -14,7 +14,10 @@ python .ai/runtime/orchestrate.py /path/to/original-schedule.json --status
 ```
 
 Compare the saved phase/checkpoint HEAD with the original snapshot and live Git
-and forge state. `--status` cannot prove that a process is alive.
+and forge state. Report each track's original PLAN mapping, phase/state, PR,
+checkpoint HEAD and wait reason. Prefer the original snapshot with
+`orchestrate.py --status`; otherwise inspect the common-directory receipt
+structure. `--status` cannot prove that a process is alive.
 
 Read the manifest, then **check it against reality**. The manifest is what the
 coordinator recorded; a run interrupted mid-track leaves it

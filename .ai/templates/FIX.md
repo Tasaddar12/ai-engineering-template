@@ -77,8 +77,9 @@ cause is a signal that the real work is a plan.
 - 
 
 <!--
-Naming: FIX-{nnn}-{slug}.md, next number after the highest anywhere under
-.ai/fixes/ (including done/ — numbers are never reused).
+Naming: FIX-{nnn}-{slug}.md, from the coordinator-issued block. Collision
+checks cover lifecycle inventories, registered worktrees and receipts;
+numbers are never reused.
 
 Run /fix, which does the whole loop: diagnose, record, change, prove, close.
 

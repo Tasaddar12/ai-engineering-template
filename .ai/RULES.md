@@ -218,7 +218,11 @@ it never authorizes bypassing host permissions.
 PLAN content is written by planning/documentation agents. Implementors do not
 rewrite the target, contract, steps or acceptance; they report discoveries.
 The documentor updates PLAN notes and final documentation after code review.
-The coordinator performs directory moves without rewriting content.
+The coordinator performs lifecycle moves mechanically, while the move helper
+rebases outgoing Markdown links, images and reference destinations inside the
+whole moved set. This destination-only rewrite preserves rendered content;
+incoming live references are prepared before final review. It does not rewrite
+raw HTML links or YAML metadata.
 
 ## Roles
 
@@ -515,7 +519,7 @@ use severity downgrades or a permissive residual-policy override to close it.
 When an affected tree is available, a fresh read-only audit examines open code
 FIXes, previous proof and actual integrated or explicitly preserved trees.
 A parked defect and work waiting on it do not prevent examining that defect;
-other unfinished project PLANs do. Include open reports from earlier runs.
+unrelated unfinished project PLANs do not. Include open reports from earlier runs.
 Current done/abandoned record lifecycle overrides stale receipt copies.
 The audit does not close unproved records, repair code, or restart the original
 review loop. Documentation fragments remain INTAKE for planned documentation work.
@@ -569,6 +573,16 @@ propose a corrected dependency or PLAN boundary. Exclude vague work without
 usable steps/acceptance and explain why. Recheck ready PLANs against landed
 prerequisites before allocation.
 
+Record identifiers are allocated by the coordinator across the complete
+lifecycle inventory, registered worktree inventories, reviewed issued blocks,
+and common-directory receipts. Templates and examples are excluded. Before
+dispatch, allocation is serialized and published in disjoint blocks;
+`record_ids.py KIND --count N` only proposes a range and reports
+`reserved: false`. Issued ranges remain in the reviewed manifest even when
+unused or abandoned. Workers use only their assigned block, and the
+coordinator rechecks collisions before merge. Other worktree inventories are
+collision evidence, never a substitute checkout or an authoritative ID table.
+
 lifecycle.max_active is guidance. Report excess concurrency without rejecting
 work or requesting permission merely because the suggested count is exceeded.
 orchestration.max_parallel_tracks limits actual runtime capacity.
@@ -599,8 +613,13 @@ The worker follows this file and its assigned role. Assignment supplies phase,
 worktree/branch, original PLANs, steps, scopes, research paths, reserved IDs,
 checks and documentation handoff. Run only the assigned phase: no nested agents,
 branch changes, merge/rebase, publication or sibling-worktree writes.
-Build/document workers commit each assigned step; fix/docs-fix workers leave
-their scoped edits for the coordinator's audited correction commit. Reviewers
+Build/document workers commit each assigned step; runtime fix/docs-fix workers
+return scoped uncommitted edits for the coordinator's audited correction
+commit. Standalone/manual task authors commit their own task work. A
+documentation correction may edit assigned `documentation_paths` and
+explicitly assigned `source_documentation_paths`; pure documentation has both
+code path lists empty. YAML/config values remain outside runtime docs-fix.
+Reviewers
 do not edit or commit. Host permissions must support the selected Git operations.
 
 Use argv commands and the supplied result schema. Return complete or blocked

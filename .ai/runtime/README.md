@@ -5,7 +5,16 @@ authenticated GitHub CLI. Each worker phase is a separate subprocess. The
 scheduler waits for process completion, saves receipts, and dispatches tracks
 whose own dependencies have merged. Waves remain a display grouping.
 
-The Markdown commands describe the planning and role workflow. For executable
+The Markdown commands describe the planning and role workflow. Install the
+preparation dependencies before compiling a snapshot:
+
+```text
+python -m pip install -r .ai/runtime/requirements.txt
+# or, when YAML preparation is needed:
+python -m pip install -r .ai/runtime/requirements-prepare.txt
+```
+
+For executable
 background dispatch, the coordinator compiles that approved plan into a JSON
 schedule using [schedule.example.json](schedule.example.json). The example is
 illustrative; replace its repository, PLAN paths, owned paths, resources, ID
@@ -14,6 +23,7 @@ The JSON is an explicit execution snapshot of `.ai/config.yaml` and the run
 manifest. Keep it outside tracked content or in the Git common directory.
 
 ```text
+python .ai/runtime/prepare.py MANIFEST --repository . --ref HEAD --config .ai/config.yaml > snapshot.json
 python .ai/runtime/orchestrate.py /path/to/schedule.json --validate
 python .ai/runtime/orchestrate.py /path/to/schedule.json
 python .ai/runtime/orchestrate.py /path/to/schedule.json --status

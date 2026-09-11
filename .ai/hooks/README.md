@@ -12,8 +12,8 @@ the repository's prompts and host permissions remain in effect.
 
 | Script | Example event | Output |
 |---|---|---|
-| [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | The edited document's tier and responsibilities |
-| [worktree-confine.sh](worktree-confine.sh) | `PreToolUse` | A warning about a possible write outside the assigned checkout |
+| [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | Plain `NOTICE` naming the edited document's tier and responsibilities |
+| [worktree-confine.sh](worktree-confine.sh) | `PreToolUse` | `systemMessage` warning about a possible write outside the assigned checkout |
 
 The worktree hook reads `cwd`, `tool_name` and `tool_input` from JSON on stdin.
 It derives the checkout and shared Git directory from Git. File tools warn for
@@ -21,7 +21,9 @@ outside paths and direct Git metadata edits; checkout and environment-provided
 scratch/temp paths are quiet. Shell checks also allow shared Git metadata and
 standard stream devices, and inspect only simple redirects.
 
-Warnings use `systemMessage`, exit 0 and never emit a permission decision.
+Both hooks are advisory: they exit 0 and never emit a permission decision.
+The tier hook emits plain `NOTICE` text; the worktree hook emits a
+`systemMessage` object for host display.
 Missing repository context produces no warning. JSON parsing prefers `jq`,
 then Python; the minimal text fallback can miss escaped/quoted inputs.
 The lexical path checks do not resolve symlinks or junctions and lowercase

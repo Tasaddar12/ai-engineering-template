@@ -66,8 +66,9 @@ lifecycle:
   # Fixes are live in every mode, light included.
   fix_stages: [open, done]
 
-# Identifier formats. Numbers are zero-padded and allocated by taking the
-# highest existing number and adding one.
+# Identifier formats. Numbers are zero-padded. The coordinator allocates
+# disjoint reviewed blocks across lifecycle inventories and receipts; the
+# record_ids helper only proposes a range and never reserves it.
 ids:
   spec: SPEC-{nnn}-{slug}
   plan: PLAN-{nnn}-{slug}

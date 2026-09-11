@@ -1,20 +1,22 @@
 ---
-description: Review the onboarding change, commit it, and open a merge request
+description: Review onboarding, prepare its reviewed delivery, and report the publication path
 argument-hint: [target-branch]
 ---
 
 Read and follow [RULES](../RULES.md).
 
-Land this adoption. Target branch: **$ARGUMENTS** (default: the repository's
-default branch — check `git remote show origin` or `git symbolic-ref
-refs/remotes/origin/HEAD` rather than assuming `main`).
+Land this adoption on **$ARGUMENTS** (default: inspect the remote default branch;
+never assume `main`). First report the requested adoption scope: rules-only,
+issue sweep, documentation reconciliation, or full adoption. Apply only gates
+that the scope can satisfy. Full adoption still requires filled intent,
+configuration and structure; narrower scopes do not pretend to satisfy those
+gates.
 
-## 1. Check the work before offering it
+## 1. Inspect, verify and prepare
 
-Report on each of these, and **stop if any looks wrong** — do not commit past a
-problem here:
+Check each scope-relevant item and report evidence before committing:
 
-- **`.ai/state/PROJECT.md`** — filled in, no `CHANGEME`, and the non-goals and
+- **Full adoption: `.ai/state/PROJECT.md`** — filled in, no `CHANGEME`, and the non-goals and
   hard constraints are specific enough to reject a plan. Everything downstream
   is graded against this file.
 - **`.ai/specs/`** — nothing asserted that has not been checked against the
@@ -27,9 +29,14 @@ problem here:
   and `Edit` in its `tools:` list.
 - **`.ai/plans/intake/`** — a readable set of clustered items, not one file per
   `TODO`.
-- **`.ai/config.yaml`** — `verification.commands` holds the project's real test
+- **Full adoption: `.ai/config.yaml`** — `verification.commands` holds the project's real test
   and lint commands, not an empty list.
-- **Deletions** — every retired document was one the user explicitly approved.
+- **Deletions** — every retired document was explicitly approved.
+
+Run the required checks on the exact reviewed HEAD, verify the worktree is
+clean, and prepare a concise description covering scope, decisions,
+contradictions corrected, captured findings and anything still open. Keep
+unrelated edits out of the assigned worktree.
 
 ## 2. Commit in a reviewed worktree
 
@@ -46,7 +53,7 @@ worktree, review and open the PR, then merge and synchronize the primary target
 before continuing. If the worktree has changes that are not part of
 the adoption, stop and tell the user rather than sweeping them in.
 
-## 3. Push and open the merge request
+## 3. Publish only with authority
 
 Neither `gh` nor `glab` is assumed to be installed. On GitLab, push options
 create the MR with no CLI:
@@ -61,15 +68,23 @@ git push -u origin HEAD \
 ```
 
 Check the remote host first. If it is GitHub and `gh` is available, use
-`gh pr create` instead. If neither route is available, push the branch and give
-the user the compare URL to open it themselves.
+`gh pr create` instead. If neither route is available, report that publication
+is unavailable and preserve the branch for an authorized retry; do not claim
+delivery from a compare URL alone.
 
-**Confirm with the user before pushing.** Pushing is outward-facing, and the
-description below is a claim about work they have not read yet.
+Existing explicit authority to push and merge persists; ask only when that
+authority is missing. If publication or PR creation fails, report the failure
+and preserve the branch. It is not a delivered adoption and must not fall back
+to a local merge.
 
-## 4. Write the description
+## 4. Merge and verify
 
-Cover, briefly:
+Open the PR with the prepared description, wait for required checks and review,
+then merge the exact reviewed head. Refresh the target, verify ancestry and the
+tested tree, rerun required checks on the synchronized target, and clean up
+only the exact clean merged worktree and branch. Report the PR URL and evidence.
+
+The description covers, briefly:
 
 - What the structure is, and a one-line pointer to `.ai/README.md`
 - **Decisions the reviewer should check** — SPECs derived from reviewed code,
@@ -83,4 +98,4 @@ Cover, briefly:
   why
 - Anything still open: unanswered questions, `.ai/plans/blocked/` entries
 
-Then report the MR or PR URL, or the compare URL if you could not open it.
+Then report the MR or PR URL and the synchronized verification evidence.

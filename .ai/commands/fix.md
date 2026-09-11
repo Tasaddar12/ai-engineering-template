@@ -47,8 +47,9 @@ document, and stop rather than changing code speculatively.
 
 ## 3. Write the record first
 
-Allocate the next id — the highest `FIX-` anywhere under `.ai/fixes/`,
-including `done/`, plus one. Numbers are never reused. Copy
+Use the coordinator-issued FIX id block. Do not derive an id from the highest
+filename; collision checks cover lifecycle directories, registered worktrees,
+reviewed issued blocks and common receipts. Copy
 `.ai/templates/FIX.md` to `.ai/fixes/open/FIX-{nnn}-{slug}.md` and fill in
 **Symptom** and **Root cause** *now*, before touching code.
 

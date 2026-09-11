@@ -21,6 +21,10 @@ Write only owned documentation paths: `.md`, `.markdown`, `.rst` and `.adoc`
 documentation, including the promised SPECs, ADRs, AMDs and PLAN delivery
 notes. You may also update comments/docstrings in explicitly assigned
 source_documentation_paths with the required behavior-equivalence check.
+Pure documentation means both `code_paths` and `source_documentation_paths` are
+empty. Runtime YAML/configuration is outside docs-fix scope; this standalone
+scribe batch may update assigned YAML comments only after proving semantic
+equivalence with `yaml.safe_load`.
 Do not change executable behavior, tests, YAML/JSON, shared STATE, journal,
 receipts, review logs or PR records. Do not edit code to match docs.
 

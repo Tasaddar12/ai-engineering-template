@@ -109,6 +109,14 @@ lets it find where a behavior was introduced.
 
 ---
 
+## Related records and preparation
+
+Related lifecycle moves, STATE updates, journal entries and the parent task's
+record housekeeping share that task's worktree and reviewed PR. A standalone
+mutation owns its own lifecycle. Runtime preparation and finalization remain
+separate when synchronization or merge evidence is required; a run never edits
+the tracked primary checkout in place.
+
 ## Running one
 
 It is two commands, and the split matters — see
@@ -118,11 +126,12 @@ It is two commands, and the split matters — see
 review and merge the manifest PR, then synchronize the primary checkout:
 
 ```bash
-/orchestrate --all-backlog --dry-run       # just the schedule, nothing created
+/orchestrate --all-backlog --dry-run       # read-only layout/cost/dependencies
 /orchestrate PLAN-011 PLAN-014 PLAN-018    # schedule after the prep PR is synced
 ```
 
-**Start with `--dry-run`.** It produces the manifest and stops. You get the
+**Start with `--dry-run`.** It reports the prospective layout and stops without
+creating a tracked manifest, worktree, ID reservation or PR. You get the
 wave layout, the tracks, and — listed separately — every dependency the
 orchestrator *inferred* rather than read from a plan. Those are the ones that
 can be wrong, and checking them costs a minute against a run that costs hours.

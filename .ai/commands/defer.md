@@ -26,7 +26,7 @@ the next agent rediscovers it and improvises around it.
    - Uncertain defect → INTAKE with `kind: question`; do not label a guess a bug.
    - Other unplanned work → INTAKE with the appropriate kind.
 3. **Write non-code findings** to `.ai/plans/intake/INTAKE-{nnn}-{slug}.md` from
-   `.ai/templates/INTAKE.md`, numbered after the highest existing. Fill in
+   `.ai/templates/INTAKE.md`, using a coordinator-issued INTAKE id block. Fill in
    what's wrong, where, why not now, and what it costs to leave. Five lines.
 4. **Do not fix it.** Not a small version of it either. The point of capturing
    is that the current change stays reviewable.

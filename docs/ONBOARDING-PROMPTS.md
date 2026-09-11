@@ -1,8 +1,11 @@
 # Onboarding starter prompts
 
 Paste-ready prompts for the first message of a fresh agent session in the
-adoption worktree (see [onboard](../.ai/commands/onboard.md)). They differ in how much
-they do in one pass and in what they ask you to decide.
+adoption worktree (see [onboard](../.ai/commands/onboard.md)). Each names an
+adoption scope so `/onboard-pr` applies only the gates that scope can satisfy.
+Full adoption requires filled intent, configuration and structure; rules-only,
+issue-sweep and documentation-reconciliation prompts do not silently claim
+those gates.
 
 If you are not sure, use **B**. If agents on this project are already refusing
 to edit docs or bending code around stale specs, run **A** first — it finds the
