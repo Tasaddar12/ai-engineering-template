@@ -124,6 +124,7 @@ orchestration:
   # cost dial: each track is a full pipeline of subagents. Raising it past the
   # number of genuinely independent plans buys nothing.
   max_parallel_tracks: 3
+  max_process_attempts: 2
 
   # Branch the run starts from and merges back into. Empty means whatever
   # branch /orchestrate was invoked on.

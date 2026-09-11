@@ -93,7 +93,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertTrue(runner.run())
         self.assertEqual(runner.state['tracks']['a']['phase_attempts']['build'], 1)
 
-    def test_missing_review_result_never_resets_review_attempt(self):
+    def test_missing_review_result_can_retry_without_repeating_completed_reviews(self):
         runner = self.runner()
         consume = runner.consume_result
         def interrupted(track):
@@ -105,10 +105,11 @@ class RecoveryTests(unittest.TestCase):
         runner.consume_result = interrupted
         self.assertFalse(runner.run())
         path, _ = runner.location(self.config['tracks'][0])
-        with self.assertRaisesRegex(orch.Blocked, 'Failed fix/review'):
-            runner.recover('reconcile', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
-        self.assertFalse(runner.run())
+        runner.consume_result = consume
+        runner.recover('reconcile', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        self.assertTrue(runner.run())
         self.assertEqual(runner.state['tracks']['a']['phase_attempts']['review-1'], 1)
+        self.assertEqual(runner.state['tracks']['a']['process_attempts']['review-1'], 2)
 
     def test_abandon_preserves_work_and_allows_a_new_run(self):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'outside'
@@ -165,7 +166,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(finding['severity'], 'critical')
         self.assertEqual([x['severity'] for x in finding['history']], ['minor', 'critical'])
         report = (self.root / finding['record']).read_text()
-        for text in ('severity: "critical"', 'Concrete regression evidence', 'New second-round evidence', 'src/critical.txt', 'Attempted correction'):
+        for text in ('severity: "critical"', 'Concrete regression evidence', 'New second-round evidence', 'src/critical.txt'):
             self.assertIn(text, report)
 
     def test_python_caches_and_declared_generated_output_allow_cleanup(self):
@@ -350,7 +351,7 @@ class DocumentationTests(unittest.TestCase):
     def test_code_owned_configuration_in_documentation_directories_can_ship(self):
         paths = ['docs/conf.py', 'docs/requirements.txt', 'doc/conf.py', 'documentation/CMakeLists.txt']
         track = self.track('a', 1, docs=True, env={'WORKER_MODE': 'code-documentation-config'})
-        track.update(code_paths=paths, owned_paths=paths + ['PLAN-a.md', 'docs.md'])
+        track.update(code_paths=paths, owned_paths=paths + ['.ai/plans/backlog/PLAN-001-a.md', 'docs.md'])
         self.config['tracks'] = [track]
         runner = self.runner()
         self.assertTrue(runner.run())
@@ -363,7 +364,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_code_owned_markdown_remains_readonly_during_build(self):
         track = self.track('a', 1, env={'WORKER_MODE': 'code-documentation-config'})
-        track.update(code_paths=['docs/README.md'], owned_paths=['PLAN-a.md', 'docs/README.md'])
+        track.update(code_paths=['docs/README.md'], owned_paths=['.ai/plans/backlog/PLAN-001-a.md', 'docs/README.md'])
         self.config['tracks'] = [track]
         runner = self.runner()
         self.assertFalse(runner.run())
@@ -373,7 +374,7 @@ class DocumentationTests(unittest.TestCase):
     def test_executable_text_configuration_cannot_be_declared_documentation(self):
         for name in ('CMakeLists.txt', 'requirements.txt', 'docs/CMakeLists.txt', 'docs/requirements.txt'):
             config = copy.deepcopy(self.config)
-            config['tracks'][0].update(owned_paths=['PLAN-a.md', name], code_paths=[], documentation_paths=[name])
+            config['tracks'][0].update(owned_paths=['.ai/plans/backlog/PLAN-001-a.md', name], code_paths=[], documentation_paths=[name])
             with self.subTest(path=name), self.assertRaisesRegex(orch.Blocked, 'Documentation paths cannot name source'):
                 orch.validate(config)
 
@@ -391,14 +392,14 @@ class DocumentationTests(unittest.TestCase):
                 self.assertFalse(runner.run())
                 state = runner.state['tracks']['a']
                 self.assertIn(f'Documentation worker cannot change source: {name}', state['reason'])
-                self.assertEqual(state['phase_attempts'], {'build': 1, 'review-1': 1, 'review-2': 1, 'document': 1})
+                self.assertEqual(state['phase_attempts'], {'build': 1, 'review-1': 1, 'review-2': 1})
                 path, _ = runner.location(config['tracks'][0])
                 self.assertNotIn('document', state['completed_phases'])
                 self.assertEqual(orch.git(path, 'diff', state['code_reviewed_sha'], 'HEAD', '--', 'src/a.txt'), '')
                 self.assertEqual((path / 'src/a.txt').read_text(), 'built\n')
                 self.assertFalse(runner.events)
 
-    def test_documentation_only_track_still_runs_both_review_pairs(self):
+    def test_documentation_only_track_runs_only_documentation_reviews(self):
         self.config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': 'no-code'})]
         self.config['tracks'][0]['code_paths'] = []
         runner = self.runner()
@@ -414,10 +415,10 @@ class DocumentationTests(unittest.TestCase):
         self.assertTrue(runner.run())
         state = runner.state['tracks']['a']
         self.assertEqual(state['code_reviewed_sha'], state['base'])
-        self.assertTrue(all(name in state['completed_phases'] for name in orch.REVIEW_PHASES))
+        self.assertEqual(list(state['completed_phases']), ['document', 'docs-review-1', 'docs-review-2'])
         self.assertFalse((self.root / 'src/a.txt').exists())
         self.assertEqual((self.root / 'docs.md').read_text(), 'documented\n')
-        self.assertEqual(create_after, [['build', 'review-1', 'review-2', 'document']])
+        self.assertEqual(create_after, [['document']])
 
     def test_no_change_track_is_preserved_without_fabricating_a_commit_or_pr(self):
         self.config['tracks'] = [self.track('a', 1, env={'WORKER_MODE': 'no-code'})]
@@ -427,7 +428,7 @@ class DocumentationTests(unittest.TestCase):
         state = runner.state['tracks']['a']
         path, _ = runner.location(self.config['tracks'][0])
         self.assertEqual(orch.git(path, 'rev-parse', 'HEAD'), state['base'])
-        self.assertEqual(list(state['completed_phases']), ['build', 'review-1', 'review-2', 'document'])
+        self.assertEqual(list(state['completed_phases']), ['document'])
         self.assertIn('No changes available for a pull request', state['reason'])
         self.assertFalse(runner.prs)
         self.assertFalse(runner.events)
@@ -446,7 +447,7 @@ class DocumentationTests(unittest.TestCase):
         runner.gh = unavailable
         self.assertFalse(runner.run())
         before = copy.deepcopy(runner.state['tracks']['a']['phase_attempts'])
-        self.assertEqual(before, {'build': 1, 'review-1': 1, 'review-2': 1, 'document': 1})
+        self.assertEqual(before, {'document': 1})
         runner.gh = original
         runner.recover('retry', 'a')
         self.assertTrue(runner.run())
@@ -517,7 +518,7 @@ class DocumentationTests(unittest.TestCase):
             (['docs/code.py'], ['docs/'], [], 'source'),
         ]:
             config = copy.deepcopy(self.config)
-            config['tracks'][0].update(documentation_paths=docs, owned_paths=owned + ['PLAN-a.md'], code_paths=code)
+            config['tracks'][0].update(documentation_paths=docs, owned_paths=owned + ['.ai/plans/backlog/PLAN-001-a.md'], code_paths=code)
             with self.subTest(docs=docs), self.assertRaisesRegex(orch.Blocked, error):
                 orch.validate(config)
 
@@ -585,7 +586,7 @@ class DocumentationTests(unittest.TestCase):
         self.assertTrue(all(count == 1 for count in state['phase_attempts'].values()))
         self.assertEqual(state['phase_receipts']['document']['model'], 'gpt-5.6-luna')
 
-    def test_lost_documentation_review_result_cannot_reset_review_budget(self):
+    def test_lost_documentation_review_result_retries_only_the_failed_process(self):
         runner = self.runner()
         consume = runner.consume_result
 
@@ -599,9 +600,11 @@ class DocumentationTests(unittest.TestCase):
         runner.consume_result = interrupted
         self.assertFalse(runner.run())
         path, _ = runner.location(self.config['tracks'][0])
-        with self.assertRaisesRegex(orch.Blocked, 'Failed fix/review'):
-            runner.recover('reconcile', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        runner.consume_result = consume
+        runner.recover('reconcile', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        self.assertTrue(runner.run())
         self.assertEqual(runner.state['tracks']['a']['phase_attempts']['docs-review-2'], 1)
+        self.assertEqual(runner.state['tracks']['a']['process_attempts']['docs-review-2'], 2)
         with self.assertRaisesRegex(orch.Blocked, 'Unknown phase'):
             runner.phase(self.config['tracks'][0], 'docs-review-3', readonly=True)
 

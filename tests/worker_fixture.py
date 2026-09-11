@@ -22,7 +22,12 @@ def write(path, content):
     target.write_text(content, encoding='utf-8')
 
 
-if phase == 'build':
+if phase == 'readiness':
+    for plan in context['plans']:
+        subprocess.check_output(['git', 'show', f"{context['base_sha']}:{plan}"])
+    if mode == 'readiness-reject':
+        status = 'blocked'
+elif phase == 'build':
     for required in json.loads(os.environ.get('REQUIRE_FILES', '[]')):
         assert (root / required).is_file(), required
     time.sleep(float(os.environ.get('WORKER_DELAY', '0')))
@@ -72,6 +77,8 @@ elif phase.startswith('docs-review'):
                         for kind in ('documentation', 'contract')]
     if mode == 'docs-mutating-review':
         write('docs.md', 'documentation reviewer edited\n')
+    if mode == 'cold-docs':
+        assert not any(name in context['documentation_handoff'] for name in ('document', 'docs-review-1', 'docs-fix', 'docs-review-2'))
     if mode == 'incomplete-docs' or mode == 'missing-docs-review' and phase == 'docs-review-2':
         documentation_complete = False
 elif phase.startswith('review'):
@@ -85,6 +92,9 @@ elif phase.startswith('review'):
             findings[0].update(severity='critical', detail='New second-round evidence', path='src/critical.txt')
     if mode == 'mutating-review':
         write('docs.md', 'reviewer changed a document\n')
+    if mode == 'out-of-scope' and phase == 'review-1':
+        findings = [dict(key='outside', kind='code', severity='minor', title='Outside scope',
+                         path='src/other.txt', detail='Known defect outside the owned source', impact='unrelated')]
 
 if phase == 'build' and mode == 'research':
     write(context['research_paths'][0], '# Research\n\nInspected the fixture writer and its callers.\n')
@@ -126,6 +136,8 @@ if phase.startswith('review') and mode == 'incomplete-code':
 
 verdict = ('cannot_review' if mode == 'cannot-review' or mode == 'docs-cannot-review' and phase.startswith('docs-review') else
            'changes_requested' if findings else 'approved') if 'review-' in phase else 'not_applicable'
+if phase == 'readiness':
+    verdict = 'approved' if status == 'complete' else 'changes_requested'
 Path(os.environ['ORCH_RESULT']).write_text(json.dumps(
     dict(status=status, verdict=verdict, summary=f'Completed {phase}', findings=findings,
          implementation_complete=implementation_complete, documentation_complete=documentation_complete,

@@ -22,7 +22,7 @@ class PolicyWorkflowTests(unittest.TestCase):
         orch.git(self.root, 'push')
 
     def test_pending_intent_blocks_only_its_track_before_worktree_allocation(self):
-        self.seed({'PLAN-a.md': fixture.plan_text('Change intent', [
+        self.seed({'.ai/plans/backlog/PLAN-001-a.md': fixture.plan_text('Change intent', [
             {'id': 'implementation', 'phase': 'build', 'title': 'Implement the approved choice'}], [
             {'request': 'Change the supported platform', 'decision': 'pending', 'human_resolution': ''}])})
         self.config['tracks'].append(self.track('b', 21))
@@ -33,7 +33,7 @@ class PolicyWorkflowTests(unittest.TestCase):
         self.assertEqual(runner.state['tracks']['b']['status'], 'merged')
 
     def test_approved_intent_and_every_step_have_separate_commits(self):
-        self.seed({'PLAN-a.md': fixture.plan_text('Approved behavior', [
+        self.seed({'.ai/plans/backlog/PLAN-001-a.md': fixture.plan_text('Approved behavior', [
             {'id': 'first', 'phase': 'build', 'title': 'Implement the first behavior'},
             {'id': 'second', 'phase': 'build', 'title': 'Implement the second behavior'}], [
             {'request': 'Change the supported platform', 'decision': 'approved',
@@ -44,7 +44,7 @@ class PolicyWorkflowTests(unittest.TestCase):
         self.assertEqual([step['id'] for step in commits], ['first', 'second'])
         self.assertEqual(len({step['commit'] for step in commits}), 2)
         for step in commits:
-            self.assertIn(f"PLAN-Step: PLAN-a.md#{step['id']}",
+            self.assertIn(f"PLAN-Step: .ai/plans/backlog/PLAN-001-a.md#{step['id']}",
                           orch.git(self.root, 'show', '-s', '--format=%B', step['commit']))
 
     def test_missing_step_commit_cannot_merge(self):
@@ -59,6 +59,7 @@ class PolicyWorkflowTests(unittest.TestCase):
         runner = self.runner()
         self.assertFalse(runner.run())
         self.assertIn('Missing code or functionality', runner.state['tracks']['a']['reason'])
+        self.assertNotIn('document', runner.state['tracks']['a']['process_attempts'])
         self.assertFalse(runner.events)
 
     def test_residual_functionality_defect_is_a_fix_and_prevents_merge(self):
@@ -122,14 +123,15 @@ class PolicyWorkflowTests(unittest.TestCase):
 
     def test_documentor_can_update_plan_notes_after_code_review(self):
         track = self.config['tracks'][0]
-        track['documentation_paths'] = ['PLAN-a.md']
+        track['documentation_paths'] = ['.ai/plans/backlog/PLAN-001-a.md']
         track['environment']['WORKER_MODE'] = 'plan-notes'
-        self.seed({'PLAN-a.md': fixture.plan_text('Plan notes', [
+        self.seed({'.ai/plans/backlog/PLAN-001-a.md': fixture.plan_text('Plan notes', [
             {'id': 'implement', 'phase': 'build', 'title': 'Implement behavior'},
             {'id': 'document', 'phase': 'document', 'title': 'Record delivered documentation'}])})
         runner = self.runner()
         self.assertTrue(runner.run())
-        self.assertIn('Implementation and SPEC coverage verified.', (self.root / 'PLAN-a.md').read_text())
+        delivered = next((self.root / '.ai/plans/done').rglob('PLAN-001-a.md'))
+        self.assertIn('Implementation and SPEC coverage verified.', delivered.read_text())
 
     def test_late_python_documentation_preserves_behavior(self):
         self.seed({'src/module.py': 'VALUE = 1\n'})
@@ -155,7 +157,7 @@ class PolicyWorkflowTests(unittest.TestCase):
         self.assertFalse(runner.events)
 
     def test_missing_human_evidence_and_short_id_blocks_are_rejected(self):
-        self.seed({'PLAN-a.md': fixture.plan_text('Unresolved intent', [], [
+        self.seed({'.ai/plans/backlog/PLAN-001-a.md': fixture.plan_text('Unresolved intent', [], [
             {'request': 'Change intent', 'decision': 'approved', 'human_resolution': ''}])})
         runner = self.runner()
         self.assertFalse(runner.run())

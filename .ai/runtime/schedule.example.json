@@ -1,5 +1,5 @@
 {
-  "protocol_version": 2,
+  "protocol_version": 3,
   "run_id": "ORCH-001",
   "repository": "/absolute/path/to/project",
   "base_branch": "main",
@@ -7,6 +7,9 @@
   "github_repo": "OWNER/REPOSITORY",
   "branch_prefix": "orch",
   "max_parallel_tracks": 3,
+  "worktree_root": ".worktrees",
+  "done_partition": "quarter",
+  "max_process_attempts": 2,
   "worker_command": [
     "codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "{sandbox}",
     "-C", "{worktree}", "--output-schema", "{schema_file}",
