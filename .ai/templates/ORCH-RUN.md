@@ -96,7 +96,11 @@ optional `fix` → `review-2` → `document` → `docs-review-1` → optional
 `docs-fix` → `docs-review-2` → final checks and delivery. Both code reviews and
 both documentation reviews run when preceding work is complete and conclusive.
 Documentation-only tracks run both code reviews before opening a PR after docs
-create a diff. Incomplete work or an inconclusive review is parked; residual
+ create a diff. A documentation-only track whose branch still has no net diff
+ from its base after the document phase stops with a recorded no-change outcome,
+ preserves its checkout, and creates no empty commit or PR; it does not proceed
+ to docs reviews or delivery. Code-only tracks may already have a valid code
+ diff/PR and may continue without documentation edits. Incomplete work or an inconclusive review is parked; residual
 findings preserve their actual verdict and follow the stated merge policy.
 
 Derived, not tracked: the branch and its commits say where a track actually

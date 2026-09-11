@@ -40,5 +40,7 @@ definition of done.
    specs moved.
 
 Report what shipped, which specs were created, amended or retired, which ADRs
-were written or superseded, and what is next. Do not commit or push unless the
-user asked.
+were written or superseded, and what is next. In runtime mode the coordinator
+owns commits. Standalone closeout commits lifecycle and state changes under the
+repository's standing commit rule or an explicit user assignment; never create
+an empty commit. Publication still requires existing authorization.

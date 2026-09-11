@@ -26,7 +26,12 @@ durable and authoritative; never infer or reset counts from commit subjects.
 2. **PR when there is a diff.** For a code diff, the coordinator prepares and
    opens the PR before review. A documentation-only track runs both code
    reviews first and opens its PR only after the documentation batch creates a
-   diff. PR/push failure parks the track.
+   diff. A documentation-only track whose branch still has no net diff from its
+   base after the document phase stops with a recorded no-change outcome,
+   preserves the checkout, and does not create an empty commit or PR or proceed
+   to documentation reviews or delivery. Code-only tracks may already have a
+   valid code diff/PR and may continue without documentation edits. PR/push
+   failure parks the track.
 
 3. **Code review one.** A fresh `track-reviewer` receives only the PLAN,
    current contracts, source and filtered diff. It reviews code quality and
