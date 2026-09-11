@@ -49,6 +49,9 @@ def highest_issued(roots, common):
                                 require(match is not None, f'Invalid {kind} reservation in {manifest}')
                                 include(kind, [int(match[1]), int(match[2])])
     for receipt in (common / 'orchestration').glob('*/state.json'):
+        run = re.fullmatch(r'ORCH-(\d+)', receipt.parent.name)
+        if run:
+            highest['ORCH'] = max(highest['ORCH'], int(run[1]))
         data = json.loads(receipt.read_text(encoding='utf-8'))
         for track in data['tracks'].values():
             for kind, bounds in track.get('ids', {}).items():

@@ -30,9 +30,13 @@ def compile_snapshot(repository, manifest, source_ref='HEAD', config_path='.ai/c
     require(orchestration['dispatch'] == 'background', 'Snapshot compiler requires background dispatch')
     require(orchestration['review']['max_rounds'] == 2 and orchestration['documentation']['max_review_rounds'] == 2,
             'Runtime requires exactly two code and two documentation review rounds')
-    fixed_paths = {'plans': '.ai/plans', 'fixes': '.ai/fixes', 'specs': '.ai/specs',
+    fixed_paths = {'project': '.ai/state/PROJECT.md', 'state': '.ai/state', 'journal': '.ai/state/journal',
+                   'plans': '.ai/plans', 'fixes': '.ai/fixes', 'specs': '.ai/specs',
                    'decisions': '.ai/decisions', 'amendments': '.ai/decisions/amendments',
-                   'orchestration': '.ai/state/orchestration', 'research': '.ai/research'}
+                   'retired': '.ai/decisions/retired', 'meetings': '.ai/decisions/meetings',
+                   'orchestration': '.ai/state/orchestration', 'research': '.ai/research',
+                   'agents': '.ai/agents', 'commands': '.ai/commands', 'templates': '.ai/templates',
+                   'hooks': '.ai/hooks', 'policies': '.ai/policies', 'gates': '.ai/gates', 'docs': 'docs'}
     require(all(config['paths'].get(key) == value for key, value in fixed_paths.items()),
             'Runtime requires the fixed record paths')
     fixed_ids = {'plan': 'PLAN-{nnn}-{slug}', 'fix': 'FIX-{nnn}-{slug}', 'intake': 'INTAKE-{nnn}-{slug}',

@@ -54,6 +54,24 @@ class RecordLinkTests(unittest.TestCase):
         self.assertIn('(../../RULES.md#intent-and-plan-approval)', result.stdout)
         self.assertFalse((ROOT / target).exists())
 
+    def test_markdown_escapes_nested_parentheses_and_multiline_references(self):
+        text = ('[guide](../../docs/Guide\\(draft\\).md)\n'
+                '[nested](../../docs/Guide(draft(v2)).md)\n'
+                '[guide-reference]:\n  ../../docs/Guide\\(draft\\).md "Guide"\n')
+        updated = orch.rebase_record_links(text, '.ai/plans/PLAN-001.md', '.ai/plans/done/PLAN-001.md')
+        self.assertIn('[guide](../../../docs/Guide%28draft%29.md)', updated)
+        self.assertIn('[nested](../../../docs/Guide%28draft%28v2%29%29.md)', updated)
+        self.assertIn('[guide-reference]:\n  ../../../docs/Guide%28draft%29.md "Guide"', updated)
+
+    def test_exact_backtick_delimiters_preserve_the_entire_code_span(self):
+        code = '``[a](first.md) `[b](second.md)` [c](third.md)``'
+        updated = orch.rebase_record_links(code + '\n[real](fourth.md)\n', 'plans/PLAN-001.md', 'plans/done/PLAN-001.md')
+        self.assertTrue(updated.startswith(code + '\n'))
+        self.assertIn('[real](../fourth.md)', updated)
+        escaped = '\\` [real](fourth.md) \\`'
+        self.assertEqual(orch.rebase_record_links(escaped, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
+                         '\\` [real](../fourth.md) \\`')
+
 
 if __name__ == '__main__':
     unittest.main()

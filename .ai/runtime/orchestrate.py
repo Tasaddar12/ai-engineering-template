@@ -21,6 +21,7 @@ import posixpath
 import re
 import shutil
 import signal
+import string
 import subprocess
 import sys
 import threading
@@ -125,32 +126,86 @@ def documentation_path(path):
 def rebase_record_links(text, source, target, moves=None):
     moves = moves or {}
     source_dir, target_dir = posixpath.dirname(source), posixpath.dirname(target)
-    destination = re.compile(r'(\]\([ \t]*|^[ \t]{0,3}\[[^\]\n]+\]:[ \t]*)(<[^>\n]+>|(?:\\.|[^\s()\\]|\([^()\n]*\))+)', re.M)
+    prefix = re.compile(r'\]\([ \t]*(?:\r?\n[ \t]*)?|^[ \t]{0,3}\[[^\]\n]+\]:[ \t]*(?:\r?\n[ \t]*)?', re.M)
+    punctuation = string.punctuation
 
-    def replace(match):
-        token = match[2]
+    def replace(token):
         angled = token.startswith('<') and token.endswith('>')
         link = token[1:-1] if angled else token
-        parts = urlsplit(link)
+        link = re.sub(r'\\([' + re.escape(punctuation) + r'])', r'\1', link)
+        try:
+            parts = urlsplit(link)
+        except ValueError:
+            return token
         if not parts.path or parts.scheme or parts.netloc or parts.path.startswith('/'):
-            return match[0]
+            return token
         resolved = posixpath.normpath(posixpath.join(source_dir, unquote(parts.path)))
         if resolved == '..' or resolved.startswith('../'):
-            return match[0]
+            return token
         rebased = posixpath.relpath(moves.get(resolved, resolved), target_dir)
         if parts.path.endswith('/'):
             rebased += '/'
-        rebased = quote(rebased, safe="/@!$&'()*+,;=-._~")
+        rebased = quote(rebased, safe="/@!$&'*+,;=-._~")
         if parts.query:
             rebased += '?' + parts.query
         if parts.fragment:
             rebased += '#' + parts.fragment
-        return match[1] + ('<' + rebased + '>' if angled else rebased)
+        return '<' + rebased + '>' if angled else rebased
+
+    def destinations(chunk):
+        parts, cursor = [], 0
+        for match in prefix.finditer(chunk):
+            start = match.end()
+            if start < cursor or start == len(chunk):
+                continue
+            angled = chunk[start] == '<'
+            end, depth = start + int(angled), 0
+            while end < len(chunk):
+                char = chunk[end]
+                if char == '\\' and end + 1 < len(chunk) and chunk[end + 1] in punctuation:
+                    end += 2
+                    continue
+                if angled:
+                    if char == '>':
+                        end += 1
+                        break
+                    if char in '\r\n':
+                        break
+                elif char.isspace() or char == ')' and not depth:
+                    break
+                elif char == '(':
+                    depth += 1
+                elif char == ')':
+                    depth -= 1
+                end += 1
+            if end == start or depth or angled and (end <= start + 1 or chunk[end - 1] != '>'):
+                continue
+            parts.extend((chunk[cursor:start], replace(chunk[start:end])))
+            cursor = end
+        parts.append(chunk[cursor:])
+        return ''.join(parts)
 
     lines, pending, fence = [], [], None
+
     def prose(chunk):
-        return ''.join(part if index % 2 else destination.sub(replace, part)
-                       for index, part in enumerate(re.split(r'(`+[^`]*`+)', chunk)))
+        parts, cursor, index = [], 0, 0
+        while index < len(chunk):
+            if chunk[index] == '\\' and index + 1 < len(chunk) and chunk[index + 1] in punctuation:
+                index += 2
+                continue
+            if chunk[index] != '`':
+                index += 1
+                continue
+            length = len(re.match(r'`+', chunk[index:])[0])
+            closing = re.search(r'(?<!`)`{' + str(length) + r'}(?!`)', chunk[index + length:])
+            if closing is None:
+                index += length
+                continue
+            end = index + length + closing.end()
+            parts.extend((destinations(chunk[cursor:index]), chunk[index:end]))
+            cursor = index = end
+        parts.append(destinations(chunk[cursor:]))
+        return ''.join(parts)
 
     for line in text.splitlines(keepends=True):
         marker = re.match(r'^[ \t]{0,3}(`{3,}|~{3,})(.*)', line)
@@ -1088,14 +1143,16 @@ class Runner:
             target = f'.ai/plans/done/{period}/{PurePosixPath(source).name}'
             moves[source] = target
         require(len(set(moves.values())) == len(moves), 'Lifecycle destinations collide')
+        contents = {}
         for source, target in moves.items():
             require((path / source).is_file() and not (path / target).exists(), f'Cannot close record: {source}')
+            original = (path / source).read_text(encoding='utf-8')
+            contents[target] = (original, rebase_record_links(original, source, target, moves))
         for source, target in moves.items():
             (path / target).parent.mkdir(parents=True, exist_ok=True)
             git(path, 'mv', '--', source, target)
             record = path / target
-            original = record.read_text(encoding='utf-8')
-            rebased = rebase_record_links(original, source, target, moves)
+            original, rebased = contents[target]
             if rebased != original:
                 record.write_text(rebased, encoding='utf-8')
                 git(path, 'add', '--', target)

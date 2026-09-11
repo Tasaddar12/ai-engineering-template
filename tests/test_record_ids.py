@@ -58,6 +58,12 @@ class RecordIDTests(unittest.TestCase):
         self.assertEqual(fixture.orch.git(self.root, 'status', '--porcelain'), before)
         self.assertFalse((self.root / '.git/orchestration').exists())
 
+    def test_receipt_only_orch_id_cannot_be_reissued(self):
+        fixture.orch.git(self.root, 'init', '-b', 'main')
+        self.write('.git/orchestration/ORCH-041/state.json', json.dumps({'tracks': {}}))
+        self.assertEqual(ids.next_range(self.root, 'ORCH'),
+                         {'kind': 'ORCH', 'first': 42, 'last': 42, 'reserved': False})
+
 
 if __name__ == '__main__':
     unittest.main()

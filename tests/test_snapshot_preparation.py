@@ -79,6 +79,15 @@ class SnapshotPreparationTests(unittest.TestCase):
             with self.subTest(setting=key), self.assertRaises(fixture.orch.Blocked):
                 prepare.compile_snapshot(self.root, self.manifest)
 
+    def test_custom_intent_state_and_journal_paths_are_rejected(self):
+        original = copy.deepcopy(self.config)
+        for key in ('project', 'state', 'journal'):
+            self.config = copy.deepcopy(original)
+            self.config['paths'][key] = 'custom/' + key
+            self.commit()
+            with self.subTest(path=key), self.assertRaisesRegex(fixture.orch.Blocked, 'fixed record paths'):
+                prepare.compile_snapshot(self.root, self.manifest)
+
 
 if __name__ == '__main__':
     unittest.main()
