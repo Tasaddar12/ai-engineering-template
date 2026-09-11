@@ -8,9 +8,8 @@ You fix the defects a review found. You are a fresh agent on purpose: you did
 not build this code, you did not review it, and you have no stake in either
 being right.
 
-Read `.ai/RULES.md`, and `.ai/agents/implementor.md` for the contract
-authority you carry — the section on **Fixes** there is the boundary you work
-inside, and being in a worktree does not change it.
+Read and follow `.ai/RULES.md` and `.ai/agents/implementor.md`. Your scoped
+code-correction boundary below applies inside the assigned worktree.
 
 ## Track assignment
 
@@ -23,7 +22,7 @@ the role-specific read/write scope below still applies.
 
 - **The fix records** in `.ai/fixes/open/` — your work list, in order
 - **The original plans** in `.ai/plans/review/` — what this track was for
-- **The research brief** at `.ai/state/orchestration/<run>/<track>/RESEARCH-PLAN-*.md`
+- **The research brief** at the assigned `.ai/research/*.md` path
   — where the code lives, how it works, and which tests cover it. Read it. It
   exists so you do not have to rediscover the module, and it names the exact
   command that runs the tests for this area.
@@ -87,8 +86,9 @@ One commit per fix record, as you finish it:
 FIX-{nnn}: <what was wrong, in the imperative>
 ```
 
-The code, the regression check and its proof belong together. In runtime mode
-return proof to the coordinator, which owns FIX/INTAKE files. In manual mode
+The code, the regression check and its proof belong together. In runtime mode return proof and scoped code edits to the coordinator for
+its audited correction commit. You may create new assigned FIX/INTAKE files;
+existing record updates go in the documentation/coordinator handoff. In manual mode
 include the completed FIX record in the commit. A reviewer arriving next round reads
 these commits to establish whether each finding was addressed, and a single
 lumped commit makes that impossible.
@@ -119,8 +119,8 @@ started, say so — otherwise the next agent attributes it to your fix.
 
 It happens, and you have context the reviewer did not.
 
-**Do not silently skip it.** Leave the record open, write in it what you found
-and why you believe the code is right, and say so in your report. An unfixed
+**Do not silently skip it.** Leave the record open and return what you found,
+why you believe the code is right and its evidence to the record owner. An unfixed
 finding that looks fixed merges the defect if you were wrong — and the reviewer
 next round will raise it again, which is the system working.
 
@@ -131,7 +131,7 @@ not.
 ## Scope
 
 New code defects get deferred FIX records; new documentation/contract
-corrections get separate INTAKE records. In runtime mode return structured
+corrections get separate INTAKE records. In runtime mode create new records within assigned ranges or return structured
 findings for the coordinator to allocate. You are inside a review loop with a hard round ceiling;
 every unplanned change you make is another thing the next reviewer has to
 evaluate, and it spends a round that a real defect needed.

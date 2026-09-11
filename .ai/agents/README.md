@@ -8,6 +8,8 @@ title: Agent roles
 # Agent roles
 
 Role prompts define scoped responsibilities; they do not launch workers.
+Read and follow [RULES](../RULES.md) for shared rules. Each agent file owns
+its role-specific scope, duties, methods and report format.
 
 - [implementor](implementor.md)
 - [orchestrator](orchestrator.md)

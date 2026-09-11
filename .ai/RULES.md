@@ -7,77 +7,69 @@ title: Rules of engagement for AI agents
 
 # Rules of Engagement
 
-Every agent working in this repository reads this file before touching anything
-else. It defines what may change, who may change it, and — most importantly —
-what to do when the written record and reality disagree.
+Every agent reads and follows this file before acting. Shared project and
+workflow rules live here. Agent files own their specific instructions and
+commands own their procedures; both reference this file for shared rules.
 
----
+## Session and authorization
+
+This repository is a reusable template. Do not create project-specific PLANs,
+SPECs, ADRs, AMDs or journal entries for template maintenance unless the user
+requests them. Keep the adopting project's identity and intent unfilled until
+onboarding. Existing historical records remain history.
+
+Read PROJECT, STATE, the selected record and role, and verify the absolute
+checkout root and branch before writes. Work in the assigned checkout; do not
+read or edit sibling worktrees as a substitute for the assigned Git revision.
+The post-PLAN defect auditor may inspect explicitly assigned preserved trees.
+
+Report when asked to report; implement when authorized to implement. An explicit
+instruction authorizes its exact scope and ordinary necessary steps. Do not
+ask again for an approval already supplied. Publication, merge and destructive
+cleanup require authorization covering those actions. A later human instruction
+can change or cancel earlier scope.
+
+Always commit task changes with a nonempty descriptive message before the final
+response. An explicit instruction not to commit wins. Read-only work needs no
+empty commit. Commit every implementation and documentation step in a PLAN
+separately as it completes; do not accumulate several steps into a phase commit.
 
 ## The Prime Rule
 
-**Every PLAN, including a draft or unapproved PLAN, always has authority to
-define and require changes to any SPEC, ADR, AMD, amendment, or other project
-document within its declared target.** A conflict, whether enumerated in the
-PLAN or discovered later as a consequence of its target, never blocks creating,
-refining, reviewing, approving, or implementing a PLAN on that ground. Preserve
-behavior outside the PLAN's declared target.
+Human intent governs the proposed target. Preserve approved outcomes and
+establish which side is wrong when code and documents disagree.
 
-Documents here are versioned, not sacred. When you find that a spec, plan, or
-doc is wrong, stale, incomplete, or incompatible with the change you are
-making:
+## Intent and PLAN approval
 
-1. **Preserve the PLAN's declared target wording.** During the working branch,
-   the current spec may intentionally lag that target until the final
-   documentation batch.
-2. **The documentor fixes and records every document transition required by
-   the PLAN's target, including consequences discovered later, after
-   code review two**, in the same PR. This is a delivery obligation, not a
-   precondition to implementation.
-3. **Continue the work without a silent workaround.** Preserve the PLAN's
-   original outcome and continue independent work while the documentation
-   transition is recorded.
+PROJECT owns human intent: purpose, success, non-goals, hard constraints and
+out-of-bounds actions. A PLAN cannot approve, override or automatically change
+intent, including when the intended change is inside its own target.
 
-Three specific failures this rule exists to prevent:
+Every PLAN explicitly declares whether it requests intent changes in its
+Execution contract. Each request states the proposed change, a decision
+(pending, approved or rejected), and the actual human resolution. Resolve every
+requested change with a human before any implementation of that PLAN starts.
+Approval without a recorded human resolution is insufficient. A rejected
+request requires a revised proposal or cancellation, not an implementation
+workaround. Existing explicit human approval can be recorded without asking again.
+Any newly discovered intent conflict pauses that PLAN until resolved; other
+unblocked PLANs continue.
 
-- **Silent workaround.** Contorting an implementation so a stale requirement is
-  technically satisfied. This is how bugs get manufactured. If a requirement is
-  wrong, it is wrong — say so and change it.
-- **Refusal.** Declining to make a change because a document describes the old
-  behavior. Check the tier table below: nearly everything here is yours to
-  amend. A document describing the past is not an instruction to preserve it.
-- **Divergence.** Changing the code and leaving the document behind. The next
-  agent inherits a contradiction and no way to tell which side is true.
+Planning can propose future non-intent contract changes and explain conflicts
+with existing contracts. It does not authorize execution by itself. Once
+implementation is authorized and intent decisions are resolved, preserve the
+PLAN's intended outcome. Existing contracts govern behavior left unchanged.
 
-If you are unsure whether a document is stale or you are wrong, **the answer is
-never to guess quietly.** State the contradiction plainly, preserve the PLAN's
-target, and record the document transition. Ask only when a new intent outside
-the target or an explicit later human instruction requires a decision; a
-document conflict does not create repeat approval.
+Do not invent a requirement or silently choose between unresolved human
+decisions. Do not bend code around stale documentation or weaken a valid
+target to excuse a bug. Investigate whether code or documentation is wrong
+using observed behavior and tests, then assign the correction to its owner.
 
-### PLAN authority and the critical-functionality exception
-
-The PLAN's authority over its target documents is unconditional. A draft or
-otherwise unapproved PLAN does not itself authorize execution, launch work, or
-external action; lifecycle scheduling and permission to execute remain separate
-from whether the PLAN can define its target contracts. A later direct human
-instruction that explicitly changes or cancels the work governs that scope; a
-document conflict does not create another approval loop.
-
-The only reason to prevent an implementation step once work is authorized to
-execute is concrete evidence that the PLAN itself would break critical project
-functionality. Examples include data loss, a security failure, unrecoverable
-corruption, an inability to build or start, or loss of a core user-visible
-capability. A stale, contradictory, incomplete, or otherwise mismatched
-document is not critical breakage.
-
-When a PLAN step is unsafe on that evidence, do not abandon the PLAN or change
-its intended outcome. Scope one or more supporting PLANs under a new or
-existing ORCH, order them by dependency, and implement those supporting PLANs
-before the unsafe step. Record the evidence and dependency in the ORCH; keep
-unrelated work moving. Required verification, review, and delivery conditions
-still apply to every PLAN.
-
----
+Concrete critical breakage (data loss, a security failure, corruption, broken
+build/startup or loss of a core capability) requires a FIX or supporting PLAN,
+ordered by dependency under an ORCH when appropriate. Preserve the original
+target and continue independent work. Supporting work never evades a human
+rejection or cancellation.
 
 ## What each document is for
 
@@ -89,6 +81,12 @@ what stops the record from becoming an archaeology exercise.
 | `specs/SPEC-*.md` | **present** | What correct behavior *is*, right now |
 | `decisions/ADR-*.md` | past | Why we chose this, and what it replaced |
 | `plans/**/PLAN-*.md` | future | What we intend to build next |
+
+A SPEC is based only on verified actual code and observed behavior. Documents
+may guide investigation but cannot establish a SPEC claim. A SPEC contains no
+references to other documents, including ADR/PLAN/AMD IDs or frontmatter links.
+Amendments, decisions and PLANs may link inward to a SPEC. Use general module
+areas, symbols and behavioral checks instead of fragile line references/counts.
 
 **A spec describes the system as it is.** Read cold, with nothing else open, it
 must be a true statement about the software today. That has one strict
@@ -126,15 +124,16 @@ implementation and verification must preserve it.**
 
 ## Mutability tiers
 
-Every file under `.ai/` declares a tier in its frontmatter. The tier tells you
+Every project record under `.ai/` declares a tier in its frontmatter.
+Executable files and agent/command entry points are not project records. The tier tells you
 what you may do without asking.
 
 | Tier | What it holds | Examples | You may |
 |---|---|---|---|
-| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | Human authority. Stop and ask before changing intent outside a PLAN target. Every PLAN authorizes the necessary document transitions within its declared target; only the critical-functionality exception above can prevent implementation. |
-| `contract` | What "correct" means right now | `specs/SPEC-*.md`, `decisions/ADR-*.md` | **Amend freely, with a recorded amendment.** See protocol below. |
-| `plan` | How we intend to get there | `plans/**/PLAN-*.md`, `fixes/**/FIX-*.md` | **Rewrite freely.** Plans are disposable. |
-| `status` | Where things stand | `state/STATE.md` | **Overwrite freely.** Expected to churn every session. |
+| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | Human authority. Explicit human resolution is required for any requested intent change before PLAN implementation. |
+| `contract` | What "correct" means right now | `specs/SPEC-*.md`, `decisions/ADR-*.md` | Documentation agents amend with verified evidence and a recorded amendment. |
+| `plan` | How we intend to get there | `plans/**/PLAN-*.md`, `fixes/**/FIX-*.md` | Assigned planning/documentation agents revise PLANs; implementors may create FIX/INTAKE records. |
+| `status` | Where things stand | `state/STATE.md` | The assigned coordinator updates the present. |
 | `log` | What happened | `state/journal/*.md`, `decisions/amendments/*.md` | **Append only.** Never edit or delete past entries. |
 
 Frontmatter on every `.ai/` document:
@@ -143,9 +142,9 @@ Frontmatter on every `.ai/` document:
 ---
 tier: contract          # intent | contract | plan | status | log
 authority: agent        # human | agent  — who has final say
-id: SPEC-004
+id: ADR-0004
 title: Short human-readable title
-links: [ADR-0002, PLAN-011]
+links: [PLAN-011]
 ---
 ```
 
@@ -183,11 +182,49 @@ amendment record, because the new ADR *is* the record. Never rewrite the old
 ADR's Context, Decision or Alternatives; its whole value is being an accurate
 account of what was decided at the time.
 
----
+## PLAN records and commits
+
+A PLAN contains its goal, acceptance, unchanged governing behavior, dependencies,
+owned paths, proposed contract changes, risks and an Execution contract.
+The contract is a JSON block with intent_changes, ordered steps and
+completed_intake. An empty intent_changes list explicitly requests no intent change.
+completed_intake lists existing captures the implementation is expected to resolve;
+a name in that list alone is not proof of completion.
+
+Each step has a unique stable id, a title and phase build or document. Define
+independently verifiable slices and include documentation steps for expected
+documentation edits. Runtime reads this explicit contract at the initial Git
+revision; it does not infer steps from prose or let later notes weaken the target.
+Resolve dependencies and human intent before dispatch.
+
+Commit each PLAN step separately, immediately after its work and checks. Runtime
+build/document workers make those commits in their assigned branch and use:
+`PLAN-Step: <original-plan-path>#<step-id>` as a commit trailer. Each trailer
+corresponds to exactly one ordered step in the assigned phase. Empty commits,
+a batch standing in for multiple steps, or research/FIX/INTAKE-only commits
+standing in for implementation are not completion. Additional evidence-only
+commits are allowed. Permission failure preserves the work for recovery;
+it never authorizes bypassing host permissions.
+
+PLAN content is written by planning/documentation agents. Implementors do not
+rewrite the target, contract, steps or acceptance; they report discoveries.
+The documentor updates PLAN notes and final documentation after code review.
+The coordinator performs directory moves without rewriting content.
+
+## Roles
+
+Each [agent file](agents/README.md) owns that agent's scope, duties, inputs,
+methods and reporting requirements. Every agent reads and follows this file
+for shared rules. Its assignment may narrow its role's scope.
+
+The roles are instructions, not an installed dispatcher or permission system.
+Use [Review and documentation](#review-and-documentation) for the shared
+handoff and documentation-ownership requirements.
 
 ## The amendment protocol
 
-Use this whenever you change a `contract`-tier file: a spec, or an ADR.
+The assigned documentor uses this after code review when changing a
+`contract`-tier file: a spec or an ADR.
 
 1. Write the amendment record first: copy `templates/AMENDMENT.md` to
    `decisions/amendments/AMD-<nnn>-<slug>.md`. It captures four things — what
@@ -197,7 +234,8 @@ Use this whenever you change a `contract`-tier file: a spec, or an ADR.
    wording, never annotate it, and delete the criterion outright if the
    requirement is gone. On an ADR, correct a factual error only; changing the
    decision is a new ADR, not an edit.
-3. Add the amendment id to the affected document's `links:`.
+3. Keep the affected document reference in the AMD. An ADR may link back to
+   the amendment; a SPEC never contains document references.
 4. Include both files in the documentation commit in the same PR as the code
    change. Implementation and documentation commits may be separate while the
    track is under review.
@@ -207,9 +245,9 @@ you down. It is three sentences, not an essay. **An amendment is never a
 failure**; it is the system working. A project whose specs never get amended is
 a project whose specs are being ignored.
 
-For a PLAN, this protocol records the transition after code review two and does
-not block implementation. The PLAN's declared target remains the authority
-while the working branch is in flight.
+For a PLAN with human intent resolved, this protocol records the transition
+after code review two. Future contract wording stays in the PLAN during
+implementation; unresolved intent requests follow the approval rule above.
 
 Amendments are `log` tier — append only. If a later amendment supersedes an
 earlier one, write a new record that says so.
@@ -229,10 +267,14 @@ what the record already says it should, and the line is exactly that:
 > A fix restores conformance with the contract. A plan changes what
 > conformance means.
 
-If the specs, ADRs and intent already describe the behavior you want and the
-code simply does not do it, that is a fix. Nothing in `contract` tier moves, so
+If existing requirements, the approved target or demonstrable code invariants
+establish a defect, that is a fix even when a SPEC is silent. Nothing in `contract` tier moves, so
 there is no spec to amend, no ADR to write, and no reason to spend the whole
 plan lifecycle on it.
+
+Every confirmed code bug gets a FIX, at every severity and scope. Unknowns,
+documentation discrepancies, ideas, concepts and other fragments get INTAKE.
+Never label an unconfirmed suspicion a code bug.
 
 A fix gets a short record at `fixes/open/FIX-{nnn}-{slug}.md` from
 `templates/FIX.md`, and a two-stage lifecycle of the same kind as a plan — the
@@ -249,8 +291,8 @@ reintroduced by the next agent, who has no way to know it was ever considered.
 Three things look like fixes and need care. **FIX items are code-only:**
 
 - **The spec is silent on the case.** Capture the contract decision as its own
-  INTAKE. If an existing acceptance criterion establishes a code defect, record
-  that separately as a FIX; otherwise do not invent correctness in a fix.
+  INTAKE. If existing acceptance or a demonstrable code invariant establishes a defect,
+  record that separately as a FIX; otherwise do not invent correctness in a fix.
 - **The spec or documentation is wrong.** Capture an INTAKE for the correction.
   It becomes planned documentation/contract work later, not a code FIX.
 - **The fix needs an ADR, a spec rewrite, or more than a handful of files.**
@@ -259,7 +301,16 @@ Three things look like fixes and need care. **FIX items are code-only:**
   checker and the verifier, which is the failure this route can produce.
 
 Do not use a fix to sneak a behavior change past review, and do not open a plan
-for a one-line defect the specs already condemn. Both waste the distinction.
+for a one-line defect the requirements already condemn. Make the smallest
+cause-directed change, without unrelated refactoring. If reproduction fails,
+record uncertainty rather than guessing. Manual-only verification is a
+disclosed weakness, not an automated pass.
+
+Standalone/manual fixes use one commit per FIX with source, regression check
+and proof. Runtime correction workers return proof and leave scoped changes
+for the coordinator's audited correction commit. Workers can create new
+FIX/INTAKE records within their assigned ranges; documentors/coordinators
+update existing record content and lifecycle according to role ownership.
 
 ---
 
@@ -280,15 +331,11 @@ decision from a strong opinion. Two specific failures:
   present nor a lie — it describes an intention. An agent that treats it as
   current will "fix" working code to match something nobody has built.
 
-Decisions become real by landing in `decisions/ADR-*.md`. Meeting notes alone
-do not authorize intent or scope changes: a change outside a PLAN's declared
-target must land in `state/PROJECT.md` with human authority. Every PLAN,
-including a draft or unapproved PLAN, always authorizes the SPEC, ADR, AMD and
-other document transitions required within its declared target, and a document
-conflict never creates an approval gate. Execution permission remains a
-separate lifecycle decision, and a later direct human instruction governs.
-Until then, an agent that finds a note describing something that ought to be
-true should **raise the gap, not act on it**.
+Accepted ADRs record decisions. Meeting notes alone never authorize intent or
+scope changes. A PLAN may propose intent changes, but each request needs an
+explicit human resolution before implementation, including changes inside the
+PLAN target. An agent that finds an unbuilt idea raises the gap as INTAKE or a
+PLAN proposal.
 
 Turning notes into contracts is what [`/harvest`](../.ai/commands/harvest.md)
 does. A note carries `harvested:` in its frontmatter so you can tell whether
@@ -296,26 +343,18 @@ its contents are in effect yet.
 
 ## Precedence when documents disagree
 
-Reality first, then the declared target contract, then human intent for
-behavior the PLAN does not change:
-
-1. **Working, tested code** is evidence of present behavior, not a veto over a
-   PLAN's declared future target. Documents follow reality for behavior already
-   delivered — but only after you have *confirmed* the code is right; a bug in
-   the code does not license amending the spec to match the bug. Existing code
-   cannot veto a PLAN's target.
-2. **A PLAN's Contract changes section governs its explicitly
-   declared target changes, even when it conflicts with any existing spec, ADR,
-   amendment, or other document.** A PLAN may always require a change to any
-   contract. Its exact future wording remains in the PLAN until implementation
-   and the documentation batch land; the conflict is recorded as a document
-   transition after code review two and is never an implementation veto.
-3. **`state/PROJECT.md`** and the more recent accepted `contract` govern
-   behavior and constraints the PLAN does not change. Check
-   amendment and ADR history before assuming a spec is current.
-4. **A meeting note beats nothing.** It is evidence, and it loses to every
-   tier above it. A note that contradicts a spec means someone needs to
-   harvest it, not that the spec is wrong.
+1. **Human intent** governs purpose, constraints and authorized scope. A PLAN
+   cannot override it; requested changes follow Intent and PLAN approval.
+2. **Working, tested code** is evidence of present behavior, not a veto over an
+   approved future target. First confirm the code is right: a bug does not
+   authorize rewriting a valid requirement to excuse it.
+3. **The authorized PLAN target** governs declared future changes after human
+   intent requests are resolved. Exact future wording remains in the PLAN
+   until code review and documentation are complete.
+4. **Existing contracts** govern unchanged behavior. Check accepted ADRs and
+   amendment history when establishing which contract is current.
+5. **Meeting and Research notes** are evidence, never requirements. A note
+   cannot override intent, an approved target or a verified contract.
 
 If two documents at the same tier disagree and you cannot tell which is
 correct, that is a `truth-map.md` violation — two files own the same fact. Fix
@@ -358,33 +397,76 @@ Two tests, and a spec has to pass both:
 
 ---
 
+## Review and documentation
+
+All product documentation work happens after both code reviews. This includes
+SPECs, ADRs, AMDs, PLAN delivery notes, guides, comments and docstrings.
+Only documentation agents modify SPECs, ADRs, AMDs and other product
+documentation. Code agents do not mix documentation
+cleanup into implementation. Functional directives embedded in comments
+(e.g. compiler pragmas) remain executable configuration, not editorial prose.
+
+A completed track runs two fresh code reviews, with at most one immediate code
+correction between them. The second runs even if the first approves. After the
+code handoff, the documentation agent completes the documentation steps. Two
+documentation reviews follow, with at most one documentation correction between
+them. No third review, repeated immediate fix pass or late scribe refresh.
+Interrupted sessions do not reset attempt counts.
+
+Research notes may be written before implementation and may be read by
+implementors and reviewers. Planning documents are preparation; PLAN delivery
+notes and product documentation use the post-code-review handoff.
+
+Documentation agents receive Research notes, implementation reports, code-review
+findings and proof. They verify actual behavior, then update SPECs, ADRs, AMDs,
+PLANs and other documents. They preserve the intended outcome instead of
+documenting incomplete code as accepted. They prefer general script areas,
+symbols and behavior over unstable source line numbers and counts.
+
+Late comments/docstrings may touch explicitly declared source_documentation_paths.
+They must preserve executable behavior. Runtime checks Python AST equivalence
+after removing docstrings; other languages need an explicit project-supplied
+equivalence command. Missing equivalence support parks that edit rather than
+allowing unchecked source changes after code review.
+
+Record substantive problems and minor editorial findings accurately.
+Spelling, stale line references, approximate item counts, layout and similar
+details never make otherwise adequate SPEC coverage incomplete and never block
+closeout. A number that defines actual behavior (such as a retry limit) is a
+functional claim, not an editorial count.
+
 ## Definition of done
 
-A task is done when **the software satisfies the PLAN's intended outcome**
-and the updated specs truthfully describe the delivered behavior.
+PLAN-Done validates and delivers already complete work. It does not repair code,
+rewrite documentation, weaken a target or start another review.
 
-Verification checks observed behavior against the PLAN's target and the
-truthful updated specs. Never weaken or rewrite the PLAN's target to excuse
-missing or incorrect implementation. If implementation is incomplete or
-incorrect, fix it or use the critical-functionality procedure above; preserve
-the target.
+Its substantive rejection reasons are:
+1. Actual required code is missing.
+2. Actual required functionality is missing or broken.
+3. The overall implementation is not documented accurately in SPECs.
 
-Before calling anything done:
+On rejection, leave lifecycle records in place and report the missing behavior
+or coverage, evidence, and concrete next actions. Confirmed code defects go to
+FIX; substantial missing work can need a supporting PLAN. Documentation agents
+address missing SPEC coverage. Preserve the original target. Spinning off a
+FIX or PLAN does not make an incomplete original implementation mergeable.
 
-- The specs it touches describe what the code now actually does — in present
-  tense, with no annotation about what they used to say.
-- Everything the plan listed under **Contract changes** has landed: specs
-  written or amended, ADRs written, superseded ADRs marked.
-- Any contract change has an amendment record.
-- A fix has a check that fails before it and passes after.
-- `state/STATE.md` reflects the new present.
-- A journal entry exists for the session.
+Small documentation corrections never block. A fully implemented result with
+adequate SPEC coverage may retain editorial or unrelated INTAKE/FIX follow-ups.
+Preserve the actual review verdict; delivery does not turn findings into approval.
+All modes use actual-code SPEC coverage at closeout, including light mode.
 
-These are required verification and delivery conditions for completion. They
-are not preconditions to implementing a PLAN, and a document
-mismatch by itself is never evidence of critical breakage.
+Validate the entire closing set before making lifecycle changes. Then move the
+completed PLAN and only evidenced, resolved INTAKE items to plans/done/<period>,
+commit those mechanical moves, and complete authorized clean delivery.
+Unverified/unrelated captures stay open. The coordinator records the resulting
+present and history after delivery; PLAN-Done does not perform content repairs.
 
----
+Execution prerequisites remain necessary: authorization, conclusive evidence,
+passing required checks, valid worker results, clean Git state and a working
+forge. Missing evidence is not a pass. These are operational delivery conditions,
+not additional editorial standards. A failed required check or operational
+failure preserves work and reports recovery actions.
 
 ## Problems you find but are not going to fix
 
@@ -401,56 +483,43 @@ own `plans/intake/INTAKE-{nnn}-{slug}.md`; other unplanned work also uses INTAKE
 Use the corresponding template. FIX work proceeds through `/fix`; INTAKE work
 is triaged through `/plan-archive` and `/plan-new`.
 
-Outside autonomous review, two things are **always in scope** and get fixed
-rather than captured, because leaving them is what corrupts everyone's future
-work. A PLAN's promised contract/documentation changes are the explicit
-exception: preserve them until the final documentation batch:
+Documentation agents resolve in-scope documentation contradictions and
+ownership duplicates after code review. Other agents hand off the evidence;
+they do not interrupt code work to edit documentation. Unrelated fragments are
+captured as INTAKE for later documentation work.
 
-- a document that contradicts reality → amend it, with a record
-- the same fact restated in two documents → collapse it into a link
+Search existing records before creating a duplicate. Repeated root causes
+reuse the record with new evidence. Omission from a later review is not proof
+of correction. Only evidenced resolved INTAKE items move to done/<period>;
+unrelated or unverified captures stay open. Abandoned means deliberately
+rejected by a human scope decision, not successfully delivered.
 
-### Autonomous review and fix
+## Autonomous review and fix
 
-The autonomous review workflow takes precedence over the incidental amendment
-and always-in-scope rules above. The original PLAN's promised documentation
-and contracts still land with its implementation. Document and contract
-transitions necessary to the PLAN's target, including consequences
-discovered in review, remain in that PLAN's final documentation batch. Only
-unrelated or independently proposed documentation and contract review findings
-become separate INTAKE items for later; do not expand the review fix pass to
-edit documentation.
+Residual missing code/functionality or absent overall SPEC coverage prevents
+merge. Capture its FIX/INTAKE evidence and identify supporting work; do not
+use severity downgrades or a permissive residual-policy override to close it.
 
-Run at most **two reviews**, with one immediate code-fix pass after the first.
-At the second failure, or for other residual defects, retain code FIX reports
-and documentation/contract INTAKE reports for after all other PLANs complete.
-No third review, repeated permission request or severity downgrade ends the
-loop. Preserve the actual verdict and proof. A track with findings may be
-`ready_with_followups` when required checks pass; it is not an approved review.
-Required check failures, incomplete work and `cannot_review` park that track
-while independent PLANs continue. Completed work runs exactly two cold code
-reviews and exactly two cold documentation reviews. At most one code correction
-occurs between code reviews, and at most one documentation correction occurs
-between documentation reviews. Resume does not reset counts, and no scribe or
-verifier review follows documentation review two. See [the runtime](runtime/README.md)
-for enforced delivery conditions and post-PLAN queue handoff.
-
-And if what you found is severe — data loss, a security hole, a broken build —
-capture it *and* say so plainly. Filing an urgent problem is not the same as
-handling it; say which one you did.
+After other PLAN work completes, a fresh read-only audit examines open code
+FIXes, previous proof and actual integrated or explicitly preserved trees.
+A parked defect and work waiting on it do not prevent examining that defect;
+other unfinished project PLANs do. Include open reports from earlier runs.
+Current done/abandoned record lifecycle overrides stale receipt copies.
+The audit does not close unproved records, repair code, or restart the original
+review loop. Documentation fragments remain INTAKE for planned documentation work.
 
 ## When you are genuinely blocked
 
-Blocked means only that a genuinely missing human decision is required and was
-not supplied by the PLAN. A conflict with an existing intent or
-other document is not such a question. An explicit later human instruction or
-cancellation is honored as given and does not create supporting PLANs to evade
-it. Concrete evidence of critical breakage follows the supporting-PLAN/ORCH
-procedure above and is not an automatic human-decision wait.
+An unresolved human intent request blocks that PLAN before implementation,
+even when it falls inside the proposed target. An existing document's old
+non-intent wording alone does not create a human decision. Concrete critical
+breakage follows the supporting FIX/PLAN procedure. Never use supporting work
+to evade a later explicit human rejection or cancellation.
 
 When a genuinely missing human decision blocks the work:
 
 1. Move the plan to `plans/blocked/`.
-2. Add a `## Blocked` section to it: the question, the options you see, and
+2. Have the planning/documentation agent add a `## Blocked` section to it: the question, the options you see, and
    your recommendation.
 3. Record it under blockers in `state/STATE.md`.
 4. **Do every part of the task that does not depend on the answer**, then
@@ -459,3 +528,165 @@ When a genuinely missing human decision blocks the work:
 Do not sit idle on a missing decision: do every independent part of the task
 and report what is waiting. Do not silently pick an answer to an unresolved
 intent-tier question or override an explicit later human instruction.
+
+## Single owner
+
+Each fact has one owner, indexed by truth-map. Other documents link to that
+owner instead of copying rules or thresholds. Add an ownership entry before
+introducing a new fact category. Resolve conflicting owners, not just wording.
+
+Shared project and workflow rules belong in this file. Each agent's specific
+instructions belong in its agent file, which references this file. Commands
+own their operating procedures. Templates hold fields and example record
+shapes; guides provide navigation, examples and tool interfaces.
+Self-contained SPECs are the exception to outbound links: they state their own
+verified behavior without citing another document.
+
+## Scheduling and IDs
+
+A track is one worktree/branch/PR containing sequential PLANs. Waves display
+dependency depth only. Run every unblocked track as soon as its own prerequisites,
+capacity and resources permit; wait only for blocked tracks and their dependents.
+A ready dependent need not wait for unrelated earlier-wave work.
+
+Shared source, SPECs or ADRs are contention; genuine build/verification
+prerequisites are dependencies. Group overlapping owners or serialize them.
+Declare dependency evidence and confidence. Do not silently break a cycle;
+propose a corrected dependency or PLAN boundary. Exclude vague work without
+usable steps/acceptance and explain why. Recheck ready PLANs against landed
+prerequisites before allocation.
+
+lifecycle.max_active is guidance. Report excess concurrency without rejecting
+work or requesting permission merely because the suggested count is exceeded.
+orchestration.max_parallel_tracks limits actual runtime capacity.
+
+Reserve 20 IDs of each type (FIX, INTAKE, SPEC, ADR, AMD) for every track at
+dispatch, before branching. Exclude templates/examples when finding existing
+IDs. Previously issued blocks are never reused. Workers create records only
+within their reserved ranges; the coordinator allocates structured findings
+without colliding with worker-created records.
+
+The normal process estimate is tracks x 6 through tracks x 8: one build,
+two code reviewers, one documentation worker, two documentation reviewers,
+and up to one correction of each kind. Three tracks therefore use 18–24
+workers, plus scheduling and any later defect audit. Separate manual research
+sessions or exceptional recovery change the estimate and must be disclosed.
+
+## Runtime worker protocol
+
+The explicit JSON execution snapshot uses protocol_version 2. PLANs contain
+their own Execution contract; runtime reads it at plan_source_sha. Old schedules
+must be reconciled with their compatible runtime/receipts, not silently upgraded
+or restarted with cleared review counts. Configuration is not parsed from YAML.
+
+The worker follows this file and its assigned role. Assignment supplies phase,
+worktree/branch, original PLANs, steps, scopes, research paths, reserved IDs,
+checks and documentation handoff. Run only the assigned phase: no nested agents,
+branch changes, merge/rebase, publication or sibling-worktree writes.
+Build/document workers commit each assigned step; fix/docs-fix workers leave
+their scoped edits for the coordinator's audited correction commit. Reviewers
+do not edit or commit. Host permissions must support the selected Git operations.
+
+Use argv commands and the supplied result schema. Return complete or blocked
+with actual evidence, implementation_complete, documentation_complete,
+spec_coverage, resolved_intake and findings. Code reviews assess implementation;
+documentation reviews assess overall SPEC coverage. Each coverage entry names
+the PLAN, an existing SPEC path and code evidence. Each resolved INTAKE entry
+names a declared capture and evidence of its actual completion.
+
+Findings use stable keys, kind, severity, general path/area, evidence and impact:
+missing_code, missing_functionality, missing_spec_coverage, editorial or unrelated.
+Do not classify a code bug as editorial. Use approved only with no findings,
+changes_requested with findings, and cannot_review for insufficient evidence.
+Do not use a false completeness flag for spelling/count/line-reference issues.
+
+Ownership uses exact paths or directory prefixes ending in /. No traversal,
+globs or whole-repository scope. code_paths and documentation_paths are
+disjoint subsets of owned_paths. Prose document extensions are .md, .markdown,
+.rst and .adoc. Executable configuration remains code regardless of directory.
+research_paths name separate owned notes; source_documentation_paths name
+explicit code files with behavior-equivalence verification.
+
+Shared STATE, journal, run boards and receipts are coordinator-owned.
+Workers may create new FIX/INTAKE reports; the coordinator audits reserved IDs
+and preserves them in the queue. It also creates reports from structured
+review findings and retains valid evidence even if a phase fails its edit audit.
+
+## Delivery, recovery and cleanup
+
+Require a clean synchronized target checkout and ignored worktree root.
+Allocate new tracks at the verified target revision containing their dependencies.
+Declare exclusive ports/databases/caches/accounts and distinct environment
+settings. Worktrees do not isolate external services or arbitrary writes;
+host permissions provide the sandbox. Permission failure never authorizes bypass.
+
+Require nonempty local checks and named GitHub checks. Missing, skipped,
+failed or inconclusive required checks are not success; optional checks do not
+gate delivery. GitHub formal changes-requested reviews remain a forge gate.
+Require strict up-to-date branch protection enforced for administrators.
+Runtime uses merge commits, not administrator bypass, squash/rebase or merge queues.
+
+Only the coordinator publishes and merges. Serialize target integration and
+delivery: refresh target, integrate it into the track, run checks on that tree,
+push, verify required GitHub checks, and merge the exact checked head.
+A target advance needs fresh integration validation. Conflicts, PR/auth/network
+failures or invalid results park affected work; independent tracks continue.
+Do not replace failed PR delivery with a local merge.
+
+After merge, synchronize the target and verify ancestry and the tested merge
+tree before releasing dependents or cleaning up. Mechanical lifecycle moves
+alone do not count as delivered while the PR remains unmerged.
+
+Remove only exact clean merged worktrees and branches. Preserve unmerged,
+dirty, ignored, unrelated or advanced work. Ambiguous cleanup is a dry-run.
+Forced deletion requires explicit authorization for the identified loss.
+Automatically remove only declared, initially absent, ignored disposable
+directories without tracked files or redirected paths. Keep scratch/cache
+output in run-owned temporary space. Abandonment preserves files and releases
+reservations; it never satisfies dependencies or claims a merge.
+
+Keep atomic receipts and an OS lock for the Git common directory. An interrupted
+writer is not automatically replayed. Reconcile inspected HEAD, process and
+result before retrying. Retry resumes a clean checkpoint; reconcile can consume
+a completed step-commit result without repeating its worker. Never reset
+review/fix counts. Lost merge responses resume verification/cleanup, not reviews.
+
+## Hooks and validation
+
+Hooks are optional advisory notices. They warn, return success and never issue
+permission decisions. No registration is supplied. File tools warn on outside
+paths/direct Git metadata; shell inspection is best-effort and recognizes
+standard stream devices. Missing repository context is quiet. Lexical checks,
+shell quoting, symlinks and junctions limit detection; hooks are not a sandbox.
+
+Run the Python integration suite for runtime changes and the Bash regression
+suite before and after hook changes. Use real temporary Git fixtures and
+simulated forge/model responses for repository tests. Report actual command
+results, skips and failures. No test outcome is inferred from a checklist.
+
+## Configuration and onboarding
+
+Configuration owns project values, paths, ID formats, suggested concurrency,
+runtime capacity, worker routes and verification commands. Light mode reduces
+planning ceremony; standard uses the full record lifecycle; full adds phase
+planning and named acceptance checks. Quality and SPEC coverage at delivery
+remain the same. Documentation uses its configured lightweight worker route
+without a code-model fallback.
+
+Fresh onboarding inspects code before asking questions, then obtains human
+intent, mode and actual verification commands. Existing documentation is an
+inventory to investigate, not a SPEC source. Propose leave/retire decisions and
+obtain authorization before moves/deletions. Documentation agents write
+self-contained SPECs only after inspecting/reviewing actual code in relevant
+areas. Greenfield projects have no SPEC claims until code exists.
+
+Cluster confirmed bugs into FIX records and other fragments into INTAKE. Show
+the clustered adoption inventory before writing it. Capture only human-confirmed
+historical decisions. Seed remaining work, initialize current state and add the
+AGENTS entry point. A returning session briefs itself without restructuring.
+
+Harvest only relevant meeting areas, oldest first, preserving original text and
+recording harvested date/produced IDs. Distinguish decisions already built,
+decisions awaiting work, debate, current-behavior claims and intent requests.
+Later notes win only when they explicitly revisit the decision; otherwise ask.
+Documentation agents record confirmed decisions; unbuilt work becomes INTAKE/PLAN.

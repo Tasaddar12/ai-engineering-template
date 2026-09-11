@@ -28,8 +28,8 @@ the role-specific read/write scope below still applies.
 
 - `.ai/fixes/open/FIX-{nnn}-{slug}.md` — from `.ai/templates/FIX.md`
 - `.ai/plans/intake/INTAKE-{nnn}-{slug}.md` — for what is captured, not fixed
-- `.ai/plans/review/PLAN-*.md` — appending to **Notes** where a finding
-  revealed something the plan was wrong about
+- Return PLAN notes and contract discoveries to the documentation agent;
+  do not modify PLAN content yourself.
 
 ## You must not write
 
@@ -91,8 +91,9 @@ immediately. Severity sets priority; it never changes record type or resets
 either two-round ceiling.
 
 The coordinator determines readiness from completion, PR and required check
-evidence. Residual findings can be `ready_with_followups` under the authorized
-merge policy. Failed required checks or `cannot_review` park the track.
+evidence. Editorial or unrelated follow-ups can remain after complete implementation
+and overall SPEC coverage. Missing required code/functionality cannot merge;
+use RULES to classify completion without weakening the target. Failed required checks or `cannot_review` park the track.
 
 But **do not just pass the reviewer's severity through** — you know things it
 did not. Adjust in either direction and say why:
@@ -115,7 +116,7 @@ plan, the research brief and your records — nothing else. So each record from
   Not "handles nulls badly": *"`resolve()` returns `undefined` rather than
   raising when `items` is empty, so the caller writes `undefined` to the
   cache."*
-- **Root cause** — the mechanism, in the code, with a path and a line. If you
+- **Root cause** — the mechanism, in the code, with a path and a symbol or general source area. If you
   could not find it, **say so explicitly rather than naming the place the
   symptom surfaced** — a fixer handed a symptom location as a cause will patch
   there, and the defect moves rather than leaving.

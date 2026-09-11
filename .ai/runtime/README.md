@@ -40,8 +40,10 @@ schema and a final-message file. Those interfaces are documented in
 [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode).
 Use an authenticated local CLI and the user's configured model. A custom host
 can implement the same contract. The adapter requests `workspace-write` for
-writers and `read-only` for review. The coordinator audits and commits worker
-edits, so worker sandboxes do not need write access to shared Git metadata.
+writers and `read-only` for review. Build/document workers commit each PLAN
+step; the coordinator audits their ordered commit history and owns correction
+commits. Configure the host's worker permissions to support scoped Git commits
+in the assigned checkout, including its required Git metadata.
 A permission failure parks the track;
 the runner never switches to unrestricted permissions to get past it.
 
@@ -53,11 +55,10 @@ is no third review or second immediate fix pass of either kind. All review
 severities are recorded. A reviewer must supply
 evidence and a stable root-cause key, not just a severity or opinion.
 
-Code reviewers receive the original PLANs, contracts, source and filtered diff.
-Documentation reviewers receive the original PLANs, owned documentation paths,
-and code only as evidence for documentation claims; they never perform code
-quality review.
-They do not receive previous findings or implementation reports. Context
+Code reviewers receive the original PLANs, unchanged contracts, Research notes,
+source and filtered diff. Documentation agents receive the accumulated
+implementation/code-review handoff and verify its claims against actual code.
+Each [agent file](../agents/README.md) defines that role's inputs and methods. Context
 separation is enforced by the host's tool permissions and the prompt, not a
 filesystem sandbox supplied by this script. The runner detects changed HEAD
 or dirty files after read-only phases.
@@ -68,12 +69,57 @@ as a subset of `owned_paths`, disjoint from `code_paths`, and restricted to
 source files. The snapshot also carries `documentation_model` and a separate
 `documentation_worker_command` containing `{model}`. An unavailable lightweight
 route blocks instead of falling back to the code model. Results include
-`documentation_complete`, durable `phase_attempts`, phase receipts,
+`implementation_complete`, `documentation_complete`, `spec_coverage`,
+`resolved_intake`, durable `phase_attempts`, phase receipts,
 `code_reviewed_sha` and `documentation_reviewed_sha`. Immutable
 `plan_source_sha` keeps later PLAN notes from weakening the original promise.
 Old unfinished runs reconcile with their original compatible schedule and
 receipts; deleting receipts or changing the schedule fingerprint does not
 evade the review count.
+
+## Protocol version 2
+
+Set `protocol_version: 2` in the JSON snapshot. The assigned PLAN uses the
+[PLAN template's Execution contract](../templates/PLAN.md#execution-contract):
+`intent_changes`, ordered `steps` with stable IDs and build/document phases,
+and `completed_intake` paths. Runtime reads this contract at the original
+revision before allocating the worktree.
+
+Each build/document step commit includes this trailer:
+
+```text
+PLAN-Step: .ai/plans/backlog/PLAN-001-example.md#implement
+```
+
+Receipts retain `build_step_commits` and `document_step_commits`. Missing,
+combined, empty or out-of-order step commits fail the audit. The `--reconcile`
+interface can consume completed step commits after interruption using the
+inspected HEAD. Older unfinished schedules keep their compatible runtime and
+receipts until reconciled; do not silently upgrade an in-flight run.
+
+Optional track fields:
+
+| Field | Value |
+| --- | --- |
+| `research_paths` | Exact separately owned `.ai/research/*.md` paths |
+| `source_documentation_paths` | Exact code files for later comments/docstrings |
+| `source_documentation_check` | Non-Python equivalence argv using `{before}` and `{after}` temporary files |
+
+For Python, the runtime compares ASTs with docstrings removed. This checks
+executable syntax rather than proving arbitrary program equivalence; projects
+that inspect `__doc__` need behavior checks for those consumers as well.
+Other languages use the project-supplied equivalence command.
+
+Results include `spec_coverage` entries with `plan`, `spec` and code
+`evidence`, and `resolved_intake` entries with `path` and completion
+`evidence`. Findings carry `impact`: missing_code, missing_functionality,
+missing_spec_coverage, editorial or unrelated. The schema distinguishes
+overall implementation coverage from editorial cleanup.
+
+The schedule reserves 20 IDs per track for each of FIX, INTAKE, SPEC, ADR and
+AMD under [Scheduling and IDs](../RULES.md#scheduling-and-ids). Build/fix workers
+may create new scoped FIX/INTAKE records; their IDs are audited and retained
+alongside coordinator-generated findings.
 
 ## Review outcomes and deferred work
 
@@ -88,10 +134,11 @@ evade the review count.
 - The fixer can edit only `code_paths`. A missing or wrong contract is an
   INTAKE, not permission to redefine correctness during a fix. Original PLAN
   documentation promises remain part of the final documentation phase.
-- With `residual_findings: merge`, remaining review findings are disclosed in
-  the PR and may merge only when required local and GitHub checks pass.
-  The verdict remains `changes_requested`; the track is `ready_with_followups`.
-  Set `residual_findings: park` to keep such PRs open instead.
+- Completion uses [RULES: Definition of done](../RULES.md#definition-of-done).
+  Missing required code/functionality or overall SPEC coverage prevents merge.
+  Editorial and unrelated findings can remain on a complete result, with the
+  actual verdict retained as `changes_requested`/`ready_with_followups`.
+  The former `residual_findings` configuration override is rejected.
 - Failed tests, incomplete implementation, inconclusive review, PR failures,
   merge conflicts and formal GitHub requests for changes are blocked outcomes.
   Independent tracks continue. Dependencies of blocked tracks wait.
@@ -141,10 +188,12 @@ supports GitHub merge commits, not squash/rebase or merge queues. It never uses
 an administrator bypass or treats absent/skipped required checks as passed.
 
 The PR records the reviewed source SHA separately from the integrated head.
-Only mechanically generated finding records and PLAN lifecycle moves may follow the last source review;
+The documentation batch, including checked source comments/docstrings, follows
+code review. Only generated finding records and lifecycle moves may follow the
+last documentation review;
 target integration imports already-landed changes and is validated again.
-The scheduler moves completed PLANs to `done/<year>-Q<quarter>/` in the track
-after review; these moves reach the target only when the PR merges. A blocked
+The scheduler validates the entire closing set before moving completed PLANs
+and evidenced, declared INTAKE items to `done/<year>-Q<quarter>/` in the track; these moves reach the target only when the PR merges. A blocked
 PR's local move does not count as completion. Shared STATE/journal updates
 remain coordinator work and are not written concurrently by runtime workers.
 `--match-head-commit` binds the merge to the checked head. The runner then fetches,

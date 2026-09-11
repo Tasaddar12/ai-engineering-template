@@ -3,6 +3,8 @@ description: Write a new plan into .ai/plans/backlog/
 argument-hint: <what needs building>
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Create a plan for: **$ARGUMENTS**
 
 If the argument is an `INTAKE-{nnn}` id, this is a promotion: read that file in
@@ -20,11 +22,10 @@ into a fix; a plan changes what conformance means. See
 `.ai/RULES.md#bug-fixes`.
 
 1. Read `.ai/config.yaml` for `mode`, and `.ai/state/PROJECT.md` for non-goals
-   and hard constraints. If the request pursues a stated non-goal or conflicts
-   with a hard constraint, preserve the desired target, record the required
-   intent or contract change in the PLAN, and continue drafting. Ask only for a
-   genuinely new intent decision outside the declared target or for permission
-   to execute the work.
+   and hard constraints. Record whether the proposal requests intent changes,
+   with each request and its human resolution in the Execution contract. Use
+   [Intent and PLAN approval](../RULES.md#intent-and-plan-approval) to report
+   what remains unresolved before implementation.
 2. Check `.ai/plans/intake/` and `.ai/plans/backlog/` for the same problem
    already captured. Fold it in rather than opening a second thread on it.
 3. Allocate the next id: the highest `PLAN-` number anywhere under `.ai/plans/`
@@ -35,8 +36,9 @@ into a fix; a plan changes what conformance means. See
    fills in **Contract changes** — the specs this plan will create, amend or
    retire, with their wording drafted in present tense, plus any ADR it needs
    or supersedes. That section is the plan's contract with the future and the
-   main thing the checker reviews. In `light` mode the acceptance criteria go in
-   the plan instead.
+   main thing the checker reviews. Fill the Execution contract's stable build
+   and documentation steps, plus captures expected to resolve. Light mode can
+   use compact acceptance criteria while still planning delivered SPEC coverage.
 
    Nothing drafted there is written into `.ai/specs/` yet: a spec states what
    is true on the merged/deliverable revision, so the documentor lands the
@@ -44,7 +46,8 @@ into a fix; a plan changes what conformance means. See
 5. On anything non-trivial, then run the **plan-checker** agent against the new
    plan and report its verdict. If it finds a concrete scope, coherence,
    dependency or evidence defect, have the planner revise before you report
-   back. A conflict with an existing document is not a blocking finding.
+   back. Distinguish non-intent contract transitions from unresolved human intent
+   requests under [RULES](../RULES.md#intent-and-plan-approval).
 6. Append a line to today's journal at `.ai/state/journal/YYYY-MM-DD.md`.
 
 Report the plan id and path, the specs it satisfies, what its **Contract

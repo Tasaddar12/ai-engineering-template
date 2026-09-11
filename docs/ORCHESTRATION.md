@@ -68,34 +68,22 @@ build (research + implement) → PR when there is a diff → code review 1
 Code defects are FIX items. Incidental documentation/contract corrections are
 INTAKE items; actionable findings against the original documentation promises
 may receive the single documentation correction pass between documentation
-reviews. Residual findings follow the configured merge policy; never a third
-review of either kind.
+reviews. Completion and retained findings follow RULES.md#definition-of-done.
 ```
 
-| Agent | Sees | Deliberately does not see |
-|---|---|---|
-| `track-researcher` | plan, specs, code | — |
-| `track-implementor` | plan, research, specs, code | other tracks |
-| `track-documentor` | owned documentation paths and code evidence | source edits, review findings |
-| `track-reviewer` | plan, contracts, source and code diff | **documentation content, research, previous rounds** |
-| `track-triage` | everything, including all rounds | — |
-| `track-documentation-reviewer` | PLAN, owned docs and code evidence | **code-quality review, research, previous rounds** |
-| `track-fixer` | plan, research, fix records | **the review discussion** |
+Each [agent file](../.ai/agents/README.md) owns its inputs, duties and scope.
+Research notes can inform implementation and independent code review;
+documentation agents receive the accumulated code-review handoff. For the
+shared sequence, see [RULES](../.ai/RULES.md#review-and-documentation).
 
-The reviewer's isolation is the load-bearing part. An agent that reviews
-against the same research the implementor worked from checks the
-implementation against its own premise, which cannot catch a wrong premise.
-
-That isolation needs enforcing, not just stating. The researcher commits its
-brief **to the track branch**, so a plain `git diff <base>...HEAD` hands the
-reviewer the very document it must not see. The reviewer is always given a
-filtered diff:
+The reviewer uses a filtered source diff, for example:
 
 ```bash
-git diff <base>...HEAD -- . ':(exclude).ai/state/orchestration/'
+git diff <base>...HEAD -- src/ tests/
 ```
 
-The same filter hides the review log, which is where earlier rounds live.
+Substitute the track's actual code paths. Manual review logs remain outside
+that source diff; Research notes are supplied separately as evidence.
 
 And each review round gets a **fresh** reviewer with no memory of earlier
 findings. If round 2 independently finds what round 1 found, that
@@ -153,7 +141,7 @@ Start an agent session in .worktrees/ORCH-001-w1t1, then:
 /orchestrate-track ORCH-001 w1t1
 ```
 
-Then re-run `/orchestrate` at each wave boundary.
+Then re-run `/orchestrate` as tracks become ready under their own dependencies.
 
 Any time:
 
@@ -196,15 +184,15 @@ session:
 | Nothing survives the session | Stage, round counts and PR numbers live in context | State is derived from git; the manifest is a static schedule |
 
 An optional `PreToolUse` accident guard is supplied as
-[`worktree-confine.sh`](../.ai/hooks/worktree-confine.sh), which blocks a write
-landing outside the checkout the session is in. It derives that boundary from
+[`worktree-confine.sh`](../.ai/hooks/worktree-confine.sh), which warns about writes
+outside the checkout the session is in. It derives that boundary from
 `git rev-parse` rather than a host-provided project directory that may still
-point at the project root, and it allows the shared `.git` because a
-worktree's own `.git` is only a pointer into it.
+point at the project root. It also warns about direct Git-metadata writes;
+normal Git commands use the worktree's shared Git metadata.
 
 This is best-effort for file tools and simple `Bash` patterns — shell
-cannot be parsed reliably, and a false block would stop a run that was doing
-the right thing. So it stops mistakes, not a determined escape. `/orchestrate`
+cannot be parsed reliably. Hook output is advisory; see
+[RULES: Hooks and validation](../.ai/RULES.md#hooks-and-validation). `/orchestrate`
 also checks `git status --porcelain` on the base between waves, since anything
 that does get through is otherwise silent.
 
@@ -242,7 +230,6 @@ In `.ai/config.yaml`, under `orchestration`:
 | `max_parallel_tracks` | `3` | The real cost dial — each track is a full agent pipeline |
 | `base_branch` | *current* | What tracks branch from and merge into |
 | `review.max_rounds` | `2` | One immediate code-fix pass between two reviews |
-| `review.residual_findings` | `merge` | Merge with follow-ups only when required checks pass; `park` keeps the PR open |
 | `forge` | `github` | Executable GitHub adapter; other forges require a manual host |
 | `merge_strategy` | `merge` | `merge` keeps the per-step commits |
 | `auto_merge` | `auto` | Authorized autonomous delivery; manual hosts may use `ask` or `never` |
@@ -256,9 +243,10 @@ items into INTAKE or extends the two-review ceiling.
 ## When a run stops
 
 After review 2, residual code defects remain open FIX reports; documentation
-and contract corrections remain separate INTAKE items. Passing required checks
-permit `ready_with_followups` under the default policy, with the actual review
-verdict disclosed. No third review is started. After the other PLANs complete,
+and contract corrections remain separate INTAKE items. Missing required code,
+functionality or overall SPEC coverage prevents merge under
+[Definition of done](../.ai/RULES.md#definition-of-done). Complete work can
+retain editorial or unrelated follow-ups with the actual verdict disclosed. No third review is started. After the other PLANs complete,
 the runtime looks through the deferred FIX queue in a fresh read-only audit.
 
 Other stopping points: the implementor hits a question only a human can answer
@@ -276,9 +264,9 @@ work continues. A failed PR never silently becomes a local merge.
   were shaped that way, what each track did, every review round. Kept after the
   run closes; it is the first thing to read when a later run hits the same
   dependencies.
-- **Research briefs** and a **review log** at
-  `.ai/state/orchestration/<run>/<track>/`, merged with their track. The log is
-  the durable round count: it lives on the track branch, so it has one writer,
+- **Research notes** at assigned `.ai/research/*.md` paths and a manual
+  **review log** at `.ai/state/orchestration/<run>/<track>/`. Runtime mode uses
+  receipts in the Git common directory. In manual mode the log records rounds: it lives on the track branch, so it has one writer,
   cannot conflict with another track, and survives a lost session.
 - **Plans** in `.ai/plans/done/<period>/`, carrying the reviewer's verdict as
   verification evidence

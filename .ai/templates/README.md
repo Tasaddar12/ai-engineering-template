@@ -19,4 +19,5 @@ tier; no nested single-file folders are needed.
 - [Plan](PLAN.md)
 - [Project](PROJECT.md)
 - [Spec](SPEC.md)
+- [Research](RESEARCH.md)
 - [AGENTS.snippet](AGENTS.snippet.md)

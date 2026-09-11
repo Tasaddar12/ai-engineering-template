@@ -9,16 +9,14 @@ links: [RULES, TRUTH-MAP]
 # `.ai/`
 
 The working memory of this project: intent, contracts, plans, state, history.
-Agent *behavior* lives in [agents](agents/) and [commands](commands/); the project's *content*
-lives here.
+Agent-specific instructions live in [agents](agents/), procedures in
+[commands](commands/), and shared project/workflow rules in [RULES](RULES.md).
 
 **Agents: read [RULES.md](RULES.md) first.** It answers the question that
-matters most — what you are allowed to change, and what to do when a document
-contradicts reality. The short version: every PLAN, including a draft or
-unapproved PLAN, has unconditional authority over its declared target
-documents; preserve that target during implementation, then let the documentor
-fix and record it after code review two. Lifecycle permission to start work is
-separate. Working around a stale document is the only forbidden move.
+matters most — what you are allowed to change and how to resolve a conflict.
+Use [Intent and PLAN approval](RULES.md#intent-and-plan-approval) for human
+decisions and [Review and documentation](RULES.md#review-and-documentation)
+for the code-to-documentation handoff.
 
 ## Layout
 
@@ -46,8 +44,8 @@ separate. Working around a stale document is the only forbidden move.
 │   ├── PROJECT.md      Why we're building this. Human authority.
 │   ├── STATE.md        Now / next / blockers. Churns constantly.
 │   ├── journal/        Append-only daily log.
-│   └── orchestration/  One board per /orchestrate run; per-track research
-│                       briefs and review logs live on the track branches.
+│   └── orchestration/  One board per /orchestrate run; manual review logs.
+├── research/           Assigned Research notes and inspected evidence.
 └── templates/          Copy these to create new documents.
 ```
 
@@ -58,13 +56,10 @@ agent cannot forget to do or misreport. There is deliberately no `status:`
 field in plan frontmatter — a second copy of the truth is a future
 contradiction.
 
-**2. Documents are tiered by who may change them.** `intent` needs a human for
-changes outside a PLAN's declared target. Every PLAN, including a draft or
-unapproved PLAN, always authorizes the document transitions required within
-that target; document conflict never creates an approval gate. Execution
-permission remains a separate lifecycle decision. `contract` is amendable by
-any agent, provided it records why. `plan`, `status` and `log` are the agent's
-to maintain. An agent that knows which tier it is looking at never has to
+**2. Documents are tiered by who may change them.** Use
+[Mutability tiers](RULES.md#mutability-tiers) with the assigned
+[agent's instructions](agents/README.md) to find the document's owner and
+correction procedure. An agent that knows which tier it is looking at never has to
 guess whether it has permission, which is what produces both refusals and
 silent workarounds.
 
@@ -79,9 +74,9 @@ revision. See
 
 | Tier | Files | Agent may |
 |---|---|---|
-| `intent` | `state/PROJECT.md`, `RULES.md` | Ask outside a PLAN target; target transitions follow [RULES](RULES.md) |
-| `contract` | `specs/`, `decisions/` | Amend, with a record |
-| `plan` | `plans/`, `fixes/` | Rewrite |
+| `intent` | `state/PROJECT.md`, `RULES.md` | Follow [human intent approval](RULES.md#intent-and-plan-approval) |
+| `contract` | `specs/`, `decisions/` | Documentation agent applies [amendments](RULES.md#the-amendment-protocol) |
+| `plan` | `plans/`, `fixes/` | Use the assigned [agent's scope](agents/README.md) |
 | `status` | `state/STATE.md`, `state/orchestration/ORCH-*.md` | Overwrite |
 | `log` | `state/journal/`, `amendments/`, research briefs | Append |
 
@@ -120,9 +115,10 @@ hand if you prefer.
 
 ## Scaling down
 
-A one-afternoon project does not need specs and a roadmap. Set `mode: light`
+A one-afternoon project can use compact planning without a roadmap. Set `mode: light`
 in [config.yaml](config.yaml) and use `plans/active/` with acceptance criteria
-written directly in the plan. The rules in `RULES.md` still apply — they are
+written directly in the plan and actual-code SPEC coverage at delivery.
+The rules in `RULES.md` still apply — they are
 what stops an agent from bending code around a stale note, and that failure
 happens at every project size. Raise the mode later; it is purely additive.
 

@@ -9,12 +9,12 @@ title: Research evidence
 
 Use configured RES IDs for bounded investigation records. Include the question,
 scope, inspected sources, findings and uncertainty.
-Research cannot authorize a requirement or implementation.
+See [RULES](../RULES.md#what-each-document-is-for) for evidence authority.
 
 Place contradictions and useful local code/test knowledge in the brief.
 A completed brief is log-tier evidence: append corrections or link a successor
 instead of rewriting the premise another worker used.
 
-Cold review excludes these briefs; the reviewer should challenge the result
-without inheriting the implementation's assumptions. Triage can read them
-after review to explain recurring or already-answered findings.
+Use the [Research template](../templates/RESEARCH.md) for an optional note.
+The [researcher](../agents/track-researcher.md), [code reviewer](../agents/track-reviewer.md)
+and [documentor](../agents/track-documentor.md) describe how they create or use it.

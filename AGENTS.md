@@ -12,7 +12,7 @@ permission again. This requirement overrides role or command instructions
 that say to commit only when separately asked. Honor an explicit user
 instruction not to commit; read-only tasks need no empty commit.
 
-Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/state/PROJECT.md),
+Read and follow [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/state/PROJECT.md),
 [STATE](.ai/state/STATE.md), the selected record and your
 [role](.ai/agents/README.md) before acting.
 
@@ -29,7 +29,8 @@ their exact contract wording. ADRs explain decisions; amendments and the
 journal retain history. Plan and FIX stages come from their directories.
 Use [truth-map](.ai/truth-map.md) to find each fact's single owner.
 
-Use the selected role's positive read/write scope. Report unrelated findings
+Use the selected agent file for its specific rules, methods and positive
+read/write scope; shared project/workflow rules live in RULES.md. Report unrelated findings
 through [defer](.ai/commands/defer.md). Work only in the assigned checkout;
 verify its absolute root and branch before writes. Roles are instructions,
 not an installed dispatcher or permission system.
@@ -38,11 +39,12 @@ Start with [onboard](.ai/commands/onboard.md) for project context,
 [plan-status](.ai/commands/plan-status.md) for a snapshot, and
 [verifier](.ai/agents/verifier.md) for evidence before delivery.
 
-Plans define desired future state. Every PLAN, including a draft or unapproved
-PLAN, always has authority to require changes to any contract in its declared
-target and carries exact target wording until the final documentation batch.
-Document conflicts never block PLAN creation, review, approval or implementation
-on that ground; lifecycle permission to start work remains separate.
+Plans define desired future state and carry exact proposed contract wording.
+For requested intent changes, fill the PLAN's Execution contract and record
+each human resolution under
+[Intent and PLAN approval](.ai/RULES.md#intent-and-plan-approval) before implementation.
+Use [Review and documentation](.ai/RULES.md#review-and-documentation) for the
+handoff from code agents to documentation agents.
 Existing specs govern behavior left unchanged. Specs must be truthful on the
 merged/deliverable revision, while intermediate implementation commits may
 precede that batch. Amendments, specs and ADRs land together in the

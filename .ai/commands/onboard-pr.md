@@ -3,6 +3,8 @@ description: Review the onboarding change, commit it, and open a merge request
 argument-hint: [target-branch]
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Land this adoption. Target branch: **$ARGUMENTS** (default: the repository's
 default branch — check `git remote show origin` or `git symbolic-ref
 refs/remotes/origin/HEAD` rather than assuming `main`).
@@ -68,13 +70,13 @@ description below is a claim about work they have not read yet.
 Cover, briefly:
 
 - What the structure is, and a one-line pointer to `.ai/README.md`
-- **Decisions the reviewer should check** — documents promoted to specs,
+- **Decisions the reviewer should check** — SPECs derived from reviewed code,
   documents retired, and the intent file's non-goals. These are judgment calls,
   not mechanical changes, and they are the reason this is a merge request
   rather than a commit to main.
 - Contradictions found and fixed in `AGENTS.md` or existing agents
-- How many intake items were captured, and that intake is a record of known
-  problems rather than a commitment to fix them
+- FIX and INTAKE items captured, with the evidence distinguishing confirmed
+  code defects from unknowns and other fragments
 - What was deliberately *not* done — areas left unspec'd, the mode chosen and
   why
 - Anything still open: unanswered questions, `.ai/plans/blocked/` entries

@@ -3,6 +3,8 @@ description: Diagnose, record and fix a single defect, with the check that stops
 argument-hint: <what's broken, or a FIX/INTAKE id>
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Fix: **$ARGUMENTS**
 
 If the argument is a `FIX-{nnn}` id, resume that record in `.ai/fixes/open/`.
@@ -17,11 +19,12 @@ and use `/plan-new`.
 
 ## 1. Establish it is a defect, not a disagreement
 
-Find the spec, ADR, or intent statement the code contradicts. Then one of:
+Find the requirement, approved target or demonstrable code invariant the
+code contradicts. Use [Bug fixes](../RULES.md#bug-fixes) for classification. Then one of:
 
 - **A spec forbids the observed behavior** → a defect. Proceed.
-- **No spec covers the case** → use existing PLAN acceptance if it establishes
-  the code defect. Any missing contract decision gets a separate INTAKE; do
+- **No spec covers the case** → use existing PLAN acceptance or a demonstrable code invariant if it
+  establishes the defect. Any missing contract decision gets a separate INTAKE; do
   not decide what correct means inside a FIX.
 - **A spec permits or requires the observed behavior** → not a defect yet.
   Either the spec is wrong (capture a contract INTAKE for later) or the request
@@ -58,8 +61,7 @@ makes the recurrence baffling.
 
 ## 4. Make the change
 
-Delegate to the **implementor** agent, which is the only agent that writes
-production code, and give it the fix id. Smallest change that addresses the
+Delegate to the assigned **implementor** or **track-fixer** agent, and give it the fix id. Smallest change that addresses the
 cause. Nothing else — a fix that also tidies two files nearby is no longer
 reviewable as a fix, and the tidying belongs in `/defer`.
 
@@ -74,14 +76,17 @@ something else is not a fix.
 impossible, say exactly why, record the manual verification, and report it as a
 known weakness rather than a pass.
 
-## 6. Close it
+## 6. Review and close it
+
+Gather the code review and hand its evidence to the documentation agent for
+any record/documentation updates under
+[Review and documentation](../RULES.md#review-and-documentation).
 
 1. `git mv` the record into `.ai/fixes/done/<period>/`, per
    `lifecycle.done_partition` in `.ai/config.yaml`. Create the directory if
    needed.
-2. If this came from an intake item, `git mv` that file to
-   `.ai/plans/abandoned/` with a line pointing at the fix id — the problem is
-   handled, so the capture is spent.
+2. If this came from an INTAKE item and the evidence proves it resolved,
+   `git mv` that capture into `.ai/plans/done/<period>/`.
 3. Append a journal entry: the defect, the cause, and the check that now guards
    it.
 4. Update `.ai/state/STATE.md` only if this changed what is being worked on.

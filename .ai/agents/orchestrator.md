@@ -112,13 +112,12 @@ unschedulable plan costs a whole track before anyone notices.
 
 ## Sizing the run
 
-Respect `orchestration.max_parallel_tracks` from `.ai/config.yaml`. If a wave
-has more independent tracks than the limit, split it: the limit is a real cost
-ceiling, and each track is an entire pipeline of subagents.
+Respect `orchestration.max_parallel_tracks` from `.ai/config.yaml`. Queue excess ready tracks until capacity is available; dispatch them as it
+opens without waiting for an unrelated wave.
 
 Check `lifecycle.max_active` too. A run that puts eight plans into `active/`
-against a limit of two is worth mentioning to the user — not refusing, but the
-limit exists for a reason and quietly blowing past it is not your call.
+against a suggested count of two is worth reporting as guidance, without a
+new approval gate.
 
 ## How you work
 

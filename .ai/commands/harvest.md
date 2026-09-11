@@ -3,12 +3,19 @@ description: Turn a meeting or design document into ADRs, intent changes and int
 argument-hint: <path to the document, or a directory of them>
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Harvest: **$ARGUMENTS**
 
 Meeting and design documents are `log` tier — a record of what was said on a
 date, never a contract. Harvesting extracts the parts that *are* contracts and
 leaves the rest as history. Until a note is harvested, nothing in it is in
 effect, no matter how it is phrased.
+
+Use [Configuration and onboarding](../RULES.md#configuration-and-onboarding)
+and [Roles](../RULES.md#roles) for evidence and documentation ownership.
+Prepare the classification first; the documentation agent records approved
+ADR/AMD/SPEC changes after the code-review handoff.
 
 ## 1. Read it, and place it
 
@@ -39,17 +46,19 @@ reliable. Ask if you cannot tell.
   Draft the wording, show the user, and **do not edit
   `.ai/state/PROJECT.md` without their explicit approval.**
 - **A statement of current behavior** → check it against the code. If it holds
-  and matters, it may become a spec. If it does not hold, it is stale
-  discussion, not a requirement — say so.
-- **Follow-up work** → an `INTAKE-{nnn}` per real item, clustered.
+  and matters, hand the independently inspected code evidence to the
+  documentor. The note itself is not a SPEC source. If the claim does not
+  hold, report the mismatch and classify it as FIX or INTAKE.
+- **Follow-up work** → classify confirmed code defects as FIX and other
+  fragments as INTAKE using [Bug fixes](../RULES.md#bug-fixes).
 - **Anything else** → leave it in the note.
 
 ## 3. Reconcile against what already exists
 
 Before writing anything:
 
-- Does an ADR already cover this? Then either the note adds alternatives to it,
-  or it supersedes it — write a new ADR with the old id in `supersedes:`, then
+- Does an ADR already cover this? Then the note may inform a new decision record,
+  or supersede it — write a new ADR with the old id in `supersedes:`, then
   set `status: superseded` and `superseded_by:` on the old one and change
   nothing else in it. Never rewrite a past ADR's Context, Decision or
   Alternatives; its value is being an accurate account of what was decided at
@@ -59,7 +68,7 @@ Before writing anything:
   same question; otherwise this is a real ambiguity and a question for the
   user. Do not silently pick the more recent one.
 - Does the note contradict a live spec? Follow the amendment protocol in
-  `.ai/RULES.md` — with the note as the evidence, not as the authority.
+  `.ai/RULES.md` — with verified code as evidence for any SPEC claim.
 - Does it contradict `.ai/state/PROJECT.md`? Stop and ask. Intent outranks
   every meeting.
 

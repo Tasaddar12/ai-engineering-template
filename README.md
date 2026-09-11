@@ -68,11 +68,10 @@ The [agent index](.ai/agents/README.md) covers coordination, research,
 planning, plan checking, implementation, documentation, independent review
 and defect triage.
 
-Each role says what it may write and where its authority ends. The worker
-doing approved implementation can correct a stale contract with an amendment;
-the independent reviewer reports defects without editing its own answer.
-Cold review keeps research and previous discussion out of the review packet
-so the reviewer can challenge the premise. Any reduced isolation is reported.
+Each agent file owns that agent's specific duties, scope and report format,
+and references [RULES](.ai/RULES.md) for shared policy. Research, code review
+and documentation have distinct roles and a documented handoff; the
+[individual agents](.ai/agents/README.md) describe their inputs and methods.
 
 ## Several changes at once
 
@@ -89,9 +88,8 @@ cleanliness and ownership evidence before removing an exact worktree/branch.
 
 The [executable runner](.ai/runtime/README.md) dispatches worker processes from
 an approved JSON schedule, audits owned paths/resources and serializes tested
-GitHub merges, target sync and cleanup. It permits two reviews with one code-fix
-pass. Remaining code defects become FIX reports; documentation/contract
-corrections become separate INTAKE items for after the other PLANs complete.
+GitHub merges, target sync and cleanup. Its completion checks follow [Definition of done](.ai/RULES.md#definition-of-done)
+and preserve follow-up records without accepting incomplete implementation.
 The consuming project supplies its worker permissions, checks and service
 namespaces. Prompt wording and Git worktrees do not provide a sandbox.
 
@@ -99,7 +97,7 @@ namespaces. Prompt wording and Git worktrees do not provide a sandbox.
 
 Inspect existing instructions and fact owners before copying or changing
 anything. Keep useful project knowledge, reconcile contradictions, and write
-specs only for behavior you can establish now. Do not invent project intent.
+specs from verified actual code. Do not invent project intent.
 
 Use [onboard](.ai/commands/onboard.md) for that reconciliation.
 Use [harvest](.ai/commands/harvest.md) for discussion notes: what was said,

@@ -3,6 +3,8 @@ description: Show every plan by stage, plus current state, blockers and suspecte
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Report where this project stands. Read, do not change anything.
 
 1. List plan files in each stage directory under `.ai/plans/` — `intake/`,
@@ -16,7 +18,7 @@ Report where this project stands. Read, do not change anything.
 Then output:
 
 ```
-ACTIVE      PLAN-nnn  <title>          (n of max_active)
+ACTIVE      PLAN-nnn  <title>          (n active; suggested max_active)
 REVIEW      PLAN-nnn  <title>
 BLOCKED     PLAN-nnn  <title>  — <the question>
 BACKLOG     n plans   (next up: PLAN-nnn <title>)

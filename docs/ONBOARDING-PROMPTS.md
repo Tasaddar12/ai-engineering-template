@@ -39,8 +39,8 @@ requirements instead of correcting them.
 Read .ai/RULES.md first so you know what the target state is. Then audit,
 without changing anything:
 
-1. Every agent definition in .ai/agents/ — does its `tools:` list include
-   Write and Edit? An agent without them cannot edit and will narrate a refusal.
+1. Every agent definition in .ai/agents/ — do its tools match its intended
+   scope? Compare documentation writers with read-only reviewers and code agents.
 2. AGENTS.md, and any instruction file — quote every line that
    forbids or discourages changing documentation, specs, plans or requirements.
 3. The host's hook settings — anything that blocks writes to md files or
@@ -74,7 +74,7 @@ copied in. Onboard this project onto it.
 Run /onboard and work through every step, including the retrofit steps —
 adopting existing requirement documents rather than duplicating them, auditing
 AGENTS.md and the existing agents for language that contradicts .ai/RULES.md,
-sweeping known problems into .ai/plans/intake/, and capturing architectural
+classifying known problems into FIX/INTAKE, and capturing architectural
 decisions that were made but never written down.
 
 Read the repo thoroughly before you ask me anything, so your questions are
@@ -82,15 +82,13 @@ informed ones. Then:
 
 - Interview me for .ai/state/PROJECT.md. Push hard on non-goals and hard
   constraints; do not fill them in by guessing.
-- Show me the promote/leave/retire recommendation for each existing doc and
+- Show me the leave/retire recommendation and code areas to inspect for each doc and
   wait for my call before moving or deleting anything.
-- Cluster the TODO/FIXME sweep by theme before writing any intake files, and
-  show me the list first. Mark which ones are bugs the specs already condemn —
-  those are /fix candidates, not plans.
-- Only write specs for the areas we are about to work on, and only in the
-  present tense: what the code does today. Strip the history and the
-  aspirations out of anything you promote — no "deprecated", no "planned",
-  no changelog sections. Tell me what you dropped.
+- Cluster the TODO/FIXME sweep by theme and show the list first. Apply RULES
+  to distinguish confirmed code bugs (FIX) from unknowns and fragments (INTAKE).
+- Review actual code in the areas we are about to work on, then hand the
+  evidence to a documentation agent for self-contained SPECs under RULES.
+  Keep the existing-doc inventory separate from evidence for SPEC claims.
 
 Stop and ask whenever a judgment is mine to make. Do not commit.
 ```
@@ -113,7 +111,8 @@ adoption and issue sweep, and spend the effort on:
   constraints until they are specific enough to reject a plan.
 - .ai/config.yaml — recommend a mode and say why. Fill in project name, summary
   and the real test/lint commands under verification.commands.
-- The first specs, as acceptance criteria for what we are about to build.
+- Acceptance criteria in the first PLAN for what we are about to build;
+  the documentor will derive SPECs from actual code after code review.
 - A first plan in .ai/plans/backlog/, checked by plan-checker.
 
 Then append .ai/templates/AGENTS.snippet.md to AGENTS.md, creating it if
@@ -124,21 +123,21 @@ absent. Do not commit.
 
 ## D — Light mode
 
-Small or short-lived work. One plan at a time, no specs, minimal ceremony.
+Small or short-lived work with compact planning and documentation.
 
 ```
 Onboard this project onto the .ai/ structure in light mode.
 
 Set mode: light in .ai/config.yaml, along with project name, summary, and the
-real verification commands. In light mode there are no specs — acceptance
-criteria live in the plan.
+real verification commands. Use RULES for light-mode planning and the
+post-code-review documentation requirements.
 
 Keep it minimal:
 - Fill .ai/state/PROJECT.md from a short interview. Non-goals and hard
   constraints still matter; the rest can be brief.
 - One plan in .ai/plans/active/ for the work in hand.
-- Sweep obvious TODO/FIXME and known-broken things into .ai/plans/intake/,
-  clustered, shown to me before you write them.
+- Sweep obvious TODO/FIXME and known-broken things into a classified FIX/INTAKE
+  inventory, clustered and shown to me before writing records.
 - Append .ai/templates/AGENTS.snippet.md to AGENTS.md.
 
 Skip the roadmap, skip retro-specs, skip anything the mode does not require.
@@ -158,8 +157,8 @@ nothing else yet.
 
 1. Append .ai/templates/AGENTS.snippet.md to AGENTS.md (create it if absent).
 2. Audit AGENTS.md and .ai/agents/ for anything that now contradicts
-   .ai/RULES.md — prohibitions on editing docs or specs, and agent `tools:`
-   lists missing Write/Edit. Show me each one with the proposed edit.
+   .ai/RULES.md and the role's intended scope — especially documentation-writer
+   tools, read-only reviewers and code/documentation ownership. Show me each one with the proposed edit.
 3. Fill in .ai/config.yaml: project name, summary, mode: light, and the real
    verification commands.
 4. Leave .ai/specs/ and .ai/plans/ alone entirely.
@@ -176,8 +175,8 @@ When the thing you actually want is every deferred and current problem written
 down where an agent will find it.
 
 ```
-Populate .ai/plans/intake/ with everything this project already knows is
-wrong, without adopting the rest of the structure yet.
+Capture the project's known problems in FIX/INTAKE records under .ai/RULES.md,
+without adopting the rest of the structure yet.
 
 Sweep for:
 - TODO, FIXME, HACK, XXX comments in source
@@ -191,12 +190,12 @@ Then ask me for the open tickets and bugs you cannot see.
 
 Cluster by theme and severity before writing any files, and show me the list
 first — I want a readable pile, not one file per TODO. Write one
-INTAKE-{nnn} per real problem from .ai/templates/INTAKE.md, and for trivia
+record per confirmed root cause or meaningful fragment using the FIX/INTAKE
+templates and RULES classification, and for trivia
 that will never be scheduled, say so and write nothing.
 
-Set each item's `kind`, because that decides its route out: a bug the specs
-already condemn gets promoted with /fix in one command, anything that changes
-what correct means gets a plan.
+Report which confirmed code bugs are ready for /fix and which INTAKE fragments
+need investigation or /plan-new.
 
 Finish with two lists — the three items most worth a plan, and the ones that
 are same-day /fix candidates — and why. Do not fix anything, and do not commit.
@@ -220,7 +219,9 @@ without adopting the rest of the structure yet.
    contort code, so this table is the deliverable.
 3. Flag every place a document contradicts the code as it is now, and say which
    side you believe is wrong and how you established it.
-4. For each document, recommend promote to a spec / leave in docs / retire.
+4. For each document, recommend leave in docs / retire and identify code areas
+   for review. A documentation agent derives any SPEC from that reviewed code,
+   following RULES; existing documents are not SPEC sources.
 
 Show me all of that before changing a single file. Then make only the changes I
 approve, collapsing duplicates into links to the owning document. Do not commit.

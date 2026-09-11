@@ -8,13 +8,8 @@ links: [RULES]
 
 # Truth Map
 
-Every fact in this project has **exactly one owner**. Other documents may link
-to it; none may restate it.
-
-Duplicated facts are the single largest cause of AI agents producing bad work.
-When the same requirement appears in four files, no change can satisfy all
-four, so the agent either refuses or contorts the implementation until every
-copy is technically satisfied. Neither is what you wanted.
+Use [RULES: Single owner](RULES.md#single-owner) for shared ownership policy.
+This index locates project facts and instruction owners.
 
 ## Ownership
 
@@ -32,13 +27,16 @@ copy is technically satisfied. Neither is what you wanted.
 | A defect, its root cause, and the check that catches it | `fixes/**/FIX-*.md` | Link by fix id |
 | What stage a plan or fix is at | **its directory** | Never restate |
 | Why a multi-plan run was sequenced that way | `state/orchestration/ORCH-*.md` | Link by run id |
-| What one agent found out about the code before building | `state/orchestration/<run>/<track>/RESEARCH-*.md` | Link — never a requirement |
+| What one agent found out about the code before building | `research/*.md` | Link — never a requirement |
 | What each review round of a track found | `state/orchestration/<run>/<track>/REVIEW-LOG.md` | Link by round — the reviewer never reads it |
 | What is happening right now | `state/STATE.md` | Link to it |
 | What happened on a given day | `state/journal/YYYY-MM-DD.md` | Link to it |
 | How the code actually works | **the code** | Describe, never duplicate |
 | How to use the product | `docs/` | Link to it |
-| Coding conventions, tooling | `AGENTS.md` at repo root | Link to it |
+| Shared project/workflow rules | `RULES.md` | Link to it |
+| An agent's scope, duties, methods and report | `agents/<role>.md` | Link to the agent |
+| A command's operating procedure | `commands/<command>.md` | Link to the command |
+| Tool values, paths and routes | `config.yaml` | Link to the setting |
 
 Note the split inside the decision block: a meeting note owns *what was said on
 a date*, an ADR owns *what we decided*. They are different facts, and
@@ -60,21 +58,8 @@ it does not own — which is why "deprecated", "removed in v2" and "not yet
 implemented" are truth-map violations and not merely untidy. See
 [RULES.md](RULES.md#what-each-document-is-for).
 
-## Rules for authors, human and agent
-
-1. **Link, don't copy.** Write "satisfies SPEC-004" rather than restating
-   SPEC-004's criteria. A reader who needs the detail can follow the link; a
-   copy will drift.
-2. **Numbers and rules live once.** Any threshold, limit, timeout, or business
-   rule appears in exactly one document. If you need it in a second place,
-   reference it.
-3. **Never describe code behavior in prose you could assert in a test.** A test
-   cannot go stale silently; a paragraph can.
-4. **Found a duplicate?** Delete the copy, replace it with a link, and note it
-   in the journal. This is always in scope and never needs permission.
-
 ## Adding a new kind of fact
 
-If you need to record something with no owner in the table above, add a row
-first, then write the document. If a fact does not fit the table at all, that
-is a signal to ask rather than to invent a new file.
+Use [RULES: Single owner](RULES.md#single-owner), then add its owner to the
+table above. SPEC self-containment is defined in
+[What each document is for](RULES.md#what-each-document-is-for).

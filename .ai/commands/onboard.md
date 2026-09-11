@@ -2,6 +2,8 @@
 description: Set up the .ai/ structure for this project, or brief yourself on an existing one
 ---
 
+Read and follow [RULES](../RULES.md).
+
 Bring this project's `.ai/` structure to life. Behave differently depending on
 what you find.
 
@@ -13,7 +15,7 @@ This is a fresh drop-in. Set it up:
    entry points, test setup, existing docs, recent git history. Come to the
    conversation already informed.
 2. **Pick a mode** and say why, then confirm with the user:
-   - `light` — small or short-lived. No specs, one plan at a time.
+   - `light` — small or short-lived, with compact planning.
    - `standard` — default for real projects.
    - `full` — long-running or multi-team. Adds a roadmap of phases.
    Write it into `.ai/config.yaml`, along with `project.name`,
@@ -30,25 +32,19 @@ This is a fresh drop-in. Set it up:
    *second* home for the same facts, which is the exact duplicated-fact failure
    `.ai/truth-map.md` exists to prevent.
 
-   For each requirement-bearing document you find, propose one of three, and
-   get the user's call before moving anything:
-   - **Promote** — it is a real contract. Rewrite it as a spec in `.ai/specs/`
-     (acceptance criteria, not implementation) and replace the original with a
-     link. **Promote only the parts that are true right now.** Existing docs
-     are usually layered with history and aspiration — "deprecated in 2.1",
-     "planned for Q4", a changelog section, a struck-through paragraph. A spec
-     states what *is*: drop all of it, keep the present-tense requirement, and
-     say what you dropped. Anything aspirational becomes an intake item or a
-     plan, never a spec criterion.
-   - **Leave** — it is human-facing documentation. It stays in `docs/`, and no
-     spec restates it. Migration guides, changelogs and upgrade notes belong
-     here permanently — history is their whole point, which is exactly why it
-     is not the spec's.
-   - **Retire** — it describes a past state. Say so and propose deleting it; a
-     stale document that stays will be read as a requirement.
+   Inventory the documents and the code areas they discuss. Propose **leave**
+   for useful human guides/history and **retire** for obsolete material, with
+   the exact proposed moves/deletions for the user's decision. Use those areas
+   to direct code inspection in step 6 under
+   [Configuration and onboarding](../RULES.md#configuration-and-onboarding).
+   Keep this inventory separate from evidence supporting SPEC claims.
 
-   Do not silently duplicate anything into `.ai/specs/`. List what you found,
-   your recommendation for each, and let the user decide.
+   - **Leave** — useful human-facing documentation stays in `docs/`.
+     Migration guides, changelogs and upgrade notes preserve history.
+   - **Retire** — obsolete documentation gets a named move/deletion proposal
+     and a reason, so the user can review exactly what would be lost.
+   - **Inspect code** — identify the entry points, callers and checks that
+     establish implemented behavior for the documentor's later SPEC work.
 
    **Meeting notes and design docs are a fourth case — do not treat them as
    requirements.** They are `log` tier: a record of what was said, where a
@@ -58,12 +54,12 @@ This is a fresh drop-in. Set it up:
    Harvesting a backlog of them during onboarding produces a pile of ADRs
    nobody has verified.
 5. **Audit the existing `AGENTS.md` and `.ai/agents/` for contradictions.**
-   This is the other retrofit trap. Look for language that forbids editing
-   documentation — "never modify the spec", "the plan is the source of truth",
-   "do not change requirements" — and for agent definitions whose `tools:` list
-   omits `Write`/`Edit`. Both cause the refuse-or-contort behavior directly,
-   and both will now contradict `.ai/RULES.md`, leaving agents with two
-   conflicting instructions. Report every instance and propose the edit.
+   This is the other retrofit trap. Compare each agent's instructions and tools
+   with its intended scope: documentation agents need usable write tools;
+   code reviewers stay read-only; implementors report documentation discoveries.
+   Look for automatic intent overrides, conflicting handoff instructions and
+   documentation-agent prohibitions that contradict `.ai/RULES.md`.
+   Report exact files and sections and propose targeted edits.
 
    Look for one more thing while you are in there: instructions to *preserve*
    documentation history — "mark requirements deprecated rather than removing
@@ -71,41 +67,28 @@ This is a fresh drop-in. Set it up:
    requirement". Those read as prudence and produce the specs-as-archaeology
    problem instead, and they will fight the present-tense rule. Propose moving
    that history into `docs/`, where it belongs, and out of the specs.
-6. **Write the first specs** for behavior that already exists and matters, if
-   the mode calls for specs. Acceptance criteria, not implementation, and
-   **present tense only** — every sentence has to be true of the code as it is
-   today. Not what the team wishes were true, not what is half-built behind a
-   flag. Behavior nobody has built yet is a plan, and behavior that used to be
-   true is not recorded at all.
+6. **Review the relevant actual code**, including callers and checks, then
+   hand the evidence to a documentation agent to write the first SPECs for
+   implemented behavior in the areas about to be worked on. Use
+   [What each document is for](../RULES.md#what-each-document-is-for). For
+   greenfield areas, capture proposed behavior in PLAN/INTAKE until code exists.
+7. **Sweep known problems into a classified inventory.** Gather:
+   - `TODO`, `FIXME`, `HACK`, `XXX` comments
+   - skipped, commented-out or failing tests
+   - temporary or known-broken behavior mentioned in existing guides
+   - tickets available through the user's supplied sources
 
-   Only for the areas about to be worked on — retro-specifying a whole codebase
-   produces a pile of unverified claims, which is worse than having no specs.
-7. **Sweep the project's known problems into `.ai/plans/intake/`.** An
-   in-flight project already knows about a pile of deferred work; it is just
-   scattered where no agent will look. Gather it:
-   - `TODO`, `FIXME`, `HACK`, `XXX` comments in the source
-   - skipped, commented-out, or currently failing tests
-   - anything the README or docs describe as temporary, known broken, or
-     "for now"
-   - open tickets and bugs — **ask the user for these**, you cannot see them
+   Investigate enough to distinguish confirmed code bugs from unknowns and
+   fragments using [Bug fixes](../RULES.md#bug-fixes). Cluster related findings,
+   show the user the proposed FIX/INTAKE list with urgency, then write the
+   confirmed inventory through the assigned record owner. Include which FIXes
+   look ready for `/fix` and which captures need investigation or `/plan-new`.
 
-   **Cluster before writing.** Fifty `TODO`s become a handful of intake items
-   by theme, not fifty files — an intake pile nobody can read is the same as no
-   pile. Write one `INTAKE-{nnn}` per real problem from
-   `.ai/templates/INTAKE.md`, and for trivia that will never be scheduled, say
-   so and write nothing.
-
-   Show the user the clustered list with your read on severity before writing
-   the files. Nothing in `intake/` commits anyone to doing the work.
-
-   Mark each one's `kind`, since that decides its route out: a `bug` — code
-   that contradicts a spec — gets promoted with `/fix`, everything else with
-   `/plan-new`. Say which of the pile look like same-day `/fix` candidates;
-   that is usually the most useful thing to come out of this step.
 8. **Capture decisions that were made but never written down.** Ask the user
    what the project's real architectural commitments are — and check the git
    history and any design notes for choices that clearly got made. Anything
-   still live and load-bearing becomes an ADR in `.ai/decisions/`. Write only
+   still live and load-bearing goes to the documentor for an ADR in
+   `.ai/decisions/` after the code review handoff. Record only
    the ones the user confirms; inventing a rationale for a past decision is
    worse than leaving it unrecorded.
 
@@ -147,6 +130,6 @@ Brief yourself and report — do not restructure anything:
    kind that makes every later reading of that spec a guess.
 
 Report: what this project is, where it stands, what is next, what is blocked,
-and any drift you spotted between the documents and the code. List drift as
-candidate work — under `.ai/RULES.md` reconciling it is always in scope.
+and any drift you spotted between the documents and the code. List drift as candidate work with evidence and its appropriate owner under
+[Roles](../RULES.md#roles).
 Capture with `/defer` anything you find that you are not about to fix.

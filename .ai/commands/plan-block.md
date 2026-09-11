@@ -7,29 +7,26 @@ Arguments: **$ARGUMENTS** — the first token is the plan id; everything after i
 is the blocking question. If no id was given, infer it from the plan currently
 in `.ai/plans/active/` and say which one you picked.
 
-First, check that this is genuinely a blocker. Per `.ai/RULES.md`, blocked
-means a genuinely missing human decision is required and was not supplied by
-the PLAN. A document conflict at any PLAN stage is never a blocker. An
-`intent`-tier question can block behavior outside the PLAN's declared target,
-as can an irreversible or outward-facing action when execution permission is
-missing. Required target document transitions remain in the PLAN's final
-documentation batch. Concrete critical breakage routes through supporting
-PLANs under an ORCH rather than a document veto. These are **not** blockers:
+Read and follow [RULES](../RULES.md#when-you-are-genuinely-blocked).
+Check whether there is an unresolved human decision, including any requested
+intent change inside the PLAN's target. Record that request and its resolution
+in the PLAN's Execution contract. Use this diagnostic map:
 
-- a spec is wrong → amend it with a record, and continue
-- a plan is wrong → rewrite it, and continue
-- a document contradicts the code → resolve it, and continue
-- a PLAN target conflicts with a SPEC, ADR, amendment, PROJECT or other document
-  → preserve the target and continue through the PLAN lifecycle
-- a doc is missing → write it, and continue
-- the blocker is a defect the specs already condemn → `/fix` it, and continue
-
-If it is one of those, say so and do that instead of blocking.
+- A SPEC appears wrong → investigate the code and pass evidence to the documentor.
+- A PLAN's route appears wrong → report evidence for the planner; preserve its
+  approved outcome.
+- A document contradicts code → establish which side is wrong before routing
+  the correction.
+- A PLAN requests an intent change → resolve it with a human before implementing.
+- Documentation is missing → pass the gap to the documentation agent after
+  code review.
+- Code violates established requirements/invariants → capture a FIX and identify
+  the needed correction or supporting PLAN.
 
 If it is a real blocker:
 
 1. `git mv` the plan into `.ai/plans/blocked/`.
-2. Add a `## Blocked` section to the plan with the question, the options you
+2. Have the planning/documentation agent add a `## Blocked` section to the plan with the question, the options you
    see, your recommendation, and what you already finished.
 3. Add a row to the **Blockers** table in `.ai/state/STATE.md`, and move
    **Now** on to something else if there is other work.

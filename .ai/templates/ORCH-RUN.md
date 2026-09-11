@@ -74,14 +74,10 @@ error raised anywhere. The blocks are what prevent that.
 
 | Track | INTAKE | FIX   | AMD   | SPEC | ADR | Used |
 | ----- | ------ | ----- | ----- | ---- | --- | ---- |
-| w1t1  | 40–59  | 40–59 | 12–31 | 8–11 | 5–9 |      |
+| w1t1  | 40–59  | 40–59 | 12–31 | 8–27 | 5–24 |      |
 
-**Compute the maxima from files that exist, excluding `.ai/templates/`** — the
-examples in here are not records. **Allocate at dispatch, not at schedule
-time:** a block held for a run that never starts is a permanent hole in the
-sequence. And **size the block to the namespace** — twenty fits `INTAKE` and
-`FIX`, which a track can really produce in quantity; a track will not write
-twenty specs, so five is plenty for `SPEC` and `ADR`.
+Allocation rules are in [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
+Use the coordinator's issued-block ledger when filling this table.
 
 ## Waves
 
@@ -89,7 +85,7 @@ twenty specs, so five is plenty for `SPEC` and `ADR`.
 
 | Track | Plans    | Branch               | Worktree                   | Stage    | PR  |
 | ----- | -------- | -------------------- | -------------------------- | -------- | --- |
-| w1t1  | PLAN-011 | `orch/ORCH-001/w1t1` | `.worktrees/ORCH-001-w1t1` | research | —   |
+| w1t1  | PLAN-011 | `orch/ORCH-001/w1t1` | `.worktrees/ORCH-001-w1t1` | build | —   |
 
 Stages, in order: `build` → `pr` (when build has a diff) → `review-1` →
 optional `fix` → `review-2` → `document` → `docs-review-1` → optional
@@ -101,7 +97,7 @@ Documentation-only tracks run both code reviews before opening a PR after docs
  preserves its checkout, and creates no empty commit or PR; it does not proceed
  to docs reviews or delivery. Code-only tracks may already have a valid code
  diff/PR and may continue without documentation edits. Incomplete work or an inconclusive review is parked; residual
-findings preserve their actual verdict and follow the stated merge policy.
+findings are classified through [Definition of done](../RULES.md#definition-of-done).
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees
@@ -109,9 +105,8 @@ with the table.
 
 ### Wave 2 — pending
 
-Waves after the first stay empty until the wave before them merges. Their
-worktrees do not exist yet, deliberately: a dependent plan is built on top of
-the code it depends on, not alongside it.
+List each track's own prerequisites and current wait reason. Dispatch readiness
+uses [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
 
 ## Review rounds
 
@@ -121,9 +116,8 @@ uses `orchestration.documentation.max_review_rounds` (two). Each pair is cold,
 and each permits at most one correction between rounds. Review two of each pair
 is mandatory whenever preceding work is complete and conclusive, including
 after an approved first review or zero eligible fixes. Inconclusive work parks.
-The configured `residual_findings` policy controls whether recorded residuals
-may merge after required checks; it never changes the actual verdict or starts
-a third review.
+Record the actual completeness evidence and retained follow-ups under
+[Definition of done](../RULES.md#definition-of-done).
 
 > **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
 > `INTAKE-nnn` in this template and never as plausible numbers: a scheduler
@@ -132,9 +126,9 @@ a third review.
 > 023 from an earlier version of this very table, in a project where no `FIX`
 > record had ever existed.
 
-| Track | Code 1 | Code 2 | Docs 1 | Docs 2 | Residual policy | State |
+| Track | Code 1 | Code 2 | Docs 1 | Docs 2 | Completeness | State |
 | ----- | ------ | ------ | ------ | ------ | --------------- | ----- |
-| w1t1  | changes requested | approved | changes requested | approved | merge · park | ready · ready_with_followups · stopped |
+| w1t1  | changes requested | approved | changes requested | approved | complete · incomplete | ready · ready_with_followups · stopped |
 
 ## Needs a human
 
@@ -157,13 +151,13 @@ this file later.
 
 -
 
-### Merged with known defects
+### Retained follow-ups
 
-Tracks that reached the review ceiling. Every record here merged **unfixed**,
-so this is the first work to pick up after the run — `critical` and `major`
-fixes ahead of anything in the backlog.
+Editorial or unrelated findings retained after complete delivery, plus findings
+on blocked tracks. Include the delivery state so an unmerged defect is not
+mistaken for delivered work.
 
-| Track | Record     | Severity | What is wrong |
+| Track/state | Record     | Severity | What is wrong |
 | ----- | ---------- | -------- | ------------- |
 | w1t1  | FIX-nnn    | major    |               |
 | w1t1  | INTAKE-nnn | —        |               |
