@@ -37,3 +37,11 @@ not an installed dispatcher or permission system.
 Start with [onboard](.ai/commands/onboard.md) for project context,
 [plan-status](.ai/commands/plan-status.md) for a snapshot, and
 [verifier](.ai/agents/verifier.md) for evidence before delivery.
+
+Plans define desired future state. A PLAN may always require a change to any
+contract and carries exact target wording until the final documentation batch.
+Existing specs govern behavior left unchanged. Specs must be truthful on the
+merged/deliverable revision, while intermediate implementation commits may
+precede that batch. Amendments, specs and ADRs land together in the
+documentation commit in the same PR as code; supersede ADRs with a new ADR and
+links from the old record.

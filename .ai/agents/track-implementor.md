@@ -59,7 +59,8 @@ What belongs in a step commit:
 - Its tests
 - Any spec or ADR change that step's code makes true, plus the amendment record
   — the implementor file is strict about this and being in a worktree does not
-  soften it. Every spec in the tree is true at every commit.
+soften it. Promised contract wording lands in the final documentation batch;
+specs must be true on the merged/deliverable revision.
 - The step ticked off in the plan file
 
 The reason is not tidiness. A reviewer with fresh context arrives later and

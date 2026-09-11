@@ -66,7 +66,8 @@ history, no intentions, no "deprecated" and no "not yet implemented". An ADR
 says why we chose something and what it replaced. A plan says what we intend
 next, and carries the exact spec wording it will land once the code works. Mix
 the tenses and a spec becomes something an agent has to interpret rather than
-read; keep them apart and every spec is true at every commit. See
+read; keep them apart and every spec is true on the merged/deliverable
+revision. See
 [RULES.md](RULES.md#what-each-document-is-for).
 
 | Tier | Files | Agent may |

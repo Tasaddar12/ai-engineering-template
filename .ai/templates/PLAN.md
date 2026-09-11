@@ -52,6 +52,7 @@ journal and run manifests belong to the coordinator.
 
 - **Owned paths:** <source, tests, PLAN and contract/document paths>
 - **Code paths:** <subset the review fixer may edit; no docs/contracts>
+- **Documentation paths:** <explicit list; subset of owned paths, disjoint from code paths; may be empty>
 - **Exclusive resources:** <ports, databases, caches, accounts; `none` if none>
 - **Environment:** <unique per-track port/database/cache settings>
 
@@ -60,11 +61,11 @@ resources even when file ownership is disjoint; worktrees do not isolate them.
 
 ## Contract changes
 
-What this plan makes the contract say once it lands. Specs describe the present,
-so **nothing here is written into `.ai/specs/` or `.ai/decisions/` until the
-code works** — this section holds the wording, and the implementor lands it in the
-same change as the code. Delete any subsection that does not apply; a plan that
-changes behavior and declares nothing here has not been thought through.
+What this plan makes the contract say once it lands. A PLAN may always require
+changes to any contract because it defines desired future state. Keep exact
+target wording here until the final documentation batch. The documentor lands
+promised specs, amendments and ADR decisions after both code reviews, in the
+same PR as code. Existing contracts govern behavior the PLAN does not change.
 
 ### Specs to create
 

@@ -91,10 +91,13 @@ twenty specs, so five is plenty for `SPEC` and `ADR`.
 | ----- | -------- | -------------------- | -------------------------- | -------- | --- |
 | w1t1  | PLAN-011 | `orch/ORCH-001/w1t1` | `.worktrees/ORCH-001-w1t1` | research | —   |
 
-Stages, in order: `research` → `implement` → `document` → `pr` → `review`
-→ `triage` → `fix` → `merged`. A track that reaches the round ceiling goes
-`review` → `triage` → `defer` → `merged` and is marked `deferred`; `stopped`
-is only for something review cannot resolve, like a question for a human.
+Stages, in order: `build` → `pr` (when build has a diff) → `review-1` →
+optional `fix` → `review-2` → `document` → `docs-review-1` → optional
+`docs-fix` → `docs-review-2` → final checks and delivery. Both code reviews and
+both documentation reviews run when preceding work is complete and conclusive.
+Documentation-only tracks run both code reviews before opening a PR after docs
+create a diff. Incomplete work or an inconclusive review is parked; residual
+findings preserve their actual verdict and follow the stated merge policy.
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees

@@ -59,11 +59,10 @@ The seats are separated by **what they are allowed to know**, not just by task.
 That is what makes the review meaningful.
 
 ```
-research → implement → original PLAN documentation → PR → review 1
-                                                           │
-                       code findings → one fix pass → review 2
-                                                           │
-                         required checks + integrated tests → delivery
+build (research + implement) → PR when there is a diff → code review 1
+                       → optional code fix → code review 2
+                       → documentation batch → docs review 1
+                       → optional docs fix → docs review 2 → delivery
 
 Code defects: FIX. Documentation/contract corrections: separate INTAKE.
 Residual findings wait until all other PLANs complete; never a third review.
@@ -73,9 +72,10 @@ Residual findings wait until all other PLANs complete; never a third review.
 |---|---|---|
 | `track-researcher` | plan, specs, code | — |
 | `track-implementor` | plan, research, specs, code | other tracks |
-| `track-documentor` | everything on the branch | other tracks |
-| `track-reviewer` | plan, specs, docs, diff | **research, implementor's reasoning, previous rounds** |
+| `track-documentor` | owned documentation paths and code evidence | source edits, review findings |
+| `track-reviewer` | plan, contracts, source and code diff | **documentation content, research, previous rounds** |
 | `track-triage` | everything, including all rounds | — |
+| `track-documentation-reviewer` | PLAN, owned docs and code evidence | **code-quality review, research, previous rounds** |
 | `track-fixer` | plan, research, fix records | **the review discussion** |
 
 The reviewer's isolation is the load-bearing part. An agent that reviews
@@ -100,8 +100,9 @@ round's list ticks it off instead of looking.
 
 ### 3. Commit every step slice
 
-The implementor commits once per plan step, not once at the end — code, tests,
-and the spec change that step makes true, together.
+The implementor commits once per plan step, not once at the end — code and
+tests for that slice. Promised specs, amendments and ADR decisions land later
+in the documentor's batch, in the same PR as code.
 
 This is not tidiness. A reviewer arriving cold reads the branch commit by
 commit; one 40-file commit is unreviewable and gets rubber-stamped. And when a

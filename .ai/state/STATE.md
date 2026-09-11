@@ -15,17 +15,15 @@ updated: 2026-09-09
 
 ## Now
 
-Nothing in flight. The `/orchestrate` pipeline landed on
-`full-orchestration-template` and has not been exercised on a real run yet.
+This repository is a reusable template. Its `.ai/` records describe workflows
+for an adopting project; no adopting-project run, intent, or delivery history
+is asserted here. The executable orchestration runtime and its Markdown
+contracts are present.
 
 ## Next
 
-Do a first real run to exercise the review loop and merge, which are the parts
-never executed. `/orchestrate --all-backlog --dry-run` first.
-
-Also: `.ai/state/PROJECT.md` is still the `CHANGEME` placeholder, and both
-`orchestrator` and `track-reviewer` cite it as authority when deciding what to
-schedule and what to approve.
+An adopting project should complete onboarding, set project intent and required
+verification commands, then create a PLAN before running orchestration.
 
 ## Blockers
 

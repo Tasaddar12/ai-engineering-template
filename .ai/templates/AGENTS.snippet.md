@@ -38,8 +38,11 @@ So a spec carries **no history and no intentions** — never "deprecated",
 the new one. When it goes away, delete it — the criterion, the section, or the
 file. The amendment record holds what it said and why it moved, the ADR holds
 why the decision changed, and git holds every version. Behavior that is decided
-but unbuilt lives in the plan that will build it, and lands in the spec
-alongside the working code — so every spec is true at every commit.
+but unbuilt lives in the plan that will build it. A PLAN may always require a
+change to any contract because it defines the desired future state. Existing
+specs govern unchanged behavior; specs become truthful for the
+merged/deliverable revision in the documentation batch, not at every
+intermediate code commit.
 
 What you may change without asking:
 

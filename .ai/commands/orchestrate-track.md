@@ -5,8 +5,10 @@ argument-hint: <run-id> <track-id>
 
 Build track **$2** of run **$1**.
 
-You drive **one track and nothing else**: research → implement → document → PR
-→ review loop, then exit saying `ready`, `ready_with_followups` or `stopped`.
+You drive **one track and nothing else**: build → PR (when there is a diff) →
+two cold code reviews with at most one code correction → documentation → two
+cold documentation reviews with at most one documentation correction → final
+checks/delivery. Exit saying `ready`, `ready_with_followups` or `stopped`.
 [`/orchestrate`](orchestrate.md) scheduled the run, created your worktree, and
 does the merging; other tracks are being built by other sessions and are none
 of your business.
@@ -114,9 +116,10 @@ and exit `stopped` with the reason. Do not send an incomplete track to review.
 
 ## 5. Document
 
-**track-documentor** — checks the plan's **Contract changes** promises actually
-landed, makes the specs describe what shipped, updates `docs/`, and validates
-its own output by running what it documented.
+**track-documentor** — after both code reviews, checks every original PLAN
+promise and lands the documentation batch. It writes only owned documentation
+paths, validates claims against code, and does not edit source comments or
+docstrings.
 
 ## 6. Open the PR
 
@@ -135,9 +138,8 @@ substitute a local merge for the required PR workflow.
 
 ## 7. Review
 
-**track-reviewer** — reviews cold. It gets the plans, the specs, the docs and
-the diff, and is **not** given the research brief, the implementor's report, or
-any previous round's findings.
+**track-reviewer** — reviews code cold. It reads plans, contracts and code
+evidence, not documentation content, research, reports or previous findings.
 
 ### Hand it a filtered diff
 
@@ -202,7 +204,9 @@ work is INTAKE for later. Return proof for the code corrections, then run
 ### The ceiling
 
 `orchestration.review.max_rounds` is **2**, counted durably. There is at most
-one immediate code-fix pass, between reviews 1 and 2.
+one immediate code-fix pass, between code reviews 1 and 2. Documentation has a
+separate `max_review_rounds: 2`, with at most one documentation-only correction
+between documentation reviews. No third review of either kind is permitted.
 
 **At the second review failure, defer residual findings.** Retain code FIX
 reports and separate documentation/contract INTAKE reports for the post-PLAN

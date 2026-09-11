@@ -7,9 +7,9 @@ Verify **$1**.
 
 1. Locate the plan. If it is still in `.ai/plans/active/`, `git mv` it to
    `.ai/plans/review/`.
-2. Delegate to the **verifier** agent. It grades against `.ai/specs/` and
-   against observed behavior — **not** against the plan's checklist. Ticked
-   boxes are not evidence.
+2. Delegate to the **verifier** agent. It grades against current contracts,
+   observed behavior and coordinator receipts — **not** against the plan's
+   checklist. Ticked boxes are not evidence.
 3. If the project is in `mode: full`, also confirm the acceptance gate named by
    the plan or the phase.
 4. Append a journal entry with the verdict.
@@ -27,7 +27,8 @@ Then, by verdict:
 
 If the verifier reports **record drift** — a spec that no longer matches the
 code, a contract change with no amendment record, something the plan's
-**Contract changes** section promised and never landed, or a spec carrying
+   **Contract changes** section promised and never landed, or a spec carrying
 history ("deprecated", "was previously") or unbuilt behavior — that is a
 defect, not a footnote. It is what makes the next task go wrong. Have the
-implementor land it before closing the plan.
+   documentor land it in the final documentation batch before closing the plan.
+   Do not start a third code or documentation review.

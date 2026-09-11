@@ -45,18 +45,35 @@ edits, so worker sandboxes do not need write access to shared Git metadata.
 A permission failure parks the track;
 the runner never switches to unrestricted permissions to get past it.
 
-One build process researches, implements the track's plans in order and lands
-their promised documentation/contracts. A fresh process performs review 1.
-If it reports code defects, one fresh fixer attempts those corrections, then
-a fresh reviewer performs review 2. There is no third review and no second
-immediate fix pass. All review severities are recorded. A reviewer must supply
+One build process researches and implements the track's plans in order. Both
+cold code reviews run before a lightweight documentation process lands the
+original PLAN's promised documentation/contracts. Two fresh documentation-only
+reviews then run, with at most one documentation correction between them. There
+is no third review or second immediate fix pass of either kind. All review
+severities are recorded. A reviewer must supply
 evidence and a stable root-cause key, not just a severity or opinion.
 
-Reviewers receive the original PLANs, contracts, source and filtered diff.
+Code reviewers receive the original PLANs, contracts, source and filtered diff.
+Documentation reviewers receive the original PLANs, owned documentation paths,
+and code only as evidence for documentation claims; they never perform code
+quality review.
 They do not receive previous findings or implementation reports. Context
 separation is enforced by the host's tool permissions and the prompt, not a
 filesystem sandbox supplied by this script. The runner detects changed HEAD
 or dirty files after read-only phases.
+
+Each track schedule declares `documentation_paths` explicitly (possibly empty)
+as a subset of `owned_paths`, disjoint from `code_paths`, and restricted to
+`.md`, `.markdown`, `.rst` or `.adoc` files; directory scopes must not include
+source files. The snapshot also carries `documentation_model` and a separate
+`documentation_worker_command` containing `{model}`. An unavailable lightweight
+route blocks instead of falling back to the code model. Results include
+`documentation_complete`, durable `phase_attempts`, phase receipts,
+`code_reviewed_sha` and `documentation_reviewed_sha`. Immutable
+`plan_source_sha` keeps later PLAN notes from weakening the original promise.
+Old unfinished runs reconcile with their original compatible schedule and
+receipts; deleting receipts or changing the schedule fingerprint does not
+evade the review count.
 
 ## Review outcomes and deferred work
 
@@ -70,7 +87,7 @@ or dirty files after read-only phases.
   retaining each round's evidence and any attempted correction summary.
 - The fixer can edit only `code_paths`. A missing or wrong contract is an
   INTAKE, not permission to redefine correctness during a fix. Original PLAN
-  documentation promises remain part of the build phase.
+  documentation promises remain part of the final documentation phase.
 - With `residual_findings: merge`, remaining review findings are disclosed in
   the PR and may merge only when required local and GitHub checks pass.
   The verdict remains `changes_requested`; the track is `ready_with_followups`.
