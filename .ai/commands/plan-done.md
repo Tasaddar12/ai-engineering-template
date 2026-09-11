@@ -32,10 +32,15 @@ definition of done.
    directory if needed.
 3. Move the item from **Now** to **Recently landed** in `.ai/state/STATE.md`,
    and set the new **Next**.
-4. Consider whether `docs/` is now stale. If so, run the **scribe** agent.
+4. Consume the coordinator's documentation completion and review receipts.
+   Plan-done performs mechanical lifecycle and state closeout; it does not edit
+   late content or start another documentation review. Standalone/manual runs
+   may use the current assigned checkout without run metadata.
 5. Append the closing journal entry: what shipped, what was learned, what
    specs moved.
 
 Report what shipped, which specs were created, amended or retired, which ADRs
-were written or superseded, and what is next. Do not commit or push unless the
-user asked.
+were written or superseded, and what is next. In runtime mode the coordinator
+owns commits. Standalone closeout commits lifecycle and state changes under the
+repository's standing commit rule or an explicit user assignment; never create
+an empty commit. Publication still requires existing authorization.

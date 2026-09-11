@@ -16,15 +16,17 @@ what to do when the written record and reality disagree.
 ## The Prime Rule
 
 **Writing code you know contradicts a written document is the only forbidden
-move.**
+move, except for the explicitly declared transition in an approved PLAN.**
 
 Documents here are versioned, not sacred. When you find that a spec, plan, or
 doc is wrong, stale, incomplete, or incompatible with the change you are
 making:
 
-1. **Fix the document.**
-2. **Record why**, in the same change.
-3. **Continue the work.**
+1. **Preserve the PLAN's declared target wording.** During the working branch,
+   the current spec may intentionally lag that target until the final
+   documentation batch.
+2. **The documentor fixes and records it after code review two**, in the same PR.
+3. **Continue the work without a silent workaround.**
 
 Three specific failures this rule exists to prevent:
 
@@ -75,8 +77,8 @@ agent guessing.
 the target state makes every verification fail, which teaches everyone to
 ignore the verifier. Unbuilt behavior lives in the plan that will build it,
 under its **Contract changes** section — the exact wording the spec will carry
-once the code works. The implementor lands that wording in the same change as the
-code, so every spec is true at every commit.
+on the merged/deliverable revision. The documentor lands that wording after
+both code reviews in the final documentation batch.
 
 **An ADR is the opposite of a spec** — a dated record, and allowed to be about
 the past. That is why superseding an ADR means writing a new one that points at
@@ -161,8 +163,9 @@ Use this whenever you change a `contract`-tier file: a spec, or an ADR.
    requirement is gone. On an ADR, correct a factual error only; changing the
    decision is a new ADR, not an edit.
 3. Add the amendment id to the affected document's `links:`.
-4. Include both files in the same commit as the code change. One commit, one
-   coherent story.
+4. Include both files in the documentation commit in the same PR as the code
+   change. Implementation and documentation commits may be separate while the
+   track is under review.
 
 The record exists so a human can audit *why* the contract moved, not to slow
 you down. It is three sentences, not an essay. **An amendment is never a
@@ -249,17 +252,20 @@ its contents are in effect yet.
 
 ## Precedence when documents disagree
 
-Reality first, then intent, then recency:
+Reality first, then human intent, then the declared target contract:
 
 1. **Working, tested code** beats any document describing it. Documents follow
    reality — but only after you have *confirmed* the code is right; a bug in
    the code does not license amending the spec to match the bug.
 2. **`state/PROJECT.md`** beats specs. A spec that violates a stated non-goal
    or hard constraint is the thing that is wrong.
-3. **The more recent `contract`** beats the older one. Check the amendment log
-   before assuming a spec is current.
-4. **A plan never beats a spec.** If a plan step would violate a spec, the plan
-   is wrong. Rewrite the plan.
+3. **An approved PLAN Contract changes section governs its explicitly declared
+   target changes.** A PLAN may always require a change to any contract. Its
+   exact future wording remains in the PLAN until implementation and the
+   documentation batch land; existing contracts govern behavior the PLAN does
+   not change.
+4. **The more recent accepted `contract`** governs unchanged behavior. Check
+   amendment and ADR history before assuming a spec is current.
 5. **A meeting note beats nothing.** It is evidence, and it loses to every
    tier above it. A note that contradicts a spec means someone needs to
    harvest it, not that the spec is wrong.
@@ -342,8 +348,10 @@ own `plans/intake/INTAKE-{nnn}-{slug}.md`; other unplanned work also uses INTAKE
 Use the corresponding template. FIX work proceeds through `/fix`; INTAKE work
 is triaged through `/plan-archive` and `/plan-new`.
 
-Outside autonomous review, two things are **always in scope** and get fixed rather than captured, because
-leaving them is what corrupts everyone's future work:
+Outside autonomous review, two things are **always in scope** and get fixed
+rather than captured, because leaving them is what corrupts everyone's future
+work. An approved PLAN's promised contract/documentation changes are the
+explicit exception: preserve them until the final documentation batch:
 
 - a document that contradicts reality → amend it, with a record
 - the same fact restated in two documents → collapse it into a link
@@ -363,8 +371,12 @@ No third review, repeated permission request or severity downgrade ends the
 loop. Preserve the actual verdict and proof. A track with findings may be
 `ready_with_followups` when required checks pass; it is not an approved review.
 Required check failures, incomplete work and `cannot_review` park that track
-while independent PLANs continue. See [the runtime](runtime/README.md) for the
-enforced delivery conditions and post-PLAN queue handoff.
+while independent PLANs continue. Completed work runs exactly two cold code
+reviews and exactly two cold documentation reviews. At most one code correction
+occurs between code reviews, and at most one documentation correction occurs
+between documentation reviews. Resume does not reset counts, and no scribe or
+verifier review follows documentation review two. See [the runtime](runtime/README.md)
+for enforced delivery conditions and post-PLAN queue handoff.
 
 And if what you found is severe — data loss, a security hole, a broken build —
 capture it *and* say so plainly. Filing an urgent problem is not the same as

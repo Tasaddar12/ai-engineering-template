@@ -2,8 +2,9 @@
 
 `/orchestrate` takes a set of plans and works out which can be built at the
 same time and which have to wait. Each group then gets its own git worktree and
-its own session, which drives it through research, implementation,
-documentation, a pull request, and a review loop with a hard ceiling.
+its own session, which drives it through research and implementation, two cold
+code reviews, a consolidated documentation batch, two documentation reviews,
+and final delivery.
 
 The [Python runtime](../.ai/runtime/README.md) provides executable background
 dispatch, durable receipts and serialized GitHub delivery. The coordinator
@@ -59,23 +60,26 @@ The seats are separated by **what they are allowed to know**, not just by task.
 That is what makes the review meaningful.
 
 ```
-research → implement → original PLAN documentation → PR → review 1
-                                                           │
-                       code findings → one fix pass → review 2
-                                                           │
-                         required checks + integrated tests → delivery
+build (research + implement) → PR when there is a diff → code review 1
+                       → optional code fix → code review 2
+                       → documentation batch → docs review 1
+                       → optional docs fix → docs review 2 → delivery
 
-Code defects: FIX. Documentation/contract corrections: separate INTAKE.
-Residual findings wait until all other PLANs complete; never a third review.
+Code defects are FIX items. Incidental documentation/contract corrections are
+INTAKE items; actionable findings against the original documentation promises
+may receive the single documentation correction pass between documentation
+reviews. Residual findings follow the configured merge policy; never a third
+review of either kind.
 ```
 
 | Agent | Sees | Deliberately does not see |
 |---|---|---|
 | `track-researcher` | plan, specs, code | — |
 | `track-implementor` | plan, research, specs, code | other tracks |
-| `track-documentor` | everything on the branch | other tracks |
-| `track-reviewer` | plan, specs, docs, diff | **research, implementor's reasoning, previous rounds** |
+| `track-documentor` | owned documentation paths and code evidence | source edits, review findings |
+| `track-reviewer` | plan, contracts, source and code diff | **documentation content, research, previous rounds** |
 | `track-triage` | everything, including all rounds | — |
+| `track-documentation-reviewer` | PLAN, owned docs and code evidence | **code-quality review, research, previous rounds** |
 | `track-fixer` | plan, research, fix records | **the review discussion** |
 
 The reviewer's isolation is the load-bearing part. An agent that reviews
@@ -100,8 +104,9 @@ round's list ticks it off instead of looking.
 
 ### 3. Commit every step slice
 
-The implementor commits once per plan step, not once at the end — code, tests,
-and the spec change that step makes true, together.
+The implementor commits once per plan step, not once at the end — code and
+tests for that slice. Promised specs, amendments and ADR decisions land later
+in the documentor's batch, in the same PR as code.
 
 This is not tidiness. A reviewer arriving cold reads the branch commit by
 commit; one 40-file commit is unreviewable and gets rubber-stamped. And when a

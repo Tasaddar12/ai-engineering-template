@@ -91,10 +91,17 @@ twenty specs, so five is plenty for `SPEC` and `ADR`.
 | ----- | -------- | -------------------- | -------------------------- | -------- | --- |
 | w1t1  | PLAN-011 | `orch/ORCH-001/w1t1` | `.worktrees/ORCH-001-w1t1` | research | —   |
 
-Stages, in order: `research` → `implement` → `document` → `pr` → `review`
-→ `triage` → `fix` → `merged`. A track that reaches the round ceiling goes
-`review` → `triage` → `defer` → `merged` and is marked `deferred`; `stopped`
-is only for something review cannot resolve, like a question for a human.
+Stages, in order: `build` → `pr` (when build has a diff) → `review-1` →
+optional `fix` → `review-2` → `document` → `docs-review-1` → optional
+`docs-fix` → `docs-review-2` → final checks and delivery. Both code reviews and
+both documentation reviews run when preceding work is complete and conclusive.
+Documentation-only tracks run both code reviews before opening a PR after docs
+ create a diff. A documentation-only track whose branch still has no net diff
+ from its base after the document phase stops with a recorded no-change outcome,
+ preserves its checkout, and creates no empty commit or PR; it does not proceed
+ to docs reviews or delivery. Code-only tracks may already have a valid code
+ diff/PR and may continue without documentation edits. Incomplete work or an inconclusive review is parked; residual
+findings preserve their actual verdict and follow the stated merge policy.
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees
@@ -108,13 +115,15 @@ the code it depends on, not alongside it.
 
 ## Review rounds
 
-Summarised here from each track's own
-`.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md`, which is the durable
-record — it lives on the track branch, so it has one writer and survives a lost
-session. The ceiling is `orchestration.review.max_rounds` in
-[config.yaml](../../config.yaml), default two; a track that reaches it does
-not start another round and does not wait for a human — triage records what is
-still outstanding and the track merges as `deferred`.
+The coordinator records separate durable code and documentation attempts in
+phase receipts. Code uses `orchestration.review.max_rounds` (two); documentation
+uses `orchestration.documentation.max_review_rounds` (two). Each pair is cold,
+and each permits at most one correction between rounds. Review two of each pair
+is mandatory whenever preceding work is complete and conclusive, including
+after an approved first review or zero eligible fixes. Inconclusive work parks.
+The configured `residual_findings` policy controls whether recorded residuals
+may merge after required checks; it never changes the actual verdict or starts
+a third review.
 
 > **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
 > `INTAKE-nnn` in this template and never as plausible numbers: a scheduler
@@ -123,10 +132,9 @@ still outstanding and the track merges as `deferred`.
 > 023 from an earlier version of this very table, in a project where no `FIX`
 > record had ever existed.
 
-| Track | Round | Verdict           | Blocking findings | Fixes raised       | Deferred                      |
-| ----- | ----- | ----------------- | ----------------- | ------------------ | ----------------------------- |
-| w1t1  | 1     | changes requested | 2                 | FIX-nnn, FIX-nnn+1 | —                             |
-| w1t1  | 2     | changes requested | 1                 | —                  | FIX-nnn+2 (major), INTAKE-nnn |
+| Track | Code 1 | Code 2 | Docs 1 | Docs 2 | Residual policy | State |
+| ----- | ------ | ------ | ------ | ------ | --------------- | ----- |
+| w1t1  | changes requested | approved | changes requested | approved | merge · park | ready · ready_with_followups · stopped |
 
 ## Needs a human
 

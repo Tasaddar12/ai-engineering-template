@@ -47,8 +47,9 @@ project whose specs are being ignored.
 5. **Follow the change downstream.** Other specs, plans, docs, or tests that
    depended on the old wording. Check `.ai/truth-map.md` — if the same fact was
    restated elsewhere, collapse the copies into links now.
-6. **Commit together** with the related code change, if there is one. One
-   commit, one coherent story.
+6. Land the spec, amendment and any related ADR in the final documentation
+   batch after code review two, in one documentation commit. The implementation
+   may be a separate commit in the same PR.
 7. Append a journal entry, and clear the matching line from **Known drift** in
    `.ai/state/STATE.md` if there is one.
 

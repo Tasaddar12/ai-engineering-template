@@ -100,14 +100,15 @@ be wrong.
 A run is approved on one screen and then consumes agents for hours. Nobody can
 consent to that from a wave diagram alone, so put a number on it.
 
-The executable adapter uses one build process per track for research,
-implementation and original PLAN documentation, then one cold reviewer.
-Code findings add one fixer and one final reviewer. Manual role-per-session
+The executable adapter uses one build process per track for research and
+implementation, two cold code reviewers, a lightweight documentation worker,
+and two cold documentation reviewers. Code findings add one fixer; docs
+findings add one documentation correction worker. Manual role-per-session
 hosts may use more sessions; identify the adapter in the estimate.
 
 ```
-floor    = tracks x 2
-ceiling  = tracks x 4
+floor    = tracks x 6
+ceiling  = tracks x 8
 ```
 
 Present both, and the shape:

@@ -74,9 +74,10 @@ replaced". They still describe the software, and that is all they are for.
 
 The migration lives in plans. The ADR says where you are going; the specs say
 where you are; the plans get you from one to the other, carrying the new spec
-wording in their **Contract changes** section until the code catches up. If you
-want the target behavior written down as criteria, that section is where it
-goes — drafted, in present tense, ready to land with the code.
+wording in their **Contract changes** section until code review two completes
+and the final documentation batch lands. If you want the target behavior
+written down as criteria, that section is where it goes — drafted, in present
+tense, ready for the documentor.
 
 Say plainly in your report which decisions are recorded-but-unbuilt, because
 that gap is invisible otherwise and it is where the worst surprises live.

@@ -34,9 +34,9 @@ means. See `.ai/RULES.md#bug-fixes`.
    main thing the checker reviews. In `light` mode the acceptance criteria go in
    the plan instead.
 
-   Nothing drafted there is written into `.ai/specs/` yet: a spec states what is
-   true today, so the implementor lands the wording in the same change as the
-   working code.
+   Nothing drafted there is written into `.ai/specs/` yet: a spec states what
+   is true on the merged/deliverable revision, so the documentor lands the
+   wording in the final documentation batch in the same PR as the working code.
 5. On anything non-trivial, then run the **plan-checker** agent against the new
    plan and report its verdict. If it finds blocking conflicts, have the
    planner revise before you report back.

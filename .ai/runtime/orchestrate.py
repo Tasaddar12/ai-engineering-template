@@ -110,6 +110,15 @@ def overlaps(left, right):
     return covers(left, right.rstrip('/')) or covers(right, left.rstrip('/'))
 
 
+DOCUMENT_SUFFIXES = ('.md', '.markdown', '.rst', '.adoc')
+DOCUMENT_PHASES = ('document', 'docs-review-1', 'docs-fix', 'docs-review-2')
+REVIEW_PHASES = ('review-1', 'review-2', 'docs-review-1', 'docs-review-2')
+
+
+def documentation_path(path):
+    return path.casefold().endswith(DOCUMENT_SUFFIXES)
+
+
 def validate(config):
     require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', config['run_id']), 'Invalid run_id')
     for field in ('base_branch', 'remote', 'branch_prefix'):
@@ -122,9 +131,16 @@ def validate(config):
     require(config['required_status_checks'] and
             all(isinstance(x, str) and x for x in config['required_status_checks']),
             'Name the required GitHub status checks; an empty result is not a pass')
-    for argv in [config['worker_command'], *config['required_commands']]:
+    config.setdefault('documentation_model', 'gpt-5.6-luna')
+    require(isinstance(config['documentation_model'], str) and config['documentation_model'].strip(),
+            'Declare a lightweight documentation_model')
+    require('documentation_worker_command' in config,
+            'Declare a separate documentation_worker_command; no code-model fallback is permitted')
+    for argv in [config['worker_command'], config['documentation_worker_command'], *config['required_commands']]:
         require(isinstance(argv, list) and argv and all(isinstance(x, str) and x for x in argv),
                 'Commands must be nonempty argv arrays')
+    require(any('{model}' in arg for arg in config['documentation_worker_command']),
+            'documentation_worker_command must select the lightweight model with {model}')
     require(config.get('residual_findings', 'merge') in ('merge', 'park'), 'Invalid residual policy')
     tracks = config['tracks']
     require(tracks and len({t['id'].casefold() for t in tracks}) == len(tracks), 'Duplicate/empty tracks')
@@ -133,11 +149,18 @@ def validate(config):
     for track in tracks:
         require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', track['id']), 'Invalid track id')
         require(track['owned_paths'] and track['plans'], 'Declare owned paths and plans for every track')
-        for path in track['owned_paths'] + track['plans'] + track['code_paths']:
+        require(isinstance(track.get('documentation_paths'), list), 'Declare documentation_paths explicitly (may be empty)')
+        for path in track['owned_paths'] + track['plans'] + track['code_paths'] + track['documentation_paths']:
             relative_path(path)
         for path in track['code_paths']:
             require(any((not path.endswith('/') or s.endswith('/')) and covers(s, path.rstrip('/'))
                         for s in track['owned_paths']), 'Code paths must be owned')
+        for path in track['documentation_paths']:
+            require(any((not path.endswith('/') or s.endswith('/')) and covers(s, path.rstrip('/'))
+                        for s in track['owned_paths']), 'Documentation paths must be owned')
+            require(path.endswith('/') or documentation_path(path), 'Documentation paths cannot name source files')
+            require(not any(overlaps(path, code) for code in track['code_paths']),
+                    'Documentation paths and code paths must be disjoint')
         for plan in track['plans']:
             require(plan.casefold() not in plans, f'Plan scheduled twice: {plan}')
             require(any(covers(s, plan) for s in track['owned_paths']), f'Plan not owned: {plan}')
@@ -215,8 +238,9 @@ RESULT_SCHEMA = {
         'status': {'type': 'string', 'enum': ['complete', 'blocked']},
         'verdict': {'type': 'string', 'enum': ['approved', 'changes_requested', 'cannot_review', 'not_applicable']},
         'summary': {'type': 'string'},
+        'documentation_complete': {'type': 'boolean'},
         'findings': {'type': 'array', 'items': FINDING}},
-    'required': ['status', 'verdict', 'summary', 'findings']}
+    'required': ['status', 'verdict', 'summary', 'findings', 'documentation_complete']}
 
 
 class Runner:
@@ -353,6 +377,8 @@ class Runner:
         require(not git(path, 'status', '--porcelain'), 'Worker left uncommitted/untracked changes')
 
     def phase(self, track, name, *, readonly=False, extra=''):
+        require(name in ('build', 'fix', *REVIEW_PHASES, 'document', 'docs-fix'), 'Unknown phase')
+        require(readonly == (name in REVIEW_PHASES), 'Review phases must be read-only')
         state = self.state['tracks'][track['id']]
         if name in state['completed_phases']:
             result = state['completed_phases'][name]
@@ -361,16 +387,26 @@ class Runner:
         path, _ = self.location(track)
         self.audit(track, path)
         before = git(path, 'rev-parse', 'HEAD')
+        require(before == state.get('checkpoint_head', state['base']), 'Phase HEAD changed outside coordinator')
+        docs = name in DOCUMENT_PHASES
+        model = self.config['documentation_model'] if docs else self.config.get('code_model', 'worker-command-default')
+        scopes = track['documentation_paths'] if docs else track['code_paths']
         token = f"{track['id']}-{name}-{time.time_ns()}"
         result_file = self.directory / f'{token}.json'
         mapping = {'worktree': str(path), 'result_file': str(result_file),
                    'schema_file': str(self.schema), 'phase': name,
-                   'sandbox': 'read-only' if readonly else 'workspace-write'}
-        argv = [arg.format_map(mapping) for arg in self.config['worker_command']]
+                   'sandbox': 'read-only' if readonly else 'workspace-write', 'model': model}
+        worker_command = self.config['documentation_worker_command'] if docs else self.config['worker_command']
+        argv = [arg.format_map(mapping) for arg in worker_command]
         context = {
             'run': self.config['run_id'], 'track': track['id'], 'phase': name,
             'worktree': str(path), 'branch': self.location(track)[1], 'base_sha': state['base'],
+            'plan_source_sha': state['base'],
             'plans': track['plans'], 'owned_paths': track['owned_paths'], 'code_paths': track['code_paths'],
+            'documentation_paths': track['documentation_paths'], 'phase_paths': scopes,
+            'model': model, 'documentation_model': self.config['documentation_model'],
+            'review_kind': 'documentation' if docs else 'code',
+            'code_reviewed_sha': state.get('code_reviewed_sha'),
             'resources': track['resources'], 'required_commands': self.config['required_commands']}
         prompt = (
             'Execute only this assigned phase. Read AGENTS.md and .ai/RULES.md. '
@@ -378,45 +414,70 @@ class Runner:
             'Do not commit or stage files; the coordinator audits and commits your edits after this phase. '
             'Never launch other agents, change branches, merge, rebase, push or edit sibling worktrees. '
             'Do not ask for approval. Return blocked with a reason if execution is impossible. '
-            'Do not modify documentation/contracts to repair incidental review findings; return those '
-            'as documentation/contract findings for INTAKE. Confirmed code defects are code findings '
+            'The approved PLAN Contract changes specify the target and may require updates to any current '
+            'contract. Original promises are the PLAN content at plan_source_sha, even if later PLAN notes change. '
+            'Read current contracts to understand unchanged requirements; do not preserve a '
+            'stale requirement that the PLAN explicitly changes. All documentation edits occur only in '
+            'the consolidated documentation phase after both code reviews. Confirmed code defects are code findings '
             'for FIX, at every severity and regardless of scope. Use a stable key for each root cause. '
             'Record concrete evidence and location. Questions are question findings. '
             'Workers do not create FIX or INTAKE files. '
-            + ('This is a cold, read-only review. Follow .ai/agents/track-reviewer.md. '
+            + ('This is a cold, read-only review. Follow .ai/agents/'
+               + ('track-documentation-reviewer.md. ' if docs else 'track-reviewer.md. ') +
                'Do not read previous phase output, research, review logs or FIX/INTAKE reports. '
-               'Review the plans, acceptance, contracts and actual diff from base_sha. Exclude '
+               'Inspect the actual diff from base_sha restricted to phase_paths. Exclude '
                '.ai/fixes/ and .ai/plans/intake/ from the diff; the coordinator audits those records. '
                'Use approved only with no findings; changes_requested requires findings. '
                'Use cannot_review if evidence is insufficient. Do not make commits or edits. '
+               + ('Review documentation and contracts only; read implemented code as evidence for their claims. '
+                  'Verify every original PLAN documentation/Contract changes promise landed. Set '
+                  'documentation_complete false if any promise is missing or cannot be verified; such '
+                  'incompleteness blocks delivery even under residual-findings merge policy. Do not review '
+                  'code quality or start another code review. '
+                  if docs else
+                  'Review only code, tests and executable configuration. You may read PLAN target wording '
+                  'and current contracts as requirements, but must not review documentation content or '
+                  'report intentionally deferred documentation as a defect. ')
                if readonly else
                'Follow the applicable track role with coordinator-owned commits. '
-               'Build phase: research, implement the plans in order, then document all original '
-               'PLAN promises using track-researcher, track-implementor and track-documentor guidance. '
+               + ('Follow track-documentor: implement all original PLAN documentation and contract promises '
+                  'together in document, or attempt only supplied documentation findings in docs-fix. '
+                  'Write only documentation_paths; never change source, tests or executable configuration, '
+                  'including code comments/docstrings. Keep PLAN paths fixed. Use implemented code as '
+                  'evidence. Report documentation_complete true only after all original promised changes '
+                  'are complete, false if incomplete or unverifiable. Incidental unrelated docs/contracts '
+                  'remain INTAKE findings. Use the assigned lightweight model; if unavailable return blocked. '
+                  if docs else
+                  'Build phase: research and implement the plans in order, then self-review only the code '
+                  'using track-researcher and track-implementor guidance. Write only code_paths. '
+                  'Do not edit or review documentation, specs, ADRs, amendments or PLAN content. '
                'Keep research in the response, not shared orchestration files. '
                'Keep plans in their existing paths; report completion to the coordinator. '
                'Fix phase: follow track-fixer, correct only supplied code findings inside ownership, '
                'run a regression check and report before/after proof. Never repair docs/contracts '
-               'in this phase. Return any unresolved or out-of-scope code defects as findings. ')
+               'in this phase. Return any unresolved or out-of-scope code defects as findings. '))
             + '\nAssignment:\n' + json.dumps(context, indent=2) + '\n' + extra
             + '\nReturn JSON matching the supplied schema in the configured result file.')
         attempts = state.setdefault('phase_attempts', {})
         require(name == 'build' or not attempts.get(name), 'Cannot repeat a fix or review attempt')
         attempts[name] = attempts.get(name, 0) + 1
         self.update(state, inflight_phase=name, worker_stopped=False,
-                    inflight={'name': name, 'before': before, 'result_file': str(result_file), 'readonly': readonly})
+                    inflight={'name': name, 'before': before, 'result_file': str(result_file), 'readonly': readonly,
+                              'model': model, 'argv': argv, 'paths': scopes})
         try:
             output = command(argv, path, input=prompt, timeout=self.config.get('worker_timeout_seconds', 3600),
                              env={**self.worker_environment(track), 'ORCH_CONTEXT': json.dumps(context),
                                   'ORCH_RESULT': str(result_file)})
-        except Exception:
+        except Exception as exc:
             # command() waits for termination before returning an error. A process crash
             # of this scheduler leaves this flag absent and requires explicit reconciliation.
             self.update(state, worker_stopped=True)
             if result_file.is_file():
                 result = json.loads(result_file.read_text(encoding='utf-8'))
                 self.validate_result(result)
-                self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before)
+                self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before, phase_name=name)
+            if docs:
+                raise Blocked(f'Lightweight documentation phase {name} ({model}) failed: {exc}') from exc
             raise
         (self.directory / f'{token}.log').write_text(output, encoding='utf-8')
         self.update(state, worker_stopped=True)
@@ -424,7 +485,7 @@ class Runner:
 
     @staticmethod
     def phase_round(name):
-        return 2 if name == 'review-2' else 0 if name == 'build' else 1
+        return 2 if name.endswith('review-2') else 0 if name in ('build', 'document') else 1
 
     @staticmethod
     def validate_result(result):
@@ -448,18 +509,25 @@ class Runner:
         result = json.loads(result_file.read_text(encoding='utf-8'))
         self.validate_result(result)
         # Queue confirmed findings even if the worker is blocked or its edits fail audit.
-        self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before)
+        self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before, phase_name=name)
         require(result['status'] == 'complete', result['summary'])
+        if name in DOCUMENT_PHASES:
+            require(type(result.get('documentation_complete')) is bool,
+                    'Documentation phase must explicitly verify original PLAN promises')
         require(git(path, 'rev-parse', 'HEAD') == before, 'Worker changed HEAD; coordinator owns commits')
         if readonly:
             require(result.get('verdict') in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
             if result['verdict'] != 'cannot_review':
                 require((result['verdict'] == 'approved') == (len(result['findings']) == 0), 'Inconsistent review verdict')
+            kinds = ('documentation', 'contract', 'question') if name in DOCUMENT_PHASES else ('code', 'question')
+            require(all(f['kind'] in kinds for f in result['findings']), 'Reviewer crossed its code/documentation scope')
         else:
             self.commit_worker_changes(track, name)
         self.audit(track, path)
         with self.mutex:
             state.setdefault('phase_heads', {})[name] = before
+            state.setdefault('phase_receipts', {})[name] = {
+                **phase, 'after': git(path, 'rev-parse', 'HEAD')}
             state['completed_phases'][name] = result
             state.pop('inflight_phase', None)
             state.pop('inflight', None)
@@ -474,19 +542,23 @@ class Runner:
         require(not git(path, 'diff', '--cached', '--name-only'), 'Worker staged files; coordinator owns the index')
         changed = set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z', 'HEAD').split('\0')))
         changed.update(filter(None, git(path, 'ls-files', '--others', '--exclude-standard', '-z').split('\0')))
-        scopes = track['code_paths'] if phase == 'fix' else track['owned_paths']
+        docs = phase in DOCUMENT_PHASES
+        scopes = track['documentation_paths'] if docs else track['code_paths']
         for name in changed:
             require(not name.casefold().startswith(('.ai/state/', '.ai/fixes/', '.ai/plans/intake/')) and
                     any(covers(s, name) for s in scopes), f'Worker change outside {phase} ownership: {name}')
-            if phase == 'fix':
-                require(not name.casefold().endswith(('.md', '.rst', '.adoc')) and
-                        not name.casefold().startswith(('.ai/specs/', '.ai/decisions/')), f'Fix cannot change docs/contracts: {name}')
+            if docs:
+                require(documentation_path(name), f'Documentation worker cannot change source: {name}')
+            else:
+                require(not documentation_path(name) and
+                        not name.casefold().startswith(('.ai/specs/', '.ai/decisions/')),
+                        f'Code worker cannot change docs/contracts: {name}')
         if changed:
             git(path, '--literal-pathspecs', 'add', '--', *sorted(changed))
             git(path, 'commit', '-m', f"{phase.capitalize()} planned track {track['id']}")
 
     @state_locked
-    def record_findings(self, track, result, round_number, *, publish=True, source_head=None):
+    def record_findings(self, track, result, round_number, *, publish=True, source_head=None, phase_name='legacy'):
         path, _ = self.location(track)
         state = self.state['tracks'][track['id']]
         self.validate_result(result)
@@ -510,10 +582,10 @@ class Runner:
                 item = {'id': record_id, 'record': f'{folder}/{record_id}-review.md',
                         'history': [], 'found': str(date.today())}
                 state['findings'][key] = item
-            evidence = {**finding, 'round': round_number, 'reviewed_sha': source_head}
+            evidence = {**finding, 'round': round_number, 'reviewed_sha': source_head, 'phase': phase_name}
             # Re-entering a completed phase is not a new review observation.
-            fields = (*FINDING['required'], 'round')
-            if not any(all(old[k] == evidence[k] for k in fields) for old in item['history']):
+            fields = (*FINDING['required'], 'round', 'phase')
+            if not any(all(old.get(k) == evidence[k] for k in fields) for old in item['history']):
                 item['history'].append(evidence)
                 item.update(finding, round=round_number, reviewed_sha=source_head)
         self.write_reports(track, publish=publish)
@@ -533,7 +605,7 @@ class Runner:
             text += f"## What's wrong\n\n{item['detail']}\n\n## Where\n\n{item['path']}\n\n## Why it wasn't fixed then\n\nSeparate {item['kind']} work after the PLAN queue.\n\n## What it costs to leave\n\nSeverity: {item['severity']}.\n"
         text += '\n## Review evidence\n'
         for evidence in item.get('history', [item]):
-            text += (f"\nRound {evidence['round']}, source {evidence['reviewed_sha']}, "
+            text += (f"\nPhase {evidence.get('phase', 'legacy')}, round {evidence['round']}, source {evidence['reviewed_sha']}, "
                      f"severity {evidence['severity']}, location {evidence['path']}.\n\n{evidence['detail']}\n")
         for attempt in item.get('attempts', []):
             text += ('\n## Attempted correction\n\n' + attempt +
@@ -575,6 +647,8 @@ class Runner:
     def pull_request(self, track):
         path, branch = self.location(track)
         state = self.state['tracks'][track['id']]
+        require(git(path, 'diff', '--name-only', state['base'], 'HEAD'),
+                'No changes available for a pull request; preserve the track without an empty commit')
         git(path, 'push', '-u', self.config['remote'], f'HEAD:refs/heads/{branch}')
         prs = json.loads(self.gh('pr', 'list', '--repo', self.config['github_repo'], '--head', branch,
                                 '--base', self.config['base_branch'], '--state', 'all', '--json', 'number,state'))
@@ -595,53 +669,87 @@ class Runner:
         state = self.state['tracks'][track['id']]
         path, _ = self.location(track)
         result = self.phase(track, 'build')
-        self.record_findings(track, result, 0)
-        self.pull_request(track)
+        self.record_findings(track, result, 0, phase_name='build', source_head=state['phase_heads']['build'])
+        if git(path, 'diff', '--name-only', state['base'], 'HEAD'):
+            self.pull_request(track)
         first = self.phase(track, 'review-1', readonly=True)
-        self.record_findings(track, first, 1)
+        self.record_findings(track, first, 1, phase_name='review-1', source_head=state['phase_heads']['review-1'])
         require(first['verdict'] != 'cannot_review', 'Reviewer cannot review')
         code = [f for f in first['findings'] if f['kind'] == 'code']
         if code:
             fixed = self.phase(track, 'fix', extra='Code findings to attempt once:\n' + json.dumps(code))
-            self.record_findings(track, fixed, 1)
+            self.record_findings(track, fixed, 1, phase_name='fix', source_head=state['phase_heads']['fix'])
             self.record_attempt(track, fixed)
-            last = self.phase(track, 'review-2', readonly=True)
-            self.record_findings(track, last, 2)
-            require(last['verdict'] != 'cannot_review', 'Reviewer cannot review')
-        else:
-            last = first
+        last = self.phase(track, 'review-2', readonly=True)
+        self.record_findings(track, last, 2, phase_name='review-2', source_head=state['phase_heads']['review-2'])
+        require(last['verdict'] != 'cannot_review', 'Reviewer cannot review')
+        self.update(state, code_reviewed_sha=state['phase_heads']['review-2'], code_review_verdict=last['verdict'])
+        documented = self.phase(track, 'document')
+        self.record_findings(track, documented, 0, phase_name='document', source_head=state['phase_heads']['document'])
+        require(documented.get('documentation_complete') is True, 'Original PLAN documentation is incomplete or unverified')
+        if not state.get('pr'):
+            self.pull_request(track)
+        docs_first = self.phase(track, 'docs-review-1', readonly=True)
+        self.record_findings(track, docs_first, 1, phase_name='docs-review-1', source_head=state['phase_heads']['docs-review-1'])
+        require(docs_first['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')
+        docs_findings = [f for f in docs_first['findings'] if f['kind'] in ('documentation', 'contract') and
+                        any(covers(s, f['path']) for s in track['documentation_paths'])]
+        require(docs_first.get('documentation_complete') is True or docs_findings,
+                'Missing documentation promises require actionable findings within documentation_paths')
+        if docs_findings:
+            fixed = self.phase(track, 'docs-fix', extra='Documentation findings to attempt once:\n' + json.dumps(docs_findings))
+            self.record_findings(track, fixed, 1, phase_name='docs-fix', source_head=state['phase_heads']['docs-fix'])
+            self.record_attempt(track, fixed, documentation=True)
+            require(fixed.get('documentation_complete') is True, 'Documentation correction is incomplete or unverified')
+        docs_last = self.phase(track, 'docs-review-2', readonly=True)
+        self.record_findings(track, docs_last, 2, phase_name='docs-review-2', source_head=state['phase_heads']['docs-review-2'])
+        require(docs_last['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')
+        require(docs_last.get('documentation_complete') is True, 'Original PLAN documentation is incomplete or unverified')
         # Reports remain open until the later defect pass verifies their proof.
         # This avoids silently closing a bug merely because a cold review omitted it.
-        self.update(state, reviewed_sha=state['phase_heads']['review-2' if code else 'review-1'])
+        self.update(state, reviewed_sha=state['phase_heads']['docs-review-2'],
+                    documentation_reviewed_sha=state['phase_heads']['docs-review-2'],
+                    documentation_review_verdict=docs_last['verdict'], documentation_model=self.config['documentation_model'])
         self.finalize_plans(track)
         self.update(state, prepared_head=git(path, 'rev-parse', 'HEAD'))
         generated = {f['record'] for f in state['findings'].values()}
         generated.update(state.get('plan_moves', {}))
         generated.update(state.get('plan_moves', {}).values())
+        changed_after_code = set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z',
+                                                  state['code_reviewed_sha'], 'HEAD').split('\0')))
+        require(all(name in generated or (documentation_path(name) and
+                    any(covers(scope, name) for scope in track['documentation_paths'])) for name in changed_after_code),
+                'Code changed after the final code review')
         require(set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z',
                                     state['reviewed_sha'], 'HEAD').split('\0'))) <= generated,
                 'Source changed after the final review')
-        self.update(state, review_verdict=last['verdict'], residual_findings=last['findings'])
+        residual = last['findings'] + docs_last['findings']
+        verdict = 'changes_requested' if residual else 'approved'
+        self.update(state, review_verdict=verdict, residual_findings=residual)
         self.checks(path, track)
         self.audit(track, path)
         self.pull_request(track)
-        require(not last['findings'] or self.config.get('residual_findings', 'merge') == 'merge',
+        require(not residual or self.config.get('residual_findings', 'merge') == 'merge',
                 'Residual findings parked until the post-PLAN pass')
         self.update(state, status='ready_with_followups' if state['findings'] else 'ready')
 
     @state_locked
-    def record_attempt(self, track, result):
+    def record_attempt(self, track, result, *, documentation=False):
         """Store the fixer's actual proof without treating its claim as closure."""
         state = self.state['tracks'][track['id']]
-        if state.get('attempt_recorded'):
+        marker = 'documentation_attempt_recorded' if documentation else 'attempt_recorded'
+        if state.get(marker):
             return
         path, _ = self.location(track)
-        attempted = {f['key'] for f in state['completed_phases']['review-1']['findings']
-                     if f['kind'] == 'code' and any(covers(s, f['path']) for s in track['code_paths'])}
+        review = 'docs-review-1' if documentation else 'review-1'
+        kinds = ('documentation', 'contract') if documentation else ('code',)
+        scopes = track['documentation_paths'] if documentation else track['code_paths']
+        attempted = {f['key'] for f in state['completed_phases'][review]['findings']
+                     if f['kind'] in kinds and any(covers(s, f['path']) for s in scopes)}
         for key in attempted:
             state['findings'][key].setdefault('attempts', []).append(result['summary'])
         self.write_reports(track, publish=True)
-        state['attempt_recorded'] = True
+        state[marker] = True
         self.save()
 
     @state_locked
@@ -698,6 +806,10 @@ class Runner:
         """One delivery worker; CI waits never occupy the dispatch thread."""
         state = self.state['tracks'][track['id']]
         path, branch = self.location(track)
+        require(all(name in state['completed_phases'] for name in REVIEW_PHASES) and
+                state.get('documentation_reviewed_sha') == state.get('reviewed_sha') and
+                state['completed_phases']['docs-review-2'].get('documentation_complete') is True,
+                'Delivery requires two code reviews and two complete documentation reviews')
         require(state.get('review_verdict') in ('approved', 'changes_requested'), 'No conclusive review for delivery')
         require(not state.get('residual_findings') or self.config.get('residual_findings', 'merge') == 'merge',
                 'Residual findings parked until the post-PLAN pass')
@@ -724,7 +836,9 @@ class Runner:
         body = self.directory / f"{track['id']}-pr.md"
         body.write_text('Build plans:\n\n' + '\n'.join('- ' + p for p in track['plans']) +
                         f"\n\nReview: {state['review_verdict']}. Required local checks passed.\n"
-                        f"Reviewed source: {state['reviewed_sha']}\n\nIntegrated head: {head}\n\n"
+                        f"Code review: {state['code_review_verdict']}; source: {state['code_reviewed_sha']}\n\n"
+                        f"Documentation review: {state['documentation_review_verdict']}; source: {state['documentation_reviewed_sha']}\n\n"
+                        f"Documentation model: {state['documentation_model']}\n\nIntegrated head: {head}\n\n"
                         'Follow-ups (open until verified after all other PLANs):\n\n' +
                         ('\n'.join('- ' + f['record'] for f in state['findings'].values()) or 'None.') + '\n', encoding='utf-8')
         self.gh('pr', 'edit', str(state['pr']), '--repo', self.config['github_repo'], '--body-file', str(body))
@@ -791,7 +905,8 @@ class Runner:
         token = f'defect-audit-{time.time_ns()}'
         result_file = self.directory / f'{token}.json'
         mapping = {'worktree': str(self.root), 'phase': 'defect-audit', 'sandbox': 'read-only',
-                   'schema_file': str(self.schema), 'result_file': str(result_file)}
+                   'schema_file': str(self.schema), 'result_file': str(result_file),
+                   'model': self.config.get('code_model', 'worker-command-default')}
         argv = [arg.format_map(mapping) for arg in self.config['worker_command']]
         context = {'phase': 'defect-audit', 'worktree': str(self.root), 'run': self.config['run_id'],
                    'base_sha': head, 'FIX': queue['FIX'], 'INTAKE': queue['INTAKE'],
@@ -858,7 +973,7 @@ class Runner:
                 if result is not None:
                     self.validate_result(result)
                     self.record_findings(track, result, self.phase_round(phase['name']), publish=False,
-                                         source_head=phase['before'])
+                                         source_head=phase['before'], phase_name=phase['name'])
                 if result is not None and result['status'] == 'complete':
                     self.consume_result(track)
                 else:

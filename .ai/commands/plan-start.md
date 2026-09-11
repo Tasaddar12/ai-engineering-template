@@ -16,9 +16,10 @@ Start work on: **$1**
 5. Delegate to the **implementor** agent to implement it.
 6. Append a journal entry: what was started, and what the implementor reported.
 
-The implementor has authority to amend specs it finds to be wrong, and is required
-to do so rather than working around them — see `.ai/RULES.md`. If it reports an
-amendment, surface that in your summary: which spec, and why it moved.
+The PLAN may declare future changes to any contract. The implementor builds the
+code and reports contradictions; the documentor lands promised specs,
+amendments and ADR decisions in the final documentation batch after code review.
+Do not work around stale requirements or pre-land target contracts.
 
 When the implementor believes the work is complete it moves the plan to
 `.ai/plans/review/`. Then run `/plan-review $1`.

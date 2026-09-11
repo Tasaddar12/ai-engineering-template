@@ -76,8 +76,9 @@ TWO RULES, and both matter.
    ADR holds why the decision changed, and git holds every version.
 
    Behavior that is decided but not built does not go here at all. It lives in
-   the plan that will build it, under Contract changes, and the implementor lands
-   it here in the same change as the working code. A spec asserting the target
+   the plan that will build it, under Contract changes, and the documentor lands
+   it here in the final documentation batch in the same PR as the working code.
+   A spec asserting the target
    state makes every verification fail, which teaches everyone to ignore the
    verifier.
 

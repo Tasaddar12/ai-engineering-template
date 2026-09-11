@@ -48,7 +48,8 @@ what the user wanted.
 
 A plan explains the desired outcome and the exact contract wording that will
 land with it. Its route can change as evidence improves. Proposed behavior
-stays in the plan until implementation makes it true in a current SPEC.
+stays in the plan until implementation and the final documentation batch make
+it true in a current SPEC.
 
 A fix restores an existing contract. Its useful artifact is a symptom, a
 cause, a bounded change and a guard that fails before and passes after.
@@ -116,5 +117,7 @@ invariants and the plan's promised contract changes. Missing required evidence
 cannot become PASS. [Delivery](.ai/commands/onboard-pr.md) distinguishes an
 authorized draft push from acceptance, PR creation, merge and cleanup.
 
-The scaffold is documentation and configuration. It has no application,
-dependency installer, executable dispatcher, automatic hooks or CI service.
+The scaffold is documentation, configuration, and an optional executable
+orchestration runtime. It does not install application dependencies or provide
+a project-specific CI service; an adopting project supplies those commands and
+status checks in `.ai/config.yaml`.

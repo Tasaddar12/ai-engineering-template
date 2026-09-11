@@ -23,5 +23,6 @@ not a ready result: name ready, stopped or failed with evidence and a reason.
 The [runtime](../../runtime/README.md) starts worker processes and stores durable
 phase/merge receipts in the Git common directory. Runtime mode uses those
 receipts instead of track-written review logs. It audits declared paths and
-resources; host permissions still provide sandboxing. Two reviews are the
-ceiling, and residual code FIX/doc-contract INTAKE queues survive the run.
+resources; host permissions still provide sandboxing. Two code reviews and two
+documentation reviews are the separate ceilings, and residual code FIX or
+doc-contract INTAKE queues survive the run.

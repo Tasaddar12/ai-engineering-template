@@ -38,8 +38,14 @@ class FakeForge(orch.Runner):
             return json.dumps([{'number': n, 'state': p['state']} for n, p in self.prs.items() if p['branch'] == branch])
         if args[:2] == ('pr', 'create'):
             with self.guard:
+                branch = args[args.index('--head') + 1]
+                base = args[args.index('--base') + 1]
+                remote = Path(orch.git(self.forge_root, 'remote', 'get-url', 'origin'))
+                orch.require(orch.git(remote, 'rev-list', '--count', f'{base}..{branch}') != '0' and
+                             orch.git(remote, 'diff', '--name-only', f'{base}...{branch}'),
+                             'GitHub rejected PR: no commits or changes between base and head')
                 number = len(self.prs) + 1
-                self.prs[number] = {'state': 'OPEN', 'branch': args[args.index('--head') + 1]}
+                self.prs[number] = {'state': 'OPEN', 'branch': branch}
             return f'https://github.com/fixture/repo/pull/{number}'
         number = int(args[2])
         pr = self.prs[number]
@@ -97,6 +103,7 @@ class RuntimeTests(unittest.TestCase):
         self.config = dict(run_id='ORCH-001', repository=str(self.root), base_branch='main', remote='origin',
                            github_repo='fixture/repo', branch_prefix='orch', max_parallel_tracks=3,
                            worker_command=[sys.executable, str(Path(__file__).with_name('worker_fixture.py').resolve())],
+                           documentation_worker_command=[sys.executable, str(Path(__file__).with_name('worker_fixture.py').resolve()), '{model}'],
                            required_commands=[[sys.executable, '-c', 'print("checks pass")']],
                            required_status_checks=['validate'], github_timeout_seconds=0, tracks=[self.track('a', 1)])
 
@@ -105,6 +112,7 @@ class RuntimeTests(unittest.TestCase):
                     owned_paths=[f'src/{name}.txt', f'PLAN-{name}.md', 'docs.md'] if kwargs.get('docs') else
                                 [f'src/{name}.txt', f'PLAN-{name}.md'],
                     code_paths=[f'src/{name}.txt'], resources=kwargs.get('resources', []),
+                    documentation_paths=['docs.md'] if kwargs.get('docs') else [],
                     environment=kwargs.get('env', {}), ids={'FIX': [start, start + 19], 'INTAKE': [start, start + 19]})
 
     def runner(self):
@@ -128,7 +136,8 @@ class RuntimeTests(unittest.TestCase):
         runner = self.runner()
         self.assertTrue(runner.run())
         state = runner.state['tracks']['a']
-        self.assertEqual(set(state['completed_phases']), {'build', 'review-1', 'fix', 'review-2'})
+        self.assertEqual(set(state['completed_phases']), {'build', 'review-1', 'fix', 'review-2',
+                                                       'document', 'docs-review-1', 'docs-review-2'})
         self.assertEqual(state['review_verdict'], 'changes_requested')
         self.assertEqual(len(list((self.root / '.ai/fixes/open').glob('FIX-*.md'))), 1)
         self.assertEqual(len(list((self.root / '.ai/plans/intake').glob('INTAKE-*.md'))), 2)
@@ -142,7 +151,8 @@ class RuntimeTests(unittest.TestCase):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'docs-only'
         runner = self.runner()
         self.assertTrue(runner.run())
-        self.assertEqual(set(runner.state['tracks']['a']['completed_phases']), {'build', 'review-1'})
+        self.assertEqual(set(runner.state['tracks']['a']['completed_phases']),
+                         {'build', 'review-1', 'review-2', 'document', 'docs-review-1', 'docs-review-2'})
         self.assertFalse((self.root / '.ai/fixes/open').exists())
 
     def test_final_plan_run_audits_open_fixes_from_earlier_runs(self):
