@@ -8,7 +8,7 @@ found_by: <agent or person>
 found_while: PLAN-{nnn}
 kind: documentation  # documentation | contract | debt | idea | question
 links: []
-deferred_until: none # all-other-plans-complete for deferred review corrections
+deferred_until: none # use affected-tree-available only for an affected-tree dependency
 ---
 
 # INTAKE-{nnn}: <the problem, in a few words>

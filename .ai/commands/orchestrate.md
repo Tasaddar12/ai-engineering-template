@@ -324,7 +324,8 @@ left is blocked on a human — and say which.
 
 ### Post-PLAN defect pass
 
-After all other PLANs are complete, look through the deferred code FIX queue:
+When an affected integrated or preserved tree is available, look through the
+deferred code FIX queue:
 deduplicate root causes, reproduce against the now-integrated target, inspect
 any earlier fix proof and identify which reports remain actionable. Do not
 close a FIX just because a later review omitted it. Documentation and contract
@@ -332,7 +333,7 @@ corrections stay as their own INTAKE items for later planning. The runtime
 produces `followups.json` and an automatic read-only defect audit when eligible;
 it never starts a third review of the original track. A parked defect and the
 PLANs waiting on it are listed for the audit, not prerequisites for examining
-that defect. Other unfinished PLANs still delay eligibility; report them.
+that defect. Unrelated unfinished PLANs do not delay eligibility; report them.
 
 ## Close out
 

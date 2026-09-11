@@ -27,10 +27,9 @@ git log -1 --format='%cr' <branch>            # how long since it moved
 git show <branch>:.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md
 ```
 
-The review log is the durable round count — it lives on the track branch, so it
-survives a lost session and cannot conflict with another track. Read it from
-the branch rather than the worktree, so the answer is the same whether or not
-the worktree still exists.
+The review log is manual-mode evidence. Runtime mode uses phase and merge
+receipts under the Git common directory; inspect those receipts and the original
+execution snapshot instead of assuming a review log exists.
 
 Check nothing escaped its worktree, too:
 

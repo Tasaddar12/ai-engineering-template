@@ -36,7 +36,8 @@ the next agent rediscovers it and improvises around it.
    handling it, and it is your job to say which one this is.
 6. Append a one-line journal entry, or return the event to the coordinator in
    a track. Use reserved IDs. In autonomous review set
-   `deferred_until: all-other-plans-complete` on deferred FIX/INTAKE records.
+    `deferred_until: affected-tree-available` on deferred FIX records when the
+    affected tree is not yet available.
 
 Report the FIX or INTAKE id, the one-line problem, and your read on urgency. Then
 carry on with what you were doing.

@@ -8,7 +8,7 @@ found_by: <agent or person>
 severity: minor      # critical | major | minor | cosmetic
 violates: SPEC-{nnn} # the spec the code contradicts, or `none` — see below
 links: []
-deferred_until: none # all-other-plans-complete for deferred orchestration defects
+deferred_until: none # affected-tree-available when the inspected tree is unavailable
 ---
 
 # FIX-{nnn}: <the defect, in a few words>

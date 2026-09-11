@@ -68,8 +68,8 @@ Split into two lists and be explicit about the difference:
 disappears: *"`orch/ORCH-001/w2t1` has 7 commits not in `main`, and 3 modified
 files not committed at all."*
 
-**Never delete anything from the second list without an explicit yes**, even
-under `--all`. `--all` means every run, not every safety check waived.
+Never delete anything from the second list. `--all` means every run, not a
+safety check waiver; preserve unmerged work for recovery.
 
 For a track that stopped for a human, recommend keeping the worktree. That is
 where the work resumes, and the manifest points at it.
@@ -83,13 +83,13 @@ contents. A remote PR marked merged alone is insufficient. Preserve unrelated,
 dirty, ignored or advanced work and report why it cannot be removed safely.
 
 ```bash
-git worktree remove .worktrees/<name>        # add --force only if the user said so
+git worktree remove .worktrees/<name>
 git branch -d orch/<run>/<track>             # -d refuses unmerged; that is the point
 git worktree prune                           # clears stale administrative files
 ```
 
-Use `git branch -d`, never `-D`, unless the user explicitly confirmed losing
-that branch. The refusal is a safety check, not an obstacle to route around.
+Use `git branch -d`, never `-D`. The refusal is a safety check, not an obstacle
+to route around.
 
 If `git worktree remove` reports the worktree is dirty, **do not reach for
 `--force`.** Go back to step 3 and show the user what is in it.

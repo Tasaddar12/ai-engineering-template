@@ -28,7 +28,7 @@ This index locates project facts and instruction owners.
 | What stage a plan or fix is at | **its directory** | Never restate |
 | Why a multi-plan run was sequenced that way | `state/orchestration/ORCH-*.md` | Link by run id |
 | What one agent found out about the code before building | `research/*.md` | Link — never a requirement |
-| What each review round of a track found | `state/orchestration/<run>/<track>/REVIEW-LOG.md` | Link by round — the reviewer never reads it |
+| What each review round of a track found | Runtime phase receipts under the Git common directory; manual `state/orchestration/<run>/<track>/REVIEW-LOG.md` | Runtime receipts are authoritative in runtime mode; the manual log is authoritative only for manual runs |
 | What is happening right now | `state/STATE.md` | Link to it |
 | What happened on a given day | `state/journal/YYYY-MM-DD.md` | Link to it |
 | How the code actually works | **the code** | Describe, never duplicate |

@@ -48,12 +48,12 @@ in the assigned checkout, including its required Git metadata.
 A permission failure parks the track;
 the runner never switches to unrestricted permissions to get past it.
 
-One build process researches and implements the track's plans in order. Both
-cold code reviews run before a lightweight documentation process lands the
-original PLAN's promised documentation/contracts. Two fresh documentation-only
-reviews then run, with at most one documentation correction between them. There
-is no third review or second immediate fix pass of either kind. All review
-severities are recorded. A reviewer must supply
+Full tracks use one build process, two cold code reviews, then a lightweight
+documentation process and two fresh documentation reviews, with at most one
+correction between each pair. Pure documentation tracks (empty code and source
+documentation paths) use readiness, the documentation author and two
+documentation reviews, with one optional correction. There is no third review
+or second immediate fix pass. All review severities are recorded. A reviewer must supply
 evidence and a stable root-cause key, not just a severity or opinion.
 
 Code reviewers receive the original PLANs, unchanged contracts, Research notes,
@@ -78,9 +78,9 @@ Old unfinished runs reconcile with their original compatible schedule and
 receipts; deleting receipts or changing the schedule fingerprint does not
 evade the review count.
 
-## Protocol version 2
+## Protocol version 3
 
-Set `protocol_version: 2` in the JSON snapshot. The assigned PLAN uses the
+Set `protocol_version: 3` in the JSON snapshot. The assigned PLAN uses the
 [PLAN template's Execution contract](../templates/PLAN.md#execution-contract):
 `intent_changes`, ordered `steps` with stable IDs and build/document phases,
 and `completed_intake` paths. Runtime reads this contract at the original
@@ -146,9 +146,10 @@ alongside coordinator-generated findings.
 - Records remain open until a later defect pass verifies before/after proof.
   A cold review omitting an earlier finding does not silently close its FIX.
   After other PLAN work finishes, `followups.json` marks the queue eligible.
-  A parked track with findings and its waiting dependents are listed explicitly
-  and do not prevent examination of those findings. Other unfinished scheduled
-  or project PLANs in backlog/active/review/blocked still delay eligibility.
+   A parked track with findings and its waiting dependents are listed explicitly
+   and do not prevent examination of those findings. A finding is eligible when
+   its affected integrated or preserved tree is available; unrelated unfinished
+   PLANs do not delay eligibility.
   A fresh read-only worker looks through the code FIX reports, attempted proof
   and current code, including preserved unmerged worktrees, recording which
   tree was examined and the per-FIX assessment in the receipt. This audit

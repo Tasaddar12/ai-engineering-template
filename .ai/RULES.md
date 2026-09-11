@@ -399,18 +399,19 @@ Two tests, and a spec has to pass both:
 
 ## Review and documentation
 
-All product documentation work happens after both code reviews. This includes
+All product documentation work happens after the implementation handoff. This includes
 SPECs, ADRs, AMDs, PLAN delivery notes, guides, comments and docstrings.
 Only documentation agents modify SPECs, ADRs, AMDs and other product
 documentation. Code agents do not mix documentation
 cleanup into implementation. Functional directives embedded in comments
 (e.g. compiler pragmas) remain executable configuration, not editorial prose.
 
-A completed track runs two fresh code reviews, with at most one immediate code
-correction between them. The second runs even if the first approves. After the
-code handoff, the documentation agent completes the documentation steps. Two
-documentation reviews follow, with at most one documentation correction between
-them. No third review, repeated immediate fix pass or late scribe refresh.
+A code track runs two fresh code reviews, with at most one immediate code
+correction between them. A pure documentation track (empty `code_paths` and
+`source_documentation_paths`) runs readiness, the documentation author and two
+fresh documentation reviews, with at most one documentation correction. A full
+track runs two code reviews before its documentation phase. No third review,
+repeated immediate fix pass or late scribe refresh.
 Interrupted sessions do not reset attempt counts.
 
 Research notes may be written before implementation and may be read by
@@ -566,18 +567,21 @@ IDs. Previously issued blocks are never reused. Workers create records only
 within their reserved ranges; the coordinator allocates structured findings
 without colliding with worker-created records.
 
-The normal process estimate is tracks x 6 through tracks x 8: one build,
-two code reviewers, one documentation worker, two documentation reviewers,
-and up to one correction of each kind. Three tracks therefore use 18–24
-workers, plus scheduling and any later defect audit. Separate manual research
-sessions or exceptional recovery change the estimate and must be disclosed.
+The normal full-track estimate is tracks x 7 through tracks x 9: readiness,
+build, two code reviewers, one documentation worker, two documentation
+reviewers, and up to one correction of each kind. Pure documentation tracks
+use 4–5 workers: readiness, author, two documentation reviewers and one optional
+correction. Separate recovery or defect-audit workers must be disclosed.
 
 ## Runtime worker protocol
 
-The explicit JSON execution snapshot uses protocol_version 2. PLANs contain
+The explicit JSON execution snapshot uses protocol_version 3. PLANs contain
 their own Execution contract; runtime reads it at plan_source_sha. Old schedules
 must be reconciled with their compatible runtime/receipts, not silently upgraded
 or restarted with cleared review counts. Configuration is not parsed from YAML.
+Readiness is a read-only check against immutable synchronized base and PLAN
+source SHAs using `git show`; it reruns on target advance and preserves valid
+blocked or rejected lifecycle decisions.
 
 The worker follows this file and its assigned role. Assignment supplies phase,
 worktree/branch, original PLANs, steps, scopes, research paths, reserved IDs,

@@ -151,5 +151,5 @@ say so plainly. Filing it is not handling it.
 
 In manual mode move only proven, closed records to `.ai/fixes/done/<period>/`
 and commit. In runtime mode leave records to the coordinator and return proof;
-open reports are re-examined after all other PLANs complete. There is one
+open reports are re-examined when their affected tree is available. There is one
 immediate fixer pass, then review 2; no third review and no merge by the fixer.
