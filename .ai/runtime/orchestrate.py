@@ -17,6 +17,7 @@ from functools import wraps
 import json
 import os
 from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import shutil
 import signal
@@ -24,7 +25,7 @@ import subprocess
 import sys
 import threading
 import time
-from urllib.parse import quote
+from urllib.parse import quote, unquote, urlsplit
 
 
 class Blocked(RuntimeError):
@@ -121,10 +122,62 @@ def documentation_path(path):
     return path.casefold().endswith(DOCUMENT_SUFFIXES)
 
 
+def rebase_record_links(text, source, target, moves=None):
+    moves = moves or {}
+    source_dir, target_dir = posixpath.dirname(source), posixpath.dirname(target)
+    destination = re.compile(r'(\]\([ \t]*|^[ \t]{0,3}\[[^\]\n]+\]:[ \t]*)(<[^>\n]+>|(?:\\.|[^\s()\\]|\([^()\n]*\))+)', re.M)
+
+    def replace(match):
+        token = match[2]
+        angled = token.startswith('<') and token.endswith('>')
+        link = token[1:-1] if angled else token
+        parts = urlsplit(link)
+        if not parts.path or parts.scheme or parts.netloc or parts.path.startswith('/'):
+            return match[0]
+        resolved = posixpath.normpath(posixpath.join(source_dir, unquote(parts.path)))
+        if resolved == '..' or resolved.startswith('../'):
+            return match[0]
+        rebased = posixpath.relpath(moves.get(resolved, resolved), target_dir)
+        if parts.path.endswith('/'):
+            rebased += '/'
+        rebased = quote(rebased, safe="/@!$&'()*+,;=-._~")
+        if parts.query:
+            rebased += '?' + parts.query
+        if parts.fragment:
+            rebased += '#' + parts.fragment
+        return match[1] + ('<' + rebased + '>' if angled else rebased)
+
+    lines, pending, fence = [], [], None
+    def prose(chunk):
+        return ''.join(part if index % 2 else destination.sub(replace, part)
+                       for index, part in enumerate(re.split(r'(`+[^`]*`+)', chunk)))
+
+    for line in text.splitlines(keepends=True):
+        marker = re.match(r'^[ \t]{0,3}(`{3,}|~{3,})(.*)', line)
+        if fence:
+            lines.append(line)
+            if marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
+                fence = None
+        elif marker:
+            lines.append(prose(''.join(pending)))
+            pending = []
+            lines.append(line)
+            fence = marker[1]
+        else:
+            pending.append(line)
+    lines.append(prose(''.join(pending)))
+    return ''.join(lines)
+
+
+def json_section(text, heading):
+    section = re.search(r'^## ' + re.escape(heading) + r'[ \t]*\r?\n(.*?)(?=^#{1,2}[ \t]|\Z)', text, re.M | re.S)
+    match = re.search(r'^```json[ \t]*\r?\n(.*?)\r?\n```[ \t]*$', section[1], re.M | re.S) if section else None
+    require(match is not None, f'Record is missing its explicit {heading}')
+    return json.loads(match[1])
+
+
 def execution_contract(text):
-    match = re.search(r'^## Execution contract\s*\n```json\s*\n(.*?)\n```', text, re.M | re.S)
-    require(match is not None, 'PLAN is missing its explicit Execution contract')
-    contract = json.loads(match[1])
+    contract = json_section(text, 'Execution contract')
     require(isinstance(contract, dict) and isinstance(contract.get('intent_changes'), list) and
             isinstance(contract.get('steps'), list) and isinstance(contract.get('completed_intake'), list),
             'Execution contract needs intent_changes, steps and completed_intake lists')
@@ -926,9 +979,9 @@ class Runner:
         require(docs_first['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')
         docs_findings = [f for f in docs_first['findings'] if f['kind'] in ('documentation', 'contract') and
                         f['impact'] != 'unrelated' and
-                        any(covers(s, f['path']) for s in track['documentation_paths'])]
+                        any(covers(s, f['path']) for s in track['documentation_paths'] + track.get('source_documentation_paths', []))]
         require(docs_first.get('documentation_complete') is True or docs_findings,
-                'Missing documentation promises require actionable findings within documentation_paths')
+                'Missing documentation promises require actionable findings within assigned documentation scopes')
         if docs_findings:
             fixed = self.phase(track, 'docs-fix', extra='Documentation findings to attempt once:\n' + json.dumps(docs_findings))
             self.record_findings(track, fixed, 1, phase_name='docs-fix', source_head=state['phase_heads']['docs-fix'])
@@ -999,7 +1052,7 @@ class Runner:
         path, _ = self.location(track)
         review = 'docs-review-1' if documentation else 'review-1'
         kinds = ('documentation', 'contract') if documentation else ('code',)
-        scopes = track['documentation_paths'] if documentation else track['code_paths']
+        scopes = track['documentation_paths'] + track.get('source_documentation_paths', []) if documentation else track['code_paths']
         attempted = {f['key'] for f in state['completed_phases'][review]['findings']
                       if f['kind'] in kinds and f['impact'] != 'unrelated' and any(covers(s, f['path']) for s in scopes)}
         for key in attempted:
@@ -1040,6 +1093,12 @@ class Runner:
         for source, target in moves.items():
             (path / target).parent.mkdir(parents=True, exist_ok=True)
             git(path, 'mv', '--', source, target)
+            record = path / target
+            original = record.read_text(encoding='utf-8')
+            rebased = rebase_record_links(original, source, target, moves)
+            if rebased != original:
+                record.write_text(rebased, encoding='utf-8')
+                git(path, 'add', '--', target)
         if moves:
             git(path, 'commit', '-m', f"Archive completed plans for {track['id']}")
         state['plan_moves'] = moves
