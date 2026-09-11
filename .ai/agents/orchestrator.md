@@ -140,8 +140,9 @@ new approval gate.
    manifest's **Contention** table.
 6. Write the manifest from `.ai/templates/ORCH-RUN.md`. Fill in **Plans in this
    run**, **Dependency findings**, **Contention** and **Waves**. Leave the
-   stage columns at their starting values — the main session maintains them as
-   the run proceeds.
+   stage columns at their starting values — they remain static last-known
+   summaries while runtime receipts own progress; consolidated finalization
+   updates the manifest in a sibling reviewed PR.
    Record each track's exact owned paths, code-only fixer paths, resources and
    environment assignments. Include PLAN/spec/ADR/doc ownership, not just source.
    Group overlapping owners or serialize them; reserve shared ports/databases

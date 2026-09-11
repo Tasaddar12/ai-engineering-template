@@ -56,9 +56,10 @@ project whose specs are being ignored.
    depended on the old wording. Check `.ai/truth-map.md` — if the same fact was
    restated elsewhere, collapse the copies into links now.
 6. Land the spec, amendment and any related ADR in the final documentation
-   batch after code review two. Commit each assigned PLAN documentation step
-   under [PLAN records and commits](../RULES.md#plan-records-and-commits),
-   in the same PR as the implementation.
+   batch after the applicable readiness or implementation handoff. Full tracks
+   use the same code PR; standalone documentation tracks use their own reviewed
+   documentation PR with merge, synchronization and cleanup. Commit each
+   assigned PLAN documentation step under [PLAN records and commits](../RULES.md#plan-records-and-commits).
 7. Append a journal entry, and clear the matching line from **Known drift** in
    `.ai/state/STATE.md` if there is one.
 

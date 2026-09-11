@@ -1,6 +1,6 @@
 ---
 name: track-documentor
-description: Lands the original PLAN documentation batch after code review two and validates it against the delivered code.
+description: Lands the original PLAN documentation batch after readiness for pure documentation tracks or code review two for full tracks, and validates it against delivered code.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

@@ -417,7 +417,8 @@ Interrupted sessions do not reset attempt counts.
 
 Research notes may be written before implementation and may be read by
 implementors and reviewers. Planning documents are preparation; PLAN delivery
-notes and product documentation use the post-code-review handoff.
+notes and product documentation use the applicable readiness handoff for pure
+documentation tracks or code-review-two handoff for full tracks.
 
 Documentation agents receive Research notes, implementation reports, code-review
 findings and proof. They verify actual behavior, then update SPECs, ADRs, AMDs,

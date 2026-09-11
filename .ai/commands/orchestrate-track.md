@@ -1,5 +1,5 @@
 ---
-description: Run one orchestration track through build, two code reviews, documentation, two documentation reviews and delivery.
+description: Run a full track through build and two code reviews, or a pure documentation track through readiness and two documentation reviews, then delivery.
 argument-hint: <run-id> <track-id>
 ---
 
