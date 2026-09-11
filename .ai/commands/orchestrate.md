@@ -49,9 +49,11 @@ git remote -v
 
 - **Uncommitted changes** — stop. Worktrees branch from a commit; anything
   uncommitted is silently excluded from every track.
-- **`.worktrees/` not in `.gitignore`** — bootstrap with a temporary local
-  exclude if needed, then prepare and merge the tracked ignore change through
-  a reviewed preparation worktree PR. Never edit tracked ignore files on primary.
+- **`.worktrees/` not in `.gitignore`** — bootstrap only with Git-local
+  administrative metadata such as `.git/info/exclude` if needed, then prepare
+  and merge the tracked ignore change through a reviewed preparation worktree
+  PR. This narrow bootstrap exception never permits editing tracked primary
+  project files.
 - **Existing worktrees** — `git worktree list`. If a previous run left some,
   say so and point at `/orchestrate-clean`. Never reuse one.
 - **Base branch behind its remote** — `git fetch && git status -sb`. Pull
