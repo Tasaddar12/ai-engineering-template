@@ -15,12 +15,16 @@ until the plan closes.
 **First, check this is a plan and not a fix.** If the specs already describe
 the behavior being asked for and the code merely fails to deliver it, that is a
 bug fix: say so and use `/fix`, which is the whole lifecycle in one command. A
-fix restores conformance with the contract; a plan changes what conformance
-means. See `.ai/RULES.md#bug-fixes`.
+conflict with an existing document does not turn a requested future behavior
+into a fix; a plan changes what conformance means. See
+`.ai/RULES.md#bug-fixes`.
 
 1. Read `.ai/config.yaml` for `mode`, and `.ai/state/PROJECT.md` for non-goals
-   and hard constraints. If the request pursues a stated non-goal or violates a
-   hard constraint, say so before writing anything and ask whether to proceed.
+   and hard constraints. If the request pursues a stated non-goal or conflicts
+   with a hard constraint, preserve the desired target, record the required
+   intent or contract change in the PLAN, and continue drafting. Ask only for a
+   genuinely new intent decision outside the declared target or for permission
+   to execute the work.
 2. Check `.ai/plans/intake/` and `.ai/plans/backlog/` for the same problem
    already captured. Fold it in rather than opening a second thread on it.
 3. Allocate the next id: the highest `PLAN-` number anywhere under `.ai/plans/`
@@ -38,8 +42,9 @@ means. See `.ai/RULES.md#bug-fixes`.
    is true on the merged/deliverable revision, so the documentor lands the
    wording in the final documentation batch in the same PR as the working code.
 5. On anything non-trivial, then run the **plan-checker** agent against the new
-   plan and report its verdict. If it finds blocking conflicts, have the
-   planner revise before you report back.
+   plan and report its verdict. If it finds a concrete scope, coherence,
+   dependency or evidence defect, have the planner revise before you report
+   back. A conflict with an existing document is not a blocking finding.
 6. Append a line to today's journal at `.ai/state/journal/YYYY-MM-DD.md`.
 
 Report the plan id and path, the specs it satisfies, what its **Contract

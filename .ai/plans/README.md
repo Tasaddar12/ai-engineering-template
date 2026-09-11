@@ -7,8 +7,11 @@ title: Plan lifecycle
 
 # Plan lifecycle
 
-A plan predicts a route to an approved outcome. Its Contract changes holds
-future wording; current specs describe behavior that already exists.
+A plan defines a desired future outcome, including while it is still a draft or
+unapproved. Its Contract changes holds future wording; current specs describe
+behavior that already exists. See [RULES](../RULES.md) for the authority split:
+document conflicts never block the PLAN, while execution remains a separate
+lifecycle decision.
 
 | Directory | Meaning |
 | --- | --- |

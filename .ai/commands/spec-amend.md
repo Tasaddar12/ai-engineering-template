@@ -17,8 +17,12 @@ project whose specs are being ignored.
      here and run `/fix` instead — that is the route for code that fails to do
      what the record already says it should.
    - Does the correction violate anything in `.ai/state/PROJECT.md`? Hard
-     constraints and non-goals outrank any spec. If it does, this is a blocker
-     for a human, not an amendment.
+     constraints and non-goals still govern behavior outside a PLAN's declared
+     target. When a PLAN declares the contract transition, its authority to
+     change the affected SPEC, ADR or amendment is unconditional; a conflict
+     with the current PROJECT wording does not veto that document transition.
+     A genuinely new intent or behavior outside the PLAN remains a human
+     decision.
 2. **Write the record first.** Copy `.ai/templates/AMENDMENT.md` to
    `.ai/decisions/amendments/AMD-{nnn}-{slug}.md`, numbering after the highest
    existing. Fill in all four sections: what the document said, what is

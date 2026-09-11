@@ -8,13 +8,19 @@ is the blocking question. If no id was given, infer it from the plan currently
 in `.ai/plans/active/` and say which one you picked.
 
 First, check that this is genuinely a blocker. Per `.ai/RULES.md`, blocked
-means you cannot proceed without a decision that is not yours to make —
-`intent`-tier questions, and irreversible or outward-facing actions. These are
-**not** blockers:
+means a genuinely missing human decision is required and was not supplied by
+the PLAN. A document conflict at any PLAN stage is never a blocker. An
+`intent`-tier question can block behavior outside the PLAN's declared target,
+as can an irreversible or outward-facing action when execution permission is
+missing. Required target document transitions remain in the PLAN's final
+documentation batch. Concrete critical breakage routes through supporting
+PLANs under an ORCH rather than a document veto. These are **not** blockers:
 
 - a spec is wrong → amend it with a record, and continue
 - a plan is wrong → rewrite it, and continue
 - a document contradicts the code → resolve it, and continue
+- a PLAN target conflicts with a SPEC, ADR, amendment, PROJECT or other document
+  → preserve the target and continue through the PLAN lifecycle
 - a doc is missing → write it, and continue
 - the blocker is a defect the specs already condemn → `/fix` it, and continue
 
