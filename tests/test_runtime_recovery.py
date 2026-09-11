@@ -40,7 +40,8 @@ class RecoveryTests(unittest.TestCase):
         self.assertTrue(runner.run())
         state = runner.state['tracks']['a']
         self.assertEqual(before, state['completed_phases']['build'])
-        self.assertEqual(state['phase_attempts'], {'build': 1, 'review-1': 1})
+        self.assertEqual(state['phase_attempts'], {name: 1 for name in
+            ('build', 'review-1', 'review-2', 'document', 'docs-review-1', 'docs-review-2')})
         self.assertEqual(len(runner.prs), 1)
 
     def test_retry_failed_integration_checks_reuses_review(self):
@@ -341,6 +342,174 @@ class RecoveryTests(unittest.TestCase):
         expected = orch.git(self.forge, 'rev-parse', 'HEAD')
         orch.git(self.root, 'config', 'remote.origin.fetch', '+refs/heads/unrelated:refs/remotes/origin/unrelated')
         self.assertEqual(self.runner().sync(), expected)
+
+
+class DocumentationTests(unittest.TestCase):
+    setUp = fixture.RuntimeTests.setUp
+    track = fixture.RuntimeTests.track
+    runner = fixture.RuntimeTests.runner
+
+    def test_documentation_only_track_still_runs_both_review_pairs(self):
+        self.config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': 'no-code'})]
+        self.config['tracks'][0]['code_paths'] = []
+        runner = self.runner()
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(state['code_reviewed_sha'], state['base'])
+        self.assertTrue(all(name in state['completed_phases'] for name in orch.REVIEW_PHASES))
+        self.assertFalse((self.root / 'src/a.txt').exists())
+        self.assertEqual((self.root / 'docs.md').read_text(), 'documented\n')
+
+    def test_two_code_and_two_documentation_reviews_use_separate_models(self):
+        self.config['tracks'] = [self.track('a', 1, docs=True)]
+        self.config['documentation_model'] = 'fixture-lightweight'
+        runner = self.runner()
+        phase, pull_request = runner.phase, runner.pull_request
+        order = []
+
+        def observe(track, name, **kwargs):
+            order.append(name)
+            return phase(track, name, **kwargs)
+
+        def opened(track):
+            order.append('PR')
+            return pull_request(track)
+
+        runner.phase, runner.pull_request = observe, opened
+        self.assertTrue(runner.run())
+        self.assertEqual(order, ['build', 'PR', 'review-1', 'review-2', 'document',
+                                 'docs-review-1', 'docs-review-2', 'PR'])
+        state = runner.state['tracks']['a']
+        self.assertEqual(state['phase_attempts'], {name: 1 for name in order if name != 'PR'})
+        self.assertNotEqual(state['code_reviewed_sha'], state['documentation_reviewed_sha'])
+        self.assertEqual((self.root / 'src/a.txt').read_text(), 'built\n')
+        self.assertEqual((self.root / 'docs.md').read_text(), 'documented\n')
+        for name, receipt in state['phase_receipts'].items():
+            if name in orch.DOCUMENT_PHASES:
+                self.assertEqual(receipt['model'], 'fixture-lightweight')
+                self.assertEqual(receipt['argv'][-1], 'fixture-lightweight')
+                self.assertEqual(receipt['paths'], ['docs.md'])
+            else:
+                self.assertEqual(receipt['paths'], ['src/a.txt'])
+        self.assertEqual(state['review_verdict'], 'approved')
+
+    def test_documentation_correction_has_one_attempt_and_two_cold_reviews(self):
+        self.config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': 'docs-corrected'})]
+        runner = self.runner()
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertEqual(list(state['completed_phases']), ['build', 'review-1', 'review-2', 'document',
+                                                         'docs-review-1', 'docs-fix', 'docs-review-2'])
+        self.assertEqual(state['phase_attempts']['docs-fix'], 1)
+        self.assertEqual(state['documentation_review_verdict'], 'approved')
+        self.assertEqual((self.root / 'docs.md').read_text(), 'documentation corrected\n')
+        self.assertFalse((self.root / '.ai/fixes').exists())
+        self.assertIn('Completed docs-fix', (self.root / state['findings']['documentation']['record']).read_text())
+
+    def test_explicit_documentation_scopes_and_lightweight_command_are_required(self):
+        for field, value, error in [
+            ('documentation_worker_command', None, 'Commands'),
+            ('documentation_worker_command', self.config['worker_command'], 'model'),
+            ('documentation_model', '', 'documentation_model'),
+        ]:
+            config = copy.deepcopy(self.config)
+            config[field] = value
+            with self.subTest(field=field, value=value), self.assertRaisesRegex(orch.Blocked, error):
+                orch.validate(config)
+        for docs, owned, code, error in [
+            (None, ['src/'], ['src/'], 'explicitly'),
+            (['docs.md'], ['src/'], ['src/'], 'owned'),
+            (['src/'], ['src/'], ['src/'], 'disjoint'),
+            (['docs/code.py'], ['docs/'], [], 'source'),
+        ]:
+            config = copy.deepcopy(self.config)
+            config['tracks'][0].update(documentation_paths=docs, owned_paths=owned + ['PLAN-a.md'], code_paths=code)
+            with self.subTest(docs=docs), self.assertRaisesRegex(orch.Blocked, error):
+                orch.validate(config)
+
+    def test_writers_and_reviewers_cannot_cross_documentation_boundary(self):
+        for mode in ('build-doc', 'document-code', 'document-outside', 'document-source',
+                     'docs-fix-code', 'docs-mutating-review'):
+            config = copy.deepcopy(self.config)
+            config['run_id'] = mode
+            config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': mode})]
+            config['tracks'][0]['documentation_paths'].append('docs/')
+            config['tracks'][0]['owned_paths'].append('docs/')
+            runner = fixture.FakeForge(config, self.forge)
+            runner.preflight = runner.sync
+            with self.subTest(mode=mode):
+                self.assertFalse(runner.run())
+                self.assertEqual(runner.state['tracks']['a']['status'], 'blocked')
+                self.assertFalse(runner.events)
+
+    def test_incomplete_promises_or_inconclusive_documentation_block_merge(self):
+        for mode in ('incomplete-docs', 'missing-docs-review', 'docs-cannot-review'):
+            config = copy.deepcopy(self.config)
+            config['run_id'] = mode
+            config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': mode})]
+            runner = fixture.FakeForge(config, self.forge)
+            runner.preflight = runner.sync
+            with self.subTest(mode=mode):
+                self.assertFalse(runner.run())
+                self.assertEqual(runner.state['tracks']['a']['status'], 'blocked')
+                self.assertFalse(runner.events)
+
+    def test_changes_after_final_documentation_review_block_delivery(self):
+        self.config['tracks'] = [self.track('a', 1, docs=True)]
+        runner = self.runner()
+        finalize = runner.finalize_plans
+
+        def mutate(track):
+            finalize(track)
+            path, _ = runner.location(track)
+            (path / 'docs.md').write_text('unreviewed documentation\n')
+            orch.git(path, 'add', 'docs.md')
+            orch.git(path, 'commit', '-m', 'Unexpected late documentation edit')
+
+        runner.finalize_plans = mutate
+        self.assertFalse(runner.run())
+        self.assertIn('Source changed after the final review', runner.state['tracks']['a']['reason'])
+        self.assertFalse(runner.events)
+
+    def test_recovery_consumes_completed_documentation_without_repeating_reviews(self):
+        self.config['tracks'] = [self.track('a', 1, docs=True)]
+        runner = self.runner()
+        consume = runner.consume_result
+
+        def interrupted(track):
+            if runner.state['tracks']['a']['inflight']['name'] == 'document':
+                raise orch.Blocked('Lost documentation ingestion')
+            return consume(track)
+
+        runner.consume_result = interrupted
+        self.assertFalse(runner.run())
+        path, _ = runner.location(self.config['tracks'][0])
+        runner.consume_result = consume
+        runner.recover('reconcile', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        self.assertTrue(runner.run())
+        state = runner.state['tracks']['a']
+        self.assertTrue(all(count == 1 for count in state['phase_attempts'].values()))
+        self.assertEqual(state['phase_receipts']['document']['model'], 'gpt-5.6-luna')
+
+    def test_lost_documentation_review_result_cannot_reset_review_budget(self):
+        runner = self.runner()
+        consume = runner.consume_result
+
+        def interrupted(track):
+            inflight = runner.state['tracks']['a']['inflight']
+            if inflight['name'] == 'docs-review-2':
+                Path(inflight['result_file']).unlink()
+                raise orch.Blocked('Lost documentation review result')
+            return consume(track)
+
+        runner.consume_result = interrupted
+        self.assertFalse(runner.run())
+        path, _ = runner.location(self.config['tracks'][0])
+        with self.assertRaisesRegex(orch.Blocked, 'Failed fix/review'):
+            runner.recover('reconcile', 'a', expected_head=orch.git(path, 'rev-parse', 'HEAD'), workers_stopped=True)
+        self.assertEqual(runner.state['tracks']['a']['phase_attempts']['docs-review-2'], 1)
+        with self.assertRaisesRegex(orch.Blocked, 'Unknown phase'):
+            runner.phase(self.config['tracks'][0], 'docs-review-3', readonly=True)
 
 
 if __name__ == '__main__':

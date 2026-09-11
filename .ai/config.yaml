@@ -135,12 +135,37 @@ orchestration:
 
   # review — the fix/re-review loop after a PR opens.
   review:
-    # One review, one code-fix attempt, one final review. Never reset on resume.
+    # Both cold code reviews always run, with at most one correction between.
     max_rounds: 2
     # All code defects are FIX; docs/contracts are separate INTAKE items.
     # Residual findings wait until all other PLANs complete. Required checks
     # must pass even when the authorized policy permits merging with follow-ups.
     residual_findings: merge   # merge | park
+
+  # Consolidate documentation only after both code reviews. Both documentation
+  # reviews always run, with at most one documentation-only correction between.
+  documentation:
+    model: gpt-5.6-luna
+    max_review_rounds: 2
+    # Snapshot this as documentation_worker_command and documentation_model.
+    # A missing/unavailable lightweight route blocks; never use the code default.
+    worker_command:
+      - codex
+      - -a
+      - never
+      - exec
+      - --ephemeral
+      - --model
+      - "{model}"
+      - --sandbox
+      - "{sandbox}"
+      - -C
+      - "{worktree}"
+      - --output-schema
+      - "{schema_file}"
+      - --output-last-message
+      - "{result_file}"
+      - "-"
 
   # forge — where the pull request or merge request is opened.
   #   auto    Detect from `git remote get-url origin`: github.com or a

@@ -12,6 +12,12 @@
     "-C", "{worktree}", "--output-schema", "{schema_file}",
     "--output-last-message", "{result_file}", "-"
   ],
+  "documentation_model": "gpt-5.6-luna",
+  "documentation_worker_command": [
+    "codex", "-a", "never", "exec", "--ephemeral", "--model", "{model}",
+    "--sandbox", "{sandbox}", "-C", "{worktree}", "--output-schema", "{schema_file}",
+    "--output-last-message", "{result_file}", "-"
+  ],
   "required_commands": [["python", "-m", "unittest", "discover", "-s", "tests", "-v"]],
   "required_status_checks": ["validate"],
   "worker_timeout_seconds": 3600,
@@ -23,8 +29,9 @@
       "title": "Build the planned API changes",
       "plans": [".ai/plans/backlog/PLAN-001-api.md"],
       "depends_on": [],
-      "owned_paths": ["src/api/", "tests/api/", ".ai/plans/backlog/PLAN-001-api.md"],
+      "owned_paths": ["src/api/", "tests/api/", "docs/api/", ".ai/specs/SPEC-001-api.md", ".ai/plans/backlog/PLAN-001-api.md"],
       "code_paths": ["src/api/", "tests/api/"],
+      "documentation_paths": ["docs/api/", ".ai/specs/SPEC-001-api.md", ".ai/plans/backlog/PLAN-001-api.md"],
       "resources": ["database:api-test", "port:8101"],
       "environment": {"TEST_DATABASE": "api_test", "PORT": "8101"},
       "ids": {"FIX": [1, 20], "INTAKE": [1, 20]}
@@ -34,8 +41,9 @@
       "title": "Build the planned UI changes",
       "plans": [".ai/plans/backlog/PLAN-002-ui.md"],
       "depends_on": [],
-      "owned_paths": ["src/ui/", "tests/ui/", ".ai/plans/backlog/PLAN-002-ui.md"],
+      "owned_paths": ["src/ui/", "tests/ui/", "docs/ui/", ".ai/plans/backlog/PLAN-002-ui.md"],
       "code_paths": ["src/ui/", "tests/ui/"],
+      "documentation_paths": ["docs/ui/", ".ai/plans/backlog/PLAN-002-ui.md"],
       "resources": ["port:8102"],
       "environment": {"PORT": "8102"},
       "ids": {"FIX": [21, 40], "INTAKE": [21, 40]}
@@ -47,6 +55,7 @@
       "depends_on": ["api", "ui"],
       "owned_paths": ["tests/integration/", ".ai/plans/backlog/PLAN-003-integration.md"],
       "code_paths": ["tests/integration/"],
+      "documentation_paths": [".ai/plans/backlog/PLAN-003-integration.md"],
       "resources": ["database:api-test", "port:8101", "port:8102"],
       "environment": {},
       "ids": {"FIX": [41, 60], "INTAKE": [41, 60]}
