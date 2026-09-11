@@ -16,9 +16,40 @@ orch = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(orch)
 
 
+def plan_text(title, steps=None, intent_changes=None, completed_intake=None):
+    return '# ' + title + '\n\n## Execution contract\n```json\n' + json.dumps({
+        'intent_changes': intent_changes or [], 'steps': steps or [],
+        'completed_intake': completed_intake or []}, indent=2) + '\n```\n'
+
+
 class FakeForge(orch.Runner):
     """Replace GitHub transport only; exercise real Git push/merge/sync/cleanup."""
     def __init__(self, config, remote_worktree):
+        # Older fixture scenarios name only an outcome. Give those scenarios an
+        # explicit execution contract; tests supplying one retain it verbatim.
+        root = Path(config['repository'])
+        seeded = False
+        for track in config['tracks']:
+            for plan in track['plans']:
+                target = root / plan
+                original = target.read_text() if target.is_file() else ''
+                default_title = 'Build ' + Path(plan).stem.removeprefix('PLAN-')
+                if original and ('## Execution contract' not in original or original.startswith('# ' + default_title + '\n')):
+                    steps = []
+                    if track['code_paths'] and track.get('environment', {}).get('WORKER_MODE') != 'no-code':
+                        steps.append({'id': 'implement', 'phase': 'build', 'title': 'Implement the requested behavior'})
+                    if 'docs.md' in track['documentation_paths'] or track.get('source_documentation_paths'):
+                        steps.append({'id': 'document', 'phase': 'document', 'title': 'Document delivered behavior'})
+                    updated = plan_text(default_title if original.startswith('# ' + default_title + '\n') else original, steps)
+                    if updated != original:
+                        target.write_text(updated, encoding='utf-8')
+                        orch.git(root, 'add', plan)
+                        seeded = True
+        if seeded:
+            orch.git(root, 'commit', '-m', 'Declare fixture PLAN steps and intent decisions')
+            orch.git(root, 'push', config['remote'], config['base_branch'])
+            orch.git(remote_worktree, 'fetch', 'origin')
+            orch.git(remote_worktree, 'merge', '--ff-only', 'origin/' + config['base_branch'])
         super().__init__(config)
         self.forge_root = remote_worktree
         self.prs = {}
@@ -88,8 +119,12 @@ class RuntimeTests(unittest.TestCase):
             orch.git(self.root, 'config', key, value)
         (self.root / '.gitignore').write_text('.worktrees/\n', encoding='utf-8')
         (self.root / 'docs.md').write_text('original docs\n', encoding='utf-8')
+        spec = self.root / '.ai/specs/SPEC-001-behavior.md'
+        spec.parent.mkdir(parents=True)
+        spec.write_text('# Implemented behavior\n\nThe fixture writes its result to the assigned source file.\n', encoding='utf-8')
         for name in ('a', 'b', 'c'):
-            (self.root / f'PLAN-{name}.md').write_text('Build ' + name, encoding='utf-8')
+            (self.root / f'PLAN-{name}.md').write_text(plan_text('Build ' + name, [
+                {'id': 'implement', 'phase': 'build', 'title': 'Implement the requested behavior'}]), encoding='utf-8')
         orch.git(self.root, 'add', '.')
         orch.git(self.root, 'commit', '-m', 'Initialize fixture')
         self.remote = self.directory / 'remote.git'
@@ -100,7 +135,7 @@ class RuntimeTests(unittest.TestCase):
         orch.git(self.directory, 'clone', '--branch', 'main', str(self.remote), str(self.forge))
         orch.git(self.forge, 'config', 'user.name', 'Forge Test')
         orch.git(self.forge, 'config', 'user.email', 'forge@example.invalid')
-        self.config = dict(run_id='ORCH-001', repository=str(self.root), base_branch='main', remote='origin',
+        self.config = dict(protocol_version=2, run_id='ORCH-001', repository=str(self.root), base_branch='main', remote='origin',
                            github_repo='fixture/repo', branch_prefix='orch', max_parallel_tracks=3,
                            worker_command=[sys.executable, str(Path(__file__).with_name('worker_fixture.py').resolve())],
                            documentation_worker_command=[sys.executable, str(Path(__file__).with_name('worker_fixture.py').resolve()), '{model}'],
@@ -113,7 +148,7 @@ class RuntimeTests(unittest.TestCase):
                                 [f'src/{name}.txt', f'PLAN-{name}.md'],
                     code_paths=[f'src/{name}.txt'], resources=kwargs.get('resources', []),
                     documentation_paths=['docs.md'] if kwargs.get('docs') else [],
-                    environment=kwargs.get('env', {}), ids={'FIX': [start, start + 19], 'INTAKE': [start, start + 19]})
+                    environment=kwargs.get('env', {}), ids={kind: [start, start + 19] for kind in orch.ID_KINDS})
 
     def runner(self):
         return FakeForge(self.config, self.forge)
@@ -131,8 +166,8 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(len(orch.git(self.root, 'worktree', 'list', '--porcelain').split('worktree ')), 2)
         self.assertTrue(json.loads((runner.directory / 'followups.json').read_text())['eligible'])
 
-    def test_residual_findings_are_code_fix_and_separate_intakes_after_two_rounds(self):
-        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'residual'
+    def test_unrelated_findings_are_code_fix_and_separate_intakes_after_two_rounds(self):
+        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'unrelated'
         runner = self.runner()
         self.assertTrue(runner.run())
         state = runner.state['tracks']['a']
@@ -181,7 +216,7 @@ class RuntimeTests(unittest.TestCase):
         track = self.config['tracks'][0]
         track['plans'] = [source]
         track['owned_paths'].append(source)
-        track['environment']['WORKER_MODE'] = 'residual'
+        track['environment']['WORKER_MODE'] = 'unrelated'
         runner = self.runner()
         self.assertTrue(runner.run())
         self.assertFalse((self.root / source).exists())

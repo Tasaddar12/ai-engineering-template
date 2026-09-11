@@ -1,4 +1,5 @@
 {
+  "protocol_version": 2,
   "run_id": "ORCH-001",
   "repository": "/absolute/path/to/project",
   "base_branch": "main",
@@ -6,7 +7,6 @@
   "github_repo": "OWNER/REPOSITORY",
   "branch_prefix": "orch",
   "max_parallel_tracks": 3,
-  "residual_findings": "merge",
   "worker_command": [
     "codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "{sandbox}",
     "-C", "{worktree}", "--output-schema", "{schema_file}",
@@ -34,7 +34,7 @@
       "documentation_paths": ["docs/api/", ".ai/specs/SPEC-001-api.md", ".ai/plans/backlog/PLAN-001-api.md"],
       "resources": ["database:api-test", "port:8101"],
       "environment": {"TEST_DATABASE": "api_test", "PORT": "8101"},
-      "ids": {"FIX": [1, 20], "INTAKE": [1, 20]}
+      "ids": {"FIX": [1, 20], "INTAKE": [1, 20], "SPEC": [1, 20], "ADR": [1, 20], "AMD": [1, 20]}
     },
     {
       "id": "ui",
@@ -46,7 +46,7 @@
       "documentation_paths": ["docs/ui/", ".ai/plans/backlog/PLAN-002-ui.md"],
       "resources": ["port:8102"],
       "environment": {"PORT": "8102"},
-      "ids": {"FIX": [21, 40], "INTAKE": [21, 40]}
+      "ids": {"FIX": [21, 40], "INTAKE": [21, 40], "SPEC": [21, 40], "ADR": [21, 40], "AMD": [21, 40]}
     },
     {
       "id": "integration",
@@ -58,7 +58,7 @@
       "documentation_paths": [".ai/plans/backlog/PLAN-003-integration.md"],
       "resources": ["database:api-test", "port:8101", "port:8102"],
       "environment": {},
-      "ids": {"FIX": [41, 60], "INTAKE": [41, 60]}
+      "ids": {"FIX": [41, 60], "INTAKE": [41, 60], "SPEC": [41, 60], "ADR": [41, 60], "AMD": [41, 60]}
     }
   ]
 }

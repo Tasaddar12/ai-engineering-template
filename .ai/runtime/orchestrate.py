@@ -8,6 +8,7 @@ The scheduler is an accident guard, not a sandbox for untrusted programs.
 from __future__ import annotations
 
 import argparse
+import ast
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from datetime import date
@@ -113,13 +114,47 @@ def overlaps(left, right):
 DOCUMENT_SUFFIXES = ('.md', '.markdown', '.rst', '.adoc')
 DOCUMENT_PHASES = ('document', 'docs-review-1', 'docs-fix', 'docs-review-2')
 REVIEW_PHASES = ('review-1', 'review-2', 'docs-review-1', 'docs-review-2')
+ID_KINDS = ('FIX', 'INTAKE', 'SPEC', 'ADR', 'AMD')
 
 
 def documentation_path(path):
     return path.casefold().endswith(DOCUMENT_SUFFIXES)
 
 
+def execution_contract(text):
+    match = re.search(r'^## Execution contract\s*\n```json\s*\n(.*?)\n```', text, re.M | re.S)
+    require(match is not None, 'PLAN is missing its explicit Execution contract')
+    contract = json.loads(match[1])
+    require(isinstance(contract, dict) and isinstance(contract.get('intent_changes'), list) and
+            isinstance(contract.get('steps'), list) and isinstance(contract.get('completed_intake'), list),
+            'Execution contract needs intent_changes, steps and completed_intake lists')
+    seen = set()
+    for step in contract['steps']:
+        require(isinstance(step, dict) and re.fullmatch(r'[A-Za-z0-9_-]+', step.get('id', '')) and
+                step['id'] not in seen and step.get('phase') in ('build', 'document') and
+                isinstance(step.get('title'), str) and step['title'].strip(), 'Invalid or duplicate PLAN step')
+        seen.add(step['id'])
+    for change in contract['intent_changes']:
+        require(isinstance(change, dict) and isinstance(change.get('request'), str) and change['request'].strip() and
+                change.get('decision') in ('pending', 'approved', 'rejected') and
+                isinstance(change.get('human_resolution'), str), 'Invalid PLAN intent change')
+    for record in contract['completed_intake']:
+        relative_path(record)
+        require(re.fullmatch(r'\.ai/plans/intake/INTAKE-\d+-[^/]+\.md', record), 'Invalid completed INTAKE path')
+    return contract
+
+
+def python_behavior(text):
+    tree = ast.parse(text, type_comments=True)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.body and isinstance(node.body[0], ast.Expr) and isinstance(node.body[0].value, ast.Constant) and isinstance(node.body[0].value.value, str):
+                node.body.pop(0)
+    return ast.dump(tree, include_attributes=False)
+
+
 def validate(config):
+    require(config.get('protocol_version') == 2, 'Use protocol_version 2 with explicit PLAN execution contracts; preserve old run receipts')
     require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', config['run_id']), 'Invalid run_id')
     for field in ('base_branch', 'remote', 'branch_prefix'):
         require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', config[field]) and
@@ -141,16 +176,18 @@ def validate(config):
                 'Commands must be nonempty argv arrays')
     require(any('{model}' in arg for arg in config['documentation_worker_command']),
             'documentation_worker_command must select the lightweight model with {model}')
-    require(config.get('residual_findings', 'merge') in ('merge', 'park'), 'Invalid residual policy')
+    require('residual_findings' not in config, 'Residual policy is owned by RULES.md; remove the obsolete override')
     tracks = config['tracks']
     require(tracks and len({t['id'].casefold() for t in tracks}) == len(tracks), 'Duplicate/empty tracks')
-    plans, reservations = set(), {'FIX': [], 'INTAKE': []}
+    plans, reservations = set(), {kind: [] for kind in ID_KINDS}
     by_id = {t['id']: t for t in tracks}
     for track in tracks:
         require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', track['id']), 'Invalid track id')
         require(track['owned_paths'] and track['plans'], 'Declare owned paths and plans for every track')
         require(isinstance(track.get('documentation_paths'), list), 'Declare documentation_paths explicitly (may be empty)')
-        for path in track['owned_paths'] + track['plans'] + track['code_paths'] + track['documentation_paths']:
+        require(isinstance(track.get('research_paths', []), list) and isinstance(track.get('source_documentation_paths', []), list),
+                'Research and source documentation paths must be lists')
+        for path in track['owned_paths'] + track['plans'] + track['code_paths'] + track['documentation_paths'] + track.get('research_paths', []) + track.get('source_documentation_paths', []):
             relative_path(path)
         for path in track['code_paths']:
             require(any((not path.endswith('/') or s.endswith('/')) and covers(s, path.rstrip('/'))
@@ -165,6 +202,19 @@ def validate(config):
             require(plan.casefold() not in plans, f'Plan scheduled twice: {plan}')
             require(any(covers(s, plan) for s in track['owned_paths']), f'Plan not owned: {plan}')
             plans.add(plan.casefold())
+        for path in track.get('research_paths', []):
+            require(path.startswith('.ai/research/') and documentation_path(path) and not path.endswith('/') and
+                    any(covers(s, path) for s in track['owned_paths']) and
+                    not any(overlaps(path, s) for s in track['documentation_paths'] + track['code_paths']),
+                    'Research notes must be exact, separately owned .ai/research documents')
+        for path in track.get('source_documentation_paths', []):
+            require(not path.endswith('/') and not documentation_path(path) and
+                    any(covers(s, path) for s in track['code_paths']), 'Source documentation must name an owned code file')
+            if not path.endswith('.py'):
+                argv = track.get('source_documentation_check')
+                require(isinstance(argv, list) and argv and all(isinstance(a, str) and a for a in argv) and
+                        any('{before}' in a for a in argv) and any('{after}' in a for a in argv),
+                        'Non-Python source documentation needs a behavior-equivalence command with {before} and {after}')
         require(all(d in by_id and d != track['id'] for d in track['depends_on']), 'Unknown/self dependency')
         require(isinstance(track['resources'], list) and
                 all(isinstance(x, str) and x for x in track['resources']), 'Declare exclusive resources')
@@ -176,7 +226,7 @@ def validate(config):
                     'Disposable paths must be explicit generated directories')
         for kind in reservations:
             start, end = track['ids'][kind]
-            require(type(start) is int and type(end) is int and 0 < start <= end, 'Invalid ID range')
+            require(type(start) is int and type(end) is int and 0 < start and end - start == 19, 'Reserve exactly 20 IDs of each type')
             require(not any(start <= old_end and old_start <= end for old_start, old_end in reservations[kind]),
                     f'Overlapping {kind} reservations')
             reservations[kind].append((start, end))
@@ -232,15 +282,24 @@ FINDING = {
     'required': ['key', 'kind', 'severity', 'title', 'path', 'detail']}
 FINDING['properties']['kind']['enum'] = ['code', 'documentation', 'contract', 'question']
 FINDING['properties']['severity']['enum'] = ['critical', 'major', 'minor', 'cosmetic']
+FINDING['properties']['impact'] = {'type': 'string', 'enum': [
+    'missing_code', 'missing_functionality', 'missing_spec_coverage', 'editorial', 'unrelated']}
+FINDING['required'].append('impact')
 RESULT_SCHEMA = {
     'type': 'object', 'additionalProperties': False,
     'properties': {
         'status': {'type': 'string', 'enum': ['complete', 'blocked']},
         'verdict': {'type': 'string', 'enum': ['approved', 'changes_requested', 'cannot_review', 'not_applicable']},
         'summary': {'type': 'string'},
+        'implementation_complete': {'type': 'boolean'},
         'documentation_complete': {'type': 'boolean'},
+        'resolved_intake': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False,
+            'properties': {'path': {'type': 'string'}, 'evidence': {'type': 'string'}}, 'required': ['path', 'evidence']}},
+        'spec_coverage': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False,
+            'properties': {key: {'type': 'string'} for key in ('plan', 'spec', 'evidence')},
+            'required': ['plan', 'spec', 'evidence']}},
         'findings': {'type': 'array', 'items': FINDING}},
-    'required': ['status', 'verdict', 'summary', 'findings', 'documentation_complete']}
+    'required': ['status', 'verdict', 'summary', 'findings', 'implementation_complete', 'documentation_complete', 'resolved_intake', 'spec_coverage']}
 
 
 class Runner:
@@ -361,6 +420,75 @@ class Runner:
         require(Path(git(path, 'rev-parse', '--show-toplevel')).resolve() == path.resolve(), 'Wrong worktree')
         require(git(path, 'branch', '--show-current') == self.location(track)[1], 'Track branch changed')
 
+    def plan_contracts(self, track, base):
+        contracts = {}
+        for plan in track['plans']:
+            contract = execution_contract(git(self.root, 'show', f'{base}:{plan}'))
+            for change in contract['intent_changes']:
+                require(change['decision'] == 'approved' and change['human_resolution'].strip(),
+                        f"Human intent decision required before implementing {plan}: {change['request']}")
+            for record in contract['completed_intake']:
+                require(any(covers(s, record) for s in track['owned_paths']), f'Completion INTAKE not owned: {record}')
+            contracts[plan] = contract
+        return contracts
+
+    def phase_steps(self, track, phase):
+        state = self.state['tracks'][track['id']]
+        return [{'plan': plan, **step} for plan, contract in state['plan_contracts'].items()
+                for step in contract['steps'] if step['phase'] == phase]
+
+    def documentation_equivalent(self, track, name, before, after):
+        path, _ = self.location(track)
+        old = git(path, 'show', f'{before}:{name}')
+        new = git(path, 'show', f'{after}:{name}') if after else (path / name).read_text(encoding='utf-8')
+        if name.endswith('.py'):
+            require(python_behavior(old) == python_behavior(new), f'Documentation changed executable behavior: {name}')
+        else:
+            scratch = self.directory / 'scratch' / track['id'] / 'documentation-check'
+            scratch.mkdir(parents=True, exist_ok=True)
+            left, right = scratch / ('before' + Path(name).suffix), scratch / ('after' + Path(name).suffix)
+            left.write_text(old, encoding='utf-8')
+            right.write_text(new, encoding='utf-8')
+            mapping = {'before': str(left), 'after': str(right)}
+            command([arg.format_map(mapping) for arg in track['source_documentation_check']], path,
+                    env=self.worker_environment(track))
+
+    def created_finding(self, track, name, before, after=None):
+        match = re.fullmatch(r'\.ai/(fixes/open/(FIX)|plans/intake/(INTAKE))-(\d+)-[^/]+\.md', name)
+        if not match:
+            return False
+        kind, number = match[2] or match[3], int(match[4])
+        start, end = track['ids'][kind]
+        require(start <= number <= end, f'Worker finding outside reserved {kind} IDs: {name}')
+        path, _ = self.location(track)
+        require(not git(path, 'ls-tree', '--name-only', before, '--', name), 'Workers may create findings, not rewrite existing reports')
+        content = git(path, 'show', f'{after}:{name}') if after else (path / name).read_text(encoding='utf-8')
+        expected = f'{kind}-{number:03d}'
+        require(re.search(rf'^id:\s*[\"\']?{re.escape(expected)}[\"\']?\s*$', content, re.M), 'Finding file ID does not match its reserved filename')
+        existing = git(path, 'ls-tree', '-r', '--name-only', before, '--', '.ai').splitlines()
+        require(not any(Path(p).name.startswith(expected + '-') for p in existing), f'ID already exists: {expected}')
+        self.state['tracks'][track['id']].setdefault('worker_records', {})[name] = expected
+        return True
+
+    def audit_worker_paths(self, track, phase, names, before, after=None):
+        docs = phase in DOCUMENT_PHASES
+        scopes = (track['documentation_paths'] + track.get('source_documentation_paths', [])) if docs else track['code_paths']
+        for name in names:
+            if not docs and self.created_finding(track, name, before, after):
+                continue
+            if phase == 'build' and name in track.get('research_paths', []):
+                continue
+            if docs and name in track.get('source_documentation_paths', []):
+                self.documentation_equivalent(track, name, before, after)
+                continue
+            require(not name.casefold().startswith(('.ai/state/', '.ai/fixes/', '.ai/plans/intake/')) and
+                    any(covers(s, name) for s in scopes), f'Worker change outside {phase} ownership: {name}')
+            if docs:
+                require(documentation_path(name), f'Documentation worker cannot change source: {name}')
+            else:
+                require(not documentation_path(name) and not name.casefold().startswith(('.ai/specs/', '.ai/decisions/')),
+                        f'Code worker cannot change docs/contracts: {name}')
+
     def audit(self, track, path):
         self.ownership(track, path)
         state = self.state['tracks'][track['id']]
@@ -368,6 +496,7 @@ class Runner:
         baseline = state.get('integration_base', state['base'])
         paths = git(path, 'diff', '--name-only', '--no-renames', '-z', baseline, 'HEAD').split('\0')
         records = {f['record'] for f in state['findings'].values()}
+        records.update(state.get('worker_records', {}))
         records.update(state.get('plan_moves', {}).values())
         for changed in filter(None, paths):
             require(not changed.casefold().startswith(('.ai/state/state.md', '.ai/state/journal/', '.ai/state/orchestration/')),
@@ -390,7 +519,7 @@ class Runner:
         require(before == state.get('checkpoint_head', state['base']), 'Phase HEAD changed outside coordinator')
         docs = name in DOCUMENT_PHASES
         model = self.config['documentation_model'] if docs else self.config.get('code_model', 'worker-command-default')
-        scopes = track['documentation_paths'] if docs else track['code_paths']
+        scopes = (track['documentation_paths'] + track.get('source_documentation_paths', [])) if docs else track['code_paths']
         token = f"{track['id']}-{name}-{time.time_ns()}"
         result_file = self.directory / f'{token}.json'
         mapping = {'worktree': str(path), 'result_file': str(result_file),
@@ -404,60 +533,21 @@ class Runner:
             'plan_source_sha': state['base'],
             'plans': track['plans'], 'owned_paths': track['owned_paths'], 'code_paths': track['code_paths'],
             'documentation_paths': track['documentation_paths'], 'phase_paths': scopes,
+            'source_documentation_paths': track.get('source_documentation_paths', []),
+            'research_paths': track.get('research_paths', []), 'reserved_ids': track['ids'],
+            'steps': self.phase_steps(track, name) if name in ('build', 'document') else [],
+            'plan_contracts': state['plan_contracts'],
+            'documentation_handoff': state['completed_phases'] if docs else {},
             'model': model, 'documentation_model': self.config['documentation_model'],
             'review_kind': 'documentation' if docs else 'code',
             'code_reviewed_sha': state.get('code_reviewed_sha'),
             'resources': track['resources'], 'required_commands': self.config['required_commands']}
-        prompt = (
-            'Execute only this assigned phase. Read AGENTS.md and .ai/RULES.md. '
-            'The coordinator owns commits, publication, shared state and FIX/INTAKE allocation. '
-            'Do not commit or stage files; the coordinator audits and commits your edits after this phase. '
-            'Never launch other agents, change branches, merge, rebase, push or edit sibling worktrees. '
-            'Do not ask for approval. Return blocked with a reason if execution is impossible. '
-            'The approved PLAN Contract changes specify the target and may require updates to any current '
-            'contract. Original promises are the PLAN content at plan_source_sha, even if later PLAN notes change. '
-            'Read current contracts to understand unchanged requirements; do not preserve a '
-            'stale requirement that the PLAN explicitly changes. All documentation edits occur only in '
-            'the consolidated documentation phase after both code reviews. Confirmed code defects are code findings '
-            'for FIX, at every severity and regardless of scope. Use a stable key for each root cause. '
-            'Record concrete evidence and location. Questions are question findings. '
-            'Workers do not create FIX or INTAKE files. '
-            + ('This is a cold, read-only review. Follow .ai/agents/'
-               + ('track-documentation-reviewer.md. ' if docs else 'track-reviewer.md. ') +
-               'Do not read previous phase output, research, review logs or FIX/INTAKE reports. '
-               'Inspect the actual diff from base_sha restricted to phase_paths. Exclude '
-               '.ai/fixes/ and .ai/plans/intake/ from the diff; the coordinator audits those records. '
-               'Use approved only with no findings; changes_requested requires findings. '
-               'Use cannot_review if evidence is insufficient. Do not make commits or edits. '
-               + ('Review documentation and contracts only; read implemented code as evidence for their claims. '
-                  'Verify every original PLAN documentation/Contract changes promise landed. Set '
-                  'documentation_complete false if any promise is missing or cannot be verified; such '
-                  'incompleteness blocks delivery even under residual-findings merge policy. Do not review '
-                  'code quality or start another code review. '
-                  if docs else
-                  'Review only code, tests and executable configuration. You may read PLAN target wording '
-                  'and current contracts as requirements, but must not review documentation content or '
-                  'report intentionally deferred documentation as a defect. ')
-               if readonly else
-               'Follow the applicable track role with coordinator-owned commits. '
-               + ('Follow track-documentor: implement all original PLAN documentation and contract promises '
-                  'together in document, or attempt only supplied documentation findings in docs-fix. '
-                  'Write only documentation_paths; never change source, tests or executable configuration, '
-                  'including code comments/docstrings. Keep PLAN paths fixed. Use implemented code as '
-                  'evidence. Report documentation_complete true only after all original promised changes '
-                  'are complete, false if incomplete or unverifiable. Incidental unrelated docs/contracts '
-                  'remain INTAKE findings. Use the assigned lightweight model; if unavailable return blocked. '
-                  if docs else
-                  'Build phase: research and implement the plans in order, then self-review only the code '
-                  'using track-researcher and track-implementor guidance. Write only code_paths. '
-                  'Do not edit or review documentation, specs, ADRs, amendments or PLAN content. '
-               'Keep research in the response, not shared orchestration files. '
-               'Keep plans in their existing paths; report completion to the coordinator. '
-               'Fix phase: follow track-fixer, correct only supplied code findings inside ownership, '
-               'run a regression check and report before/after proof. Never repair docs/contracts '
-               'in this phase. Return any unresolved or out-of-scope code defects as findings. '))
-            + '\nAssignment:\n' + json.dumps(context, indent=2) + '\n' + extra
-            + '\nReturn JSON matching the supplied schema in the configured result file.')
+        role = ('track-documentation-reviewer' if docs else 'track-reviewer') if readonly else (
+            'track-documentor' if docs else 'track-fixer' if name == 'fix' else 'track-implementor')
+        prompt = (f'Follow AGENTS.md and .ai/RULES.md, especially Roles, Runtime worker protocol, '
+                  f'Review and documentation, and Definition of done. Your role entry point is .ai/agents/{role}.md. '
+                  '\nAssignment:\n' + json.dumps(context, indent=2) + '\n' + extra +
+                  '\nReturn the supplied result schema to result_file/ORCH_RESULT.')
         attempts = state.setdefault('phase_attempts', {})
         require(name == 'build' or not attempts.get(name), 'Cannot repeat a fix or review attempt')
         attempts[name] = attempts.get(name, 0) + 1
@@ -492,12 +582,23 @@ class Runner:
         require(isinstance(result, dict) and result.get('status') in ('complete', 'blocked') and
                 isinstance(result.get('findings'), list) and isinstance(result.get('summary'), str) and
                 result.get('verdict') in RESULT_SCHEMA['properties']['verdict']['enum'], 'Malformed worker result')
+        require(type(result.get('implementation_complete')) is bool and type(result.get('documentation_complete')) is bool,
+                'Worker must explicitly report implementation and SPEC coverage completeness')
+        require(isinstance(result.get('resolved_intake'), list) and all(isinstance(item, dict) and
+                isinstance(item.get('path'), str) and isinstance(item.get('evidence'), str) and item['evidence'].strip()
+                for item in result['resolved_intake']), 'Resolved INTAKE items need paths and completion evidence')
+        require(isinstance(result.get('spec_coverage'), list) and all(isinstance(item, dict) and
+                all(isinstance(item.get(key), str) and item[key].strip() for key in ('plan', 'spec', 'evidence'))
+                for item in result['spec_coverage']), 'SPEC coverage needs PLAN, SPEC and code evidence')
         for finding in result['findings']:
             require(isinstance(finding, dict) and set(FINDING['required']) <= finding.keys() and
                     all(isinstance(finding[k], str) and finding[k].strip() for k in FINDING['required']),
                     'Finding needs a key, kind, severity, title, path and evidence')
             require(finding['kind'] in ('code', 'documentation', 'contract', 'question'), 'Invalid finding kind')
             require(finding['severity'] in ('critical', 'major', 'minor', 'cosmetic'), 'Invalid severity')
+            require(finding['impact'] in FINDING['properties']['impact']['enum'], 'Invalid finding impact')
+            require(finding['kind'] != 'code' or finding['impact'] in ('missing_code', 'missing_functionality', 'unrelated'),
+                    'A code defect cannot be dismissed as editorial')
 
     def consume_result(self, track):
         state = self.state['tracks'][track['id']]
@@ -514,15 +615,15 @@ class Runner:
         if name in DOCUMENT_PHASES:
             require(type(result.get('documentation_complete')) is bool,
                     'Documentation phase must explicitly verify original PLAN promises')
-        require(git(path, 'rev-parse', 'HEAD') == before, 'Worker changed HEAD; coordinator owns commits')
         if readonly:
+            require(git(path, 'rev-parse', 'HEAD') == before, 'Read-only worker changed HEAD')
             require(result.get('verdict') in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
             if result['verdict'] != 'cannot_review':
                 require((result['verdict'] == 'approved') == (len(result['findings']) == 0), 'Inconsistent review verdict')
             kinds = ('documentation', 'contract', 'question') if name in DOCUMENT_PHASES else ('code', 'question')
             require(all(f['kind'] in kinds for f in result['findings']), 'Reviewer crossed its code/documentation scope')
         else:
-            self.commit_worker_changes(track, name)
+            self.commit_worker_changes(track, name, before)
         self.audit(track, path)
         with self.mutex:
             state.setdefault('phase_heads', {})[name] = before
@@ -536,26 +637,47 @@ class Runner:
             self.save()
         return result
 
-    def commit_worker_changes(self, track, phase):
+    def commit_worker_changes(self, track, phase, before):
         path, _ = self.location(track)
         self.ownership(track, path)
-        require(not git(path, 'diff', '--cached', '--name-only'), 'Worker staged files; coordinator owns the index')
+        require(not git(path, 'diff', '--cached', '--name-only'), 'Worker left staged files outside a completed step')
+        expected = self.phase_steps(track, phase) if phase in ('build', 'document') else []
+        head = git(path, 'rev-parse', 'HEAD')
+        commits = git(path, 'rev-list', '--reverse', f'{before}..{head}').splitlines()
+        previous, matched = before, []
+        for commit in commits:
+            require(git(path, 'rev-list', '--parents', '-n', '1', commit).split()[1:] == [previous],
+                    'Worker history must be linear step commits without merge or rewritten ancestry')
+            changed = git(path, 'diff', '--name-only', '--no-renames', previous, commit).splitlines()
+            require(changed, 'An empty commit does not complete a PLAN step')
+            self.audit_worker_paths(track, phase, changed, previous, commit)
+            message = git(path, 'show', '-s', '--format=%B', commit)
+            marker = re.findall(r'^PLAN-Step: (.+)$', message, re.M)
+            if marker:
+                require(len(marker) == 1 and len(matched) < len(expected), 'Unexpected or duplicate PLAN step commit')
+                step = expected[len(matched)]
+                require(marker[0] == f"{step['plan']}#{step['id']}", 'PLAN step commits are missing or out of order')
+                require(any(name not in track.get('research_paths', []) and
+                            name not in self.state['tracks'][track['id']].get('worker_records', {}) for name in changed),
+                        'A finding or research note cannot stand in for an implementation step')
+                matched.append({'plan': step['plan'], 'id': step['id'], 'commit': commit})
+            else:
+                require(phase == 'build' and all(name in track.get('research_paths', []) or
+                        name in self.state['tracks'][track['id']].get('worker_records', {}) for name in changed),
+                        'Every PLAN step needs its own commit and PLAN-Step trailer')
+            previous = commit
+        require(previous == head, 'Worker rewound the checkout')
+        require(len(matched) == len(expected), 'Missing PLAN step commits; preserve the target and finish the implementation')
         changed = set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z', 'HEAD').split('\0')))
         changed.update(filter(None, git(path, 'ls-files', '--others', '--exclude-standard', '-z').split('\0')))
-        docs = phase in DOCUMENT_PHASES
-        scopes = track['documentation_paths'] if docs else track['code_paths']
-        for name in changed:
-            require(not name.casefold().startswith(('.ai/state/', '.ai/fixes/', '.ai/plans/intake/')) and
-                    any(covers(s, name) for s in scopes), f'Worker change outside {phase} ownership: {name}')
-            if docs:
-                require(documentation_path(name), f'Documentation worker cannot change source: {name}')
-            else:
-                require(not documentation_path(name) and
-                        not name.casefold().startswith(('.ai/specs/', '.ai/decisions/')),
-                        f'Code worker cannot change docs/contracts: {name}')
+        self.audit_worker_paths(track, phase, changed, head)
+        require(phase not in ('build', 'document') or not changed,
+                'Uncommitted PLAN work remains; each step must be committed before handoff')
         if changed:
             git(path, '--literal-pathspecs', 'add', '--', *sorted(changed))
             git(path, 'commit', '-m', f"{phase.capitalize()} planned track {track['id']}")
+        if phase in ('build', 'document'):
+            self.update(self.state['tracks'][track['id']], **{phase + '_step_commits': matched})
 
     @state_locked
     def record_findings(self, track, result, round_number, *, publish=True, source_head=None, phase_name='legacy'):
@@ -574,6 +696,7 @@ class Runner:
                 kind = 'FIX' if finding['kind'] == 'code' else 'INTAKE'
                 start, end = track['ids'][kind]
                 used = {int(f['id'].split('-')[1]) for f in state['findings'].values() if f['id'].startswith(kind + '-')}
+                used.update(int(record.split('-')[1]) for record in state.get('worker_records', {}).values() if record.startswith(kind + '-'))
                 number = next((n for n in range(start, end + 1) if n not in used), None)
                 require(number is not None, f'{kind} ID block exhausted')
                 record_id = f'{kind}-{number:03d}'
@@ -670,6 +793,7 @@ class Runner:
         path, _ = self.location(track)
         result = self.phase(track, 'build')
         self.record_findings(track, result, 0, phase_name='build', source_head=state['phase_heads']['build'])
+        require(result['implementation_complete'], 'Missing code or functionality; create FIX items or a supporting PLAN and preserve the target')
         if git(path, 'diff', '--name-only', state['base'], 'HEAD'):
             self.pull_request(track)
         first = self.phase(track, 'review-1', readonly=True)
@@ -686,7 +810,6 @@ class Runner:
         self.update(state, code_reviewed_sha=state['phase_heads']['review-2'], code_review_verdict=last['verdict'])
         documented = self.phase(track, 'document')
         self.record_findings(track, documented, 0, phase_name='document', source_head=state['phase_heads']['document'])
-        require(documented.get('documentation_complete') is True, 'Original PLAN documentation is incomplete or unverified')
         if not state.get('pr'):
             self.pull_request(track)
         docs_first = self.phase(track, 'docs-review-1', readonly=True)
@@ -704,12 +827,13 @@ class Runner:
         docs_last = self.phase(track, 'docs-review-2', readonly=True)
         self.record_findings(track, docs_last, 2, phase_name='docs-review-2', source_head=state['phase_heads']['docs-review-2'])
         require(docs_last['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')
-        require(docs_last.get('documentation_complete') is True, 'Original PLAN documentation is incomplete or unverified')
         # Reports remain open until the later defect pass verifies their proof.
         # This avoids silently closing a bug merely because a cold review omitted it.
         self.update(state, reviewed_sha=state['phase_heads']['docs-review-2'],
                     documentation_reviewed_sha=state['phase_heads']['docs-review-2'],
                     documentation_review_verdict=docs_last['verdict'], documentation_model=self.config['documentation_model'])
+        self.validate_completion(track)
+        self.checks(path, track)
         self.finalize_plans(track)
         self.update(state, prepared_head=git(path, 'rev-parse', 'HEAD'))
         generated = {f['record'] for f in state['findings'].values()}
@@ -717,7 +841,9 @@ class Runner:
         generated.update(state.get('plan_moves', {}).values())
         changed_after_code = set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z',
                                                   state['code_reviewed_sha'], 'HEAD').split('\0')))
-        require(all(name in generated or (documentation_path(name) and
+        for name in changed_after_code & set(track.get('source_documentation_paths', [])):
+            self.documentation_equivalent(track, name, state['code_reviewed_sha'], 'HEAD')
+        require(all(name in generated or name in track.get('source_documentation_paths', []) or (documentation_path(name) and
                     any(covers(scope, name) for scope in track['documentation_paths'])) for name in changed_after_code),
                 'Code changed after the final code review')
         require(set(filter(None, git(path, 'diff', '--name-only', '--no-renames', '-z',
@@ -729,9 +855,28 @@ class Runner:
         self.checks(path, track)
         self.audit(track, path)
         self.pull_request(track)
-        require(not residual or self.config.get('residual_findings', 'merge') == 'merge',
-                'Residual findings parked until the post-PLAN pass')
         self.update(state, status='ready_with_followups' if state['findings'] else 'ready')
+
+    def validate_completion(self, track):
+        state = self.state['tracks'][track['id']]
+        phases = state['completed_phases']
+        require(all(name in phases for name in REVIEW_PHASES), 'Missing review evidence for completion')
+        code, docs = phases['review-2'], phases['docs-review-2']
+        require(code['implementation_complete'] and not any(f['impact'] in ('missing_code', 'missing_functionality')
+                for f in code['findings'] + docs['findings']),
+                'Missing code or functionality; preserve the target and report FIX/supporting PLAN actions')
+        require(docs['documentation_complete'] and not any(f['impact'] == 'missing_spec_coverage' for f in docs['findings']),
+                'Overall implementation is not documented in SPECs; route coverage to the documentor')
+        path, _ = self.location(track)
+        covered = set()
+        for item in docs['spec_coverage']:
+            relative_path(item['spec'])
+            require(item['plan'] in track['plans'] and re.fullmatch(r'\.ai/specs/SPEC-\d+-[^/]+\.md', item['spec']),
+                    'Invalid implementation SPEC coverage')
+            require((path / item['spec']).is_file() and (path / item['spec']).read_text(encoding='utf-8').strip(),
+                    f"Overall implementation SPEC is missing: {item['spec']}")
+            covered.add(item['plan'])
+        require(covered == set(track['plans']), 'Overall implementation lacks evidenced SPEC coverage for every PLAN')
 
     @state_locked
     def record_attempt(self, track, result, *, documentation=False):
@@ -758,6 +903,7 @@ class Runner:
         state = self.state['tracks'][track['id']]
         if 'plan_moves' in state:
             return
+        self.validate_completion(track)
         path, _ = self.location(track)
         moves = {}
         today = date.today()
@@ -766,10 +912,21 @@ class Runner:
             if not re.match(r'^\.ai/plans/(backlog|active|review)/PLAN-', source):
                 continue
             target = f'.ai/plans/done/{period}/{PurePosixPath(source).name}'
-            require(not (path / target).exists(), f'Completed PLAN already exists: {target}')
+            moves[source] = target
+        eligible = {p for contract in state['plan_contracts'].values() for p in contract['completed_intake']}
+        for item in state['completed_phases']['docs-review-2']['resolved_intake']:
+            source = item['path']
+            require(source in eligible, f'Closeout INTAKE was not declared by the PLAN: {source}')
+            if source in moves:
+                continue
+            target = f'.ai/plans/done/{period}/{PurePosixPath(source).name}'
+            moves[source] = target
+        require(len(set(moves.values())) == len(moves), 'Lifecycle destinations collide')
+        for source, target in moves.items():
+            require((path / source).is_file() and not (path / target).exists(), f'Cannot close record: {source}')
+        for source, target in moves.items():
             (path / target).parent.mkdir(parents=True, exist_ok=True)
             git(path, 'mv', '--', source, target)
-            moves[source] = target
         if moves:
             git(path, 'commit', '-m', f"Archive completed plans for {track['id']}")
         state['plan_moves'] = moves
@@ -811,8 +968,7 @@ class Runner:
                 state['completed_phases']['docs-review-2'].get('documentation_complete') is True,
                 'Delivery requires two code reviews and two complete documentation reviews')
         require(state.get('review_verdict') in ('approved', 'changes_requested'), 'No conclusive review for delivery')
-        require(not state.get('residual_findings') or self.config.get('residual_findings', 'merge') == 'merge',
-                'Residual findings parked until the post-PLAN pass')
+        self.validate_completion(track)
         self.ownership(track, path)
         require(not git(path, 'status', '--porcelain'), 'Dirty track cannot be delivered')
         if state.get('delivery_head'):
@@ -828,6 +984,7 @@ class Runner:
         git(path, 'merge', '--no-edit', base)
         self.update(state, integration_base=base, integration_head=git(path, 'rev-parse', 'HEAD'),
                     checkpoint_head=git(path, 'rev-parse', 'HEAD'))
+        self.validate_completion(track)
         self.checks(path, track)
         head = git(path, 'rev-parse', 'HEAD')
         self.update(state, status='delivering', delivery_head=head, tested_base=base,
@@ -967,7 +1124,8 @@ class Runner:
             if action == 'reconcile' and state.get('inflight_phase'):
                 phase = state.get('inflight')
                 require(phase is not None, 'Legacy interrupted phase has no result receipt; preserve and abandon it')
-                require(head == phase['before'], 'Phase HEAD changed; reconcile Git against the saved receipt first')
+                if phase['readonly'] or phase['name'] not in ('build', 'document'):
+                    require(head == phase['before'], 'Phase HEAD changed; reconcile Git against the saved receipt first')
                 result_file = Path(phase['result_file'])
                 result = json.loads(result_file.read_text(encoding='utf-8')) if result_file.is_file() else None
                 if result is not None:
@@ -1006,11 +1164,12 @@ class Runner:
                     'Recovery checkpoint changed')
         else:
             base = self.sync()
+            contracts = self.plan_contracts(track, base)
             require(not path.exists(), 'Assigned worktree already exists')
             git(self.root, 'check-ignore', str(path))
             git(self.root, 'worktree', 'add', '-b', branch, str(path), base)
             # Save ownership even if artifact registration fails after worktree creation.
-            self.update(state, base=base, checkpoint_head=base)
+            self.update(state, base=base, checkpoint_head=base, plan_contracts=contracts)
             for name in track.get('disposable_paths', []):
                 require(not (path / name).exists(), f'Disposable path already exists: {name}')
                 require(not git(path, '--literal-pathspecs', 'ls-files', '--', name), 'Disposable path contains tracked files')
@@ -1049,7 +1208,7 @@ class Runner:
                         for kind, folder in (('FIX', '.ai/fixes/open'), ('INTAKE', '.ai/plans/intake'))
                         for report in (self.root / folder).glob(f'{kind}-*.md')}
         closed = {'-'.join(report.stem.split('-')[:2])
-                  for kind, folder in (('FIX', '.ai/fixes/done'), ('INTAKE', '.ai/plans/abandoned'))
+                  for kind, folder in (('FIX', '.ai/fixes/done'), ('INTAKE', '.ai/plans/done'), ('INTAKE', '.ai/plans/abandoned'))
                   for report in (self.root / folder).rglob(f'{kind}-*.md')}
         for state in all_states:
             for item in state['findings'].values():

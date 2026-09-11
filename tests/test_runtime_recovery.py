@@ -134,7 +134,6 @@ class RecoveryTests(unittest.TestCase):
         track['owned_paths'].append(source)
         track['environment']['WORKER_MODE'] = 'residual'
         self.config['tracks'] += [self.track('b', 21), self.track('c', 41, deps=['a'])]
-        self.config['residual_findings'] = 'park'
         runner = self.runner()
         self.assertFalse(runner.run())
         queue = json.loads((runner.directory / 'followups.json').read_text())
@@ -218,9 +217,8 @@ class RecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(orch.Blocked, 'security'):
             runner.wait_checks(1, 'sha')
 
-    def test_retry_cannot_bypass_park_policy(self):
+    def test_retry_cannot_bypass_incomplete_implementation(self):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'residual'
-        self.config['residual_findings'] = 'park'
         runner = self.runner()
         self.assertFalse(runner.run())
         attempts = copy.deepcopy(runner.state['tracks']['a']['phase_attempts'])
@@ -230,7 +228,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(attempts, runner.state['tracks']['a']['phase_attempts'])
 
     def test_closed_reports_are_not_resurrected_from_receipts(self):
-        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'residual'
+        self.config['tracks'][0]['environment']['WORKER_MODE'] = 'unrelated'
         runner = self.runner()
         self.assertTrue(runner.run())
         finding = runner.state['tracks']['a']['findings']['code']
@@ -323,7 +321,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertTrue(path.is_dir())
 
     def test_resource_waiter_does_not_block_parked_defect_audit(self):
-        self.config.update(residual_findings='park', tracks=[
+        self.config.update(tracks=[
             self.track('a', 1, resources=['port:test'], env={'WORKER_MODE': 'residual'}),
             self.track('b', 21, resources=['port:test']), self.track('c', 41)])
         runner = self.runner()
@@ -395,7 +393,8 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn(f'Documentation worker cannot change source: {name}', state['reason'])
                 self.assertEqual(state['phase_attempts'], {'build': 1, 'review-1': 1, 'review-2': 1, 'document': 1})
                 path, _ = runner.location(config['tracks'][0])
-                self.assertEqual(orch.git(path, 'rev-parse', 'HEAD'), state['code_reviewed_sha'])
+                self.assertNotIn('document', state['completed_phases'])
+                self.assertEqual(orch.git(path, 'diff', state['code_reviewed_sha'], 'HEAD', '--', 'src/a.txt'), '')
                 self.assertEqual((path / 'src/a.txt').read_text(), 'built\n')
                 self.assertFalse(runner.events)
 
