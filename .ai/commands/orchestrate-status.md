@@ -61,8 +61,10 @@ glab mr list --source-branch <branch>
 | Track | Plans | Stage | Round | Commits | Last activity | PR |
 |---|---|---|---|---|---|---|
 
-Stage is the pipeline position: `research` → `implement` → `document` → `pr` →
-`review` → `triage` → `fix` → `merged`, or `stopped`.
+Stage is the pipeline position: `build` → `pr` when there is a diff →
+`review-1` → optional `fix` → mandatory `review-2` → `document` →
+`docs-review-1` → optional `docs-fix` → mandatory `docs-review-2` → final
+checks/delivery, or `stopped`.
 
 **Needs a human** — the section that matters. Each row: the track, what it is
 waiting on, and the specific next action. A blocker with no named next action
@@ -77,9 +79,10 @@ is how a run quietly dies.
   that work is not in any commit and will be lost by `/orchestrate-clean`.
 - A PR merged that the manifest still shows open.
 
-**Cost so far** — tracks completed, review rounds spent, tracks at the ceiling.
-The ceiling is two reviews. Report residual code FIX and documentation/contract
-INTAKE items separately; a third round is a workflow defect, not progress.
+**Cost so far** — tracks completed, code review rounds spent, documentation
+review rounds spent, and tracks at either ceiling. Each ceiling is two reviews;
+report code FIX and documentation/contract INTAKE items separately. A third
+round of either kind is a workflow defect, not progress.
 In runtime mode inspect the Git-common-directory receipts and `followups.json`
 as well as Git/PR state. `ready_with_followups` is not an approved review.
 

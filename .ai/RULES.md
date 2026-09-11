@@ -16,15 +16,17 @@ what to do when the written record and reality disagree.
 ## The Prime Rule
 
 **Writing code you know contradicts a written document is the only forbidden
-move.**
+move, except for the explicitly declared transition in an approved PLAN.**
 
 Documents here are versioned, not sacred. When you find that a spec, plan, or
 doc is wrong, stale, incomplete, or incompatible with the change you are
 making:
 
-1. **Fix the document.**
-2. **Record why**, in the same change.
-3. **Continue the work.**
+1. **Preserve the PLAN's declared target wording.** During the working branch,
+   the current spec may intentionally lag that target until the final
+   documentation batch.
+2. **The documentor fixes and records it after code review two**, in the same PR.
+3. **Continue the work without a silent workaround.**
 
 Three specific failures this rule exists to prevent:
 
@@ -346,8 +348,10 @@ own `plans/intake/INTAKE-{nnn}-{slug}.md`; other unplanned work also uses INTAKE
 Use the corresponding template. FIX work proceeds through `/fix`; INTAKE work
 is triaged through `/plan-archive` and `/plan-new`.
 
-Outside autonomous review, two things are **always in scope** and get fixed rather than captured, because
-leaving them is what corrupts everyone's future work:
+Outside autonomous review, two things are **always in scope** and get fixed
+rather than captured, because leaving them is what corrupts everyone's future
+work. An approved PLAN's promised contract/documentation changes are the
+explicit exception: preserve them until the final documentation batch:
 
 - a document that contradicts reality → amend it, with a record
 - the same fact restated in two documents → collapse it into a link

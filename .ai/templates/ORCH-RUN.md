@@ -111,13 +111,15 @@ the code it depends on, not alongside it.
 
 ## Review rounds
 
-Summarised here from each track's own
-`.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md`, which is the durable
-record — it lives on the track branch, so it has one writer and survives a lost
-session. The ceiling is `orchestration.review.max_rounds` in
-[config.yaml](../../config.yaml), default two; a track that reaches it does
-not start another round and does not wait for a human — triage records what is
-still outstanding and the track merges as `deferred`.
+The coordinator records separate durable code and documentation attempts in
+phase receipts. Code uses `orchestration.review.max_rounds` (two); documentation
+uses `orchestration.documentation.max_review_rounds` (two). Each pair is cold,
+and each permits at most one correction between rounds. Review two of each pair
+is mandatory whenever preceding work is complete and conclusive, including
+after an approved first review or zero eligible fixes. Inconclusive work parks.
+The configured `residual_findings` policy controls whether recorded residuals
+may merge after required checks; it never changes the actual verdict or starts
+a third review.
 
 > **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
 > `INTAKE-nnn` in this template and never as plausible numbers: a scheduler
@@ -126,10 +128,9 @@ still outstanding and the track merges as `deferred`.
 > 023 from an earlier version of this very table, in a project where no `FIX`
 > record had ever existed.
 
-| Track | Round | Verdict           | Blocking findings | Fixes raised       | Deferred                      |
-| ----- | ----- | ----------------- | ----------------- | ------------------ | ----------------------------- |
-| w1t1  | 1     | changes requested | 2                 | FIX-nnn, FIX-nnn+1 | —                             |
-| w1t1  | 2     | changes requested | 1                 | —                  | FIX-nnn+2 (major), INTAKE-nnn |
+| Track | Code 1 | Code 2 | Docs 1 | Docs 2 | Residual policy | State |
+| ----- | ------ | ------ | ------ | ------ | --------------- | ----- |
+| w1t1  | changes requested | approved | changes requested | approved | merge · park | ready · ready_with_followups · stopped |
 
 ## Needs a human
 

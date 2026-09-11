@@ -14,8 +14,9 @@ lives here.
 
 **Agents: read [RULES.md](RULES.md) first.** It answers the question that
 matters most — what you are allowed to change, and what to do when a document
-contradicts reality. The short version: fix the document, record why, keep
-going. Working around a stale document is the only forbidden move.
+contradicts reality. The short version: preserve an approved PLAN target during
+implementation, then let the documentor fix and record it after code review
+two. Working around a stale document is the only forbidden move.
 
 ## Layout
 
