@@ -84,14 +84,17 @@ what stops the record from becoming an archaeology exercise.
 
 A SPEC is based only on verified actual code and observed behavior. Documents
 may guide investigation but cannot establish a SPEC claim. Its body states
-current verified behavior directly and must not cite or depend on an AMD, ADR,
-PLAN, INTAKE, FIX, research, meeting or similar history/planning record. A SPEC
-may carry optional document links in YAML frontmatter for traceability; those
-links neither establish nor modify requirements, and removing them must leave
-every requirement's meaning and verification intact. The body remains
-self-contained, and this metadata does not expand the existing policy for
-SPEC-to-SPEC links. Use general module areas, symbols and behavioral checks
-instead of fragile line references/counts.
+current verified behavior directly and must not cite or depend on another
+document, including an AMD, ADR, PLAN, INTAKE, FIX, research, meeting or
+similar history/planning record. Document references are allowed only in
+optional YAML frontmatter `links` metadata for traceability; those links
+neither establish nor modify requirements, and removing them must leave every
+requirement's meaning and verification intact. The body remains self-contained:
+particular document citations and dependencies, including SPEC-to-SPEC links,
+are prohibited. Code and test evidence references are allowed by naming general
+module areas, symbols and behavioral checks, and the body may describe record
+types when the software processes those records. Avoid fragile line
+references/counts.
 
 **A spec describes the system as it is.** Read cold, with nothing else open, it
 must be a true statement about the software today. That has one strict
