@@ -27,9 +27,10 @@ scope. Verify that documentation paths are Markdown-compatible documentation
 files, are owned and disjoint from code paths, and that source-comment/docstring edits use declared
 source_documentation_paths with behavior-equivalence evidence. Check that no
 executable behavior, test or YAML/JSON change slipped into that phase.
-Check specs for present-tense truth on the merged/deliverable revision, PLAN
-target wording, incoming amendment/ADR references, relative links/anchors in
-other documents, and
+Check specs for present-tense truth on the merged/deliverable revision, body
+independence from history/planning records, optional outgoing SPEC metadata
+links, PLAN target wording, incoming amendment/ADR references,
+relative links/anchors in other documents, and
 commands/examples against the code. A PLAN may intentionally change a contract;
 do not report that declared target change as a contradiction. Do not perform
 code-quality review or invent new decisions.

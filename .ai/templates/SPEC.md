@@ -3,6 +3,7 @@ tier: contract
 authority: agent
 id: SPEC-{nnn}
 title: <What this specifies>
+links: [] # Optional traceability metadata; the body remains self-contained.
 ---
 
 # SPEC-{nnn}: <What this specifies>

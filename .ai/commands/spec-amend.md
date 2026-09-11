@@ -51,7 +51,8 @@ project whose specs are being ignored.
      `supersedes:`, plus `status: superseded` and `superseded_by:` here. That
      status flip needs no amendment record — the new ADR is the record.
 4. **Link the affected document from the AMD.** For an ADR, add the amendment
-   ID to its links. Keep the SPEC self-contained without document references.
+   ID to its links. A SPEC may retain or add optional traceability links in
+   frontmatter, while its body stays self-contained and independent of records.
 5. **Follow the change downstream.** Other specs, plans, docs, or tests that
    depended on the old wording. Check `.ai/truth-map.md` — if the same fact was
    restated elsewhere, collapse the copies into links now.

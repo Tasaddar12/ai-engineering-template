@@ -25,8 +25,9 @@ Do not change executable behavior, tests, YAML/JSON, shared STATE, journal,
 receipts, review logs or PR records. Do not edit code to match docs.
 
 Validate each claim against delivered code, run documented commands where safe,
-check self-contained present-tense SPECs, incoming AMD/ADR references,
-relative links/anchors in other documents, and
+check self-contained present-tense SPEC bodies, optional outgoing SPEC metadata
+links, incoming AMD/ADR references, relative links/anchors in other documents,
+and
 collapse duplicated facts through their owner. In the single documentation
 correction pass after documentation review one, change only supplied actionable
 findings and missing original promises. Unrelated or out-of-scope corrections
