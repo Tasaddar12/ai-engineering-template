@@ -110,7 +110,7 @@ def overlaps(left, right):
     return covers(left, right.rstrip('/')) or covers(right, left.rstrip('/'))
 
 
-DOCUMENT_SUFFIXES = ('.md', '.markdown', '.rst', '.adoc', '.txt')
+DOCUMENT_SUFFIXES = ('.md', '.markdown', '.rst', '.adoc')
 DOCUMENT_PHASES = ('document', 'docs-review-1', 'docs-fix', 'docs-review-2')
 REVIEW_PHASES = ('review-1', 'review-2', 'docs-review-1', 'docs-review-2')
 
@@ -550,7 +550,7 @@ class Runner:
             if docs:
                 require(documentation_path(name), f'Documentation worker cannot change source: {name}')
             else:
-                require(not name.casefold().endswith(('.md', '.markdown', '.rst', '.adoc')) and
+                require(not documentation_path(name) and
                         not name.casefold().startswith(('docs/', 'doc/', 'documentation/', '.ai/specs/', '.ai/decisions/')),
                         f'Code worker cannot change docs/contracts: {name}')
         if changed:

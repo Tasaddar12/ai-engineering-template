@@ -50,6 +50,10 @@ elif phase in ('document', 'docs-fix'):
         write('other.md', 'outside documentation ownership\n')
     if mode == 'document-source':
         write('docs/code.py', 'print("source under docs")\n')
+    if mode == 'document-cmake':
+        write('docs/CMakeLists.txt', 'cmake_minimum_required(VERSION 3.20)\n')
+    if mode == 'document-requirements':
+        write('docs/requirements.txt', 'fixture-dependency==1.0\n')
     if mode == 'incomplete-docs':
         documentation_complete = False
 elif phase.startswith('docs-review'):

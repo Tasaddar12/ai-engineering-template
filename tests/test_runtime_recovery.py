@@ -349,6 +349,33 @@ class DocumentationTests(unittest.TestCase):
     track = fixture.RuntimeTests.track
     runner = fixture.RuntimeTests.runner
 
+    def test_executable_text_configuration_cannot_be_declared_documentation(self):
+        for name in ('CMakeLists.txt', 'requirements.txt', 'docs/CMakeLists.txt', 'docs/requirements.txt'):
+            config = copy.deepcopy(self.config)
+            config['tracks'][0].update(owned_paths=['PLAN-a.md', name], code_paths=[], documentation_paths=[name])
+            with self.subTest(path=name), self.assertRaisesRegex(orch.Blocked, 'Documentation paths cannot name source'):
+                orch.validate(config)
+
+    def test_executable_text_configuration_cannot_be_written_under_documentation_directory(self):
+        for mode, name in (('document-cmake', 'docs/CMakeLists.txt'),
+                           ('document-requirements', 'docs/requirements.txt')):
+            config = copy.deepcopy(self.config)
+            config['run_id'] = mode
+            config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': mode})]
+            config['tracks'][0]['documentation_paths'].append('docs/')
+            config['tracks'][0]['owned_paths'].append('docs/')
+            runner = fixture.FakeForge(config, self.forge)
+            runner.preflight = runner.sync
+            with self.subTest(mode=mode):
+                self.assertFalse(runner.run())
+                state = runner.state['tracks']['a']
+                self.assertIn(f'Documentation worker cannot change source: {name}', state['reason'])
+                self.assertEqual(state['phase_attempts'], {'build': 1, 'review-1': 1, 'review-2': 1, 'document': 1})
+                path, _ = runner.location(config['tracks'][0])
+                self.assertEqual(orch.git(path, 'rev-parse', 'HEAD'), state['code_reviewed_sha'])
+                self.assertEqual((path / 'src/a.txt').read_text(), 'built\n')
+                self.assertFalse(runner.events)
+
     def test_documentation_only_track_still_runs_both_review_pairs(self):
         self.config['tracks'] = [self.track('a', 1, docs=True, env={'WORKER_MODE': 'no-code'})]
         self.config['tracks'][0]['code_paths'] = []
