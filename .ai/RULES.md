@@ -280,8 +280,13 @@ decision from a strong opinion. Two specific failures:
   present nor a lie — it describes an intention. An agent that treats it as
   current will "fix" working code to match something nobody has built.
 
-Decisions become real by landing in `decisions/ADR-*.md`. Constraints and scope
-changes become real by landing in `state/PROJECT.md`, which takes a human.
+Decisions become real by landing in `decisions/ADR-*.md`. Meeting notes alone
+do not authorize intent or scope changes: a change outside a PLAN's declared
+target must land in `state/PROJECT.md` with human authority. Every PLAN,
+including a draft or unapproved PLAN, always authorizes the SPEC, ADR, AMD and
+other document transitions required within its declared target, and a document
+conflict never creates an approval gate. Execution permission remains a
+separate lifecycle decision, and a later direct human instruction governs.
 Until then, an agent that finds a note describing something that ought to be
 true should **raise the gap, not act on it**.
 

@@ -11,8 +11,8 @@ draft or unapproved PLAN, always has authority to require changes to any
 contract in its declared target because it defines desired future state. Do not
 pre-land
 future specs or ADRs; the documentor lands promised wording in the final batch
-after code review. Include `documentation_paths`, even when empty, as a subset
-of owned paths and disjoint from code paths.
+after both code reviews. Include `documentation_paths`, even when empty, as a
+subset of owned paths and disjoint from code paths.
 
 Draft observable criteria, not implementation instructions. Declare ADRs that
 the PLAN needs, confirms or supersedes; do not invent decisions. Do not write

@@ -173,7 +173,7 @@ Act on what it reports:
 
 | Finding | Do |
 |---|---|
-| Conflicts with a spec or `state/PROJECT.md` | Preserve the PLAN's declared target, record the necessary document transition, and continue per [RULES](../RULES.md). If the target creates concrete critical functionality breakage, route supporting PLANs through an ORCH dependency; retain unrelated scheduling checks. |
+| Conflicts with any existing project document (SPEC, ADR, AMD, intent or other) | Preserve the PLAN's declared target, record the necessary document transition, and continue per [RULES](../RULES.md); the conflict never vetoes the PLAN. If the target creates concrete critical functionality breakage, route supporting PLANs through an ORCH dependency; retain unrelated scheduling checks. |
 | Premise invalidated by an earlier wave | Pull it, and offer to re-run `/plan-new` on it |
 | Internally inconsistent, or too vague to slice | Pull it — an implementor cannot build it |
 | Nits only | Proceed, and pass them to the track |

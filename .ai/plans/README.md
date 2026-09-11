@@ -3,7 +3,8 @@ tier: contract
 authority: agent
 title: Plan lifecycle
 ---
-> Contract: amend with evidence inside the approved scope.
+> Contract: amend with evidence within the PLAN's declared target, following
+> [RULES](../RULES.md).
 
 # Plan lifecycle
 
