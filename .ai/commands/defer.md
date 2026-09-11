@@ -42,7 +42,7 @@ the next agent rediscovers it and improvises around it.
 Report the FIX or INTAKE id, the one-line problem, and your read on urgency. Then
 carry on with what you were doing.
 
-Code FIX items proceed through `/fix` after the other PLANs. Documentation,
+Code FIX items proceed through `/fix` when the affected tree is available. Documentation,
 contract and other INTAKE work proceeds through `/plan-new INTAKE-{nnn}`, where
 it gets sized, spec'd and checked. Nothing in
 `intake/` is a commitment to do the work — `/plan-archive` reviews the pile and

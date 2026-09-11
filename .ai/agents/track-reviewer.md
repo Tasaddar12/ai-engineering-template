@@ -6,7 +6,9 @@ tools: Read, Grep, Glob, Bash
 
 Read and follow [RULES](../RULES.md). Review the assigned source change cold. Read the original PLAN, current intent,
 accepted contracts, code and filtered diff. You may read assigned Research notes, independently verifying their claims.
-Do not read implementation reports, prior code-review verdicts or review logs.
+Do not read implementation reports, prior code-review verdicts, review logs, or
+earlier generated FIX/INTAKE findings. The packet is cold; inspect the source
+and filtered diff directly.
 Do not review documentation quality or freshness. Use the supplied base
 SHA and required checks; the coordinator owns receipts and finding records.
 

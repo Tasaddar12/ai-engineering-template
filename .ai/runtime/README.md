@@ -16,6 +16,7 @@ manifest. Keep it outside tracked content or in the Git common directory.
 ```text
 python .ai/runtime/orchestrate.py /path/to/schedule.json --validate
 python .ai/runtime/orchestrate.py /path/to/schedule.json
+python .ai/runtime/orchestrate.py /path/to/schedule.json --status
 ```
 
 Validation alone is read-only. Execution requires the caller's authorization
@@ -122,6 +123,14 @@ AMD under [Scheduling and IDs](../RULES.md#scheduling-and-ids). Build/fix worker
 may create new scoped FIX/INTAKE records; their IDs are audited and retained
 alongside coordinator-generated findings.
 
+The runtime accepts `max_process_attempts` from 1 through 3 (default 2), and
+`done_partition` values `quarter`, `month` or `year`; lifecycle moves use the
+selected partition. Worktrees must be immediate children of the primary's fixed
+`.worktrees/` root. Runtime delivery requires `forge: github`,
+`merge_strategy: merge`, `auto_merge: auto` and `cleanup_on_merge: true`.
+Custom top-level paths or ID formats are rejected, as are linked or nested
+worktree roots. The JSON snapshot is explicit; YAML is never parsed.
+
 ## Review outcomes and deferred work
 
 - Confirmed code defects produce `FIX` files in `.ai/fixes/open/`, including
@@ -145,7 +154,8 @@ alongside coordinator-generated findings.
   Independent tracks continue. Dependencies of blocked tracks wait.
 - Records remain open until a later defect pass verifies before/after proof.
   A cold review omitting an earlier finding does not silently close its FIX.
-  After other PLAN work finishes, `followups.json` marks the queue eligible.
+  `followups.json` marks a queue eligible when its affected tree is available
+  and stopped workers have been checked.
    A parked track with findings and its waiting dependents are listed explicitly
    and do not prevent examination of those findings. A finding is eligible when
    its affected integrated or preserved tree is available; unrelated unfinished
@@ -195,7 +205,8 @@ code review. Only generated finding records and lifecycle moves may follow the
 last documentation review;
 target integration imports already-landed changes and is validated again.
 The scheduler validates the entire closing set before moving completed PLANs
-and evidenced, declared INTAKE items to `done/<year>-Q<quarter>/` in the track; these moves reach the target only when the PR merges. A blocked
+and evidenced, declared INTAKE items to `done/<configured period>/` using
+`lifecycle.done_partition`; these moves reach the target only when the PR merges. A blocked
 PR's local move does not count as completion. Shared STATE/journal updates
 remain coordinator work and are not written concurrently by runtime workers.
 `--match-head-commit` binds the merge to the checked head. The runner then fetches,
@@ -230,16 +241,24 @@ python .ai/runtime/orchestrate.py schedule.json --abandon api --expected-head <s
 
 `--retry` resumes a clean blocked track at its saved coordinator checkpoint,
 such as after a PR service outage or check infrastructure failure. Completed
-phases are reused. `--reconcile` requires the exact inspected worktree HEAD and
+phases are reused. A missing or malformed stopped process result may retry at
+the exact unchanged inspected HEAD within `max_process_attempts`; valid blocked,
+`cannot_review` or completed review decisions are preserved and never replayed.
+Partial writer commits require reconciliation and are not replayed.
+`--reconcile` requires the exact inspected worktree HEAD and
 confirmation that its workers/resource users have stopped; it consumes the saved
 result without launching another worker. A failed build with no edits may be
-retried explicitly. A missing or blocked fix/review result remains parked;
-recovery never grants another fix/review attempt. Changed HEADs, partial edits
-and unfinished Git operations require reconciliation before retrying.
+retried explicitly. Changed HEADs, partial edits and unfinished Git operations
+require reconciliation before retrying.
 
 `--abandon` releases reservations while preserving all files, branches, PRs and
-findings. It never satisfies dependencies or marks work merged. Omit the SHA
-only if allocation failed before creating a worktree. A new run may start once
+findings. It never satisfies dependencies or marks work merged. For an inflight
+readiness worker, always supply its exact expected HEAD, including before
+allocation; omission is allowed only when no worktree/process was ever created.
+Readiness attempts are saved per SHA with history and inflight state written
+before launch. A completed readiness rejection requires a changed revision.
+Reconciliation may consume a clean synchronized descendant target while
+preserving the prior rejection and charging the new revision's budget. A new run may start once
 every earlier track is cleaned after merge or explicitly abandoned and released;
 previously issued ID ranges remain reserved. The coordinator can run these
 commands within existing authorization after establishing their preconditions.

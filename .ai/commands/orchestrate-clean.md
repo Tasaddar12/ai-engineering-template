@@ -5,9 +5,11 @@ argument-hint: [run-id | --all | --dry-run]
 
 Read and follow [RULES](../RULES.md).
 
-Run cleanup from an assigned worktree after synchronization; use [worktree lifecycle](worktree.md).
+Run cleanup from the verified primary checkout after synchronization; use [worktree lifecycle](worktree.md).
 
-Clean up: **${1:-the most recent run}**
+Run administrative cleanup from the verified primary checkout for
+**${1:-the most recent run}**. It performs no tracked writes there; final
+summaries use a sibling finalization worktree and reviewed PR.
 
 **This deletes work.** A worktree holds a full checkout, and a track branch may
 hold commits that exist nowhere else. Removing one that was not merged destroys
@@ -20,6 +22,7 @@ than the user wanted costs one more command; deleting more costs a track.
 ## 1. Find what exists
 
 ```bash
+git rev-parse --show-toplevel
 git worktree list
 git branch --list 'orch/*'
 ls .ai/state/orchestration/
@@ -39,21 +42,21 @@ git log --oneline <base>..<branch>        # empty means fully merged
 **Does its worktree have uncommitted changes?**
 
 ```bash
-git -C .worktrees/<name> status --porcelain
+git -C <absolute-primary>/.worktrees/<name> status --porcelain
 ```
 
 Anything here is in no commit at all. It is the most easily lost thing in the
 repo and the most likely to matter — a track interrupted mid-implementation.
 
-**Is its request still open?**
+**Is its request merged and reviewed?**
 
 ```bash
-gh pr list  --head <branch> --state open
-glab mr list --source-branch <branch> --state opened
+gh pr view <number> --json state,mergedAt,headRefOid
+glab mr view <number>
 ```
 
-An open PR on a branch you are about to delete leaves a request nobody can
-merge.
+Require merged PR state, completed review evidence, synchronized ancestry,
+clean tracked and ignored files, and no advanced remote branch before removal.
 
 ## 3. Show the user before deleting
 
@@ -62,7 +65,7 @@ merge.
 
 Split into two lists and be explicit about the difference:
 
-**Safe to remove** — merged, clean, no open request.
+**Safe to remove** — merged PR, complete review evidence, synchronized and clean.
 
 **Would lose work** — anything failing a check. For each, say precisely what
 disappears: *"`orch/ORCH-001/w2t1` has 7 commits not in `main`, and 3 modified
@@ -85,7 +88,6 @@ dirty, ignored or advanced work and report why it cannot be removed safely.
 ```bash
 git worktree remove .worktrees/<name>
 git branch -d orch/<run>/<track>             # -d refuses unmerged; that is the point
-git worktree prune                           # clears stale administrative files
 ```
 
 Use `git branch -d`, never `-D`. The refusal is a safety check, not an obstacle

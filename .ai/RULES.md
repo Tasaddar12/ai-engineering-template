@@ -110,7 +110,8 @@ the target state makes every verification fail, which teaches everyone to
 ignore the verifier. Unbuilt behavior lives in the plan that will build it,
 under its **Contract changes** section — the exact wording the spec will carry
 on the merged/deliverable revision. The documentor lands that wording after
-both code reviews in the final documentation batch.
+readiness for pure documentation tracks or after both code reviews for full
+tracks.
 
 **An ADR is the opposite of a spec** — a dated record, and allowed to be about
 the past. That is why superseding an ADR means writing a new one that points at
@@ -501,7 +502,7 @@ Residual missing code/functionality or absent overall SPEC coverage prevents
 merge. Capture its FIX/INTAKE evidence and identify supporting work; do not
 use severity downgrades or a permissive residual-policy override to close it.
 
-After other PLAN work completes, a fresh read-only audit examines open code
+When an affected tree is available, a fresh read-only audit examines open code
 FIXes, previous proof and actual integrated or explicitly preserved trees.
 A parked defect and work waiting on it do not prevent examining that defect;
 other unfinished project PLANs do. Include open reports from earlier runs.

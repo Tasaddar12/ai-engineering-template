@@ -24,7 +24,8 @@ Do not soften a failure and do not round a partial result up to a pass.
 
 Then, by verdict:
 
-- **verified** — tell the user to run `/plan-done $1`.
+- **verified** — continue authorized delivery; otherwise report the missing
+  authorization and leave the work ready for `/plan-done $1`.
 - **defects found** — leave the plan in `review/`, list the defects, and
   list missing implementation or overall SPEC coverage and concrete actions.
   Route confirmed bugs to FIX and substantial missing work to a supporting PLAN.

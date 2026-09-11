@@ -69,6 +69,12 @@ Code defects are FIX items. Incidental documentation/contract corrections are
 INTAKE items; actionable findings against the original documentation promises
 may receive the single documentation correction pass between documentation
 reviews. Completion and retained findings follow RULES.md#definition-of-done.
+
+Pure documentation tracks have empty `code_paths` and
+`source_documentation_paths`. Their route is readiness, documentation author,
+PR on a real documentation diff, two documentation reviews and delivery; they
+do not run build, research or synthetic code-review phases. Full tracks use the
+code phases before documentation.
 ```
 
 Each [agent file](../.ai/agents/README.md) owns its inputs, duties and scope.
@@ -249,7 +255,7 @@ After review 2, residual code defects remain open FIX reports; documentation
 and contract corrections remain separate INTAKE items. Missing required code,
 functionality or overall SPEC coverage prevents merge under
 [Definition of done](../.ai/RULES.md#definition-of-done). Complete work can
-retain editorial or unrelated follow-ups with the actual verdict disclosed. No third review is started. After the other PLANs complete,
+retain editorial or unrelated follow-ups with the actual verdict disclosed. No third review is started. When each affected tree is available,
 the runtime looks through the deferred FIX queue in a fresh read-only audit.
 
 Other stopping points: the implementor hits a question only a human can answer

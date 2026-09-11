@@ -62,10 +62,12 @@ glab mr list --source-branch <branch>
 | Track | Plans | Stage | Round | Commits | Last activity | PR |
 |---|---|---|---|---|---|---|
 
-Stage is the pipeline position: `build` → `pr` when there is a diff →
-`review-1` → optional `fix` → mandatory `review-2` → `document` →
-`docs-review-1` → optional `docs-fix` → mandatory `docs-review-2` → final
-checks/delivery, or `stopped`.
+Stage is mode-aware: runtime receipts report `readiness` before allocation;
+full tracks use `build` → `pr` → two code reviews → `document` → two docs
+reviews → delivery. Pure documentation tracks use `readiness` → `document` →
+`pr` on a real diff → two documentation reviews → delivery. Compare stored phase
+receipts with the original PLAN paths and live Git/forge state; do not infer a
+dead worker from few commits because readiness and reviews are read-only.
 
 **Needs a human** — the section that matters. Each row: the track, what it is
 waiting on, and the specific next action. A blocker with no named next action
@@ -112,7 +114,7 @@ One recommendation, not a menu:
   run in that track's worktree after checking its branch and review log.
 - Tracks reporting `ready` but unmerged → re-invoke `/orchestrate`; merging is
   the scheduler's job and it may simply not have been woken.
-- A wave fully merged → the next wave is ready to start
+- A wave fully merged → recheck only tracks whose own dependencies and immutable readiness target are satisfied
 - Everything merged → close the run and `/plan-archive`
 
 If the run finished, say so plainly and list what merged and what did not.

@@ -151,7 +151,7 @@ its PR, merge the exact reviewed head, and fast-forward the primary checkout
 before runtime starts. The runtime must snapshot a synchronized target; it may
 not start from a locally-ahead primary checkout.
 
-## 5. Create ready tracks' worktrees
+## 5. Readiness and track worktrees
 
 **Only ready tracks.** Create a track after its own dependencies have merged,
 the target has synced and their contents are verified. Waves are a display
@@ -184,30 +184,29 @@ Act on what it reports:
 | Internally inconsistent, or too vague to slice | Pull it — an implementor cannot build it |
 | Nits only | Proceed, and pass them to the track |
 
-A pulled plan goes back to `.ai/plans/backlog/`, and anything that depended on
-it is pulled too. **Say what you removed and why** — a wave that quietly
-shrinks looks like the orchestrator lost a plan.
+A rejected plan remains at its assigned original path and its track is parked;
+anything that depended on it waits. Record the reason in the coordinator
+receipt so a wave that pauses is not mistaken for a lost plan.
 
 If the checker finds nothing, say that too. It is evidence, not a formality.
 
 ### Create the worktrees
 
-Per track:
+Manual hosts create each track only after the immutable readiness check:
 
 ```bash
-git worktree add .worktrees/ORCH-001-w1t1 -b orch/ORCH-001/w1t1
-git -C .worktrees/ORCH-001-w1t1 rev-parse --show-toplevel   # absolute path
+git worktree add <absolute-primary>/.worktrees/ORCH-001-w1t1 -b orch/ORCH-001/w1t1
+git -C <absolute-primary>/.worktrees/ORCH-001-w1t1 rev-parse --show-toplevel
 ```
 
-Manual hosts then move the track's plans into `.ai/plans/active/` and commit
-there. Runtime workers keep assigned PLAN paths fixed; the coordinator performs
+Manual hosts keep assigned PLAN paths fixed; the coordinator performs
 the final lifecycle moves so all phases use the same inputs.
 
 ## 6. Dispatch ready tracks
 
-**Runtime mode:** invoke the approved JSON schedule once. The runner manages
-child processes and completion notifications internally; keep its host process
-alive. It does not depend on a chat session being re-invoked automatically.
+**Runtime mode:** compile and validate the approved JSON snapshot at the
+synchronized target, then invoke it once. The runner performs readiness and
+owns allocation and creation of track worktrees; do not create them here.
 
 **Manual host mode:** launch each ready track in its assigned worktree using
 the host's documented background/completion mechanism, for example:
@@ -305,16 +304,16 @@ Process each terminal track without waiting for an unrelated wave barrier:
 1. **Check nothing escaped.** `git status --porcelain` on this checkout must be
    empty. Anything here means an agent wrote outside its worktree — **stop and
    report it** rather than merging over it.
-2. **Write `.ai/state/STATE.md` and the journal** from what the tracks
-   reported. Tracks are told not to touch either: they are single shared files,
-   and parallel tracks editing them makes the second merge conflict. **You are
-   the only writer**, on the base branch.
+2. **Record shared state through a coordinator worktree.** Prepare STATE,
+   journal and manifest updates in a sibling finalization worktree, review and
+   merge that PR, then synchronize the primary. Runtime receipts remain
+   operational files in the Git common directory between allocations.
 3. **Update the manifest** — which tracks merged, rounds each took, ids used.
 4. **Re-check newly ready tracks' plans** — that is step 5's `plan-checker` gate,
    and it is the reason the gate runs per ready track rather than once at the top.
-5. **Drop any plan whose dependency did not land.** If a wave-2 plan depended
-   on a stopped wave-1 track, it cannot be built — move it back to
-   `backlog/`, say why, and carry on with the rest of the wave.
+5. **Park any plan whose dependency did not land.** Preserve its original
+   assigned PLAN path and record the blocked dependency; do not move it back to
+   `backlog/` during an in-run allocation.
 6. Go to step 5 and dispatch tracks whose own dependencies are now verified.
 
 Keep going until every wave is done or nothing is left that can proceed. **The
@@ -347,8 +346,8 @@ that defect. Unrelated unfinished PLANs do not delay eligibility; report them.
 
 ## Rules for you
 
-- **Never write code, and never edit anything inside a worktree.** Hand the
-  track off.
+- **Never write code.** Coordinator records are prepared in their assigned
+  sibling worktree and delivered through the reviewed PR lifecycle.
 - **Never drive more than the scheduling.** Launching a track and merging its
   result is yours. Its research, its code, its review rounds are not — if you
   find yourself tracking which stage three tracks are at, you have taken on the
@@ -357,8 +356,8 @@ that defect. Unrelated unfinished PLANs do not delay eligibility; report them.
   host's documented notification mechanism; do not assume a chat wake-up.
 - **You merge; tracks do not.** Concurrent merges into one base branch race
   each other, and merging here serialises them.
-- **You alone write the manifest, `STATE.md` and the journal**, and only on the
-  base branch.
+- **You alone own the manifest, `STATE.md` and journal**, but write them in a
+  reviewed coordinator worktree; the primary checkout only inspects and syncs.
 - **A dependent track never starts early.** Require its own dependencies to be
   merged and synced; display-wave boundaries do not block independent work.
 - **One stuck track does not stop the run.** Merge what is ready, park only the

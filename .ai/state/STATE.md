@@ -42,5 +42,6 @@ without reading the journal.
 ## Known drift
 
 Places where documents and reality are suspected to disagree but have not been
-reconciled yet. Anything sitting here is a legitimate, always-in-scope task:
+reconciled yet. Treat entries as evidence for approved scope; they do not
+automatically expand the current task:
 confirm which side is right, amend, and remove the line.

@@ -75,7 +75,7 @@ error raised anywhere. The blocks are what prevent that.
 | ----- | ------ | ----- | ----- | ---- | --- | ---- |
 | w1t1  | 40–59  | 40–59 | 12–31 | 8–27 | 5–24 |      |
 
-Allocation rules are in [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
+Allocation rules are in [RULES: Scheduling and IDs](../../RULES.md#scheduling-and-ids).
 Use the coordinator's issued-block ledger when filling this table.
 
 ## Waves
@@ -97,7 +97,7 @@ documentation-only track whose branch still has no net diff
  preserves its checkout, and creates no empty commit or PR; it does not proceed
  to docs reviews or delivery. Code-only tracks may already have a valid code
  diff/PR and may continue without documentation edits. Incomplete work or an inconclusive review is parked; residual
-findings are classified through [Definition of done](../RULES.md#definition-of-done).
+findings are classified through [Definition of done](../../RULES.md#definition-of-done).
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees
@@ -106,7 +106,7 @@ with the table.
 ### Wave 2 — pending
 
 List each track's own prerequisites and current wait reason. Dispatch readiness
-uses [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
+uses [RULES: Scheduling and IDs](../../RULES.md#scheduling-and-ids).
 
 ## Review rounds
 
@@ -117,7 +117,7 @@ and each permits at most one correction between rounds. Review two of each pair
 is mandatory whenever preceding work is complete and conclusive, including
 after an approved first review or zero eligible fixes. Inconclusive work parks.
 Record the actual completeness evidence and retained follow-ups under
-[Definition of done](../RULES.md#definition-of-done).
+[Definition of done](../../RULES.md#definition-of-done).
 
 > **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
 > `INTAKE-nnn` in this template and never as plausible numbers: a scheduler

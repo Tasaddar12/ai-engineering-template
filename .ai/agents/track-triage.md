@@ -83,7 +83,8 @@ reviews behind it.
 
 Every confirmed code defect gets a FIX, including minor and out-of-scope bugs;
 only in-scope code corrections may enter the single code-fix pass after review
-1. At review 2, defer residual code findings until the other PLANs complete.
+1. At review 2, defer residual code findings until their affected tree is
+   available; unrelated PLAN backlog is context only.
 For documentation review 1, the coordinator may send actionable findings that
 correct an original PLAN promise through the single documentation-fix pass.
 Unrelated or out-of-scope documentation/contract corrections become INTAKE
