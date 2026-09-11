@@ -7,6 +7,8 @@ Build track **$2** of run **$1**. The coordinator schedules, records, commits,
 publishes and merges runtime work. A track never merges another track or edits
 shared state. Manual role commits are allowed only when explicitly assigned.
 
+## Track scope
+
 Read `.ai/config.yaml` and `.ai/RULES.md`. Establish the absolute worktree,
 branch, base SHA, run manifest, reserved IDs, owned paths, code paths,
 documentation paths and exclusive resources before dispatching any worker.
