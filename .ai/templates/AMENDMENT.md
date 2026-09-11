@@ -49,7 +49,8 @@ Delete unless applicable. Amendment ids this record replaces, and why.
 Naming: AMD-{nnn}-{slug}.md in .ai/decisions/amendments/.
 
 The documentation agent writes this before editing the SPEC, after code review.
-Link the affected SPEC from this AMD; the SPEC has no document references.
+Link the affected SPEC from this AMD. A SPEC may carry optional traceability
+links in frontmatter, but its body has no document citations or dependencies.
 Commit it with the corresponding PLAN documentation step in the same PR as code.
 Three sentences per
 section is plenty — the record exists so a human can audit why the contract

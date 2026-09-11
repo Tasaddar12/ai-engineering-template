@@ -83,10 +83,15 @@ what stops the record from becoming an archaeology exercise.
 | `plans/**/PLAN-*.md` | future | What we intend to build next |
 
 A SPEC is based only on verified actual code and observed behavior. Documents
-may guide investigation but cannot establish a SPEC claim. A SPEC contains no
-references to other documents, including ADR/PLAN/AMD IDs or frontmatter links.
-Amendments, decisions and PLANs may link inward to a SPEC. Use general module
-areas, symbols and behavioral checks instead of fragile line references/counts.
+may guide investigation but cannot establish a SPEC claim. Its body states
+current verified behavior directly and must not cite or depend on an AMD, ADR,
+PLAN, INTAKE, FIX, research, meeting or similar history/planning record. A SPEC
+may carry optional document links in YAML frontmatter for traceability; those
+links neither establish nor modify requirements, and removing them must leave
+every requirement's meaning and verification intact. The body remains
+self-contained, and this metadata does not expand the existing policy for
+SPEC-to-SPEC links. Use general module areas, symbols and behavioral checks
+instead of fragile line references/counts.
 
 **A spec describes the system as it is.** Read cold, with nothing else open, it
 must be a true statement about the software today. That has one strict
@@ -236,7 +241,8 @@ The assigned documentor uses this after code review when changing a
    requirement is gone. On an ADR, correct a factual error only; changing the
    decision is a new ADR, not an edit.
 3. Keep the affected document reference in the AMD. An ADR may link back to
-   the amendment; a SPEC never contains document references.
+   the amendment. A SPEC may carry optional traceability links in frontmatter,
+   but its body remains self-contained and independent of document records.
 4. Include both files in the documentation commit in the same PR as the code
    change. Implementation and documentation commits may be separate while the
    track is under review.
@@ -542,8 +548,9 @@ Shared project and workflow rules belong in this file. Each agent's specific
 instructions belong in its agent file, which references this file. Commands
 own their operating procedures. Templates hold fields and example record
 shapes; guides provide navigation, examples and tool interfaces.
-Self-contained SPECs are the exception to outbound links: they state their own
-verified behavior without citing another document.
+SPEC bodies are self-contained: they state their own verified behavior without
+citing or depending on another document. Optional frontmatter links are
+traceability metadata only and do not establish requirements.
 
 ## Scheduling and IDs
 
