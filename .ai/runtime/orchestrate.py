@@ -21,12 +21,13 @@ import posixpath
 import re
 import shutil
 import signal
-import string
 import subprocess
 import sys
 import threading
 import time
 from urllib.parse import quote, unquote, urlsplit
+
+from markdown_it import MarkdownIt
 
 
 class Blocked(RuntimeError):
@@ -126,102 +127,75 @@ def documentation_path(path):
 def rebase_record_links(text, source, target, moves=None):
     moves = moves or {}
     source_dir, target_dir = posixpath.dirname(source), posixpath.dirname(target)
-    prefix = re.compile(r'\]\([ \t]*(?:\r?\n[ \t]*)?|^[ \t]{0,3}\[[^\]\n]+\]:[ \t]*(?:\r?\n[ \t]*)?', re.M)
-    punctuation = string.punctuation
+    parser = MarkdownIt('commonmark')
 
-    def replace(token):
-        angled = token.startswith('<') and token.endswith('>')
-        link = token[1:-1] if angled else token
-        link = re.sub(r'\\([' + re.escape(punctuation) + r'])', r'\1', link)
+    def snapshot(markdown):
+        environment, urls = {}, []
+
+        def tokens_shape(tokens):
+            shape = []
+            for token in tokens:
+                attrs = dict(token.attrs)
+                for key in ('href', 'src'):
+                    if key in attrs:
+                        urls.append(attrs[key])
+                        attrs[key] = None
+                shape.append((token.type, token.tag, token.nesting, token.hidden, token.markup, token.info, attrs,
+                              None if token.type == 'inline' else token.content,
+                              tokens_shape(token.children) if token.children else None))
+            return shape
+
+        shape = tokens_shape(parser.parse(markdown, environment))
+        references = [(('reference', key), value) for key, value in sorted(environment.get('references', {}).items())]
+        references += [(('duplicate', index), value) for index, value in enumerate(environment.get('duplicate_refs', []))]
+        reference_shape = []
+        for key, value in references:
+            urls.append(value['href'])
+            reference_shape.append((key, {k: v for k, v in value.items() if k not in ('href', 'map')}))
+        return (shape, reference_shape), urls
+
+    def destination(link):
         try:
             parts = urlsplit(link)
         except ValueError:
-            return token
+            return None
         if not parts.path or parts.scheme or parts.netloc or parts.path.startswith('/'):
-            return token
+            return None
         resolved = posixpath.normpath(posixpath.join(source_dir, unquote(parts.path)))
         if resolved == '..' or resolved.startswith('../'):
-            return token
+            return None
         rebased = posixpath.relpath(moves.get(resolved, resolved), target_dir)
         if parts.path.endswith('/'):
             rebased += '/'
         rebased = quote(rebased, safe="/@!$&'*+,;=-._~")
         if parts.query:
-            rebased += '?' + parts.query
+            rebased += '?' + quote(parts.query, safe="/?:@!$&'*+,;=-._~%")
         if parts.fragment:
-            rebased += '#' + parts.fragment
-        return '<' + rebased + '>' if angled else rebased
+            rebased += '#' + quote(parts.fragment, safe="/?:@!$&'*+,;=-._~%")
+        return rebased
 
-    def destinations(chunk):
-        parts, cursor = [], 0
-        for match in prefix.finditer(chunk):
-            start = match.end()
-            if start < cursor or start == len(chunk):
-                continue
-            angled = chunk[start] == '<'
-            end, depth = start + int(angled), 0
-            while end < len(chunk):
-                char = chunk[end]
-                if char == '\\' and end + 1 < len(chunk) and chunk[end + 1] in punctuation:
-                    end += 2
-                    continue
-                if angled:
-                    if char == '>':
-                        end += 1
-                        break
-                    if char in '\r\n':
-                        break
-                elif char.isspace() or char == ')' and not depth:
-                    break
-                elif char == '(':
-                    depth += 1
-                elif char == ')':
-                    depth -= 1
-                end += 1
-            if end == start or depth or angled and (end <= start + 1 or chunk[end - 1] != '>'):
-                continue
-            parts.extend((chunk[cursor:start], replace(chunk[start:end])))
-            cursor = end
-        parts.append(chunk[cursor:])
-        return ''.join(parts)
-
-    lines, pending, fence = [], [], None
-
-    def prose(chunk):
-        parts, cursor, index = [], 0, 0
-        while index < len(chunk):
-            if chunk[index] == '\\' and index + 1 < len(chunk) and chunk[index + 1] in punctuation:
-                index += 2
-                continue
-            if chunk[index] != '`':
-                index += 1
-                continue
-            length = len(re.match(r'`+', chunk[index:])[0])
-            closing = re.search(r'(?<!`)`{' + str(length) + r'}(?!`)', chunk[index + length:])
-            if closing is None:
-                index += length
-                continue
-            end = index + length + closing.end()
-            parts.extend((destinations(chunk[cursor:index]), chunk[index:end]))
-            cursor = index = end
-        parts.append(destinations(chunk[cursor:]))
-        return ''.join(parts)
-
-    for line in text.splitlines(keepends=True):
-        marker = re.match(r'^[ \t]{0,3}(`{3,}|~{3,})(.*)', line)
-        if fence:
-            lines.append(line)
-            if marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
-                fence = None
-        elif marker:
-            lines.append(prose(''.join(pending)))
-            pending = []
-            lines.append(line)
-            fence = marker[1]
-        else:
-            pending.append(line)
-    lines.append(prose(''.join(pending)))
-    return ''.join(lines)
+    current = text
+    shape, urls = snapshot(current)
+    candidates = list(re.finditer(r'\][(:][ \t\r\n]*', text))
+    for match in reversed(candidates):
+        start = match.end()
+        parsed = parser.helpers.parseLinkDestination(text, start, len(text))
+        if not parsed.ok:
+            continue
+        replacement = destination(parsed.str)
+        if replacement is None:
+            continue
+        old_url, new_url = parser.normalizeLink(parsed.str), parser.normalizeLink(replacement)
+        if text[start:parsed.pos].startswith('<'):
+            replacement = '<' + replacement + '>'
+        candidate = current[:start] + replacement + current[parsed.pos:]
+        candidate_shape, candidate_urls = snapshot(candidate)
+        if candidate_shape != shape or len(candidate_urls) != len(urls):
+            continue
+        changed = [(before, after) for before, after in zip(urls, candidate_urls) if before != after]
+        if changed and all(before == old_url and after == new_url for before, after in changed):
+            current, urls = candidate, candidate_urls
+    return current
 
 
 def json_section(text, heading):

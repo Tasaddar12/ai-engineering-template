@@ -34,7 +34,7 @@ class RecordLinkTests(unittest.TestCase):
         peer_target = '.ai/plans/done/2026-Q3/INTAKE-001-example.md'
         text = ('[peer](../intake/INTAKE-001-example.md#proof)\n'
                 '[guide](<../../../docs/My%20Guide.md> "Guide")\n'
-                '[rules]: ../../RULES.md#bug-fixes "Rules"\n'
+                '\n[rules]: ../../RULES.md#bug-fixes "Rules"\n\n'
                 '[local](#proof) [web](https://example.org/a)\n'
                 '`[inline example](../intake/INTAKE-001-example.md)`\n'
                 '```md\n[example](../intake/INTAKE-001-example.md)\n```\n')
@@ -57,7 +57,7 @@ class RecordLinkTests(unittest.TestCase):
     def test_markdown_escapes_nested_parentheses_and_multiline_references(self):
         text = ('[guide](../../docs/Guide\\(draft\\).md)\n'
                 '[nested](../../docs/Guide(draft(v2)).md)\n'
-                '[guide-reference]:\n  ../../docs/Guide\\(draft\\).md "Guide"\n')
+                '\n[guide-reference]:\n  ../../docs/Guide\\(draft\\).md "Guide"\n')
         updated = orch.rebase_record_links(text, '.ai/plans/PLAN-001.md', '.ai/plans/done/PLAN-001.md')
         self.assertIn('[guide](../../../docs/Guide%28draft%29.md)', updated)
         self.assertIn('[nested](../../../docs/Guide%28draft%28v2%29%29.md)', updated)
@@ -71,6 +71,59 @@ class RecordLinkTests(unittest.TestCase):
         escaped = '\\` [real](fourth.md) \\`'
         self.assertEqual(orch.rebase_record_links(escaped, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
                          '\\` [real](../fourth.md) \\`')
+
+    def test_escaped_url_components_remain_markdown_destinations(self):
+        text = '[anchor](peer.md?search=draft\\)#section\\))\n'
+        updated = orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md')
+        self.assertEqual(updated, '[anchor](../peer.md?search=draft%29#section%29)\n')
+
+    def test_link_titles_are_preserved_as_text(self):
+        for title in ('"[sample](example.md)"', "'[sample](example.md)'", '(sample \\(example.md\\))'):
+            text = '[guide](peer.md ' + title + ')\n'
+            with self.subTest(title=title):
+                self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
+                                 '[guide](../peer.md ' + title + ')\n')
+        reference = '[guide]: peer.md "[sample](example.md)"\n'
+        self.assertEqual(orch.rebase_record_links(reference, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
+                         '[guide]: ../peer.md "[sample](example.md)"\n')
+
+    def test_indented_code_is_preserved_and_paragraph_continuations_rebase(self):
+        text = ('    [example](peer.md)\n\n\t[tabbed](peer.md)\n\n'
+                'Paragraph continues\n    [real](peer.md)\n\n'
+                '[ref]:\n    peer.md\n')
+        updated = orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md')
+        self.assertIn('    [example](peer.md)\n\n\t[tabbed](peer.md)', updated)
+        self.assertIn('Paragraph continues\n    [real](../peer.md)', updated)
+        self.assertIn('[ref]:\n    ../peer.md', updated)
+
+    def test_literal_link_syntax_and_html_are_preserved(self):
+        literals = [r'\[literal](peer.md)', 'literal](peer.md)',
+                    '<div>\n[example](peer.md)\n</div>', '<span title="[sample](peer.md)">text</span>']
+        for literal in literals:
+            text = literal + '\n\n[real](peer.md)\n'
+            with self.subTest(literal=literal):
+                self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
+                                 literal + '\n\n[real](../peer.md)\n')
+
+    def test_lists_distinguish_code_from_links_and_reference_definitions(self):
+        pairs = [('- ```md\n  [example](peer.md)\n  ```\n', '- ```md\n  [example](peer.md)\n  ```\n'),
+                 ('- item\n\n      [example](peer.md)\n', '- item\n\n      [example](peer.md)\n'),
+                 ('- item\n\n    [real](peer.md)\n', '- item\n\n    [real](../peer.md)\n'),
+                 ('- [ref]: peer.md\n\n[ref]\n', '- [ref]: ../peer.md\n\n[ref]\n'),
+                 ('> [ref]: peer.md\n>\n> [ref]\n', '> [ref]: ../peer.md\n>\n> [ref]\n')]
+        for text, expected in pairs:
+            with self.subTest(text=text):
+                self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'), expected)
+
+    def test_code_in_link_labels_and_titles_does_not_hide_the_destination(self):
+        for text in ('[a `code` label](peer.md)', '[guide](peer.md "`[sample](example.md)`")'):
+            with self.subTest(text=text):
+                self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
+                                 text.replace('(peer.md', '(../peer.md'))
+
+    def test_reference_like_prose_is_not_rewritten_as_a_definition(self):
+        text = 'Paragraph\n[not-a-definition]: peer.md\n'
+        self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'), text)
 
 
 if __name__ == '__main__':
