@@ -14,10 +14,9 @@ started: YYYY-MM-DD
 > in [the journal](../journal/); what was decided goes in the plans and their
 > PRs.
 >
-> **Only `/orchestrate` writes this file, and only on the base branch.** No
-> track ever touches it — tracks are built by separate `/orchestrate-track`
-> sessions, and parallel writers here would conflict in the one file that has
-> to stay readable.
+> **The coordinator owns this file.** Prepare and finalize it in an assigned
+> sibling worktree through a reviewed PR; synchronize the primary target before
+> runtime allocation. No track edits it directly.
 >
 > **The schedule is authoritative; the stage columns are not.** Waves, tracks
 > and id blocks are decided once and fixed. A track's _stage_ is derived from
@@ -64,7 +63,7 @@ instead of `src/`.
 
 ## Reserved id blocks
 
-Allocated by the main session before any track starts, and never reused — a
+Allocated by the coordinator before any track starts, and never reused — a
 later wave carries on from the highest block issued here.
 
 Tracks branch from the same commit, so "highest existing number plus one" makes

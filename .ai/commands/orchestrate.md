@@ -128,7 +128,7 @@ Then two judgements the numbers do not show, and say them plainly:
 
 On `--dry-run`, stop here. The manifest and this estimate are the deliverable.
 
-## 4. Reserve id blocks
+## 4. Prepare and review the manifest
 
 Every record type is numbered "highest existing plus one". Tracks branch from
 the same commit, so they all compute the same next number, write it under
@@ -146,7 +146,10 @@ the whole repository and give every track a contiguous block of 20:
 Record them in the manifest. Blocks are never reused, including by later
 waves — carry on from the highest issued.
 
-Commit the manifest to the base branch.
+Write the manifest in an immediate-child preparation worktree, review it, open
+its PR, merge the exact reviewed head, and fast-forward the primary checkout
+before runtime starts. The runtime must snapshot a synchronized target; it may
+not start from a locally-ahead primary checkout.
 
 ## 5. Create ready tracks' worktrees
 

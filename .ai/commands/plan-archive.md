@@ -5,6 +5,8 @@ argument-hint: [period]
 
 Read and follow [RULES](../RULES.md).
 
+Run these lifecycle moves in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Tidy the plan lifecycle. Period: **$ARGUMENTS** (default: the current one from
 `lifecycle.done_partition` in `.ai/config.yaml`, e.g. `2026-Q3`).
 

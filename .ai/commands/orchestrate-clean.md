@@ -5,6 +5,8 @@ argument-hint: [run-id | --all | --dry-run]
 
 Read and follow [RULES](../RULES.md).
 
+Run cleanup from an assigned worktree after synchronization; use [worktree lifecycle](worktree.md).
+
 Clean up: **${1:-the most recent run}**
 
 **This deletes work.** A worktree holds a full checkout, and a track branch may

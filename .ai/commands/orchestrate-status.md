@@ -8,7 +8,7 @@ Read and follow [RULES](../RULES.md).
 Report the state of: **${1:-the most recent run}**
 
 Read the manifest, then **check it against reality**. The manifest is what the
-main session believed when it last wrote; a run interrupted mid-track leaves it
+coordinator recorded; a run interrupted mid-track leaves it
 describing a state that no longer exists. Where they disagree, git wins.
 
 ## Gather
@@ -19,7 +19,7 @@ git worktree list                             # what exists on disk
 git branch --list 'orch/*'                    # track branches
 ```
 
-For each track branch:
+For each track branch in manual mode:
 
 ```bash
 git log --oneline <base>..<branch>            # what it has actually built
@@ -86,7 +86,8 @@ review rounds spent, and tracks at either ceiling. Each ceiling is two reviews;
 report code FIX and documentation/contract INTAKE items separately. A third
 round of either kind is a workflow defect, not progress.
 In runtime mode inspect the Git-common-directory receipts and `followups.json`
-as well as Git/PR state. `ready_with_followups` is not an approved review.
+as well as Git/PR state. In manual mode inspect the track branch's review log
+and worker output. `ready_with_followups` is not an approved review.
 
 Each track is driven by its own `/orchestrate-track` session, normally launched
 in the background by the scheduler. A track with no recent activity is either
@@ -96,20 +97,20 @@ still working or has no session — read its `TRACK STATE` line to tell:
 |---|---|
 | `ready` | Finished cleanly, waiting for the scheduler to merge |
 | `stopped` | Needs a human. The reason is on the next line |
-| absent | Either still running, or the session died mid-track |
+| absent | Runtime: inspect receipts and live Git; manual: either running or died mid-track |
 
 **An absent state with no recent commits is the case worth flagging** — a
-session that ended without writing one looks the same as a crash. Say so, and
-give the command to relaunch it.
+session that ended without writing one looks the same as a crash. In runtime
+mode reconcile the saved process/result receipt and live Git before retrying;
+in manual mode report the missing session and its assigned worktree.
 
 ## Then say what to do next
 
 One recommendation, not a menu:
 
 - Waiting on a human → what the question is and which track it unblocks
-- A track with no session driving it → `/orchestrate-track <run> <track>`,
-  run in that track's worktree. It works out its own stage from git and
-  continues; there is no separate resume.
+- A manual track with no session driving it → `/orchestrate-track <run> <track>`,
+  run in that track's worktree after checking its branch and review log.
 - Tracks reporting `ready` but unmerged → re-invoke `/orchestrate`; merging is
   the scheduler's job and it may simply not have been woken.
 - A wave fully merged → the next wave is ready to start

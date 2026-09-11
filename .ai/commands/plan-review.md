@@ -5,6 +5,9 @@ argument-hint: <plan-id>
 
 Read and follow [RULES](../RULES.md).
 
+This mutating procedure runs in an assigned immediate-child worktree; follow
+the [shared lifecycle](worktree.md) before recording review state.
+
 Verify **$1**.
 
 1. Locate the plan. If it is still in `.ai/plans/active/`, `git mv` it to

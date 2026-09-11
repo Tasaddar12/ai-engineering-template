@@ -90,7 +90,8 @@ informed ones. Then:
   evidence to a documentation agent for self-contained SPECs under RULES.
   Keep the existing-doc inventory separate from evidence for SPEC claims.
 
-Stop and ask whenever a judgment is mine to make. Do not commit.
+Stop and ask whenever a judgment is mine to make. Prepare approved changes in
+the assigned worktree and use `/onboard-pr` for the reviewed commit and delivery.
 ```
 
 ---
@@ -116,7 +117,8 @@ adoption and issue sweep, and spend the effort on:
 - A first plan in .ai/plans/backlog/, checked by plan-checker.
 
 Then append .ai/templates/AGENTS.snippet.md to AGENTS.md, creating it if
-absent. Do not commit.
+absent. Prepare approved changes in the assigned worktree and use `/onboard-pr`
+for the reviewed commit and delivery.
 ```
 
 ---
@@ -141,7 +143,9 @@ Keep it minimal:
 - Append .ai/templates/AGENTS.snippet.md to AGENTS.md.
 
 Skip the roadmap, skip retro-specs, skip anything the mode does not require.
-Tell me if you think light mode is the wrong call for this repo. Do not commit.
+Tell me if you think light mode is the wrong call for this repo. Prepare the
+approved configuration in the assigned worktree and use `/onboard-pr` for
+reviewed delivery.
 ```
 
 ---
@@ -164,7 +168,8 @@ nothing else yet.
 4. Leave .ai/specs/ and .ai/plans/ alone entirely.
 
 Then tell me, in a few lines, what changes about how agents will behave on this
-repo and what does not. Do not commit.
+repo and what does not. Prepare approved records in the assigned worktree and
+use `/onboard-pr` for reviewed delivery.
 ```
 
 ---
@@ -198,7 +203,8 @@ Report which confirmed code bugs are ready for /fix and which INTAKE fragments
 need investigation or /plan-new.
 
 Finish with two lists — the three items most worth a plan, and the ones that
-are same-day /fix candidates — and why. Do not fix anything, and do not commit.
+are same-day /fix candidates — and why. Do not fix anything; capture approved
+records in the assigned worktree and use `/onboard-pr` for reviewed delivery.
 ```
 
 ---
@@ -224,7 +230,8 @@ without adopting the rest of the structure yet.
    following RULES; existing documents are not SPEC sources.
 
 Show me all of that before changing a single file. Then make only the changes I
-approve, collapsing duplicates into links to the owning document. Do not commit.
+approve, collapsing duplicates into links to the owning document. Prepare these
+approved edits in the assigned worktree and use `/onboard-pr` for reviewed delivery.
 ```
 
 ---
@@ -284,7 +291,8 @@ what was said on a date, never a requirement — so:
   me instead of taking the more recent one.
 
 Move all of them under .ai/decisions/meetings/ with proper frontmatter, and
-leave the out-of-area ones marked unharvested. Do not commit.
+leave the out-of-area ones marked unharvested. Prepare moves in the assigned
+worktree and use `/onboard-pr` for reviewed delivery.
 ```
 
 ## Writing your own
@@ -297,5 +305,5 @@ The prompts above are long on purpose. Four things earn their length:
   intent, what to retire, what to retro-spec. An agent told to ask will.
 - **Demand the list before the files.** "Show me the clustered list first" is
   what stands between you and forty unreviewable intake files.
-- **Say "do not commit."** You want to read the diff before it becomes history,
-  and `/onboard-pr` is the deliberate step that lands it.
+- **Use `/onboard-pr`.** It is the deliberate reviewed step that lands onboarding
+  changes from the assigned worktree.

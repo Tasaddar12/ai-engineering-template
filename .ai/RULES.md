@@ -614,6 +614,28 @@ review findings and retains valid evidence even if a phase fails its edit audit.
 
 ## Delivery, recovery and cleanup
 
+### Worktree lifecycle
+
+Every mutating command, including plan and FIX lifecycle commands, `defer`,
+`harvest`, `spec-amend`, onboarding and coordinator record updates, obtains or
+reuses an assigned immediate-child worktree under the fixed, ignored
+`.worktrees/` root before writing. Verify its absolute root and branch first.
+The primary checkout is read-only for tracked edits and commits; it may inspect,
+fetch and fast-forward a verified merged target. A linked worker needing another
+checkout creates a sibling from the primary absolute root and never nests a
+worktree inside its assigned checkout. See [the command procedure](commands/worktree.md).
+
+Preparation and finalization records use a sibling worktree and their own
+reviewed PR. Preparation is merged and synchronized before runtime starts, so
+the runtime snapshot cannot be locally ahead of the target. Runtime receipts
+under the Git common directory may be updated operationally without a tracked
+primary-checkout write.
+
+The lifecycle for a mutating command is: prepare, review, open a PR, verify the
+required checks, merge the exact reviewed head, synchronize the primary target,
+verify ancestry and the tested tree, and clean up only the clean merged
+worktree. Read-only reports do not need a worktree, commit or PR.
+
 Require a clean synchronized target checkout and ignored worktree root.
 Allocate new tracks at the verified target revision containing their dependencies.
 Declare exclusive ports/databases/caches/accounts and distinct environment

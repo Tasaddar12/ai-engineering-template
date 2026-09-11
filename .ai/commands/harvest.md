@@ -5,6 +5,8 @@ argument-hint: <path to the document, or a directory of them>
 
 Read and follow [RULES](../RULES.md).
 
+Run this mutating harvest in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Harvest: **$ARGUMENTS**
 
 Meeting and design documents are `log` tier — a record of what was said on a

@@ -38,8 +38,9 @@ track. A successful process exit alone never authorizes a merge.
 The supplied Codex adapter uses fresh `exec --ephemeral` processes, an output
 schema and a final-message file. Those interfaces are documented in
 [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode).
-Use an authenticated local CLI and the user's configured model. A custom host
-can implement the same contract. The adapter requests `workspace-write` for
+Use an authenticated local CLI and the user's configured model. The supplied
+adapter is the supported route; a custom host is outside this runtime and must
+explicitly implement the same contract. The adapter requests `workspace-write` for
 writers and `read-only` for review. Build/document workers commit each PLAN
 step; the coordinator audits their ordered commit history and owns correction
 commits. Configure the host's worker permissions to support scoped Git commits

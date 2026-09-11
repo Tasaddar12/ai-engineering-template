@@ -26,8 +26,9 @@ project:
 # ---------------------------------------------------------------------------
 mode: standard
 
-# Where things live. Paths are relative to the repository root.
-# Change these only if the project already has a conflicting convention.
+# Where things live. Paths are relative to the repository root. Manual
+# workflows may adopt a conflicting convention; the runtime schedule rejects
+# custom top-level paths and IDs and requires the fixed .ai layout and formats.
 paths:
   project: .ai/state/PROJECT.md
   specs: .ai/specs
@@ -126,8 +127,8 @@ orchestration:
   max_parallel_tracks: 3
   max_process_attempts: 2
 
-  # Branch the run starts from and merges back into. Empty means whatever
-  # branch /orchestrate was invoked on.
+  # Branch the run starts from and merges back into. The runtime snapshot must
+  # contain an explicit valid branch name.
   base_branch: ""
 
   # Branch naming for tracks. {run} -> ORCH-007, {track} -> w1t2
@@ -164,28 +165,18 @@ orchestration:
       - "{result_file}"
       - "-"
 
-  # forge — where the pull request or merge request is opened.
-  #   auto    Detect from `git remote get-url origin`: github.com or a
-  #           GitHub Enterprise host -> gh; gitlab.com or a self-hosted GitLab
-  #           -> glab for a manual host adapter. Missing PR capability blocks
-  #           delivery; never silently fall back to a local merge.
-  #   none    Local-only work; cannot satisfy an autonomous PR/merge request.
-  forge: github            # github runtime; auto | gitlab | none for manual hosts
+  # Runtime delivery is supported only through GitHub's reviewed PR path.
+  # Unsupported forge values are rejected during schedule validation.
+  forge: github
 
-  # How a cleared track lands. `squash` keeps the base branch history one
-  # commit per track; `merge` preserves the per-step commits the implementor
-  # made, which is usually what you want when reviewing agent work later.
-  merge_strategy: merge    # runtime requires merge commits for ancestry verification
+  # The runtime requires merge commits for ancestry verification.
+  merge_strategy: merge
 
-  # Applies to the scheduler, which is the only thing that merges — a track
-  # never merges itself, so an `ask` here cannot hang an unattended track.
-  #   ask     Request missing delivery authorization for currently ready tracks.
-  #   auto    Merge as each track reports ready. Hands-off end to end.
-  #   never   Leave the PR open and report it. Nothing is merged.
-  auto_merge: auto         # authorized runs; ask | never remain manual-host options
+  # The runtime merges ready reviewed PRs automatically; other values are
+  # rejected during schedule validation.
+  auto_merge: auto
 
-  # Remove the worktree and delete the track branch after a successful merge.
-  # Worktrees for tracks that stopped for a human are always kept.
+  # Successful merged worktrees are removed; stopped or unmerged work is kept.
   cleanup_on_merge: true
 
   # The coordinator copies these settings and approved PLAN scope into a JSON

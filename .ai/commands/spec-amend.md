@@ -10,6 +10,9 @@ document is at fault and confirm it before amending.
 Read and follow [RULES](../RULES.md). Assign this procedure to a documentation
 agent after the code-review handoff.
 
+The documentation agent works in an assigned worktree and completes the reviewed
+PR lifecycle; use [worktree lifecycle](worktree.md).
+
 This is the mechanism that keeps stale documents from forcing bad code. Using
 it is normal and expected — a project whose specs are never amended is a
 project whose specs are being ignored.

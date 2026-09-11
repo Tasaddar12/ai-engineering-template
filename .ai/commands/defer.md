@@ -5,6 +5,8 @@ argument-hint: <what's wrong, and where>
 
 Read and follow [RULES](../RULES.md).
 
+This mutating capture runs in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Capture, without fixing: **$ARGUMENTS**
 
 This exists so a discovered problem outlives the session that found it. A

@@ -102,12 +102,17 @@ revision. See
 | See where a multi-plan run stands | `/orchestrate-status` |
 | Tear down a run's worktrees | `/orchestrate-clean` |
 
-`/orchestrate` is the one command that is not a step in the single-plan
-lifecycle. It works out which plans can be built in parallel and which have to
-wait, then creates a git worktree per group; `/orchestrate-track` builds one of
-those groups, in its own session — see
+Every mutating command first obtains or reuses its assigned immediate-child
+worktree and completes the reviewed PR lifecycle described in
+[`commands/worktree.md`](commands/worktree.md). The primary checkout is for
+inspection, fetch and fast-forward synchronization; tracked edits and commits
+belong in a sibling worktree.
+
+`/orchestrate` schedules several plans, works out which can be built in parallel
+and which have to wait, then creates a git worktree per group;
+`/orchestrate-track` builds one of those groups, in its own session — see
 [docs/ORCHESTRATION.md](../docs/ORCHESTRATION.md). For one plan, `/plan-start`
-is still the right thing; a single plan does not need a worktree and a PR loop.
+still runs the same worktree and reviewed PR lifecycle, with one track.
 
 Everything is plain `git mv` and markdown underneath. There is no build step,
 no dependency, and nothing to install — you can drive the whole lifecycle by

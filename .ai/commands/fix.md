@@ -5,6 +5,8 @@ argument-hint: <what's broken, or a FIX/INTAKE id>
 
 Read and follow [RULES](../RULES.md).
 
+Run this mutating FIX lifecycle in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Fix: **$ARGUMENTS**
 
 If the argument is a `FIX-{nnn}` id, resume that record in `.ai/fixes/open/`.
