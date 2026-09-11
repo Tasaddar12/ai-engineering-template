@@ -13,16 +13,18 @@ Create a plan for: **$ARGUMENTS**
 If the argument is an `INTAKE-{nnn}` id, this is a promotion: read that file in
 `.ai/plans/intake/` and plan the problem it describes. The intake item is the
 raw capture; the plan is the sized, spec'd version of it. Link the plan back to
-the intake id, and `git mv` the intake file into `.ai/plans/abandoned/` only if
-   planning it reveals it is not worth doing only after the user rejects or
-   narrows its scope. Otherwise leave it pending until the plan closes. An
-   agent's cost judgment cannot abandon an intake without a human resolution.
+the intake id. Abandon the intake only when the user explicitly rejects the
+work or resolves a scope question so that no requested work remains; a partial
+narrowing leaves the remaining work pending for this plan. An agent's cost
+judgment cannot abandon an intake without that human resolution.
 
 **First, check this is a plan and not a fix.** If the specs already describe
-the behavior being asked for and the code merely fails to deliver it, that is a
-bug fix: say so and use `/fix`, which is the whole lifecycle in one command. A
-conflict with an existing document does not turn a requested future behavior
-into a fix; a plan changes what conformance means. See
+the behavior being asked for and the code merely fails to deliver it, use `/fix`
+when the defect is small and bounded. A large or multiple-defect conformance
+repair may instead use an approved PLAN coordinating linked FIX records;
+preserve each FIX's symptom, root cause and proof, and declare no contract
+changes when the governed criteria remain unchanged. A conflict with an
+existing document does not turn a requested future behavior into a fix. See
 `.ai/RULES.md#bug-fixes`.
 
 1. Read `.ai/config.yaml` for `mode`, and `.ai/state/PROJECT.md` for non-goals
@@ -32,11 +34,15 @@ into a fix; a plan changes what conformance means. See
    what remains unresolved before implementation.
 2. Check `.ai/plans/intake/` and `.ai/plans/backlog/` for the same problem
    already captured. Fold it in rather than opening a second thread on it.
-3. Request a coordinator-issued PLAN id block. Do not derive an id from the
-   highest filename; lifecycle directories, registered worktrees, reviewed
-   issued blocks and common receipts all participate in collision checks.
+3. Use the serialized standalone PLAN single-ID allocation under
+   [Scheduling and IDs](../RULES.md#scheduling-and-ids). Do not derive an id
+   from the highest filename; lifecycle directories, registered
+   worktrees, reviewed issued blocks and common receipts all participate in
+   collision checks.
 4. Delegate to the **planner** agent to write
-   `.ai/plans/backlog/PLAN-{nnn}-{slug}.md` from `.ai/templates/PLAN.md`.
+   `.ai/plans/backlog/PLAN-{nnn}-{slug}.md` by rendering
+   `.ai/templates/PLAN.md` through `.ai/runtime/render_record.py` and saving
+   stdout in the assigned tree.
    In `standard` and `full` mode the planner identifies the governing specs and
    fills in **Contract changes** — the specs this plan will create, amend or
    retire, with their wording drafted in present tense, plus any ADR it needs

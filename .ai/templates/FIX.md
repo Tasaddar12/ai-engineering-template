@@ -17,8 +17,11 @@ deferred_until: none # affected-tree-available when the inspected tree is unavai
 > worked, `fixes/done/<period>/` once the check passes. No `status:` field.
 > Once it is in `done/`, treat it as history: append, do not rewrite.
 >
-> A fix **restores conformance with the contract.** If this change would move
-> what "correct" means, it is a plan — see [RULES.md](../RULES.md#bug-fixes).
+> A fix **restores conformance with the contract.** Small bounded repairs use a
+> FIX. An approved PLAN may coordinate multiple or large linked FIX records;
+> each keeps reproduction, root cause and proof. If this change would move what
+> "correct" means, it needs explicit PLAN Contract changes — see
+> [RULES.md](../RULES.md#bug-fixes).
 
 ## Symptom
 
@@ -84,8 +87,9 @@ numbers are never reused.
 Run /fix, which does the whole loop: diagnose, record, change, prove, close.
 
 Escalate to /plan-new if the fix turns out to need an ADR, a spec rewrite, or
-more than a handful of files. That is normal. What is not normal is a behavior
-change landing as a fix, because it skips the plan-checker and the verifier.
+more than a handful of files. A large conformance repair may be linked into an
+approved PLAN while preserving this record's symptom, root cause and proof.
+Behavior changes belong in the PLAN Contract changes section.
 
 Write the Symptom and Root cause sections BEFORE changing code. A fix record
 written afterwards reliably describes the change and forgets the defect, which

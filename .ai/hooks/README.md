@@ -35,6 +35,7 @@ Run the Bash regression suite before and after hook changes:
 
 ```bash
 bash .ai/hooks/worktree-confine.test.sh
+bash .ai/hooks/ai-tier-notice.test.sh
 ```
 
 It checks quiet versus warning output, exit status, absence of permission

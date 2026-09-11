@@ -18,7 +18,8 @@ started: YYYY-MM-DD
 > sibling worktree through a reviewed PR; synchronize the primary target before
 > runtime allocation. No track edits it directly.
 >
-> **The schedule is authoritative; the stage columns are not.** Waves, tracks
+> **The Execution schedule is authoritative; the board tables are projections
+> and stage columns are not.** Waves, tracks
 > and id blocks are decided once and fixed. A track's _stage_ is derived from
 > git — its branch, its commits, its plans' directory, its review log — so
 > treat the columns below as a last-known summary and check reality with
@@ -36,8 +37,7 @@ the committed configuration during preparation.
   "run_id": "ORCH-000",
   "remote": "origin",
   "github_repo": "ORG/REPOSITORY",
-  "worker_command": ["codex", "exec", "--ephemeral"],
-  "readiness_worker_command": ["codex", "exec", "--ephemeral", "--readiness"],
+  "worker_command": ["codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "{sandbox}", "-C", "{worktree}", "--output-schema", "{schema_file}", "--output-last-message", "{result_file}", "-"],
   "tracks": [{
     "id": "example",
     "title": "Example planned work",
@@ -93,22 +93,14 @@ instead of `src/`.
 | ----- | ------------------ | ----------------- | --------------------- |
 | w1t1  | PLAN-nnn, PLAN-nnn | `src/auth/**`     | SPEC-nnn, ADR-nnnn    |
 
-## Reserved id blocks
+## Reserved id blocks (projection of `Execution schedule`)
 
-Allocated by the coordinator before any track starts, and never reused — a
-later wave carries on from the highest block issued here.
-
-Tracks branch from the same commit, so independent filename scanning cannot
-coordinate their identifiers. Two tracks could otherwise write the same id
-under different slugs without a merge conflict. The reviewed blocks are what
-prevent that.
-
-| Track | INTAKE | FIX   | AMD   | SPEC | ADR | Used |
-| ----- | ------ | ----- | ----- | ---- | --- | ---- |
-| w1t1  | 40–59  | 40–59 | 12–31 | 8–27 | 5–24 |      |
-
-Allocation rules are in [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
-Use the coordinator's issued-block ledger when filling this table.
+The `ids` blocks inside each `tracks[]` schedule entry are canonical. The board
+tables below are explanatory projections of that schedule, never independent
+schedule facts. The
+coordinator allocates them before dispatch, retains them during finalization,
+and never reuses them. Allocation rules are in
+[RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
 
 ## Waves
 

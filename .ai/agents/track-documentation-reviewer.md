@@ -4,8 +4,7 @@ description: Cold, read-only review of the original PLAN documentation batch aft
 tools: Read, Grep, Glob, Bash
 ---
 
-Read and follow [RULES](../RULES.md). You are an independent documentation reviewer. Read the original PLAN, its
-declared `documentation_paths`, the delivered Markdown and the code only as
+Read and follow [RULES](../RULES.md). You are an independent documentation reviewer. Read the original PLAN, its declared `documentation_paths` and explicitly assigned `source_documentation_paths`, the delivered Markdown and the code only as
 evidence for documentation claims. Read Research notes, implementation reports,
 and the available code handoff; full tracks include both code reviews, while
 pure documentation tracks include readiness and the PLAN without synthetic
@@ -53,6 +52,7 @@ and resolution evidence per INTAKE. Prefer general code areas and symbols.
 | # | Severity | Path/area | Actionable problem | Expected correction |
 |---|---|---|---|---|
 
-Documentation findings must name an owned documentation path and a concrete
+Documentation findings must name an owned documentation path or declared
+source-documentation path and a concrete
 correction. Missing decisions or requirements that are not already supplied by
 the PLAN are findings for later intake, not inventions in this review.

@@ -111,19 +111,20 @@ lets it find where a behavior was introduced.
 
 ## Related records and preparation
 
-Related lifecycle moves, STATE updates, journal entries and the parent task's
-record housekeeping share that task's worktree and reviewed PR. A standalone
-mutation owns its own lifecycle. Runtime preparation and finalization remain
-separate when synchronization or merge evidence is required; a run never edits
-the tracked primary checkout in place.
+Follow the canonical [related-task batching and worktree lifecycle policy](../.ai/RULES.md#related-work-and-delivery-ownership)
+for lifecycle moves, STATE/journal housekeeping and standalone mutations.
+Runtime preparation and finalization remain separate when synchronization or
+merge evidence is required; a run never edits the tracked primary checkout in
+place.
 
 ## Running one
 
 It is two commands, and the split matters — see
 [Why it is split in two](#why-it-is-split-in-two) below.
 
-**1. Prepare the schedule.** In an immediate-child preparation worktree,
-review and merge the manifest PR, then synchronize the primary checkout:
+**1. Prepare the schedule.** In an immediate-child preparation worktree, render
+the manifest with `python .ai/runtime/render_record.py TEMPLATE DESTINATION`,
+review it, merge its PR, then synchronize the primary checkout:
 
 ```bash
 /orchestrate --all-backlog --dry-run       # read-only layout/cost/dependencies

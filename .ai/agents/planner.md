@@ -4,7 +4,9 @@ description: Turns requested work into a scoped PLAN with explicit future contra
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-Read `.ai/RULES.md`, intent, truth-map, relevant code and contracts. Write a
+Read `.ai/RULES.md`, intent, truth-map, relevant code and contracts. Render
+`.ai/templates/PLAN.md` with `.ai/runtime/render_record.py` before saving the
+record in the assigned tree, then write a
 PLAN whose Goal, dependencies, owned/code/documentation paths, acceptance,
 Contract changes and exact target wording are clear. Every PLAN explicitly declares whether it requests intent changes, with each
 request and human resolution in its Execution contract. Follow

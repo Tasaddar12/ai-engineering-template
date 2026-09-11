@@ -29,10 +29,13 @@ ask again for an approval already supplied. Publication, merge and destructive
 cleanup require authorization covering those actions. A later human instruction
 can change or cancel earlier scope.
 
-Always commit task changes with a nonempty descriptive message before the final
-response. An explicit instruction not to commit wins. Read-only work needs no
-empty commit. Commit every implementation and documentation step in a PLAN
-separately as it completes; do not accumulate several steps into a phase commit.
+Task authors commit standalone task work with a nonempty descriptive message
+before the final response; read-only work needs no empty commit. Build and
+document step authors commit each PLAN step separately as it completes, with
+the required trailer. Runtime fix/docs-fix workers return scoped, uncommitted
+edits for coordinator audit and commit; runtime correction passes are the
+explicit exception to the general commit rule. An explicit instruction not to
+commit wins.
 
 ## The Prime Rule
 
@@ -224,6 +227,34 @@ whole moved set. This destination-only rewrite preserves rendered content;
 incoming live references are prepared before final review. It does not rewrite
 raw HTML links or YAML metadata.
 
+## Record templates and moves
+
+Render a source-relative record template before saving it in the assigned tree:
+`python .ai/runtime/render_record.py TEMPLATE DESTINATION` writes the rendered
+record to stdout. Save that output safely in the assigned worktree; do not copy
+source-relative links from the template verbatim. The root `AGENTS.md` is the
+explicit exception: append `.ai/templates/AGENTS.snippet.md` verbatim as its
+root-target snippet requires.
+
+Before a PLAN or FIX closing move, build the complete source-to-destination
+mapping for the whole closing set. For every source, call the pure helper
+`rebase_record_links(text, source, target, moves)` and retain its returned
+string; do this for the entire set before any move. Then `git mv` the validated
+records, write each returned string as UTF-8 at its target, stage and commit the
+mechanical move. The helper supports Markdown URLs, images and reference
+destinations, including peers moved together; it does not promise to
+understand arbitrary raw HTML or YAML metadata. Documentation authors prepare
+incoming live links in their assigned docs before final review, so no late
+unowned content rewrite is needed.
+
+## Related work and delivery ownership
+
+Related lifecycle, STATE, journal and defer bookkeeping reuses the parent task's
+worktree and PR. Standalone commands own a separate delivery. Runtime
+preparation and finalization remain separate synchronization boundaries where
+merge or source synchronization is required; link each command to this policy
+instead of restating a competing delivery rule.
+
 ## Roles
 
 Each [agent file](agents/README.md) owns that agent's scope, duties, inputs,
@@ -239,7 +270,8 @@ handoff and documentation-ownership requirements.
 The assigned documentor uses this after code review when changing a
 `contract`-tier file: a spec or an ADR.
 
-1. Write the amendment record first: copy `templates/AMENDMENT.md` to
+1. Write the amendment record first: render `templates/AMENDMENT.md` with
+   `runtime/render_record.py` and save it as
    `decisions/amendments/AMD-<nnn>-<slug>.md`. It captures four things — what
    the document said, what is actually true, why they diverged, and what you
    changed it to.
@@ -278,13 +310,16 @@ what changed, that is the amendment's job and it is already done.
 Not every change needs a plan. A **bug fix** is a change that makes the code do
 what the record already says it should, and the line is exactly that:
 
-> A fix restores conformance with the contract. A plan changes what
-> conformance means.
+> A FIX restores existing valid behavior. A PLAN proposes future work,
+> including coordinating large or multiple linked conformance FIX records
+> without changing their contracts.
 
 If existing requirements, the approved target or demonstrable code invariants
-establish a defect, that is a fix even when a SPEC is silent. Nothing in `contract` tier moves, so
-there is no spec to amend, no ADR to write, and no reason to spend the whole
-plan lifecycle on it.
+establish a defect, it is a FIX even when a SPEC is silent. Small bounded
+defects use the short FIX lifecycle. A large or multiple-defect conformance
+repair may use a PLAN to coordinate linked FIX records; because their existing
+contracts remain unchanged, that coordination plan declares no contract
+changes and links the governed FIX criteria.
 
 Every confirmed code bug gets a FIX, at every severity and scope. Unknowns,
 documentation discrepancies, ideas, concepts and other fragments get INTAKE.
@@ -310,9 +345,12 @@ Three things look like fixes and need care. **FIX items are code-only:**
 - **The spec or documentation is wrong.** Capture an INTAKE for the correction.
   It becomes planned documentation/contract work later, not a code FIX.
 - **The fix needs an ADR, a spec rewrite, or more than a handful of files.**
-  Promote it with `/plan-new` and link the fix record from the plan. A fix that
-  grows into a plan is normal and expected; a plan disguised as a fix skips the
-  checker and the verifier, which is the failure this route can produce.
+  Promote it with `/plan-new` and link the fix record from the plan. A large or
+  multiple-defect conformance repair may use an approved PLAN to coordinate
+  several linked FIX records while every FIX retains its symptom, root cause,
+  change and proof. Small bounded conformance repairs stay on `/fix`; a plan
+  must not be used to change an existing contract without explicit Contract
+  changes wording and intent resolution.
 
 Do not use a fix to sneak a behavior change past review, and do not open a plan
 for a one-line defect the requirements already condemn. Make the smallest
@@ -578,20 +616,30 @@ lifecycle inventory, registered worktree inventories, reviewed issued blocks,
 and common-directory receipts. Templates and examples are excluded. Before
 dispatch, allocation is serialized and published in disjoint blocks;
 `record_ids.py KIND --count N` only proposes a range and reports
-`reserved: false`. Issued ranges remain in the reviewed manifest even when
-unused or abandoned. Workers use only their assigned block, and the
-coordinator rechecks collisions before merge. Other worktree inventories are
-collision evidence, never a substitute checkout or an authoritative ID table.
+`reserved: false`. For a standalone one-record command, the coordinator
+serializes the helper's `--count 1` proposal, collision check and record
+creation. The assigned record must become visible in the registered-worktree
+inventory before releasing that allocation to another request, then ships in
+the parent reviewed PR; recheck after target refresh and before merge. Such
+commands do not require an ORCH block or run. Runtime block reservations are
+published separately in reviewed ORCH preparation. Issued ranges remain in the
+reviewed manifest even when unused or abandoned. Workers use only their
+assigned block, and the coordinator rechecks collisions before merge. Other
+worktree inventories are collision evidence, never a substitute checkout or an
+authoritative ID table.
 
 lifecycle.max_active is guidance. Report excess concurrency without rejecting
 work or requesting permission merely because the suggested count is exceeded.
 orchestration.max_parallel_tracks limits actual runtime capacity.
 
-Reserve 20 IDs of each type (FIX, INTAKE, SPEC, ADR, AMD) for every track at
-dispatch, before branching. Exclude templates/examples when finding existing
-IDs. Previously issued blocks are never reused. Workers create records only
-within their reserved ranges; the coordinator allocates structured findings
-without colliding with worker-created records.
+During reviewed preparation, propose, issue and publish disjoint ID blocks;
+allocate the worktree at dispatch only after synchronized sources are checked.
+Reserve 20 IDs of each type (FIX, INTAKE, SPEC, ADR, AMD) for every runtime
+track. Exclude templates/examples when finding existing IDs. Previously issued
+blocks are never reused. Workers create records only within their reserved
+ranges; the coordinator allocates structured findings without colliding with
+worker-created records. Standalone commands use the serialized single-ID
+procedure above.
 
 The normal full-track estimate is tracks x 7 through tracks x 9: readiness,
 build, two code reviewers, one documentation worker, two documentation

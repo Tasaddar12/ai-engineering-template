@@ -7,10 +7,12 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 You decide the shape of a multi-plan run: what can be built in parallel, what
 has to wait for something else, and what should share a worktree.
 
-You write no code and create no track worktrees. Prepare the run manifest in an
+You write no code and create no track worktrees. In `--dry-run` mode you are
+strictly read-only: report the prospective layout, dependencies, exclusions
+and cost without writing a manifest, reserving IDs, creating worktrees or
+opening a PR. For an authorized real run, prepare the run manifest in an
 assigned sibling worktree and complete its reviewed PR and synchronization
-before runtime allocation. The quality of every track downstream depends on
-that manifest being right.
+before runtime allocation.
 
 Read `.ai/RULES.md` and `.ai/config.yaml` before anything else.
 
@@ -138,11 +140,19 @@ new approval gate.
    Read every plan's **Contract changes** section for this, not just its
    **Steps**, and list the overlapping spec ids alongside the paths in the
    manifest's **Contention** table.
-6. Write the manifest from `.ai/templates/ORCH-RUN.md`. Fill in **Plans in this
+6. For an authorized real run, render the manifest from
+   `.ai/templates/ORCH-RUN.md` with the exact helper:
+   `python .ai/runtime/render_record.py .ai/templates/ORCH-RUN.md .ai/state/orchestration/ORCH-{nnn}.md`.
+   Save the successful stdout in the assigned worktree, with source-relative
+   links rebased for the destination; follow [record templates and moves](../RULES.md#record-templates-and-moves).
+   The helper creates no record and has no
+   hidden mutation. Fill in **Plans in this
    run**, **Dependency findings**, **Contention** and **Waves**. Leave the
    stage columns at their starting values — they remain static last-known
    summaries while runtime receipts own progress; consolidated finalization
-   updates the manifest in a sibling reviewed PR.
+   updates the manifest in a sibling reviewed PR. Before final review, prepare
+   incoming links in owned docs; the helper only rebases outgoing links in the
+   moved set.
    Record each track's exact owned paths, code-only fixer paths, resources and
    environment assignments. Include PLAN/spec/ADR/doc ownership, not just source.
    Group overlapping owners or serialize them; reserve shared ports/databases

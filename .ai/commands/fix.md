@@ -13,11 +13,11 @@ If the argument is a `FIX-{nnn}` id, resume that record in `.ai/fixes/open/`.
 If it is an `INTAKE-{nnn}` id, read it first. A confirmed code defect gets a
 linked FIX; documentation or contract work stays INTAKE for `/plan-new`.
 
-This is the short route, for a change that makes the code do what the record
-already says it should. **A fix restores conformance with the contract; a plan
-changes what conformance means** — see `.ai/RULES.md#bug-fixes`. If what is
-being asked for is new or different behavior, this is the wrong command: say so
-and use `/plan-new`.
+This is the short route for a small bounded change that makes the code do what
+the record already says it should. Large or multiple-defect conformance repairs
+may use an approved PLAN coordinating linked FIX records while preserving each
+existing contract. If what is being asked for is new or different behavior,
+say so and use `/plan-new`; see `.ai/RULES.md#bug-fixes`.
 
 ## 1. Establish it is a defect, not a disagreement
 
@@ -47,10 +47,12 @@ document, and stop rather than changing code speculatively.
 
 ## 3. Write the record first
 
-Use the coordinator-issued FIX id block. Do not derive an id from the highest
-filename; collision checks cover lifecycle directories, registered worktrees,
-reviewed issued blocks and common receipts. Copy
-`.ai/templates/FIX.md` to `.ai/fixes/open/FIX-{nnn}-{slug}.md` and fill in
+Use the coordinator-issued FIX id block, or the serialized standalone single-ID
+allocation in [Scheduling and IDs](../RULES.md#scheduling-and-ids). Do not
+derive an id from the highest filename; collision checks cover lifecycle
+directories, registered worktrees, reviewed issued blocks and common receipts.
+Render `.ai/templates/FIX.md` with `.ai/runtime/render_record.py` and save its
+stdout as `.ai/fixes/open/FIX-{nnn}-{slug}.md`; fill in
 **Symptom** and **Root cause** *now*, before touching code.
 
 That ordering is the point. A fix record written afterwards describes the
@@ -85,14 +87,16 @@ Gather the code review and hand its evidence to the documentation agent for
 any record/documentation updates under
 [Review and documentation](../RULES.md#review-and-documentation).
 
-1. `git mv` the record into `.ai/fixes/done/<period>/`, per
-   `lifecycle.done_partition` in `.ai/config.yaml`. Create the directory if
-   needed.
-2. If this came from an INTAKE item and the evidence proves it resolved,
-   `git mv` that capture into `.ai/plans/done/<period>/`.
-3. Append a journal entry: the defect, the cause, and the check that now guards
+1. Build the complete source-to-destination mapping for the FIX and any linked
+   closing INTAKE. Call pure `rebase_record_links(text, source, target, moves)`
+   for every source and retain each returned string before moving anything.
+   Then `git mv` the validated records into `.ai/fixes/done/<period>/` and,
+   when proven resolved, `.ai/plans/done/<period>/`; write the returned UTF-8
+   text at each target, stage and commit the mechanical moves. Use
+   `lifecycle.done_partition` in `.ai/config.yaml`.
+2. Append a journal entry: the defect, the cause, and the check that now guards
    it.
-4. Update `.ai/state/STATE.md` only if this changed what is being worked on.
+3. Update `.ai/state/STATE.md` only if this changed what is being worked on.
    A routine fix does not belong in **Now**.
 
 Leave it in `open/` and say so if you could not finish — could not reproduce,
@@ -102,15 +106,16 @@ blocked on a decision, or it grew past what a fix should be.
 
 FIX items are code-only. Documentation and contract corrections each become
 their own INTAKE. The autonomous review loop attempts code corrections once
-between reviews 1 and 2, then leaves residual FIX items open for after all
-the affected integrated or preserved tree is available. It does not repeatedly
+between reviews 1 and 2, then leaves residual FIX items open until an affected
+integrated or preserved tree is available. It does not repeatedly
 invoke `/fix` to evade the ceiling.
 
 Escalate to `/plan-new` and link the fix record from the plan when the work
-needs an ADR, a spec rewrite, or more than a handful of files. A fix growing
-into a plan is normal and expected. A behavior change landing as a fix is not:
-it skips the plan-checker and the verifier, which is the one real risk this
-route carries.
+needs an ADR, a spec rewrite, or more than a handful of files. An approved PLAN
+may coordinate multiple or large linked conformance FIX records; each FIX still
+keeps its reproduction, root cause and proof, and closes only with evidence.
+Small bounded conformance repairs remain on `/fix`. A behavior change landing
+as a fix needs explicit PLAN Contract changes and intent resolution.
 
 Report the fix id, the root cause in one sentence, the check that now guards
 it, and anything you found and did not fix — captured with `/defer`, not merely

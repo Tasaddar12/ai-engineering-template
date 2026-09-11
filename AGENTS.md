@@ -5,12 +5,13 @@ repo-specific plans, specs, decisions, amendments or journal entries for
 template cleanup unless the user explicitly requests them. The record workflows
 describe how an adopting project uses the template.
 
-**Always commit the changes made for a task before your final response, with a
-nonempty, descriptive commit message.** This is standing authorization for
-local commits: do not leave completed work uncommitted or ask for commit
-permission again. This requirement overrides role or command instructions
-that say to commit only when separately asked. Honor an explicit user
-instruction not to commit; read-only tasks need no empty commit.
+**Commit standalone task work and each PLAN build/document step before your
+final response, with a nonempty descriptive message.** This is standing
+authorization for local commits. Runtime fix/docs-fix workers are the explicit
+exception: they return scoped edits uncommitted for coordinator audit and
+commit, as defined in [RULES](.ai/RULES.md#session-and-authorization). Honor
+an explicit user instruction not to commit; read-only tasks need no empty
+commit.
 
 Read and follow [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/state/PROJECT.md),
 [STATE](.ai/state/STATE.md), the selected record and your

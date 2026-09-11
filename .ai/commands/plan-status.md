@@ -15,6 +15,19 @@ Report where this project stands. Read, do not change anything.
 3. Read `.ai/state/STATE.md`.
 4. Read the most recent file in `.ai/state/journal/`.
 
+For any runtime track, also read the original immutable execution snapshot and
+prefer `python .ai/runtime/orchestrate.py SNAPSHOT --status` (read-only). Join
+each returned `tracks[].track` to the original snapshot's `tracks[].id` and
+take the original PLAN mapping from that snapshot's `plans`; the status receipt
+does not repeat that mapping. Report the receipt's `status`, `phase`,
+`pipeline`, PR, observed and checkpoint HEADs, recorded `reason`, and
+`next_action` separately from the PLAN's directory stage and the human-facing
+STATE summary. If the original snapshot is unavailable, inspect the
+common-directory `state.json` read-only and label original mapping fields
+unavailable; do not fabricate a replacement snapshot. If no receipt exists,
+report `not_started`; do not infer process liveness or write a manifest,
+receipt, STATE entry, or record while running status.
+
 Then output:
 
 ```

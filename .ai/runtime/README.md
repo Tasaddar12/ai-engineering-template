@@ -6,28 +6,86 @@ scheduler waits for process completion, saves receipts, and dispatches tracks
 whose own dependencies have merged. Waves remain a display grouping.
 
 The Markdown commands describe the planning and role workflow. Install the
-preparation dependencies before compiling a snapshot:
+runtime dependency for normal execution, or the preparation bundle when the
+compiler must read YAML:
 
 ```text
-python -m pip install -r .ai/runtime/requirements.txt
-# or, when YAML preparation is needed:
+python -m pip install -r .ai/runtime/requirements.txt   # markdown-it-py
+# YAML preparation includes the runtime dependency and PyYAML:
 python -m pip install -r .ai/runtime/requirements-prepare.txt
 ```
 
-For executable
-background dispatch, the coordinator compiles that approved plan into a JSON
-schedule using [schedule.example.json](schedule.example.json). The example is
-illustrative; replace its repository, PLAN paths, owned paths, resources, ID
-ranges and checks. The runner does not parse YAML, infer plans, or invent tests.
-The JSON is an explicit execution snapshot of `.ai/config.yaml` and the run
-manifest. Keep it outside tracked content or in the Git common directory.
+For executable background dispatch, first merge and synchronize the reviewed
+preparation PR into the primary target. That synchronization is an operational
+precondition; the compiler cannot establish human review or authorization.
+Then run `prepare.py` against that immutable revision and the committed ORCH
+manifest/configuration. [schedule.example.json](schedule.example.json) is only
+an illustrative output snapshot; it is not a file to hand-author or copy.
+The runner does not parse YAML, infer plans, or invent tests. Keep the emitted
+JSON outside tracked content or in the Git common directory.
+
+Preparation reads the committed configuration and the first JSON fence under
+`## Execution schedule` from the same resolved immutable revision. It emits a
+validated snapshot with `sources.revision` and path/blob hashes for both
+configuration and manifest. It validates the fixed paths, supported ID formats,
+PLAN/FIX stages, review counts, dispatch and delivery settings; it does not
+validate arbitrary project guidance. The compiler is preparation only: it does
+not prove human approval, reserve IDs or publish a run. YAML is read only by
+the compiler; the runner consumes JSON.
+
+Render a record template to stdout and save it yourself after success:
 
 ```text
-python .ai/runtime/prepare.py MANIFEST --repository . --ref HEAD --config .ai/config.yaml > snapshot.json
-python .ai/runtime/orchestrate.py /path/to/schedule.json --validate
-python .ai/runtime/orchestrate.py /path/to/schedule.json
-python .ai/runtime/orchestrate.py /path/to/schedule.json --status
+python .ai/runtime/render_record.py .ai/templates/PLAN.md .ai/plans/backlog/PLAN-001-example.md
 ```
+
+The helper takes exactly `TEMPLATE DESTINATION`, writes rendered source-relative
+content to stdout, and creates no record; see [record templates and moves](../RULES.md#record-templates-and-moves).
+Save that output in the assigned worktree only after the command succeeds;
+lifecycle moves use the callable `rebase_record_links` helper with the whole
+move mapping.
+
+For a failure-safe immutable snapshot, capture stdout before creating the final
+file, validate JSON, and use an exclusive UTF-8 write. This PowerShell example
+resolves the common Git directory and revision, checks `$LASTEXITCODE`, and
+never exposes a partial snapshot:
+
+```powershell
+$root = (git rev-parse --show-toplevel 2>$null).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($root)) { throw 'could not resolve repository root' }
+$common = (git rev-parse --path-format=absolute --git-common-dir 2>$null).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($common)) { throw 'could not resolve absolute Git common directory' }
+$revision = (git rev-parse --verify HEAD 2>$null).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($revision)) { throw 'could not resolve immutable revision' }
+$dir = Join-Path $common 'orchestration/snapshots'
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$path = Join-Path $dir ("$revision-" + [guid]::NewGuid().ToString("N") + ".json")
+$raw = & python .ai/runtime/prepare.py .ai/state/orchestration/ORCH-001.md --repository $root --ref $revision --config .ai/config.yaml
+if ($LASTEXITCODE -ne 0) { throw 'snapshot preparation failed; no snapshot was saved' }
+$json = $raw -join "`n" | ConvertFrom-Json -ErrorAction Stop
+$text = $raw -join "`n"
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+$temp = "$path.tmp"
+$stream = [System.IO.File]::Open($temp, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+try {
+  $bytes = $utf8.GetBytes($text); $stream.Write($bytes, 0, $bytes.Length)
+  $stream.Dispose(); [System.IO.File]::Move($temp, $path)
+} catch {
+  $stream.Dispose(); Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
+  throw
+}
+```
+
+Use the same unique path for `--validate`, execution, status and resume:
+
+```text
+python .ai/runtime/orchestrate.py /path/to/snapshot.json --validate
+python .ai/runtime/orchestrate.py /path/to/snapshot.json
+python .ai/runtime/orchestrate.py /path/to/snapshot.json --status
+```
+
+If validation or execution fails, retain the original immutable snapshot for
+resume and write a new revision path for a new preparation.
 
 Validation alone is read-only. Execution requires the caller's authorization
 to build and publish the selected PLANs. Run it from a clean checkout of the
@@ -135,16 +193,30 @@ AMD under [Scheduling and IDs](../RULES.md#scheduling-and-ids). Build/fix worker
 may create new scoped FIX/INTAKE records; their IDs are audited and retained
 alongside coordinator-generated findings.
 
+To propose a range for inspection, run the helper with a supported kind
+(`FIX`, `INTAKE`, `SPEC`, `ADR`, `AMD`, `PLAN`, `ORCH` or `RES`):
+
+```text
+python .ai/runtime/record_ids.py FIX --count 1 --repository .
+python .ai/runtime/record_ids.py FIX --count 20 --repository .
+```
+
+It prints JSON with `kind`, `first`, `last` and `reserved: false`. The helper
+does not reserve IDs or create records. Serialized allocation and publication
+remain the coordinator's responsibility under
+[Scheduling and IDs](../RULES.md#scheduling-and-ids); workers use only issued
+blocks.
+
 The runtime accepts `max_process_attempts` from 1 through 3 (default 2), and
 `done_partition` values `quarter`, `month` or `year`; lifecycle moves use the
 selected partition. Worktrees must be immediate children of the primary's fixed
 `.worktrees/` root. Runtime delivery requires `forge: github`,
 `merge_strategy: merge`, `auto_merge: auto` and `cleanup_on_merge: true`.
 Custom top-level paths or ID formats are rejected, as are linked or nested
-worktree roots. The JSON snapshot is explicit; YAML is never parsed.
-When compiling the JSON schedule, copy `lifecycle.done_partition` from the YAML
-configuration into the snapshot's `done_partition`; the runtime reads only that
-JSON value.
+worktree roots. The compiler reads YAML only while preparing the snapshot,
+including `lifecycle.done_partition`; the runtime reads only that JSON value.
+Do not manually copy configuration into a schedule or edit an existing resume
+snapshot. Prepare a new immutable snapshot from a new synchronized revision.
 
 ## Review outcomes and deferred work
 
