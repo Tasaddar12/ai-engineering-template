@@ -7,6 +7,15 @@ Read and follow [RULES](../RULES.md).
 
 Report the state of: **${1:-the most recent run}**
 
+Runtime status is read-only:
+
+```bash
+python .ai/runtime/orchestrate.py /path/to/original-schedule.json --status
+```
+
+Compare the saved phase/checkpoint HEAD with the original snapshot and live Git
+and forge state. `--status` cannot prove that a process is alive.
+
 Read the manifest, then **check it against reality**. The manifest is what the
 coordinator recorded; a run interrupted mid-track leaves it
 describing a state that no longer exists. Where they disagree, git wins.
@@ -78,17 +87,20 @@ is how a run quietly dies.
 - A track marked `implement` whose branch has no commits — the subagent
   probably failed. Say so; do not report it as in progress.
 - A branch with commits but no worktree — someone cleaned up mid-run.
-- A worktree with uncommitted changes — a track was interrupted. Name the files;
-  that work is not in any commit and will be lost by `/orchestrate-clean`.
+- A worktree with uncommitted changes — preserve it and name the files; cleanup
+  must not remove dirty work.
 - A PR merged that the manifest still shows open.
 
-**Cost so far** — tracks completed, code review rounds spent, documentation
+**Cost so far** — tracks completed, code review rounds spent (zero for pure
+documentation tracks), documentation
 review rounds spent, and tracks at either ceiling. Each ceiling is two reviews;
 report code FIX and documentation/contract INTAKE items separately. A third
 round of either kind is a workflow defect, not progress.
 In runtime mode inspect the Git-common-directory receipts and `followups.json`
 as well as Git/PR state. In manual mode inspect the track branch's review log
 and worker output. `ready_with_followups` is not an approved review.
+Continue, retry and reconcile only from the original snapshot under
+[runtime recovery](../runtime/README.md); preserve receipt counts.
 
 Each track is driven by its own `/orchestrate-track` session, normally launched
 in the background by the scheduler. A track with no recent activity is either

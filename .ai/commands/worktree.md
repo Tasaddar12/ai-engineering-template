@@ -12,10 +12,11 @@ from the primary absolute root; it never creates a nested worktree.
 
 The primary checkout is read-only for tracked content: it may inspect, fetch and
 fast-forward to a verified merged target. The worker worktree owns edits and
-commits. Coordinator records use a sibling preparation or finalization
-worktree, each with its own reviewed PR, and are merged and synchronized before
-the next runtime allocation. Operational runtime receipts under the Git common
-directory are the exception and are not tracked primary-checkout edits.
+commits. Coordinator preparation uses a sibling worktree and reviewed PR before
+the run. During the run, operational receipts under the Git common directory
+are updated without tracked summary writes. After scheduling stops, one
+consolidated finalization uses a sibling worktree and reviewed PR, then is
+merged and synchronized before cleanup.
 
 Complete the lifecycle in order: prepare the manifest or record, review it,
 open the PR, verify required checks, merge the exact reviewed head, synchronize

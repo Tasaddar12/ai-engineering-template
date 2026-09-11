@@ -86,8 +86,8 @@ contents. A remote PR marked merged alone is insufficient. Preserve unrelated,
 dirty, ignored or advanced work and report why it cannot be removed safely.
 
 ```bash
-git worktree remove .worktrees/<name>
-git branch -d orch/<run>/<track>             # -d refuses unmerged; that is the point
+git -C "<absolute-primary>" worktree remove "<absolute-primary>/.worktrees/<name>"
+git -C "<absolute-primary>" branch -d orch/<run>/<track>
 ```
 
 Use `git branch -d`, never `-D`. The refusal is a safety check, not an obstacle
@@ -112,6 +112,6 @@ Only when a run's tracks are all merged or explicitly abandoned:
 
 - Worktrees and branches removed
 - What was kept, and why
-- **Anything abandoned that had unmerged commits** — say it plainly, with the
-  branch name, so it can be recovered from the reflog if that was a mistake
+- **Anything abandoned** — identify the preserved checkout, branch, PR and
+  findings; it remains incomplete and still requires a reviewed PR to deliver.
 - Runs still open

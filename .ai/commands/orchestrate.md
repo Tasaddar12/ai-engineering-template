@@ -43,13 +43,15 @@ Stop and report rather than working around any of these:
 
 ```bash
 git status --porcelain          # must be empty
-git branch --show-current       # the base branch, unless config overrides
+git branch --show-current       # primary target branch; prep worktree branch is separate
 git remote -v
 ```
 
 - **Uncommitted changes** — stop. Worktrees branch from a commit; anything
   uncommitted is silently excluded from every track.
-- **`.worktrees/` not in `.gitignore`** — add it and commit that first.
+- **`.worktrees/` not in `.gitignore`** — bootstrap with a temporary local
+  exclude if needed, then prepare and merge the tracked ignore change through
+  a reviewed preparation worktree PR. Never edit tracked ignore files on primary.
 - **Existing worktrees** — `git worktree list`. If a previous run left some,
   say so and point at `/orchestrate-clean`. Never reuse one.
 - **Base branch behind its remote** — `git fetch && git status -sb`. Pull
@@ -102,20 +104,20 @@ be wrong.
 A run is approved on one screen and then consumes agents for hours. Nobody can
 consent to that from a wave diagram alone, so put a number on it.
 
-The executable adapter uses one build process per track for research and
-implementation, two cold code reviewers, a lightweight documentation worker,
-and two cold documentation reviewers. Code findings add one fixer; docs
-findings add one documentation correction worker. Manual role-per-session
-hosts may use more sessions; identify the adapter in the estimate.
+Full tracks use readiness, build, two cold code reviewers, a documentation
+author and two cold documentation reviewers: 7–9 workers including optional
+code/docs corrections. Pure documentation tracks use readiness, author and two
+documentation reviewers: 4–5 including one optional correction. Target advance,
+process retries, research/manual adapters and defect audits add workers.
 
 ```
-floor    = tracks x 6
-ceiling  = tracks x 8
+full floor/ceiling = full_tracks x 7 / full_tracks x 9
+pure floor/ceiling = docs_tracks x 4 / docs_tracks x 5
 ```
 
 Present both, and the shape:
 
-> 3 tracks, 5 plans, 2 display waves: 18–24 worker processes, plus scheduling
+> 3 full tracks, 2 display waves: 21–27 worker processes, plus scheduling
 > and the later defect audit. Each track waits only for its own dependencies.
 
 Then two judgements the numbers do not show, and say them plainly:
@@ -182,7 +184,7 @@ Act on what it reports:
 | Changes existing non-intent contracts | Pass the declared target and transition evidence through the code-to-documentation handoff in [RULES](../RULES.md#review-and-documentation). |
 | Premise invalidated by an earlier wave | Pull it, and offer to re-run `/plan-new` on it |
 | Internally inconsistent, or too vague to slice | Pull it — an implementor cannot build it |
-| Nits only | Proceed, and pass them to the track |
+| Any readiness finding, `changes_requested`, `cannot_review` or blocked result | Preserve the decision and park the PLAN; only a conclusive approved readiness result with no findings proceeds |
 
 A rejected plan remains at its assigned original path and its track is parked;
 anything that depended on it waits. Record the reason in the coordinator
@@ -266,12 +268,8 @@ of four needs a human is the failure this whole step exists to avoid.
 Merging here serialises it, and puts the one outward-facing action in the
 session the user is actually talking to.
 
-Honour `orchestration.auto_merge`:
-
-- **`ask`** — present the currently ready tracks together when delivery
-  authorization is missing; continue independent work while it is pending.
-- **`auto`** — merge as each track reports ready.
-- **`never`** — leave the PRs open and report them.
+Runtime delivery requires `orchestration.auto_merge: auto`; `ask` and `never`
+are unsupported runtime values and fail schedule validation.
 
 ```bash
 gh pr merge <n> --merge --match-head-commit <tested-head>
@@ -299,7 +297,11 @@ and deferred FIX/INTAKE IDs; never call residual findings an approved review.
 
 ## 9. Record completion and dispatch newly ready tracks
 
-Process each terminal track without waiting for an unrelated wave barrier:
+Process each terminal track without waiting for an unrelated wave barrier. In
+runtime mode record each result only in Git-common-directory receipts during
+the run; after scheduling stops, consolidate STATE, journal and manifest in one
+sibling finalization worktree, reviewed PR, synchronized primary and cleanup.
+Manual mode uses the same ownership.
 
 1. **Check nothing escaped.** `git status --porcelain` on this checkout must be
    empty. Anything here means an agent wrote outside its worktree — **stop and
@@ -308,7 +310,7 @@ Process each terminal track without waiting for an unrelated wave barrier:
    journal and manifest updates in a sibling finalization worktree, review and
    merge that PR, then synchronize the primary. Runtime receipts remain
    operational files in the Git common directory between allocations.
-3. **Update the manifest** — which tracks merged, rounds each took, ids used.
+ 3. **Update the manifest after the run** — which tracks merged, rounds each took, ids used.
 4. **Re-check newly ready tracks' plans** — that is step 5's `plan-checker` gate,
    and it is the reason the gate runs per ready track rather than once at the top.
 5. **Park any plan whose dependency did not land.** Preserve its original

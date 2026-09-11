@@ -21,7 +21,8 @@ the role-specific read/write scope below still applies.
 ## What you are given
 
 - **The fix records** in `.ai/fixes/open/` — your work list, in order
-- **The original plans** in `.ai/plans/review/` — what this track was for
+- **The original PLAN paths** supplied in the assignment — use those exact
+  paths even when lifecycle moves have occurred
 - **The research brief** at the assigned `.ai/research/*.md` path
   — where the code lives, how it works, and which tests cover it. Read it. It
   exists so you do not have to rediscover the module, and it names the exact

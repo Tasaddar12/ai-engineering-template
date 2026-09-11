@@ -75,6 +75,8 @@ route blocks instead of falling back to the code model. Results include
 `resolved_intake`, durable `phase_attempts`, phase receipts,
 `code_reviewed_sha` and `documentation_reviewed_sha`. Immutable
 `plan_source_sha` keeps later PLAN notes from weakening the original promise.
+If `readiness_worker_command` is absent, readiness explicitly falls back to the
+code worker command; this is a snapshot choice, never YAML parsing at runtime.
 Old unfinished runs reconcile with their original compatible schedule and
 receipts; deleting receipts or changing the schedule fingerprint does not
 evade the review count.
@@ -239,6 +241,9 @@ python .ai/runtime/orchestrate.py schedule.json --reconcile api --expected-head 
 python .ai/runtime/orchestrate.py schedule.json --abandon api --expected-head <sha> --workers-stopped
 ```
 
+For inflight readiness, `--expected-head` is the current primary checkout HEAD;
+for normal phases it is the assigned worktree HEAD.
+
 `--retry` resumes a clean blocked track at its saved coordinator checkpoint,
 such as after a PR service outage or check infrastructure failure. Completed
 phases are reused. A missing or malformed stopped process result may retry at
@@ -256,9 +261,22 @@ findings. It never satisfies dependencies or marks work merged. For an inflight
 readiness worker, always supply its exact expected HEAD, including before
 allocation; omission is allowed only when no worktree/process was ever created.
 Readiness attempts are saved per SHA with history and inflight state written
-before launch. A completed readiness rejection requires a changed revision.
-Reconciliation may consume a clean synchronized descendant target while
-preserving the prior rejection and charging the new revision's budget. A new run may start once
+before launch. A stopped failed readiness with a missing or malformed result at
+A may reconcile at inspected clean synchronized descendant B, retain A's failed
+receipt and attempts, check B's budget, then let the next run launch fresh
+readiness at B. A completed valid rejection is retained; `--retry` requires a
+changed target. Reconcile consumes a valid saved result without replay.
+
+| Recovery case | Action |
+|---|---|
+| Missing/malformed stopped process | Retry unchanged clean HEAD within process budget |
+| Valid content blocker | Preserve decision; no replay |
+| Partial writer commit | Reconcile exact inspected HEAD; never replay |
+| Delivery interruption | Resume sync/verification/cleanup, not reviews |
+| Merged cleanup response lost | Verify ancestry and clean up |
+| Abandon | Preserve incomplete branch, worktree, PR and findings |
+
+A new run may start once
 every earlier track is cleaned after merge or explicitly abandoned and released;
 previously issued ID ranges remain reserved. The coordinator can run these
 commands within existing authorization after establishing their preconditions.

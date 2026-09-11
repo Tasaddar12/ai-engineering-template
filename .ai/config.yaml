@@ -125,6 +125,8 @@ orchestration:
   # cost dial: each track is a full pipeline of subagents. Raising it past the
   # number of genuinely independent plans buys nothing.
   max_parallel_tracks: 3
+  # Bounded infrastructure/process retry budget (default 2, range 1..3),
+  # separate from completed review counts.
   max_process_attempts: 2
 
   # Branch the run starts from and merges back into. The runtime snapshot must
@@ -136,7 +138,9 @@ orchestration:
 
   # review — the fix/re-review loop after a PR opens.
   review:
-    # Both cold code reviews always run, with at most one correction between.
+    # Full tracks run both cold code reviews, with at most one correction between.
+    # Pure documentation tracks skip code reviews and use readiness plus the
+    # documentation route.
     max_rounds: 2
     # Completion and retained findings follow RULES.md#definition-of-done.
 
