@@ -15,12 +15,11 @@ what to do when the written record and reality disagree.
 
 ## The Prime Rule
 
-**Writing code you know contradicts a written document is the only forbidden
-move unless the contradiction is the explicitly declared transition in an
-authorized PLAN.** An authorized PLAN's declared target takes precedence over
-conflicting existing specs, ADRs, amendments, and other project documents.
-Document conflict alone is never a reason to refuse, pause, or redesign the
-PLAN.
+**Implement an authorized PLAN's target even when it conflicts with any
+existing SPEC, ADR, amendment, or other project document.** No document
+conflict, whether enumerated in the PLAN or discovered later as a consequence
+of its authorized target, may by itself prevent, pause, or force redesign of
+the PLAN. Preserve behavior outside the PLAN's declared target.
 
 Documents here are versioned, not sacred. When you find that a spec, plan, or
 doc is wrong, stale, incomplete, or incompatible with the change you are
@@ -48,8 +47,10 @@ Three specific failures this rule exists to prevent:
   agent inherits a contradiction and no way to tell which side is true.
 
 If you are unsure whether a document is stale or you are wrong, **the answer is
-never to guess quietly.** State the contradiction plainly, say which side you
-believe, and either amend or ask — but surface it.
+never to guess quietly.** State the contradiction plainly, preserve the
+authorized target, and record the document transition. Ask only when a new
+intent outside the authorized target or an explicit later human instruction
+requires a decision; a document conflict does not create repeat approval.
 
 ### Authorized PLANs and the critical-functionality exception
 
@@ -114,7 +115,8 @@ the past. That is why superseding an ADR means writing a new one that points at
 it, never rewriting the old one, and why only an ADR with `status: accepted` is
 authority.
 
-**A plan is a prediction**, and predictions are allowed to have been wrong.
+**A proposed plan is a prediction; an authorized PLAN carries an intended
+outcome that implementation and verification must preserve.**
 
 ---
 
@@ -125,7 +127,7 @@ what you may do without asking.
 
 | Tier | What it holds | Examples | You may |
 |---|---|---|---|
-| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | Human authority. Stop and ask before changing intent unless the human has explicitly authorized the edit. An authorized PLAN still proceeds through conflicts with existing documents; only the critical-functionality exception above can prevent its implementation. |
+| `intent` | Why this project exists; hard constraints; non-goals | `state/PROJECT.md`, this file | Human authority. Stop and ask before changing intent outside an authorized target. Explicit authorization of a PLAN target also authorizes the necessary document transitions within that target; only the critical-functionality exception above can prevent its implementation. |
 | `contract` | What "correct" means right now | `specs/SPEC-*.md`, `decisions/ADR-*.md` | **Amend freely, with a recorded amendment.** See protocol below. |
 | `plan` | How we intend to get there | `plans/**/PLAN-*.md`, `fixes/**/FIX-*.md` | **Rewrite freely.** Plans are disposable. |
 | `status` | Where things stand | `state/STATE.md` | **Overwrite freely.** Expected to churn every session. |
@@ -288,9 +290,11 @@ its contents are in effect yet.
 Reality first, then the declared target contract, then human intent for
 behavior the PLAN does not change:
 
-1. **Working, tested code** beats any document describing it. Documents follow
-   reality — but only after you have *confirmed* the code is right; a bug in
-   the code does not license amending the spec to match the bug.
+1. **Working, tested code** is evidence of present behavior, not a veto over an
+   authorized future target. Documents follow reality for behavior already
+   delivered — but only after you have *confirmed* the code is right; a bug in
+   the code does not license amending the spec to match the bug. Existing code
+   cannot veto an authorized PLAN's target.
 2. **An authorized PLAN's Contract changes section governs its explicitly
    declared target changes, even when it conflicts with any existing spec, ADR,
    amendment, or other document.** A PLAN may always require a change to any
@@ -347,13 +351,14 @@ Two tests, and a spec has to pass both:
 
 ## Definition of done
 
-A task is done when **the software behaves correctly**, not when the plan's
-checkboxes are ticked.
+A task is done when **the software satisfies the authorized intended outcome**
+and the updated specs truthfully describe the delivered behavior.
 
-Verification grades work against `specs/` and against observed behavior — never
-against the plan that produced it. A plan is a prediction; predictions are
-allowed to have been wrong. If the plan was wrong and the outcome is right,
-the plan gets rewritten and the work still ships.
+Verification checks observed behavior against the authorized target and the
+truthful updated specs. Never weaken or rewrite the authorized target to excuse
+missing or incorrect implementation. If implementation is incomplete or
+incorrect, fix it or use the critical-functionality procedure above; preserve
+the target.
 
 Before calling anything done:
 
@@ -423,13 +428,14 @@ handling it; say which one you did.
 
 ## When you are genuinely blocked
 
-Blocked means: you cannot proceed without a decision that is not yours to make.
-That is an unresolved intent-tier question, an explicit later human change or
-cancellation, or concrete evidence that an authorized PLAN would cause the
-critical breakage described above. Everything else — a wrong spec, a bad plan,
-a missing doc, or a contradiction — has a path above and is not a blocker.
+Blocked means only that a genuinely missing human decision is required and was
+not supplied by the authorized PLAN. A conflict with an existing intent or
+other document is not such a question. An explicit later human instruction or
+cancellation is honored as given and does not create supporting PLANs to evade
+it. Concrete evidence of critical breakage follows the supporting-PLAN/ORCH
+procedure above and is not an automatic human-decision wait.
 
-When blocked:
+When a genuinely missing human decision blocks the work:
 
 1. Move the plan to `plans/blocked/`.
 2. Add a `## Blocked` section to it: the question, the options you see, and
@@ -438,7 +444,6 @@ When blocked:
 4. **Do every part of the task that does not depend on the answer**, then
    report what you finished and what is waiting.
 
-Do not sit idle on a blocker: scope supporting PLANs under an ORCH in
-dependency order and continue independent work. Do not silently pick an answer
-to an unresolved intent-tier question or override an explicit later human
-instruction.
+Do not sit idle on a missing decision: do every independent part of the task
+and report what is waiting. Do not silently pick an answer to an unresolved
+intent-tier question or override an explicit later human instruction.
