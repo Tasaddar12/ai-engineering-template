@@ -132,6 +132,9 @@ selected partition. Worktrees must be immediate children of the primary's fixed
 `merge_strategy: merge`, `auto_merge: auto` and `cleanup_on_merge: true`.
 Custom top-level paths or ID formats are rejected, as are linked or nested
 worktree roots. The JSON snapshot is explicit; YAML is never parsed.
+When compiling the JSON schedule, copy `lifecycle.done_partition` from the YAML
+configuration into the snapshot's `done_partition`; the runtime reads only that
+JSON value.
 
 ## Review outcomes and deferred work
 
@@ -269,10 +272,10 @@ changed target. Reconcile consumes a valid saved result without replay.
 
 | Recovery case | Action |
 |---|---|
-| Missing/malformed stopped process | Retry unchanged clean HEAD within process budget |
+| Missing/malformed stopped process | Reconcile the stopped process at the exact unchanged clean HEAD within budget, then resume the original schedule |
 | Valid content blocker | Preserve decision; no replay |
 | Partial writer commit | Reconcile exact inspected HEAD; never replay |
-| Delivery interruption | Resume sync/verification/cleanup, not reviews |
+| Delivery interruption | Inspect PR state, finish required checks/merge if still open, then sync/verify/cleanup; reuse completed reviews |
 | Merged cleanup response lost | Verify ancestry and clean up |
 | Abandon | Preserve incomplete branch, worktree, PR and findings |
 

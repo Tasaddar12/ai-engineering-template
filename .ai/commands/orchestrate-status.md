@@ -84,8 +84,9 @@ is how a run quietly dies.
 
 **Drift** — anywhere the manifest and git disagree. Say which you believe:
 
-- A track marked `implement` whose branch has no commits — the subagent
-  probably failed. Say so; do not report it as in progress.
+- A phase with no new commits — inspect the saved phase and worker/process
+  evidence; a build may still be writing and readiness/reviews are read-only.
+  Do not infer failure or liveness from commit activity alone.
 - A branch with commits but no worktree — someone cleaned up mid-run.
 - A worktree with uncommitted changes — preserve it and name the files; cleanup
   must not remove dirty work.

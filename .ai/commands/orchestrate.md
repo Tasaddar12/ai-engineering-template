@@ -306,11 +306,10 @@ Manual mode uses the same ownership.
 1. **Check nothing escaped.** `git status --porcelain` on this checkout must be
    empty. Anything here means an agent wrote outside its worktree — **stop and
    report it** rather than merging over it.
-2. **Record shared state through a coordinator worktree.** Prepare STATE,
-   journal and manifest updates in a sibling finalization worktree, review and
-   merge that PR, then synchronize the primary. Runtime receipts remain
-   operational files in the Git common directory between allocations.
- 3. **Update the manifest after the run** — which tracks merged, rounds each took, ids used.
+2. **Queue shared summaries in operational receipts during the run.** After
+   scheduling stops, publish consolidated STATE, journal and manifest updates
+   through the sibling finalization worktree lifecycle.
+3. **Update the manifest after the run** — which tracks merged, rounds each took, ids used.
 4. **Re-check newly ready tracks' plans** — that is step 5's `plan-checker` gate,
    and it is the reason the gate runs per ready track rather than once at the top.
 5. **Park any plan whose dependency did not land.** Preserve its original
