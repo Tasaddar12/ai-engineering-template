@@ -5,6 +5,8 @@ argument-hint: <what's broken, or a FIX/INTAKE id>
 
 Read and follow [RULES](../RULES.md).
 
+Run this mutating FIX lifecycle in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Fix: **$ARGUMENTS**
 
 If the argument is a `FIX-{nnn}` id, resume that record in `.ai/fixes/open/`.
@@ -100,7 +102,8 @@ blocked on a decision, or it grew past what a fix should be.
 FIX items are code-only. Documentation and contract corrections each become
 their own INTAKE. The autonomous review loop attempts code corrections once
 between reviews 1 and 2, then leaves residual FIX items open for after all
-other PLANs complete. It does not repeatedly invoke `/fix` to evade the ceiling.
+the affected integrated or preserved tree is available. It does not repeatedly
+invoke `/fix` to evade the ceiling.
 
 Escalate to `/plan-new` and link the fix record from the plan when the work
 needs an ADR, a spec rewrite, or more than a handful of files. A fix growing

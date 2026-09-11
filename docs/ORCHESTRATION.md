@@ -69,6 +69,12 @@ Code defects are FIX items. Incidental documentation/contract corrections are
 INTAKE items; actionable findings against the original documentation promises
 may receive the single documentation correction pass between documentation
 reviews. Completion and retained findings follow RULES.md#definition-of-done.
+
+Pure documentation tracks have empty `code_paths` and
+`source_documentation_paths`. Their route is readiness, documentation author,
+PR on a real documentation diff, two documentation reviews and delivery; they
+do not run build, research or synthetic code-review phases. Full tracks use the
+code phases before documentation.
 ```
 
 Each [agent file](../.ai/agents/README.md) owns its inputs, duties and scope.
@@ -108,11 +114,12 @@ lets it find where a behavior was introduced.
 It is two commands, and the split matters — see
 [Why it is split in two](#why-it-is-split-in-two) below.
 
-**1. Schedule.** In the main checkout:
+**1. Prepare the schedule.** In an immediate-child preparation worktree,
+review and merge the manifest PR, then synchronize the primary checkout:
 
 ```bash
 /orchestrate --all-backlog --dry-run       # just the schedule, nothing created
-/orchestrate PLAN-011 PLAN-014 PLAN-018    # schedule and create wave-1 worktrees
+/orchestrate PLAN-011 PLAN-014 PLAN-018    # schedule after the prep PR is synced
 ```
 
 **Start with `--dry-run`.** It produces the manifest and stops. You get the
@@ -120,8 +127,9 @@ wave layout, the tracks, and — listed separately — every dependency the
 orchestrator *inferred* rather than read from a plan. Those are the ones that
 can be wrong, and checking them costs a minute against a run that costs hours.
 
-Without `--dry-run`, an authorized background run reserves IDs and starts the
-runtime. A manual host prints worktree/session instructions instead.
+Without `--dry-run`, the reviewed preparation is synchronized, then an
+authorized background run reserves IDs and starts the runtime. A manual host
+prints worktree/session instructions instead.
 
 **2. It runs itself from there.** The runtime launches separate worker
 processes, waits for completion and saves phase receipts. As tracks clear it
@@ -141,7 +149,8 @@ Start an agent session in .worktrees/ORCH-001-w1t1, then:
 /orchestrate-track ORCH-001 w1t1
 ```
 
-Then re-run `/orchestrate` as tracks become ready under their own dependencies.
+Then continue `/orchestrate` as tracks become ready under their own
+dependencies; the primary checkout remains a read-only synchronization point.
 
 Any time:
 
@@ -179,7 +188,7 @@ session:
 
 | Problem | Cause | What the split does |
 |---|---|---|
-| Confinement is only prose | Subagents inherit the caller's working directory — the main checkout | A session started in the worktree makes that the project root, so agents resolve paths there by default |
+| Confinement is only prose | Subagents inherit the caller's working directory | A session started in the assigned worktree makes that the project root, so agents resolve paths there by default |
 | Tracks wait at every stage | One session can only batch by stage, so all tracks pause for the slowest, eight times | Independent sessions have no shared scheduler to wait on |
 | Nothing survives the session | Stage, round counts and PR numbers live in context | State is derived from git; the manifest is a static schedule |
 
@@ -232,7 +241,7 @@ In `.ai/config.yaml`, under `orchestration`:
 | `review.max_rounds` | `2` | One immediate code-fix pass between two reviews |
 | `forge` | `github` | Executable GitHub adapter; other forges require a manual host |
 | `merge_strategy` | `merge` | `merge` keeps the per-step commits |
-| `auto_merge` | `auto` | Authorized autonomous delivery; manual hosts may use `ask` or `never` |
+| `auto_merge` | `auto` | Runtime requires `auto`; unsupported values are rejected |
 | `targeted_tests` | *empty* | How to run only the tests a change affects |
 
 Before the first run, name the required local commands and GitHub checks.
@@ -246,7 +255,7 @@ After review 2, residual code defects remain open FIX reports; documentation
 and contract corrections remain separate INTAKE items. Missing required code,
 functionality or overall SPEC coverage prevents merge under
 [Definition of done](../.ai/RULES.md#definition-of-done). Complete work can
-retain editorial or unrelated follow-ups with the actual verdict disclosed. No third review is started. After the other PLANs complete,
+retain editorial or unrelated follow-ups with the actual verdict disclosed. No third review is started. When each affected tree is available,
 the runtime looks through the deferred FIX queue in a fresh read-only audit.
 
 Other stopping points: the implementor hits a question only a human can answer
@@ -282,7 +291,7 @@ work continues. A failed PR never silently becomes a local merge.
   stops rather than hiding it.
 - **Replace `/plan-new`.** It builds plans; it does not write them. A vague
   plan is excluded from the run rather than built badly.
-- **Replace `/plan-start`** for one plan. A single plan does not need a
-  worktree, a wave or a PR loop.
+- **Replace `/plan-start`** for one plan. A single plan uses one track and the
+  same assigned-worktree, reviewed-PR and synchronized-delivery lifecycle.
 - **Guarantee parallelism.** Eight plans that all touch the same module is one
   track wearing a costume, and the orchestrator will say so.

@@ -1,4 +1,4 @@
-# Nested worktrees must never become part of a committed scaffold.
+# The immediate-child worktree root is local orchestration state, never a scaffold file.
 .worktrees/
 # Local agent settings and operating-system/editor noise.
 .codex/settings.local.*

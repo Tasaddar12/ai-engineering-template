@@ -1,5 +1,5 @@
 ---
-description: Run one orchestration track through build, two code reviews, documentation, two documentation reviews and delivery.
+description: Run a full track through build and two code reviews, or a pure documentation track through readiness and two documentation reviews, then delivery.
 argument-hint: <run-id> <track-id>
 ---
 
@@ -21,7 +21,15 @@ durable and authoritative; never infer or reset counts from commit subjects.
 
 ## Linear phases
 
-1. **Build.** Fresh research and code implementation run in the assigned
+Readiness runs first against the immutable synchronized target. Full tracks then
+use the code route below. Pure documentation tracks (empty `code_paths` and
+`source_documentation_paths`) skip build, research and source comments and use
+readiness, documentation author, PR on a real diff, and two documentation
+reviews with at most one documentation fix. They run no synthetic code reviews.
+A no-change pure track remains preserved and incomplete; it gets no empty
+commit, PR or cleanup.
+
+1. **Build (full tracks).** Fresh research and code implementation run in the assigned
    worktree. It may write an assigned Research note and create new FIX/INTAKE
    records within its reserved ranges. The build worker may write source/tests and
    perform its own source self-review. It must not edit PLAN content, specs,
@@ -29,9 +37,9 @@ durable and authoritative; never infer or reset counts from commit subjects.
    receipts or review records. An incomplete or inconclusive build parks.
 
 2. **PR when there is a diff.** For a code diff, the coordinator prepares and
-   opens the PR before review. A documentation-only track runs both code
-   reviews first and opens its PR only after the documentation batch creates a
-   diff. A documentation-only track whose branch still has no net diff from its
+   opens the PR before review. A pure documentation track opens its PR only
+   after the documentation batch creates a diff. A pure documentation track
+   whose branch still has no net diff from its
    base after the document phase stops with a recorded no-change outcome,
    preserves the checkout, and does not create an empty commit or PR or proceed
    to documentation reviews or delivery. Code-only tracks may already have a
@@ -43,7 +51,9 @@ durable and authoritative; never infer or reset counts from commit subjects.
    and correctness, never documentation quality or prior code-review verdicts.
    It independently verifies the Research notes' claims.
 
-4. **Optional code correction.** If review one has actionable code findings,
+4. **Optional code correction.** If review one has actionable findings whose
+   `kind` is code, `impact` is not unrelated, and whose path is within owned
+   `code_paths`,
    one fresh fixer may correct them in code scope and provide real regression
    proof. Documentation/contract findings become INTAKE and do not return to
    the code fixer. If review one is approved or has zero eligible code fixes,

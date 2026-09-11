@@ -43,13 +43,17 @@ Stop and report rather than working around any of these:
 
 ```bash
 git status --porcelain          # must be empty
-git branch --show-current       # the base branch, unless config overrides
+git branch --show-current       # primary target branch; prep worktree branch is separate
 git remote -v
 ```
 
 - **Uncommitted changes** — stop. Worktrees branch from a commit; anything
   uncommitted is silently excluded from every track.
-- **`.worktrees/` not in `.gitignore`** — add it and commit that first.
+- **`.worktrees/` not in `.gitignore`** — bootstrap only with Git-local
+  administrative metadata such as `.git/info/exclude` if needed, then prepare
+  and merge the tracked ignore change through a reviewed preparation worktree
+  PR. This narrow bootstrap exception never permits editing tracked primary
+  project files.
 - **Existing worktrees** — `git worktree list`. If a previous run left some,
   say so and point at `/orchestrate-clean`. Never reuse one.
 - **Base branch behind its remote** — `git fetch && git status -sb`. Pull
@@ -102,20 +106,20 @@ be wrong.
 A run is approved on one screen and then consumes agents for hours. Nobody can
 consent to that from a wave diagram alone, so put a number on it.
 
-The executable adapter uses one build process per track for research and
-implementation, two cold code reviewers, a lightweight documentation worker,
-and two cold documentation reviewers. Code findings add one fixer; docs
-findings add one documentation correction worker. Manual role-per-session
-hosts may use more sessions; identify the adapter in the estimate.
+Full tracks use readiness, build, two cold code reviewers, a documentation
+author and two cold documentation reviewers: 7–9 workers including optional
+code/docs corrections. Pure documentation tracks use readiness, author and two
+documentation reviewers: 4–5 including one optional correction. Target advance,
+process retries, research/manual adapters and defect audits add workers.
 
 ```
-floor    = tracks x 6
-ceiling  = tracks x 8
+full floor/ceiling = full_tracks x 7 / full_tracks x 9
+pure floor/ceiling = docs_tracks x 4 / docs_tracks x 5
 ```
 
 Present both, and the shape:
 
-> 3 tracks, 5 plans, 2 display waves: 18–24 worker processes, plus scheduling
+> 3 full tracks, 2 display waves: 21–27 worker processes, plus scheduling
 > and the later defect audit. Each track waits only for its own dependencies.
 
 Then two judgements the numbers do not show, and say them plainly:
@@ -128,7 +132,7 @@ Then two judgements the numbers do not show, and say them plainly:
 
 On `--dry-run`, stop here. The manifest and this estimate are the deliverable.
 
-## 4. Reserve id blocks
+## 4. Prepare and review the manifest
 
 Every record type is numbered "highest existing plus one". Tracks branch from
 the same commit, so they all compute the same next number, write it under
@@ -146,9 +150,12 @@ the whole repository and give every track a contiguous block of 20:
 Record them in the manifest. Blocks are never reused, including by later
 waves — carry on from the highest issued.
 
-Commit the manifest to the base branch.
+Write the manifest in an immediate-child preparation worktree, review it, open
+its PR, merge the exact reviewed head, and fast-forward the primary checkout
+before runtime starts. The runtime must snapshot a synchronized target; it may
+not start from a locally-ahead primary checkout.
 
-## 5. Create ready tracks' worktrees
+## 5. Readiness and track worktrees
 
 **Only ready tracks.** Create a track after its own dependencies have merged,
 the target has synced and their contents are verified. Waves are a display
@@ -179,32 +186,31 @@ Act on what it reports:
 | Changes existing non-intent contracts | Pass the declared target and transition evidence through the code-to-documentation handoff in [RULES](../RULES.md#review-and-documentation). |
 | Premise invalidated by an earlier wave | Pull it, and offer to re-run `/plan-new` on it |
 | Internally inconsistent, or too vague to slice | Pull it — an implementor cannot build it |
-| Nits only | Proceed, and pass them to the track |
+| Any readiness finding, `changes_requested`, `cannot_review` or blocked result | Preserve the decision and park the PLAN; only a conclusive approved readiness result with no findings proceeds |
 
-A pulled plan goes back to `.ai/plans/backlog/`, and anything that depended on
-it is pulled too. **Say what you removed and why** — a wave that quietly
-shrinks looks like the orchestrator lost a plan.
+A rejected plan remains at its assigned original path and its track is parked;
+anything that depended on it waits. Record the reason in the coordinator
+receipt so a wave that pauses is not mistaken for a lost plan.
 
 If the checker finds nothing, say that too. It is evidence, not a formality.
 
 ### Create the worktrees
 
-Per track:
+Manual hosts create each track only after the immutable readiness check:
 
 ```bash
-git worktree add .worktrees/ORCH-001-w1t1 -b orch/ORCH-001/w1t1
-git -C .worktrees/ORCH-001-w1t1 rev-parse --show-toplevel   # absolute path
+git worktree add <absolute-primary>/.worktrees/ORCH-001-w1t1 -b orch/ORCH-001/w1t1
+git -C <absolute-primary>/.worktrees/ORCH-001-w1t1 rev-parse --show-toplevel
 ```
 
-Manual hosts then move the track's plans into `.ai/plans/active/` and commit
-there. Runtime workers keep assigned PLAN paths fixed; the coordinator performs
+Manual hosts keep assigned PLAN paths fixed; the coordinator performs
 the final lifecycle moves so all phases use the same inputs.
 
 ## 6. Dispatch ready tracks
 
-**Runtime mode:** invoke the approved JSON schedule once. The runner manages
-child processes and completion notifications internally; keep its host process
-alive. It does not depend on a chat session being re-invoked automatically.
+**Runtime mode:** compile and validate the approved JSON snapshot at the
+synchronized target, then invoke it once. The runner performs readiness and
+owns allocation and creation of track worktrees; do not create them here.
 
 **Manual host mode:** launch each ready track in its assigned worktree using
 the host's documented background/completion mechanism, for example:
@@ -264,12 +270,8 @@ of four needs a human is the failure this whole step exists to avoid.
 Merging here serialises it, and puts the one outward-facing action in the
 session the user is actually talking to.
 
-Honour `orchestration.auto_merge`:
-
-- **`ask`** — present the currently ready tracks together when delivery
-  authorization is missing; continue independent work while it is pending.
-- **`auto`** — merge as each track reports ready.
-- **`never`** — leave the PRs open and report them.
+Runtime delivery requires `orchestration.auto_merge: auto`; `ask` and `never`
+are unsupported runtime values and fail schedule validation.
 
 ```bash
 gh pr merge <n> --merge --match-head-commit <tested-head>
@@ -297,21 +299,24 @@ and deferred FIX/INTAKE IDs; never call residual findings an approved review.
 
 ## 9. Record completion and dispatch newly ready tracks
 
-Process each terminal track without waiting for an unrelated wave barrier:
+Process each terminal track without waiting for an unrelated wave barrier. In
+runtime mode record each result only in Git-common-directory receipts during
+the run; after scheduling stops, consolidate STATE, journal and manifest in one
+sibling finalization worktree, reviewed PR, synchronized primary and cleanup.
+Manual mode uses the same ownership.
 
 1. **Check nothing escaped.** `git status --porcelain` on this checkout must be
    empty. Anything here means an agent wrote outside its worktree — **stop and
    report it** rather than merging over it.
-2. **Write `.ai/state/STATE.md` and the journal** from what the tracks
-   reported. Tracks are told not to touch either: they are single shared files,
-   and parallel tracks editing them makes the second merge conflict. **You are
-   the only writer**, on the base branch.
-3. **Update the manifest** — which tracks merged, rounds each took, ids used.
+2. **Queue shared summaries in operational receipts during the run.** After
+   scheduling stops, publish consolidated STATE, journal and manifest updates
+   through the sibling finalization worktree lifecycle.
+3. **Update the manifest after the run** — which tracks merged, rounds each took, ids used.
 4. **Re-check newly ready tracks' plans** — that is step 5's `plan-checker` gate,
    and it is the reason the gate runs per ready track rather than once at the top.
-5. **Drop any plan whose dependency did not land.** If a wave-2 plan depended
-   on a stopped wave-1 track, it cannot be built — move it back to
-   `backlog/`, say why, and carry on with the rest of the wave.
+5. **Park any plan whose dependency did not land.** Preserve its original
+   assigned PLAN path and record the blocked dependency; do not move it back to
+   `backlog/` during an in-run allocation.
 6. Go to step 5 and dispatch tracks whose own dependencies are now verified.
 
 Keep going until every wave is done or nothing is left that can proceed. **The
@@ -321,7 +326,8 @@ left is blocked on a human — and say which.
 
 ### Post-PLAN defect pass
 
-After all other PLANs are complete, look through the deferred code FIX queue:
+When an affected integrated or preserved tree is available, look through the
+deferred code FIX queue:
 deduplicate root causes, reproduce against the now-integrated target, inspect
 any earlier fix proof and identify which reports remain actionable. Do not
 close a FIX just because a later review omitted it. Documentation and contract
@@ -329,7 +335,7 @@ corrections stay as their own INTAKE items for later planning. The runtime
 produces `followups.json` and an automatic read-only defect audit when eligible;
 it never starts a third review of the original track. A parked defect and the
 PLANs waiting on it are listed for the audit, not prerequisites for examining
-that defect. Other unfinished PLANs still delay eligibility; report them.
+that defect. Unrelated unfinished PLANs do not delay eligibility; report them.
 
 ## Close out
 
@@ -343,8 +349,8 @@ that defect. Other unfinished PLANs still delay eligibility; report them.
 
 ## Rules for you
 
-- **Never write code, and never edit anything inside a worktree.** Hand the
-  track off.
+- **Never write code.** Coordinator records are prepared in their assigned
+  sibling worktree and delivered through the reviewed PR lifecycle.
 - **Never drive more than the scheduling.** Launching a track and merging its
   result is yours. Its research, its code, its review rounds are not — if you
   find yourself tracking which stage three tracks are at, you have taken on the
@@ -353,8 +359,8 @@ that defect. Other unfinished PLANs still delay eligibility; report them.
   host's documented notification mechanism; do not assume a chat wake-up.
 - **You merge; tracks do not.** Concurrent merges into one base branch race
   each other, and merging here serialises them.
-- **You alone write the manifest, `STATE.md` and the journal**, and only on the
-  base branch.
+- **You alone own the manifest, `STATE.md` and journal**, but write them in a
+  reviewed coordinator worktree; the primary checkout only inspects and syncs.
 - **A dependent track never starts early.** Require its own dependencies to be
   merged and synced; display-wave boundaries do not block independent work.
 - **One stuck track does not stop the run.** Merge what is ready, park only the

@@ -7,6 +7,8 @@ title: Command entry points
 
 # Command entry points
 
+All mutating commands use the shared [worktree lifecycle](worktree.md).
+
 These are Markdown entry points, not installed slash commands.
 
 - [defer](defer.md)
@@ -24,5 +26,6 @@ These are Markdown entry points, not installed slash commands.
 - [plan-start](plan-start.md)
 - [plan-status](plan-status.md)
 - [spec-amend](spec-amend.md)
+- [worktree](worktree.md)
 - [onboard-pr](onboard-pr.md)
 - [onboard](onboard.md)

@@ -4,6 +4,8 @@ description: Set up the .ai/ structure for this project, or brief yourself on an
 
 Read and follow [RULES](../RULES.md).
 
+Run onboarding writes in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Bring this project's `.ai/` structure to life. Behave differently depending on
 what you find.
 

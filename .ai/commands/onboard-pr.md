@@ -31,7 +31,7 @@ problem here:
   and lint commands, not an empty list.
 - **Deletions** — every retired document was one the user explicitly approved.
 
-## 2. Commit
+## 2. Commit in a reviewed worktree
 
 Group the change so a reviewer can follow it. If the template copy was already
 committed separately, this is one commit of onboarding decisions; if not, split
@@ -41,7 +41,9 @@ it:
 2. everything `/onboard` decided — intent, specs, promotions, deletions,
    `AGENTS.md`, intake
 
-Do not include unrelated work. If the worktree has changes that are not part of
+Do not include unrelated work. Prepare these commits in an assigned sibling
+worktree, review and open the PR, then merge and synchronize the primary target
+before continuing. If the worktree has changes that are not part of
 the adoption, stop and tell the user rather than sweeping them in.
 
 ## 3. Push and open the merge request

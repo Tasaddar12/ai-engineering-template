@@ -110,7 +110,8 @@ the target state makes every verification fail, which teaches everyone to
 ignore the verifier. Unbuilt behavior lives in the plan that will build it,
 under its **Contract changes** section — the exact wording the spec will carry
 on the merged/deliverable revision. The documentor lands that wording after
-both code reviews in the final documentation batch.
+readiness for pure documentation tracks or after both code reviews for full
+tracks.
 
 **An ADR is the opposite of a spec** — a dated record, and allowed to be about
 the past. That is why superseding an ADR means writing a new one that points at
@@ -399,23 +400,25 @@ Two tests, and a spec has to pass both:
 
 ## Review and documentation
 
-All product documentation work happens after both code reviews. This includes
+All product documentation work happens after the implementation handoff. This includes
 SPECs, ADRs, AMDs, PLAN delivery notes, guides, comments and docstrings.
 Only documentation agents modify SPECs, ADRs, AMDs and other product
 documentation. Code agents do not mix documentation
 cleanup into implementation. Functional directives embedded in comments
 (e.g. compiler pragmas) remain executable configuration, not editorial prose.
 
-A completed track runs two fresh code reviews, with at most one immediate code
-correction between them. The second runs even if the first approves. After the
-code handoff, the documentation agent completes the documentation steps. Two
-documentation reviews follow, with at most one documentation correction between
-them. No third review, repeated immediate fix pass or late scribe refresh.
+A code track runs two fresh code reviews, with at most one immediate code
+correction between them. A pure documentation track (empty `code_paths` and
+`source_documentation_paths`) runs readiness, the documentation author and two
+fresh documentation reviews, with at most one documentation correction. A full
+track runs two code reviews before its documentation phase. No third review,
+repeated immediate fix pass or late scribe refresh.
 Interrupted sessions do not reset attempt counts.
 
 Research notes may be written before implementation and may be read by
 implementors and reviewers. Planning documents are preparation; PLAN delivery
-notes and product documentation use the post-code-review handoff.
+notes and product documentation use the applicable readiness handoff for pure
+documentation tracks or code-review-two handoff for full tracks.
 
 Documentation agents receive Research notes, implementation reports, code-review
 findings and proof. They verify actual behavior, then update SPECs, ADRs, AMDs,
@@ -500,7 +503,7 @@ Residual missing code/functionality or absent overall SPEC coverage prevents
 merge. Capture its FIX/INTAKE evidence and identify supporting work; do not
 use severity downgrades or a permissive residual-policy override to close it.
 
-After other PLAN work completes, a fresh read-only audit examines open code
+When an affected tree is available, a fresh read-only audit examines open code
 FIXes, previous proof and actual integrated or explicitly preserved trees.
 A parked defect and work waiting on it do not prevent examining that defect;
 other unfinished project PLANs do. Include open reports from earlier runs.
@@ -566,18 +569,21 @@ IDs. Previously issued blocks are never reused. Workers create records only
 within their reserved ranges; the coordinator allocates structured findings
 without colliding with worker-created records.
 
-The normal process estimate is tracks x 6 through tracks x 8: one build,
-two code reviewers, one documentation worker, two documentation reviewers,
-and up to one correction of each kind. Three tracks therefore use 18–24
-workers, plus scheduling and any later defect audit. Separate manual research
-sessions or exceptional recovery change the estimate and must be disclosed.
+The normal full-track estimate is tracks x 7 through tracks x 9: readiness,
+build, two code reviewers, one documentation worker, two documentation
+reviewers, and up to one correction of each kind. Pure documentation tracks
+use 4–5 workers: readiness, author, two documentation reviewers and one optional
+correction. Separate recovery or defect-audit workers must be disclosed.
 
 ## Runtime worker protocol
 
-The explicit JSON execution snapshot uses protocol_version 2. PLANs contain
+The explicit JSON execution snapshot uses protocol_version 3. PLANs contain
 their own Execution contract; runtime reads it at plan_source_sha. Old schedules
 must be reconciled with their compatible runtime/receipts, not silently upgraded
 or restarted with cleared review counts. Configuration is not parsed from YAML.
+Readiness is a read-only check against immutable synchronized base and PLAN
+source SHAs using `git show`; it reruns on target advance and preserves valid
+blocked or rejected lifecycle decisions.
 
 The worker follows this file and its assigned role. Assignment supplies phase,
 worktree/branch, original PLANs, steps, scopes, research paths, reserved IDs,
@@ -613,6 +619,28 @@ and preserves them in the queue. It also creates reports from structured
 review findings and retains valid evidence even if a phase fails its edit audit.
 
 ## Delivery, recovery and cleanup
+
+### Worktree lifecycle
+
+Every mutating command, including plan and FIX lifecycle commands, `defer`,
+`harvest`, `spec-amend`, onboarding and coordinator record updates, obtains or
+reuses an assigned immediate-child worktree under the fixed, ignored
+`.worktrees/` root before writing. Verify its absolute root and branch first.
+The primary checkout is read-only for tracked edits and commits; it may inspect,
+fetch and fast-forward a verified merged target. A linked worker needing another
+checkout creates a sibling from the primary absolute root and never nests a
+worktree inside its assigned checkout. See [the command procedure](commands/worktree.md).
+
+Preparation and finalization records use a sibling worktree and their own
+reviewed PR. Preparation is merged and synchronized before runtime starts, so
+the runtime snapshot cannot be locally ahead of the target. Runtime receipts
+under the Git common directory may be updated operationally without a tracked
+primary-checkout write.
+
+The lifecycle for a mutating command is: prepare, review, open a PR, verify the
+required checks, merge the exact reviewed head, synchronize the primary target,
+verify ancestry and the tested tree, and clean up only the clean merged
+worktree. Read-only reports do not need a worktree, commit or PR.
 
 Require a clean synchronized target checkout and ignored worktree root.
 Allocate new tracks at the verified target revision containing their dependencies.

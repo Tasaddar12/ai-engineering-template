@@ -5,6 +5,8 @@ argument-hint: <what's wrong, and where>
 
 Read and follow [RULES](../RULES.md).
 
+This mutating capture runs in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Capture, without fixing: **$ARGUMENTS**
 
 This exists so a discovered problem outlives the session that found it. A
@@ -34,12 +36,13 @@ the next agent rediscovers it and improvises around it.
    handling it, and it is your job to say which one this is.
 6. Append a one-line journal entry, or return the event to the coordinator in
    a track. Use reserved IDs. In autonomous review set
-   `deferred_until: all-other-plans-complete` on deferred FIX/INTAKE records.
+    `deferred_until: affected-tree-available` on deferred FIX records when the
+    affected tree is not yet available.
 
 Report the FIX or INTAKE id, the one-line problem, and your read on urgency. Then
 carry on with what you were doing.
 
-Code FIX items proceed through `/fix` after the other PLANs. Documentation,
+Code FIX items proceed through `/fix` when the affected tree is available. Documentation,
 contract and other INTAKE work proceeds through `/plan-new INTAKE-{nnn}`, where
 it gets sized, spec'd and checked. Nothing in
 `intake/` is a commitment to do the work — `/plan-archive` reviews the pile and

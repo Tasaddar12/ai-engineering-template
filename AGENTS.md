@@ -35,6 +35,11 @@ through [defer](.ai/commands/defer.md). Work only in the assigned checkout;
 verify its absolute root and branch before writes. Roles are instructions,
 not an installed dispatcher or permission system.
 
+All tracked mutations use an assigned immediate-child worktree and the reviewed
+delivery lifecycle in [.ai/commands/worktree.md](.ai/commands/worktree.md).
+The primary checkout is read-only for tracked edits and commits; it is used for
+inspection, fetch and verified fast-forward synchronization.
+
 Start with [onboard](.ai/commands/onboard.md) for project context,
 [plan-status](.ai/commands/plan-status.md) for a snapshot, and
 [verifier](.ai/agents/verifier.md) for evidence before delivery.

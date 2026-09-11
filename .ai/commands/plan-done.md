@@ -6,6 +6,8 @@ argument-hint: <plan-id>
 Close **$1**.
 
 Read and follow [RULES: Definition of done](../RULES.md#definition-of-done).
+
+Run closeout and lifecycle moves in an assigned worktree; use [worktree lifecycle](worktree.md).
 Use `/plan-review` evidence or the existing coordinator receipts.
 
 1. Locate the original PLAN target, delivered revision, code-review evidence

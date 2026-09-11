@@ -128,12 +128,15 @@ def execution_contract(text):
     require(isinstance(contract, dict) and isinstance(contract.get('intent_changes'), list) and
             isinstance(contract.get('steps'), list) and isinstance(contract.get('completed_intake'), list),
             'Execution contract needs intent_changes, steps and completed_intake lists')
-    seen = set()
+    seen, documenting = set(), False
     for step in contract['steps']:
         require(isinstance(step, dict) and re.fullmatch(r'[A-Za-z0-9_-]+', step.get('id', '')) and
                 step['id'] not in seen and step.get('phase') in ('build', 'document') and
                 isinstance(step.get('title'), str) and step['title'].strip(), 'Invalid or duplicate PLAN step')
         seen.add(step['id'])
+        require(not documenting or step['phase'] == 'document',
+                'PLAN build steps must precede all documentation steps')
+        documenting = documenting or step['phase'] == 'document'
     for change in contract['intent_changes']:
         require(isinstance(change, dict) and isinstance(change.get('request'), str) and change['request'].strip() and
                 change.get('decision') in ('pending', 'approved', 'rejected') and
@@ -154,7 +157,14 @@ def python_behavior(text):
 
 
 def validate(config):
-    require(config.get('protocol_version') == 2, 'Use protocol_version 2 with explicit PLAN execution contracts; preserve old run receipts')
+    require(config.get('protocol_version') == 3, 'Use protocol_version 3; preserve older runs with their compatible runtime and receipts')
+    require(config.get('worktree_root', '.worktrees') == '.worktrees', 'All worktrees must be immediate children of the primary checkout .worktrees/')
+    require(config.get('done_partition', 'quarter') in ('quarter', 'month', 'year'), 'Invalid done_partition')
+    require(type(config.get('max_process_attempts', 2)) is int and 1 <= config.get('max_process_attempts', 2) <= 3,
+            'max_process_attempts must be between 1 and 3')
+    for key, expected in (('forge', 'github'), ('merge_strategy', 'merge'), ('auto_merge', 'auto'), ('cleanup_on_merge', True)):
+        require(config.get(key, expected) == expected, f'Unsupported runtime {key}: requires {expected}')
+    require(not any(key in config for key in ('paths', 'ids')), 'Custom record paths and ID formats are not supported by this runtime')
     require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]*', config['run_id']), 'Invalid run_id')
     for field in ('base_branch', 'remote', 'branch_prefix'):
         require(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', config[field]) and
@@ -171,7 +181,8 @@ def validate(config):
             'Declare a lightweight documentation_model')
     require('documentation_worker_command' in config,
             'Declare a separate documentation_worker_command; no code-model fallback is permitted')
-    for argv in [config['worker_command'], config['documentation_worker_command'], *config['required_commands']]:
+    for argv in [config['worker_command'], config.get('readiness_worker_command', config['worker_command']),
+                 config['documentation_worker_command'], *config['required_commands']]:
         require(isinstance(argv, list) and argv and all(isinstance(x, str) and x for x in argv),
                 'Commands must be nonempty argv arrays')
     require(any('{model}' in arg for arg in config['documentation_worker_command']),
@@ -199,6 +210,8 @@ def validate(config):
             require(not any(overlaps(path, code) for code in track['code_paths']),
                     'Documentation paths and code paths must be disjoint')
         for plan in track['plans']:
+            require(re.fullmatch(r'\.ai/plans/(backlog|active|review)/PLAN-\d+-[^/]+\.md', plan),
+                    f'PLAN must be in an executable lifecycle stage: {plan}')
             require(plan.casefold() not in plans, f'Plan scheduled twice: {plan}')
             require(any(covers(s, plan) for s in track['owned_paths']), f'Plan not owned: {plan}')
             plans.add(plan.casefold())
@@ -308,6 +321,9 @@ class Runner:
         self.root = Path(config['repository']).resolve()
         require(Path(git(self.root, 'rev-parse', '--show-toplevel')).resolve() == self.root,
                 'repository must be the exact base checkout root')
+        primary = git(self.root, 'worktree', 'list', '--porcelain').splitlines()[0].removeprefix('worktree ')
+        require(Path(primary).resolve() == self.root and (self.root / '.git').is_dir(),
+                'repository must be the primary checkout; nested worktrees are forbidden')
         self.common = Path(git(self.root, 'rev-parse', '--path-format=absolute', '--git-common-dir'))
         self.runtime = self.common / 'orchestration'
         self.directory = self.runtime / config['run_id']
@@ -437,6 +453,82 @@ class Runner:
         return [{'plan': plan, **step} for plan, contract in state['plan_contracts'].items()
                 for step in contract['steps'] if step['phase'] == phase]
 
+    def documentation_only(self, track):
+        return not track['code_paths'] and not track.get('source_documentation_paths')
+
+    def required_reviews(self, track):
+        return REVIEW_PHASES[2:] if self.documentation_only(track) else REVIEW_PHASES
+
+    def readiness(self, track, base, contracts):
+        state = self.state['tracks'][track['id']]
+        require(not state.get('inflight_phase'), 'Reconcile the unfinished readiness worker before retrying')
+        receipt = state.get('readiness')
+        if receipt and receipt['base_sha'] == base:
+            require(receipt['result']['status'] == 'complete' and receipt['result']['verdict'] == 'approved' and
+                    not receipt['result']['findings'], 'PLAN readiness needs a revised proposal or human resolution')
+            return
+        if self.documentation_only(track):
+            require(not track.get('research_paths') and not any(
+                step['phase'] == 'build' for contract in contracts.values() for step in contract['steps']),
+                'Documentation-only tracks cannot declare build steps or research writes')
+        token = f"{track['id']}-readiness-{time.time_ns()}"
+        result_file = self.directory / f'{token}.json'
+        mapping = {'worktree': str(self.root), 'phase': 'readiness', 'sandbox': 'read-only',
+                   'schema_file': str(self.schema), 'result_file': str(result_file),
+                   'model': self.config.get('code_model', 'worker-command-default')}
+        context = {'phase': 'readiness', 'worktree': str(self.root), 'base_sha': base,
+                   'plan_source_sha': base, 'track': track['id'], 'plans': track['plans'],
+                   'plan_contracts': contracts, 'owned_paths': track['owned_paths'],
+                   'code_paths': track['code_paths'], 'documentation_paths': track['documentation_paths'],
+                   'depends_on': track['depends_on'], 'required_commands': self.config['required_commands']}
+        prompt = ('Read AGENTS.md, .ai/RULES.md and .ai/agents/plan-checker.md. Perform only a read-only readiness check. '
+                  'Use git show at the immutable base_sha for PLANs, intent, contracts and code. '
+                  'Verify acceptance, scope, step ordering and prerequisites against that revision, '
+                  'including substantive expected changes; no-change work is not ready for allocation. '
+                  'Do not edit, commit, create worktrees or launch agents. Return the supplied result schema: '
+                  'approved with no findings means ready; changes_requested or cannot_review parks the PLAN.\n' +
+                  json.dumps(context, indent=2))
+        argv = [arg.format_map(mapping) for arg in self.config.get('readiness_worker_command', self.config['worker_command'])]
+        attempts = state.setdefault('readiness_attempts', {})
+        require(attempts.get(base, 0) < self.config.get('max_process_attempts', 2), 'Readiness process retry budget exhausted')
+        attempts[base] = attempts.get(base, 0) + 1
+        self.update(state, inflight_phase='readiness', worker_stopped=False,
+                    inflight={'name': 'readiness', 'before': base, 'result_file': str(result_file),
+                              'readonly': True, 'argv': argv})
+        try:
+            output = command(argv, self.root, input=prompt, timeout=self.config.get('worker_timeout_seconds', 3600),
+                             env={**self.worker_environment(track), 'ORCH_CONTEXT': json.dumps(context),
+                                  'ORCH_RESULT': str(result_file)})
+        finally:
+            self.update(state, worker_stopped=True)
+        (self.directory / f'{token}.log').write_text(output, encoding='utf-8')
+        self.consume_readiness(track)
+
+    def consume_readiness(self, track):
+        state = self.state['tracks'][track['id']]
+        phase = state['inflight']
+        result = json.loads(Path(phase['result_file']).read_text(encoding='utf-8'))
+        self.validate_phase_result(result, 'readiness')
+        with self.repo_mutex:
+            require(not git(self.root, 'status', '--porcelain'), 'Readiness worker changed the primary checkout')
+            self.sync()
+        receipt = {'base_sha': phase['before'], 'result': result, 'result_file': phase['result_file']}
+        with self.mutex:
+            state['readiness'] = receipt
+            state.setdefault('readiness_history', []).append(receipt)
+            state.pop('inflight_phase', None)
+            state.pop('inflight', None)
+            state.pop('worker_stopped', None)
+            self.save()
+        require(result['status'] == 'complete' and result['verdict'] == 'approved' and not result['findings'],
+                f"PLAN readiness failed: {result['summary']}")
+
+    def documentation_handoff(self, state, readonly):
+        allowed = ('build', 'review-1', 'fix', 'review-2')
+        if not readonly:
+            allowed += ('document', 'docs-review-1')
+        return {name: result for name, result in state['completed_phases'].items() if name in allowed}
+
     def documentation_equivalent(self, track, name, before, after):
         path, _ = self.location(track)
         old = git(path, 'show', f'{before}:{name}')
@@ -537,7 +629,7 @@ class Runner:
             'research_paths': track.get('research_paths', []), 'reserved_ids': track['ids'],
             'steps': self.phase_steps(track, name) if name in ('build', 'document') else [],
             'plan_contracts': state['plan_contracts'],
-            'documentation_handoff': state['completed_phases'] if docs else {},
+            'documentation_handoff': self.documentation_handoff(state, readonly) if docs else {},
             'model': model, 'documentation_model': self.config['documentation_model'],
             'review_kind': 'documentation' if docs else 'code',
             'code_reviewed_sha': state.get('code_reviewed_sha'),
@@ -548,8 +640,9 @@ class Runner:
                   f'Review and documentation, and Definition of done. Your role entry point is .ai/agents/{role}.md. '
                   '\nAssignment:\n' + json.dumps(context, indent=2) + '\n' + extra +
                   '\nReturn the supplied result schema to result_file/ORCH_RESULT.')
-        attempts = state.setdefault('phase_attempts', {})
-        require(name == 'build' or not attempts.get(name), 'Cannot repeat a fix or review attempt')
+        attempts = state.setdefault('process_attempts', {})
+        require(attempts.get(name, 0) < self.config.get('max_process_attempts', 2), 'Process retry budget exhausted')
+        require(not state.get('inflight_phase'), 'Reconcile the unfinished worker before another process attempt')
         attempts[name] = attempts.get(name, 0) + 1
         self.update(state, inflight_phase=name, worker_stopped=False,
                     inflight={'name': name, 'before': before, 'result_file': str(result_file), 'readonly': readonly,
@@ -600,6 +693,18 @@ class Runner:
             require(finding['kind'] != 'code' or finding['impact'] in ('missing_code', 'missing_functionality', 'unrelated'),
                     'A code defect cannot be dismissed as editorial')
 
+    @classmethod
+    def validate_phase_result(cls, result, name):
+        cls.validate_result(result)
+        if result['status'] != 'complete' or name not in (*REVIEW_PHASES, 'readiness'):
+            return
+        require(result['verdict'] in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
+        if result['verdict'] != 'cannot_review':
+            require((result['verdict'] == 'approved') == (len(result['findings']) == 0), 'Inconsistent review verdict')
+        if name != 'readiness':
+            kinds = ('documentation', 'contract', 'question') if name in DOCUMENT_PHASES else ('code', 'question')
+            require(all(f['kind'] in kinds for f in result['findings']), 'Reviewer crossed its code/documentation scope')
+
     def consume_result(self, track):
         state = self.state['tracks'][track['id']]
         path, _ = self.location(track)
@@ -608,7 +713,7 @@ class Runner:
         result_file = Path(phase['result_file'])
         require(result_file.is_file(), 'Worker did not produce its result')
         result = json.loads(result_file.read_text(encoding='utf-8'))
-        self.validate_result(result)
+        self.validate_phase_result(result, name)
         # Queue confirmed findings even if the worker is blocked or its edits fail audit.
         self.record_findings(track, result, self.phase_round(name), publish=False, source_head=before, phase_name=name)
         require(result['status'] == 'complete', result['summary'])
@@ -617,11 +722,6 @@ class Runner:
                     'Documentation phase must explicitly verify original PLAN promises')
         if readonly:
             require(git(path, 'rev-parse', 'HEAD') == before, 'Read-only worker changed HEAD')
-            require(result.get('verdict') in ('approved', 'changes_requested', 'cannot_review'), 'Invalid review verdict')
-            if result['verdict'] != 'cannot_review':
-                require((result['verdict'] == 'approved') == (len(result['findings']) == 0), 'Inconsistent review verdict')
-            kinds = ('documentation', 'contract', 'question') if name in DOCUMENT_PHASES else ('code', 'question')
-            require(all(f['kind'] in kinds for f in result['findings']), 'Reviewer crossed its code/documentation scope')
         else:
             self.commit_worker_changes(track, name, before)
         self.audit(track, path)
@@ -630,6 +730,7 @@ class Runner:
             state.setdefault('phase_receipts', {})[name] = {
                 **phase, 'after': git(path, 'rev-parse', 'HEAD')}
             state['completed_phases'][name] = result
+            state.setdefault('phase_attempts', {})[name] = 1
             state.pop('inflight_phase', None)
             state.pop('inflight', None)
             state.pop('worker_stopped', None)
@@ -718,7 +819,7 @@ class Runner:
         front = {'tier': 'plan', 'authority': 'agent', 'id': item['id'], 'title': item['title'],
                  'found': item.get('found', str(date.today())), 'found_by': 'orchestration review',
                  'found_while': track['plans'], 'severity': item['severity'],
-                 'deferred_until': 'all-other-plans-complete', 'run': self.config['run_id'], 'links': []}
+                  'deferred_until': 'affected-tree-available', 'run': self.config['run_id'], 'links': []}
         front['violates' if kind == 'FIX' else 'kind'] = 'none' if kind == 'FIX' else item['kind']
         text = '---\n' + ''.join(f'{k}: {json.dumps(v)}\n' for k, v in front.items()) + '---\n\n'
         text += f"# {item['id']}: {item['title']}\n\n"
@@ -791,23 +892,31 @@ class Runner:
     def build(self, track):
         state = self.state['tracks'][track['id']]
         path, _ = self.location(track)
-        result = self.phase(track, 'build')
-        self.record_findings(track, result, 0, phase_name='build', source_head=state['phase_heads']['build'])
-        require(result['implementation_complete'], 'Missing code or functionality; create FIX items or a supporting PLAN and preserve the target')
-        if git(path, 'diff', '--name-only', state['base'], 'HEAD'):
-            self.pull_request(track)
-        first = self.phase(track, 'review-1', readonly=True)
-        self.record_findings(track, first, 1, phase_name='review-1', source_head=state['phase_heads']['review-1'])
-        require(first['verdict'] != 'cannot_review', 'Reviewer cannot review')
-        code = [f for f in first['findings'] if f['kind'] == 'code']
-        if code:
-            fixed = self.phase(track, 'fix', extra='Code findings to attempt once:\n' + json.dumps(code))
-            self.record_findings(track, fixed, 1, phase_name='fix', source_head=state['phase_heads']['fix'])
-            self.record_attempt(track, fixed)
-        last = self.phase(track, 'review-2', readonly=True)
-        self.record_findings(track, last, 2, phase_name='review-2', source_head=state['phase_heads']['review-2'])
-        require(last['verdict'] != 'cannot_review', 'Reviewer cannot review')
-        self.update(state, code_reviewed_sha=state['phase_heads']['review-2'], code_review_verdict=last['verdict'])
+        last = {'findings': []}
+        if self.documentation_only(track):
+            self.update(state, pipeline='documentation', code_reviewed_sha=state['base'], code_review_verdict='not_applicable')
+        else:
+            self.update(state, pipeline='code')
+            result = self.phase(track, 'build')
+            self.record_findings(track, result, 0, phase_name='build', source_head=state['phase_heads']['build'])
+            require(result['implementation_complete'], 'Missing code or functionality; create FIX items or a supporting PLAN and preserve the target')
+            if git(path, 'diff', '--name-only', state['base'], 'HEAD'):
+                self.pull_request(track)
+            first = self.phase(track, 'review-1', readonly=True)
+            self.record_findings(track, first, 1, phase_name='review-1', source_head=state['phase_heads']['review-1'])
+            require(first['verdict'] != 'cannot_review', 'Reviewer cannot review')
+            code = [f for f in first['findings'] if f['kind'] == 'code' and f['impact'] != 'unrelated' and
+                    any(covers(scope, f['path']) for scope in track['code_paths'])]
+            if code:
+                fixed = self.phase(track, 'fix', extra='In-scope code findings to diagnose and attempt once:\n' + json.dumps(code))
+                self.record_findings(track, fixed, 1, phase_name='fix', source_head=state['phase_heads']['fix'])
+                self.record_attempt(track, fixed)
+            last = self.phase(track, 'review-2', readonly=True)
+            self.record_findings(track, last, 2, phase_name='review-2', source_head=state['phase_heads']['review-2'])
+            require(last['verdict'] != 'cannot_review', 'Reviewer cannot review')
+            self.update(state, code_reviewed_sha=state['phase_heads']['review-2'], code_review_verdict=last['verdict'])
+            require(last['implementation_complete'] and not any(f['impact'] in ('missing_code', 'missing_functionality')
+                    for f in last['findings']), 'Missing code or functionality; preserve the target before documentation')
         documented = self.phase(track, 'document')
         self.record_findings(track, documented, 0, phase_name='document', source_head=state['phase_heads']['document'])
         if not state.get('pr'):
@@ -816,6 +925,7 @@ class Runner:
         self.record_findings(track, docs_first, 1, phase_name='docs-review-1', source_head=state['phase_heads']['docs-review-1'])
         require(docs_first['verdict'] != 'cannot_review', 'Documentation reviewer cannot review')
         docs_findings = [f for f in docs_first['findings'] if f['kind'] in ('documentation', 'contract') and
+                        f['impact'] != 'unrelated' and
                         any(covers(s, f['path']) for s in track['documentation_paths'])]
         require(docs_first.get('documentation_complete') is True or docs_findings,
                 'Missing documentation promises require actionable findings within documentation_paths')
@@ -860,8 +970,9 @@ class Runner:
     def validate_completion(self, track):
         state = self.state['tracks'][track['id']]
         phases = state['completed_phases']
-        require(all(name in phases for name in REVIEW_PHASES), 'Missing review evidence for completion')
-        code, docs = phases['review-2'], phases['docs-review-2']
+        require(all(name in phases for name in self.required_reviews(track)), 'Missing review evidence for completion')
+        code = phases.get('review-2', {'implementation_complete': self.documentation_only(track), 'findings': []})
+        docs = phases['docs-review-2']
         require(code['implementation_complete'] and not any(f['impact'] in ('missing_code', 'missing_functionality')
                 for f in code['findings'] + docs['findings']),
                 'Missing code or functionality; preserve the target and report FIX/supporting PLAN actions')
@@ -890,7 +1001,7 @@ class Runner:
         kinds = ('documentation', 'contract') if documentation else ('code',)
         scopes = track['documentation_paths'] if documentation else track['code_paths']
         attempted = {f['key'] for f in state['completed_phases'][review]['findings']
-                     if f['kind'] in kinds and any(covers(s, f['path']) for s in scopes)}
+                      if f['kind'] in kinds and f['impact'] != 'unrelated' and any(covers(s, f['path']) for s in scopes)}
         for key in attempted:
             state['findings'][key].setdefault('attempts', []).append(result['summary'])
         self.write_reports(track, publish=True)
@@ -907,7 +1018,9 @@ class Runner:
         path, _ = self.location(track)
         moves = {}
         today = date.today()
-        period = f'{today.year}-Q{(today.month - 1) // 3 + 1}'
+        partition = self.config.get('done_partition', 'quarter')
+        period = (f'{today.year}-Q{(today.month - 1) // 3 + 1}' if partition == 'quarter' else
+                  today.strftime('%Y-%m' if partition == 'month' else '%Y'))
         for source in track['plans']:
             if not re.match(r'^\.ai/plans/(backlog|active|review)/PLAN-', source):
                 continue
@@ -963,10 +1076,10 @@ class Runner:
         """One delivery worker; CI waits never occupy the dispatch thread."""
         state = self.state['tracks'][track['id']]
         path, branch = self.location(track)
-        require(all(name in state['completed_phases'] for name in REVIEW_PHASES) and
+        require(all(name in state['completed_phases'] for name in self.required_reviews(track)) and
                 state.get('documentation_reviewed_sha') == state.get('reviewed_sha') and
                 state['completed_phases']['docs-review-2'].get('documentation_complete') is True,
-                'Delivery requires two code reviews and two complete documentation reviews')
+                'Delivery requires every review in the assigned pipeline')
         require(state.get('review_verdict') in ('approved', 'changes_requested'), 'No conclusive review for delivery')
         self.validate_completion(track)
         self.ownership(track, path)
@@ -996,7 +1109,7 @@ class Runner:
                         f"Code review: {state['code_review_verdict']}; source: {state['code_reviewed_sha']}\n\n"
                         f"Documentation review: {state['documentation_review_verdict']}; source: {state['documentation_reviewed_sha']}\n\n"
                         f"Documentation model: {state['documentation_model']}\n\nIntegrated head: {head}\n\n"
-                        'Follow-ups (open until verified after all other PLANs):\n\n' +
+                        'Follow-ups (open until their affected implementation is verified):\n\n' +
                         ('\n'.join('- ' + f['record'] for f in state['findings'].values()) or 'None.') + '\n', encoding='utf-8')
         self.gh('pr', 'edit', str(state['pr']), '--repo', self.config['github_repo'], '--body-file', str(body))
         self.wait_checks(state['pr'], head)
@@ -1052,7 +1165,6 @@ class Runner:
             overlaps(x, y) for x in a['owned_paths'] for y in b['owned_paths'])
 
     def audit_followups(self, queue):
-        """Look through deferred bugs once the project's other PLAN work is done."""
         if not queue['eligible'] or not queue['FIX']:
             return
         head = self.sync()
@@ -1066,11 +1178,11 @@ class Runner:
                    'model': self.config.get('code_model', 'worker-command-default')}
         argv = [arg.format_map(mapping) for arg in self.config['worker_command']]
         context = {'phase': 'defect-audit', 'worktree': str(self.root), 'run': self.config['run_id'],
-                   'base_sha': head, 'FIX': queue['FIX'], 'INTAKE': queue['INTAKE'],
+                    'base_sha': head, 'FIX': [item for item in queue['FIX'] if item['audit_ready']], 'INTAKE': queue['INTAKE'],
                    'parked_tracks': queue['parked_tracks']}
         prompt = (
             'Perform the post-PLAN defect audit, read-only, without launching other agents. '
-            'Other runnable PLAN work is finished; listed parked tracks and their dependencies remain incomplete. '
+            'Audit the supplied available defect trees; unrelated PLAN work may remain incomplete. '
             'Read each report_file and its attempted correction proof. Inspect integrated code at base_sha '
             'and, for unmerged defects, the preserved source_worktree read-only. State which tree was tested. '
             'Do not execute checks in a parked worktree whose workers_stopped flag is false; mark it unverified. '
@@ -1108,6 +1220,33 @@ class Runner:
             state = self.state['tracks'][track_id]
             require(state['status'] in ('blocked', 'running', 'pending'),
                     'Resume uncertain delivery or merged cleanup with the normal run command')
+            if state.get('inflight_phase') == 'readiness':
+                require(action in ('reconcile', 'abandon') and workers_stopped,
+                        'Reconcile readiness after confirming its worker stopped')
+                require(git(self.root, 'rev-parse', 'HEAD') == expected_head,
+                        'Supply the exact primary checkout HEAD for readiness recovery')
+                if action == 'abandon':
+                    self.update(state, status='abandoned', released=True, reason='Readiness abandoned; all evidence preserved')
+                    return
+                phase = state['inflight']
+                require(not git(self.root, 'status', '--porcelain'), 'Readiness left changes in the primary checkout')
+                try:
+                    result = json.loads(Path(phase['result_file']).read_text(encoding='utf-8'))
+                    self.validate_phase_result(result, 'readiness')
+                except (OSError, ValueError, TypeError, KeyError, Blocked):
+                    require(self.sync() == expected_head, 'Target advanced during recovery; inspect its new HEAD')
+                    git(self.root, 'merge-base', '--is-ancestor', phase['before'], expected_head)
+                    require(state.get('readiness_attempts', {}).get(expected_head, 0) < self.config.get('max_process_attempts', 2),
+                            'Readiness process retry budget exhausted')
+                    state.setdefault('failed_processes', []).append(dict(phase))
+                    state.pop('inflight_phase', None)
+                    state.pop('inflight', None)
+                    state.pop('worker_stopped', None)
+                    self.update(state, status='pending', reason='Readiness infrastructure failure reconciled without losing prior evidence')
+                    return
+                self.consume_readiness(track)
+                self.update(state, status='pending', reason='Completed readiness result reconciled without replay')
+                return
             path, _ = self.location(track)
             if path.exists():
                 self.ownership(track, path)
@@ -1120,23 +1259,41 @@ class Runner:
             if action == 'abandon':
                 self.update(state, status='abandoned', released=True, reason='Explicitly abandoned; all work preserved')
                 return
-            require(head is not None, 'No worktree to retry; abandon this allocation and use a new run')
+            if head is None:
+                require(not state.get('base') and not git(self.root, 'branch', '--list', self.location(track)[1]),
+                        'Allocated branch is missing its worktree; inspect and reconcile it before recovery')
+                require(action == 'retry', 'Use retry for readiness or preallocation failures')
+                receipt = state.get('readiness')
+                if receipt and (receipt['result']['status'] != 'complete' or receipt['result']['verdict'] != 'approved' or
+                                receipt['result']['findings']):
+                    require(self.sync() != receipt['base_sha'],
+                            'Completed readiness rejection requires a changed revision; preserve its decision')
+                self.update(state, status='pending', reason='Retry readiness against the synchronized target')
+                return
             if action == 'reconcile' and state.get('inflight_phase'):
                 phase = state.get('inflight')
                 require(phase is not None, 'Legacy interrupted phase has no result receipt; preserve and abandon it')
                 if phase['readonly'] or phase['name'] not in ('build', 'document'):
                     require(head == phase['before'], 'Phase HEAD changed; reconcile Git against the saved receipt first')
                 result_file = Path(phase['result_file'])
-                result = json.loads(result_file.read_text(encoding='utf-8')) if result_file.is_file() else None
+                try:
+                    result = json.loads(result_file.read_text(encoding='utf-8')) if result_file.is_file() else None
+                    if result is not None:
+                        self.validate_phase_result(result, phase['name'])
+                except (ValueError, TypeError, KeyError, Blocked):
+                    result = None
                 if result is not None:
-                    self.validate_result(result)
                     self.record_findings(track, result, self.phase_round(phase['name']), publish=False,
-                                         source_head=phase['before'], phase_name=phase['name'])
+                                          source_head=phase['before'], phase_name=phase['name'])
                 if result is not None and result['status'] == 'complete':
                     self.consume_result(track)
                 else:
-                    require(phase['name'] == 'build', 'Failed fix/review attempt stays parked for the deferred pass')
+                    require(result is None, 'A valid blocked worker result needs supporting work, not another review')
+                    require(head == phase['before'], 'Partial writer changes require recovery; they cannot be replayed')
                     self.audit(track, path)
+                    require(state.get('process_attempts', {}).get(phase['name'], 0) < self.config.get('max_process_attempts', 2),
+                            'Process retry budget exhausted')
+                    state.setdefault('failed_processes', []).append(dict(phase))
                     state.pop('inflight_phase', None)
                     state.pop('inflight', None)
                     state['checkpoint_head'] = head
@@ -1154,7 +1311,6 @@ class Runner:
                       if state.get('prepared_head') and state.get('review_verdict') else 'pending')
             self.update(state, status=status, reason='Recovered without replaying completed phases')
 
-    @repo_locked
     def start(self, track):
         state = self.state['tracks'][track['id']]
         path, branch = self.location(track)
@@ -1163,18 +1319,30 @@ class Runner:
             require(git(path, 'rev-parse', 'HEAD') == state.get('checkpoint_head', state['base']),
                     'Recovery checkpoint changed')
         else:
-            base = self.sync()
-            contracts = self.plan_contracts(track, base)
-            require(not path.exists(), 'Assigned worktree already exists')
-            git(self.root, 'check-ignore', str(path))
-            git(self.root, 'worktree', 'add', '-b', branch, str(path), base)
-            # Save ownership even if artifact registration fails after worktree creation.
-            self.update(state, base=base, checkpoint_head=base, plan_contracts=contracts)
+            for _ in range(3):
+                with self.repo_mutex:
+                    base = self.sync()
+                    contracts = self.plan_contracts(track, base)
+                self.readiness(track, base, contracts)
+                with self.repo_mutex:
+                    if self.sync() != base:
+                        continue
+                    require(not path.exists(), 'Assigned worktree already exists')
+                    git(self.root, 'check-ignore', str(path))
+                    git(self.root, 'worktree', 'add', '-b', branch, str(path), base)
+                    self.update(state, base=base, checkpoint_head=base, plan_contracts=contracts)
+                    break
+            else:
+                raise Blocked('Target kept advancing during readiness; retry against a stable revision')
             for name in track.get('disposable_paths', []):
                 require(not (path / name).exists(), f'Disposable path already exists: {name}')
                 require(not git(path, '--literal-pathspecs', 'ls-files', '--', name), 'Disposable path contains tracked files')
             self.update(state, disposable_paths=track.get('disposable_paths', []))
         self.update(state, status='running')
+
+    def start_and_build(self, track):
+        self.start(track)
+        self.build(track)
 
     def followup_queue(self):
         states = self.state['tracks']
@@ -1229,12 +1397,14 @@ class Runner:
                     queue[kind].append({'id': record_id, 'record': report.relative_to(self.root).as_posix(),
                                         'report_file': str(report), 'kind': 'code' if kind == 'FIX' else 'intake',
                                         'title': report.stem})
-        excluded = {p for t in self.config['tracks'] if t['id'] in parked for p in t['plans']}
-        other_plans = [p.relative_to(self.root).as_posix() for stage in ('backlog', 'active', 'review', 'blocked')
-                       for p in (self.root / '.ai/plans' / stage).glob('PLAN-*.md')
-                       if p.relative_to(self.root).as_posix() not in excluded]
-        if other_plans:
-            queue.update(eligible=False, reason='Other project PLANs remain', waiting_for=other_plans)
+        busy_trees = {item.get('source_worktree') for state in all_states
+                      if state.get('inflight_phase') and not state.get('worker_stopped') and not state.get('released')
+                      for item in state['findings'].values()}
+        for item in queue['FIX']:
+            item['audit_ready'] = item.get('source_worktree') not in busy_trees
+        queue.update(eligible=not queue['FIX'] or any(item['audit_ready'] for item in queue['FIX']),
+                     reason='Audit each available defect tree independently of unrelated PLANs',
+                     waiting_for=[item['id'] for item in queue['FIX'] if not item['audit_ready']])
         return queue
 
     def run(self):
@@ -1278,8 +1448,8 @@ class Runner:
                         if any(self.conflict(track, other) for other in others):
                             continue
                         try:
-                            self.start(track)
-                            active[pool.submit(self.build, track)] = track
+                            self.update(state, status='running')
+                            active[pool.submit(self.start_and_build, track)] = track
                         except Exception as exc:
                             self.update(state, status='blocked', reason=str(exc))
                     futures = {*active, *delivering}
@@ -1304,10 +1474,56 @@ class Runner:
             return all(s['status'] == 'merged' and s.get('cleaned') for s in self.state['tracks'].values())
 
 
+def read_status(config):
+    root = Path(config['repository']).resolve()
+    common = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-common-dir'))
+    receipt = common / 'orchestration' / config['run_id'] / 'state.json'
+    if not receipt.is_file():
+        return {'run': config['run_id'], 'mode': 'runtime', 'status': 'not_started', 'next_action': 'Validate and run the approved schedule'}
+    state = json.loads(receipt.read_text(encoding='utf-8'))
+    fingerprint = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
+    require(state['config_hash'] == fingerprint, 'Status requires the original execution snapshot')
+    tracks = []
+    for track in config['tracks']:
+        current = state['tracks'][track['id']]
+        path = root / '.worktrees' / f"{config['run_id']}-{track['id']}"
+        require(path.resolve() == path, 'Worktree path was redirected')
+        head = git(path, 'rev-parse', 'HEAD') if path.exists() else None
+        dirty = git(path, 'status', '--porcelain') if path.exists() else ''
+        if current['status'] == 'abandoned':
+            action = 'Preserved and incomplete; delivery still requires a reviewed PR, merge, sync and cleanup'
+        elif current.get('inflight_phase'):
+            recovery_head = git(root, 'rev-parse', 'HEAD') if current['inflight_phase'] == 'readiness' else head
+            action = f"Inspect worker processes and Git, then --reconcile {track['id']} --expected-head {recovery_head} --workers-stopped"
+        elif current['status'] == 'blocked':
+            content_failure = any(r['status'] != 'complete' or r['verdict'] == 'cannot_review' or
+                                  (name in ('build', 'review-2') and not r['implementation_complete']) or
+                                  (name == 'docs-review-2' and not r['documentation_complete']) or
+                                  (name in ('review-2', 'docs-review-2') and any(f['impact'] in
+                                   ('missing_code', 'missing_functionality', 'missing_spec_coverage') for f in r['findings']))
+                                  for name, r in current['completed_phases'].items())
+            action = ('Preserve and inspect Git drift before recovery' if dirty or
+                      (head is not None and head != current.get('checkpoint_head')) else
+                      'Resolve the recorded content/decision blocker with supporting work' if content_failure else
+                      f"Resolve the recorded blocker, then --retry {track['id']} at the saved checkpoint")
+        elif current['status'] == 'merged' and current.get('cleaned'):
+            action = 'Complete: PR merged, target synced, worktree and branch cleaned'
+        else:
+            action = 'Use the original schedule to continue; inspect process liveness before restarting a running scheduler'
+        tracks.append({'track': track['id'], 'status': current['status'], 'phase': current.get('inflight_phase'),
+                       'pipeline': current.get('pipeline'), 'pr': current.get('pr'), 'worktree': str(path),
+                       'observed_head': head, 'checkpoint_head': current.get('checkpoint_head'), 'dirty': dirty,
+                       'completed_reviews': [name for name in REVIEW_PHASES if name in current['completed_phases']],
+                       'process_attempts': current.get('process_attempts', {}), 'reason': current.get('reason'),
+                       'next_action': action})
+    return {'run': config['run_id'], 'mode': 'runtime', 'receipt': str(receipt), 'tracks': tracks}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('schedule', type=Path)
     parser.add_argument('--validate', action='store_true', help='Validate JSON without Git/network/writes')
+    parser.add_argument('--status', action='store_true', help='Read runtime receipts and actual Git state without writes')
     recovery = parser.add_mutually_exclusive_group()
     recovery.add_argument('--retry', metavar='TRACK', help='Retry a clean blocked track at its saved checkpoint')
     recovery.add_argument('--reconcile', metavar='TRACK', help='Consume an interrupted result after checking its worker and HEAD')
@@ -1319,6 +1535,9 @@ def main():
         config = validate(json.loads(args.schedule.read_text(encoding='utf-8')))
         if args.validate:
             print('Schedule valid')
+            return 0
+        if args.status:
+            print(json.dumps(read_status(config), indent=2))
             return 0
         runner = Runner(config)
         action = next((name for name in ('retry', 'reconcile', 'abandon') if getattr(args, name)), None)

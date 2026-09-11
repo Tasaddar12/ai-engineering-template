@@ -8,6 +8,8 @@ is the blocking question. If no id was given, infer it from the plan currently
 in `.ai/plans/active/` and say which one you picked.
 
 Read and follow [RULES](../RULES.md#when-you-are-genuinely-blocked).
+
+Record the block in an assigned worktree; use [worktree lifecycle](worktree.md).
 Check whether there is an unresolved human decision, including any requested
 intent change inside the PLAN's target. Record that request and its resolution
 in the PLAN's Execution contract. Use this diagnostic map:

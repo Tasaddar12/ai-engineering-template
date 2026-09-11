@@ -5,6 +5,9 @@ argument-hint: <plan-id>
 
 Read and follow [RULES](../RULES.md).
 
+This mutating procedure runs in an assigned immediate-child worktree; follow
+the [shared lifecycle](worktree.md) before moving or editing a PLAN.
+
 Start work on: **$1**
 
 1. Locate the plan under `.ai/plans/`. If it is in `blocked/`, confirm the

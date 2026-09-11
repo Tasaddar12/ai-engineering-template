@@ -21,7 +21,8 @@ the role-specific read/write scope below still applies.
 ## What you are given
 
 - **The fix records** in `.ai/fixes/open/` — your work list, in order
-- **The original plans** in `.ai/plans/review/` — what this track was for
+- **The original PLAN paths** supplied in the assignment — use those exact
+  paths even when lifecycle moves have occurred
 - **The research brief** at the assigned `.ai/research/*.md` path
   — where the code lives, how it works, and which tests cover it. Read it. It
   exists so you do not have to rediscover the module, and it names the exact
@@ -151,5 +152,5 @@ say so plainly. Filing it is not handling it.
 
 In manual mode move only proven, closed records to `.ai/fixes/done/<period>/`
 and commit. In runtime mode leave records to the coordinator and return proof;
-open reports are re-examined after all other PLANs complete. There is one
+open reports are re-examined when their affected tree is available. There is one
 immediate fixer pass, then review 2; no third review and no merge by the fixer.

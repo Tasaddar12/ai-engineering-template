@@ -122,6 +122,12 @@ implementation/review evidence.
 
 ## Execution contract
 
+Build steps must all complete before any document step begins. Interleaving or
+silently reordering build and document steps is invalid. Runtime PLAN paths are
+limited to `backlog/`, `active/` and `review/`; pure documentation tracks have
+empty `code_paths` and `source_documentation_paths` and contain no build or
+research writes.
+
 ```json
 {
   "intent_changes": [],

@@ -14,10 +14,9 @@ started: YYYY-MM-DD
 > in [the journal](../journal/); what was decided goes in the plans and their
 > PRs.
 >
-> **Only `/orchestrate` writes this file, and only on the base branch.** No
-> track ever touches it — tracks are built by separate `/orchestrate-track`
-> sessions, and parallel writers here would conflict in the one file that has
-> to stay readable.
+> **The coordinator owns this file.** Prepare and finalize it in an assigned
+> sibling worktree through a reviewed PR; synchronize the primary target before
+> runtime allocation. No track edits it directly.
 >
 > **The schedule is authoritative; the stage columns are not.** Waves, tracks
 > and id blocks are decided once and fixed. A track's _stage_ is derived from
@@ -64,7 +63,7 @@ instead of `src/`.
 
 ## Reserved id blocks
 
-Allocated by the main session before any track starts, and never reused — a
+Allocated by the coordinator before any track starts, and never reused — a
 later wave carries on from the highest block issued here.
 
 Tracks branch from the same commit, so "highest existing number plus one" makes
@@ -76,7 +75,7 @@ error raised anywhere. The blocks are what prevent that.
 | ----- | ------ | ----- | ----- | ---- | --- | ---- |
 | w1t1  | 40–59  | 40–59 | 12–31 | 8–27 | 5–24 |      |
 
-Allocation rules are in [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
+Allocation rules are in [RULES: Scheduling and IDs](../../RULES.md#scheduling-and-ids).
 Use the coordinator's issued-block ledger when filling this table.
 
 ## Waves
@@ -91,13 +90,14 @@ Stages, in order: `build` → `pr` (when build has a diff) → `review-1` →
 optional `fix` → `review-2` → `document` → `docs-review-1` → optional
 `docs-fix` → `docs-review-2` → final checks and delivery. Both code reviews and
 both documentation reviews run when preceding work is complete and conclusive.
-Documentation-only tracks run both code reviews before opening a PR after docs
- create a diff. A documentation-only track whose branch still has no net diff
+Pure documentation tracks run readiness, the documentation author and both
+documentation reviews; they do not run synthetic code reviews. A
+documentation-only track whose branch still has no net diff
  from its base after the document phase stops with a recorded no-change outcome,
  preserves its checkout, and creates no empty commit or PR; it does not proceed
  to docs reviews or delivery. Code-only tracks may already have a valid code
  diff/PR and may continue without documentation edits. Incomplete work or an inconclusive review is parked; residual
-findings are classified through [Definition of done](../RULES.md#definition-of-done).
+findings are classified through [Definition of done](../../RULES.md#definition-of-done).
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees
@@ -106,7 +106,7 @@ with the table.
 ### Wave 2 — pending
 
 List each track's own prerequisites and current wait reason. Dispatch readiness
-uses [RULES: Scheduling and IDs](../RULES.md#scheduling-and-ids).
+uses [RULES: Scheduling and IDs](../../RULES.md#scheduling-and-ids).
 
 ## Review rounds
 
@@ -117,7 +117,7 @@ and each permits at most one correction between rounds. Review two of each pair
 is mandatory whenever preceding work is complete and conclusive, including
 after an approved first review or zero eligible fixes. Inconclusive work parks.
 Record the actual completeness evidence and retained follow-ups under
-[Definition of done](../RULES.md#definition-of-done).
+[Definition of done](../../RULES.md#definition-of-done).
 
 > **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
 > `INTAKE-nnn` in this template and never as plausible numbers: a scheduler

@@ -16,6 +16,11 @@ and follow [`.ai/RULES.md`](.ai/RULES.md) for shared rules, your
 [agent file](.ai/agents/README.md) for agent-specific instructions, and
 [`.ai/state/STATE.md`](.ai/state/STATE.md) to see where things stand.
 
+Every tracked mutation uses an assigned immediate-child worktree and the
+reviewed PR, merge, synchronization and cleanup lifecycle in
+[`.ai/commands/worktree.md`](.ai/commands/worktree.md). The primary checkout is
+read-only for tracked edits and commits.
+
 **Documents here are versioned, not sacred.** When a spec, plan, or doc
 contradicts reality:
 

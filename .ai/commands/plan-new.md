@@ -5,6 +5,9 @@ argument-hint: <what needs building>
 
 Read and follow [RULES](../RULES.md).
 
+This mutating procedure runs in an assigned immediate-child worktree; follow
+the [shared lifecycle](worktree.md) before creating or editing a PLAN.
+
 Create a plan for: **$ARGUMENTS**
 
 If the argument is an `INTAKE-{nnn}` id, this is a promotion: read that file in

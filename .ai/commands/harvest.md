@@ -5,6 +5,8 @@ argument-hint: <path to the document, or a directory of them>
 
 Read and follow [RULES](../RULES.md).
 
+Run this mutating harvest in an assigned worktree; use [worktree lifecycle](worktree.md).
+
 Harvest: **$ARGUMENTS**
 
 Meeting and design documents are `log` tier — a record of what was said on a
@@ -83,8 +85,9 @@ replaced". They still describe the software, and that is all they are for.
 
 The migration lives in plans. The ADR says where you are going; the specs say
 where you are; the plans get you from one to the other, carrying the new spec
-wording in their **Contract changes** section until code review two completes
-and the final documentation batch lands. If you want the target behavior
+wording in their **Contract changes** section until the applicable readiness or
+implementation handoff completes and the final documentation batch lands. A
+standalone documentation track has no synthetic code review. If you want the target behavior
 written down as criteria, that section is where it goes — drafted, in present
 tense, ready for the documentor.
 

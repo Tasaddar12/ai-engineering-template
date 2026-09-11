@@ -5,7 +5,11 @@ argument-hint: [run-id | --all | --dry-run]
 
 Read and follow [RULES](../RULES.md).
 
-Clean up: **${1:-the most recent run}**
+Run cleanup from the verified primary checkout after synchronization; use [worktree lifecycle](worktree.md).
+
+Run administrative cleanup from the verified primary checkout for
+**${1:-the most recent run}**. It performs no tracked writes there; final
+summaries use a sibling finalization worktree and reviewed PR.
 
 **This deletes work.** A worktree holds a full checkout, and a track branch may
 hold commits that exist nowhere else. Removing one that was not merged destroys
@@ -18,6 +22,7 @@ than the user wanted costs one more command; deleting more costs a track.
 ## 1. Find what exists
 
 ```bash
+git rev-parse --show-toplevel
 git worktree list
 git branch --list 'orch/*'
 ls .ai/state/orchestration/
@@ -37,21 +42,21 @@ git log --oneline <base>..<branch>        # empty means fully merged
 **Does its worktree have uncommitted changes?**
 
 ```bash
-git -C .worktrees/<name> status --porcelain
+git -C <absolute-primary>/.worktrees/<name> status --porcelain
 ```
 
 Anything here is in no commit at all. It is the most easily lost thing in the
 repo and the most likely to matter — a track interrupted mid-implementation.
 
-**Is its request still open?**
+**Is its request merged and reviewed?**
 
 ```bash
-gh pr list  --head <branch> --state open
-glab mr list --source-branch <branch> --state opened
+gh pr view <number> --json state,mergedAt,headRefOid
+glab mr view <number>
 ```
 
-An open PR on a branch you are about to delete leaves a request nobody can
-merge.
+Require merged PR state, completed review evidence, synchronized ancestry,
+clean tracked and ignored files, and no advanced remote branch before removal.
 
 ## 3. Show the user before deleting
 
@@ -60,14 +65,14 @@ merge.
 
 Split into two lists and be explicit about the difference:
 
-**Safe to remove** — merged, clean, no open request.
+**Safe to remove** — merged PR, complete review evidence, synchronized and clean.
 
 **Would lose work** — anything failing a check. For each, say precisely what
 disappears: *"`orch/ORCH-001/w2t1` has 7 commits not in `main`, and 3 modified
 files not committed at all."*
 
-**Never delete anything from the second list without an explicit yes**, even
-under `--all`. `--all` means every run, not every safety check waived.
+Never delete anything from the second list. `--all` means every run, not a
+safety check waiver; preserve unmerged work for recovery.
 
 For a track that stopped for a human, recommend keeping the worktree. That is
 where the work resumes, and the manifest points at it.
@@ -81,13 +86,12 @@ contents. A remote PR marked merged alone is insufficient. Preserve unrelated,
 dirty, ignored or advanced work and report why it cannot be removed safely.
 
 ```bash
-git worktree remove .worktrees/<name>        # add --force only if the user said so
-git branch -d orch/<run>/<track>             # -d refuses unmerged; that is the point
-git worktree prune                           # clears stale administrative files
+git -C "<absolute-primary>" worktree remove "<absolute-primary>/.worktrees/<name>"
+git -C "<absolute-primary>" branch -d orch/<run>/<track>
 ```
 
-Use `git branch -d`, never `-D`, unless the user explicitly confirmed losing
-that branch. The refusal is a safety check, not an obstacle to route around.
+Use `git branch -d`, never `-D`. The refusal is a safety check, not an obstacle
+to route around.
 
 If `git worktree remove` reports the worktree is dirty, **do not reach for
 `--force`.** Go back to step 3 and show the user what is in it.
@@ -108,6 +112,6 @@ Only when a run's tracks are all merged or explicitly abandoned:
 
 - Worktrees and branches removed
 - What was kept, and why
-- **Anything abandoned that had unmerged commits** — say it plainly, with the
-  branch name, so it can be recovered from the reflog if that was a mistake
+- **Anything abandoned** — identify the preserved checkout, branch, PR and
+  findings; it remains incomplete and still requires a reviewed PR to deliver.
 - Runs still open

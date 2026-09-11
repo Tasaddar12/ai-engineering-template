@@ -33,7 +33,7 @@ class FakeForge(orch.Runner):
             for plan in track['plans']:
                 target = root / plan
                 original = target.read_text() if target.is_file() else ''
-                default_title = 'Build ' + Path(plan).stem.removeprefix('PLAN-')
+                default_title = 'Build ' + Path(plan).stem.split('-')[-1]
                 if original and ('## Execution contract' not in original or original.startswith('# ' + default_title + '\n')):
                     steps = []
                     if track['code_paths'] and track.get('environment', {}).get('WORKER_MODE') != 'no-code':
@@ -122,8 +122,9 @@ class RuntimeTests(unittest.TestCase):
         spec = self.root / '.ai/specs/SPEC-001-behavior.md'
         spec.parent.mkdir(parents=True)
         spec.write_text('# Implemented behavior\n\nThe fixture writes its result to the assigned source file.\n', encoding='utf-8')
-        for name in ('a', 'b', 'c'):
-            (self.root / f'PLAN-{name}.md').write_text(plan_text('Build ' + name, [
+        (self.root / '.ai/plans/backlog').mkdir(parents=True)
+        for number, name in enumerate(('a', 'b', 'c'), 1):
+            (self.root / f'.ai/plans/backlog/PLAN-{number:03d}-{name}.md').write_text(plan_text('Build ' + name, [
                 {'id': 'implement', 'phase': 'build', 'title': 'Implement the requested behavior'}]), encoding='utf-8')
         orch.git(self.root, 'add', '.')
         orch.git(self.root, 'commit', '-m', 'Initialize fixture')
@@ -135,7 +136,7 @@ class RuntimeTests(unittest.TestCase):
         orch.git(self.directory, 'clone', '--branch', 'main', str(self.remote), str(self.forge))
         orch.git(self.forge, 'config', 'user.name', 'Forge Test')
         orch.git(self.forge, 'config', 'user.email', 'forge@example.invalid')
-        self.config = dict(protocol_version=2, run_id='ORCH-001', repository=str(self.root), base_branch='main', remote='origin',
+        self.config = dict(protocol_version=3, run_id='ORCH-001', repository=str(self.root), base_branch='main', remote='origin',
                            github_repo='fixture/repo', branch_prefix='orch', max_parallel_tracks=3,
                            worker_command=[sys.executable, str(Path(__file__).with_name('worker_fixture.py').resolve())],
                            documentation_worker_command=[sys.executable, str(Path(__file__).with_name('worker_fixture.py').resolve()), '{model}'],
@@ -143,9 +144,9 @@ class RuntimeTests(unittest.TestCase):
                            required_status_checks=['validate'], github_timeout_seconds=0, tracks=[self.track('a', 1)])
 
     def track(self, name, start, **kwargs):
-        return dict(id=name, plans=[f'PLAN-{name}.md'], depends_on=kwargs.get('deps', []),
-                    owned_paths=[f'src/{name}.txt', f'PLAN-{name}.md', 'docs.md'] if kwargs.get('docs') else
-                                [f'src/{name}.txt', f'PLAN-{name}.md'],
+        return dict(id=name, plans=[f'.ai/plans/backlog/PLAN-{ord(name) - 96:03d}-{name}.md'], depends_on=kwargs.get('deps', []),
+                    owned_paths=[f'src/{name}.txt', f'.ai/plans/backlog/PLAN-{ord(name) - 96:03d}-{name}.md', 'docs.md'] if kwargs.get('docs') else
+                                [f'src/{name}.txt', f'.ai/plans/backlog/PLAN-{ord(name) - 96:03d}-{name}.md'],
                     code_paths=[f'src/{name}.txt'], resources=kwargs.get('resources', []),
                     documentation_paths=['docs.md'] if kwargs.get('docs') else [],
                     environment=kwargs.get('env', {}), ids={kind: [start, start + 19] for kind in orch.ID_KINDS})
@@ -171,7 +172,7 @@ class RuntimeTests(unittest.TestCase):
         runner = self.runner()
         self.assertTrue(runner.run())
         state = runner.state['tracks']['a']
-        self.assertEqual(set(state['completed_phases']), {'build', 'review-1', 'fix', 'review-2',
+        self.assertEqual(set(state['completed_phases']), {'build', 'review-1', 'review-2',
                                                        'document', 'docs-review-1', 'docs-review-2'})
         self.assertEqual(state['review_verdict'], 'changes_requested')
         self.assertEqual(len(list((self.root / '.ai/fixes/open').glob('FIX-*.md'))), 1)
@@ -179,8 +180,8 @@ class RuntimeTests(unittest.TestCase):
         self.assertNotEqual(state['reviewed_sha'], state['phase_heads']['review-1'])
         self.assertIn('followup_audit', runner.state)
         report = next((self.root / '.ai/fixes/open').glob('FIX-*.md')).read_text()
-        self.assertIn('Attempted correction', report)
-        self.assertIn('Completed fix', report)
+        self.assertNotIn('Attempted correction', report)
+        self.assertNotIn('fix', state['completed_phases'])
 
     def test_documentation_findings_do_not_invoke_code_fixer(self):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'docs-only'
@@ -203,7 +204,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(queue['FIX'][0]['id'], 'FIX-900')
         self.assertIn('followup_audit', runner.state)
 
-    def test_plan_lifecycle_moves_are_in_pr_and_other_plans_delay_audit(self):
+    def test_plan_lifecycle_moves_are_in_pr_and_backlog_does_not_delay_audit(self):
         source = '.ai/plans/backlog/PLAN-001-a.md'
         other = '.ai/plans/backlog/PLAN-999-later.md'
         for name in (source, other):
@@ -222,8 +223,8 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse((self.root / source).exists())
         self.assertEqual(len(list((self.root / '.ai/plans/done').rglob('PLAN-001-a.md'))), 1)
         queue = json.loads((runner.directory / 'followups.json').read_text())
-        self.assertFalse(queue['eligible'])
-        self.assertNotIn('followup_audit', runner.state)
+        self.assertTrue(queue['eligible'])
+        self.assertIn('followup_audit', runner.state)
 
     def test_cannot_review_parks_track_but_independent_plan_merges(self):
         self.config['tracks'][0]['environment']['WORKER_MODE'] = 'cannot-review'
@@ -232,7 +233,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse(runner.run())
         self.assertEqual(runner.state['tracks']['a']['status'], 'blocked')
         self.assertEqual(runner.state['tracks']['b']['status'], 'merged')
-        self.assertFalse(json.loads((runner.directory / 'followups.json').read_text())['eligible'])
+        self.assertTrue(json.loads((runner.directory / 'followups.json').read_text())['eligible'])
 
     def test_scope_escape_and_mutating_review_and_doc_fix_are_blocked(self):
         for mode in ('outside', 'mutating-review', 'fix-doc'):

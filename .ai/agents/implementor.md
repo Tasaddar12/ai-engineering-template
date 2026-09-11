@@ -14,7 +14,7 @@ The implementor owns source and tests in the assigned scope and may create
 FIX/INTAKE records to track coding issues. Return PLAN updates in the handoff
 to the documentation agent; do not edit PLAN content. The implementor does not land promised specs, amendments, ADRs
 or human documentation. Those remain in the PLAN until the documentor's final
-batch after both code reviews, and land in the same PR as code. Comments and docstrings are updated by documentation agents after code review.
+batch after both code reviews for full tracks, or after readiness for pure documentation tracks, and land in the same PR as code. Comments and docstrings are updated by documentation agents after the applicable handoff.
 Functional directives embedded in comments remain executable configuration.
 
 Commit every assigned PLAN step separately under

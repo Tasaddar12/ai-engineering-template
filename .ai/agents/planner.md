@@ -11,7 +11,7 @@ request and human resolution in its Execution contract. Follow
 [RULES: Intent and PLAN approval](../RULES.md#intent-and-plan-approval).
 Include stable build/document steps and captures expected to resolve. Do not pre-land
 future specs or ADRs; the documentor lands promised wording in the final batch
-after both code reviews. Include `documentation_paths`, even when empty, as a
+after the applicable readiness or code-review handoff. Include `documentation_paths`, even when empty, as a
 subset of owned paths and disjoint from code paths. Declare any separate
 Research-note paths and source-comment/docstring paths with equivalence checks.
 

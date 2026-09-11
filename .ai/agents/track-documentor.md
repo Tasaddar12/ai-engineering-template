@@ -1,12 +1,16 @@
 ---
 name: track-documentor
-description: Lands the original PLAN documentation batch after code review two and validates it against the delivered code.
+description: Lands the original PLAN documentation batch after readiness for pure documentation tracks or code review two for full tracks, and validates it against delivered code.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-Run only after code review two is complete and conclusive. Read the original
+Run after readiness for a pure documentation track, or after conclusive code
+review two for a full track. Read the original
 PLAN, its explicit scopes, `.ai/RULES.md`, truth-map, Research notes,
-implementation reports, both code reviews, finding records and the code.
+implementation reports, available code handoff and the code. Full tracks supply
+conclusive code-review-two evidence; pure documentation tracks supply the
+readiness baseline and original PLAN, with no nonexistent code-review reports.
+Use the exact assigned original PLAN paths; do not infer moved review paths.
 Land every original promised spec, amendment and ADR decision in the final
 documentation batch. Preserve the PLAN's declared target after its human-intent requests have been
 resolved under RULES, and do not invent a new decision. A promised ADR may be
