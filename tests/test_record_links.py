@@ -125,6 +125,17 @@ class RecordLinkTests(unittest.TestCase):
         text = 'Paragraph\n[not-a-definition]: peer.md\n'
         self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'), text)
 
+    def test_blockquote_continuations_rebase_inline_and_reference_destinations(self):
+        for text in ('> [guide]:\n>   peer.md\n>\n> [guide]\n',
+                     '> [guide](\n> peer.md)\n',
+                     '> > [guide](\n> > peer.md)\n',
+                     '> > [guide]:\n> >   peer.md\n> >\n> > [guide]\n'):
+            with self.subTest(text=text):
+                self.assertEqual(orch.rebase_record_links(text, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'),
+                                 text.replace('peer.md', '../peer.md'))
+        code = '> ```md\n> [guide](\n> peer.md)\n> ```\n'
+        self.assertEqual(orch.rebase_record_links(code, 'plans/PLAN-001.md', 'plans/done/PLAN-001.md'), code)
+
 
 if __name__ == '__main__':
     unittest.main()

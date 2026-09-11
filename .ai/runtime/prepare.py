@@ -40,9 +40,13 @@ def compile_snapshot(repository, manifest, source_ref='HEAD', config_path='.ai/c
     require(all(config['paths'].get(key) == value for key, value in fixed_paths.items()),
             'Runtime requires the fixed record paths')
     fixed_ids = {'plan': 'PLAN-{nnn}-{slug}', 'fix': 'FIX-{nnn}-{slug}', 'intake': 'INTAKE-{nnn}-{slug}',
-                 'spec': 'SPEC-{nnn}-{slug}', 'decision': 'ADR-{nnnn}-{slug}', 'amendment': 'AMD-{nnn}-{slug}'}
+                 'spec': 'SPEC-{nnn}-{slug}', 'decision': 'ADR-{nnnn}-{slug}', 'amendment': 'AMD-{nnn}-{slug}',
+                 'research': 'RES-{nnn}-{slug}', 'orchestration': 'ORCH-{nnn}'}
     require(all(config['ids'].get(key) == value for key, value in fixed_ids.items()),
             'Runtime requires the fixed record ID formats')
+    require(config['lifecycle']['stages'] == ['intake', 'backlog', 'active', 'blocked', 'review', 'done', 'abandoned'] and
+            config['lifecycle']['fix_stages'] == ['open', 'done'],
+            'Runtime requires the fixed PLAN and FIX lifecycle stages')
     primary = git(root, 'worktree', 'list', '--porcelain').splitlines()[0].removeprefix('worktree ')
     snapshot = {**schedule, 'protocol_version': 3, 'repository': str(Path(primary).resolve()),
                 'done_partition': config['lifecycle']['done_partition'],

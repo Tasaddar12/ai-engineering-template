@@ -176,9 +176,19 @@ def rebase_record_links(text, source, target, moves=None):
 
     current = text
     shape, urls = snapshot(current)
-    candidates = list(re.finditer(r'\][(:][ \t\r\n]*', text))
-    for match in reversed(candidates):
+    candidates = set()
+    for match in re.finditer(r'\][(:]', text):
         start = match.end()
+        while start < len(text):
+            while start < len(text) and text[start] in ' \t\r\n':
+                start += 1
+            candidates.add(start)
+            if start == len(text) or text[start] != '>':
+                break
+            # Container markers are absent from parsed inline/reference text.
+            # Try each raw position; the rendered-content check rejects guesses.
+            start += 1
+    for start in sorted(candidates, reverse=True):
         parsed = parser.helpers.parseLinkDestination(text, start, len(text))
         if not parsed.ok:
             continue

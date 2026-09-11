@@ -88,6 +88,20 @@ class SnapshotPreparationTests(unittest.TestCase):
             with self.subTest(path=key), self.assertRaisesRegex(fixture.orch.Blocked, 'fixed record paths'):
                 prepare.compile_snapshot(self.root, self.manifest)
 
+    def test_custom_numeric_id_formats_and_lifecycle_stages_are_rejected(self):
+        original = copy.deepcopy(self.config)
+        settings = [('ids', 'research', 'RESEARCH-{nnn}-{slug}'),
+                    ('ids', 'orchestration', 'RUN-{nnn}'),
+                    ('lifecycle', 'stages', ['delivered' if stage == 'done' else stage
+                                             for stage in original['lifecycle']['stages']]),
+                    ('lifecycle', 'fix_stages', ['open', 'closed'])]
+        for group, key, value in settings:
+            self.config = copy.deepcopy(original)
+            self.config[group][key] = value
+            self.commit()
+            with self.subTest(setting=f'{group}.{key}'), self.assertRaises(fixture.orch.Blocked):
+                prepare.compile_snapshot(self.root, self.manifest)
+
 
 if __name__ == '__main__':
     unittest.main()
