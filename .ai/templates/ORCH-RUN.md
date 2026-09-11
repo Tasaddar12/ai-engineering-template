@@ -11,7 +11,7 @@ started: YYYY-MM-DD
 # ORCH-{nnn}: <what this run is building>
 
 > **`status` tier.** The board for one `/orchestrate` run. What happened goes
-> in [the journal](JOURNAL.md); what was decided goes in the plans and their
+> in [the journal](../journal/); what was decided goes in the plans and their
 > PRs.
 >
 > **Only `/orchestrate` writes this file, and only on the base branch.** No
@@ -20,7 +20,7 @@ started: YYYY-MM-DD
 > to stay readable.
 >
 > **The schedule is authoritative; the stage columns are not.** Waves, tracks
-> and id blocks are decided once and fixed. A track's *stage* is derived from
+> and id blocks are decided once and fixed. A track's _stage_ is derived from
 > git — its branch, its commits, its plans' directory, its review log — so
 > treat the columns below as a last-known summary and check reality with
 > `/orchestrate-status` before acting on them.
@@ -31,10 +31,10 @@ Every plan the run was given, and where it landed. A plan the orchestrator
 excluded stays listed with the reason — an unexplained absence reads as an
 oversight to whoever picks this up.
 
-| Plan | Title | Wave | Track | Why here |
-|---|---|---|---|---|
-| PLAN- | | 1 | w1t1 | no unmet dependencies |
-| PLAN- | | — | — | excluded: <reason> |
+| Plan  | Title | Wave | Track | Why here              |
+| ----- | ----- | ---- | ----- | --------------------- |
+| PLAN- |       | 1    | w1t1  | no unmet dependencies |
+| PLAN- |       | —    | —     | excluded: <reason>    |
 
 ## Dependency findings
 
@@ -42,11 +42,11 @@ Why the waves are shaped the way they are. One row per dependency the
 orchestrator asserted, with the evidence — an inferred dependency that nobody
 can audit is a guess that will strand a plan a wave too late.
 
-| Plan | Depends on | Evidence | Confidence |
-|---|---|---|---|
-| PLAN- | PLAN- | declared in `## Depends on` | certain |
-| PLAN- | PLAN- | amends SPEC-004, which PLAN-011 creates | certain |
-| PLAN- | PLAN- | calls the API the other PLAN introduces | inferred |
+| Plan  | Depends on | Evidence                                | Confidence |
+| ----- | ---------- | --------------------------------------- | ---------- |
+| PLAN- | PLAN-      | declared in `## Depends on`             | certain    |
+| PLAN- | PLAN-      | amends SPEC-004, which PLAN-011 creates | certain    |
+| PLAN- | PLAN-      | both rewrite `src/auth/session.ts`      | inferred   |
 
 ## Contention
 
@@ -58,24 +58,9 @@ asked for, so overlap is resolved here, before any worktree exists.
 hard as two editing the same module — the conflict just lands in `.ai/specs/`
 instead of `src/`.
 
-| Track | Plans | Overlapping paths | Overlapping contracts |
-|---|---|---|---|
-| w1t1 | PLAN-011, PLAN-014 | `src/auth/**` | SPEC-004, ADR-0012 |
-
-## Execution scope
-
-The coordinator compiles this into the [runtime JSON schedule](../runtime/schedule.example.json).
-Waves show dependency depth; only a track's own dependencies gate readiness.
-
-| Track | Depends on tracks | Owned paths | Code-only fixer paths | Exclusive resources | Environment |
-|---|---|---|---|---|---|
-| w1t1 | none | <exact files or directory prefixes/> | <subset> | <ports/databases/cache keys> | <assignments> |
-
-- Required local commands: <nonempty argv arrays>
-- Required GitHub checks: <names; strict up-to-date branch protection required>
-- Runtime schedule and receipt locations: <paths outside tracked content>
-- Residual policy: `merge` with passing required checks; retain actual verdict
-- Review ceiling: 2; deferred code FIX and documentation/contract INTAKE queues
+| Track | Plans              | Overlapping paths | Overlapping contracts |
+| ----- | ------------------ | ----------------- | --------------------- |
+| w1t1  | PLAN-nnn, PLAN-nnn | `src/auth/**`     | SPEC-nnn, ADR-nnnn    |
 
 ## Reserved id blocks
 
@@ -87,20 +72,29 @@ every track pick the same one. Two tracks then write that id under different
 slugs, git merges both without a conflict, and two records share an id with no
 error raised anywhere. The blocks are what prevent that.
 
-| Track | INTAKE | FIX | AMD | SPEC | ADR | Used |
-|---|---|---|---|---|---|---|
-| w1t1 | 40–59 | 40–59 | 12–31 | 8–27 | 5–24 | |
+| Track | INTAKE | FIX   | AMD   | SPEC | ADR | Used |
+| ----- | ------ | ----- | ----- | ---- | --- | ---- |
+| w1t1  | 40–59  | 40–59 | 12–31 | 8–11 | 5–9 |      |
+
+**Compute the maxima from files that exist, excluding `.ai/templates/`** — the
+examples in here are not records. **Allocate at dispatch, not at schedule
+time:** a block held for a run that never starts is a permanent hole in the
+sequence. And **size the block to the namespace** — twenty fits `INTAKE` and
+`FIX`, which a track can really produce in quantity; a track will not write
+twenty specs, so five is plenty for `SPEC` and `ADR`.
 
 ## Waves
 
-### Wave 1 — `pending` · `running` · `merged` · `stopped`
+### Wave 1 — `pending` · `running` · `merged` · `deferred` · `stopped`
 
-| Track | Plans | Branch | Worktree | Stage | PR |
-|---|---|---|---|---|---|
-| w1t1 | PLAN-011 | `orch/ORCH-001/w1t1` | `.worktrees/ORCH-001-w1t1` | research | — |
+| Track | Plans    | Branch               | Worktree                   | Stage    | PR  |
+| ----- | -------- | -------------------- | -------------------------- | -------- | --- |
+| w1t1  | PLAN-011 | `orch/ORCH-001/w1t1` | `.worktrees/ORCH-001-w1t1` | research | —   |
 
 Stages, in order: `research` → `implement` → `document` → `pr` → `review`
-→ `triage` → `fix` → `merged`, or `stopped` when it needs a human.
+→ `triage` → `fix` → `merged`. A track that reaches the round ceiling goes
+`review` → `triage` → `defer` → `merged` and is marked `deferred`; `stopped`
+is only for something review cannot resolve, like a question for a human.
 
 Derived, not tracked: the branch and its commits say where a track actually
 got to. `/orchestrate-status` reconstructs this and reports where it disagrees
@@ -108,9 +102,9 @@ with the table.
 
 ### Wave 2 — pending
 
-Unstarted tracks have no worktree until their own dependencies merge and sync
-and their owned paths/resources are available. Other tracks in an earlier
-display wave need not finish first.
+Waves after the first stay empty until the wave before them merges. Their
+worktrees do not exist yet, deliberately: a dependent plan is built on top of
+the code it depends on, not alongside it.
 
 ## Review rounds
 
@@ -118,15 +112,21 @@ Summarised here from each track's own
 `.ai/state/orchestration/<run>/<track>/REVIEW-LOG.md`, which is the durable
 record — it lives on the track branch, so it has one writer and survives a lost
 session. The ceiling is `orchestration.review.max_rounds` in
-[config.yaml](../config.yaml): two reviews, then deferred code FIX and separate
-documentation/contract INTAKE reports. Runtime receipts in the Git common
-directory replace track-written logs in executable mode. Required check or PR
-failures park the track; residual findings with passing checks may proceed as
-`ready_with_followups` under the authorized policy.
+[config.yaml](../../config.yaml), default two; a track that reaches it does
+not start another round and does not wait for a human — triage records what is
+still outstanding and the track merges as `deferred`.
 
-| Track | Round | Verdict | Blocking findings | Fixes raised |
-|---|---|---|---|---|
-| w1t1 | 1 | changes requested | 2 | FIX-021, FIX-022 |
+> **The ids below are placeholders, not records.** Write them as `FIX-nnn` and
+> `INTAKE-nnn` in this template and never as plausible numbers: a scheduler
+> computing "highest id in use" by grepping the repository will read a realistic
+> example as a real record. That happened — ORCH-001 set its `FIX` baseline to
+> 023 from an earlier version of this very table, in a project where no `FIX`
+> record had ever existed.
+
+| Track | Round | Verdict           | Blocking findings | Fixes raised       | Deferred                      |
+| ----- | ----- | ----------------- | ----------------- | ------------------ | ----------------------------- |
+| w1t1  | 1     | changes requested | 2                 | FIX-nnn, FIX-nnn+1 | —                             |
+| w1t1  | 2     | changes requested | 1                 | —                  | FIX-nnn+2 (major), INTAKE-nnn |
 
 ## Needs a human
 
@@ -134,9 +134,12 @@ Anything the run stopped on. Empty is the good answer. Each row names the
 track, what it is waiting for, and what happens next — a blocker with no named
 next action is how a run quietly dies.
 
+Deferred tracks do not belong here — nothing is waiting on anyone, the work
+merged, and it is recorded below.
+
 | Track | Waiting on | Next action |
-|---|---|---|
-| | | |
+| ----- | ---------- | ----------- |
+|       |            |             |
 
 ## Excluded and deferred
 
@@ -145,3 +148,14 @@ rather than fixed. Intake and fix ids, so nothing depends on someone rereading
 this file later.
 
 -
+
+### Merged with known defects
+
+Tracks that reached the review ceiling. Every record here merged **unfixed**,
+so this is the first work to pick up after the run — `critical` and `major`
+fixes ahead of anything in the backlog.
+
+| Track | Record     | Severity | What is wrong |
+| ----- | ---------- | -------- | ------------- |
+| w1t1  | FIX-nnn    | major    |               |
+| w1t1  | INTAKE-nnn | —        |               |
