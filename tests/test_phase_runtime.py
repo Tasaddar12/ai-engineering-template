@@ -28,7 +28,9 @@ class PhaseRuntimeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="phase runtime ")
         self.addCleanup(self.temporary.cleanup)
-        self.directory = Path(self.temporary.name)
+        # Windows CI may expose TEMP through an 8.3 alias (for example RUNNER~1).
+        # Compare the same physical paths that Git and the runtime resolve.
+        self.directory = Path(self.temporary.name).resolve()
         self.primary = self.directory / "project"
         self.primary.mkdir()
         self.environment = os.environ.copy()
