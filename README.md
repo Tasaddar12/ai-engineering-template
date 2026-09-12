@@ -12,6 +12,7 @@ integrate into a phase branch. One verified phase normally produces one PR.
 ## What lives where
 
 ```text
+.agents/skills/       Reusable methods, one SKILL.md per focused skill
 .ai/
   PROJECT.md          Purpose, success and boundaries
   REQUIREMENTS.md     Desired outcomes and phase mapping
@@ -82,7 +83,8 @@ Read the [phase workflow guide](docs/PHASE-WORKFLOW.md) for project onboarding,
 agent responsibilities, context handoffs, dependency waves, documentation timing,
 conflict handling, recovery and the full annotated folder structure. Use
 [onboarding prompts](docs/ONBOARDING-PROMPTS.md) for reusable starting requests,
-and [fact ownership](.ai/truth-map.md) for consistency rules.
+[agent skills](docs/AGENT-SKILLS.md) for methods agents can select, and
+[fact ownership](.ai/truth-map.md) for consistency rules.
 The [migration reference](docs/PHASE-MIGRATION.md) records this template redesign.
 
 ## Validation

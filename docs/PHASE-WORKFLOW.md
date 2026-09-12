@@ -243,9 +243,11 @@ document. They still preserve the requested outcome and meaningful evidence.
 The [command catalog](../.ai/commands/README.md) contains procedures an assistant
 can follow by name or from an ordinary-language request. These Markdown files
 are not installed slash commands. Role files and references supply instructions;
-this architecture requires no separate skills directory or skill registry.
-Optional host skills can help a particular assignment without becoming another
-tracking layer.
+[repository skills](AGENT-SKILLS.md) in `.agents/skills/` supply focused methods
+for research, decomposition, debugging, documentation, verification and handoffs.
+Agents load relevant skills, and preparation names required skill paths in the
+component's Read first section. Skills use existing phase records and do not
+start agents or add workflow stages.
 
 | Procedure | Purpose | Executable boundary |
 |---|---|---|
@@ -285,8 +287,19 @@ project/
   docs/
     PHASE-WORKFLOW.md                 This end-to-end workflow guide
     ONBOARDING-PROMPTS.md             Reusable starting requests
+    AGENT-SKILLS.md                   Skill catalog, selection and GSD inspiration
     PHASE-MIGRATION.md                Requested template migration reference/history
     ...                              Adopting project's setup, usage and operations guides
+  .agents/
+    skills/                          Each folder contains one focused SKILL.md
+      codebase-recon/                 Trace relevant source, owners and checks
+      bounded-research/               Resolve a specific technical uncertainty
+      phase-decomposition/            Define phase/component boundaries
+      hypothesis-debugging/           Test explanations for a failure
+      regression-design/              Check behavior and catch wrong fixes
+      documentation-reconcile/        Reconcile claims, evidence and intent
+      outcome-verification/           Verify the connected observable outcome
+      context-handoff/                Preserve focused continuation context
   .ai/
     README.md                        Workflow navigation
     PROJECT.md                       Purpose, success and boundaries

@@ -87,6 +87,12 @@ Worker processes do not start agents. The default Codex adapter uses the host's
 configured model. Check the installed host's execution and worktree permissions;
 prompts and Git auditing do not sandbox arbitrary commands or external services.
 
+Tracked `.agents/skills/` files travel with committed inputs into fresh worker
+checkouts. Codex can discover them there; required methods are also named by path
+in IMPLEMENT's Read first section. Other adapters can read those same Markdown
+paths. The runtime needs no new skill configuration or registration; follow the
+[repository skill guide](../../docs/AGENT-SKILLS.md) for selection and upkeep.
+
 For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's
 worktree. Do not use `--output-last-message` to write there after a commit.
 For the verifier it is an external report path. The default verifier adapter

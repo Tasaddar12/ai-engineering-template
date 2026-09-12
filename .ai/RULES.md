@@ -7,8 +7,9 @@ title: Shared engineering rules
 # Shared engineering rules
 
 Every agent reads this core. Commands own procedures, roles own responsibilities,
-and references supply operation-specific details. Use [truth-map](truth-map.md)
-to find the owner rather than maintaining another copy of a rule.
+references supply operation-specific details, and repository skills supply
+reusable engineering methods. Use [truth-map](truth-map.md) to find the owner
+rather than maintaining another copy of a rule.
 
 ## Session and authorization
 

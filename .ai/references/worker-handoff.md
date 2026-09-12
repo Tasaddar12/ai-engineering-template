@@ -19,6 +19,13 @@ component instructions, owned paths, checks and dependency results. Read the
 mandatory core plus relevant sources. Ask the coordinator for missing scope;
 do not borrow another checkout or reconstruct instructions from unrelated history.
 
+Read required skill paths from IMPLEMENT's Read first section in the assigned
+checkout. The coordinator commits required skills before dispatch; each worker
+reads the copy at its recorded assigned revision, including already integrated
+changes. Select additional matching skills only when useful, without injecting
+every skill body. See [skill use](../../docs/AGENT-SKILLS.md) for native discovery,
+method changes and hosts that need explicit paths.
+
 ## Component result
 
 Coder/documentor workers write and commit the supplied SUMMARY path. Its

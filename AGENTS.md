@@ -9,6 +9,10 @@ Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/PROJECT.md),
 Load the selected [command](.ai/commands/README.md) and applicable references.
 [Truth map](.ai/truth-map.md) locates each fact's owner.
 
+[Repository skills](docs/AGENT-SKILLS.md) supply focused engineering methods.
+Load matching skills and those named in the component's Read first section from
+the assigned checkout; do not read every skill body.
+
 Report when asked to report; implement the scope already authorized. Do not ask
 again for an approval already supplied. Record consequential decisions in phase
 context. When code and documents disagree, establish which side is wrong with

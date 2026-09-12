@@ -124,7 +124,8 @@ class OwnershipBoundaryTests(unittest.TestCase):
 class DocumentNavigationTests(unittest.TestCase):
     def test_active_markdown_links_resolve_to_files_and_headings(self):
         documents = [SOURCE / "AGENTS.md", SOURCE / "README.md"]
-        documents += list((SOURCE / ".ai").rglob("*.md")) + list((SOURCE / "docs").rglob("*.md"))
+        for directory in (".ai", ".agents", "docs"):
+            documents += list((SOURCE / directory).rglob("*.md"))
         checked = 0
         for path in documents:
             if path.name.startswith("FIX-"):
@@ -144,6 +145,27 @@ class DocumentNavigationTests(unittest.TestCase):
                         self.assertIn(unquote(parts.fragment), anchors)
                 checked += 1
         self.assertGreater(checked, 100, "Link inspection unexpectedly skipped the active documentation")
+
+    def test_repository_skills_have_discoverable_metadata(self):
+        skills_root = SOURCE / ".agents/skills"
+        skill_dirs = [path for path in skills_root.iterdir() if path.is_dir()]
+        self.assertTrue(skill_dirs, "Repository skills are missing")
+        names = set()
+        for directory in skill_dirs:
+            with self.subTest(skill=directory.name):
+                metadata, body = record(directory / "SKILL.md")
+                name = metadata.get("name")
+                description = metadata.get("description")
+                self.assertIsInstance(name, str)
+                self.assertEqual(name, directory.name)
+                self.assertRegex(name, r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+                self.assertLessEqual(len(name), 64)
+                self.assertNotIn(name, names)
+                names.add(name)
+                self.assertIsInstance(description, str)
+                self.assertTrue(description.strip())
+                self.assertLessEqual(len(description), 1024)
+                self.assertTrue(body.strip())
 
     def test_templates_and_config_use_readable_unambiguous_yaml(self):
         for path in (SOURCE / ".ai/templates").glob("*.md"):
