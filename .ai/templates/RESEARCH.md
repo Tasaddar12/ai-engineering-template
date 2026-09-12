@@ -1,36 +1,26 @@
----
-tier: log
-authority: agent
-id: RES-{nnn}
-title: <investigation>
-links: [PLAN-nnn]
-created: YYYY-MM-DD
----
+# Phase NN research
 
-# RES-{nnn}: <investigation>
+## Questions
 
-## Question and scope
+Bounded questions from phase context.
 
-<What the assigned implementation/review needs to establish.>
+## Baseline
 
-## Inspected code and sources
-
-| Path or source | Area/symbol | What was inspected |
-| --- | --- | --- |
-| | | |
+Inspected revision and relevant source/test areas. State limits on what was read.
 
 ## Findings
 
-<Call paths, invariants, local idioms, contradictions and their evidence.>
+Evidence, source locations and implications for this phase.
 
-## Checks
+## Recommended approach
 
-<Commands, actual output and pre-existing failures.>
+Component boundaries, existing patterns to reuse, interfaces and alternatives.
+Separate recommendations from approved decisions.
 
-## Uncertainty and risks
+## Validation and documentation
 
-<Unverified assumptions and the evidence needed to resolve them.>
+Existing checks, missing infrastructure, integration risks and affected documents.
 
-## Out of scope but worth knowing
+## Remaining uncertainty
 
-<FIX/INTAKE IDs allocated from the findings handoff.>
+What is unresolved, why it matters and who must decide.

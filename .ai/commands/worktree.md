@@ -1,31 +1,23 @@
----
-description: Shared worktree and reviewed delivery lifecycle for mutating commands
----
+# Assigned worktree
 
-Read and follow [RULES](../RULES.md).
+Follow [RULES: Worktrees](../RULES.md#worktrees-recovery-and-cleanup).
 
-Every command that creates, edits, moves, archives or records repository state
-must run from an assigned immediate-child worktree under the configured
-`.worktrees/` root. Verify the absolute root, branch and clean starting target
-before writing. A linked worker that needs another checkout creates a sibling
-from the primary absolute root; it never creates a nested worktree.
+1. Inspect `git worktree list --porcelain`, the absolute current Git root, branch
+   and status. Resolve the primary checkout and its Git common directory.
+2. Reuse the explicitly assigned checkout. If another is needed, create an
+   immediate child of the primary's ignored `.worktrees/` root with a
+   `codex/` branch, from the agreed base revision. Verify that the root is
+   ignored and that the resolved target remains under it before creation.
+3. Confirm the new absolute root, branch and starting revision. Never create a
+   nested worktree beneath a linked checkout or write tracked files in primary.
+4. Keep related phase preparation and execution in its integration worktree.
+   Runtime component checkouts are siblings with explicit owned paths/resources.
+   Only the coordinator integrates them into the phase branch.
+5. Commit completed work; inspect diff and evidence before authorized publication.
+   Use [phase-ship](phase-ship.md). The runtime never merges.
+6. Preserve unmerged, dirty and incomplete worktrees. Cleanup requires verified
+   merge evidence, an exact clean target and authorization covering removal.
 
-Related lifecycle, STATE, journal and defer bookkeeping reuses the parent task's
-worktree and PR. Standalone commands own separate delivery; runtime preparation
-and finalization remain separate synchronization boundaries. See
-[Record templates and moves](../RULES.md#record-templates-and-moves).
-
-The primary checkout is read-only for tracked content: it may inspect, fetch and
-fast-forward to a verified merged target. The worker worktree owns edits and
-commits. Coordinator preparation uses a sibling worktree and reviewed PR before
-the run. During the run, operational receipts under the Git common directory
-are updated without tracked summary writes. After scheduling stops, one
-consolidated finalization uses a sibling worktree and reviewed PR, then is
-merged and synchronized before cleanup.
-
-Complete the lifecycle in order: prepare the manifest or record, review it,
-open the PR, verify required checks, merge the exact reviewed head, synchronize
-the primary target, verify ancestry and the tested tree, then remove only the
-clean merged worktree and branch. Preserve dirty, unmerged, advanced or
-ambiguous work for recovery. A read-only report may run in the primary checkout
-and needs no empty commit or PR.
+Do not treat ignored data as automatically disposable. Worktree isolation does
+not isolate databases, ports, accounts or caches. Declare those resources before
+parallel execution. Status and other read-only reports do not need a new checkout.

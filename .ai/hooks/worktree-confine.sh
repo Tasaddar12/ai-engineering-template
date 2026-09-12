@@ -2,10 +2,10 @@
 # PreToolUse hook. WARNS about file writes that land outside the checkout this
 # session is working in. Advisory only -- it blocks nothing.
 #
-# Advisory behavior follows enforcement: advisory in .ai/config.yaml.
+# Advisory behavior follows .ai/RULES.md.
 #
-# Why this exists: /orchestrate runs each track in its own git worktree, and a
-# track writing into the main checkout or a sibling worktree corrupts work
+# Why this exists: phase execution runs each component in its own git worktree;
+# writing into the primary checkout or a sibling worktree can corrupt work
 # nobody is reviewing. This hook surfaces that mistake early.
 #
 # Host permissions and assigned-worktree instructions remain in effect.
@@ -203,7 +203,7 @@ case "$tool" in
     [[ -n "$target" ]] || exit 0
     abs="$(resolve "$target")"
     if ! inside "$abs"; then
-      warn "Heads up: $target is outside this checkout ($root). If this session is an /orchestrate track, the main checkout and sibling worktrees belong to other tracks and are being changed concurrently -- prefer 'git show <base>:<path>' over reaching across the filesystem. Writing outside is legitimate for things that belong to no track, such as the agent memory directory. Not blocked."
+      warn "Heads up: $target is outside this checkout ($root). Phase workers own only their assigned component worktree. The primary checkout and sibling worktrees can belong to other sessions; use 'git show <base>:<path>' for source inspection. External scratch or agent memory can be legitimate when authorized. Not blocked."
     fi
     ;;
 

@@ -1,45 +1,22 @@
----
-tier: contract
-authority: agent
-id: SPEC-{nnn}
-title: <What this specifies>
-links: [] # Optional traceability metadata; the body remains self-contained.
----
+# SPEC-NNN: Capability
 
-# SPEC-{nnn}: <What this specifies>
+## Behavior
 
+Current correct implemented behavior, expressed in observable terms.
 
+## Acceptance
 
-## Requirement
+- Given a situation, when an action occurs, the observable result is defined.
 
-What must be true, in one or two sentences. Written so it stays true through a
-rewrite of the implementation.
+## Invariants and boundaries
 
-## Acceptance criteria
+Rules that remain true and adjacent behavior excluded from this contract.
 
-Observable, checkable, implementation-free. These are what verification grades
-against.
+## Evidence
 
-- [ ] Given <situation>, when <action>, then <observable outcome>
-- [ ] Given <situation>, when <action>, then <observable outcome>
+| Behavior | Source area or symbol | Observed check |
+|---|---|---|
+| Criterion | Implementation area | Actual verification |
 
-## Invariants
-
-Things that must hold at all times, not just at the end of a happy path.
-
-- 
-
-## Explicitly out of scope
-
-Adjacent behavior excluded from this specification, described without document
-references.
-
-- 
-
-## Code evidence
-
-Implemented areas and behavioral checks supporting the criteria above.
-
-| Criterion | Code area or symbol | Observed behavior/check |
-| --- | --- | --- |
-| <criterion> | <source area> | <evidence> |
+Write claims only after inspecting implementation evidence. Keep future changes
+in phase context and historical discussion in Git or significant ADRs.

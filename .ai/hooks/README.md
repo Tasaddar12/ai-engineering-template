@@ -12,7 +12,7 @@ the repository's prompts and host permissions remain in effect.
 
 | Script | Example event | Output |
 |---|---|---|
-| [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | Plain `NOTICE` naming the edited document's tier and responsibilities |
+| [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | Plain `NOTICE` naming document ownership and responsibilities |
 | [worktree-confine.sh](worktree-confine.sh) | `PreToolUse` | `systemMessage` warning about a possible write outside the assigned checkout |
 
 The worktree hook reads `cwd`, `tool_name` and `tool_input` from JSON on stdin.
@@ -41,4 +41,4 @@ bash .ai/hooks/ai-tier-notice.test.sh
 It checks quiet versus warning output, exit status, absence of permission
 decisions, Windows slash forms, sibling paths, Git metadata, scratch paths
 and redirects. Hook testing uses this Bash file; the separate Python suite
-tests the orchestration runtime.
+tests the phase runtime.

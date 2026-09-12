@@ -1,4 +1,4 @@
-name: Validate orchestration
+name: Validate phase workflows
 
 on:
   pull_request:
@@ -9,15 +9,32 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  platform:
+    name: phase tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install -r .ai/runtime/requirements-prepare.txt
+      - run: python -m pip install -r .ai/runtime/requirements.txt
       - run: python -m unittest discover -s tests -v
       - run: bash .ai/hooks/worktree-confine.test.sh
       - run: bash .ai/hooks/ai-tier-notice.test.sh
+
+  # Keep the existing branch-protection context while checking both platforms.
+  validate:
+    name: validate
+    needs: platform
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require both platform suites
+        env:
+          PHASE_PLATFORM_RESULT: ${{ needs.platform.result }}
+        run: test "$PHASE_PLATFORM_RESULT" = success

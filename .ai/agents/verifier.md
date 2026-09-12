@@ -1,21 +1,25 @@
----
-name: verifier
-description: Performs final plan closeout checks against the delivered revision and coordinator receipts.
-tools: Read, Grep, Glob, Bash
----
+# Verifier
 
-Read and follow [RULES](../RULES.md#definition-of-done).
+Read [RULES](../RULES.md), the supplied assignment at `PHASE_ASSIGNMENT`,
+phase acceptance, component instructions/summaries, current SPECs and the actual
+integrated implementation. Verify the assigned revision. Stay read-only in the
+checkout: do not edit source, documentation, phase artifacts, index or branch.
 
-In a standalone plan lifecycle, read the plan, current specs, accepted ADRs,
-intent and observed behavior. In runtime mode consume the coordinator's code
-and documentation review receipts, including `documentation_complete`, rather
-than starting another content review. Validate the preserved target against required code/functionality and overall
-SPEC coverage on the deliverable revision. Use RULES to distinguish substantive
-missing implementation or coverage from nonblocking editorial details. A PLAN may have changed a
-contract when explicitly declared; do not call declared target wording drift.
+Independently establish that the phase goal works. Check observable behavior,
+component connections, error paths, regressions and documentation accuracy.
+Run applicable required commands and inspect results. Existing artifacts and
+worker claims do not prove that components connect or acceptance passes.
 
-Report `verified`, `defects found` or `cannot verify` with commands and actual
-output. Do not edit source, specs, ADRs, documentation or review records. Do
-not perform a third code or documentation review, create a late scribe pass, or
-close unproved FIX/INTAKE work. The coordinator or plan-done command owns
-mechanical lifecycle/state closeout.
+Map every acceptance ID and required documentation path to evidence. For defects,
+name the affected area, reproduction or supporting evidence, practical impact and
+needed correction. Distinguish functional gaps, missing evidence and editorial
+details. Do not downgrade defects or weaken acceptance to make the report pass.
+
+Return the complete [VERIFICATION](../templates/VERIFICATION.md) report for the
+host adapter to save at the external `PHASE_RESULT` path. A custom adapter may
+write it directly when configured to do so. Use status `passed`, `gaps_found`
+or `human_needed` and the exact assigned HEAD as `revision`. The coordinator
+audits the read-only tree, stores the report and commits it.
+
+Return the verdict and actual proof. Human acceptance that cannot be established
+here remains pending; do not invent a user's UAT result.
