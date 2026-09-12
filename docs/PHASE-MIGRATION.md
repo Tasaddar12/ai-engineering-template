@@ -206,3 +206,36 @@ Use temporary real Git repositories and deterministic worker fixtures for runtim
 tests. Test actual transitions and evidence, not just presence of wording. Review
 the code and documentation independently, fix findings, repeat affected checks,
 push, and leave the PR open for the user. Retain the implementation worktree.
+
+## Implementation and review outcome
+
+The phase architecture, executable runtime, roles, procedures, templates and
+documentation are implemented on `codex/phase-workflow-migration`. Active legacy
+lifecycle files and the snapshot/schema dispatcher have been removed. The two
+historical repair records are unchanged. Project identity and adopting-project
+checks remain deliberately unfilled.
+
+The committed test suite has 47 cases using real temporary Git repositories,
+component worktrees and a local bare publication remote. Local validation passed
+the full 44-case suite available at the start of the final run, followed by the
+three additional recovery cases. Both hook suites passed: 49 worktree notices
+and 9 document-ownership notices. Active Markdown links, anchors and template
+frontmatter were checked, and the worktree passed whitespace validation.
+
+Separate implementation and documentation reviews found and corrected process
+recovery gaps, check mutation handling, protected-path overlap, interrupted
+verification recovery and cross-phase evidence reuse. Regression coverage includes
+loss of the coordinator's PID checkpoint, live parent/child writers, unchanged
+committed output reuse, failing checks that create commits, and explicit recovery
+after inspecting unintended check changes. No blocking findings remained in those
+reviews. The default worker CLI flags were checked against the installed host;
+the automated suite uses deterministic adapters rather than live model calls.
+
+Operational limits are explicit in the runtime guide: one coordinator per
+repository, parallel components within a phase, host-managed worker permissions,
+and original local checkpoints for interrupted execution. Independent verification
+and meaningful project checks remain necessary for behavioral correctness. CI
+runs the complete suite on Windows and Linux. PR readiness must follow their
+observed results; this document is not an assertion that remote checks passed.
+
+The worktree and PR are retained for review. Merging remains outside this request.
