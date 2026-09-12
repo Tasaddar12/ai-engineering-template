@@ -12,7 +12,7 @@ import test_phase_runtime as fixtures
 
 SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE / ".ai/runtime"))
-from phase_records import PhaseError, read_yaml, record  # noqa: E402
+from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record  # noqa: E402
 
 
 class PhaseRecordTests(unittest.TestCase):
@@ -44,6 +44,14 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertEqual(paths, [".ai/STATE.md"])
         self.assertIn("01-example", (f.checkout / ".ai/STATE.md").read_text())
         f.assert_primary_untouched()
+
+    def test_git_text_normalizes_line_endings_while_raw_preserves_them(self):
+        f = self.fixture
+        content = b"first\r\nsecond\rthird\n"
+        (f.checkout / "line-endings.txt").write_bytes(content)
+        f.commit("Record a blob with mixed line endings")
+        self.assertEqual(record_git(f.checkout, "show", "HEAD:line-endings.txt"), "first\nsecond\nthird")
+        self.assertEqual(record_git(f.checkout, "show", "HEAD:line-endings.txt", raw=True), content.decode())
 
     def test_readiness_rejects_coordinator_ownership_and_bad_configuration(self):
         f = self.fixture
@@ -102,6 +110,15 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertIn("recorded verification: passed", result.stdout)
         self.assertIn("checkpoint unavailable", result.stdout)
         self.assertEqual(f.git(sibling, "rev-parse", "HEAD"), before)
+
+
+class OwnershipBoundaryTests(unittest.TestCase):
+    def test_exact_ownership_and_conservative_overlap_have_separate_case_rules(self):
+        self.assertTrue(owns("README.md", "README.md"))
+        self.assertFalse(owns("README.md", "readme.md"))
+        self.assertFalse(owns("src/", "Src/component.py"))
+        self.assertTrue(overlaps(["README.md"], ["readme.md"]))
+        self.assertTrue(overlaps(["src/"], ["Src/component.py"]))
 
 
 class DocumentNavigationTests(unittest.TestCase):

@@ -19,14 +19,18 @@ def require(condition, message):
         raise PhaseError(message)
 
 
-def git(root, *args, check=True):
+def git(root, *args, check=True, raw=False):
     result = subprocess.run(
-        ["git", "-C", str(root), *args], capture_output=True, text=True,
-        encoding="utf-8", errors="replace",
+        ["git", "-C", str(root), *args], capture_output=True,
     )
+    # NUL-delimited paths must retain whitespace, newline bytes and filename case.
+    output = result.stdout.decode("utf-8", errors="surrogateescape" if raw else "replace")
     if check:
-        require(result.returncode == 0, result.stderr.strip() or result.stdout.strip())
-    return result.stdout.strip()
+        require(result.returncode == 0, result.stderr.decode("utf-8", errors="replace").strip() or output.strip())
+    if raw:
+        return output
+    # Preserve the former text-mode normalization for document and line output.
+    return output.replace("\r\n", "\n").replace("\r", "\n").strip()
 
 
 class UniqueLoader(yaml.SafeLoader):
@@ -102,13 +106,14 @@ def safe_path(root, value):
 
 
 def owns(prefix, path):
-    # Conservative across platforms: instructions should also be safe on Windows/macOS.
-    prefix, path = prefix.casefold(), path.casefold()
+    # Authorization matches Git's exact path spelling, even on insensitive hosts.
     return path == prefix or (prefix.endswith("/") and path.startswith(prefix))
 
 
 def overlaps(left, right):
-    return any(owns(a, b) or owns(b, a) for a in left for b in right)
+    # Scheduling stays conservative for filesystems that alias case variants.
+    return any(owns(a.casefold(), b.casefold()) or owns(b.casefold(), a.casefold())
+               for a in left for b in right)
 
 
 @dataclass

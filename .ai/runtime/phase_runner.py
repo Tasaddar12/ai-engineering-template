@@ -239,9 +239,9 @@ def checks(phase, root, extra=()):
 def source_hash(phase):
     excluded = {".ai/STATE.md", f"{phase.relative}/{phase.number}-VERIFICATION.md",
                 f"{phase.relative}/{phase.number}-UAT.md", f"{phase.relative}/.continue-here.md"}
-    entries = git(phase.root, "ls-tree", "-rz", "--full-tree", "HEAD").split("\x00")
+    entries = git(phase.root, "ls-tree", "-rz", "--full-tree", "HEAD", raw=True).split("\x00")
     included = [entry for entry in entries if entry and entry.split("\t", 1)[-1] not in excluded]
-    return hashlib.sha256("\x00".join(included).encode()).hexdigest()
+    return hashlib.sha256("\x00".join(included).encode("utf-8", errors="surrogateescape")).hexdigest()
 
 
 def validate_summary(phase, component, root):
@@ -262,7 +262,7 @@ def validate_summary(phase, component, root):
 
 def changed_paths(root, start, end):
     # --no-renames reports both removed and added paths, so source ownership is audited too.
-    return [p for p in git(root, "diff", "--no-renames", "--name-only", "-z", start, end).split("\x00") if p]
+    return [p for p in git(root, "diff", "--no-renames", "--name-only", "-z", start, end, raw=True).split("\x00") if p]
 
 
 def audit_worker(phase, component, entry):
@@ -279,7 +279,7 @@ def audit_worker(phase, component, entry):
     allowed = component.data["files"] + [summary]
     for commit in git(root, "rev-list", f"{entry['base']}..{head}").splitlines():
         # Audit every commit, including edits reverted before the final tree.
-        for path in git(root, "diff-tree", "--root", "-m", "--no-commit-id", "--no-renames", "--name-only", "-r", "-z", commit).split("\x00"):
+        for path in git(root, "diff-tree", "--root", "-m", "--no-commit-id", "--no-renames", "--name-only", "-r", "-z", commit, raw=True).split("\x00"):
             if path:
                 safe_path(root, path)
                 require(any(owns(prefix, path) for prefix in allowed), f"{component.id}: out-of-scope change: {path}")
@@ -815,9 +815,10 @@ def status_text(root, name=None, remote=False):
                 observation = publication.get("observed", {})
                 if remote:
                     observation = json.loads(gh(root, "pr", "view", publication["url"], "--json", "number,url,state,mergedAt,headRefOid,statusCheckRollup"))
-                if observation.get("state") == "MERGED" and observation.get("mergedAt") and observation.get("headRefOid") == publication["head"]:
+                current_publication = publication["head"] == revision(root) and observation.get("headRefOid") == publication["head"]
+                if current_publication and observation.get("state") == "MERGED" and observation.get("mergedAt"):
                     stage, next_action = "delivered (observed merge)", "Check the next phase"
-                elif publication["head"] == revision(root) and observation.get("headRefOid") == publication["head"]:
+                elif current_publication:
                     stage, next_action = "published (unmerged at last observation)", "Review PR and GitHub checks"
                     next_action = check_observation(phase, observation)
                     if observation.get("state") == "CLOSED":

@@ -64,9 +64,11 @@ def forge_cli() -> int:
         elif argv[1:3] == ["pr", "create"]:
             stdout = "https://github.com/example/fixture/pull/7\n"
         elif argv[1:3] == ["pr", "view"]:
+            state = os.environ.get("PHASE_FIXTURE_PR_STATE", "OPEN")
             stdout = json.dumps({
                 "number": 7, "url": "https://github.com/example/fixture/pull/7",
-                "state": "OPEN", "mergedAt": None, "headRefOid": head,
+                "state": state, "mergedAt": "2026-09-12T00:00:00Z" if state == "MERGED" else None,
+                "headRefOid": head,
                 "statusCheckRollup": [],
             })
         else:
@@ -159,6 +161,18 @@ def main() -> int:
         documentation = metadata.get("documentation", [])
         if mode == "outside":
             owned = ["outside-ownership.txt"]
+        if mode == "case-outside":
+            owned = ["src/allowed.txt"]
+        if mode == "leading-space-outside":
+            owned = [" safe.txt"]
+        if mode == "leading-space-reverted":
+            outside = root / " safe.txt"
+            outside.write_text("Out-of-scope history\n", encoding="utf-8")
+            git(root, "add", "--", " safe.txt")
+            git(root, "commit", "-m", "Temporarily change an unowned path")
+            outside.unlink()
+            git(root, "add", "--", " safe.txt")
+            git(root, "commit", "-m", "Revert the unowned change")
         if mode == "summary-only":
             owned = []
         for name in owned:

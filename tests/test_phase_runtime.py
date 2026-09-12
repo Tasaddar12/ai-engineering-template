@@ -351,12 +351,17 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.component("01-02", files=["src/Shared.txt"])
         self.configure(PHASE_FIXTURE_DELAY="0.2")
         self.commit("Prepare case-variant ownership")
-        self.cli("run", PHASE)
+        probe = self.directory / "CaseSensitivityProbe"
+        probe.touch()
+        case_sensitive = not (self.directory / "casesensitivityprobe").exists()
+        # On Windows, the second write retains the first file's Git spelling;
+        # serialization remains required, but its exact ownership audit must fail.
+        self.cli("run", PHASE, succeeds=case_sensitive)
         events = sorted(self.events(), key=lambda event: event["started"])
         self.assertEqual(len(events), 2)
         self.assertGreaterEqual(events[1]["started"], events[0]["finished"])
         self.assertTrue(self.summary("01-01").exists())
-        self.assertTrue(self.summary("01-02").exists())
+        self.assertEqual(self.summary("01-02").exists(), case_sensitive)
 
     def test_dependency_sees_committed_prerequisite(self) -> None:
         self.component("01-02", depends_on=["01-01"])
@@ -435,6 +440,37 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertFalse((self.checkout / "outside-ownership.txt").exists())
         self.assertFalse(self.summary("01-01").exists())
         self.assertTrue((Path(self.events()[0]["worktree"]) / "outside-ownership.txt").is_file())
+
+    def test_exact_ownership_rejects_a_different_git_path_case(self) -> None:
+        self.component("01-01", files=["src/Allowed.txt"], checks=[[sys.executable, "-c", "pass"]])
+        self.configure(PHASE_FIXTURE_MODE="case-outside")
+        self.commit("Prepare a worker writing a differently spelled Git path")
+        self.cli("run", PHASE, succeeds=False)
+        worker = Path(self.events()[0]["worktree"])
+        self.assertEqual(self.git(worker, "ls-files", "src/allowed.txt"), "src/allowed.txt")
+        self.assertFalse((self.checkout / "src/allowed.txt").exists())
+        self.assertFalse(self.summary("01-01").exists())
+
+    def test_leading_space_path_is_rejected_without_trimming_git_output(self) -> None:
+        self.component("01-01", files=["safe.txt"], checks=[[sys.executable, "-c", "pass"]])
+        self.configure(PHASE_FIXTURE_MODE="leading-space-outside")
+        self.commit("Prepare an unowned path with leading whitespace")
+        self.cli("run", PHASE, succeeds=False)
+        worker = Path(self.events()[0]["worktree"])
+        self.assertTrue((worker / " safe.txt").is_file())
+        self.assertFalse((self.checkout / " safe.txt").exists())
+        self.assertFalse(self.summary("01-01").exists())
+
+    def test_reverted_leading_space_path_is_rejected_from_commit_history(self) -> None:
+        self.component("01-01", files=["safe.txt"], checks=[[sys.executable, "-c", "pass"]])
+        self.configure(PHASE_FIXTURE_MODE="leading-space-reverted")
+        self.commit("Prepare a reverted unowned path in worker history")
+        self.cli("run", PHASE, succeeds=False)
+        worker = Path(self.events()[0]["worktree"])
+        self.assertFalse((worker / " safe.txt").exists())
+        self.assertTrue(self.git(worker, "log", "--format=%s", "--", " safe.txt"))
+        self.assertFalse((self.checkout / "safe.txt").exists())
+        self.assertFalse(self.summary("01-01").exists())
 
     def test_uncommitted_work_is_preserved_but_not_integrated(self) -> None:
         self.configure(PHASE_FIXTURE_MODE="uncommitted")
@@ -624,6 +660,23 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertEqual(self.git(self.remote, "rev-parse", "main"), self.main_revision)
         self.assertEqual(self.git(self.remote, "rev-parse", "codex/phase-test"), self.git(self.checkout, "rev-parse", "HEAD"))
         self.assert_primary_untouched()
+
+    def test_merged_observation_does_not_mark_newer_branch_work_delivered(self) -> None:
+        self.prepare_remote()
+        self.cli("run", PHASE)
+        self.cli("verify", PHASE)
+        # Simulate a human merge observed by the forge; the CLI still never merges.
+        self.environment["PHASE_FIXTURE_PR_STATE"] = "MERGED"
+        self.publish()
+        delivered = self.cli("status", PHASE)
+        self.assertIn("delivered (observed merge)", delivered.stdout)
+        self.write(self.checkout, "later-change.txt", "A commit not covered by the observed PR\n")
+        self.commit("Add new work after the observed merge")
+        before = self.state_snapshot()
+        current = self.cli("status", PHASE)
+        self.assertNotIn("delivered (observed merge)", current.stdout)
+        self.assertIn("https://github.com/example/fixture/pull/7", current.stdout)
+        self.assertEqual(self.state_snapshot(), before, "Status must retain observations without rewriting state")
 
     def test_publication_requires_explicit_authorization(self) -> None:
         self.prepare_remote()

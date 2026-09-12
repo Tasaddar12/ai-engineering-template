@@ -47,8 +47,10 @@ Each [IMPLEMENT](../templates/IMPLEMENT.md) declares kind (`code` or
 acceptance IDs, required documentation paths and meaningful argv checks. Paths
 are exact repository-relative files or directory prefixes ending in `/`. Globs,
 traversal, shared Git metadata and phase-record ownership are rejected. Its own
-SUMMARY is automatically owned. Match case consistently; scheduling treats case
-variants conservatively as overlapping across platforms.
+SUMMARY is automatically owned. Authorization matches exact Git path spelling,
+including case and whitespace. Scheduling treats case variants conservatively
+as overlapping across platforms, but that does not authorize a differently
+spelled path during the committed-output audit.
 
 The coordinator also owns immutable PROJECT, REQUIREMENTS, RULES and config
 inputs. Broad ownership such as `.ai/` is rejected because it contains those
@@ -156,7 +158,9 @@ pushes one phase branch and creates/updates its PR. It reports observed GitHub
 checks. PR creation can start CI; it does not imply checks have finished or the
 PR is ready. Configure `publication.required_checks` and use status with `--remote`
 to inspect them. A delivered status requires an observed merge of the published
-revision. No command merges a PR or moves the primary branch.
+revision matching the current branch HEAD. A later commit must not be reported
+as delivered using the older PR's merge observation. No command merges a PR or
+moves the primary branch.
 
 ## Validation
 
