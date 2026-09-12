@@ -16,7 +16,8 @@ This is a reusable template; onboarding supplies the adopting project's identity
 | `decisions/` | Significant architectural rationale |
 | [commands](commands/README.md) | Procedures from intake through publication |
 | [agents](agents/README.md) | Responsibilities and handoffs |
-| `references/` | Applicable details loaded on demand |
+| [skills](../docs/AGENT-SKILLS.md) | Reusable engineering methods selected per assignment |
+| `references/` | Artifact and handoff details loaded on demand |
 | [templates](templates/README.md) | Artifact shapes |
 | [runtime](runtime/README.md) | Executable phase coordination |
 | [config](config.yaml) | Actual worker routes, capacity and checks |

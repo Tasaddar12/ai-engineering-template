@@ -6,6 +6,8 @@ Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 1. Define bounded components using [IMPLEMENT](../templates/IMPLEMENT.md). Each
    component must state its outcome, owned paths, dependencies, shared interfaces,
    acceptance IDs, required reads, commands and documentation obligations.
+   Select useful [repository skills](../../docs/AGENT-SKILLS.md) for the actual
+   assignment and put required skill paths in its Read first section.
 2. Use exact file paths or directory prefixes ending in `/`. Mark exclusive
    resources. Overlap serializes workers; dependency edges mean a prerequisite
    really must exist. Reject cycles and unnecessary coupling.

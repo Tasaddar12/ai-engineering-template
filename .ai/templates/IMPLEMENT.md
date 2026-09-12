@@ -17,7 +17,9 @@ The bounded outcome and what this component provides to later components.
 ## Read first
 
 Relevant context decisions, source paths, current contracts and dependency
-summaries. Read required material without loading the entire project.
+summaries. Include relevant repository skill paths with a short reason when a
+specific method is needed. Read required material without loading the entire
+project or every skill.
 
 ## Implementation
 

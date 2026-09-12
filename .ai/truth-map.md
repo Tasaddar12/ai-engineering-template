@@ -23,7 +23,9 @@
 | Shared rules | [RULES](RULES.md) | Link rather than restating |
 | Role scope, inputs and outputs | [agents](agents/README.md) | Assign a responsibility |
 | Workflow procedure | [commands](commands/README.md) | Entry points load the procedure |
-| Reusable detailed method | `references/` | Load only when relevant |
+| Artifact and handoff contract details | `references/` | Load only when relevant |
+| Reusable engineering methods | `../.agents/skills/*/SKILL.md` | Reference a selected method from the assignment |
+| Skill discovery and usage | [Agent skills guide](../docs/AGENT-SKILLS.md) | Keep catalogs out of individual assignments |
 | Commands, capacity and worker routes | [config](config.yaml) | Avoid duplicating defaults |
 | CLI interface | [runtime](runtime/README.md) | Use verified syntax |
 

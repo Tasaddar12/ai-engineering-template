@@ -4,6 +4,10 @@ These prompts invoke the documented procedures in ordinary language. Markdown
 command files are not automatically installed slash commands. Adapt the request
 to the project's actual intent and authorization.
 
+Agents can select [repository skills](AGENT-SKILLS.md) for the method a request
+needs. Name a skill or its repository path when a specific method matters; the
+existing request still determines scope and authorization.
+
 ## Start a new project
 
 > Use this template to establish the project described in my request. Record the
