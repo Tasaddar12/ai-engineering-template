@@ -31,6 +31,15 @@ def write_record(path: Path, metadata: dict, body: str) -> None:
     )
 
 
+def await_fixture_release() -> None:
+    release = Path(os.environ["PHASE_FIXTURE_RELEASE"])
+    deadline = time.monotonic() + 25
+    while not release.exists():
+        if time.monotonic() > deadline:
+            raise RuntimeError("Test did not release the worker")
+        time.sleep(0.025)
+
+
 def forge_cli() -> int:
     """Run the real CLI with only the external GitHub response simulated."""
     import json
@@ -120,6 +129,10 @@ def main() -> int:
                 "## Findings\n\n"
                 + ("The requested behavior is missing.\n" if verdict != "passed" else "None.\n"),
             )
+            event["report_written"] = str(result)
+            save_event()
+            if mode == "verifier-report-then-wait":
+                await_fixture_release()
             return 0
 
         matches = list((root / ".ai/phases").glob(f"*/{component}-IMPLEMENT.md"))
@@ -190,12 +203,7 @@ def main() -> int:
             event["committed"] = git(root, "rev-parse", "HEAD")
             save_event()
         if mode == "commit-then-wait":
-            release = Path(os.environ["PHASE_FIXTURE_RELEASE"])
-            deadline = time.monotonic() + 25
-            while not release.exists():
-                if time.monotonic() > deadline:
-                    raise RuntimeError("Test did not release the committed worker")
-                time.sleep(0.025)
+            await_fixture_release()
         return 0
     finally:
         event["finished"] = time.monotonic()

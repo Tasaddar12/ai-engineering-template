@@ -9,8 +9,19 @@ python .ai/runtime/phase.py verify 01-authentication
 
 The runtime dispatches the independent [verifier](../agents/verifier.md). It
 checks phase acceptance, component connections, regressions and documentation at
-the assigned revision. It writes an external report while leaving the checkout
-unchanged; the coordinator audits, stores and commits VERIFICATION.
+the assigned revision. The host saves the report externally while the checkout
+stays unchanged; the coordinator audits, stores and commits VERIFICATION.
+
+Verifier attempts also retain their worktree, process identity and result path.
+An interrupted verifier must stop before its result is reused. If no usable report
+for the current source remains, inspect the saved attempt and allow a fresh one:
+
+```text
+python .ai/runtime/phase.py verify 01-authentication --workers-stopped
+```
+
+The flag asserts an inspected, stopped attempt; it does not stop a live process.
+Use this verification route for an interrupted review, rather than component resume.
 
 Keep missing behavior, documentation or evidence as gaps. Correct bounded
 findings within authorized scope; obtain a real decision if the target must

@@ -22,3 +22,7 @@ cause resolved, not a cleared checkpoint.
 Use optional `.continue-here.md` for useful human continuation context. Runtime
 and Git evidence determine what happened. Preserve incomplete and unmerged
 worktrees; after resumption repeat checks invalidated by changed content.
+
+An interrupted independent verifier has its own saved attempt. Follow
+[phase-verify](phase-verify.md) to reuse its valid current report or explicitly
+allow a fresh verifier after confirming the previous process stopped.

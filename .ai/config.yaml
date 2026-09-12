@@ -1,199 +1,49 @@
-# Project-level configuration for the .ai/ orchestration structure.
-# Edit this once when you drop the template into a project.
+# Configure an adopting project's actual workers and checks here.
+# Intent belongs to PROJECT.md; acceptance belongs to phase CONTEXT.
+execution:
+  max_parallel: 3
+  worker_timeout_seconds: 3600
+  check_timeout_seconds: 300
+  # argv lists, without a shell. Each invocation gets one fresh assignment.
+  # Workers commit SUMMARY; do not overwrite it with CLI output after a commit.
+  worker_command:
+    - codex
+    - -a
+    - never
+    - exec
+    - --ephemeral
+    - --sandbox
+    - "{sandbox}"
+    - -C
+    - "{worktree}"
+    - "-"
+  # Optional documentor_command can select a separate route; otherwise the same
+  # executable receives the documentor role and its bounded documentation scope.
+  verifier_command:
+    - codex
+    - -a
+    - never
+    - exec
+    - --ephemeral
+    - --sandbox
+    - "{sandbox}"
+    - -C
+    - "{worktree}"
+    - --output-last-message
+    - "{result}"
+    - "-"
+  # Nonsecret adapter settings only. Use the host environment for credentials.
+  environment: {}
 
-project:
-  name: CHANGEME
-  # One line. What this project is, for an agent that has never seen it.
-  summary: CHANGEME
-
-# ---------------------------------------------------------------------------
-# mode — how much process this project gets. Same template either way; the
-# mode decides which documents are required and which commands are in play.
-#
-#   light     Small or short-lived work with compact planning.
-#             Acceptance criteria begin in the plan; actual-code SPEC coverage
-#             is completed after code review. See RULES.md for shared policy.
-#
-#   standard  Default. Specs are the contract; plans move through the full
-#             lifecycle; amendments are recorded.
-#             Agents in play: planner, plan-checker, implementor, verifier, scribe.
-#
-#   full      Long-running or multi-team work. Adds a roadmap of phases above
-#             plans, and an explicit acceptance/UAT gate before done.
-#             Agents in play: all of them.
-#
-# Raising the mode later is additive — nothing has to be rewritten.
-# ---------------------------------------------------------------------------
-mode: standard
-
-# Where things live. Paths are relative to the repository root. Manual
-# workflows may adopt a conflicting convention; the runtime schedule rejects
-# custom top-level paths and IDs and requires the fixed .ai layout and formats.
-paths:
-  project: .ai/state/PROJECT.md
-  specs: .ai/specs
-  decisions: .ai/decisions
-  amendments: .ai/decisions/amendments
-  retired: .ai/decisions/retired
-  meetings: .ai/decisions/meetings
-  plans: .ai/plans
-  fixes: .ai/fixes
-  state: .ai/state
-  journal: .ai/state/journal
-  orchestration: .ai/state/orchestration
-  research: .ai/research
-  agents: .ai/agents
-  commands: .ai/commands
-  # Reserved directories; only .gitkeep placeholders are supplied.
-  policies: .ai/policies
-  gates: .ai/gates
-  hooks: .ai/hooks
-  templates: .ai/templates
-  docs: docs
-
-# Plan lifecycle stages, in order. A plan's stage is the directory it sits in.
-# `done` is partitioned by period so it stays browsable for years.
-lifecycle:
-  stages: [intake, backlog, active, blocked, review, done, abandoned]
-  # Concurrency guidance, not enforcement. Exceeding it is a smell worth
-  # mentioning to the user, not an error.
-  max_active: 2
-  done_partition: quarter   # quarter | month | year  -> done/2026-Q3/
-
-  # Bug fixes run a shorter lifecycle of the same kind — the stage is still the
-  # directory. A fix restores conformance with the contract; anything that
-  # changes what conformance means is a plan. See .ai/RULES.md#bug-fixes.
-  # Fixes are live in every mode, light included.
-  fix_stages: [open, done]
-
-# Identifier formats. Numbers are zero-padded. The coordinator allocates
-# disjoint reviewed blocks across lifecycle inventories and receipts; the
-# record_ids helper only proposes a range and never reserves it.
-ids:
-  spec: SPEC-{nnn}-{slug}
-  plan: PLAN-{nnn}-{slug}
-  decision: ADR-{nnnn}-{slug}
-  amendment: AMD-{nnn}-{slug}
-  intake: INTAKE-{nnn}-{slug}
-  fix: FIX-{nnn}-{slug}
-  research: RES-{nnn}-{slug}
-  orchestration: ORCH-{nnn}
-  meeting: MEET-{date}-{slug}
-  journal: "{date}"
-
-# Enforcement posture. Advisory means hooks inform and never block; the
-# behavior in RULES.md is carried by agent prompts, not by walls.
-# Walls are what produce refusals.
-enforcement: advisory
-
-# Commands the verifier should run to check reality. Fill these in per project;
-# an empty list permits manual inspection but cannot authorize autonomous merge.
 verification:
+  # Required before run/verify/publish. Configure meaningful project checks.
   commands: []
-    # - [pytest, -q]
-    # - [npm, test]
-    # - [ruff, check, .]
+    # - [python, -m, unittest, discover, -s, tests, -v]
+    # - [npm, test, --, --run]
 
-# ---------------------------------------------------------------------------
-# orchestration — settings for /orchestrate, which builds several plans at once
-# in parallel git worktrees. See docs/ORCHESTRATION.md for the whole flow.
-#
-# Vocabulary, because the rest of this block is meaningless without it:
-#   run    One /orchestrate invocation. ORCH-{nnn}, manifest in state/.
-#   wave   A display grouping by dependency depth. A track waits only for its
-#          own dependencies to merge and sync, plus ownership/resource availability.
-#   track  A group of plans sharing one worktree, one branch, one PR. Plans in
-#          a track run in sequence; tracks in a wave run in parallel.
-# ---------------------------------------------------------------------------
-orchestration:
-  # Where worktrees are created, relative to the repository root. This path
-  # MUST be in .gitignore — a worktree committed into the base branch is a
-  # mess to unpick.
-  worktree_root: .worktrees
-
-  # How ready tracks are started.
-  #   background  /orchestrate launches a session per track and is woken as each
-  #               exits, so a run finishes without anyone watching for a wave to
-  #               complete. Use .ai/runtime/orchestrate.py and its worker adapter.
-  #   manual      /orchestrate prints the commands and stops. Every wave
-  #               dispatch decision then needs a person.
-  # Background tracks run unattended, so they must not hit a permission prompt —
-  # configure the host's worktree permissions. Hooks are optional accident guards;
-  # they are not a sandbox or permission to bypass the host's controls.
-  dispatch: background     # background | manual
-
-  # How many tracks may be in flight at once within a wave. This is the real
-  # cost dial: each track is a full pipeline of subagents. Raising it past the
-  # number of genuinely independent plans buys nothing.
-  max_parallel_tracks: 3
-  # Bounded infrastructure/process retry budget (default 2, range 1..3),
-  # separate from completed review counts.
-  max_process_attempts: 2
-
-  # Branch the run starts from and merges back into. The runtime snapshot must
-  # contain an explicit valid branch name.
-  base_branch: ""
-
-  # Branch naming for tracks. {run} -> ORCH-007, {track} -> w1t2
-  branch_prefix: orch
-
-  # review — the fix/re-review loop after a PR opens.
-  review:
-    # Full tracks run both cold code reviews, with at most one correction between.
-    # Pure documentation tracks skip code reviews and use readiness plus the
-    # documentation route.
-    max_rounds: 2
-    # Completion and retained findings follow RULES.md#definition-of-done.
-
-  # Full tracks consolidate documentation after both code reviews. Pure
-  # documentation tracks start after readiness. Both documentation reviews
-  # always run, with at most one documentation-only correction between.
-  documentation:
-    model: gpt-5.6-luna
-    max_review_rounds: 2
-    # Snapshot this as documentation_worker_command and documentation_model.
-    # A missing/unavailable lightweight route blocks; never use the code default.
-    worker_command:
-      - codex
-      - -a
-      - never
-      - exec
-      - --ephemeral
-      - --model
-      - "{model}"
-      - --sandbox
-      - "{sandbox}"
-      - -C
-      - "{worktree}"
-      - --output-schema
-      - "{schema_file}"
-      - --output-last-message
-      - "{result_file}"
-      - "-"
-
-  # Runtime delivery is supported only through GitHub's reviewed PR path.
-  # Unsupported forge values are rejected during schedule validation.
-  forge: github
-
-  # The runtime requires merge commits for ancestry verification.
-  merge_strategy: merge
-
-  # The runtime merges ready reviewed PRs automatically; other values are
-  # rejected during schedule validation.
-  auto_merge: auto
-
-  # Successful merged worktrees are removed; stopped or unmerged work is kept.
-  cleanup_on_merge: true
-
-  # prepare.py reads this committed configuration and the manifest's first
-  # Execution schedule JSON fence at one immutable ref, then emits the JSON
-  # execution snapshot. The Python runner consumes JSON and never parses YAML.
-  runtime: .ai/runtime/orchestrate.py
-  required_status_checks: [] # fill per project; autonomous delivery rejects empty
-
-  # Commands the track pipeline may use to run only the tests affected by a
-  # change. Left empty, agents fall back to `verification.commands` in full and
-  # say that they did. {files} is replaced with the changed paths.
-  targeted_tests: []
-    # - [pytest, -q, "{files}"]
-    # - [npm, test, --, --findRelatedTests, "{files}"]
+publication:
+  remote: origin
+  base_branch: main
+  # Names to inspect in GitHub's statusCheckRollup. Publication can start CI;
+  # readiness is separate and requires successful observations of these checks.
+  required_checks: []

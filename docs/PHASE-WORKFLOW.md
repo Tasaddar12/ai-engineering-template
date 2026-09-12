@@ -123,6 +123,10 @@ the worker processes, commits and summaries before asserting that workers have
 stopped. Preserve worktrees and consume valid committed results where possible
 instead of repeating them.
 
+Independent verification retains a separate attempt. A stopped verifier's valid
+current report can be reused. Use phase-verify with --workers-stopped after
+inspection when a fresh review is needed; do not start a duplicate live verifier.
+
 A correction changes affected code and invalidates corresponding evidence.
 After reconciling the previous attempt, preserve completed assignments and add
 bounded corrective components using the runtime's replan route. Review the

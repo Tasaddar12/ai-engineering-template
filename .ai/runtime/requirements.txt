@@ -1,1 +1,1 @@
-markdown-it-py>=4.2,<5
+PyYAML>=6.0,<7.0

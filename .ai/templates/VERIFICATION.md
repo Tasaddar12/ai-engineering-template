@@ -25,5 +25,5 @@ Concrete gaps, affected areas, impact and correction. Separate required human
 observations from failures and editorial findings. Set passed only when required
 independent evidence is conclusive; otherwise use gaps_found or human_needed.
 
-The verifier writes this to its supplied external result path. The coordinator
-audits the read-only checkout before storing and committing the report.
+The verifier returns this complete report for its host adapter to save externally.
+The coordinator audits the read-only checkout before storing and committing it.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -210,6 +211,67 @@ class PhaseRuntimeTests(unittest.TestCase):
         log = self.directory / "forge.jsonl"
         return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
 
+    @contextmanager
+    def live_worker_after_coordinator_interruption(self, *, crash_before_pid_save: bool = False):
+        release = self.directory / "release-worker"
+        self.configure(PHASE_FIXTURE_MODE="commit-then-wait", PHASE_FIXTURE_RELEASE=str(release))
+        self.commit("Prepare interrupted coordinator")
+        command = [sys.executable, str(self.checkout / ".ai/runtime/phase.py"), "run", PHASE]
+        if crash_before_pid_save:
+            launcher = (
+                "import os,sys\n"
+                "sys.path.insert(0,'.ai/runtime')\n"
+                "import phase_runner,phase\n"
+                "original=phase_runner.save\n"
+                "def lose_pid_checkpoint(p,state):\n"
+                "    if any(e.get('status')=='running' for e in state['components'].values()):\n"
+                "        os._exit(81)\n"
+                "    return original(p,state)\n"
+                "phase_runner.save=lose_pid_checkpoint\n"
+                f"phase.main(['run',{PHASE!r}])\n"
+            )
+            command = [sys.executable, "-c", launcher]
+        process = subprocess.Popen(
+            command,
+            cwd=self.checkout, env=self.environment, text=True, encoding="utf-8",
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        try:
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                events = self.events()
+                if events and events[0].get("committed"):
+                    break
+                if process.poll() is not None and not crash_before_pid_save:
+                    self.fail("Coordinator exited before interruption: " + str(process.communicate()))
+                time.sleep(0.025)
+            else:
+                self.fail("Worker did not commit before interruption timeout")
+            if not crash_before_pid_save:
+                process.terminate()
+            process.communicate(timeout=10)
+            if crash_before_pid_save:
+                self.assertEqual(process.returncode, 81, "Fault injection did not reach the PID checkpoint")
+            yield release
+        finally:
+            release.touch()
+            deadline = time.monotonic() + 10
+            while self.events() and not self.events()[0].get("finished") and time.monotonic() < deadline:
+                time.sleep(0.025)
+            if process.poll() is None:
+                process.kill()
+                process.communicate(timeout=10)
+
+    def release_worker(self, release: Path, *, kind: str = "code") -> None:
+        release.touch()
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            matching = [event for event in self.events(include_verifier=True) if event["kind"] == kind]
+            if matching and matching[0].get("finished"):
+                return
+            time.sleep(0.025)
+        self.fail(f"The {kind} worker did not finish")
+
     def test_check_and_status_are_read_only(self) -> None:
         before = self.git(self.checkout, "rev-parse", "HEAD")
         state_before = self.state_snapshot()
@@ -417,6 +479,50 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertEqual([event["component"] for event in self.events()], ["01-01"])
         self.assertFalse(self.summary("01-02").exists())
 
+    def test_component_check_timeout_allows_independent_work_and_explicit_replan(self) -> None:
+        self.component("01-01", checks=[[sys.executable, "-c", "import time; time.sleep(2)"]])
+        self.component("01-02")
+        self.config["execution"].update(check_timeout_seconds=1, max_parallel=1)
+        self.configure()
+        self.commit("Prepare a timed out component check")
+        self.cli("run", PHASE, succeeds=False)
+        self.assertEqual({event["component"] for event in self.events()}, {"01-01", "01-02"})
+        self.assertFalse(self.summary("01-01").exists())
+        self.assertTrue(self.summary("01-02").exists())
+        self.component("01-01")
+        self.commit("Correct the timed out verification instructions")
+        self.cli("run", PHASE, "--replan", "--workers-stopped")
+        components = [event["component"] for event in self.events()]
+        self.assertEqual(components.count("01-01"), 2)
+        self.assertEqual(components.count("01-02"), 1)
+        self.assertTrue(self.summary("01-01").exists())
+
+    def assert_check_commit_rejected(self, *, fails_after_commit: bool) -> None:
+        command = (
+            "from pathlib import Path; import subprocess; p=Path('check-created.txt'); "
+            "apply=Path.cwd().name == 'phase' and not p.exists(); "
+            "p.write_text('outside component ownership') if apply else None; "
+            "subprocess.run(['git','add','check-created.txt'],check=True) if apply else None; "
+            "subprocess.run(['git','commit','-m','Check changed source'],check=True) if apply else None"
+        )
+        if fails_after_commit:
+            command += "; raise SystemExit(7 if apply else 0)"
+        self.config["verification"]["commands"] = [[sys.executable, "-c", command]]
+        self.configure()
+        self.commit("Prepare an improperly committing integration check")
+        self.cli("run", PHASE, succeeds=False)
+        self.cli("verify", PHASE, succeeds=False)
+        self.assertTrue((self.checkout / "check-created.txt").is_file(), "Unexpected changes must remain available for inspection")
+        worker = Path(self.events()[0]["worktree"])
+        self.assertFalse((worker / "check-created.txt").exists())
+        self.assertFalse((self.checkout / PHASE_PATH / "01-VERIFICATION.md").exists())
+
+    def test_verification_command_cannot_hide_changes_in_a_commit(self) -> None:
+        self.assert_check_commit_rejected(fails_after_commit=False)
+
+    def test_failing_verification_command_cannot_hide_changes_in_a_commit(self) -> None:
+        self.assert_check_commit_rejected(fails_after_commit=True)
+
     def test_failed_integration_prevents_dependency_release_and_preserves_result(self) -> None:
         self.component("01-02", depends_on=["01-01"])
         self.config["verification"]["commands"] = [[
@@ -558,37 +664,72 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertFalse(any("merge" in call for call in self.forge_calls()))
 
     def test_resume_consumes_committed_worker_without_replaying_it(self) -> None:
-        release = self.directory / "release-worker"
-        self.configure(PHASE_FIXTURE_MODE="commit-then-wait", PHASE_FIXTURE_RELEASE=str(release))
-        self.commit("Prepare interrupted coordinator")
+        with self.live_worker_after_coordinator_interruption() as release:
+            self.release_worker(release)
+            self.cli("resume", PHASE, "--workers-stopped")
+            self.assertTrue(self.summary("01-01").is_file())
+            self.assertEqual(len(self.events()), 1)
+
+    def test_resume_refuses_to_integrate_a_still_running_worker(self) -> None:
+        with self.live_worker_after_coordinator_interruption() as release:
+            self.assertFalse(self.events()[0].get("finished"))
+            self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
+            self.assertFalse(self.summary("01-01").exists())
+            self.assertFalse((self.checkout / "src/01-01.txt").exists())
+            self.release_worker(release)
+            self.cli("resume", PHASE, "--workers-stopped")
+            self.assertTrue(self.summary("01-01").is_file())
+            self.assertEqual(len(self.events()), 1)
+
+    def test_resume_uses_launch_receipt_when_pid_checkpoint_was_lost(self) -> None:
+        with self.live_worker_after_coordinator_interruption(crash_before_pid_save=True) as release:
+            self.assertFalse(self.events()[0].get("finished"))
+            self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
+            self.assertFalse(self.summary("01-01").exists())
+            self.release_worker(release)
+            self.cli("resume", PHASE, "--workers-stopped")
+            self.assertTrue(self.summary("01-01").exists())
+            self.assertEqual(len(self.events()), 1)
+
+    def test_interrupted_verifier_reuses_its_finished_report_without_relaunch(self) -> None:
+        release = self.directory / "release-verifier"
+        self.configure(PHASE_FIXTURE_MODE="verifier-report-then-wait", PHASE_FIXTURE_RELEASE=str(release))
+        self.commit("Prepare interrupted independent verification")
+        self.cli("run", PHASE)
+        verified_revision = self.git(self.checkout, "rev-parse", "HEAD")
         process = subprocess.Popen(
-            [sys.executable, str(self.checkout / ".ai/runtime/phase.py"), "run", PHASE],
+            [sys.executable, str(self.checkout / ".ai/runtime/phase.py"), "verify", PHASE],
             cwd=self.checkout, env=self.environment, text=True, encoding="utf-8",
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
         try:
             deadline = time.monotonic() + 20
             while time.monotonic() < deadline:
-                events = self.events()
-                if events and events[0].get("committed"):
+                verifier_events = [event for event in self.events(include_verifier=True) if event["kind"] == "verifier"]
+                if verifier_events and verifier_events[0].get("report_written"):
                     break
                 if process.poll() is not None:
-                    self.fail("Coordinator exited before interruption: " + str(process.communicate()))
+                    self.fail("Verifier coordinator exited before interruption: " + str(process.communicate()))
                 time.sleep(0.025)
             else:
-                self.fail("Worker did not commit before interruption timeout")
+                self.fail("Verifier did not write its report before timeout")
             process.terminate()
             process.communicate(timeout=10)
-            release.touch()
-            deadline = time.monotonic() + 10
-            while time.monotonic() < deadline and not self.events()[0].get("finished"):
-                time.sleep(0.025)
-            self.assertTrue(self.events()[0].get("finished"), "Committed worker did not finish")
-            self.cli("resume", PHASE, "--workers-stopped")
-            self.assertTrue(self.summary("01-01").is_file())
-            self.assertEqual(len(self.events()), 1)
+            self.cli("verify", PHASE, succeeds=False)
+            self.assertFalse((self.checkout / PHASE_PATH / "01-VERIFICATION.md").exists())
+            self.release_worker(release, kind="verifier")
+            self.cli("verify", PHASE)
+            report = (self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text().split("---", 2)
+            self.assertEqual(yaml.safe_load(report[1])["revision"], verified_revision)
+            self.assertEqual(len([event for event in self.events(include_verifier=True) if event["kind"] == "verifier"]), 1)
         finally:
             release.touch()
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                pending = [event for event in self.events(include_verifier=True) if event["kind"] == "verifier" and not event.get("finished")]
+                if not pending:
+                    break
+                time.sleep(0.025)
             if process.poll() is None:
                 process.kill()
                 process.communicate(timeout=10)

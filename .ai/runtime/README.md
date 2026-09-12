@@ -1,382 +1,168 @@
-# Executable orchestration
+# Phase runtime
 
-`orchestrate.py` runs an approved schedule with Python 3.11+, Git and an
-authenticated GitHub CLI. Each worker phase is a separate subprocess. The
-scheduler waits for process completion, saves receipts, and dispatches tracks
-whose own dependencies have merged. Waves remain a display grouping.
+`phase.py` executes the phase procedures described in
+[the workflow guide](../../docs/PHASE-WORKFLOW.md). It consumes Markdown records
+with small YAML frontmatter and [config.yaml](../config.yaml). There are no
+schema files, schedule snapshots or separate work-item registry to maintain.
+Python 3.11+ and PyYAML are required. Install `requirements.txt` into the host's
+virtual environment. Git and the chosen worker executable must be available;
+publication additionally requires an authenticated GitHub CLI.
 
-The Markdown commands describe the planning and role workflow. Install the
-runtime dependency for normal execution, or the preparation bundle when the
-compiler must read YAML:
+Run from an assigned immediate-child worktree under the primary checkout's
+ignored `.worktrees/`. Commands use the current repository and named branch.
+The primary checkout accepts inspection only. Config and phase inputs must be
+committed, and the worktree must be clean before mutation.
 
-```text
-python -m pip install -r .ai/runtime/requirements.txt   # markdown-it-py
-# YAML preparation includes the runtime dependency and PyYAML:
-python -m pip install -r .ai/runtime/requirements-prepare.txt
-```
+## Commands
 
-For executable background dispatch, first merge and synchronize the reviewed
-preparation PR into the primary target. That synchronization is an operational
-precondition; the compiler cannot establish human review or authorization.
-Then run `prepare.py` against that immutable revision and the committed ORCH
-manifest/configuration. [schedule.example.json](schedule.example.json) is only
-an illustrative output snapshot; it is not a file to hand-author or copy.
-The runner does not parse YAML, infer plans, or invent tests. Keep the emitted
-JSON outside tracked content or in the Git common directory.
-
-Preparation reads the committed configuration and the first JSON fence under
-`## Execution schedule` from the same resolved immutable revision. It emits a
-validated snapshot with `sources.revision` and path/blob hashes for both
-configuration and manifest. It validates the fixed paths, supported ID formats,
-PLAN/FIX stages, review counts, dispatch and delivery settings; it does not
-validate arbitrary project guidance. The compiler is preparation only: it does
-not prove human approval, reserve IDs or publish a run. YAML is read only by
-the compiler; the runner consumes JSON.
-
-Render a record template to stdout and save it yourself after success:
-
-```text
-python .ai/runtime/render_record.py .ai/templates/PLAN.md .ai/plans/backlog/PLAN-001-example.md
-```
-
-The helper takes exactly `TEMPLATE DESTINATION`, writes rendered source-relative
-content to stdout, and creates no record; see [record templates and moves](../RULES.md#record-templates-and-moves).
-Save that output in the assigned worktree only after the command succeeds;
-lifecycle moves use the callable `rebase_record_links` helper with the whole
-move mapping.
-
-For a failure-safe immutable snapshot, capture stdout before creating the final
-file, validate JSON, and use an exclusive UTF-8 write. This PowerShell example
-resolves the common Git directory and revision, checks `$LASTEXITCODE`, and
-never exposes a partial snapshot:
-
-```powershell
-$root = (git rev-parse --show-toplevel 2>$null).Trim()
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($root)) { throw 'could not resolve repository root' }
-$common = (git rev-parse --path-format=absolute --git-common-dir 2>$null).Trim()
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($common)) { throw 'could not resolve absolute Git common directory' }
-$revision = (git rev-parse --verify HEAD 2>$null).Trim()
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($revision)) { throw 'could not resolve immutable revision' }
-$dir = Join-Path $common 'orchestration/snapshots'
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$path = Join-Path $dir ("$revision-" + [guid]::NewGuid().ToString("N") + ".json")
-$raw = & python .ai/runtime/prepare.py .ai/state/orchestration/ORCH-001.md --repository $root --ref $revision --config .ai/config.yaml
-if ($LASTEXITCODE -ne 0) { throw 'snapshot preparation failed; no snapshot was saved' }
-$json = $raw -join "`n" | ConvertFrom-Json -ErrorAction Stop
-$text = $raw -join "`n"
-$utf8 = [System.Text.UTF8Encoding]::new($false)
-$temp = "$path.tmp"
-$stream = [System.IO.File]::Open($temp, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
-try {
-  $bytes = $utf8.GetBytes($text); $stream.Write($bytes, 0, $bytes.Length)
-  $stream.Dispose(); [System.IO.File]::Move($temp, $path)
-} catch {
-  $stream.Dispose(); Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
-  throw
-}
-```
-
-Use the same unique path for `--validate`, execution, status and resume:
-
-```text
-python .ai/runtime/orchestrate.py /path/to/snapshot.json --validate
-python .ai/runtime/orchestrate.py /path/to/snapshot.json
-python .ai/runtime/orchestrate.py /path/to/snapshot.json --status
-```
-
-If validation or execution fails, retain the original immutable snapshot for
-resume and write a new revision path for a new preparation.
-
-Validation alone is read-only. Execution requires the caller's authorization
-to build and publish the selected PLANs. Run it from a clean checkout of the
-target branch. That checkout is reserved for the scheduler until it exits.
-The same command resumes delivery receipts after interruption. Exit 0 means
-every scheduled track merged; exit 1 preserves blocked work and reports why.
-Recovery commands below update a receipt and exit; invoke the normal run command
-afterward to continue scheduling.
-
-## Worker contract
-
-`worker_command` is an argv array, never a shell string. Placeholders are
-`{worktree}`, `{phase}`, `{sandbox}`, `{schema_file}` and `{result_file}`.
-The assignment arrives on stdin, and also as JSON in `ORCH_CONTEXT`; the
-result destination is `ORCH_RESULT`. Return the supplied JSON schema. Worker
-exit failure, invalid output, missing output and `cannot_review` block the
-track. A successful process exit alone never authorizes a merge.
-
-The supplied Codex adapter uses fresh `exec --ephemeral` processes, an output
-schema and a final-message file. Those interfaces are documented in
-[Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode).
-Use an authenticated local CLI and the user's configured model. The supplied
-adapter is the supported route; a custom host is outside this runtime and must
-explicitly implement the same contract. The adapter requests `workspace-write` for
-writers and `read-only` for review. Build/document workers commit each PLAN
-step; the coordinator audits their ordered commit history and owns correction
-commits. Configure the host's worker permissions to support scoped Git commits
-in the assigned checkout, including its required Git metadata.
-A permission failure parks the track;
-the runner never switches to unrestricted permissions to get past it.
-
-Full tracks use one build process, two cold code reviews, then a lightweight
-documentation process and two fresh documentation reviews, with at most one
-correction between each pair. Pure documentation tracks (empty code and source
-documentation paths) use readiness, the documentation author and two
-documentation reviews, with one optional correction. There is no third review
-or second immediate fix pass. All review severities are recorded. A reviewer must supply
-evidence and a stable root-cause key, not just a severity or opinion.
-
-Code reviewers receive the original PLANs, unchanged contracts, Research notes,
-source and filtered diff. Documentation agents receive the accumulated
-implementation/code-review handoff and verify its claims against actual code.
-Each [agent file](../agents/README.md) defines that role's inputs and methods. Context
-separation is enforced by the host's tool permissions and the prompt, not a
-filesystem sandbox supplied by this script. The runner detects changed HEAD
-or dirty files after read-only phases.
-
-Each track schedule declares `documentation_paths` explicitly (possibly empty)
-as a subset of `owned_paths`, disjoint from `code_paths`, and restricted to
-`.md`, `.markdown`, `.rst` or `.adoc` files; directory scopes must not include
-source files. The snapshot also carries `documentation_model` and a separate
-`documentation_worker_command` containing `{model}`. An unavailable lightweight
-route blocks instead of falling back to the code model. Results include
-`implementation_complete`, `documentation_complete`, `spec_coverage`,
-`resolved_intake`, durable `phase_attempts`, phase receipts,
-`code_reviewed_sha` and `documentation_reviewed_sha`. Immutable
-`plan_source_sha` keeps later PLAN notes from weakening the original promise.
-If `readiness_worker_command` is absent, readiness explicitly falls back to the
-code worker command; this is a snapshot choice, never YAML parsing at runtime.
-Old unfinished runs reconcile with their original compatible schedule and
-receipts; deleting receipts or changing the schedule fingerprint does not
-evade the review count.
-
-## Protocol version 3
-
-Set `protocol_version: 3` in the JSON snapshot. The assigned PLAN uses the
-[PLAN template's Execution contract](../templates/PLAN.md#execution-contract):
-`intent_changes`, ordered `steps` with stable IDs and build/document phases,
-and `completed_intake` paths. Runtime reads this contract at the original
-revision before allocating the worktree.
-
-Each build/document step commit includes this trailer:
-
-```text
-PLAN-Step: .ai/plans/backlog/PLAN-001-example.md#implement
-```
-
-Receipts retain `build_step_commits` and `document_step_commits`. Missing,
-combined, empty or out-of-order step commits fail the audit. The `--reconcile`
-interface can consume completed step commits after interruption using the
-inspected HEAD. Older unfinished schedules keep their compatible runtime and
-receipts until reconciled; do not silently upgrade an in-flight run.
-
-Optional track fields:
-
-| Field | Value |
-| --- | --- |
-| `research_paths` | Exact separately owned `.ai/research/*.md` paths |
-| `source_documentation_paths` | Exact code files for later comments/docstrings |
-| `source_documentation_check` | Non-Python equivalence argv using `{before}` and `{after}` temporary files |
-
-For Python, the runtime compares ASTs with docstrings removed. This checks
-executable syntax rather than proving arbitrary program equivalence; projects
-that inspect `__doc__` need behavior checks for those consumers as well.
-Other languages use the project-supplied equivalence command.
-
-Results include `spec_coverage` entries with `plan`, `spec` and code
-`evidence`, and `resolved_intake` entries with `path` and completion
-`evidence`. Findings carry `impact`: missing_code, missing_functionality,
-missing_spec_coverage, editorial or unrelated. The schema distinguishes
-overall implementation coverage from editorial cleanup.
-
-The schedule reserves 20 IDs per track for each of FIX, INTAKE, SPEC, ADR and
-AMD under [Scheduling and IDs](../RULES.md#scheduling-and-ids). Build/fix workers
-may create new scoped FIX/INTAKE records; their IDs are audited and retained
-alongside coordinator-generated findings.
-
-To propose a range for inspection, run the helper with a supported kind
-(`FIX`, `INTAKE`, `SPEC`, `ADR`, `AMD`, `PLAN`, `ORCH` or `RES`):
-
-```text
-python .ai/runtime/record_ids.py FIX --count 1 --repository .
-python .ai/runtime/record_ids.py FIX --count 20 --repository .
-```
-
-It prints JSON with `kind`, `first`, `last` and `reserved: false`. The helper
-does not reserve IDs or create records. Serialized allocation and publication
-remain the coordinator's responsibility under
-[Scheduling and IDs](../RULES.md#scheduling-and-ids); workers use only issued
-blocks.
-
-The runtime accepts `max_process_attempts` from 1 through 3 (default 2), and
-`done_partition` values `quarter`, `month` or `year`; lifecycle moves use the
-selected partition. Worktrees must be immediate children of the primary's fixed
-`.worktrees/` root. Runtime delivery requires `forge: github`,
-`merge_strategy: merge`, `auto_merge: auto` and `cleanup_on_merge: true`.
-Custom top-level paths or ID formats are rejected, as are linked or nested
-worktree roots. The compiler reads YAML only while preparing the snapshot,
-including `lifecycle.done_partition`; the runtime reads only that JSON value.
-Do not manually copy configuration into a schedule or edit an existing resume
-snapshot. Prepare a new immutable snapshot from a new synchronized revision.
-
-## Review outcomes and deferred work
-
-- Confirmed code defects produce `FIX` files in `.ai/fixes/open/`, including
-  minor and out-of-scope defects. Documentation and contract corrections each
-  produce their own `INTAKE` in `.ai/plans/intake/`; questions also use INTAKE.
-  Valid findings survive blocked results and failed edit audits in durable
-  `deferred/<track>/` FIX/INTAKE copies under the run directory. `report_file`
-  in the queue identifies the readable copy. Reports enter the worktree only
-  after its edits pass audit. Repeated findings update severity and location,
-  retaining each round's evidence and any attempted correction summary.
-- The fixer can edit only `code_paths`. A missing or wrong contract is an
-  INTAKE, not permission to redefine correctness during a fix. Original PLAN
-  documentation promises remain part of the final documentation phase.
-- Completion uses [RULES: Definition of done](../RULES.md#definition-of-done).
-  Missing required code/functionality or overall SPEC coverage prevents merge.
-  Editorial and unrelated findings can remain on a complete result, with the
-  actual verdict retained as `changes_requested`/`ready_with_followups`.
-  The former `residual_findings` configuration override is rejected.
-- Failed tests, incomplete implementation, inconclusive review, PR failures,
-  merge conflicts and formal GitHub requests for changes are blocked outcomes.
-  Independent tracks continue. Dependencies of blocked tracks wait.
-- Records remain open until a later defect pass verifies before/after proof.
-  A cold review omitting an earlier finding does not silently close its FIX.
-  `followups.json` marks a queue eligible when its affected tree is available
-  and stopped workers have been checked.
-   A parked track with findings and its waiting dependents are listed explicitly
-   and do not prevent examination of those findings. A finding is eligible when
-   its affected integrated or preserved tree is available; unrelated unfinished
-   PLANs do not delay eligibility.
-  A fresh read-only worker looks through the code FIX reports, attempted proof
-  and current code, including preserved unmerged worktrees, recording which
-  tree was examined and the per-FIX assessment in the receipt. This audit
-  does not restart the original track's review/fix loop or close unproved FIXes.
-  Open reports from earlier runs are included, so finishing the last PLAN run
-  does not lose defects deferred by an earlier one.
-
-## Ownership and resources
-
-Declare exact files or directory prefixes ending in `/`. Globs, repository-wide
-ownership and path traversal are rejected. `code_paths` must be a subset of
-`owned_paths`. Include the PLAN itself and every promised SPEC/ADR/doc change
-in ownership. The runner compares the actual diff, including both sides of
-renames, against this declaration. Shared STATE, journal and orchestration
-records are always coordinator-owned. Runtime FIX/INTAKE files are allocated
-from disjoint reserved ranges, with existing-ID collisions rejected.
-
-Tracks with intersecting ownership or exclusive resource names wait for one
-another. Assign unique port/database/cache names in `environment`, and declare
-each shared service in `resources`. Worktrees do not isolate databases, ports,
-external APIs or filesystem writes by arbitrary processes. An undeclared
-resource cannot be detected by this runner. A parked track retains its resource
-reservation; investigate its processes before reusing it.
-
-## Delivery and recovery
-
-One delivery worker refreshes the target, merges that exact revision
-into the completed track, runs the required commands on the integrated tree,
-pushes that head, and waits for configured and protected required GitHub checks.
-Optional checks do not gate delivery. CI waits leave the dispatch loop free to
-start independent work; target Git operations remain serialized. Branch protection must
-require those checks with **Require branches to be up to date before merging**.
-Protection must also apply to administrators; the runner rejects a bypassable
-administrator configuration for this guarantee.
-This server-side condition prevents a target advance between local validation
-and the merge request from silently bypassing integration checks. The runtime
-supports GitHub merge commits, not squash/rebase or merge queues. It never uses
-an administrator bypass or treats absent/skipped required checks as passed.
-
-The PR records the reviewed source SHA separately from the integrated head.
-The documentation batch, including checked source comments/docstrings, follows
-code review. Only generated finding records and lifecycle moves may follow the
-last documentation review;
-target integration imports already-landed changes and is validated again.
-The scheduler validates the entire closing set before moving completed PLANs
-and evidenced, declared INTAKE items to `done/<configured period>/` using
-`lifecycle.done_partition`; these moves reach the target only when the PR merges. A blocked
-PR's local move does not count as completion. Shared STATE/journal updates
-remain coordinator work and are not written concurrently by runtime workers.
-`--match-head-commit` binds the merge to the checked head. The runner then fetches,
-fast-forwards the target, verifies commit ancestry and compares the remote merge
-tree with the tested tree. Only then can dependents start or cleanup occur.
-
-Cleanup uses non-forced worktree removal and branch deletion, and refuses dirty
-files, undeclared ignored output and advanced remote branches. Python bytecode
-is disabled for workers/checks, and Python cache, temporary-directory and XDG
-cache environment variables point to run-owned scratch directories outside the
-worktree. Other tools can declare generated directories in a track's optional
-`disposable_paths`, for example `[".pytest_cache/"]`. These must be absent at
-allocation, ignored by Git, contain no tracked files and have no redirected
-paths. Only those directories are removed automatically. No unrelated branches,
-worktrees or ignored local files are deleted.
-
-Receipts and worker output live under `<git-common-dir>/orchestration/<run>/`.
-An OS lock excludes concurrent schedulers for the same repository. Atomic JSON
-receipts preserve the schedule hash, review count, PR number and merge evidence.
-Unfinished earlier runs must be reconciled before a different run starts.
-
-An interrupted writer is **not automatically replayed**: its child process may
-still exist and its last commit may have succeeded. The run parks it and keeps
-the receipt. Reconcile the process, result and Git state before recovery; never
-delete a receipt to reset the review counter.
-
-```text
-python .ai/runtime/orchestrate.py schedule.json --retry api
-python .ai/runtime/orchestrate.py schedule.json --reconcile api --expected-head <sha> --workers-stopped
-python .ai/runtime/orchestrate.py schedule.json --abandon api --expected-head <sha> --workers-stopped
-```
-
-For inflight readiness, `--expected-head` is the current primary checkout HEAD;
-for normal phases it is the assigned worktree HEAD.
-
-`--retry` resumes a clean blocked track at its saved coordinator checkpoint,
-such as after a PR service outage or check infrastructure failure. Completed
-phases are reused. A missing or malformed stopped process result may retry at
-the exact unchanged inspected HEAD within `max_process_attempts`; valid blocked,
-`cannot_review` or completed review decisions are preserved and never replayed.
-Partial writer commits require reconciliation and are not replayed.
-`--reconcile` requires the exact inspected worktree HEAD and
-confirmation that its workers/resource users have stopped; it consumes the saved
-result without launching another worker. A failed build with no edits may be
-retried explicitly. Changed HEADs, partial edits and unfinished Git operations
-require reconciliation before retrying.
-
-`--abandon` releases reservations while preserving all files, branches, PRs and
-findings. It never satisfies dependencies or marks work merged. For an inflight
-readiness worker, always supply its exact expected HEAD, including before
-allocation; omission is allowed only when no worktree/process was ever created.
-Readiness attempts are saved per SHA with history and inflight state written
-before launch. A stopped failed readiness with a missing or malformed result at
-A may reconcile at inspected clean synchronized descendant B, retain A's failed
-receipt and attempts, check B's budget, then let the next run launch fresh
-readiness at B. A completed valid rejection is retained; `--retry` requires a
-changed target. Reconcile consumes a valid saved result without replay.
-
-| Recovery case | Action |
+| Invocation | Effect |
 |---|---|
-| Missing/malformed stopped process | Reconcile the stopped process at the exact unchanged clean HEAD within budget, then resume the original schedule |
-| Valid content blocker | Preserve decision; no replay |
-| Partial writer commit | Reconcile exact inspected HEAD; never replay |
-| Delivery interruption | Inspect PR state, finish required checks/merge if still open, then sync/verify/cleanup; reuse completed reviews |
-| Merged cleanup response lost | Verify ancestry and clean up |
-| Abandon | Preserve incomplete branch, worktree, PR and findings |
+| `python .ai/runtime/phase.py new authentication --title "Authentication"` | Allocate the next phase number across registered worktrees; commit pending CONTEXT and a roadmap link |
+| `python .ai/runtime/phase.py check 03` | Read-only structural readiness and dependency checks; does not replace an independent feasibility review |
+| `python .ai/runtime/phase.py status [03]` | Read-only local status, including pending components and next action |
+| `python .ai/runtime/phase.py status 03 --remote` | Also observe the published PR and its checks without editing local status |
+| `python .ai/runtime/phase.py run 03` | Dispatch ready components; audit and integrate committed results |
+| `python .ai/runtime/phase.py resume 03 --workers-stopped` | Reconcile interrupted work after confirming old processes stopped; reuse committed output without replay |
+| `python .ai/runtime/phase.py run 03 --replan --workers-stopped` | Explicit new attempt after reconciliation and approval; retain incorporated work and add correction components |
+| `python .ai/runtime/phase.py verify 03` | Run checks, start a fresh independent verifier and commit the assessment |
+| `python .ai/runtime/phase.py verify 03 --workers-stopped` | Reconcile an interrupted verifier; retry when its saved report is incomplete or stale |
+| `python .ai/runtime/phase.py uat 03` | Create or show a persistent acceptance session |
+| `python .ai/runtime/phase.py uat 03 --case 1 --result pass --note "Observed result"` | Commit an actual human observation; also accepts fail, blocked and skipped |
+| `python .ai/runtime/phase.py publish 03 --authorized --base main [--draft]` | Push and create/update the phase PR; never merge it |
+| `python .ai/runtime/phase.py sync` | Commit a refreshed, derived STATE view |
 
-A new run may start once
-every earlier track is cleaned after merge or explicitly abandoned and released;
-previously issued ID ranges remain reserved. The coordinator can run these
-commands within existing authorization after establishing their preconditions.
+Phase arguments accept a number or full directory name. Read-only status and
+check do not launch agents, reserve IDs or write checkpoints. An empty template
+has no phases and no verification commands until adoption.
 
-A completed remote merge with a
-lost response resumes at sync/verification/cleanup, without another review or PR.
-Fix or check failures preserve the branch and its open records for the later
-defect pass. The coordinator reports unresolved recovery work explicitly.
+## Input and result contract
 
-## Template validation
+[CONTEXT](../templates/CONTEXT.md) owns goal, identified acceptance, decisions
+and actual authorization. `approval: approved` is a recorded human instruction,
+not permission a worker can invent. Open questions remain a coordinator
+judgment: prepare only independent, decided scope for execution.
 
-```text
-python -m unittest discover -s tests -v
-```
+Each [IMPLEMENT](../templates/IMPLEMENT.md) declares kind (`code` or
+`documentation`), prerequisite component IDs, owned paths, exclusive resources,
+acceptance IDs, required documentation paths and meaningful argv checks. Paths
+are exact repository-relative files or directory prefixes ending in `/`. Globs,
+traversal, shared Git metadata and phase-record ownership are rejected. Its own
+SUMMARY is automatically owned. Match case consistently; scheduling treats case
+variants conservatively as overlapping across platforms.
 
-The tests use real temporary repositories and bare remotes, deterministic
-worker subprocesses and simulated GitHub responses. They do not consume model
-tokens or publish test PRs. `.github/workflows/validate.yml` runs this suite.
+The coordinator also owns immutable PROJECT, REQUIREMENTS, RULES and config
+inputs. Broad ownership such as `.ai/` is rejected because it contains those
+inputs. Change them during preparation, then commit and explicitly replan.
+
+Every acceptance outcome needs at least one component. Give substantive guide
+or specification obligations to a documentor component that depends on the code;
+the code component's body points to that handoff. Declare documentation on the
+component responsible for completing or verifying it, not a predecessor finishing
+before it exists. Overlapping files or resources serialize. Dependencies wait
+for integrated commits and passing checks. Cross-phase dependencies need verified
+code and its report on the fetched publication base.
+
+Workers commit actual changes and [SUMMARY](../templates/SUMMARY.md), with
+`status: complete|blocked`, acceptance and documentation coverage. The runner
+audits every commit's paths, clean output, ancestry and nonempty implementation,
+then reruns checks. Exit code zero and summary claims alone do not prove success.
+Required documentation must exist and have summary coverage; the independent
+verifier checks its truth. No runtime can infer product correctness from file
+existence or a command that does not test the intended outcome.
+
+## Worker adapters and context
+
+Configuration commands are argument lists; no shell interpolation is performed.
+Supported substitutions are `{worktree}`, `{assignment}`, `{result}`, `{kind}`,
+`{component}` and `{sandbox}`. Runtime also provides `PHASE_WORKTREE`,
+`PHASE_ASSIGNMENT`, `PHASE_RESULT`, `PHASE_KIND` and `PHASE_COMPONENT` environment
+variables, plus the Markdown assignment on standard input. An optional
+`execution.documentor_command` selects a separate executable/model route.
+
+The coordinator starts fresh processes. Each gets the role, relevant core
+constraints, CONTEXT, its IMPLEMENT, required source and dependency summaries.
+Worker processes do not start agents. The default Codex adapter uses the host's
+configured model. Check the installed host's execution and worktree permissions;
+prompts and Git auditing do not sandbox arbitrary commands or external services.
+
+For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's
+worktree. Do not use `--output-last-message` to write there after a commit.
+For the verifier it is an external report path. The default verifier adapter
+saves its final Markdown message there. Custom adapters may write it directly.
+Verifier YAML is `status: passed|gaps_found|human_needed` and the exact assigned
+`revision`. Required sections are Acceptance, Integration, Documentation and
+Findings. The verifier has its own worktree; any tracked edit or commit invalidates
+its result and preserves the worktree for inspection.
+
+## Integration, failures and recovery
+
+One operating-system lock in the common Git directory protects the coordinator
+and shared Git operations. One coordinator runs per repository at a time;
+components within that phase use `execution.max_parallel` (1–8). This deliberate
+limit avoids concurrent coordinators allocating and integrating against each other.
+
+Operational state is atomic internal YAML under the common Git directory's
+`ai/phases/`, keyed by phase and assigned checkout. It records immutable inputs,
+initial revision, worktrees, processes, checks and integrated commits. Assignment
+prompts and logs live beside it. These are machine-maintained local checkpoints.
+Durable summaries, reports and UAT travel with the phase; a fresh clone does not
+inherit local process checkpoints.
+
+A small supervisor records its process identity before launching the worker.
+Recovery inspects both identities and refuses observable live writers, including
+when a coordinator stopped before saving the worker PID. Missing or ambiguous
+launch evidence requires inspection, not an automatic replay.
+
+Interrupted workers are never automatically restarted. Confirm the recorded
+processes stopped, inspect each worktree, then use resume. A clean committed
+result can be audited and integrated without another worker. Dirty, missing,
+blocked or out-of-scope output stays preserved. An already integrated component
+whose checks failed is rechecked without rerunning its edits. Integration failure
+does not release its dependents. Other successful outputs remain available.
+
+Verifier attempts also preserve their source, worktree, process and result.
+A stopped verifier's valid report can be reused for unchanged source. Use
+`verify --workers-stopped` to retry an incomplete/stale attempt after inspection.
+Checks that change tracked files or commits stop for inspection, even if the
+check itself reports success. Commit or resolve preserved changes before retrying.
+After inspecting and correcting a check mutation, use explicit replanning to
+recheck incorporated work. Ordinary resume cannot clear an inspection finding.
+
+Changes to execution inputs require explicit replanning. Keep incorporated
+component instructions as history; add a new correction component instead of
+rewriting completed instructions. Update CONTEXT only with authorized decisions,
+commit inputs, and use `run --replan --workers-stopped`. Incomplete worktrees and
+prior checkpoint generations are retained for audit. The runtime does not force
+cleanup, retry indefinitely or merge a phase into its publication base.
+
+Old dispatcher attempts must finish or be inspected using their original
+repository revision. There is no silent conversion of old checkpoints.
+
+## Verification, UAT and publication
+
+Independent reports name the reviewed source revision and a content fingerprint.
+Only generated STATE, this phase's verification/UAT and interruption note are
+excluded from that fingerprint. Changed code, docs, instructions or checks
+invalidate verification. Modifying the report invalidates its recorded attestation.
+Component and project checks run again at publication.
+
+When CONTEXT requires UAT, every acceptance case must have a current passing
+observation and a note. Pending, failed, blocked and skipped cases prevent
+publication; skipped means unresolved, even with a reason. Changes in tested
+content start a new session after re-verification and retain prior observations.
+
+`--authorized` records authorization already supplied by the human. Publication
+pushes one phase branch and creates/updates its PR. It reports observed GitHub
+checks. PR creation can start CI; it does not imply checks have finished or the
+PR is ready. Configure `publication.required_checks` and use status with `--remote`
+to inspect them. A delivered status requires an observed merge of the published
+revision. No command merges a PR or moves the primary branch.
+
+## Validation
+
+Run `python -m unittest discover -s tests -v` from the test environment.
+Integration tests use temporary real repositories, isolated component worktrees,
+deterministic workers and a local bare publication remote. Only GitHub's API
+boundary is simulated. They test execution, ownership, dependency availability,
+failure preservation, recovery, stale evidence and publication without merging.
+The separate [hook suites](../hooks/README.md) check optional advisory notices.

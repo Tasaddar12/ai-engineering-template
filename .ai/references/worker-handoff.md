@@ -31,9 +31,10 @@ documentation can be verified unchanged with a reason; listing a path alone is
 not proof. A blocked result preserves findings and safe partial work without
 claiming successful integration. Only the coordinator integrates commits.
 
-The verifier writes a report at an external result path and leaves the checkout
-unchanged. Its `revision` must identify the assigned HEAD. The coordinator stores
-that report after auditing the tree. There is no worker-authored status registry.
+The verifier returns a complete report for the host adapter to save at the external
+result path. A custom adapter may write it directly. The checkout stays unchanged,
+and `revision` identifies the assigned HEAD. The coordinator stores the report
+after auditing the tree. There is no worker-authored status registry.
 
 ## Revision and recovery
 
@@ -41,3 +42,8 @@ Runtime checkpoints preserve the assignment inputs and observed state. If the
 worker exits or the host interrupts, inspect commits and the result before retrying.
 A committed result may be recoverable without another worker. Uncommitted or
 out-of-scope output requires reconciliation, not automatic acceptance.
+
+Verifier attempts retain their process identity, source revision, result path and
+worktree. Reuse requires a stopped process and valid current evidence. Follow
+phase-verify with --workers-stopped when inspection establishes that a fresh
+verification attempt is needed; component resume does not restart a reviewer.
