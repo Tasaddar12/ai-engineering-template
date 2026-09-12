@@ -45,9 +45,16 @@ section, with a short reason. For example:
 ```
 
 A worker reads those paths in its own assigned checkout. Commit required skills
-with prepared inputs so the fresh checkout receives them at the recorded input
-revision. Do not rely on a coordinator's global installation, an uncommitted
-working copy, or the worker inheriting the conversation.
+before dispatch. Each fresh worker receives its recorded assigned base revision,
+including changes already integrated when it starts. Do not rely on a
+coordinator's global installation, an uncommitted working copy, or the worker
+inheriting the conversation.
+
+Skills are not included in the runtime's phase-input fingerprint, so they are
+not frozen to the phase's initial revision. Treat a material change to a required
+method as an assignment change: the coordinator reviews affected scope and
+reconciles active work before further dispatch. A running worker keeps its
+original instructions and checkout; a later worker can receive a newer copy.
 
 Native discovery helps selection; an explicit path also works for another host
 that can read Markdown but does not discover repository skills itself. If names
