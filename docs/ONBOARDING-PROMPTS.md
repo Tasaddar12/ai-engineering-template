@@ -4,6 +4,15 @@ These prompts invoke the documented procedures in ordinary language. Markdown
 command files are not automatically installed slash commands. Adapt the request
 to the project's actual intent and authorization.
 
+## Start a new project
+
+> Use this template to establish the project described in my request. Record the
+> purpose, users, success and boundaries in PROJECT; desired outcomes in
+> REQUIREMENTS; and coherent phase goals and dependencies in ROADMAP. Configure
+> real worker routes and checks, then prepare the next phase in an assigned
+> worktree. Identify consequential decisions that are still missing. Do not
+> invent product requirements or start implementation unless I have authorized it.
+
 ## Inspect before adoption
 
 > Inspect this repository and our existing documentation. Use the onboarding
@@ -38,6 +47,15 @@ to the project's actual intent and authorization.
 > for independent components, integrate and check their results, update required
 > documentation, obtain independent verification, and fix actionable findings.
 > Commit and push a pull request. Do not merge; tell me when it is ready.
+
+## Merge an approved PR and clean up
+
+> Finish the authorized changes and documentation in the existing assigned
+> worktree, review and fix actionable findings, commit and push the existing PR.
+> Verify its final revision and required checks, then merge it through the normal
+> repository process. Confirm the merge, fast-forward the primary checkout and
+> remove only this work's clean merged worktrees and branches. Preserve unrelated
+> or incomplete work and report the final outcome.
 
 ## Repair a small defect
 

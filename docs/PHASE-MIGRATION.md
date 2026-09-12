@@ -2,11 +2,16 @@
 
 ## Authorization and scope
 
-The user requested this reference document and authorized implementation in a
-new worktree, commits, pushing a pull request, independent review, and fixing
-findings. The user explicitly prohibited merging. The migration implements the
-phase-based recommendation from this conversation. It does not adopt the
-template into a fictional product or fill in its project identity.
+The original request authorized this reference document, implementation in a
+new worktree, commits, a pull request, independent review and fixes, with the PR
+left open. On 2026-09-12 the user extended that authorization to complete the
+project documentation, push, merge and clean up. The
+[final delivery authorization](#final-documentation-and-delivery-authorization)
+below supersedes the original leave-open boundary for this migration.
+
+The migration implements the phase-based recommendation from this conversation.
+It does not adopt the template into a fictional product or fill in its project
+identity.
 
 The user rejected INTAKE and standalone PLAN lifecycles, milestones, work-item
 hierarchies, and JSON schema requirements. Those exclusions govern this work.
@@ -204,8 +209,9 @@ change. Preserve their advisory behavior.
 
 Use temporary real Git repositories and deterministic worker fixtures for runtime
 tests. Test actual transitions and evidence, not just presence of wording. Review
-the code and documentation independently, fix findings, repeat affected checks,
-push, and leave the PR open for the user. Retain the implementation worktree.
+the code and documentation independently, fix findings, and repeat affected
+checks. The original handoff required pushing the PR and retaining it and the
+worktree for review; the later authorization below permits final delivery.
 
 ## Implementation and review outcome
 
@@ -215,8 +221,9 @@ lifecycle files and the snapshot/schema dispatcher have been removed. The two
 historical repair records are unchanged. Project identity and adopting-project
 checks remain deliberately unfilled.
 
-The committed test suite has 47 cases using real temporary Git repositories,
-component worktrees and a local bare publication remote. Local validation passed
+The initial implementation test suite had 47 cases using real temporary Git
+repositories, component worktrees and a local bare publication remote. Local
+validation passed
 the full 44-case suite available at the start of the final run, followed by the
 three additional recovery cases. Both hook suites passed: 49 worktree notices
 and 9 document-ownership notices. Active Markdown links, anchors and template
@@ -238,4 +245,50 @@ and meaningful project checks remain necessary for behavioral correctness. CI
 runs the complete suite on Windows and Linux. PR readiness must follow their
 observed results; this document is not an assertion that remote checks passed.
 
-The worktree and PR are retained for review. Merging remains outside this request.
+The implementation was initially handed off as an open PR with its worktree
+retained for review, in accordance with the original request.
+
+## Final documentation and delivery authorization
+
+On 2026-09-12, after reviewing the explanation of onboarding, phases, agents,
+documentation and dependency waves, the user instructed:
+
+> I like this. Ensure all these details are documented in this projects own
+> documentation in the worktree available, push it for the pull request, then
+> merge and clean up.
+
+This authorizes completing the explanation in the existing worktree, pushing
+[PR #25](https://github.com/Tasaddar12/ai-engineering-template/pull/25), merging
+after final review and successful required checks, synchronizing primary, and
+removing this migration's clean merged worktree and branch. It supersedes the
+earlier instruction to leave this PR open. It does not change the runtime's
+publication boundary: the runtime still never merges a PR.
+
+The consolidated [workflow guide](PHASE-WORKFLOW.md) documents new and existing
+project onboarding, project direction and phase decomposition, all seven agent
+roles and their launch responsibilities, bounded handoffs, dependency waves,
+documentation timing and ownership, conflicting claims, small fixes, commands,
+the annotated file tree, tracking, recovery and authorized delivery. It explains
+which artifacts are optional and which responsibilities are coordinator-led.
+
+The subsequent automated PR review identified three additional defects: case
+folding could authorize a differently spelled path, whitespace trimming could
+alter a NUL-delimited filename during an ownership audit, and an older merged PR
+could make newer branch changes appear delivered. Final corrections use exact
+Git path spelling for authorization, preserve raw path output while keeping
+scheduling conservative, and require the observed published head to match the
+current branch before reporting delivery. Regression checks cover these cases.
+
+Four regression scenarios reproduced the failures against the previous runtime
+revision. All 12 affected checks passed with the corrections, including path
+history, case-sensitive authorization, conservative scheduling, text/raw Git
+output, and delivered-phase handoffs. Independent review found no remaining
+actionable issues in these fixes or the expanded documentation. Final delivery
+still requires successful checks for the final PR revision.
+
+The final delivery sequence is to validate and commit those documentation
+additions, push them to the existing PR, observe successful checks for its final
+revision, merge through the normal repository process, verify and fast-forward
+primary, and remove only the identified merged migration worktree and branch.
+Merge and cleanup completion must be reported from observed evidence, not inferred
+from this authorization or from publication alone.

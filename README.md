@@ -78,7 +78,9 @@ Those Markdown files do not register slash commands. The executable interface is
 `python .ai/runtime/phase.py`; use its [runtime guide](.ai/runtime/README.md)
 for configuration and syntax.
 
-Read the [phase workflow guide](docs/PHASE-WORKFLOW.md) for practical examples,
+Read the [phase workflow guide](docs/PHASE-WORKFLOW.md) for project onboarding,
+agent responsibilities, context handoffs, dependency waves, documentation timing,
+conflict handling, recovery and the full annotated folder structure. Use
 [onboarding prompts](docs/ONBOARDING-PROMPTS.md) for reusable starting requests,
 and [fact ownership](.ai/truth-map.md) for consistency rules.
 The [migration reference](docs/PHASE-MIGRATION.md) records this template redesign.
