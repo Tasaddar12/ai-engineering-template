@@ -1,31 +1,25 @@
----
-tier: contract
-authority: agent
-title: Command entry points
----
-> Contract: follow linked owners rather than duplicating requirements.
+# Command procedures
 
-# Command entry points
+These Markdown files are instructions an assistant can follow. They do not
+register slash commands or install a host dispatcher. A user can name a procedure
+or ask for the same work in ordinary language. The Python CLI supplies the
+executable steps; see [runtime](../runtime/README.md).
 
-All mutating commands use the shared [worktree lifecycle](worktree.md).
+| Procedure | Purpose | CLI where applicable |
+|---|---|---|
+| [onboard](onboard.md) | Establish project context, intent and real checks | Inspection and authorized edits |
+| [worktree](worktree.md) | Assign an isolated checkout | Git worktree operations |
+| [phase-new](phase-new.md) | Receive a request into a stable phase | `new` |
+| [phase-discuss](phase-discuss.md) | Resolve scope, decisions and acceptance | Coordinator edits |
+| [phase-research](phase-research.md) | Investigate relevant questions | Research assignment |
+| [phase-prepare](phase-prepare.md) | Define and check bounded components | `check` |
+| [phase-start](phase-start.md) | Execute ready component assignments | `run` |
+| [phase-verify](phase-verify.md) | Independently assess the integrated outcome | `verify` |
+| [phase-uat](phase-uat.md) | Preserve human acceptance observations | `uat` |
+| [phase-status](phase-status.md) | Report evidence and next action | `status` |
+| [phase-resume](phase-resume.md) | Reconcile interrupted execution | `resume` |
+| [phase-ship](phase-ship.md) | Publish a verified PR within authorization | `publish` |
 
-These are Markdown entry points, not installed slash commands.
-
-- [defer](defer.md)
-- [fix](fix.md)
-- [harvest](harvest.md)
-- [orchestrate-clean](orchestrate-clean.md)
-- [orchestrate-status](orchestrate-status.md)
-- [orchestrate-track](orchestrate-track.md)
-- [orchestrate](orchestrate.md)
-- [plan-archive](plan-archive.md)
-- [plan-block](plan-block.md)
-- [plan-done](plan-done.md)
-- [plan-new](plan-new.md)
-- [plan-review](plan-review.md)
-- [plan-start](plan-start.md)
-- [plan-status](plan-status.md)
-- [spec-amend](spec-amend.md)
-- [worktree](worktree.md)
-- [onboard-pr](onboard-pr.md)
-- [onboard](onboard.md)
+All procedures follow [RULES](../RULES.md). Read-only operations need no new
+worktree or commit. Tracked mutations use the assigned worktree. Related
+preparation, implementation and documentation normally share one phase PR.
