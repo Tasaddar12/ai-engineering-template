@@ -13,10 +13,11 @@ For a new phase, use the assigned integration worktree:
 python .ai/runtime/phase.py new authentication --title "Authentication"
 ```
 
-The runtime creates a numbered stable phase with pending CONTEXT. Treat the name
-above as an example, not a template requirement. Record the original request,
-goal, acceptance candidates, known decisions, dependencies and sources. Add the
-phase to ROADMAP and map applicable REQUIREMENTS without duplicating acceptance.
+The runtime creates a numbered stable phase with pending CONTEXT and a roadmap
+link. Treat the name above as an example, not a template requirement. Record the
+original request, goal, acceptance candidates, known decisions, dependencies and
+sources. Review the generated ROADMAP link and map applicable REQUIREMENTS without
+duplicating acceptance.
 
 An intake request alone does not authorize implementation. Record the real
 instruction in Authorization; leave approval pending when execution is not
