@@ -9,7 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  platform:
+    name: phase tests (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -25,3 +26,15 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: bash .ai/hooks/worktree-confine.test.sh
       - run: bash .ai/hooks/ai-tier-notice.test.sh
+
+  # Keep the existing branch-protection context while checking both platforms.
+  validate:
+    name: validate
+    needs: platform
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require both platform suites
+        env:
+          PHASE_PLATFORM_RESULT: ${{ needs.platform.result }}
+        run: test "$PHASE_PLATFORM_RESULT" = success
