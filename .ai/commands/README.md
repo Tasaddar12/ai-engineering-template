@@ -23,3 +23,12 @@ executable steps; see [runtime](../runtime/README.md).
 All procedures follow [RULES](../RULES.md). Read-only operations need no new
 worktree or commit. Tracked mutations use the assigned worktree. Related
 preparation, implementation and documentation normally share one phase PR.
+
+## Template consumers
+
+The complete [template catalog](../templates/README.md) identifies the producing and consuming roles. [The reference library](../library/README.md) preserves those full definitions.
+The local procedures above connect the main lifecycle to this repository's Python
+runtime; use [adaptation](../references/template-adaptation.md) and the
+[template guide](../../docs/TEMPLATE-GUIDE.md) to distinguish a callable operation
+from a retained upstream method. A named method is not proof that the host has
+registered a slash command or agent type.

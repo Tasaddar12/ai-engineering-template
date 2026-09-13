@@ -23,3 +23,11 @@ rather than replacing earlier results. Required cases must pass before publicati
 Diagnose failures using evidence and route bounded corrections through the phase.
 Preserve the failure and retest the affected case after correction. UAT does not
 replace automated checks or independent code/documentation verification.
+
+## Preserve the full acceptance record
+
+Read the complete [UAT template](../templates/UAT.md), including its update rules,
+gap records and resume behavior. Follow the [runtime contract](../runtime/TEMPLATE-CONTRACT.md)
+for the machine-checked fields. Keep expected behavior, observed results, gaps
+and diagnosis visible. A failed observation remains a gap until a correction is
+verified; only the user can supply a human acceptance observation.

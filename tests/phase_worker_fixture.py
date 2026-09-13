@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -85,6 +86,36 @@ def forge_cli() -> int:
     return 0
 
 
+def full_template_result(root, path, template_name):
+    """Materialize the entire upstream output block, plus real fixture receipts."""
+    sys.path.insert(0, str(root / ".ai/runtime"))
+    from phase_records import file_template, record
+    data, evidence = record(path)
+    template = file_template(root, template_name)
+    body = re.sub(r"\A---\n.*?\n---\n", "", template, count=1, flags=re.S)
+    # These are deterministic test artifacts, not model judgments. Keep every
+    # upstream heading and fill instructional placeholders with fixture evidence.
+    body = re.sub(r"\[[^\]\n]+\]", "Fixture output verified", body)
+    body = body.replace("XX-name", "01-example").replace("{phase}", "01").replace("{plan}", "01")
+    data.update(phase="01-example")
+    if template_name == "summary.md":
+        data.update(plan="01", subsystem="testing", tags=["fixture"], requires=[],
+                    provides=["Assigned fixture output"], affects=[], actuals={"tokens": 10, "tasks": 1, "commits": 1},
+                    **{"tech-stack": {"added": [], "patterns": []},
+                       "key-files": {"created": ["src/01-01.txt"], "modified": []},
+                       "key-decisions": ["Follow assigned fixture"], "patterns-established": [],
+                       "coverage": [{"id": "D1", "description": "Assigned fixture output", "requirement": "R1",
+                                     "verification": [{"kind": "integration", "ref": "fixture check", "status": "pass"}],
+                                     "human_judgment": False}], "duration": "1min", "completed": "2026-09-13"})
+        # Runtime Checks is additive; upstream sections keep their own names.
+        body += "\n## Checks\n\nFixture check asserted assigned output exists; worker verified integrated dependencies.\n"
+    else:
+        data.update(verified="2026-09-13T00:00:00Z", score="1/1 must-haves verified", behavior_unverified=0,
+                    covered_files=["src/01-01.txt"], covered_digest="fixture-only: not an upstream fingerprint")
+        body += "\n" + evidence[evidence.index("## Acceptance"):]
+    write_record(path, data, body)
+
+
 def main() -> int:
     root = Path(os.environ["PHASE_WORKTREE"])
     assignment = Path(os.environ["PHASE_ASSIGNMENT"])
@@ -124,28 +155,32 @@ def main() -> int:
             write_record(
                 result,
                 {"status": verdict, "revision": revision},
-                "# Phase verification\n\n## Acceptance\n\n"
+                "# Phase verification\n\n## Goal Achievement\n\nFixture output works.\n\n"
+                "## Requirements Coverage\n\nR1 exercised.\n\n## Anti-Patterns Found\n\nNone.\n\n"
+                "## Human Verification Required\n\nNone.\n\n## Acceptance\n\n"
                 "Inspected all component outputs and committed summaries.\n\n"
                 "## Integration\n\nThe configured integration check passed.\n\n"
                 "## Documentation\n\nRequired guide paths exist and match the output.\n\n"
                 "## Findings\n\n"
                 + ("The requested behavior is missing.\n" if verdict != "passed" else "None.\n"),
             )
+            if mode == "full-templates":
+                full_template_result(root, result, "verification-report.md")
             event["report_written"] = str(result)
             save_event()
             if mode == "verifier-report-then-wait":
                 await_fixture_release()
             return 0
 
-        matches = list((root / ".ai/phases").glob(f"*/{component}-IMPLEMENT.md"))
+        matches = list((root / ".planning/phases").glob(f"*/{component}-PLAN.md"))
         assert len(matches) == 1, f"No unique instructions for {component}: {matches}"
         instructions = matches[0]
         metadata = frontmatter(instructions)
         for dependency in metadata.get("depends_on", []):
-            dependency_instruction = instructions.with_name(f"{dependency}-IMPLEMENT.md")
+            dependency_instruction = instructions.with_name(f"{dependency}-PLAN.md")
             dependency_summary = instructions.with_name(f"{dependency}-SUMMARY.md")
             assert dependency_summary.is_file(), f"Dependency summary is not integrated: {dependency}"
-            for name in frontmatter(dependency_instruction)["files"]:
+            for name in frontmatter(dependency_instruction)["files_modified"]:
                 assert (root / name).exists(), f"Dependency output is not integrated: {name}"
 
         time.sleep(float(os.environ.get("PHASE_FIXTURE_DELAY", "0")))
@@ -153,11 +188,31 @@ def main() -> int:
             print("Deliberate component failure", file=sys.stderr)
             return 7
 
+        tdd_evidence = ""
+        if mode == "native-tdd":
+            test = root / "tests/test_total.py"
+            test.write_text("import unittest\nfrom src.total import total\n\nclass TotalTests(unittest.TestCase):\n"
+                            "    def test_total_nonempty(self):\n        self.assertEqual(total([1, 2, 3]), 6)\n", encoding="utf-8")
+            git(root, "add", "--", "tests/test_total.py")
+            git(root, "commit", "-m", "test: specify total returns the sum of nonempty inputs")
+            red_commit = git(root, "rev-parse", "HEAD")
+            red = subprocess.run(metadata["checks"][0], cwd=root, capture_output=True, text=True)
+            assert red.returncode == 1 and "FAIL: test_total_nonempty" in red.stderr and "AssertionError: 0 != 6" in red.stderr, red.stderr
+            (root / "src/total.py").write_text("def total(values):\n    return sum(values)\n", encoding="utf-8")
+            green = subprocess.run(metadata["checks"][0], cwd=root, capture_output=True, text=True)
+            assert green.returncode == 0 and "Ran 1 test" in green.stderr, green.stderr
+            git(root, "add", "--", "src/total.py")
+            git(root, "commit", "-m", "feat: implement total for nonempty inputs")
+            green_commit = git(root, "rev-parse", "HEAD")
+            tdd_evidence = (f"\n## TDD Evidence\n\nCommand: {metadata['checks'][0]!r}. Target: TotalTests.test_total_nonempty.\n"
+                            f"RED at {red_commit}: exit {red.returncode}; expected total([1, 2, 3]) = 6, actual 0; AssertionError: 0 != 6.\n"
+                            f"GREEN at {green_commit}: exit {green.returncode}; one named test passed.\n"
+                            "REFACTOR: no further change needed; configured integration check reruns the same behavioral assertion.\n")
         if mode == "repair-bug":
             before = [subprocess.run(argv, cwd=root, capture_output=True).returncode for argv in metadata["checks"]]
             assert any(before), "The regression must fail before repair"
 
-        owned = metadata["files"]
+        owned = metadata["files_modified"] + metadata.get("files_deleted", [])
         documentation = metadata.get("documentation", [])
         if mode == "outside":
             owned = ["outside-ownership.txt"]
@@ -173,12 +228,15 @@ def main() -> int:
             outside.unlink()
             git(root, "add", "--", " safe.txt")
             git(root, "commit", "-m", "Revert the unowned change")
-        if mode == "summary-only":
+        if mode in ("summary-only", "native-tdd"):
             owned = []
         for name in owned:
             if mode == "missing-documentation" and name in documentation:
                 continue
             target = root / name
+            if mode == "delete":
+                target.unlink()
+                continue
             if name.endswith("/"):
                 target /= f"{component}.txt"
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -200,14 +258,22 @@ def main() -> int:
             {
                 "status": "blocked" if mode == "blocked" else "complete",
                 "acceptance": metadata.get("acceptance", []),
+                "requirements-completed": metadata.get("requirements", []),
                 "documentation": [] if mode == "missing-documentation" else documentation,
             },
-            f"# Component {component}\n\n## Changes\n\n"
+            f"# Component {component}\n\n## Accomplishments\n\n"
             f"Implemented the owned paths for {component}.\n\n"
+            "## Task Commits\n\nCommitted fixture output.\n\n## Files Created/Modified\n\nAssigned paths.\n\n"
+            "## Decisions Made\n\nFollow assignment.\n\n## Issues Encountered\n\nNone.\n\n"
+            "## User Setup Required\n\nNone.\n\n"
             f"## Checks\n\n{check_evidence}\n\n"
-            "## Deviations\n\nNone.\n\n## Remaining\n\n"
+            "## Deviations from Plan\n\nNone.\n\n## Next Phase Readiness\n\n"
             + ("The component needs a decision.\n" if mode == "blocked" else "None.\n"),
         )
+        if mode in ("full-templates", "native-tdd"):
+            full_template_result(root, summary, "summary.md")
+        if tdd_evidence:
+            summary.write_text(summary.read_text(encoding="utf-8") + tdd_evidence, encoding="utf-8")
         if result.resolve() != summary.resolve():
             result.parent.mkdir(parents=True, exist_ok=True)
             result.write_text(summary.read_text(encoding="utf-8"), encoding="utf-8")

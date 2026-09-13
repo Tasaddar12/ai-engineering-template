@@ -13,13 +13,40 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 import yaml
 
 
 SOURCE = Path(__file__).resolve().parents[1]
 PHASE = "01-example"
-PHASE_PATH = Path(".ai/phases") / PHASE
+PHASE_PATH = Path(".planning/phases") / PHASE
+
+
+def read_fixture_event(path: Path) -> dict:
+    # Windows can briefly deny opening a destination during atomic replacement.
+    # Retry that sharing race only; persistent errors must still fail the test.
+    for attempt in range(40):
+        try:
+            return yaml.safe_load(path.read_text(encoding="utf-8"))
+        except PermissionError:
+            if attempt == 39:
+                raise
+            time.sleep(0.025)
+
+
+class FixtureEventTests(unittest.TestCase):
+    def test_transient_sharing_error_retries_and_reads_complete_event(self) -> None:
+        with patch.object(Path, "read_text", side_effect=[PermissionError("sharing"), "kind: code\nfinished: 12\n"]) as read, patch("time.sleep") as sleep:
+            self.assertEqual(read_fixture_event(Path("event.yaml")), {"kind": "code", "finished": 12})
+        self.assertEqual(read.call_count, 2)
+        sleep.assert_called_once_with(0.025)
+
+    def test_persistent_permission_error_is_not_hidden(self) -> None:
+        with patch.object(Path, "read_text", side_effect=PermissionError("denied")) as read, patch("time.sleep"):
+            with self.assertRaises(PermissionError):
+                read_fixture_event(Path("event.yaml"))
+        self.assertEqual(read.call_count, 40)
 
 
 class PhaseRuntimeTests(unittest.TestCase):
@@ -46,6 +73,8 @@ class PhaseRuntimeTests(unittest.TestCase):
             SOURCE / ".ai/runtime", self.primary / ".ai/runtime",
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
+        templates = Path(os.environ.get("TEMPLATE_TEST_SOURCE", str(SOURCE / ".ai/templates")))
+        shutil.copytree(templates, self.primary / ".ai/templates")
         (self.primary / "tests").mkdir()
         shutil.copy2(SOURCE / "tests/phase_worker_fixture.py", self.primary / "tests/phase_worker_fixture.py")
         self.write(self.primary, ".gitignore", ".worktrees/\n__pycache__/\n*.pyc\n")
@@ -54,10 +83,10 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.write(self.primary, ".ai/RULES.md", "Preserve approved scope and use assigned worktrees.\n")
         for role in ("coder", "documentor", "verifier"):
             self.write(self.primary, f".ai/agents/{role}.md", f"# {role}\n\nFollow the assigned phase responsibility.\n")
-        self.write(self.primary, ".ai/PROJECT.md", "# Fixture project\n\nExercise phase execution.\n")
-        self.write(self.primary, ".ai/REQUIREMENTS.md", "# Requirements\n\n- R1: Components integrate correctly.\n")
-        self.write(self.primary, ".ai/ROADMAP.md", "# Roadmap\n\n- 01: Exercise phase execution.\n")
-        self.write(self.primary, ".ai/STATE.md", "# State\n\nNo phase has run.\n")
+        self.write(self.primary, ".planning/PROJECT.md", "# Fixture project\n\nExercise phase execution.\n")
+        self.write(self.primary, ".planning/REQUIREMENTS.md", "# Requirements\n\n- R1: Components integrate correctly.\n")
+        self.write(self.primary, ".planning/ROADMAP.md", "# Roadmap\n\n- 01: Exercise phase execution.\n")
+        self.write(self.primary, ".planning/STATE.md", "# State\n\nNo phase has run.\n")
         self.config = {
             "execution": {
                 "max_parallel": 2,
@@ -67,11 +96,11 @@ class PhaseRuntimeTests(unittest.TestCase):
                 "environment": {"PHASE_FIXTURE_EVENTS": str(self.directory / "events")},
             },
             "verification": {
-                "commands": [[sys.executable, "-c", "from pathlib import Path; assert Path('README.md').read_text() == 'Fixture project\\n'"]],
+                "commands": [[sys.executable, "-c", "from pathlib import Path; assert Path('README.md').read_text(encoding='utf-8') == 'Fixture project\\n'"]],
             },
             "publication": {"remote": "origin"},
         }
-        self.write(self.primary, ".ai/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
+        self.write(self.primary, ".planning/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
         self.git(self.primary, "add", "--all")
         self.git(self.primary, "commit", "-m", "Seed phase runtime fixture")
         self.main_revision = self.git(self.primary, "rev-parse", "HEAD")
@@ -127,23 +156,30 @@ class PhaseRuntimeTests(unittest.TestCase):
     ) -> None:
         paths = files or [f"src/{identifier}.txt"]
         self.record(
-            PHASE_PATH / f"{identifier}-IMPLEMENT.md",
+            PHASE_PATH / f"{identifier}-PLAN.md",
             {
-                "kind": kind, "depends_on": depends_on or [], "files": paths,
+                "phase": PHASE, "plan": identifier.split("-")[-1], "type": "execute", "autonomous": True, "wave": 1, "must_haves": {"truths": ["Fixture output works"], "artifacts": paths, "key_links": []},
+                "kind": kind, "depends_on": depends_on or [], "files_modified": paths, "requirements": ["R1"],
                 "resources": resources or [], "acceptance": ["A1"],
                 "documentation": documentation or [],
                 "checks": checks or [[sys.executable, "-c", "from pathlib import Path; assert Path(" + repr(paths[0]) + ").exists()"]],
             },
-            f"# Component {identifier}\n\n## Objective\n\nImplement the assigned fixture component.\n\n"
-            "## Read first\n\nRead phase CONTEXT and summaries of prerequisites.\n\n"
-            "## Implementation\n\nWrite the assigned paths without editing other components.\n\n"
-            "## Verification\n\nRun the component check and configured integration check.\n\n"
+            "<objective>Implement the assigned fixture component.</objective>\n"
+            "<execution_context>@.ai/runtime/TEMPLATE-CONTRACT.md</execution_context>\n"
+            "<context>Read phase CONTEXT and summaries of prerequisites.</context>\n"
+            "<tasks><task type=\"auto\"><name>Implement output</name>"
+            "<files>Assigned paths</files><read_first>Phase CONTEXT</read_first>"
+            "<action>Write assigned paths without editing other components.</action>"
+            "<verify>Run component checks.</verify><done>Assigned outputs work.</done>"
+            "</task></tasks>\n<verification>Run component and integration checks.</verification>\n"
+            "<success_criteria>Checks pass and output works.</success_criteria>\n"
+            "<output>Commit assigned SUMMARY.</output>\n"
             "## Documentation\n\nUpdate every declared documentation path.\n",
         )
 
     def configure(self, **environment: str) -> None:
         self.config["execution"]["environment"].update(environment)
-        self.write(self.checkout, ".ai/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
+        self.write(self.checkout, ".planning/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
 
     def commit(self, message: str) -> None:
         self.git(self.checkout, "add", "--all")
@@ -168,7 +204,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def events(self, *, include_verifier: bool = False) -> list[dict]:
         directory = self.directory / "events"
-        events = [yaml.safe_load(path.read_text(encoding="utf-8")) for path in directory.glob("*.yaml")]
+        events = [read_fixture_event(path) for path in directory.glob("*.yaml")]
         return [event for event in events if include_verifier or event["kind"] != "verifier"]
 
     def summary(self, identifier: str) -> Path:
@@ -211,7 +247,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def forge_calls(self) -> list[list[str]]:
         log = self.directory / "forge.jsonl"
-        return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+        return [json.loads(line) for line in log.read_text(encoding='utf-8').splitlines()] if log.exists() else []
 
     @contextmanager
     def live_worker_after_coordinator_interruption(self, *, crash_before_pid_save: bool = False):
@@ -288,7 +324,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def test_runs_component_commits_summary_and_verifies_phase(self) -> None:
         self.cli("run", PHASE)
-        self.assertEqual((self.checkout / "src/01-01.txt").read_text(), "01-01 implemented\n")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "01-01 implemented\n")
         self.assertTrue(self.summary("01-01").is_file())
         self.cli("verify", PHASE)
         self.assertTrue((self.checkout / PHASE_PATH / "01-VERIFICATION.md").is_file())
@@ -304,8 +340,8 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.configure(PHASE_FIXTURE_MODE="repair-bug")
         self.commit("Prepare reproducible arithmetic defect")
         self.cli("run", PHASE)
-        self.assertIn("Regression before repair: [1]", self.summary("01-01").read_text())
-        self.assertIn("Regression after repair: [0]", self.summary("01-01").read_text())
+        self.assertIn("Regression before repair: [1]", self.summary("01-01").read_text(encoding='utf-8'))
+        self.assertIn("Regression after repair: [0]", self.summary("01-01").read_text(encoding='utf-8'))
         self.cli("verify", PHASE)
 
     def test_independent_components_overlap_and_use_sibling_worktrees(self) -> None:
@@ -342,7 +378,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         events = sorted(self.events(), key=lambda event: event["started"])
         self.assertEqual(len(events), 2)
         self.assertGreaterEqual(events[1]["started"], events[0]["finished"])
-        self.assertEqual((self.checkout / "src/shared.txt").read_text().splitlines(), [
+        self.assertEqual((self.checkout / "src/shared.txt").read_text(encoding='utf-8').splitlines(), [
             f"{events[0]['component']} implemented", f"{events[1]['component']} implemented",
         ])
 
@@ -382,19 +418,19 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.git(self.primary, "worktree", "add", "-b", "codex/second-phase", str(next_checkout), "origin/main")
         self.checkout = next_checkout
         self.cli("new", "dependent", "--title", "Use the delivered first phase")
-        next_phase = Path(".ai/phases/02-dependent")
-        source_context = (self.checkout / PHASE_PATH / "01-CONTEXT.md").read_text().split("---", 2)[2]
+        next_phase = Path(".planning/phases/02-dependent")
+        source_context = (self.checkout / PHASE_PATH / "01-CONTEXT.md").read_text(encoding='utf-8').split("---", 2)[2]
         self.record(
             next_phase / "02-CONTEXT.md",
             {"phase": "02", "approval": "approved", "depends_on": [PHASE], "uat": False},
             source_context,
         )
-        source_instruction = (self.checkout / PHASE_PATH / "01-01-IMPLEMENT.md").read_text().split("---", 2)
+        source_instruction = (self.checkout / PHASE_PATH / "01-01-PLAN.md").read_text(encoding='utf-8').split("---", 2)
         metadata = yaml.safe_load(source_instruction[1])
-        metadata.update(files=["src/02-01.txt"], checks=[[
+        metadata.update(phase="02-dependent", plan="01", files_modified=["src/02-01.txt"], checks=[[
             sys.executable, "-c", "from pathlib import Path; assert Path('src/01-01.txt').exists() and Path('src/02-01.txt').exists()",
         ]])
-        self.record(next_phase / "02-01-IMPLEMENT.md", metadata, source_instruction[2])
+        self.record(next_phase / "02-01-PLAN.md", metadata, source_instruction[2])
         self.commit("Prepare phase depending on delivered behavior")
         self.cli("check", "02-dependent")
         self.cli("run", "02-dependent")
@@ -539,7 +575,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         command = (
             "from pathlib import Path; import subprocess; p=Path('check-created.txt'); "
             "apply=Path.cwd().name == 'phase' and not p.exists(); "
-            "p.write_text('outside component ownership') if apply else None; "
+            "p.write_text('outside component ownership', encoding='utf-8') if apply else None; "
             "subprocess.run(['git','add','check-created.txt'],check=True) if apply else None; "
             "subprocess.run(['git','commit','-m','Check changed source'],check=True) if apply else None"
         )
@@ -593,7 +629,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         events = self.events()
         self.assertEqual(len(events), 2)
         self.assertEqual({event["component"] for event in events}, {"01-01", "01-02"})
-        self.assertEqual((self.checkout / "src/01-01.txt").read_text(), "01-01 implemented\n")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "01-01 implemented\n")
         self.assertTrue(self.summary("01-02").exists())
 
     def test_summary_only_commit_is_not_implementation(self) -> None:
@@ -602,7 +638,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.commit("Prepare summary-only worker")
         self.cli("run", PHASE, succeeds=False)
         self.assertFalse(self.summary("01-01").exists())
-        self.assertEqual((self.checkout / "src/01-01.txt").read_text(), "Existing behavior\n")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "Existing behavior\n")
 
     def test_blocked_summary_cannot_claim_component_completion(self) -> None:
         self.configure(PHASE_FIXTURE_MODE="blocked")
@@ -620,8 +656,8 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def test_changed_inputs_do_not_reuse_completed_assignments(self) -> None:
         self.cli("run", PHASE)
-        instruction = self.checkout / PHASE_PATH / "01-01-IMPLEMENT.md"
-        instruction.write_text(instruction.read_text() + "\nA newly changed implementation requirement.\n", encoding="utf-8")
+        instruction = self.checkout / PHASE_PATH / "01-01-PLAN.md"
+        instruction.write_text(instruction.read_text(encoding='utf-8') + "\nA newly changed implementation requirement.\n", encoding="utf-8")
         self.commit("Change execution target after completion")
         self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
         self.assertEqual(len(self.events()), 1)
@@ -705,16 +741,16 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertTrue(uat.is_file())
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "blocked", "--note", "External fixture unavailable")
-        self.assertIn("External fixture unavailable", uat.read_text())
+        self.assertIn("External fixture unavailable", uat.read_text(encoding='utf-8'))
         self.cli("uat", PHASE)
-        self.assertIn("External fixture unavailable", uat.read_text())
+        self.assertIn("External fixture unavailable", uat.read_text(encoding='utf-8'))
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "fail", "--note", "Observed missing behavior")
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "skipped", "--note", "Scenario has not been exercised")
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "pass", "--note", "The complete acceptance scenario passed")
-        self.assertIn("The complete acceptance scenario passed", uat.read_text())
+        self.assertIn("The complete acceptance scenario passed", uat.read_text(encoding='utf-8'))
         self.publish()
         self.assertFalse(any("merge" in call for call in self.forge_calls()))
 
@@ -774,7 +810,7 @@ class PhaseRuntimeTests(unittest.TestCase):
             self.assertFalse((self.checkout / PHASE_PATH / "01-VERIFICATION.md").exists())
             self.release_worker(release, kind="verifier")
             self.cli("verify", PHASE)
-            report = (self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text().split("---", 2)
+            report = (self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text(encoding='utf-8').split("---", 2)
             self.assertEqual(yaml.safe_load(report[1])["revision"], verified_revision)
             self.assertEqual(len([event for event in self.events(include_verifier=True) if event["kind"] == "verifier"]), 1)
         finally:

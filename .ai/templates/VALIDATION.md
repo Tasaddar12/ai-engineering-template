@@ -1,29 +1,101 @@
-# Phase NN validation
+---
+phase: "{N}"
+slug: "{phase-slug}"
+# status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
+# audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
+status: draft
+nyquist_compliant: false
+wave_0_complete: false
+created: "{date}"
+---
 
-## Strategy
+# Phase {N} — Validation Strategy
 
-How the phase outcome will be demonstrated at the integrated revision.
+> Per-phase validation contract for feedback sampling during execution.
 
-## Coverage
+---
 
-| Acceptance | Component/check reference | Expected evidence |
-|---|---|---|
-| A1 | NN-01 checks | Observable result |
+## Test Infrastructure
 
-## Prerequisites
+| Property | Value |
+|----------|-------|
+| **Framework** | {pytest 7.x / jest 29.x / vitest / go test / other} |
+| **Config file** | {path or "none — Wave 0 installs"} |
+| **Quick run command** | `{quick command}` |
+| **Full suite command** | `{full command}` |
+| **Estimated runtime** | ~{N} seconds |
 
-Test infrastructure, fixtures, external resources and setup needed before checks.
+---
 
-## Integration
+## Sampling Rate
 
-Connections between components and their failure paths. A file's existence is
-not proof that the application calls it.
+- **After every task commit:** Run `{quick run command}`
+- **After every plan wave:** Run `{full suite command}`
+- **Before `/workflow:verify-work`:** Full suite must be green
+- **Max feedback latency:** {N} seconds
 
-## Documentation
+---
 
-Required SPEC/guide paths and how claims/examples will be checked. Executable
-commands live in config or IMPLEMENT to avoid competing copies.
+## Per-Task Verification Map
 
-## Human acceptance
+| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
+|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
+| {N}-01-01 | 01 | 1 | REQ-{XX} | T-{N}-01 / — | {expected secure behavior or "N/A"} | unit | `{command}` | ✅ / ❌ W0 | ⬜ pending |
 
-Cases requiring UAT, expected observations and any genuine human-only limitations.
+*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+---
+
+## Wave 0 Requirements
+
+- [ ] `{tests/test_file.py}` — stubs for REQ-{XX}
+- [ ] `{tests/conftest.py}` — shared fixtures
+- [ ] `{framework install}` — if no framework detected
+
+*If none: "Existing infrastructure covers all phase requirements."*
+
+---
+
+## Manual-Only Verifications
+
+| Behavior | Requirement | Why Manual | Test Instructions |
+|----------|-------------|------------|-------------------|
+| {behavior} | REQ-{XX} | {reason} | {steps} |
+
+*If none: "All phase behaviors have automated verification."*
+
+---
+
+## Validation Sign-Off
+
+- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
+- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
+- [ ] Wave 0 covers all MISSING references
+- [ ] No watch-mode flags
+- [ ] Feedback latency < {N}s
+- [ ] `nyquist_compliant: true` set in frontmatter
+
+**Approval:** {pending / approved YYYY-MM-DD}
+
+
+<!-- LOCAL-ADOPTION:START -->
+## Local adoption — read before using this source
+
+This complete authoring guide retains its source content, examples, and methods.
+Only recorded namespace/reference substitutions and explicit local conflict
+corrections have been made. Source attribution and exact original hashes are
+isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
+
+Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
+fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
+The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
+`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
+names, hooks, and Node CLI examples describe supporting source capabilities;
+this import does not install or activate them. Source catalog pointers in examples
+identify provenance, not executable command arguments. Retained specialty workflows are full source
+guidance for explicit future integration, not promises of installed features.
+Local rules, assigned worktrees, recorded authorization, runtime ownership and
+verification safeguards govern execution. The local runtime never merges.
+<!-- LOCAL-ADOPTION:END -->

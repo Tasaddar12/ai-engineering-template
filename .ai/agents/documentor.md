@@ -20,6 +20,6 @@ instructions. For every obligation, state updated and verified, verified unchang
 not applicable with a reason, or unresolved. A missing required document or
 unsupported functional claim remains a gap.
 
-Commit the documentation and [SUMMARY](../templates/SUMMARY.md) with a descriptive
+Commit the documentation and [SUMMARY](../templates/summary.md) with a descriptive
 message. Report actual checks, covered paths, decisions requiring attention and
 remaining issues. Do not edit shared status, delegate, integrate or publish.

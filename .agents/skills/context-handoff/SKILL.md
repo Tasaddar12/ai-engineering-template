@@ -13,7 +13,7 @@ or authorize restarting processes.
 
 | Reader | Useful context | Existing destination |
 |---|---|---|
-| Fresh component worker | Objective, acceptance, decisions, ownership, interfaces, prerequisites, required source/skills, checks and result path | IMPLEMENT and runtime assignment |
+| Fresh component worker | Objective, acceptance, decisions, ownership, interfaces, prerequisites, required source/skills, checks and result path | PLAN and runtime assignment |
 | Coordinator or dependent worker | Actual changes, commits, results, deviations and unresolved needs | SUMMARY |
 | Returning coordinator | Current revision, completed scope, uncertain processes/results, pending decisions and next safe action | Optional .continue-here.md and existing phase evidence |
 

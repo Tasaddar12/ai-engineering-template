@@ -3,7 +3,7 @@
 Read [RULES](../RULES.md), CONTEXT, relevant current SPECs, research and code.
 Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 
-1. Define bounded components using [IMPLEMENT](../templates/IMPLEMENT.md). Each
+1. Define bounded components using [PLAN](../templates/phase-prompt.md). Each
    component must state its outcome, owned paths, dependencies, shared interfaces,
    acceptance IDs, required reads, commands and documentation obligations.
    Select useful [repository skills](../../docs/AGENT-SKILLS.md) for the actual
@@ -17,7 +17,7 @@ Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
    each required document on the component that will cover it; reference later
    documentation handoffs in coder prose rather than claiming future coverage.
 4. Write VALIDATION when the phase needs shared test setup, manual checks or a
-   coverage explanation. Command values belong to config or IMPLEMENT; reference
+   coverage explanation. Command values belong to config or PLAN; reference
    them rather than keeping competing copies.
 5. Have an independent [checker](../agents/phase-checker.md) assess substantial
    phases. Record its findings and resolution in CONTEXT preparation notes.
@@ -34,3 +34,25 @@ one bounded instruction and before/after regression evidence, but can omit
 research and a lengthy validation document.
 
 Continue with [phase-start](phase-start.md) when execution is authorized.
+
+## Complete plans and independent checking
+
+Read the entire [phase prompt](../templates/phase-prompt.md),
+[planner prompt](../templates/planner-subagent-prompt.md),
+[Planner method](../library/agents/planner.md) and relevant
+[planning workflow](../library/workflows/plan-phase.md) sections. Preserve the full
+artifact structure: objective, execution context, source context, task-level
+files/read-first/action/verification/done criteria, success criteria and summary
+output. Derive `must_haves` backward from the goal, including actual connections
+between components. Read the examples explaining false dependencies and useful
+vertical slices. Apply the [runtime contract](../runtime/TEMPLATE-CONTRACT.md)
+for executable metadata; do not replace these detailed tasks with five generic
+headings.
+
+For substantial phases, the coordinator assigns preparation and checking to fresh
+independent agents. The local Python `check` command is structural inspection,
+not the checker agent. Give the checker the completed plans, context and actual
+source; use [Plan-checking method](../library/agents/plan-checker.md) with local
+[adaptation](../references/template-adaptation.md). Correct blockers and repeat affected
+assessment before execution. Record the reviewer and findings, not merely
+"checked".

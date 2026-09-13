@@ -21,3 +21,20 @@ Commit authorized context changes. Continue to [research](phase-research.md)
 when uncertainty warrants it, or [prepare](phase-prepare.md) when the approach
 is sufficiently understood. A changed approved target must be reconciled with
 any active execution attempt before more dispatch.
+
+## Template and downstream use
+
+Read the complete [context template](../templates/context.md) and its good/bad
+examples before authoring. Use domain-specific decision categories, numbered
+decisions, canonical references with real paths, reusable code insights and
+explicit deferred ideas. Preserve the user's locked decisions verbatim where
+required; document delegated discretion separately. The researcher needs to know
+what to investigate and the planner needs to know which choices are fixed.
+
+Use [discussion-log](../templates/discussion-log.md) when a transcript is useful
+and [spec](../templates/spec.md) for a phase-level specification of desired
+behavior. A phase specification is distinct from a current-behavior contract.
+Add the [runtime fields](../runtime/TEMPLATE-CONTRACT.md) to the full context
+output. [Discussion method](../library/workflows/discuss-phase.md) provides the complete
+discussion method; [adaptation](../references/template-adaptation.md) resolves local
+authority, host and storage differences.

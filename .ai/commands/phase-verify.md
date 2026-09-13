@@ -40,3 +40,13 @@ A summary assertion or successful process is not a pass. Report human-only check
 as pending and use [phase-uat](phase-uat.md). Required missing evidence prevents
 publication. Additional review follows the risks and changes; there is no fixed
 limit that strands known repairable work.
+
+## Full verification artifact
+
+Use the complete [verification report](../templates/verification-report.md) and
+[Verifier method](../library/agents/verifier.md) with the
+[local adapter](../references/template-adaptation.md). Trace observable truths, real
+artifacts and critical connections, with requirement coverage, regression evidence,
+anti-pattern findings and human-only checks. Add the assigned revision and
+[runtime result metadata](../runtime/TEMPLATE-CONTRACT.md). Do not substitute
+a short verdict for the full report or equate a string match with working behavior.

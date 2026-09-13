@@ -1,5 +1,7 @@
 """Record navigation and preparation behavior, including fresh-worktree handoffs."""
 from pathlib import Path
+import hashlib
+import os
 import re
 import sys
 import unittest
@@ -12,7 +14,8 @@ import test_phase_runtime as fixtures
 
 SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE / ".ai/runtime"))
-from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record  # noqa: E402
+from phase_runner import validate_summary  # noqa: E402
+from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record, file_template, load_phase  # noqa: E402
 
 
 class PhaseRecordTests(unittest.TestCase):
@@ -24,14 +27,14 @@ class PhaseRecordTests(unittest.TestCase):
     def test_new_phase_stays_pending_and_allocates_across_worktrees(self):
         f = self.fixture
         f.cli("new", "second", "--title", "Second change")
-        context = f.checkout / ".ai/phases/02-second/02-CONTEXT.md"
+        context = f.checkout / ".planning/phases/02-second/02-CONTEXT.md"
         self.assertEqual(record(context)[0]["approval"], "pending")
-        self.assertIn("02-CONTEXT.md", (f.checkout / ".ai/ROADMAP.md").read_text())
+        self.assertIn("02-CONTEXT.md", (f.checkout / ".planning/ROADMAP.md").read_text(encoding='utf-8'))
         self.assertEqual(f.git(f.checkout, "status", "--porcelain"), "")
         sibling = f.primary / ".worktrees/another"
         f.git(f.primary, "worktree", "add", "-b", "codex/another", str(sibling), "codex/phase-test")
         f.cli("new", "third", "--title", "Third change", root=sibling)
-        self.assertTrue((sibling / ".ai/phases/03-third/03-CONTEXT.md").is_file())
+        self.assertTrue((sibling / ".planning/phases/03-third/03-CONTEXT.md").is_file())
         f.cli("run", "02", succeeds=False)
         self.assertEqual(f.events(), [])
         f.assert_primary_untouched()
@@ -41,9 +44,186 @@ class PhaseRecordTests(unittest.TestCase):
         before = f.git(f.checkout, "rev-parse", "HEAD")
         f.cli("sync")
         paths = f.git(f.checkout, "diff", "--name-only", before, "HEAD").splitlines()
-        self.assertEqual(paths, [".ai/STATE.md"])
-        self.assertIn("01-example", (f.checkout / ".ai/STATE.md").read_text())
+        self.assertEqual(paths, [".planning/STATE.md"])
+        self.assertIn("01-example", (f.checkout / ".planning/STATE.md").read_text(encoding='utf-8'))
         f.assert_primary_untouched()
+
+    def test_full_upstream_outputs_execute_verify_uat_and_preserve_authored_state(self):
+        f = self.fixture
+        f.prepare_remote()
+        f.configure(PHASE_FIXTURE_MODE="full-templates")
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        context_data, local_context = record(context_path)
+        context_data["uat"] = True
+        context_body = file_template(f.checkout, "context.md")
+        context_body = context_body.replace("[X]", "01").replace("[Name]", "Example")
+        context_body = context_body.replace("[Clear statement of what this phase delivers — the scope anchor. This comes from ROADMAP.md and is fixed. Discussion clarifies implementation within this boundary.]", "Deliver integrated fixture output.")
+        f.record(fixtures.PHASE_PATH / "01-CONTEXT.md", context_data,
+                 context_body + "\n## Acceptance\n\n- [ ] A1: Assigned output works.\n\n## Authorization\n\nUser requested fixture execution and testing.\n")
+        plan_path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        plan_data, _ = record(plan_path)
+        plan = file_template(f.checkout, "phase-prompt.md")
+        original_metadata = read_yaml(plan.split("---", 2)[1])
+        original_metadata.update(plan_data, wave=1, user_setup=[], must_haves={
+            "truths": ["Assigned output exists after execution"],
+            "artifacts": [{"path": "src/01-01.txt", "provides": "Fixture output"}], "key_links": []})
+        plan_body = plan.split("---", 2)[2]
+        # Checkpoints are conditional examples. This fixture has no human decision
+        # inside execution; actual UAT is exercised separately below.
+        plan_body = re.sub(r'<task type="checkpoint:.*?</task>', "", plan_body, flags=re.S)
+        f.record(fixtures.PHASE_PATH / "01-01-PLAN.md", original_metadata,
+                 plan_body + "\n## Documentation\n\nNo external guide obligation for the fixture.\n")
+        state_path = f.checkout / ".planning/STATE.md"
+        state_path.write_text(file_template(f.checkout, "state.md") + "\nCoordinator note: preserve this decision.\n", encoding="utf-8")
+        f.commit("Prepare full upstream artifact outputs")
+        f.cli("check", "01")
+        f.cli("run", "01")
+        self.assertIn("01-01 implemented", (f.checkout / "src/01-01.txt").read_text(encoding='utf-8'))
+        summary_data, summary_body = record(f.summary("01-01"))
+        self.assertEqual(summary_data["requirements-completed"], ["R1"])
+        self.assertIn("## Performance", summary_body)
+        f.cli("verify", "01")
+        report = f.checkout / fixtures.PHASE_PATH / "01-VERIFICATION.md"
+        self.assertIn("### Key Link Verification", record(report)[1])
+        f.cli("uat", "01")
+        uat = f.checkout / fixtures.PHASE_PATH / "01-UAT.md"
+        data, body = record(uat)
+        self.assertEqual(data["source"], [str(fixtures.PHASE_PATH / "01-01-SUMMARY.md").replace("\\", "/")])
+        self.assertIn("## Current Test", body)
+        self.assertIn("expected: Assigned output works.", body)
+        uat.write_text(uat.read_text(encoding='utf-8') + "\n## Interview Notes\n\nPreserve the user's additional context.\n", encoding="utf-8")
+        f.commit("Record authored UAT context")
+        f.cli("uat", "01", "--case", "1", "--result", "fail", "--note", "Observed issue")
+        f.cli("uat", "01", "--case", "1", "--result", "pass", "--note", "Retest observed output")
+        data, body = record(uat)
+        self.assertEqual(data["status"], "complete")
+        self.assertEqual(len(data["cases"][0]["observations"]), 2)
+        self.assertIn("Preserve the user's additional context.", body)
+        f.cli("sync")
+        self.assertIn("## Accumulated Context", state_path.read_text(encoding='utf-8'))
+        self.assertIn("Coordinator note: preserve this decision.", state_path.read_text(encoding='utf-8'))
+        f.publish()
+        f.assert_primary_untouched()
+
+    def test_legacy_records_and_old_checkpoint_do_not_disappear_from_status(self):
+        f = self.fixture
+        f.write(f.checkout, ".ai/PROJECT.md", "Legacy identity must be reconciled.\n")
+        result = f.cli("status", succeeds=False)
+        self.assertIn("Legacy project records remain", result.stderr)
+        (f.checkout / ".ai/PROJECT.md").unlink()
+        legacy_relative = str(fixtures.PHASE_PATH).replace("\\", "/").replace(".planning/", ".ai/")
+        key = hashlib.sha256((str(f.checkout) + "\n" + legacy_relative).encode()).hexdigest()[:20]
+        path = f.primary / ".git/ai/phases" / f"01-example-{key}" / "state.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text("components: {}\n", encoding="utf-8")
+        result = f.cli("status", "01", succeeds=False)
+        self.assertIn("Legacy checkpoint exists", result.stderr)
+        self.assertTrue(path.exists())
+
+    def test_explicit_files_deleted_allows_removal_with_coverage(self):
+        self.deletion_case(declared=True)
+
+    def test_files_modified_does_not_authorize_unannounced_removal(self):
+        self.deletion_case(declared=False)
+
+    def deletion_case(self, declared):
+        f = self.fixture
+        f.write(f.checkout, "src/obsolete.txt", "Obsolete fixture output.\n")
+        f.component("01-01", files=["src/obsolete.txt"], checks=[[
+            sys.executable, "-c", "from pathlib import Path; assert not Path('src/obsolete.txt').exists()"]])
+        path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        data, body = record(path)
+        if declared:
+            data.update(files_modified=[], files_deleted=["src/obsolete.txt"])
+        f.record(path.relative_to(f.checkout), data, body)
+        f.configure(PHASE_FIXTURE_MODE="delete")
+        f.commit("Prepare declared deletion" if declared else "Prepare undeclared deletion regression")
+        result = f.cli("run", "01", succeeds=declared)
+        self.assertEqual((f.checkout / "src/obsolete.txt").exists(), not declared)
+        if not declared:
+            self.assertIn("undeclared deletion", result.stdout + result.stderr)
+            self.assertTrue(Path(f.events()[0]["worktree"]).exists())
+
+    def test_optional_summary_variant_retains_original_sections_and_adds_required_evidence(self):
+        f = self.fixture
+        metadata, body = record(SOURCE / ".ai/templates/summary-standard.md")
+        metadata.update(status="complete", acceptance=["A1"], documentation=[], **{"requirements-completed": ["R1"]})
+        summary = f.summary("01-01")
+        f.record(summary.relative_to(f.checkout), metadata, body)
+        phase = load_phase(f.checkout, "01", ready=True)
+        with self.assertRaisesRegex(PhaseError, "Decisions Made"):
+            validate_summary(phase, phase.components["01-01"], f.checkout)
+        for title, evidence in (("Decisions Made", "Use assigned output interface."),
+                                ("Deviations from Plan", "None."),
+                                ("Issues Encountered", "None."),
+                                ("User Setup Required", "None."),
+                                ("Checks", "Named fixture check asserted expected output; exit 0.")):
+            body += f"\n## {title}\n\n{evidence}\n"
+        f.record(summary.relative_to(f.checkout), metadata, body)
+        validate_summary(phase, phase.components["01-01"], f.checkout)
+        self.assertIn("## Decisions & Deviations", record(summary)[1])
+
+    def test_native_tdd_feature_plan_runs_named_red_and_green_assertions(self):
+        f = self.fixture
+        f.write(f.checkout, "src/total.py", "def total(values):\n    return 0\n")
+        f.component("01-01", files=["src/total.py", "tests/test_total.py"], checks=[[
+            sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_total.py", "-v"]])
+        path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        metadata, _ = record(path)
+        metadata["type"] = "tdd"
+        source = Path(os.environ.get("TDD_REFERENCE_TEST_SOURCE", str(SOURCE / ".ai/library/references/tdd.md")))
+        reference = source.read_text(encoding="utf-8")
+        native = re.search(r"(?ms)<tdd_plan_structure>.*?^```markdown\n(.*?)^```", reference)[1]
+        body = native.split("---", 2)[2]
+        body = (body.replace("[Feature name]", "Sum nonempty inputs")
+                    .replace("[source file, test file]", "src/total.py, tests/test_total.py")
+                    .replace("[Expected behavior in testable terms]", "total([1, 2, 3]) returns 6; name the assertion test_total_nonempty")
+                    .replace("[How to implement once tests pass]", "Return sum(values) after observing the named assertion fail"))
+        f.record(path.relative_to(f.checkout), metadata, body + "\n## Documentation\n\nNo external guide change required.\n")
+        prepared = path.read_text(encoding="utf-8")
+        path.write_text(re.sub(r"<behavior>.*?</behavior>", "", prepared, flags=re.S), encoding="utf-8")
+        self.assertIn("TDD feature missing <behavior>", f.cli("check", "01", succeeds=False).stderr)
+        self.assertEqual(f.events(), [])
+        path.write_text(prepared, encoding="utf-8")
+        f.configure(PHASE_FIXTURE_MODE="native-tdd")
+        f.commit("Prepare native feature-shaped TDD plan")
+        f.cli("check", "01")
+        f.cli("run", "01")
+        summary = f.summary("01-01").read_text(encoding="utf-8")
+        self.assertIn("AssertionError: 0 != 6", summary)
+        self.assertIn("exit 0; one named test passed", summary)
+        self.assertIn("## Performance", summary)
+        self.assertIn("<feature>", path.read_text(encoding='utf-8'))
+        self.assertNotIn("<tasks>", path.read_text(encoding='utf-8'))
+        history = f.git(f.checkout, "log", "--format=%s")
+        self.assertIn("test: specify total", history)
+        self.assertIn("feat: implement total", history)
+        f.assert_primary_untouched()
+
+    def test_new_phase_refuses_concrete_legacy_sibling_without_losing_it(self):
+        f = self.fixture
+        sibling = f.primary / ".worktrees/legacy-sibling"
+        f.git(f.primary, "worktree", "add", "-b", "codex/legacy-sibling", str(sibling), "codex/phase-test")
+        old = f.write(sibling, ".ai/phases/02-preserved/02-CONTEXT.md", "Preserve old pending work.\n")
+        f.git(sibling, "add", "--all")
+        f.git(sibling, "commit", "-m", "Preserve legacy phase input")
+        # A primary's empty historical README alone must not be the reason to block.
+        f.write(f.primary, ".ai/phases/README.md", "Old directory guide.\n")
+        result = f.cli("new", "next", "--title", "Next phase", succeeds=False)
+        self.assertIn("Legacy phases remain in registered worktree", result.stderr)
+        self.assertIn("legacy-sibling", result.stderr)
+        self.assertEqual(old.read_text(encoding='utf-8'), "Preserve old pending work.\n")
+        self.assertFalse((f.checkout / ".planning/phases/02-next").exists())
+
+    def test_native_plan_rejects_missing_task_action_and_unresolved_checkpoint(self):
+        f = self.fixture
+        path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        original = path.read_text(encoding='utf-8')
+        path.write_text(re.sub(r"<action>.*?</action>", "", original), encoding='utf-8')
+        self.assertIn("task missing <action>", f.cli("check", "01", succeeds=False).stderr)
+        path.write_text(original.replace("autonomous: true", "autonomous: false"), encoding='utf-8')
+        self.assertIn("checkpoint/non-autonomous", f.cli("check", "01", succeeds=False).stderr)
+        self.assertEqual(f.events(), [])
 
     def test_git_text_normalizes_line_endings_while_raw_preserves_them(self):
         f = self.fixture
@@ -55,7 +235,7 @@ class PhaseRecordTests(unittest.TestCase):
 
     def test_readiness_rejects_coordinator_ownership_and_bad_configuration(self):
         f = self.fixture
-        for path in (".ai/", ".AI/PHASES/", ".ai/state.md", ".ai/config.yaml"):
+        for path in (".ai/", ".PLANNING/PHASES/", ".planning/state.md", ".planning/config.yaml"):
             with self.subTest(path=path):
                 f.component("01-01", files=[path])
                 f.commit("Declare invalid coordinator ownership")
@@ -70,7 +250,7 @@ class PhaseRecordTests(unittest.TestCase):
     def test_approved_flag_does_not_accept_placeholder_authorization(self):
         f = self.fixture
         context = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
-        context.write_text(context.read_text().replace(
+        context.write_text(context.read_text(encoding='utf-8').replace(
             "The user approved implementing and verifying this phase in worktrees.", "CHANGEME"
         ), encoding="utf-8")
         f.commit("Leave authorization unresolved")
@@ -83,7 +263,7 @@ class PhaseRecordTests(unittest.TestCase):
         f.config["verification"]["commands"] = [[sys.executable, "-c",
             "from pathlib import Path; import subprocess; "
             "p=Path('check-created.txt'); apply=Path.cwd().name=='phase'; "
-            "p.write_text('Unintended change') if apply else None; "
+            "p.write_text('Unintended change', encoding='utf-8') if apply else None; "
             "subprocess.run(['git','add','check-created.txt'],check=True) if apply else None; "
             "subprocess.run(['git','commit','-m','Unintended check commit'],check=True) if apply else None"]]
         f.configure()
@@ -124,8 +304,18 @@ class OwnershipBoundaryTests(unittest.TestCase):
 class DocumentNavigationTests(unittest.TestCase):
     def test_active_markdown_links_resolve_to_files_and_headings(self):
         documents = [SOURCE / "AGENTS.md", SOURCE / "README.md"]
-        for directory in (".ai", ".agents", "docs"):
-            documents += list((SOURCE / directory).rglob("*.md"))
+        for directory in (".ai", ".agents", ".planning", "docs"):
+            for path in (SOURCE / directory).rglob("*.md"):
+                relative = path.relative_to(SOURCE).as_posix()
+                # Preserved upstream teaching examples are checked by the dedicated
+                # provenance/reference suite, not as active checkout-relative links.
+                if relative.startswith((".ai/library/", ".planning/maintenance/")):
+                    continue
+                if relative.startswith(".ai/templates/") and path.name not in ("ADR.md", "CURRENT-SPEC.md"):
+                    continue
+                if relative == "docs/PHASE-MIGRATION.md":
+                    continue  # Historical paths describe superseded behavior.
+                documents.append(path)
         checked = 0
         for path in documents:
             body = re.sub(r"(?ms)^```.*?^```[^\n]*$", "", path.read_text(encoding="utf-8-sig"))
@@ -172,7 +362,7 @@ class DocumentNavigationTests(unittest.TestCase):
                     metadata, body = record(path)
                     self.assertTrue(metadata)
                     self.assertTrue(body.strip())
-        config = read_yaml((SOURCE / ".ai/config.yaml").read_text(encoding="utf-8"))
+        config = read_yaml((SOURCE / ".planning/config.yaml").read_text(encoding="utf-8"))
         self.assertEqual(config["verification"]["commands"], [])
         with self.assertRaisesRegex(PhaseError, "Duplicate YAML key"):
             read_yaml("approval: pending\napproval: approved\n")

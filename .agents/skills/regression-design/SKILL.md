@@ -47,7 +47,7 @@ Ground the command in existing manifests, configuration and the assigned working
 directory. Verify fixture prerequisites and cleanup; keep tests isolated from
 shared accounts or databases unless that use is already authorized.
 
-Put executable commands in config or IMPLEMENT, with supporting strategy in
+Put executable commands in config or PLAN, with supporting strategy in
 VALIDATION only when useful. Report actual before/after results and revisions
 in the assigned result. Run the checks required by the change and project;
 broaden testing when new failures, risks or changes justify it.

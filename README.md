@@ -1,104 +1,97 @@
-# Phase-based AI engineering
+# Project planning and parallel implementation
 
-A reusable workflow for taking a project outcome through discussion, research,
-parallel implementation, documentation and independent verification.
+A reusable engineering workflow with complete instructional templates, a separate
+`.planning/` project workspace, and a Python runtime for bounded parallel workers.
 Start with [AGENTS.md](AGENTS.md).
 
-A phase keeps decisions and evidence together while giving each coder a small,
-explicit assignment. Independent components run in separate worktrees and
-integrate into a phase branch. One verified phase normally produces one PR.
-**The runtime publishes PRs; it never merges them.**
+**The project identity stays blank until adoption.** Template maintenance records
+are not an adopting project's roadmap or delivery history.
+
+## Start here
+
+| Need | Read |
+|---|---|
+| Understand the complete workflow | [Project and phase workflow](docs/PHASE-WORKFLOW.md) |
+| See features, safeguards and limitations | [Workflow features](docs/WORKFLOW-FEATURES.md) |
+| Select and fill a template correctly | [Template guide](docs/TEMPLATE-GUIDE.md) |
+| Give an agent a starting request | [Onboarding prompts](docs/ONBOARDING-PROMPTS.md) |
+| Configure and run workers | [Runtime guide](.ai/runtime/README.md) and [template contract](.ai/runtime/TEMPLATE-CONTRACT.md) |
+| Select a focused engineering method | [Repository skills](docs/AGENT-SKILLS.md) |
+| Understand the proposed next-stage entry workflows | [Workflow direction](docs/WORKFLOW-DIRECTION.md) |
 
 ## What lives where
 
-```text
-.agents/skills/       Reusable methods, one SKILL.md per focused skill
-.ai/
-  PROJECT.md          Purpose, success and boundaries
-  REQUIREMENTS.md     Desired outcomes and phase mapping
-  ROADMAP.md          Phase goals, order and links
-  STATE.md            Compact derived progress view
-  RULES.md            Shared rules
-  config.yaml         Worker routes, concurrency and real checks
-  codebase/           Optional maps of existing code
-  phases/NN-slug/
-    NN-CONTEXT.md             Scope, decisions and authorization
-    NN-RESEARCH.md            Findings when needed
-    NN-VALIDATION.md          Checking strategy when needed
-    NN-01-IMPLEMENT.md        One component's instructions
-    NN-01-SUMMARY.md          Its committed result
-    NN-02-IMPLEMENT.md        Another component
-    NN-02-SUMMARY.md
-    NN-VERIFICATION.md       Independent integrated assessment
-    NN-UAT.md                Human acceptance when applicable
-  specs/              Verified current behavior
-  decisions/          Significant rationale
-  agents/             Role responsibilities
-  commands/           Phase procedures
-  references/         Details loaded when needed
-  templates/          Artifact examples
-  runtime/            Dispatch, integration, recovery and publication
-docs/                 Human-facing guides
-```
+| Location | Contents | Travels with Git? |
+|---|---|---|
+| `.planning/` | Project intent, requirements, roadmap, state, phase plans, evidence, research, current specs, decisions and project execution settings | Yes, for committed records |
+| `.ai/` | Reusable rules, local procedures and roles, complete templates, supporting guidance, runtime and advisory hooks | Yes |
+| `.agents/skills/` | Focused engineering methods selected for each assignment | Yes |
+| `docs/` | Human-facing usage, feature and architecture guides | Yes |
+| Primary checkout's `.worktrees/` | Assigned integration and worker checkouts | No; ignored local working directories |
+| Git common directory's `ai/phases/` | Runtime lock, process records, attempts, prompts and local logs | No; machine-local operational evidence |
 
-Optional discussion logs and pause notes stay inside the phase. Folders do not
-move to indicate status, and components have no separate record lifecycle.
+## From request to delivery
 
-## The working loop
-
-| Step | Result |
+| Stage | Useful output |
 |---|---|
-| Receive and discuss | CONTEXT with observable acceptance and actual decisions |
-| Research if needed | Relevant findings and source evidence |
-| Prepare and check | Bounded component instructions, ownership and dependencies |
-| Execute | Fresh coder/documentor per ready component |
-| Integrate | Checked prerequisite code available to dependent components |
-| Verify and correct | Independent evidence for behavior and documentation |
-| Accept and publish | Required UAT results and an open verified PR |
+| Onboard | Real intent, inspected baseline, meaningful checks and worker configuration |
+| Define and discuss | Observable phase acceptance, boundaries, decisions and authorization |
+| Research when needed | Evidence that resolves implementation uncertainty |
+| Plan and check | Detailed `NN-CC-PLAN.md` assignments with task actions, checks, dependencies and ownership |
+| Execute and integrate | Fresh bounded workers; committed, audited results become available to dependents |
+| Verify and accept | Independent outcome assessment, corrected gaps, required human observations |
+| Publish and deliver | Visible draft progress when authorized; final checks before readiness and authorized merge |
 
-The coordinator starts workers. File overlap and exclusive resources serialize
-conflicting assignments; a genuine dependency waits for its own integrated result.
-An unrelated slow component does not impose a wave barrier.
+The coordinator starts workers. Independent components run concurrently; shared
+files, exclusive resources and genuine prerequisites constrain scheduling. A
+slow unrelated component does not block every later component behind a wave.
 
-Documentation obligations travel with the change. Coders can update nearby
-explanations, and documentors handle substantial SPECs and guides. Verification
-checks the complete outcome rather than merely counting completed components.
+## Template fidelity and execution
 
-## Getting started
+All 40 adapted templates are retained in full at stable artifact filenames under
+[`.ai/templates/`](.ai/templates/README.md), including teaching guidance, examples,
+counterexamples and consumer descriptions. [Supporting workflow guidance](.ai/library/README.md)
+keeps referenced methods available. [changes.log](changes.log) records adaptations.
+Source attribution and revision history remain in
+[third-party notices](.ai/library/THIRD-PARTY-NOTICES.md) and provenance.
 
-1. Follow [onboard](.ai/commands/onboard.md). Keep this template's PROJECT
-   unfilled until it is adopted into a real project.
-2. Configure the project's actual checks and worker routes in
-   [config.yaml](.ai/config.yaml); install the
-   [runtime dependencies](.ai/runtime/README.md).
-3. Create or reuse an [assigned worktree](.ai/commands/worktree.md), then follow
-   [phase-new](.ai/commands/phase-new.md) through preparation and execution.
+The executable interface remains `python .ai/runtime/phase.py`. Its
+[additive contract](.ai/runtime/TEMPLATE-CONTRACT.md) explains the runtime metadata
+used alongside the complete templates. Library workflow documents and command
+names are supplied guidance; their presence does not install every documented
+command, agent dispatcher or host integration.
 
-The [command catalog](.ai/commands/README.md) contains assistant procedures.
-Those Markdown files do not register slash commands. The executable interface is
-`python .ai/runtime/phase.py`; use its [runtime guide](.ai/runtime/README.md)
-for configuration and syntax.
+`.planning/config.yaml` configures this runtime. The complete library
+`config.json` template is retained separately; its settings are not silently
+translated into Python runtime settings.
 
-Read the [phase workflow guide](docs/PHASE-WORKFLOW.md) for project onboarding,
-agent responsibilities, context handoffs, dependency waves, documentation timing,
-conflict handling, recovery and the full annotated folder structure. Use
-[onboarding prompts](docs/ONBOARDING-PROMPTS.md) for reusable starting requests,
-[agent skills](docs/AGENT-SKILLS.md) for methods agents can select, and
-[fact ownership](.ai/truth-map.md) for consistency rules.
-The [migration reference](docs/PHASE-MIGRATION.md) records this template redesign.
+## Adopt the template
+
+1. Follow [onboard](.ai/commands/onboard.md) in an assigned worktree. Establish the
+   actual project's identity and inspect its baseline before asserting readiness.
+2. Configure real worker routes and checks in
+   [`.planning/config.yaml`](.planning/config.yaml). Install the runtime dependencies.
+3. Select a coherent phase and follow the [local procedures](.ai/commands/README.md)
+   to discuss, research, plan, check and execute it.
+4. Keep required documentation and verification attached to that phase. Complete
+   the user's authorized delivery boundary and preserve unfinished work.
+
+**The runtime publishes PRs and never merges.** When the user authorizes merge
+and cleanup, the coordinator performs those separately after final verification,
+required checks and merge evidence. An open draft is progress visibility.
 
 ## Validation
-
-Run the Python workflow tests with:
 
 ```text
 python -m unittest discover -s tests -v
 ```
 
-Optional advisory hooks have their own Bash suites under `.ai/hooks/`; see
-[hook documentation](.ai/hooks/README.md). They warn about common accidents and
-do not enforce permissions or provide a sandbox.
+Runtime tests use real temporary Git repositories and processes with deterministic
+workers and simulated external boundaries. They establish specific runtime
+behavior, not the quality of every live agent assignment. Optional
+[advisory hooks](.ai/hooks/README.md) have separate Bash suites; they warn and
+return success rather than enforce host permissions.
 
-Checks use real temporary Git fixtures and simulated worker/forge boundaries
-where appropriate. Report actual results and limits rather than assuming a
-configured command has passed.
+[Fact ownership](.ai/truth-map.md) explains which record resolves each kind of
+question. [The earlier migration history](.planning/maintenance/history/phase-migration.md) remains a
+historical account of the prior design.

@@ -13,7 +13,7 @@ rather than maintaining another copy of a rule.
 
 ## Session and authorization
 
-This is a reusable template. Keep [PROJECT](PROJECT.md) unfilled until adoption.
+This is a reusable template. Keep [PROJECT](../.planning/PROJECT.md) unfilled until adoption.
 Template maintenance creates only project records requested by the user.
 Historical records remain history.
 
@@ -37,7 +37,7 @@ Reviewers do not edit or commit the checkout.
 
 PROJECT owns purpose and boundaries; REQUIREMENTS owns desired product outcomes.
 Phase CONTEXT owns exact acceptance, decisions, open questions and execution
-authorization. IMPLEMENT documents supply bounded instructions and reference
+authorization. PLAN documents supply bounded instructions and reference
 that acceptance. Research, transcripts, worker results and status views cannot
 authorize new scope.
 
@@ -58,7 +58,8 @@ reinterpret running workers' assignments.
 
 ## Documents and conflicts
 
-SPECs describe verified current behavior on the deliverable revision. Proposed
+Current specifications under `.planning/specs/` describe verified behavior on
+the deliverable revision. Phase `NN-SPEC.md` records desired behavior. Proposed
 behavior stays in the phase until implemented. Guides explain actual use and
 operation. Significant ADRs preserve rationale; supersede a decision with a new
 ADR and links instead of rewriting its historical reasoning. Git and phase
@@ -116,8 +117,9 @@ Required UAT must pass. A process exit, summary assertion, checkbox or existing
 file is not proof. Bug repairs need reproduction and regression evidence.
 
 Evidence names the tested revision and actual commands/results. Material content
-changes invalidate prior verification. Publication needs authorization, current
-verification and configured nonempty local checks. Observe required remote checks
+changes invalidate prior verification. Final publication readiness needs authorization, current
+verification and configured nonempty local checks. Explicitly authorized draft
+progress pushes may precede completion; describe their unfinished scope honestly. Observe required remote checks
 after creating/updating the PR; pending or failed checks prevent declaring it
 ready. Published, verified and merged are distinct facts. Never claim delivery
 from an open PR or replace failed publication with a local merge.
@@ -153,5 +155,19 @@ grant permission nor create a sandbox, and lexical path detection has limits.
 Run checks appropriate to changed behavior and required project commands. Runtime
 changes need real Git/process workflow tests; hook changes need their Bash suites.
 Report actual outcomes, failures and skips. Checks that repeat implementation
-wording do not establish behavior. [Config](config.yaml) owns command values and
+wording do not establish behavior. [Config](../.planning/config.yaml) owns command values and
 worker routes; [runtime documentation](runtime/README.md) owns the CLI interface.
+
+## Complete template use
+
+Read full templates, including examples, counterexamples, consumer descriptions
+and lifecycle instructions. Do not shorten them or substitute a compact variant
+without an assignment calling for it. Use the artifact block to write project
+records; instructional examples are not real project decisions.
+
+The [template adaptation](references/template-adaptation.md) defines local runtime, host and
+authority differences; [changes.log](../changes.log) records template maintenance
+adaptations. The imported support library supplies complete methods, not installed
+slash commands. Use actual local procedures and the runtime contract for execution.
+Project records belong to `.planning/`; reusable rules, templates and tooling
+belong to `.ai/`.

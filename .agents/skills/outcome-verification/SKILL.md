@@ -50,7 +50,7 @@ Map acceptance and documentation to actual evidence, with the exact revision.
 For findings, give the affected area, reproduction or source evidence, impact
 and needed correction. Separate blocking gaps from optional editorial advice.
 
-Use the assigned [VERIFICATION report](../../../.ai/templates/VERIFICATION.md)
+Use the assigned [VERIFICATION report](../../../.ai/templates/verification-report.md)
 for a phase, or the requested review format for a scoped PR review. A changed
 source needs current evidence; a previous pass or an old merged PR does not
 attest to newer work. Do not publish, merge, alter acceptance or manufacture UAT.

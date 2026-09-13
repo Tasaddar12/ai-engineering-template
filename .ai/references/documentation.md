@@ -1,7 +1,7 @@
 # Documentation coverage
 
 A phase keeps required documentation attached to the behavior that changes.
-IMPLEMENT frontmatter names exact required document paths; code or documentation
+PLAN frontmatter names exact required document paths; code or documentation
 components may satisfy them within their assigned ownership. SUMMARY records
 what was actually covered. The verifier checks the integrated result.
 
