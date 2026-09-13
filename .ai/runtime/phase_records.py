@@ -168,7 +168,8 @@ class Phase:
 
     def fingerprint(self):
         paths = [self.root / ".planning/config.yaml", self.root / ".ai/RULES.md",
-                 self.root / ".planning/PROJECT.md", self.root / ".planning/REQUIREMENTS.md"]
+                 self.root / ".planning/PROJECT.md", self.root / ".planning/REQUIREMENTS.md",
+                 self.root / ".planning/ROADMAP.md"]
         paths += [p for p in self.directory.glob("*.md") if not
                   re.search(r"-(SUMMARY|VERIFICATION|UAT)\.md$", p.name)]
         digest = hashlib.sha256()
@@ -183,7 +184,7 @@ class Phase:
 def planning_boundary(root):
     """Fail explicitly instead of hiding project data or incompatible old attempts."""
     legacy = [str(p.relative_to(root)) for name in
-              ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml", "phases")
+              ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml", "phases", "codebase", "specs", "decisions")
               if (p := root / ".ai" / name).exists()]
     require(not legacy, "Legacy project records remain at " + ", ".join(legacy) +
             "; inspect and migrate them to .planning in an assigned worktree. "
@@ -250,7 +251,7 @@ def load_phase(root, name, ready=False):
         for value in data["files"] + data["documentation"]:
             safe_path(root, value)
             reserved = [".planning/phases/", ".planning/STATE.md", ".planning/PROJECT.md", ".planning/REQUIREMENTS.md",
-                        ".ai/RULES.md", ".planning/config.yaml"]
+                        ".ai/RULES.md", ".planning/config.yaml", ".planning/ROADMAP.md"]
             require(not overlaps([value], reserved),
                     f"{cid}: phase records, STATE and immutable inputs are coordinator-owned; summary ownership is automatic")
         for value in data["documentation"]:

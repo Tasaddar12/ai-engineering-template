@@ -118,6 +118,30 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertIn("Legacy checkpoint exists", result.stderr)
         self.assertTrue(path.exists())
 
+    def test_explicit_files_deleted_allows_removal_with_coverage(self):
+        self.deletion_case(declared=True)
+
+    def test_files_modified_does_not_authorize_unannounced_removal(self):
+        self.deletion_case(declared=False)
+
+    def deletion_case(self, declared):
+        f = self.fixture
+        f.write(f.checkout, "src/obsolete.txt", "Obsolete fixture output.\n")
+        f.component("01-01", files=["src/obsolete.txt"], checks=[[
+            sys.executable, "-c", "from pathlib import Path; assert not Path('src/obsolete.txt').exists()"]])
+        path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        data, body = record(path)
+        if declared:
+            data.update(files_modified=[], files_deleted=["src/obsolete.txt"])
+        f.record(path.relative_to(f.checkout), data, body)
+        f.configure(PHASE_FIXTURE_MODE="delete")
+        f.commit("Prepare declared deletion" if declared else "Prepare undeclared deletion regression")
+        result = f.cli("run", "01", succeeds=declared)
+        self.assertEqual((f.checkout / "src/obsolete.txt").exists(), not declared)
+        if not declared:
+            self.assertIn("undeclared deletion", result.stdout + result.stderr)
+            self.assertTrue(Path(f.events()[0]["worktree"]).exists())
+
     def test_native_plan_rejects_missing_task_action_and_unresolved_checkpoint(self):
         f = self.fixture
         path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"

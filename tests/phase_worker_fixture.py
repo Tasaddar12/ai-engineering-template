@@ -192,7 +192,7 @@ def main() -> int:
             before = [subprocess.run(argv, cwd=root, capture_output=True).returncode for argv in metadata["checks"]]
             assert any(before), "The regression must fail before repair"
 
-        owned = metadata["files_modified"]
+        owned = metadata["files_modified"] + metadata.get("files_deleted", [])
         documentation = metadata.get("documentation", [])
         if mode == "outside":
             owned = ["outside-ownership.txt"]
@@ -214,6 +214,9 @@ def main() -> int:
             if mode == "missing-documentation" and name in documentation:
                 continue
             target = root / name
+            if mode == "delete":
+                target.unlink()
+                continue
             if name.endswith("/"):
                 target /= f"{component}.txt"
             target.parent.mkdir(parents=True, exist_ok=True)
