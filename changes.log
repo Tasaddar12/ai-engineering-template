@@ -1,0 +1,18 @@
+# Template and planning migration changes
+
+Source: open-gsd/gsd-core c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977 (MIT).
+
+This log records adaptations and conflict resolutions, not a shortened replacement
+for upstream templates. Imported guidance must retain its full instructional text.
+
+## 2026-09-13 — Scope and precedence
+
+- The current request authorizes complete upstream templates, a separate .planning
+  data directory, supporting reference reconciliation, and draft progress pushes.
+- Earlier exclusions of milestone templates and phase-local PLAN naming are
+  superseded where they conflict with this request. Optional templates do not
+  create an adopting project or require using every artifact for every change.
+- The phase runtime retains its no-automatic-merge boundary. The coordinator may
+  merge this migration after review and checks under the user's explicit request.
+- Primary has an existing uncommitted .ai/templates/CONTEXT.md edit. Preserve it
+  throughout migration and final synchronization; all work uses assigned worktrees.
