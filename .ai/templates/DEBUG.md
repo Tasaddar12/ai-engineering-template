@@ -21,7 +21,7 @@ hypothesis: [current theory being tested]
 test: [how testing it]
 expecting: [what result means if true/false]
 next_action: [immediate next step — be specific, not "continue investigating"]
-bug_class: null  <!-- assigned at Phase 1.75 — bohrbug|heisenbug-mandelbug|concurrency — routes investigation technique (see .ai/gsd/references/debugger-bug-taxonomy.md) -->
+bug_class: null  <!-- assigned at Phase 1.75 — bohrbug|heisenbug-mandelbug|concurrency — routes investigation technique (see .ai/library/references/debugger-bug-taxonomy.md) -->
 reasoning_checkpoint: null  <!-- populated before every fix attempt — see structured_returns -->
 tdd_checkpoint: null  <!-- populated when tdd_mode is active after root cause confirmed -->
 
@@ -52,10 +52,10 @@ started: [when it broke / always broken]
 ## Resolution
 <!-- OVERWRITE as understanding evolves -->
 
-root_cause: [empty until found — may hold one OR a small set of contributing causes when the AND-gate fires; see .ai/gsd/references/debugger-rca-branching.md]
+root_cause: [empty until found — may hold one OR a small set of contributing causes when the AND-gate fires; see .ai/library/references/debugger-rca-branching.md]
 fix: [empty until applied]
-verification: [empty until verified — holds the nested per-signal fix-acceptance guardrail record (map shape) when active; see .ai/gsd/references/debugger-fix-acceptance.md]
-oracle_type: [empty until the regression test is written — specified|derived|metamorphic|implicit; the assertion's oracle classification per .ai/gsd/references/debugger-repro-hardening.md]
+verification: [empty until verified — holds the nested per-signal fix-acceptance guardrail record (map shape) when active; see .ai/library/references/debugger-fix-acceptance.md]
+oracle_type: [empty until the regression test is written — specified|derived|metamorphic|implicit; the assertion's oracle classification per .ai/library/references/debugger-repro-hardening.md]
 files_changed: []
 ```
 
@@ -75,7 +75,7 @@ files_changed: []
 - If Claude reads this after /clear, it knows exactly where to resume
 - Fields: hypothesis, test, expecting, next_action, reasoning_checkpoint, tdd_checkpoint
 - `next_action`: must be concrete and actionable — bad: "continue investigating"; good: "Add logging at line 47 of auth.js to observe token value before jwt.verify()"
-- `reasoning_checkpoint`: OVERWRITE before every fix_and_verify — seven-field structured reasoning record (hypothesis, confirming_evidence, falsification_test, fix_rationale, blind_spots, candidate_causes, and_gate) — see `gsd-debugger.md` Structured Reasoning Checkpoint
+- `reasoning_checkpoint`: OVERWRITE before every fix_and_verify — seven-field structured reasoning record (hypothesis, confirming_evidence, falsification_test, fix_rationale, blind_spots, candidate_causes, and_gate) — see `debugger.md` Structured Reasoning Checkpoint
 - `tdd_checkpoint`: OVERWRITE during TDD red/green phases — test file, name, status, failure output
 
 **Symptoms:**
@@ -106,7 +106,7 @@ files_changed: []
 
 <lifecycle>
 
-**Creation:** Immediately when /gsd:debug is called
+**Creation:** Immediately when /workflow:debug is called
 - Create file with trigger from user input
 - Set status to "gathering"
 - Current Focus: next_action = "gather symptoms"
@@ -174,19 +174,20 @@ If evidence grows very large (10+ entries), consider whether you're going in cir
 <!-- LOCAL-ADOPTION:START -->
 ## Local adoption — read before using this source
 
-The complete upstream body above is retained from GSD-Core at
-`c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; only recorded reference substitutions
-and explicit local conflict corrections have been made. See
-`.ai/gsd/PROVENANCE.json` for exact source hashes and changes.
+This complete authoring guide retains its source content, examples, and methods.
+Only recorded namespace/reference substitutions and explicit local conflict
+corrections have been made. Source attribution and exact original hashes are
+isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
 
-Read `.ai/gsd/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/gsd-adaptation.md` for local conflict decisions,
+Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. The upstream `config.json`, `/gsd:*` commands, tool
-names, hooks, and Node CLI examples describe GSD's system; this import does not
-install or activate that system. Retained specialty workflows are full source
+`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
+names, hooks, and Node CLI examples describe supporting source capabilities;
+this import does not install or activate them. Source catalog pointers in examples
+identify provenance, not executable command arguments. Retained specialty workflows are full source
 guidance for explicit future integration, not promises of installed features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.

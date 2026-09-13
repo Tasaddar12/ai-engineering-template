@@ -12,7 +12,7 @@ phase: XX-name
 verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
 score: N/M must-haves verified
-covered_files: # #4155 — see .ai/gsd/agents/gsd-verifier.md's "Create VERIFICATION.md" step for what belongs here and how to compute it
+covered_files: # #4155 — see .ai/library/agents/verifier.md's "Create VERIFICATION.md" step for what belongs here and how to compute it
   - .planning/phases/XX-name/{phase_num}-{plan}-PLAN.md
   - .planning/phases/XX-name/{phase_num}-{plan}-SUMMARY.md
   - src/{changed-file}.cts
@@ -188,7 +188,7 @@ None — all verifiable items checked programmatically.
 - `⚠️ PRESENT_BEHAVIOR_UNVERIFIED` — present + wired, but a state transition or cancellation/cleanup/ordering invariant was not exercised by any test. Counts toward `behavior_unverified`, routes to human verification, and is *excluded* from the verified score. Per-truth only — on its own the overall `status:` becomes `human_needed` (unless a higher-precedence `gaps_found` also applies); the item is preserved in `behavior_unverified_items` regardless.
 - `✓ VERIFIED (coincidental-reliance)` — an **advisory** qualifier on a truth that *is* verified but holds for an incidental reason rather than a guaranteed one (#1955): `undeclared-precondition` (state nothing in the phase's artifacts or a declared prerequisite guarantees), `incidental-ordering` (an order or side effect nothing in the code enforces), or `fixture-only` (the test's own setup establishes the precondition; the production path has no equivalent). The base `✓ VERIFIED` token is kept verbatim and leading, so it counts toward the verified score exactly as before — the advisory changes no score and no status, and never produces a human-verification item. Each flagged truth is listed in `coincidental_reliance_items` with the reason and what to harden. Not applied to a truth that never reached `✓ VERIFIED`, nor to a `PASSED (override)` truth.
 
-  **Filling this column — apply the reliance check to every `✓ VERIFIED` truth before writing the row.** Ask why the truth holds and classify the evidence you already recorded, not your confidence in it. Flag it when the evidence names one of the three reasons above. Do NOT flag: a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. The check is endogenous and so weaker than an exogenous tag (`.ai/gsd/references/honest-verifier.md`) — which is why it is advisory and never a gate. The usual fix is to promote the hidden assumption into a declared precondition.
+  **Filling this column — apply the reliance check to every `✓ VERIFIED` truth before writing the row.** Ask why the truth holds and classify the evidence you already recorded, not your confidence in it. Flag it when the evidence names one of the three reasons above. Do NOT flag: a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. The check is endogenous and so weaker than an exogenous tag (`.ai/library/references/honest-verifier.md`) — which is why it is advisory and never a gate. The usual fix is to promote the hidden assumption into a declared precondition.
 - `✗ FAILED` — artifact missing, stub, or unwired
 - `? UNCERTAIN` — can't verify programmatically
 
@@ -351,19 +351,20 @@ None needed until automated gaps are fixed.
 <!-- LOCAL-ADOPTION:START -->
 ## Local adoption — read before using this source
 
-The complete upstream body above is retained from GSD-Core at
-`c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; only recorded reference substitutions
-and explicit local conflict corrections have been made. See
-`.ai/gsd/PROVENANCE.json` for exact source hashes and changes.
+This complete authoring guide retains its source content, examples, and methods.
+Only recorded namespace/reference substitutions and explicit local conflict
+corrections have been made. Source attribution and exact original hashes are
+isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
 
-Read `.ai/gsd/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/gsd-adaptation.md` for local conflict decisions,
+Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. The upstream `config.json`, `/gsd:*` commands, tool
-names, hooks, and Node CLI examples describe GSD's system; this import does not
-install or activate that system. Retained specialty workflows are full source
+`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
+names, hooks, and Node CLI examples describe supporting source capabilities;
+this import does not install or activate them. Source catalog pointers in examples
+identify provenance, not executable command arguments. Retained specialty workflows are full source
 guidance for explicit future integration, not promises of installed features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
