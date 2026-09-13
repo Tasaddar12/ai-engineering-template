@@ -51,3 +51,18 @@ stage; implement the supporting connections needed to make these templates usabl
 - Preserve the existing uncommitted primary CONTEXT edit. Do not overwrite it.
 - Draft publication before completion is explicitly authorized by the user.
   Marking ready and merging still requires final checks and independent review.
+
+## Latest user direction — 2026-09-13
+
+Remove source-project branding from active names, folders and guides. Preserve
+required source attribution in third-party/provenance records. Keep complete
+instructional content while adapting terminology and references consistently.
+
+The user proposed three future entry workflows: feature changes (possibly grouped
+by a feature or milestone spanning phases), bug fixes, and small changes. Start
+from the requested outcome, research and informed questions, then establish phase
+goals. Record this as the proposed next-stage design; do not claim unimplemented
+new dispatch or grouping features.
+
+Independent review findings and their original evidence are in REVIEW-01.md.
+Correct required gaps and obtain current re-review before final readiness/merge.
