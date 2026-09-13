@@ -40,3 +40,19 @@ for upstream templates. Imported guidance must retain its full instructional tex
   upstream imports have a separate provenance/reference audit. Historical
   migration records remain explicitly historical, not current instructions.
 - Hook evidence: 10 document-ownership cases passed on Windows Git Bash.
+
+## 2026-09-13 — Storage/runtime compatibility and documentation
+
+- Project records move to .planning. The Python execution configuration remains
+  YAML at .planning/config.yaml; GSD's complete config.json template is retained
+  separately because its settings are not implemented by this Python adapter.
+- The runtime accepts full GSD PLAN task/XML structure and requirement metadata;
+  local additions carry authorization, checks, resource ownership and evidence.
+  .ai/runtime/TEMPLATE-CONTRACT.md documents the producer/consumer contract.
+- Old .ai planning records, IMPLEMENT artifacts and matching old-path checkpoints
+  now produce actionable migration errors instead of silently appearing empty.
+  Existing interrupted attempts must be inspected with their original runtime.
+- All workflow/data-storage, onboarding, parallel execution, failure handling,
+  verification, delivery and recovery guides are being reconciled against source.
+- Both Windows Git Bash hook suites passed: 10 ownership cases and 49 worktree
+  cases. These are hook results, not a claim that final migration checks passed.
