@@ -46,7 +46,7 @@ class PhaseRuntimeTests(unittest.TestCase):
             SOURCE / ".ai/runtime", self.primary / ".ai/runtime",
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
-        templates = Path(os.environ.get("GSD_TEMPLATE_TEST_SOURCE", str(SOURCE / ".ai/templates")))
+        templates = Path(os.environ.get("TEMPLATE_TEST_SOURCE", str(SOURCE / ".ai/templates")))
         shutil.copytree(templates, self.primary / ".ai/templates")
         (self.primary / "tests").mkdir()
         shutil.copy2(SOURCE / "tests/phase_worker_fixture.py", self.primary / "tests/phase_worker_fixture.py")
@@ -69,7 +69,7 @@ class PhaseRuntimeTests(unittest.TestCase):
                 "environment": {"PHASE_FIXTURE_EVENTS": str(self.directory / "events")},
             },
             "verification": {
-                "commands": [[sys.executable, "-c", "from pathlib import Path; assert Path('README.md').read_text() == 'Fixture project\\n'"]],
+                "commands": [[sys.executable, "-c", "from pathlib import Path; assert Path('README.md').read_text(encoding='utf-8') == 'Fixture project\\n'"]],
             },
             "publication": {"remote": "origin"},
         }
@@ -220,7 +220,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def forge_calls(self) -> list[list[str]]:
         log = self.directory / "forge.jsonl"
-        return [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
+        return [json.loads(line) for line in log.read_text(encoding='utf-8').splitlines()] if log.exists() else []
 
     @contextmanager
     def live_worker_after_coordinator_interruption(self, *, crash_before_pid_save: bool = False):
@@ -297,7 +297,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def test_runs_component_commits_summary_and_verifies_phase(self) -> None:
         self.cli("run", PHASE)
-        self.assertEqual((self.checkout / "src/01-01.txt").read_text(), "01-01 implemented\n")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "01-01 implemented\n")
         self.assertTrue(self.summary("01-01").is_file())
         self.cli("verify", PHASE)
         self.assertTrue((self.checkout / PHASE_PATH / "01-VERIFICATION.md").is_file())
@@ -313,8 +313,8 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.configure(PHASE_FIXTURE_MODE="repair-bug")
         self.commit("Prepare reproducible arithmetic defect")
         self.cli("run", PHASE)
-        self.assertIn("Regression before repair: [1]", self.summary("01-01").read_text())
-        self.assertIn("Regression after repair: [0]", self.summary("01-01").read_text())
+        self.assertIn("Regression before repair: [1]", self.summary("01-01").read_text(encoding='utf-8'))
+        self.assertIn("Regression after repair: [0]", self.summary("01-01").read_text(encoding='utf-8'))
         self.cli("verify", PHASE)
 
     def test_independent_components_overlap_and_use_sibling_worktrees(self) -> None:
@@ -351,7 +351,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         events = sorted(self.events(), key=lambda event: event["started"])
         self.assertEqual(len(events), 2)
         self.assertGreaterEqual(events[1]["started"], events[0]["finished"])
-        self.assertEqual((self.checkout / "src/shared.txt").read_text().splitlines(), [
+        self.assertEqual((self.checkout / "src/shared.txt").read_text(encoding='utf-8').splitlines(), [
             f"{events[0]['component']} implemented", f"{events[1]['component']} implemented",
         ])
 
@@ -392,13 +392,13 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.checkout = next_checkout
         self.cli("new", "dependent", "--title", "Use the delivered first phase")
         next_phase = Path(".planning/phases/02-dependent")
-        source_context = (self.checkout / PHASE_PATH / "01-CONTEXT.md").read_text().split("---", 2)[2]
+        source_context = (self.checkout / PHASE_PATH / "01-CONTEXT.md").read_text(encoding='utf-8').split("---", 2)[2]
         self.record(
             next_phase / "02-CONTEXT.md",
             {"phase": "02", "approval": "approved", "depends_on": [PHASE], "uat": False},
             source_context,
         )
-        source_instruction = (self.checkout / PHASE_PATH / "01-01-PLAN.md").read_text().split("---", 2)
+        source_instruction = (self.checkout / PHASE_PATH / "01-01-PLAN.md").read_text(encoding='utf-8').split("---", 2)
         metadata = yaml.safe_load(source_instruction[1])
         metadata.update(phase="02-dependent", plan="01", files_modified=["src/02-01.txt"], checks=[[
             sys.executable, "-c", "from pathlib import Path; assert Path('src/01-01.txt').exists() and Path('src/02-01.txt').exists()",
@@ -548,7 +548,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         command = (
             "from pathlib import Path; import subprocess; p=Path('check-created.txt'); "
             "apply=Path.cwd().name == 'phase' and not p.exists(); "
-            "p.write_text('outside component ownership') if apply else None; "
+            "p.write_text('outside component ownership', encoding='utf-8') if apply else None; "
             "subprocess.run(['git','add','check-created.txt'],check=True) if apply else None; "
             "subprocess.run(['git','commit','-m','Check changed source'],check=True) if apply else None"
         )
@@ -602,7 +602,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         events = self.events()
         self.assertEqual(len(events), 2)
         self.assertEqual({event["component"] for event in events}, {"01-01", "01-02"})
-        self.assertEqual((self.checkout / "src/01-01.txt").read_text(), "01-01 implemented\n")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "01-01 implemented\n")
         self.assertTrue(self.summary("01-02").exists())
 
     def test_summary_only_commit_is_not_implementation(self) -> None:
@@ -611,7 +611,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.commit("Prepare summary-only worker")
         self.cli("run", PHASE, succeeds=False)
         self.assertFalse(self.summary("01-01").exists())
-        self.assertEqual((self.checkout / "src/01-01.txt").read_text(), "Existing behavior\n")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "Existing behavior\n")
 
     def test_blocked_summary_cannot_claim_component_completion(self) -> None:
         self.configure(PHASE_FIXTURE_MODE="blocked")
@@ -630,7 +630,7 @@ class PhaseRuntimeTests(unittest.TestCase):
     def test_changed_inputs_do_not_reuse_completed_assignments(self) -> None:
         self.cli("run", PHASE)
         instruction = self.checkout / PHASE_PATH / "01-01-PLAN.md"
-        instruction.write_text(instruction.read_text() + "\nA newly changed implementation requirement.\n", encoding="utf-8")
+        instruction.write_text(instruction.read_text(encoding='utf-8') + "\nA newly changed implementation requirement.\n", encoding="utf-8")
         self.commit("Change execution target after completion")
         self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
         self.assertEqual(len(self.events()), 1)
@@ -714,16 +714,16 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertTrue(uat.is_file())
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "blocked", "--note", "External fixture unavailable")
-        self.assertIn("External fixture unavailable", uat.read_text())
+        self.assertIn("External fixture unavailable", uat.read_text(encoding='utf-8'))
         self.cli("uat", PHASE)
-        self.assertIn("External fixture unavailable", uat.read_text())
+        self.assertIn("External fixture unavailable", uat.read_text(encoding='utf-8'))
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "fail", "--note", "Observed missing behavior")
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "skipped", "--note", "Scenario has not been exercised")
         self.publish(succeeds=False)
         self.cli("uat", PHASE, "--case", "1", "--result", "pass", "--note", "The complete acceptance scenario passed")
-        self.assertIn("The complete acceptance scenario passed", uat.read_text())
+        self.assertIn("The complete acceptance scenario passed", uat.read_text(encoding='utf-8'))
         self.publish()
         self.assertFalse(any("merge" in call for call in self.forge_calls()))
 
@@ -783,7 +783,7 @@ class PhaseRuntimeTests(unittest.TestCase):
             self.assertFalse((self.checkout / PHASE_PATH / "01-VERIFICATION.md").exists())
             self.release_worker(release, kind="verifier")
             self.cli("verify", PHASE)
-            report = (self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text().split("---", 2)
+            report = (self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text(encoding='utf-8').split("---", 2)
             self.assertEqual(yaml.safe_load(report[1])["revision"], verified_revision)
             self.assertEqual(len([event for event in self.events(include_verifier=True) if event["kind"] == "verifier"]), 1)
         finally:

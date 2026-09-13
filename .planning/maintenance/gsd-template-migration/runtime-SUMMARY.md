@@ -91,3 +91,27 @@ templates remain checked. Existing real-file/anchor assertions and the >100-link
 coverage floor remain. Dedicated upstream provenance/reference tests inspect the
 preserved teaching library. This follows the coordinator's explicit test ownership
 instruction and avoids treating illustrative project paths as current files.
+
+## Independent-review corrections
+
+| Finding | Correction | Evidence |
+|---|---|---|
+| Native TDD feature artifact rejected for missing tasks | Validate one feature with name/files/behavior/implementation directly; preserve reference structure and add explicit local metadata/docs; require TDD Evidence in summary | Real named assertion returns 0 rather than expected 6 in RED; committed implementation returns 6 in GREEN; integration checks rerun it |
+| Legacy sibling phase allocation could reuse an old ID | Refuse allocation while a registered sibling contains concrete legacy phase directories; preserve old records; empty historical guide directories do not block | Multiworktree regression observes actionable failure, intact old context and no newly allocated directory |
+| Optional summary variants lack default evidence headings | Preserve their original sections and document additive required evidence fields/headings; default remains normal unless variant explicitly selected | Unadapted standard variant rejected; same body plus explicit missing evidence accepted without removing original Decisions & Deviations |
+| Windows locale decoding of UTF-8 project artifacts | Explicit UTF-8 document reads/writes throughout owned tests and fixture code | Four focused tests passed without PYTHONUTF8 set, 19.039s |
+| User requested local terminology | Runtime prose uses full/phase templates; template override is TEMPLATE_TEST_SOURCE; active imported reference paths use .ai/library | Case-insensitive search found no old project brand in owned runtime/test files |
+
+The Python runtime requires RED/GREEN evidence, audits commit ownership and reruns
+final checks; it does not claim to enforce the imported Node pre-GREEN verdict.
+Independent verification remains responsible for assessing whether RED proved the
+intended behavior. The deterministic regression discriminates the named assertion
+failure from import/fixture/zero-test failures. No full suite is claimed for this
+slice; the parent validates the final integrated, rebranded template revision.
+
+Additional changes.log entries:
+
+- Support native feature-shaped TDD plans from the full TDD reference directly; preserve feature/objective/context/verification/success/output fields and add the existing local execution metadata plus TDD Evidence in SUMMARY. Document that Python reruns GREEN and audits evidence but does not install the imported pre-GREEN Node gate.
+- Refuse phase allocation when registered sibling worktrees contain concrete legacy `.ai/phases/NN-name` data; preserve that data and require inspection/migration before allocating IDs. Empty legacy guide directories alone do not block.
+- Document summary variant selection as explicit: retain every original variant section and add all required local evidence headings/metadata; do not silently substitute a shorter variant for the full default.
+- Make owned tests read and write project artifacts explicitly as UTF-8 on Windows; use neutral full-template terminology and TEMPLATE_TEST_SOURCE, with imported references under `.ai/library`.

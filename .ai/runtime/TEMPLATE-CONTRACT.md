@@ -1,4 +1,4 @@
-# Full GSD templates and the local runtime
+# Full phase templates and the local runtime
 
 Read the complete upstream template before authoring or reviewing its output.
 The template's File Template is the output skeleton; examples and teaching
@@ -147,3 +147,45 @@ decimal proposal as a planning artifact until compatible tooling is provided.
 `sync` updates only a dedicated Runtime Status section in the full STATE artifact.
 Project reference, current position, metrics, accumulated context, deferred items
 and session continuity remain coordinator-authored and are never discarded by sync.
+
+## Native TDD feature plans
+
+A `type: tdd` plan uses the complete feature-shaped output in
+[the TDD reference](../library/references/tdd.md). Keep its `<feature>` block with
+`<name>`, `<files>`, `<behavior>` and `<implementation>`, plus objective, context,
+verification, success criteria and output. It does not need artificial `<tasks>`
+or an execution_context section absent from that reference. Add the same local
+ownership, requirement, acceptance, documentation, argv-check, autonomy and wave
+metadata as other plans, and the Documentation handoff section.
+
+The worker writes and commits a named behavioral test first, runs it and records
+why the failure is the expected assertion (RED), then implements and commits the
+passing behavior (GREEN). Refactor only when useful and rerun checks. A startup
+error, fixture failure, zero discovered tests or unrelated assertion is not RED.
+Add `## TDD Evidence` to the complete SUMMARY with the command, target test,
+expected/actual assertion, exit codes, RED/GREEN commit IDs and refactor outcome.
+
+The Python runtime accepts this structure, requires the evidence section, audits
+all commits and reruns final GREEN checks. The independent verifier judges the
+RED evidence and intended outcome. This runtime does not implement the imported
+Node tool's pre-GREEN evidence verdict or config-driven commit-pattern gate;
+those examples remain reference methods, not claims about automatic enforcement.
+
+## Explicitly selected summary variants
+
+The complete default summary remains the normal executable output. The minimal,
+standard and complex variants are retained as optional authoring sources; selecting
+one does not waive integration evidence. Preserve every original variant section
+and add any missing named sections required by this runtime: Accomplishments,
+Task Commits, Files Created/Modified, Decisions Made, Deviations from Plan,
+Issues Encountered, User Setup Required, Next Phase Readiness and Checks.
+Also include status, requirements-completed, acceptance and documentation metadata.
+A combined Decisions & Deviations heading can remain, but it does not substitute
+for the separately reviewable named evidence. TDD plans also add TDD Evidence.
+Do not replace the complete default with a shorter variant without an explicit
+assignment choice; use additional sections, not deleted source guidance.
+
+When allocating a phase, registered sibling worktrees with concrete legacy
+`.ai/phases/NN-name` directories stop allocation. Inspect/migrate that preserved
+worktree with its compatible runtime first. A historical README in an otherwise
+empty legacy directory does not by itself reserve an ID or block allocation.

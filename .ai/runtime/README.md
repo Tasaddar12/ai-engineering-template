@@ -2,7 +2,7 @@
 
 `phase.py` executes the phase procedures described in
 [the workflow guide](../../docs/PHASE-WORKFLOW.md). It consumes Markdown records
-with complete GSD template bodies and additive YAML execution fields and
+with complete phase template bodies and additive YAML execution fields and
 [config.yaml](../../.planning/config.yaml). The Python runtime requires no schema
 files, schedule snapshots or separate work-item registry. Optional upstream
 methods and schema sources remain available in the imported library.

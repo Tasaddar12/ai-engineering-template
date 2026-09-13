@@ -73,7 +73,7 @@ def section(body, name):
 
 
 def xml_section(body, name):
-    """Read GSD's Markdown-bearing XML wrappers without parsing Markdown as XML."""
+    """Read phase-template Markdown-bearing XML wrappers without parsing Markdown as XML."""
     match = re.search(rf"<{re.escape(name)}(?:\s[^>]*)?>(.*?)</{re.escape(name)}>", body, re.S)
     return match[1].strip() if match else ""
 
@@ -264,13 +264,21 @@ def load_phase(root, name, ready=False):
             require(data.get("autonomous") is True and not re.search(r'<task\b[^>]*\btype\s*=\s*[\'"]checkpoint:', content),
                     f"{cid}: checkpoint/non-autonomous plans need coordinator resolution before process dispatch; preserve decisions in CONTEXT and prepare an autonomous continuation")
             require(data.get("user_setup", []) == [], f"{cid}: resolve user_setup with the coordinator and record evidence before dispatch")
-            for tag in ("objective", "execution_context", "context", "tasks", "verification", "success_criteria", "output"):
+            for tag in ("objective", "context", "verification", "success_criteria", "output"):
                 require(bool(xml_section(content, tag)), f"{cid}: missing <{tag}> instructions")
-            tasks = re.findall(r'<task\s+type=[\'"]auto[\'"][^>]*>(.*?)</task>', content, re.S)
-            require(bool(tasks), f"{cid}: prepare at least one executable auto task")
-            for task in tasks:
-                for tag in ("name", "files", "read_first", "action", "verify", "done"):
-                    require(bool(xml_section(task, tag)), f"{cid}: task missing <{tag}> instructions")
+            if data["type"] == "tdd":
+                features = re.findall(r"<feature(?:\s[^>]*)?>(.*?)</feature>", content, re.S)
+                require(len(features) == 1, f"{cid}: TDD plans require exactly one <feature>")
+                for tag in ("name", "files", "behavior", "implementation"):
+                    require(bool(xml_section(features[0], tag)), f"{cid}: TDD feature missing <{tag}> instructions")
+            else:
+                for tag in ("execution_context", "tasks"):
+                    require(bool(xml_section(content, tag)), f"{cid}: missing <{tag}> instructions")
+                tasks = re.findall(r'<task\s+type=[\'"]auto[\'"][^>]*>(.*?)</task>', content, re.S)
+                require(bool(tasks), f"{cid}: prepare at least one executable auto task")
+                for task in tasks:
+                    for tag in ("name", "files", "read_first", "action", "verify", "done"):
+                        require(bool(xml_section(task, tag)), f"{cid}: task missing <{tag}> instructions")
             require(bool(section(content, "Documentation")), f"{cid}: missing Documentation handoff instructions")
         components[cid] = Component(cid, path, data, content)
     visiting, visited = set(), set()
