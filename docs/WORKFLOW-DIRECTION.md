@@ -22,7 +22,7 @@ records and detailed routing rules remain open for the next implementation stage
 ## Three entry paths, shared execution machinery
 
 | Entry path | Typical request | First investigation | Planning result | Scope adjustment |
-|---|---|---|---|---| 
+|---|---|---|---|---|
 | Feature change | Add a capability or change a substantial existing behavior | Trace current behavior, users, interfaces and technical uncertainties; discuss consequential choices | One coherent phase or an ordered group of phase goals, then detailed plans for the next useful phase | Split when outcomes, dependencies or verification need separate phases |
 | Bug fix | A behavior fails, regresses or differs from its valid contract | Reproduce the failure, establish expected behavior, compare hypotheses and isolate the cause | A bounded repair phase with regression evidence and affected documentation | Expand deliberately if evidence reveals a shared architectural cause |
 | Small change | A precise, limited adjustment with a known outcome | Inspect the affected source and relevant contract; check that scope is actually small | One bounded phase/plan using the applicable complete artifact structure | Route into feature discovery or diagnosis if uncertainty or impact grows |

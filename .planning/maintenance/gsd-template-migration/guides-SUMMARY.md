@@ -88,3 +88,56 @@ local-only templates with complete authoring guidance.
 - Coordinator must integrate the final commit, add the proposed adaptations to
   `changes.log`, run final independent review/checks and complete authorized
   publication, merge and cleanup. No required assigned guide coverage remains.
+
+## Follow-up: project-owned naming and proposed entry workflows
+
+**Authorization:** The user's subsequent direction removes source branding from
+our active system while retaining heavy methodological inspiration and complete
+instructional depth. The user also proposed feature-change, bug-fix and
+small-change entry workflows for the next stage.
+
+**Assigned baseline:** Clean `codex/gsd-guides` checkout at `b18b6dc`, with the
+absolute assigned root verified again before writes.
+
+### Completed slices
+
+- `f7d803f`: Reconciled all eight assigned active guides/local templates to
+  project-owned terminology and `.ai/library/` paths. The skill methods table
+  now links local supporting guidance, including bare specialist filenames.
+  Source attribution is referenced through THIRD-PARTY-NOTICES/provenance.
+- `ae43dd9`: Added `docs/WORKFLOW-DIRECTION.md` and navigation from README,
+  PHASE-WORKFLOW and WORKFLOW-FEATURES. Records three proposed entry paths,
+  research/questions before phase goals, optional feature/milestone grouping,
+  common execution safeguards, open choices and demonstration-based validation.
+- Final follow-up commit: corrected a trailing table space and recorded evidence.
+
+### Decisions and changes.log additions
+
+1. Active guides use our own library/workflow terminology. Source attribution and
+   exact revision history remain separate in third-party notices and provenance.
+   The importer/coordinator was informed to preserve the earlier skill-method
+   source pin separately from the full template import revision.
+2. All references to supporting methods now target `.ai/library/`; specialist
+   filenames drop the source prefix. Full templates were not abbreviated, and
+   the local ADR/current-spec teaching content remains intact.
+3. The three entry workflows are a proposed next-stage design. This slice creates
+   no new runtime route, host command or mandatory feature-group registry.
+4. The proposed flow begins with the request and relevant source inspection,
+   uses research/questions to resolve material uncertainty, then derives phase
+   goals. Small changes do not automatically require a separate research report.
+5. Feature/milestone grouping is recorded as an open design choice. Existing
+   phase execution, evidence and ownership remain the shared foundation.
+
+### Follow-up verification and limits
+
+- Inspected 130 local links across the nine assigned active files. Twenty target
+  the planned library/notice migration; each library method resolves through its
+  known original source mapping. Zero unexplained missing targets.
+- Final active-prose scan found no source brand, old source revision strings,
+  old library path, or duplicate replacement wording in assigned files.
+- Final `git diff --check` passed after correcting the table whitespace.
+- The prior history above is retained as migration evidence. This follow-up does
+  not rewrite the actual original attribution or authorization history.
+- No runtime behavior changed or runtime tests added. Final actual renamed-target
+  navigation checks remain for integration after the parallel library rename.
+- No push, integration, merge, branch switch or worker delegation performed.
