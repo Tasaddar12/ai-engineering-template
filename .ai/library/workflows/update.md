@@ -13,14 +13,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 Detect the installed Workflow version, scope, runtime, and config dir.
 
 First, derive `PREFERRED_CONFIG_DIR` and `PREFERRED_RUNTIME` from the invoking prompt's `execution_context` path — this is the one input only the workflow knows:
-- If the path contains `/workflow-core/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`.
+- If the path contains `.ai/library/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`.
 - Infer `PREFERRED_RUNTIME` from the path: `/.claude/` -> `claude`; `/.codex/` -> `codex`; `/.gemini/antigravity-ide/`, `/.gemini/antigravity-cli/`, `/.gemini/antigravity/`, `/.agents/` or `/.agent/` -> `antigravity` (`.agents` is the canonical local Antigravity install dir (#791); `.agent` is the legacy form (#503); see bin/install.js `getDirName('antigravity')`); `/.windsurf/`, `/.devin/` -> `windsurf`; `/.config/kilo/` or `/.kilo/` -> `kilo`; `/.config/opencode/` or `/.opencode/` -> `opencode`; otherwise leave it empty.
 
 Then resolve the install context via the deterministic projection (#498). **Do NOT re-derive scope, runtime, or version by hand** — `update-context` owns that cascade in tested code (`workflow-core/bin/lib/update-context.cjs`), the same way `check-latest-version` owns the package name (#2992):
 
 ```bash
 # Resolve workflow-tools.cjs WITHOUT yet knowing Workflow_DIR. The running workflow lives
-# at <PREFERRED_CONFIG_DIR>/workflow-core/workflows/update.md, so its sibling
+# at <PREFERRED_CONFIG_DIR>.ai/library/workflows/update.md, so its sibling
 # bin/workflow-tools.cjs is the authoritative tool for THIS install. Fall back to a
 # global copy, then to workflow-tools on PATH.
 Workflow_TOOLS=""
@@ -268,7 +268,7 @@ rm -f "$CHANGELOG_TMP"
 ---
 
 ⚠️  **Note:** The installer performs a clean install of Workflow folders:
-- `commands/` will be wiped and replaced
+- `.ai/library/commands/` will be wiped and replaced
 - `workflow-core/` will be wiped and replaced
 - `agents/workflow-*` files will be replaced
 
@@ -277,7 +277,7 @@ global: `~/.claude/`, `~/.config/opencode/`, `~/.opencode/`, `~/.gemini/`, `~/.c
 local: `./.claude/`, `./.config/opencode/`, `./.opencode/`, `./.gemini/`, `./.kilo/`, or `./.codex/`)
 
 Your custom files in other locations are preserved:
-- Custom commands not in `commands/` ✓
+- Custom commands not in `.ai/library/commands/` ✓
 - Custom agents not prefixed with `workflow-` ✓
 - Custom hooks ✓
 - Your CLAUDE.md files ✓

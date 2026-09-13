@@ -366,7 +366,7 @@ If verification fails:
 NODE_REPAIR=$(workflow_run query config-get workflow.node_repair --raw 2>/dev/null || echo "true")
 ```
 
-If `NODE_REPAIR` is `true`: invoke `@./.claude/workflow-core/workflows/node-repair.md` with:
+If `NODE_REPAIR` is `true`: invoke `@.ai/library/workflows/node-repair.md` with:
 - FAILED_TASK: task number, name, done-criteria
 - ERROR: expected vs actual result
 - PLAN_CONTEXT: adjacent task names + phase goal

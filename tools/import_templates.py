@@ -189,7 +189,7 @@ def aliases(mapping: dict[str, str]) -> dict[str, str]:
         variants = {source}
         variants.update(prefix + source for prefix in (
             "~/.claude/", "$HOME/.claude/", "${HOME}/.claude/",
-            "~/.codex/", "$HOME/.codex/", "~/.config/opencode/",
+            "~/.codex/", "$HOME/.codex/", "~/.config/opencode/", "./.claude/", ".claude/", "/",
         ))
         if source.startswith("gsd-core/"):
             variants.add(source.removeprefix("gsd-core/"))
@@ -204,7 +204,13 @@ def aliases(mapping: dict[str, str]) -> dict[str, str]:
 
 def generate(files: dict[str, bytes]) -> dict[str, bytes]:
     mapping = destinations(files)
-    replacements = aliases(mapping | {source + "/": destination + "/" for source, destination in TREES.items()})
+    directories = {source + "/": destination + "/" for source, destination in TREES.items()}
+    for source, destination in mapping.items():
+        source_dir, destination_dir = posixpath.dirname(source), posixpath.dirname(destination)
+        while source_dir not in TREES:
+            directories[source_dir + "/"] = destination_dir + "/"
+            source_dir, destination_dir = posixpath.dirname(source_dir), posixpath.dirname(destination_dir)
+    replacements = aliases(mapping | directories)
     # This upstream registry points at an untracked build product. Link the
     # actual pinned implementation rather than creating a fictitious local CLI.
     replacements["gsd-core/bin/lib/artifacts.cjs"] = SOURCE_URL + "src/artifacts.cts"
@@ -247,7 +253,14 @@ def generate(files: dict[str, bytes]) -> dict[str, bytes]:
             body, namespace_stages = neutral_namespace(body, destination, mapping, catalog)
             content = (body + NOTE).encode()
         else:
-            body, namespace_stages = neutral_namespace(original.decode(), destination, mapping, catalog)
+            body = original.decode()
+            counts = {}
+            for match in pattern.finditer(body):
+                counts.setdefault(match.group(), []).append(match.start())
+            transformations = [{"original": old, "replacement": replacements[old], "count": len(offsets), "offsets": offsets}
+                               for old, offsets in sorted(counts.items())]
+            body = pattern.sub(lambda match: replacements[match.group()], body)
+            body, namespace_stages = neutral_namespace(body, destination, mapping, catalog)
             content = body.encode()
             markdown_edits = []
         generated[destination] = content
@@ -310,7 +323,9 @@ def template_changes(entries):
         "## Shared additive note", "",
         "Every imported Markdown template and Markdown supporting file receives",
         "the following separated local note after its complete upstream body.",
-        "JSON and other non-Markdown files are byte-preserved. The note resolves",
+        "Non-Markdown files receive only reversible namespace/reference substitutions",
+        "where needed, without an appended note; config.json remains byte-preserved.",
+        "The note resolves",
         "local execution authority without deleting upstream system descriptions.", "",
         "````text", NOTE.strip(), "````", "",
         "## Per-template substitutions", "",
