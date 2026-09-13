@@ -191,6 +191,9 @@ Reuse useful Git/process protection and regression-test ideas, not obsolete poli
 assertions. Update both advisory hooks and their tests where paths or policy links
 change. Preserve their advisory behavior.
 
+The archive-retention instruction above applied to the original migration and
+was superseded by the [2026-09-13 cleanup](#retired-repair-archive-cleanup).
+
 ## Required demonstrations before the PR is ready
 
 - A bounded defect has reproduction and regression evidence.
@@ -218,8 +221,9 @@ worktree for review; the later authorization below permits final delivery.
 The phase architecture, executable runtime, roles, procedures, templates and
 documentation are implemented on `codex/phase-workflow-migration`. Active legacy
 lifecycle files and the snapshot/schema dispatcher have been removed. The two
-historical repair records are unchanged. Project identity and adopting-project
-checks remain deliberately unfilled.
+historical repair records were unchanged at that migration revision; the
+[later cleanup](#retired-repair-archive-cleanup) removes their archive. Project
+identity and adopting-project checks remain deliberately unfilled.
 
 The initial implementation test suite had 47 cases using real temporary Git
 repositories, component worktrees and a local bare publication remote. Local
@@ -292,3 +296,14 @@ revision, merge through the normal repository process, verify and fast-forward
 primary, and remove only the identified merged migration worktree and branch.
 Merge and cleanup completion must be reported from observed evidence, not inferred
 from this authorization or from publication alone.
+
+## Retired repair archive cleanup
+
+On 2026-09-13, the user instructed:
+
+> Lets remove the fixes folder since we dont use it anymore.
+
+This supersedes the original migration's instruction to retain the two FIX
+records in the working tree. The cleanup removes `.ai/fixes/`, its folder-diagram
+entry and the obsolete link-check exemption. The records remain available in
+Git history. Current repairs use phase artifacts.
