@@ -175,7 +175,7 @@ def neutral_namespace(body, destination, mapping, catalog):
     for match in re.finditer(r"https?://[^\s<>`\"')]+", body):
         url = match.group().rstrip(".,;")
         if re.search("gsd|get-shit-done", url, re.IGNORECASE):
-            markdown = body[max(0, match.start() - 2):match.start()] == "](" 
+            markdown = body[max(0, match.start() - 2):match.start()] == "]("
             replacements[url] = source_pointer(url, catalog, destination, markdown=markdown)
     stage_one, first = apply_recorded(body, replacements)
     spellings = {match.group() for match in re.finditer("gsd", stage_one, re.IGNORECASE)}

@@ -81,7 +81,7 @@ artifacts that do not have automated local producers yet.
 | `requirements.md`, `roadmap.md`, `state.md` | `.planning/REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`; coordinator and returning sessions. |
 | `context.md`, `discussion-log.md` | Phase CONTEXT and optional DISCUSSION-LOG; preparer, checker, and workers. |
 | `phase-prompt.md`, `planner-subagent-prompt.md` | Phase-local `NN-MM-PLAN.md` and planner assignment; checker and executor. Local ownership and execution fields are additive. |
-| `summary.md`, `summary.compact.md`, `summary-standard.md`, `summary-minimal.md`, `summary-complex.md` | Component SUMMARY; coordinator integration, dependent workers, verifier, and future preparation. Use the full default unless a particular upstream variant is deliberately selected; all require local result fields when consumed by runtime. |
+| `summary.md`, `summary.compact.md`, `summary-standard.md`, `summary-minimal.md`, `summary-complex.md` | Component SUMMARY; coordinator integration, dependent workers, verifier, and future preparation. Use the full default unless a particular upstream variant is deliberately selected; runtime use requires every additive evidence field and missing named section listed in the [variant contract](../runtime/TEMPLATE-CONTRACT.md#explicitly-selected-summary-variants), while retaining all original variant sections. |
 | `research.md` | Phase RESEARCH; preparer and checker. |
 | `research-project/ARCHITECTURE.md`, `FEATURES.md`, `PITFALLS.md`, `STACK.md`, `SUMMARY.md` | `.planning/research/` topic findings and synthesis; project/phase preparation. |
 | `codebase/architecture.md`, `codebase/stack.md` | `.planning/codebase/` maps; onboarding and later reconnaissance. |
