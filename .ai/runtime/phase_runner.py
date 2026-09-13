@@ -293,6 +293,10 @@ def audit_worker(phase, component, entry):
             if path:
                 safe_path(root, path)
                 require(any(owns(prefix, path) for prefix in allowed), f"{component.id}: out-of-scope change: {path}")
+        deleted = git(root, "diff-tree", "--root", "-m", "--no-commit-id", "--no-renames", "--diff-filter=D", "--name-only", "-r", "-z", commit, raw=True)
+        for path in filter(None, deleted.split("\x00")):
+            require(path in component.data.get("files_deleted", []),
+                    f"{component.id}: undeclared deletion: {path}; declare exact files_deleted before dispatch")
     validate_summary(phase, component, root)
     evidence = checks(phase, root, component.data["checks"])
     require(revision(root) == head, "Verification commands must not create commits")
@@ -938,6 +942,6 @@ def new_phase(root, slug, title):
     write_record(context, {"phase": number, "approval": "pending", "depends_on": [], "uat": False}, body)
     roadmap = root / ".planning/ROADMAP.md"
     existing = roadmap.read_text(encoding="utf-8") if roadmap.exists() else "# Roadmap\n"
-    roadmap.write_text(existing.rstrip() + f"\n\n- [{number}: {title}](phases/{directory.name}/{context.name}) â€” pending discussion.\n", encoding="utf-8")
+    roadmap.write_text(existing.rstrip() + f"\n\n- [{number}: {title}](phases/{directory.name}/{context.name}) - pending discussion.\n", encoding="utf-8")
     commit_paths(root, [context, roadmap], f"Create phase {number}: {title}")
     print(f"Created {directory}; discuss scope and approval before preparing components.")

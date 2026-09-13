@@ -58,7 +58,9 @@ checks:
 `files_modified` grants exact paths or directory prefixes ending in `/`.
 `files_deleted` grants exact files only. A path belongs in one of these fields,
 not both. Declarations use Git's exact case/spelling; traversal and globs fail.
-Phase records, STATE, PROJECT, REQUIREMENTS, RULES and config are coordinator-owned.
+Phase records, STATE, PROJECT, REQUIREMENTS, ROADMAP, RULES and config are coordinator-owned.
+Every committed deletion must name its exact path in files_deleted, even when a
+directory prefix or files_modified otherwise grants ownership.
 The worker automatically owns its assigned SUMMARY. `requirements` stays nonempty;
 `acceptance` covers the phase's identified outcomes. Add `## Documentation` after
 the upstream output explaining the assigned documentation or dependent handoff.

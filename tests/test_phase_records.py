@@ -118,6 +118,30 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertIn("Legacy checkpoint exists", result.stderr)
         self.assertTrue(path.exists())
 
+    def test_explicit_files_deleted_allows_removal_with_coverage(self):
+        self.deletion_case(declared=True)
+
+    def test_files_modified_does_not_authorize_unannounced_removal(self):
+        self.deletion_case(declared=False)
+
+    def deletion_case(self, declared):
+        f = self.fixture
+        f.write(f.checkout, "src/obsolete.txt", "Obsolete fixture output.\n")
+        f.component("01-01", files=["src/obsolete.txt"], checks=[[
+            sys.executable, "-c", "from pathlib import Path; assert not Path('src/obsolete.txt').exists()"]])
+        path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        data, body = record(path)
+        if declared:
+            data.update(files_modified=[], files_deleted=["src/obsolete.txt"])
+        f.record(path.relative_to(f.checkout), data, body)
+        f.configure(PHASE_FIXTURE_MODE="delete")
+        f.commit("Prepare declared deletion" if declared else "Prepare undeclared deletion regression")
+        result = f.cli("run", "01", succeeds=declared)
+        self.assertEqual((f.checkout / "src/obsolete.txt").exists(), not declared)
+        if not declared:
+            self.assertIn("undeclared deletion", result.stdout + result.stderr)
+            self.assertTrue(Path(f.events()[0]["worktree"]).exists())
+
     def test_native_plan_rejects_missing_task_action_and_unresolved_checkpoint(self):
         f = self.fixture
         path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
@@ -207,8 +231,18 @@ class OwnershipBoundaryTests(unittest.TestCase):
 class DocumentNavigationTests(unittest.TestCase):
     def test_active_markdown_links_resolve_to_files_and_headings(self):
         documents = [SOURCE / "AGENTS.md", SOURCE / "README.md"]
-        for directory in (".ai", ".agents", "docs"):
-            documents += list((SOURCE / directory).rglob("*.md"))
+        for directory in (".ai", ".agents", ".planning", "docs"):
+            for path in (SOURCE / directory).rglob("*.md"):
+                relative = path.relative_to(SOURCE).as_posix()
+                # Preserved upstream teaching examples are checked by the dedicated
+                # provenance/reference suite, not as active checkout-relative links.
+                if relative.startswith((".ai/gsd/", ".planning/maintenance/")):
+                    continue
+                if relative.startswith(".ai/templates/") and path.name not in ("ADR.md", "CURRENT-SPEC.md"):
+                    continue
+                if relative == "docs/PHASE-MIGRATION.md":
+                    continue  # Historical paths describe superseded behavior.
+                documents.append(path)
         checked = 0
         for path in documents:
             body = re.sub(r"(?ms)^```.*?^```[^\n]*$", "", path.read_text(encoding="utf-8-sig"))
