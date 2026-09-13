@@ -1,19 +1,87 @@
-# State
+---
+gsd_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on first state.* call
+status: planning
+progress:
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
 
-## Now
+> **Unfilled adoption skeleton:** CHANGEME. Every example, placeholder, phase, requirement and metric below is instructional only. No adopting project, approved scope or execution history has been established. Onboarding fills this from actual user intent and observed evidence.
 
-This repository is a reusable phase workflow template. It does not assert an
-adopting project's intent, active execution or delivery history.
+<!-- STATE-MD-SCHEMA:END:frontmatter -->
 
-## Next
+# Project State
 
-Run [onboard](commands/onboard.md), establish PROJECT and actual verification
-commands, then create the first authorized phase.
+## Project Reference
 
-## Blockers
+See: .planning/PROJECT.md (updated [date])
 
-No adopting-project execution has been started.
+**Core value:** [One-liner from PROJECT.md Core Value section]
+**Current focus:** [Current phase name]
 
-This is a compact derived view. The coordinator updates it with runtime `sync`
-in its assigned worktree. Read-only status inspects source artifacts and execution
-evidence without changing this file.
+## Current Position
+
+Phase: [X] of [Y] ([Phase name])
+Plan: [A] of [B] in current phase
+Status: [Ready to plan / Planning / Ready to execute / In progress / Phase complete]
+Last activity: [YYYY-MM-DD] — [What happened]
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: [N]
+- Average duration: [X] min
+- Total execution time: [X.X] hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:**
+- Last 5 plans: [durations]
+- Trend: [Improving / Stable / Degrading]
+
+*Updated after each plan completion*
+
+## Accumulated Context
+
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [Phase X]: [Decision summary]
+- [Phase Y]: [Decision summary]
+
+### Pending Todos
+
+[From .planning/todos/pending/ — ideas captured during sessions]
+
+None yet.
+
+### Blockers/Concerns
+
+[Issues that affect future work]
+
+None yet.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close, most recent first:
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| *(none)* | | | | |
+
+## Session Continuity
+
+Last session: [YYYY-MM-DD HH:MM]
+Stopped at: [Description of last completed action]
+Resume file: [Path to .continue-here*.md if exists, otherwise "None"]

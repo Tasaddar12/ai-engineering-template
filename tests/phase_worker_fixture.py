@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -85,6 +86,36 @@ def forge_cli() -> int:
     return 0
 
 
+def full_template_result(root, path, template_name):
+    """Materialize the entire upstream output block, plus real fixture receipts."""
+    sys.path.insert(0, str(root / ".ai/runtime"))
+    from phase_records import file_template, record
+    data, evidence = record(path)
+    template = file_template(root, template_name)
+    body = re.sub(r"\A---\n.*?\n---\n", "", template, count=1, flags=re.S)
+    # These are deterministic test artifacts, not model judgments. Keep every
+    # upstream heading and fill instructional placeholders with fixture evidence.
+    body = re.sub(r"\[[^\]\n]+\]", "Fixture output verified", body)
+    body = body.replace("XX-name", "01-example").replace("{phase}", "01").replace("{plan}", "01")
+    data.update(phase="01-example")
+    if template_name == "summary.md":
+        data.update(plan="01", subsystem="testing", tags=["fixture"], requires=[],
+                    provides=["Assigned fixture output"], affects=[], actuals={"tokens": 10, "tasks": 1, "commits": 1},
+                    **{"tech-stack": {"added": [], "patterns": []},
+                       "key-files": {"created": ["src/01-01.txt"], "modified": []},
+                       "key-decisions": ["Follow assigned fixture"], "patterns-established": [],
+                       "coverage": [{"id": "D1", "description": "Assigned fixture output", "requirement": "R1",
+                                     "verification": [{"kind": "integration", "ref": "fixture check", "status": "pass"}],
+                                     "human_judgment": False}], "duration": "1min", "completed": "2026-09-13"})
+        # Runtime Checks is additive; upstream sections keep their own names.
+        body += "\n## Checks\n\nFixture check asserted assigned output exists; worker verified integrated dependencies.\n"
+    else:
+        data.update(verified="2026-09-13T00:00:00Z", score="1/1 must-haves verified", behavior_unverified=0,
+                    covered_files=["src/01-01.txt"], covered_digest="fixture-only: not an upstream fingerprint")
+        body += "\n" + evidence[evidence.index("## Acceptance"):]
+    write_record(path, data, body)
+
+
 def main() -> int:
     root = Path(os.environ["PHASE_WORKTREE"])
     assignment = Path(os.environ["PHASE_ASSIGNMENT"])
@@ -133,6 +164,8 @@ def main() -> int:
                 "## Findings\n\n"
                 + ("The requested behavior is missing.\n" if verdict != "passed" else "None.\n"),
             )
+            if mode == "full-templates":
+                full_template_result(root, result, "verification-report.md")
             event["report_written"] = str(result)
             save_event()
             if mode == "verifier-report-then-wait":
@@ -214,6 +247,8 @@ def main() -> int:
             "## Deviations from Plan\n\nNone.\n\n## Next Phase Readiness\n\n"
             + ("The component needs a decision.\n" if mode == "blocked" else "None.\n"),
         )
+        if mode == "full-templates":
+            full_template_result(root, summary, "summary.md")
         if result.resolve() != summary.resolve():
             result.parent.mkdir(parents=True, exist_ok=True)
             result.write_text(summary.read_text(encoding="utf-8"), encoding="utf-8")

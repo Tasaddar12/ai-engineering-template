@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -676,12 +677,16 @@ def uat_phase(phase, case=None, result=None, note=None):
     clean(phase.root)
     verified, _ = current_verification(phase)
     path = phase.artifact("UAT")
-    data = record(path)[0] if path.exists() else {}
-    if data.get("source") != verified["source"]:
+    data, previous_body = record(path) if path.exists() else ({}, "")
+    fresh_session = data.get("source_fingerprint") != verified["source"]
+    if data.get("source_fingerprint") != verified["source"]:
         history = data.get("history", [])
         if data:
-            history.append({"source": data.get("source"), "cases": data.get("cases", [])})
-        data = {"revision": verified["revision"], "source": verified["source"], "history": history,
+            history.append({"source": data.get("source"), "source_fingerprint": data.get("source_fingerprint"), "cases": data.get("cases", []), "body": record(path)[1]})
+        data = {"revision": verified["revision"], "source_fingerprint": verified["source"], "history": history,
+                "phase": phase.directory.name,
+                "source": [c.summary.relative_to(phase.root).as_posix() for c in phase.components.values()],
+                "started": datetime.now(timezone.utc).isoformat(),
                 "cases": [{"id": i + 1, "acceptance": a, "result": "pending", "note": "", "observations": []}
                           for i, a in enumerate(phase.acceptance)]}
     if case is not None:
@@ -694,13 +699,63 @@ def uat_phase(phase, case=None, result=None, note=None):
         item.update(result=result, note=note)
     else:
         require(result is None and note is None, "--result and --note need --case")
-    body = (f"# Phase {phase.number} acceptance session\n\n"
-            "Record observable human testing, not inferred approval. Every required case must pass before publication. "
-            "Skipped cases retain their reason and remain unresolved. Prior observations are retained above.\n\n"
-            "| Case | Acceptance | Result | Latest observation |\n|---|---|---|---|\n")
-    for item in data["cases"]:
-        note_text = item["note"].replace("|", "\\|").replace("\n", " ")
-        body += f"| {item['id']} | {item['acceptance']} | {item['result']} | {note_text} |\n"
+    data["updated"] = datetime.now(timezone.utc).isoformat()
+    cases = data["cases"]
+    data["status"] = "complete" if all(c["result"] == "pass" for c in cases) else (
+        "partial" if any(c["result"] != "pending" for c in cases) else "testing")
+    template = file_template(phase.root, "UAT.md")
+    body = re.sub(r"\A---\n.*?\n---\n", "", template, count=1, flags=re.S) if fresh_session else previous_body
+    acceptance_text = dict(re.findall(r"(?m)^\s*-\s+(?:\[[ xX]\]\s+)?([A-Z][A-Z0-9_-]*\d+)\s*:\s*(.*)$", section(phase.body, "Acceptance")))
+    current = next((c for c in cases if c["result"] != "pass"), None)
+    current_text = (f"number: {current['id']}\nname: {current['acceptance']}\nexpected: {acceptance_text[current['acceptance']]}\nawaiting: user response"
+                    if current else "[testing complete]")
+    tests = []
+    for item in cases:
+        result_text = "issue" if item["result"] == "fail" else item["result"]
+        tests.append(f"### {item['id']}. {item['acceptance']}\n" + yaml.safe_dump({
+            "expected": acceptance_text[item["acceptance"]], "result": result_text,
+            "reported": item["note"]}, sort_keys=False, width=100000))
+    counts = {"total": len(cases), **{label: sum(c["result"] == result for c in cases)
+              for label, result in (("passed", "pass"), ("issues", "fail"), ("pending", "pending"), ("skipped", "skipped"), ("blocked", "blocked"))}}
+    generated_gaps = [{"truth": acceptance_text[c["acceptance"]], "status": "failed", "reason": "User reported: " + c["note"],
+             "test": c["id"], "root_cause": "", "artifacts": [], "missing": [], "debug_session": ""}
+            for c in cases if c["result"] == "fail"]
+    if fresh_session:
+        tests_text = "\n".join(tests)
+        gaps = generated_gaps
+    else:
+        tests_text = section(body, "Tests")
+        if case is not None:
+            pattern = rf"(?ms)(^### {case}\. [^\n]*\n)(.*?)(?=^### |\Z)"
+            def update_case(match):
+                content = match[2]
+                content = re.sub(r"(?m)^result:.*$", "result: " + ("issue" if result == "fail" else result), content)
+                # Preserve all authored test instructions. Put multiline observations in
+                # the durable case receipts; the visible reported scalar is one line.
+                content = re.sub(r"(?m)^reported:.*$", "", content)
+                content = content.rstrip() + "\nreported: " + json.dumps(note, ensure_ascii=False) + "\n\n"
+                return match[1] + content
+            tests_text = re.sub(pattern, update_case, tests_text)
+        raw_gaps = section(body, "Gaps")
+        try:
+            gaps = yaml.safe_load(raw_gaps) or []
+        except yaml.YAMLError:
+            raise PhaseError("UAT Gaps must remain a YAML list; preserve and reconcile authored diagnosis before updating")
+        require(isinstance(gaps, list) and all(isinstance(g, dict) for g in gaps), "UAT Gaps must be a YAML list of findings")
+        for gap in generated_gaps:
+            existing = next((g for g in gaps if g.get("test") == gap["test"]), None)
+            if existing is None:
+                gaps.append(gap)
+            else:
+                existing.update(status="failed", reason=gap["reason"])
+        if case is not None and result == "pass":
+            for gap in gaps:
+                if gap.get("test") == case:
+                    gap["status"] = "resolved"
+    for heading, content in (("Current Test", current_text), ("Tests", tests_text),
+                             ("Summary", yaml.safe_dump(counts, sort_keys=False)),
+                             ("Gaps", yaml.safe_dump(gaps, sort_keys=False))):
+        body = re.sub(rf"(?ms)^## {heading}\n.*?(?=^## |\Z)", lambda m: f"## {heading}\n\n{content.rstrip()}\n\n", body)
     write_record(path, data, body)
     commit_paths(phase.root, [path], f"Record phase {phase.number} acceptance results")
     print(body)
@@ -710,7 +765,7 @@ def require_uat(phase):
     if not phase.context.get("uat", False):
         return
     data, _ = record(phase.artifact("UAT"))
-    require(data.get("source") == source_hash(phase), "Acceptance results are stale; repeat UAT for the verified revision")
+    require(data.get("source_fingerprint") == source_hash(phase), "Acceptance results are stale; repeat UAT for the verified revision")
     cases = data.get("cases", [])
     require(isinstance(cases, list) and {item.get("acceptance") for item in cases} == set(phase.acceptance),
             "UAT must cover every phase acceptance outcome")
@@ -844,7 +899,16 @@ def sync_state(root):
     assigned(root)
     clean(root)
     path = root / ".planning/STATE.md"
-    path.write_text(status_text(root) + "\nGenerated by phase.py sync; phase records own scope and evidence.\n", encoding="utf-8")
+    existing = path.read_text(encoding="utf-8") if path.exists() else file_template(root, "state.md")
+    view = status_text(root)
+    # This runtime owns only its view; authored state, decisions and session
+    # continuity retain their full upstream structure and their original text.
+    content = "## Runtime Status\n\n" + view.removeprefix("# Phase status\n").strip() + "\n"
+    if re.search(r"(?m)^## Runtime Status$", existing):
+        existing = re.sub(r"(?ms)^## Runtime Status\n.*?(?=^## |\Z)", lambda m: content + "\n", existing)
+    else:
+        existing = existing.rstrip() + "\n\n" + content
+    path.write_text(existing, encoding="utf-8")
     commit_paths(root, [path], "Refresh derived phase status")
     print(str(path))
 

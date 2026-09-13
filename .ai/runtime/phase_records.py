@@ -79,7 +79,7 @@ def xml_section(body, name):
 
 
 def phase_goal(body):
-    return section(body, "Phase Boundary") or section(body, "Goal")
+    return section(xml_section(body, "domain"), "Phase Boundary") or section(body, "Goal")
 
 
 def file_template(root, name):
@@ -87,7 +87,7 @@ def file_template(root, name):
     path = root / ".ai/templates" / name
     require(path.is_file(), f"Missing upstream template: {path}")
     text = path.read_text(encoding="utf-8-sig")
-    match = re.search(r"(?ms)^## File Template\s*\n+```markdown\s*\n(.*?)^```\s*$", text)
+    match = re.search(r"(?ms)^## File Template\b.*?^```markdown\s*\n(.*?)^```\s*$", text)
     require(match is not None, f"Missing File Template Markdown block: {path}")
     return match[1]
 
@@ -234,6 +234,8 @@ def load_phase(root, name, ready=False):
         cid = path.name.removesuffix("-PLAN.md")
         require(data.get("phase") == directory.name, f"{cid}: PLAN phase must match its directory name")
         require(str(data.get("plan")) == cid.split("-")[-1], f"{cid}: quote the matching plan number in YAML")
+        require(type(data.get("wave")) is int and data["wave"] >= 1, f"{cid}: wave must be a positive integer")
+        require(isinstance(data.get("must_haves"), dict), f"{cid}: must_haves must be a mapping")
         require(data.get("type") in ("execute", "tdd"), f"{cid}: PLAN type must be execute or tdd")
         data["files"] = string_list(data.get("files_modified", []), f"{cid}.files_modified") + string_list(data.get("files_deleted", []), f"{cid}.files_deleted")
         require(len(data["files"]) == len(set(data["files"])), f"{cid}: declare a path in files_modified or files_deleted, not both")
@@ -258,9 +260,9 @@ def load_phase(root, name, ready=False):
         if ready:
             require(bool(data["acceptance"]), f"{cid}: declare acceptance coverage")
             require(bool(data["requirements"]), f"{cid}: declare requirements coverage")
-            require(data.get("autonomous") is True and 'type="checkpoint:' not in content
-                    and "type='checkpoint:" not in content,
+            require(data.get("autonomous") is True and not re.search(r'<task\b[^>]*\btype\s*=\s*[\'"]checkpoint:', content),
                     f"{cid}: checkpoint/non-autonomous plans need coordinator resolution before process dispatch; preserve decisions in CONTEXT and prepare an autonomous continuation")
+            require(data.get("user_setup", []) == [], f"{cid}: resolve user_setup with the coordinator and record evidence before dispatch")
             for tag in ("objective", "execution_context", "context", "tasks", "verification", "success_criteria", "output"):
                 require(bool(xml_section(content, tag)), f"{cid}: missing <{tag}> instructions")
             tasks = re.findall(r'<task\s+type=[\'"]auto[\'"][^>]*>(.*?)</task>', content, re.S)
@@ -289,7 +291,7 @@ def load_phase(root, name, ready=False):
         require(context["approval"] == "approved", "Phase needs recorded human approval before execution")
         require(bool(section(body, "Authorization")) and "CHANGEME" not in section(body, "Authorization"),
                 "Record the actual human authorization in CONTEXT")
-        require(bool(phase_goal(body)) and bool(acceptance), "CONTEXT needs a goal and identified acceptance outcomes")
+        require(bool(phase_goal(body)) and bool(acceptance) and "CHANGEME" not in section(body, "Acceptance"), "CONTEXT needs a goal and identified acceptance outcomes")
         require(bool(components), "Prepare at least one PLAN component before running")
         covered = {a for c in components.values() for a in c.data["acceptance"]}
         require(set(acceptance) <= covered, "Every acceptance outcome needs component coverage")
