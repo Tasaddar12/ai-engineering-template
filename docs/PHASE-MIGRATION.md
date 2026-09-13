@@ -1,5 +1,10 @@
 # Phase workflow migration
 
+> Historical record: this describes the earlier phase-workflow migration at its
+> original revision. The subsequent complete-template and `.planning` migration
+> is recorded in [changes.log](../changes.log). Use the current
+> [workflow guide](PHASE-WORKFLOW.md) for active paths and behavior.
+
 ## Authorization and scope
 
 The original request authorized this reference document, implementation in a
