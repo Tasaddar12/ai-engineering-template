@@ -188,6 +188,26 @@ def main() -> int:
             print("Deliberate component failure", file=sys.stderr)
             return 7
 
+        tdd_evidence = ""
+        if mode == "native-tdd":
+            test = root / "tests/test_total.py"
+            test.write_text("import unittest\nfrom src.total import total\n\nclass TotalTests(unittest.TestCase):\n"
+                            "    def test_total_nonempty(self):\n        self.assertEqual(total([1, 2, 3]), 6)\n", encoding="utf-8")
+            git(root, "add", "--", "tests/test_total.py")
+            git(root, "commit", "-m", "test: specify total returns the sum of nonempty inputs")
+            red_commit = git(root, "rev-parse", "HEAD")
+            red = subprocess.run(metadata["checks"][0], cwd=root, capture_output=True, text=True)
+            assert red.returncode == 1 and "FAIL: test_total_nonempty" in red.stderr and "AssertionError: 0 != 6" in red.stderr, red.stderr
+            (root / "src/total.py").write_text("def total(values):\n    return sum(values)\n", encoding="utf-8")
+            green = subprocess.run(metadata["checks"][0], cwd=root, capture_output=True, text=True)
+            assert green.returncode == 0 and "Ran 1 test" in green.stderr, green.stderr
+            git(root, "add", "--", "src/total.py")
+            git(root, "commit", "-m", "feat: implement total for nonempty inputs")
+            green_commit = git(root, "rev-parse", "HEAD")
+            tdd_evidence = (f"\n## TDD Evidence\n\nCommand: {metadata['checks'][0]!r}. Target: TotalTests.test_total_nonempty.\n"
+                            f"RED at {red_commit}: exit {red.returncode}; expected total([1, 2, 3]) = 6, actual 0; AssertionError: 0 != 6.\n"
+                            f"GREEN at {green_commit}: exit {green.returncode}; one named test passed.\n"
+                            "REFACTOR: no further change needed; configured integration check reruns the same behavioral assertion.\n")
         if mode == "repair-bug":
             before = [subprocess.run(argv, cwd=root, capture_output=True).returncode for argv in metadata["checks"]]
             assert any(before), "The regression must fail before repair"
@@ -208,7 +228,7 @@ def main() -> int:
             outside.unlink()
             git(root, "add", "--", " safe.txt")
             git(root, "commit", "-m", "Revert the unowned change")
-        if mode == "summary-only":
+        if mode in ("summary-only", "native-tdd"):
             owned = []
         for name in owned:
             if mode == "missing-documentation" and name in documentation:
@@ -250,8 +270,10 @@ def main() -> int:
             "## Deviations from Plan\n\nNone.\n\n## Next Phase Readiness\n\n"
             + ("The component needs a decision.\n" if mode == "blocked" else "None.\n"),
         )
-        if mode == "full-templates":
+        if mode in ("full-templates", "native-tdd"):
             full_template_result(root, summary, "summary.md")
+        if tdd_evidence:
+            summary.write_text(summary.read_text(encoding="utf-8") + tdd_evidence, encoding="utf-8")
         if result.resolve() != summary.resolve():
             result.parent.mkdir(parents=True, exist_ok=True)
             result.write_text(summary.read_text(encoding="utf-8"), encoding="utf-8")

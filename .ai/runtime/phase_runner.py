@@ -267,6 +267,8 @@ def validate_summary(phase, component, root):
         require((root / name).is_file(), f"{component.id}: required documentation missing: {name}")
     for title in ("Accomplishments", "Task Commits", "Files Created/Modified", "Decisions Made", "Deviations from Plan", "Issues Encountered", "User Setup Required", "Next Phase Readiness", "Checks"):
         require(bool(section(body, title)), f"{component.id}: summary needs {title} evidence")
+    if component.data["type"] == "tdd":
+        require(bool(section(body, "TDD Evidence")), f"{component.id}: summary needs TDD Evidence with actual RED/GREEN/REFACTOR observations")
     return data
 
 
@@ -351,6 +353,15 @@ def assignment(phase, component, root, kind, result, revision_id):
                  "requirements-completed: [covered requirement IDs], documentation: [covered exact paths]. Preserve every upstream section and add Checks (actual evidence). A blocked result must explain the blocker. "
                  "Do not edit phase inputs, STATE, other components, or other worktrees. "
                  "Do not start agents, push, publish, merge, delete worktrees, or leave background writers running.\n")
+        if component.data["type"] == "tdd":
+            text += ("Preserve and implement the plan's single <feature> through RED/GREEN/REFACTOR. "
+                     "Read .ai/library/references/tdd.md and the local TEMPLATE-CONTRACT TDD boundary. "
+                     "Write and commit the named target test before implementation. Prove its RED failure "
+                     "is the expected behavioral assertion, not a syntax/import/fixture error or zero-test run. "
+                     "Then implement and commit GREEN, and refactor only when useful. Add a TDD Evidence "
+                     "SUMMARY section naming commands, target test, expected/actual assertion, exit codes, "
+                     "RED/GREEN commit IDs and refactor outcome. This Python runtime reruns final checks "
+                     "and requires evidence; it does not install an automated pre-GREEN gate.\n")
     else:
         text += ("Independently inspect actual acceptance behavior, component wiring, regression evidence "
                  "and required documentation. Read PLAN and SUMMARY records; claims are not proof. "
@@ -926,7 +937,11 @@ def new_phase(root, slug, title):
     numbers = []
     for line in git(root, "worktree", "list", "--porcelain").splitlines():
         if line.startswith("worktree "):
-            directory = Path(line.removeprefix("worktree ")) / ".planning/phases"
+            registered = Path(line.removeprefix("worktree "))
+            legacy_phases = [p for p in (registered / ".ai/phases").glob("[0-9]*-*") if p.is_dir()]
+            require(not legacy_phases,
+                    f"Legacy phases remain in registered worktree {registered}; inspect/migrate that preserved sibling with its compatible runtime before allocating a new phase")
+            directory = registered / ".planning/phases"
             numbers += [int(p.name.split("-", 1)[0]) for p in directory.glob("[0-9]*-*") if p.name.split("-", 1)[0].isdigit()]
     number = f"{max(numbers, default=0) + 1:02d}"
     directory = root / ".planning/phases" / f"{number}-{slug}"
