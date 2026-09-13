@@ -17,6 +17,7 @@ are not an adopting project's roadmap or delivery history.
 | Give an agent a starting request | [Onboarding prompts](docs/ONBOARDING-PROMPTS.md) |
 | Configure and run workers | [Runtime guide](.ai/runtime/README.md) and [template contract](.ai/runtime/TEMPLATE-CONTRACT.md) |
 | Select a focused engineering method | [Repository skills](docs/AGENT-SKILLS.md) |
+| Understand the proposed next-stage entry workflows | [Workflow direction](docs/WORKFLOW-DIRECTION.md) |
 
 ## What lives where
 
