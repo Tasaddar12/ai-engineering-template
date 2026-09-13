@@ -32,3 +32,17 @@ Read PROJECT, STATE, ROADMAP and the selected phase's context/evidence. Run
 [phase-status](phase-status.md), inspect relevant code and continue the user's
 authorized work. Do not restructure the project merely because onboarding was
 invoked. Report drift with evidence in its affected phase.
+
+## Complete authoring sources
+
+Use the full [project](../templates/project.md), [requirements](../templates/requirements.md),
+[roadmap](../templates/roadmap.md) and [state](../templates/state.md) templates when
+onboarding. Read their examples and update rules before creating real records in
+`.planning/`. Existing-project mapping uses the complete [codebase templates](../templates/codebase/).
+Preserve existing project guidance and migrate old data explicitly; do not maintain
+both `.ai/PROJECT.md` and `.planning/PROJECT.md` as competing owners.
+
+The [GSD onboarding workflow](../gsd/workflows/onboard.md) supplies the full method.
+Apply the [local adapter](../references/gsd-adaptation.md) for host capabilities,
+worktree placement and configuration. Do not run upstream installer/CLI examples
+as though they were already configured local commands.

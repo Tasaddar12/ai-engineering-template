@@ -16,7 +16,7 @@ checks; record real commands, outputs, failures and skips. An unrun test is not 
 pass. If a missing prerequisite or decision prevents completion, report it as
 blocked with the affected scope and available evidence.
 
-Write a [SUMMARY](../templates/SUMMARY.md) at the supplied result path. Report
+Write a [SUMMARY](../templates/summary.md) at the supplied result path. Report
 accepted criteria and required documentation actually covered; explain deviations
 and remaining issues. Commit completed component changes and the SUMMARY using
 nonempty descriptive messages. Keep safe partial work when blocked and report its

@@ -15,7 +15,7 @@ name the affected area, reproduction or supporting evidence, practical impact an
 needed correction. Distinguish functional gaps, missing evidence and editorial
 details. Do not downgrade defects or weaken acceptance to make the report pass.
 
-Return the complete [VERIFICATION](../templates/VERIFICATION.md) report for the
+Return the complete [VERIFICATION](../templates/verification-report.md) report for the
 host adapter to save at the external `PHASE_RESULT` path. A custom adapter may
 write it directly when configured to do so. Use status `passed`, `gaps_found`
 or `human_needed` and the exact assigned HEAD as `revision`. The coordinator

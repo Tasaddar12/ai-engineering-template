@@ -23,3 +23,13 @@ executable steps; see [runtime](../runtime/README.md).
 All procedures follow [RULES](../RULES.md). Read-only operations need no new
 worktree or commit. Tracked mutations use the assigned worktree. Related
 preparation, implementation and documentation normally share one phase PR.
+
+## GSD template consumers
+
+The complete [template catalog](../templates/README.md) retains GSD's producer and
+consumer names. [GSD support](../gsd/README.md) preserves those full definitions.
+The local procedures above connect the main lifecycle to this repository's Python
+runtime; use [adaptation](../references/gsd-adaptation.md) and the
+[template guide](../../docs/TEMPLATE-GUIDE.md) to distinguish a callable operation
+from a retained upstream method. A named method is not proof that the host has
+registered a slash command or agent type.

@@ -4,8 +4,8 @@ This repository is a reusable engineering workflow template. Keep the adopting
 project's identity unfilled until onboarding. Create project-specific records
 for template maintenance only when the user requests them.
 
-Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.ai/PROJECT.md),
-[STATE](.ai/STATE.md), the selected phase and your [role](.ai/agents/README.md).
+Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
+[STATE](.planning/STATE.md), the selected phase and your [role](.ai/agents/README.md).
 Load the selected [command](.ai/commands/README.md) and applicable references.
 [Truth map](.ai/truth-map.md) locates each fact's owner.
 

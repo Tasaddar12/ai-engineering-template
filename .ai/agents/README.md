@@ -7,7 +7,7 @@ These files are instructions, not installed dispatchers or permission controls.
 |---|---|---|
 | [Coordinator](coordinator.md) | Human request, phase records, runtime evidence | Assignments, integration, status and authorized publication |
 | [Researcher](researcher.md) | Phase questions and relevant sources | Reusable findings with evidence |
-| [Phase preparer](phase-preparer.md) | CONTEXT, relevant research and current code | Bounded IMPLEMENT instructions and validation approach |
+| [Phase preparer](phase-preparer.md) | CONTEXT, relevant research and current code | Bounded PLAN instructions and validation approach |
 | [Phase checker](phase-checker.md) | Prepared phase and actual repository | Readiness findings; no checkout edits |
 | [Coder](coder.md) | One implementation assignment | Committed changes, tests and SUMMARY |
 | [Documentor](documentor.md) | Documentation assignment and implementation evidence | Committed verified documentation and SUMMARY |

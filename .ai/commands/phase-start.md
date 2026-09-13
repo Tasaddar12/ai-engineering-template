@@ -25,3 +25,13 @@ within authorized scope and run applicable UAT. Continue through already-authori
 steps rather than asking at each boundary. A real new decision still requires
 resolution before its dependent work. For interruption, use
 [phase-resume](phase-resume.md), not a blind second run.
+
+## Execution guidance
+
+The [complete execution method](../gsd/workflows/execute-plan.md) explains task
+execution, deviations, checkpoints and result writing. Use it with
+[local adaptation](../references/gsd-adaptation.md), the assigned PLAN, and the
+full [summary template](../templates/summary.md). Preserve task completion evidence,
+actual changes, decisions, dependency effects, issues and remaining work. Add
+[runtime result fields](../runtime/TEMPLATE-CONTRACT.md); a blocked task cannot
+be reported as a completed requirement.

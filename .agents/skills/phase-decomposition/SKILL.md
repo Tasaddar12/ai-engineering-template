@@ -54,7 +54,7 @@ behavior. Waves describe readiness, not a barrier for unrelated work.
 
 ## Make the instructions executable
 
-Fill [IMPLEMENT](../../../.ai/templates/IMPLEMENT.md) with the objective, owned
+Fill [PLAN](../../../.ai/templates/phase-prompt.md) with the objective, owned
 paths, resources, prerequisites, acceptance IDs, read-first sources and needed
 skill paths. Ground checks in the real project and execution directory; do not
 guess a command or reference a test path that no component will create.

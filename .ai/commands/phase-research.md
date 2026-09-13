@@ -16,3 +16,14 @@ The coordinator records any resolved choices in CONTEXT and routes remaining
 questions. Commit authorized findings and continue to [prepare](phase-prepare.md).
 A research-only phase can conclude with supported findings without claiming code
 implementation, acceptance of unknown behavior or merged delivery.
+
+## Full research method
+
+Read [research](../templates/research.md) and the
+[phase researcher](../gsd/agents/gsd-phase-researcher.md). Preserve locked decisions,
+primary sources, version/compatibility evidence, recommendations and uncertainty
+in the actual result. Project-wide research can use the complete
+[research-project templates](../templates/research-project/). Distinguish the
+question being answered from background information; link the evidence the planner
+will need instead of replacing it with a confidence claim. Follow the
+[local adaptation](../references/gsd-adaptation.md) for host-specific tools.

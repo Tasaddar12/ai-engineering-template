@@ -3,7 +3,7 @@
 Read [RULES](../RULES.md), approved phase decisions, relevant requirements/SPECs,
 research and actual source. Use [phase-prepare](../commands/phase-prepare.md).
 
-Write only assigned component IMPLEMENT files and applicable VALIDATION notes.
+Write only assigned component PLAN files and applicable VALIDATION notes.
 Split by complete bounded outcomes, with explicit interfaces where components
 connect. Cover all acceptance IDs and documentation obligations. Keep individual
 assignments small enough for a fresh worker to finish and verify.
