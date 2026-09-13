@@ -24,14 +24,14 @@ class PhaseRecordTests(unittest.TestCase):
     def test_new_phase_stays_pending_and_allocates_across_worktrees(self):
         f = self.fixture
         f.cli("new", "second", "--title", "Second change")
-        context = f.checkout / ".ai/phases/02-second/02-CONTEXT.md"
+        context = f.checkout / ".planning/phases/02-second/02-CONTEXT.md"
         self.assertEqual(record(context)[0]["approval"], "pending")
-        self.assertIn("02-CONTEXT.md", (f.checkout / ".ai/ROADMAP.md").read_text())
+        self.assertIn("02-CONTEXT.md", (f.checkout / ".planning/ROADMAP.md").read_text())
         self.assertEqual(f.git(f.checkout, "status", "--porcelain"), "")
         sibling = f.primary / ".worktrees/another"
         f.git(f.primary, "worktree", "add", "-b", "codex/another", str(sibling), "codex/phase-test")
         f.cli("new", "third", "--title", "Third change", root=sibling)
-        self.assertTrue((sibling / ".ai/phases/03-third/03-CONTEXT.md").is_file())
+        self.assertTrue((sibling / ".planning/phases/03-third/03-CONTEXT.md").is_file())
         f.cli("run", "02", succeeds=False)
         self.assertEqual(f.events(), [])
         f.assert_primary_untouched()
@@ -41,8 +41,8 @@ class PhaseRecordTests(unittest.TestCase):
         before = f.git(f.checkout, "rev-parse", "HEAD")
         f.cli("sync")
         paths = f.git(f.checkout, "diff", "--name-only", before, "HEAD").splitlines()
-        self.assertEqual(paths, [".ai/STATE.md"])
-        self.assertIn("01-example", (f.checkout / ".ai/STATE.md").read_text())
+        self.assertEqual(paths, [".planning/STATE.md"])
+        self.assertIn("01-example", (f.checkout / ".planning/STATE.md").read_text())
         f.assert_primary_untouched()
 
     def test_git_text_normalizes_line_endings_while_raw_preserves_them(self):
@@ -55,7 +55,7 @@ class PhaseRecordTests(unittest.TestCase):
 
     def test_readiness_rejects_coordinator_ownership_and_bad_configuration(self):
         f = self.fixture
-        for path in (".ai/", ".AI/PHASES/", ".ai/state.md", ".ai/config.yaml"):
+        for path in (".ai/", ".PLANNING/PHASES/", ".planning/state.md", ".planning/config.yaml"):
             with self.subTest(path=path):
                 f.component("01-01", files=[path])
                 f.commit("Declare invalid coordinator ownership")
@@ -172,7 +172,7 @@ class DocumentNavigationTests(unittest.TestCase):
                     metadata, body = record(path)
                     self.assertTrue(metadata)
                     self.assertTrue(body.strip())
-        config = read_yaml((SOURCE / ".ai/config.yaml").read_text(encoding="utf-8"))
+        config = read_yaml((SOURCE / ".planning/config.yaml").read_text(encoding="utf-8"))
         self.assertEqual(config["verification"]["commands"], [])
         with self.assertRaisesRegex(PhaseError, "Duplicate YAML key"):
             read_yaml("approval: pending\napproval: approved\n")

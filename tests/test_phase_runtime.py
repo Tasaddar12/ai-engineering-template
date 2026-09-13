@@ -19,7 +19,7 @@ import yaml
 
 SOURCE = Path(__file__).resolve().parents[1]
 PHASE = "01-example"
-PHASE_PATH = Path(".ai/phases") / PHASE
+PHASE_PATH = Path(".planning/phases") / PHASE
 
 
 class PhaseRuntimeTests(unittest.TestCase):
@@ -46,6 +46,8 @@ class PhaseRuntimeTests(unittest.TestCase):
             SOURCE / ".ai/runtime", self.primary / ".ai/runtime",
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
+        templates = Path(os.environ.get("GSD_TEMPLATE_TEST_SOURCE", str(SOURCE / ".ai/templates")))
+        shutil.copytree(templates, self.primary / ".ai/templates")
         (self.primary / "tests").mkdir()
         shutil.copy2(SOURCE / "tests/phase_worker_fixture.py", self.primary / "tests/phase_worker_fixture.py")
         self.write(self.primary, ".gitignore", ".worktrees/\n__pycache__/\n*.pyc\n")
@@ -54,10 +56,10 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.write(self.primary, ".ai/RULES.md", "Preserve approved scope and use assigned worktrees.\n")
         for role in ("coder", "documentor", "verifier"):
             self.write(self.primary, f".ai/agents/{role}.md", f"# {role}\n\nFollow the assigned phase responsibility.\n")
-        self.write(self.primary, ".ai/PROJECT.md", "# Fixture project\n\nExercise phase execution.\n")
-        self.write(self.primary, ".ai/REQUIREMENTS.md", "# Requirements\n\n- R1: Components integrate correctly.\n")
-        self.write(self.primary, ".ai/ROADMAP.md", "# Roadmap\n\n- 01: Exercise phase execution.\n")
-        self.write(self.primary, ".ai/STATE.md", "# State\n\nNo phase has run.\n")
+        self.write(self.primary, ".planning/PROJECT.md", "# Fixture project\n\nExercise phase execution.\n")
+        self.write(self.primary, ".planning/REQUIREMENTS.md", "# Requirements\n\n- R1: Components integrate correctly.\n")
+        self.write(self.primary, ".planning/ROADMAP.md", "# Roadmap\n\n- 01: Exercise phase execution.\n")
+        self.write(self.primary, ".planning/STATE.md", "# State\n\nNo phase has run.\n")
         self.config = {
             "execution": {
                 "max_parallel": 2,
@@ -71,7 +73,7 @@ class PhaseRuntimeTests(unittest.TestCase):
             },
             "publication": {"remote": "origin"},
         }
-        self.write(self.primary, ".ai/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
+        self.write(self.primary, ".planning/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
         self.git(self.primary, "add", "--all")
         self.git(self.primary, "commit", "-m", "Seed phase runtime fixture")
         self.main_revision = self.git(self.primary, "rev-parse", "HEAD")
@@ -127,23 +129,30 @@ class PhaseRuntimeTests(unittest.TestCase):
     ) -> None:
         paths = files or [f"src/{identifier}.txt"]
         self.record(
-            PHASE_PATH / f"{identifier}-IMPLEMENT.md",
+            PHASE_PATH / f"{identifier}-PLAN.md",
             {
-                "kind": kind, "depends_on": depends_on or [], "files": paths,
+                "phase": PHASE, "plan": identifier.split("-")[-1], "type": "execute", "autonomous": True,
+                "kind": kind, "depends_on": depends_on or [], "files_modified": paths, "requirements": ["R1"],
                 "resources": resources or [], "acceptance": ["A1"],
                 "documentation": documentation or [],
                 "checks": checks or [[sys.executable, "-c", "from pathlib import Path; assert Path(" + repr(paths[0]) + ").exists()"]],
             },
-            f"# Component {identifier}\n\n## Objective\n\nImplement the assigned fixture component.\n\n"
-            "## Read first\n\nRead phase CONTEXT and summaries of prerequisites.\n\n"
-            "## Implementation\n\nWrite the assigned paths without editing other components.\n\n"
-            "## Verification\n\nRun the component check and configured integration check.\n\n"
+            "<objective>Implement the assigned fixture component.</objective>\n"
+            "<execution_context>@.ai/runtime/TEMPLATE-CONTRACT.md</execution_context>\n"
+            "<context>Read phase CONTEXT and summaries of prerequisites.</context>\n"
+            "<tasks><task type=\"auto\"><name>Implement output</name>"
+            "<files>Assigned paths</files><read_first>Phase CONTEXT</read_first>"
+            "<action>Write assigned paths without editing other components.</action>"
+            "<verify>Run component checks.</verify><done>Assigned outputs work.</done>"
+            "</task></tasks>\n<verification>Run component and integration checks.</verification>\n"
+            "<success_criteria>Checks pass and output works.</success_criteria>\n"
+            "<output>Commit assigned SUMMARY.</output>\n"
             "## Documentation\n\nUpdate every declared documentation path.\n",
         )
 
     def configure(self, **environment: str) -> None:
         self.config["execution"]["environment"].update(environment)
-        self.write(self.checkout, ".ai/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
+        self.write(self.checkout, ".planning/config.yaml", yaml.safe_dump(self.config, sort_keys=False))
 
     def commit(self, message: str) -> None:
         self.git(self.checkout, "add", "--all")
@@ -382,19 +391,19 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.git(self.primary, "worktree", "add", "-b", "codex/second-phase", str(next_checkout), "origin/main")
         self.checkout = next_checkout
         self.cli("new", "dependent", "--title", "Use the delivered first phase")
-        next_phase = Path(".ai/phases/02-dependent")
+        next_phase = Path(".planning/phases/02-dependent")
         source_context = (self.checkout / PHASE_PATH / "01-CONTEXT.md").read_text().split("---", 2)[2]
         self.record(
             next_phase / "02-CONTEXT.md",
             {"phase": "02", "approval": "approved", "depends_on": [PHASE], "uat": False},
             source_context,
         )
-        source_instruction = (self.checkout / PHASE_PATH / "01-01-IMPLEMENT.md").read_text().split("---", 2)
+        source_instruction = (self.checkout / PHASE_PATH / "01-01-PLAN.md").read_text().split("---", 2)
         metadata = yaml.safe_load(source_instruction[1])
-        metadata.update(files=["src/02-01.txt"], checks=[[
+        metadata.update(phase="02-dependent", plan="01", files_modified=["src/02-01.txt"], checks=[[
             sys.executable, "-c", "from pathlib import Path; assert Path('src/01-01.txt').exists() and Path('src/02-01.txt').exists()",
         ]])
-        self.record(next_phase / "02-01-IMPLEMENT.md", metadata, source_instruction[2])
+        self.record(next_phase / "02-01-PLAN.md", metadata, source_instruction[2])
         self.commit("Prepare phase depending on delivered behavior")
         self.cli("check", "02-dependent")
         self.cli("run", "02-dependent")
@@ -620,7 +629,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def test_changed_inputs_do_not_reuse_completed_assignments(self) -> None:
         self.cli("run", PHASE)
-        instruction = self.checkout / PHASE_PATH / "01-01-IMPLEMENT.md"
+        instruction = self.checkout / PHASE_PATH / "01-01-PLAN.md"
         instruction.write_text(instruction.read_text() + "\nA newly changed implementation requirement.\n", encoding="utf-8")
         self.commit("Change execution target after completion")
         self.cli("resume", PHASE, "--workers-stopped", succeeds=False)

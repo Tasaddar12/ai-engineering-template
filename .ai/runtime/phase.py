@@ -4,7 +4,7 @@ import argparse
 import subprocess
 import sys
 
-from phase_records import PhaseError, load_phase
+from phase_records import PhaseError, load_phase, planning_boundary
 from phase_runner import (assigned, check_phase_dependencies, clean, lock, new_phase,
                           publish_phase, repo, run_phase, status_text, sync_state,
                           uat_phase, verify_phase)
@@ -38,6 +38,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         root = repo()
+        planning_boundary(root)
         if args.command == "status":
             print(status_text(root, args.phase, args.remote), end="")
             return 0

@@ -124,7 +124,9 @@ def main() -> int:
             write_record(
                 result,
                 {"status": verdict, "revision": revision},
-                "# Phase verification\n\n## Acceptance\n\n"
+                "# Phase verification\n\n## Goal Achievement\n\nFixture output works.\n\n"
+                "## Requirements Coverage\n\nR1 exercised.\n\n## Anti-Patterns Found\n\nNone.\n\n"
+                "## Human Verification Required\n\nNone.\n\n## Acceptance\n\n"
                 "Inspected all component outputs and committed summaries.\n\n"
                 "## Integration\n\nThe configured integration check passed.\n\n"
                 "## Documentation\n\nRequired guide paths exist and match the output.\n\n"
@@ -137,15 +139,15 @@ def main() -> int:
                 await_fixture_release()
             return 0
 
-        matches = list((root / ".ai/phases").glob(f"*/{component}-IMPLEMENT.md"))
+        matches = list((root / ".planning/phases").glob(f"*/{component}-PLAN.md"))
         assert len(matches) == 1, f"No unique instructions for {component}: {matches}"
         instructions = matches[0]
         metadata = frontmatter(instructions)
         for dependency in metadata.get("depends_on", []):
-            dependency_instruction = instructions.with_name(f"{dependency}-IMPLEMENT.md")
+            dependency_instruction = instructions.with_name(f"{dependency}-PLAN.md")
             dependency_summary = instructions.with_name(f"{dependency}-SUMMARY.md")
             assert dependency_summary.is_file(), f"Dependency summary is not integrated: {dependency}"
-            for name in frontmatter(dependency_instruction)["files"]:
+            for name in frontmatter(dependency_instruction)["files_modified"]:
                 assert (root / name).exists(), f"Dependency output is not integrated: {name}"
 
         time.sleep(float(os.environ.get("PHASE_FIXTURE_DELAY", "0")))
@@ -157,7 +159,7 @@ def main() -> int:
             before = [subprocess.run(argv, cwd=root, capture_output=True).returncode for argv in metadata["checks"]]
             assert any(before), "The regression must fail before repair"
 
-        owned = metadata["files"]
+        owned = metadata["files_modified"]
         documentation = metadata.get("documentation", [])
         if mode == "outside":
             owned = ["outside-ownership.txt"]
@@ -200,12 +202,16 @@ def main() -> int:
             {
                 "status": "blocked" if mode == "blocked" else "complete",
                 "acceptance": metadata.get("acceptance", []),
+                "requirements-completed": metadata.get("requirements", []),
                 "documentation": [] if mode == "missing-documentation" else documentation,
             },
-            f"# Component {component}\n\n## Changes\n\n"
+            f"# Component {component}\n\n## Accomplishments\n\n"
             f"Implemented the owned paths for {component}.\n\n"
+            "## Task Commits\n\nCommitted fixture output.\n\n## Files Created/Modified\n\nAssigned paths.\n\n"
+            "## Decisions Made\n\nFollow assignment.\n\n## Issues Encountered\n\nNone.\n\n"
+            "## User Setup Required\n\nNone.\n\n"
             f"## Checks\n\n{check_evidence}\n\n"
-            "## Deviations\n\nNone.\n\n## Remaining\n\n"
+            "## Deviations from Plan\n\nNone.\n\n## Next Phase Readiness\n\n"
             + ("The component needs a decision.\n" if mode == "blocked" else "None.\n"),
         )
         if result.resolve() != summary.resolve():

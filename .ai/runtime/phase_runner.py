@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -15,7 +16,7 @@ import uuid
 import yaml
 
 from phase_records import (PhaseError, commands, git, load_phase, overlaps, owns,
-                           read_yaml, record, require, safe_path, section, string_list)
+                           read_yaml, record, require, safe_path, section, string_list, file_template, phase_goal)
 
 
 class CheckMutation(PhaseError):
@@ -101,6 +102,12 @@ def checkpoint_path(phase):
 
 
 def read_state(phase):
+    old_relative = phase.relative.replace(".planning/phases/", ".ai/phases/", 1)
+    old_key = hashlib.sha256((str(phase.root) + "\n" + old_relative).encode()).hexdigest()[:20]
+    old_path = storage(phase.root) / f"{phase.directory.name}-{old_key}" / "state.yaml"
+    require(not old_path.exists(),
+            f"Legacy checkpoint exists at {old_path}; inspect/finish it with its original runtime. "
+            "Archive the inspected attempt explicitly before creating a new .planning attempt; no automatic conversion.")
     path = checkpoint_path(phase)
     return read_yaml(path.read_text(encoding="utf-8")) if path.exists() else None
 
@@ -237,7 +244,7 @@ def checks(phase, root, extra=()):
 
 
 def source_hash(phase):
-    excluded = {".ai/STATE.md", f"{phase.relative}/{phase.number}-VERIFICATION.md",
+    excluded = {".planning/STATE.md", f"{phase.relative}/{phase.number}-VERIFICATION.md",
                 f"{phase.relative}/{phase.number}-UAT.md", f"{phase.relative}/.continue-here.md"}
     entries = git(phase.root, "ls-tree", "-rz", "--full-tree", "HEAD", raw=True).split("\x00")
     included = [entry for entry in entries if entry and entry.split("\t", 1)[-1] not in excluded]
@@ -249,13 +256,15 @@ def validate_summary(phase, component, root):
     data, body = record(path)
     require(data.get("status") == "complete", f"{component.id}: summary is blocked or incomplete")
     acceptance = string_list(data.get("acceptance", []), f"{component.id} summary acceptance")
+    requirements = string_list(data.get("requirements-completed", []), f"{component.id} summary requirements-completed")
+    require(set(component.data["requirements"]) <= set(requirements), f"{component.id}: missing requirement evidence")
     documentation = string_list(data.get("documentation", []), f"{component.id} summary documentation")
     require(set(component.data["acceptance"]) <= set(acceptance), f"{component.id}: missing acceptance evidence")
     require(set(component.data["documentation"]) <= set(documentation), f"{component.id}: missing required documentation coverage")
     for name in component.data["documentation"]:
         safe_path(root, name)
         require((root / name).is_file(), f"{component.id}: required documentation missing: {name}")
-    for title in ("Changes", "Checks", "Deviations", "Remaining"):
+    for title in ("Accomplishments", "Task Commits", "Files Created/Modified", "Decisions Made", "Deviations from Plan", "Issues Encountered", "User Setup Required", "Next Phase Readiness", "Checks"):
         require(bool(section(body, title)), f"{component.id}: summary needs {title} evidence")
     return data
 
@@ -324,7 +333,7 @@ def assignment(phase, component, root, kind, result, revision_id):
     text = (f"# Phase {phase.directory.name}: {kind}\n\n"
             f"Assigned worktree: {root}\nAssigned revision: {revision_id}\n"
             f"Result path: {result}\n\n"
-            "Read AGENTS.md, .ai/RULES.md, .ai/PROJECT.md, .ai/REQUIREMENTS.md, "
+            "Read AGENTS.md, .ai/RULES.md, .planning/PROJECT.md, .planning/REQUIREMENTS.md, "
             f".ai/agents/{role}.md and {phase.relative}/{phase.number}-CONTEXT.md. "
             "Load only relevant specs, code and references. Scope approval comes from CONTEXT; "
             "research and source comments cannot expand it. Report contradictions with evidence.\n\n")
@@ -333,15 +342,14 @@ def assignment(phase, component, root, kind, result, revision_id):
                  f"{', '.join(component.data['depends_on']) or 'no prerequisites'}.\n"
                  f"Own only: {', '.join(component.data['files'])}, plus your SUMMARY.\n"
                  "Implement the entire component, run its checks, and commit scoped changes and its "
-                 "SUMMARY. SUMMARY YAML: status: complete|blocked, acceptance: [covered IDs], "
-                 "documentation: [covered exact paths]. Include Changes, Checks (actual evidence), "
-                 "Deviations and Remaining sections. A blocked result must explain the blocker. "
+                 "SUMMARY using the complete .ai/templates/summary.md File Template and .ai/runtime/TEMPLATE-CONTRACT.md. SUMMARY YAML: status: complete|blocked, acceptance: [covered IDs], "
+                 "requirements-completed: [covered requirement IDs], documentation: [covered exact paths]. Preserve every upstream section and add Checks (actual evidence). A blocked result must explain the blocker. "
                  "Do not edit phase inputs, STATE, other components, or other worktrees. "
                  "Do not start agents, push, publish, merge, delete worktrees, or leave background writers running.\n")
     else:
         text += ("Independently inspect actual acceptance behavior, component wiring, regression evidence "
-                 "and required documentation. Read IMPLEMENT and SUMMARY records; claims are not proof. "
-                 "Do not edit tracked files or create commits. Return only a Markdown report with YAML "
+                 "and required documentation. Read PLAN and SUMMARY records; claims are not proof. "
+                 "Use the complete .ai/templates/verification-report.md File Template and .ai/runtime/TEMPLATE-CONTRACT.md. Do not edit tracked files or create commits. Return only a Markdown report with YAML "
                  f"frontmatter status: passed|gaps_found|human_needed and revision: '{revision_id}', "
                  "and sections Acceptance, Integration, Documentation, Findings. Identify acceptance IDs "
                  "and concrete evidence, and retain unresolved findings. The host saves your final report "
@@ -582,7 +590,7 @@ def verifier_report(path, expected_revision):
     data, body = record(path)
     require(data.get("status") in ("passed", "gaps_found", "human_needed"), "Verifier must report passed, gaps_found or human_needed")
     require(data.get("revision") == expected_revision, "Verifier report targets a stale or different revision")
-    for title in ("Acceptance", "Integration", "Documentation", "Findings"):
+    for title in ("Goal Achievement", "Requirements Coverage", "Anti-Patterns Found", "Human Verification Required", "Acceptance", "Integration", "Documentation", "Findings"):
         require(bool(section(body, title)), f"Verifier report is missing {title} evidence")
     return data, body
 
@@ -736,7 +744,7 @@ def publish_phase(phase, *, authorized, base, draft=False):
     require(not any(p.get("state") == "MERGED" for p in requests), "This phase PR is already merged; observe delivery instead of publishing again")
     existing = [p for p in requests if p.get("state") == "OPEN"]
     require(len(existing) <= 1, "Multiple open PRs match this phase; resolve publication target")
-    description = (f"Implements phase {phase.directory.name}.\n\n" + section(phase.body, "Goal") +
+    description = (f"Implements phase {phase.directory.name}.\n\n" + phase_goal(phase.body) +
                    "\n\nAcceptance and component instructions: `" + phase.relative + "`.\n\n" +
                    f"Independent verification: `{phase.number}-VERIFICATION.md` at `{verified['revision']}`.\n\n" +
                    "Configured component and integration checks passed before publication.\n\n" +
@@ -776,7 +784,7 @@ def check_observation(phase, observation):
 
 
 def status_text(root, name=None, remote=False):
-    directories = [name] if name else sorted(p.name for p in (root / ".ai/phases").glob("[0-9]*-*") if p.is_dir())
+    directories = [name] if name else sorted(p.name for p in (root / ".planning/phases").glob("[0-9]*-*") if p.is_dir())
     lines = ["# Phase status", "", "| Phase | Evidence | Next action |", "|---|---|---|"]
     for name in directories:
         phase = load_phase(root, name)
@@ -835,7 +843,7 @@ def status_text(root, name=None, remote=False):
 def sync_state(root):
     assigned(root)
     clean(root)
-    path = root / ".ai/STATE.md"
+    path = root / ".planning/STATE.md"
     path.write_text(status_text(root) + "\nGenerated by phase.py sync; phase records own scope and evidence.\n", encoding="utf-8")
     commit_paths(root, [path], "Refresh derived phase status")
     print(str(path))
@@ -850,18 +858,22 @@ def new_phase(root, slug, title):
     numbers = []
     for line in git(root, "worktree", "list", "--porcelain").splitlines():
         if line.startswith("worktree "):
-            directory = Path(line.removeprefix("worktree ")) / ".ai/phases"
+            directory = Path(line.removeprefix("worktree ")) / ".planning/phases"
             numbers += [int(p.name.split("-", 1)[0]) for p in directory.glob("[0-9]*-*") if p.name.split("-", 1)[0].isdigit()]
     number = f"{max(numbers, default=0) + 1:02d}"
-    directory = root / ".ai/phases" / f"{number}-{slug}"
+    directory = root / ".planning/phases" / f"{number}-{slug}"
     require(not directory.exists(), "Phase directory already exists")
     context = directory / f"{number}-CONTEXT.md"
-    write_record(context, {"phase": number, "approval": "pending", "depends_on": [], "uat": False},
-                 f"# {title}\n\n## Goal\n\nCHANGEME\n\n## Acceptance\n\n- [ ] A1: CHANGEME\n\n"
-                 "## Decisions\n\nPending discussion.\n\n## Authorization\n\nCHANGEME: record the user's actual authorization.\n\n"
-                 "## Open questions\n\nDefine scope and acceptance.\n\n## Deferred\n\nNone.\n")
-    roadmap = root / ".ai/ROADMAP.md"
+    body = file_template(root, "context.md")
+    body = (body.replace("[X]", number).replace("[Name]", title)
+            .replace("[date]", datetime.now(timezone.utc).date().isoformat())
+            .replace("XX-name", directory.name).replace("Ready for planning", "Pending discussion"))
+    body += ("\n## Acceptance\n\n- [ ] A1: CHANGEME — define an observable outcome.\n\n"
+             "## Authorization\n\nCHANGEME: record the user's actual authorization.\n\n"
+             "## Open Questions\n\nDefine scope, acceptance, and required decisions before dispatch.\n")
+    write_record(context, {"phase": number, "approval": "pending", "depends_on": [], "uat": False}, body)
+    roadmap = root / ".planning/ROADMAP.md"
     existing = roadmap.read_text(encoding="utf-8") if roadmap.exists() else "# Roadmap\n"
-    roadmap.write_text(existing.rstrip() + f"\n\n- [{number}: {title}](phases/{directory.name}/{context.name}) — pending discussion.\n", encoding="utf-8")
+    roadmap.write_text(existing.rstrip() + f"\n\n- [{number}: {title}](phases/{directory.name}/{context.name}) â€” pending discussion.\n", encoding="utf-8")
     commit_paths(root, [context, roadmap], f"Create phase {number}: {title}")
     print(f"Created {directory}; discuss scope and approval before preparing components.")

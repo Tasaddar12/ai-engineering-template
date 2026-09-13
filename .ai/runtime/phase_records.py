@@ -72,6 +72,26 @@ def section(body, name):
     return match[1].strip() if match else ""
 
 
+def xml_section(body, name):
+    """Read GSD's Markdown-bearing XML wrappers without parsing Markdown as XML."""
+    match = re.search(rf"<{re.escape(name)}(?:\s[^>]*)?>(.*?)</{re.escape(name)}>", body, re.S)
+    return match[1].strip() if match else ""
+
+
+def phase_goal(body):
+    return section(body, "Phase Boundary") or section(body, "Goal")
+
+
+def file_template(root, name):
+    """Use the complete first File Template block, never the teaching examples."""
+    path = root / ".ai/templates" / name
+    require(path.is_file(), f"Missing upstream template: {path}")
+    text = path.read_text(encoding="utf-8-sig")
+    match = re.search(r"(?ms)^## File Template\s*\n+```markdown\s*\n(.*?)^```\s*$", text)
+    require(match is not None, f"Missing File Template Markdown block: {path}")
+    return match[1]
+
+
 def string_list(value, label):
     require(isinstance(value, list) and all(isinstance(v, str) and v.strip() for v in value),
             f"{label} must be a list of nonempty strings")
@@ -147,8 +167,8 @@ class Phase:
         return self.directory / f"{self.number}-{suffix}.md"
 
     def fingerprint(self):
-        paths = [self.root / ".ai/config.yaml", self.root / ".ai/RULES.md",
-                 self.root / ".ai/PROJECT.md", self.root / ".ai/REQUIREMENTS.md"]
+        paths = [self.root / ".planning/config.yaml", self.root / ".ai/RULES.md",
+                 self.root / ".planning/PROJECT.md", self.root / ".planning/REQUIREMENTS.md"]
         paths += [p for p in self.directory.glob("*.md") if not
                   re.search(r"-(SUMMARY|VERIFICATION|UAT)\.md$", p.name)]
         digest = hashlib.sha256()
@@ -160,8 +180,20 @@ class Phase:
         return digest.hexdigest()
 
 
+def planning_boundary(root):
+    """Fail explicitly instead of hiding project data or incompatible old attempts."""
+    legacy = [str(p.relative_to(root)) for name in
+              ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml", "phases")
+              if (p := root / ".ai" / name).exists()]
+    require(not legacy, "Legacy project records remain at " + ", ".join(legacy) +
+            "; inspect and migrate them to .planning in an assigned worktree. "
+            "Finish or inspect existing attempts with their original runtime before migration; "
+            "do not copy or reinterpret old checkpoints.")
+
+
 def load_phase(root, name, ready=False):
-    base = root / ".ai/phases"
+    planning_boundary(root)
+    base = root / ".planning/phases"
     require(isinstance(name, str) and re.fullmatch(r"\d{2,}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?", name),
             "Select a phase number or its directory name, for example 01-authentication")
     candidates = [p for p in base.glob(name if "-" in name else name + "-*") if p.is_dir()]
@@ -179,7 +211,7 @@ def load_phase(root, name, ready=False):
                 f"Invalid phase dependency: {dep}")
     acceptance = re.findall(r"(?m)^\s*-\s+(?:\[[ xX]\]\s+)?([A-Z][A-Z0-9_-]*\d+)\s*:", section(body, "Acceptance"))
     require(len(acceptance) == len(set(acceptance)), "Duplicate acceptance identifiers in CONTEXT")
-    config = read_yaml((root / ".ai/config.yaml").read_text(encoding="utf-8-sig"))
+    config = read_yaml((root / ".planning/config.yaml").read_text(encoding="utf-8-sig"))
     execution = config.get("execution", {})
     require(isinstance(execution, dict), "execution must be a mapping")
     parallel = execution.get("max_parallel", 2)
@@ -193,19 +225,30 @@ def load_phase(root, name, ready=False):
     env = execution.get("environment", {})
     require(isinstance(env, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in env.items()),
             "execution.environment must map string names to string values")
+    require(not list(directory.glob("*-IMPLEMENT.md")),
+            "Legacy IMPLEMENT records remain; reconcile them to phase-local NN-CC-PLAN.md before execution")
     components = {}
-    for path in sorted(directory.glob("*-IMPLEMENT.md")):
-        require(re.fullmatch(rf"{number}-\d{{2,}}-IMPLEMENT\.md", path.name), f"Invalid component filename: {path.name}")
+    for path in sorted(directory.glob("*-PLAN.md")):
+        require(re.fullmatch(rf"{number}-\d{{2,}}-PLAN\.md", path.name), f"Invalid component filename: {path.name}")
         data, content = record(path)
-        cid = path.name.removesuffix("-IMPLEMENT.md")
+        cid = path.name.removesuffix("-PLAN.md")
+        require(data.get("phase") == directory.name, f"{cid}: PLAN phase must match its directory name")
+        require(str(data.get("plan")) == cid.split("-")[-1], f"{cid}: quote the matching plan number in YAML")
+        require(data.get("type") in ("execute", "tdd"), f"{cid}: PLAN type must be execute or tdd")
+        data["files"] = string_list(data.get("files_modified", []), f"{cid}.files_modified") + string_list(data.get("files_deleted", []), f"{cid}.files_deleted")
+        require(len(data["files"]) == len(set(data["files"])), f"{cid}: declare a path in files_modified or files_deleted, not both")
+        require(all(not p.endswith("/") for p in data.get("files_deleted", [])), f"{cid}: files_deleted requires exact files")
+        data["requirements"] = string_list(data.get("requirements", []), f"{cid}.requirements")
+        data.setdefault("acceptance", data["requirements"])
+        data.setdefault("kind", "code")
         require(data.get("kind") in ("code", "documentation"), f"{cid}: kind must be code or documentation")
         for key in ("depends_on", "files", "resources", "acceptance", "documentation"):
             data[key] = string_list(data.get(key, []), f"{cid}.{key}")
         require(bool(data["files"]), f"{cid}: declare files or directory/ prefixes")
         for value in data["files"] + data["documentation"]:
             safe_path(root, value)
-            reserved = [".ai/phases/", ".ai/STATE.md", ".ai/PROJECT.md", ".ai/REQUIREMENTS.md",
-                        ".ai/RULES.md", ".ai/config.yaml"]
+            reserved = [".planning/phases/", ".planning/STATE.md", ".planning/PROJECT.md", ".planning/REQUIREMENTS.md",
+                        ".ai/RULES.md", ".planning/config.yaml"]
             require(not overlaps([value], reserved),
                     f"{cid}: phase records, STATE and immutable inputs are coordinator-owned; summary ownership is automatic")
         for value in data["documentation"]:
@@ -214,8 +257,18 @@ def load_phase(root, name, ready=False):
         require(set(data["acceptance"]) <= set(acceptance), f"{cid}: unknown acceptance identifier")
         if ready:
             require(bool(data["acceptance"]), f"{cid}: declare acceptance coverage")
-            for title in ("Objective", "Read first", "Implementation", "Verification", "Documentation"):
-                require(bool(section(content, title)), f"{cid}: missing {title} instructions")
+            require(bool(data["requirements"]), f"{cid}: declare requirements coverage")
+            require(data.get("autonomous") is True and 'type="checkpoint:' not in content
+                    and "type='checkpoint:" not in content,
+                    f"{cid}: checkpoint/non-autonomous plans need coordinator resolution before process dispatch; preserve decisions in CONTEXT and prepare an autonomous continuation")
+            for tag in ("objective", "execution_context", "context", "tasks", "verification", "success_criteria", "output"):
+                require(bool(xml_section(content, tag)), f"{cid}: missing <{tag}> instructions")
+            tasks = re.findall(r'<task\s+type=[\'"]auto[\'"][^>]*>(.*?)</task>', content, re.S)
+            require(bool(tasks), f"{cid}: prepare at least one executable auto task")
+            for task in tasks:
+                for tag in ("name", "files", "read_first", "action", "verify", "done"):
+                    require(bool(xml_section(task, tag)), f"{cid}: task missing <{tag}> instructions")
+            require(bool(section(content, "Documentation")), f"{cid}: missing Documentation handoff instructions")
         components[cid] = Component(cid, path, data, content)
     visiting, visited = set(), set()
 
@@ -236,8 +289,8 @@ def load_phase(root, name, ready=False):
         require(context["approval"] == "approved", "Phase needs recorded human approval before execution")
         require(bool(section(body, "Authorization")) and "CHANGEME" not in section(body, "Authorization"),
                 "Record the actual human authorization in CONTEXT")
-        require(bool(section(body, "Goal")) and bool(acceptance), "CONTEXT needs a goal and identified acceptance outcomes")
-        require(bool(components), "Prepare at least one IMPLEMENT component before running")
+        require(bool(phase_goal(body)) and bool(acceptance), "CONTEXT needs a goal and identified acceptance outcomes")
+        require(bool(components), "Prepare at least one PLAN component before running")
         covered = {a for c in components.values() for a in c.data["acceptance"]}
         require(set(acceptance) <= covered, "Every acceptance outcome needs component coverage")
         commands(config.get("verification", {}).get("commands", []), "verification.commands", required=True)
