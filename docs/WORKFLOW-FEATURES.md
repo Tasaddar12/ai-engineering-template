@@ -16,6 +16,7 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 | Discuss and specify | Falsifiable scope, decisions, boundaries and explicit unresolved questions | Phase SPEC and CONTEXT | Recorded requirements do not prove implementation |
 | Bounded research | Resolve technical uncertainties with source evidence | [bounded-research](../.agents/skills/bounded-research/SKILL.md) | Research cannot authorize a new product direction |
 | Detailed phase plans | Concrete tasks, checks, ownership, dependencies and must-haves | `NN-CC-PLAN.md`; [template contract](../.ai/runtime/TEMPLATE-CONTRACT.md) | Full upstream guidance plus local runtime metadata |
+| Human checkpoints and setup | Preserve explicit decisions, observations and external prerequisites | Full PLAN/context/setup guidance | Python dispatch blocks non-autonomous plans or unresolved setup; coordinator resolves and prepares autonomous continuation |
 | Independent preparation check | Examine feasibility, coverage, interfaces and task quality | [Phase checker](../.ai/agents/phase-checker.md) | Coordinator arranges this; structural runtime check is insufficient alone |
 | Fresh implementation workers | Focused coder or documentor per ready assignment | [Runtime](../.ai/runtime/README.md) | Workers stay inside assigned write scope and do not dispatch more agents |
 | Parallel scheduling | Start ready independent components up to configured capacity | `execution.max_parallel` | Shared paths/resources serialize; worktree isolation does not isolate services |
@@ -53,7 +54,7 @@ specialty upstream workflow.
   PROJECT.md                    Purpose, users, boundaries and confirmed intent
   REQUIREMENTS.md               Desired outcomes and identifiers
   ROADMAP.md                    Phase goals, order and dependencies
-  STATE.md                      Compact derived progress and next action
+  STATE.md                      Living session memory plus derived Runtime Status
   config.yaml                   Python runtime workers, capacity and real checks
   config.json                   Optional upstream settings when its workflow is used
   codebase/                     Inspected architecture and stack maps
