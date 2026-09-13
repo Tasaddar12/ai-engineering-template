@@ -1,24 +1,105 @@
-# Phase templates
+# GSD Canonical Artifact Registry
 
-Templates show the minimum useful shape; placeholder text is not a real decision,
-result or verification. Replace it with evidence before using a record.
+This directory contains the template files for every artifact that GSD workflows officially produce. The table below is the authoritative index: **if a `.planning/` root file is not listed here, `gsd-health` will flag it as W019** (unrecognized artifact).
 
-| Template | Destination |
-|---|---|
-| [PROJECT](PROJECT.md) | `.ai/PROJECT.md` during adoption |
-| [CONTEXT](CONTEXT.md) | `phases/NN-slug/NN-CONTEXT.md` |
-| [DISCUSSION-LOG](DISCUSSION-LOG.md) | Optional `NN-DISCUSSION-LOG.md` |
-| [RESEARCH](RESEARCH.md) | Optional `NN-RESEARCH.md` |
-| [VALIDATION](VALIDATION.md) | Optional `NN-VALIDATION.md` |
-| [IMPLEMENT](IMPLEMENT.md) | `NN-CC-IMPLEMENT.md` per component |
-| [SUMMARY](SUMMARY.md) | `NN-CC-SUMMARY.md` from its worker |
-| [VERIFICATION](VERIFICATION.md) | `NN-VERIFICATION.md` stored by coordinator |
-| [UAT](UAT.md) | `NN-UAT.md`, created/updated through runtime |
-| [CONTINUE](CONTINUE.md) | Optional `.continue-here.md` |
-| [SPEC](SPEC.md) | Current behavior in `.ai/specs/` |
-| [ADR](ADR.md) | Significant rationale in `.ai/decisions/` |
+Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical GSD artifact.
 
-Frontmatter is limited to fields the operation uses. Do not add separate schema
-files or repeat component requirements in another registry. See
-[artifact ownership](../references/phase-artifacts.md). Optional records are
-omitted when they add no useful information.
+---
+
+## `.planning/` Root Artifacts
+
+These files live directly at `.planning/` — not inside phase subdirectories.
+
+| File | Template | Produced by | Purpose |
+|------|----------|-------------|---------|
+| `PROJECT.md` | `project.md` | `/gsd:new-project` | Project identity, goals, requirements summary |
+| `ROADMAP.md` | `roadmap.md` | `/gsd:new-milestone`, `/gsd:new-project` | Phase plan with milestones and progress tracking |
+| `STATE.md` | `state.md` | `/gsd:new-project`, `/gsd:health --repair` | Current session state, active phase, last activity |
+| `REQUIREMENTS.md` | `requirements.md` | `/gsd:new-milestone` | Functional requirements with traceability |
+| `MILESTONES.md` | `milestone.md` | `/gsd:complete-milestone` | Log of completed milestones with accomplishments |
+| `BACKLOG.md` | *(inline)* | `/gsd-add-backlog` | Pending ideas and deferred work |
+| `LEARNINGS.md` | *(inline)* | `/gsd:extract-learnings`, `/gsd:execute-phase` (gated: `features.global_learnings`) | Phase retrospective learnings for future plans |
+| `THREADS.md` | *(inline)* | `/gsd:thread` | Persistent discussion threads |
+| `config.json` | `config.json` | `/gsd:new-project`, `/gsd:health --repair` | Project-specific GSD configuration |
+| `CLAUDE.md` | *(inline)* | `/gsd-profile` | Auto-assembled Claude Code context file |
+| `RETROSPECTIVE.md` | *(inline)* | `/gsd:complete-milestone` | Living milestone retrospective updated at each milestone close |
+| `WINDOWS.md` | *(none)* | broken-windows ledger (`https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/broken-windows.cts`) | Tracked known-broken items pending resolution (#3224) |
+| `STATE-ARCHIVE.md` | *(none)* | `https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
+| `milestone.lock` | *(none)* | `https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
+| `state.json` | *(none)* | `https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/state-contract.cts` | Machine-readable state contract published at step boundaries (#3227) |
+| `skill-manifest.json` | *(none)* | `https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest (#3964) |
+| `PATTERNS.md` | *(inline)* | `/gsd:extract-learnings` (graduation, `.ai/gsd/workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below (#4282) |
+
+### Version-stamped artifacts (pattern: `vX.Y-*.md`)
+
+| Pattern | Produced by | Purpose |
+|---------|-------------|---------|
+| `vX.Y-MILESTONE-AUDIT.md` | `/gsd:audit-milestone` | Milestone audit report before archiving |
+
+These files are archived to `.planning/milestones/` by `/gsd:complete-milestone`. Finding them at the `.planning/` root after completion indicates the archive step was skipped.
+
+---
+
+## Phase Subdirectory Artifacts (`.planning/phases/NN-name/`)
+
+These files live inside a phase directory. They are NOT checked by W019 (which only inspects the `.planning/` root).
+
+| File Pattern | Template | Produced by | Purpose |
+|-------------|----------|-------------|---------|
+| `NN-MM-PLAN.md` | `phase-prompt.md` | `/gsd:plan-phase` | Executable implementation plan |
+| `NN-MM-SUMMARY.md` | `summary.md` | `/gsd:execute-phase` | Post-execution summary with learnings |
+| `NN-CONTEXT.md` | `context.md` | `/gsd:discuss-phase` | Scoped discussion decisions for the phase |
+| `NN-RESEARCH.md` | `research.md` | `/gsd:plan-phase`, `/gsd:plan-phase --research-phase <N>` | Technical research for the phase |
+| `NN-VALIDATION.md` | `VALIDATION.md` | `/gsd:plan-phase` (Nyquist) | Validation architecture (Nyquist method) |
+| `NN-UAT.md` | `UAT.md` | `/gsd:validate-phase` | User acceptance test results |
+| `NN-PATTERNS.md` | *(inline)* | `/gsd:plan-phase` (pattern mapper) | Analog file mapping for the phase |
+| `NN-UI-SPEC.md` | `UI-SPEC.md` | `/gsd:ui-phase` | UI design contract |
+| `NN-SECURITY.md` | `SECURITY.md` | `/gsd:secure-phase` | Security threat model |
+| `NN-AI-SPEC.md` | `AI-SPEC.md` | `/gsd:ai-integration-phase` | AI integration spec with eval strategy |
+| `NN-DEBUG.md` | `DEBUG.md` | `/gsd:debug` | Debug session log |
+| `NN-REVIEWS.md` | *(inline)* | `/gsd:review` | Cross-AI review feedback |
+
+---
+
+## Milestone Archive (`.planning/milestones/`)
+
+Files archived by `/gsd:complete-milestone`. These are never checked by W019.
+
+| File Pattern | Source |
+|-------------|--------|
+| `vX.Y-ROADMAP.md` | Snapshot of ROADMAP.md at milestone close |
+| `vX.Y-REQUIREMENTS.md` | Snapshot of REQUIREMENTS.md at milestone close |
+| `vX.Y-MILESTONE-AUDIT.md` | Moved from `.planning/` root |
+| `vX.Y-phases/` | Archived phase directories (if `--archive-phases` used) |
+
+---
+
+## Adding a New Canonical Artifact
+
+When a new workflow produces a `.planning/` root file:
+
+1. Add the file name to `CANONICAL_EXACT` in `https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/artifacts.cts`
+2. Add a row to the **`.planning/` Root Artifacts** table above
+3. Add the template to `gsd-core/templates/` if one exists
+
+
+<!-- LOCAL-ADOPTION:START -->
+## Local adoption — read before using this source
+
+The complete upstream body above is retained from GSD-Core at
+`c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; only recorded reference substitutions
+and explicit local conflict corrections have been made. See
+`.ai/gsd/PROVENANCE.json` for exact source hashes and changes.
+
+Read `.ai/gsd/README.md` for the local producer/consumer mapping and execution
+boundary, `.ai/references/gsd-adaptation.md` for local conflict decisions,
+and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
+fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
+The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
+`.planning/config.yaml`. The upstream `config.json`, `/gsd:*` commands, tool
+names, hooks, and Node CLI examples describe GSD's system; this import does not
+install or activate that system. Retained specialty workflows are full source
+guidance for explicit future integration, not promises of installed features.
+Local rules, assigned worktrees, recorded authorization, runtime ownership and
+verification safeguards govern execution. The local runtime never merges.
+<!-- LOCAL-ADOPTION:END -->
