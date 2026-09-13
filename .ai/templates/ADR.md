@@ -20,8 +20,8 @@ instructions, delegated discretion and inspected evidence.
 | Verifier | Check that implementation follows the accepted choice and its stated limits |
 | Future maintainer | Distinguish intentional tradeoffs from defects and superseded assumptions |
 
-This is a local extension. It complements the complete upstream template catalog;
-it is not a replacement for the upstream phase specification.
+This is a local extension. It complements the complete library template catalog;
+it is not a replacement for the phase specification.
 
 ---
 

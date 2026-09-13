@@ -1,6 +1,6 @@
 # Project planning and parallel implementation
 
-A reusable engineering workflow with complete GSD-Core templates, a separate
+A reusable engineering workflow with complete instructional templates, a separate
 `.planning/` project workspace, and a Python runtime for bounded parallel workers.
 Start with [AGENTS.md](AGENTS.md).
 
@@ -23,7 +23,7 @@ are not an adopting project's roadmap or delivery history.
 | Location | Contents | Travels with Git? |
 |---|---|---|
 | `.planning/` | Project intent, requirements, roadmap, state, phase plans, evidence, research, current specs, decisions and project execution settings | Yes, for committed records |
-| `.ai/` | Reusable rules, local procedures and roles, complete templates, upstream supporting guidance, runtime and advisory hooks | Yes |
+| `.ai/` | Reusable rules, local procedures and roles, complete templates, supporting guidance, runtime and advisory hooks | Yes |
 | `.agents/skills/` | Focused engineering methods selected for each assignment | Yes |
 | `docs/` | Human-facing usage, feature and architecture guides | Yes |
 | Primary checkout's `.worktrees/` | Assigned integration and worker checkouts | No; ignored local working directories |
@@ -47,18 +47,20 @@ slow unrelated component does not block every later component behind a wave.
 
 ## Template fidelity and execution
 
-All 40 upstream templates are retained in full at their original filenames under
+All 40 adapted templates are retained in full at stable artifact filenames under
 [`.ai/templates/`](.ai/templates/README.md), including teaching guidance, examples,
-counterexamples and consumer descriptions. [Supporting GSD guidance](.ai/gsd/README.md)
+counterexamples and consumer descriptions. [Supporting workflow guidance](.ai/library/README.md)
 keeps referenced methods available. [changes.log](changes.log) records adaptations.
+Source attribution and revision history remain in
+[third-party notices](THIRD-PARTY-NOTICES.md) and provenance.
 
 The executable interface remains `python .ai/runtime/phase.py`. Its
 [additive contract](.ai/runtime/TEMPLATE-CONTRACT.md) explains the runtime metadata
-used alongside the complete templates. Upstream workflow documents and command
-names are supplied guidance; their presence does not install every GSD command,
-agent dispatcher or host integration.
+used alongside the complete templates. Library workflow documents and command
+names are supplied guidance; their presence does not install every documented
+command, agent dispatcher or host integration.
 
-`.planning/config.yaml` configures this runtime. The complete upstream
+`.planning/config.yaml` configures this runtime. The complete library
 `config.json` template is retained separately; its settings are not silently
 translated into Python runtime settings.
 
