@@ -2,7 +2,7 @@
 
 `phase.py` executes the phase procedures described in
 [the workflow guide](../../docs/PHASE-WORKFLOW.md). It consumes Markdown records
-with small YAML frontmatter and [config.yaml](../config.yaml). There are no
+with complete GSD template bodies and additive YAML execution fields and [config.yaml](../../.planning/config.yaml). There are no
 schema files, schedule snapshots or separate work-item registry to maintain.
 Python 3.11+ and PyYAML are required. Install `requirements.txt` into the host's
 virtual environment. Git and the chosen worker executable must be available;
@@ -29,7 +29,7 @@ committed, and the worktree must be clean before mutation.
 | `python .ai/runtime/phase.py uat 03` | Create or show a persistent acceptance session |
 | `python .ai/runtime/phase.py uat 03 --case 1 --result pass --note "Observed result"` | Commit an actual human observation; also accepts fail, blocked and skipped |
 | `python .ai/runtime/phase.py publish 03 --authorized --base main [--draft]` | Push and create/update the phase PR; never merge it |
-| `python .ai/runtime/phase.py sync` | Commit a refreshed, derived STATE view |
+| `python .ai/runtime/phase.py sync` | Update only Runtime Status in the full STATE artifact |
 
 Phase arguments accept a number or full directory name. Read-only status and
 check do not launch agents, reserve IDs or write checkpoints. An empty template
@@ -37,12 +37,12 @@ has no phases and no verification commands until adoption.
 
 ## Input and result contract
 
-[CONTEXT](../templates/CONTEXT.md) owns goal, identified acceptance, decisions
+[CONTEXT](../templates/context.md) owns goal, identified acceptance, decisions
 and actual authorization. `approval: approved` is a recorded human instruction,
 not permission a worker can invent. Open questions remain a coordinator
 judgment: prepare only independent, decided scope for execution.
 
-Each [IMPLEMENT](../templates/IMPLEMENT.md) declares kind (`code` or
+Each [PLAN](../templates/phase-prompt.md) declares kind (`code` or
 `documentation`), prerequisite component IDs, owned paths, exclusive resources,
 acceptance IDs, required documentation paths and meaningful argv checks. Paths
 are exact repository-relative files or directory prefixes ending in `/`. Globs,
@@ -51,6 +51,9 @@ SUMMARY is automatically owned. Authorization matches exact Git path spelling,
 including case and whitespace. Scheduling treats case variants conservatively
 as overlapping across platforms, but that does not authorize a differently
 spelled path during the committed-output audit.
+
+[TEMPLATE-CONTRACT](TEMPLATE-CONTRACT.md) defines complete upstream artifact consumption,
+local evidence extensions, checkpoint and decimal-numbering boundaries, and migration.
 
 The coordinator also owns immutable PROJECT, REQUIREMENTS, RULES and config
 inputs. Broad ownership such as `.ai/` is rejected because it contains those
@@ -64,7 +67,7 @@ before it exists. Overlapping files or resources serialize. Dependencies wait
 for integrated commits and passing checks. Cross-phase dependencies need verified
 code and its report on the fetched publication base.
 
-Workers commit actual changes and [SUMMARY](../templates/SUMMARY.md), with
+Workers commit actual changes and [SUMMARY](../templates/summary.md), with
 `status: complete|blocked`, acceptance and documentation coverage. The runner
 audits every commit's paths, clean output, ancestry and nonempty implementation,
 then reruns checks. Exit code zero and summary claims alone do not prove success.
@@ -82,14 +85,14 @@ variables, plus the Markdown assignment on standard input. An optional
 `execution.documentor_command` selects a separate executable/model route.
 
 The coordinator starts fresh processes. Each gets the role, relevant core
-constraints, CONTEXT, its IMPLEMENT, required source and dependency summaries.
+constraints, CONTEXT, its PLAN, required source and dependency summaries.
 Worker processes do not start agents. The default Codex adapter uses the host's
 configured model. Check the installed host's execution and worktree permissions;
 prompts and Git auditing do not sandbox arbitrary commands or external services.
 
 Tracked `.agents/skills/` files travel with committed inputs into fresh worker
 checkouts. Codex can discover them there; required methods are also named by path
-in IMPLEMENT's Read first section. Other adapters can read those same Markdown
+in PLAN's Read first section. Other adapters can read those same Markdown
 paths. The runtime needs no new skill configuration or registration; follow the
 [repository skill guide](../../docs/AGENT-SKILLS.md) for selection and upkeep.
 
@@ -97,7 +100,8 @@ For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's
 worktree. Do not use `--output-last-message` to write there after a commit.
 For the verifier it is an external report path. The default verifier adapter
 saves its final Markdown message there. Custom adapters may write it directly.
-Verifier YAML is `status: passed|gaps_found|human_needed` and the exact assigned
+Preserve the complete upstream verification-report sections and add the local
+evidence sections below. Verifier YAML is `status: passed|gaps_found|human_needed` and the exact assigned
 `revision`. Required sections are Acceptance, Integration, Documentation and
 Findings. The verifier has its own worktree; any tracked edit or commit invalidates
 its result and preserves the worktree for inspection.

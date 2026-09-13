@@ -1,5 +1,6 @@
 """Record navigation and preparation behavior, including fresh-worktree handoffs."""
 from pathlib import Path
+import hashlib
 import re
 import sys
 import unittest
@@ -12,7 +13,7 @@ import test_phase_runtime as fixtures
 
 SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE / ".ai/runtime"))
-from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record  # noqa: E402
+from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record, file_template, load_phase  # noqa: E402
 
 
 class PhaseRecordTests(unittest.TestCase):
@@ -44,6 +45,88 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertEqual(paths, [".planning/STATE.md"])
         self.assertIn("01-example", (f.checkout / ".planning/STATE.md").read_text())
         f.assert_primary_untouched()
+
+    def test_full_upstream_outputs_execute_verify_uat_and_preserve_authored_state(self):
+        f = self.fixture
+        f.prepare_remote()
+        f.configure(PHASE_FIXTURE_MODE="full-templates")
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        context_data, local_context = record(context_path)
+        context_data["uat"] = True
+        context_body = file_template(f.checkout, "context.md")
+        context_body = context_body.replace("[X]", "01").replace("[Name]", "Example")
+        context_body = context_body.replace("[Clear statement of what this phase delivers — the scope anchor. This comes from ROADMAP.md and is fixed. Discussion clarifies implementation within this boundary.]", "Deliver integrated fixture output.")
+        f.record(fixtures.PHASE_PATH / "01-CONTEXT.md", context_data,
+                 context_body + "\n## Acceptance\n\n- [ ] A1: Assigned output works.\n\n## Authorization\n\nUser requested fixture execution and testing.\n")
+        plan_path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        plan_data, _ = record(plan_path)
+        plan = file_template(f.checkout, "phase-prompt.md")
+        original_metadata = read_yaml(plan.split("---", 2)[1])
+        original_metadata.update(plan_data, wave=1, user_setup=[], must_haves={
+            "truths": ["Assigned output exists after execution"],
+            "artifacts": [{"path": "src/01-01.txt", "provides": "Fixture output"}], "key_links": []})
+        plan_body = plan.split("---", 2)[2]
+        # Checkpoints are conditional examples. This fixture has no human decision
+        # inside execution; actual UAT is exercised separately below.
+        plan_body = re.sub(r'<task type="checkpoint:.*?</task>', "", plan_body, flags=re.S)
+        f.record(fixtures.PHASE_PATH / "01-01-PLAN.md", original_metadata,
+                 plan_body + "\n## Documentation\n\nNo external guide obligation for the fixture.\n")
+        state_path = f.checkout / ".planning/STATE.md"
+        state_path.write_text(file_template(f.checkout, "state.md") + "\nCoordinator note: preserve this decision.\n", encoding="utf-8")
+        f.commit("Prepare full upstream artifact outputs")
+        f.cli("check", "01")
+        f.cli("run", "01")
+        self.assertIn("01-01 implemented", (f.checkout / "src/01-01.txt").read_text())
+        summary_data, summary_body = record(f.summary("01-01"))
+        self.assertEqual(summary_data["requirements-completed"], ["R1"])
+        self.assertIn("## Performance", summary_body)
+        f.cli("verify", "01")
+        report = f.checkout / fixtures.PHASE_PATH / "01-VERIFICATION.md"
+        self.assertIn("### Key Link Verification", record(report)[1])
+        f.cli("uat", "01")
+        uat = f.checkout / fixtures.PHASE_PATH / "01-UAT.md"
+        data, body = record(uat)
+        self.assertEqual(data["source"], [str(fixtures.PHASE_PATH / "01-01-SUMMARY.md").replace("\\", "/")])
+        self.assertIn("## Current Test", body)
+        self.assertIn("expected: Assigned output works.", body)
+        uat.write_text(uat.read_text() + "\n## Interview Notes\n\nPreserve the user's additional context.\n", encoding="utf-8")
+        f.commit("Record authored UAT context")
+        f.cli("uat", "01", "--case", "1", "--result", "fail", "--note", "Observed issue")
+        f.cli("uat", "01", "--case", "1", "--result", "pass", "--note", "Retest observed output")
+        data, body = record(uat)
+        self.assertEqual(data["status"], "complete")
+        self.assertEqual(len(data["cases"][0]["observations"]), 2)
+        self.assertIn("Preserve the user's additional context.", body)
+        f.cli("sync")
+        self.assertIn("## Accumulated Context", state_path.read_text())
+        self.assertIn("Coordinator note: preserve this decision.", state_path.read_text())
+        f.publish()
+        f.assert_primary_untouched()
+
+    def test_legacy_records_and_old_checkpoint_do_not_disappear_from_status(self):
+        f = self.fixture
+        f.write(f.checkout, ".ai/PROJECT.md", "Legacy identity must be reconciled.\n")
+        result = f.cli("status", succeeds=False)
+        self.assertIn("Legacy project records remain", result.stderr)
+        (f.checkout / ".ai/PROJECT.md").unlink()
+        legacy_relative = str(fixtures.PHASE_PATH).replace("\\", "/").replace(".planning/", ".ai/")
+        key = hashlib.sha256((str(f.checkout) + "\n" + legacy_relative).encode()).hexdigest()[:20]
+        path = f.primary / ".git/ai/phases" / f"01-example-{key}" / "state.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text("components: {}\n", encoding="utf-8")
+        result = f.cli("status", "01", succeeds=False)
+        self.assertIn("Legacy checkpoint exists", result.stderr)
+        self.assertTrue(path.exists())
+
+    def test_native_plan_rejects_missing_task_action_and_unresolved_checkpoint(self):
+        f = self.fixture
+        path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
+        original = path.read_text()
+        path.write_text(re.sub(r"<action>.*?</action>", "", original))
+        self.assertIn("task missing <action>", f.cli("check", "01", succeeds=False).stderr)
+        path.write_text(original.replace("autonomous: true", "autonomous: false"))
+        self.assertIn("checkpoint/non-autonomous", f.cli("check", "01", succeeds=False).stderr)
+        self.assertEqual(f.events(), [])
 
     def test_git_text_normalizes_line_endings_while_raw_preserves_them(self):
         f = self.fixture

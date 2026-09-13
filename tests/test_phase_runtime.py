@@ -131,7 +131,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.record(
             PHASE_PATH / f"{identifier}-PLAN.md",
             {
-                "phase": PHASE, "plan": identifier.split("-")[-1], "type": "execute", "autonomous": True,
+                "phase": PHASE, "plan": identifier.split("-")[-1], "type": "execute", "autonomous": True, "wave": 1, "must_haves": {"truths": ["Fixture output works"], "artifacts": paths, "key_links": []},
                 "kind": kind, "depends_on": depends_on or [], "files_modified": paths, "requirements": ["R1"],
                 "resources": resources or [], "acceptance": ["A1"],
                 "documentation": documentation or [],

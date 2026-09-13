@@ -131,3 +131,17 @@ Migration checklist:
 4. Reconcile each IMPLEMENT to the full phase-prompt File Template and PLAN name.
 5. Commit inputs, configure real checks, run readiness and an independent review.
 6. Begin a new attempt; retain old evidence without treating it as current verification.
+
+## Phase numbering boundary
+
+The full upstream roadmap retains decimal insertion examples and instructions.
+This Python allocator currently creates and accepts integer phase identifiers
+only (NN-slug). Decimal insertion is an upstream method pending a future command
+expansion; it is not silently rounded, ignored, or advertised as executable here.
+Keep the example guidance in the template. Use an explicitly authorized next
+integer phase with recorded dependency decisions for this runtime, or retain the
+decimal proposal as a planning artifact until compatible tooling is provided.
+
+`sync` updates only a dedicated Runtime Status section in the full STATE artifact.
+Project reference, current position, metrics, accumulated context, deferred items
+and session continuity remain coordinator-authored and are never discarded by sync.
