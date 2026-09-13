@@ -120,6 +120,12 @@ workers. Researcher, preparer and preparation-checker contexts are arranged by
 the coordinator. The complete upstream workflows describe those methods; they
 are not all registered host commands in this repository.
 
+The process runner accepts autonomous plans. Non-autonomous/checkpoint plans and
+unresolved `user_setup` remain complete planning artifacts but block dispatch.
+The coordinator handles the actual checkpoint, records the outcome and prepares
+an autonomous continuation. Keep the checkpoint and its evidence; do not delete
+it to make the readiness gate pass.
+
 ## 5. Execute with bounded fresh workers
 
 | Role | Responsibility | Started by |
@@ -265,7 +271,8 @@ Local runtime attempts live under the Git common directory's `ai/phases/`, share
 by linked worktrees. Committed summaries, verification and UAT live with the phase
 and travel with Git. A fresh clone has durable history but not the old machine's
 process checkpoints. `status` is read-only; `sync` explicitly refreshes the
-tracked `.planning/STATE.md` view.
+`Runtime Status` section of tracked `.planning/STATE.md`, preserving its authored
+session memory and full upstream structure.
 
 See the [runtime guide](../.ai/runtime/README.md) for exact resume, replan and
 verification commands. Never interpret an old STATE entry as proof that a process
