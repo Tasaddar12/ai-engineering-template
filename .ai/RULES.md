@@ -165,7 +165,7 @@ and lifecycle instructions. Do not shorten them or substitute a compact variant
 without an assignment calling for it. Use the artifact block to write project
 records; instructional examples are not real project decisions.
 
-The [GSD adaptation](references/gsd-adaptation.md) defines local runtime, host and
+The [template adaptation](references/template-adaptation.md) defines local runtime, host and
 authority differences; [changes.log](../changes.log) records template maintenance
 adaptations. The imported support library supplies complete methods, not installed
 slash commands. Use actual local procedures and the runtime contract for execution.

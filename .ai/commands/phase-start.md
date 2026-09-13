@@ -28,9 +28,9 @@ resolution before its dependent work. For interruption, use
 
 ## Execution guidance
 
-The [complete execution method](../gsd/workflows/execute-plan.md) explains task
+The [complete execution method](../library/workflows/execute-plan.md) explains task
 execution, deviations, checkpoints and result writing. Use it with
-[local adaptation](../references/gsd-adaptation.md), the assigned PLAN, and the
+[local adaptation](../references/template-adaptation.md), the assigned PLAN, and the
 full [summary template](../templates/summary.md). Preserve task completion evidence,
 actual changes, decisions, dependency effects, issues and remaining work. Add
 [runtime result fields](../runtime/TEMPLATE-CONTRACT.md); a blocked task cannot

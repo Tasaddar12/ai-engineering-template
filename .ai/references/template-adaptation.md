@@ -1,4 +1,4 @@
-# Using the complete GSD templates here
+# Using the complete project templates here
 
 Read the selected [full template](../templates/README.md), including its examples,
 counterexamples, field explanations and consumer guidance. Generate the artifact
@@ -10,17 +10,17 @@ the assignment or user calls for it. All supplied variants remain available.
 
 | Layer | Responsibility | Entry point |
 |---|---|---|
-| Complete GSD templates | Artifact structure and authoring guidance | `.ai/templates/` |
-| GSD supporting methods | Full referenced research, planning, execution and review instructions | [Source library](../gsd/README.md) |
+| Complete project templates | Artifact structure and authoring guidance | `.ai/templates/` |
+| Supporting methods | Full referenced research, planning, execution and review instructions | [Source library](../library/README.md) |
 | Local procedures | Apply those methods to this repository's host and delivery boundaries | [Commands](../commands/README.md) |
 | Local execution adapter | Git isolation, worker processes, checked integration, recovery, verification, UAT and PR publication | [Python runtime](../runtime/README.md) |
 | Project records | Actual decisions, plans, evidence and configuration | [Planning data](../../.planning/README.md) |
 
 The support library is available to read. Its host-specific command names and
-agent types do not register themselves in Codex. A `/gsd:...` reference identifies
+agent types do not register themselves in Codex. A `/workflow:...` reference identifies
 its backing workflow; use the mapped local procedure where supplied. Additional
 specialty workflows require an explicit assignment and the appropriate host
-capabilities. Never pretend a GSD CLI command ran when only a Markdown file was read.
+capabilities. Never pretend an unavailable CLI command ran when only a Markdown file was read.
 
 ## Compatibility decisions
 
@@ -33,7 +33,7 @@ preserve full instructions; they are not a license to shorten a template.
 | Project data | `.planning/` owns project identity, requirements, roadmap, state, phases, research maps, current specifications, decisions and project settings | User requested separation from reusable `.ai` machinery |
 | PLAN | `NN-CC-PLAN.md` is the bounded component prompt within a phase | Follow upstream naming without resurrecting a standalone PLAN lifecycle |
 | Execution metadata | Add the documented [runtime extensions](../runtime/TEMPLATE-CONTRACT.md) to the full artifact | Preserve recorded authorization, exact ownership, command arguments, documentation coverage and revision evidence |
-| Configuration | `.planning/config.yaml` configures the Python runtime; imported `config.json` describes GSD's separate configuration | The two runtimes do not implement identical settings |
+| Configuration | `.planning/config.yaml` configures the Python runtime; imported `config.json` describes the source workflow's separate configuration | The two runtimes do not implement identical settings |
 | Waves | Keep wave metadata and dependency planning guidance; the Python scheduler releases each component after its own integrated and checked prerequisites | Unrelated components need no global wave barrier |
 | Source versus current behavior | Phase `NN-SPEC.md` uses upstream `spec.md`; `.planning/specs/SPEC-*.md` uses `CURRENT-SPEC.md` | Proposed requirements must not masquerade as verified current behavior |
 | Checkpoints | Preserve checkpoint tasks and human observations; ask when a real decision or human-only check is needed | Existing authorization persists; repeated approval prompts are not progress |

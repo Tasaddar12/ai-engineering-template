@@ -507,3 +507,22 @@ is phase-prompt.md (producing phase-local PLAN.md), CONTINUE's is continue-here.
 and VERIFICATION's is verification-report.md. The former current-behavior SPEC
 is represented separately by the local CURRENT-SPEC template because upstream
 spec.md describes proposed product intent. ADR remains a local-only template.
+
+## 2026-09-13 — Naming and proposed workflow direction
+
+- The user asked to remove source-project branding from the working system.
+  Use neutral template, specialist, command and reference-library names.
+  Full instructional content and examples remain; renaming is reversible and
+  recorded in provenance. Required license/source attribution stays in dedicated
+  third-party/provenance records rather than the user workflow.
+- Rename .ai/gsd to .ai/library and the adapter reference to
+  .ai/references/template-adaptation.md. Working procedure links follow the new
+  specialist and library names. The importer and tests receive neutral names.
+- Record the user's proposed three entry paths: feature changes spanning phases,
+  bug fixes and small changes. Research and informed questions precede phase-goal
+  preparation. Optional feature/milestone grouping is a proposed next-stage
+  design, not an assertion that a new grouping runtime is already implemented.
+- Independent review found a native TDD plan-format mismatch, six unresolved
+  supporting hyperlinks, underspecified summary-variant extensions and a Windows
+  test decoding failure. These remain open until the corresponding corrections
+  and independent re-review pass; successful import hashes alone are insufficient.

@@ -17,7 +17,7 @@ Leave the adopting project's identity unfilled until onboarding records real int
 | `decisions/` | Significant architectural decisions and supersession | Recorded human decisions |
 | `maintenance/` | Explicitly requested work on this reusable template | Assigned maintenance coordinator |
 
-Optional upstream artifacts, including project research, debugging, design,
+Optional workflow artifacts, including project research, debugging, design,
 milestones and retrospectives, use destinations described by their complete
 templates. Their presence does not start an agent or authorize a change.
 

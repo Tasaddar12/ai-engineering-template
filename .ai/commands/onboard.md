@@ -42,7 +42,7 @@ onboarding. Read their examples and update rules before creating real records in
 Preserve existing project guidance and migrate old data explicitly; do not maintain
 both `.ai/PROJECT.md` and `.planning/PROJECT.md` as competing owners.
 
-The [GSD onboarding workflow](../gsd/workflows/onboard.md) supplies the full method.
-Apply the [local adapter](../references/gsd-adaptation.md) for host capabilities,
+The [Onboarding method](../library/workflows/onboard.md) supplies the full method.
+Apply the [local adapter](../references/template-adaptation.md) for host capabilities,
 worktree placement and configuration. Do not run upstream installer/CLI examples
 as though they were already configured local commands.

@@ -27,6 +27,6 @@ The coordinator records decisions and obtains a checker before substantial work.
 Read the complete [phase prompt template](../templates/phase-prompt.md), including
 its examples, task criteria and context/dependency guidance. Preserve its artifact
 structure and use the [adapter contract](../runtime/TEMPLATE-CONTRACT.md) for
-local executable fields. The full [GSD planner](../gsd/agents/gsd-planner.md)
-supplies the method; [local adaptation](../references/gsd-adaptation.md) governs
+local executable fields. The full [Planner method](../library/agents/planner.md)
+supplies the method; [local adaptation](../references/template-adaptation.md) governs
 host dispatch, paths and authority.

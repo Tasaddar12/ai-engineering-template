@@ -35,6 +35,6 @@ Use [discussion-log](../templates/discussion-log.md) when a transcript is useful
 and [spec](../templates/spec.md) for a phase-level specification of desired
 behavior. A phase specification is distinct from a current-behavior contract.
 Add the [runtime fields](../runtime/TEMPLATE-CONTRACT.md) to the full context
-output. [GSD discussion](../gsd/workflows/discuss-phase.md) provides the complete
-discussion method; [adaptation](../references/gsd-adaptation.md) resolves local
+output. [Discussion method](../library/workflows/discuss-phase.md) provides the complete
+discussion method; [adaptation](../references/template-adaptation.md) resolves local
 authority, host and storage differences.
