@@ -1,5 +1,6 @@
 """Check navigable local workflow guidance after the planning/template cutover."""
 from pathlib import Path
+import posixpath
 import re
 import unittest
 from urllib.parse import unquote
@@ -37,12 +38,15 @@ class WorkflowNavigationTests(unittest.TestCase):
                 file_part = unquote(target.split("#", 1)[0])
                 if not file_part:
                     continue
-                destination = (source.parent / file_part).resolve()
+                relative_text = posixpath.normpath(source.parent.relative_to(ROOT).as_posix() + "/" + file_part)
+                destination = (ROOT / relative_text).resolve()
                 label = f"{source.relative_to(ROOT)} -> {target}"
                 if not destination.is_relative_to(ROOT) or not destination.exists():
                     failures.append(label + " (missing or outside repository)")
                     continue
-                relative = destination.relative_to(ROOT)
+                # resolve() can correct filename casing on Windows. Audit the
+                # spelling in the link, not the filesystem's corrected result.
+                relative = Path(relative_text)
                 cursor = ROOT
                 for part in relative.parts:
                     if part not in {child.name for child in cursor.iterdir()}:
