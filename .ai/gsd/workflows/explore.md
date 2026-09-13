@@ -73,7 +73,7 @@ If yes, spawn a research agent:
 
 <!-- #2508 runtime-aware-dispatch -->
 
-> **Runtime-aware dispatch (#2508 Phase 4).** GSD workflows dispatch specialized subagents by role. Before dispatching on a built-in-only runtime (kimi-code — three built-ins only), resolve the role to a built-in via `gsd_run query resolve-dispatch-type --requested <role> --raw`. On named-dispatch runtimes (Claude/OpenCode/…) the role is returned unchanged; on kimi-code it maps to `coder`/`explore`/`plan` by role-suffix. The persona rides `${AGENT_SKILLS_<ROLE>}` (Phase 3) regardless. See @gsd-core/references/runtime-aware-dispatch.md.
+> **Runtime-aware dispatch (#2508 Phase 4).** GSD workflows dispatch specialized subagents by role. Before dispatching on a built-in-only runtime (kimi-code — three built-ins only), resolve the role to a built-in via `gsd_run query resolve-dispatch-type --requested <role> --raw`. On named-dispatch runtimes (Claude/OpenCode/…) the role is returned unchanged; on kimi-code it maps to `coder`/`explore`/`plan` by role-suffix. The persona rides `${AGENT_SKILLS_<ROLE>}` (Phase 3) regardless. See @.ai/gsd/references/runtime-aware-dispatch.md.
 
 Resolve the researcher's **tier** and its model before dispatching. `--pick tier` returns the effective
 tier GSD resolved (`opus` | `sonnet` | `haiku` | `fable` | `inherit` | `unknown`) and is what arms the tier-floor
@@ -100,7 +100,7 @@ Agent(
 **Omit `model=` entirely when `RESEARCHER_MODEL` is `inherit` or empty** (#2517) — passing either
 value through as an argument 404s on runtimes without native tier aliases. Every opus-tier agent
 resolves to the literal `inherit`, so omission is the normal case, not an error path. See
-@gsd-core/references/model-profile-resolution.md.
+@.ai/gsd/references/model-profile-resolution.md.
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 

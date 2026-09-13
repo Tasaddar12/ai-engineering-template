@@ -110,7 +110,7 @@ For each included sketch:
 <step name="synthesize">
 ## Synthesize Reference Files
 
-For each design-area group, write a reference file at `references/[design-area-name].md`:
+For each design-area group, write a reference file at `.ai/gsd/references/[design-area-name].md`:
 
 ```markdown
 # [Design Area Name]
@@ -164,7 +164,7 @@ Sketch sessions wrapped: [date(s)]
 
 | Area | Reference | Key Decision |
 |------|-----------|--------------|
-| [Name] | references/[name].md | [One-line summary] |
+| [Name] | .ai/gsd/references/[name].md | [One-line summary] |
 
 ## Theme
 
@@ -272,7 +272,7 @@ The sketch-findings skill will auto-load when building the UI.
 <success_criteria>
 - [ ] Every unprocessed sketch presented for individual curation
 - [ ] Design-area grouping proposed and approved
-- [ ] Sketch-findings skill exists at `./.claude/skills/` with SKILL.md, references/, sources/
+- [ ] Sketch-findings skill exists at `./.claude/skills/` with SKILL.md, .ai/gsd/references/, sources/
 - [ ] Winning theme.css copied into skill sources
 - [ ] Reference files contain design decisions, CSS patterns, HTML structures, anti-patterns
 - [ ] `.planning/sketches/WRAP-UP-SUMMARY.md` written for project history

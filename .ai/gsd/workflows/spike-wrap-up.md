@@ -98,7 +98,7 @@ For each included spike:
 <step name="synthesize">
 ## Synthesize Reference Files
 
-For each feature-area group, write a reference file at `references/[feature-area-name].md` as an **implementation blueprint** — it should read like a recipe, not a research paper. A future build session should be able to follow this and build the feature correctly without re-spiking anything.
+For each feature-area group, write a reference file at `.ai/gsd/references/[feature-area-name].md` as an **implementation blueprint** — it should read like a recipe, not a research paper. A future build session should be able to follow this and build the feature correctly without re-spiking anything.
 
 ```markdown
 # [Feature Area Name]
@@ -169,7 +169,7 @@ idea key so a future reader can tell which requirement belongs to which idea.]
 
 | Area | Reference | Key Finding |
 |------|-----------|-------------|
-| [Name] | references/[name].md | [One-line summary] |
+| [Name] | .ai/gsd/references/[name].md | [One-line summary] |
 
 ## Source Files
 
@@ -309,7 +309,7 @@ After the summary, present next-step options:
 <success_criteria>
 - [ ] All unprocessed spikes auto-included and processed
 - [ ] Spikes grouped by feature area
-- [ ] Spike-findings skill exists at `./.claude/skills/` with SKILL.md (including requirements), references/, sources/
+- [ ] Spike-findings skill exists at `./.claude/skills/` with SKILL.md (including requirements), .ai/gsd/references/, sources/
 - [ ] Reference files are implementation blueprints with Requirements, How to Build It, What to Avoid, Constraints
 - [ ] Requirements in each reference file and in SKILL.md are scoped to the idea key(s) actually represented among the wrapped spikes — never blended with an unrelated idea's requirements
 - [ ] `.planning/spikes/CONVENTIONS.md` created or updated with recurring stack/structure/pattern choices

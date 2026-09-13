@@ -80,7 +80,7 @@ When a new workflow produces a `.planning/` root file:
 
 1. Add the file name to `CANONICAL_EXACT` in `https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/artifacts.cts`
 2. Add a row to the **`.planning/` Root Artifacts** table above
-3. Add the template to `gsd-core/templates/` if one exists
+3. Add the template to `.ai/templates/` if one exists
 
 
 <!-- LOCAL-ADOPTION:START -->

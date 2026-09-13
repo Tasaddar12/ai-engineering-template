@@ -87,7 +87,7 @@ artifacts that do not have automated local producers yet.
 | `codebase/architecture.md`, `codebase/stack.md` | `.planning/codebase/` maps; onboarding and later reconnaissance. |
 | `VALIDATION.md`, `verification-report.md`, `UAT.md` | Phase validation strategy, independent verification, and user acceptance evidence. Runtime verdict fields are additive. |
 | `continue-here.md` | Phase `.continue-here.md`; returning coordinator reconciles it against Git/process evidence. |
-| `spec.md` | Proposed project specification in `.planning/`; preparation input. Existing verified behavior uses local `CURRENT-SPEC.md` to avoid conflating intent and implementation. |
+| `spec.md` | Phase-local `NN-SPEC.md` desired behavior under `.planning/phases/`; preparation input. Existing verified behavior uses local `CURRENT-SPEC.md` to avoid conflating intent and implementation. |
 | `DEBUG.md` | `.planning/debug/` investigation record; explicit diagnosis work. |
 | `UI-SPEC.md`, `SECURITY.md`, `AI-SPEC.md` | Phase specialty contracts; explicitly assigned design/security/AI preparation, retained source methods. |
 | `user-setup.md`, `user-setup.compact.md` | Phase USER-SETUP; user actions and subsequent verification. Never populate secrets in committed records. |
@@ -112,9 +112,11 @@ the same kind of authoring guidance without claiming upstream provenance.
 - The registry's missing `gsd-core/bin/lib/artifacts.cjs` build output is mapped
   to its real pinned `src/artifacts.cts` source. Template STATE schema/generator
   references point to actual pinned sources; those generators are not installed.
-- The `context-bridge.md` reference in the verifier few-shot example is an
-  upstream illustrative artifact, not an available workflow. Preserve the
-  example's reasoning; never claim that the illustrated file exists locally.
+- The `context-bridge.md` and `commands/gsd/misc.md` references in the verifier
+  few-shot examples are upstream illustrative artifacts, not available methods.
+  Preserve their reasoning; never claim that the illustrated files exist locally.
+- [TEMPLATE-CHANGES.md](TEMPLATE-CHANGES.md) lists every template's before/after
+  reference and conflict correction in a human-readable form for `changes.log`.
 - [changes.log](../../changes.log) records migration decisions across the entire
   repository, including scheduling, authorization, and truthful summary fixes.
 

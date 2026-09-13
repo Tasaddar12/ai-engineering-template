@@ -53,7 +53,7 @@ Otherwise, load in this order:
 **a. MANIFEST.md** — every idea section under `## Ideas` (each idea's paragraph and its own
 scoped Requirements) and the `## Spikes` table with verdicts (each row tagged by idea).
 
-**b. Findings skills** — glob `./.claude/skills/spike-findings-*/SKILL.md` and read any that exist, plus their `references/*.md`. These contain curated knowledge from prior wrap-ups.
+**b. Findings skills** — glob `./.claude/skills/spike-findings-*/SKILL.md` and read any that exist, plus their `.ai/gsd/references/*.md`. These contain curated knowledge from prior wrap-ups.
 
 **c. CONVENTIONS.md** — read `.planning/spikes/CONVENTIONS.md` if it exists. Established stack and patterns.
 
@@ -130,7 +130,7 @@ If `.planning/spikes/` has existing content, load context in this priority order
 
 **a. Conventions:** Read `.planning/spikes/CONVENTIONS.md` if it exists.
 
-**b. Findings skills:** Glob for `./.claude/skills/spike-findings-*/SKILL.md` and read any that exist, plus their `references/*.md` files.
+**b. Findings skills:** Glob for `./.claude/skills/spike-findings-*/SKILL.md` and read any that exist, plus their `.ai/gsd/references/*.md` files.
 
 **c. Manifest:** Read `.planning/spikes/MANIFEST.md` for the index of all spikes.
 
