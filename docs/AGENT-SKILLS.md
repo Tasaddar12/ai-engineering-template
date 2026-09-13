@@ -129,7 +129,7 @@ The local skills apply focused engineering methods within our phase workflow.
 The [template guide](TEMPLATE-GUIDE.md) and
 [support route map](../.ai/library/README.md) connect them to the complete
 instructional library. Source history and attribution live in
-[third-party notices](../THIRD-PARTY-NOTICES.md).
+[third-party notices](../.ai/library/THIRD-PARTY-NOTICES.md).
 
 | Supporting method | Useful idea | Application here |
 |---|---|---|

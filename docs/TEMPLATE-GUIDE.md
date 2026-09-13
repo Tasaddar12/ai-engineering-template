@@ -6,7 +6,7 @@ full, including examples, counterexamples, consumer notes and lifecycle guidance
 This guide helps select and connect them; it does not replace their instructions.
 
 Source attribution and revision history live in
-[third-party notices](../THIRD-PARTY-NOTICES.md) and the provenance records.
+[third-party notices](../.ai/library/THIRD-PARTY-NOTICES.md) and the provenance records.
 The [support route map](../.ai/library/README.md) resolves referenced methods and
 execution boundaries. [changes.log](../changes.log) records local adaptations.
 

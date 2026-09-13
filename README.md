@@ -53,7 +53,7 @@ All 40 adapted templates are retained in full at stable artifact filenames under
 counterexamples and consumer descriptions. [Supporting workflow guidance](.ai/library/README.md)
 keeps referenced methods available. [changes.log](changes.log) records adaptations.
 Source attribution and revision history remain in
-[third-party notices](THIRD-PARTY-NOTICES.md) and provenance.
+[third-party notices](.ai/library/THIRD-PARTY-NOTICES.md) and provenance.
 
 The executable interface remains `python .ai/runtime/phase.py`. Its
 [additive contract](.ai/runtime/TEMPLATE-CONTRACT.md) explains the runtime metadata
