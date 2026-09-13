@@ -93,5 +93,5 @@ behavior, not the quality of every live agent assignment. Optional
 return success rather than enforce host permissions.
 
 [Fact ownership](.ai/truth-map.md) explains which record resolves each kind of
-question. [The earlier migration history](docs/PHASE-MIGRATION.md) remains a
+question. [The earlier migration history](.planning/maintenance/history/phase-migration.md) remains a
 historical account of the prior design.
