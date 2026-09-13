@@ -1,6 +1,6 @@
 # Planner Subagent Prompt Template
 
-Template for spawning gsd-planner agent. The agent contains all planning expertise - this template provides planning context only.
+Template for spawning planner agent. The agent contains all planning expertise - this template provides planning context only.
 
 ---
 
@@ -34,7 +34,7 @@ Template for spawning gsd-planner agent. The agent contains all planning experti
 </planning_context>
 
 <downstream_consumer>
-Output consumed by /gsd:execute-phase
+Output consumed by /workflow:execute-phase
 Plans must be executable prompts with:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format
@@ -68,20 +68,20 @@ Before returning PLANNING COMPLETE:
 
 ## Usage
 
-**From /gsd:plan-phase (standard mode):**
+**From /workflow:plan-phase (standard mode):**
 ```python
 Task(
   prompt=filled_template,
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   description="Plan Phase {phase}"
 )
 ```
 
-**From /gsd:plan-phase --gaps (gap closure mode):**
+**From /workflow:plan-phase --gaps (gap closure mode):**
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   description="Plan gaps for Phase {phase}"
 )
 ```
@@ -114,25 +114,26 @@ Continue: {standard | gap_closure}
 
 ---
 
-**Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the gsd-planner agent. This template only passes context.
+**Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the planner agent. This template only passes context.
 
 
 <!-- LOCAL-ADOPTION:START -->
 ## Local adoption — read before using this source
 
-The complete upstream body above is retained from GSD-Core at
-`c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; only recorded reference substitutions
-and explicit local conflict corrections have been made. See
-`.ai/gsd/PROVENANCE.json` for exact source hashes and changes.
+This complete authoring guide retains its source content, examples, and methods.
+Only recorded namespace/reference substitutions and explicit local conflict
+corrections have been made. Source attribution and exact original hashes are
+isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
 
-Read `.ai/gsd/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/gsd-adaptation.md` for local conflict decisions,
+Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. The upstream `config.json`, `/gsd:*` commands, tool
-names, hooks, and Node CLI examples describe GSD's system; this import does not
-install or activate that system. Retained specialty workflows are full source
+`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
+names, hooks, and Node CLI examples describe supporting source capabilities;
+this import does not install or activate them. Source catalog pointers in examples
+identify provenance, not executable command arguments. Retained specialty workflows are full source
 guidance for explicit future integration, not promises of installed features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.

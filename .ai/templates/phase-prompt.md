@@ -1,6 +1,6 @@
 # Phase Prompt Template
 
-> **Note:** Planning methodology is in `.ai/gsd/agents/gsd-planner.md`.
+> **Note:** Planning methodology is in `.ai/library/agents/planner.md`.
 > This template defines the PLAN.md output format that the agent produces.
 
 Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phase plans optimized for parallel execution.
@@ -45,10 +45,10 @@ Output: [What artifacts will be created]
 </objective>
 
 <execution_context>
-@.ai/gsd/workflows/execute-plan.md
+@.ai/library/workflows/execute-plan.md
 @.ai/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
-@.ai/gsd/references/checkpoints.md
+@.ai/library/references/checkpoints.md
 </execution_context>
 
 <context>
@@ -92,7 +92,7 @@ Output: [What artifacts will be created]
   <done>[Acceptance criteria]</done>
 </task>
 
-<!-- For checkpoint task examples and patterns, see @.ai/gsd/references/checkpoints.md -->
+<!-- For checkpoint task examples and patterns, see @.ai/library/references/checkpoints.md -->
 
 <task type="checkpoint:decision" gate="blocking">
   <decision>[What needs deciding]</decision>
@@ -285,7 +285,7 @@ TDD features get dedicated plans with `type: tdd`.
 → Yes: Create a TDD plan
 → No: Standard task in standard plan
 
-See `.ai/gsd/references/tdd.md` for TDD plan structure.
+See `.ai/library/references/tdd.md` for TDD plan structure.
 
 ---
 
@@ -389,9 +389,9 @@ Output: Working dashboard component.
 </objective>
 
 <execution_context>
-@.ai/gsd/workflows/execute-plan.md
+@.ai/library/workflows/execute-plan.md
 @.ai/templates/summary.md
-@.ai/gsd/references/checkpoints.md
+@.ai/library/references/checkpoints.md
 </execution_context>
 
 <context>
@@ -618,19 +618,20 @@ Task completion ≠ Goal achievement. A task "create chat component" can complet
 <!-- LOCAL-ADOPTION:START -->
 ## Local adoption — read before using this source
 
-The complete upstream body above is retained from GSD-Core at
-`c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; only recorded reference substitutions
-and explicit local conflict corrections have been made. See
-`.ai/gsd/PROVENANCE.json` for exact source hashes and changes.
+This complete authoring guide retains its source content, examples, and methods.
+Only recorded namespace/reference substitutions and explicit local conflict
+corrections have been made. Source attribution and exact original hashes are
+isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
 
-Read `.ai/gsd/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/gsd-adaptation.md` for local conflict decisions,
+Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. The upstream `config.json`, `/gsd:*` commands, tool
-names, hooks, and Node CLI examples describe GSD's system; this import does not
-install or activate that system. Retained specialty workflows are full source
+`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
+names, hooks, and Node CLI examples describe supporting source capabilities;
+this import does not install or activate them. Source catalog pointers in examples
+identify provenance, not executable command arguments. Retained specialty workflows are full source
 guidance for explicit future integration, not promises of installed features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
