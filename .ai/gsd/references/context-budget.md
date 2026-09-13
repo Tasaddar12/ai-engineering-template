@@ -10,7 +10,7 @@ See also: `.ai/gsd/references/universal-anti-patterns.md` for the complete set o
 
 Every workflow that spawns agents or reads significant content must follow these rules:
 
-1. **Never** read agent definition files (`agents/*.md`) -- `subagent_type` auto-loads them
+1. **Never** read agent definition files (`.ai/gsd/agents/*.md`) -- `subagent_type` auto-loads them
 2. **Never** inline large files into subagent prompts -- tell agents to read files from disk instead
 3. **Read depth scales with context window** -- check `context_window` in `.planning/config.json`:
    - At < 500000 tokens (default 200k): read only frontmatter, status fields, or summaries. Never read full SUMMARY.md, VERIFICATION.md, or RESEARCH.md bodies.

@@ -1023,8 +1023,34 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/agents/gsd-intel-updater.compact.md",
       "source_sha256": "f64310968b44ebfd168155a15d44179192d58eb8cb09c9d44a5ad5c7e1f0f959",
       "source_bytes": 15139,
-      "destination_sha256": "ec34cb4b2edfea25f9ddaef8369177c65252dc6ae1d0258be5297b27875c86f4",
-      "reference_substitutions": [],
+      "destination_sha256": "73a04f2cc3590168765b11fddcb1af83e775db5b1d81fee85b194849d772c208",
+      "reference_substitutions": [
+        {
+          "original": "agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 2,
+          "offsets": [
+            3158,
+            4093
+          ]
+        },
+        {
+          "original": "gsd-core/references/",
+          "replacement": ".ai/gsd/references/",
+          "count": 1,
+          "offsets": [
+            3409
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/",
+          "replacement": ".ai/gsd/workflows/",
+          "count": 1,
+          "offsets": [
+            3336
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -1034,8 +1060,34 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/agents/gsd-intel-updater.md",
       "source_sha256": "1bedaf5f53c35f1ecf9597c4cbae4e0e3c5d4c7fdc03e270d48c11c69a32216d",
       "source_bytes": 16273,
-      "destination_sha256": "1ee9f41328b96a295ac0731f5d36dc1439881f6d69da9e1db44fffcbad581fba",
-      "reference_substitutions": [],
+      "destination_sha256": "064dafdeb22601f76590633fbe7ca9bb998793d428d0fab87f49b7d0ff487587",
+      "reference_substitutions": [
+        {
+          "original": "agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 2,
+          "offsets": [
+            3847,
+            4822
+          ]
+        },
+        {
+          "original": "gsd-core/references/",
+          "replacement": ".ai/gsd/references/",
+          "count": 1,
+          "offsets": [
+            4098
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/",
+          "replacement": ".ai/gsd/workflows/",
+          "count": 1,
+          "offsets": [
+            4025
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -1289,14 +1341,15 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/agents/gsd-planner.md",
       "source_sha256": "de9beca2d07a2fb3de01f207030529e84d14cc2a1e53ae8c615e243a59ca7681",
       "source_bytes": 48838,
-      "destination_sha256": "e84e15f7c5649edfc047d19aa4578a649d47d9eb8a36474ad4a9cec247ca1882",
+      "destination_sha256": "3a99ff6f2b8ede46654ca5bdbd279d8d8e428ef8d616ecd56b533201b69c69db",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/planner-antipatterns.md",
           "replacement": ".ai/gsd/references/planner-antipatterns.md",
-          "count": 2,
+          "count": 3,
           "offsets": [
             9961,
+            10182,
             38149
           ]
         },
@@ -1438,6 +1491,14 @@
           ]
         },
         {
+          "original": "~/.claude/gsd-core/references/planner-preconditions.md",
+          "replacement": ".ai/gsd/references/planner-preconditions.md",
+          "count": 1,
+          "offsets": [
+            10811
+          ]
+        },
+        {
           "original": "~/.claude/gsd-core/references/planner-reversibility.md",
           "replacement": ".ai/gsd/references/planner-reversibility.md",
           "count": 1,
@@ -1460,6 +1521,14 @@
           "count": 1,
           "offsets": [
             2099
+          ]
+        },
+        {
+          "original": "~/.claude/gsd-core/references/security-asvs-levels.md",
+          "replacement": ".ai/gsd/references/security-asvs-levels.md",
+          "count": 1,
+          "offsets": [
+            22910
           ]
         },
         {
@@ -2072,7 +2141,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/agents/gsd-verifier.md",
       "source_sha256": "31f229e29100d01c9593960554b0fa96cdc38b125c76cb6529a3c231d7650225",
       "source_bytes": 49131,
-      "destination_sha256": "7036efd49d0b12d20ca8514d3e89faa86be39e35eceb7be4cedf21230ee5266f",
+      "destination_sha256": "2f27319753e30c8dc869e9620ee25cccbe91c2fe151e6210f6560a0fcc27891a",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/honest-verifier.md",
@@ -2080,6 +2149,14 @@
           "count": 1,
           "offsets": [
             13983
+          ]
+        },
+        {
+          "original": "gsd-core/references/verifier-evidence-gate.md",
+          "replacement": ".ai/gsd/references/verifier-evidence-gate.md",
+          "count": 1,
+          "offsets": [
+            24054
           ]
         },
         {
@@ -3141,7 +3218,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/commands/gsd/next.md",
       "source_sha256": "7be751510caa165d1169f96c4078811c4deee3035d82c514e61a8923a10aa284",
       "source_bytes": 944,
-      "destination_sha256": "451ca8cfe99d4f3add307f82d7e6885c03c15055e9460dda87433b07397183e3",
+      "destination_sha256": "5157e7399ff9fc6a5948539bc8f809a6cc8602ede15cd55bf04d0d1729fe10e0",
       "reference_substitutions": [
         {
           "original": "~/.claude/gsd-core/references/ui-brand.md",
@@ -3154,9 +3231,10 @@
         {
           "original": "~/.claude/gsd-core/workflows/smart-entry.md",
           "replacement": ".ai/gsd/workflows/smart-entry.md",
-          "count": 1,
+          "count": 2,
           "offsets": [
-            629
+            629,
+            799
           ]
         }
       ],
@@ -4158,8 +4236,17 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/agent-contracts.md",
       "source_sha256": "237b7d28aad97275c1d6de27f5dc0ac8aaacecaad52d77ce54bda0e6c0480142",
       "source_bytes": 13281,
-      "destination_sha256": "269d2a6a70178704f506f4a5678700c890bb343e9e96470f1c672835d7766526",
+      "destination_sha256": "28d4370ce5f82bfd197fd188819bed1c9ba991f269e5a2db0b93b0215f4b9d92",
       "reference_substitutions": [
+        {
+          "original": "agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 2,
+          "offsets": [
+            10866,
+            10968
+          ]
+        },
         {
           "original": "agents/gsd-debug-session-manager.md",
           "replacement": ".ai/gsd/agents/gsd-debug-session-manager.md",
@@ -4231,6 +4318,22 @@
           "count": 1,
           "offsets": [
             2236
+          ]
+        },
+        {
+          "original": "commands/",
+          "replacement": ".ai/gsd/commands/",
+          "count": 1,
+          "offsets": [
+            10949
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/",
+          "replacement": ".ai/gsd/workflows/",
+          "count": 1,
+          "offsets": [
+            10924
           ]
         },
         {
@@ -4632,8 +4735,43 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/compact-content-gate.md",
       "source_sha256": "30b27c97f5aa9d650a3302c484a3c800934a8b32aa9c57a087199d4f5c4a26e0",
       "source_bytes": 4985,
-      "destination_sha256": "e477ea64ba4d2f7bde4b4c95c697a7f3ca260211c7d8537d8905978d37ee540d",
-      "reference_substitutions": [],
+      "destination_sha256": "53d75f1545b32b1ac1223aad7ecf9cc83a2302a21df83a6900bf07b2baa08cd4",
+      "reference_substitutions": [
+        {
+          "original": "agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 1,
+          "offsets": [
+            3879
+          ]
+        },
+        {
+          "original": "gsd-core/templates/",
+          "replacement": ".ai/templates/",
+          "count": 3,
+          "offsets": [
+            1645,
+            3030,
+            3703
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/",
+          "replacement": ".ai/gsd/workflows/",
+          "count": 1,
+          "offsets": [
+            673
+          ]
+        },
+        {
+          "original": "workflows/",
+          "replacement": ".ai/gsd/workflows/",
+          "count": 1,
+          "offsets": [
+            1583
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -4643,8 +4781,16 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/context-budget.md",
       "source_sha256": "0376465732822d601aaedf7073c5b8cae1cab110a256c7ef995405b6874d90c4",
       "source_bytes": 9042,
-      "destination_sha256": "5fafc379fc2cda77418dca29e62cd5b12435a3860a11908be7030d36e93d1d75",
+      "destination_sha256": "36945e7c0a6939e1efc85765e032b45fcfa0e2018a4e53789ddde780f6c66d46",
       "reference_substitutions": [
+        {
+          "original": "agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 1,
+          "offsets": [
+            415
+          ]
+        },
         {
           "original": "gsd-core/references/universal-anti-patterns.md",
           "replacement": ".ai/gsd/references/universal-anti-patterns.md",
@@ -5388,8 +5534,17 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/model-profiles.md",
       "source_sha256": "82a8bfb8c6aed419fd553d19795ce53ba44e109b957c5f50d65a5041dabbefd0",
       "source_bytes": 15244,
-      "destination_sha256": "53a397e30d73f9fa45ff5680885b9fd161ba02a1bcd5a13df846801a050728b8",
-      "reference_substitutions": [],
+      "destination_sha256": "bab1ce90c82538e5333556eb155bfc3361cf200e39457ee75fdf55093db0a2e8",
+      "reference_substitutions": [
+        {
+          "original": "~/.codex/agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 1,
+          "offsets": [
+            12564
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -5978,7 +6133,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/planning-config.md",
       "source_sha256": "f27745e851ea41c7d22aff9a4919eb1a7046ea3872bbeac4c55f6cc5561c00f6",
       "source_bytes": 38503,
-      "destination_sha256": "5a5188395575a174b6fac75038fcb816be2a5787c894ebabaa18bd88051f968a",
+      "destination_sha256": "655125d152c852c0c70091af04ce2988aa7f35926cdfef7687a9085dbee9357b",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/compact-content-gate.md",
@@ -5994,6 +6149,14 @@
           "count": 1,
           "offsets": [
             23762
+          ]
+        },
+        {
+          "original": "gsd-core/templates/",
+          "replacement": ".ai/templates/",
+          "count": 1,
+          "offsets": [
+            17448
           ]
         }
       ],
@@ -6426,8 +6589,16 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/universal-anti-patterns.md",
       "source_sha256": "bacdc27e0718d0e26a6a1fffec10013dffbccd3f34501d456f6b5b1f2a04b8e0",
       "source_bytes": 6482,
-      "destination_sha256": "04344891a047e7814f67d753a9acbdcc89794c3bccc671a708f12ebe50f006a8",
+      "destination_sha256": "851c6276d757d8888c49481f2d70cab46318bb134e87b830fd8777d8d7e8743d",
       "reference_substitutions": [
+        {
+          "original": "agents/",
+          "replacement": ".ai/gsd/agents/",
+          "count": 1,
+          "offsets": [
+            212
+          ]
+        },
         {
           "original": "gsd-core/references/context-budget.md",
           "replacement": ".ai/gsd/references/context-budget.md",
@@ -6747,7 +6918,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/templates/README.md",
       "source_sha256": "26940a1749e55ed32fe9fa7538f6024da4bd730569b95eaf6dbede5a786003cb",
       "source_bytes": 5352,
-      "destination_sha256": "b60c288cb7d2140cf710e9f65750e017a31c0b0f65ffc2e99daca62ada36ad1c",
+      "destination_sha256": "1bab937d931e4cd0a9693dff5ba37ea535f7ba09f3f587165c76d8f16c58df34",
       "reference_substitutions": [
         {
           "original": "gsd-core/bin/lib/artifacts.cjs",
@@ -6755,6 +6926,14 @@
           "count": 1,
           "offsets": [
             5195
+          ]
+        },
+        {
+          "original": "gsd-core/templates/",
+          "replacement": ".ai/templates/",
+          "count": 1,
+          "offsets": [
+            5315
           ]
         },
         {
@@ -7081,8 +7260,16 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/templates/project.md",
       "source_sha256": "4f311fb1b05b823bd00c655f737b546b98bb1123e0b20ca673ff5a0a3b6e5cc1",
       "source_bytes": 6048,
-      "destination_sha256": "7358eb5d50f88a8dcf2e601cf382e94720a3070f8e5f4e89dc37a7ab84b135cb",
+      "destination_sha256": "99091ef88217d15873888d8e7d90cabbf674382ce01d99b448e3398f8233f1ac",
       "reference_substitutions": [
+        {
+          "original": "workflows/complete-milestone.md",
+          "replacement": ".ai/gsd/workflows/complete-milestone.md",
+          "count": 1,
+          "offsets": [
+            4338
+          ]
+        },
         {
           "original": "workflows/transition.md",
           "replacement": ".ai/gsd/workflows/transition.md",
@@ -7573,8 +7760,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/audit-fix.md",
       "source_sha256": "4e117fa5a97e157190bb7e81fbb91812f781582e76d188e76f9288e54835263f",
       "source_bytes": 10997,
-      "destination_sha256": "c61cd9d4f3f07561faf96b8db56f60e585de8b8724211038ce4ea6748fc7ff45",
+      "destination_sha256": "c76750a475db0c140e7df65e38b5c4886d8c2303db7dad1c7f7b3b0134207982",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            6987
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            6533
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -7593,8 +7796,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/audit-milestone.md",
       "source_sha256": "774538c2d60c1877446d847a2a9a6ee3103e574abba75dd35fd4f2f1cd8f6a09",
       "source_bytes": 16459,
-      "destination_sha256": "95cb75c08c96dfa2cdb92ddcf9e7197e8ead87751764c27ba6e0dd2e6824308a",
+      "destination_sha256": "481f3d7241c18ec26cd2fe352e330c0ddab89537d6bb5bee530035541e57679b",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            5627
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            6541
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -7819,8 +8038,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/code-review-fix.md",
       "source_sha256": "e7e633c1641e2be7354b7db8bc3e36456fafc9a7f539c9a0fafefd4fcb6ebb33",
       "source_bytes": 25695,
-      "destination_sha256": "7596450dbe7cc34ae6180eacabc23376e30d87bbc98b15b52248416043d9e2da",
+      "destination_sha256": "7e2a3e07e6c4a548dcef0e9b67825234f4d1e6b144cc86cc809bbfc93517ca9e",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            10316
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            9925
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -7839,7 +8074,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/code-review.md",
       "source_sha256": "4773bdbbf10f6498340eb28639d037ce3c7993eedbe8f8d205ddd986c0738f7e",
       "source_bytes": 49029,
-      "destination_sha256": "a1cdd52ea3bd24ba6510a400574a51f2f0bb7a6fdd3e26f86e8c4aa95262c165",
+      "destination_sha256": "53fa57e464eca5b26abca707400e18ad1e1b0663b9a5311f626067198247502b",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/loop-hook-dispatch.md",
@@ -7847,6 +8082,22 @@
           "count": 1,
           "offsets": [
             29534
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            41610
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            41234
           ]
         },
         {
@@ -8024,7 +8275,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/debug.md",
       "source_sha256": "07f67a665b79c731e1d06b6da5d2ca0d2dad00e2b272ec4a7b6ae41a9db74c05",
       "source_bytes": 20216,
-      "destination_sha256": "833f82c2c6d57ebe697180a45fa49e21d3515234527aa5a53689feee6f893d13",
+      "destination_sha256": "cdbde40db4ab37211991bc6d21726f79dad24d923249b7f846ac7b20e2a8b057",
       "reference_substitutions": [
         {
           "original": "agents/gsd-debugger.md",
@@ -8042,6 +8293,22 @@
           "offsets": [
             44
           ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            8532
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            9335
+          ]
         }
       ],
       "conflict_adaptations": [],
@@ -8053,7 +8320,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/diagnose-issues.md",
       "source_sha256": "b4abd0fd7447fa21c597cf35799c291b57d1c6fa816ed887e37ab075bf1260d9",
       "source_bytes": 15256,
-      "destination_sha256": "a4fb573b0e1e05b32ac3a1e0290e2ff36768fe73268e02d44f42b2e71ad1b540",
+      "destination_sha256": "ebec0371233c09f13801c1c80413dba1e94dd2e6d6180782a475aa5bb52aaa66",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/dispatch-isolation-gate.md",
@@ -8061,6 +8328,22 @@
           "count": 1,
           "offsets": [
             4775
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            10374
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            9998
           ]
         },
         {
@@ -8089,8 +8372,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/discuss-phase-assumptions.md",
       "source_sha256": "2533c910e388ac8f43a2cb67bb87ebcc408bbc5d319da853d4e34f6df007422b",
       "source_bytes": 26843,
-      "destination_sha256": "b683a7b831950d98395a654a0344b9f7e41fcdb68c8a06a7984d3d4323a18aac",
+      "destination_sha256": "430a407624fdc2b74d449eaa8c1ade22b9bf98832fb475dc6b1128216912631d",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            14044
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            13668
+          ]
+        },
         {
           "original": "gsd-core/workflows/discuss-phase-assumptions/steps/auto-advance-dispatch.md",
           "replacement": ".ai/gsd/workflows/discuss-phase-assumptions/steps/auto-advance-dispatch.md",
@@ -8148,7 +8447,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/discuss-phase.md",
       "source_sha256": "f4a7761412ed19fe0d52cb6ed0a098c1b458bd8c423f88e91e753e234ca47ea0",
       "source_bytes": 30175,
-      "destination_sha256": "f30d5f8a3e97e4e4386c78894dd54fb58caa04aa6e629edbf97ee6631324bb9f",
+      "destination_sha256": "eb7919334cb79afa7009989e542064423aaf0245dc4095b9a977a86d22ecf495",
       "reference_substitutions": [
         {
           "original": "workflows/discuss-phase/modes/advisor.md",
@@ -8283,6 +8582,15 @@
           "count": 1,
           "offsets": [
             623
+          ]
+        },
+        {
+          "original": "~/.claude/gsd-core/references/loop-hook-dispatch.md",
+          "replacement": ".ai/gsd/references/loop-hook-dispatch.md",
+          "count": 2,
+          "offsets": [
+            18400,
+            26127
           ]
         },
         {
@@ -8585,7 +8893,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/docs-update.md",
       "source_sha256": "59c24be1178f932ce611998fa449e4db648b4440331485bc3dd91621f95bd4ba",
       "source_bytes": 48179,
-      "destination_sha256": "b32beffbc72654e7cea6318534b4b292eb4190c05208f8a5eaf540bb5d3108e9",
+      "destination_sha256": "38d9a6ca9b2db3b94cb7ff7d0575643dd8aaf637df040081217826307b11d487",
       "reference_substitutions": [
         {
           "original": "agents/gsd-doc-writer.md",
@@ -8601,6 +8909,22 @@
           "count": 1,
           "offsets": [
             918
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            22901
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            22501
           ]
         },
         {
@@ -8719,7 +9043,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/execute-phase.md",
       "source_sha256": "ba69804f311a5efb7ebd87b824917a82fbacbb3389cf56de06346d64d31beb4a",
       "source_bytes": 92371,
-      "destination_sha256": "1edd171cc1c7d7d3ac8cbd20c85e2cd89dc9745075a0e558f57911a65947b184",
+      "destination_sha256": "18a4744d78712b21e4827d92acf22c736d14a0ac243fd66367fce711c747c6af",
       "reference_substitutions": [
         {
           "original": "agents/gsd-executor.md",
@@ -8741,13 +9065,22 @@
         {
           "original": "gsd-core/references/loop-hook-dispatch.md",
           "replacement": ".ai/gsd/references/loop-hook-dispatch.md",
-          "count": 5,
+          "count": 6,
           "offsets": [
             40646,
             40820,
             68283,
             68432,
-            76303
+            76303,
+            77727
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            1106
           ]
         },
         {
@@ -9040,8 +9373,17 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/execute-phase/steps/codebase-drift-gate.md",
       "source_sha256": "05f40aac58c8d0ab42e1866504779189d192352cb7949cf173827d870d013bd9",
       "source_bytes": 8267,
-      "destination_sha256": "243914f3f8e7b598c44d4ad29d8079a93ecd8742fb9aa32c1ddfda158573b36b",
-      "reference_substitutions": [],
+      "destination_sha256": "a04287c4088ca529248fa5030c477c7a7e7fe2f51b03c6582de3db13b5cb8d55",
+      "reference_substitutions": [
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            6215
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -9278,7 +9620,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/execute-plan.md",
       "source_sha256": "f76c31e1591bfbac00774003b2884686ac3f0c1b3129a212977cfb13f572943b",
       "source_bytes": 40885,
-      "destination_sha256": "134b856ead89d433baa174e3efb49d4f6767ca8c0709c1b0fafc2bfba06e1a65",
+      "destination_sha256": "9f6b4202c1eb5ee304dc25758592388edb300692d5b834c3aa6eb578c32100fc",
       "reference_substitutions": [
         {
           "original": "agents/gsd-executor.md",
@@ -9295,6 +9637,14 @@
           "offsets": [
             8545,
             11621
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            10187
           ]
         },
         {
@@ -9371,8 +9721,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/explore.md",
       "source_sha256": "58e5429b9dd4ee73746b232a03dab11ea7c7a28e280a3ede42dc64e28d20511e",
       "source_bytes": 19473,
-      "destination_sha256": "1f43574cc8eea00b4940d7ddc9fb577f035d32c9a6fc942f9431a7dd42ac00e5",
+      "destination_sha256": "c2a2e5977d2d372d73e09e6759e5b43021764d2a96577ff375d3061628ef6652",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            7701
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            5916
+          ]
+        },
         {
           "original": "gsd-core/references/untrusted-input-boundary.md",
           "replacement": ".ai/gsd/references/untrusted-input-boundary.md",
@@ -9657,7 +10023,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/import.md",
       "source_sha256": "e280a4a305daefb5403ce02b4c31c4a9faa9edf37c23adac95bf94fa24db7ac7",
       "source_bytes": 13708,
-      "destination_sha256": "ad48bcaf2a9bdb304b999eeec5f3af6623fcccb774eed0ad7163fd093d70c61a",
+      "destination_sha256": "52762fea89c7e8209306ca039ba31190e70b1083c9cf7b55c372ec8120d5d9a0",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/doc-conflict-engine.md",
@@ -9675,6 +10041,22 @@
           "count": 1,
           "offsets": [
             8081
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            10987
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            10612
           ]
         }
       ],
@@ -9698,7 +10080,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/ingest-docs.md",
       "source_sha256": "1afebfd246b2277f9fec63635881d140a70172295225f9d5690da3d527d099dc",
       "source_bytes": 20222,
-      "destination_sha256": "89563e0c1778cb713d9d2f28927ca3c094b9c2aea3bb240ae78bed327cb60479",
+      "destination_sha256": "0a044db6fd3469944cdf4778d4453330b274410bbca9b9cef921d42a453596fd",
       "reference_substitutions": [
         {
           "original": "agents/gsd-doc-classifier.md",
@@ -9733,6 +10115,22 @@
           "offsets": [
             6097,
             8707
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            10279
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            11978
           ]
         }
       ],
@@ -9836,8 +10234,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/map-codebase.md",
       "source_sha256": "2df037554031bee0db0a755578d923e9aed17571869de47d57c739e4870aa8f3",
       "source_bytes": 22683,
-      "destination_sha256": "6fad8fb1b50ba94bd24e6d81fd4c321a0858af5ce89d636b2662b377c203c7e8",
+      "destination_sha256": "17b808403d42efefdfb8781a2daef245977a38c606b73d1f1b0cff695f62fb2b",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            9567
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            9193
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -9922,8 +10336,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/new-milestone.md",
       "source_sha256": "46c20a823d676623361e0ff65309d7605b4cd14749b77dc4707f31db66ea553a",
       "source_bytes": 39082,
-      "destination_sha256": "26f1aa81882226f238403247dc722756e254e5d31ccc6061dc560f9a7d06831f",
+      "destination_sha256": "cc3365c96aec4f0986137217b5682fe3fc5192caad042bc736af50cc0ca293db",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            22610
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            23705
+          ]
+        },
         {
           "original": "gsd-core/references/workstream-flag.md",
           "replacement": ".ai/gsd/references/workstream-flag.md",
@@ -10059,7 +10489,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/new-project/detail/elaboration.md",
       "source_sha256": "31d2072b17423737395afcba4794d79f2077b52f2b8917470ee57b5cd53bd25f",
       "source_bytes": 8230,
-      "destination_sha256": "fd058d0e3a149423e083f3d0a7c1793d98c31141d6c69e3f300d26ceecd2ae0c",
+      "destination_sha256": "cea1a18a3c9f978c495fefac7918c052f02cd1f1082b70375269232575e18db2",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/compact-content-gate.md",
@@ -10067,6 +10497,22 @@
           "count": 1,
           "offsets": [
             118
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            2237
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            3798
           ]
         },
         {
@@ -10715,7 +11161,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/profile-user.md",
       "source_sha256": "612d8067e754388a0a8fa9ec72c48cdef6c0c98dbd66397c6d282f57aa84de55",
       "source_bytes": 19670,
-      "destination_sha256": "955f6db0b663e1d3d11113d9ac7d1807f1deaca97c8f2212ddf9fc4d4dd133f1",
+      "destination_sha256": "69c58b06539270b5712ce2a1301b947a76b67c4152ae39db82f4a280ef58570b",
       "reference_substitutions": [
         {
           "original": "$HOME/.claude/agents/gsd-user-profiler.md",
@@ -10741,6 +11187,14 @@
             747,
             9379,
             9643
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            8991
           ]
         }
       ],
@@ -10820,7 +11274,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/quick-batch.md",
       "source_sha256": "b2b5ff4258df7bbfede0907a5c6e12b47d7eaee2d321e9113c699fa1664a3157",
       "source_bytes": 12861,
-      "destination_sha256": "603361fef95c939a7fd264b091a438df8cec3360b0602d1bc584acc482302a9a",
+      "destination_sha256": "95abe16ecab30828612618d9025fcfdd0e9423c281e21868f7765cc62a451ef9",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/dispatch-isolation-gate.md",
@@ -10828,6 +11282,14 @@
           "count": 1,
           "offsets": [
             8204
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            6868
           ]
         },
         {
@@ -11196,8 +11658,25 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/quick/steps/research-phase.md",
       "source_sha256": "9dbacbf97906704f30b3cedba24a2bd655d189e05274e870ba1c60ab4459dc80",
       "source_bytes": 3558,
-      "destination_sha256": "fd5518e37a437368bf1231ff0a6b0a95af52e003106fad4a7493eef6a915d562",
-      "reference_substitutions": [],
+      "destination_sha256": "475cd83d5fc021b41eb7681558c51e122b45c2f6e6ef456bfb446050b17c6ff5",
+      "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            863
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            1447
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -11389,8 +11868,16 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/scan.md",
       "source_sha256": "15a2b45901578add0e1200f2db182455cefc736d82d2bc60280d386ef5de553d",
       "source_bytes": 7056,
-      "destination_sha256": "3e92c90efa56a4159cb749494583a02d739fc03502b935e73ecf987a77ebbecf",
+      "destination_sha256": "b6e4532028f9489ff17a41d511eab05526654463d361363773d1c77c83b4786f",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            5539
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -11420,8 +11907,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/secure-phase.md",
       "source_sha256": "5206a7b224d88ce1a76c7a1682a7884973a831e7c00067bc58aa0ce380aa7c0e",
       "source_bytes": 13218,
-      "destination_sha256": "23ba1f6372cb1f15685f2493b6c7f2870ffdb5ae80000b1fe25d910895611237",
+      "destination_sha256": "8b61c7db804905182ce970ce4688d39b26f223d0dacf4dc7257c5aaa517cfadd",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            9514
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            9139
+          ]
+        },
         {
           "original": "~/.claude/agents/gsd-security-auditor.md",
           "replacement": ".ai/gsd/agents/gsd-security-auditor.md",
@@ -11518,7 +12021,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/ship.md",
       "source_sha256": "e2a23f049e4b96a4f2d350ad677be086db6f3e2aa84e562064e72ec22287d73c",
       "source_bytes": 35061,
-      "destination_sha256": "6d136df99b159a2b3bae63259e97590fb7843422ffc98ecc604dcf2fae89fe4a",
+      "destination_sha256": "371e2b1ec82d5b4c019fd92878f801e0c78b9de25fb1f2f74b2fb98780e01382",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/loop-hook-dispatch.md",
@@ -11526,6 +12029,14 @@
           "count": 1,
           "offsets": [
             7774
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            31651
           ]
         }
       ],
@@ -11538,8 +12049,18 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/sketch-wrap-up.md",
       "source_sha256": "12df76f42565f69c00b0f37695828b71a4022cb71042464cc89d2c1f84466815",
       "source_bytes": 10471,
-      "destination_sha256": "22a89c14ce28a83fca0439d090f74d76c0a5339ab00a12ff6ff1e127a5027c1e",
+      "destination_sha256": "f5b6c543bc9f420340d85e7c37ec4d5fd6bda7637b69338ee3e669bea969fd3d",
       "reference_substitutions": [
+        {
+          "original": "references/",
+          "replacement": ".ai/gsd/references/",
+          "count": 3,
+          "offsets": [
+            5883,
+            7399,
+            10007
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -11558,8 +12079,17 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/sketch.md",
       "source_sha256": "c43abfaa2e55d5b31ba916ed34f9fd0d76bf1b3ac2ceec7da5bc2820feb33d3b",
       "source_bytes": 16780,
-      "destination_sha256": "5c11595566373d40bebd483ae33aa87623efffbf047d8f0cdd59956edaa3419b",
+      "destination_sha256": "9d142db205128e068efecb28cfb9573842bb8463bdcfd873f0d61224bcd4f9ce",
       "reference_substitutions": [
+        {
+          "original": "references/",
+          "replacement": ".ai/gsd/references/",
+          "count": 2,
+          "offsets": [
+            1829,
+            8364
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/sketch-interactivity.md",
           "replacement": ".ai/gsd/references/sketch-interactivity.md",
@@ -11622,14 +12152,30 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/spec-phase.md",
       "source_sha256": "73b9739d8ed163f4d360406b1fcae13d9a4ea22f611bca695571a540abe70e25",
       "source_bytes": 34411,
-      "destination_sha256": "06fe19ee91d9bba1b5a46d781d227a161a3050a2f957d8c28a85aa7420f9e553",
+      "destination_sha256": "c2e3d078266bbc4288361cc3e8865a0b9c38ce36a56a3e80ef3be0033cf974bb",
       "reference_substitutions": [
+        {
+          "original": "~/.claude/gsd-core/references/edge-probe.md",
+          "replacement": ".ai/gsd/references/edge-probe.md",
+          "count": 1,
+          "offsets": [
+            10677
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/prohibition-probe.md",
           "replacement": ".ai/gsd/references/prohibition-probe.md",
           "count": 1,
           "offsets": [
             23529
+          ]
+        },
+        {
+          "original": "~/.claude/gsd-core/templates/spec.md",
+          "replacement": ".ai/templates/spec.md",
+          "count": 1,
+          "offsets": [
+            30675
           ]
         }
       ],
@@ -11642,8 +12188,18 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/spike-wrap-up.md",
       "source_sha256": "712e35cfb774df948403018a6b6e75f5b2fede02f423f9fd3d46cc88818ae0a2",
       "source_bytes": 13276,
-      "destination_sha256": "7f97a31b047f916308220f0c923fcc43cd1a5662987149ceb52fcd3ebc6737ef",
+      "destination_sha256": "32ad4fe6e12c26e4ae3d3ae8a95fbec5895ec13cca1940caf0a7de5eeafe6b57",
       "reference_substitutions": [
+        {
+          "original": "references/",
+          "replacement": ".ai/gsd/references/",
+          "count": 3,
+          "offsets": [
+            5880,
+            8506,
+            12532
+          ]
+        },
         {
           "original": "~/.claude/gsd-core/references/response-language-directive.md",
           "replacement": ".ai/gsd/references/response-language-directive.md",
@@ -11662,8 +12218,18 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/spike.md",
       "source_sha256": "ff0e893a12c26e2910a185f688ade40044ecff0be2375777057c81cdede4ce5a",
       "source_bytes": 21772,
-      "destination_sha256": "968888e5d85a5eb9603e00449361dc915e6f9915a5f1907ca9824c45b3ca5ecf",
-      "reference_substitutions": [],
+      "destination_sha256": "c19dd97b835d9b119c6a7cac2a59d7037d70987fbb12cd81e632311c556b1150",
+      "reference_substitutions": [
+        {
+          "original": "references/",
+          "replacement": ".ai/gsd/references/",
+          "count": 2,
+          "offsets": [
+            4802,
+            8399
+          ]
+        }
+      ],
       "conflict_adaptations": [],
       "local_note_appended": true
     },
@@ -11788,8 +12354,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/ui-phase.md",
       "source_sha256": "eb626da312e3a367a8b7cc7e2256455d513a6d8754f6dded6de2ec81023c266e",
       "source_bytes": 26306,
-      "destination_sha256": "9af24d129702b9ae78ce5625c84d99eec0159606cb62e787d673d72bf996216a",
+      "destination_sha256": "5bfd3986bd3aed1ac30535efe461bc26780731d2da87a0a841d0ae1f9bab8bb0",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            8942
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            8541
+          ]
+        },
         {
           "original": "~/.claude/agents/gsd-ui-checker.md",
           "replacement": ".ai/gsd/agents/gsd-ui-checker.md",
@@ -11815,6 +12397,14 @@
           ]
         },
         {
+          "original": "~/.claude/gsd-core/references/ui-consideration-probe.md",
+          "replacement": ".ai/gsd/references/ui-consideration-probe.md",
+          "count": 1,
+          "offsets": [
+            14630
+          ]
+        },
+        {
           "original": "~/.claude/gsd-core/templates/UI-SPEC.md",
           "replacement": ".ai/templates/UI-SPEC.md",
           "count": 1,
@@ -11832,8 +12422,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/ui-review.md",
       "source_sha256": "459f5a2455239d449d2805247263e4c8032d336e0dc5abac4436ea6b958120f8",
       "source_bytes": 9754,
-      "destination_sha256": "6d15bdacbc53d68fc510db80b9206dbb2210afe7cf0f895379cb420d0c3faf2b",
+      "destination_sha256": "850a4740972e60cf4619da8fa48781cd4fa680ef31154644dc245342600c90f2",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            7042
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            6664
+          ]
+        },
         {
           "original": "~/.claude/agents/gsd-ui-auditor.md",
           "replacement": ".ai/gsd/agents/gsd-ui-auditor.md",
@@ -11939,8 +12545,24 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/validate-phase.md",
       "source_sha256": "a0b4b73a1fad655f9acf2e1c4f289b5276ad283a5a8a78df34c2316f753d6f9b",
       "source_bytes": 10447,
-      "destination_sha256": "84451c1f5c6a6d1afe1fc43d1a5ef954adbde1bcbf4af5865cca2737fbce4931",
+      "destination_sha256": "e1060f64b28fd9481be28cf57f7a68ade0ea718f9106447d836c2fcae3aec35d",
       "reference_substitutions": [
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            7529
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            7154
+          ]
+        },
         {
           "original": "~/.claude/agents/gsd-nyquist-auditor.md",
           "replacement": ".ai/gsd/agents/gsd-nyquist-auditor.md",
@@ -12057,7 +12679,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/verify-work/detail/elaboration.md",
       "source_sha256": "18229ad2cb7fc2c61b3c948eb3e98ec8d93c0edba57bf51812c1dff625f798b5",
       "source_bytes": 7870,
-      "destination_sha256": "93853eaaf262711f7402039bcbfa71def95c8e3c3f4544b82a0bc92327bb2970",
+      "destination_sha256": "3e6499274bafa578bdaeb91d2ecfa072fab5399b6fb4522081ac455833ee69b0",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/compact-content-gate.md",
@@ -12065,6 +12687,22 @@
           "count": 1,
           "offsets": [
             118
+          ]
+        },
+        {
+          "original": "gsd-core/references/model-profile-resolution.md",
+          "replacement": ".ai/gsd/references/model-profile-resolution.md",
+          "count": 1,
+          "offsets": [
+            3900
+          ]
+        },
+        {
+          "original": "gsd-core/references/runtime-aware-dispatch.md",
+          "replacement": ".ai/gsd/references/runtime-aware-dispatch.md",
+          "count": 1,
+          "offsets": [
+            4871
           ]
         },
         {

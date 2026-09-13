@@ -296,7 +296,7 @@ Read `@.ai/gsd/references/scout-codebase.md` — it contains the phase-type→ma
 ```bash
 DISCUSS_PRE_HOOKS_JSON=$(gsd_run loop render-hooks discuss:pre --raw)
 ```
-Apply each entry in `activeHooks` per @~/.claude/gsd-core/references/loop-hook-dispatch.md. Empty list → continue to `analyze_phase`.
+Apply each entry in `activeHooks` per @.ai/gsd/references/loop-hook-dispatch.md. Empty list → continue to `analyze_phase`.
 </step>
 
 <step name="analyze_phase">
@@ -415,7 +415,7 @@ Write the file.
 ```bash
 DISCUSS_POST_HOOKS_JSON=$(gsd_run loop render-hooks discuss:post --raw)
 ```
-Apply each entry in `activeHooks` per @~/.claude/gsd-core/references/loop-hook-dispatch.md. Empty list → continue to `confirm_creation`.
+Apply each entry in `activeHooks` per @.ai/gsd/references/loop-hook-dispatch.md. Empty list → continue to `confirm_creation`.
 </step>
 
 <step name="confirm_creation">

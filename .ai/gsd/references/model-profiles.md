@@ -237,7 +237,7 @@ install time into the `effort:` frontmatter key of
 effort parameter, so per-agent frontmatter is the only channel. An effort
 config change has no effect until `gsd_run effort sync --apply`
 re-syncs the agent files. Codex agents instead pin
-`model_reasoning_effort` in `~/.codex/agents/*.toml` at install time.
+`model_reasoning_effort` in `.ai/gsd/agents/*.toml` at install time.
 
 ## Per-Agent Overrides
 

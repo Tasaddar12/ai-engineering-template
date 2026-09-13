@@ -74,11 +74,11 @@ Use the detected root (when applicable) to resolve all canonical paths below:
 
 | Source type | Standard `.claude` layout | `.kilo` layout |
 |-------------|--------------------------|----------------|
-| Agent files | `agents/*.md` | `.kilo/agents/*.md` |
+| Agent files | `.ai/gsd/agents/*.md` | `.kilo/agents/*.md` |
 | Command files | `commands/gsd/*.md` | `.kilo/command/*.md` |
 | CLI tooling | `gsd-core/bin/` | `.kilo/gsd-core/bin/` |
-| Workflow files | `gsd-core/workflows/` | `.kilo/gsd-core/workflows/` |
-| Reference docs | `gsd-core/references/` | `.kilo/gsd-core/references/` |
+| Workflow files | `.ai/gsd/workflows/` | `.kilo/gsd-core/workflows/` |
+| Reference docs | `.ai/gsd/references/` | `.kilo/gsd-core/references/` |
 | Hook files | `hooks/*.js` | `.kilo/hooks/*.js` |
 
 When analyzing this project, use ONLY the canonical source locations matching the detected layout. Do not fall back to the standard layout paths if the `.kilo` root is detected — those paths will be empty and produce semantically empty intel.
@@ -90,7 +90,7 @@ EXCLUDE from counts and analysis:
 
 **Count accuracy:** When reporting component counts in stack.json or arch-decisions.json, always derive
 counts by running Glob on the layout-resolved canonical locations above, not from memory or CLAUDE.md.
-Example (standard layout): `Glob("agents/*.md")`. Example (kilo): `Glob(".kilo/agents/*.md")`.
+Example (standard layout): `Glob(".ai/gsd/agents/*.md")`. Example (kilo): `Glob(".kilo/agents/*.md")`.
 
 ## Forbidden Files
 
