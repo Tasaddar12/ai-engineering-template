@@ -526,3 +526,16 @@ spec.md describes proposed product intent. ADR remains a local-only template.
   supporting hyperlinks, underspecified summary-variant extensions and a Windows
   test decoding failure. These remain open until the corresponding corrections
   and independent re-review pass; successful import hashes alone are insufficient.
+slice; the parent validates the final integrated, rebranded template revision.
+
+Additional changes.log entries:
+
+- Support native feature-shaped TDD plans from the full TDD reference directly; preserve feature/objective/context/verification/success/output fields and add the existing local execution metadata plus TDD Evidence in SUMMARY. Document that Python reruns GREEN and audits evidence but does not install the imported pre-GREEN Node gate.
+- Refuse phase allocation when registered sibling worktrees contain concrete legacy `.ai/phases/NN-name` data; preserve that data and require inspection/migration before allocating IDs. Empty legacy guide directories alone do not block.
+- Document summary variant selection as explicit: retain every original variant section and add all required local evidence headings/metadata; do not silently substitute a shorter variant for the full default.
+- Make owned tests read and write project artifacts explicitly as UTF-8 on Windows; use neutral full-template terminology and TEMPLATE_TEST_SOURCE, with imported references under `.ai/library`.
+
+- The independent review also prompted full native TDD compatibility, a safe
+  legacy-sibling allocation boundary, explicit summary-variant evidence additions
+  and UTF-8 test handling. Initial findings remain preserved in REVIEW-01.md;
+  final re-review will assess the corrections at the delivered revision.
