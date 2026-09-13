@@ -1,8 +1,8 @@
-# GSD template migration
+# Template migration
 
 ## Authorization
 
-On 2026-09-13 the user authorized importing every complete GSD-Core template,
+On 2026-09-13 the user authorized importing every complete source template,
 reconciling referenced components, moving project management into `.planning`,
 expanding unmatched local templates, documenting the complete workflow, frequent
 commits and pushes to a draft PR, independent review, merge and safe cleanup.
@@ -12,9 +12,9 @@ stage; implement the supporting connections needed to make these templates usabl
 
 ## Source
 
-- Repository: https://github.com/open-gsd/gsd-core
-- Revision: c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977
-- License: MIT, copyright 2026 Open GSD; retain attribution and license.
+Source identity, exact revision and required license attribution are maintained
+in [third-party notices](../../../.ai/library/THIRD-PARTY-NOTICES.md) and the
+linked provenance records. Working instructions use our own workflow namespace.
 
 ## Acceptance
 
