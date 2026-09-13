@@ -48,7 +48,7 @@ Read STATE.md before any operation to load project context.
 </required_reading>
 
 <available_agent_types>
-These are the valid Workflow subagent types registered in .claude/agents/ (or equivalent for your runtime).
+These are the valid Workflow subagent types registered in .ai/library/agents/ (or equivalent for your runtime).
 Always use the exact name from this list — do not fall back to 'general-purpose' or other built-in types:
 
 - executor — Executes plan tasks, commits, creates SUMMARY.md

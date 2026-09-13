@@ -395,7 +395,7 @@ ${AGENT_SKILLS_RESEARCHER}
 
 <output>
 Write to: {research_dir}/{FILE}
-Use template: ~/.claude/workflow-core/templates/research-project/{FILE}
+Use template: .ai/templates/research-project/{FILE}
 </output>
 ", subagent_type="project-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```

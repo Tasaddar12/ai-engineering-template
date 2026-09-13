@@ -268,7 +268,7 @@ rm -f "$CHANGELOG_TMP"
 ---
 
 ⚠️  **Note:** The installer performs a clean install of Workflow folders:
-- `commands/` will be wiped and replaced
+- `.ai/library/commands/` will be wiped and replaced
 - `workflow-core/` will be wiped and replaced
 - `agents/workflow-*` files will be replaced
 
@@ -277,7 +277,7 @@ global: `~/.claude/`, `~/.config/opencode/`, `~/.opencode/`, `~/.gemini/`, `~/.c
 local: `./.claude/`, `./.config/opencode/`, `./.opencode/`, `./.gemini/`, `./.kilo/`, or `./.codex/`)
 
 Your custom files in other locations are preserved:
-- Custom commands not in `commands/` ✓
+- Custom commands not in `.ai/library/commands/` ✓
 - Custom agents not prefixed with `workflow-` ✓
 - Custom hooks ✓
 - Your CLAUDE.md files ✓

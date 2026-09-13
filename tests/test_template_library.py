@@ -183,6 +183,13 @@ class TemplateLibraryTests(unittest.TestCase):
                     if resolved.name == "SOURCES.md":
                         self.assertIn(f'id="{fragment}"', resolved.read_text(encoding="utf-8"))
 
+    def test_workflow_step_manifest_references_actual_local_files(self):
+        sections = json.loads((ROOT / ".ai/library/workflows/section-manifest.json").read_text(encoding="utf-8"))
+        for workflow, steps in sections["workflows"].items():
+            for step in steps:
+                with self.subTest(workflow=workflow, step=step["id"]):
+                    self.assertTrue((ROOT / step["read"]).is_file(), step["read"])
+
     def test_truncated_content_cannot_pass_losslessness_check(self):
         entry = next(entry for entry in self.manifest["files"] if entry["source"] == "gsd-core/templates/project.md")
         content = canonical_bytes(ROOT / entry["destination"])

@@ -75,7 +75,7 @@ Use the detected root (when applicable) to resolve all canonical paths below:
 | Source type | Standard `.claude` layout | `.kilo` layout |
 |-------------|--------------------------|----------------|
 | Agent files | `.ai/library/agents/*.md` | `.kilo/agents/*.md` |
-| Command files | `commands/*.md` | `.kilo/command/*.md` |
+| Command files | `.ai/library/commands/*.md` | `.kilo/command/*.md` |
 | CLI tooling | `workflow-core/bin/` | `.kilo/workflow-core/bin/` |
 | Workflow files | `.ai/library/workflows/` | `.kilo/workflow-core/workflows/` |
 | Reference docs | `.ai/library/references/` | `.kilo/workflow-core/references/` |

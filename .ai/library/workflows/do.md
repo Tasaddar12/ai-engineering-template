@@ -122,7 +122,7 @@ Route to {chosen command}?
 <step name="dispatch">
 **Invoke the chosen command with only the arguments it accepts.**
 
-Read the chosen command's frontmatter `argument-hint` (in `commands/<name>.md`) and forward **only arguments that command accepts**. Do NOT pass the full freeform sentence wholesale.
+Read the chosen command's frontmatter `argument-hint` (in `.ai/library/commands/<name>.md`) and forward **only arguments that command accepts**. Do NOT pass the full freeform sentence wholesale.
 
 - If the command expects a phase number or flags only (e.g. `/workflow:verify-work [phase number]`, `/workflow:plan-phase`, `/workflow:execute-phase`), extract the phase number / flags from the input; if none was provided, extract it from context or ask via AskUserQuestion. Drop the surrounding prose.
 - If the command explicitly accepts a freeform task description (e.g. `/workflow:quick`, `/workflow:debug`, `/workflow:spike`, `/workflow:sketch`), forward the relevant portion of `$ARGUMENTS` as the description.

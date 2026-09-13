@@ -2986,7 +2986,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/agents/gsd-intel-updater.compact.md",
       "source_sha256": "f64310968b44ebfd168155a15d44179192d58eb8cb09c9d44a5ad5c7e1f0f959",
       "source_bytes": 15139,
-      "destination_sha256": "eb236df952e1b1ce9965f70d0e3f231dcca27b3ece05a8c7ad210ef809bc2b6b",
+      "destination_sha256": "680b14f9a41a248d6b73d51b10f3583d3b561f38764c7da3db397cfc01891f7d",
       "reference_substitutions": [
         {
           "original": "agents/",
@@ -2995,6 +2995,14 @@
           "offsets": [
             3158,
             4093
+          ]
+        },
+        {
+          "original": "commands/gsd/",
+          "replacement": ".ai/library/commands/",
+          "count": 1,
+          "offsets": [
+            3214
           ]
         },
         {
@@ -3018,14 +3026,6 @@
       "namespace_stages": [
         [
           {
-            "original": "commands/gsd/",
-            "replacement": "commands/",
-            "count": 1,
-            "offsets": [
-              3226
-            ]
-          },
-          {
             "original": "gsd-intel-updater",
             "replacement": "intel-updater",
             "count": 2,
@@ -3046,46 +3046,46 @@
               2427,
               2494,
               2599,
-              7987,
-              8019,
-              8107,
-              8121,
-              8155,
-              8217,
-              8282,
-              8316,
-              8336,
-              8378,
-              8398,
-              8439,
-              8480,
-              8556,
-              8587,
-              8673,
-              8736,
-              8805,
-              8866,
-              8935,
-              9006,
-              9087,
-              9158,
-              9223,
-              9288,
-              9363,
-              9430,
-              9498,
-              9584,
-              9684,
-              9776,
-              9817,
-              9883,
-              9993,
-              10131,
-              10169,
-              10194,
-              10243,
-              10488,
-              10552
+              7999,
+              8031,
+              8119,
+              8133,
+              8167,
+              8229,
+              8294,
+              8328,
+              8348,
+              8390,
+              8410,
+              8451,
+              8492,
+              8568,
+              8599,
+              8685,
+              8748,
+              8817,
+              8878,
+              8947,
+              9018,
+              9099,
+              9170,
+              9235,
+              9300,
+              9375,
+              9442,
+              9510,
+              9596,
+              9696,
+              9788,
+              9829,
+              9895,
+              10005,
+              10143,
+              10181,
+              10206,
+              10255,
+              10500,
+              10564
             ]
           },
           {
@@ -3100,61 +3100,61 @@
               2739,
               2743,
               2821,
-              3275,
-              3299,
-              3369,
-              3446,
-              5169,
-              6790,
-              8002,
-              8139,
-              8173,
-              8271,
-              8300,
-              8362,
-              8423,
-              8461,
-              8514,
-              8540,
-              8573,
-              8613,
-              8657,
-              8720,
-              8789,
-              8850,
-              8919,
-              8990,
-              9071,
-              9142,
-              9207,
-              9272,
-              9347,
-              9414,
-              9482,
-              9568,
-              9668,
-              9760,
-              9798,
-              9855,
-              9897,
-              9938,
-              9942,
-              10033,
-              10111,
-              10115,
-              10280,
-              10284,
-              10339,
-              10343,
-              10425,
-              10613,
-              10719,
-              11083,
-              11551,
-              11835,
-              12056,
-              12151,
-              12426
+              3287,
+              3311,
+              3381,
+              3458,
+              5181,
+              6802,
+              8014,
+              8151,
+              8185,
+              8283,
+              8312,
+              8374,
+              8435,
+              8473,
+              8526,
+              8552,
+              8585,
+              8625,
+              8669,
+              8732,
+              8801,
+              8862,
+              8931,
+              9002,
+              9083,
+              9154,
+              9219,
+              9284,
+              9359,
+              9426,
+              9494,
+              9580,
+              9680,
+              9772,
+              9810,
+              9867,
+              9909,
+              9950,
+              9954,
+              10045,
+              10123,
+              10127,
+              10292,
+              10296,
+              10351,
+              10355,
+              10437,
+              10625,
+              10731,
+              11095,
+              11563,
+              11847,
+              12068,
+              12163,
+              12438
             ]
           }
         ]
@@ -3168,7 +3168,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/agents/gsd-intel-updater.md",
       "source_sha256": "1bedaf5f53c35f1ecf9597c4cbae4e0e3c5d4c7fdc03e270d48c11c69a32216d",
       "source_bytes": 16273,
-      "destination_sha256": "2c49a2819984a59ca269e23f5836523dbeef13828a171e690d75a1bad5c0a514",
+      "destination_sha256": "0d7235bb6d78e7cba1ed613f59192284464c6d92ed5a17ec44310626fbfd2baf",
       "reference_substitutions": [
         {
           "original": "agents/",
@@ -3177,6 +3177,14 @@
           "offsets": [
             3847,
             4822
+          ]
+        },
+        {
+          "original": "commands/gsd/",
+          "replacement": ".ai/library/commands/",
+          "count": 1,
+          "offsets": [
+            3903
           ]
         },
         {
@@ -3200,14 +3208,6 @@
       "namespace_stages": [
         [
           {
-            "original": "commands/gsd/",
-            "replacement": "commands/",
-            "count": 1,
-            "offsets": [
-              3915
-            ]
-          },
-          {
             "original": "gsd-intel-updater",
             "replacement": "intel-updater",
             "count": 2,
@@ -3229,46 +3229,46 @@
               3070,
               3175,
               3311,
-              9160,
-              9192,
-              9280,
-              9294,
-              9328,
-              9390,
-              9455,
-              9489,
-              9509,
-              9551,
-              9571,
-              9612,
-              9653,
-              9729,
-              9760,
-              9846,
-              9909,
-              9978,
-              10039,
-              10108,
-              10179,
-              10260,
-              10331,
-              10396,
-              10461,
-              10536,
-              10603,
-              10671,
-              10757,
-              10857,
-              10949,
-              10990,
-              11056,
-              11166,
-              11304,
-              11342,
-              11367,
-              11416,
-              11661,
-              11725
+              9172,
+              9204,
+              9292,
+              9306,
+              9340,
+              9402,
+              9467,
+              9501,
+              9521,
+              9563,
+              9583,
+              9624,
+              9665,
+              9741,
+              9772,
+              9858,
+              9921,
+              9990,
+              10051,
+              10120,
+              10191,
+              10272,
+              10343,
+              10408,
+              10473,
+              10548,
+              10615,
+              10683,
+              10769,
+              10869,
+              10961,
+              11002,
+              11068,
+              11178,
+              11316,
+              11354,
+              11379,
+              11428,
+              11673,
+              11737
             ]
           },
           {
@@ -3285,60 +3285,60 @@
               3403,
               3407,
               3485,
-              3964,
-              3988,
-              4058,
-              4135,
-              6105,
-              7929,
-              9175,
-              9312,
-              9346,
-              9444,
-              9473,
-              9535,
-              9596,
-              9634,
-              9687,
-              9713,
-              9746,
-              9786,
-              9830,
-              9893,
-              9962,
-              10023,
-              10092,
-              10163,
-              10244,
-              10315,
-              10380,
-              10445,
-              10520,
-              10587,
-              10655,
-              10741,
-              10841,
-              10933,
-              10971,
-              11028,
-              11070,
-              11111,
-              11115,
-              11206,
-              11284,
-              11288,
-              11453,
-              11457,
-              11512,
-              11516,
-              11598,
-              11786,
-              12095,
-              12611,
-              12910,
-              13194,
-              13292,
-              13599
+              3976,
+              4000,
+              4070,
+              4147,
+              6117,
+              7941,
+              9187,
+              9324,
+              9358,
+              9456,
+              9485,
+              9547,
+              9608,
+              9646,
+              9699,
+              9725,
+              9758,
+              9798,
+              9842,
+              9905,
+              9974,
+              10035,
+              10104,
+              10175,
+              10256,
+              10327,
+              10392,
+              10457,
+              10532,
+              10599,
+              10667,
+              10753,
+              10853,
+              10945,
+              10983,
+              11040,
+              11082,
+              11123,
+              11127,
+              11218,
+              11296,
+              11300,
+              11465,
+              11469,
+              11524,
+              11528,
+              11610,
+              11798,
+              12107,
+              12623,
+              12922,
+              13206,
+              13304,
+              13611
             ]
           }
         ]
@@ -22439,20 +22439,20 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/do.md",
       "source_sha256": "8a389266849a9b9d185b852616df1b29ca7c9740ff8eb97e67d00931abc23a24",
       "source_bytes": 11680,
-      "destination_sha256": "036518ffdef3f33de84f3de280f5c70146b7540d1463fb7aaa97c043705ae78e",
-      "reference_substitutions": [],
+      "destination_sha256": "276434279eadd77638701640236e23a6febe31c33535c953ef06b89cdf112a99",
+      "reference_substitutions": [
+        {
+          "original": "commands/gsd/",
+          "replacement": ".ai/library/commands/",
+          "count": 1,
+          "offsets": [
+            10304
+          ]
+        }
+      ],
       "markdown_substitutions": [],
       "namespace_stages": [
-        [
-          {
-            "original": "commands/gsd/",
-            "replacement": "commands/",
-            "count": 1,
-            "offsets": [
-              10304
-            ]
-          }
-        ],
+        [],
         [
           {
             "original": "GSD",
@@ -22502,7 +22502,7 @@
               2944,
               4082,
               9252,
-              11174
+              11186
             ]
           },
           {
@@ -22592,13 +22592,13 @@
               8763,
               9010,
               9090,
-              10491,
-              10526,
-              10545,
-              10789,
-              10803,
-              10817,
-              10831
+              10503,
+              10538,
+              10557,
+              10801,
+              10815,
+              10829,
+              10843
             ]
           }
         ]
@@ -23223,8 +23223,16 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/execute-phase.md",
       "source_sha256": "ba69804f311a5efb7ebd87b824917a82fbacbb3389cf56de06346d64d31beb4a",
       "source_bytes": 92371,
-      "destination_sha256": "4d82319f81590395c911735660b2cf806ba11d09c6e2e5ebe3fe2da746b227eb",
+      "destination_sha256": "232d8a6a99c8af5eacb1e3af48b41b52053ff62b930296deda517964204d8590",
       "reference_substitutions": [
+        {
+          "original": ".claude/agents/",
+          "replacement": ".ai/library/agents/",
+          "count": 1,
+          "offsets": [
+            3048
+          ]
+        },
         {
           "original": "agents/gsd-executor.md",
           "replacement": ".ai/library/agents/executor.md",
@@ -23524,7 +23532,7 @@
             "replacement": "codebase-mapper",
             "count": 1,
             "offsets": [
-              3548
+              3552
             ]
           },
           {
@@ -23532,7 +23540,7 @@
             "replacement": "debugger",
             "count": 1,
             "offsets": [
-              3504
+              3508
             ]
           },
           {
@@ -23542,10 +23550,10 @@
             "offsets": [
               1270,
               2269,
-              3189,
-              7912,
-              14097,
-              20836
+              3193,
+              7916,
+              14101,
+              20840
             ]
           },
           {
@@ -23553,7 +23561,7 @@
             "replacement": "integration-checker",
             "count": 1,
             "offsets": [
-              3612
+              3616
             ]
           },
           {
@@ -23561,7 +23569,7 @@
             "replacement": "nyquist-auditor",
             "count": 1,
             "offsets": [
-              3671
+              3675
             ]
           },
           {
@@ -23569,7 +23577,7 @@
             "replacement": "phase-researcher",
             "count": 1,
             "offsets": [
-              3376
+              3380
             ]
           },
           {
@@ -23577,7 +23585,7 @@
             "replacement": "plan-checker",
             "count": 1,
             "offsets": [
-              3445
+              3449
             ]
           },
           {
@@ -23585,7 +23593,7 @@
             "replacement": "planner",
             "count": 1,
             "offsets": [
-              3320
+              3324
             ]
           },
           {
@@ -23593,7 +23601,7 @@
             "replacement": "ui-auditor",
             "count": 1,
             "offsets": [
-              3830
+              3834
             ]
           },
           {
@@ -23601,7 +23609,7 @@
             "replacement": "ui-checker",
             "count": 1,
             "offsets": [
-              3777
+              3781
             ]
           },
           {
@@ -23609,7 +23617,7 @@
             "replacement": "ui-researcher",
             "count": 1,
             "offsets": [
-              3727
+              3731
             ]
           },
           {
@@ -23617,9 +23625,9 @@
             "replacement": "verifier",
             "count": 3,
             "offsets": [
-              3255,
-              81193,
-              82182
+              3259,
+              81197,
+              82186
             ]
           }
         ],
@@ -23631,56 +23639,56 @@
             "offsets": [
               657,
               2989,
-              4902,
-              4934,
-              5022,
-              5036,
-              5070,
-              5132,
-              5197,
-              5231,
-              5251,
-              5293,
-              5313,
-              5354,
-              5395,
-              5471,
-              5502,
-              5588,
-              5651,
-              5720,
-              5781,
-              5850,
-              5921,
-              6002,
-              6073,
-              6138,
-              6203,
-              6278,
-              6345,
-              6413,
-              6499,
-              6599,
-              6691,
-              6732,
-              6798,
-              6908,
-              7046,
-              7084,
-              7109,
-              7158,
-              7403,
-              7467,
-              11767,
-              12053,
-              51567,
-              76592,
-              84690,
-              85605,
-              85711,
-              85797,
-              85923,
-              90932
+              4906,
+              4938,
+              5026,
+              5040,
+              5074,
+              5136,
+              5201,
+              5235,
+              5255,
+              5297,
+              5317,
+              5358,
+              5399,
+              5475,
+              5506,
+              5592,
+              5655,
+              5724,
+              5785,
+              5854,
+              5925,
+              6006,
+              6077,
+              6142,
+              6207,
+              6282,
+              6349,
+              6417,
+              6503,
+              6603,
+              6695,
+              6736,
+              6802,
+              6912,
+              7050,
+              7088,
+              7113,
+              7162,
+              7407,
+              7471,
+              11771,
+              12057,
+              51571,
+              76596,
+              84694,
+              85609,
+              85715,
+              85801,
+              85927,
+              90936
             ]
           },
           {
@@ -23690,121 +23698,121 @@
             "offsets": [
               5,
               829,
-              4917,
-              5054,
-              5088,
-              5186,
-              5215,
-              5277,
-              5338,
-              5376,
-              5429,
-              5455,
-              5488,
-              5528,
-              5572,
-              5635,
-              5704,
-              5765,
-              5834,
-              5905,
-              5986,
-              6057,
-              6122,
-              6187,
-              6262,
-              6329,
-              6397,
-              6483,
-              6583,
-              6675,
-              6713,
-              6770,
-              6812,
-              6853,
+              4921,
+              5058,
+              5092,
+              5190,
+              5219,
+              5281,
+              5342,
+              5380,
+              5433,
+              5459,
+              5492,
+              5532,
+              5576,
+              5639,
+              5708,
+              5769,
+              5838,
+              5909,
+              5990,
+              6061,
+              6126,
+              6191,
+              6266,
+              6333,
+              6401,
+              6487,
+              6587,
+              6679,
+              6717,
+              6774,
+              6816,
               6857,
-              6948,
-              7026,
+              6861,
+              6952,
               7030,
-              7195,
+              7034,
               7199,
-              7254,
+              7203,
               7258,
-              7340,
-              7686,
-              7829,
-              9176,
-              9278,
-              9394,
-              9524,
-              12604,
-              14942,
-              15314,
-              15416,
-              15473,
-              17871,
-              18816,
-              21836,
-              23712,
-              24107,
-              26033,
-              26191,
-              28212,
-              30406,
-              32259,
-              36533,
-              40396,
-              42414,
-              44760,
-              50073,
-              55675,
-              56332,
-              56579,
-              60294,
-              62002,
-              66464,
-              66711,
-              67840,
-              68889,
-              71543,
-              73182,
-              73733,
-              76015,
-              76565,
-              76766,
-              76836,
-              77091,
-              77519,
-              77859,
-              78299,
-              78889,
-              79008,
-              79861,
-              79898,
-              80373,
-              80667,
-              80689,
-              80964,
-              81098,
-              82810,
-              84227,
-              84668,
-              85159,
-              85577,
-              85689,
-              85769,
-              85887,
-              86067,
-              86656,
-              86676,
-              86705,
-              87155,
-              87230,
-              87292,
-              87787,
-              88945,
-              90649,
-              91435
+              7262,
+              7344,
+              7690,
+              7833,
+              9180,
+              9282,
+              9398,
+              9528,
+              12608,
+              14946,
+              15318,
+              15420,
+              15477,
+              17875,
+              18820,
+              21840,
+              23716,
+              24111,
+              26037,
+              26195,
+              28216,
+              30410,
+              32263,
+              36537,
+              40400,
+              42418,
+              44764,
+              50077,
+              55679,
+              56336,
+              56583,
+              60298,
+              62006,
+              66468,
+              66715,
+              67844,
+              68893,
+              71547,
+              73186,
+              73737,
+              76019,
+              76569,
+              76770,
+              76840,
+              77095,
+              77523,
+              77863,
+              78303,
+              78893,
+              79012,
+              79865,
+              79902,
+              80377,
+              80671,
+              80693,
+              80968,
+              81102,
+              82814,
+              84231,
+              84672,
+              85163,
+              85581,
+              85693,
+              85773,
+              85891,
+              86071,
+              86660,
+              86680,
+              86709,
+              87159,
+              87234,
+              87296,
+              87791,
+              88949,
+              90653,
+              91439
             ]
           }
         ]
@@ -25459,8 +25467,16 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/execute-plan.md",
       "source_sha256": "f76c31e1591bfbac00774003b2884686ac3f0c1b3129a212977cfb13f572943b",
       "source_bytes": 40885,
-      "destination_sha256": "9a3a5f23c21a79d4257d0f11a65d308bd0ac93d1dc42735fe7a8cc89393a9f59",
+      "destination_sha256": "5c6bbda3e542d7663b7b2169da22923c9d26595176343027d2472bd726288a77",
       "reference_substitutions": [
+        {
+          "original": "./.claude/gsd-core/workflows/node-repair.md",
+          "replacement": ".ai/library/workflows/node-repair.md",
+          "count": 1,
+          "offsets": [
+            28190
+          ]
+        },
         {
           "original": "agents/gsd-executor.md",
           "replacement": ".ai/library/agents/executor.md",
@@ -25619,7 +25635,7 @@
           {
             "original": "gsd",
             "replacement": "workflow",
-            "count": 81,
+            "count": 80,
             "offsets": [
               1983,
               2120,
@@ -25675,33 +25691,32 @@
               17381,
               18585,
               28051,
-              28183,
-              31864,
-              32459,
-              32484,
-              32824,
-              32905,
-              32973,
-              33372,
-              33533,
-              33679,
-              33704,
-              33725,
-              34776,
-              35674,
-              35891,
-              37075,
-              37238,
-              38682,
-              39093,
-              39581,
-              39612,
-              39737,
-              39763,
-              39788,
-              39909,
-              39937,
-              39958
+              31857,
+              32452,
+              32477,
+              32817,
+              32898,
+              32966,
+              33365,
+              33526,
+              33672,
+              33697,
+              33718,
+              34769,
+              35667,
+              35884,
+              37068,
+              37231,
+              38675,
+              39086,
+              39574,
+              39605,
+              39730,
+              39756,
+              39781,
+              39902,
+              39930,
+              39951
             ]
           }
         ]
@@ -28873,7 +28888,7 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/new-milestone.md",
       "source_sha256": "46c20a823d676623361e0ff65309d7605b4cd14749b77dc4707f31db66ea553a",
       "source_bytes": 39082,
-      "destination_sha256": "e3c7337dc91f6f273fcd15f08fc7f69da42a35b70fc7b62b9df3f669d67b5cc8",
+      "destination_sha256": "8c597fa95c253f9903e5e7f61243b7d8296425d230e721dd5b252d31f9f18434",
       "reference_substitutions": [
         {
           "original": "gsd-core/references/model-profile-resolution.md",
@@ -28917,6 +28932,14 @@
           ]
         },
         {
+          "original": "~/.claude/gsd-core/templates/research-project/",
+          "replacement": ".ai/templates/research-project/",
+          "count": 1,
+          "offsets": [
+            23808
+          ]
+        },
+        {
           "original": "~/.claude/gsd-core/templates/research-project/SUMMARY.md",
           "replacement": ".ai/templates/research-project/SUMMARY.md",
           "count": 1,
@@ -28937,7 +28960,7 @@
               19074,
               20154,
               22119,
-              23907
+              23892
             ]
           },
           {
@@ -28948,7 +28971,7 @@
               709,
               19152,
               20178,
-              26187
+              26172
             ]
           },
           {
@@ -28959,11 +28982,11 @@
               789,
               19231,
               20204,
-              27273,
-              28694,
-              28772,
-              33297,
-              38338
+              27258,
+              28679,
+              28757,
+              33282,
+              38323
             ]
           }
         ],
@@ -29044,23 +29067,23 @@
               19986,
               21827,
               23231,
-              28874,
-              29106,
-              31498,
-              31603,
-              32033,
-              34569,
-              34678,
-              37177,
-              37722,
-              37799,
-              38673
+              28859,
+              29091,
+              31483,
+              31588,
+              32018,
+              34554,
+              34663,
+              37162,
+              37707,
+              37784,
+              38658
             ]
           },
           {
             "original": "gsd",
             "replacement": "workflow",
-            "count": 108,
+            "count": 107,
             "offsets": [
               1408,
               1545,
@@ -29149,27 +29172,26 @@
               21711,
               21766,
               23403,
-              23796,
-              27351,
-              27464,
-              28216,
-              31526,
-              31569,
-              31695,
-              31861,
-              31902,
-              34597,
-              34644,
-              34782,
-              34943,
-              34997,
-              35056,
-              35101,
-              35381,
-              36851,
-              37698,
-              37778,
-              38649
+              27336,
+              27449,
+              28201,
+              31511,
+              31554,
+              31680,
+              31846,
+              31887,
+              34582,
+              34629,
+              34767,
+              34928,
+              34982,
+              35041,
+              35086,
+              35366,
+              36836,
+              37683,
+              37763,
+              38634
             ]
           }
         ]
@@ -35518,59 +35540,325 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/section-manifest.json",
       "source_sha256": "d9cf1b1e10416c86c42fa950a8f7cff4ca890a1cb6fe93abb1f1233ffde6aa17",
       "source_bytes": 7096,
-      "destination_sha256": "5e3c868ee1157fb60ac6cae1fac0e526e590fee36c8006723c4d8e688374ac4c",
-      "reference_substitutions": [],
+      "destination_sha256": "11dd20b22d3fb1594473f7035cb3b435312c5be617c7e0f62eaa63b3d25fcda3",
+      "reference_substitutions": [
+        {
+          "original": "gsd-core/workflows/autonomous/steps/converge-banner.md",
+          "replacement": ".ai/library/workflows/autonomous/steps/converge-banner.md",
+          "count": 1,
+          "offsets": [
+            322
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/autonomous/steps/converge-dispatch-bg.md",
+          "replacement": ".ai/library/workflows/autonomous/steps/converge-dispatch-bg.md",
+          "count": 1,
+          "offsets": [
+            498
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/autonomous/steps/converge-dispatch-inline.md",
+          "replacement": ".ai/library/workflows/autonomous/steps/converge-dispatch-inline.md",
+          "count": 1,
+          "offsets": [
+            683
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/autonomous/steps/converge-fail-fast.md",
+          "replacement": ".ai/library/workflows/autonomous/steps/converge-fail-fast.md",
+          "count": 1,
+          "offsets": [
+            148
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/autonomous/steps/converge-loop.md",
+          "replacement": ".ai/library/workflows/autonomous/steps/converge-loop.md",
+          "count": 1,
+          "offsets": [
+            861
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/code-review/steps/dispatch-fix.md",
+          "replacement": ".ai/library/workflows/code-review/steps/dispatch-fix.md",
+          "count": 1,
+          "offsets": [
+            1208
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/code-review/steps/structural-pre-pass.md",
+          "replacement": ".ai/library/workflows/code-review/steps/structural-pre-pass.md",
+          "count": 1,
+          "offsets": [
+            1053
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/complete-milestone/steps/git-tag.md",
+          "replacement": ".ai/library/workflows/complete-milestone/steps/git-tag.md",
+          "count": 1,
+          "offsets": [
+            1395
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/discuss-phase-assumptions/steps/auto-advance-dispatch.md",
+          "replacement": ".ai/library/workflows/discuss-phase-assumptions/steps/auto-advance-dispatch.md",
+          "count": 1,
+          "offsets": [
+            1610
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/docs-update/steps/dispatch-monorepo-packages.md",
+          "replacement": ".ai/library/workflows/docs-update/steps/dispatch-monorepo-packages.md",
+          "count": 1,
+          "offsets": [
+            1829
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/execute-phase/steps/gap-closure-artifacts.md",
+          "replacement": ".ai/library/workflows/execute-phase/steps/gap-closure-artifacts.md",
+          "count": 1,
+          "offsets": [
+            2193
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/execute-phase/steps/partial-wave.md",
+          "replacement": ".ai/library/workflows/execute-phase/steps/partial-wave.md",
+          "count": 1,
+          "offsets": [
+            2021
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/execute-phase/steps/regression-gate.md",
+          "replacement": ".ai/library/workflows/execute-phase/steps/regression-gate.md",
+          "count": 1,
+          "offsets": [
+            2367
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/new-milestone/steps/project-md-milestone-write.md",
+          "replacement": ".ai/library/workflows/new-milestone/steps/project-md-milestone-write.md",
+          "count": 1,
+          "offsets": [
+            2568
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/new-milestone/steps/reset-phase-safety.md",
+          "replacement": ".ai/library/workflows/new-milestone/steps/reset-phase-safety.md",
+          "count": 1,
+          "offsets": [
+            2754
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/new-project/steps/auto-mode-config.md",
+          "replacement": ".ai/library/workflows/new-project/steps/auto-mode-config.md",
+          "count": 1,
+          "offsets": [
+            3279
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/new-project/steps/auto-mode-detection.md",
+          "replacement": ".ai/library/workflows/new-project/steps/auto-mode-detection.md",
+          "count": 1,
+          "offsets": [
+            2945
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/new-project/steps/codebase-map-offer.md",
+          "replacement": ".ai/library/workflows/new-project/steps/codebase-map-offer.md",
+          "count": 1,
+          "offsets": [
+            3120
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/plan-phase/steps/adr-ingest-express-path.md",
+          "replacement": ".ai/library/workflows/plan-phase/steps/adr-ingest-express-path.md",
+          "count": 1,
+          "offsets": [
+            3793
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/plan-phase/steps/chunked-planning-mode.md",
+          "replacement": ".ai/library/workflows/plan-phase/steps/chunked-planning-mode.md",
+          "count": 1,
+          "offsets": [
+            4330
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/plan-phase/steps/prd-express-gate.md",
+          "replacement": ".ai/library/workflows/plan-phase/steps/prd-express-gate.md",
+          "count": 1,
+          "offsets": [
+            3628
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/plan-phase/steps/research-only-early-exit.md",
+          "replacement": ".ai/library/workflows/plan-phase/steps/research-only-early-exit.md",
+          "count": 1,
+          "offsets": [
+            4154
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/plan-phase/steps/research-only-modifiers.md",
+          "replacement": ".ai/library/workflows/plan-phase/steps/research-only-modifiers.md",
+          "count": 1,
+          "offsets": [
+            3973
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/plan-phase/steps/reviews-prerequisite.md",
+          "replacement": ".ai/library/workflows/plan-phase/steps/reviews-prerequisite.md",
+          "count": 1,
+          "offsets": [
+            3469
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/progress/steps/forensic-audit.md",
+          "replacement": ".ai/library/workflows/progress/steps/forensic-audit.md",
+          "count": 1,
+          "offsets": [
+            4670
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/progress/steps/mvp-display.md",
+          "replacement": ".ai/library/workflows/progress/steps/mvp-display.md",
+          "count": 1,
+          "offsets": [
+            4519
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick-batch/steps/research-phase.md",
+          "replacement": ".ai/library/workflows/quick-batch/steps/research-phase.md",
+          "count": 1,
+          "offsets": [
+            4851
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick-batch/steps/verification-wave.md",
+          "replacement": ".ai/library/workflows/quick-batch/steps/verification-wave.md",
+          "count": 1,
+          "offsets": [
+            5011
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick/steps/discussion-phase.md",
+          "replacement": ".ai/library/workflows/quick/steps/discussion-phase.md",
+          "count": 1,
+          "offsets": [
+            5193
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick/steps/plan-checker-loop.md",
+          "replacement": ".ai/library/workflows/quick/steps/plan-checker-loop.md",
+          "count": 1,
+          "offsets": [
+            5500
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick/steps/quick-verification.md",
+          "replacement": ".ai/library/workflows/quick/steps/quick-verification.md",
+          "count": 1,
+          "offsets": [
+            5845
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick/steps/research-phase.md",
+          "replacement": ".ai/library/workflows/quick/steps/research-phase.md",
+          "count": 1,
+          "offsets": [
+            5346
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/quick/steps/worktree-pre-dispatch-commit.md",
+          "replacement": ".ai/library/workflows/quick/steps/worktree-pre-dispatch-commit.md",
+          "count": 1,
+          "offsets": [
+            5676
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/review/steps/reviewer-instances-note-1.md",
+          "replacement": ".ai/library/workflows/review/steps/reviewer-instances-note-1.md",
+          "count": 1,
+          "offsets": [
+            6053
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/review/steps/reviewer-instances-note-2.md",
+          "replacement": ".ai/library/workflows/review/steps/reviewer-instances-note-2.md",
+          "count": 1,
+          "offsets": [
+            6247
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/transition/steps/workstream-collision-check.md",
+          "replacement": ".ai/library/workflows/transition/steps/workstream-collision-check.md",
+          "count": 1,
+          "offsets": [
+            6456
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/update/steps/channel-banner.md",
+          "replacement": ".ai/library/workflows/update/steps/channel-banner.md",
+          "count": 1,
+          "offsets": [
+            6649
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/verify-work/steps/automated-ui-verification.md",
+          "replacement": ".ai/library/workflows/verify-work/steps/automated-ui-verification.md",
+          "count": 1,
+          "offsets": [
+            6845
+          ]
+        },
+        {
+          "original": "gsd-core/workflows/verify-work/steps/mvp-uat-framing.md",
+          "replacement": ".ai/library/workflows/verify-work/steps/mvp-uat-framing.md",
+          "count": 1,
+          "offsets": [
+            7019
+          ]
+        }
+      ],
       "markdown_substitutions": [],
       "namespace_stages": [
         [],
-        [
-          {
-            "original": "gsd",
-            "replacement": "workflow",
-            "count": 39,
-            "offsets": [
-              148,
-              322,
-              498,
-              683,
-              861,
-              1053,
-              1208,
-              1395,
-              1610,
-              1829,
-              2021,
-              2193,
-              2367,
-              2568,
-              2754,
-              2945,
-              3120,
-              3279,
-              3469,
-              3628,
-              3793,
-              3973,
-              4154,
-              4330,
-              4519,
-              4670,
-              4851,
-              5011,
-              5193,
-              5346,
-              5500,
-              5676,
-              5845,
-              6053,
-              6247,
-              6456,
-              6649,
-              6845,
-              7019
-            ]
-          }
-        ]
+        []
       ],
       "conflict_adaptations": [],
       "local_note_appended": false
@@ -38767,8 +39055,17 @@
       "source_url": "https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/update.md",
       "source_sha256": "19f4ab097c932c7e078a3e09f299cb0afeb1dd3b2f9795132857fc6d9a689e58",
       "source_bytes": 26566,
-      "destination_sha256": "007ffd35a1c7eb8cb48ab513cc825b3fb41beeb1cf17168e07b424b826b5bb69",
+      "destination_sha256": "b951e8ace61c3766c48c400f23f976a9a172beee5cf191c3bf34a1b1b5c76042",
       "reference_substitutions": [
+        {
+          "original": "commands/gsd/",
+          "replacement": ".ai/library/commands/",
+          "count": 2,
+          "offsets": [
+            13139,
+            13611
+          ]
+        },
         {
           "original": "gsd-core/workflows/update/steps/channel-banner.md",
           "replacement": ".ai/library/workflows/update/steps/channel-banner.md",
@@ -38782,20 +39079,11 @@
       "namespace_stages": [
         [
           {
-            "original": "commands/gsd/",
-            "replacement": "commands/",
-            "count": 2,
-            "offsets": [
-              13142,
-              13614
-            ]
-          },
-          {
             "original": "https://github.com/open-gsd/gsd-core/blob/main/CHANGELOG.md",
             "replacement": "../SOURCES.md#source-9c5c83f6d4e65f04",
             "count": 1,
             "offsets": [
-              21197
+              21213
             ]
           },
           {
@@ -38851,20 +39139,20 @@
               12505,
               12890,
               13080,
-              13686,
-              14521,
-              15418,
-              15568,
-              15742,
-              15809,
-              17261,
-              21034,
-              21747,
-              21770,
-              21811,
-              21858,
-              24758,
-              24805
+              13710,
+              14545,
+              15442,
+              15592,
+              15766,
+              15833,
+              17285,
+              21058,
+              21771,
+              21794,
+              21835,
+              21882,
+              24782,
+              24829
             ]
           },
           {
@@ -38900,42 +39188,42 @@
               10828,
               11152,
               11397,
-              13137,
-              13185,
-              13612,
-              13745,
-              13793,
-              14604,
-              15028,
-              15079,
-              16281,
-              16383,
-              17319,
-              17735,
-              17739,
-              17758,
-              17849,
-              17853,
-              17872,
-              19960,
-              20249,
-              20299,
-              20379,
-              20438,
-              20442,
-              20502,
-              20523,
-              20527,
-              20619,
-              20675,
-              20679,
-              20732,
-              21282,
-              23200,
-              25436,
-              25449,
-              25680,
-              25822
+              13149,
+              13197,
+              13636,
+              13769,
+              13817,
+              14628,
+              15052,
+              15103,
+              16305,
+              16407,
+              17343,
+              17759,
+              17763,
+              17782,
+              17873,
+              17877,
+              17896,
+              19984,
+              20273,
+              20323,
+              20403,
+              20462,
+              20466,
+              20526,
+              20547,
+              20551,
+              20643,
+              20699,
+              20703,
+              20756,
+              21306,
+              23224,
+              25460,
+              25473,
+              25704,
+              25846
             ]
           }
         ]
