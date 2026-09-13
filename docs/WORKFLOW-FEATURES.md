@@ -47,6 +47,10 @@ The current import keeps its teaching and dependencies visible so that expansion
 can be accurate. It does not claim a live autonomous implementation of every
 specialty library workflow.
 
+The proposed feature-change, bug-fix and small-change entry paths are documented
+in [Workflow direction](WORKFLOW-DIRECTION.md). They are next-stage design work;
+the capability inventory above describes the current shared machinery.
+
 ## Tracked project data
 
 ```text
