@@ -385,7 +385,6 @@ project/
       phase_runner.py                Scheduling, integration, status and recovery
       phase_process.py               Worker supervision and process identity
     hooks/                           Optional advisory notices and their Bash tests
-    fixes/                           Preserved historical repairs; no active queue
   .github/
     workflows/
       validate.yml                   Windows/Linux workflow and hook checks

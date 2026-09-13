@@ -128,8 +128,6 @@ class DocumentNavigationTests(unittest.TestCase):
             documents += list((SOURCE / directory).rglob("*.md"))
         checked = 0
         for path in documents:
-            if path.name.startswith("FIX-"):
-                continue  # Historical references belong to their original Git revisions.
             body = re.sub(r"(?ms)^```.*?^```[^\n]*$", "", path.read_text(encoding="utf-8-sig"))
             for match in re.finditer(r"\[[^\]\n]+\]\((<[^>]+>|[^)\s]+)\)", body):
                 target = match[1].strip("<>")
