@@ -13,6 +13,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 import yaml
 
@@ -20,6 +21,32 @@ import yaml
 SOURCE = Path(__file__).resolve().parents[1]
 PHASE = "01-example"
 PHASE_PATH = Path(".planning/phases") / PHASE
+
+
+def read_fixture_event(path: Path) -> dict:
+    # Windows can briefly deny opening a destination during atomic replacement.
+    # Retry that sharing race only; persistent errors must still fail the test.
+    for attempt in range(40):
+        try:
+            return yaml.safe_load(path.read_text(encoding="utf-8"))
+        except PermissionError:
+            if attempt == 39:
+                raise
+            time.sleep(0.025)
+
+
+class FixtureEventTests(unittest.TestCase):
+    def test_transient_sharing_error_retries_and_reads_complete_event(self) -> None:
+        with patch.object(Path, "read_text", side_effect=[PermissionError("sharing"), "kind: code\nfinished: 12\n"]) as read, patch("time.sleep") as sleep:
+            self.assertEqual(read_fixture_event(Path("event.yaml")), {"kind": "code", "finished": 12})
+        self.assertEqual(read.call_count, 2)
+        sleep.assert_called_once_with(0.025)
+
+    def test_persistent_permission_error_is_not_hidden(self) -> None:
+        with patch.object(Path, "read_text", side_effect=PermissionError("denied")) as read, patch("time.sleep"):
+            with self.assertRaises(PermissionError):
+                read_fixture_event(Path("event.yaml"))
+        self.assertEqual(read.call_count, 40)
 
 
 class PhaseRuntimeTests(unittest.TestCase):
@@ -177,7 +204,7 @@ class PhaseRuntimeTests(unittest.TestCase):
 
     def events(self, *, include_verifier: bool = False) -> list[dict]:
         directory = self.directory / "events"
-        events = [yaml.safe_load(path.read_text(encoding="utf-8")) for path in directory.glob("*.yaml")]
+        events = [read_fixture_event(path) for path in directory.glob("*.yaml")]
         return [event for event in events if include_verifier or event["kind"] != "verifier"]
 
     def summary(self, identifier: str) -> Path:

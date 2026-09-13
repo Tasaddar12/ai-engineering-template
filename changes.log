@@ -722,4 +722,17 @@ Additional changes.log entries:
 - The independent review also prompted full native TDD compatibility, a safe
   legacy-sibling allocation boundary, explicit summary-variant evidence additions
   and UTF-8 test handling. Initial findings remain preserved in REVIEW-01.md;
-  final re-review will assess the corrections at the delivered revision.
+  independent re-review passed at 55f944c and the reference/naming addendum
+  passed at 0459dbb. VERIFICATION.md records results and their limits.
+
+## 2026-09-13 — Final validation and Windows event polling
+
+- Full local suite passed: 72 tests at 55f944c. Current library checks pass all
+  ten cases, including the subsequently added workflow-step reference check.
+- Hosted Windows CI exposed a test-fixture sharing race while reading an event
+  file during atomic replacement. Retry only PermissionError for a bounded
+  interval, retain persistent failures, and test both transient and persistent
+  cases. Production runtime behavior and acceptance assertions are unchanged.
+- Preserve the full source template from the user's original primary CONTEXT
+  edit in the adopted library; retain an exact external backup before syncing
+  the primary checkout after merge.
