@@ -327,7 +327,7 @@ The `privacy` row is `test`-tier — "no raw SSN in the audit log" is a mechanic
 while `fairness` and `transparency` are `judgment`-tier. The byVerification rollup
 `{ test: 1, judgment: 2 }` is the count-preserved breakdown of the three `resolved`-status
 items. Each worked-example block above is kept byte-for-byte (parsed-JSON) identical to its
-fixture under `workflow-core/references/prohibition-probe-fixtures/` by
+fixture under `.ai/library/references/prohibition-probe-fixtures/` by
 `tests/prohibition-probe.docs-fixtures.test.cjs`, so the doc and the reference data cannot
 silently drift.
 

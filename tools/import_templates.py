@@ -189,7 +189,7 @@ def aliases(mapping: dict[str, str]) -> dict[str, str]:
         variants = {source}
         variants.update(prefix + source for prefix in (
             "~/.claude/", "$HOME/.claude/", "${HOME}/.claude/",
-            "~/.codex/", "$HOME/.codex/", "~/.config/opencode/", "./.claude/", ".claude/",
+            "~/.codex/", "$HOME/.codex/", "~/.config/opencode/", "./.claude/", ".claude/", "/",
         ))
         if source.startswith("gsd-core/"):
             variants.add(source.removeprefix("gsd-core/"))
@@ -205,7 +205,11 @@ def aliases(mapping: dict[str, str]) -> dict[str, str]:
 def generate(files: dict[str, bytes]) -> dict[str, bytes]:
     mapping = destinations(files)
     directories = {source + "/": destination + "/" for source, destination in TREES.items()}
-    directories.update({posixpath.dirname(source) + "/": posixpath.dirname(destination) + "/" for source, destination in mapping.items()})
+    for source, destination in mapping.items():
+        source_dir, destination_dir = posixpath.dirname(source), posixpath.dirname(destination)
+        while source_dir not in TREES:
+            directories[source_dir + "/"] = destination_dir + "/"
+            source_dir, destination_dir = posixpath.dirname(source_dir), posixpath.dirname(destination_dir)
     replacements = aliases(mapping | directories)
     # This upstream registry points at an untracked build product. Link the
     # actual pinned implementation rather than creating a fictitious local CLI.
