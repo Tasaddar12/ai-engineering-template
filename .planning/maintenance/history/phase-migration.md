@@ -2,8 +2,8 @@
 
 > Historical record: this describes the earlier phase-workflow migration at its
 > original revision. The subsequent complete-template and `.planning` migration
-> is recorded in [changes.log](../changes.log). Use the current
-> [workflow guide](PHASE-WORKFLOW.md) for active paths and behavior.
+> is recorded in [changes.log](../../../changes.log). Use the current
+> [workflow guide](../../../docs/PHASE-WORKFLOW.md) for active paths and behavior.
 
 ## Authorization and scope
 
@@ -273,7 +273,7 @@ removing this migration's clean merged worktree and branch. It supersedes the
 earlier instruction to leave this PR open. It does not change the runtime's
 publication boundary: the runtime still never merges a PR.
 
-The consolidated [workflow guide](PHASE-WORKFLOW.md) documents new and existing
+The consolidated [workflow guide](../../../docs/PHASE-WORKFLOW.md) documents new and existing
 project onboarding, project direction and phase decomposition, all seven agent
 roles and their launch responsibilities, bounded handoffs, dependency waves,
 documentation timing and ownership, conflicting claims, small fixes, commands,
