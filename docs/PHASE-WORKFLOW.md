@@ -33,10 +33,10 @@ observed behavior, and record actual authorization already supplied.
 assert that unrun checks pass, or repeat approval questions at internal steps when
 the user already authorized the work.
 
-For substantial discovery, use the complete upstream project and research
-questioning guidance through the [support library](../.ai/gsd/README.md). The local
+For substantial discovery, use the complete library project and research
+questioning guidance through the [support library](../.ai/library/README.md). The local
 onboarding procedure remains [onboard](../.ai/commands/onboard.md). Optional
-upstream milestone and profile records are available when relevant; simply
+optional milestone and profile records are available when relevant; simply
 importing their templates does not activate another scheduler.
 
 ## 2. Select the next phase
@@ -66,12 +66,12 @@ workers and changes no records.
 
 | Activity | Question answered | Artifact |
 |---|---|---|
-| Specify when useful | What does this phase deliver, and what proves it? | `NN-SPEC.md` from upstream `spec.md` |
+| Specify when useful | What does this phase deliver, and what proves it? | `NN-SPEC.md` from `spec.md` |
 | Discuss | Which implementation choices are fixed, delegated or unresolved? | `NN-CONTEXT.md`; optional discussion log |
 | Research | Which technical uncertainty could invalidate the approach? | `NN-RESEARCH.md`; relevant project research |
 | Define validation | Which checks will expose plausible incorrect implementations? | `NN-VALIDATION.md` when useful |
 
-The upstream phase specification teaches falsifiable requirements, boundaries,
+The phase specification teaches falsifiable requirements, boundaries,
 negative requirements and edge coverage. Phase CONTEXT retains exact acceptance,
 actual decisions and execution authorization for the local runtime. Carry valid
 requirements between them explicitly; a repeated heading must not become a second
@@ -117,7 +117,7 @@ coordinator resolves findings within scope and repeats the affected review.
 
 The runtime automatically dispatches code, documentation and verification
 workers. Researcher, preparer and preparation-checker contexts are arranged by
-the coordinator. The complete upstream workflows describe those methods; they
+the coordinator. The complete library workflows describe those methods; they
 are not all registered host commands in this repository.
 
 The process runner accepts autonomous plans. Non-autonomous/checkpoint plans and
@@ -225,7 +225,7 @@ to code, documents, plans or checks invalidate prior evidence. Generated status
 and specified evidence records have controlled exclusions; consult the runtime
 contract for the exact boundary. A successful exit code is not acceptance.
 
-Use full upstream verification, validation, UAT, debugging and summary guidance
+Use full template verification, validation, UAT, debugging and summary guidance
 as appropriate. The Python runner's report fields and UAT mechanics remain
 explicit in its runtime contract.
 
@@ -272,7 +272,7 @@ by linked worktrees. Committed summaries, verification and UAT live with the pha
 and travel with Git. A fresh clone has durable history but not the old machine's
 process checkpoints. `status` is read-only; `sync` explicitly refreshes the
 `Runtime Status` section of tracked `.planning/STATE.md`, preserving its authored
-session memory and full upstream structure.
+session memory and full template structure.
 
 See the [runtime guide](../.ai/runtime/README.md) for exact resume, replan and
 verification commands. Never interpret an old STATE entry as proof that a process

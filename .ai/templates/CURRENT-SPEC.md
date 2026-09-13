@@ -20,7 +20,7 @@ working from integrated implementation and actual checks.
 | Verifier | Trace a documented claim through implementation and observable evidence |
 | Guide author | Explain actual usage and limitations accurately |
 
-**Distinction:** The upstream [`spec.md`](spec.md) produces a phase's desired
+**Distinction:** The library [`spec.md`](spec.md) produces a phase's desired
 `NN-SPEC.md` before implementation. This local template produces an evidenced
 current contract after implementation. A locked requirement is not proof that it
 already works. Keep both records when the transition needs both.

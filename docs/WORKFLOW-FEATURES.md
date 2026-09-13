@@ -1,6 +1,6 @@
 # Workflow features and storage
 
-The repository combines complete GSD-Core authoring templates with a Python
+The repository combines complete detailed authoring templates with a Python
 runtime for bounded parallel execution. This guide lists available capabilities,
 their evidence owners and their operational limits. For the end-to-end procedure,
 read [Project and phase workflow](PHASE-WORKFLOW.md).
@@ -15,7 +15,7 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 | Rich authoring templates | Purpose, consumers, fillable structure, examples and quality guidance | [Template guide](TEMPLATE-GUIDE.md) | Optional specialty artifacts do not imply an installed automated workflow |
 | Discuss and specify | Falsifiable scope, decisions, boundaries and explicit unresolved questions | Phase SPEC and CONTEXT | Recorded requirements do not prove implementation |
 | Bounded research | Resolve technical uncertainties with source evidence | [bounded-research](../.agents/skills/bounded-research/SKILL.md) | Research cannot authorize a new product direction |
-| Detailed phase plans | Concrete tasks, checks, ownership, dependencies and must-haves | `NN-CC-PLAN.md`; [template contract](../.ai/runtime/TEMPLATE-CONTRACT.md) | Full upstream guidance plus local runtime metadata |
+| Detailed phase plans | Concrete tasks, checks, ownership, dependencies and must-haves | `NN-CC-PLAN.md`; [template contract](../.ai/runtime/TEMPLATE-CONTRACT.md) | Full template guidance plus local runtime metadata |
 | Human checkpoints and setup | Preserve explicit decisions, observations and external prerequisites | Full PLAN/context/setup guidance | Python dispatch blocks non-autonomous plans or unresolved setup; coordinator resolves and prepares autonomous continuation |
 | Independent preparation check | Examine feasibility, coverage, interfaces and task quality | [Phase checker](../.ai/agents/phase-checker.md) | Coordinator arranges this; structural runtime check is insufficient alone |
 | Fresh implementation workers | Focused coder or documentor per ready assignment | [Runtime](../.ai/runtime/README.md) | Workers stay inside assigned write scope and do not dispatch more agents |
@@ -38,14 +38,14 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 | Local `.ai/commands/` | Markdown procedures for the coordinator | Ask in ordinary language or read the named file; these do not register slash commands |
 | Local `.ai/agents/` | Role responsibilities and write boundaries | Supply the applicable role in a bounded assignment |
 | `.agents/skills/` | Focused reusable engineering methods | Select relevant skills and list required exact paths in plan inputs |
-| `.ai/templates/` | All 40 complete upstream templates, with local extensions | Copy the fillable artifact portion and follow all authoring guidance |
-| `.ai/gsd/` | Pinned supporting agent, command, workflow, reference and context documents | Read through the [support route map](../.ai/gsd/README.md); heed executable boundaries |
-| Upstream host commands/tools | Referenced where upstream guidance relies on its own installation | Do not assume available merely because their documentation is vendored |
+| `.ai/templates/` | All 40 complete adapted templates, with local extensions | Copy the fillable artifact portion and follow all authoring guidance |
+| `.ai/library/` | Pinned supporting agent, command, workflow, reference and context documents | Read through the [support route map](../.ai/library/README.md); heed executable boundaries |
+| Documented host commands/tools | Referenced where a documented workflow requires a separate installation | Do not assume available merely because their documentation is vendored |
 
 The wider native skills/commands/agents/workflows expansion is a subsequent stage.
 The current import keeps its teaching and dependencies visible so that expansion
 can be accurate. It does not claim a live autonomous implementation of every
-specialty upstream workflow.
+specialty library workflow.
 
 ## Tracked project data
 
@@ -56,7 +56,7 @@ specialty upstream workflow.
   ROADMAP.md                    Phase goals, order and dependencies
   STATE.md                      Living session memory plus derived Runtime Status
   config.yaml                   Python runtime workers, capacity and real checks
-  config.json                   Optional upstream settings when its workflow is used
+  config.json                   Optional library settings when its workflow is used
   codebase/                     Inspected architecture and stack maps
   research/                     Cross-phase/project research when useful
   phases/NN-name/
@@ -83,7 +83,7 @@ own full templates define their output destinations and consumers. Do not create
 every possible record during onboarding. Use the [template catalog](TEMPLATE-GUIDE.md)
 to identify the right artifact.
 
-`.planning/config.yaml` and the upstream `config.json` represent distinct
+`.planning/config.yaml` and the library `config.json` represent distinct
 configuration contracts. The Python runtime reads YAML. JSON options are not
 silently mapped, and setting a JSON option does not configure the Python runner.
 The directory listing shows possible artifacts, not a requirement that every
@@ -99,8 +99,8 @@ AGENTS.md                       Repository entry point
   agents/                       Local role responsibilities
   commands/                     Local coordinator procedures
   references/                   Local handoff, documentation and operation details
-  templates/                    Full upstream templates plus local extensions
-  gsd/                          Full pinned supporting guidance and route map
+  templates/                    Complete templates plus local extensions
+  library/                      Full supporting guidance and route map
   runtime/                      Executable runner and its template adapter contract
   hooks/                        Optional advisory hook implementations and tests
 .agents/skills/                 Selected reusable engineering methods

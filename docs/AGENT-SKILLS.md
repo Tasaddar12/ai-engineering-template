@@ -89,7 +89,7 @@ needed; documentors reconcile claims against the integrated behavior. The
 independent verifier traces the complete outcome. Handoff guidance keeps the
 next worker's context small and specific.
 
-These are methods within the authorized workflow. Optional upstream milestone
+These are methods within the authorized workflow. Optional milestone
 templates and phase-local PLAN artifacts are now available; selecting a skill
 does not itself introduce another lifecycle or approval gate. Do not copy a
 skill's method into every component or load every skill body for every worker.
@@ -123,24 +123,23 @@ Each skill currently needs just one Markdown file. Supporting examples or script
 belong beside a skill only when they solve a demonstrated recurring need. There
 is no separate registry or per-skill tracking file.
 
-## Origins of the existing local skills
+## Methods and supporting guidance
 
-The comparison uses GSD-Core revision
-[`a0270a7`](https://github.com/open-gsd/gsd-core/tree/a0270a79452f94360d7c4acda81038d51a4df7a1).
-These skills are original instructions adapted during an earlier stage. Their
-historical source revision differs from the complete template import at
-`c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`. See the [template guide](TEMPLATE-GUIDE.md)
-and [support route map](../.ai/gsd/README.md) for the current full source library.
+The local skills apply focused engineering methods within our phase workflow.
+The [template guide](TEMPLATE-GUIDE.md) and
+[support route map](../.ai/library/README.md) connect them to the complete
+instructional library. Source history and attribution live in
+[third-party notices](../THIRD-PARTY-NOTICES.md).
 
-| GSD source | Useful idea | Adaptation here |
+| Supporting method | Useful idea | Application here |
 |---|---|---|
-| [Skill discovery contract](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/docs/skills/discovery-contract.md) and [agent bootstrap](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/agent-skills-bootstrap.md) | Give fresh agents a dependable route to applicable guidance | Use repository discovery and explicit Read first paths; load selected bodies and keep required core/role reading |
-| [Research verification](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/research-verification-protocol.md) | Check exact evidence and distinguish unknown from incompatible | Bounded research that answers the phase's actual decision |
-| [Planner coupling](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/planner-coupling.md) and [check grounding](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/planner-verify-command-grounding.md) | Make dependencies, interfaces and executable checks concrete | Prepare bounded phase-local PLAN components; the full imported phase-prompt now supplies detailed task guidance |
-| [Debugger](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/agents/gsd-debugger.md) and [reproduction hardening](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/debugger-repro-hardening.md) | Test explanations and retain a representative failure | Debug within the existing assignment and design meaningful regression evidence |
-| [Document verifier](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/agents/gsd-doc-verifier.md) and [conflict method](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/doc-conflict-engine.md) | Audit concrete claims and trace their evidence | Apply our fact owners and intent rules; correct the responsible side |
-| [Verifier connections](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/verifier-wiring-patterns.md) and [honest verification](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/honest-verifier.md) | Existing artifacts are weaker evidence than connected behavior | Trace acceptance to actual execution and distinguish a defect from missing proof |
-| [Context budget](https://github.com/open-gsd/gsd-core/blob/a0270a79452f94360d7c4acda81038d51a4df7a1/gsd-core/references/context-budget.md) | Bound each worker's input and retain useful continuation evidence | Use source links and existing summaries without model-specific budget thresholds |
+| [Skill discovery](../.ai/library/references/project-skills-discovery.md) and [agent bootstrap](../.ai/library/references/agent-skills-bootstrap.md) | Give fresh agents a dependable route to applicable guidance | Use repository discovery and explicit read-first paths; load selected bodies and keep required core/role reading |
+| [Research verification](../.ai/library/references/research-verification-protocol.md) | Check exact evidence and distinguish unknown from incompatible | Answer the phase's actual technical decision |
+| [Planner coupling](../.ai/library/references/planner-coupling.md) and [check grounding](../.ai/library/references/planner-verify-command-grounding.md) | Make dependencies, interfaces and executable checks concrete | Prepare bounded phase-local PLAN components using detailed task guidance |
+| [Debugger](../.ai/library/agents/debugger.md) and [reproduction hardening](../.ai/library/references/debugger-repro-hardening.md) | Test explanations and retain a representative failure | Debug within the assignment and design meaningful regression evidence |
+| [Document verifier](../.ai/library/agents/doc-verifier.md) and [conflict method](../.ai/library/references/doc-conflict-engine.md) | Audit concrete claims and trace their evidence | Apply our fact owners and intent rules; correct the responsible side |
+| [Verifier connections](../.ai/library/references/verifier-wiring-patterns.md) and [honest verification](../.ai/library/references/honest-verifier.md) | Existing artifacts are weaker evidence than connected behavior | Trace acceptance to actual execution and distinguish a defect from missing proof |
+| [Context budget](../.ai/library/references/context-budget.md) | Bound each worker's input and retain useful continuation evidence | Use source links and existing summaries without model-specific budget thresholds |
 
 ## Keep the skills useful
 
@@ -161,12 +160,12 @@ correct result. Review the actual output and fix demonstrated weaknesses.
 | Author a planning/result artifact | Complete relevant `.ai/templates/` file, including its good/bad examples and consumers | The destination named by the template under `.planning/` |
 | Connect an artifact to Python execution | `.ai/runtime/TEMPLATE-CONTRACT.md` | Additive metadata in the same phase artifact |
 | Apply a recurring engineering method | Matching `.agents/skills/<name>/SKILL.md` | Assigned map, research, plan, source, summary or report |
-| Understand a referenced GSD method | `.ai/gsd/README.md` route map and linked full source | Existing assigned record; respect local runtime boundaries |
+| Understand a referenced library method | `.ai/library/README.md` route map and linked full source | Existing assigned record; respect local runtime boundaries |
 
 The wider native skills, commands, agents and workflows expansion remains a
 subsequent stage. This template migration preserves the full teaching materials
 and supporting references so that later work has accurate inputs. Vendored
-upstream agent/workflow documents do not register every host command or replace
+library agent/workflow documents do not register every host command or replace
 the Python dispatcher automatically.
 
 When a method is required, put its exact repository path in the full PLAN's
