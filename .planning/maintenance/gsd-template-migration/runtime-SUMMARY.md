@@ -81,3 +81,13 @@ through provenance/reference coverage; those failures are not suppressed here.
 2. Run the full suite using integrated templates and reconciled active documents.
 3. Independently review runtime claims, source/template mapping and all acceptance.
 4. Perform user-authorized final publication/merge/cleanup only after required checks.
+
+## Active-link inspection scope
+
+The generic navigation scanner now includes `.planning` active records and excludes
+maintenance history, the preserved `.ai/gsd/` source library, upstream template
+teaching examples, and historical PHASE-MIGRATION claims. Local ADR/CURRENT-SPEC
+templates remain checked. Existing real-file/anchor assertions and the >100-link
+coverage floor remain. Dedicated upstream provenance/reference tests inspect the
+preserved teaching library. This follows the coordinator's explicit test ownership
+instruction and avoids treating illustrative project paths as current files.

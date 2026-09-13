@@ -231,8 +231,18 @@ class OwnershipBoundaryTests(unittest.TestCase):
 class DocumentNavigationTests(unittest.TestCase):
     def test_active_markdown_links_resolve_to_files_and_headings(self):
         documents = [SOURCE / "AGENTS.md", SOURCE / "README.md"]
-        for directory in (".ai", ".agents", "docs"):
-            documents += list((SOURCE / directory).rglob("*.md"))
+        for directory in (".ai", ".agents", ".planning", "docs"):
+            for path in (SOURCE / directory).rglob("*.md"):
+                relative = path.relative_to(SOURCE).as_posix()
+                # Preserved upstream teaching examples are checked by the dedicated
+                # provenance/reference suite, not as active checkout-relative links.
+                if relative.startswith((".ai/gsd/", ".planning/maintenance/")):
+                    continue
+                if relative.startswith(".ai/templates/") and path.name not in ("ADR.md", "CURRENT-SPEC.md"):
+                    continue
+                if relative == "docs/PHASE-MIGRATION.md":
+                    continue  # Historical paths describe superseded behavior.
+                documents.append(path)
         checked = 0
         for path in documents:
             body = re.sub(r"(?ms)^```.*?^```[^\n]*$", "", path.read_text(encoding="utf-8-sig"))
