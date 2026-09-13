@@ -68,7 +68,9 @@ bodies. No example, counterexample, section, or guidance is abridged.
 
 Every imported Markdown template and Markdown supporting file receives
 the following separated local note after its complete upstream body.
-JSON and other non-Markdown files are byte-preserved. The note resolves
+Non-Markdown files receive only reversible namespace/reference substitutions
+where needed, without an appended note; config.json remains byte-preserved.
+The note resolves
 local execution authority without deleting upstream system descriptions.
 
 ````text
