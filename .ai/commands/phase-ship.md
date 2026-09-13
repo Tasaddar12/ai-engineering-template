@@ -3,7 +3,7 @@
 Read [RULES](../RULES.md), current verification, required UAT and the user's
 publication boundary. Use the assigned clean integration worktree.
 
-Complete required behavior, documentation and local checks before publication.
+Complete required behavior, documentation and local checks before final readiness.
 Record real publication authorization; `--authorized` asserts existing authority
 and does not obtain it. Choose the actual target branch for the project.
 
@@ -28,3 +28,12 @@ Publication is distinct from delivery. Merge and cleanup are separate actions
 requiring applicable authorization and observed merge evidence; they are not an
 automatic consequence of this procedure. A failed publication must not become
 a local merge.
+
+## Authorized draft progress
+
+When the user explicitly requests live progress in a draft PR, the coordinator
+may commit and push each bounded slice and create/update a draft through GitHub
+before phase verification. Keep the PR description clear about unfinished work.
+This direct draft route does not bypass the Python runtime's final publication
+checks or establish readiness. Before marking ready or merging, finish required
+checks, independent review and documented corrections for the final revision.

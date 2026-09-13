@@ -16,3 +16,27 @@ for upstream templates. Imported guidance must retain its full instructional tex
   merge this migration after review and checks under the user's explicit request.
 - Primary has an existing uncommitted .ai/templates/CONTEXT.md edit. Preserve it
   throughout migration and final synchronization; all work uses assigned worktrees.
+
+## 2026-09-13 — Local workflow and ownership adapters
+
+- Move project data references from .ai to .planning; keep reusable rules,
+  templates, source methods and Python runtime in .ai. Update relative links,
+  explicit assigned read paths and document-ownership hook paths together.
+- Adopt phase-local NN-CC-PLAN.md names instead of NN-CC-IMPLEMENT.md.
+  Plans retain full upstream task/action/verify/done structure and must_haves.
+- Link local discussion, research, preparation, execution and verification
+  procedures to complete upstream templates and supporting methods. These
+  references do not claim host registration of slash commands or named agents.
+- Preserve existing exact ownership, resources, real argv checks, authorization,
+  documentation coverage and revision evidence via additive runtime extensions.
+- Keep the dependency-driven Python scheduler; upstream wave metadata remains
+  useful for planning but does not force unrelated components through a barrier.
+- Separate desired phase specifications (upstream spec.md) from verified current
+  contracts (new CURRENT-SPEC.md). Expand the latter and ADR.md with complete
+  authoring guidance, good/bad examples, consumers and handoffs.
+- Document the explicitly authorized draft-progress path. The runtime's publish
+  operation still requires verified work and never automatically merges.
+- Add a portable local-link regression check for active workflow documentation;
+  upstream imports have a separate provenance/reference audit. Historical
+  migration records remain explicitly historical, not current instructions.
+- Hook evidence: 10 document-ownership cases passed on Windows Git Bash.

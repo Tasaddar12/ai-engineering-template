@@ -12,13 +12,13 @@ This is a reusable template; onboarding supplies the adopting project's identity
 | [STATE](../.planning/STATE.md) | Derived current summary |
 | [phases](../.planning/phases/README.md) | Decisions, assignments and evidence per capability/change |
 | [codebase](../.planning/codebase/README.md) | Useful maps of existing implementation |
-| `specs/` | Current verified behavioral contracts |
-| `decisions/` | Significant architectural rationale |
+| `.planning/specs/` | Current verified behavioral contracts |
+| `.planning/decisions/` | Significant architectural rationale |
 | [commands](commands/README.md) | Procedures from intake through publication |
 | [agents](agents/README.md) | Responsibilities and handoffs |
 | [skills](../docs/AGENT-SKILLS.md) | Reusable engineering methods selected per assignment |
 | `references/` | Artifact and handoff details loaded on demand |
-| [templates](templates/README.md) | Artifact shapes |
+| [templates](templates/README.md) | Complete artifact instructions and examples |
 | [runtime](runtime/README.md) | Executable phase coordination |
 | [config](../.planning/config.yaml) | Actual worker routes, capacity and checks |
 | [truth-map](truth-map.md) | Each fact's authoritative owner |

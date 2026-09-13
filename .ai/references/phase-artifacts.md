@@ -16,16 +16,17 @@ lifecycle. Use [templates](../templates/README.md) for their shapes.
 | `NN-UAT.md` | User acceptance is required/useful | Acceptance session and publication checks |
 | `.continue-here.md` | Work pauses with useful continuation context | Returning coordinator |
 
-CONTEXT carries `phase`, `approval`, phase `depends_on` and `uat` in
-frontmatter. Its body owns Goal, Acceptance, Decisions, Authorization, Open
-questions and Deferred. Acceptance IDs such as A1 stay stable. Approval must
-record the actual human instruction; `approved` text alone is not authority.
+Use the full templates for both authoring instructions and output structure.
+CONTEXT retains upstream decision categories, canonical references, existing-code
+insights and deferred ideas. PLAN retains task-level actions, verification, done
+criteria and goal-backward `must_haves`. SUMMARY retains dependency effects,
+changes, decisions, issues and evidence.
 
-PLAN metadata supplies `kind`, component `depends_on`, `files`,
-`resources`, `acceptance`, `documentation` and executable `checks`.
-The body supplies Objective, Read first, Implementation, Verification and
-Documentation. Dependencies use NN-CC IDs within the phase. Directory ownership
-prefixes end in `/`; document obligations name exact paths.
+The [runtime contract](../runtime/TEMPLATE-CONTRACT.md) specifies additive metadata
+for authorization, ownership, checks, documentation coverage and exact revision
+evidence. Do not substitute the previous shortened records for these full outputs.
+Dependencies use NN-CC IDs within a phase; ownership prefixes end in `/` and
+required documentation names exact files.
 
 A small bug phase may have only CONTEXT, one PLAN/SUMMARY pair and
 VERIFICATION. Add reproduction and regression proof. A documentation-only phase
