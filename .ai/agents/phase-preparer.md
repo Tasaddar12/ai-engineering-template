@@ -15,7 +15,6 @@ color: green
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
-The source identity and reversible edits are in [provenance](PROVENANCE.json).
 
 Use only the assigned checkout, paths, revision and result destination. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches

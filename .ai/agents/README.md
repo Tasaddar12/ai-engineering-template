@@ -35,11 +35,10 @@ current independent evidence. Required docs and their corrections stay in the
 same phase. See the [documentation loop](../references/agent-adaptation.md#documentation-handoff).
 
 Eleven complete, non-compact source agents are adapted here. Coordinator remains
-the local scheduling role; documentor remains the runtime entry adapter. Optional
+the local scheduling role; documentation assignments read doc-writer directly. Optional
 upstream agents for dedicated UI/DOM, security, AI/eval, domain-specific research,
 profiling, knowledge-store curation and milestone services are not installed.
 Their useful general checks remain in the selected full methods. Pinned external
 supporting references do not register those omitted agents or workflows.
 
-[Provenance](PROVENANCE.json) preserves source hashes and reversible adaptations;
 [notices](../THIRD-PARTY-NOTICES.md) preserve the license and attribution.

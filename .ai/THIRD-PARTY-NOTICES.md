@@ -1,7 +1,6 @@
 # Third-party notices
 
 The complete adapted agents in `.ai/agents/` derive from [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/agents), revision `4713ffba761a069bbd79e4833b4bea4e14848388`. No compact agents are used.
-See [agent provenance](agents/PROVENANCE.json) for source hashes and reversible edits.
 
 The retained project templates derive from the same MIT-licensed project at
 revision `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; their original adaptation
