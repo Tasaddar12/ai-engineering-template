@@ -2,7 +2,8 @@
 
 Start at [RULES](RULES.md), [PROJECT](../.planning/PROJECT.md) and [STATE](../.planning/STATE.md), then
 load the selected [command](commands/README.md) and [role](agents/README.md).
-This is a reusable template; onboarding supplies the adopting project's identity.
+These are the project's installed engineering tools and guidance. Preserve existing
+project context; onboarding fills only what is missing from evidence and user intent.
 
 | Area | Responsibility |
 |---|---|

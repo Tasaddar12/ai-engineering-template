@@ -789,3 +789,11 @@ Additional changes.log entries:
 - Pin coders to gpt-5.6-terra and documentors and verifiers to gpt-5.6-luna
   in the configured Codex commands, as requested. Keep host reasoning defaults
   and document the explicit model routes in the runtime guide.
+
+## 2026-09-14 — Project context at installation
+
+- Separate source maintainer instructions from the installed project entry point.
+- Install pending project records without example scope; preserve existing intent, state and config.
+- Keep source phases, maintenance history and proposed workflow direction out of project payloads.
+- Point local-adoption footers and guides to upstream attribution rather than a destination changes.log obligation; retain complete instructional template bodies.
+- Add an explicit, content-checked repair for the original installer's context leak.

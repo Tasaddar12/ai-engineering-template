@@ -1,0 +1,20 @@
+# Project roadmap
+
+## Overview
+
+Onboarding pending. Inspect the current project and reconcile existing plans
+before ordering the user's agreed outcomes into phases.
+
+## Phases
+
+No phases have been created by installation. Preserve any existing project
+roadmap and delivery history when completing this record.
+
+## Phase Details
+
+Add details only for agreed phases using the complete
+[roadmap guide](../.ai/templates/roadmap.md).
+
+## Progress
+
+Not assessed. Installation does not establish project completion or readiness.

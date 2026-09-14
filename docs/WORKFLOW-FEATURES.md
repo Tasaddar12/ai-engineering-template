@@ -9,7 +9,7 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 
 | Feature | What it provides | Owner or entry point | Boundary |
 |---|---|---|---|
-| Greenfield onboarding | Establish real product intent, outcomes, phase order and executable checks | [onboard](../.ai/commands/onboard.md) | No fictional project identity is filled during template maintenance |
+| Greenfield onboarding | Establish real product intent, outcomes, phase order and executable checks | [onboard](../.ai/commands/onboard.md) | Project intent comes from the user and observed evidence |
 | Brownfield adoption | Inspect existing code, preserve useful docs and establish the baseline | [codebase-recon](../.agents/skills/codebase-recon/SKILL.md) | Maps are evidence from inspection, not automatic truth |
 | Phase selection | Stable phase directory and requirement/dependency mapping | PROJECT, REQUIREMENTS, ROADMAP, STATE in `.planning/` | State summaries require current source/process/PR observations |
 | Rich authoring templates | Purpose, consumers, fillable structure, examples and quality guidance | [Template guide](TEMPLATE-GUIDE.md) | Optional specialty artifacts do not imply an installed automated workflow |
@@ -48,10 +48,6 @@ coordinator assigns findings back to the responsible author, then repeats affect
 independent reviews. Role files supply these methods without installing extra
 runtime routes or commands.
 
-The proposed feature-change, bug-fix and small-change entry paths are documented
-in [Workflow direction](WORKFLOW-DIRECTION.md). They are next-stage design work;
-the capability inventory above describes the current shared machinery.
-
 ## Tracked project data
 
 ```text
@@ -78,7 +74,6 @@ the capability inventory above describes the current shared machinery.
     .continue-here.md           Optional continuation note
   specs/                        Verified current behavior contracts
   decisions/                    Significant architectural rationale
-  maintenance/                  Explicitly authorized template-maintenance records
 ```
 
 Optional retained templates describe research, setup, validation and continuation
@@ -107,7 +102,6 @@ AGENTS.md                       Repository entry point
   hooks/                        Optional advisory hook implementations and tests
 .agents/skills/                 Selected reusable engineering methods
 docs/                          Human-facing workflow and feature guides
-changes.log                    Recorded migration adaptations and their reasons
 ```
 
 ## Local work and operational storage

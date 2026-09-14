@@ -62,15 +62,22 @@ Uncommitted source edits are not installed.
 
 ## What setup does
 
-- Copies `.ai/`, repository skills, blank `.planning/` records, workflow guides
-  under `docs/`, and `changes.log` for attribution/adaptation references.
-- Excludes template maintenance history, its root README, tests and CI settings.
+- Installs reusable `.ai/` tooling, full instructional templates, repository skills
+  and the supported workflow guides. Source attribution remains in third-party notices.
+- Creates a project agent entry point and clean onboarding-pending planning records
+  from dedicated installation assets. It does not copy the source repository's
+  `AGENTS.md`, illustrative requirements, phases, metrics or project identity.
+- Preserves existing PROJECT, REQUIREMENTS, ROADMAP, STATE and config files as
+  authoritative. Onboarding reconciles them with actual code and user intent.
+- Excludes source project history, the template maintainer's proposed roadmap,
+  root README and changes.log, tests, CI settings and installer build assets.
   Existing application code, README, Git history and remotes remain intact.
-- Preserves an existing `AGENTS.md` and appends the template entry instructions
-  once. Adds local workflow ignore rules to `.gitignore` without replacing it.
+- Preserves an existing `AGENTS.md` and appends project workflow instructions
+  once in a delimited block. Adds local ignore rules to `.gitignore` without replacing it.
   These two files must use UTF-8; other encodings stop setup before copying.
-- Checks all destination conflicts before copying. Identical files are accepted;
-  differing workflow files or directories stop installation and list conflicts.
+- Checks all destination conflicts before copying. Identical resources are accepted;
+  differing reusable tools/guides or incompatible directories stop installation
+  and list conflicts. Existing project records are preserved rather than conflicts.
   Linked paths (including junctions) are refused.
 - Initializes Git if the target is outside a repository. An existing Git root
   or linked worktree keeps its repository. A subdirectory of another repository
@@ -90,6 +97,29 @@ install `.ai/runtime/requirements.txt` if dependency repair is needed. Network o
 dependency failures return a nonzero exit code; files already installed remain
 available for inspection and retry. Conflict detection is a preflight check,
 not a transaction protecting against concurrent writers or disk failures.
+
+## Repair an installation made by the original installer
+
+The original installer copied template-maintenance instructions and example
+project records into destinations. To repair that specific defect, download and
+run the current script against the affected checkout with:
+
+```text
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target . --skip-deps --repair-template-context
+```
+
+Add `--dry-run` to inspect the writes and removals first. The repair recognizes
+the original shipped content by recorded hashes (allowing LF/CRLF differences).
+It replaces matching old workflow files and untouched example project records,
+and replaces the exact old appended AGENTS block while preserving surrounding
+user guidance. Real project records and config stay byte-for-byte intact.
+
+The repair removes root `changes.log` and `docs/WORKFLOW-DIRECTION.md` only when
+their content matches the original upstream copies. Modified histories remain.
+An edited old AGENTS block or customized conflicting tooling requires manual
+reconciliation; the repair does not guess which user edits to overwrite.
+Use an assigned worktree for agent-driven repair and review the diff before
+committing. The source template repository itself is not a repair target.
 
 ## Existing projects and worktrees
 
@@ -121,7 +151,7 @@ Git needs your author name and email configured for this step.
 For a brand-new, otherwise empty project, review the installed files and run:
 
 ```text
-git add -- AGENTS.md .ai .agents/skills .planning docs changes.log .gitignore
+git add -- AGENTS.md .ai .agents/skills .planning docs .gitignore
 git commit -m "Install AI engineering workflow"
 ```
 

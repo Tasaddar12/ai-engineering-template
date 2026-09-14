@@ -1,0 +1,45 @@
+# Project context
+
+## What This Is
+
+Onboarding pending. Establish the project's name, purpose and users from existing
+source and documentation and the user's stated intent. Installation does not
+reset an existing product or establish its scope.
+
+## Core Value
+
+Pending confirmation from the user.
+
+## Requirements
+
+### Validated
+
+Inspect existing behavior and evidence before recording validated requirements.
+
+### Active
+
+Record the user's requested outcomes during onboarding.
+
+### Out of Scope
+
+Preserve existing boundaries and record confirmed exclusions with their reasons.
+
+## Context
+
+The engineering workflow is installed. Inspect the repository's existing source,
+documentation, configuration and history before planning changes.
+
+## Constraints
+
+Pending inspection and user confirmation. Preserve established constraints.
+
+## Key Decisions
+
+No project decisions have been inferred by installation. Reconcile existing
+decisions during onboarding.
+
+## Evolution
+
+Maintain this record as the project changes, following the complete
+[project authoring guide](../.ai/templates/project.md) and
+[onboarding procedure](../.ai/commands/onboard.md).

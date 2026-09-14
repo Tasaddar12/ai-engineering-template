@@ -621,7 +621,7 @@ Task completion ≠ Goal achievement. A task "create chat component" can complet
 This complete authoring guide retains its source content, examples, and methods.
 Only recorded namespace/reference substitutions and explicit local conflict
 corrections have been made. Source attribution is retained in `.ai/THIRD-PARTY-NOTICES.md`; the
-original template adaptation history is in `changes.log`. The previous template
+original template adaptation history is linked from `.ai/THIRD-PARTY-NOTICES.md`. The previous template
 import manifest was removed during pruning; no absent manifest is claimed here.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution

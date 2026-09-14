@@ -2,7 +2,8 @@
 
 This directory stores project-specific records. The reusable agent machinery lives
 in [`.ai`](../.ai/README.md); full authoring templates live in [`.ai/templates`](../.ai/templates/README.md).
-Leave the adopting project's identity unfilled until onboarding records real intent.
+Preserve existing project records. Onboarding completes missing context from
+actual source, documentation and user intent.
 
 | Location | Stores | Owner |
 |---|---|---|
@@ -15,7 +16,6 @@ Leave the adopting project's identity unfilled until onboarding records real int
 | `codebase/` | Revision-specific maps and research on existing implementation | Assigned researcher |
 | `specs/` | Verified current behavior | Assigned author/documentor |
 | `decisions/` | Significant architectural decisions and supersession | Recorded human decisions |
-| `maintenance/` | Explicitly requested work on this reusable template | Assigned maintenance coordinator |
 
 Optional workflow artifacts, including project research, debugging, design,
 milestones and retrospectives, use destinations described by their complete

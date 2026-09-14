@@ -9,7 +9,8 @@ Source attribution and revision history live in
 [third-party notices](../.ai/THIRD-PARTY-NOTICES.md). The
 [agent catalog](../.ai/agents/README.md) supplies selected full methods and
 [agent adaptation](../.ai/references/agent-adaptation.md) resolves host boundaries.
-[changes.log](../changes.log) records local adaptations.
+The notices link upstream adaptation history; project decisions belong in this
+project's phase records.
 
 ## Authoring sequence
 
@@ -31,8 +32,8 @@ Source attribution and revision history live in
 
 **Do not shorten the source templates, discard unfamiliar sections, silently
 remove references, invent evidence, or use a completed heading as proof of a
-completed outcome.** Conflicts require an explicit reasoned adaptation and a
-`changes.log` entry during this migration.
+completed outcome.** Conflicts require an explicit reasoned adaptation recorded
+in the affected project phase.
 
 ## Complete template catalog
 

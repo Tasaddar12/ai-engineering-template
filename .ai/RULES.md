@@ -13,9 +13,10 @@ rather than maintaining another copy of a rule.
 
 ## Session and authorization
 
-This is a reusable template. Keep [PROJECT](../.planning/PROJECT.md) unfilled until adoption.
-Template maintenance creates only project records requested by the user.
-Historical records remain history.
+Preserve the project's established identity, requirements, decisions and history.
+[PROJECT](../.planning/PROJECT.md) owns project context. Complete missing context
+through onboarding from the user's intent and inspected source; do not treat
+workflow examples or upstream maintenance records as this project's scope.
 
 Read PROJECT, STATE, the selected phase and role. Verify the assigned checkout's
 absolute root and branch before writes. Inspect relevant sources at that
@@ -166,8 +167,8 @@ without an assignment calling for it. Use the artifact block to write project
 records; instructional examples are not real project decisions.
 
 The [template adaptation](references/template-adaptation.md) defines local runtime, host and
-authority differences; [changes.log](../changes.log) records template maintenance
-adaptations. Complete agent methods and their pinned external supporting sources
+authority differences; [third-party notices](THIRD-PARTY-NOTICES.md) identify
+upstream sources and adaptation history. Complete agent methods and their pinned external supporting sources
 supply guidance, not installed slash commands. Use actual local procedures and
 the runtime contract for execution.
 Project records belong to `.planning/`; reusable rules, templates and tooling

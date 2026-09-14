@@ -13,7 +13,6 @@ boundary, with fresh workers for bounded assignments.
 | [Template contract](../.ai/runtime/TEMPLATE-CONTRACT.md) | Additional metadata connecting full templates to the Python runner |
 | [Template guide](TEMPLATE-GUIDE.md) | Artifact selection, producers, consumers and lifecycle |
 | [Feature guide](WORKFLOW-FEATURES.md) | Capability inventory, safeguards and limitations |
-| [Proposed workflow direction](WORKFLOW-DIRECTION.md) | Next-stage feature, bug-fix and small-change entry paths; not newly implemented commands |
 
 ## 1. Onboard a new or existing project
 

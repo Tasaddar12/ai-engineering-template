@@ -24,8 +24,8 @@ Markdown file was read.
 
 ## Compatibility decisions
 
-Every template alteration and source-reference repair is recorded in
-[changes.log](../../changes.log) and the import provenance. These adaptations
+The workflow's [upstream adaptation history](https://github.com/Tasaddar12/ai-engineering-template/blob/main/changes.log)
+and import provenance record its source alterations and reference repairs. These adaptations
 preserve full instructions; they are not a license to shorten a template.
 
 | Concern | Applied behavior | Reason |
@@ -52,5 +52,6 @@ preserve full instructions; they are not a license to shorten a template.
 - Add only the adapter fields required by the operation, following the contract.
 - Give the next agent the artifact, applicable methods, exact source revision and relevant dependency summaries.
 - Check both the semantic outcome and executable readiness; either can fail independently.
-- Record a newly discovered incompatibility in the affected phase and `changes.log`
-  for template maintenance. Correct the actual producer and consumer together.
+- Record a newly discovered incompatibility in this project's affected phase.
+  Correct the actual producer and consumer together; upstream history is attribution,
+  not this project's change log or an instruction to maintain the source template.

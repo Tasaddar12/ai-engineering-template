@@ -1,0 +1,26 @@
+# Project requirements
+
+**Defined:** Pending onboarding.
+**Core Value:** See [PROJECT](PROJECT.md).
+
+## v1 Requirements
+
+Reconcile existing requirements and record the user's agreed next outcomes.
+Installation does not establish release scope or infer that the product is new.
+
+## v2 Requirements
+
+Record future outcomes only when the user defers them explicitly.
+
+## Out of Scope
+
+Preserve existing exclusions and confirm missing boundaries during onboarding.
+
+## Traceability
+
+Map agreed requirements to actual phases in [ROADMAP](ROADMAP.md).
+No requirements or phase mappings were created by installation.
+
+Use the complete [requirements guide](../.ai/templates/requirements.md) when
+recording real requirements. Its illustrative authentication requirements are
+examples, not this project's requirements.

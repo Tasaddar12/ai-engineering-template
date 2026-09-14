@@ -70,6 +70,9 @@ are not silently translated into Python runtime settings.
 Start with the [download-and-run installer](docs/INSTALL.md) for a new directory
 or an existing project. It preserves existing files and sets up the Python
 runtime in `.ai-venv`. Preview with `--dry-run`; then finish onboarding below.
+Installed instructions describe the destination project, and existing planning
+records remain authoritative. The guide also covers repairing copies made by
+the original installer with `--repair-template-context`.
 
 1. Follow [onboard](.ai/commands/onboard.md) in an assigned worktree. Establish the
    actual project's identity and inspect its baseline before asserting readiness.
