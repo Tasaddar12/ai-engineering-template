@@ -335,7 +335,7 @@ def worker_route(phase, kind):
     return value
 
 
-def assignment(phase, component, root, kind, result, revision_id):
+def assignment(phase, component, root, kind, result, revision_id, *, review_base=None):
     role = "verifier" if kind == "verifier" else ("documentor" if kind == "documentation" else "coder")
     text = (f"# Phase {phase.directory.name}: {kind}\n\n"
             f"Assigned worktree: {root}\nAssigned revision: {revision_id}\n"
@@ -371,6 +371,16 @@ def assignment(phase, component, root, kind, result, revision_id):
                      "RED/GREEN commit IDs and refactor outcome. This Python runtime reruns final checks "
                      "and requires evidence; it does not install an automated pre-GREEN gate.\n")
     else:
+        require(isinstance(review_base, str) and re.fullmatch(r"[0-9a-f]{40}", review_base),
+                "Verification needs the recorded initial phase revision for review scope")
+        require(git(root, "merge-base", review_base, revision_id) == review_base,
+                "Review base is not an ancestor of the assigned verification revision")
+        review_scope = {"depth": "standard", "diff_base": review_base,
+                        "files": changed_paths(root, review_base, revision_id)}
+        text += ("Source review scope from the recorded phase start through the assigned revision. "
+                 "Use this config with code-reviewer; it is evidence of exact changed paths, not "
+                 "additional write ownership. Inspect deletions against diff_base.\n\n<config>\n" +
+                 yaml.safe_dump(review_scope, sort_keys=False) + "</config>\n\n")
         text += ("Apply the full .ai/agents/doc-verifier.md method to required document paths and "
                  ".ai/agents/integration-checker.md to expected component connections; use "
                  ".ai/agents/code-reviewer.md when source defect review is relevant. Do not spawn "
@@ -388,14 +398,15 @@ def assignment(phase, component, root, kind, result, revision_id):
     return text
 
 
-def launch(phase, component, root, kind, state_directory, revision_id, before_start=None):
+def launch(phase, component, root, kind, state_directory, revision_id, before_start=None, *, review_base=None):
     cid = component.id if component else phase.number
     token = uuid.uuid4().hex[:10]
     prompt_path = state_directory / f"{cid}-{kind}-{token}-assignment.md"
     result = (root / component.summary.relative_to(phase.root) if component else
               state_directory / f"{cid}-verification-{token}.md")
     prompt_path.parent.mkdir(parents=True, exist_ok=True)
-    prompt_path.write_text(assignment(phase, component, root, kind, result, revision_id), encoding="utf-8")
+    prompt_path.write_text(assignment(phase, component, root, kind, result, revision_id,
+                                      review_base=review_base), encoding="utf-8")
     values = dict(worktree=str(root), assignment=str(prompt_path), result=str(result), kind=kind,
                   component=cid, sandbox="read-only" if kind == "verifier" else "workspace-write")
     try:
@@ -662,7 +673,8 @@ def verify_phase(phase, workers_stopped=False):
             attempt.update(status="launching", result=str(result), log=str(log), receipt=str(receipt))
             save(phase, state)
 
-        process, result, log = launch(phase, None, path, "verifier", checkpoint_path(phase).parent, source_revision, before_start)
+        process, result, log = launch(phase, None, path, "verifier", checkpoint_path(phase).parent,
+                                      source_revision, before_start, review_base=state.get("initial_revision"))
         attempt.update(status="running", pid=process.pid, process_identity=process_identity(process.pid))
         save(phase, state)
         try:

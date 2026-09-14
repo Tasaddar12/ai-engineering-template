@@ -2,6 +2,12 @@
 
 ## 2026-09-13 — Complete agent methods and connected specialist handoffs
 
+- GitHub review on PR #31 identified a missing producer input: the verifier
+  referenced code-reviewer without its required scope. Supply a `<config>` block
+  with the recorded phase-start revision, verified ancestor relationship and
+  exact changed-file list through the reviewed revision. Regression fixtures now
+  consume that block and check baseline files are excluded from the review scope.
+
 - User requested a separate worktree, full non-compact GSD-core agents adapted
   slightly to local workflows/paths, useful smaller roles within existing
   commands, and commit/push/PR/review repairs/merge/sync/cleanup. Work is on

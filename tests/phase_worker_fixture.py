@@ -152,6 +152,12 @@ def main() -> int:
             assert (root / method).read_text(encoding="utf-8").strip(), f"Assignment method is empty: {method}"
         event["methods"] = methods
         if kind == "verifier":
+            scope_match = re.search(r"(?s)<config>\n(.*?)</config>", prompt)
+            assert scope_match, "Code-reviewer cannot run without a review scope"
+            scope = yaml.safe_load(scope_match[1])
+            assert isinstance(scope["files"], list), "Review files must be exact paths"
+            assert re.fullmatch(r"[0-9a-f]{40}", scope["diff_base"]), "Review base must be an exact revision"
+            event["review_scope"] = scope
             revision = git(root, "rev-parse", "HEAD")
             if mode == "verifier-stale":
                 revision = git(root, "rev-parse", "HEAD~1")

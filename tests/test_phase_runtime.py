@@ -324,10 +324,15 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assert_primary_untouched()
 
     def test_runs_component_commits_summary_and_verifies_phase(self) -> None:
+        review_base = self.git(self.checkout, "rev-parse", "HEAD")
         self.cli("run", PHASE)
         self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "01-01 implemented\n")
         self.assertTrue(self.summary("01-01").is_file())
         self.cli("verify", PHASE)
+        review = next(event for event in self.events(include_verifier=True) if event["kind"] == "verifier")
+        self.assertEqual(review["review_scope"]["diff_base"], review_base)
+        self.assertEqual(set(review["review_scope"]["files"]),
+                         {"src/01-01.txt", (PHASE_PATH / "01-01-SUMMARY.md").as_posix()})
         self.assertTrue((self.checkout / PHASE_PATH / "01-VERIFICATION.md").is_file())
         self.assertEqual(len(self.events()), 1)
         self.assertEqual(self.git(self.checkout, "status", "--porcelain"), "")

@@ -132,3 +132,10 @@ is triage, not final phase verification. Structural tool findings and external
 review comments must be checked against source. Optional style advice is not a
 blocking defect. All findings return to the coordinator for owned corrections
 and affected rechecks; reviewers never silently edit away a finding.
+
+Runtime verifier assignments include the code-reviewer's `<config>` block with
+the recorded initial phase revision as `diff_base` and the exact changed file
+paths through the assigned verification revision. The runtime checks ancestry;
+directory ownership declarations are not substituted for that file list.
+Deleted files are inspected against the supplied base. The reviewer applies its
+normal planning/generated-file filters while retaining actual source scope.
