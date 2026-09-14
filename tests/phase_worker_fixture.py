@@ -144,7 +144,13 @@ def main() -> int:
     save_event()
     try:
         assert assignment.is_file(), "The worker must receive an assignment file"
-        assert assignment.read_text(encoding="utf-8").strip(), "The assignment is empty"
+        prompt = assignment.read_text(encoding="utf-8")
+        assert prompt.strip(), "The assignment is empty"
+        methods = sorted(set(re.findall(r"\.ai/(?:agents|references)/[a-z-]+\.md", prompt)))
+        for method in methods:
+            assert (root / method).is_file(), f"Assignment requires missing method: {method}"
+            assert (root / method).read_text(encoding="utf-8").strip(), f"Assignment method is empty: {method}"
+        event["methods"] = methods
         if kind == "verifier":
             revision = git(root, "rev-parse", "HEAD")
             if mode == "verifier-stale":

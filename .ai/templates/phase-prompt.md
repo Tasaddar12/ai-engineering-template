@@ -1,6 +1,6 @@
 # Phase Prompt Template
 
-> **Note:** Planning methodology is in `.ai/library/agents/planner.md`.
+> **Note:** Planning methodology is in `.ai/agents/phase-preparer.md`.
 > This template defines the PLAN.md output format that the agent produces.
 
 Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phase plans optimized for parallel execution.
@@ -45,10 +45,10 @@ Output: [What artifacts will be created]
 </objective>
 
 <execution_context>
-@.ai/library/workflows/execute-plan.md
+@.ai/commands/phase-start.md
 @.ai/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
-@.ai/library/references/checkpoints.md
+https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md
 </execution_context>
 
 <context>
@@ -92,7 +92,7 @@ Output: [What artifacts will be created]
   <done>[Acceptance criteria]</done>
 </task>
 
-<!-- For checkpoint task examples and patterns, see @.ai/library/references/checkpoints.md -->
+<!-- For checkpoint task examples and patterns, see https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md -->
 
 <task type="checkpoint:decision" gate="blocking">
   <decision>[What needs deciding]</decision>
@@ -285,7 +285,7 @@ TDD features get dedicated plans with `type: tdd`.
 → Yes: Create a TDD plan
 → No: Standard task in standard plan
 
-See `.ai/library/references/tdd.md` for TDD plan structure.
+See `.ai/runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans` for TDD plan structure.
 
 ---
 
@@ -389,9 +389,9 @@ Output: Working dashboard component.
 </objective>
 
 <execution_context>
-@.ai/library/workflows/execute-plan.md
+@.ai/commands/phase-start.md
 @.ai/templates/summary.md
-@.ai/library/references/checkpoints.md
+https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md
 </execution_context>
 
 <context>
@@ -620,19 +620,20 @@ Task completion ≠ Goal achievement. A task "create chat component" can complet
 
 This complete authoring guide retains its source content, examples, and methods.
 Only recorded namespace/reference substitutions and explicit local conflict
-corrections have been made. Source attribution and exact original hashes are
-isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
+corrections have been made. Source attribution is retained in `.ai/THIRD-PARTY-NOTICES.md`; the
+original template adaptation history is in `changes.log`. The previous template
+import manifest was removed during pruning; no absent manifest is claimed here.
 
-Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
 boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
-names, hooks, and Node CLI examples describe supporting source capabilities;
+`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
+examples describe supporting source capabilities; no JSON config template is shipped;
 this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Retained specialty workflows are full source
-guidance for explicit future integration, not promises of installed features.
+identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
+guidance for explicit assignments, not promises of installed features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

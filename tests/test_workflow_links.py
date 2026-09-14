@@ -23,7 +23,8 @@ def guidance_files():
 
 
 def without_fences(text):
-    return re.sub(r"(?ms)^```[^\n]*\n.*?^```\s*$", "", text)
+    text = re.sub(r"(?ms)^```[^\n]*\n.*?^```\s*$", "", text)
+    return re.sub(r"`+[^`\n]*`+", "", text)  # Literal link syntax in inline examples is not navigation.
 
 
 class WorkflowNavigationTests(unittest.TestCase):

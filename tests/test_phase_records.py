@@ -146,7 +146,14 @@ class PhaseRecordTests(unittest.TestCase):
 
     def test_optional_summary_variant_retains_original_sections_and_adds_required_evidence(self):
         f = self.fixture
-        metadata, body = record(SOURCE / ".ai/templates/summary-standard.md")
+        # An explicitly supplied variant remains supported; no compact variant
+        # is shipped by the template. Exercise that input without a deleted file.
+        metadata = {"phase": "01-example", "plan": "01"}
+        body = ("# Component summary\n\n## Accomplishments\n\nImplemented the assigned output.\n\n"
+                "## Task Commits\n\nRecorded implementation commit.\n\n"
+                "## Files Created/Modified\n\nsrc/01-01.txt contains the result.\n\n"
+                "## Decisions & Deviations\n\nUse assigned output interface.\n\n"
+                "## Next Phase Readiness\n\nReady for independent verification.\n")
         metadata.update(status="complete", acceptance=["A1"], documentation=[], **{"requirements-completed": ["R1"]})
         summary = f.summary("01-01")
         f.record(summary.relative_to(f.checkout), metadata, body)
@@ -171,14 +178,18 @@ class PhaseRecordTests(unittest.TestCase):
         path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
         metadata, _ = record(path)
         metadata["type"] = "tdd"
-        source = Path(os.environ.get("TDD_REFERENCE_TEST_SOURCE", str(SOURCE / ".ai/library/references/tdd.md")))
+        source = Path(os.environ.get("TDD_REFERENCE_TEST_SOURCE", str(SOURCE / ".ai/runtime/TEMPLATE-CONTRACT.md")))
         reference = source.read_text(encoding="utf-8")
-        native = re.search(r"(?ms)<tdd_plan_structure>.*?^```markdown\n(.*?)^```", reference)[1]
-        body = native.split("---", 2)[2]
-        body = (body.replace("[Feature name]", "Sum nonempty inputs")
-                    .replace("[source file, test file]", "src/total.py, tests/test_total.py")
-                    .replace("[Expected behavior in testable terms]", "total([1, 2, 3]) returns 6; name the assertion test_total_nonempty")
-                    .replace("[How to implement once tests pass]", "Return sum(values) after observing the named assertion fail"))
+        feature = re.search(r"(?ms)^```xml\n(<feature>.*?</feature>)\n```", reference)[1]
+        feature = (feature.replace("[One observable behavior]", "Sum nonempty inputs")
+                    .replace("[Exact implementation and test paths]", "src/total.py, tests/test_total.py")
+                    .replace("[Inputs, expected outputs, boundary cases and the assertion that fails before repair]", "total([1, 2, 3]) returns 6; name the assertion test_total_nonempty")
+                    .replace("[Implementation approach after the failing behavioral check is established]", "Return sum(values) after observing the named assertion fail"))
+        body = ("<objective>Sum nonempty inputs correctly.</objective>\n"
+                "<context>Inspect src/total.py and the assigned acceptance.</context>\n" + feature +
+                "\n<verification>Run the named assertion through unittest.</verification>\n"
+                "<success_criteria>The named assertion fails before and passes after repair.</success_criteria>\n"
+                "<output>Write the assigned SUMMARY with RED/GREEN evidence.</output>\n")
         f.record(path.relative_to(f.checkout), metadata, body + "\n## Documentation\n\nNo external guide change required.\n")
         prepared = path.read_text(encoding="utf-8")
         path.write_text(re.sub(r"<behavior>.*?</behavior>", "", prepared, flags=re.S), encoding="utf-8")
@@ -319,6 +330,7 @@ class DocumentNavigationTests(unittest.TestCase):
         checked = 0
         for path in documents:
             body = re.sub(r"(?ms)^```.*?^```[^\n]*$", "", path.read_text(encoding="utf-8-sig"))
+            body = re.sub(r"`+[^`\n]*`+", "", body)
             for match in re.finditer(r"\[[^\]\n]+\]\((<[^>]+>|[^)\s]+)\)", body):
                 target = match[1].strip("<>")
                 parts = urlsplit(target)

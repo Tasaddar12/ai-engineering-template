@@ -29,3 +29,23 @@ replaying uncertain writes. Never turn missing behavior into a deferred success.
 Return the current verified revision, completed and blocked components,
 documentation coverage, actual check results, PR/check state and next action.
 Never claim an open PR is delivered. The runtime does not merge.
+
+## Specialist routing within existing procedures
+
+Use the [agent handoff catalog](README.md) and
+[local adapter](../references/agent-adaptation.md). Assign codebase-mapper when
+onboarding/research needs a reusable map; route findings through researcher to
+phase-preparer and independent phase-checker. During execution the documentor
+route loads doc-writer. During verification the independent verifier applies
+doc-verifier and integration-checker, with code-reviewer for relevant defects.
+Start separate fresh specialists through the host only when useful; no worker
+dispatches its successor or requires the user to issue another command.
+
+Give reviewers exact files, acceptance, source revision and an external result
+destination. Audit their unchanged checkout. Feed documentation failures to a
+doc-writer fix assignment with doc_path/revision/line/claim/expected/actual; feed
+code failures or debugger regression proposals to an owned coder assignment.
+Integrate committed repairs, rerun affected checks and obtain independent
+verification of the resulting revision. Keep required documentation and finding
+history attached to the same phase. A missing, stale or wholly skipped
+specialist result is not passing evidence.

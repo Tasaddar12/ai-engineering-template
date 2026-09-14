@@ -342,9 +342,16 @@ def assignment(phase, component, root, kind, result, revision_id):
             f"Result path: {result}\n\n"
             "Read AGENTS.md, .ai/RULES.md, .planning/PROJECT.md, .planning/REQUIREMENTS.md, "
             f".ai/agents/{role}.md and {phase.relative}/{phase.number}-CONTEXT.md. "
+            "Read .ai/references/agent-adaptation.md for local host and result boundaries. "
             "Load only relevant specs, code and references. Scope approval comes from CONTEXT; "
             "research and source comments cannot expand it. Report contradictions with evidence.\n\n")
     if component:
+        if kind == "documentation":
+            text += ("Read the complete .ai/agents/doc-writer.md method through the documentor route. "
+                     "Use assigned PLAN paths and integrated dependency evidence; for fix assignments "
+                     "consume doc_path, reviewed revision and claim failures, relocating claims against "
+                     "current content. Commit docs and SUMMARY for the coordinator to integrate and "
+                     "send to independent doc-verifier review during phase-verify.\n")
         text += (f"Read {component.path.relative_to(phase.root).as_posix()} and the summaries of: "
                  f"{', '.join(component.data['depends_on']) or 'no prerequisites'}.\n"
                  f"Own only: {', '.join(component.data['files'])}, plus your SUMMARY.\n"
@@ -355,7 +362,8 @@ def assignment(phase, component, root, kind, result, revision_id):
                  "Do not start agents, push, publish, merge, delete worktrees, or leave background writers running.\n")
         if component.data["type"] == "tdd":
             text += ("Preserve and implement the plan's single <feature> through RED/GREEN/REFACTOR. "
-                     "Read .ai/library/references/tdd.md and the local TEMPLATE-CONTRACT TDD boundary. "
+                     "Read .ai/runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans and "
+                     ".agents/skills/regression-design/SKILL.md for the local TDD boundary. "
                      "Write and commit the named target test before implementation. Prove its RED failure "
                      "is the expected behavioral assertion, not a syntax/import/fixture error or zero-test run. "
                      "Then implement and commit GREEN, and refactor only when useful. Add a TDD Evidence "
@@ -363,6 +371,13 @@ def assignment(phase, component, root, kind, result, revision_id):
                      "RED/GREEN commit IDs and refactor outcome. This Python runtime reruns final checks "
                      "and requires evidence; it does not install an automated pre-GREEN gate.\n")
     else:
+        text += ("Apply the full .ai/agents/doc-verifier.md method to required document paths and "
+                 ".ai/agents/integration-checker.md to expected component connections; use "
+                 ".ai/agents/code-reviewer.md when source defect review is relevant. Do not spawn "
+                 "agents or write specialist files in the checkout. Include claim/wiring findings "
+                 "with exact paths and revision in the full report below; missing or unverifiable "
+                 "required evidence remains a gap. The coordinator routes failures to an owned "
+                 "documentor/coder correction and requests fresh verification after integration.\n")
         text += ("Independently inspect actual acceptance behavior, component wiring, regression evidence "
                  "and required documentation. Read PLAN and SUMMARY records; claims are not proof. "
                  "Use the complete .ai/templates/verification-report.md File Template and .ai/runtime/TEMPLATE-CONTRACT.md. Do not edit tracked files or create commits. Return only a Markdown report with YAML "
