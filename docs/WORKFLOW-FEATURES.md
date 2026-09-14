@@ -36,16 +36,17 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 |---|---|---|
 | Python runtime | Parses phase records; dispatches code/docs/verifier processes; schedules, audits, integrates, recovers and publishes | `python .ai/runtime/phase.py`; follow its documented dependencies/configuration |
 | Local `.ai/commands/` | Markdown procedures for the coordinator | Ask in ordinary language or read the named file; these do not register slash commands |
-| Local `.ai/agents/` | Role responsibilities and write boundaries | Supply the applicable role in a bounded assignment |
+| Local `.ai/agents/` | Complete selected agent methods, responsibilities and write boundaries | Supply the applicable role in a bounded assignment; follow [agent adaptation](../.ai/references/agent-adaptation.md) |
 | `.agents/skills/` | Focused reusable engineering methods | Select relevant skills and list required exact paths in plan inputs |
-| `.ai/templates/` | All 40 complete adapted templates, with local extensions | Copy the fillable artifact portion and follow all authoring guidance |
-| `.ai/library/` | Pinned supporting agent, command, workflow, reference and context documents | Read through the [support route map](../.ai/library/README.md); heed executable boundaries |
+| `.ai/templates/` | Retained complete adapted templates, with local extensions | Use the [retained catalog](TEMPLATE-GUIDE.md), copy the fillable artifact portion and follow all authoring guidance |
 | Documented host commands/tools | Referenced where a documented workflow requires a separate installation | Do not assume available merely because their documentation is vendored |
 
-The wider native skills/commands/agents/workflows expansion is a subsequent stage.
-The current import keeps its teaching and dependencies visible so that expansion
-can be accurate. It does not claim a live autonomous implementation of every
-specialty library workflow.
+Specialist agents fit the existing procedures: mapping feeds onboarding/research;
+preparation feeds independent checking; documentor uses doc-writer; doc-verifier,
+integration-checker and code-reviewer feed phase verification when relevant. The
+coordinator assigns findings back to the responsible author, then repeats affected
+independent reviews. Role files supply these methods without installing extra
+runtime routes or commands.
 
 The proposed feature-change, bug-fix and small-change entry paths are documented
 in [Workflow direction](WORKFLOW-DIRECTION.md). They are next-stage design work;
@@ -60,7 +61,6 @@ the capability inventory above describes the current shared machinery.
   ROADMAP.md                    Phase goals, order and dependencies
   STATE.md                      Living session memory plus derived Runtime Status
   config.yaml                   Python runtime workers, capacity and real checks
-  config.json                   Optional library settings when its workflow is used
   codebase/                     Inspected architecture and stack maps
   research/                     Cross-phase/project research when useful
   phases/NN-name/
@@ -81,14 +81,12 @@ the capability inventory above describes the current shared machinery.
   maintenance/                  Explicitly authorized template-maintenance records
 ```
 
-Optional templates also describe milestone archives, debugging sessions,
-preferences, profiles, security, UI/AI specifications and setup records. Their
-own full templates define their output destinations and consumers. Do not create
-every possible record during onboarding. Use the [template catalog](TEMPLATE-GUIDE.md)
-to identify the right artifact.
+Optional retained templates describe research, setup, validation and continuation
+records. Their full templates define their output destinations and consumers. Do
+not create every possible record during onboarding. Use the
+[template catalog](TEMPLATE-GUIDE.md) to identify the right artifact.
 
-`.planning/config.yaml` and the library `config.json` represent distinct
-configuration contracts. The Python runtime reads YAML. JSON options are not
+The Python runtime reads `.planning/config.yaml`. Upstream JSON options are not
 silently mapped, and setting a JSON option does not configure the Python runner.
 The directory listing shows possible artifacts, not a requirement that every
 project immediately creates all of them.
@@ -104,7 +102,7 @@ AGENTS.md                       Repository entry point
   commands/                     Local coordinator procedures
   references/                   Local handoff, documentation and operation details
   templates/                    Complete templates plus local extensions
-  library/                      Full supporting guidance and route map
+  THIRD-PARTY-NOTICES.md         Source attribution for adapted teaching materials
   runtime/                      Executable runner and its template adapter contract
   hooks/                        Optional advisory hook implementations and tests
 .agents/skills/                 Selected reusable engineering methods

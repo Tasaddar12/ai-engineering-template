@@ -39,8 +39,7 @@ Continue with [phase-start](phase-start.md) when execution is authorized.
 
 Read the entire [phase prompt](../templates/phase-prompt.md),
 [planner prompt](../templates/planner-subagent-prompt.md),
-[Planner method](../library/agents/planner.md) and relevant
-[planning workflow](../library/workflows/plan-phase.md) sections. Preserve the full
+[phase preparer](../agents/phase-preparer.md) method. Preserve the full
 artifact structure: objective, execution context, source context, task-level
 files/read-first/action/verification/done criteria, success criteria and summary
 output. Derive `must_haves` backward from the goal, including actual connections
@@ -52,7 +51,8 @@ headings.
 For substantial phases, the coordinator assigns preparation and checking to fresh
 independent agents. The local Python `check` command is structural inspection,
 not the checker agent. Give the checker the completed plans, context and actual
-source; use [Plan-checking method](../library/agents/plan-checker.md) with local
-[adaptation](../references/template-adaptation.md). Correct blockers and repeat affected
-assessment before execution. Record the reviewer and findings, not merely
-"checked".
+source; use the [phase checker](../agents/phase-checker.md) with local
+[agent adaptation](../references/agent-adaptation.md). Return findings to the
+coordinator, who assigns the preparer bounded corrections and then gives the
+revised plans to the independent checker. Repeat affected assessment before
+execution. Record the reviewer and findings, not merely "checked".

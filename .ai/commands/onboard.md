@@ -6,7 +6,10 @@ Read [RULES](../RULES.md). Inspect first; write in an
 ## Fresh adoption
 
 1. Inspect the source layout, languages, entry points, tests, configuration,
-   recent history and existing guides. Do not invent a product from this template.
+   recent history and existing guides. For substantial existing code, assign a
+   [codebase mapper](../agents/codebase-mapper.md) a bounded focus and read its
+   evidence before choosing follow-up research or documentation work. Do not
+   invent a product from this template.
 2. Establish PROJECT from the user's stated purpose, success, boundaries and
    confirmed decisions. Resolve genuinely missing intent with the user; record
    existing explicit authorization without asking again.
@@ -42,7 +45,8 @@ onboarding. Read their examples and update rules before creating real records in
 Preserve existing project guidance and migrate old data explicitly; do not maintain
 both `.ai/PROJECT.md` and `.planning/PROJECT.md` as competing owners.
 
-The [Onboarding method](../library/workflows/onboard.md) supplies the full method.
-Apply the [local adapter](../references/template-adaptation.md) for host capabilities,
-worktree placement and configuration. Do not run upstream installer/CLI examples
-as though they were already configured local commands.
+The [codebase mapper](../agents/codebase-mapper.md) supplies the full mapping
+method. Route technical unknowns to [research](phase-research.md) and unsupported
+documentation claims through [documentation coverage](../references/documentation.md).
+Apply [agent adaptation](../references/agent-adaptation.md) for host capabilities,
+worktree placement and handoff boundaries.

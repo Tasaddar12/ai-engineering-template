@@ -63,8 +63,8 @@ every internal transition.
 | Component plan | One bounded worker assignment within a phase | Declares actual prerequisite components, owned paths, checks and handoffs |
 
 A group should add a useful overview without duplicating phase status or moving
-phase folders to indicate progress. Existing optional milestone templates may
-provide a starting structure. Choosing the name and canonical storage location
+phase folders to indicate progress. Milestone templates are not retained in the
+current catalog. Choosing a group structure, name and canonical storage location
 requires an explicit next-stage design decision; no new group directory or
 runtime registry is introduced by this document.
 

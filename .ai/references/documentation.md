@@ -39,3 +39,21 @@ defect needs code repair. Neither author may redefine the intended outcome.
 Record editorial findings separately from missing behavior/coverage. Deferred
 unrelated findings stay linked to the phase; missing required docs cannot be
 spun out to make an unfinished phase appear complete.
+
+## Writer and independent verifier handoff
+
+During [phase-prepare](../commands/phase-prepare.md), assign required paths and the
+code prerequisites that establish their claims. During
+[phase-start](../commands/phase-start.md), the [documentor](../agents/documentor.md)
+uses the complete [doc-writer](../agents/doc-writer.md) method and returns committed
+changes, checked claims and coverage evidence. Its own validation does not replace
+independent review.
+
+During [phase-verify](../commands/phase-verify.md), the coordinator assigns the
+[doc-verifier](../agents/doc-verifier.md) the integrated revision, changed documents,
+required coverage and source evidence. It returns claim-specific findings without
+editing the checkout. The independent [verifier](../agents/verifier.md) includes
+those findings in the phase assessment. The coordinator classifies each finding
+under the conflict rules and assigns documentor or coder corrections, then repeats
+the affected review after integration. No extra command or worker-spawn permission
+is implied by the writer/verifier handoff.
