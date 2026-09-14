@@ -167,7 +167,7 @@ def plan_install(source, target, repair=False):
     else:
         current = ignore.read_bytes() if ignore.exists() else b""
         require_utf8(current, ignore)
-        if IGNORE_BLOCK.encode() not in current:
+        if IGNORE_BLOCK.encode() not in current.replace(b"\r\n", b"\n"):
             changes.append((ignore, current + IGNORE_BLOCK.encode()))
     if conflicts:
         raise ValueError("Existing files conflict; nothing was installed. Reconcile these paths "

@@ -138,7 +138,7 @@ class InstallerTests(unittest.TestCase):
         self.target.mkdir()
         (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
         self.assertEqual(0, self.install().returncode)
-        for name in ("AGENTS.md", ".ai/RULES.md", "docs/TEMPLATE-GUIDE.md"):
+        for name in ("AGENTS.md", ".gitignore", ".ai/RULES.md", "docs/TEMPLATE-GUIDE.md"):
             path = self.target / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = self.snapshot()
