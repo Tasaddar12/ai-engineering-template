@@ -2,7 +2,7 @@
 
 > Historical record: this describes the earlier phase-workflow migration at its
 > original revision. The subsequent complete-template and `.planning` migration
-> is recorded in [changes.log](../../../changes.log). Use the current
+> is recorded in [Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/). Use the current
 > [workflow guide](../../../docs/PHASE-WORKFLOW.md) for active paths and behavior.
 
 ## Authorization and scope

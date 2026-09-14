@@ -6,7 +6,9 @@ On 2026-09-13 the user authorized importing every complete source template,
 reconciling referenced components, moving project management into `.planning`,
 expanding unmatched local templates, documenting the complete workflow, frequent
 commits and pushes to a draft PR, independent review, merge and safe cleanup.
-Do not shorten upstream guidance. Record every adaptation in `changes.log`.
+Do not shorten upstream guidance. Git records adaptations. The temporary
+`changes.log` was removed at the user's request; do not recreate it. References
+to that file in historical summaries describe the old handoff, not an active task.
 The subsequent broader skills/commands/agents/workflows expansion remains a later
 stage; implement the supporting connections needed to make these templates usable now.
 

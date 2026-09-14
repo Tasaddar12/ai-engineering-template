@@ -2,14 +2,16 @@
 """Install the workflow into a new directory or an existing project (Python 3.11+)."""
 
 import argparse
-import hashlib
-import json
+import io
 import os
 from pathlib import Path
+import posixpath
+import re
 import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 
 
@@ -22,9 +24,10 @@ PROJECT_RECORDS = {f".planning/{name}" for name in
 PLANNING_RESOURCES = {f".planning/{name}" for name in
                       ("README.md", "config.yaml", "phases/README.md", "codebase/README.md",
                        "specs/.gitkeep", "decisions/.gitkeep")}
-GUIDES = {f"docs/{name}.md" for name in
-          ("INSTALL", "AGENT-SKILLS", "ONBOARDING-PROMPTS", "PHASE-WORKFLOW",
-           "TEMPLATE-GUIDE", "WORKFLOW-FEATURES")}
+GUIDES = {f"docs/{name}.md": f".ai/guides/{name.replace('TEMPLATE', 'ARTIFACT')}.md"
+          for name in ("INSTALL", "AGENT-SKILLS", "ONBOARDING-PROMPTS", "PHASE-WORKFLOW",
+                       "TEMPLATE-GUIDE", "WORKFLOW-FEATURES", "GOAL-PLANNING")}
+LEGACY_REVISION = "f4855eb66023495c75a9c9d5c9190565d3af2315"
 IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.worktrees/\n.ai-venv/\n__pycache__/\n*.pyc\n"
 
 
@@ -47,6 +50,27 @@ def safe_path(path):
             raise ValueError(f"Refusing linked path: {part}")
 
 
+def render_guidance(content, origin, destination):
+    """Relocate workflow guide links while leaving application docs alone."""
+    body = content.decode("utf-8")
+    def relocate(match):
+        url = match[2]
+        if re.match(r"[a-zA-Z][a-zA-Z0-9+.-]*:", url) or url.startswith("#"):
+            return match[0]
+        path, separator, anchor = url.partition("#")
+        resolved = posixpath.normpath(posixpath.join(posixpath.dirname(origin), path))
+        mapped = GUIDES.get(resolved, resolved)
+        if mapped == resolved and origin == destination:
+            return match[0]
+        relative = posixpath.relpath(mapped, posixpath.dirname(destination) or ".")
+        return match[1] + relative + separator + anchor + ")"
+    body = re.sub(r"(\[[^\]\n]+\]\()([^)\n]+)\)", relocate, body)
+    # Root-relative agent skill mentions and literal command paths are not Markdown links.
+    for old, new in GUIDES.items():
+        body = body.replace(old, new)
+    return body.encode("utf-8")
+
+
 def payload(source):
     selected = {}
     modes = {}
@@ -63,14 +87,17 @@ def payload(source):
             continue
         if modes[name] not in ("100644", "100755"):
             raise ValueError(f"Unsupported template entry: {name}")
-        selected[name] = (source / name).read_bytes()
+        destination = GUIDES.get(name, name)
+        content = (source / name).read_bytes()
+        selected[destination] = (render_guidance(content, name, destination)
+                                 if name.endswith(".md") else content)
     for destination, asset in [("AGENTS.md", "agent-entry.txt"), *[
             (f".planning/{name}.md", f"{name}.txt")
             for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE")]]:
         origin = ASSETS + asset
         if modes.get(origin) not in ("100644", "100755"):
             raise ValueError(f"Missing or unsupported project install asset: {origin}")
-        selected[destination] = (source / origin).read_bytes()
+        selected[destination] = render_guidance((source / origin).read_bytes(), destination, destination)
     selected["AGENTS.md"] = (AGENT_MARKER.encode() + b"\n" + selected["AGENTS.md"]
                              + b"\n" + AGENT_END.encode() + b"\n")
     for required in ("AGENTS.md", ".ai/runtime/phase.py", ".planning/config.yaml"):
@@ -88,9 +115,18 @@ def require_utf8(content, path):
         raise ValueError(f"{path} must be UTF-8 text before appending; nothing was installed.") from error
 
 
+def load_legacy(source, remote):
+    """Read the original release from Git; keep no duplicate manifest or history file."""
+    run("git", "fetch", "--quiet", "--depth=1", "--", remote, LEGACY_REVISION, cwd=source)
+    archive = subprocess.run(["git", "archive", LEGACY_REVISION], cwd=source,
+                             check=True, capture_output=True).stdout
+    with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
+        return {member.name: snapshot.extractfile(member).read().replace(b"\r\n", b"\n")
+                for member in snapshot.getmembers() if member.isfile()}
+
+
 def legacy_matches(legacy, name, content):
-    digest = hashlib.sha256(content.replace(b"\r\n", b"\n")).hexdigest()
-    return legacy is not None and legacy["sha256"].get(name) == digest
+    return legacy is not None and legacy.get(name) == content.replace(b"\r\n", b"\n")
 
 
 def merge_agent(current, incoming, legacy):
@@ -98,14 +134,14 @@ def merge_agent(current, incoming, legacy):
         return current
     if AGENT_MARKER.encode() in current:
         if legacy:
-            old = (AGENT_MARKER + "\n" + legacy["agent_entry"]).encode()
+            old = (AGENT_MARKER + "\n").encode() + legacy["AGENTS.md"]
             for variant in (old, old.replace(b"\n", b"\r\n")):
                 if current.count(variant) == 1:
                     return current.replace(variant, incoming, 1)
         raise ValueError("Existing AGENTS.md workflow block differs. For an unmodified prior "
                          "install use --repair-template-context; otherwise reconcile it manually.")
     if legacy:
-        old = legacy["agent_entry"].encode()
+        old = legacy["AGENTS.md"]
         for variant in (old, old.replace(b"\n", b"\r\n")):
             if current.count(variant) == 1:
                 return current.replace(variant, incoming, 1)
@@ -118,11 +154,9 @@ def merge_agent(current, incoming, legacy):
     return current + b"\n\n" + incoming
 
 
-def plan_install(source, target, repair=False):
+def plan_install(source, target, legacy=None):
     changes = []
     conflicts = []
-    baseline = json.loads((source / ASSETS / "legacy-context.json").read_text(encoding="utf-8"))
-    legacy = baseline if repair else None
     for name, incoming in payload(source).items():
         relative = Path(name)
         destination = target / relative
@@ -144,9 +178,6 @@ def plan_install(source, target, repair=False):
                 continue  # Existing intent, execution history and config remain authoritative.
             elif relative == Path("AGENTS.md"):
                 require_utf8(current, destination)
-                if legacy_matches(baseline, name, current):
-                    raise ValueError("AGENTS.md came from the original template installer. "
-                                     "Use --repair-template-context to replace its template context.")
                 incoming = merge_agent(current, incoming, legacy)
                 if current == incoming:
                     continue
@@ -154,8 +185,8 @@ def plan_install(source, target, repair=False):
                 conflicts.append(str(relative))
                 continue
         changes.append((destination, incoming))
-    if repair:
-        for name in ("changes.log", "docs/WORKFLOW-DIRECTION.md"):
+    if legacy:
+        for name in ("changes.log", *[name for name in legacy if name.startswith("docs/")]):
             destination = target / name
             safe_path(destination)
             if destination.is_file() and legacy_matches(legacy, name, destination.read_bytes()):
@@ -196,14 +227,15 @@ def install(args):
         safe_path(environment)
         if environment.exists():
             raise ValueError(".ai-venv already exists; preserve it and rerun with --skip-deps. "
-                             "See docs/INSTALL.md for dependency repair.")
+                             "See .ai/guides/INSTALL.md for dependency repair.")
     with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
         run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.ref, cwd=source)
         run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=source)
         revision = run("git", "rev-parse", "HEAD", cwd=source, capture=True).strip()
-        changes = plan_install(source, target, args.repair_template_context)
+        legacy = load_legacy(source, args.source) if args.repair_template_context else None
+        changes = plan_install(source, target, legacy)
         print(f"Template revision: {revision}\nTarget: {target}", flush=True)
         print(f"{'Would change' if args.dry_run else 'Changing'} {len(changes)} workflow files.", flush=True)
         if args.dry_run:
@@ -233,9 +265,9 @@ def install(args):
             run(str(interpreter), str(target / ".ai/runtime/phase.py"), "status", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
               "If installed into a primary checkout, a human must review and commit the "
-              "bootstrap before an agent creates a worktree (see docs/INSTALL.md).\n"
+              "bootstrap before an agent creates a worktree (see .ai/guides/INSTALL.md).\n"
               "Next: follow .ai/commands/onboard.md to fill project intent, configure actual "
-              "checks and worker commands, and commit setup. See docs/INSTALL.md.")
+              "checks and worker commands, and commit setup. See .ai/guides/ONBOARDING-PROMPTS.md.")
 
 
 def main():

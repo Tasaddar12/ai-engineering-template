@@ -1,4 +1,4 @@
-# Template guide
+# Artifact guide
 
 The retained template files are available under `.ai/templates/` with their
 complete teaching content and stable artifact names. Read the selected template in
@@ -9,7 +9,7 @@ Source attribution and revision history live in
 [third-party notices](../.ai/THIRD-PARTY-NOTICES.md). The
 [agent catalog](../.ai/agents/README.md) supplies selected full methods and
 [agent adaptation](../.ai/references/agent-adaptation.md) resolves host boundaries.
-The notices link upstream adaptation history; project decisions belong in this
+The notices link upstream Git history; project decisions belong in this
 project's phase records.
 
 ## Authoring sequence
@@ -38,9 +38,8 @@ in the affected project phase.
 ## Complete template catalog
 
 The tables list retained authoring sources and their producing/consuming roles.
-The navigation catalog is separate from the 25 artifact templates. Removed
-configuration, compact-summary, milestone and specialty templates are not
-available sources; the existing procedures select only the artifacts needed.
+The navigation catalog is separate from the 25 artifact templates. Select only
+the artifacts needed for the current project outcome.
 
 ### Project identity and continuity
 

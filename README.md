@@ -15,6 +15,7 @@ are not an adopting project's roadmap or delivery history.
 | See features, safeguards and limitations | [Workflow features](docs/WORKFLOW-FEATURES.md) |
 | Select and fill a template correctly | [Template guide](docs/TEMPLATE-GUIDE.md) |
 | Give an agent a starting request | [Onboarding prompts](docs/ONBOARDING-PROMPTS.md) |
+| Turn one or several goals into phases | [Goal planning](docs/GOAL-PLANNING.md) |
 | Configure and run workers | [Runtime guide](.ai/runtime/README.md) and [template contract](.ai/runtime/TEMPLATE-CONTRACT.md) |
 | Select a focused engineering method | [Repository skills](docs/AGENT-SKILLS.md) |
 | Understand the proposed next-stage entry workflows | [Workflow direction](docs/WORKFLOW-DIRECTION.md) |
@@ -52,7 +53,7 @@ The retained templates keep their complete teaching guidance, examples,
 counterexamples and consumer descriptions at stable filenames under
 [`.ai/templates/`](.ai/templates/README.md). Selected full
 [agent methods](.ai/agents/README.md) connect research, preparation, implementation
-and independent review through the existing procedures. [changes.log](changes.log) records adaptations.
+and independent review through the existing procedures. Git records adaptations.
 Source attribution and revision history remain in
 [third-party notices](.ai/THIRD-PARTY-NOTICES.md) and provenance.
 
@@ -73,6 +74,9 @@ runtime in `.ai-venv`. Preview with `--dry-run`; then finish onboarding below.
 Installed instructions describe the destination project, and existing planning
 records remain authoritative. The guide also covers repairing copies made by
 the original installer with `--repair-template-context`.
+The installer leaves this repository's `docs/` directory out of the target.
+Practical workflow guides and prompts are installed under `.ai/guides/`, keeping
+the destination's application documentation separate.
 
 1. Follow [onboard](.ai/commands/onboard.md) in an assigned worktree. Establish the
    actual project's identity and inspect its baseline before asserting readiness.

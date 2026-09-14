@@ -1,8 +1,7 @@
 """Exercise the downloaded installer against real Git sources and target projects."""
 
 from pathlib import Path
-import hashlib
-import json
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -14,6 +13,9 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / ".ai/install.py"
+spec = importlib.util.spec_from_file_location("workflow_installer", INSTALLER)
+installer = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(installer)
 
 
 def command(*args, cwd=None):
@@ -28,7 +30,7 @@ class InstallerTests(unittest.TestCase):
         for directory in (".ai", ".agents", ".planning", "docs"):
             shutil.copytree(ROOT / directory, cls.source / directory,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        for name in ("AGENTS.md", "changes.log", "README.md", ".gitattributes"):
+        for name in ("AGENTS.md", "README.md", ".gitattributes"):
             shutil.copy2(ROOT / name, cls.source / name)
         # Source-project records must never become destination-project history.
         for name in ("phases/99-source/99-CONTEXT.md", "specs/SPEC-source.md",
@@ -41,6 +43,7 @@ class InstallerTests(unittest.TestCase):
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
                 "commit", "--quiet", "-m", "Template fixture", cwd=cls.source)
         cls.revision = command("git", "rev-parse", "HEAD", cwd=cls.source).strip()
+        cls.legacy = installer.load_legacy(cls.source, installer.SOURCE)
 
     @classmethod
     def tearDownClass(cls):
@@ -72,7 +75,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("No phases yet", status)
         self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
         for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
-                        "changes.log", "docs/WORKFLOW-DIRECTION.md", ".ai/install-assets",
+                        "changes.log", "docs", ".ai/install-assets",
                         ".planning/phases/99-source", ".planning/specs/SPEC-source.md",
                         ".planning/decisions/ADR-source.md", ".planning/codebase/source-map.md"):
             self.assertFalse((self.target / omitted).exists(), omitted)
@@ -83,7 +86,9 @@ class InstallerTests(unittest.TestCase):
                                  "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
                 self.assertNotIn(source_claim, body, name)
         self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
-        self.assertTrue((self.target / "docs/INSTALL.md").is_file())
+        self.assertTrue((self.target / ".ai/guides/INSTALL.md").is_file())
+        self.assertTrue((self.target / ".ai/guides/ONBOARDING-PROMPTS.md").is_file())
+        self.assertIn(".ai/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
         (self.target / ".worktrees").mkdir()
         (self.target / ".worktrees/local.txt").write_text("local")
         self.assertIn(".worktrees/local.txt", command("git", "check-ignore", ".worktrees/local.txt", cwd=self.target))
@@ -91,8 +96,11 @@ class InstallerTests(unittest.TestCase):
     def test_existing_repository_preserves_files_history_remote_and_reruns(self):
         self.target.mkdir()
         original = {"README.md": b"Existing product\n", "app.py": b"print('hello')\n",
-                    "AGENTS.md": b"# Existing instructions\r\nKeep these.\r\n", ".gitignore": b"/build\r\n"}
+                    "AGENTS.md": b"# Existing instructions\r\nKeep these.\r\n", ".gitignore": b"/build\r\n",
+                    "docs/INSTALL.md": b"Product setup instructions\r\n",
+                    "docs/architecture.md": b"Actual application architecture\n"}
         for name, content in original.items():
+            (self.target / name).parent.mkdir(parents=True, exist_ok=True)
             (self.target / name).write_bytes(content)
         command("git", "init", "--quiet", str(self.target))
         command("git", "add", ".", cwd=self.target)
@@ -104,6 +112,9 @@ class InstallerTests(unittest.TestCase):
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(original["README.md"], (self.target / "README.md").read_bytes())
+        self.assertEqual({name: content for name, content in original.items() if name.startswith("docs/")},
+                         {p.relative_to(self.target).as_posix(): p.read_bytes()
+                          for p in (self.target / "docs").rglob("*") if p.is_file()})
         self.assertEqual(b"uncommitted work\n", (self.target / "app.py").read_bytes())
         for name in ("AGENTS.md", ".gitignore"):
             self.assertTrue((self.target / name).read_bytes().startswith(original[name]))
@@ -138,7 +149,7 @@ class InstallerTests(unittest.TestCase):
         self.target.mkdir()
         (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
         self.assertEqual(0, self.install().returncode)
-        for name in ("AGENTS.md", ".gitignore", ".ai/RULES.md", "docs/TEMPLATE-GUIDE.md"):
+        for name in ("AGENTS.md", ".gitignore", ".ai/RULES.md", ".ai/guides/ARTIFACT-GUIDE.md"):
             path = self.target / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = self.snapshot()
@@ -149,16 +160,17 @@ class InstallerTests(unittest.TestCase):
     def seed_legacy_context(self, appended=False):
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
-        legacy = json.loads((ROOT / ".ai/install-assets/legacy-context.json").read_text(encoding="utf-8"))
-        agent = legacy["agent_entry"].encode()
+        legacy = self.legacy
+        agent = legacy["AGENTS.md"]
         if appended:
             agent = b"# Existing product guidance\r\nKeep this.\r\n\n\n<!-- ai-engineering-template -->\n" + agent + b"\nUser added this later.\r\n"
         (self.target / "AGENTS.md").write_bytes(agent)
-        (self.target / ".ai/RULES.md").write_text(legacy["rules"], encoding="utf-8")
-        for name, text in legacy["obsolete_files"].items():
-            content = text.encode()
-            self.assertEqual(legacy["sha256"][name], hashlib.sha256(content).hexdigest())
-            (self.target / name).write_bytes(content)
+        (self.target / ".ai/RULES.md").write_bytes(legacy[".ai/RULES.md"])
+        for name, content in legacy.items():
+            if name == "changes.log" or name.startswith("docs/"):
+                path = self.target / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
         for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
             (self.target / f".planning/{name}.md").write_bytes((ROOT / f".planning/{name}.md").read_bytes())
 
@@ -183,6 +195,7 @@ class InstallerTests(unittest.TestCase):
         self.assertNotIn("Critical Fix", (self.target / ".planning/ROADMAP.md").read_text(encoding="utf-8"))
         self.assertFalse((self.target / "changes.log").exists())
         self.assertFalse((self.target / "docs/WORKFLOW-DIRECTION.md").exists())
+        self.assertEqual([], list((self.target / "docs").rglob("*.md")))
         repaired = self.snapshot()
         self.assertEqual(0, self.install("--repair-template-context").returncode)
         self.assertEqual(repaired, self.snapshot())
@@ -192,12 +205,12 @@ class InstallerTests(unittest.TestCase):
         self.seed_legacy_context()
         agent = self.target / "AGENTS.md"
         agent.write_bytes(agent.read_bytes() + b"\nKeep this later project guidance.\r\n")
-        (self.target / "changes.log").write_bytes(b"Actual product release history\n")
+        (self.target / "docs/INSTALL.md").write_bytes(b"Actual product install instructions\n")
         result = self.install("--repair-template-context")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertNotIn("reusable engineering workflow template", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
         self.assertTrue(agent.read_bytes().endswith(b"Keep this later project guidance.\r\n"))
-        self.assertEqual(b"Actual product release history\n", (self.target / "changes.log").read_bytes())
+        self.assertEqual(b"Actual product install instructions\n", (self.target / "docs/INSTALL.md").read_bytes())
 
     def test_edited_unmarked_legacy_instructions_are_not_silently_retained(self):
         self.seed_legacy_context()
@@ -242,7 +255,7 @@ class InstallerTests(unittest.TestCase):
 
     def test_file_as_parent_aborts_before_any_copy(self):
         self.target.mkdir()
-        (self.target / "docs").write_text("Existing file")
+        (self.target / ".ai").write_text("Existing file")
         before = self.snapshot()
         result = self.install()
         self.assertNotEqual(0, result.returncode)

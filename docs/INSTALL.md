@@ -62,15 +62,18 @@ Uncommitted source edits are not installed.
 
 ## What setup does
 
-- Installs reusable `.ai/` tooling, full instructional templates, repository skills
-  and the supported workflow guides. Source attribution remains in third-party notices.
+- Installs reusable `.ai/` tooling, full instructional templates and repository skills.
+  Practical workflow guides and detailed prompts live in `.ai/guides/`; no files
+  are installed into the project's `docs/` directory. Source attribution remains
+  in third-party notices.
 - Creates a project agent entry point and clean onboarding-pending planning records
   from dedicated installation assets. It does not copy the source repository's
   `AGENTS.md`, illustrative requirements, phases, metrics or project identity.
 - Preserves existing PROJECT, REQUIREMENTS, ROADMAP, STATE and config files as
   authoritative. Onboarding reconciles them with actual code and user intent.
 - Excludes source project history, the template maintainer's proposed roadmap,
-  root README and changes.log, tests, CI settings and installer build assets.
+  root README and temporary changes.log, tests, CI settings and installer build assets.
+  No installation history or JSON manifest is generated.
   Existing application code, README, Git history and remotes remain intact.
 - Preserves an existing `AGENTS.md` and appends project workflow instructions
   once in a delimited block. Adds local ignore rules to `.gitignore` without replacing it.
@@ -109,13 +112,17 @@ python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubu
 ```
 
 Add `--dry-run` to inspect the writes and removals first. The repair recognizes
-the original shipped content by recorded hashes (allowing LF/CRLF differences).
+the original shipped content directly from its pinned Git release (allowing
+LF/CRLF differences). Repair fetches that release from the selected source;
+custom source repositories must retain the original release to support repair.
 It replaces matching old workflow files and untouched example project records,
 and replaces the exact old AGENTS entry (marked or unmarked) while preserving surrounding
 user guidance. Real project records and config stay byte-for-byte intact.
 
-The repair removes root `changes.log` and `docs/WORKFLOW-DIRECTION.md` only when
-their content matches the original upstream copies. Modified histories remain.
+The repair removes the original temporary `changes.log` and every original
+template document under `docs/` when their contents match the shipped copies.
+It puts practical workflow help under `.ai/guides/`. Existing or customized
+application documentation is preserved; empty directories can remain after cleanup.
 An edited old AGENTS block or customized conflicting tooling requires manual
 reconciliation; the repair does not guess which user edits to overwrite.
 Use an assigned worktree for agent-driven repair and review the diff before
@@ -151,7 +158,7 @@ Git needs your author name and email configured for this step.
 For a brand-new, otherwise empty project, review the installed files and run:
 
 ```text
-git add -- AGENTS.md .ai .agents/skills .planning docs .gitignore
+git add -- AGENTS.md .ai .agents/skills .planning .gitignore
 git commit -m "Install AI engineering workflow"
 ```
 
@@ -178,7 +185,9 @@ using `python` can find the dependency. Install and authenticate your chosen age
 CLI separately. The [runtime guide](../.ai/runtime/README.md) describes configuration.
 
 Give the agent your project description and the appropriate
-[onboarding prompt](ONBOARDING-PROMPTS.md). It should inspect existing code,
+[onboarding prompt](ONBOARDING-PROMPTS.md). Once onboarding is complete, use
+[goal planning](GOAL-PLANNING.md) to define the first goal or order several goals
+into phases. The agent should inspect existing code,
 preserve useful guidance, fill project intent, set actual worker routes and
 nonempty verification commands, run baseline checks, and commit reviewed setup
 in its assigned worktree. A successful install with an empty phase list proves

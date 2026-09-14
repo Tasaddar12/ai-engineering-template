@@ -24,7 +24,7 @@ Markdown file was read.
 
 ## Compatibility decisions
 
-The workflow's [upstream adaptation history](https://github.com/Tasaddar12/ai-engineering-template/blob/main/changes.log)
+The workflow's [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/)
 and import provenance record its source alterations and reference repairs. These adaptations
 preserve full instructions; they are not a license to shorten a template.
 

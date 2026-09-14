@@ -8,10 +8,9 @@ does not copy this directory into adopting projects.
 - PROJECT, REQUIREMENTS, ROADMAP and STATE text files become pending onboarding
   records only when destination records are missing. Complete authoring methods
   and illustrative examples remain in the separately installed `.ai/templates/`.
-- `legacy-context.json` identifies the original faulty installer payload at its
-  recorded revision. SHA-256 hashes use LF-normalized bytes. The original agent
-  entry supports exact block replacement; retained rule/history content supplies
-  regression fixtures. Preserve this historical baseline when changing the installer.
+
+Explicit repair reads the original release directly from Git at the installer's
+pinned revision. No duplicate history or JSON manifest is kept or installed.
 
 Changes to these inputs require testing the rendered destination, including
 project context, preservation, links, runtime startup and the repair boundary.
