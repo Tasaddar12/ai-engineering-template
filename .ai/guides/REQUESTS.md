@@ -3,7 +3,9 @@
 Use these prompts after [onboarding](../commands/onboard.md) and
 [goal planning](../commands/goal-plan.md), or to continue an existing phase.
 Name the actual phase, desired outcome, relevant source context and delivery
-boundary. Preserve prior decisions and authorization. These ordinary-language
+boundary if overriding the [shared defaults](../RULES.md#session-and-authorization):
+worktree, commit each completed slice, push, PR/MR and automatic verified merge.
+Preserve prior decisions and authorization. These ordinary-language
 requests use the installed phase procedures; they do not create slash commands.
 
 ## Prepare a feature for parallel work
@@ -16,7 +18,7 @@ requests use the installed phase procedures; they do not create slash commands.
 > preparation checker, correct findings within scope and report readiness and
 > unresolved decisions before implementation.
 
-## Implement and open a verified PR
+## Implement and leave a verified PR open (explicit no-merge override)
 
 > Implement the authorized phase in its assigned worktree. Start fresh bounded
 > coder and documentor agents for independent plans, integrate and check their
@@ -40,7 +42,8 @@ requests use the installed phase procedures; they do not create slash commands.
 Draft progress pushes and final verified publication are different steps.
 The runtime's `publish --draft` still requires verification; the coordinator
 handles authorized earlier draft snapshots through the forge workflow. The
-runtime never merges; the coordinator performs an authorized final merge.
+runtime never merges; the coordinator performs the final merge by default unless
+the user opts out, after verification and required checks.
 
 ## Merge an already authorized PR and clean up
 

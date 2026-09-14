@@ -251,19 +251,22 @@ explicit in its runtime contract.
 | Committed slice | Reviewable local change with a descriptive commit | Integration and required validation |
 | Pushed draft PR | Authorized progress snapshot visible to the user | Remaining scope and final evidence |
 | Verified final revision | Required local evidence covers current content | Required UAT/remote checks and delivery boundary |
-| Ready PR | Final checks and required review have passed | Authorized merge if requested |
+| Ready PR/MR | Final checks and required review have passed | Automatic merge unless the user opts out |
 | Merged | Published revision observed merged through repository process | Authorized synchronization and safe cleanup |
 
-When the user requests frequent pushes and a draft PR, the coordinator can push
-committed progress slices through the forge workflow. Describe unfinished work
+By default, authors commit each completed meaningful slice immediately and the
+coordinator pushes each standalone or integrated slice to the task's draft PR/MR.
+Explicit user delivery limits override this default. Describe unfinished work
 honestly. The runtime's `publish` remains a verified publication operation even
 when `--draft` is supplied; that flag does not bypass readiness checks.
 
-The runtime never merges. If merge is already authorized, the coordinator
-reviews and fixes findings, verifies the final revision, observes required
-checks, merges through the normal repository process, confirms the merge and
-safely synchronizes the primary checkout. It does not ask again merely because
-the workflow reached another internal step.
+The Python runtime never merges. Under the shared delivery defaults, the
+coordinator reviews and fixes findings, verifies the final revision, observes
+required checks and reviews, automatically merges through the forge, confirms the
+remote merge and safely synchronizes a clean primary checkout. Explicit no-merge
+instructions leave the request open. Follow [phase-ship](../commands/phase-ship.md)
+for standalone work as well as phases. Do not ask again merely because the
+workflow reached another internal step.
 
 Cleanup removes only identified clean merged worktrees and branches within the
 authorized scope. Verify absolute paths under the primary `.worktrees/` root.

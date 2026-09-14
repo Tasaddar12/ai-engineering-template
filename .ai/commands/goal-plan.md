@@ -24,10 +24,12 @@ One goal may span several phases; closely related goals may share one phase when
 they form a coherent outcome. Neither the number of goals nor a template's sample
 phase count dictates the implementation plan.
 
-State the task's boundary: discussion only, committed preparation, implementation,
-PR publication, or delivery including an authorized merge. A planning request
-authorizes the requested records, not automatic implementation of everything
-mentioned. Earlier explicit authorization remains valid within its scope.
+State any override to the shared delivery defaults, such as discussion only,
+local-only preparation, draft-only publication or no merge. Authorized tracked
+records and implementation default to worktree, slice commits, pushes, a PR/MR
+and automatic verified merge. A planning request authorizes the requested records,
+not implementation of everything mentioned. Earlier explicit authorization and
+delivery limits remain valid within their scope.
 
 ## Build the context in order
 

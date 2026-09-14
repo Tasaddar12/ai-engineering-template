@@ -18,7 +18,8 @@ python .ai/runtime/phase.py uat 01-authentication --case 1 --result pass --note 
 
 Use `fail`, `blocked` or `skipped` as appropriate, with the observed detail.
 Only record that example statement when it is true. Resume the existing file
-rather than replacing earlier results. Required cases must pass before publication.
+rather than replacing earlier results. Required cases must pass before final readiness and merge. Draft progress pushes
+follow [phase-ship](phase-ship.md); the runtime publisher still requires UAT.
 
 Diagnose failures using evidence and route bounded corrections through the phase.
 Preserve the failure and retest the affected case after correction. UAT does not

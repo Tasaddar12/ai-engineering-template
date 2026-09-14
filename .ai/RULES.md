@@ -25,14 +25,26 @@ revision; another worker's checkout is not an integrated dependency.
 A report request authorizes inspection, not implementation. An implementation
 request authorizes its stated scope and ordinary necessary steps. Record actual
 human instructions; do not invent approval or repeatedly ask at internal stage
-boundaries. A later instruction can change or cancel scope. Publication, merge
-and destructive cleanup need authorization covering those actions. The phase
-runtime publishes PRs and never merges them.
+boundaries. A later instruction can change or cancel scope. For authorized tracked
+changes, the default delivery boundary includes slice commits, pushes, a pull
+request (PR) or merge request (MR), and automatic merge after verification and
+required checks. This standing authorization applies unless the user narrows it
+(for example: no commit, local only, draft only, or do not merge). It does not
+authorize additional product scope or destructive cleanup. Read-only requests
+remain read-only. Record the applicable default or explicit override in existing
+phase CONTEXT; standalone template maintenance needs no invented project records.
 
-Authors commit completed standalone work and component changes with descriptive,
-nonempty messages before returning. Component workers also commit their SUMMARY.
-An explicit instruction not to commit wins. Read-only work needs no empty commit.
-Reviewers do not edit or commit the checkout.
+Authors commit each completed meaningful slice immediately, before starting the
+next slice or returning, with a descriptive nonempty message. A slice is a bounded,
+reviewable unit of the authorized task, with its applicable checks completed;
+do not accumulate completed slices into one end-of-task commit. This includes
+standalone work, preparation, code, tests, documentation and corrections.
+Component workers also commit their SUMMARY and hand commits to the coordinator.
+The coordinator pushes each completed standalone or integrated slice and creates
+or updates one PR/MR for the task or phase, using a draft while scope remains.
+Workers keep their ownership boundaries and do not independently publish or merge.
+An explicit instruction not to commit wins; local-only work is not pushed.
+Read-only work needs no empty commit. Reviewers do not edit or commit the checkout.
 
 ## Phase authority
 
@@ -118,12 +130,21 @@ Required UAT must pass. A process exit, summary assertion, checkbox or existing
 file is not proof. Bug repairs need reproduction and regression evidence.
 
 Evidence names the tested revision and actual commands/results. Material content
-changes invalidate prior verification. Final publication readiness needs authorization, current
-verification and configured nonempty local checks. Explicitly authorized draft
-progress pushes may precede completion; describe their unfinished scope honestly. Observe required remote checks
+changes invalidate prior verification. Final publication readiness needs applicable
+authorization, current verification and configured nonempty local checks. Default
+draft progress pushes may precede completion; describe their unfinished scope
+honestly. Observe required remote checks
 after creating/updating the PR; pending or failed checks prevent declaring it
 ready. Published, verified and merged are distinct facts. Never claim delivery
-from an open PR or replace failed publication with a local merge.
+from an open PR or replace failed publication with a local merge. The coordinator
+automatically merges the verified PR/MR through the forge unless the user opts
+out, then confirms the remote merged state and revision. Follow
+[phase-ship](commands/phase-ship.md) for both standalone and phase delivery.
+The Python runtime publishes GitHub PRs only; the coordinator performs the merge
+and uses the forge's supported tools for MRs. Missing credentials, unavailable
+remotes, failed checks or required human reviews are concrete blockers: preserve
+the branch and report them without bypassing repository protections or claiming
+delivery. Do not ask again merely because delivery reached an internal step.
 
 ## Worktrees, recovery and cleanup
 

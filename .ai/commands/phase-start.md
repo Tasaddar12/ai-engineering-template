@@ -15,7 +15,8 @@ exclusive resources serialize conflicting assignments. A dependent component
 starts after its own prerequisites are integrated and checked on the phase
 branch. Unrelated earlier-wave work is not a barrier.
 
-Workers commit their changes and SUMMARY. The coordinator audits scope, actual
+Workers commit each completed meaningful slice immediately and commit their
+SUMMARY. The coordinator audits scope, actual
 commits and required checks before integration. A blocked or invalid result
 remains visible and its checkout is preserved. Status distinguishes worker exit,
 integration, verification and publication.
