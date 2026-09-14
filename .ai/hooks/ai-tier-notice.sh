@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Advisory PostToolUse hook. Prints a document-ownership reminder after a write to
-# a file under .planning/ or the shared .ai/RULES.md. It NEVER blocks â€” exit is always 0.
+# a file under .planning/ or the shared .ai/RULES.md. It NEVER blocks -- exit is always 0.
 #
 # Rules and assigned roles govern changes; this optional hook only displays them.
 #
@@ -12,7 +12,7 @@ payload="$(cat 2>/dev/null || true)"
 
 # --- extract a top-level or tool_input string field ---------------------------
 # Tiered on purpose. The sed fallback stops at the first quote, so it truncates
-# any value containing an escaped quote â€” which is most Bash commands. That
+# any value containing an escaped quote -- which is most Bash commands. That
 # fails OPEN (no block), the safe direction, but it makes the Bash check
 # near-useless without a real parser. jq or python restores it. The file-tool
 # checks are unaffected either way: a file_path is a path, not a sentence.

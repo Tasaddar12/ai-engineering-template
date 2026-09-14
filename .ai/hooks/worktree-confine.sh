@@ -11,11 +11,11 @@
 # Host permissions and assigned-worktree instructions remain in effect.
 # This hook is not a sandbox.
 #
-# The boundary is derived from git, NOT from $CLAUDE_PROJECT_DIR â€” the hooks
+# The boundary is derived from git, NOT from $CLAUDE_PROJECT_DIR -- the hooks
 # documentation is explicit that in a worktree that variable stays at the
 # project root, which is exactly the case this hook exists for.
 #
-# What is allowed depends on the tool, and the split is load-bearing â€” see
+# What is allowed depends on the tool, and the split is load-bearing -- see
 # `inside` and `inside_bash` below:
 #
 #   file tools   this checkout's toplevel, and the OS temp roots
@@ -23,7 +23,7 @@
 #
 # Enforcement is honest about its limits:
 #   Write / Edit / NotebookEdit  warned, from a real file_path field
-#   Bash                         narrow best-effort â€” an unambiguous redirect
+#   Bash                         narrow best-effort -- an unambiguous redirect
 #                                to somewhere outside. Shell cannot be parsed
 #                                reliably, so this catches accidents, not a
 #                                determined escape.
@@ -36,7 +36,7 @@ payload="$(cat 2>/dev/null || true)"
 
 # --- extract a top-level or tool_input string field ---------------------------
 # Tiered on purpose. The sed fallback stops at the first quote, so it truncates
-# any value containing an escaped quote â€” which is most Bash commands. That
+# any value containing an escaped quote -- which is most Bash commands. That
 # fails OPEN (no block), the safe direction, but it makes the Bash check
 # near-useless without a real parser. jq or python restores it. The file-tool
 # checks are unaffected either way: a file_path is a path, not a sentence.
@@ -147,7 +147,6 @@ esac
 n_root="$(norm "$root")"
 n_gitdir="$(norm "$gitdir")"
 n_primary="$(norm "${gitdir%/.git}")"
-n_primary="$(norm "${gitdir%/.git}")"
 n_dotgit="$(norm "$root/.git")"   # the main checkout's, which lives inside root
 
 # Other linked checkouts can sit outside the primary directory, including in temp.
@@ -177,7 +176,7 @@ done
 # a *file* pointing into the main repository's .git/worktrees/<name>, so deny it
 # and git stops working. But git needs it through `git`, which is a Bash call.
 # No Write or Edit ever legitimately targets that directory, and allowing them
-# there hands over .git/hooks/pre-commit and .git/config â€” either one is
+# there hands over .git/hooks/pre-commit and .git/config -- either one is
 # arbitrary code execution in the main checkout and in every sibling worktree at
 # the next git operation. That is a complete bypass of the confinement, through
 # the very allowance meant to support it.
@@ -197,7 +196,6 @@ inside() {
   in_gitdir "$1" && return 1
   local p; p="$(norm "$1")"
   [[ "$p" == "$n_root" || "$p" == "$n_root"/* ]] && return 0
-  [[ "$p" == "$n_primary" || "$p" == "$n_primary"/* ]] && return 1
   [[ "$p" == "$n_primary" || "$p" == "$n_primary"/* ]] && return 1
   local d
   for d in ${n_worktrees[@]+"${n_worktrees[@]}"}; do
@@ -237,7 +235,7 @@ case "$tool" in
   Bash)
     # Narrow and deliberately incomplete: an unambiguous redirect to an absolute
     # path outside the boundary. Shell cannot be parsed reliably, so anything
-    # cleverer here produces false positives that break legitimate git work â€”
+    # cleverer here produces false positives that break legitimate git work --
     # and a false block is worse than a missed catch, because it stops a run
     # that was doing the right thing.
     cmd="$(field command)"
@@ -259,7 +257,7 @@ $(printf '%s' "$cmd_bare" | grep -oE '>>?[[:space:]]*(/|[A-Za-z]:/)[^[:space:];|
       [[ -n "$hit" ]] || continue
       # The device files are not filesystem locations. They match the bare-path
       # pattern, they are never inside the checkout, and `2>/dev/null` is an
-      # everyday idiom â€” denying it costs an agent turn and teaches nothing.
+      # everyday idiom -- denying it costs an agent turn and teaches nothing.
       case "$(norm "$hit")" in
         /dev/null|/dev/zero|/dev/tty|/dev/stdin|/dev/stdout|/dev/stderr|/dev/fd/*)
           continue ;;
