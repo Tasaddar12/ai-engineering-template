@@ -23,8 +23,8 @@ Existing settings remain authoritative. Codex must trust the project and hooks
 before running them. Installed files alone do not prove live host execution.
 See [Codex hooks](https://learn.chatgpt.com/docs/hooks).
 
-Bash and Git must be available. On Windows, put Git Bash's `bin` directory on PATH
-ahead of WSL's `bash.exe`. JSON extraction uses jq when available, then Python,
+Bash and Git must be available. On Windows, the Codex launcher locates Git Bash
+beside the Git executable instead of using WSL's `bash.exe`; Claude uses Git Bash. JSON extraction uses jq when available, then Python,
 with a limited text fallback. The scripts support file fields and Codex
 `apply_patch` Add/Update/Delete/Move headers. The worktree script uses payload
 `cwd` and Git, rather than `CLAUDE_PROJECT_DIR`, to locate the active checkout.

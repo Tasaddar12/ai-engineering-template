@@ -72,8 +72,8 @@ after opening the project. See [Claude settings](https://code.claude.com/docs/en
 up new project files. Installed registrations are not proof of trusted live execution.
 
 Python 3.11+ and Git must be on PATH for installation and the runtime. Hooks run
-Bash directly; on Windows, put Git Bash's `bin` directory on PATH ahead of WSL's
-`bash.exe`. Hook commands locate their script from the active Git checkout, and
+Bash directly. On Windows, the Codex launcher locates Git Bash beside the Git
+executable, so WSL's `bash.exe` does not intercept the hook. Claude uses Git Bash. Hook commands locate their script from the active Git checkout, and
 the scripts inspect payload paths. No separate Python hook adapter is installed.
 
 To repeat the selected installation from the same template revision, use its

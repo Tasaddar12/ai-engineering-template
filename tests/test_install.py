@@ -345,9 +345,6 @@ class InstallerTests(unittest.TestCase):
             cwd = worktree / "sub directory"
             cwd.mkdir()
             environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
-            if os.name == "nt":
-                git_bin = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin"
-                environment["PATH"] = str(git_bin) + os.pathsep + environment["PATH"]
             settings = read_settings(worktree / name)
             for event, destination in (("PreToolUse", self.target / "outside.txt"),
                                        ("PreToolUse", worktree / "inside.txt"),
