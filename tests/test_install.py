@@ -239,7 +239,9 @@ class InstallerTests(unittest.TestCase):
         (self.target / "README.md").write_text("# Existing product\n", encoding="utf-8")
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
-        with patch.object(test_workflow_links, "ROOT", self.target):
+        # CI may expose TEMP through a Windows 8.3 alias. Compare canonical roots,
+        # while the checker still audits the original link spelling and casing.
+        with patch.object(test_workflow_links, "ROOT", self.target.resolve()):
             test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
 
     def test_conflicts_abort_before_any_copy(self):
