@@ -16,7 +16,8 @@ Use `python3` on macOS/Linux if needed. For an existing project, use `--target .
 from its root or assigned worktree. This executes the repository's script in
 memory; the saved-file commands below are an alternative.
 
-Choose `--host codex` or `--host claude`; omitting `--host` selects Codex.
+Choose `--host codex` or `--host claude`; the downloaded script defaults to Codex.
+An installed `.claude/install.py` defaults to Claude when repeated locally.
 The entire workflow is installed inside the selected host directory. A fresh
 installation has no separate `.ai` directory. Pending project records remain
 under `.planning`.
@@ -91,10 +92,62 @@ host does not rewrite an existing project's worker routes.
 
 An older installation with a separate `.ai` directory needs migration in an
 assigned worktree. The installer refuses to leave that older workflow beside a
-new host layout. Preserve custom instructions, tooling and project history and
-reconcile their destination paths before retrying. Changing `--host` is not a
-migration command. Review the diff, then commit and deliver it through the normal
-worktree procedure.
+new host layout. Use the migration mode below to preserve existing project data
+and custom material. Changing `--host` alone is not a migration command.
+
+## Migrate an existing `.ai` and `.planning` project
+
+Use an assigned worktree with the existing setup committed. Download the current
+installer as described below, then preview the selected destination:
+
+```text
+python /path/to/install.py --target . --host claude --migrate-existing --skip-deps --dry-run
+python /path/to/install.py --target . --host claude --migrate-existing --skip-deps
+```
+
+Use `--host codex` for Codex. Omit `--skip-deps` to create the selected host's
+virtual environment and install its requirements. The old `.ai-venv` is left
+intact; it is not copied into the new environment.
+
+Migration preflights the entire change and creates a verified copy of the
+original files under the ignored `.workflow-backups/` directory before writing.
+Each snapshot has a `files/` tree with the originals and a `MANIFEST.json` recording
+their paths, SHA-256 hashes and file modes. Its own ignore file also protects an
+incomplete backup when setup fails before the project ignore rules are updated. Keep that local
+backup until you have reviewed and tested the migration; it is not included in
+Git commits or automatically propagated to another worktree. The backup holds
+the original bytes for recovery, including replaced runtime files and settings.
+
+- All existing `.planning` records, phase summaries, specs, decisions and history
+  are preserved. Only necessary runtime/virtual-environment paths in config are
+  translated; existing custom worker commands and checks remain authoritative.
+  An unchanged template-default config selects the new host's worker defaults.
+- Existing rules, templates, skills and custom workflow material move into the
+  selected host directory. Local paths in supported text guidance are translated;
+  unknown binary files retain their bytes. Shipped runtime, hook and installer
+  files are refreshed from the selected template revision, with their originals
+  retained in the backup.
+- The selected root entry gets current workflow instructions while preserving
+  custom guidance. A mapping explains old paths in historical or pending phase
+  records; those records are not rewritten just to change their namespace.
+- Existing native settings and hooks are retained and merged. Conflicting native
+  files, linked paths and ambiguous instruction blocks stop preflight rather
+  than overwrite a second setup. Original files and empty directories are removed
+  from `.ai` only after backup; no separate `.ai` directory remains on success.
+  Ignore patterns for relocated custom workflow paths move with those paths.
+
+Review the reported refreshed files and the Git diff, reconcile any local runtime
+customizations from the backup, run the selected host's `runtime/phase.py status`
+and your project checks, and commit the migration slice. A Claude migration
+preserves customized worker routes even when they invoke Codex; update those
+routes deliberately if the project should run only Claude workers.
+
+Migration does not modify Git-common-directory checkpoints, running processes or
+other worktrees. Finish or reconcile old attempts with their original runtime
+before starting new work; changed runtime inputs invalidate old verification.
+Older projects whose records still live inside `.ai` rather than `.planning`
+must first complete that project-record migration with their compatible runtime.
+Do not remove the original backup when inspecting a failed or interrupted setup.
 
 ## Download and run
 
@@ -183,8 +236,10 @@ not a transaction protecting against concurrent writers or disk failures.
 
 `--repair-template-context` recognizes the original release's unchanged template
 context. It is not a general migration or overwrite option. If a separate `.ai`
-directory is still present, first reconcile that old installation in an assigned
-worktree as described above. Preview a context repair with:
+directory is present, every file in it must match that release: repair installs
+the selected host layout and removes only those recognized old files and their
+empty directories. A customized or newer `.ai` installation stops before writes
+and requires manual reconciliation in an assigned worktree. Preview with:
 
 ```text
 python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target . --host codex --skip-deps --repair-template-context --dry-run
@@ -197,7 +252,9 @@ LF/CRLF differences). Repair fetches that release from the selected source;
 custom source repositories must retain the original release to support repair.
 It replaces matching old workflow files and untouched example project records,
 and replaces the exact old AGENTS entry (marked or unmarked) while preserving surrounding
-user guidance. Real project records and config stay byte-for-byte intact.
+user guidance. For Claude, the recognized old AGENTS workflow block is retired
+and the complete current entry is installed in CLAUDE.md; unrelated AGENTS guidance
+is retained. Real project records and config stay byte-for-byte intact.
 
 Repair cleans matching source artifacts from the destination and preserves
 existing or customized application documentation. Empty directories can remain

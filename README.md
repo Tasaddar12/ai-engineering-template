@@ -76,8 +76,11 @@ Select `--host codex` or `--host claude` to install the entire workflow under
 hooks. A fresh installation has no separate `.ai` directory. Codex is the default;
 `--no-hooks` skips new hook registrations. Existing project settings are preserved.
 Installed instructions describe the destination project, and existing planning
-records remain authoritative. The guide also covers repairing copies made by
-the original installer with `--repair-template-context`.
+records remain authoritative. Existing `.ai` + `.planning` projects can use
+`--migrate-existing` to rebuild the selected host layout while preserving project
+history, custom material and verified original-file backups. Preview the migration
+with `--dry-run` in an assigned worktree. The guide also covers the narrower
+original-release repair with `--repair-template-context`.
 The installer leaves this repository's `docs/` directory out of the target.
 Installed procedures live in the selected host's `workflows` directory, role
 methods in `roles`, and supporting guides in `guides`. Codex uses root AGENTS.md

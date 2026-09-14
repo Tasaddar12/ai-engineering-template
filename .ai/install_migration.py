@@ -207,6 +207,9 @@ def plan_migration(source, target, host, hooks, installer):
     installer.require_utf8(current_ignore, ignore)
     if ignore.exists():
         backups.add(ignore)
+    # Keep ignored custom workflow data ignored after it changes directory.
+    current_ignore = current_ignore.replace(b".ai/", namespace.encode() + b"/")
+    current_ignore = current_ignore.replace(b".agents/skills/", namespace.encode() + b"/skills/")
     block = installer.IGNORE_BLOCK.replace(".ai-venv", namespace + "-venv").encode()
     desired[".gitignore"] = current_ignore if block in current_ignore.replace(b"\r\n", b"\n") else current_ignore + block
     writes = []
