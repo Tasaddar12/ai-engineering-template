@@ -177,6 +177,9 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(0, result.returncode, result.stderr)
                 command("git", "config", "user.name", "Installer Test", cwd=self.target)
                 command("git", "config", "user.email", "test@example.invalid", cwd=self.target)
+                # Git must finish writes before this temporary repository is removed.
+                command("git", "config", "maintenance.autoDetach", "false", cwd=self.target)
+                command("git", "config", "gc.autoDetach", "false", cwd=self.target)
                 command("git", "add", ".", cwd=self.target)
                 command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                         "commit", "--quiet", "-m", "Install workflow", cwd=self.target)
