@@ -175,6 +175,8 @@ class InstallerTests(unittest.TestCase):
                 self.target = self.base / host
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
+                command("git", "config", "user.name", "Installer Test", cwd=self.target)
+                command("git", "config", "user.email", "test@example.invalid", cwd=self.target)
                 command("git", "add", ".", cwd=self.target)
                 command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                         "commit", "--quiet", "-m", "Install workflow", cwd=self.target)

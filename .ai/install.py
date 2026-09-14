@@ -45,7 +45,7 @@ def safe_path(path):
     for part in (path, *path.parents):
         try:
             metadata = part.lstat()
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
             continue
         reparse = (os.name == "nt"
                    and metadata.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
