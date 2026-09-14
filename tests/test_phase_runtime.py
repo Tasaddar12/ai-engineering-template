@@ -457,7 +457,7 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertEqual([event["kind"] for event in self.events()], ["documentation"])
         self.assertIn(".ai/agents/doc-writer.md", self.events()[0]["methods"])
         self.cli("verify", "01")
-        review = next(event for event in self.events() if event["kind"] == "verifier")
+        review = next(event for event in self.events(include_verifier=True) if event["kind"] == "verifier")
         self.assertTrue({".ai/agents/doc-verifier.md", ".ai/agents/integration-checker.md"}.issubset(review["methods"]))
         self.assertFalse(Path(review["report_written"]).is_relative_to(Path(review["worktree"])))
         self.assertTrue((self.checkout / "docs/guide.md").is_file())
