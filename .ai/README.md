@@ -5,8 +5,8 @@ load the selected [command](commands/README.md) and [role](agents/README.md).
 These are the project's installed engineering tools and guidance. Preserve existing
 project context; onboarding fills only what is missing from evidence and user intent.
 
-Use the [setup prompts](../docs/ONBOARDING-PROMPTS.md) for a new or existing
-project, then [plan the first goal or several goals](../docs/GOAL-PLANNING.md)
+Use the [setup prompts](commands/onboard.md) for a new or existing
+project, then [plan the first goal or several goals](commands/goal-plan.md)
 to establish phase context and implementation scope.
 
 | Area | Responsibility |
@@ -21,7 +21,7 @@ to establish phase context and implementation scope.
 | `.planning/decisions/` | Significant architectural rationale |
 | [commands](commands/README.md) | Procedures from intake through publication |
 | [agents](agents/README.md) | Responsibilities and handoffs |
-| [skills](../docs/AGENT-SKILLS.md) | Reusable engineering methods selected per assignment |
+| [skills](guides/AGENT-SKILLS.md) | Reusable engineering methods selected per assignment |
 | `references/` | Artifact and handoff details loaded on demand |
 | [templates](templates/README.md) | Complete artifact instructions and examples |
 | [runtime](runtime/README.md) | Executable phase coordination |
@@ -32,5 +32,4 @@ A phase's CONTEXT owns acceptance and decisions. PLAN/SUMMARY pairs keep
 component inputs and results bounded. Independent VERIFICATION and applicable
 UAT establish completion; an open PR is publication, not merged delivery.
 
-See [the workflow guide](../docs/PHASE-WORKFLOW.md). Historical records describe
-their original revisions and do not define a second active workflow.
+See [the workflow guide](guides/PHASE-WORKFLOW.md) for the full procedure.

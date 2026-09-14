@@ -75,10 +75,11 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("No phases yet", status)
         self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
         for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
-                        "changes.log", "docs", ".ai/install-assets",
+                        "docs", ".ai/install-assets",
                         ".planning/phases/99-source", ".planning/specs/SPEC-source.md",
                         ".planning/decisions/ADR-source.md", ".planning/codebase/source-map.md"):
             self.assertFalse((self.target / omitted).exists(), omitted)
+        self.assertEqual([], list(self.target.glob("*.log")))
         for name in ("AGENTS.md", ".ai/RULES.md", ".ai/README.md", ".planning/PROJECT.md",
                      ".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/STATE.md"):
             body = (self.target / name).read_text(encoding="utf-8")
@@ -86,8 +87,13 @@ class InstallerTests(unittest.TestCase):
                                  "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
                 self.assertNotIn(source_claim, body, name)
         self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
-        self.assertTrue((self.target / ".ai/guides/INSTALL.md").is_file())
-        self.assertTrue((self.target / ".ai/guides/ONBOARDING-PROMPTS.md").is_file())
+        self.assertTrue((self.target / ".ai/commands/install.md").is_file())
+        self.assertTrue((self.target / ".ai/commands/onboard.md").is_file())
+        self.assertTrue((self.target / ".ai/commands/goal-plan.md").is_file())
+        # Core instructions must work as shipped, without rewritten links or docs exports.
+        for name in (".ai/commands/install.md", ".ai/commands/onboard.md", ".ai/commands/goal-plan.md"):
+            self.assertEqual((self.source / name).read_bytes().replace(b"\r\n", b"\n"),
+                             (self.target / name).read_bytes().replace(b"\r\n", b"\n"))
         self.assertIn(".ai/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
         (self.target / ".worktrees").mkdir()
         (self.target / ".worktrees/local.txt").write_text("local")
@@ -167,7 +173,7 @@ class InstallerTests(unittest.TestCase):
         (self.target / "AGENTS.md").write_bytes(agent)
         (self.target / ".ai/RULES.md").write_bytes(legacy[".ai/RULES.md"])
         for name, content in legacy.items():
-            if name == "changes.log" or name.startswith("docs/"):
+            if ("/" not in name and name.endswith(".log")) or name.startswith("docs/"):
                 path = self.target / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(content)
@@ -181,7 +187,9 @@ class InstallerTests(unittest.TestCase):
         before = self.snapshot()
         preview = self.install("--repair-template-context", "--dry-run")
         self.assertEqual(0, preview.returncode, preview.stderr)
-        self.assertIn("remove changes.log", preview.stdout)
+        for name in self.legacy:
+            if "/" not in name and name.endswith(".log"):
+                self.assertIn(f"remove {name}", preview.stdout)
         self.assertEqual(before, self.snapshot())
         result = self.install("--repair-template-context")
         self.assertEqual(0, result.returncode, result.stderr)
@@ -193,7 +201,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(custom, (self.target / ".planning/PROJECT.md").read_bytes())
         self.assertNotIn("AUTH-01", (self.target / ".planning/REQUIREMENTS.md").read_text(encoding="utf-8"))
         self.assertNotIn("Critical Fix", (self.target / ".planning/ROADMAP.md").read_text(encoding="utf-8"))
-        self.assertFalse((self.target / "changes.log").exists())
+        self.assertEqual([], list(self.target.glob("*.log")))
         self.assertFalse((self.target / "docs/WORKFLOW-DIRECTION.md").exists())
         self.assertEqual([], list((self.target / "docs").rglob("*.md")))
         repaired = self.snapshot()

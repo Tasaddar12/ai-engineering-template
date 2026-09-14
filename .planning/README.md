@@ -27,4 +27,4 @@ the primary checkout's ignored `.worktrees/`. Neither location is a replacement
 for committed source, summaries or verification reports.
 
 Start with [onboarding](../.ai/commands/onboard.md), then use the
-[workflow guide](../docs/PHASE-WORKFLOW.md) and [feature reference](../docs/WORKFLOW-FEATURES.md).
+[workflow guide](../.ai/guides/PHASE-WORKFLOW.md) and [feature reference](../.ai/guides/WORKFLOW-FEATURES.md).

@@ -10,7 +10,7 @@ does not copy this directory into adopting projects.
   and illustrative examples remain in the separately installed `.ai/templates/`.
 
 Explicit repair reads the original release directly from Git at the installer's
-pinned revision. No duplicate history or JSON manifest is kept or installed.
+pinned revision.
 
 Changes to these inputs require testing the rendered destination, including
 project context, preservation, links, runtime startup and the repair boundary.

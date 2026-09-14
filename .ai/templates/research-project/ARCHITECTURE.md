@@ -207,11 +207,8 @@ src/
 <!-- LOCAL-ADOPTION:START -->
 ## Local adoption — read before using this source
 
-This complete authoring guide retains its source content, examples, and methods.
-Only recorded namespace/reference substitutions and explicit local conflict
-corrections have been made. Source attribution is retained in `.ai/THIRD-PARTY-NOTICES.md`; the
-original template adaptation history is linked from `.ai/THIRD-PARTY-NOTICES.md`. The previous template
-import manifest was removed during pruning; no absent manifest is claimed here.
+Read this complete authoring guide, including its examples and methods.
+Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
 boundary, `.ai/references/template-adaptation.md` for local conflict decisions,

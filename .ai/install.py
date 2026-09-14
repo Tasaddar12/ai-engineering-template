@@ -5,8 +5,6 @@ import argparse
 import io
 import os
 from pathlib import Path
-import posixpath
-import re
 import shutil
 import stat
 import subprocess
@@ -24,9 +22,6 @@ PROJECT_RECORDS = {f".planning/{name}" for name in
 PLANNING_RESOURCES = {f".planning/{name}" for name in
                       ("README.md", "config.yaml", "phases/README.md", "codebase/README.md",
                        "specs/.gitkeep", "decisions/.gitkeep")}
-GUIDES = {f"docs/{name}.md": f".ai/guides/{name.replace('TEMPLATE', 'ARTIFACT')}.md"
-          for name in ("INSTALL", "AGENT-SKILLS", "ONBOARDING-PROMPTS", "PHASE-WORKFLOW",
-                       "TEMPLATE-GUIDE", "WORKFLOW-FEATURES", "GOAL-PLANNING")}
 LEGACY_REVISION = "f4855eb66023495c75a9c9d5c9190565d3af2315"
 IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.worktrees/\n.ai-venv/\n__pycache__/\n*.pyc\n"
 
@@ -50,27 +45,6 @@ def safe_path(path):
             raise ValueError(f"Refusing linked path: {part}")
 
 
-def render_guidance(content, origin, destination):
-    """Relocate workflow guide links while leaving application docs alone."""
-    body = content.decode("utf-8")
-    def relocate(match):
-        url = match[2]
-        if re.match(r"[a-zA-Z][a-zA-Z0-9+.-]*:", url) or url.startswith("#"):
-            return match[0]
-        path, separator, anchor = url.partition("#")
-        resolved = posixpath.normpath(posixpath.join(posixpath.dirname(origin), path))
-        mapped = GUIDES.get(resolved, resolved)
-        if mapped == resolved and origin == destination:
-            return match[0]
-        relative = posixpath.relpath(mapped, posixpath.dirname(destination) or ".")
-        return match[1] + relative + separator + anchor + ")"
-    body = re.sub(r"(\[[^\]\n]+\]\()([^)\n]+)\)", relocate, body)
-    # Root-relative agent skill mentions and literal command paths are not Markdown links.
-    for old, new in GUIDES.items():
-        body = body.replace(old, new)
-    return body.encode("utf-8")
-
-
 def payload(source):
     selected = {}
     modes = {}
@@ -83,21 +57,18 @@ def payload(source):
         if name.startswith(ASSETS):
             continue
         if not (name.startswith((".ai/", ".agents/skills/"))
-                or name in PLANNING_RESOURCES or name in GUIDES):
+                or name in PLANNING_RESOURCES):
             continue
         if modes[name] not in ("100644", "100755"):
             raise ValueError(f"Unsupported template entry: {name}")
-        destination = GUIDES.get(name, name)
-        content = (source / name).read_bytes()
-        selected[destination] = (render_guidance(content, name, destination)
-                                 if name.endswith(".md") else content)
+        selected[name] = (source / name).read_bytes()
     for destination, asset in [("AGENTS.md", "agent-entry.txt"), *[
             (f".planning/{name}.md", f"{name}.txt")
             for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE")]]:
         origin = ASSETS + asset
         if modes.get(origin) not in ("100644", "100755"):
             raise ValueError(f"Missing or unsupported project install asset: {origin}")
-        selected[destination] = render_guidance((source / origin).read_bytes(), destination, destination)
+        selected[destination] = (source / origin).read_bytes()
     selected["AGENTS.md"] = (AGENT_MARKER.encode() + b"\n" + selected["AGENTS.md"]
                              + b"\n" + AGENT_END.encode() + b"\n")
     for required in ("AGENTS.md", ".ai/runtime/phase.py", ".planning/config.yaml"):
@@ -186,7 +157,9 @@ def plan_install(source, target, legacy=None):
                 continue
         changes.append((destination, incoming))
     if legacy:
-        for name in ("changes.log", *[name for name in legacy if name.startswith("docs/")]):
+        for name in legacy:
+            if not (name.startswith("docs/") or ("/" not in name and name.endswith(".log"))):
+                continue
             destination = target / name
             safe_path(destination)
             if destination.is_file() and legacy_matches(legacy, name, destination.read_bytes()):
@@ -227,7 +200,7 @@ def install(args):
         safe_path(environment)
         if environment.exists():
             raise ValueError(".ai-venv already exists; preserve it and rerun with --skip-deps. "
-                             "See .ai/guides/INSTALL.md for dependency repair.")
+                             "See .ai/commands/install.md for dependency repair.")
     with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
@@ -265,9 +238,9 @@ def install(args):
             run(str(interpreter), str(target / ".ai/runtime/phase.py"), "status", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
               "If installed into a primary checkout, a human must review and commit the "
-              "bootstrap before an agent creates a worktree (see .ai/guides/INSTALL.md).\n"
+              "bootstrap before an agent creates a worktree (see .ai/commands/install.md).\n"
               "Next: follow .ai/commands/onboard.md to fill project intent, configure actual "
-              "checks and worker commands, and commit setup. See .ai/guides/ONBOARDING-PROMPTS.md.")
+              "checks and worker commands, and commit setup. See .ai/commands/onboard.md.")
 
 
 def main():

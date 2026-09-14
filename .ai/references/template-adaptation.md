@@ -3,8 +3,7 @@
 Read the selected [full template](../templates/README.md), including its examples,
 counterexamples, field explanations and consumer guidance. Generate the artifact
 from its **File Template** or corresponding artifact block; do not copy the whole
-instructional document into a phase result. Use the complete retained templates;
-removed compact and specialty variants are not available authoring sources.
+instructional document into a phase result. Use the complete templates.
 
 ## Which layer runs
 
@@ -22,7 +21,7 @@ and the host mappings in agent adaptation. A reference to an upstream tool does
 not make it installed. Never claim an unavailable CLI command ran when only a
 Markdown file was read.
 
-## Compatibility decisions
+## Runtime behavior
 
 The workflow's [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/)
 and import provenance record its source alterations and reference repairs. These adaptations
@@ -31,7 +30,7 @@ preserve full instructions; they are not a license to shorten a template.
 | Concern | Applied behavior | Reason |
 |---|---|---|
 | Project data | `.planning/` owns project identity, requirements, roadmap, state, phases, research maps, current specifications, decisions and project settings | User requested separation from reusable `.ai` machinery |
-| PLAN | `NN-CC-PLAN.md` is the bounded component prompt within a phase | Follow upstream naming without resurrecting a standalone PLAN lifecycle |
+| PLAN | `NN-CC-PLAN.md` is the bounded component prompt within a phase | Keep each assignment attached to its phase |
 | Execution metadata | Add the documented [runtime extensions](../runtime/TEMPLATE-CONTRACT.md) to the full artifact | Preserve recorded authorization, exact ownership, command arguments, documentation coverage and revision evidence |
 | Configuration | `.planning/config.yaml` configures the Python runtime; no JSON configuration template is supplied | Upstream settings cannot silently configure a different runtime |
 | Waves | Keep wave metadata and dependency planning guidance; the Python scheduler releases each component after its own integrated and checked prerequisites | Unrelated components need no global wave barrier |

@@ -20,13 +20,13 @@
 | Current correct behavior | `.planning/specs/SPEC-*.md` | Reference contracts instead of copying them |
 | Significant rationale | `.planning/decisions/ADR-*.md` | Accepted decisions govern; superseded ones are history |
 | Ordinary change history | Git and phase artifacts | No duplicate journal required |
-| Human usage/operations guidance | `docs/` | Link to the relevant guide |
+| Project usage/operations guidance | The project's established documentation paths | Link to the relevant guide |
 | Shared rules | [RULES](RULES.md) | Link rather than restating |
 | Role scope, inputs and outputs | [agents](agents/README.md) | Assign a responsibility |
 | Workflow procedure | [commands](commands/README.md) | Entry points load the procedure |
 | Artifact and handoff contract details | `references/` | Load only when relevant |
 | Reusable engineering methods | `../.agents/skills/*/SKILL.md` | Reference a selected method from the assignment |
-| Skill discovery and usage | [Agent skills guide](../docs/AGENT-SKILLS.md) | Keep catalogs out of individual assignments |
+| Skill discovery and usage | [Agent skills guide](guides/AGENT-SKILLS.md) | Keep catalogs out of individual assignments |
 | Commands, capacity and worker routes | [config](../.planning/config.yaml) | Avoid duplicating defaults |
 | CLI interface | [runtime](runtime/README.md) | Use verified syntax |
 

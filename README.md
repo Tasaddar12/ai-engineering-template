@@ -11,13 +11,13 @@ are not an adopting project's roadmap or delivery history.
 
 | Need | Read |
 |---|---|
-| Understand the complete workflow | [Project and phase workflow](docs/PHASE-WORKFLOW.md) |
-| See features, safeguards and limitations | [Workflow features](docs/WORKFLOW-FEATURES.md) |
-| Select and fill a template correctly | [Template guide](docs/TEMPLATE-GUIDE.md) |
-| Give an agent a starting request | [Onboarding prompts](docs/ONBOARDING-PROMPTS.md) |
-| Turn one or several goals into phases | [Goal planning](docs/GOAL-PLANNING.md) |
+| Understand the complete workflow | [Project and phase workflow](.ai/guides/PHASE-WORKFLOW.md) |
+| See features, safeguards and limitations | [Workflow features](.ai/guides/WORKFLOW-FEATURES.md) |
+| Select and fill a template correctly | [Template guide](.ai/guides/ARTIFACT-GUIDE.md) |
+| Give an agent a starting request | [Onboarding prompts](.ai/commands/onboard.md) |
+| Turn one or several goals into phases | [Goal planning](.ai/commands/goal-plan.md) |
 | Configure and run workers | [Runtime guide](.ai/runtime/README.md) and [template contract](.ai/runtime/TEMPLATE-CONTRACT.md) |
-| Select a focused engineering method | [Repository skills](docs/AGENT-SKILLS.md) |
+| Select a focused engineering method | [Repository skills](.ai/guides/AGENT-SKILLS.md) |
 | Understand the proposed next-stage entry workflows | [Workflow direction](docs/WORKFLOW-DIRECTION.md) |
 
 ## What lives where
@@ -68,15 +68,15 @@ are not silently translated into Python runtime settings.
 
 ## Adopt the template
 
-Start with the [download-and-run installer](docs/INSTALL.md) for a new directory
+Start with the [download-and-run installer](.ai/commands/install.md) for a new directory
 or an existing project. It preserves existing files and sets up the Python
 runtime in `.ai-venv`. Preview with `--dry-run`; then finish onboarding below.
 Installed instructions describe the destination project, and existing planning
 records remain authoritative. The guide also covers repairing copies made by
 the original installer with `--repair-template-context`.
 The installer leaves this repository's `docs/` directory out of the target.
-Practical workflow guides and prompts are installed under `.ai/guides/`, keeping
-the destination's application documentation separate.
+Procedures and prompts are available directly in `.ai/commands/`, with supporting
+workflow guides under `.ai/guides/`.
 
 1. Follow [onboard](.ai/commands/onboard.md) in an assigned worktree. Establish the
    actual project's identity and inspect its baseline before asserting readiness.
@@ -103,6 +103,4 @@ behavior, not the quality of every live agent assignment. Optional
 [advisory hooks](.ai/hooks/README.md) have separate Bash suites; they warn and
 return success rather than enforce host permissions.
 
-[Fact ownership](.ai/truth-map.md) explains which record resolves each kind of
-question. [The earlier migration history](.planning/maintenance/history/phase-migration.md) remains a
-historical account of the prior design.
+[Fact ownership](.ai/truth-map.md) explains which record resolves each kind of question.

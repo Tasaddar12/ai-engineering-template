@@ -54,7 +54,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @docs/AGENT-SKILLS.md
+**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each applicable or assigned skill (use the catalog to select)
 3. Load specific `rules/*.md` files as needed during implementation
@@ -614,7 +614,7 @@ change — only location and metadata change.
 <critical_rules>
 
 1. Generated docs describe the TARGET PROJECT exclusively. Do not inject unrelated workflow methodology; when the target itself is an engineering workflow template, document its actual phases, plans, PLAN.md, ROADMAP.md and commands accurately.
-2. Do not touch CHANGELOG.md or changes.log unless explicitly assigned. Follow the actual project owner; phase-ship does not automatically maintain these files.
+2. Maintain project changelogs only when explicitly assigned. Follow the actual project owner.
 3. Include the GSD marker `<!-- generated-by: doc-writer -->` as the first line of every generated doc file (except supplement mode — see rule 7).
 4. Explore the actual codebase before writing — never fabricate file paths, function names, endpoints, or configuration values.
 8. Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.

@@ -15,10 +15,8 @@ def guidance_files():
     for directory in (".ai", ".agents", ".planning", "docs"):
         for path in (ROOT / directory).rglob("*.md"):
             relative = path.relative_to(ROOT).as_posix()
-            if relative.startswith((".ai/library/", ".ai/templates/", ".planning/maintenance/")):
+            if relative.startswith(".ai/templates/"):
                 continue  # Imported source has its own provenance/reference audit.
-            if relative == "docs/PHASE-MIGRATION.md":
-                continue  # Explicit historical record for the previous revision.
             yield path
 
 

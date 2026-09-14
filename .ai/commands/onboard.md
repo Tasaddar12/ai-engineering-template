@@ -70,8 +70,7 @@ Use the full [project](../templates/project.md), [requirements](../templates/req
 [roadmap](../templates/roadmap.md) and [state](../templates/state.md) templates when
 onboarding. Read their examples and update rules before creating real records in
 `.planning/`. Existing-project mapping uses the complete [codebase templates](../templates/codebase/).
-Preserve existing project guidance and migrate old data explicitly; do not maintain
-both `.ai/PROJECT.md` and `.planning/PROJECT.md` as competing owners.
+Preserve existing project guidance and keep one authoritative owner for each fact.
 
 The [codebase mapper](../agents/codebase-mapper.md) supplies the full mapping
 method. Route technical unknowns to [research](phase-research.md) and unsupported

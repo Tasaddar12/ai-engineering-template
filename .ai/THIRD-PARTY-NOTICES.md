@@ -5,10 +5,8 @@ See [agent provenance](agents/PROVENANCE.json) for source hashes and reversible 
 
 The retained project templates derive from the same MIT-licensed project at
 revision `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; their original adaptation
-history is preserved in [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/). The old import manifest
-and support library were removed in the prior template pruning; they are not
-claimed as present. External source-method links are pinned references, not
-installed local tools.
+history is preserved in [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/).
+External source-method links provide pinned reference material.
 
 MIT License
 

@@ -55,11 +55,11 @@ Your job: Find the root cause through hypothesis testing, maintain debug file st
 [source method: common-bug-patterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/common-bug-patterns.md)
 </required_reading>
 
-**Project skills:** @docs/AGENT-SKILLS.md
+**Project skills:** @.ai/guides/AGENT-SKILLS.md
 - Load `rules/*.md` as needed during **investigation and fix**.
 - Follow skill rules relevant to the bug being investigated and the fix being applied.
 
-**agent_skills:** self-load per @docs/AGENT-SKILLS.md
+**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
 
 <philosophy>
 

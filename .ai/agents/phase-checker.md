@@ -78,7 +78,7 @@ Before verifying, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @docs/AGENT-SKILLS.md
+**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each applicable or assigned skill (use the catalog to select)
 3. Load specific `rules/*.md` files as needed during verification
