@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -40,19 +41,20 @@ class HostHookTests(unittest.TestCase):
     def run_git(*args, cwd):
         return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True).stdout
 
-    def invoke(self, tool="Write", inputs=None, *, cwd=None, event="PreToolUse", raw=None, env=None):
+    def invoke(self, tool="Write", inputs=None, *, cwd=None, event="PreToolUse", raw=None, env=None,
+               script=SCRIPT):
         payload = raw if raw is not None else json.dumps({
             "cwd": str(cwd or self.assigned), "hook_event_name": event,
             "tool_name": tool, "tool_input": inputs or {},
-        })
+        }, ensure_ascii=False)
         environment = os.environ.copy()
         # A host project variable must not override payload cwd in a worktree.
         environment["CLAUDE_PROJECT_DIR"] = str(self.primary)
         environment.update(env or {})
-        result = subprocess.run([sys.executable, str(SCRIPT)], input=payload,
-                                text=True, capture_output=True, env=environment, cwd=self.primary)
+        result = subprocess.run([sys.executable, str(script)], input=payload.encode("utf-8"),
+                                capture_output=True, env=environment, cwd=self.primary)
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("", result.stderr)
+        self.assertEqual(b"", result.stderr)
         if not result.stdout:
             return None
         notice = json.loads(result.stdout)
@@ -90,6 +92,32 @@ class HostHookTests(unittest.TestCase):
         self.assertIsNotNone(self.invoke(inputs={"file_path": target}))
         if os.name == "nt":
             self.assertIsNone(self.invoke(inputs={"file_path": str(self.assigned / "new.txt").upper()}))
+
+    def test_utf8_payload_ignores_host_text_locale(self):
+        unicode_cwd = self.assigned / "source résumé 東京"
+        unicode_cwd.mkdir()
+        target = self.sibling / "résumé 東京.txt"
+        for cwd in (self.assigned, unicode_cwd):
+            with self.subTest(cwd=cwd):
+                notice = self.invoke(inputs={"file_path": str(target)}, cwd=cwd,
+                                     env={"PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"})
+                self.assertIsNotNone(notice)
+                self.assertIn(str(target), notice)
+
+    def test_relocated_hooks_use_their_host_rules_namespace(self):
+        for namespace in (".codex", ".claude"):
+            with self.subTest(namespace=namespace):
+                installed = self.assigned / namespace / "hooks" / "host-adapter.py"
+                installed.parent.mkdir(parents=True)
+                shutil.copy2(SCRIPT, installed)
+                for path in (namespace + "/RULES.md", ".planning/PROJECT.md",
+                             ".planning/specs/SPEC-test.md", ".planning/decisions/ADR-test.md",
+                             ".planning/phases/01-test/01-PLAN.md", ".planning/STATE.md"):
+                    notice = self.invoke(inputs={"file_path": "../" + path}, cwd=self.nested,
+                                         event="PostToolUse", script=installed)
+                    self.assertIsNotNone(notice)
+                    self.assertIn(namespace + "/RULES.md#", notice)
+                    self.assertNotIn(".ai/RULES.md", notice)
 
     def test_temporary_and_environment_scratch_are_quiet(self):
         self.assertIsNone(self.invoke(inputs={"file_path": str(self.base / "temporary output.txt")}))

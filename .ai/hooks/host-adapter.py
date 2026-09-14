@@ -16,6 +16,9 @@ import sys
 import tempfile
 
 
+RULES_PATH = f"{Path(__file__).resolve().parents[1].name}/RULES.md"
+
+
 def path_at(value, cwd):
     """Accept Git's forward slashes and native Windows path separators."""
     path = Path(value.replace("\\", "/"))
@@ -106,21 +109,23 @@ def tier_notice(path, roots):
     if not owners:
         return None
     relative = path.relative_to(owners[0]).as_posix()
-    if relative in (".planning/PROJECT.md", ".planning/REQUIREMENTS.md", ".ai/RULES.md"):
-        return "Intent ownership: follow human authorization and .ai/RULES.md#phase-authority within your assigned role."
+    if relative in (".planning/PROJECT.md", ".planning/REQUIREMENTS.md", RULES_PATH):
+        return f"Intent ownership: follow human authorization and {RULES_PATH}#phase-authority within your assigned role."
     if relative.startswith(".planning/specs/"):
-        return "Current behavior: resolve evidence and documentation through .ai/RULES.md#documents-and-conflicts."
+        return f"Current behavior: resolve evidence and documentation through {RULES_PATH}#documents-and-conflicts."
     if relative.startswith(".planning/decisions/ADR-"):
-        return "Decision history: follow ADR ownership and supersession in .ai/RULES.md#documents-and-conflicts."
+        return f"Decision history: follow ADR ownership and supersession in {RULES_PATH}#documents-and-conflicts."
     if relative.startswith(".planning/phases/"):
-        return "Phase evidence: follow .ai/RULES.md#phase-authority and .ai/RULES.md#components-and-handoffs."
+        return f"Phase evidence: follow {RULES_PATH}#phase-authority and {RULES_PATH}#components-and-handoffs."
     if relative in (".planning/STATE.md", ".planning/ROADMAP.md"):
-        return "Derived status and navigation: follow .ai/RULES.md#phase-authority within your assigned role."
+        return f"Derived status and navigation: follow {RULES_PATH}#phase-authority within your assigned role."
     return None
 
 
 def main():
-    payload = json.load(sys.stdin)
+    # Host payloads are UTF-8 even when Windows configures stdin as a legacy
+    # locale encoding. Decode bytes explicitly before parsing or resolving paths.
+    payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     if not isinstance(payload, dict):
         return
     event, tool, inputs = (payload.get(key) for key in ("hook_event_name", "tool_name", "tool_input"))
