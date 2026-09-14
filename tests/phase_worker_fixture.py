@@ -88,7 +88,7 @@ def forge_cli() -> int:
 
 def full_template_result(root, path, template_name):
     """Materialize the entire upstream output block, plus real fixture receipts."""
-    sys.path.insert(0, str(root / ".ai/runtime"))
+    sys.path.insert(0, str(root / os.environ.get("PHASE_RUNTIME_ROOT", ".ai") / "runtime"))
     from phase_records import file_template, record
     data, evidence = record(path)
     template = file_template(root, template_name)
@@ -146,7 +146,8 @@ def main() -> int:
         assert assignment.is_file(), "The worker must receive an assignment file"
         prompt = assignment.read_text(encoding="utf-8")
         assert prompt.strip(), "The assignment is empty"
-        methods = sorted(set(re.findall(r"\.ai/(?:agents|references)/[a-z-]+\.md", prompt)))
+        namespace = re.escape(os.environ.get("PHASE_RUNTIME_ROOT", ".ai"))
+        methods = sorted(set(re.findall(rf"{namespace}/(?:agents|roles|references)/[a-z-]+\.md", prompt)))
         for method in methods:
             assert (root / method).is_file(), f"Assignment requires missing method: {method}"
             assert (root / method).read_text(encoding="utf-8").strip(), f"Assignment method is empty: {method}"
