@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import importlib.util
+import json
 import os
 import shutil
 import subprocess
@@ -130,6 +131,155 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(before, self.snapshot())
         self.assertEqual(head, command("git", "rev-parse", "HEAD", cwd=self.target))
         self.assertIn("existing.git", command("git", "remote", "get-url", "origin", cwd=self.target))
+
+    def test_host_profiles_install_only_selected_native_integrations(self):
+        for host in ("codex", "claude", "both"):
+            with self.subTest(host=host):
+                self.target = self.base / (host + " project")
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(host != "claude", (self.target / ".codex/hooks.json").exists())
+                self.assertEqual(host != "codex", (self.target / ".claude/settings.json").exists())
+                self.assertEqual(host != "codex", (self.target / "CLAUDE.md").exists())
+                config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
+                self.assertEqual(host == "claude", "claude_worker.py" in config)
+                self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text())
+                if host != "codex":
+                    self.assertIn("@AGENTS.md", (self.target / "CLAUDE.md").read_text())
+                    canonical = list((self.target / ".agents/skills").glob("*/SKILL.md"))
+                    wrappers = list((self.target / ".claude/skills").glob("*/SKILL.md"))
+                    self.assertEqual(len(canonical), len(wrappers))
+                    for wrapper in wrappers:
+                        original = self.target / ".agents/skills" / wrapper.parent.name / "SKILL.md"
+                        body = wrapper.read_text(encoding="utf-8")
+                        self.assertEqual(original.read_text(encoding="utf-8").split("---", 2)[1],
+                                         body.split("---", 2)[1])
+                        target = body.split("](", 1)[1].split(")", 1)[0]
+                        self.assertEqual(original.resolve(), (wrapper.parent / target).resolve())
+
+    def test_adding_second_host_preserves_settings_instructions_and_worker_routes(self):
+        (self.target / ".claude").mkdir(parents=True)
+        (self.target / ".codex").mkdir()
+        settings = {"permissions": {"deny": ["Read(.env)"]}, "disableAllHooks": False,
+                    "hooks": {"PreToolUse": [{"matcher": "Write", "hooks": [
+                        {"type": "command", "command": "echo custom"}]}]}}
+        (self.target / ".claude/settings.json").write_text(json.dumps(settings), encoding="utf-8")
+        personal = b'{"model":"personal-local-choice"}\n'
+        (self.target / ".claude/settings.local.json").write_bytes(personal)
+        codex_config = b'model = "existing-model"\n[features]\nhooks = false\n'
+        (self.target / ".codex/config.toml").write_bytes(codex_config)
+        prose = b"# Product instructions\r\nPreserve this context.\r\n"
+        (self.target / "CLAUDE.md").write_bytes(prose)
+        self.assertEqual(0, self.install("--host", "codex").returncode)
+        config = (self.target / ".planning/config.yaml").read_bytes()
+        result = self.install("--host", "both")
+        self.assertEqual(0, result.returncode, result.stderr)
+        merged = json.loads((self.target / ".claude/settings.json").read_text())
+        self.assertEqual(settings["permissions"], merged["permissions"])
+        self.assertIn(settings["hooks"]["PreToolUse"][0], merged["hooks"]["PreToolUse"])
+        self.assertEqual(2, len(merged["hooks"]["PreToolUse"]))
+        self.assertTrue((self.target / "CLAUDE.md").read_bytes().startswith(prose))
+        before = self.snapshot()
+        result = self.install("--host", "claude")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(before, self.snapshot())
+        self.assertEqual(config, (self.target / ".planning/config.yaml").read_bytes())
+        self.assertEqual(codex_config, (self.target / ".codex/config.toml").read_bytes())
+        self.assertEqual(personal, (self.target / ".claude/settings.local.json").read_bytes())
+
+    def test_invalid_host_settings_abort_before_any_copy(self):
+        for contents in ('{', '[]', '{"hooks": []}', '{"hooks": {"PreToolUse": {}}}',
+                         '{"hooks": {"PreToolUse": [{"hooks": null}]}}',
+                         '{"hooks": {"PreToolUse": [{"hooks": [{}]}]}}',
+                         '{"hooks": {}, "hooks": {}}', '{"hooks": {}, "timeout": NaN}'):
+            for name in (".codex/hooks.json", ".claude/settings.json"):
+                with self.subTest(contents=contents, name=name):
+                    path = self.target / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(contents, encoding="utf-8")
+                    before = self.snapshot()
+                    result = self.install("--host", "both")
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("host settings", result.stderr)
+                    self.assertEqual(before, self.snapshot())
+                    self.assertFalse((self.target / ".git").exists())
+                    path.unlink()
+
+    def test_customized_host_registration_and_claude_block_require_reconciliation(self):
+        self.assertEqual(0, self.install("--host", "both").returncode)
+        for name in (".codex/hooks.json", "CLAUDE.md"):
+            with self.subTest(name=name):
+                path = self.target / name
+                original = path.read_bytes()
+                path.write_bytes(original.replace(b'"timeout": 10', b'"timeout": 99')
+                                 if name.endswith("json") else original.replace(b"@AGENTS.md", b"@OTHER.md"))
+                before = self.snapshot()
+                result = self.install("--host", "both")
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("reconcile", result.stderr)
+                self.assertEqual(before, self.snapshot())
+                path.write_bytes(original)
+
+    def test_no_hooks_skips_registration_without_removing_existing_hooks(self):
+        result = self.install("--host", "both", "--no-hooks", "--dry-run")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertFalse(self.target.exists())
+        self.assertNotIn("write .codex", result.stdout)
+        self.assertNotIn("settings.json", result.stdout)
+        result = self.install("--host", "both", "--no-hooks")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue((self.target / "CLAUDE.md").exists())
+        self.assertFalse((self.target / ".codex").exists())
+        self.assertFalse((self.target / ".claude/settings.json").exists())
+        self.assertEqual(0, self.install("--host", "both").returncode)
+        before = self.snapshot()
+        self.assertEqual(0, self.install("--host", "both", "--no-hooks").returncode)
+        self.assertEqual(before, self.snapshot())
+
+    def test_registered_hooks_execute_from_installed_linked_worktree_subdirectory(self):
+        result = self.install("--host", "both")
+        self.assertEqual(0, result.returncode, result.stderr)
+        command("git", "add", ".", cwd=self.target)
+        command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                "commit", "--quiet", "-m", "Installed hosts", cwd=self.target)
+        worktree = self.target / ".worktrees/assigned space"
+        command("git", "worktree", "add", "-b", "codex/installed", str(worktree), cwd=self.target)
+        cwd = worktree / "sub directory"
+        cwd.mkdir()
+        environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
+        for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+            settings = json.loads((worktree / name).read_text(encoding="utf-8"))
+            for event, destination in (("PreToolUse", self.target / "outside.txt"),
+                                       ("PreToolUse", worktree / "inside.txt"),
+                                       ("PostToolUse", worktree / ".planning/PROJECT.md")):
+                with self.subTest(host=host, event=event, destination=destination):
+                    handler = settings["hooks"][event][0]["hooks"][0]
+                    if host == "codex" and os.name == "nt":
+                        argv = ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
+                    elif host == "codex":
+                        argv = ["sh", "-c", handler["command"]]
+                    else:
+                        bash = shutil.which("bash")
+                        if os.name == "nt":
+                            git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
+                            if git_bash.is_file():
+                                bash = str(git_bash)
+                        self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
+                        argv = [bash, "-c", handler["command"]]
+                    tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
+                                  if host == "codex" else {"file_path": str(destination)})
+                    payload = {"cwd": str(cwd), "hook_event_name": event,
+                               "tool_name": "apply_patch" if host == "codex" else "Write",
+                               "tool_input": tool_input}
+                    observed = subprocess.run(argv, cwd=cwd, env=environment,
+                                              input=json.dumps(payload), text=True, capture_output=True)
+                    self.assertEqual(0, observed.returncode, observed.stderr)
+                    if destination == worktree / "inside.txt":
+                        self.assertEqual("", observed.stdout.strip())
+                    else:
+                        warning = json.loads(observed.stdout)
+                        self.assertTrue(warning["systemMessage"])
+                        self.assertNotIn("permissionDecision", observed.stdout)
 
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")

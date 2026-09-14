@@ -5,15 +5,77 @@ template from GitHub and installs PyYAML into a dedicated `.ai-venv`. Python's
 `venv` and pip must be available. GitHub and the configured pip package index need
 to be reachable. It does not require a GitHub login for this public template.
 
-One command to download and run it, creating `./my-project`:
+Choose the host integration when creating `./my-project`:
 
 ```text
-python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project --host codex
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project --host claude
 ```
 
 Use `python3` on macOS/Linux if needed. For an existing project, use `--target .`
 from its root or assigned worktree. This executes the repository's script in
 memory; the saved-file commands below are an alternative.
+
+Use `--host both` to share a project between Codex and Claude Code. Omitting
+`--host` selects Codex. Every profile installs the shared `.ai/` workflow,
+canonical `.agents/skills/`, AGENTS.md and pending onboarding records.
+
+| Profile | Native project integration | New worker routes |
+|---|---|---|
+| `codex` | `.codex/hooks.json`; Codex reads AGENTS.md and `.agents/skills/` | Codex |
+| `claude` | `.claude/settings.json`, root CLAUDE.md importing AGENTS.md, `.claude/skills/` entry points | Claude Code |
+| `both` | Both sets of native files | Codex; configure another route during onboarding if desired |
+
+The Claude directory is lowercase `.claude`, including on Windows. These are
+project files intended for Git. Once committed, they propagate into fresh Git
+worktrees along with shared rules, full skills and hook implementations. The
+installer never copies your home `.codex`/`.claude`, credentials, trust approvals,
+session history, or local settings. It leaves existing worker routes authoritative.
+
+## Hooks, host settings and adding another host
+
+Selected profiles add advisory `PreToolUse` and `PostToolUse` registrations for
+the [portable Python hook adapter](../hooks/README.md). Existing hook groups and
+unrelated settings are retained; identical registrations are not added twice.
+Invalid JSON, duplicate keys, incompatible hook structures, edited managed
+registrations or conflicting instruction blocks stop setup before any writes.
+Settings may be reformatted when groups are added; existing values are retained.
+
+Use `--no-hooks` to skip adding registrations. This preserves any existing hooks;
+it does not disable or uninstall them. Existing disabled-hook settings, personal
+overrides and managed policies still apply. Codex config.toml is left untouched;
+if it already has inline hooks, both sources load under Codex's normal rules.
+
+Codex needs a version supporting project lifecycle hooks, a trusted project, and
+review of each new or changed hook in `/hooks`. The installer does not grant
+trust. See [Codex hooks](https://learn.chatgpt.com/docs/hooks) and
+[config layers](https://learn.chatgpt.com/docs/config-file/config-basic).
+Claude uses project settings and CLAUDE.md imports; inspect `/hooks` and `/status`
+after opening the project. See [Claude settings](https://code.claude.com/docs/en/settings),
+[shared instructions](https://code.claude.com/docs/en/memory#agentsmd) and
+[hooks](https://code.claude.com/docs/en/hooks). Restart a host if it has not picked
+up new project files. Installed registrations are not proof of trusted live execution.
+
+Python 3.11+ and Git must be on the host's PATH. Codex uses `python3` on Unix and
+`python` on Windows. Claude's shell hook probes `python3`, falling back to `python`;
+its command shell requires Bash (Git Bash on Windows). The Python adapter itself
+does not invoke Bash. Hook commands locate the Git checkout from their working
+directory; the adapter uses the payload's `cwd`, even when `CLAUDE_PROJECT_DIR`
+still names the primary checkout.
+
+To add Claude to an existing installation from the same template revision:
+
+```text
+python .ai/install.py --target . --host claude --skip-deps --ref COMMIT --dry-run
+python .ai/install.py --target . --host claude --skip-deps --ref COMMIT
+```
+
+Replace COMMIT with the revision that installed the shared files. Keep that
+revision when adding a host; a newer template can conflict with customized or
+older shared files and requires reconciliation. Adding Claude preserves existing
+Codex integration and runtime config; it does not switch an active project's
+workers. Switching profiles never removes the other host. Review the generated
+diff, then commit and deliver it through the normal worktree procedure.
 
 ## Download and run
 
@@ -27,7 +89,7 @@ PowerShell:
 $installer = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + '.py')
 try {
     Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py' -OutFile $installer
-    python $installer --target './my-project'
+    python $installer --target './my-project' --host codex
     if ($LASTEXITCODE -ne 0) { throw 'Workflow installation failed' }
 } finally {
     Remove-Item -LiteralPath $installer -ErrorAction SilentlyContinue
@@ -41,7 +103,7 @@ macOS / Linux:
   installer="$(mktemp)" || exit 1
   trap 'rm -f "$installer"' EXIT
   curl -fsSL 'https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py' -o "$installer" &&
-    python3 "$installer" --target './my-project'
+    python3 "$installer" --target './my-project' --host codex
 )
 ```
 
@@ -49,6 +111,7 @@ These commands execute code from this repository's `main` branch. To inspect it
 first, download the URL to a local file and read it before running Python. To pin
 an installation, replace `main` in the URL with a reviewed commit ID and pass that
 same ID with `--ref COMMIT`. The installer prints the template revision it fetched.
+Replace `codex` with `claude` or `both` in either command as needed.
 
 From a local template checkout, the equivalent is:
 
@@ -73,8 +136,10 @@ Uncommitted source edits are not installed.
   authoritative. Onboarding reconciles them with actual code and user intent.
 - Preserves existing application code, README, Git history and remotes.
 - Preserves an existing `AGENTS.md` and appends project workflow instructions
-  once in a delimited block. Adds local ignore rules to `.gitignore` without replacing it.
-  These two files must use UTF-8; other encodings stop setup before copying.
+  once in a delimited block. Claude profiles similarly preserve CLAUDE.md and
+  append a shared-instructions import. Adds local ignore rules to `.gitignore`
+  without replacing it. Files receiving appended text must use UTF-8; other
+  encodings stop setup before copying.
 - Checks all destination conflicts before copying. Identical resources are accepted;
   differing reusable tools/guides or incompatible directories stop installation
   and list conflicts. Existing project records are preserved rather than conflicts.
@@ -83,8 +148,9 @@ Uncommitted source edits are not installed.
   or linked worktree keeps its repository. A subdirectory of another repository
   is rejected to avoid installing at the wrong level.
 - Creates `.ai-venv`, installs runtime requirements, and runs phase status as a
-  smoke check. It does not install agent CLIs, configure credentials, register
-  slash commands, fill project identity, commit files or publish anything.
+  smoke check. It registers selected-host hooks and skill discovery entries, but
+  does not install agent CLIs, configure credentials, register `.ai/commands/` as
+  native slash commands, fill project identity, commit files or publish anything.
 
 This is an initial installer, not an updater for customized workflow files.
 Use `--dry-run` to fetch and preview without changing the target. Use
@@ -160,6 +226,9 @@ If the directory contained existing files, inspect `git status` and stage only
 the installer additions and reviewed instruction/ignore changes; the directory
 arguments above can also stage unrelated work. If installing into an already
 assigned worktree, the agent can review and commit setup there directly.
+Also stage the selected native integration files shown by `git status`: `.codex`
+for Codex; CLAUDE.md and `.claude` for Claude. Inspect individual paths before
+staging a pre-existing host directory; never stage personal settings or credentials.
 
 Activate the environment from the project directory:
 

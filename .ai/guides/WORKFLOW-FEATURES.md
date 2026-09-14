@@ -29,6 +29,7 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 | Verified publication | Push/create/update phase PR and inspect required remote checks | Runtime `publish` | Publishing does not merge or declare pending checks passed |
 | Default final delivery | Review, verify, automatically merge and confirm the remote result unless the user opts out | Coordinator through the forge; Python publisher only publishes | Required checks/reviews still apply; cleanup needs separate authorization |
 | Advisory hooks | Warn about common workflow mistakes | [Hook guide](../hooks/README.md) | Return success; neither sandbox nor permission enforcement |
+| Host installation profiles | Native Codex or Claude instructions, skill discovery and advisory hook registrations | [Installer](../commands/install.md), `--host codex\|claude\|both` | Project files propagate through Git; existing settings and host trust remain authoritative |
 
 ## What is installed, executable or supplied as guidance
 

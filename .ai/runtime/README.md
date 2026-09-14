@@ -95,10 +95,37 @@ reasoning effort, retain the host defaults unless overridden in those commands.
 Check the installed host's execution and worktree permissions;
 prompts and Git auditing do not sandbox arbitrary commands or external services.
 
+The [installer](../commands/install.md) selects initial routes by host: Codex for
+`--host codex` or `--host both`, and [claude_worker.py](claude_worker.py) for a
+fresh `--host claude` project. Existing `.planning/config.yaml` is never switched
+when another host is added. To choose Claude explicitly during onboarding, set
+the worker, documentor and verifier command lists to:
+
+```yaml
+[python, .ai/runtime/claude_worker.py, --kind, "{kind}", --result, "{result}"]
+```
+
+The Claude adapter runs `claude -p --output-format json --no-session-persistence`
+with the complete assignment on stdin and the assigned checkout as cwd. It uses
+Claude's configured model and permission defaults, preserving project context
+and hooks. Install/authenticate Claude separately and configure needed project
+tool permissions before dispatch; permission denials return a failed result,
+not a fabricated completion. No permission bypass or `--bare` mode is added.
+
+For code/documentation, the final response goes to the runtime log and never
+overwrites the worker's committed SUMMARY. The verifier exposes only Read, Glob
+and Grep, separately denies MCP tools, and saves a successful final report to
+the external result path without overwriting an existing file. Configured checks
+run through the runtime; the Claude verifier cannot run Bash checks itself.
+Tool restrictions and prompts are not an OS sandbox; configured host hooks can
+still run, and the runtime audits verifier checkout changes. Failed CLI runs,
+invalid result JSON, empty reports or permission denials fail the adapter.
+
 Tracked `.agents/skills/` files travel with committed inputs into fresh worker
-checkouts. Codex can discover them there; required methods are also named by path
-in PLAN's Read first section. Other adapters can read those same Markdown
-paths. The runtime needs no new skill configuration or registration; follow the
+checkouts. Codex can discover them there; Claude installations expose thin
+`.claude/skills/` entries pointing to the same complete methods. Required methods
+are also named by path in PLAN's Read first section. Other adapters can read
+those same Markdown paths. The runtime needs no new skill configuration; follow the
 [repository skill guide](../guides/AGENT-SKILLS.md) for selection and upkeep.
 
 For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's
