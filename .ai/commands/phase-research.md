@@ -20,7 +20,7 @@ implementation, acceptance of unknown behavior or merged delivery.
 ## Full research method
 
 Read [research](../templates/research.md) and the
-[phase researcher](../library/agents/phase-researcher.md). Preserve locked decisions,
+[researcher](../agents/researcher.md). Preserve locked decisions,
 primary sources, version/compatibility evidence, recommendations and uncertainty
 in the actual result. Project-wide research can use the complete
 [research-project templates](../templates/research-project/). Distinguish the

@@ -1,5 +1,52 @@
 # Template and planning migration changes
 
+## 2026-09-13 — Complete agent methods and connected specialist handoffs
+
+- GitHub review on PR #31 identified a missing producer input: the verifier
+  referenced code-reviewer without its required scope. Supply a `<config>` block
+  with the recorded phase-start revision, verified ancestor relationship and
+  exact changed-file list through the reviewed revision. Regression fixtures now
+  consume that block and check baseline files are excluded from the review scope.
+
+- User requested a separate worktree, full non-compact GSD-core agents adapted
+  slightly to local workflows/paths, useful smaller roles within existing
+  commands, and commit/push/PR/review repairs/merge/sync/cleanup. Work is on
+  `codex/gsd-agent-workflows`; adopting project records remain unfilled.
+- Adapt eleven complete source agents at revision
+  `4713ffba761a069bbd79e4833b4bea4e14848388`: executor→coder,
+  planner→phase-preparer, plan-checker→phase-checker,
+  phase-researcher→researcher, verifier, doc-writer, doc-verifier,
+  codebase-mapper, debugger, code-reviewer and integration-checker.
+  Preserve all method sections and examples; no compact agents are imported.
+  `.ai/agents/PROVENANCE.json` records original/adapted LF-normalized hashes and
+  inverse edits that reconstruct each complete pinned original without network.
+  `.ai/THIRD-PARTY-NOTICES.md` retains MIT attribution and license.
+- Keep coordinator as local scheduler and documentor as the existing runtime
+  entry to full doc-writer. No new phase commands or worker configuration routes.
+  Runtime assignments connect writing to independent document/flow verification;
+  coordinator routes claim failures to writer fix mode or implementation defects
+  to owned coder corrections, then obtains current verification.
+- Replace direct shared-state writes with coordinator proposals, protect exact
+  assigned worktree/branch identity, and deliver read-only review reports outside
+  the checkout. CONTEXT remains intent authority; source mode flags, research,
+  fuzzy overrides and later phase names cannot waive current required behavior.
+  Retain source SDK/host examples as explicitly non-executable local examples,
+  with an operation mapping in `.ai/references/agent-adaptation.md`.
+- Pinned external links preserve full supporting methods without restoring the
+  deliberately removed library. Repair stale library/catalog/license references
+  throughout active guidance and template adapter notes. Catalog only the 25
+  retained templates; no removed compact/specialty template is resurrected.
+- Repair CI fixtures that still loaded deleted summary-standard and TDD library
+  files. Exercise an explicitly supplied summary variant in-memory and the actual
+  supported TDD feature example from TEMPLATE-CONTRACT. Worker fixtures check that
+  dispatched method paths exist; the documentation workflow test follows writing
+  through independent verification and checks the external report boundary.
+  Link checks distinguish literal inline examples from actual navigation.
+- Source audit read all eleven full originals and checked all 61 distinct
+  referenced upstream methods/templates/workflows. Independent verification and
+  local/remote check results accompany this change's PR; prior merged red CI is
+  not accepted as passing evidence for this revision.
+
 Source: open-gsd/gsd-core c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977 (MIT).
 
 This log records adaptations and conflict resolutions, not a shortened replacement

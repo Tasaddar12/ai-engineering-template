@@ -191,19 +191,20 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 
 This complete authoring guide retains its source content, examples, and methods.
 Only recorded namespace/reference substitutions and explicit local conflict
-corrections have been made. Source attribution and exact original hashes are
-isolated in `.ai/library/THIRD-PARTY-NOTICES.md` and `PROVENANCE.json`.
+corrections have been made. Source attribution is retained in `.ai/THIRD-PARTY-NOTICES.md`; the
+original template adaptation history is in `changes.log`. The previous template
+import manifest was removed during pruning; no absent manifest is claimed here.
 
-Read `.ai/library/README.md` for the local producer/consumer mapping and execution
+Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
 boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. The retained `config.json`, `/workflow:*` commands, tool
-names, hooks, and Node CLI examples describe supporting source capabilities;
+`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
+examples describe supporting source capabilities; no JSON config template is shipped;
 this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Retained specialty workflows are full source
-guidance for explicit future integration, not promises of installed features.
+identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
+guidance for explicit assignments, not promises of installed features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

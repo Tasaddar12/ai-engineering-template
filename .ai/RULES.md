@@ -167,7 +167,8 @@ records; instructional examples are not real project decisions.
 
 The [template adaptation](references/template-adaptation.md) defines local runtime, host and
 authority differences; [changes.log](../changes.log) records template maintenance
-adaptations. The imported support library supplies complete methods, not installed
-slash commands. Use actual local procedures and the runtime contract for execution.
+adaptations. Complete agent methods and their pinned external supporting sources
+supply guidance, not installed slash commands. Use actual local procedures and
+the runtime contract for execution.
 Project records belong to `.planning/`; reusable rules, templates and tooling
 belong to `.ai/`.

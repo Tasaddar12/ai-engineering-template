@@ -48,22 +48,22 @@ slow unrelated component does not block every later component behind a wave.
 
 ## Template fidelity and execution
 
-All 40 adapted templates are retained in full at stable artifact filenames under
-[`.ai/templates/`](.ai/templates/README.md), including teaching guidance, examples,
-counterexamples and consumer descriptions. [Supporting workflow guidance](.ai/library/README.md)
-keeps referenced methods available. [changes.log](changes.log) records adaptations.
+The retained templates keep their complete teaching guidance, examples,
+counterexamples and consumer descriptions at stable filenames under
+[`.ai/templates/`](.ai/templates/README.md). Selected full
+[agent methods](.ai/agents/README.md) connect research, preparation, implementation
+and independent review through the existing procedures. [changes.log](changes.log) records adaptations.
 Source attribution and revision history remain in
-[third-party notices](.ai/library/THIRD-PARTY-NOTICES.md) and provenance.
+[third-party notices](.ai/THIRD-PARTY-NOTICES.md) and provenance.
 
 The executable interface remains `python .ai/runtime/phase.py`. Its
 [additive contract](.ai/runtime/TEMPLATE-CONTRACT.md) explains the runtime metadata
-used alongside the complete templates. Library workflow documents and command
-names are supplied guidance; their presence does not install every documented
-command, agent dispatcher or host integration.
+used alongside the complete templates. Agent method files supply instructions;
+their presence does not install commands, dispatchers or host integrations.
+[Agent adaptation](.ai/references/agent-adaptation.md) defines the local boundaries.
 
-`.planning/config.yaml` configures this runtime. The complete library
-`config.json` template is retained separately; its settings are not silently
-translated into Python runtime settings.
+`.planning/config.yaml` configures this runtime. Upstream configuration examples
+are not silently translated into Python runtime settings.
 
 ## Adopt the template
 

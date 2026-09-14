@@ -81,8 +81,9 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.write(self.primary, "README.md", "Fixture project\n")
         self.write(self.primary, "AGENTS.md", "Follow the approved phase assignment and commit scoped changes.\n")
         self.write(self.primary, ".ai/RULES.md", "Preserve approved scope and use assigned worktrees.\n")
-        for role in ("coder", "documentor", "verifier"):
-            self.write(self.primary, f".ai/agents/{role}.md", f"# {role}\n\nFollow the assigned phase responsibility.\n")
+        # Dispatch must hand off real, shipped methods, including specialists.
+        shutil.copytree(SOURCE / ".ai/agents", self.primary / ".ai/agents")
+        shutil.copytree(SOURCE / ".ai/references", self.primary / ".ai/references")
         self.write(self.primary, ".planning/PROJECT.md", "# Fixture project\n\nExercise phase execution.\n")
         self.write(self.primary, ".planning/REQUIREMENTS.md", "# Requirements\n\n- R1: Components integrate correctly.\n")
         self.write(self.primary, ".planning/ROADMAP.md", "# Roadmap\n\n- 01: Exercise phase execution.\n")
@@ -323,10 +324,15 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assert_primary_untouched()
 
     def test_runs_component_commits_summary_and_verifies_phase(self) -> None:
+        review_base = self.git(self.checkout, "rev-parse", "HEAD")
         self.cli("run", PHASE)
         self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding='utf-8'), "01-01 implemented\n")
         self.assertTrue(self.summary("01-01").is_file())
         self.cli("verify", PHASE)
+        review = next(event for event in self.events(include_verifier=True) if event["kind"] == "verifier")
+        self.assertEqual(review["review_scope"]["diff_base"], review_base)
+        self.assertEqual(set(review["review_scope"]["files"]),
+                         {"src/01-01.txt", (PHASE_PATH / "01-01-SUMMARY.md").as_posix()})
         self.assertTrue((self.checkout / PHASE_PATH / "01-VERIFICATION.md").is_file())
         self.assertEqual(len(self.events()), 1)
         self.assertEqual(self.git(self.checkout, "status", "--porcelain"), "")
@@ -454,6 +460,11 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.commit("Prepare documentation-only phase")
         self.cli("run", PHASE)
         self.assertEqual([event["kind"] for event in self.events()], ["documentation"])
+        self.assertIn(".ai/agents/doc-writer.md", self.events()[0]["methods"])
+        self.cli("verify", "01")
+        review = next(event for event in self.events(include_verifier=True) if event["kind"] == "verifier")
+        self.assertTrue({".ai/agents/doc-verifier.md", ".ai/agents/integration-checker.md"}.issubset(review["methods"]))
+        self.assertFalse(Path(review["report_written"]).is_relative_to(Path(review["worktree"])))
         self.assertTrue((self.checkout / "docs/guide.md").is_file())
         self.assertFalse((self.checkout / "src").exists())
 

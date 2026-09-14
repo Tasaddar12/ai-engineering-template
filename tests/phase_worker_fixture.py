@@ -144,8 +144,20 @@ def main() -> int:
     save_event()
     try:
         assert assignment.is_file(), "The worker must receive an assignment file"
-        assert assignment.read_text(encoding="utf-8").strip(), "The assignment is empty"
+        prompt = assignment.read_text(encoding="utf-8")
+        assert prompt.strip(), "The assignment is empty"
+        methods = sorted(set(re.findall(r"\.ai/(?:agents|references)/[a-z-]+\.md", prompt)))
+        for method in methods:
+            assert (root / method).is_file(), f"Assignment requires missing method: {method}"
+            assert (root / method).read_text(encoding="utf-8").strip(), f"Assignment method is empty: {method}"
+        event["methods"] = methods
         if kind == "verifier":
+            scope_match = re.search(r"(?s)<config>\n(.*?)</config>", prompt)
+            assert scope_match, "Code-reviewer cannot run without a review scope"
+            scope = yaml.safe_load(scope_match[1])
+            assert isinstance(scope["files"], list), "Review files must be exact paths"
+            assert re.fullmatch(r"[0-9a-f]{40}", scope["diff_base"]), "Review base must be an exact revision"
+            event["review_scope"] = scope
             revision = git(root, "rev-parse", "HEAD")
             if mode == "verifier-stale":
                 revision = git(root, "rev-parse", "HEAD~1")

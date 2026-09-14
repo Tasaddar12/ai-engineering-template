@@ -1,7 +1,7 @@
 # Starting requests
 
-Use these prompts in ordinary language. Local Markdown procedures and supplied
-library command names do not automatically register host slash commands. Adapt the
+Use these prompts in ordinary language. Local Markdown procedures and agent
+methods do not automatically register host slash commands. Adapt the
 project details and delivery boundary to the work you intend to authorize.
 
 Project records belong in `.planning/`; reusable instructions and templates stay

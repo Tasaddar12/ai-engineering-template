@@ -26,9 +26,11 @@ preparation, implementation and documentation normally share one phase PR.
 
 ## Template consumers
 
-The complete [template catalog](../templates/README.md) identifies the producing and consuming roles. [The reference library](../library/README.md) preserves those full definitions.
+The [template catalog](../templates/README.md) identifies retained authoring sources.
+The complete [agent methods](../agents/README.md) define the selected responsibilities
+and their handoffs within these existing procedures.
 The local procedures above connect the main lifecycle to this repository's Python
 runtime; use [adaptation](../references/template-adaptation.md) and the
 [template guide](../../docs/TEMPLATE-GUIDE.md) to distinguish a callable operation
-from a retained upstream method. A named method is not proof that the host has
+from an agent method. A named method is not proof that the host has
 registered a slash command or agent type.
