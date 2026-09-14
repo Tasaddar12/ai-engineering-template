@@ -10,6 +10,17 @@ from pathlib import Path, PurePosixPath
 import yaml
 
 
+WORKFLOW_ROOT = Path(__file__).resolve().parents[1].name
+AGENT_ENTRY = "CLAUDE.md" if WORKFLOW_ROOT == ".claude" else "AGENTS.md"
+ROLE_ROOT = f"{WORKFLOW_ROOT}/" + ("agents" if WORKFLOW_ROOT == ".ai" else "roles")
+SKILL_ROOT = ".agents/skills" if WORKFLOW_ROOT == ".ai" else f"{WORKFLOW_ROOT}/skills"
+
+
+def workflow_path(relative):
+    """Resolve reusable resources in this runtime's own installed namespace."""
+    return f"{WORKFLOW_ROOT}/{relative}"
+
+
 class PhaseError(Exception):
     """An actionable workflow failure, rather than successful completion."""
 
@@ -84,7 +95,7 @@ def phase_goal(body):
 
 def file_template(root, name):
     """Use the complete first File Template block, never the teaching examples."""
-    path = root / ".ai/templates" / name
+    path = root / workflow_path("templates") / name
     require(path.is_file(), f"Missing upstream template: {path}")
     text = path.read_text(encoding="utf-8-sig")
     match = re.search(r"(?ms)^## File Template\b.*?^```markdown\s*\n(.*?)^```\s*$", text)
@@ -167,7 +178,7 @@ class Phase:
         return self.directory / f"{self.number}-{suffix}.md"
 
     def fingerprint(self):
-        paths = [self.root / ".planning/config.yaml", self.root / ".ai/RULES.md",
+        paths = [self.root / ".planning/config.yaml", self.root / workflow_path("RULES.md"),
                  self.root / ".planning/PROJECT.md", self.root / ".planning/REQUIREMENTS.md",
                  self.root / ".planning/ROADMAP.md"]
         paths += [p for p in self.directory.glob("*.md") if not
@@ -251,7 +262,7 @@ def load_phase(root, name, ready=False):
         for value in data["files"] + data["documentation"]:
             safe_path(root, value)
             reserved = [".planning/phases/", ".planning/STATE.md", ".planning/PROJECT.md", ".planning/REQUIREMENTS.md",
-                        ".ai/RULES.md", ".planning/config.yaml", ".planning/ROADMAP.md"]
+                        workflow_path("RULES.md"), ".planning/config.yaml", ".planning/ROADMAP.md"]
             require(not overlaps([value], reserved),
                     f"{cid}: phase records, STATE and immutable inputs are coordinator-owned; summary ownership is automatic")
         for value in data["documentation"]:

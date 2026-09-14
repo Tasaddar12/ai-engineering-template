@@ -30,6 +30,14 @@ the selected skill's body is loaded when needed. Each entry is a `SKILL.md` with
 a small YAML header containing its name and description. Repository skills need
 no personal installation. See the [official skill documentation](https://learn.chatgpt.com/docs/build-skills).
 
+[Installation](../commands/install.md) puts complete skill bodies under
+`.codex/skills` or `.claude/skills`. A Codex installation generates thin entries
+in `.agents/skills`, retaining each skill's metadata and directing Codex to read
+the complete method under `.codex/skills`. Resolve references from that complete
+method's location. Claude discovers its complete `.claude/skills` bodies directly.
+All required files travel with Git; maintain the complete methods as the source
+of truth. See [Claude skill discovery](https://code.claude.com/docs/en/skills).
+
 For a worker whose method matters to the result, the coordinator lists the
 repository-relative skill path in the full PLAN's **read-first/context inputs**,
 with a short reason. For example:

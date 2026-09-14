@@ -10,6 +10,12 @@ Python 3.11+ and PyYAML are required. Install `requirements.txt` into the host's
 virtual environment. Git and the chosen worker executable must be available;
 publication additionally requires an authenticated GitHub CLI.
 
+Installation places this runtime under `.codex/runtime` or `.claude/runtime`.
+It locates rules, role methods, workflow procedures and skills in the same host
+layout. Project records remain under `.planning`. Commands and references in
+the installed guides use the selected layout; the template authoring checkout
+continues to use its internal layout.
+
 Run from an assigned immediate-child worktree under the primary checkout's
 ignored `.worktrees/`. Commands use the current repository and named branch.
 The primary checkout accepts inspection only. Config and phase inputs must be
@@ -95,10 +101,38 @@ reasoning effort, retain the host defaults unless overridden in those commands.
 Check the installed host's execution and worktree permissions;
 prompts and Git auditing do not sandbox arbitrary commands or external services.
 
-Tracked `.agents/skills/` files travel with committed inputs into fresh worker
-checkouts. Codex can discover them there; required methods are also named by path
-in PLAN's Read first section. Other adapters can read those same Markdown
-paths. The runtime needs no new skill configuration or registration; follow the
+The [installer](../commands/install.md) selects initial routes by host: Codex for
+`--host codex`, and [claude_worker.py](claude_worker.py) for a fresh `--host claude`
+project. Existing `.planning/config.yaml` remains authoritative. To choose Claude
+explicitly during onboarding, set
+the worker, documentor and verifier command lists to:
+
+```yaml
+[python, .claude/runtime/claude_worker.py, --kind, "{kind}", --result, "{result}"]
+```
+
+The Claude adapter runs `claude -p --output-format json --no-session-persistence`
+with the complete assignment on stdin and the assigned checkout as cwd. It uses
+Claude's configured model and permission defaults, preserving project context
+and hooks. Install/authenticate Claude separately and configure needed project
+tool permissions before dispatch; permission denials return a failed result,
+not a fabricated completion. No permission bypass or `--bare` mode is added.
+
+For code/documentation, the final response goes to the runtime log and never
+overwrites the worker's committed SUMMARY. The verifier exposes only Read, Glob
+and Grep, separately denies MCP tools, and saves a successful final report to
+the external result path without overwriting an existing file. Configured checks
+run through the runtime; the Claude verifier cannot run Bash checks itself.
+Tool restrictions and prompts are not an OS sandbox; configured host hooks can
+still run, and the runtime audits verifier checkout changes. Failed CLI runs,
+invalid result JSON, empty reports or permission denials fail the adapter.
+
+Complete skills are installed under `.codex/skills` or `.claude/skills` and travel
+with committed inputs into fresh worker checkouts. Codex discovers thin entries
+under `.agents/skills` that direct it to the complete installed methods. Claude
+discovers its complete skills directly. Required methods are also named by path
+in PLAN's Read first section. Other adapters can read those same Markdown paths.
+The runtime needs no new skill configuration; follow the
 [repository skill guide](../guides/AGENT-SKILLS.md) for selection and upkeep.
 
 For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's

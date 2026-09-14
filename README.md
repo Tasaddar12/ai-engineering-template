@@ -70,13 +70,23 @@ are not silently translated into Python runtime settings.
 
 Start with the [download-and-run installer](.ai/commands/install.md) for a new directory
 or an existing project. It preserves existing files and sets up the Python
-runtime in `.ai-venv`. Preview with `--dry-run`; then finish onboarding below.
+runtime in `.codex-venv` or `.claude-venv`. Preview with `--dry-run`; then finish onboarding below.
+Select `--host codex` or `--host claude` to install the entire workflow under
+`.codex` or `.claude`, including rules, runtime, complete skills and advisory
+hooks. A fresh installation has no separate `.ai` directory. Codex is the default;
+`--no-hooks` skips new hook registrations. Existing project settings are preserved.
 Installed instructions describe the destination project, and existing planning
-records remain authoritative. The guide also covers repairing copies made by
-the original installer with `--repair-template-context`.
+records remain authoritative. Existing `.ai` + `.planning` projects can use
+`--migrate-existing` to rebuild the selected host layout while preserving project
+history, custom material and verified original-file backups. Preview the migration
+with `--dry-run` in an assigned worktree. The guide also covers the narrower
+original-release repair with `--repair-template-context`.
 The installer leaves this repository's `docs/` directory out of the target.
-Procedures and prompts are available directly in `.ai/commands/`, with supporting
-workflow guides under `.ai/guides/`.
+Installed procedures live in the selected host's `workflows` directory, role
+methods in `roles`, and supporting guides in `guides`. Codex uses root AGENTS.md
+and `.agents/skills` discovery entries; Claude uses root CLAUDE.md and its native
+skills directory. Committed files propagate to new Git worktrees. The links below
+refer to the template authoring checkout; installed instructions use host paths.
 
 1. Follow [onboard](.ai/commands/onboard.md) in an assigned worktree. Establish the
    actual project's identity and inspect its baseline before asserting readiness.

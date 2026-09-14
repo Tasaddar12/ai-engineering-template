@@ -10,12 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def guidance_files():
-    yield ROOT / "AGENTS.md"
-    yield ROOT / "README.md"
-    for directory in (".ai", ".agents", ".planning", "docs"):
+    for name in ("AGENTS.md", "CLAUDE.md", "README.md"):
+        if (ROOT / name).is_file():
+            yield ROOT / name
+    for directory in (".ai", ".codex", ".claude", ".agents", ".planning", "docs"):
         for path in (ROOT / directory).rglob("*.md"):
             relative = path.relative_to(ROOT).as_posix()
-            if relative.startswith(".ai/templates/"):
+            if any(relative.startswith(root + "/templates/") for root in (".ai", ".codex", ".claude")):
                 continue  # Imported source has its own provenance/reference audit.
             yield path
 

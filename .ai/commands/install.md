@@ -1,19 +1,158 @@
 # Install and set up the workflow
 
 Use Python 3.11+ and Git on Windows, macOS or Linux. The installer downloads the
-template from GitHub and installs PyYAML into a dedicated `.ai-venv`. Python's
+template from GitHub and installs PyYAML into a host-specific virtual environment. Python's
 `venv` and pip must be available. GitHub and the configured pip package index need
 to be reachable. It does not require a GitHub login for this public template.
 
-One command to download and run it, creating `./my-project`:
+Choose the host integration when creating `./my-project`:
 
 ```text
-python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project --host codex
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project --host claude
 ```
 
 Use `python3` on macOS/Linux if needed. For an existing project, use `--target .`
 from its root or assigned worktree. This executes the repository's script in
 memory; the saved-file commands below are an alternative.
+
+Choose `--host codex` or `--host claude`; the downloaded script defaults to Codex.
+An installed `.claude/install.py` defaults to Claude when repeated locally.
+The entire workflow is installed inside the selected host directory. A fresh
+installation has no separate `.ai` directory. Pending project records remain
+under `.planning`.
+
+| Installed location | Codex | Claude Code |
+|---|---|---|
+| Root instructions | `AGENTS.md` | `CLAUDE.md` with the complete project instructions |
+| Rules, guides, templates and runtime | `.codex` | `.claude` |
+| Workflow procedures | `.codex/workflows` | `.claude/workflows` |
+| Role methods | `.codex/roles` | `.claude/roles` |
+| Complete skills | `.codex/skills` | `.claude/skills` |
+| Native skill discovery | `.agents/skills` entries linking to complete Codex skills | Complete Claude skills discovered directly |
+| Hook registration | `.codex/hooks.json` | `.claude/settings.json` |
+| Local Python environment | `.codex-venv` | `.claude-venv` |
+| Initial worker routes | Codex | Claude Code |
+
+References in installed instructions, skills, procedures and runtime routes point
+to the selected host layout. Role methods are stored under `roles` and procedures
+under `workflows`; installing them does not register native subagents or slash
+commands. A fresh Claude installation does not generate an AGENTS.md or Codex
+skill wrappers.
+
+The Claude directory is lowercase `.claude`, including on Windows. These are
+project files intended for Git. Once committed, they propagate into fresh Git
+worktrees along with rules, full skills and hook implementations. The
+installer never copies your home `.codex`/`.claude`, credentials, trust approvals,
+session history, or local settings. It leaves existing worker routes authoritative.
+
+## Hooks and existing host settings
+
+Selected profiles add advisory `PreToolUse` and `PostToolUse` registrations for
+the [portable Python hook adapter](../hooks/README.md). Existing hook groups and
+unrelated settings are retained; identical registrations are not added twice.
+Invalid JSON, duplicate keys, incompatible hook structures, edited managed
+registrations or conflicting instruction blocks stop setup before any writes.
+Settings may be reformatted when groups are added; existing values are retained.
+
+Use `--no-hooks` to skip adding registrations. This preserves any existing hooks;
+it does not disable or uninstall them. Existing disabled-hook settings, personal
+overrides and managed policies still apply. Codex config.toml is left untouched;
+if it already has inline hooks, both sources load under Codex's normal rules.
+
+Codex needs a version supporting project lifecycle hooks, a trusted project, and
+review of each new or changed hook in `/hooks`. The installer does not grant
+trust. See [Codex hooks](https://learn.chatgpt.com/docs/hooks) and
+[config layers](https://learn.chatgpt.com/docs/config-file/config-basic).
+Claude uses project settings and root CLAUDE.md; inspect `/hooks` and `/status`
+after opening the project. See [Claude settings](https://code.claude.com/docs/en/settings),
+[shared instructions](https://code.claude.com/docs/en/memory#agentsmd) and
+[hooks](https://code.claude.com/docs/en/hooks). Restart a host if it has not picked
+up new project files. Installed registrations are not proof of trusted live execution.
+
+Python 3.11+ and Git must be on the host's PATH. Codex uses `python3` on Unix and
+`python` on Windows. Claude's shell hook probes `python3`, falling back to `python`;
+its command shell requires Bash (Git Bash on Windows). The Python adapter itself
+does not invoke Bash. Hook commands locate the Git checkout from their working
+directory; the adapter uses the payload's `cwd`, even when `CLAUDE_PROJECT_DIR`
+still names the primary checkout.
+
+To repeat the selected installation from the same template revision, use its
+installed script. For example, in a Claude project:
+
+```text
+python .claude/install.py --target . --host claude --skip-deps --ref COMMIT --dry-run
+python .claude/install.py --target . --host claude --skip-deps --ref COMMIT
+```
+
+Replace COMMIT with the revision that installed the workflow. A newer template
+can conflict with customized or older files and requires reconciliation. Existing
+project context, settings and runtime config remain authoritative; choosing a
+host does not rewrite an existing project's worker routes.
+
+An older installation with a separate `.ai` directory needs migration in an
+assigned worktree. The installer refuses to leave that older workflow beside a
+new host layout. Use the migration mode below to preserve existing project data
+and custom material. Changing `--host` alone is not a migration command.
+
+## Migrate an existing `.ai` and `.planning` project
+
+Use an assigned worktree with the existing setup committed. Download the current
+installer as described below, then preview the selected destination:
+
+```text
+python /path/to/install.py --target . --host claude --migrate-existing --skip-deps --dry-run
+python /path/to/install.py --target . --host claude --migrate-existing --skip-deps
+```
+
+Use `--host codex` for Codex. Omit `--skip-deps` to create the selected host's
+virtual environment and install its requirements. The old `.ai-venv` is left
+intact; it is not copied into the new environment.
+
+Migration preflights the entire change and creates a verified copy of the
+original files under the ignored `.workflow-backups/` directory before writing.
+Each snapshot has a `files/` tree with the originals and a `MANIFEST.json` recording
+their paths, SHA-256 hashes and file modes. Its own ignore file also protects an
+incomplete backup when setup fails before the project ignore rules are updated. Keep that local
+backup until you have reviewed and tested the migration; it is not included in
+Git commits or automatically propagated to another worktree. The backup holds
+the original bytes for recovery, including replaced runtime files and settings.
+
+- All existing `.planning` records, phase summaries, specs, decisions and history
+  are preserved. Only necessary workflow/virtual-environment paths in config are
+  translated; existing custom worker commands and checks remain authoritative.
+  An unchanged template-default config selects the new host's worker defaults.
+- Existing rules, templates, skills and custom workflow material move into the
+  selected host directory. Local paths in supported text guidance are translated;
+  unknown binary files retain their bytes. Shipped runtime, hook and installer
+  files are refreshed from the selected template revision, with their originals
+  retained in the backup.
+- The selected root entry gets current workflow instructions while preserving
+  custom guidance. A mapping explains old paths in historical or pending phase
+  records; those records are not rewritten just to change their namespace.
+- Existing native settings and hooks are retained and merged. Conflicting native
+  files, linked paths and ambiguous instruction blocks stop preflight rather
+  than overwrite a second setup. Original files and empty directories are removed
+  from `.ai` only after backup; no separate `.ai` directory remains on success.
+  Ignore patterns for relocated custom workflow paths move with those paths.
+
+Review the reported refreshed files and the Git diff, reconcile any local runtime
+customizations from the backup, run the selected host's `runtime/phase.py status`
+and your project checks, and commit the migration slice. A Claude migration
+preserves customized worker routes even when they invoke Codex; update those
+routes deliberately if the project should run only Claude workers.
+
+The historical-path mapping helps agents read old references; the runtime still
+uses PLAN ownership literally. Reconcile pending PLAN ownership and Read first
+paths with the selected layout before dispatch, then recheck and reverify those
+plans. Preserve completed records and their revision-specific evidence.
+
+Migration does not modify Git-common-directory checkpoints, running processes or
+other worktrees. Finish or reconcile old attempts with their original runtime
+before starting new work; changed runtime inputs invalidate old verification.
+Older projects whose records still live inside `.ai` rather than `.planning`
+must first complete that project-record migration with their compatible runtime.
+Do not remove the original backup when inspecting a failed or interrupted setup.
 
 ## Download and run
 
@@ -27,7 +166,7 @@ PowerShell:
 $installer = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + '.py')
 try {
     Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py' -OutFile $installer
-    python $installer --target './my-project'
+    python $installer --target './my-project' --host codex
     if ($LASTEXITCODE -ne 0) { throw 'Workflow installation failed' }
 } finally {
     Remove-Item -LiteralPath $installer -ErrorAction SilentlyContinue
@@ -41,7 +180,7 @@ macOS / Linux:
   installer="$(mktemp)" || exit 1
   trap 'rm -f "$installer"' EXIT
   curl -fsSL 'https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py' -o "$installer" &&
-    python3 "$installer" --target './my-project'
+    python3 "$installer" --target './my-project' --host codex
 )
 ```
 
@@ -49,22 +188,18 @@ These commands execute code from this repository's `main` branch. To inspect it
 first, download the URL to a local file and read it before running Python. To pin
 an installation, replace `main` in the URL with a reviewed commit ID and pass that
 same ID with `--ref COMMIT`. The installer prints the template revision it fetched.
+Replace `codex` with `claude` in either command as needed. The download URL always
+names the upstream packaging script; it is independent of the installed layout.
 
-From a local template checkout, the equivalent is:
-
-```text
-python .ai/install.py --target /path/to/project
-```
-
-The local script still fetches `main` from GitHub by default. Use
+The saved or installed script also fetches `main` from GitHub by default. Use
 `--source /path/to/template --ref COMMIT` for a local, committed template revision.
 Uncommitted source edits are not installed.
 
 ## What setup does
 
-- Installs reusable `.ai/` tooling, full instructional templates and repository skills.
-  Procedures and prompts live in `.ai/commands/`, with supporting guides in
-  `.ai/guides/`. No files are installed into the project's `docs/` directory. Source attribution remains
+- Installs all reusable tooling, full instructional templates and complete skills
+  into `.codex` or `.claude`. Procedures and prompts live in `workflows`, with
+  supporting material in `guides`. No files are installed into the project's `docs/` directory. Source attribution remains
   in third-party notices.
 - Creates a project agent entry point and clean onboarding-pending planning records
   from dedicated installation assets. It does not copy the source repository's
@@ -72,9 +207,11 @@ Uncommitted source edits are not installed.
 - Preserves existing PROJECT, REQUIREMENTS, ROADMAP, STATE and config files as
   authoritative. Onboarding reconciles them with actual code and user intent.
 - Preserves existing application code, README, Git history and remotes.
-- Preserves an existing `AGENTS.md` and appends project workflow instructions
-  once in a delimited block. Adds local ignore rules to `.gitignore` without replacing it.
-  These two files must use UTF-8; other encodings stop setup before copying.
+- Preserves the selected root entry file, AGENTS.md or CLAUDE.md, and appends
+  complete project workflow instructions once in a delimited block.
+  Adds local ignore rules to `.gitignore`
+  without replacing it. Files receiving appended text must use UTF-8; other
+  encodings stop setup before copying.
 - Checks all destination conflicts before copying. Identical resources are accepted;
   differing reusable tools/guides or incompatible directories stop installation
   and list conflicts. Existing project records are preserved rather than conflicts.
@@ -82,9 +219,10 @@ Uncommitted source edits are not installed.
 - Initializes Git if the target is outside a repository. An existing Git root
   or linked worktree keeps its repository. A subdirectory of another repository
   is rejected to avoid installing at the wrong level.
-- Creates `.ai-venv`, installs runtime requirements, and runs phase status as a
-  smoke check. It does not install agent CLIs, configure credentials, register
-  slash commands, fill project identity, commit files or publish anything.
+- Creates `.codex-venv` or `.claude-venv`, installs runtime requirements, and runs phase status as a
+  smoke check. It registers selected-host hooks and skill discovery entries, but
+  does not install agent CLIs, configure credentials, register workflow procedures as
+  native slash commands, fill project identity, commit files or publish anything.
 
 This is an initial installer, not an updater for customized workflow files.
 Use `--dry-run` to fetch and preview without changing the target. Use
@@ -92,27 +230,36 @@ Use `--dry-run` to fetch and preview without changing the target. Use
 the package index. Repeating the same install with `--skip-deps` preserves
 identical files and does not duplicate the appended instructions/ignore block.
 
-An existing `.ai-venv` is preserved: rerun with `--skip-deps` and use its Python to
-install `.ai/runtime/requirements.txt` if dependency repair is needed. Network or
+An existing host virtual environment is preserved: rerun with `--skip-deps` and
+use its Python to install the selected host's `runtime/requirements.txt` if
+dependency repair is needed. Network or
 dependency failures return a nonzero exit code; files already installed remain
 available for inspection and retry. Conflict detection is a preflight check,
 not a transaction protecting against concurrent writers or disk failures.
 
 ## Repair template context
 
-When an installation contains template identity instead of project context, run:
+`--repair-template-context` recognizes the original release's unchanged template
+context. It is not a general migration or overwrite option. If a separate `.ai`
+directory is present, every file in it must match that release: repair installs
+the selected host layout and removes only those recognized old files and their
+empty directories. A customized or newer `.ai` installation stops before writes
+and requires manual reconciliation in an assigned worktree. Preview with:
 
 ```text
-python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target . --skip-deps --repair-template-context
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target . --host codex --skip-deps --repair-template-context --dry-run
 ```
 
-Add `--dry-run` to inspect the writes and removals first. The repair recognizes
+Select `claude` for a Claude destination. Remove `--dry-run` after reviewing the
+proposed changes. The repair recognizes
 the original shipped content directly from its pinned Git release (allowing
 LF/CRLF differences). Repair fetches that release from the selected source;
 custom source repositories must retain the original release to support repair.
 It replaces matching old workflow files and untouched example project records,
 and replaces the exact old AGENTS entry (marked or unmarked) while preserving surrounding
-user guidance. Real project records and config stay byte-for-byte intact.
+user guidance. For Claude, the recognized old AGENTS workflow block is retired
+and the complete current entry is installed in CLAUDE.md; unrelated AGENTS guidance
+is retained. Real project records and config stay byte-for-byte intact.
 
 Repair cleans matching source artifacts from the destination and preserves
 existing or customized application documentation. Empty directories can remain
@@ -149,31 +296,38 @@ create the worktree required for agent onboarding. An existing repository also
 needs the installed files committed before they can travel into a new worktree.
 Git needs your author name and email configured for this step.
 
-For a brand-new, otherwise empty project, review the installed files and run:
+For a brand-new, otherwise empty Codex project, review the installed files and run:
 
 ```text
-git add -- AGENTS.md .ai .agents/skills .planning .gitignore
+git add -- AGENTS.md .codex .agents/skills .planning .gitignore
 git commit -m "Install AI engineering workflow"
 ```
+
+For a fresh Claude project, stage `CLAUDE.md`, `.claude`, `.planning` and
+`.gitignore` instead.
 
 If the directory contained existing files, inspect `git status` and stage only
 the installer additions and reviewed instruction/ignore changes; the directory
 arguments above can also stage unrelated work. If installing into an already
 assigned worktree, the agent can review and commit setup there directly.
+Inspect individual paths before staging a pre-existing host directory; never
+stage personal settings or credentials.
 
-Activate the environment from the project directory:
+Activate the environment from the project directory. Codex examples:
 
 ```powershell
-.\.ai-venv\Scripts\Activate.ps1
-python .ai/runtime/phase.py status
+.\.codex-venv\Scripts\Activate.ps1
+python .codex/runtime/phase.py status
 ```
 
 ```sh
-. .ai-venv/bin/activate
-python .ai/runtime/phase.py status
+. .codex-venv/bin/activate
+python .codex/runtime/phase.py status
 ```
 
-If PowerShell prevents activation, run `.\.ai-venv\Scripts\python.exe` directly.
+For Claude, replace `.codex-venv` with `.claude-venv` and run
+`python .claude/runtime/phase.py status`. If PowerShell prevents activation, use
+the selected environment's `Scripts/python.exe` directly.
 Keep this environment active when starting the coordinator so runtime subprocesses
 using `python` can find the dependency. Install and authenticate your chosen agent
 CLI separately. The [runtime guide](../runtime/README.md) describes configuration.
@@ -189,5 +343,6 @@ the runtime starts; onboarding establishes project readiness.
 
 The virtual environment is local to this checkout. Before removing a setup
 worktree, retain any local data you need; create an environment in your continuing
-checkout using `python -m venv .ai-venv` and its Python's
-`-m pip install -r .ai/runtime/requirements.txt` as needed.
+checkout using `python -m venv .codex-venv` and its Python's
+`-m pip install -r .codex/runtime/requirements.txt` as needed. Use the matching
+`.claude-venv` and `.claude/runtime/requirements.txt` paths for Claude.
