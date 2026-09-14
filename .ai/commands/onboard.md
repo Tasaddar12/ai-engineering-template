@@ -29,8 +29,8 @@ These are ordinary-language requests. Markdown commands describe local procedure
 they do not automatically register host slash commands. Setup authorizes only its
 requested scope, not product implementation. Authorized tracked setup changes
 follow the shared commit, push, PR/MR and automatic verified merge defaults unless
-the user narrows delivery. The copy-ready local-only prompts below explicitly
-narrow that default.
+the user narrows delivery. The copy-ready setup prompts inherit that default;
+the inspection-only prompt remains read-only.
 
 ## Procedure for a new or existing project
 
@@ -104,8 +104,10 @@ My inputs:
 - Existing assets and references: [repository paths, designs, notes, or none known]
 - Decisions already made: [choices to preserve, or none yet]
 - Authorization: discovery, setup records/configuration and next-phase preparation.
-  Commit setup locally. Product implementation and publication are outside this task
-  unless I explicitly add them here: [additional authorized scope, or none].
+  Commit each completed setup slice, push and create/update a PR/MR, then merge
+  automatically after verification and required checks under the shared rules.
+  Product implementation is outside this task unless I add it here: [scope, or none].
+- Delivery override: [none, or an explicit limit such as local only or do not merge].
 
 Work through the following sequence:
 
@@ -153,8 +155,10 @@ Work through the following sequence:
    workers merely because a plan exists.
 
 7. Check that setup documents, links and configured commands agree with the actual
-   repository. Commit the completed authorized setup with a descriptive message.
-   Return the files and commit, the product understanding and decisions recorded,
+   repository. Commit each completed setup slice with a descriptive message and
+   follow phase-ship through the default verified merge or my delivery override.
+   Return the files, commits and observed PR/MR state, the product understanding
+   and decisions recorded,
    actual baseline checks/results, unresolved questions, and the next phase with
    its acceptance and remaining prerequisites. Clearly distinguish setup complete
    from ready to execute; do not claim that the product was implemented or shipped.
@@ -205,9 +209,11 @@ My inputs:
 - Compatibility and operational constraints: [interfaces, environments, data, users]
 - Work or files to preserve: [uncommitted work, active branches, special constraints]
 - Authorization: inspect, reconcile workflow setup, complete missing project
-  records/configuration, prepare the next agreed scope and commit setup locally.
-  Do not push or create/merge a PR/MR unless I add that delivery here.
-  Additional authorized changes or delivery actions: [explicit scope, or none].
+  records/configuration and prepare the next agreed scope. Commit each completed
+  setup slice, push and create/update a PR/MR, then merge automatically after
+  verification and required checks under the shared rules.
+  Additional authorized changes: [explicit scope, or none].
+- Delivery override: [none, or an explicit limit such as local only or do not merge].
 
 Work through the following sequence:
 
@@ -262,8 +268,10 @@ Work through the following sequence:
    scope. If I requested onboarding only, report the recommended next action
    without inventing feature work or launching implementation.
 
-7. Verify the adoption changes and commit completed setup with a descriptive
-   message. Return the project understanding and source references, records and
+7. Verify the adoption changes and commit each completed setup slice with a
+   descriptive message. Follow phase-ship through the default verified merge or
+   my delivery override. Return commits and observed PR/MR state, the project
+   understanding and source references, records and
    guides preserved/updated, configuration changes, baseline results, known defects
    and unresolved questions, plus the exact next action and its prerequisites.
    State what is ready and what remains blocked. Keep product implementation,

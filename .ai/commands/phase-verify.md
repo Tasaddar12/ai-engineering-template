@@ -54,7 +54,9 @@ Rerun affected checks and independent verification on the resulting revision.
 
 A summary assertion or successful process is not a pass. Report human-only checks
 as pending and use [phase-uat](phase-uat.md). Required missing evidence prevents
-publication. Additional review follows the risks and changes; there is no fixed
+final readiness and merge. Draft progress pushes follow
+[phase-ship](phase-ship.md); the runtime publisher still requires verification.
+Additional review follows the risks and changes; there is no fixed
 limit that strands known repairable work.
 
 ## Full verification artifact
