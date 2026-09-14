@@ -4,7 +4,6 @@
 import argparse
 from datetime import datetime, timezone
 import hashlib
-import io
 import json
 import os
 import posixpath
@@ -15,8 +14,8 @@ import shutil
 import stat
 import subprocess
 import sys
-import tarfile
 import tempfile
+import tomllib
 from types import SimpleNamespace
 import uuid
 
@@ -30,7 +29,6 @@ PROJECT_RECORDS = {f".planning/{name}" for name in
 PLANNING_RESOURCES = {f".planning/{name}" for name in
                       ("README.md", "config.yaml", "phases/README.md", "codebase/README.md",
                        "specs/.gitkeep", "decisions/.gitkeep")}
-LEGACY_REVISION = "f4855eb66023495c75a9c9d5c9190565d3af2315"
 IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.worktrees/\n.ai-venv/\n.workflow-backups/\n__pycache__/\n*.pyc\n"
 
 
@@ -96,9 +94,7 @@ def destination_path(name, host):
     namespace = "." + host
     if name == "AGENTS.md" and host == "claude":
         return "CLAUDE.md"
-    for prefix, destination in ((".ai/agents", namespace + "/roles"),
-                                (".ai/commands", namespace + "/workflows"),
-                                (".agents/skills", namespace + "/skills"),
+    for prefix, destination in ((".agents/skills", skill_root(host)),
                                 (".ai", namespace)):
         if name == prefix or name.startswith(prefix + "/"):
             return destination + name[len(prefix):]
@@ -108,11 +104,8 @@ def destination_path(name, host):
 def render_asset(name, content, host):
     """Relocate authored paths without rewriting Python logic or upstream URLs."""
     if name.endswith((".py", ".json")) or not content:
-        return content  # Python locates its installed namespace; provenance is historical.
+        return content  # Executable code and structured data are copied unchanged.
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
-    if name == ".ai/runtime/TEMPLATE-CONTRACT.md":
-        text = text.replace("legacy `.ai`", "legacy `__HISTORICAL_AI_ROOT__`")
-        text = text.replace("`.ai/phases/NN-name`", "`__HISTORICAL_AI_ROOT__/phases/NN-name`")
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -139,10 +132,8 @@ def render_asset(name, content, host):
         if part.startswith(("https://", "http://")) or name == ".ai/commands/install.md":
             return part
         part = part.replace(".ai-venv", namespace + "-venv")
-        part = part.replace(".ai/agents/", namespace + "/roles/")
-        part = part.replace(".ai/commands/", namespace + "/workflows/")
-        part = part.replace(".agents/skills/", namespace + "/skills/")
-        if name == ".ai/guides/AGENT-SKILLS.md":
+        part = part.replace(".agents/skills/", skill_root(host) + "/")
+        if host == "claude" and name == ".ai/guides/AGENT-SKILLS.md":
             part = part.replace("\n.agents/\n  skills/", "\n" + namespace + "/\n  skills/")
         part = re.sub(r"\.ai(?![\w-])", lambda _: namespace, part)
         if host == "claude" and name not in (".ai/commands/install.md", ".ai/runtime/README.md",
@@ -151,53 +142,74 @@ def render_asset(name, content, host):
         return part
     # Source download and attribution URLs must keep the authoring paths.
     text = "".join(local_paths(part) for part in re.split(r"(https?://[^\s<>\"')\]]+)", text))
-    text = text.replace("__HISTORICAL_AI_ROOT__", ".ai")
     return text.encode("utf-8")
 
 
+def skill_root(host):
+    return ".agents/skills" if host == "codex" else ".claude/skills"
+
+
 def host_payload(rendered, host, hooks):
-    """Native discovery adapters to the complete host-contained workflow."""
-    selected = {}
+    """Register hooks; skills are installed in full at their discovery location."""
+    if not hooks:
+        return {}
     if host == "codex":
-        for name, content in rendered.items():
-            if not (name.startswith(".codex/skills/") and name.endswith("/SKILL.md")):
-                continue
-            text = content.decode("utf-8-sig").replace("\r\n", "\n")
-            if not text.startswith("---\n") or "\n---\n" not in text[4:]:
-                raise ValueError(f"Missing skill metadata: {name}")
-            header = text.split("\n---\n", 1)[0] + "\n---\n"
-            destination = name.replace(".codex/skills/", ".agents/skills/", 1)
-            relative = posixpath.relpath(name, posixpath.dirname(destination))
-            selected[destination] = (header + "\nRead and follow the complete skill at "
-                                    f"[SKILL.md]({relative}) before doing this work. "
-                                    "Resolve its references from that canonical location.\n").encode()
-    if hooks:
-        name = ".codex/hooks.json" if host == "codex" else ".claude/settings.json"
-        selected[name] = json_bytes(hook_settings(host))
-    return selected
+        return {".codex/config.toml": hooks_toml(hook_settings(host)["hooks"])}
+    return {".claude/settings.json": json_bytes(hook_settings(host))}
+
+
+def hooks_toml(events):
+    """Serialize only generated hook groups, using TOML array-of-table syntax."""
+    lines = []
+    for event, groups in events.items():
+        for group in groups:
+            lines.append(f"[[hooks.{event}]]")
+            if "matcher" in group:
+                lines.append("matcher = " + json.dumps(group["matcher"], ensure_ascii=False))
+            for handler in group["hooks"]:
+                lines.append(f"[[hooks.{event}.hooks]]")
+                for key, value in handler.items():
+                    lines.append(f"{key} = " + json.dumps(value, ensure_ascii=False))
+            lines.append("")
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def merge_codex_config(current, incoming, path):
+    """Append missing hooks while preserving existing TOML text and settings."""
+    try:
+        settings = tomllib.loads(current.decode("utf-8-sig"))
+        additions = tomllib.loads(incoming.decode("utf-8"))
+        merged = json.loads(merge_hooks(json_bytes(settings), json_bytes(additions), path))
+        missing = {event: [group for group in groups
+                           if group not in settings.get("hooks", {}).get(event, [])]
+                   for event, groups in merged["hooks"].items()}
+        if not any(missing.values()):
+            return current
+        result = current + b"\n" + hooks_toml(missing)
+        # Inline arrays/tables cannot always be extended with array-of-tables.
+        # Refuse incompatible existing syntax rather than rewrite user settings.
+        parsed = tomllib.loads(result.decode("utf-8-sig"))
+        if parsed != merged:
+            raise ValueError("appended hooks changed existing settings")
+        return result
+    except (ValueError, UnicodeError) as error:
+        raise ValueError(f"Invalid or conflicting host settings {path}: {error}; "
+                         "reconcile the TOML hook tables before installation.") from error
 
 
 def hook_settings(host):
-    # The command locates the active Git checkout, including launches in subfolders.
-    # Payload cwd is separately used by the adapter to assess the tool's target.
-    launcher = ("import runpy,subprocess; "
-                "root=subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True,encoding='utf-8').rstrip(chr(10)+chr(13)); "
-                f"runpy.run_path(root+'/.{host}/hooks/host-adapter.py',run_name='__main__')")
-    unix = f'python3 -c "{launcher}"'
-    windows = f'python -c "{launcher}"'
-    if host == "claude":
-        # Claude's default command shell is Bash, including Git Bash on Windows.
-        # Actually probe Python: a Windows Store alias can exist but be unusable.
-        command = ('if python3 -c "import sys; sys.exit(sys.version_info < (3, 11))" '
-                   f'>/dev/null 2>&1; then {unix}; else {windows}; fi')
-    else:
-        command = unix
-    handler = {"type": "command", "command": command, "timeout": 10}
-    if host == "codex":
-        handler["commandWindows"] = windows
-    return {"hooks": {event: [{"matcher": "^(Bash|Write|Edit|NotebookEdit|apply_patch)$",
-                                "hooks": [dict(handler)]}]
-                      for event in ("PreToolUse", "PostToolUse")}}
+    events = {}
+    for event, script in (("PreToolUse", "worktree-confine.sh"),
+                          ("PostToolUse", "ai-tier-notice.sh")):
+        command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
+        handler = {"type": "command", "command": command, "timeout": 10}
+        if host == "codex":
+            handler["commandWindows"] = (
+                "& (Join-Path (Split-Path (Get-Command git).Source) '../bin/bash.exe') "
+                f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}')")
+        events[event] = [{"matcher": "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$",
+                          "hooks": [handler]}]
+    return {"hooks": events}
 
 
 def json_bytes(value):
@@ -245,7 +257,9 @@ def merge_hooks(current, incoming, path):
             for group in groups:
                 if group in existing:
                     continue
-                if any("/hooks/host-adapter.py" in json.dumps(item) for item in existing):
+                if any(any("/hooks/" + script in json.dumps(item)
+                           for script in ("worktree-confine.sh", "ai-tier-notice.sh"))
+                       for item in existing):
                     raise ValueError(f"managed {event} registration differs; reconcile it manually")
                 existing.append(group)
                 changed = True
@@ -263,46 +277,15 @@ def require_utf8(content, path):
         raise ValueError(f"{path} must be UTF-8 text before appending; nothing was installed.") from error
 
 
-def load_legacy(source, remote):
-    """Read the original release from Git; keep no duplicate manifest or history file."""
-    run("git", "fetch", "--quiet", "--depth=1", "--", remote, LEGACY_REVISION, cwd=source)
-    archive = subprocess.run(["git", "archive", LEGACY_REVISION], cwd=source,
-                             check=True, capture_output=True).stdout
-    with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
-        return {member.name: snapshot.extractfile(member).read().replace(b"\r\n", b"\n")
-                for member in snapshot.getmembers() if member.isfile()}
-
-
-def legacy_matches(legacy, name, content):
-    return legacy is not None and legacy.get(name) == content.replace(b"\r\n", b"\n")
-
-
-def merge_agent(current, incoming, legacy, name="AGENTS.md"):
+def merge_agent(current, incoming, name="AGENTS.md"):
     if any(variant in current for variant in (incoming, incoming.replace(b"\n", b"\r\n"))):
         return current
     if AGENT_MARKER.encode() in current:
-        if legacy:
-            old = (AGENT_MARKER + "\n").encode() + legacy["AGENTS.md"]
-            for variant in (old, old.replace(b"\n", b"\r\n")):
-                if current.count(variant) == 1:
-                    return current.replace(variant, incoming, 1)
-        raise ValueError(f"Existing {name} workflow block differs. For an unmodified prior "
-                         "install use --repair-template-context; otherwise reconcile it manually.")
-    if legacy:
-        old = legacy["AGENTS.md"]
-        for variant in (old, old.replace(b"\n", b"\r\n")):
-            if current.count(variant) == 1:
-                return current.replace(variant, incoming, 1)
-    if any(signal in current for signal in (
-            b"reusable engineering workflow template",
-            b"for template maintenance only when the user requests them.")):
-        raise ValueError("AGENTS.md still contains template-maintenance instructions. "
-                         "Use --repair-template-context for an unchanged original entry; "
-                         "reconcile edited instructions manually.")
+        raise ValueError(f"Existing {name} workflow block differs; reconcile it before installation.")
     return current + b"\n\n" + incoming
 
 
-def plan_install(source, target, legacy=None, host="codex", hooks=True):
+def plan_install(source, target, host="codex", hooks=True):
     changes = []
     conflicts = []
     other = ".claude" if host == "codex" else ".codex"
@@ -312,40 +295,8 @@ def plan_install(source, target, legacy=None, host="codex", hooks=True):
     old_root = target / ".ai"
     safe_path(old_root)
     if old_root.exists():
-        if not old_root.is_dir() or not legacy:
-            raise ValueError("Existing .ai requires migration in an assigned worktree before host installation; "
-                             "nothing was installed. Use --migrate-existing to preserve project data "
-                             "and verified originals while rebuilding the selected host layout. "
-                             "--repair-template-context recognizes the original release only.")
-        old_paths = sorted(old_root.rglob("*"), key=lambda path: len(path.parts), reverse=True)
-        for old in old_paths:
-            safe_path(old)
-            if old.is_file() and not legacy_matches(legacy, old.relative_to(target).as_posix(), old.read_bytes()):
-                conflicts.append(str(old.relative_to(target)))
-        # Exact recognized files and empty directories only; no recursive deletion.
-        changes.extend((old, None) for old in old_paths)
-        changes.append((old_root, None))
-    legacy_destinations = ({destination_path(name, host): value for name, value in legacy.items()}
-                           if legacy else None)
-    if host == "claude" and legacy:
-        old_entry = target / "AGENTS.md"
-        safe_path(old_entry)
-        if old_entry.is_file():
-            current = old_entry.read_bytes()
-            # Retire only the recognized old workflow block, retaining user text.
-            remainder = current
-            old = legacy["AGENTS.md"]
-            for candidate in ((AGENT_MARKER + "\n").encode() + old, old):
-                for variant in (candidate, candidate.replace(b"\n", b"\r\n")):
-                    if remainder.count(variant) == 1:
-                        remainder = remainder.replace(variant, b"", 1)
-                        break
-                if remainder != current:
-                    break
-            if remainder != current:
-                changes.append((old_entry, remainder if remainder.strip() else None))
-            elif b"reusable engineering workflow template" in current:
-                conflicts.append("AGENTS.md (edited legacy workflow; reconcile before Claude installation)")
+        raise ValueError("Existing .ai requires --migrate-existing in an assigned worktree; "
+                         "nothing was installed.")
     for name, incoming in payload(source, host, hooks).items():
         relative = Path(name)
         destination = target / relative
@@ -361,31 +312,22 @@ def plan_install(source, target, legacy=None, host="codex", hooks=True):
             current = destination.read_bytes()
             if current.replace(b"\r\n", b"\n") == incoming.replace(b"\r\n", b"\n"):
                 continue
-            if legacy_matches(legacy_destinations, name, current):
-                pass  # Explicit repair replaces only recognized prior installer bytes.
-            elif name in PROJECT_RECORDS:
+            if name in PROJECT_RECORDS:
                 continue  # Existing intent, execution history and config remain authoritative.
             elif name in ("AGENTS.md", "CLAUDE.md"):
                 require_utf8(current, destination)
-                incoming = merge_agent(current, incoming, legacy, name)
+                incoming = merge_agent(current, incoming, name)
                 if current == incoming:
                     continue
-            elif name in (".codex/hooks.json", ".claude/settings.json"):
-                incoming = merge_hooks(current, incoming, destination)
+            elif name in (".codex/config.toml", ".claude/settings.json"):
+                merge = merge_codex_config if name.endswith(".toml") else merge_hooks
+                incoming = merge(current, incoming, destination)
                 if current == incoming:
                     continue
             else:
                 conflicts.append(str(relative))
                 continue
         changes.append((destination, incoming))
-    if legacy:
-        for name in legacy:
-            if not (name.startswith("docs/") or ("/" not in name and name.endswith(".log"))):
-                continue
-            destination = target / name
-            safe_path(destination)
-            if destination.is_file() and legacy_matches(legacy, name, destination.read_bytes()):
-                changes.append((destination, None))
     ignore = target / ".gitignore"
     safe_path(ignore)
     if ignore.exists() and not ignore.is_file():
@@ -461,14 +403,13 @@ def install(args):
         safe_path(environment)
         if environment.exists():
             raise ValueError(f"{namespace}-venv already exists; preserve it and rerun with --skip-deps. "
-                             f"See {namespace}/workflows/install.md for dependency repair.")
+                             f"See {namespace}/commands/install.md for dependency repair.")
     with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
         run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.ref, cwd=source)
         run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=source)
         revision = run("git", "rev-parse", "HEAD", cwd=source, capture=True).strip()
-        legacy = load_legacy(source, args.source) if args.repair_template_context else None
         backup_files = []
         notes = []
         if args.migrate_existing:
@@ -476,7 +417,7 @@ def install(args):
             changes, backup_files, notes = migration["plan_migration"](
                 source, target, args.host, not args.no_hooks, SimpleNamespace(**globals()))
         else:
-            changes = plan_install(source, target, legacy, args.host, not args.no_hooks)
+            changes = plan_install(source, target, args.host, not args.no_hooks)
         originals = {destination_path(name, args.host): source / name
                      for name in run("git", "ls-files", "-z", cwd=source, capture=True).split("\0")
                      if name}
@@ -523,8 +464,8 @@ def install(args):
             run(str(interpreter), str(target / namespace / "runtime/phase.py"), "status", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
               "If installed into a primary checkout, a human must review and commit the "
-              f"bootstrap before an agent creates a worktree (see {namespace}/workflows/install.md).\n"
-              f"Next: follow {namespace}/workflows/onboard.md to fill project intent, configure actual "
+              f"bootstrap before an agent creates a worktree (see {namespace}/commands/install.md).\n"
+              f"Next: follow {namespace}/commands/onboard.md to fill project intent, configure actual "
               "checks and worker commands, and commit setup.")
         if not args.no_hooks:
             print("Review project hook registrations in /hooks in each selected host. "
@@ -543,13 +484,11 @@ def main():
     location = Path(globals().get("__file__", ".ai/install.py")).parent.name
     default_host = "claude" if location == ".claude" else "codex"
     parser.add_argument("--host", choices=("codex", "claude"), default=default_host,
-                        help=f"Install the entire workflow under .codex or .claude (default: {default_host})")
+                        help=f"Install commands, agents and runtime under .codex or .claude (default: {default_host})")
     parser.add_argument("--no-hooks", action="store_true",
                         help="Skip adding hook registrations; preserve existing hooks")
     parser.add_argument("--dry-run", action="store_true", help="Fetch and check without changing the target")
     parser.add_argument("--skip-deps", action="store_true", help="Skip virtual environment and dependency setup")
-    parser.add_argument("--repair-template-context", action="store_true",
-                        help="Repair recognized files from the original installer; preserve customized project records")
     parser.add_argument("--migrate-existing", action="store_true",
                         help="Rebuild an existing .ai workflow for the selected host, preserving project data and verified originals")
     args = parser.parse_args()
@@ -558,8 +497,6 @@ def main():
             raise ValueError("Python 3.11 or newer is required.")
         if not shutil.which("git"):
             raise ValueError("Git is required on PATH.")
-        if args.migrate_existing and args.repair_template_context:
-            raise ValueError("Use --migrate-existing or --repair-template-context, not both.")
         install(args)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         print(f"Setup failed: {error}\nIf setup had already started, files are retained for "

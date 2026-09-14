@@ -46,12 +46,13 @@ class HostRuntimeTests(unittest.TestCase):
                             ("core.autocrlf", "false"), ("commit.gpgsign", "false")):
             self.git(self.primary, "config", name, value)
         for source, destination in (("runtime", "runtime"), ("templates", "templates"),
-                                    ("agents", "roles"), ("references", "references")):
+                                    ("agents", "agents"), ("references", "references")):
             shutil.copytree(SOURCE / ".ai" / source, self.primary / host / destination,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        shutil.copytree(SOURCE / ".agents/skills", self.primary / host / "skills")
+        self.skills = ".claude/skills" if host == ".claude" else ".agents/skills"
+        shutil.copytree(SOURCE / ".agents/skills", self.primary / self.skills)
         # Match the installer's prose relocation; Python is copied byte-for-byte.
-        for path in (self.primary / host).rglob("*.md"):
+        for path in self.primary.rglob("*.md"):
             text = path.read_text(encoding="utf-8")
             path.write_text(self.relocate(text), encoding="utf-8")
         self.write(self.primary, ".gitignore", ".worktrees/\n__pycache__/\n*.pyc\n")
@@ -85,9 +86,9 @@ class HostRuntimeTests(unittest.TestCase):
         self.git(self.primary, "worktree", "add", "-b", "codex/host-runtime-test", str(self.checkout))
 
     def relocate(self, text):
-        return (text.replace(".ai/agents/", f"{self.host}/roles/")
-                    .replace(".ai/commands/", f"{self.host}/workflows/")
-                    .replace(".agents/skills/", f"{self.host}/skills/")
+        return (text.replace(".ai/agents/", f"{self.host}/agents/")
+                    .replace(".ai/commands/", f"{self.host}/commands/")
+                    .replace(".agents/skills/", f"{self.skills}/")
                     .replace(".ai/", f"{self.host}/"))
 
     def cli(self, *args, succeeds=True):
@@ -165,8 +166,7 @@ class HostRuntimeTests(unittest.TestCase):
             "from phase_runner import assignment; "
             f"p=load_phase(Path.cwd(), {PHASE!r}); c=p.components['01-01']; c.data['type']='tdd'; "
             "print(assignment(p,c,p.root,'code',c.summary,'a'*40))")
-        self.assertIn(f"{host}/skills/regression-design/SKILL.md", tdd_prompt)
-        self.assertNotIn(".agents/skills", tdd_prompt)
+        self.assertIn(f"{self.skills}/regression-design/SKILL.md", tdd_prompt)
         self.assertNotIn(".ai/", tdd_prompt)
         self.assertFalse((self.primary / ".ai").exists())
         self.assertFalse((self.checkout / ".ai").exists())

@@ -127,10 +127,9 @@ Tool restrictions and prompts are not an OS sandbox; configured host hooks can
 still run, and the runtime audits verifier checkout changes. Failed CLI runs,
 invalid result JSON, empty reports or permission denials fail the adapter.
 
-Complete skills are installed under `.codex/skills` or `.claude/skills` and travel
-with committed inputs into fresh worker checkouts. Codex discovers thin entries
-under `.agents/skills` that direct it to the complete installed methods. Claude
-discovers its complete skills directly. Required methods are also named by path
+Complete skills are installed directly under `.agents/skills` for Codex or
+`.claude/skills` for Claude and travel with committed inputs into fresh worker
+checkouts. Both hosts discover the full skills at those locations. Required methods are also named by path
 in PLAN's Read first section. Other adapters can read those same Markdown paths.
 The runtime needs no new skill configuration; follow the
 [repository skill guide](../guides/AGENT-SKILLS.md) for selection and upkeep.

@@ -88,7 +88,7 @@ class MigrationCliTests(unittest.TestCase):
                 self.assertIn(".workflow-backups/", ignored)
                 self.assertIn(namespace + "/private/example", support.command(
                     "git", "check-ignore", namespace + "/private/example", cwd=self.target))
-                for directory in ("roles", "workflows"):
+                for directory in ("agents", "commands"):
                     expected = namespace + "/" + directory + "/private/example"
                     self.assertIn(expected, support.command("git", "check-ignore", expected, cwd=self.target))
                 status = support.command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target)

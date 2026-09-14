@@ -10,10 +10,12 @@ The coordinator owns publication and merge; component workers return commits.
 1. Inspect the owned diff and run applicable checks for a bounded, reviewable slice.
    Commit it immediately with a descriptive nonempty message before the next slice.
 2. Verify the actual remote, target branch and task branch. Push each completed
-   standalone or integrated slice. Find an existing PR/MR for that source and target
-   before creating one; keep one request for the task or phase and update it.
-3. Use a draft while required scope, documentation or verification remains. Describe
-   unfinished work accurately. Default progress pushes use the forge's supported
+   standalone or integrated slice immediately after its commit, before beginning
+   the next slice. Do not batch pushes or hold committed progress until completion.
+3. On the first push, immediately open a draft PR/MR for tracking. Find an existing
+   PR/MR for that source and target first; update it if present. Keep the same
+   request current after every subsequent slice. Keep it draft while required
+   scope, documentation or verification remains. Describe unfinished work accurately. Default progress pushes use the forge's supported
    CLI/API; an explicit local-only or no-push instruction prevents publication.
 
 ## Verify final readiness

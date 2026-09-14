@@ -18,27 +18,24 @@ memory; the saved-file commands below are an alternative.
 
 Choose `--host codex` or `--host claude`; the downloaded script defaults to Codex.
 An installed `.claude/install.py` defaults to Claude when repeated locally.
-The entire workflow is installed inside the selected host directory. A fresh
-installation has no separate `.ai` directory. Pending project records remain
-under `.planning`.
+Commands, agents, rules and runtime are installed inside the selected host directory.
+Complete skills are installed directly at the host discovery location. A fresh
+installation has no separate `.ai` directory. Project records remain under `.planning`.
 
 | Installed location | Codex | Claude Code |
 |---|---|---|
 | Root instructions | `AGENTS.md` | `CLAUDE.md` with the complete project instructions |
 | Rules, guides, templates and runtime | `.codex` | `.claude` |
-| Workflow procedures | `.codex/workflows` | `.claude/workflows` |
-| Role methods | `.codex/roles` | `.claude/roles` |
-| Complete skills | `.codex/skills` | `.claude/skills` |
-| Native skill discovery | `.agents/skills` entries linking to complete Codex skills | Complete Claude skills discovered directly |
-| Hook registration | `.codex/hooks.json` | `.claude/settings.json` |
+| Commands | `.codex/commands` | `.claude/commands` |
+| Agents | `.codex/agents` | `.claude/agents` |
+| Complete skills, discovered directly | `.agents/skills` | `.claude/skills` |
+| Hook registration | `.codex/config.toml` | `.claude/settings.json` |
 | Local Python environment | `.codex-venv` | `.claude-venv` |
 | Initial worker routes | Codex | Claude Code |
 
 References in installed instructions, skills, procedures and runtime routes point
-to the selected host layout. Role methods are stored under `roles` and procedures
-under `workflows`; installing them does not register native subagents or slash
-commands. A fresh Claude installation does not generate an AGENTS.md or Codex
-skill wrappers.
+to the selected host layout. Agents stay under `agents` and commands
+stay under `commands`. The AI reads those files directly. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are
 project files intended for Git. Once committed, they propagate into fresh Git
@@ -49,16 +46,17 @@ session history, or local settings. It leaves existing worker routes authoritati
 ## Hooks and existing host settings
 
 Selected profiles add advisory `PreToolUse` and `PostToolUse` registrations for
-the [portable Python hook adapter](../hooks/README.md). Existing hook groups and
+the existing [Bash hook scripts](../hooks/README.md). Existing hook groups and
 unrelated settings are retained; identical registrations are not added twice.
-Invalid JSON, duplicate keys, incompatible hook structures, edited managed
+Invalid JSON/TOML, duplicate keys, incompatible hook structures, edited managed
 registrations or conflicting instruction blocks stop setup before any writes.
-Settings may be reformatted when groups are added; existing values are retained.
+Claude JSON settings may be reformatted; existing values are retained. Codex hook
+tables are appended to `config.toml`, preserving existing text and settings.
+Incompatible inline hook arrays stop preflight instead of rewriting user settings.
 
 Use `--no-hooks` to skip adding registrations. This preserves any existing hooks;
 it does not disable or uninstall them. Existing disabled-hook settings, personal
-overrides and managed policies still apply. Codex config.toml is left untouched;
-if it already has inline hooks, both sources load under Codex's normal rules.
+overrides and managed policies still apply. Codex uses inline hook tables in `.codex/config.toml`. Existing TOML settings and hooks are retained. Codex configuration uses TOML. See [inline hooks](https://learn.chatgpt.com/docs/config-file/config-advanced#hooks).
 
 Codex needs a version supporting project lifecycle hooks, a trusted project, and
 review of each new or changed hook in `/hooks`. The installer does not grant
@@ -70,12 +68,10 @@ after opening the project. See [Claude settings](https://code.claude.com/docs/en
 [hooks](https://code.claude.com/docs/en/hooks). Restart a host if it has not picked
 up new project files. Installed registrations are not proof of trusted live execution.
 
-Python 3.11+ and Git must be on the host's PATH. Codex uses `python3` on Unix and
-`python` on Windows. Claude's shell hook probes `python3`, falling back to `python`;
-its command shell requires Bash (Git Bash on Windows). The Python adapter itself
-does not invoke Bash. Hook commands locate the Git checkout from their working
-directory; the adapter uses the payload's `cwd`, even when `CLAUDE_PROJECT_DIR`
-still names the primary checkout.
+Python 3.11+ and Git must be on PATH for installation and the runtime. Hooks run
+Bash directly. On Windows, the Codex launcher locates Git Bash beside the Git
+executable, so WSL's `bash.exe` does not intercept the hook. Claude uses Git Bash. Hook commands locate their script from the active Git checkout, and
+the scripts inspect payload paths. No separate Python hook adapter is installed.
 
 To repeat the selected installation from the same template revision, use its
 installed script. For example, in a Claude project:
@@ -128,8 +124,7 @@ the original bytes for recovery, including replaced runtime files and settings.
   files are refreshed from the selected template revision, with their originals
   retained in the backup.
 - The selected root entry gets current workflow instructions while preserving
-  custom guidance. A mapping explains old paths in historical or pending phase
-  records; those records are not rewritten just to change their namespace.
+  custom guidance.
 - Existing native settings and hooks are retained and merged. Conflicting native
   files, linked paths and ambiguous instruction blocks stop preflight rather
   than overwrite a second setup. Original files and empty directories are removed
@@ -142,16 +137,12 @@ and your project checks, and commit the migration slice. A Claude migration
 preserves customized worker routes even when they invoke Codex; update those
 routes deliberately if the project should run only Claude workers.
 
-The historical-path mapping helps agents read old references; the runtime still
-uses PLAN ownership literally. Reconcile pending PLAN ownership and Read first
-paths with the selected layout before dispatch, then recheck and reverify those
-plans. Preserve completed records and their revision-specific evidence.
+PLAN ownership and Read first paths must name the actual installed files before
+dispatch. Migration does not add aliases or historical path mappings.
 
 Migration does not modify Git-common-directory checkpoints, running processes or
 other worktrees. Finish or reconcile old attempts with their original runtime
 before starting new work; changed runtime inputs invalidate old verification.
-Older projects whose records still live inside `.ai` rather than `.planning`
-must first complete that project-record migration with their compatible runtime.
 Do not remove the original backup when inspecting a failed or interrupted setup.
 
 ## Download and run
@@ -197,8 +188,9 @@ Uncommitted source edits are not installed.
 
 ## What setup does
 
-- Installs all reusable tooling, full instructional templates and complete skills
-  into `.codex` or `.claude`. Procedures and prompts live in `workflows`, with
+- Installs reusable tooling and full instructional templates into `.codex` or
+  `.claude`, and complete skills into `.agents/skills` for Codex or `.claude/skills`
+  for Claude. Commands and prompts live in `commands`, with
   supporting material in `guides`. No files are installed into the project's `docs/` directory. Source attribution remains
   in third-party notices.
 - Creates a project agent entry point and clean onboarding-pending planning records
@@ -220,9 +212,9 @@ Uncommitted source edits are not installed.
   or linked worktree keeps its repository. A subdirectory of another repository
   is rejected to avoid installing at the wrong level.
 - Creates `.codex-venv` or `.claude-venv`, installs runtime requirements, and runs phase status as a
-  smoke check. It registers selected-host hooks and skill discovery entries, but
-  does not install agent CLIs, configure credentials, register workflow procedures as
-  native slash commands, fill project identity, commit files or publish anything.
+  smoke check. It registers selected-host hooks and installs complete skills. The AI references
+  commands and agents directly in their installed folders. Setup does not install
+  agent CLIs, configure credentials, fill project identity, commit files or publish anything.
 
 This is an initial installer, not an updater for customized workflow files.
 Use `--dry-run` to fetch and preview without changing the target. Use
@@ -236,38 +228,6 @@ dependency repair is needed. Network or
 dependency failures return a nonzero exit code; files already installed remain
 available for inspection and retry. Conflict detection is a preflight check,
 not a transaction protecting against concurrent writers or disk failures.
-
-## Repair template context
-
-`--repair-template-context` recognizes the original release's unchanged template
-context. It is not a general migration or overwrite option. If a separate `.ai`
-directory is present, every file in it must match that release: repair installs
-the selected host layout and removes only those recognized old files and their
-empty directories. A customized or newer `.ai` installation stops before writes
-and requires manual reconciliation in an assigned worktree. Preview with:
-
-```text
-python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target . --host codex --skip-deps --repair-template-context --dry-run
-```
-
-Select `claude` for a Claude destination. Remove `--dry-run` after reviewing the
-proposed changes. The repair recognizes
-the original shipped content directly from its pinned Git release (allowing
-LF/CRLF differences). Repair fetches that release from the selected source;
-custom source repositories must retain the original release to support repair.
-It replaces matching old workflow files and untouched example project records,
-and replaces the exact old AGENTS entry (marked or unmarked) while preserving surrounding
-user guidance. For Claude, the recognized old AGENTS workflow block is retired
-and the complete current entry is installed in CLAUDE.md; unrelated AGENTS guidance
-is retained. Real project records and config stay byte-for-byte intact.
-
-Repair cleans matching source artifacts from the destination and preserves
-existing or customized application documentation. Empty directories can remain
-after cleanup. Use `--dry-run` for the exact proposed changes.
-An edited old AGENTS block or customized conflicting tooling requires manual
-reconciliation; the repair does not guess which user edits to overwrite.
-Use an assigned worktree for agent-driven repair and review the diff before
-committing. The source template repository itself is not a repair target.
 
 ## Existing projects and worktrees
 

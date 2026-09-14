@@ -34,17 +34,22 @@ authorize additional product scope or destructive cleanup. Read-only requests
 remain read-only. Record the applicable default or explicit override in existing
 phase CONTEXT; standalone template maintenance needs no invented project records.
 
-Authors commit each completed meaningful slice immediately, before starting the
-next slice or returning, with a descriptive nonempty message. A slice is a bounded,
-reviewable unit of the authorized task, with its applicable checks completed;
-do not accumulate completed slices into one end-of-task commit. This includes
-standalone work, preparation, code, tests, documentation and corrections.
-Component workers also commit their SUMMARY and hand commits to the coordinator.
-The coordinator pushes each completed standalone or integrated slice and creates
-or updates one PR/MR for the task or phase, using a draft while scope remains.
-Workers keep their ownership boundaries and do not independently publish or merge.
-An explicit instruction not to commit wins; local-only work is not pushed.
-Read-only work needs no empty commit. Reviewers do not edit or commit the checkout.
+### Commit and push workflow
+
+1. **Finish one slice.** Run its applicable checks. This includes preparation,
+   code, tests, documentation and corrections.
+2. **Commit immediately.** Use a descriptive message. Workers include their SUMMARY.
+3. **Push immediately.** The coordinator pushes every standalone or integrated slice.
+4. **First push: open a draft PR/MR for tracking.** Later pushes update that same PR/MR.
+5. **Repeat before starting the next slice or ending the turn.** Never batch
+   completed slices into a later commit or push.
+6. **Finish delivery.** Keep the PR/MR draft while work remains. Verify, pass required
+   checks, then merge under the user's delivery instructions.
+
+Workers hand commits to the coordinator; they do not publish or merge.
+If a push or draft creation fails, report the blocker and preserve the commit.
+Explicit no-commit, local-only or no-merge instructions override these defaults.
+Read-only work needs no commit or publication; reviewers do not edit or commit.
 
 ## Phase authority
 

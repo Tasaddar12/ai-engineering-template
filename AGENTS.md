@@ -9,7 +9,7 @@ Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
 Load the selected [command](.ai/commands/README.md) and applicable references.
 [Truth map](.ai/truth-map.md) locates each fact's owner.
 
-[Repository skills](docs/AGENT-SKILLS.md) supply focused engineering methods.
+[Repository skills](.ai/guides/AGENT-SKILLS.md) supply focused engineering methods.
 Load matching skills and those named in the component's Read first section from
 the assigned checkout; do not read every skill body.
 
@@ -24,9 +24,10 @@ before writes; follow [worktree](.ai/commands/worktree.md). The primary checkout
 read-only for tracked changes and commits.
 
 Commit each completed meaningful slice immediately with a descriptive nonempty
-message, including component summaries. By default, the coordinator pushes each
-standalone or integrated slice, creates or updates a PR/MR, and automatically
-merges after verification and required checks. Explicit user limits override
+message, including component summaries. The coordinator immediately pushes every
+standalone or integrated slice and opens a draft PR/MR on the first push for
+tracking. Keep that same draft current after every slice; do not wait until the
+work is finished. Merge automatically after verification and required checks. Explicit user limits override
 these defaults; read-only work needs no commit or publication. Follow
 [delivery rules](.ai/RULES.md#session-and-authorization).
 

@@ -29,7 +29,7 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 | Verified publication | Push/create/update phase PR and inspect required remote checks | Runtime `publish` | Publishing does not merge or declare pending checks passed |
 | Default final delivery | Review, verify, automatically merge and confirm the remote result unless the user opts out | Coordinator through the forge; Python publisher only publishes | Required checks/reviews still apply; cleanup needs separate authorization |
 | Advisory hooks | Warn about common workflow mistakes | [Hook guide](../hooks/README.md) | Return success; neither sandbox nor permission enforcement |
-| Host installation profiles | Entire workflow in the selected `.codex` or `.claude` directory, with native instructions, skills and advisory hooks | [Installer](../commands/install.md), `--host codex\|claude` | No separate `.ai` in fresh installs; project files propagate through Git; existing settings and host trust remain authoritative |
+| Host installation profiles | Commands and agents in the selected `.codex` or `.claude` directory, complete skills at discovery paths, and advisory hooks | [Installer](../commands/install.md), `--host codex\|claude` | No separate `.ai` in fresh installs; project files propagate through Git; existing settings and host trust remain authoritative |
 
 ## What is installed, executable or supplied as guidance
 
@@ -89,23 +89,22 @@ project immediately creates all of them.
 
 ## Reusable instructions and human guides
 
-The installer keeps the complete workflow inside the selected native directory.
-Project planning records remain separate under `.planning`.
+The installer preserves `commands` and `agents` inside the selected host directory.
+Complete skills use each host's discovery location. Project records stay under `.planning`.
 
 | Content | Codex installation | Claude installation |
 |---|---|---|
 | Root instructions | `AGENTS.md` | `CLAUDE.md` |
 | Rules and fact ownership | `.codex/RULES.md`, `.codex/truth-map.md` | `.claude/RULES.md`, `.claude/truth-map.md` |
-| Role methods | `.codex/roles` | `.claude/roles` |
-| Procedures and starting prompts | `.codex/workflows` | `.claude/workflows` |
+| Agents | `.codex/agents` | `.claude/agents` |
+| Commands and starting prompts | `.codex/commands` | `.claude/commands` |
 | Guides, references and templates | `.codex/guides`, `.codex/references`, `.codex/templates` | `.claude/guides`, `.claude/references`, `.claude/templates` |
 | Runtime and hooks | `.codex/runtime`, `.codex/hooks` | `.claude/runtime`, `.claude/hooks` |
-| Complete skills | `.codex/skills` | `.claude/skills` |
-| Native skill discovery | `.agents/skills` wrappers | Complete skills discovered directly |
+| Complete skills, discovered directly | `.agents/skills` | `.claude/skills` |
+| Hook registration | `.codex/config.toml` | `.claude/settings.json` |
 
-Source attribution travels with the selected workflow. Roles and procedures are
-instruction documents; installing them does not register native subagents or
-slash commands.
+Source attribution travels with the selected workflow. The AI reads commands
+and agents directly from their installed files.
 
 ## Local work and operational storage
 

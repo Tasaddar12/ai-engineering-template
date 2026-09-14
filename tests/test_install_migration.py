@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import unittest
 
 
@@ -39,12 +40,12 @@ class MigrationTests(unittest.TestCase):
         moved = migration.relocate_paths(config, "claude")
         parsed = yaml.safe_load(moved)
         self.assertEqual(".claude\\workers\\custom.py", parsed["worker"])
-        self.assertEqual(".claude\\roles\\custom.py", parsed["role"])
+        self.assertEqual(".claude\\agents\\custom.py", parsed["role"])
         self.assertEqual("https://example.invalid/.ai/source.py", parsed["url"])
         self.assertTrue(moved.startswith(b"# Keep formatting\r\n"))
         directories = yaml.safe_load(migration.relocate_paths(
             b'args: [.ai/agents, .ai/commands, .agents/skills, .ai/agents-custom]\n', "claude"))
-        self.assertEqual([".claude/roles", ".claude/workflows", ".claude/skills", ".claude/agents-custom"],
+        self.assertEqual([".claude/agents", ".claude/commands", ".claude/skills", ".claude/agents-custom"],
                          directories["args"])
 
     @classmethod
@@ -118,7 +119,7 @@ class MigrationTests(unittest.TestCase):
                 self.assertEqual(before[".ai/private/archive.bin"], (self.target / namespace / "private/archive.bin").read_bytes())
                 self.assertEqual((self.source / ".ai/runtime/phase.py").read_bytes(), (self.target / namespace / "runtime/phase.py").read_bytes())
                 self.assertEqual(before[".ai/runtime/custom.py"], (self.target / namespace / "runtime/custom.py").read_bytes())
-                self.assertIn(f"{namespace}/workflows/worktree.md".encode(), (self.target / namespace / "RULES.md").read_bytes())
+                self.assertIn(f"{namespace}/commands/worktree.md".encode(), (self.target / namespace / "RULES.md").read_bytes())
                 for name, original in before.items():
                     if name.startswith(".planning/") and name != ".planning/config.yaml":
                         self.assertEqual(original, (self.target / name).read_bytes(), name)
@@ -128,11 +129,11 @@ class MigrationTests(unittest.TestCase):
                 self.assertIn("original versions remain in backup", " ".join(notes))
                 self.assertIn(b"Customer preface\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
                 self.assertIn(b"Customer footer\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
-                self.assertIn(b"Local behavior", (self.target / namespace / "skills/custom/SKILL.md").read_bytes())
-                self.assertEqual(before[".agents/skills/custom/data.bin"], (self.target / namespace / "skills/custom/data.bin").read_bytes())
+                skills = ".agents/skills" if host == "codex" else ".claude/skills"
+                self.assertIn(b"Local behavior", (self.target / skills / "custom/SKILL.md").read_bytes())
+                self.assertEqual(before[".agents/skills/custom/data.bin"], (self.target / skills / "custom/data.bin").read_bytes())
                 if host == "codex":
-                    self.assertIn(b".codex/skills/custom/SKILL.md", (self.target / ".agents/skills/custom/SKILL.md").read_bytes())
-                    self.assertFalse((self.target / ".agents/skills/custom/data.bin").exists())
+                    self.assertFalse((self.target / ".codex/skills").exists())
                 else:
                     self.assertFalse((self.target / ".agents/skills").exists())
                     self.assertNotIn(b"Old managed workflow", (self.target / "AGENTS.md").read_bytes())
@@ -160,7 +161,7 @@ class MigrationTests(unittest.TestCase):
         self.assertIn('"Stop"', settings)
         self.assertIn('"PreToolUse"', settings)
 
-    def test_unmarked_entry_is_preserved_with_historical_path_mapping(self):
+    def test_unmarked_entry_preserves_customer_guidance(self):
         custom = b"Custom .ai instructions without a managed block\r\n"
         self.write("AGENTS.md", custom)
         changes, _, _ = self.plan("claude", hooks=False)
@@ -168,38 +169,29 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(custom, (self.target / "AGENTS.md").read_bytes())
         entry = (self.target / "CLAUDE.md").read_bytes()
         self.assertIn(custom, entry)
-        self.assertIn(b"`.ai/commands/` to `.claude/workflows/`", entry)
-        self.assertIn(b"current managed entry and its delivery rules", entry)
+        self.assertNotIn(b"Historical plans", entry)
+        self.assertIn(b".claude/commands/", entry)
 
     def test_existing_hook_commands_move_even_when_new_hooks_are_disabled(self):
-        self.write(".codex/hooks.json", b'{"other":".ai/hooks/keep", "hooks":{"Stop":[{"hooks":[{"type":"command","command":"python .ai/hooks/local.py","commandWindows":"python .ai\\\\hooks\\\\local.py"}]}]}}')
-        changes, backups, _ = self.plan(hooks=False)
-        self.assertIn(self.target / ".codex/hooks.json", backups)
+        self.write(".claude/settings.json", b'{"other":".ai/hooks/keep", "hooks":{"Stop":[{"hooks":[{"type":"command","command":"python .ai/hooks/local.py","commandWindows":"python .ai\\\\hooks\\\\local.py"}]}]}}')
+        changes, backups, _ = self.plan("claude", hooks=False)
+        self.assertIn(self.target / ".claude/settings.json", backups)
         self.apply(changes)
         import json
-        settings = json.loads((self.target / ".codex/hooks.json").read_bytes())
+        settings = json.loads((self.target / ".claude/settings.json").read_bytes())
         self.assertEqual(".ai/hooks/keep", settings["other"])
         command = settings["hooks"]["Stop"][0]["hooks"][0]
-        self.assertEqual("python .codex/hooks/local.py", command["command"])
-        self.assertEqual("python .codex\\hooks\\local.py", command["commandWindows"])
+        self.assertEqual("python .claude/hooks/local.py", command["command"])
+        self.assertEqual("python .claude\\hooks\\local.py", command["commandWindows"])
         self.assertNotIn("PreToolUse", settings["hooks"])
 
-    def test_old_open_marker_preserves_appended_customer_instructions(self):
-        current = (installer.AGENT_MARKER.encode() + b"\nOriginal entry\n"
-                   b"Customer appended .ai migration rules\r\n")
-        self.write("AGENTS.md", current)
-        changes, _, _ = self.plan()
-        self.apply(changes)
-        self.assertIn(current, (self.target / "AGENTS.md").read_bytes())
-        self.assertIn(installer.AGENT_END.encode(), (self.target / "AGENTS.md").read_bytes())
-
     def test_existing_managed_hooks_relocate_without_duplicate_registration(self):
-        settings = installer.json_bytes(installer.hook_settings("codex")).replace(b"/.codex/hooks/", b"/.ai/hooks/")
-        self.write(".codex/hooks.json", settings)
+        settings = installer.hooks_toml(installer.hook_settings("codex")["hooks"]).replace(b"/.codex/hooks/", b"/.ai/hooks/")
+        self.write(".codex/config.toml", settings)
         changes, _, _ = self.plan()
         self.apply(changes)
         import json
-        result = json.loads((self.target / ".codex/hooks.json").read_bytes())
+        result = tomllib.loads((self.target / ".codex/config.toml").read_text())
         for event in ("PreToolUse", "PostToolUse"):
             self.assertEqual(1, len(result["hooks"][event]))
             self.assertNotIn("/.ai/hooks/", str(result["hooks"][event]))
@@ -208,14 +200,7 @@ class MigrationTests(unittest.TestCase):
         self.write(".ai/skills/custom/SKILL.md", b"Different custom content")
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "both map to"):
-            self.plan()
-        self.assertEqual(before, self.snapshot())
-
-    def test_legacy_records_fail_without_reinterpreting_attempts(self):
-        self.write(".ai/phases/01/attempt.txt", b"old schema")
-        before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "compatible original runtime"):
-            self.plan()
+            self.plan("claude")
         self.assertEqual(before, self.snapshot())
 
     def test_backup_location_file_and_parent_file_fail_preflight(self):

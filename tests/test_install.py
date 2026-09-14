@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -21,6 +22,11 @@ spec.loader.exec_module(installer)
 
 def command(*args, cwd=None):
     return subprocess.run(args, cwd=cwd, text=True, encoding="utf-8", capture_output=True, check=True).stdout
+
+
+def read_settings(path):
+    content = path.read_text(encoding="utf-8")
+    return tomllib.loads(content) if path.suffix == ".toml" else json.loads(content)
 
 
 class InstallerTests(unittest.TestCase):
@@ -44,7 +50,6 @@ class InstallerTests(unittest.TestCase):
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
                 "commit", "--quiet", "-m", "Template fixture", cwd=cls.source)
         cls.revision = command("git", "rev-parse", "HEAD", cwd=cls.source).strip()
-        cls.legacy = installer.load_legacy(cls.source, installer.SOURCE)
 
     @classmethod
     def tearDownClass(cls):
@@ -88,12 +93,12 @@ class InstallerTests(unittest.TestCase):
                                  "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
                 self.assertNotIn(source_claim, body, name)
         self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
-        self.assertTrue((self.target / ".codex/workflows/install.md").is_file())
-        self.assertTrue((self.target / ".codex/workflows/onboard.md").is_file())
-        self.assertTrue((self.target / ".codex/workflows/goal-plan.md").is_file())
+        self.assertTrue((self.target / ".codex/commands/install.md").is_file())
+        self.assertTrue((self.target / ".codex/commands/onboard.md").is_file())
+        self.assertTrue((self.target / ".codex/commands/goal-plan.md").is_file())
         self.assertFalse((self.target / ".ai").exists())
         self.assertIn(".codex/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
-        guide = (self.target / ".codex/workflows/install.md").read_text(encoding="utf-8")
+        guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
         self.assertIn("/main/.ai/install.py", guide)
         (self.target / ".worktrees").mkdir()
         (self.target / ".worktrees/local.txt").write_text("local")
@@ -143,8 +148,8 @@ class InstallerTests(unittest.TestCase):
                 self.assertFalse((self.target / ".ai").exists())
                 self.assertFalse((self.target / other).exists())
                 self.assertFalse((self.target / ("CLAUDE.md" if host == "codex" else "AGENTS.md")).exists())
-                for relative in ("RULES.md", "runtime/phase.py", "roles/coder.md",
-                                 "workflows/onboard.md", "templates/context.md", "skills/codebase-recon/SKILL.md"):
+                for relative in ("RULES.md", "runtime/phase.py", "agents/coder.md",
+                                 "commands/onboard.md", "templates/context.md"):
                     self.assertTrue((self.target / namespace / relative).is_file(), relative)
                 body = (self.target / entry).read_text(encoding="utf-8")
                 self.assertIn(namespace + "/RULES.md", body)
@@ -154,18 +159,15 @@ class InstallerTests(unittest.TestCase):
                 self.assertNotIn(".ai/", config)
                 self.assertIn("No phases yet", command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target))
                 self.assertIn(namespace + "-venv/", (self.target / ".gitignore").read_text())
+                skills = self.target / (".agents/skills" if host == "codex" else ".claude/skills")
+                full = (skills / "codebase-recon/SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("##", full)
+                self.assertNotIn("Read and follow the complete skill at", full)
+                self.assertFalse((self.target / namespace / "roles").exists())
+                self.assertFalse((self.target / namespace / "workflows").exists())
                 if host == "codex":
-                    canonical = list((self.target / namespace / "skills").glob("*/SKILL.md"))
-                    wrappers = list((self.target / ".agents/skills").glob("*/SKILL.md"))
-                    self.assertEqual(len(canonical), len(wrappers))
-                    for wrapper in wrappers:
-                        original = self.target / namespace / "skills" / wrapper.parent.name / "SKILL.md"
-                        wrapped = wrapper.read_text(encoding="utf-8")
-                        full = original.read_text(encoding="utf-8")
-                        self.assertEqual(full.split("---", 2)[1], wrapped.split("---", 2)[1])
-                        target = wrapped.split("](", 1)[1].split(")", 1)[0]
-                        self.assertEqual(original.resolve(), (wrapper.parent / target).resolve())
-                        self.assertGreater(len(full), len(wrapped))
+                    self.assertFalse((self.target / ".codex/skills").exists())
+                    self.assertFalse((self.target / ".codex/hooks.json").exists())
                 else:
                     self.assertFalse((self.target / ".agents").exists())
 
@@ -202,19 +204,25 @@ class InstallerTests(unittest.TestCase):
                 settings = {"permissions": {"deny": ["Read(.env)"]}, "disableAllHooks": False,
                             "hooks": {"PreToolUse": [{"matcher": "Write", "hooks": [
                                 {"type": "command", "command": "echo custom"}]}]}}
-                name = ".codex/hooks.json" if host == "codex" else ".claude/settings.json"
-                (self.target / name).write_text(json.dumps(settings), encoding="utf-8")
+                name = ".codex/config.toml" if host == "codex" else ".claude/settings.json"
+                original_settings = (b'model = "existing-model"\n[features]\nhooks = false\n' + installer.hooks_toml(settings["hooks"])
+                                     if host == "codex" else installer.json_bytes(settings))
+                (self.target / name).write_bytes(original_settings)
                 personal = b'{"model":"personal-local-choice"}\n'
                 (self.target / ".claude/settings.local.json").write_bytes(personal)
                 codex_config = b'model = "existing-model"\n[features]\nhooks = false\n'
-                (self.target / ".codex/config.toml").write_bytes(codex_config)
+                if host == "claude":
+                    (self.target / ".codex/config.toml").write_bytes(codex_config)
                 prose = b"# Product instructions\r\nPreserve this context.\r\n"
                 entry = "AGENTS.md" if host == "codex" else "CLAUDE.md"
                 (self.target / entry).write_bytes(prose)
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
-                merged = json.loads((self.target / name).read_text())
-                self.assertEqual(settings["permissions"], merged["permissions"])
+                merged = read_settings(self.target / name)
+                if host == "claude":
+                    self.assertEqual(settings["permissions"], merged["permissions"])
+                else:
+                    self.assertTrue((self.target / name).read_bytes().startswith(original_settings))
                 self.assertIn(settings["hooks"]["PreToolUse"][0], merged["hooks"]["PreToolUse"])
                 self.assertEqual(2, len(merged["hooks"]["PreToolUse"]))
                 self.assertTrue((self.target / entry).read_bytes().startswith(prose))
@@ -223,7 +231,8 @@ class InstallerTests(unittest.TestCase):
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertEqual(before, self.snapshot())
-                self.assertEqual(codex_config, (self.target / ".codex/config.toml").read_bytes())
+                if host == "claude":
+                    self.assertEqual(codex_config, (self.target / ".codex/config.toml").read_bytes())
                 self.assertEqual(personal, (self.target / ".claude/settings.local.json").read_bytes())
 
     def test_switching_installed_host_requires_migration_without_partial_copy(self):
@@ -242,7 +251,7 @@ class InstallerTests(unittest.TestCase):
                          '{"hooks": {"PreToolUse": [{"hooks": null}]}}',
                          '{"hooks": {"PreToolUse": [{"hooks": [{}]}]}}',
                          '{"hooks": {}, "hooks": {}}', '{"hooks": {}, "timeout": NaN}'):
-            for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+            for host, name in (("claude", ".claude/settings.json"),):
                 with self.subTest(contents=contents, name=name):
                     path = self.target / name
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -255,8 +264,22 @@ class InstallerTests(unittest.TestCase):
                     self.assertFalse((self.target / ".git").exists())
                     path.unlink()
 
+    def test_invalid_codex_toml_aborts_before_any_copy(self):
+        for contents in ('[', 'hooks = []', '[hooks]\nPreToolUse = {}',
+                         'model = "one"\nmodel = "two"',
+                         '[[hooks.PreToolUse]]\nhooks = [{}]'):
+            with self.subTest(contents=contents):
+                path = self.target / ".codex/config.toml"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(contents, encoding="utf-8")
+                before = self.snapshot()
+                result = self.install()
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("host settings", result.stderr)
+                self.assertEqual(before, self.snapshot())
+
     def test_customized_host_registration_and_entry_require_reconciliation(self):
-        for host, setting, entry in (("codex", ".codex/hooks.json", "AGENTS.md"),
+        for host, setting, entry in (("codex", ".codex/config.toml", "AGENTS.md"),
                                      ("claude", ".claude/settings.json", "CLAUDE.md")):
             self.target = self.base / host
             self.assertEqual(0, self.install("--host", host).returncode)
@@ -265,7 +288,8 @@ class InstallerTests(unittest.TestCase):
                     path = self.target / name
                     original = path.read_bytes()
                     modified = (original.replace(b'"timeout": 10', b'"timeout": 99')
-                                if name.endswith("json") else original.replace(b"RULES.md", b"OTHER.md"))
+                                if name.endswith("json") else original.replace(b"timeout = 10", b"timeout = 99")
+                                if name.endswith("toml") else original.replace(b"RULES.md", b"OTHER.md"))
                     self.assertNotEqual(original, modified)
                     path.write_bytes(modified)
                     before = self.snapshot()
@@ -276,7 +300,7 @@ class InstallerTests(unittest.TestCase):
                     path.write_bytes(original)
 
     def test_no_hooks_skips_registration_without_removing_existing_hooks(self):
-        for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+        for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
             with self.subTest(host=host):
                 self.target = self.base / host
                 result = self.install("--host", host, "--no-hooks", "--dry-run")
@@ -293,7 +317,7 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(before, self.snapshot())
 
     def test_registered_hooks_execute_from_installed_linked_worktree_subdirectory(self):
-        for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+        for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
             self.target = self.base / (host + " projet caf\u00e9 \u65e5\u672c\u8a9e")
             result = self.install("--host", host)
             self.assertEqual(0, result.returncode, result.stderr)
@@ -305,7 +329,7 @@ class InstallerTests(unittest.TestCase):
             cwd = worktree / "sub directory"
             cwd.mkdir()
             environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
-            settings = json.loads((worktree / name).read_text(encoding="utf-8"))
+            settings = read_settings(worktree / name)
             for event, destination in (("PreToolUse", self.target / "outside.txt"),
                                        ("PreToolUse", worktree / "inside.txt"),
                                        ("PostToolUse", worktree / ("." + host) / "RULES.md")):
@@ -335,11 +359,12 @@ class InstallerTests(unittest.TestCase):
                     if destination == worktree / "inside.txt":
                         self.assertEqual(b"", observed.stdout.strip())
                     else:
-                        warning = json.loads(observed.stdout)
-                        self.assertTrue(warning["systemMessage"])
                         self.assertNotIn(b"permissionDecision", observed.stdout)
                         if event == "PostToolUse":
-                            self.assertIn("." + host + "/RULES.md", warning["systemMessage"])
+                            self.assertIn(b"NOTICE", observed.stdout)
+                            self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
+                        else:
+                            self.assertTrue(json.loads(observed.stdout)["systemMessage"])
 
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")
@@ -354,8 +379,8 @@ class InstallerTests(unittest.TestCase):
         (self.target / ".planning").mkdir(parents=True)
         for name, content in records.items():
             (self.target / ".planning" / name).write_bytes(content)
-        for options in ((), ("--repair-template-context",)):
-            result = self.install(*options)
+        for _ in range(2):
+            result = self.install()
             self.assertEqual(0, result.returncode, result.stderr)
             for name, content in records.items():
                 self.assertEqual(content, (self.target / ".planning" / name).read_bytes())
@@ -373,83 +398,6 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(before, self.snapshot())
 
-    def seed_legacy_context(self, appended=False):
-        result = self.install()
-        self.assertEqual(0, result.returncode, result.stderr)
-        legacy = self.legacy
-        agent = legacy["AGENTS.md"]
-        if appended:
-            agent = b"# Existing product guidance\r\nKeep this.\r\n\n\n<!-- ai-engineering-template -->\n" + agent + b"\nUser added this later.\r\n"
-        (self.target / "AGENTS.md").write_bytes(agent)
-        (self.target / ".codex/RULES.md").write_bytes(legacy[".ai/RULES.md"])
-        for name, content in legacy.items():
-            if ("/" not in name and name.endswith(".log")) or name.startswith("docs/"):
-                path = self.target / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(content)
-        for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
-            (self.target / f".planning/{name}.md").write_bytes((ROOT / f".planning/{name}.md").read_bytes())
-
-    def test_explicit_repair_replaces_old_context_and_removes_only_known_history(self):
-        self.seed_legacy_context(appended=True)
-        custom = b"# Actual project\nThese are confirmed product decisions.\n"
-        (self.target / ".planning/PROJECT.md").write_bytes(custom)
-        before = self.snapshot()
-        preview = self.install("--repair-template-context", "--dry-run")
-        self.assertEqual(0, preview.returncode, preview.stderr)
-        for name in self.legacy:
-            if "/" not in name and name.endswith(".log"):
-                self.assertIn(f"remove {name}", preview.stdout)
-        self.assertEqual(before, self.snapshot())
-        result = self.install("--repair-template-context")
-        self.assertEqual(0, result.returncode, result.stderr)
-        agent = (self.target / "AGENTS.md").read_bytes()
-        self.assertTrue(agent.startswith(b"# Existing product guidance\r\nKeep this.\r\n"))
-        self.assertTrue(agent.endswith(b"User added this later.\r\n"))
-        self.assertNotIn(b"This repository is a reusable engineering workflow template", agent)
-        self.assertNotIn("This is a reusable template", (self.target / ".codex/RULES.md").read_text(encoding="utf-8"))
-        self.assertEqual(custom, (self.target / ".planning/PROJECT.md").read_bytes())
-        self.assertNotIn("AUTH-01", (self.target / ".planning/REQUIREMENTS.md").read_text(encoding="utf-8"))
-        self.assertNotIn("Critical Fix", (self.target / ".planning/ROADMAP.md").read_text(encoding="utf-8"))
-        self.assertEqual([], list(self.target.glob("*.log")))
-        self.assertFalse((self.target / "docs/WORKFLOW-DIRECTION.md").exists())
-        self.assertEqual([], list((self.target / "docs").rglob("*.md")))
-        repaired = self.snapshot()
-        self.assertEqual(0, self.install("--repair-template-context").returncode)
-        self.assertEqual(repaired, self.snapshot())
-        self.assertIn("No phases yet", command(sys.executable, ".codex/runtime/phase.py", "status", cwd=self.target))
-
-    def test_repair_handles_unmarked_old_entry_and_preserves_custom_history(self):
-        self.seed_legacy_context()
-        agent = self.target / "AGENTS.md"
-        agent.write_bytes(agent.read_bytes() + b"\nKeep this later project guidance.\r\n")
-        (self.target / "docs/INSTALL.md").write_bytes(b"Actual product install instructions\n")
-        result = self.install("--repair-template-context")
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertNotIn("reusable engineering workflow template", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
-        self.assertTrue(agent.read_bytes().endswith(b"Keep this later project guidance.\r\n"))
-        self.assertEqual(b"Actual product install instructions\n", (self.target / "docs/INSTALL.md").read_bytes())
-
-    def test_edited_unmarked_legacy_instructions_are_not_silently_retained(self):
-        self.seed_legacy_context()
-        agent = self.target / "AGENTS.md"
-        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
-        before = self.snapshot()
-        result = self.install("--repair-template-context")
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("reconcile", result.stderr)
-        self.assertEqual(before, self.snapshot())
-
-    def test_edited_legacy_instruction_block_requires_reconciliation(self):
-        self.seed_legacy_context(appended=True)
-        agent = self.target / "AGENTS.md"
-        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
-        before = self.snapshot()
-        result = self.install("--repair-template-context")
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("reconcile", result.stderr)
-        self.assertEqual(before, self.snapshot())
-
     def test_installed_guidance_links_resolve_in_both_destinations(self):
         import test_workflow_links
 
@@ -462,41 +410,19 @@ class InstallerTests(unittest.TestCase):
                     paths = list(test_workflow_links.guidance_files())
                     self.assertTrue(any(("." + host) in path.parts for path in paths))
                     test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
-                guide = (self.target / ("." + host) / "workflows/install.md").read_text(encoding="utf-8")
+                guide = (self.target / ("." + host) / "commands/install.md").read_text(encoding="utf-8")
                 self.assertIn("/main/.ai/install.py", guide)
 
     def test_existing_ai_is_preserved_and_requires_explicit_migration(self):
         (self.target / ".ai/runtime").mkdir(parents=True)
         (self.target / ".ai/runtime/custom.py").write_text("# Valuable custom workflow\n")
         for host in ("codex", "claude"):
-            for repair in ((), ("--repair-template-context",)):
-                with self.subTest(host=host, repair=repair):
-                    before = self.snapshot()
-                    result = self.install("--host", host, *repair)
-                    self.assertNotEqual(0, result.returncode)
-                    self.assertEqual(before, self.snapshot())
-                    self.assertFalse((self.target / ".git").exists())
-
-    def test_original_ai_release_migrates_only_with_explicit_repair(self):
-        for host in ("codex", "claude"):
             with self.subTest(host=host):
-                self.target = self.base / host
-                for name, content in self.legacy.items():
-                    if name.startswith(".ai/") or name == "AGENTS.md":
-                        path = self.target / name
-                        path.parent.mkdir(parents=True, exist_ok=True)
-                        path.write_bytes(content)
                 before = self.snapshot()
                 result = self.install("--host", host)
                 self.assertNotEqual(0, result.returncode)
                 self.assertEqual(before, self.snapshot())
-                result = self.install("--host", host, "--repair-template-context", "--dry-run")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertEqual(before, self.snapshot())
-                result = self.install("--host", host, "--repair-template-context")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertFalse((self.target / ".ai").exists())
-                self.assertIn("No phases yet", command(sys.executable, "." + host + "/runtime/phase.py", "status", cwd=self.target))
+                self.assertFalse((self.target / ".git").exists())
 
     def test_conflicts_abort_before_any_copy(self):
         (self.target / ".codex").mkdir(parents=True)

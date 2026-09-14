@@ -9,8 +9,6 @@ import json
 import re
 
 
-LEGACY_RECORDS = ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md",
-                  "config.yaml", "phases", "codebase", "specs", "decisions")
 TEXT_SUFFIXES = {".md", ".txt", ".yaml", ".yml", ".toml", ".sh", ".ps1"}
 
 
@@ -22,9 +20,10 @@ def relocate_paths(content, host):
         if part.startswith((b"http://", b"https://")):
             continue
         for separator in (b"/", b"\\\\", b"\\"):
-            for old, new in ((b".ai" + separator + b"agents", namespace + separator + b"roles"),
-                             (b".ai" + separator + b"commands", namespace + separator + b"workflows"),
-                             (b".agents" + separator + b"skills", namespace + separator + b"skills")):
+            for old, new in ((b".ai" + separator + b"agents", namespace + separator + b"agents"),
+                             (b".ai" + separator + b"commands", namespace + separator + b"commands"),
+                             (b".agents" + separator + b"skills",
+                              b".agents" + separator + b"skills" if host == "codex" else namespace + separator + b"skills")):
                 boundary = rb'''(?=''' + re.escape(separator) + rb'''|[\s"',\]});]|$)'''
                 part = re.sub(re.escape(old) + boundary, lambda _: new, part)
             part = part.replace(b".ai" + separator, namespace + separator)
@@ -69,10 +68,6 @@ def entry_remainder(content, installer, name):
     """Remove exactly one complete managed block, never guessed user content."""
     start, end = installer.AGENT_MARKER.encode(), installer.AGENT_END.encode()
     if start not in content and end not in content:
-        return content
-    if content.count(start) == 1 and end not in content:
-        # Older installers had no closing marker. Its ending cannot safely be
-        # distinguished from appended project instructions, so preserve it all.
         return content
     if content.count(start) != 1 or content.count(end) != 1:
         raise ValueError(f"Ambiguous managed workflow block in {name}; nothing was installed.")
@@ -122,12 +117,6 @@ def plan_migration(source, target, host, hooks, installer):
     if not old_root.exists():
         raise ValueError("--migrate-existing requires an existing .ai directory.")
     old_files, old_dirs = inventory(old_root, installer)
-    legacy = [name for name in LEGACY_RECORDS if (old_root / name).exists()]
-    if legacy:
-        raise ValueError("Legacy project records remain under .ai: " + ", ".join(legacy)
-                         + ". Preserve and reconcile them into .planning with their compatible "
-                         "original runtime first; finish or inspect old attempts without copying "
-                         "or reinterpreting checkpoints. Nothing was installed.")
     planning_files, _ = inventory(target / ".planning", installer)
     skill_files, skill_dirs = inventory(target / ".agents/skills", installer)
     incoming = installer.payload(source, host, hooks)
@@ -160,12 +149,6 @@ def plan_migration(source, target, host, hooks, installer):
     if refreshed:
         notes.append("Refresh shipped implementation; original versions remain in backup: "
                      + ", ".join(sorted(refreshed)))
-    # The full customized skills, including their metadata, determine discovery.
-    # Remove the source payload's wrappers before regenerating the complete set.
-    for name in list(desired):
-        if name.startswith(".agents/skills/"):
-            del desired[name]
-    desired.update(installer.host_payload(desired, host, hooks))
     for path in planning_files:
         name = path.relative_to(target).as_posix()
         current = path.read_bytes()
@@ -196,19 +179,10 @@ def plan_migration(source, target, host, hooks, installer):
         previous = remainders["AGENTS.md"]
         if previous.strip() and previous not in custom:
             custom += b"\n\n" + previous
-    mapping = ("\n\nHistorical plans keep their original paths. When following them, resolve "
-               f"`.ai/agents/` to `{namespace}/roles/`, `.ai/commands/` to "
-               f"`{namespace}/workflows/`, `.agents/skills/` to `{namespace}/skills/`, "
-               f"and other `.ai/` paths to `{namespace}/`. Project records remain in "
-               "`.planning/`; do not rewrite completed history or reuse incompatible old checkpoints. "
-               "Before execution, reconcile pending PLAN ownership and Read first paths with "
-               "the installed layout, then recheck and reverify; the runtime does not translate "
-               "PLAN ownership from this prose mapping. "
-               "The current managed entry and its delivery rules govern current work.\n").encode()
-    desired[entry] = custom + (b"\n\n" if custom else b"") + incoming[entry] + mapping
+    desired[entry] = custom + (b"\n\n" if custom else b"") + incoming[entry]
     if host == "claude" and "AGENTS.md" in remainders:
         desired["AGENTS.md"] = remainders["AGENTS.md"]
-    for name in (".codex/hooks.json", ".claude/settings.json"):
+    for name in (".codex/config.toml", ".claude/settings.json"):
         path = target / name
         installer.safe_path(path)
         if path.exists():
@@ -216,8 +190,10 @@ def plan_migration(source, target, host, hooks, installer):
                 raise ValueError(f"Host settings are not a file: {path}")
             backups.add(path)
             if name.startswith(namespace + "/"):
-                current = relocate_hook_commands(path.read_bytes(), host, installer)
-                desired[name] = (installer.merge_hooks(current, desired[name], path)
+                current = (relocate_paths(path.read_bytes(), host) if name.endswith(".toml")
+                           else relocate_hook_commands(path.read_bytes(), host, installer))
+                merge = installer.merge_codex_config if name.endswith(".toml") else installer.merge_hooks
+                desired[name] = (merge(current, desired[name], path)
                                  if name in desired else current)
     ignore = target / ".gitignore"
     installer.safe_path(ignore)
@@ -249,8 +225,8 @@ def plan_migration(source, target, host, hooks, installer):
             if destination not in backups:
                 raise ValueError(f"Existing destination conflicts: {destination}; nothing was installed.")
         writes.append((destination, content))
-    # Only exact inventoried old files are removed, after all writes. Codex
-    # discovery wrappers stay; their former support files move into .codex.
+    # Only exact inventoried old files are removed, after all writes.
+    # Codex skills stay complete at their existing discovery location.
     retained = {target / name for name in desired}
     deletes = [(path, None) for path in old_files + skill_files if path not in retained]
     deletes.extend((path, None) for path in old_dirs + skill_dirs

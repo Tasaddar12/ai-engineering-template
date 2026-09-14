@@ -28,7 +28,7 @@
 #                                reliably, so this catches accidents, not a
 #                                determined escape.
 #
-# Register explicitly with your host; no settings template is supplied.
+# The installer registers this script directly for PreToolUse.
 
 set -u
 
@@ -53,14 +53,14 @@ fi
 _PYEX='
 import sys, json
 try:
-    d = json.load(sys.stdin)
+    d = json.loads(sys.stdin.buffer.read().decode("utf-8"))
 except Exception:
     sys.exit(0)
 k = sys.argv[1]
 v = d.get(k)
 if not isinstance(v, str):
     v = (d.get("tool_input") or {}).get(k)
-sys.stdout.write(v if isinstance(v, str) else "")
+sys.stdout.buffer.write((v if isinstance(v, str) else "").encode("utf-8"))
 '
 
 field() {
@@ -85,6 +85,15 @@ field() {
 # are case-insensitive and git and the tool layer disagree on drive-letter case).
 norm() {
   local p="${1//\\//}"
+  if [[ "$p" != /dev/* ]] && command -v cygpath >/dev/null 2>&1; then
+    p="$(cygpath -m "$p")"
+    local ancestor="$p" suffix=""
+    while [[ ! -e "$ancestor" && "$ancestor" == */* && "$ancestor" != */ ]]; do
+      suffix="/${ancestor##*/}$suffix"
+      ancestor="${ancestor%/*}"
+    done
+    p="$(cygpath -ml "$ancestor")$suffix"
+  fi
   while [[ "$p" == *"//"* ]]; do p="${p//\/\//\/}"; done
   p="${p%/}"
   printf '%s' "$p" | tr '[:upper:]' '[:lower:]'
@@ -95,7 +104,7 @@ resolve() {
   local p="${1//\\//}"
   case "$p" in
     /*|?:/*) ;;                 # already absolute (POSIX or C:/...)
-    *) p="$cwd/$p" ;;
+    *) p="${cwd//\\//}/$p" ;;
   esac
   local out=() seg
   local IFS=/
@@ -143,7 +152,16 @@ esac
 
 n_root="$(norm "$root")"
 n_gitdir="$(norm "$gitdir")"
+n_primary="$(norm "${gitdir%/.git}")"
 n_dotgit="$(norm "$root/.git")"   # the main checkout's, which lives inside root
+
+# Other linked checkouts can sit outside the primary directory, including in temp.
+n_worktrees=()
+while IFS= read -r -d '' record; do
+  case "$record" in
+    'worktree '*) n_worktrees+=("$(norm "${record#worktree }")") ;;
+  esac
+done < <(git -C "$cwd" worktree list --porcelain -z 2>/dev/null)
 
 # The session scratchpad is not in the payload. `scratchpad_dir` is not a field
 # PreToolUse carries, so reading it always yielded the empty string and every
@@ -184,7 +202,11 @@ inside() {
   in_gitdir "$1" && return 1
   local p; p="$(norm "$1")"
   [[ "$p" == "$n_root" || "$p" == "$n_root"/* ]] && return 0
+  [[ "$p" == "$n_primary" || "$p" == "$n_primary"/* ]] && return 1
   local d
+  for d in ${n_worktrees[@]+"${n_worktrees[@]}"}; do
+    [[ "$p" == "$d" || "$p" == "$d"/* ]] && return 1
+  done
   for d in ${n_tmpdirs[@]+"${n_tmpdirs[@]}"}; do
     [[ "$p" == "$d" || "$p" == "$d"/* ]] && return 0
   done
@@ -197,6 +219,15 @@ inside_bash() {
 }
 
 case "$tool" in
+  apply_patch)
+    while IFS= read -r target; do
+      [[ -n "$target" ]] || continue
+      abs="$(resolve "$target")"
+      if ! inside "$abs"; then
+        warn "Heads up: $target is outside this checkout ($root). Keep patch changes in the assigned worktree. Not blocked."
+      fi
+    done < <(field command | sed -nE 's/^\*\*\* (Add File|Update File|Delete File|Move to): (.*)\r?$/\2/p' | tr -d '\r')
+    ;;
   Write|Edit|MultiEdit|NotebookEdit)
     target="$(field file_path)"
     [[ -n "$target" ]] || target="$(field notebook_path)"

@@ -2,9 +2,8 @@
 
 Read the selected complete role in [agents](../agents/README.md). Its local
 workflow section and operation notes adapt the full source method; they do not
-replace its analysis, examples, task steps or report structure. The
-[provenance](../agents/PROVENANCE.json) records the pinned source, original hashes
-and every reversible edit. No compact agents are used.
+replace its analysis, examples, task steps or report structure. No compact agents
+are used.
 
 ## Authority and execution
 
