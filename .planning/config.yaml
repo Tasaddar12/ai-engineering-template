@@ -11,19 +11,35 @@ execution:
     - -a
     - never
     - exec
+    - --model
+    - gpt-5.6-terra
     - --ephemeral
     - --sandbox
     - "{sandbox}"
     - -C
     - "{worktree}"
     - "-"
-  # Optional documentor_command can select a separate route; otherwise the same
-  # executable receives the documentor role and its bounded documentation scope.
+  # Documentation uses Luna with the same bounded worker invocation.
+  documentor_command:
+    - codex
+    - -a
+    - never
+    - exec
+    - --model
+    - gpt-5.6-luna
+    - --ephemeral
+    - --sandbox
+    - "{sandbox}"
+    - -C
+    - "{worktree}"
+    - "-"
   verifier_command:
     - codex
     - -a
     - never
     - exec
+    - --model
+    - gpt-5.6-luna
     - --ephemeral
     - --sandbox
     - "{sandbox}"

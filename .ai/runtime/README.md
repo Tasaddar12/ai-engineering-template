@@ -88,8 +88,11 @@ variables, plus the Markdown assignment on standard input. An optional
 
 The coordinator starts fresh processes. Each gets the role, relevant core
 constraints, CONTEXT, its PLAN, required source and dependency summaries.
-Worker processes do not start agents. The default Codex adapter uses the host's
-configured model. Check the installed host's execution and worktree permissions;
+Worker processes do not start agents. The template's Codex commands explicitly
+select `gpt-5.6-terra` for coders and `gpt-5.6-luna` for documentors and verifiers
+through `--model` in `.planning/config.yaml`. Other model settings, including
+reasoning effort, retain the host defaults unless overridden in those commands.
+Check the installed host's execution and worktree permissions;
 prompts and Git auditing do not sandbox arbitrary commands or external services.
 
 Tracked `.agents/skills/` files travel with committed inputs into fresh worker
