@@ -40,8 +40,16 @@ reviewable unit of the authorized task, with its applicable checks completed;
 do not accumulate completed slices into one end-of-task commit. This includes
 standalone work, preparation, code, tests, documentation and corrections.
 Component workers also commit their SUMMARY and hand commits to the coordinator.
-The coordinator pushes each completed standalone or integrated slice and creates
-or updates one PR/MR for the task or phase, using a draft while scope remains.
+The coordinator must push each completed standalone or integrated slice
+immediately after committing it, before starting the next slice or returning.
+On the first push, open a draft PR/MR immediately for tracking; do not wait for
+the task, phase, implementation or verification to finish. If a PR/MR already
+exists for the task, update it instead of creating another. Push every subsequent
+slice to that same PR/MR and keep its description current. Do not batch completed
+slices into a later push or leave committed progress only on the local machine.
+The draft tracks ongoing work; it does not claim readiness for review or merge.
+If a push or draft creation fails, report the blocker and preserve the commit;
+do not silently continue accumulating unpublished slices.
 Workers keep their ownership boundaries and do not independently publish or merge.
 An explicit instruction not to commit wins; local-only work is not pushed.
 Read-only work needs no empty commit. Reviewers do not edit or commit the checkout.

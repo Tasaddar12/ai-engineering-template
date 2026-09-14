@@ -33,8 +33,9 @@ and checks before accepting a component; a summary alone is not proof.
 Only you update shared phase context, ROADMAP and STATE, integrate component
 branches or publish. Keep Git operations serialized. Commit phase preparation and
 coordinator updates in the assigned integration worktree. Commit each completed
-meaningful slice immediately, then push each standalone or integrated slice and
-create/update the task's draft PR/MR under the shared delivery defaults.
+meaningful slice immediately and push it before beginning the next slice. Open
+the task's draft PR/MR on the first push for tracking, and update that same draft
+after every subsequent slice. Do not postpone publication until completion.
 
 Obtain independent verification and correct evidenced gaps within authorized
 scope. Record scope-changing decisions before revising instructions. Preserve
