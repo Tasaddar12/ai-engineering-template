@@ -143,6 +143,8 @@ def install(args):
                 str(target / ".ai/runtime/requirements.txt"))
             run(str(interpreter), str(target / ".ai/runtime/phase.py"), "status", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
+              "If installed into a primary checkout, a human must review and commit the "
+              "bootstrap before an agent creates a worktree (see docs/INSTALL.md).\n"
               "Next: follow .ai/commands/onboard.md to fill project intent, configure actual "
               "checks and worker commands, and commit setup. See docs/INSTALL.md.")
 

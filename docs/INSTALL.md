@@ -5,6 +5,16 @@ template from GitHub and installs PyYAML into a dedicated `.ai-venv`. Python's
 `venv` and pip must be available. GitHub and the configured pip package index need
 to be reachable. It does not require a GitHub login for this public template.
 
+One command to download and run it, creating `./my-project`:
+
+```text
+python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target ./my-project
+```
+
+Use `python3` on macOS/Linux if needed. For an existing project, use `--target .`
+from its root or assigned worktree. This executes the repository's script in
+memory; the saved-file commands below are an alternative.
+
 ## Download and run
 
 For a new project, run the following from its intended parent directory. Change
@@ -92,12 +102,32 @@ python /path/to/downloaded/install.py --target .worktrees/ai-setup
 ```
 
 If this is the first bootstrap in a repository without workflow rules, a human
-can install directly into its root and review the changes. Subsequent agent
-edits and commits follow the installed worktree procedure. Preserve any
+can install directly into its root, review the changes, and commit the installed
+workflow before handing off to an agent. A worktree created from HEAD only gets
+committed files. Subsequent agent edits and commits follow the installed
+worktree procedure. Preserve any
 conflicting guidance and reconcile it explicitly; the installer has no overwrite
 switch. It leaves unrelated dirty files alone.
 
 ## Finish onboarding
+
+**Commit the human bootstrap first when installing into a primary checkout.**
+A newly initialized repository has no HEAD until its first commit, so it cannot
+create the worktree required for agent onboarding. An existing repository also
+needs the installed files committed before they can travel into a new worktree.
+Git needs your author name and email configured for this step.
+
+For a brand-new, otherwise empty project, review the installed files and run:
+
+```text
+git add -- AGENTS.md .ai .agents/skills .planning docs changes.log .gitignore
+git commit -m "Install AI engineering workflow"
+```
+
+If the directory contained existing files, inspect `git status` and stage only
+the installer additions and reviewed instruction/ignore changes; the directory
+arguments above can also stage unrelated work. If installing into an already
+assigned worktree, the agent can review and commit setup there directly.
 
 Activate the environment from the project directory:
 

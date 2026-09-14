@@ -56,6 +56,7 @@ class InstallerTests(unittest.TestCase):
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn(self.revision, result.stdout)
+        self.assertIn("human must review and commit", result.stdout)
         self.assertEqual(self.target.resolve(), Path(command("git", "rev-parse", "--show-toplevel", cwd=self.target).strip()).resolve())
         self.assertEqual("", command("git", "remote", cwd=self.target))
         status = command(sys.executable, ".ai/runtime/phase.py", "status", cwd=self.target)
