@@ -150,6 +150,14 @@ n_primary="$(norm "${gitdir%/.git}")"
 n_primary="$(norm "${gitdir%/.git}")"
 n_dotgit="$(norm "$root/.git")"   # the main checkout's, which lives inside root
 
+# Other linked checkouts can sit outside the primary directory, including in temp.
+n_worktrees=()
+while IFS= read -r -d '' record; do
+  case "$record" in
+    'worktree '*) n_worktrees+=("$(norm "${record#worktree }")") ;;
+  esac
+done < <(git -C "$cwd" worktree list --porcelain -z 2>/dev/null)
+
 # The session scratchpad is not in the payload. `scratchpad_dir` is not a field
 # PreToolUse carries, so reading it always yielded the empty string and every
 # write to the scratchpad the harness tells agents to use was denied. The temp
@@ -192,6 +200,9 @@ inside() {
   [[ "$p" == "$n_primary" || "$p" == "$n_primary"/* ]] && return 1
   [[ "$p" == "$n_primary" || "$p" == "$n_primary"/* ]] && return 1
   local d
+  for d in ${n_worktrees[@]+"${n_worktrees[@]}"}; do
+    [[ "$p" == "$d" || "$p" == "$d"/* ]] && return 1
+  done
   for d in ${n_tmpdirs[@]+"${n_tmpdirs[@]}"}; do
     [[ "$p" == "$d" || "$p" == "$d"/* ]] && return 0
   done
