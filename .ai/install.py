@@ -63,7 +63,7 @@ def payload(source, host="codex", hooks=True):
             continue
         metadata, name = entry.split("\t", 1)
         modes[name] = metadata.split()[0]
-        if name.startswith(ASSETS) or name == ".ai/hooks/host-adapter.py":
+        if name.startswith(ASSETS):
             continue
         if not (name.startswith((".ai/", ".agents/skills/"))
                 or name in PLANNING_RESOURCES):
@@ -219,22 +219,6 @@ def hook_settings(host):
     return {"hooks": events}
 
 
-def remove_legacy_adapter(settings):
-    """Retire the replaced Python hook while retaining other handlers."""
-    for event in ("PreToolUse", "PostToolUse"):
-        groups = settings.get("hooks", {}).get(event, [])
-        retained = []
-        for group in groups:
-            handlers = [handler for handler in group["hooks"]
-                        if "/hooks/host-adapter.py" not in handler.get("command", "")]
-            if handlers:
-                retained.append(dict(group, hooks=handlers))
-            elif not group["hooks"]:
-                retained.append(group)
-        if event in settings.get("hooks", {}):
-            settings["hooks"][event] = retained
-
-
 def json_bytes(value):
     return (json.dumps(value, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
 
@@ -273,10 +257,8 @@ def merge_hooks(current, incoming, path):
                                    (not isinstance(item.get("command"), str) or not item["command"].strip()))
                                for item in group["hooks"])):
                     raise ValueError(f"invalid matcher/handler group for {event}")
-        before = json_bytes(settings)
-        remove_legacy_adapter(settings)
         additions = json.loads(incoming)["hooks"]
-        changed = json_bytes(settings) != before
+        changed = False
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
@@ -299,9 +281,7 @@ def retire_codex_json(current, path):
     # Validate existing groups and reject edited managed registrations first.
     merge_hooks(current, json_bytes(expected), path)
     settings = json.loads(current.decode("utf-8-sig"))
-    before = json_bytes(settings)
-    remove_legacy_adapter(settings)
-    changed = json_bytes(settings) != before
+    changed = False
     for event, groups in expected["hooks"].items():
         existing = settings.get("hooks", {}).get(event, [])
         retained = [group for group in existing if group not in groups]

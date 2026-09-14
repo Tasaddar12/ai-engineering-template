@@ -206,28 +206,6 @@ class MigrationTests(unittest.TestCase):
             self.assertEqual(1, len(result["hooks"][event]))
             self.assertNotIn("/.ai/hooks/", str(result["hooks"][event]))
 
-    def test_python_adapter_is_backed_up_and_replaced_with_direct_shell_hooks(self):
-        import json
-        self.write(".ai/hooks/host-adapter.py", b"# obsolete hook implementation\n")
-        old = {"hooks": {"PreToolUse": [{"hooks": [
-            {"type": "command", "command": "python .ai/hooks/host-adapter.py"},
-            {"type": "command", "command": "echo customer hook"},
-        ]}]}}
-        self.write(".codex/hooks.json", installer.json_bytes(old))
-        changes, backups, _ = self.plan()
-        self.assertIn(self.target / ".ai/hooks/host-adapter.py", backups)
-        self.apply(changes)
-        self.assertFalse((self.target / ".codex/hooks/host-adapter.py").exists())
-        retained = json.loads((self.target / ".codex/hooks.json").read_bytes())
-        self.assertEqual([{"type": "command", "command": "echo customer hook"}],
-                         retained["hooks"]["PreToolUse"][0]["hooks"])
-        settings = tomllib.loads((self.target / ".codex/config.toml").read_text())
-        pre = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
-        post = settings["hooks"]["PostToolUse"][0]["hooks"][0]["command"]
-        self.assertIn("worktree-confine.sh", pre)
-        self.assertIn("ai-tier-notice.sh", post)
-        self.assertNotIn("host-adapter.py", pre + post)
-
     def test_two_old_paths_mapping_to_same_destination_are_rejected(self):
         self.write(".ai/skills/custom/SKILL.md", b"Different custom content")
         before = self.snapshot()

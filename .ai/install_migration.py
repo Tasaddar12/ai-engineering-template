@@ -145,8 +145,6 @@ def plan_migration(source, target, host, hooks, installer):
     relocated = {}
     for old in old_files + skill_files:
         name = old.relative_to(target).as_posix()
-        if name == ".ai/hooks/host-adapter.py":
-            continue  # Its original remains in the migration backup.
         destination = installer.destination_path(name, host)
         current = old.read_bytes()
         if destination in relocated:

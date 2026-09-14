@@ -169,7 +169,6 @@ class InstallerTests(unittest.TestCase):
                 if host == "codex":
                     self.assertFalse((self.target / ".codex/skills").exists())
                     self.assertFalse((self.target / ".codex/hooks.json").exists())
-                    self.assertFalse((self.target / ".codex/hooks/host-adapter.py").exists())
                 else:
                     self.assertFalse((self.target / ".agents").exists())
 
