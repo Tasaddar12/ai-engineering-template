@@ -7,8 +7,10 @@ title: Advisory host hooks
 # Advisory host hooks
 
 [Installation](../commands/install.md) registers
-[host-adapter.py](host-adapter.py) for Codex, Claude Code or both. Registration
+[host-adapter.py](host-adapter.py) for the selected Codex or Claude Code host. Registration
 lives in `.codex/hooks.json` for Codex and `.claude/settings.json` for Claude.
+The implementation lives in `.codex/hooks/host-adapter.py` or
+`.claude/hooks/host-adapter.py` alongside the rest of that host's workflow.
 Use `--no-hooks` to skip adding registrations; existing ones are preserved.
 The selected host must load and trust its project configuration before hooks run.
 
@@ -36,7 +38,8 @@ quiet. Repository rules and host permissions govern the work regardless of notic
 The generated launcher resolves the active Git root from its working directory
 and leaves stdin intact. It supports subdirectory launches; the adapter does not
 use `CLAUDE_PROJECT_DIR`, which can continue pointing at the primary checkout.
-Python 3.11+ and Git are required. Claude's launcher uses its normal Bash command
+The launcher and adapter read Git paths and host payloads as UTF-8, including on
+Windows. Python 3.11+ and Git are required. Claude's launcher uses its normal Bash command
 shell (Git Bash on Windows); the adapter itself uses only Python's standard library.
 
 ```text
