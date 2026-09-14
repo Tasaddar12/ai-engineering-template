@@ -85,8 +85,14 @@ field() {
 # are case-insensitive and git and the tool layer disagree on drive-letter case).
 norm() {
   local p="${1//\\//}"
-  if [[ "$p" == /* && "$p" != /dev/* ]] && command -v cygpath >/dev/null 2>&1; then
+  if [[ "$p" != /dev/* ]] && command -v cygpath >/dev/null 2>&1; then
     p="$(cygpath -m "$p")"
+    local ancestor="$p" suffix=""
+    while [[ ! -e "$ancestor" && "$ancestor" == */* && "$ancestor" != */ ]]; do
+      suffix="/${ancestor##*/}$suffix"
+      ancestor="${ancestor%/*}"
+    done
+    p="$(cygpath -ml "$ancestor")$suffix"
   fi
   while [[ "$p" == *"//"* ]]; do p="${p//\/\//\/}"; done
   p="${p%/}"

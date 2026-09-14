@@ -90,6 +90,27 @@ class HostHookTests(unittest.TestCase):
         if os.name == "nt":
             self.assertIsNone(self.invoke(inputs={"file_path": str(self.assigned / "new.txt").upper()}))
 
+    @unittest.skipUnless(os.name == "nt", "Windows short path aliases")
+    def test_short_path_aliases_share_checkout_and_scratch_boundaries(self):
+        bash = str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe")
+        short = subprocess.check_output(
+            [bash, "-c", 'cygpath -d "$1"', "--", str(self.base)],
+            text=True, encoding="utf-8").strip()
+        if short.replace("\\", "/").lower() == self.base.as_posix().lower():
+            self.skipTest("Filesystem does not provide short path aliases")
+        short_primary = Path(short) / "primary project"
+        short_assigned = short_primary / ".worktrees/assigned task"
+        for target, cwd, expected_notice in (
+            (short_primary / "new directory/outside.txt", self.assigned, True),
+            (short_assigned / "new directory/inside.txt", self.assigned, False),
+            (self.primary / "new directory/outside.txt", short_assigned, True),
+        ):
+            with self.subTest(target=target, cwd=cwd):
+                notice = self.invoke(inputs={"file_path": str(target)}, cwd=cwd)
+                self.assertEqual(expected_notice, notice is not None)
+        self.assertIsNone(self.invoke(inputs={"file_path": str(self.base / "new directory/scratch.txt")},
+                                      env={"TEMP": short, "TMP": short, "TMPDIR": short}))
+
     def test_utf8_payload_ignores_host_text_locale(self):
         unicode_cwd = self.assigned / "source résumé 東京"
         unicode_cwd.mkdir()
