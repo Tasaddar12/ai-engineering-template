@@ -13,8 +13,10 @@ Follow [RULES: Worktrees](../RULES.md#worktrees-recovery-and-cleanup).
 4. Keep related phase preparation and execution in its integration worktree.
    Runtime component checkouts are siblings with explicit owned paths/resources.
    Only the coordinator integrates them into the phase branch.
-5. Commit completed work; inspect diff and evidence before authorized publication.
-   Use [phase-ship](phase-ship.md). The runtime never merges.
+5. Commit each completed meaningful slice before starting the next. The coordinator
+   pushes standalone or integrated slices and creates/updates the task's PR/MR.
+   Use [phase-ship](phase-ship.md) through verified automatic merge by default;
+   honor explicit user overrides. The Python publisher itself does not merge.
 6. Preserve unmerged, dirty and incomplete worktrees. Cleanup requires verified
    merge evidence, an exact clean target and authorization covering removal.
 

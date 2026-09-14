@@ -23,9 +23,12 @@ the primary checkout's ignored `.worktrees/`. Verify the absolute root and branc
 before writes; follow [worktree](.ai/commands/worktree.md). The primary checkout is
 read-only for tracked changes and commits.
 
-Commit completed standalone work and each component's changes and summary with
-a nonempty descriptive message before returning. An explicit instruction not to
-commit wins. Read-only work needs no empty commit.
+Commit each completed meaningful slice immediately with a descriptive nonempty
+message, including component summaries. By default, the coordinator pushes each
+standalone or integrated slice, creates or updates a PR/MR, and automatically
+merges after verification and required checks. Explicit user limits override
+these defaults; read-only work needs no commit or publication. Follow
+[delivery rules](.ai/RULES.md#session-and-authorization).
 
 The coordinator starts workers; role files do not install a dispatcher. Workers
 follow their assigned paths and return evidence. Phase paths stay stable, and
@@ -33,6 +36,7 @@ required documentation remains attached to its phase.
 
 Start at [onboard](.ai/commands/onboard.md) and
 [phase-status](.ai/commands/phase-status.md). Use
-[phase-verify](.ai/commands/phase-verify.md) before publication. Publishing a PR
-does not mean delivery: **the runtime never merges**. Preserve unmerged work
-and follow the user's explicit delivery boundary.
+[phase-verify](.ai/commands/phase-verify.md) before final readiness and
+[phase-ship](.ai/commands/phase-ship.md) through confirmed merge by default.
+The coordinator merges through the forge; the Python publisher only publishes.
+Preserve blocked or unmerged work and honor the user's delivery overrides.

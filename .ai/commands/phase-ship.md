@@ -1,39 +1,68 @@
-# Publish a phase PR
+# Publish and deliver changes
 
-Read [RULES](../RULES.md), current verification, required UAT and the user's
-publication boundary. Use the assigned clean integration worktree.
+Read [RULES](../RULES.md#session-and-authorization), current verification, required
+UAT and any user delivery override. Use the assigned integration worktree. The
+default for authorized tracked work is commit, push, PR/MR and automatic merge.
+The coordinator owns publication and merge; component workers return commits.
 
-Complete required behavior, documentation and local checks before final readiness.
-Record real publication authorization; `--authorized` asserts existing authority
-and does not obtain it. Choose the actual target branch for the project.
+## Commit and publish each slice
+
+1. Inspect the owned diff and run applicable checks for a bounded, reviewable slice.
+   Commit it immediately with a descriptive nonempty message before the next slice.
+2. Verify the actual remote, target branch and task branch. Push each completed
+   standalone or integrated slice. Find an existing PR/MR for that source and target
+   before creating one; keep one request for the task or phase and update it.
+3. Use a draft while required scope, documentation or verification remains. Describe
+   unfinished work accurately. Default progress pushes use the forge's supported
+   CLI/API; an explicit local-only or no-push instruction prevents publication.
+
+## Verify final readiness
+
+Complete required behavior, documentation, local checks, independent review and
+required UAT. Fix actionable findings in the worktree, commit each correction,
+repeat affected checks and verification, and push the resulting revision.
+
+For a runtime-managed GitHub phase, use the publisher from the clean integration
+worktree after current phase verification:
 
 ```text
 python .ai/runtime/phase.py publish 01-authentication --authorized --base BASE
 ```
 
-Replace BASE with the agreed branch. `--draft` requests a draft PR. The runtime
-pushes and creates or updates the phase PR, checks current evidence and reports
-required remote checks. It never invokes a merge command.
+Replace BASE with the verified target branch. `--authorized` asserts the standing
+delivery authorization or an applicable explicit instruction; it does not obtain
+permission. The runtime pushes and creates/updates a GitHub PR, checks current
+evidence and reports configured remote checks. `--draft` still requires that
+evidence; use the direct forge route above for earlier progress snapshots.
 
-PR creation precedes its CI results. Inspect current checks with phase status
---remote; pending or failed required checks prevent declaring the PR ready.
-Publication itself does not promise to wait for CI completion.
+Standalone work uses the same review, checks and delivery rules through the
+forge's tools without inventing phase records. For GitLab, use supported MR
+tools; the Python publisher does not implement GitLab publication.
 
-Review the complete PR, fix actionable findings in the worktree, repeat affected
-checks and independent verification, then push the updated result. Report the
-PR link, actual review/check state, remaining limitations and readiness.
-If the user requested no merge, stop with the PR open and worktree preserved.
+Review the complete request and confirm the remote head matches the locally
+verified revision. Mark a finished draft ready unless the user requested draft-only
+delivery. Observe required remote checks and reviews for that head; pending,
+failed, cancelled or missing required results prevent merge. Wait for pending
+checks, correct actionable failures within scope and reverify changed content.
 
-Publication is distinct from delivery. Merge and cleanup are separate actions
-requiring applicable authorization and observed merge evidence; they are not an
-automatic consequence of this procedure. A failed publication must not become
-a local merge.
+## Merge automatically and confirm
 
-## Authorized draft progress
+Unless the user requested no merge or another narrower boundary, merge the PR/MR
+through the forge once verification and repository requirements pass. Use the
+repository's permitted merge method, preserving slice commits where supported.
+Bind the merge to the verified head when supported; recheck and reverify if it
+changes. Do not bypass protections, use an admin override, approve on a human's
+behalf, force push or replace a failed publication with a local merge.
 
-When the user explicitly requests live progress in a draft PR, the coordinator
-may commit and push each bounded slice and create/update a draft through GitHub
-before phase verification. Keep the PR description clear about unfinished work.
-This direct draft route does not bypass the Python runtime's final publication
-checks or establish readiness. Before marking ready or merging, finish required
-checks, independent review and documented corrections for the final revision.
+The Python publisher does not invoke merge commands. The coordinator performs
+this step with the forge CLI/API without asking for another approval. If using
+forge auto-merge or a merge queue, observe it through completion: scheduling a
+merge does not establish delivery.
+
+Confirm the remote merged state, target branch and merge revision. Report the
+PR/MR link, commits, actual checks and observed merge result. If remote access,
+required human review, checks or merge availability blocks delivery, preserve the
+branch/worktree and report the exact blocker and next action. Explicit no-merge
+instructions leave the request open. Synchronization may only fast-forward a
+verified clean primary checkout; destructive cleanup needs separate authorization
+and the [worktree](worktree.md) safeguards.
