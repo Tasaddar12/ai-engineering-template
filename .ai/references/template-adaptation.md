@@ -3,8 +3,7 @@
 Read the selected [full template](../templates/README.md), including its examples,
 counterexamples, field explanations and consumer guidance. Generate the artifact
 from its **File Template** or corresponding artifact block; do not copy the whole
-instructional document into a phase result. Use the complete retained templates;
-removed compact and specialty variants are not available authoring sources.
+instructional document into a phase result. Use the complete templates.
 
 ## Which layer runs
 
@@ -22,16 +21,16 @@ and the host mappings in agent adaptation. A reference to an upstream tool does
 not make it installed. Never claim an unavailable CLI command ran when only a
 Markdown file was read.
 
-## Compatibility decisions
+## Runtime behavior
 
-Every template alteration and source-reference repair is recorded in
-[changes.log](../../changes.log) and the import provenance. These adaptations
+The workflow's [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/)
+and import provenance record its source alterations and reference repairs. These adaptations
 preserve full instructions; they are not a license to shorten a template.
 
 | Concern | Applied behavior | Reason |
 |---|---|---|
 | Project data | `.planning/` owns project identity, requirements, roadmap, state, phases, research maps, current specifications, decisions and project settings | User requested separation from reusable `.ai` machinery |
-| PLAN | `NN-CC-PLAN.md` is the bounded component prompt within a phase | Follow upstream naming without resurrecting a standalone PLAN lifecycle |
+| PLAN | `NN-CC-PLAN.md` is the bounded component prompt within a phase | Keep each assignment attached to its phase |
 | Execution metadata | Add the documented [runtime extensions](../runtime/TEMPLATE-CONTRACT.md) to the full artifact | Preserve recorded authorization, exact ownership, command arguments, documentation coverage and revision evidence |
 | Configuration | `.planning/config.yaml` configures the Python runtime; no JSON configuration template is supplied | Upstream settings cannot silently configure a different runtime |
 | Waves | Keep wave metadata and dependency planning guidance; the Python scheduler releases each component after its own integrated and checked prerequisites | Unrelated components need no global wave barrier |
@@ -52,5 +51,6 @@ preserve full instructions; they are not a license to shorten a template.
 - Add only the adapter fields required by the operation, following the contract.
 - Give the next agent the artifact, applicable methods, exact source revision and relevant dependency summaries.
 - Check both the semantic outcome and executable readiness; either can fail independently.
-- Record a newly discovered incompatibility in the affected phase and `changes.log`
-  for template maintenance. Correct the actual producer and consumer together.
+- Record a newly discovered incompatibility in this project's affected phase.
+  Correct the actual producer and consumer together; upstream history is attribution,
+  not this project's change log or an instruction to maintain the source template.

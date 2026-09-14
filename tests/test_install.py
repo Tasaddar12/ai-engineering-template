@@ -1,16 +1,21 @@
 """Exercise the downloaded installer against real Git sources and target projects."""
 
 from pathlib import Path
+import importlib.util
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / ".ai/install.py"
+spec = importlib.util.spec_from_file_location("workflow_installer", INSTALLER)
+installer = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(installer)
 
 
 def command(*args, cwd=None):
@@ -25,13 +30,20 @@ class InstallerTests(unittest.TestCase):
         for directory in (".ai", ".agents", ".planning", "docs"):
             shutil.copytree(ROOT / directory, cls.source / directory,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        for name in ("AGENTS.md", "changes.log", "README.md"):
+        for name in ("AGENTS.md", "README.md", ".gitattributes"):
             shutil.copy2(ROOT / name, cls.source / name)
+        # Source-project records must never become destination-project history.
+        for name in ("phases/99-source/99-CONTEXT.md", "specs/SPEC-source.md",
+                     "decisions/ADR-source.md", "codebase/source-map.md"):
+            path = cls.source / ".planning" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("Source-only project history", encoding="utf-8")
         command("git", "init", "--quiet", str(cls.source))
         command("git", "add", ".", cwd=cls.source)
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
                 "commit", "--quiet", "-m", "Template fixture", cwd=cls.source)
         cls.revision = command("git", "rev-parse", "HEAD", cwd=cls.source).strip()
+        cls.legacy = installer.load_legacy(cls.source, installer.SOURCE)
 
     @classmethod
     def tearDownClass(cls):
@@ -61,11 +73,28 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual("", command("git", "remote", cwd=self.target))
         status = command(sys.executable, ".ai/runtime/phase.py", "status", cwd=self.target)
         self.assertIn("No phases yet", status)
-        self.assertIn("CHANGEME", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
-        for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv"):
+        self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
+        for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
+                        "docs", ".ai/install-assets",
+                        ".planning/phases/99-source", ".planning/specs/SPEC-source.md",
+                        ".planning/decisions/ADR-source.md", ".planning/codebase/source-map.md"):
             self.assertFalse((self.target / omitted).exists(), omitted)
+        self.assertEqual([], list(self.target.glob("*.log")))
+        for name in ("AGENTS.md", ".ai/RULES.md", ".ai/README.md", ".planning/PROJECT.md",
+                     ".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/STATE.md"):
+            body = (self.target / name).read_text(encoding="utf-8")
+            for source_claim in ("This repository is a reusable engineering workflow template",
+                                 "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
+                self.assertNotIn(source_claim, body, name)
         self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
-        self.assertTrue((self.target / "docs/INSTALL.md").is_file())
+        self.assertTrue((self.target / ".ai/commands/install.md").is_file())
+        self.assertTrue((self.target / ".ai/commands/onboard.md").is_file())
+        self.assertTrue((self.target / ".ai/commands/goal-plan.md").is_file())
+        # Core instructions must work as shipped, without rewritten links or docs exports.
+        for name in (".ai/commands/install.md", ".ai/commands/onboard.md", ".ai/commands/goal-plan.md"):
+            self.assertEqual((self.source / name).read_bytes().replace(b"\r\n", b"\n"),
+                             (self.target / name).read_bytes().replace(b"\r\n", b"\n"))
+        self.assertIn(".ai/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
         (self.target / ".worktrees").mkdir()
         (self.target / ".worktrees/local.txt").write_text("local")
         self.assertIn(".worktrees/local.txt", command("git", "check-ignore", ".worktrees/local.txt", cwd=self.target))
@@ -73,8 +102,11 @@ class InstallerTests(unittest.TestCase):
     def test_existing_repository_preserves_files_history_remote_and_reruns(self):
         self.target.mkdir()
         original = {"README.md": b"Existing product\n", "app.py": b"print('hello')\n",
-                    "AGENTS.md": b"# Existing instructions\r\nKeep these.\r\n", ".gitignore": b"/build\r\n"}
+                    "AGENTS.md": b"# Existing instructions\r\nKeep these.\r\n", ".gitignore": b"/build\r\n",
+                    "docs/INSTALL.md": b"Product setup instructions\r\n",
+                    "docs/architecture.md": b"Actual application architecture\n"}
         for name, content in original.items():
+            (self.target / name).parent.mkdir(parents=True, exist_ok=True)
             (self.target / name).write_bytes(content)
         command("git", "init", "--quiet", str(self.target))
         command("git", "add", ".", cwd=self.target)
@@ -86,6 +118,9 @@ class InstallerTests(unittest.TestCase):
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(original["README.md"], (self.target / "README.md").read_bytes())
+        self.assertEqual({name: content for name, content in original.items() if name.startswith("docs/")},
+                         {p.relative_to(self.target).as_posix(): p.read_bytes()
+                          for p in (self.target / "docs").rglob("*") if p.is_file()})
         self.assertEqual(b"uncommitted work\n", (self.target / "app.py").read_bytes())
         for name in ("AGENTS.md", ".gitignore"):
             self.assertTrue((self.target / name).read_bytes().startswith(original[name]))
@@ -99,23 +134,138 @@ class InstallerTests(unittest.TestCase):
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn("Would write", result.stdout)
+        self.assertIn("Would change", result.stdout)
         self.assertFalse(self.target.exists())
 
-    def test_conflicts_abort_before_any_copy(self):
+    def test_existing_project_records_and_config_are_authoritative(self):
+        records = {name: f"Existing project {name}; preserve decisions and progress.\n".encode()
+                   for name in ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md")}
+        records["config.yaml"] = b"verification:\n  commands: [[npm, test]]\n"
         (self.target / ".planning").mkdir(parents=True)
-        (self.target / ".planning/PROJECT.md").write_text("Real project identity")
+        for name, content in records.items():
+            (self.target / ".planning" / name).write_bytes(content)
+        for options in ((), ("--repair-template-context",)):
+            result = self.install(*options)
+            self.assertEqual(0, result.returncode, result.stderr)
+            for name, content in records.items():
+                self.assertEqual(content, (self.target / ".planning" / name).read_bytes())
+        self.assertTrue((self.target / ".ai/runtime/phase.py").is_file())
+
+    def test_git_line_ending_changes_do_not_duplicate_or_conflict_with_context(self):
+        self.target.mkdir()
+        (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
+        self.assertEqual(0, self.install().returncode)
+        for name in ("AGENTS.md", ".gitignore", ".ai/RULES.md", ".ai/guides/ARTIFACT-GUIDE.md"):
+            path = self.target / name
+            path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+        before = self.snapshot()
+        result = self.install()
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(before, self.snapshot())
+
+    def seed_legacy_context(self, appended=False):
+        result = self.install()
+        self.assertEqual(0, result.returncode, result.stderr)
+        legacy = self.legacy
+        agent = legacy["AGENTS.md"]
+        if appended:
+            agent = b"# Existing product guidance\r\nKeep this.\r\n\n\n<!-- ai-engineering-template -->\n" + agent + b"\nUser added this later.\r\n"
+        (self.target / "AGENTS.md").write_bytes(agent)
+        (self.target / ".ai/RULES.md").write_bytes(legacy[".ai/RULES.md"])
+        for name, content in legacy.items():
+            if ("/" not in name and name.endswith(".log")) or name.startswith("docs/"):
+                path = self.target / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+        for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
+            (self.target / f".planning/{name}.md").write_bytes((ROOT / f".planning/{name}.md").read_bytes())
+
+    def test_explicit_repair_replaces_old_context_and_removes_only_known_history(self):
+        self.seed_legacy_context(appended=True)
+        custom = b"# Actual project\nThese are confirmed product decisions.\n"
+        (self.target / ".planning/PROJECT.md").write_bytes(custom)
+        before = self.snapshot()
+        preview = self.install("--repair-template-context", "--dry-run")
+        self.assertEqual(0, preview.returncode, preview.stderr)
+        for name in self.legacy:
+            if "/" not in name and name.endswith(".log"):
+                self.assertIn(f"remove {name}", preview.stdout)
+        self.assertEqual(before, self.snapshot())
+        result = self.install("--repair-template-context")
+        self.assertEqual(0, result.returncode, result.stderr)
+        agent = (self.target / "AGENTS.md").read_bytes()
+        self.assertTrue(agent.startswith(b"# Existing product guidance\r\nKeep this.\r\n"))
+        self.assertTrue(agent.endswith(b"User added this later.\r\n"))
+        self.assertNotIn(b"This repository is a reusable engineering workflow template", agent)
+        self.assertNotIn("This is a reusable template", (self.target / ".ai/RULES.md").read_text(encoding="utf-8"))
+        self.assertEqual(custom, (self.target / ".planning/PROJECT.md").read_bytes())
+        self.assertNotIn("AUTH-01", (self.target / ".planning/REQUIREMENTS.md").read_text(encoding="utf-8"))
+        self.assertNotIn("Critical Fix", (self.target / ".planning/ROADMAP.md").read_text(encoding="utf-8"))
+        self.assertEqual([], list(self.target.glob("*.log")))
+        self.assertFalse((self.target / "docs/WORKFLOW-DIRECTION.md").exists())
+        self.assertEqual([], list((self.target / "docs").rglob("*.md")))
+        repaired = self.snapshot()
+        self.assertEqual(0, self.install("--repair-template-context").returncode)
+        self.assertEqual(repaired, self.snapshot())
+        self.assertIn("No phases yet", command(sys.executable, ".ai/runtime/phase.py", "status", cwd=self.target))
+
+    def test_repair_handles_unmarked_old_entry_and_preserves_custom_history(self):
+        self.seed_legacy_context()
+        agent = self.target / "AGENTS.md"
+        agent.write_bytes(agent.read_bytes() + b"\nKeep this later project guidance.\r\n")
+        (self.target / "docs/INSTALL.md").write_bytes(b"Actual product install instructions\n")
+        result = self.install("--repair-template-context")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertNotIn("reusable engineering workflow template", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertTrue(agent.read_bytes().endswith(b"Keep this later project guidance.\r\n"))
+        self.assertEqual(b"Actual product install instructions\n", (self.target / "docs/INSTALL.md").read_bytes())
+
+    def test_edited_unmarked_legacy_instructions_are_not_silently_retained(self):
+        self.seed_legacy_context()
+        agent = self.target / "AGENTS.md"
+        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
+        before = self.snapshot()
+        result = self.install("--repair-template-context")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("reconcile", result.stderr)
+        self.assertEqual(before, self.snapshot())
+
+    def test_edited_legacy_instruction_block_requires_reconciliation(self):
+        self.seed_legacy_context(appended=True)
+        agent = self.target / "AGENTS.md"
+        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
+        before = self.snapshot()
+        result = self.install("--repair-template-context")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("reconcile", result.stderr)
+        self.assertEqual(before, self.snapshot())
+
+    def test_installed_guidance_links_resolve_in_the_destination(self):
+        import test_workflow_links
+
+        self.target.mkdir()
+        (self.target / "README.md").write_text("# Existing product\n", encoding="utf-8")
+        result = self.install()
+        self.assertEqual(0, result.returncode, result.stderr)
+        # CI may expose TEMP through a Windows 8.3 alias. Compare canonical roots,
+        # while the checker still audits the original link spelling and casing.
+        with patch.object(test_workflow_links, "ROOT", self.target.resolve()):
+            test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
+
+    def test_conflicts_abort_before_any_copy(self):
+        (self.target / ".ai").mkdir(parents=True)
+        (self.target / ".ai/RULES.md").write_text("Custom engineering rules")
         (self.target / "AGENTS.md").write_text("Keep instructions")
         before = self.snapshot()
         result = self.install()
         self.assertNotEqual(0, result.returncode)
-        self.assertIn("PROJECT.md", result.stderr)
+        self.assertIn("RULES.md", result.stderr)
         self.assertEqual(before, self.snapshot())
         self.assertFalse((self.target / ".git").exists())
 
     def test_file_as_parent_aborts_before_any_copy(self):
         self.target.mkdir()
-        (self.target / "docs").write_text("Existing file")
+        (self.target / ".ai").write_text("Existing file")
         before = self.snapshot()
         result = self.install()
         self.assertNotEqual(0, result.returncode)

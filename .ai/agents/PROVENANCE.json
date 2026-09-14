@@ -9,7 +9,7 @@
       "path": ".ai/agents/coder.md",
       "source_sha256_lf": "40431b7e765a9bf6b656788196bf947a94f8697323285f0f5e552353148deafb",
       "source_lines": 890,
-      "adapted_sha256_lf": "08c918f18f715a51076fe907d552e606618463a824d4def19b1b7323feacb3db",
+      "adapted_sha256_lf": "7341243ed22b8185a2dbef229dc1502f09fd936baa407f85e92d275cb3447ad1",
       "adapted_lines": 949,
       "inverse_edits": [
         {
@@ -234,7 +234,7 @@
       "path": ".ai/agents/phase-preparer.md",
       "source_sha256_lf": "de9beca2d07a2fb3de01f207030529e84d14cc2a1e53ae8c615e243a59ca7681",
       "source_lines": 1003,
-      "adapted_sha256_lf": "bb8caa8c5dcac1de420e759f1ded38bf840a4da64b83e46782393c32dd584425",
+      "adapted_sha256_lf": "fcb141417226ad1d1b33eb03c699507a1eb41bc0d06fd81296f009006ee0cfcb",
       "adapted_lines": 1042,
       "inverse_edits": [
         {
@@ -499,7 +499,7 @@
       "path": ".ai/agents/phase-checker.md",
       "source_sha256_lf": "423b004a0afcedb8f61546130e245c2458219a32509274d2c3966f5e6008a4bf",
       "source_lines": 1069,
-      "adapted_sha256_lf": "8770c1caf4ca56512d244e4942bdf787493c888853ad74333fff5ee9dd29aab6",
+      "adapted_sha256_lf": "21a233f59706217fbe80d4dd86ef6ae7d89df80e48640059b911bff397ac4bba",
       "adapted_lines": 1109,
       "inverse_edits": [
         {
@@ -719,7 +719,7 @@
       "path": ".ai/agents/researcher.md",
       "source_sha256_lf": "bab5c586927bf1fee16a1499a44194f22a1247039f102ca600f46f77b5e67db7",
       "source_lines": 894,
-      "adapted_sha256_lf": "3f0bf5b89e2b617e9f6799a1a68675dae13e81d847e591befc11ba102cacecea",
+      "adapted_sha256_lf": "01d40358500dee335e3bfa6bc8ea3ae272cac11a16e40ad610eb31fd4d317216",
       "adapted_lines": 937,
       "inverse_edits": [
         {
@@ -864,7 +864,7 @@
       "path": ".ai/agents/verifier.md",
       "source_sha256_lf": "31f229e29100d01c9593960554b0fa96cdc38b125c76cb6529a3c231d7650225",
       "source_lines": 945,
-      "adapted_sha256_lf": "08e4cfef785896c4e81d454806697ff4e72d2978278506929bd95f92221c072f",
+      "adapted_sha256_lf": "86dfc8dd18c60bb0ac3d3697a50e5b7189b4dd8d1eb93084c01b757442f23e79",
       "adapted_lines": 988,
       "inverse_edits": [
         {
@@ -1029,7 +1029,7 @@
       "path": ".ai/agents/doc-writer.md",
       "source_sha256_lf": "0b74a86dbff1d1d9d57e307268825a063571ff9fabd29ee1f5cd00164c41bd2e",
       "source_lines": 618,
-      "adapted_sha256_lf": "aab849323668cbadae2e97702751e2a25458b02db22af5977427517e195b2fef",
+      "adapted_sha256_lf": "e60b60a85841c84c48a91b00b67bdd90619fde77afc855c1b38a446507b12d3a",
       "adapted_lines": 637,
       "inverse_edits": [
         {
@@ -1244,7 +1244,7 @@
       "path": ".ai/agents/codebase-mapper.md",
       "source_sha256_lf": "b79ab4ad778d3d7fe73f390de9af1e63efe641918bf1e706b1190d4510fd4ab5",
       "source_lines": 855,
-      "adapted_sha256_lf": "ecbabfe4199144d4eb3202d1458554c4ac475c4f3a28783f2667505b67b8236a",
+      "adapted_sha256_lf": "bdc91c37a87da064324566c348ac8687d09ab6f2d06ff1f8edb8cf10b1893301",
       "adapted_lines": 874,
       "inverse_edits": [
         {
@@ -1309,7 +1309,7 @@
       "path": ".ai/agents/debugger.md",
       "source_sha256_lf": "982658dfee831483273edebf29772ab814a778dcf80462579fb25056d1f255d8",
       "source_lines": 1279,
-      "adapted_sha256_lf": "f0dc56fc9c661a8ee80c7fce00a294e5e2d4ae38f0add63b6951b5b0eb2bb622",
+      "adapted_sha256_lf": "4c8638f8948b4ed815237b51975b22f57070436b68a5aa2735addabcd3f22dbe",
       "adapted_lines": 1309,
       "inverse_edits": [
         {
@@ -1479,7 +1479,7 @@
       "path": ".ai/agents/code-reviewer.md",
       "source_sha256_lf": "81f5ae3f23114147a7b2188fbdafebc6e29774e6379031dbd49bd0f690d37010",
       "source_lines": 401,
-      "adapted_sha256_lf": "76d24b60a46e4de2cb8f36f9a9c0f5f341c3b1a36b27ecb15c64370b9a13729d",
+      "adapted_sha256_lf": "c6b0bd84b8558c01fbc188dd8e4ee9e881d4d6263fff34edc8a24ea6b334634d",
       "adapted_lines": 422,
       "inverse_edits": [
         {
@@ -1569,7 +1569,7 @@
       "path": ".ai/agents/integration-checker.md",
       "source_sha256_lf": "ef5f851743fe5995adfc0fac96a1816350bc0da13e87b1ca9822fb7e66f3d4fe",
       "source_lines": 475,
-      "adapted_sha256_lf": "05a16717f62077db0663b9d65bf5321b3a0fc4b26e11546dc55aa4f240d09ec6",
+      "adapted_sha256_lf": "a3522254abbd0bb8429b182070d57bb9cbfff0f705c99c4f4c7cfb7a97401d21",
       "adapted_lines": 494,
       "inverse_edits": [
         {

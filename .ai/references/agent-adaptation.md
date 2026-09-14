@@ -40,8 +40,8 @@ each other, and changing a role name does not create a new CLI subcommand.
 Source SDK snippets remain in their original method sections as explicitly
 labelled examples. Do not execute `gsd_run`, install its SDK, interpret its JSON
 settings as local YAML settings, or claim a missing source probe ran. Pinned
-external source-method links provide full supporting instructions without
-restoring the removed support library. Read only applicable methods; the same
+external source-method links provide full supporting instructions.
+Read only applicable methods; the same
 local boundaries also govern their nested references and examples. If remote
 content cannot be read, use a substantive local equivalent or report the exact
 missing dependency; never claim the source method was loaded.

@@ -1,7 +1,7 @@
 # Phase runtime
 
 `phase.py` executes the phase procedures described in
-[the workflow guide](../../docs/PHASE-WORKFLOW.md). It consumes Markdown records
+[the workflow guide](../guides/PHASE-WORKFLOW.md). It consumes Markdown records
 with complete phase template bodies and additive YAML execution fields and
 [config.yaml](../../.planning/config.yaml). The Python runtime requires no schema
 files, schedule snapshots or separate work-item registry. Optional upstream
@@ -99,7 +99,7 @@ Tracked `.agents/skills/` files travel with committed inputs into fresh worker
 checkouts. Codex can discover them there; required methods are also named by path
 in PLAN's Read first section. Other adapters can read those same Markdown
 paths. The runtime needs no new skill configuration or registration; follow the
-[repository skill guide](../../docs/AGENT-SKILLS.md) for selection and upkeep.
+[repository skill guide](../guides/AGENT-SKILLS.md) for selection and upkeep.
 
 For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's
 worktree. Do not use `--output-last-message` to write there after a commit.
@@ -179,7 +179,10 @@ moves the primary branch.
 
 ## Validation
 
-Run `python -m unittest discover -s tests -v` from the test environment.
+In the upstream workflow source repository, run
+`python -m unittest discover -s tests -v` from its test environment. The installer
+does not copy that source test suite into projects. Configure the adopting
+project's actual verification commands in `.planning/config.yaml` during onboarding.
 Integration tests use temporary real repositories, isolated component worktrees,
 deterministic workers and a local bare publication remote. Only GitHub's API
 boundary is simulated. They test execution, ownership, dependency availability,

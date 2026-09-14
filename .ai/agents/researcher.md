@@ -69,11 +69,11 @@ Before researching, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @docs/AGENT-SKILLS.md
+**Project skills:** @.ai/guides/AGENT-SKILLS.md
 - Load `rules/*.md` as needed during **research**.
 - Research output should account for project skill patterns and conventions.
 
-**agent_skills:** self-load per @docs/AGENT-SKILLS.md
+**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
 
 **AGENTS.md enforcement:** If `./AGENTS.md` exists, extract all actionable directives (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from AGENTS.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat AGENTS.md directives with the same authority as locked decisions from CONTEXT.md — research should not recommend approaches that contradict them.
 </project_context>

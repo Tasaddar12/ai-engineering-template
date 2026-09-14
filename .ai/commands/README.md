@@ -7,7 +7,9 @@ executable steps; see [runtime](../runtime/README.md).
 
 | Procedure | Purpose | CLI where applicable |
 |---|---|---|
+| [install](install.md) | Install into a new or existing project and bootstrap Git | Standalone `.ai/install.py` |
 | [onboard](onboard.md) | Establish project context, intent and real checks | Inspection and authorized edits |
+| [goal-plan](goal-plan.md) | Define the first goal or an ordered set of goals with phase context | Discussion and authorized preparation |
 | [worktree](worktree.md) | Assign an isolated checkout | Git worktree operations |
 | [phase-new](phase-new.md) | Receive a request into a stable phase | `new` |
 | [phase-discuss](phase-discuss.md) | Resolve scope, decisions and acceptance | Coordinator edits |
@@ -31,6 +33,6 @@ The complete [agent methods](../agents/README.md) define the selected responsibi
 and their handoffs within these existing procedures.
 The local procedures above connect the main lifecycle to this repository's Python
 runtime; use [adaptation](../references/template-adaptation.md) and the
-[template guide](../../docs/TEMPLATE-GUIDE.md) to distinguish a callable operation
+[template guide](../guides/ARTIFACT-GUIDE.md) to distinguish a callable operation
 from an agent method. A named method is not proof that the host has
 registered a slash command or agent type.

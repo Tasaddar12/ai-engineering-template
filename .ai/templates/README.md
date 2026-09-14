@@ -5,7 +5,7 @@ Copy its File Template or artifact block into the assigned project record; keep
 teaching instructions in the source. Apply the
 [runtime contract](../runtime/TEMPLATE-CONTRACT.md) to executable phase artifacts.
 
-The [template guide](../../docs/TEMPLATE-GUIDE.md) maps every retained source to
+The [template guide](../guides/ARTIFACT-GUIDE.md) maps every retained source to
 its producer, consumer and destination. The selected [agent methods](../agents/README.md)
 connect those artifacts through the existing [procedures](../commands/README.md).
 

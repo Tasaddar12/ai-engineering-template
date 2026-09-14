@@ -2,17 +2,27 @@
 """Install the workflow into a new directory or an existing project (Python 3.11+)."""
 
 import argparse
+import io
 import os
 from pathlib import Path
 import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 
 
 SOURCE = "https://github.com/Tasaddar12/ai-engineering-template.git"
 AGENT_MARKER = "<!-- ai-engineering-template -->"
+AGENT_END = "<!-- /ai-engineering-template -->"
+ASSETS = ".ai/install-assets/"
+PROJECT_RECORDS = {f".planning/{name}" for name in
+                   ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml")}
+PLANNING_RESOURCES = {f".planning/{name}" for name in
+                      ("README.md", "config.yaml", "phases/README.md", "codebase/README.md",
+                       "specs/.gitkeep", "decisions/.gitkeep")}
+LEGACY_REVISION = "f4855eb66023495c75a9c9d5c9190565d3af2315"
 IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.worktrees/\n.ai-venv/\n__pycache__/\n*.pyc\n"
 
 
@@ -36,22 +46,33 @@ def safe_path(path):
 
 
 def payload(source):
-    selected = []
+    selected = {}
+    modes = {}
     entries = run("git", "ls-files", "--stage", "-z", cwd=source, capture=True)
     for entry in entries.split("\0"):
         if not entry:
             continue
         metadata, name = entry.split("\t", 1)
-        if not (name.startswith((".ai/", ".agents/skills/", ".planning/", "docs/"))
-                or name in ("AGENTS.md", "changes.log")):
+        modes[name] = metadata.split()[0]
+        if name.startswith(ASSETS):
             continue
-        if name.startswith(".planning/maintenance/"):
+        if not (name.startswith((".ai/", ".agents/skills/"))
+                or name in PLANNING_RESOURCES):
             continue
-        if metadata.split()[0] not in ("100644", "100755"):
+        if modes[name] not in ("100644", "100755"):
             raise ValueError(f"Unsupported template entry: {name}")
-        selected.append(Path(name))
+        selected[name] = (source / name).read_bytes()
+    for destination, asset in [("AGENTS.md", "agent-entry.txt"), *[
+            (f".planning/{name}.md", f"{name}.txt")
+            for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE")]]:
+        origin = ASSETS + asset
+        if modes.get(origin) not in ("100644", "100755"):
+            raise ValueError(f"Missing or unsupported project install asset: {origin}")
+        selected[destination] = (source / origin).read_bytes()
+    selected["AGENTS.md"] = (AGENT_MARKER.encode() + b"\n" + selected["AGENTS.md"]
+                             + b"\n" + AGENT_END.encode() + b"\n")
     for required in ("AGENTS.md", ".ai/runtime/phase.py", ".planning/config.yaml"):
-        if Path(required) not in selected:
+        if required not in selected:
             raise ValueError(f"Source is not a workflow template: missing {required}")
     return selected
 
@@ -65,10 +86,50 @@ def require_utf8(content, path):
         raise ValueError(f"{path} must be UTF-8 text before appending; nothing was installed.") from error
 
 
-def plan_install(source, target):
+def load_legacy(source, remote):
+    """Read the original release from Git; keep no duplicate manifest or history file."""
+    run("git", "fetch", "--quiet", "--depth=1", "--", remote, LEGACY_REVISION, cwd=source)
+    archive = subprocess.run(["git", "archive", LEGACY_REVISION], cwd=source,
+                             check=True, capture_output=True).stdout
+    with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
+        return {member.name: snapshot.extractfile(member).read().replace(b"\r\n", b"\n")
+                for member in snapshot.getmembers() if member.isfile()}
+
+
+def legacy_matches(legacy, name, content):
+    return legacy is not None and legacy.get(name) == content.replace(b"\r\n", b"\n")
+
+
+def merge_agent(current, incoming, legacy):
+    if any(variant in current for variant in (incoming, incoming.replace(b"\n", b"\r\n"))):
+        return current
+    if AGENT_MARKER.encode() in current:
+        if legacy:
+            old = (AGENT_MARKER + "\n").encode() + legacy["AGENTS.md"]
+            for variant in (old, old.replace(b"\n", b"\r\n")):
+                if current.count(variant) == 1:
+                    return current.replace(variant, incoming, 1)
+        raise ValueError("Existing AGENTS.md workflow block differs. For an unmodified prior "
+                         "install use --repair-template-context; otherwise reconcile it manually.")
+    if legacy:
+        old = legacy["AGENTS.md"]
+        for variant in (old, old.replace(b"\n", b"\r\n")):
+            if current.count(variant) == 1:
+                return current.replace(variant, incoming, 1)
+    if any(signal in current for signal in (
+            b"reusable engineering workflow template",
+            b"for template maintenance only when the user requests them.")):
+        raise ValueError("AGENTS.md still contains template-maintenance instructions. "
+                         "Use --repair-template-context for an unchanged original entry; "
+                         "reconcile edited instructions manually.")
+    return current + b"\n\n" + incoming
+
+
+def plan_install(source, target, legacy=None):
     changes = []
     conflicts = []
-    for relative in payload(source):
+    for name, incoming in payload(source).items():
+        relative = Path(name)
         destination = target / relative
         safe_path(destination)
         for parent in destination.parents:
@@ -78,20 +139,31 @@ def plan_install(source, target):
         if destination.exists() and not destination.is_file():
             conflicts.append(str(relative))
             continue
-        incoming = (source / relative).read_bytes()
         if destination.exists():
             current = destination.read_bytes()
-            if current == incoming:
+            if current.replace(b"\r\n", b"\n") == incoming.replace(b"\r\n", b"\n"):
                 continue
-            if relative == Path("AGENTS.md"):
+            if legacy_matches(legacy, name, current):
+                pass  # Explicit repair replaces only recognized prior installer bytes.
+            elif name in PROJECT_RECORDS:
+                continue  # Existing intent, execution history and config remain authoritative.
+            elif relative == Path("AGENTS.md"):
                 require_utf8(current, destination)
-                if AGENT_MARKER.encode() in current:
+                incoming = merge_agent(current, incoming, legacy)
+                if current == incoming:
                     continue
-                incoming = current + b"\n\n" + AGENT_MARKER.encode() + b"\n" + incoming
             else:
                 conflicts.append(str(relative))
                 continue
         changes.append((destination, incoming))
+    if legacy:
+        for name in legacy:
+            if not (name.startswith("docs/") or ("/" not in name and name.endswith(".log"))):
+                continue
+            destination = target / name
+            safe_path(destination)
+            if destination.is_file() and legacy_matches(legacy, name, destination.read_bytes()):
+                changes.append((destination, None))
     ignore = target / ".gitignore"
     safe_path(ignore)
     if ignore.exists() and not ignore.is_file():
@@ -99,7 +171,7 @@ def plan_install(source, target):
     else:
         current = ignore.read_bytes() if ignore.exists() else b""
         require_utf8(current, ignore)
-        if IGNORE_BLOCK.encode() not in current:
+        if IGNORE_BLOCK.encode() not in current.replace(b"\r\n", b"\n"):
             changes.append((ignore, current + IGNORE_BLOCK.encode()))
     if conflicts:
         raise ValueError("Existing files conflict; nothing was installed. Reconcile these paths "
@@ -128,24 +200,28 @@ def install(args):
         safe_path(environment)
         if environment.exists():
             raise ValueError(".ai-venv already exists; preserve it and rerun with --skip-deps. "
-                             "See docs/INSTALL.md for dependency repair.")
+                             "See .ai/commands/install.md for dependency repair.")
     with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
         run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.ref, cwd=source)
         run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=source)
         revision = run("git", "rev-parse", "HEAD", cwd=source, capture=True).strip()
-        changes = plan_install(source, target)
+        legacy = load_legacy(source, args.source) if args.repair_template_context else None
+        changes = plan_install(source, target, legacy)
         print(f"Template revision: {revision}\nTarget: {target}", flush=True)
-        print(f"{'Would write' if args.dry_run else 'Writing'} {len(changes)} workflow files.", flush=True)
+        print(f"{'Would change' if args.dry_run else 'Changing'} {len(changes)} workflow files.", flush=True)
         if args.dry_run:
-            for path, _ in changes:
-                print(f"  {path.relative_to(target)}")
+            for path, content in changes:
+                print(f"  {'remove' if content is None else 'write'} {path.relative_to(target)}")
             print(f"Git: {'preserve repository' if in_git else 'initialize repository'}; "
                   f"dependencies: {'skip' if args.skip_deps else 'create .ai-venv and install PyYAML'}")
             return
         target.mkdir(parents=True, exist_ok=True)
         for destination, content in changes:
+            if content is None:
+                destination.unlink()
+                continue
             destination.parent.mkdir(parents=True, exist_ok=True)
             existed = destination.exists()
             destination.write_bytes(content)
@@ -162,9 +238,9 @@ def install(args):
             run(str(interpreter), str(target / ".ai/runtime/phase.py"), "status", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
               "If installed into a primary checkout, a human must review and commit the "
-              "bootstrap before an agent creates a worktree (see docs/INSTALL.md).\n"
+              "bootstrap before an agent creates a worktree (see .ai/commands/install.md).\n"
               "Next: follow .ai/commands/onboard.md to fill project intent, configure actual "
-              "checks and worker commands, and commit setup. See docs/INSTALL.md.")
+              "checks and worker commands, and commit setup. See .ai/commands/onboard.md.")
 
 
 def main():
@@ -174,6 +250,8 @@ def main():
     parser.add_argument("--ref", default="main", help="Template branch, tag or commit (default: main)")
     parser.add_argument("--dry-run", action="store_true", help="Fetch and check without changing the target")
     parser.add_argument("--skip-deps", action="store_true", help="Skip virtual environment and dependency setup")
+    parser.add_argument("--repair-template-context", action="store_true",
+                        help="Repair recognized files from the original installer; preserve customized project records")
     args = parser.parse_args()
     try:
         if sys.version_info < (3, 11):

@@ -320,12 +320,8 @@ class DocumentNavigationTests(unittest.TestCase):
                 relative = path.relative_to(SOURCE).as_posix()
                 # Preserved upstream teaching examples are checked by the dedicated
                 # provenance/reference suite, not as active checkout-relative links.
-                if relative.startswith((".ai/library/", ".planning/maintenance/")):
-                    continue
                 if relative.startswith(".ai/templates/") and path.name not in ("ADR.md", "CURRENT-SPEC.md"):
                     continue
-                if relative == "docs/PHASE-MIGRATION.md":
-                    continue  # Historical paths describe superseded behavior.
                 documents.append(path)
         checked = 0
         for path in documents:

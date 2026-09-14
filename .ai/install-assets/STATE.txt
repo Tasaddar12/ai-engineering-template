@@ -1,0 +1,46 @@
+---
+workflow_state_version: '1.0'
+status: planning
+---
+
+# Project State
+
+## Project Reference
+
+See [PROJECT](PROJECT.md).
+
+**Core value:** Pending confirmation during onboarding.
+**Current focus:** Inspect the project and complete missing workflow setup.
+
+## Current Position
+
+Onboarding pending. No phase was selected or started by installation.
+Project implementation progress has not been assessed.
+
+## Performance Metrics
+
+Not assessed. Do not infer delivery metrics from installation.
+
+## Accumulated Context
+
+### Decisions
+
+Reconcile existing decisions and record confirmed outcomes in PROJECT and phase context.
+
+### Pending Todos
+
+Inspect source and documentation, confirm intent, configure actual checks and
+worker commands, and record their observed baseline.
+
+### Blockers/Concerns
+
+Project readiness is unverified until onboarding is complete.
+
+## Deferred Items
+
+Not assessed. Preserve existing deferrals.
+
+## Session Continuity
+
+The workflow was installed. Follow [onboard](../.ai/commands/onboard.md) and
+the complete [state guide](../.ai/templates/state.md) to establish current context.
