@@ -20,7 +20,7 @@ spec.loader.exec_module(installer)
 
 
 def command(*args, cwd=None):
-    return subprocess.run(args, cwd=cwd, text=True, capture_output=True, check=True).stdout
+    return subprocess.run(args, cwd=cwd, text=True, encoding="utf-8", capture_output=True, check=True).stdout
 
 
 class InstallerTests(unittest.TestCase):
@@ -59,7 +59,7 @@ class InstallerTests(unittest.TestCase):
     def install(self, *extra):
         return subprocess.run([sys.executable, str(INSTALLER), "--source", str(self.source),
                                "--ref", self.revision, "--target", str(self.target),
-                               "--skip-deps", *extra], text=True, capture_output=True)
+                               "--skip-deps", *extra], text=True, encoding="utf-8", capture_output=True)
 
     def snapshot(self):
         return {p.relative_to(self.target).as_posix(): p.read_bytes()
@@ -72,7 +72,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("human must review and commit", result.stdout)
         self.assertEqual(self.target.resolve(), Path(command("git", "rev-parse", "--show-toplevel", cwd=self.target).strip()).resolve())
         self.assertEqual("", command("git", "remote", cwd=self.target))
-        status = command(sys.executable, ".ai/runtime/phase.py", "status", cwd=self.target)
+        status = command(sys.executable, ".codex/runtime/phase.py", "status", cwd=self.target)
         self.assertIn("No phases yet", status)
         self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
         for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
@@ -81,21 +81,20 @@ class InstallerTests(unittest.TestCase):
                         ".planning/decisions/ADR-source.md", ".planning/codebase/source-map.md"):
             self.assertFalse((self.target / omitted).exists(), omitted)
         self.assertEqual([], list(self.target.glob("*.log")))
-        for name in ("AGENTS.md", ".ai/RULES.md", ".ai/README.md", ".planning/PROJECT.md",
+        for name in ("AGENTS.md", ".codex/RULES.md", ".codex/README.md", ".planning/PROJECT.md",
                      ".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/STATE.md"):
             body = (self.target / name).read_text(encoding="utf-8")
             for source_claim in ("This repository is a reusable engineering workflow template",
                                  "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
                 self.assertNotIn(source_claim, body, name)
         self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
-        self.assertTrue((self.target / ".ai/commands/install.md").is_file())
-        self.assertTrue((self.target / ".ai/commands/onboard.md").is_file())
-        self.assertTrue((self.target / ".ai/commands/goal-plan.md").is_file())
-        # Core instructions must work as shipped, without rewritten links or docs exports.
-        for name in (".ai/commands/install.md", ".ai/commands/onboard.md", ".ai/commands/goal-plan.md"):
-            self.assertEqual((self.source / name).read_bytes().replace(b"\r\n", b"\n"),
-                             (self.target / name).read_bytes().replace(b"\r\n", b"\n"))
-        self.assertIn(".ai/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
+        self.assertTrue((self.target / ".codex/workflows/install.md").is_file())
+        self.assertTrue((self.target / ".codex/workflows/onboard.md").is_file())
+        self.assertTrue((self.target / ".codex/workflows/goal-plan.md").is_file())
+        self.assertFalse((self.target / ".ai").exists())
+        self.assertIn(".codex/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
+        guide = (self.target / ".codex/workflows/install.md").read_text(encoding="utf-8")
+        self.assertIn("/main/.ai/install.py", guide)
         (self.target / ".worktrees").mkdir()
         (self.target / ".worktrees/local.txt").write_text("local")
         self.assertIn(".worktrees/local.txt", command("git", "check-ignore", ".worktrees/local.txt", cwd=self.target))
@@ -132,126 +131,179 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(head, command("git", "rev-parse", "HEAD", cwd=self.target))
         self.assertIn("existing.git", command("git", "remote", "get-url", "origin", cwd=self.target))
 
-    def test_host_profiles_install_only_selected_native_integrations(self):
-        for host in ("codex", "claude", "both"):
+    def test_host_profiles_install_complete_selected_workflow(self):
+        for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / (host + " project")
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
-                self.assertEqual(host != "claude", (self.target / ".codex/hooks.json").exists())
-                self.assertEqual(host != "codex", (self.target / ".claude/settings.json").exists())
-                self.assertEqual(host != "codex", (self.target / "CLAUDE.md").exists())
+                namespace = "." + host
+                other = ".claude" if host == "codex" else ".codex"
+                entry = "AGENTS.md" if host == "codex" else "CLAUDE.md"
+                self.assertFalse((self.target / ".ai").exists())
+                self.assertFalse((self.target / other).exists())
+                self.assertFalse((self.target / ("CLAUDE.md" if host == "codex" else "AGENTS.md")).exists())
+                for relative in ("RULES.md", "runtime/phase.py", "roles/coder.md",
+                                 "workflows/onboard.md", "templates/context.md", "skills/codebase-recon/SKILL.md"):
+                    self.assertTrue((self.target / namespace / relative).is_file(), relative)
+                body = (self.target / entry).read_text(encoding="utf-8")
+                self.assertIn(namespace + "/RULES.md", body)
+                self.assertNotIn("@AGENTS.md", body)
                 config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
                 self.assertEqual(host == "claude", "claude_worker.py" in config)
-                self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text())
-                if host != "codex":
-                    self.assertIn("@AGENTS.md", (self.target / "CLAUDE.md").read_text())
-                    canonical = list((self.target / ".agents/skills").glob("*/SKILL.md"))
-                    wrappers = list((self.target / ".claude/skills").glob("*/SKILL.md"))
+                self.assertNotIn(".ai/", config)
+                self.assertIn("No phases yet", command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target))
+                self.assertIn(namespace + "-venv/", (self.target / ".gitignore").read_text())
+                if host == "codex":
+                    canonical = list((self.target / namespace / "skills").glob("*/SKILL.md"))
+                    wrappers = list((self.target / ".agents/skills").glob("*/SKILL.md"))
                     self.assertEqual(len(canonical), len(wrappers))
                     for wrapper in wrappers:
-                        original = self.target / ".agents/skills" / wrapper.parent.name / "SKILL.md"
-                        body = wrapper.read_text(encoding="utf-8")
-                        self.assertEqual(original.read_text(encoding="utf-8").split("---", 2)[1],
-                                         body.split("---", 2)[1])
-                        target = body.split("](", 1)[1].split(")", 1)[0]
+                        original = self.target / namespace / "skills" / wrapper.parent.name / "SKILL.md"
+                        wrapped = wrapper.read_text(encoding="utf-8")
+                        full = original.read_text(encoding="utf-8")
+                        self.assertEqual(full.split("---", 2)[1], wrapped.split("---", 2)[1])
+                        target = wrapped.split("](", 1)[1].split(")", 1)[0]
                         self.assertEqual(original.resolve(), (wrapper.parent / target).resolve())
+                        self.assertGreater(len(full), len(wrapped))
+                else:
+                    self.assertFalse((self.target / ".agents").exists())
 
-    def test_adding_second_host_preserves_settings_instructions_and_worker_routes(self):
-        (self.target / ".claude").mkdir(parents=True)
-        (self.target / ".codex").mkdir()
-        settings = {"permissions": {"deny": ["Read(.env)"]}, "disableAllHooks": False,
-                    "hooks": {"PreToolUse": [{"matcher": "Write", "hooks": [
-                        {"type": "command", "command": "echo custom"}]}]}}
-        (self.target / ".claude/settings.json").write_text(json.dumps(settings), encoding="utf-8")
-        personal = b'{"model":"personal-local-choice"}\n'
-        (self.target / ".claude/settings.local.json").write_bytes(personal)
-        codex_config = b'model = "existing-model"\n[features]\nhooks = false\n'
-        (self.target / ".codex/config.toml").write_bytes(codex_config)
-        prose = b"# Product instructions\r\nPreserve this context.\r\n"
-        (self.target / "CLAUDE.md").write_bytes(prose)
-        self.assertEqual(0, self.install("--host", "codex").returncode)
-        config = (self.target / ".planning/config.yaml").read_bytes()
-        result = self.install("--host", "both")
-        self.assertEqual(0, result.returncode, result.stderr)
-        merged = json.loads((self.target / ".claude/settings.json").read_text())
-        self.assertEqual(settings["permissions"], merged["permissions"])
-        self.assertIn(settings["hooks"]["PreToolUse"][0], merged["hooks"]["PreToolUse"])
-        self.assertEqual(2, len(merged["hooks"]["PreToolUse"]))
-        self.assertTrue((self.target / "CLAUDE.md").read_bytes().startswith(prose))
-        before = self.snapshot()
-        result = self.install("--host", "claude")
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual(before, self.snapshot())
-        self.assertEqual(config, (self.target / ".planning/config.yaml").read_bytes())
-        self.assertEqual(codex_config, (self.target / ".codex/config.toml").read_bytes())
-        self.assertEqual(personal, (self.target / ".claude/settings.local.json").read_bytes())
+    def test_installed_runtime_creates_phase_from_native_templates(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                command("git", "add", ".", cwd=self.target)
+                command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                        "commit", "--quiet", "-m", "Install workflow", cwd=self.target)
+                worktree = self.target / ".worktrees/phase"
+                command("git", "worktree", "add", "-b", "codex/phase", str(worktree), cwd=self.target)
+                runtime = "." + host + "/runtime/phase.py"
+                command(sys.executable, runtime, "new", "example", "--title", "Installed runtime", cwd=worktree)
+                context = worktree / ".planning/phases/01-example/01-CONTEXT.md"
+                self.assertIn("<domain>", context.read_text(encoding="utf-8"))
+                self.assertIn("01-example", command(sys.executable, runtime, "status", cwd=worktree))
+                self.assertFalse((worktree / ".ai").exists())
+                self.assertFalse((self.target / ".planning/phases/01-example").exists())
+
+    def test_selected_host_preserves_settings_instructions_and_worker_routes(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                (self.target / ".claude").mkdir(parents=True)
+                (self.target / ".codex").mkdir()
+                settings = {"permissions": {"deny": ["Read(.env)"]}, "disableAllHooks": False,
+                            "hooks": {"PreToolUse": [{"matcher": "Write", "hooks": [
+                                {"type": "command", "command": "echo custom"}]}]}}
+                name = ".codex/hooks.json" if host == "codex" else ".claude/settings.json"
+                (self.target / name).write_text(json.dumps(settings), encoding="utf-8")
+                personal = b'{"model":"personal-local-choice"}\n'
+                (self.target / ".claude/settings.local.json").write_bytes(personal)
+                codex_config = b'model = "existing-model"\n[features]\nhooks = false\n'
+                (self.target / ".codex/config.toml").write_bytes(codex_config)
+                prose = b"# Product instructions\r\nPreserve this context.\r\n"
+                entry = "AGENTS.md" if host == "codex" else "CLAUDE.md"
+                (self.target / entry).write_bytes(prose)
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                merged = json.loads((self.target / name).read_text())
+                self.assertEqual(settings["permissions"], merged["permissions"])
+                self.assertIn(settings["hooks"]["PreToolUse"][0], merged["hooks"]["PreToolUse"])
+                self.assertEqual(2, len(merged["hooks"]["PreToolUse"]))
+                self.assertTrue((self.target / entry).read_bytes().startswith(prose))
+                (self.target / ".planning/config.yaml").write_text("existing: project worker routes\n")
+                before = self.snapshot()
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(before, self.snapshot())
+                self.assertEqual(codex_config, (self.target / ".codex/config.toml").read_bytes())
+                self.assertEqual(personal, (self.target / ".claude/settings.local.json").read_bytes())
+
+    def test_switching_installed_host_requires_migration_without_partial_copy(self):
+        for host, other in (("codex", "claude"), ("claude", "codex")):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                self.assertEqual(0, self.install("--host", host).returncode)
+                before = self.snapshot()
+                result = self.install("--host", other)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual(before, self.snapshot())
+                self.assertFalse((self.target / ("." + other) / "runtime").exists())
 
     def test_invalid_host_settings_abort_before_any_copy(self):
         for contents in ('{', '[]', '{"hooks": []}', '{"hooks": {"PreToolUse": {}}}',
                          '{"hooks": {"PreToolUse": [{"hooks": null}]}}',
                          '{"hooks": {"PreToolUse": [{"hooks": [{}]}]}}',
                          '{"hooks": {}, "hooks": {}}', '{"hooks": {}, "timeout": NaN}'):
-            for name in (".codex/hooks.json", ".claude/settings.json"):
+            for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
                 with self.subTest(contents=contents, name=name):
                     path = self.target / name
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text(contents, encoding="utf-8")
                     before = self.snapshot()
-                    result = self.install("--host", "both")
+                    result = self.install("--host", host)
                     self.assertNotEqual(0, result.returncode)
                     self.assertIn("host settings", result.stderr)
                     self.assertEqual(before, self.snapshot())
                     self.assertFalse((self.target / ".git").exists())
                     path.unlink()
 
-    def test_customized_host_registration_and_claude_block_require_reconciliation(self):
-        self.assertEqual(0, self.install("--host", "both").returncode)
-        for name in (".codex/hooks.json", "CLAUDE.md"):
-            with self.subTest(name=name):
-                path = self.target / name
-                original = path.read_bytes()
-                path.write_bytes(original.replace(b'"timeout": 10', b'"timeout": 99')
-                                 if name.endswith("json") else original.replace(b"@AGENTS.md", b"@OTHER.md"))
-                before = self.snapshot()
-                result = self.install("--host", "both")
-                self.assertNotEqual(0, result.returncode)
-                self.assertIn("reconcile", result.stderr)
-                self.assertEqual(before, self.snapshot())
-                path.write_bytes(original)
+    def test_customized_host_registration_and_entry_require_reconciliation(self):
+        for host, setting, entry in (("codex", ".codex/hooks.json", "AGENTS.md"),
+                                     ("claude", ".claude/settings.json", "CLAUDE.md")):
+            self.target = self.base / host
+            self.assertEqual(0, self.install("--host", host).returncode)
+            for name in (setting, entry):
+                with self.subTest(host=host, name=name):
+                    path = self.target / name
+                    original = path.read_bytes()
+                    modified = (original.replace(b'"timeout": 10', b'"timeout": 99')
+                                if name.endswith("json") else original.replace(b"RULES.md", b"OTHER.md"))
+                    self.assertNotEqual(original, modified)
+                    path.write_bytes(modified)
+                    before = self.snapshot()
+                    result = self.install("--host", host)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("reconcile", result.stderr)
+                    self.assertEqual(before, self.snapshot())
+                    path.write_bytes(original)
 
     def test_no_hooks_skips_registration_without_removing_existing_hooks(self):
-        result = self.install("--host", "both", "--no-hooks", "--dry-run")
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertFalse(self.target.exists())
-        self.assertNotIn("write .codex", result.stdout)
-        self.assertNotIn("settings.json", result.stdout)
-        result = self.install("--host", "both", "--no-hooks")
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue((self.target / "CLAUDE.md").exists())
-        self.assertFalse((self.target / ".codex").exists())
-        self.assertFalse((self.target / ".claude/settings.json").exists())
-        self.assertEqual(0, self.install("--host", "both").returncode)
-        before = self.snapshot()
-        self.assertEqual(0, self.install("--host", "both", "--no-hooks").returncode)
-        self.assertEqual(before, self.snapshot())
+        for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host, "--no-hooks", "--dry-run")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertFalse(self.target.exists())
+                self.assertNotIn("write " + name, result.stdout)
+                result = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertTrue((self.target / ("." + host) / "runtime/phase.py").exists())
+                self.assertFalse((self.target / name).exists())
+                self.assertEqual(0, self.install("--host", host).returncode)
+                before = self.snapshot()
+                self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
+                self.assertEqual(before, self.snapshot())
 
     def test_registered_hooks_execute_from_installed_linked_worktree_subdirectory(self):
-        result = self.install("--host", "both")
-        self.assertEqual(0, result.returncode, result.stderr)
-        command("git", "add", ".", cwd=self.target)
-        command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
-                "commit", "--quiet", "-m", "Installed hosts", cwd=self.target)
-        worktree = self.target / ".worktrees/assigned space"
-        command("git", "worktree", "add", "-b", "codex/installed", str(worktree), cwd=self.target)
-        cwd = worktree / "sub directory"
-        cwd.mkdir()
-        environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
         for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+            self.target = self.base / (host + " projet caf\u00e9 \u65e5\u672c\u8a9e")
+            result = self.install("--host", host)
+            self.assertEqual(0, result.returncode, result.stderr)
+            command("git", "add", ".", cwd=self.target)
+            command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                    "commit", "--quiet", "-m", "Installed host", cwd=self.target)
+            worktree = self.target / ".worktrees/assigned space"
+            command("git", "worktree", "add", "-b", "codex/installed", str(worktree), cwd=self.target)
+            cwd = worktree / "sub directory"
+            cwd.mkdir()
+            environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
             settings = json.loads((worktree / name).read_text(encoding="utf-8"))
             for event, destination in (("PreToolUse", self.target / "outside.txt"),
                                        ("PreToolUse", worktree / "inside.txt"),
-                                       ("PostToolUse", worktree / ".planning/PROJECT.md")):
+                                       ("PostToolUse", worktree / ("." + host) / "RULES.md")):
                 with self.subTest(host=host, event=event, destination=destination):
                     handler = settings["hooks"][event][0]["hooks"][0]
                     if host == "codex" and os.name == "nt":
@@ -272,14 +324,17 @@ class InstallerTests(unittest.TestCase):
                                "tool_name": "apply_patch" if host == "codex" else "Write",
                                "tool_input": tool_input}
                     observed = subprocess.run(argv, cwd=cwd, env=environment,
-                                              input=json.dumps(payload), text=True, capture_output=True)
+                                              input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                              capture_output=True)
                     self.assertEqual(0, observed.returncode, observed.stderr)
                     if destination == worktree / "inside.txt":
-                        self.assertEqual("", observed.stdout.strip())
+                        self.assertEqual(b"", observed.stdout.strip())
                     else:
                         warning = json.loads(observed.stdout)
                         self.assertTrue(warning["systemMessage"])
-                        self.assertNotIn("permissionDecision", observed.stdout)
+                        self.assertNotIn(b"permissionDecision", observed.stdout)
+                        if event == "PostToolUse":
+                            self.assertIn("." + host + "/RULES.md", warning["systemMessage"])
 
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")
@@ -299,13 +354,13 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             for name, content in records.items():
                 self.assertEqual(content, (self.target / ".planning" / name).read_bytes())
-        self.assertTrue((self.target / ".ai/runtime/phase.py").is_file())
+        self.assertTrue((self.target / ".codex/runtime/phase.py").is_file())
 
     def test_git_line_ending_changes_do_not_duplicate_or_conflict_with_context(self):
         self.target.mkdir()
         (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
         self.assertEqual(0, self.install().returncode)
-        for name in ("AGENTS.md", ".gitignore", ".ai/RULES.md", ".ai/guides/ARTIFACT-GUIDE.md"):
+        for name in ("AGENTS.md", ".gitignore", ".codex/RULES.md", ".codex/guides/ARTIFACT-GUIDE.md"):
             path = self.target / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = self.snapshot()
@@ -321,7 +376,7 @@ class InstallerTests(unittest.TestCase):
         if appended:
             agent = b"# Existing product guidance\r\nKeep this.\r\n\n\n<!-- ai-engineering-template -->\n" + agent + b"\nUser added this later.\r\n"
         (self.target / "AGENTS.md").write_bytes(agent)
-        (self.target / ".ai/RULES.md").write_bytes(legacy[".ai/RULES.md"])
+        (self.target / ".codex/RULES.md").write_bytes(legacy[".ai/RULES.md"])
         for name, content in legacy.items():
             if ("/" not in name and name.endswith(".log")) or name.startswith("docs/"):
                 path = self.target / name
@@ -347,7 +402,7 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue(agent.startswith(b"# Existing product guidance\r\nKeep this.\r\n"))
         self.assertTrue(agent.endswith(b"User added this later.\r\n"))
         self.assertNotIn(b"This repository is a reusable engineering workflow template", agent)
-        self.assertNotIn("This is a reusable template", (self.target / ".ai/RULES.md").read_text(encoding="utf-8"))
+        self.assertNotIn("This is a reusable template", (self.target / ".codex/RULES.md").read_text(encoding="utf-8"))
         self.assertEqual(custom, (self.target / ".planning/PROJECT.md").read_bytes())
         self.assertNotIn("AUTH-01", (self.target / ".planning/REQUIREMENTS.md").read_text(encoding="utf-8"))
         self.assertNotIn("Critical Fix", (self.target / ".planning/ROADMAP.md").read_text(encoding="utf-8"))
@@ -357,7 +412,7 @@ class InstallerTests(unittest.TestCase):
         repaired = self.snapshot()
         self.assertEqual(0, self.install("--repair-template-context").returncode)
         self.assertEqual(repaired, self.snapshot())
-        self.assertIn("No phases yet", command(sys.executable, ".ai/runtime/phase.py", "status", cwd=self.target))
+        self.assertIn("No phases yet", command(sys.executable, ".codex/runtime/phase.py", "status", cwd=self.target))
 
     def test_repair_handles_unmarked_old_entry_and_preserves_custom_history(self):
         self.seed_legacy_context()
@@ -390,21 +445,57 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("reconcile", result.stderr)
         self.assertEqual(before, self.snapshot())
 
-    def test_installed_guidance_links_resolve_in_the_destination(self):
+    def test_installed_guidance_links_resolve_in_both_destinations(self):
         import test_workflow_links
 
-        self.target.mkdir()
-        (self.target / "README.md").write_text("# Existing product\n", encoding="utf-8")
-        result = self.install()
-        self.assertEqual(0, result.returncode, result.stderr)
-        # CI may expose TEMP through a Windows 8.3 alias. Compare canonical roots,
-        # while the checker still audits the original link spelling and casing.
-        with patch.object(test_workflow_links, "ROOT", self.target.resolve()):
-            test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                with patch.object(test_workflow_links, "ROOT", self.target.resolve()):
+                    paths = list(test_workflow_links.guidance_files())
+                    self.assertTrue(any(("." + host) in path.parts for path in paths))
+                    test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
+                guide = (self.target / ("." + host) / "workflows/install.md").read_text(encoding="utf-8")
+                self.assertIn("/main/.ai/install.py", guide)
+
+    def test_existing_ai_is_preserved_and_requires_explicit_migration(self):
+        (self.target / ".ai/runtime").mkdir(parents=True)
+        (self.target / ".ai/runtime/custom.py").write_text("# Valuable custom workflow\n")
+        for host in ("codex", "claude"):
+            for repair in ((), ("--repair-template-context",)):
+                with self.subTest(host=host, repair=repair):
+                    before = self.snapshot()
+                    result = self.install("--host", host, *repair)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertEqual(before, self.snapshot())
+                    self.assertFalse((self.target / ".git").exists())
+
+    def test_original_ai_release_migrates_only_with_explicit_repair(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                for name, content in self.legacy.items():
+                    if name.startswith(".ai/") or name == "AGENTS.md":
+                        path = self.target / name
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_bytes(content)
+                before = self.snapshot()
+                result = self.install("--host", host)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual(before, self.snapshot())
+                result = self.install("--host", host, "--repair-template-context", "--dry-run")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(before, self.snapshot())
+                result = self.install("--host", host, "--repair-template-context")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertFalse((self.target / ".ai").exists())
+                self.assertIn("No phases yet", command(sys.executable, "." + host + "/runtime/phase.py", "status", cwd=self.target))
 
     def test_conflicts_abort_before_any_copy(self):
-        (self.target / ".ai").mkdir(parents=True)
-        (self.target / ".ai/RULES.md").write_text("Custom engineering rules")
+        (self.target / ".codex").mkdir(parents=True)
+        (self.target / ".codex/RULES.md").write_text("Custom engineering rules")
         (self.target / "AGENTS.md").write_text("Keep instructions")
         before = self.snapshot()
         result = self.install()
@@ -482,7 +573,7 @@ class InstallerTests(unittest.TestCase):
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
         canonical = long_parent.resolve() / "new project"
-        self.assertTrue((canonical / ".ai/runtime/phase.py").is_file())
+        self.assertTrue((canonical / ".codex/runtime/phase.py").is_file())
         self.assertEqual(canonical, Path(command("git", "rev-parse", "--show-toplevel", cwd=canonical).strip()).resolve())
 
     def test_rejects_subdirectory_but_accepts_linked_worktree(self):
