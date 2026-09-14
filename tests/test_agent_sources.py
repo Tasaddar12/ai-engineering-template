@@ -41,6 +41,13 @@ class AgentSourceTests(unittest.TestCase):
                 adapted_sections = re.findall(r"(?m)^#{1,6} .+|^<[/\w][^>]*>$", adapted)
                 self.assertGreaterEqual(len(adapted_sections), len(source_sections))
 
+    def test_agent_required_local_reads_resolve(self):
+        for path in (ROOT / ".ai/agents").glob("*.md"):
+            body = path.read_text(encoding="utf-8")
+            for required in re.findall(r"@((?:\.ai|docs)/[\w./-]+\.md)", body):
+                with self.subTest(agent=path.name, required=required):
+                    self.assertTrue((ROOT / required).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

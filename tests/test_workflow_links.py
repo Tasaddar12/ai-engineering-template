@@ -28,6 +28,12 @@ def without_fences(text):
 
 
 class WorkflowNavigationTests(unittest.TestCase):
+    def test_literal_link_examples_do_not_hide_real_navigation(self):
+        body = without_fences("`[example](missing.md)` and [actual](required.md)\n"
+                              "```markdown\n[example](also-missing.md)\n```\n")
+        self.assertNotIn("missing.md", body)
+        self.assertIn("[actual](required.md)", body)
+
     def test_local_guidance_links_resolve_with_portable_case(self):
         failures = []
         for source in guidance_files():
