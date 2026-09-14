@@ -22,9 +22,10 @@ def relocate_paths(content, host):
         if part.startswith((b"http://", b"https://")):
             continue
         for separator in (b"/", b"\\\\", b"\\"):
-            for old, new in ((b".ai" + separator + b"agents", namespace + separator + b"roles"),
-                             (b".ai" + separator + b"commands", namespace + separator + b"workflows"),
-                             (b".agents" + separator + b"skills", namespace + separator + b"skills")):
+            for old, new in ((b".ai" + separator + b"agents", namespace + separator + b"agents"),
+                             (b".ai" + separator + b"commands", namespace + separator + b"commands"),
+                             (b".agents" + separator + b"skills",
+                              b".agents" + separator + b"skills" if host == "codex" else namespace + separator + b"skills")):
                 boundary = rb'''(?=''' + re.escape(separator) + rb'''|[\s"',\]});]|$)'''
                 part = re.sub(re.escape(old) + boundary, lambda _: new, part)
             part = part.replace(b".ai" + separator, namespace + separator)
@@ -144,6 +145,8 @@ def plan_migration(source, target, host, hooks, installer):
     relocated = {}
     for old in old_files + skill_files:
         name = old.relative_to(target).as_posix()
+        if name == ".ai/hooks/host-adapter.py":
+            continue  # Its original remains in the migration backup.
         destination = installer.destination_path(name, host)
         current = old.read_bytes()
         if destination in relocated:
@@ -160,12 +163,6 @@ def plan_migration(source, target, host, hooks, installer):
     if refreshed:
         notes.append("Refresh shipped implementation; original versions remain in backup: "
                      + ", ".join(sorted(refreshed)))
-    # The full customized skills, including their metadata, determine discovery.
-    # Remove the source payload's wrappers before regenerating the complete set.
-    for name in list(desired):
-        if name.startswith(".agents/skills/"):
-            del desired[name]
-    desired.update(installer.host_payload(desired, host, hooks))
     for path in planning_files:
         name = path.relative_to(target).as_posix()
         current = path.read_bytes()
@@ -197,8 +194,8 @@ def plan_migration(source, target, host, hooks, installer):
         if previous.strip() and previous not in custom:
             custom += b"\n\n" + previous
     mapping = ("\n\nHistorical plans keep their original paths. When following them, resolve "
-               f"`.ai/agents/` to `{namespace}/roles/`, `.ai/commands/` to "
-               f"`{namespace}/workflows/`, `.agents/skills/` to `{namespace}/skills/`, "
+               f"`.ai/agents/` to `{namespace}/agents/`, `.ai/commands/` to "
+               f"`{namespace}/commands/`, `.agents/skills/` to `{installer.skill_root(host)}/`, "
                f"and other `.ai/` paths to `{namespace}/`. Project records remain in "
                "`.planning/`; do not rewrite completed history or reuse incompatible old checkpoints. "
                "Before execution, reconcile pending PLAN ownership and Read first paths with "
@@ -208,7 +205,7 @@ def plan_migration(source, target, host, hooks, installer):
     desired[entry] = custom + (b"\n\n" if custom else b"") + incoming[entry] + mapping
     if host == "claude" and "AGENTS.md" in remainders:
         desired["AGENTS.md"] = remainders["AGENTS.md"]
-    for name in (".codex/hooks.json", ".claude/settings.json"):
+    for name in (".codex/hooks.json", ".codex/config.toml", ".claude/settings.json"):
         path = target / name
         installer.safe_path(path)
         if path.exists():
@@ -216,9 +213,20 @@ def plan_migration(source, target, host, hooks, installer):
                 raise ValueError(f"Host settings are not a file: {path}")
             backups.add(path)
             if name.startswith(namespace + "/"):
-                current = relocate_hook_commands(path.read_bytes(), host, installer)
-                desired[name] = (installer.merge_hooks(current, desired[name], path)
+                current = (relocate_paths(path.read_bytes(), host) if name.endswith(".toml")
+                           else relocate_hook_commands(path.read_bytes(), host, installer))
+                merge = installer.merge_codex_config if name.endswith(".toml") else installer.merge_hooks
+                desired[name] = (merge(current, desired[name], path)
                                  if name in desired else current)
+    retired_settings = []
+    old_hooks = ".codex/hooks.json"
+    if host == "codex" and hooks and old_hooks in desired:
+        retired = installer.retire_codex_json(desired[old_hooks], target / old_hooks)
+        if retired is None:
+            del desired[old_hooks]
+            retired_settings.append((target / old_hooks, None))
+        else:
+            desired[old_hooks] = retired
     ignore = target / ".gitignore"
     installer.safe_path(ignore)
     if ignore.exists() and not ignore.is_file():
@@ -249,10 +257,10 @@ def plan_migration(source, target, host, hooks, installer):
             if destination not in backups:
                 raise ValueError(f"Existing destination conflicts: {destination}; nothing was installed.")
         writes.append((destination, content))
-    # Only exact inventoried old files are removed, after all writes. Codex
-    # discovery wrappers stay; their former support files move into .codex.
+    # Only exact inventoried old files are removed, after all writes.
+    # Codex skills stay complete at their existing discovery location.
     retained = {target / name for name in desired}
     deletes = [(path, None) for path in old_files + skill_files if path not in retained]
     deletes.extend((path, None) for path in old_dirs + skill_dirs
                    if not any(path == kept or path in kept.parents for kept in retained))
-    return writes + deletes, sorted(backups), notes
+    return writes + retired_settings + deletes, sorted(backups), notes

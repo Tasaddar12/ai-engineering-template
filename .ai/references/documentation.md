@@ -44,8 +44,7 @@ spun out to make an unfinished phase appear complete.
 
 During [phase-prepare](../commands/phase-prepare.md), assign required paths and the
 code prerequisites that establish their claims. During
-[phase-start](../commands/phase-start.md), the [documentor](../agents/documentor.md)
-uses the complete [doc-writer](../agents/doc-writer.md) method and returns committed
+[phase-start](../commands/phase-start.md), the [doc-writer](../agents/doc-writer.md) returns committed
 changes, checked claims and coverage evidence. Its own validation does not replace
 independent review.
 

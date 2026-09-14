@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / ".ai/hooks/host-adapter.py"
+SCRIPT = Path(__file__).resolve().parents[1] / ".ai/hooks/worktree-confine.sh"
 
 
 class HostHookTests(unittest.TestCase):
@@ -51,17 +51,21 @@ class HostHookTests(unittest.TestCase):
         # A host project variable must not override payload cwd in a worktree.
         environment["CLAUDE_PROJECT_DIR"] = str(self.primary)
         environment.update(env or {})
-        result = subprocess.run([sys.executable, str(script)], input=payload.encode("utf-8"),
+        bash = shutil.which("bash")
+        if os.name == "nt":
+            bash = str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe")
+        if script == SCRIPT and event == "PostToolUse":
+            script = SCRIPT.with_name("ai-tier-notice.sh")
+        result = subprocess.run([bash, str(script)], input=payload.encode("utf-8"),
                                 capture_output=True, env=environment, cwd=self.primary)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(b"", result.stderr)
         if not result.stdout:
             return None
+        self.assertNotIn(b"permissionDecision", result.stdout)
+        if event == "PostToolUse":
+            return result.stdout.decode("utf-8")
         notice = json.loads(result.stdout)
-        self.assertEqual({"systemMessage", "hookSpecificOutput"}, set(notice))
-        self.assertEqual({"hookEventName", "additionalContext"}, set(notice["hookSpecificOutput"]))
-        self.assertEqual(event, notice["hookSpecificOutput"]["hookEventName"])
-        self.assertEqual(notice["systemMessage"], notice["hookSpecificOutput"]["additionalContext"])
         self.assertTrue(notice["systemMessage"])
         return notice["systemMessage"]
 
@@ -71,21 +75,14 @@ class HostHookTests(unittest.TestCase):
             with self.subTest(tool=tool):
                 self.assertIsNone(self.invoke(tool, {key: "../new file.txt"}, cwd=self.nested))
                 notice = self.invoke(tool, {key: str(self.primary / "tracked.txt")}, cwd=self.nested)
-                self.assertIn("primary checkout is read-only", notice)
-
-    def test_primary_and_unassigned_worktree_writes_and_commits_warn(self):
-        for cwd in (self.primary, self.external):
-            with self.subTest(cwd=cwd):
-                self.assertIn("assigned", self.invoke(inputs={"file_path": "tracked.txt"}, cwd=cwd))
-                self.assertIn("Create commits", self.invoke("Bash", {"command": "git commit -m slice"}, cwd=cwd))
-        self.assertIsNone(self.invoke("Bash", {"command": "git commit -m slice"}))
+                self.assertIn("outside this checkout", notice)
 
     def test_siblings_and_metadata_warn_even_with_temporary_repository(self):
         for target in (self.sibling / "new.txt", self.external / "new.txt",
                        self.primary / ".git/config", self.assigned / ".git"):
             with self.subTest(target=target):
                 self.assertIsNotNone(self.invoke(inputs={"file_path": str(target)}))
-        self.assertIn("Git metadata", self.invoke(inputs={"file_path": str(self.primary / ".git/config")}))
+        self.assertIn("outside this checkout", self.invoke(inputs={"file_path": str(self.primary / ".git/config")}))
 
     def test_windows_separators_and_case_on_windows(self):
         target = str(self.sibling / "new file.txt").replace("/", "\\")
@@ -107,9 +104,9 @@ class HostHookTests(unittest.TestCase):
     def test_relocated_hooks_use_their_host_rules_namespace(self):
         for namespace in (".codex", ".claude"):
             with self.subTest(namespace=namespace):
-                installed = self.assigned / namespace / "hooks" / "host-adapter.py"
+                installed = self.assigned / namespace / "hooks" / "ai-tier-notice.sh"
                 installed.parent.mkdir(parents=True)
-                shutil.copy2(SCRIPT, installed)
+                installed.write_text(SCRIPT.with_name("ai-tier-notice.sh").read_text(encoding="utf-8").replace(".ai/", namespace + "/"), encoding="utf-8")
                 for path in (namespace + "/RULES.md", ".planning/PROJECT.md",
                              ".planning/specs/SPEC-test.md", ".planning/decisions/ADR-test.md",
                              ".planning/phases/01-test/01-PLAN.md", ".planning/STATE.md"):
@@ -151,11 +148,11 @@ class HostHookTests(unittest.TestCase):
             self.assertIsNone(self.invoke("Bash", {"command": command}))
 
     def test_post_tool_document_ownership_for_claude_and_codex(self):
-        categories = {".planning/PROJECT.md": "Intent ownership", ".ai/RULES.md": "Intent ownership",
-                      ".planning/specs/SPEC-test.md": "Current behavior",
-                      ".planning/decisions/ADR-test.md": "Decision history",
-                      ".planning/phases/01-test/01-PLAN.md": "Phase evidence",
-                      ".planning/STATE.md": "Derived status"}
+        categories = {".planning/PROJECT.md": "intent ownership", ".ai/RULES.md": "intent ownership",
+                      ".planning/specs/SPEC-test.md": "current behavior",
+                      ".planning/decisions/ADR-test.md": "decision history",
+                      ".planning/phases/01-test/01-PLAN.md": "phase evidence",
+                      ".planning/STATE.md": "derived status"}
         for path, expected in categories.items():
             with self.subTest(path=path):
                 self.assertIn(expected, self.invoke(inputs={"file_path": "../" + path}, cwd=self.nested,
@@ -172,7 +169,6 @@ class HostHookTests(unittest.TestCase):
             with self.subTest(raw=raw):
                 self.assertIsNone(self.invoke(raw=raw))
         self.assertIsNone(self.invoke(inputs={"file_path": "file"}, cwd=self.base))
-        self.assertIsNone(self.invoke(inputs={"file_path": "file"}, event="UnknownEvent"))
 
 
 if __name__ == "__main__":

@@ -71,9 +71,9 @@ are not silently translated into Python runtime settings.
 Start with the [download-and-run installer](.ai/commands/install.md) for a new directory
 or an existing project. It preserves existing files and sets up the Python
 runtime in `.codex-venv` or `.claude-venv`. Preview with `--dry-run`; then finish onboarding below.
-Select `--host codex` or `--host claude` to install the entire workflow under
-`.codex` or `.claude`, including rules, runtime, complete skills and advisory
-hooks. A fresh installation has no separate `.ai` directory. Codex is the default;
+Select `--host codex` or `--host claude` to install commands, agents and runtime under
+`.codex` or `.claude`, including rules and advisory hooks. Complete skills live
+in each host's discovery directory. A fresh installation has no separate `.ai` directory. Codex is the default;
 `--no-hooks` skips new hook registrations. Existing project settings are preserved.
 Installed instructions describe the destination project, and existing planning
 records remain authoritative. Existing `.ai` + `.planning` projects can use
@@ -82,9 +82,9 @@ history, custom material and verified original-file backups. Preview the migrati
 with `--dry-run` in an assigned worktree. The guide also covers the narrower
 original-release repair with `--repair-template-context`.
 The installer leaves this repository's `docs/` directory out of the target.
-Installed procedures live in the selected host's `workflows` directory, role
-methods in `roles`, and supporting guides in `guides`. Codex uses root AGENTS.md
-and `.agents/skills` discovery entries; Claude uses root CLAUDE.md and its native
+Installed procedures live in the selected host's `commands` directory, role
+methods in `agents`, and supporting guides in `guides`. Codex uses root AGENTS.md
+and complete skills in `.agents/skills`; Claude uses root CLAUDE.md and its native
 skills directory. Committed files propagate to new Git worktrees. The links below
 refer to the template authoring checkout; installed instructions use host paths.
 

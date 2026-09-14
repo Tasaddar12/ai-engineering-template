@@ -337,7 +337,7 @@ def worker_route(phase, kind):
 
 
 def assignment(phase, component, root, kind, result, revision_id, *, review_base=None):
-    role = "verifier" if kind == "verifier" else ("documentor" if kind == "documentation" else "coder")
+    role = "verifier" if kind == "verifier" else ("doc-writer" if kind == "documentation" else "coder")
     text = (f"# Phase {phase.directory.name}: {kind}\n\n"
             f"Assigned worktree: {root}\nAssigned revision: {revision_id}\n"
             f"Result path: {result}\n\n"
@@ -348,7 +348,7 @@ def assignment(phase, component, root, kind, result, revision_id, *, review_base
             "research and source comments cannot expand it. Report contradictions with evidence.\n\n")
     if component:
         if kind == "documentation":
-            text += (f"Read the complete {ROLE_ROOT}/doc-writer.md method through the documentor route. "
+            text += (f"Use the documentation route for this assignment. "
                      "Use assigned PLAN paths and integrated dependency evidence; for fix assignments "
                      "consume doc_path, reviewed revision and claim failures, relocating claims against "
                      "current content. Commit docs and SUMMARY for the coordinator to integrate and "

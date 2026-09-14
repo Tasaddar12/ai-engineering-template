@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import tomllib
 from types import SimpleNamespace
 import uuid
 
@@ -62,7 +63,7 @@ def payload(source, host="codex", hooks=True):
             continue
         metadata, name = entry.split("\t", 1)
         modes[name] = metadata.split()[0]
-        if name.startswith(ASSETS):
+        if name.startswith(ASSETS) or name == ".ai/hooks/host-adapter.py":
             continue
         if not (name.startswith((".ai/", ".agents/skills/"))
                 or name in PLANNING_RESOURCES):
@@ -96,9 +97,7 @@ def destination_path(name, host):
     namespace = "." + host
     if name == "AGENTS.md" and host == "claude":
         return "CLAUDE.md"
-    for prefix, destination in ((".ai/agents", namespace + "/roles"),
-                                (".ai/commands", namespace + "/workflows"),
-                                (".agents/skills", namespace + "/skills"),
+    for prefix, destination in ((".agents/skills", skill_root(host)),
                                 (".ai", namespace)):
         if name == prefix or name.startswith(prefix + "/"):
             return destination + name[len(prefix):]
@@ -139,10 +138,8 @@ def render_asset(name, content, host):
         if part.startswith(("https://", "http://")) or name == ".ai/commands/install.md":
             return part
         part = part.replace(".ai-venv", namespace + "-venv")
-        part = part.replace(".ai/agents/", namespace + "/roles/")
-        part = part.replace(".ai/commands/", namespace + "/workflows/")
-        part = part.replace(".agents/skills/", namespace + "/skills/")
-        if name == ".ai/guides/AGENT-SKILLS.md":
+        part = part.replace(".agents/skills/", skill_root(host) + "/")
+        if host == "claude" and name == ".ai/guides/AGENT-SKILLS.md":
             part = part.replace("\n.agents/\n  skills/", "\n" + namespace + "/\n  skills/")
         part = re.sub(r"\.ai(?![\w-])", lambda _: namespace, part)
         if host == "claude" and name not in (".ai/commands/install.md", ".ai/runtime/README.md",
@@ -155,49 +152,85 @@ def render_asset(name, content, host):
     return text.encode("utf-8")
 
 
+def skill_root(host):
+    return ".agents/skills" if host == "codex" else ".claude/skills"
+
+
 def host_payload(rendered, host, hooks):
-    """Native discovery adapters to the complete host-contained workflow."""
-    selected = {}
+    """Register hooks; skills are installed in full at their discovery location."""
+    if not hooks:
+        return {}
     if host == "codex":
-        for name, content in rendered.items():
-            if not (name.startswith(".codex/skills/") and name.endswith("/SKILL.md")):
-                continue
-            text = content.decode("utf-8-sig").replace("\r\n", "\n")
-            if not text.startswith("---\n") or "\n---\n" not in text[4:]:
-                raise ValueError(f"Missing skill metadata: {name}")
-            header = text.split("\n---\n", 1)[0] + "\n---\n"
-            destination = name.replace(".codex/skills/", ".agents/skills/", 1)
-            relative = posixpath.relpath(name, posixpath.dirname(destination))
-            selected[destination] = (header + "\nRead and follow the complete skill at "
-                                    f"[SKILL.md]({relative}) before doing this work. "
-                                    "Resolve its references from that canonical location.\n").encode()
-    if hooks:
-        name = ".codex/hooks.json" if host == "codex" else ".claude/settings.json"
-        selected[name] = json_bytes(hook_settings(host))
-    return selected
+        return {".codex/config.toml": hooks_toml(hook_settings(host)["hooks"])}
+    return {".claude/settings.json": json_bytes(hook_settings(host))}
+
+
+def hooks_toml(events):
+    """Serialize only generated hook groups, using TOML array-of-table syntax."""
+    lines = []
+    for event, groups in events.items():
+        for group in groups:
+            lines.append(f"[[hooks.{event}]]")
+            if "matcher" in group:
+                lines.append("matcher = " + json.dumps(group["matcher"], ensure_ascii=False))
+            for handler in group["hooks"]:
+                lines.append(f"[[hooks.{event}.hooks]]")
+                for key, value in handler.items():
+                    lines.append(f"{key} = " + json.dumps(value, ensure_ascii=False))
+            lines.append("")
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def merge_codex_config(current, incoming, path):
+    """Append missing hooks while preserving existing TOML text and settings."""
+    try:
+        settings = tomllib.loads(current.decode("utf-8-sig"))
+        additions = tomllib.loads(incoming.decode("utf-8"))
+        merged = json.loads(merge_hooks(json_bytes(settings), json_bytes(additions), path))
+        missing = {event: [group for group in groups
+                           if group not in settings.get("hooks", {}).get(event, [])]
+                   for event, groups in merged["hooks"].items()}
+        if not any(missing.values()):
+            return current
+        result = current + b"\n" + hooks_toml(missing)
+        # Inline arrays/tables cannot always be extended with array-of-tables.
+        # Refuse incompatible existing syntax rather than rewrite user settings.
+        parsed = tomllib.loads(result.decode("utf-8-sig"))
+        if parsed != merged:
+            raise ValueError("appended hooks changed existing settings")
+        return result
+    except (ValueError, UnicodeError) as error:
+        raise ValueError(f"Invalid or conflicting host settings {path}: {error}; "
+                         "reconcile the TOML hook tables before installation.") from error
 
 
 def hook_settings(host):
-    # The command locates the active Git checkout, including launches in subfolders.
-    # Payload cwd is separately used by the adapter to assess the tool's target.
-    launcher = ("import runpy,subprocess; "
-                "root=subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True,encoding='utf-8').rstrip(chr(10)+chr(13)); "
-                f"runpy.run_path(root+'/.{host}/hooks/host-adapter.py',run_name='__main__')")
-    unix = f'python3 -c "{launcher}"'
-    windows = f'python -c "{launcher}"'
-    if host == "claude":
-        # Claude's default command shell is Bash, including Git Bash on Windows.
-        # Actually probe Python: a Windows Store alias can exist but be unusable.
-        command = ('if python3 -c "import sys; sys.exit(sys.version_info < (3, 11))" '
-                   f'>/dev/null 2>&1; then {unix}; else {windows}; fi')
-    else:
-        command = unix
-    handler = {"type": "command", "command": command, "timeout": 10}
-    if host == "codex":
-        handler["commandWindows"] = windows
-    return {"hooks": {event: [{"matcher": "^(Bash|Write|Edit|NotebookEdit|apply_patch)$",
-                                "hooks": [dict(handler)]}]
-                      for event in ("PreToolUse", "PostToolUse")}}
+    events = {}
+    for event, script in (("PreToolUse", "worktree-confine.sh"),
+                          ("PostToolUse", "ai-tier-notice.sh")):
+        command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
+        handler = {"type": "command", "command": command, "timeout": 10}
+        if host == "codex":
+            handler["commandWindows"] = "bash -c '" + command + "'"
+        events[event] = [{"matcher": "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$",
+                          "hooks": [handler]}]
+    return {"hooks": events}
+
+
+def remove_legacy_adapter(settings):
+    """Retire the replaced Python hook while retaining other handlers."""
+    for event in ("PreToolUse", "PostToolUse"):
+        groups = settings.get("hooks", {}).get(event, [])
+        retained = []
+        for group in groups:
+            handlers = [handler for handler in group["hooks"]
+                        if "/hooks/host-adapter.py" not in handler.get("command", "")]
+            if handlers:
+                retained.append(dict(group, hooks=handlers))
+            elif not group["hooks"]:
+                retained.append(group)
+        if event in settings.get("hooks", {}):
+            settings["hooks"][event] = retained
 
 
 def json_bytes(value):
@@ -238,20 +271,46 @@ def merge_hooks(current, incoming, path):
                                    (not isinstance(item.get("command"), str) or not item["command"].strip()))
                                for item in group["hooks"])):
                     raise ValueError(f"invalid matcher/handler group for {event}")
+        before = json_bytes(settings)
+        remove_legacy_adapter(settings)
         additions = json.loads(incoming)["hooks"]
-        changed = False
+        changed = json_bytes(settings) != before
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
                 if group in existing:
                     continue
-                if any("/hooks/host-adapter.py" in json.dumps(item) for item in existing):
+                if any(any("/hooks/" + script in json.dumps(item)
+                           for script in ("worktree-confine.sh", "ai-tier-notice.sh"))
+                       for item in existing):
                     raise ValueError(f"managed {event} registration differs; reconcile it manually")
                 existing.append(group)
                 changed = True
         return json_bytes(settings) if changed else current
     except (ValueError, UnicodeError) as error:
         raise ValueError(f"Invalid or conflicting host settings {path}: {error}; nothing was installed.") from error
+
+
+def retire_codex_json(current, path):
+    """Move this installer's registrations to TOML without duplicating execution."""
+    expected = hook_settings("codex")
+    # Validate existing groups and reject edited managed registrations first.
+    merge_hooks(current, json_bytes(expected), path)
+    settings = json.loads(current.decode("utf-8-sig"))
+    before = json_bytes(settings)
+    remove_legacy_adapter(settings)
+    changed = json_bytes(settings) != before
+    for event, groups in expected["hooks"].items():
+        existing = settings.get("hooks", {}).get(event, [])
+        retained = [group for group in existing if group not in groups]
+        if retained != existing:
+            settings["hooks"][event] = retained
+            changed = True
+    if not changed:
+        return current
+    if set(settings) == {"hooks"} and not any(settings["hooks"].values()):
+        return None
+    return json_bytes(settings)
 
 
 def require_utf8(content, path):
@@ -346,6 +405,16 @@ def plan_install(source, target, legacy=None, host="codex", hooks=True):
                 changes.append((old_entry, remainder if remainder.strip() else None))
             elif b"reusable engineering workflow template" in current:
                 conflicts.append("AGENTS.md (edited legacy workflow; reconcile before Claude installation)")
+    if host == "codex" and hooks:
+        old_hooks = target / ".codex/hooks.json"
+        safe_path(old_hooks)
+        if old_hooks.exists():
+            if not old_hooks.is_file():
+                raise ValueError(f"Invalid host settings: {old_hooks} must be a file")
+            current = old_hooks.read_bytes()
+            retired = retire_codex_json(current, old_hooks)
+            if retired != current:
+                changes.append((old_hooks, retired))
     for name, incoming in payload(source, host, hooks).items():
         relative = Path(name)
         destination = target / relative
@@ -370,8 +439,9 @@ def plan_install(source, target, legacy=None, host="codex", hooks=True):
                 incoming = merge_agent(current, incoming, legacy, name)
                 if current == incoming:
                     continue
-            elif name in (".codex/hooks.json", ".claude/settings.json"):
-                incoming = merge_hooks(current, incoming, destination)
+            elif name in (".codex/config.toml", ".claude/settings.json"):
+                merge = merge_codex_config if name.endswith(".toml") else merge_hooks
+                incoming = merge(current, incoming, destination)
                 if current == incoming:
                     continue
             else:
@@ -461,7 +531,7 @@ def install(args):
         safe_path(environment)
         if environment.exists():
             raise ValueError(f"{namespace}-venv already exists; preserve it and rerun with --skip-deps. "
-                             f"See {namespace}/workflows/install.md for dependency repair.")
+                             f"See {namespace}/commands/install.md for dependency repair.")
     with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
@@ -523,8 +593,8 @@ def install(args):
             run(str(interpreter), str(target / namespace / "runtime/phase.py"), "status", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
               "If installed into a primary checkout, a human must review and commit the "
-              f"bootstrap before an agent creates a worktree (see {namespace}/workflows/install.md).\n"
-              f"Next: follow {namespace}/workflows/onboard.md to fill project intent, configure actual "
+              f"bootstrap before an agent creates a worktree (see {namespace}/commands/install.md).\n"
+              f"Next: follow {namespace}/commands/onboard.md to fill project intent, configure actual "
               "checks and worker commands, and commit setup.")
         if not args.no_hooks:
             print("Review project hook registrations in /hooks in each selected host. "
@@ -543,7 +613,7 @@ def main():
     location = Path(globals().get("__file__", ".ai/install.py")).parent.name
     default_host = "claude" if location == ".claude" else "codex"
     parser.add_argument("--host", choices=("codex", "claude"), default=default_host,
-                        help=f"Install the entire workflow under .codex or .claude (default: {default_host})")
+                        help=f"Install commands, agents and runtime under .codex or .claude (default: {default_host})")
     parser.add_argument("--no-hooks", action="store_true",
                         help="Skip adding hook registrations; preserve existing hooks")
     parser.add_argument("--dry-run", action="store_true", help="Fetch and check without changing the target")

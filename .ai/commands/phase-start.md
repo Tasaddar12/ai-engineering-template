@@ -31,7 +31,7 @@ resolution before its dependent work. For interruption, use
 
 The [coder](../agents/coder.md) method explains task execution, deviations,
 checkpoints and result writing. Documentation components use the
-[documentor](../agents/documentor.md) and its full [doc-writer](../agents/doc-writer.md)
+[doc-writer](../agents/doc-writer.md)
 method to author claims against integrated evidence. Use the selected role with
 [local adaptation](../references/template-adaptation.md), the assigned PLAN, and the
 full [summary template](../templates/summary.md). Preserve task completion evidence,

@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import unittest
 
 
@@ -39,12 +40,12 @@ class MigrationTests(unittest.TestCase):
         moved = migration.relocate_paths(config, "claude")
         parsed = yaml.safe_load(moved)
         self.assertEqual(".claude\\workers\\custom.py", parsed["worker"])
-        self.assertEqual(".claude\\roles\\custom.py", parsed["role"])
+        self.assertEqual(".claude\\agents\\custom.py", parsed["role"])
         self.assertEqual("https://example.invalid/.ai/source.py", parsed["url"])
         self.assertTrue(moved.startswith(b"# Keep formatting\r\n"))
         directories = yaml.safe_load(migration.relocate_paths(
             b'args: [.ai/agents, .ai/commands, .agents/skills, .ai/agents-custom]\n', "claude"))
-        self.assertEqual([".claude/roles", ".claude/workflows", ".claude/skills", ".claude/agents-custom"],
+        self.assertEqual([".claude/agents", ".claude/commands", ".claude/skills", ".claude/agents-custom"],
                          directories["args"])
 
     @classmethod
@@ -118,7 +119,7 @@ class MigrationTests(unittest.TestCase):
                 self.assertEqual(before[".ai/private/archive.bin"], (self.target / namespace / "private/archive.bin").read_bytes())
                 self.assertEqual((self.source / ".ai/runtime/phase.py").read_bytes(), (self.target / namespace / "runtime/phase.py").read_bytes())
                 self.assertEqual(before[".ai/runtime/custom.py"], (self.target / namespace / "runtime/custom.py").read_bytes())
-                self.assertIn(f"{namespace}/workflows/worktree.md".encode(), (self.target / namespace / "RULES.md").read_bytes())
+                self.assertIn(f"{namespace}/commands/worktree.md".encode(), (self.target / namespace / "RULES.md").read_bytes())
                 for name, original in before.items():
                     if name.startswith(".planning/") and name != ".planning/config.yaml":
                         self.assertEqual(original, (self.target / name).read_bytes(), name)
@@ -128,11 +129,11 @@ class MigrationTests(unittest.TestCase):
                 self.assertIn("original versions remain in backup", " ".join(notes))
                 self.assertIn(b"Customer preface\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
                 self.assertIn(b"Customer footer\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
-                self.assertIn(b"Local behavior", (self.target / namespace / "skills/custom/SKILL.md").read_bytes())
-                self.assertEqual(before[".agents/skills/custom/data.bin"], (self.target / namespace / "skills/custom/data.bin").read_bytes())
+                skills = ".agents/skills" if host == "codex" else ".claude/skills"
+                self.assertIn(b"Local behavior", (self.target / skills / "custom/SKILL.md").read_bytes())
+                self.assertEqual(before[".agents/skills/custom/data.bin"], (self.target / skills / "custom/data.bin").read_bytes())
                 if host == "codex":
-                    self.assertIn(b".codex/skills/custom/SKILL.md", (self.target / ".agents/skills/custom/SKILL.md").read_bytes())
-                    self.assertFalse((self.target / ".agents/skills/custom/data.bin").exists())
+                    self.assertFalse((self.target / ".codex/skills").exists())
                 else:
                     self.assertFalse((self.target / ".agents/skills").exists())
                     self.assertNotIn(b"Old managed workflow", (self.target / "AGENTS.md").read_bytes())
@@ -168,7 +169,7 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(custom, (self.target / "AGENTS.md").read_bytes())
         entry = (self.target / "CLAUDE.md").read_bytes()
         self.assertIn(custom, entry)
-        self.assertIn(b"`.ai/commands/` to `.claude/workflows/`", entry)
+        self.assertIn(b"`.ai/commands/` to `.claude/commands/`", entry)
         self.assertIn(b"current managed entry and its delivery rules", entry)
 
     def test_existing_hook_commands_move_even_when_new_hooks_are_disabled(self):
@@ -199,16 +200,39 @@ class MigrationTests(unittest.TestCase):
         changes, _, _ = self.plan()
         self.apply(changes)
         import json
-        result = json.loads((self.target / ".codex/hooks.json").read_bytes())
+        self.assertFalse((self.target / ".codex/hooks.json").exists())
+        result = tomllib.loads((self.target / ".codex/config.toml").read_text())
         for event in ("PreToolUse", "PostToolUse"):
             self.assertEqual(1, len(result["hooks"][event]))
             self.assertNotIn("/.ai/hooks/", str(result["hooks"][event]))
+
+    def test_python_adapter_is_backed_up_and_replaced_with_direct_shell_hooks(self):
+        import json
+        self.write(".ai/hooks/host-adapter.py", b"# obsolete hook implementation\n")
+        old = {"hooks": {"PreToolUse": [{"hooks": [
+            {"type": "command", "command": "python .ai/hooks/host-adapter.py"},
+            {"type": "command", "command": "echo customer hook"},
+        ]}]}}
+        self.write(".codex/hooks.json", installer.json_bytes(old))
+        changes, backups, _ = self.plan()
+        self.assertIn(self.target / ".ai/hooks/host-adapter.py", backups)
+        self.apply(changes)
+        self.assertFalse((self.target / ".codex/hooks/host-adapter.py").exists())
+        retained = json.loads((self.target / ".codex/hooks.json").read_bytes())
+        self.assertEqual([{"type": "command", "command": "echo customer hook"}],
+                         retained["hooks"]["PreToolUse"][0]["hooks"])
+        settings = tomllib.loads((self.target / ".codex/config.toml").read_text())
+        pre = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+        post = settings["hooks"]["PostToolUse"][0]["hooks"][0]["command"]
+        self.assertIn("worktree-confine.sh", pre)
+        self.assertIn("ai-tier-notice.sh", post)
+        self.assertNotIn("host-adapter.py", pre + post)
 
     def test_two_old_paths_mapping_to_same_destination_are_rejected(self):
         self.write(".ai/skills/custom/SKILL.md", b"Different custom content")
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "both map to"):
-            self.plan()
+            self.plan("claude")
         self.assertEqual(before, self.snapshot())
 
     def test_legacy_records_fail_without_reinterpreting_attempts(self):

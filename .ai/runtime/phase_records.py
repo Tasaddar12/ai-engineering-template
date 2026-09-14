@@ -12,8 +12,8 @@ import yaml
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1].name
 AGENT_ENTRY = "CLAUDE.md" if WORKFLOW_ROOT == ".claude" else "AGENTS.md"
-ROLE_ROOT = f"{WORKFLOW_ROOT}/" + ("agents" if WORKFLOW_ROOT == ".ai" else "roles")
-SKILL_ROOT = ".agents/skills" if WORKFLOW_ROOT == ".ai" else f"{WORKFLOW_ROOT}/skills"
+ROLE_ROOT = f"{WORKFLOW_ROOT}/agents"
+SKILL_ROOT = f"{WORKFLOW_ROOT}/skills" if WORKFLOW_ROOT == ".claude" else ".agents/skills"
 
 
 def workflow_path(relative):

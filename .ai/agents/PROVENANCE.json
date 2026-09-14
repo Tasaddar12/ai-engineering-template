@@ -60,7 +60,7 @@
         {
           "start": 89,
           "end": 90,
-          "original": "**CLAUDE.md enforcement:** If `./CLAUDE.md` exists, treat its directives as hard constraints during execution. Before committing each task, verify that code changes do not violate CLAUDE.md rules (forbidden patterns, required conventions, mandated tools). If a task action would contradict a CLAUDE.md directive, apply the CLAUDE.md rule \u2014 it takes precedence over plan instructions. Document any CLAUDE.md-driven adjustments as deviations (Rule 2: auto-add missing critical functionality).\n"
+          "original": "**CLAUDE.md enforcement:** If `./CLAUDE.md` exists, treat its directives as hard constraints during execution. Before committing each task, verify that code changes do not violate CLAUDE.md rules (forbidden patterns, required conventions, mandated tools). If a task action would contradict a CLAUDE.md directive, apply the CLAUDE.md rule — it takes precedence over plan instructions. Document any CLAUDE.md-driven adjustments as deviations (Rule 2: auto-add missing critical functionality).\n"
         },
         {
           "start": 97,
@@ -85,7 +85,7 @@
         {
           "start": 175,
           "end": 176,
-          "original": "   - **Unmet:** STOP \u2014 return a `checkpoint:human-verify` reporting `**Gate:** blocking-human` (use `checkpoint_return_format`) with `**Blocked by:** Precondition not met: <precondition text>`. Do NOT partial-commit the task. Unmet preconditions are NEVER auto-approved, even under `AUTO_CFG=true` \u2014 a missing prerequisite is not a verification step a human can rubber-stamp; it is a fact the executor cannot establish on its own. The human either satisfies the precondition (sets the env var, completes the `user_setup` step, regenerates the artifact) or reruns `/gsd:plan-phase` to restructure.\n"
+          "original": "   - **Unmet:** STOP — return a `checkpoint:human-verify` reporting `**Gate:** blocking-human` (use `checkpoint_return_format`) with `**Blocked by:** Precondition not met: <precondition text>`. Do NOT partial-commit the task. Unmet preconditions are NEVER auto-approved, even under `AUTO_CFG=true` — a missing prerequisite is not a verification step a human can rubber-stamp; it is a fact the executor cannot establish on its own. The human either satisfies the precondition (sets the env var, completes the `user_setup` step, regenerates the artifact) or reruns `/gsd:plan-phase` to restructure.\n"
         },
         {
           "start": 251,
@@ -135,7 +135,7 @@
         {
           "start": 464,
           "end": 465,
-          "original": "The verb owns the canonical predicate (tdd=\"true\" frontmatter AND `<behavior>` block AND non-test source files in `<files>`). Pure doc-only / config-only / test-only tasks return `false` and are exempt. Full result also exposes per-check breakdown (`checks.tdd_true`, `checks.has_behavior_block`, `checks.has_source_files`) and a human-readable `reason` \u2014 use these in the halt-and-report payload when the gate trips. See `gsd-core/references/execute-mvp-tdd.md` for halt protocol.\n"
+          "original": "The verb owns the canonical predicate (tdd=\"true\" frontmatter AND `<behavior>` block AND non-test source files in `<files>`). Pure doc-only / config-only / test-only tasks return `false` and are exempt. Full result also exposes per-check breakdown (`checks.tdd_true`, `checks.has_behavior_block`, `checks.has_source_files`) and a human-readable `reason` — use these in the halt-and-report payload when the gate trips. See `gsd-core/references/execute-mvp-tdd.md` for halt protocol.\n"
         },
         {
           "start": 514,
@@ -225,7 +225,7 @@
         {
           "start": 944,
           "end": 947,
-          "original": "- [ ] STATE.md updated (position, decisions, issues, session)\n- [ ] ROADMAP.md updated with plan progress (via `roadmap update-plan-progress`)\n- [ ] Final metadata commit made (includes SUMMARY.md, STATE.md, ROADMAP.md), or SDK returned an intentional skip (`skipped_commit_docs_false` / `skipped_gitignored`) \u2014 record \"skipped (<reason>)\" in completion notes\n"
+          "original": "- [ ] STATE.md updated (position, decisions, issues, session)\n- [ ] ROADMAP.md updated with plan progress (via `roadmap update-plan-progress`)\n- [ ] Final metadata commit made (includes SUMMARY.md, STATE.md, ROADMAP.md), or SDK returned an intentional skip (`skipped_commit_docs_false` / `skipped_gitignored`) — record \"skipped (<reason>)\" in completion notes\n"
         }
       ]
     },
@@ -320,7 +320,7 @@
         {
           "start": 227,
           "end": 228,
-          "original": "**<precondition>** (optional, one prose line): a runnable/checkable fact the task assumes that plan ordering does not guarantee \u2014 external setup (`user_setup`), a prior-phase artifact, or an env var. The executor asserts it before running the task and halts on unmet. Emission rules + the contract triad (precondition \u2194 `<verify>`/`<done>` \u2194 `must_haves.truths`): @~/.claude/gsd-core/references/planner-preconditions.md.\n"
+          "original": "**<precondition>** (optional, one prose line): a runnable/checkable fact the task assumes that plan ordering does not guarantee — external setup (`user_setup`), a prior-phase artifact, or an env var. The executor asserts it before running the task and halts on unmet. Emission rules + the contract triad (precondition ↔ `<verify>`/`<done>` ↔ `must_haves.truths`): @~/.claude/gsd-core/references/planner-preconditions.md.\n"
         },
         {
           "start": 229,
@@ -335,7 +335,7 @@
         {
           "start": 235,
           "end": 236,
-          "original": "**When `workflow.tdd_mode` is enabled:** Apply TDD heuristics aggressively \u2014 all eligible tasks MUST use `type: tdd`. Read @~/.claude/gsd-core/references/tdd.md for gate enforcement rules and the end-of-phase review checkpoint format.\n"
+          "original": "**When `workflow.tdd_mode` is enabled:** Apply TDD heuristics aggressively — all eligible tasks MUST use `type: tdd`. Read @~/.claude/gsd-core/references/tdd.md for gate enforcement rules and the end-of-phase review checkpoint format.\n"
         },
         {
           "start": 299,
@@ -365,7 +365,7 @@
         {
           "start": 473,
           "end": 474,
-          "original": "**Security (when `security_enforcement` enabled \u2014 absent = enabled):** Identify trust boundaries in this phase's scope. Map STRIDE categories to applicable tech stack from RESEARCH.md security domain. For each threat: assign a **severity** (critical|high|medium|low) based on impact \u00d7 likelihood, and a disposition (`mitigate`/`accept`/`transfer`) per the configured OWASP ASVS level \u2014 see @~/.claude/gsd-core/references/security-asvs-levels.md. Every plan MUST include `<threat_model>` when security_enforcement is enabled.\n"
+          "original": "**Security (when `security_enforcement` enabled — absent = enabled):** Identify trust boundaries in this phase's scope. Map STRIDE categories to applicable tech stack from RESEARCH.md security domain. For each threat: assign a **severity** (critical|high|medium|low) based on impact × likelihood, and a disposition (`mitigate`/`accept`/`transfer`) per the configured OWASP ASVS level — see @~/.claude/gsd-core/references/security-asvs-levels.md. Every plan MUST include `<threat_model>` when security_enforcement is enabled.\n"
         },
         {
           "start": 500,
@@ -465,7 +465,7 @@
         {
           "start": 912,
           "end": 913,
-          "original": "- `[To be planned]` \u2192 derive from CONTEXT.md > RESEARCH.md > phase description\n"
+          "original": "- `[To be planned]` → derive from CONTEXT.md > RESEARCH.md > phase description\n"
         },
         {
           "start": 929,
@@ -545,12 +545,12 @@
         {
           "start": 91,
           "end": 92,
-          "original": "**CONTEXT.md** (if exists) \u2014 User decisions from `/gsd:discuss-phase`\n"
+          "original": "**CONTEXT.md** (if exists) — User decisions from `/gsd:discuss-phase`\n"
         },
         {
           "start": 104,
           "end": 105,
-          "original": "**REVIEWS.md** (if included by reviews mode) \u2014 Cross-AI review feedback from `/gsd:review`\n"
+          "original": "**REVIEWS.md** (if included by reviews mode) — Cross-AI review feedback from `/gsd:review`\n"
         },
         {
           "start": 106,
@@ -650,7 +650,7 @@
         {
           "start": 724,
           "end": 725,
-          "original": "**Rule:** RESEARCH.md is produced at research time and may be stale. Numeric claims (test counts, file counts, version numbers) and factual state claims (\"feature X is implemented\") in RESEARCH.md may not reflect the current codebase. The plan may be more current. RESEARCH.md is authoritative for architectural decisions and constraints \u2014 not for measurements.\n"
+          "original": "**Rule:** RESEARCH.md is produced at research time and may be stale. Numeric claims (test counts, file counts, version numbers) and factual state claims (\"feature X is implemented\") in RESEARCH.md may not reflect the current codebase. The plan may be more current. RESEARCH.md is authoritative for architectural decisions and constraints — not for measurements.\n"
         },
         {
           "start": 746,
@@ -705,7 +705,7 @@
         {
           "start": 1066,
           "end": 1067,
-          "original": "**DO NOT** check code existence \u2014 that's gsd-verifier's job. You verify plans, not codebase.\n"
+          "original": "**DO NOT** check code existence — that's gsd-verifier's job. You verify plans, not codebase.\n"
         },
         {
           "start": 1103,
@@ -775,12 +775,12 @@
         {
           "start": 77,
           "end": 78,
-          "original": "**CLAUDE.md enforcement:** If `./CLAUDE.md` exists, extract all actionable directives (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from CLAUDE.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat CLAUDE.md directives with the same authority as locked decisions from CONTEXT.md \u2014 research should not recommend approaches that contradict them.\n"
+          "original": "**CLAUDE.md enforcement:** If `./CLAUDE.md` exists, extract all actionable directives (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from CLAUDE.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat CLAUDE.md directives with the same authority as locked decisions from CONTEXT.md — research should not recommend approaches that contradict them.\n"
         },
         {
           "start": 81,
           "end": 82,
-          "original": "**CONTEXT.md** (if exists) \u2014 User decisions from `/gsd:discuss-phase`\n"
+          "original": "**CONTEXT.md** (if exists) — User decisions from `/gsd:discuss-phase`\n"
         },
         {
           "start": 93,
@@ -810,7 +810,7 @@
         {
           "start": 215,
           "end": 216,
-          "original": "**Claim-disposition mode (the `/gsd:explore` quick-research pass).** When the invocation prompt asks you to tag each finding `[admit: <source>]` / `[refute: <source>]` / `[abstain: <why>]` \u2014 the three-way claim disposition (#2229) \u2014 that request is authoritative **for that call** and REPLACES the RESEARCH.md contract: return the 3\u20135 tagged findings **inline in your response**, do **not** write a RESEARCH.md file, and do **not** use the *Research Complete* structured return. Derive each disposition from the same source work you already do:\n"
+          "original": "**Claim-disposition mode (the `/gsd:explore` quick-research pass).** When the invocation prompt asks you to tag each finding `[admit: <source>]` / `[refute: <source>]` / `[abstain: <why>]` — the three-way claim disposition (#2229) — that request is authoritative **for that call** and REPLACES the RESEARCH.md contract: return the 3–5 tagged findings **inline in your response**, do **not** write a RESEARCH.md file, and do **not** use the *Research Complete* structured return. Derive each disposition from the same source work you already do:\n"
         },
         {
           "start": 226,
@@ -930,7 +930,7 @@
         {
           "start": 230,
           "end": 231,
-          "original": "5c. **Reliance check (advisory, #1955).** Before finalizing a \u2713 VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag (`gsd-core/references/honest-verifier.md`) \u2014 advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: \u26a0\ufe0f PRESENT_BEHAVIOR_UNVERIFIED and \u26a0\ufe0f `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `\u2713 VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only \u2014 not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.\n"
+          "original": "5c. **Reliance check (advisory, #1955).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag (`gsd-core/references/honest-verifier.md`) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.\n"
         },
         {
           "start": 245,
@@ -965,7 +965,7 @@
         {
           "start": 447,
           "end": 448,
-          "original": "**Re-verification evidence gate (#3304):** in re-verification mode, a \ud83d\uded1 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence \u2014 a named test run red, or another concrete reproducible artifact \u2014 to stay blocking. Full algorithm: @gsd-core/references/verifier-evidence-gate.md. Unevidenced \u2192 \ud83d\udccb Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.\n"
+          "original": "**Re-verification evidence gate (#3304):** in re-verification mode, a 🛑 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence — a named test run red, or another concrete reproducible artifact — to stay blocking. Full algorithm: @gsd-core/references/verifier-evidence-gate.md. Unevidenced → 📋 Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.\n"
         },
         {
           "start": 525,
@@ -980,7 +980,7 @@
         {
           "start": 627,
           "end": 628,
-          "original": "3. If a match is found \u2192 move the gap to the `deferred` list, recording which phase addresses it and the matching evidence (goal text or success criterion)\n"
+          "original": "3. If a match is found → move the gap to the `deferred` list, recording which phase addresses it and the matching evidence (goal text or success criterion)\n"
         },
         {
           "start": 642,
@@ -995,7 +995,7 @@
         {
           "start": 687,
           "end": 688,
-          "original": "1. Top-level \"User Flow Coverage\" table: each step of the user story \u2192 expected \u2192 evidence in codebase \u2192 status. (Format defined in `gsd-core/references/verify-mvp-mode.md`.)\n"
+          "original": "1. Top-level \"User Flow Coverage\" table: each step of the user story → expected → evidence in codebase → status. (Format defined in `gsd-core/references/verify-mvp-mode.md`.)\n"
         },
         {
           "start": 692,
@@ -1029,8 +1029,8 @@
       "path": ".ai/agents/doc-writer.md",
       "source_sha256_lf": "0b74a86dbff1d1d9d57e307268825a063571ff9fabd29ee1f5cd00164c41bd2e",
       "source_lines": 618,
-      "adapted_sha256_lf": "e60b60a85841c84c48a91b00b67bdd90619fde77afc855c1b38a446507b12d3a",
-      "adapted_lines": 637,
+      "adapted_sha256_lf": "d81b81ae4acb272b1e3d8bf7cd1d5edcd5ed756e84f8b75d11b2439cb24bd001",
+      "adapted_lines": 672,
       "inverse_edits": [
         {
           "start": 1,
@@ -1039,82 +1039,77 @@
         },
         {
           "start": 13,
-          "end": 32,
-          "original": ""
+          "end": 18,
+          "original": "<role>\nYou are a GSD doc writer. You write and update project documentation files for a target project.\n"
         },
         {
-          "start": 33,
-          "end": 34,
-          "original": "You are a GSD doc writer. You write and update project documentation files for a target project.\n"
-        },
-        {
-          "start": 35,
-          "end": 36,
+          "start": 19,
+          "end": 71,
           "original": "You are spawned by `/gsd:docs-update` workflow. Each spawn receives a `<doc_assignment>` XML block in the prompt containing:\n"
         },
         {
-          "start": 37,
-          "end": 38,
+          "start": 72,
+          "end": 73,
           "original": "- `mode`: `create` (new doc from scratch), `update` (revise existing GSD-generated doc), `supplement` (append missing sections to a hand-written doc), or `fix` (correct specific claims flagged by gsd-doc-verifier)\n"
         },
         {
-          "start": 41,
-          "end": 42,
+          "start": 76,
+          "end": 77,
           "original": "- `failures`: (fix mode only) array of `{line, claim, expected, actual}` objects from gsd-doc-verifier output\n"
         },
         {
-          "start": 45,
-          "end": 46,
-          "original": "Your job: Read the assignment, select the matching `<template_*>` section for guidance (or follow custom doc instructions for `type: custom`), explore the codebase using your tools, then write the doc file directly. Returns confirmation only \u2014 do not return doc content to the orchestrator.\n"
+          "start": 80,
+          "end": 81,
+          "original": "Your job: Read the assignment, select the matching `<template_*>` section for guidance (or follow custom doc instructions for `type: custom`), explore the codebase using your tools, then write the doc file directly. Returns confirmation only — do not return doc content to the orchestrator.\n"
         },
         {
-          "start": 56,
-          "end": 57,
+          "start": 91,
+          "end": 92,
           "original": "**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md\n"
         },
         {
-          "start": 58,
-          "end": 59,
+          "start": 93,
+          "end": 94,
           "original": "2. Read `SKILL.md` for each skill (lightweight index ~130 lines)\n"
         },
         {
-          "start": 60,
-          "end": 61,
+          "start": 95,
+          "end": 96,
           "original": "4. Do NOT load full `AGENTS.md` files (100KB+ context cost)\n"
         },
         {
-          "start": 75,
-          "end": 76,
+          "start": 110,
+          "end": 111,
           "original": "5. Include the GSD marker `<!-- generated-by: gsd-doc-writer -->` as the very first line of the file.\n"
         },
         {
-          "start": 88,
-          "end": 89,
+          "start": 123,
+          "end": 124,
           "original": "6. Ensure the GSD marker `<!-- generated-by: gsd-doc-writer -->` is present as the first line. Add it if missing.\n"
         },
         {
-          "start": 111,
-          "end": 112,
+          "start": 146,
+          "end": 147,
           "original": "Correct specific failing claims identified by the gsd-doc-verifier. ONLY modify the lines listed in the failures array -- do not rewrite other content.\n"
         },
         {
-          "start": 121,
-          "end": 122,
+          "start": 156,
+          "end": 157,
           "original": "5. After all Edit calls, verify the GSD marker `<!-- generated-by: gsd-doc-writer -->` is still present on the first line. If it was removed by an Edit, use Edit to restore it.\n"
         },
         {
-          "start": 449,
-          "end": 450,
+          "start": 484,
+          "end": 485,
           "original": "  `CODE_OF_CONDUCT.md` in the project root. If present: \"Please read our [Code of Conduct](CODE_OF_CONDUCT.md)\n"
         },
         {
-          "start": 615,
-          "end": 618,
-          "original": "1. NEVER include GSD methodology content in generated docs \u2014 no references to phases, plans, `/gsd-` commands, PLAN.md, ROADMAP.md, or any GSD workflow concepts. Generated docs describe the TARGET PROJECT exclusively.\n2. NEVER touch CHANGELOG.md \u2014 it is managed by `/gsd:ship` and is out of scope.\n3. Include the GSD marker `<!-- generated-by: gsd-doc-writer -->` as the first line of every generated doc file (except supplement mode \u2014 see rule 7).\n"
+          "start": 650,
+          "end": 653,
+          "original": "1. NEVER include GSD methodology content in generated docs — no references to phases, plans, `/gsd-` commands, PLAN.md, ROADMAP.md, or any GSD workflow concepts. Generated docs describe the TARGET PROJECT exclusively.\n2. NEVER touch CHANGELOG.md — it is managed by `/gsd:ship` and is out of scope.\n3. Include the GSD marker `<!-- generated-by: gsd-doc-writer -->` as the first line of every generated doc file (except supplement mode — see rule 7).\n"
         },
         {
-          "start": 631,
-          "end": 632,
+          "start": 666,
+          "end": 667,
           "original": "- [ ] No GSD methodology references in output\n"
         }
       ]
@@ -1145,7 +1140,7 @@
         {
           "start": 39,
           "end": 40,
-          "original": "Extract checkable claims from the doc, verify each against the codebase using filesystem tools only, then write a structured JSON result file. Returns a one-line confirmation to the orchestrator only \u2014 do not return doc content or claim details inline.\n"
+          "original": "Extract checkable claims from the doc, verify each against the codebase using filesystem tools only, then write a structured JSON result file. Returns a one-line confirmation to the orchestrator only — do not return doc content or claim details inline.\n"
         },
         {
           "start": 64,
@@ -1165,12 +1160,12 @@
         {
           "start": 120,
           "end": 121,
-          "original": "- **VERIFY markers**: Claims wrapped in `<!-- VERIFY: ... -->` \u2014 these are already flagged for human review. Skip entirely.\n"
+          "original": "- **VERIFY markers**: Claims wrapped in `<!-- VERIFY: ... -->` — these are already flagged for human review. Skip entirely.\n"
         },
         {
           "start": 124,
           "end": 125,
-          "original": "- **GSD marker**: The comment `<!-- generated-by: gsd-doc-writer -->` \u2014 skip entirely.\n"
+          "original": "- **GSD marker**: The comment `<!-- generated-by: gsd-doc-writer -->` — skip entirely.\n"
         },
         {
           "start": 133,
@@ -1180,7 +1175,7 @@
         {
           "start": 136,
           "end": 137,
-          "original": "Use the Read tool to load `{project_root}/package.json` if it exists. Cache the parsed content for use in command and dependency verification. If not present, note this \u2014 package.json-dependent checks will be skipped with a SKIP status rather than a FAIL.\n"
+          "original": "Use the Read tool to load `{project_root}/package.json` if it exists. Cache the parsed content for use in command and dependency verification. If not present, note this — package.json-dependent checks will be skipped with a SKIP status rather than a FAIL.\n"
         },
         {
           "start": 154,
@@ -1200,7 +1195,7 @@
         {
           "start": 165,
           "end": 166,
-          "original": "Create `.planning/tmp/` directory if it does not exist. Write the result to `.planning/tmp/verify-{doc_filename}.json` where `{doc_filename}` is the basename of `doc_path` with extension (e.g., `README.md` \u2192 `verify-README.md.json`).\n"
+          "original": "Create `.planning/tmp/` directory if it does not exist. Write the result to `.planning/tmp/verify-{doc_filename}.json` where `{doc_filename}` is the basename of `doc_path` with extension (e.g., `README.md` → `verify-README.md.json`).\n"
         },
         {
           "start": 176,
