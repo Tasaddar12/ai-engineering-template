@@ -114,8 +114,8 @@ case needs an actual passing human observation. Source changes invalidate eviden
 
 Project data lives in `.planning/`; reusable instructions, templates and tooling
 live in `.ai/`. `.planning/config.yaml` is this Python runtime's execution config.
-The complete upstream `.ai/templates/config.json` is an optional upstream template,
-not an equivalent config file consumed by this Python runtime.
+No JSON configuration template is supplied; upstream JSON examples do not
+configure this Python runtime.
 
 Local process/checkpoint data remains in the Git common directory under
 `ai/phases/`. It is operational data, not a project record in `.ai/`. New checkpoint
@@ -150,13 +150,31 @@ and session continuity remain coordinator-authored and are never discarded by sy
 
 ## Native TDD feature plans
 
-A `type: tdd` plan uses the complete feature-shaped output in
-[the TDD reference](../library/references/tdd.md). Keep its `<feature>` block with
+A `type: tdd` plan uses a feature-shaped output. Keep its `<feature>` block with
 `<name>`, `<files>`, `<behavior>` and `<implementation>`, plus objective, context,
 verification, success criteria and output. It does not need artificial `<tasks>`
-or an execution_context section absent from that reference. Add the same local
-ownership, requirement, acceptance, documentation, argv-check, autonomy and wave
-metadata as other plans, and the Documentation handoff section.
+or an execution_context section; the feature block supplies the task contract.
+Add the same local ownership, requirement, acceptance, documentation, argv-check,
+autonomy and wave metadata as other plans, and the Documentation handoff section.
+
+The feature block names one behavior small enough for a complete RED/GREEN cycle:
+
+```xml
+<feature>
+  <name>[One observable behavior]</name>
+  <files>[Exact implementation and test paths]</files>
+  <behavior>
+    [Inputs, expected outputs, boundary cases and the assertion that fails before repair]
+  </behavior>
+  <implementation>
+    [Implementation approach after the failing behavioral check is established]
+  </implementation>
+</feature>
+```
+
+Keep this inside the complete PLAN with the metadata and surrounding sections
+listed above. Choose TDD when the behavior has a clear test oracle; a fixture or
+infrastructure problem must be diagnosed before it can count as a behavioral RED.
 
 The worker writes and commits a named behavioral test first, runs it and records
 why the failure is the expected assertion (RED), then implements and commits the
@@ -173,10 +191,10 @@ those examples remain reference methods, not claims about automatic enforcement.
 
 ## Explicitly selected summary variants
 
-The complete default summary remains the normal executable output. The minimal,
-standard and complex variants are retained as optional authoring sources; selecting
-one does not waive integration evidence. Preserve every original variant section
-and add any missing named sections required by this runtime: Accomplishments,
+The complete `summary.md` is the supplied executable output; compact, minimal,
+standard and complex variant templates are not retained. A separately authorized
+alternative does not waive integration evidence. Preserve applicable authoring
+sections and every named section required by this runtime: Accomplishments,
 Task Commits, Files Created/Modified, Decisions Made, Deviations from Plan,
 Issues Encountered, User Setup Required, Next Phase Readiness and Checks.
 Also include status, requirements-completed, acceptance and documentation metadata.

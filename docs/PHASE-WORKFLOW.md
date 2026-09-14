@@ -34,11 +34,11 @@ observed behavior, and record actual authorization already supplied.
 assert that unrun checks pass, or repeat approval questions at internal steps when
 the user already authorized the work.
 
-For substantial discovery, use the complete library project and research
-questioning guidance through the [support library](../.ai/library/README.md). The local
-onboarding procedure remains [onboard](../.ai/commands/onboard.md). Optional
-optional milestone and profile records are available when relevant; simply
-importing their templates does not activate another scheduler.
+For substantial discovery, the coordinator assigns a bounded focus to the
+[codebase mapper](../.ai/agents/codebase-mapper.md), then routes technical unknowns
+to the [researcher](../.ai/agents/researcher.md) and claim discrepancies through
+[documentation coverage](../.ai/references/documentation.md). The entry procedure
+remains [onboard](../.ai/commands/onboard.md).
 
 ## 2. Select the next phase
 
@@ -118,8 +118,10 @@ coordinator resolves findings within scope and repeats the affected review.
 
 The runtime automatically dispatches code, documentation and verification
 workers. Researcher, preparer and preparation-checker contexts are arranged by
-the coordinator. The complete library workflows describe those methods; they
-are not all registered host commands in this repository.
+the coordinator using their complete [agent methods](../.ai/agents/README.md).
+The preparer returns plans to an independent phase checker; the coordinator
+assigns any corrections before the checker reassesses them. These handoffs stay
+inside phase-research and phase-prepare without additional commands.
 
 The process runner accepts autonomous plans. Non-autonomous/checkpoint plans and
 unresolved `user_setup` remain complete planning artifacts but block dispatch.
@@ -136,8 +138,13 @@ it to make the readiness gate pass.
 | Phase preparer | Produce executable plans and validation approach | Coordinator |
 | Phase checker | Independently inspect preparation without editing it | Coordinator |
 | Coder | Implement one plan; check and commit changes and SUMMARY | Runtime after coordinator invokes execution |
-| Documentor | Verify claims against integrated code; update assigned guides/specifications and SUMMARY | Runtime for documentation components |
+| Documentor using doc-writer | Verify claims against integrated code; update assigned guides/specifications and SUMMARY | Runtime for documentation components |
 | Verifier | Independently assess the integrated outcome at an exact revision | Runtime after coordinator invokes verification |
+| Codebase mapper | Trace a bounded current-code focus and return useful maps/evidence | Coordinator during onboarding or research |
+| Debugger | Reproduce uncertain failures and test competing explanations | Coordinator for a blocked diagnosis or repair |
+| Doc-verifier | Independently check concrete document claims and required coverage | Coordinator within phase-verify |
+| Integration checker | Trace cross-component wiring and end-to-end flows | Coordinator within phase-verify when relevant |
+| Code reviewer | Inspect changed code for actionable defects | Coordinator within phase-verify when relevant |
 
 Each implementation worker receives its checkout, branch, assigned revision,
 role, relevant core rules, phase context, one PLAN, required source, useful
@@ -148,6 +155,14 @@ Workers write only their assigned paths and result. They do not spawn more
 workers, rewrite shared phase inputs, integrate branches or publish. Their
 committed SUMMARY reports actual acceptance/documentation coverage, commands,
 results, deviations and remaining issues.
+
+Specialist reviews feed the independent phase verifier at the integrated revision.
+A doc-verifier reports unsupported claims to the coordinator, who assigns the
+responsible documentor (using doc-writer) or coder a bounded correction. Integration
+and code-review findings follow the same correction path; uncertain causes can
+first go to the debugger. Reviewers stay read-only. After correction and integration,
+repeat the affected specialist review and phase verification. These handoffs use
+phase-start and phase-verify; they do not require more command entry points.
 
 ## 6. Schedule dependencies, capacity and contention
 

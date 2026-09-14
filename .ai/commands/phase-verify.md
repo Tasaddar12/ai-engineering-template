@@ -12,6 +12,22 @@ checks phase acceptance, component connections, regressions and documentation at
 the assigned revision. The host saves the report externally while the checkout
 stays unchanged; the coordinator audits, stores and commits VERIFICATION.
 
+For relevant risks, the coordinator also assigns bounded independent reviews to
+[doc-verifier](../agents/doc-verifier.md) for concrete documentation claims,
+[integration-checker](../agents/integration-checker.md) for cross-component flows,
+and [code-reviewer](../agents/code-reviewer.md) for changed-code defects. These are
+specialist assignments within phase-verify, not extra runtime routes or commands.
+The verifier incorporates their evidence at the same assigned revision and remains
+responsible for a conclusive phase assessment. A reviewer does not edit its target
+or spawn more reviewers; missing specialist evidence is returned to the coordinator.
+
+The coordinator routes document findings to a documentor using doc-writer, source
+findings to a coder, and uncertain causes to a debugger before repair. Each repair
+keeps the finding, evidence and affected acceptance attached to the phase. After
+integration, repeat the affected specialist assessment and independent phase
+verification at the new revision. An author cannot close its own independent
+review solely by asserting that a correction was made.
+
 Verifier attempts also retain their worktree, process identity and result path.
 An interrupted verifier must stop before its result is reused. If no usable report
 for the current source remains, inspect the saved attempt and allow a fresh one:
@@ -44,7 +60,7 @@ limit that strands known repairable work.
 ## Full verification artifact
 
 Use the complete [verification report](../templates/verification-report.md) and
-[Verifier method](../library/agents/verifier.md) with the
+[verifier method](../agents/verifier.md) with the
 [local adapter](../references/template-adaptation.md). Trace observable truths, real
 artifacts and critical connections, with requirement coverage, regression evidence,
 anti-pattern findings and human-only checks. Add the assigned revision and

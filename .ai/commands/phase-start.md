@@ -28,10 +28,18 @@ resolution before its dependent work. For interruption, use
 
 ## Execution guidance
 
-The [complete execution method](../library/workflows/execute-plan.md) explains task
-execution, deviations, checkpoints and result writing. Use it with
+The [coder](../agents/coder.md) method explains task execution, deviations,
+checkpoints and result writing. Documentation components use the
+[documentor](../agents/documentor.md) and its full [doc-writer](../agents/doc-writer.md)
+method to author claims against integrated evidence. Use the selected role with
 [local adaptation](../references/template-adaptation.md), the assigned PLAN, and the
 full [summary template](../templates/summary.md). Preserve task completion evidence,
 actual changes, decisions, dependency effects, issues and remaining work. Add
 [runtime result fields](../runtime/TEMPLATE-CONTRACT.md); a blocked task cannot
 be reported as a completed requirement.
+
+An uncertain failure can require the [debugger](../agents/debugger.md). The worker
+returns its evidence and blocked boundary; the coordinator assigns the focused
+investigation and routes its result to the responsible coder or documentor.
+Workers do not dispatch more agents. Required documentation follows its code
+dependencies, then enters independent document verification during phase-verify.
