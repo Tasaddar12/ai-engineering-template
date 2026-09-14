@@ -39,7 +39,7 @@ preserve full instructions; they are not a license to shorten a template.
 | Verification | Tests, source inspection and observed outcomes support claims; text checks only prove textual conditions | A matching string does not establish connected behavior |
 | Completion | Report only completed requirements and observed evidence; retain blocked and failed outcomes | Copying all planned IDs into a result must not claim unfinished work |
 | Publication | Authorized draft progress pushes are allowed; final readiness requires current review and successful checks | The user can inspect slices without confusing a draft with verified completion |
-| Merge | Python publication never merges. The coordinator may merge only within the user's explicit delivery boundary after verification | Retain the existing separation between publication and delivery |
+| Merge | Python publication never merges. The coordinator automatically merges after verification and required checks under the shared delivery defaults, unless the user opts out | Publication and observed delivery remain distinct; cleanup requires separate authorization |
 | Optional artifacts | The retained catalog supplies research, setup and continuation artifacts; create them when useful for authorized work | Supplying a template does not seed fictional work or require every artifact |
 | Recovery | Existing interrupted attempts retain their original runtime and paths until explicitly reconciled | Moving planning data must not silently reinterpret running assignments |
 

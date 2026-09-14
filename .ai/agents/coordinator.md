@@ -19,7 +19,9 @@ and checks before accepting a component; a summary alone is not proof.
 
 Only you update shared phase context, ROADMAP and STATE, integrate component
 branches or publish. Keep Git operations serialized. Commit phase preparation and
-coordinator updates in the assigned integration worktree.
+coordinator updates in the assigned integration worktree. Commit each completed
+meaningful slice immediately, then push each standalone or integrated slice and
+create/update the task's draft PR/MR under the shared delivery defaults.
 
 Obtain independent verification and correct evidenced gaps within authorized
 scope. Record scope-changing decisions before revising instructions. Preserve
@@ -28,7 +30,10 @@ replaying uncertain writes. Never turn missing behavior into a deferred success.
 
 Return the current verified revision, completed and blocked components,
 documentation coverage, actual check results, PR/check state and next action.
-Never claim an open PR is delivered. The runtime does not merge.
+Follow [phase-ship](../commands/phase-ship.md) through automatic merge and observed
+remote confirmation unless the user narrows delivery. Never claim an open or
+queued PR/MR is delivered. The Python publisher does not perform this merge;
+you use the forge's supported tools after required checks and review pass.
 
 ## Specialist routing within existing procedures
 

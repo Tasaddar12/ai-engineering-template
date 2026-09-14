@@ -25,9 +25,9 @@ read [Project and phase workflow](PHASE-WORKFLOW.md).
 | Independent outcome verification | Inspect connected behavior, errors, negative guarantees and documentation | [Verifier](../agents/verifier.md) | A report must match the checked content and come from an unchanged verifier checkout |
 | Human acceptance | Persistent observed pass/fail/blocked/skipped cases when required | Runtime `uat` | Agent assumptions are not human observations |
 | Recovery and explicit replanning | Preserve attempts and reuse valid committed results | Runtime `resume` and `run --replan` | No blind restart of possibly live writers |
-| Draft progress visibility | Frequent committed slices pushed to an authorized draft PR | Coordinator's forge workflow | Runtime publish still requires verification; draft status is not a bypass |
+| Draft progress visibility | Each completed standalone or integrated slice pushed to a draft PR/MR by default | Coordinator's forge workflow | Explicit user limits override defaults; runtime publish still requires verification |
 | Verified publication | Push/create/update phase PR and inspect required remote checks | Runtime `publish` | Publishing does not merge or declare pending checks passed |
-| Authorized final delivery | Review, merge, confirm, synchronize and clean exact merged targets | Coordinator, outside the runtime merge boundary | Preserve unrelated, dirty, unmerged and ignored data |
+| Default final delivery | Review, verify, automatically merge and confirm the remote result unless the user opts out | Coordinator through the forge; Python publisher only publishes | Required checks/reviews still apply; cleanup needs separate authorization |
 | Advisory hooks | Warn about common workflow mistakes | [Hook guide](../hooks/README.md) | Return success; neither sandbox nor permission enforcement |
 
 ## What is installed, executable or supplied as guidance

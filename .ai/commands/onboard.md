@@ -26,8 +26,11 @@ needs the human bootstrap commit described in that command.
    ordered goals, or [phase-prepare](phase-prepare.md) for an existing decided phase.
 
 These are ordinary-language requests. Markdown commands describe local procedures;
-they do not automatically register host slash commands. Setup alone does not
-authorize product implementation, publication or delivery.
+they do not automatically register host slash commands. Setup authorizes only its
+requested scope, not product implementation. Authorized tracked setup changes
+follow the shared commit, push, PR/MR and automatic verified merge defaults unless
+the user narrows delivery. The copy-ready local-only prompts below explicitly
+narrow that default.
 
 ## Procedure for a new or existing project
 
@@ -55,7 +58,9 @@ authorize product implementation, publication or delivery.
    Draft current SPECs only from inspected implementation evidence.
 7. Confirm AGENTS points to the active rules, commands and roles. Check setup
    records and configured commands against the actual repository. Commit authorized
-   setup, then report what is ready and what still needs a decision or setup.
+   setup slice by slice and follow [phase-ship](phase-ship.md) for its delivery
+   unless the user narrowed that boundary. Report what is ready and what still
+   needs a decision or setup.
 
 ## Returning session
 
@@ -201,6 +206,7 @@ My inputs:
 - Work or files to preserve: [uncommitted work, active branches, special constraints]
 - Authorization: inspect, reconcile workflow setup, complete missing project
   records/configuration, prepare the next agreed scope and commit setup locally.
+  Do not push or create/merge a PR/MR unless I add that delivery here.
   Additional authorized changes or delivery actions: [explicit scope, or none].
 
 Work through the following sequence:

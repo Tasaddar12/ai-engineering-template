@@ -41,7 +41,7 @@ are not an adopting project's roadmap or delivery history.
 | Plan and check | Detailed `NN-CC-PLAN.md` assignments with task actions, checks, dependencies and ownership |
 | Execute and integrate | Fresh bounded workers; committed, audited results become available to dependents |
 | Verify and accept | Independent outcome assessment, corrected gaps, required human observations |
-| Publish and deliver | Visible draft progress when authorized; final checks before readiness and authorized merge |
+| Publish and deliver | Push each completed slice to a PR/MR; automatically merge after verification and required checks unless the user opts out |
 
 The coordinator starts workers. Independent components run concurrently; shared
 files, exclusive resources and genuine prerequisites constrain scheduling. A
@@ -87,9 +87,11 @@ workflow guides under `.ai/guides/`.
 4. Keep required documentation and verification attached to that phase. Complete
    the user's authorized delivery boundary and preserve unfinished work.
 
-**The runtime publishes PRs and never merges.** When the user authorizes merge
-and cleanup, the coordinator performs those separately after final verification,
-required checks and merge evidence. An open draft is progress visibility.
+**Tracked work defaults to worktree, slice commit, push, PR/MR and automatic merge.**
+The coordinator carries out [delivery](.ai/commands/phase-ship.md) after final
+verification and required checks; the Python publisher only publishes GitHub PRs.
+Explicit instructions such as local-only, draft-only or no-merge override the
+default. Cleanup needs separate authorization. An open draft is progress visibility.
 
 ## Validation
 
