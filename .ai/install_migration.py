@@ -9,8 +9,6 @@ import json
 import re
 
 
-LEGACY_RECORDS = ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md",
-                  "config.yaml", "phases", "codebase", "specs", "decisions")
 TEXT_SUFFIXES = {".md", ".txt", ".yaml", ".yml", ".toml", ".sh", ".ps1"}
 
 
@@ -71,10 +69,6 @@ def entry_remainder(content, installer, name):
     start, end = installer.AGENT_MARKER.encode(), installer.AGENT_END.encode()
     if start not in content and end not in content:
         return content
-    if content.count(start) == 1 and end not in content:
-        # Older installers had no closing marker. Its ending cannot safely be
-        # distinguished from appended project instructions, so preserve it all.
-        return content
     if content.count(start) != 1 or content.count(end) != 1:
         raise ValueError(f"Ambiguous managed workflow block in {name}; nothing was installed.")
     first, last = content.index(start), content.index(end)
@@ -123,12 +117,6 @@ def plan_migration(source, target, host, hooks, installer):
     if not old_root.exists():
         raise ValueError("--migrate-existing requires an existing .ai directory.")
     old_files, old_dirs = inventory(old_root, installer)
-    legacy = [name for name in LEGACY_RECORDS if (old_root / name).exists()]
-    if legacy:
-        raise ValueError("Legacy project records remain under .ai: " + ", ".join(legacy)
-                         + ". Preserve and reconcile them into .planning with their compatible "
-                         "original runtime first; finish or inspect old attempts without copying "
-                         "or reinterpreting checkpoints. Nothing was installed.")
     planning_files, _ = inventory(target / ".planning", installer)
     skill_files, skill_dirs = inventory(target / ".agents/skills", installer)
     incoming = installer.payload(source, host, hooks)
@@ -191,19 +179,10 @@ def plan_migration(source, target, host, hooks, installer):
         previous = remainders["AGENTS.md"]
         if previous.strip() and previous not in custom:
             custom += b"\n\n" + previous
-    mapping = ("\n\nHistorical plans keep their original paths. When following them, resolve "
-               f"`.ai/agents/` to `{namespace}/agents/`, `.ai/commands/` to "
-               f"`{namespace}/commands/`, `.agents/skills/` to `{installer.skill_root(host)}/`, "
-               f"and other `.ai/` paths to `{namespace}/`. Project records remain in "
-               "`.planning/`; do not rewrite completed history or reuse incompatible old checkpoints. "
-               "Before execution, reconcile pending PLAN ownership and Read first paths with "
-               "the installed layout, then recheck and reverify; the runtime does not translate "
-               "PLAN ownership from this prose mapping. "
-               "The current managed entry and its delivery rules govern current work.\n").encode()
-    desired[entry] = custom + (b"\n\n" if custom else b"") + incoming[entry] + mapping
+    desired[entry] = custom + (b"\n\n" if custom else b"") + incoming[entry]
     if host == "claude" and "AGENTS.md" in remainders:
         desired["AGENTS.md"] = remainders["AGENTS.md"]
-    for name in (".codex/hooks.json", ".codex/config.toml", ".claude/settings.json"):
+    for name in (".codex/config.toml", ".claude/settings.json"):
         path = target / name
         installer.safe_path(path)
         if path.exists():
@@ -216,15 +195,6 @@ def plan_migration(source, target, host, hooks, installer):
                 merge = installer.merge_codex_config if name.endswith(".toml") else installer.merge_hooks
                 desired[name] = (merge(current, desired[name], path)
                                  if name in desired else current)
-    retired_settings = []
-    old_hooks = ".codex/hooks.json"
-    if host == "codex" and hooks and old_hooks in desired:
-        retired = installer.retire_codex_json(desired[old_hooks], target / old_hooks)
-        if retired is None:
-            del desired[old_hooks]
-            retired_settings.append((target / old_hooks, None))
-        else:
-            desired[old_hooks] = retired
     ignore = target / ".gitignore"
     installer.safe_path(ignore)
     if ignore.exists() and not ignore.is_file():
@@ -261,4 +231,4 @@ def plan_migration(source, target, host, hooks, installer):
     deletes = [(path, None) for path in old_files + skill_files if path not in retained]
     deletes.extend((path, None) for path in old_dirs + skill_dirs
                    if not any(path == kept or path in kept.parents for kept in retained))
-    return writes + retired_settings + deletes, sorted(backups), notes
+    return writes + deletes, sorted(backups), notes

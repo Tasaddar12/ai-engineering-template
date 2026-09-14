@@ -55,7 +55,7 @@ counterexamples and consumer descriptions at stable filenames under
 [agent methods](.ai/agents/README.md) connect research, preparation, implementation
 and independent review through the existing procedures. Git records adaptations.
 Source attribution and revision history remain in
-[third-party notices](.ai/THIRD-PARTY-NOTICES.md) and provenance.
+[third-party notices](.ai/THIRD-PARTY-NOTICES.md).
 
 The executable interface remains `python .ai/runtime/phase.py`. Its
 [additive contract](.ai/runtime/TEMPLATE-CONTRACT.md) explains the runtime metadata
@@ -79,8 +79,7 @@ Installed instructions describe the destination project, and existing planning
 records remain authoritative. Existing `.ai` + `.planning` projects can use
 `--migrate-existing` to rebuild the selected host layout while preserving project
 history, custom material and verified original-file backups. Preview the migration
-with `--dry-run` in an assigned worktree. The guide also covers the narrower
-original-release repair with `--repair-template-context`.
+with `--dry-run` in an assigned worktree.
 The installer leaves this repository's `docs/` directory out of the target.
 Installed procedures live in the selected host's `commands` directory, role
 methods in `agents`, and supporting guides in `guides`. Codex uses root AGENTS.md

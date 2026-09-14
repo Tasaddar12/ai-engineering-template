@@ -118,21 +118,8 @@ No JSON configuration template is supplied; upstream JSON examples do not
 configure this Python runtime.
 
 Local process/checkpoint data remains in the Git common directory under
-`ai/phases/`. It is operational data, not a project record in `.ai/`. New checkpoint
-keys include the `.planning` phase path. Status fails visibly on legacy `.ai`
-project records, legacy IMPLEMENT files and a matching old-path checkpoint rather
-than silently reporting no work. Inspect/finish old attempts at their compatible
-original revision. Archive inspected checkpoints explicitly before starting a new
-attempt; this release does not convert live or historical attempts automatically.
-
-Migration checklist:
-
-1. Inspect old workers, worktrees, commits and checkpoints with their original runtime.
-2. Preserve incomplete/unmerged output and establish that writers stopped.
-3. Move durable records to `.planning` in an assigned worktree.
-4. Reconcile each IMPLEMENT to the full phase-prompt File Template and PLAN name.
-5. Commit inputs, configure real checks, run readiness and an independent review.
-6. Begin a new attempt; retain old evidence without treating it as current verification.
+`ai/phases/`. It is operational data, separate from project records. Checkpoint
+keys include the `.planning` phase path.
 
 ## Phase numbering boundary
 
@@ -202,8 +189,3 @@ A combined Decisions & Deviations heading can remain, but it does not substitute
 for the separately reviewable named evidence. TDD plans also add TDD Evidence.
 Do not replace the complete default with a shorter variant without an explicit
 assignment choice; use additional sections, not deleted source guidance.
-
-When allocating a phase, registered sibling worktrees with concrete legacy
-`.ai/phases/NN-name` directories stop allocation. Inspect/migrate that preserved
-worktree with its compatible runtime first. A historical README in an otherwise
-empty legacy directory does not by itself reserve an ID or block allocation.

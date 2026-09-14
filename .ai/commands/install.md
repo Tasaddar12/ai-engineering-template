@@ -56,10 +56,7 @@ Incompatible inline hook arrays stop preflight instead of rewriting user setting
 
 Use `--no-hooks` to skip adding registrations. This preserves any existing hooks;
 it does not disable or uninstall them. Existing disabled-hook settings, personal
-overrides and managed policies still apply. Codex uses inline hook tables in `.codex/config.toml`. Existing registrations
-from this installer in `.codex/hooks.json` move to TOML without duplication;
-custom JSON hooks are retained. Codex supports both formats; its config file is
-TOML, not YAML. See [inline hooks](https://learn.chatgpt.com/docs/config-file/config-advanced#hooks).
+overrides and managed policies still apply. Codex uses inline hook tables in `.codex/config.toml`. Existing TOML settings and hooks are retained. Codex configuration uses TOML. See [inline hooks](https://learn.chatgpt.com/docs/config-file/config-advanced#hooks).
 
 Codex needs a version supporting project lifecycle hooks, a trusted project, and
 review of each new or changed hook in `/hooks`. The installer does not grant
@@ -127,8 +124,7 @@ the original bytes for recovery, including replaced runtime files and settings.
   files are refreshed from the selected template revision, with their originals
   retained in the backup.
 - The selected root entry gets current workflow instructions while preserving
-  custom guidance. A mapping explains old paths in historical or pending phase
-  records; those records are not rewritten just to change their namespace.
+  custom guidance.
 - Existing native settings and hooks are retained and merged. Conflicting native
   files, linked paths and ambiguous instruction blocks stop preflight rather
   than overwrite a second setup. Original files and empty directories are removed
@@ -141,16 +137,12 @@ and your project checks, and commit the migration slice. A Claude migration
 preserves customized worker routes even when they invoke Codex; update those
 routes deliberately if the project should run only Claude workers.
 
-The historical-path mapping helps agents read old references; the runtime still
-uses PLAN ownership literally. Reconcile pending PLAN ownership and Read first
-paths with the selected layout before dispatch, then recheck and reverify those
-plans. Preserve completed records and their revision-specific evidence.
+PLAN ownership and Read first paths must name the actual installed files before
+dispatch. Migration does not add aliases or historical path mappings.
 
 Migration does not modify Git-common-directory checkpoints, running processes or
 other worktrees. Finish or reconcile old attempts with their original runtime
 before starting new work; changed runtime inputs invalidate old verification.
-Older projects whose records still live inside `.ai` rather than `.planning`
-must first complete that project-record migration with their compatible runtime.
 Do not remove the original backup when inspecting a failed or interrupted setup.
 
 ## Download and run
@@ -236,38 +228,6 @@ dependency repair is needed. Network or
 dependency failures return a nonzero exit code; files already installed remain
 available for inspection and retry. Conflict detection is a preflight check,
 not a transaction protecting against concurrent writers or disk failures.
-
-## Repair template context
-
-`--repair-template-context` recognizes the original release's unchanged template
-context. It is not a general migration or overwrite option. If a separate `.ai`
-directory is present, every file in it must match that release: repair installs
-the selected host layout and removes only those recognized old files and their
-empty directories. A customized or newer `.ai` installation stops before writes
-and requires manual reconciliation in an assigned worktree. Preview with:
-
-```text
-python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubusercontent.com/Tasaddar12/ai-engineering-template/main/.ai/install.py').read())" --target . --host codex --skip-deps --repair-template-context --dry-run
-```
-
-Select `claude` for a Claude destination. Remove `--dry-run` after reviewing the
-proposed changes. The repair recognizes
-the original shipped content directly from its pinned Git release (allowing
-LF/CRLF differences). Repair fetches that release from the selected source;
-custom source repositories must retain the original release to support repair.
-It replaces matching old workflow files and untouched example project records,
-and replaces the exact old AGENTS entry (marked or unmarked) while preserving surrounding
-user guidance. For Claude, the recognized old AGENTS workflow block is retired
-and the complete current entry is installed in CLAUDE.md; unrelated AGENTS guidance
-is retained. Real project records and config stay byte-for-byte intact.
-
-Repair cleans matching source artifacts from the destination and preserves
-existing or customized application documentation. Empty directories can remain
-after cleanup. Use `--dry-run` for the exact proposed changes.
-An edited old AGENTS block or customized conflicting tooling requires manual
-reconciliation; the repair does not guess which user edits to overwrite.
-Use an assigned worktree for agent-driven repair and review the diff before
-committing. The source template repository itself is not a repair target.
 
 ## Existing projects and worktrees
 

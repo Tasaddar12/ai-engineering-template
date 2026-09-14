@@ -21,8 +21,5 @@ for Claude. There are no generated skill wrappers or renamed command/agent folde
 There is no separate `.ai` directory in a fresh installed project. Upstream download URLs continue to
 identify the source packaging script.
 
-Explicit repair reads the original release directly from Git at the installer's
-pinned revision.
-
 Changes to these inputs require testing the rendered destination, including
-project context, preservation, links, runtime startup and the repair boundary.
+project context, preservation, links and runtime startup.

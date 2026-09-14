@@ -50,7 +50,6 @@ class InstallerTests(unittest.TestCase):
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
                 "commit", "--quiet", "-m", "Template fixture", cwd=cls.source)
         cls.revision = command("git", "rev-parse", "HEAD", cwd=cls.source).strip()
-        cls.legacy = installer.load_legacy(cls.source, installer.SOURCE)
 
     @classmethod
     def tearDownClass(cls):
@@ -252,7 +251,7 @@ class InstallerTests(unittest.TestCase):
                          '{"hooks": {"PreToolUse": [{"hooks": null}]}}',
                          '{"hooks": {"PreToolUse": [{"hooks": [{}]}]}}',
                          '{"hooks": {}, "hooks": {}}', '{"hooks": {}, "timeout": NaN}'):
-            for host, name in (("codex", ".codex/hooks.json"), ("claude", ".claude/settings.json")):
+            for host, name in (("claude", ".claude/settings.json"),):
                 with self.subTest(contents=contents, name=name):
                     path = self.target / name
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -278,20 +277,6 @@ class InstallerTests(unittest.TestCase):
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn("host settings", result.stderr)
                 self.assertEqual(before, self.snapshot())
-
-    def test_existing_codex_json_registrations_move_to_toml_once(self):
-        path = self.target / ".codex/hooks.json"
-        path.parent.mkdir(parents=True)
-        path.write_bytes(installer.json_bytes(installer.hook_settings("codex")))
-        result = self.install()
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertFalse(path.exists())
-        settings = read_settings(self.target / ".codex/config.toml")
-        self.assertEqual({"PreToolUse", "PostToolUse"}, set(settings["hooks"]))
-        self.assertTrue(all(len(groups) == 1 for groups in settings["hooks"].values()))
-        before = self.snapshot()
-        self.assertEqual(0, self.install().returncode)
-        self.assertEqual(before, self.snapshot())
 
     def test_customized_host_registration_and_entry_require_reconciliation(self):
         for host, setting, entry in (("codex", ".codex/config.toml", "AGENTS.md"),
@@ -394,8 +379,8 @@ class InstallerTests(unittest.TestCase):
         (self.target / ".planning").mkdir(parents=True)
         for name, content in records.items():
             (self.target / ".planning" / name).write_bytes(content)
-        for options in ((), ("--repair-template-context",)):
-            result = self.install(*options)
+        for _ in range(2):
+            result = self.install()
             self.assertEqual(0, result.returncode, result.stderr)
             for name, content in records.items():
                 self.assertEqual(content, (self.target / ".planning" / name).read_bytes())
@@ -411,83 +396,6 @@ class InstallerTests(unittest.TestCase):
         before = self.snapshot()
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual(before, self.snapshot())
-
-    def seed_legacy_context(self, appended=False):
-        result = self.install()
-        self.assertEqual(0, result.returncode, result.stderr)
-        legacy = self.legacy
-        agent = legacy["AGENTS.md"]
-        if appended:
-            agent = b"# Existing product guidance\r\nKeep this.\r\n\n\n<!-- ai-engineering-template -->\n" + agent + b"\nUser added this later.\r\n"
-        (self.target / "AGENTS.md").write_bytes(agent)
-        (self.target / ".codex/RULES.md").write_bytes(legacy[".ai/RULES.md"])
-        for name, content in legacy.items():
-            if ("/" not in name and name.endswith(".log")) or name.startswith("docs/"):
-                path = self.target / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(content)
-        for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
-            (self.target / f".planning/{name}.md").write_bytes((ROOT / f".planning/{name}.md").read_bytes())
-
-    def test_explicit_repair_replaces_old_context_and_removes_only_known_history(self):
-        self.seed_legacy_context(appended=True)
-        custom = b"# Actual project\nThese are confirmed product decisions.\n"
-        (self.target / ".planning/PROJECT.md").write_bytes(custom)
-        before = self.snapshot()
-        preview = self.install("--repair-template-context", "--dry-run")
-        self.assertEqual(0, preview.returncode, preview.stderr)
-        for name in self.legacy:
-            if "/" not in name and name.endswith(".log"):
-                self.assertIn(f"remove {name}", preview.stdout)
-        self.assertEqual(before, self.snapshot())
-        result = self.install("--repair-template-context")
-        self.assertEqual(0, result.returncode, result.stderr)
-        agent = (self.target / "AGENTS.md").read_bytes()
-        self.assertTrue(agent.startswith(b"# Existing product guidance\r\nKeep this.\r\n"))
-        self.assertTrue(agent.endswith(b"User added this later.\r\n"))
-        self.assertNotIn(b"This repository is a reusable engineering workflow template", agent)
-        self.assertNotIn("This is a reusable template", (self.target / ".codex/RULES.md").read_text(encoding="utf-8"))
-        self.assertEqual(custom, (self.target / ".planning/PROJECT.md").read_bytes())
-        self.assertNotIn("AUTH-01", (self.target / ".planning/REQUIREMENTS.md").read_text(encoding="utf-8"))
-        self.assertNotIn("Critical Fix", (self.target / ".planning/ROADMAP.md").read_text(encoding="utf-8"))
-        self.assertEqual([], list(self.target.glob("*.log")))
-        self.assertFalse((self.target / "docs/WORKFLOW-DIRECTION.md").exists())
-        self.assertEqual([], list((self.target / "docs").rglob("*.md")))
-        repaired = self.snapshot()
-        self.assertEqual(0, self.install("--repair-template-context").returncode)
-        self.assertEqual(repaired, self.snapshot())
-        self.assertIn("No phases yet", command(sys.executable, ".codex/runtime/phase.py", "status", cwd=self.target))
-
-    def test_repair_handles_unmarked_old_entry_and_preserves_custom_history(self):
-        self.seed_legacy_context()
-        agent = self.target / "AGENTS.md"
-        agent.write_bytes(agent.read_bytes() + b"\nKeep this later project guidance.\r\n")
-        (self.target / "docs/INSTALL.md").write_bytes(b"Actual product install instructions\n")
-        result = self.install("--repair-template-context")
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertNotIn("reusable engineering workflow template", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
-        self.assertTrue(agent.read_bytes().endswith(b"Keep this later project guidance.\r\n"))
-        self.assertEqual(b"Actual product install instructions\n", (self.target / "docs/INSTALL.md").read_bytes())
-
-    def test_edited_unmarked_legacy_instructions_are_not_silently_retained(self):
-        self.seed_legacy_context()
-        agent = self.target / "AGENTS.md"
-        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
-        before = self.snapshot()
-        result = self.install("--repair-template-context")
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("reconcile", result.stderr)
-        self.assertEqual(before, self.snapshot())
-
-    def test_edited_legacy_instruction_block_requires_reconciliation(self):
-        self.seed_legacy_context(appended=True)
-        agent = self.target / "AGENTS.md"
-        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
-        before = self.snapshot()
-        result = self.install("--repair-template-context")
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("reconcile", result.stderr)
         self.assertEqual(before, self.snapshot())
 
     def test_installed_guidance_links_resolve_in_both_destinations(self):
@@ -509,34 +417,12 @@ class InstallerTests(unittest.TestCase):
         (self.target / ".ai/runtime").mkdir(parents=True)
         (self.target / ".ai/runtime/custom.py").write_text("# Valuable custom workflow\n")
         for host in ("codex", "claude"):
-            for repair in ((), ("--repair-template-context",)):
-                with self.subTest(host=host, repair=repair):
-                    before = self.snapshot()
-                    result = self.install("--host", host, *repair)
-                    self.assertNotEqual(0, result.returncode)
-                    self.assertEqual(before, self.snapshot())
-                    self.assertFalse((self.target / ".git").exists())
-
-    def test_original_ai_release_migrates_only_with_explicit_repair(self):
-        for host in ("codex", "claude"):
             with self.subTest(host=host):
-                self.target = self.base / host
-                for name, content in self.legacy.items():
-                    if name.startswith(".ai/") or name == "AGENTS.md":
-                        path = self.target / name
-                        path.parent.mkdir(parents=True, exist_ok=True)
-                        path.write_bytes(content)
                 before = self.snapshot()
                 result = self.install("--host", host)
                 self.assertNotEqual(0, result.returncode)
                 self.assertEqual(before, self.snapshot())
-                result = self.install("--host", host, "--repair-template-context", "--dry-run")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertEqual(before, self.snapshot())
-                result = self.install("--host", host, "--repair-template-context")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertFalse((self.target / ".ai").exists())
-                self.assertIn("No phases yet", command(sys.executable, "." + host + "/runtime/phase.py", "status", cwd=self.target))
+                self.assertFalse((self.target / ".git").exists())
 
     def test_conflicts_abort_before_any_copy(self):
         (self.target / ".codex").mkdir(parents=True)

@@ -161,7 +161,7 @@ class MigrationTests(unittest.TestCase):
         self.assertIn('"Stop"', settings)
         self.assertIn('"PreToolUse"', settings)
 
-    def test_unmarked_entry_is_preserved_with_historical_path_mapping(self):
+    def test_unmarked_entry_preserves_customer_guidance(self):
         custom = b"Custom .ai instructions without a managed block\r\n"
         self.write("AGENTS.md", custom)
         changes, _, _ = self.plan("claude", hooks=False)
@@ -169,38 +169,28 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(custom, (self.target / "AGENTS.md").read_bytes())
         entry = (self.target / "CLAUDE.md").read_bytes()
         self.assertIn(custom, entry)
-        self.assertIn(b"`.ai/commands/` to `.claude/commands/`", entry)
-        self.assertIn(b"current managed entry and its delivery rules", entry)
+        self.assertNotIn(b"Historical plans", entry)
+        self.assertIn(b".claude/commands/", entry)
 
     def test_existing_hook_commands_move_even_when_new_hooks_are_disabled(self):
-        self.write(".codex/hooks.json", b'{"other":".ai/hooks/keep", "hooks":{"Stop":[{"hooks":[{"type":"command","command":"python .ai/hooks/local.py","commandWindows":"python .ai\\\\hooks\\\\local.py"}]}]}}')
-        changes, backups, _ = self.plan(hooks=False)
-        self.assertIn(self.target / ".codex/hooks.json", backups)
+        self.write(".claude/settings.json", b'{"other":".ai/hooks/keep", "hooks":{"Stop":[{"hooks":[{"type":"command","command":"python .ai/hooks/local.py","commandWindows":"python .ai\\\\hooks\\\\local.py"}]}]}}')
+        changes, backups, _ = self.plan("claude", hooks=False)
+        self.assertIn(self.target / ".claude/settings.json", backups)
         self.apply(changes)
         import json
-        settings = json.loads((self.target / ".codex/hooks.json").read_bytes())
+        settings = json.loads((self.target / ".claude/settings.json").read_bytes())
         self.assertEqual(".ai/hooks/keep", settings["other"])
         command = settings["hooks"]["Stop"][0]["hooks"][0]
-        self.assertEqual("python .codex/hooks/local.py", command["command"])
-        self.assertEqual("python .codex\\hooks\\local.py", command["commandWindows"])
+        self.assertEqual("python .claude/hooks/local.py", command["command"])
+        self.assertEqual("python .claude\\hooks\\local.py", command["commandWindows"])
         self.assertNotIn("PreToolUse", settings["hooks"])
 
-    def test_old_open_marker_preserves_appended_customer_instructions(self):
-        current = (installer.AGENT_MARKER.encode() + b"\nOriginal entry\n"
-                   b"Customer appended .ai migration rules\r\n")
-        self.write("AGENTS.md", current)
-        changes, _, _ = self.plan()
-        self.apply(changes)
-        self.assertIn(current, (self.target / "AGENTS.md").read_bytes())
-        self.assertIn(installer.AGENT_END.encode(), (self.target / "AGENTS.md").read_bytes())
-
     def test_existing_managed_hooks_relocate_without_duplicate_registration(self):
-        settings = installer.json_bytes(installer.hook_settings("codex")).replace(b"/.codex/hooks/", b"/.ai/hooks/")
-        self.write(".codex/hooks.json", settings)
+        settings = installer.hooks_toml(installer.hook_settings("codex")["hooks"]).replace(b"/.codex/hooks/", b"/.ai/hooks/")
+        self.write(".codex/config.toml", settings)
         changes, _, _ = self.plan()
         self.apply(changes)
         import json
-        self.assertFalse((self.target / ".codex/hooks.json").exists())
         result = tomllib.loads((self.target / ".codex/config.toml").read_text())
         for event in ("PreToolUse", "PostToolUse"):
             self.assertEqual(1, len(result["hooks"][event]))
@@ -211,13 +201,6 @@ class MigrationTests(unittest.TestCase):
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "both map to"):
             self.plan("claude")
-        self.assertEqual(before, self.snapshot())
-
-    def test_legacy_records_fail_without_reinterpreting_attempts(self):
-        self.write(".ai/phases/01/attempt.txt", b"old schema")
-        before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "compatible original runtime"):
-            self.plan()
         self.assertEqual(before, self.snapshot())
 
     def test_backup_location_file_and_parent_file_fail_preflight(self):
