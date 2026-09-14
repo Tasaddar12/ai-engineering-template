@@ -51,6 +51,15 @@ def payload(source):
     return selected
 
 
+def require_utf8(content, path):
+    try:
+        content.decode("utf-8-sig")
+        if b"\0" in content:
+            raise ValueError("NUL bytes in text")
+    except ValueError as error:
+        raise ValueError(f"{path} must be UTF-8 text before appending; nothing was installed.") from error
+
+
 def plan_install(source, target):
     changes = []
     conflicts = []
@@ -70,6 +79,7 @@ def plan_install(source, target):
             if current == incoming:
                 continue
             if relative == Path("AGENTS.md"):
+                require_utf8(current, destination)
                 if AGENT_MARKER.encode() in current:
                     continue
                 incoming = current + b"\n\n" + AGENT_MARKER.encode() + b"\n" + incoming
@@ -83,6 +93,7 @@ def plan_install(source, target):
         conflicts.append(".gitignore")
     else:
         current = ignore.read_bytes() if ignore.exists() else b""
+        require_utf8(current, ignore)
         if IGNORE_BLOCK.encode() not in current:
             changes.append((ignore, current + IGNORE_BLOCK.encode()))
     if conflicts:

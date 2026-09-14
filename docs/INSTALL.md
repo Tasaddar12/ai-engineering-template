@@ -68,6 +68,7 @@ Uncommitted source edits are not installed.
   Existing application code, README, Git history and remotes remain intact.
 - Preserves an existing `AGENTS.md` and appends the template entry instructions
   once. Adds local workflow ignore rules to `.gitignore` without replacing it.
+  These two files must use UTF-8; other encodings stop setup before copying.
 - Checks all destination conflicts before copying. Identical files are accepted;
   differing workflow files or directories stop installation and list conflicts.
   Linked paths (including junctions) are refused.

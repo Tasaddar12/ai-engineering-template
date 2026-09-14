@@ -121,6 +121,20 @@ class InstallerTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertEqual(before, self.snapshot())
 
+    def test_non_utf8_append_targets_are_preserved_and_rejected_before_copy(self):
+        self.target.mkdir()
+        for name in ("AGENTS.md", ".gitignore"):
+            with self.subTest(name=name):
+                path = self.target / name
+                path.write_bytes("Existing Windows text\n".encode("utf-16"))
+                before = self.snapshot()
+                result = self.install()
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("must be UTF-8", result.stderr)
+                self.assertEqual(before, self.snapshot())
+                self.assertFalse((self.target / ".git").exists())
+                path.unlink()
+
     def test_symlink_is_not_followed(self):
         self.target.mkdir()
         outside = self.base / "outside"
