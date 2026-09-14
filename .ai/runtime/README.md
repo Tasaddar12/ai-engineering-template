@@ -179,7 +179,10 @@ moves the primary branch.
 
 ## Validation
 
-Run `python -m unittest discover -s tests -v` from the test environment.
+In the upstream workflow source repository, run
+`python -m unittest discover -s tests -v` from its test environment. The installer
+does not copy that source test suite into projects. Configure the adopting
+project's actual verification commands in `.planning/config.yaml` during onboarding.
 Integration tests use temporary real repositories, isolated component worktrees,
 deterministic workers and a local bare publication remote. Only GitHub's API
 boundary is simulated. They test execution, ownership, dependency availability,

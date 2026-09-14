@@ -104,6 +104,17 @@ def merge_agent(current, incoming, legacy):
                     return current.replace(variant, incoming, 1)
         raise ValueError("Existing AGENTS.md workflow block differs. For an unmodified prior "
                          "install use --repair-template-context; otherwise reconcile it manually.")
+    if legacy:
+        old = legacy["agent_entry"].encode()
+        for variant in (old, old.replace(b"\n", b"\r\n")):
+            if current.count(variant) == 1:
+                return current.replace(variant, incoming, 1)
+    if any(signal in current for signal in (
+            b"reusable engineering workflow template",
+            b"for template maintenance only when the user requests them.")):
+        raise ValueError("AGENTS.md still contains template-maintenance instructions. "
+                         "Use --repair-template-context for an unchanged original entry; "
+                         "reconcile edited instructions manually.")
     return current + b"\n\n" + incoming
 
 

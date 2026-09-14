@@ -111,7 +111,7 @@ python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubu
 Add `--dry-run` to inspect the writes and removals first. The repair recognizes
 the original shipped content by recorded hashes (allowing LF/CRLF differences).
 It replaces matching old workflow files and untouched example project records,
-and replaces the exact old appended AGENTS block while preserving surrounding
+and replaces the exact old AGENTS entry (marked or unmarked) while preserving surrounding
 user guidance. Real project records and config stay byte-for-byte intact.
 
 The repair removes root `changes.log` and `docs/WORKFLOW-DIRECTION.md` only when

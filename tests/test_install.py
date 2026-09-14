@@ -190,11 +190,24 @@ class InstallerTests(unittest.TestCase):
 
     def test_repair_handles_unmarked_old_entry_and_preserves_custom_history(self):
         self.seed_legacy_context()
+        agent = self.target / "AGENTS.md"
+        agent.write_bytes(agent.read_bytes() + b"\nKeep this later project guidance.\r\n")
         (self.target / "changes.log").write_bytes(b"Actual product release history\n")
         result = self.install("--repair-template-context")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertNotIn("reusable engineering workflow template", (self.target / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertTrue(agent.read_bytes().endswith(b"Keep this later project guidance.\r\n"))
         self.assertEqual(b"Actual product release history\n", (self.target / "changes.log").read_bytes())
+
+    def test_edited_unmarked_legacy_instructions_are_not_silently_retained(self):
+        self.seed_legacy_context()
+        agent = self.target / "AGENTS.md"
+        agent.write_bytes(agent.read_bytes().replace(b"Keep the adopting", b"CUSTOM: Keep the adopting"))
+        before = self.snapshot()
+        result = self.install("--repair-template-context")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("reconcile", result.stderr)
+        self.assertEqual(before, self.snapshot())
 
     def test_edited_legacy_instruction_block_requires_reconciliation(self):
         self.seed_legacy_context(appended=True)
