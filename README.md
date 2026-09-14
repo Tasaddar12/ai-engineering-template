@@ -67,6 +67,10 @@ are not silently translated into Python runtime settings.
 
 ## Adopt the template
 
+Start with the [download-and-run installer](docs/INSTALL.md) for a new directory
+or an existing project. It preserves existing files and sets up the Python
+runtime in `.ai-venv`. Preview with `--dry-run`; then finish onboarding below.
+
 1. Follow [onboard](.ai/commands/onboard.md) in an assigned worktree. Establish the
    actual project's identity and inspect its baseline before asserting readiness.
 2. Configure real worker routes and checks in

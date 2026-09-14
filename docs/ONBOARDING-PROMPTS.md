@@ -1,5 +1,8 @@
 # Starting requests
 
+First [install the workflow](INSTALL.md) into the new project or an assigned
+worktree of the existing project. Then use the matching prompt below.
+
 Use these prompts in ordinary language. Local Markdown procedures and agent
 methods do not automatically register host slash commands. Adapt the
 project details and delivery boundary to the work you intend to authorize.
