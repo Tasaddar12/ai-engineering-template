@@ -5,6 +5,10 @@ load the selected [command](commands/README.md) and [role](agents/README.md).
 These are the project's installed engineering tools and guidance. Preserve existing
 project context; onboarding fills only what is missing from evidence and user intent.
 
+Use the [setup prompts](../docs/ONBOARDING-PROMPTS.md) for a new or existing
+project, then [plan the first goal or several goals](../docs/GOAL-PLANNING.md)
+to establish phase context and implementation scope.
+
 | Area | Responsibility |
 |---|---|
 | [PROJECT](../.planning/PROJECT.md) | Human purpose and boundaries |

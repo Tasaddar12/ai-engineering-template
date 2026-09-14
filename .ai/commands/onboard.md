@@ -3,6 +3,11 @@
 Read [RULES](../RULES.md). Inspect first; write in an
 [assigned worktree](worktree.md) only when adoption or changes are authorized.
 
+For a guided starting request, use the detailed
+[setup prompts](../../docs/ONBOARDING-PROMPTS.md). After establishing project context,
+use [goal planning](../../docs/GOAL-PLANNING.md) to turn one or several ordered
+goals into requirements, phase context and bounded implementation work.
+
 ## Fresh adoption
 
 1. Inspect the source layout, languages, entry points, tests, configuration,
