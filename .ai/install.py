@@ -211,7 +211,7 @@ def hook_settings(host):
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": 10}
         if host == "codex":
-            handler["commandWindows"] = "bash -c '" + command + "'"
+            handler["commandWindows"] = f"bash ((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}')"
         events[event] = [{"matcher": "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$",
                           "hooks": [handler]}]
     return {"hooks": events}
