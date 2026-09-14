@@ -5,6 +5,7 @@ import argparse
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -24,10 +25,14 @@ def run(*args, cwd=None, capture=False):
 def safe_path(path):
     """Refuse links/junctions rather than writing through them."""
     for part in (path, *path.parents):
-        if part.is_symlink() or getattr(part, "is_junction", lambda: False)():
+        try:
+            metadata = part.lstat()
+        except FileNotFoundError:
+            continue
+        reparse = (os.name == "nt"
+                   and metadata.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+        if stat.S_ISLNK(metadata.st_mode) or reparse:
             raise ValueError(f"Refusing linked path: {part}")
-    if path.resolve() != path:
-        raise ValueError(f"Path resolves elsewhere: {path}")
 
 
 def payload(source):
@@ -105,6 +110,8 @@ def plan_install(source, target):
 def install(args):
     target = Path(os.path.abspath(os.path.expanduser(args.target)))
     safe_path(target)
+    # Canonicalize legitimate Windows 8.3 aliases only after checking for links.
+    target = target.resolve()
     if target.exists() and not target.is_dir():
         raise ValueError(f"Target is not a directory: {target}")
     # A project subdirectory is almost always an accidental installation location.

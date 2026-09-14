@@ -163,6 +163,28 @@ class InstallerTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertEqual([], list(outside.iterdir()))
 
+    @unittest.skipUnless(os.name == "nt", "Windows short-path aliases")
+    def test_windows_short_path_alias_is_accepted(self):
+        import ctypes
+        from ctypes import wintypes
+
+        long_parent = self.base / "Long Installer Directory Name"
+        long_parent.mkdir()
+        get_short_path = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        get_short_path.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+        get_short_path.restype = wintypes.DWORD
+        buffer = ctypes.create_unicode_buffer(32768)
+        length = get_short_path(str(long_parent), buffer, len(buffer))
+        self.assertGreater(length, 0, ctypes.get_last_error())
+        if Path(buffer.value) == long_parent:
+            self.skipTest("Filesystem does not generate short-path aliases")
+        self.target = Path(buffer.value) / "new project"
+        result = self.install()
+        self.assertEqual(0, result.returncode, result.stderr)
+        canonical = long_parent.resolve() / "new project"
+        self.assertTrue((canonical / ".ai/runtime/phase.py").is_file())
+        self.assertEqual(canonical, Path(command("git", "rev-parse", "--show-toplevel", cwd=canonical).strip()).resolve())
+
     def test_rejects_subdirectory_but_accepts_linked_worktree(self):
         command("git", "init", "--quiet", str(self.base))
         command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
