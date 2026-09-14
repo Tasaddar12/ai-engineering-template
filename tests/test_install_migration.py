@@ -24,6 +24,25 @@ migration = load("install_migration", ROOT / ".ai/install_migration.py")
 
 
 class MigrationTests(unittest.TestCase):
+    def test_custom_skill_links_preserve_angle_brackets_and_titles(self):
+        content = (b'[Rules](<../../../.ai/RULES.md> "Project rules")\n'
+                   b'[Local](<notes with spaces.md>)\n')
+        moved = installer.render_asset(".agents/skills/custom/SKILL.md", content, "claude")
+        self.assertEqual((b'[Rules](<../../RULES.md> "Project rules")\n'
+                          b'[Local](<notes with spaces.md>)\n'), moved)
+
+    def test_escaped_windows_routes_relocate_without_rewriting_urls(self):
+        import yaml
+        config = (b'# Keep formatting\r\nworker: ".ai\\\\workers\\\\custom.py"\r\n'
+                  b'role: ".ai\\\\agents\\\\custom.py"\r\n'
+                  b'url: https://example.invalid/.ai/source.py\r\n')
+        moved = migration.relocate_paths(config, "claude")
+        parsed = yaml.safe_load(moved)
+        self.assertEqual(".claude\\workers\\custom.py", parsed["worker"])
+        self.assertEqual(".claude\\roles\\custom.py", parsed["role"])
+        self.assertEqual("https://example.invalid/.ai/source.py", parsed["url"])
+        self.assertTrue(moved.startswith(b"# Keep formatting\r\n"))
+
     @classmethod
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="migration-source-")

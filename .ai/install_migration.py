@@ -6,11 +6,30 @@ returned backup file before applying any of the planned changes.
 
 from pathlib import Path
 import json
+import re
 
 
 LEGACY_RECORDS = ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md",
                   "config.yaml", "phases", "codebase", "specs", "decisions")
 TEXT_SUFFIXES = {".md", ".txt", ".yaml", ".yml", ".toml", ".sh", ".ps1"}
+
+
+def relocate_paths(content, host):
+    """Translate local workflow paths without reserializing config or URLs."""
+    namespace = ("." + host).encode()
+    parts = re.split(rb"(https?://[^\s<>\"')\]]+)", content)
+    for index, part in enumerate(parts):
+        if part.startswith((b"http://", b"https://")):
+            continue
+        for separator in (b"/", b"\\\\", b"\\"):
+            for old, new in ((b".ai" + separator + b"agents", namespace + separator + b"roles"),
+                             (b".ai" + separator + b"commands", namespace + separator + b"workflows"),
+                             (b".agents" + separator + b"skills", namespace + separator + b"skills")):
+                part = part.replace(old + separator, new + separator)
+            part = part.replace(b".ai" + separator, namespace + separator)
+        part = part.replace(b".ai-venv", namespace + b"-venv")
+        parts[index] = part
+    return b"".join(parts)
 
 
 def inventory(root, installer):
@@ -75,8 +94,7 @@ def relocate_hook_commands(content, host, installer):
         if isinstance(value, dict):
             for key, item in value.items():
                 if key in ("command", "commandWindows") and isinstance(item, str):
-                    updated = item.replace(".ai/hooks/", "." + host + "/hooks/")
-                    updated = updated.replace(".ai\\hooks\\", "." + host + "\\hooks\\")
+                    updated = relocate_paths(item.encode("utf-8"), host).decode("utf-8")
                     if updated != item:
                         value[key] = updated
                         changed = True
@@ -158,9 +176,7 @@ def plan_migration(source, target, host, hooks, installer):
                 notes.append("Select host worker defaults from the unchanged template config.")
             else:
                 # Byte replacement preserves comments, custom commands and formatting.
-                desired[name] = current.replace(b".ai/runtime/", namespace.encode() + b"/runtime/")
-                desired[name] = desired[name].replace(b".ai\\runtime\\", namespace.encode() + b"\\runtime\\")
-                desired[name] = desired[name].replace(b".ai-venv", namespace.encode() + b"-venv")
+                desired[name] = relocate_paths(current, host)
                 notes.append("Custom worker commands and checks are retained; review their host compatibility.")
     entry = "CLAUDE.md" if host == "claude" else "AGENTS.md"
     entry_paths = {name: target / name for name in ("AGENTS.md", "CLAUDE.md")}
@@ -183,7 +199,10 @@ def plan_migration(source, target, host, hooks, installer):
                f"`.ai/agents/` to `{namespace}/roles/`, `.ai/commands/` to "
                f"`{namespace}/workflows/`, `.agents/skills/` to `{namespace}/skills/`, "
                f"and other `.ai/` paths to `{namespace}/`. Project records remain in "
-               "`.planning/`; do not rewrite history or reuse incompatible old checkpoints. "
+               "`.planning/`; do not rewrite completed history or reuse incompatible old checkpoints. "
+               "Before execution, reconcile pending PLAN ownership and Read first paths with "
+               "the installed layout, then recheck and reverify; the runtime does not translate "
+               "PLAN ownership from this prose mapping. "
                "The current managed entry and its delivery rules govern current work.\n").encode()
     desired[entry] = custom + (b"\n\n" if custom else b"") + incoming[entry] + mapping
     if host == "claude" and "AGENTS.md" in remainders:
@@ -208,8 +227,9 @@ def plan_migration(source, target, host, hooks, installer):
     if ignore.exists():
         backups.add(ignore)
     # Keep ignored custom workflow data ignored after it changes directory.
-    current_ignore = current_ignore.replace(b".ai/", namespace.encode() + b"/")
-    current_ignore = current_ignore.replace(b".agents/skills/", namespace.encode() + b"/skills/")
+    current_ignore = relocate_paths(current_ignore, host)
+    current_ignore = re.sub(rb"(?m)^(!?/?)[.]ai(?=\r?$)",
+                            lambda match: match[1] + namespace.encode(), current_ignore)
     block = installer.IGNORE_BLOCK.replace(".ai-venv", namespace + "-venv").encode()
     desired[".gitignore"] = current_ignore if block in current_ignore.replace(b"\r\n", b"\n") else current_ignore + block
     writes = []

@@ -20,6 +20,8 @@ class MigrationCliTests(unittest.TestCase):
             ".ai/RULES.md": b"# Product engineering rules\nKeep the billing invariants.\n",
             ".ai/runtime/phase.py": b"# Previous installed runtime\n",
             ".ai/runtime/custom.py": b"print('custom worker')\n",
+            ".ai/workers/worker.py": b"print('migrated custom worker')\n",
+            ".ai/check.py": b"print('migrated custom check')\n",
             ".ai/custom-tool.sh": b"#!/bin/sh\necho migrated\n",
             ".ai/guides/local.md": b"# Product guide\nSee [rules](../RULES.md).\n",
             ".ai/assets/data.bin": b"\x00\xff\x80immutable custom data\r\n",
@@ -28,10 +30,10 @@ class MigrationCliTests(unittest.TestCase):
             ".planning/specs/SPEC-billing.md": b"# Billing\nNever lose invoice history.\n",
             ".planning/decisions/ADR-001.md": b"# Decision\nApproved payment provider.\n",
             ".planning/archive/01-SUMMARY.md": b"# Prior evidence\nOriginal .ai/runtime/phase.py revision abc123.\n",
-            ".planning/config.yaml": b"# Keep this comment\nexecution:\n  worker_command: [python, .ai/runtime/custom.py]\nverification:\n  commands: [[python, -V]]\n",
+            ".planning/config.yaml": b"# Keep this comment\nexecution:\n  worker_command: [python, .ai/workers/worker.py]\nverification:\n  commands: [[python, .ai/check.py]]\n",
             "AGENTS.md": b"# Product instructions\nKeep this customer rule.\n\n<!-- ai-engineering-template -->\nOld workflow entry\n<!-- /ai-engineering-template -->\n\nKeep this later note.\n",
             "README.md": b"# Existing product\n",
-            ".gitignore": b"private-cache/\n.ai/private/\n",
+            ".gitignore": b"private-cache/\n.ai/private/\n.ai/agents/private/\n.ai/commands/private/\n",
         }
         for relative, content in files.items():
             path = self.target / relative
@@ -61,7 +63,11 @@ class MigrationCliTests(unittest.TestCase):
                         self.assertEqual(content, (self.target / relative).read_bytes(), relative)
                 config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
                 self.assertIn("# Keep this comment", config)
-                self.assertIn(namespace + "/runtime/custom.py", config)
+                self.assertIn(namespace + "/workers/worker.py", config)
+                import yaml
+                routes = yaml.safe_load(config)
+                self.assertIn("migrated custom worker", support.command(*routes["execution"]["worker_command"], cwd=self.target))
+                self.assertIn("migrated custom check", support.command(*routes["verification"]["commands"][0], cwd=self.target))
                 entry = (self.target / ("CLAUDE.md" if host == "claude" else "AGENTS.md")).read_text(encoding="utf-8")
                 self.assertIn("Keep this customer rule.", entry)
                 self.assertIn("Keep this later note.", entry)
@@ -82,6 +88,9 @@ class MigrationCliTests(unittest.TestCase):
                 self.assertIn(".workflow-backups/", ignored)
                 self.assertIn(namespace + "/private/example", support.command(
                     "git", "check-ignore", namespace + "/private/example", cwd=self.target))
+                for directory in ("roles", "workflows"):
+                    expected = namespace + "/" + directory + "/private/example"
+                    self.assertIn(expected, support.command("git", "check-ignore", expected, cwd=self.target))
                 status = support.command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target)
                 self.assertIn("No phases yet", status)
 

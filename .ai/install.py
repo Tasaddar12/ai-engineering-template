@@ -116,14 +116,23 @@ def render_asset(name, content, host):
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
-            target = match[2]
+            pieces = re.fullmatch(r'''(<[^>]+>|[^\s]+)(\s+["'].*["'])?''', match[2])
+            if pieces is None:
+                return match[0]
+            target = pieces[1]
+            angled = target.startswith("<") and target.endswith(">")
+            if angled:
+                target = target[1:-1]
             if re.match(r"[a-zA-Z][a-zA-Z0-9+.-]*:", target) or target.startswith("#"):
                 return match[0]
             bare, anchor, fragment = target.partition("#")
             source_target = posixpath.normpath(posixpath.join(posixpath.dirname(name), bare))
             mapped = destination_path(source_target, host)
             relative = posixpath.relpath(mapped, posixpath.dirname(destination) or ".")
-            return match[1] + relative + (anchor + fragment if anchor else "") + match[3]
+            resolved = relative + (anchor + fragment if anchor else "")
+            if angled:
+                resolved = "<" + resolved + ">"
+            return match[1] + resolved + (pieces[2] or "") + match[3]
         text = re.sub(r"(\[[^\]\n]*\]\()([^\)\n]+)(\))", link, text)
     namespace = "." + host
     def local_paths(part):

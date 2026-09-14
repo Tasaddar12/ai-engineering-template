@@ -119,7 +119,7 @@ Git commits or automatically propagated to another worktree. The backup holds
 the original bytes for recovery, including replaced runtime files and settings.
 
 - All existing `.planning` records, phase summaries, specs, decisions and history
-  are preserved. Only necessary runtime/virtual-environment paths in config are
+  are preserved. Only necessary workflow/virtual-environment paths in config are
   translated; existing custom worker commands and checks remain authoritative.
   An unchanged template-default config selects the new host's worker defaults.
 - Existing rules, templates, skills and custom workflow material move into the
@@ -141,6 +141,11 @@ customizations from the backup, run the selected host's `runtime/phase.py status
 and your project checks, and commit the migration slice. A Claude migration
 preserves customized worker routes even when they invoke Codex; update those
 routes deliberately if the project should run only Claude workers.
+
+The historical-path mapping helps agents read old references; the runtime still
+uses PLAN ownership literally. Reconcile pending PLAN ownership and Read first
+paths with the selected layout before dispatch, then recheck and reverify those
+plans. Preserve completed records and their revision-specific evidence.
 
 Migration does not modify Git-common-directory checkpoints, running processes or
 other worktrees. Finish or reconcile old attempts with their original runtime
