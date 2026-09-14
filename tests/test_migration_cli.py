@@ -33,7 +33,7 @@ class MigrationCliTests(unittest.TestCase):
             ".planning/config.yaml": b"# Keep this comment\nexecution:\n  worker_command: [python, .ai/workers/worker.py]\nverification:\n  commands: [[python, .ai/check.py]]\n",
             "AGENTS.md": b"# Product instructions\nKeep this customer rule.\n\n<!-- ai-engineering-template -->\nOld workflow entry\n<!-- /ai-engineering-template -->\n\nKeep this later note.\n",
             "README.md": b"# Existing product\n",
-            ".gitignore": b"private-cache/\n.ai/private/\n.ai/agents/private/\n.ai/commands/private/\n",
+            ".gitignore": b"private-cache/\n.ai/private/\n.ai/agents\n.ai/commands\n",
         }
         for relative, content in files.items():
             path = self.target / relative

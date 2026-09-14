@@ -25,7 +25,8 @@ def relocate_paths(content, host):
             for old, new in ((b".ai" + separator + b"agents", namespace + separator + b"roles"),
                              (b".ai" + separator + b"commands", namespace + separator + b"workflows"),
                              (b".agents" + separator + b"skills", namespace + separator + b"skills")):
-                part = part.replace(old + separator, new + separator)
+                boundary = rb'''(?=''' + re.escape(separator) + rb'''|[\s"',\]});]|$)'''
+                part = re.sub(re.escape(old) + boundary, lambda _: new, part)
             part = part.replace(b".ai" + separator, namespace + separator)
         part = part.replace(b".ai-venv", namespace + b"-venv")
         parts[index] = part

@@ -42,6 +42,10 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(".claude\\roles\\custom.py", parsed["role"])
         self.assertEqual("https://example.invalid/.ai/source.py", parsed["url"])
         self.assertTrue(moved.startswith(b"# Keep formatting\r\n"))
+        directories = yaml.safe_load(migration.relocate_paths(
+            b'args: [.ai/agents, .ai/commands, .agents/skills, .ai/agents-custom]\n', "claude"))
+        self.assertEqual([".claude/roles", ".claude/workflows", ".claude/skills", ".claude/agents-custom"],
+                         directories["args"])
 
     @classmethod
     def setUpClass(cls):

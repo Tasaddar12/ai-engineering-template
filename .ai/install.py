@@ -314,7 +314,8 @@ def plan_install(source, target, legacy=None, host="codex", hooks=True):
     if old_root.exists():
         if not old_root.is_dir() or not legacy:
             raise ValueError("Existing .ai requires migration in an assigned worktree before host installation; "
-                             "nothing was installed. Preserve and reconcile customized files. "
+                             "nothing was installed. Use --migrate-existing to preserve project data "
+                             "and verified originals while rebuilding the selected host layout. "
                              "--repair-template-context recognizes the original release only.")
         old_paths = sorted(old_root.rglob("*"), key=lambda path: len(path.parts), reverse=True)
         for old in old_paths:
