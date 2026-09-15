@@ -53,6 +53,20 @@ Read-only work needs no commit or publication; reviewers do not edit or commit.
 
 ## Phase authority
 
+**NEVER start implementing a phase unless the user explicitly tells you to
+implement that phase.** Creating, discussing, researching or preparing a phase,
+approving its design, passing readiness checks, and merging planning records do
+not authorize implementation. Do not infer permission from a roadmap, a suggested
+next action, an automatic continuation, or the default delivery workflow.
+
+Record the user's explicit implementation instruction and covered phase scope in
+CONTEXT Authorization before starting implementation workers or `run`/`resume`.
+Without it, finish authorized preparation and report that implementation awaits
+an explicit user instruction. Earlier explicit implementation authorization remains
+valid for its stated phases unless changed or withdrawn; do not ask again for
+that same permission. Completing one phase never authorizes the next phase unless
+the user's explicit instruction also covers it.
+
 PROJECT owns purpose and boundaries; REQUIREMENTS owns desired product outcomes.
 Phase CONTEXT owns exact acceptance, decisions, open questions and execution
 authorization. PLAN documents supply bounded instructions and reference

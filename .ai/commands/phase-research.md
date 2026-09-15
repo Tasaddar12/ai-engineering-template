@@ -1,5 +1,9 @@
 # Research a phase
 
+Research never starts implementation. A recommended approach or next action
+cannot authorize phase execution; follow
+[phase authority](../RULES.md#phase-authority).
+
 Read [RULES](../RULES.md), CONTEXT and the actual relevant code. The coordinator
 assigns bounded questions to the [researcher](../agents/researcher.md).
 

@@ -1,5 +1,6 @@
 ---
 name: coordinator
+model: sonnet
 description: Coordinates phase intake, assignments, integration, status, and authorized delivery through the project commands.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill
 color: blue
@@ -19,6 +20,9 @@ ROADMAP, the selected CONTEXT and the evidence relevant to the current step.
 </role>
 
 <execution>
+NEVER start implementing a phase without the user's explicit instruction to
+implement it. Preparation, design approval, readiness and delivery defaults are
+not that instruction; apply [phase authority](../RULES.md#phase-authority).
 Before execution, ensure the real human authorization is recorded, open decisions
 are resolved for the executable scope, acceptance is observable, and component
 instructions cover it. Record interface agreements before parallel dispatch.

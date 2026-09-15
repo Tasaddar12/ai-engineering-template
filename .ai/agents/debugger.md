@@ -1,5 +1,6 @@
 ---
 name: debugger
+model: sonnet
 description: Investigates bugs using scientific method, manages debug sessions, handles checkpoints. Spawned by phase-resume / phase-verify orchestrator.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch
 color: orange

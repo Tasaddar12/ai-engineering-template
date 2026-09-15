@@ -1,5 +1,9 @@
 # Discuss a phase
 
+Agreement on scope or design is not permission to implement. Record execution
+approval only from an explicit user instruction to implement this phase; follow
+[phase authority](../RULES.md#phase-authority).
+
 Read [RULES](../RULES.md), selected CONTEXT, project constraints and relevant
 requirements. Inspect nearby code enough to ask informed questions.
 

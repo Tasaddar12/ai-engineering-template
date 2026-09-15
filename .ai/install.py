@@ -84,6 +84,17 @@ def payload(source, host="codex", hooks=True):
         raise ValueError(f"Unknown host: {host}")
     if host == "claude":
         selected[".planning/config.yaml"] = (source / ASSETS / "claude-config.txt").read_bytes()
+    else:
+        # Native Codex definitions point to the full role, beside the installed TOML.
+        # Packaging inputs stay out of Claude installs and are required per role.
+        for name, content in list(selected.items()):
+            if not (name.startswith(".ai/agents/") and name.endswith(".md")
+                    and content.startswith(b"---")):
+                continue
+            origin = ASSETS + "codex-agents/" + Path(name).stem + ".toml"
+            if modes.get(origin) not in ("100644", "100755"):
+                raise ValueError(f"Missing or unsupported Codex agent install asset: {origin}")
+            selected[name[:-3] + ".toml"] = (source / origin).read_bytes()
     rendered = {destination_path(name, host): render_asset(name, content, host)
                 for name, content in selected.items()}
     rendered.update(host_payload(rendered, host, hooks))

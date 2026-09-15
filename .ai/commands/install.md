@@ -27,7 +27,7 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 | Root instructions | `AGENTS.md` | `CLAUDE.md` with the complete project instructions |
 | Rules, guides, templates and runtime | `.codex` | `.claude` |
 | Commands | `.codex/commands` | `.claude/commands` |
-| Agents | `.codex/agents` | `.claude/agents` |
+| Agents | `.codex/agents/*.toml` plus full `.md` methods | `.claude/agents/*.md` with model frontmatter |
 | Complete skills, discovered directly | `.agents/skills` | `.claude/skills` |
 | Hook registration | `.codex/config.toml` | `.claude/settings.json` |
 | Local Python environment | `.codex-venv` | `.claude-venv` |
@@ -35,7 +35,10 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 
 References in installed instructions, skills, procedures and runtime routes point
 to the selected host layout. Agents stay under `agents` and commands
-stay under `commands`. The AI reads those files directly. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
+stay under `commands`. Codex TOML definitions explicitly select a model and direct
+the agent to read its full Markdown role; Claude roles explicitly select their
+model in Markdown frontmatter. See [native host models](../agents/README.md#native-host-models)
+for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are
 project files intended for Git. Once committed, they propagate into fresh Git

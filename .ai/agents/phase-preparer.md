@@ -1,5 +1,6 @@
 ---
 name: phase-preparer
+model: sonnet
 description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by phase-prepare orchestrator.
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*
 color: green
@@ -12,6 +13,9 @@ color: green
 ---
 
 <local_workflow>
+Preparation never grants implementation permission. Do not start implementation
+or instruct the coordinator to auto-start: require the user's explicit instruction
+to implement this phase under [phase authority](../RULES.md#phase-authority).
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.

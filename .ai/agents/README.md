@@ -1,8 +1,9 @@
 # Agent responsibilities and handoffs
 
 Read [RULES](../RULES.md) and the selected role in full. Assignments narrow
-ownership. These are complete methods with local adapters, not registered agent
-types or new commands. The [adaptation](../references/agent-adaptation.md)
+ownership. These are complete methods with local adapters. Installation also
+provides native host agent definitions; these do not create new runtime commands.
+The [adaptation](../references/agent-adaptation.md)
 defines actual host execution, source examples and result contracts.
 
 | Role | Existing workflow | Input → result → consumer |
@@ -42,3 +43,35 @@ Their useful general checks remain in the selected full methods. Pinned external
 supporting references do not register those omitted agents or workflows.
 
 [notices](../THIRD-PARTY-NOTICES.md) preserve the license and attribution.
+
+## Native host models
+
+Codex installation adds one `.toml` file per role beside its complete Markdown
+method in `.codex/agents/`. Each defines `name`, `description`, `model` and
+`developer_instructions` that tell the agent to read the direct role file in the
+assigned checkout. The installer relocates that path to `.codex/agents/<role>.md`.
+Claude installation copies the full Markdown agents to `.claude/agents/`, including
+the explicit `model` in each file's YAML frontmatter. Legacy `.ai` migration adds
+missing defaults to known Claude roles with simple frontmatter, preserving custom
+models and instructions. Unusual frontmatter is preserved and reported for manual
+model reconciliation.
+
+| Roles | Codex model | Claude model |
+|---|---|---|
+| coordinator, researcher, phase-preparer, coder, debugger | `gpt-5.6-terra` | `sonnet` |
+| codebase-mapper, phase-checker, doc-writer, doc-verifier, integration-checker, code-reviewer, verifier | `gpt-5.6-luna` | `sonnet` |
+
+These are native agent defaults. Edit the installed TOML `model` for Codex or
+Markdown `model` for Claude to customize a role; the host must support the chosen
+model. The Codex role's Markdown `model` field is Claude metadata: Codex takes its
+model from TOML. These files do not change the current coordinator conversation's
+model or automatically start workers.
+
+The Python runtime's separate CLI processes still use the routes in
+[config](../../.planning/config.yaml). Codex routes pass their explicit `--model`;
+the Claude adapter uses the configured Claude CLI model. Native agent model fields
+apply when the host selects that native agent, not when a generic CLI session
+only reads a role file. Customize runtime routes separately when needed.
+
+Formats: [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
+and [Claude Code subagents](https://code.claude.com/docs/en/sub-agents).

@@ -1,5 +1,9 @@
 # Onboard
 
+Onboarding and preparing a next phase NEVER authorize its implementation.
+Start phase implementation only when the user explicitly tells you to implement
+that phase; follow [phase authority](../RULES.md#phase-authority).
+
 Read [RULES](../RULES.md). Inspect first; write in an
 [assigned worktree](worktree.md) only when adoption or changes are authorized.
 

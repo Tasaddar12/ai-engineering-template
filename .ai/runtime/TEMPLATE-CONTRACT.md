@@ -34,7 +34,9 @@ Append `## Authorization` with the actual user instruction and its scope/date.
 Keep unresolved choices in `## Open Questions`; dispatch only decided scope.
 Acceptance IDs may be requirement IDs or finer phase criteria with their own IDs.
 
-Good authorization names the user's request and its boundary. Bad authorization
+Good authorization quotes or faithfully records the user's explicit instruction
+to implement this phase and its boundary. Keep `approval: pending` for creation,
+discussion, research, preparation or design approval alone. Bad authorization
 says "approved because the plan looks ready." A checker cannot grant permission.
 
 ## Author an executable plan

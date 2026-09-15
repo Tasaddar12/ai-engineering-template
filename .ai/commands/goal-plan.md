@@ -1,5 +1,10 @@
 # Plan project goals
 
+NEVER implement a phase merely because its goal and plans are agreed or ready.
+The user must explicitly instruct implementation of that phase (or an explicitly
+identified set of phases). Planning and delivery defaults do not supply this
+instruction; follow [phase authority](../RULES.md#phase-authority).
+
 A goal describes a result you want for the project. The workflow turns that result
 into requirements, bounded phases and component plans, then checks the implemented
 behavior against the original acceptance. A goal does not register a new runtime
