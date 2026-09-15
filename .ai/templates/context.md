@@ -4,6 +4,11 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 
 **Purpose:** Document decisions that downstream agents need. Researcher uses this to know WHAT to investigate. Planner uses this to know WHAT choices are locked vs flexible.
 
+**Implementation gate:** NEVER implement a phase unless the user explicitly
+tells you to implement it. Record that instruction in Authorization using the
+[runtime contract](../runtime/TEMPLATE-CONTRACT.md). Planning decisions and a
+ready status do not grant execution permission.
+
 **Key principle:** Categories are NOT predefined. They emerge from what was actually discussed for THIS phase. A CLI phase has CLI-relevant sections, a UI phase has UI-relevant sections.
 
 **Downstream consumers:**

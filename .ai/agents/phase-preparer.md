@@ -12,6 +12,9 @@ color: green
 ---
 
 <local_workflow>
+Preparation never grants implementation permission. Do not start implementation
+or instruct the coordinator to auto-start: require the user's explicit instruction
+to implement this phase under [phase authority](../RULES.md#phase-authority).
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.

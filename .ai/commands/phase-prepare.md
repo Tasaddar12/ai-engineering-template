@@ -1,5 +1,11 @@
 # Prepare component execution
 
+NEVER move from preparation into implementation unless the user explicitly told
+you to implement this phase. A passing checker, ready PLAN or merged preparation
+PR does not grant permission. Finish authorized preparation and report readiness
+when that instruction is absent; follow
+[phase authority](../RULES.md#phase-authority).
+
 Read [RULES](../RULES.md), CONTEXT, relevant current SPECs, research and code.
 Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 
@@ -33,7 +39,9 @@ dependencies; it does not prove semantic completeness. A small fix still needs
 one bounded instruction and before/after regression evidence, but can omit
 research and a lengthy validation document.
 
-Continue with [phase-start](phase-start.md) when execution is authorized.
+Continue with [phase-start](phase-start.md) only when the user explicitly
+instructed implementation of this phase. Otherwise report the prepared result
+and the missing implementation instruction.
 
 ## Complete plans and independent checking
 

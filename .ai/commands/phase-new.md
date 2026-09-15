@@ -1,5 +1,10 @@
 # Receive a phase
 
+Creating a phase NEVER authorizes implementing it. Leave execution approval
+pending unless the user explicitly told you to implement this phase. Continue
+only through authorized discussion, research and preparation; follow
+[phase authority](../RULES.md#phase-authority).
+
 Read [RULES](../RULES.md), PROJECT, REQUIREMENTS and ROADMAP. Search existing
 phase context and deferred findings before creating duplicate work.
 

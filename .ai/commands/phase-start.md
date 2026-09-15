@@ -1,5 +1,10 @@
 # Execute a phase
 
+Before any implementation, require the user's explicit instruction to implement
+this phase, recorded with its scope in CONTEXT Authorization. NEVER infer it from
+phase creation, plan approval or readiness. Earlier explicit authorization still
+applies to its stated scope; follow [phase authority](../RULES.md#phase-authority).
+
 Read [RULES](../RULES.md) and verify the assigned integration worktree. Inputs
 must be committed, the tree clean, relevant decisions resolved and execution
 authorized. Follow [phase-prepare](phase-prepare.md) for incomplete instructions.
