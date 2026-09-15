@@ -28,7 +28,9 @@ edit the checkout nor commit; the host captures their full report externally.
 
 Only the Python runtime described in [runtime](../runtime/README.md) executes
 the local lifecycle. Agent names and tool lists describe responsibilities and
-capabilities; they do not register host tools, slash commands or worker routes.
+capabilities. The installer supplies native agent definitions as described in the
+[agent catalog](../agents/README.md#native-host-models); role names do not register
+host tools, slash commands or Python worker routes.
 The configured runtime routes remain code, documentation and verifier. The
 documentor loads doc-writer; the independent verifier applies doc-verifier and
 integration-checker, with code-reviewer when appropriate. The coordinator may

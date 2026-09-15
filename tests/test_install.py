@@ -12,6 +12,8 @@ import tomllib
 import unittest
 from unittest.mock import patch
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = ROOT / ".ai/install.py"
@@ -170,6 +172,66 @@ class InstallerTests(unittest.TestCase):
                     self.assertFalse((self.target / ".codex/hooks.json").exists())
                 else:
                     self.assertFalse((self.target / ".agents").exists())
+
+    def test_native_agent_models_and_direct_roles_install_without_hooks(self):
+        terra = {"coordinator", "researcher", "phase-preparer", "coder", "debugger"}
+        roles = {"coordinator", "codebase-mapper", "researcher", "phase-preparer",
+                 "phase-checker", "coder", "doc-writer", "doc-verifier",
+                 "integration-checker", "code-reviewer", "debugger", "verifier"}
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                agents = self.target / ("." + host) / "agents"
+                methods = {}
+                for role in agents.glob("*.md"):
+                    text = role.read_text(encoding="utf-8")
+                    if text.startswith("---\n"):
+                        metadata = yaml.safe_load(text.split("---", 2)[1])
+                        methods[metadata["name"]] = (role, metadata)
+                self.assertEqual(roles, set(methods))
+                for name, (role, metadata) in methods.items():
+                    self.assertEqual("sonnet", metadata["model"], name)
+                    # Full source methods survive relocation, not compact substitutes.
+                    self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
+                        (self.source / ".ai/agents" / role.name).read_bytes(), host),
+                        role.read_bytes())
+                if host == "codex":
+                    self.assertEqual(roles, {p.stem for p in agents.glob("*.toml")})
+                    for definition in agents.glob("*.toml"):
+                        config = tomllib.loads(definition.read_text(encoding="utf-8"))
+                        name = config["name"]
+                        self.assertEqual(definition.stem, name)
+                        self.assertEqual(methods[name][1]["description"], config["description"])
+                        expected = "gpt-5.6-terra" if name in terra else "gpt-5.6-luna"
+                        self.assertEqual(expected, config["model"])
+                        role_path = ".codex/agents/" + name + ".md"
+                        self.assertIn(role_path, config["developer_instructions"])
+                        self.assertNotIn(".ai/", config["developer_instructions"])
+                        self.assertTrue((self.target / role_path).is_file())
+                else:
+                    self.assertEqual([], list(agents.glob("*.toml")))
+                before = self.snapshot()
+                repeated = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, repeated.returncode, repeated.stderr)
+                self.assertEqual(before, self.snapshot())
+
+    def test_custom_native_agent_is_not_overwritten(self):
+        for host, suffix in (("codex", "toml"), ("claude", "md")):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                self.assertEqual(0, self.install("--host", host).returncode)
+                role = self.target / ("." + host) / "agents" / ("coder." + suffix)
+                role.write_text(role.read_text(encoding="utf-8").replace(
+                    'model = "gpt-5.6-terra"' if host == "codex" else 'model: sonnet',
+                    'model = "chosen-model"' if host == "codex" else 'model: opus'),
+                    encoding="utf-8")
+                before = self.snapshot()
+                result = self.install("--host", host)
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("coder." + suffix, result.stderr)
+                self.assertEqual(before, self.snapshot())
 
     def test_installed_runtime_creates_phase_from_native_templates(self):
         for host in ("codex", "claude"):

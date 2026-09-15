@@ -9,6 +9,10 @@ does not copy this directory into adopting projects.
 - PROJECT, REQUIREMENTS, ROADMAP and STATE text files become pending onboarding
   records only when destination records are missing. Complete authoring methods
   and illustrative examples remain in the selected host's `templates` directory.
+- `codex-agents/*.toml` supplies one native Codex definition per complete role.
+  The installer copies these beside the installed `.codex/agents/*.md` methods
+  and rewrites the direct role-file instructions. Claude does not receive TOML
+  definitions; its models live in the source agent Markdown frontmatter.
 - `claude-config.txt` supplies initial runtime routes for a Claude install.
   Codex installs use the template's `.planning/config.yaml` defaults.
   An existing destination config is preserved for every profile. Native hook

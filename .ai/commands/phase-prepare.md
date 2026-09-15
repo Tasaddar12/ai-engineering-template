@@ -34,7 +34,12 @@ Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 python .ai/runtime/phase.py check 01-authentication
 ```
 
-Fix gaps and repeat relevant checks. Runtime readiness checks fields and
+The runtime `check` requires execution approval as well as structural readiness.
+For planning-only work, `approval: pending` is an expected authorization blocker:
+keep it pending, report completed preparation and the missing implementation
+instruction, and do not change approval merely to make this command pass.
+Fix independently actionable preparation gaps and repeat relevant checks after
+actual authorization is recorded. Runtime readiness checks fields and
 dependencies; it does not prove semantic completeness. A small fix still needs
 one bounded instruction and before/after regression evidence, but can omit
 research and a lengthy validation document.

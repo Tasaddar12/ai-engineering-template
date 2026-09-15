@@ -1,5 +1,6 @@
 ---
 name: phase-preparer
+model: sonnet
 description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by phase-prepare orchestrator.
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*
 color: green

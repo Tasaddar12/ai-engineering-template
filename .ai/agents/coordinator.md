@@ -1,5 +1,6 @@
 ---
 name: coordinator
+model: sonnet
 description: Coordinates phase intake, assignments, integration, status, and authorized delivery through the project commands.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill
 color: blue

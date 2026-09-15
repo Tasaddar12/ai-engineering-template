@@ -103,6 +103,28 @@ class MigrationTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(content)
 
+    def test_claude_migration_seeds_missing_models_and_preserves_custom_roles(self):
+        import yaml
+        legacy = b"---\r\nname: coder\r\ndescription: My coding rules\r\n---\r\nKeep this custom body.\r\n"
+        custom = b"---\nname: verifier\ndescription: Custom verifier\nmodel: opus\n---\nKeep my checks.\n"
+        unusual = b'---\n{"name": "debugger", "model": "haiku"}\n---\nKeep my YAML.\n'
+        unrelated = b"---\nname: custom\ndescription: Custom role\n---\nKeep unchanged.\n"
+        for role, content in (("coder", legacy), ("verifier", custom),
+                              ("debugger", unusual), ("custom", unrelated)):
+            self.write(".ai/agents/" + role + ".md", content)
+        before = self.snapshot()
+        changes, backups, notes = self.plan("claude", hooks=False)
+        self.assertEqual(before, self.snapshot())
+        self.assertIn(self.target / ".ai/agents/coder.md", backups)
+        self.apply(changes)
+        coder = (self.target / ".claude/agents/coder.md").read_bytes()
+        self.assertEqual("sonnet", yaml.safe_load(coder.decode().split("---", 2)[1])["model"])
+        self.assertEqual(legacy.replace(b"\r\n", b"\n"), coder.replace(b"model: sonnet\n", b""))
+        for role, content in (("verifier", custom), ("debugger", unusual), ("custom", unrelated)):
+            self.assertEqual(content, (self.target / ".claude/agents" / (role + ".md")).read_bytes())
+        self.assertTrue(any("debugger.md" in note and "manually" in note for note in notes))
+        self.assertFalse(list((self.target / ".claude/agents").glob("*.toml")))
+
     def test_both_hosts_preserve_real_data_refresh_runtime_and_remove_old_tree(self):
         for host in ("codex", "claude"):
             with self.subTest(host=host):

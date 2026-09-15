@@ -1,0 +1,4 @@
+name = "codebase-mapper"
+description = "Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load."
+model = "gpt-5.6-luna"
+developer_instructions = "Read and follow the complete role at .ai/agents/codebase-mapper.md in the assigned checkout before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."
