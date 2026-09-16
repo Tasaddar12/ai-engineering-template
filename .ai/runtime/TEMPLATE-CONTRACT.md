@@ -89,7 +89,7 @@ An unresolved external `user_setup` prerequisite is likewise a readiness blocker
 Use the complete `.ai/templates/summary.md` File Template. Keep performance,
 accomplishments, task commits, files, decisions, deviations, issues, setup and next
 phase readiness. Preserve `requirements-completed`, coverage and other upstream
-metadata. Add `acceptance`, `documentation` and `## Checks` naming actual commands,
+metadata. Populate the skeleton's `acceptance`, `documentation` and `## Checks` with actual commands,
 results, failures/skips and tested revision. `status: complete` is already part of
 the upstream template; use `blocked` when incomplete and explain why.
 

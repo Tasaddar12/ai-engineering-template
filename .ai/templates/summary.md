@@ -47,6 +47,10 @@ patterns-established:
 
 requirements-completed: []  # REQUIRED — Include only requirement IDs from this plan's `requirements` that the delivered changes and verification evidence actually complete. Record incomplete, failed, or blocked requirements under remaining gaps; never copy them here merely because they were assigned.
 
+# Local runtime coverage — populate from actual delivered and checked results.
+acceptance: []  # Covered acceptance IDs from this plan; these may differ from requirement IDs.
+documentation: []  # Exact required documentation paths completed by this component; [] when none are assigned.
+
 # Coverage metadata (#1602) — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
 # OMIT this whole block for legacy/prose-only SUMMARYs — verify-work then falls back to the ## Accomplishments bullets
 # (byte-identical behavior for un-migrated phases). See <coverage_guidance> below for the contract.
@@ -99,6 +103,15 @@ Each task was committed atomically:
 **Plan metadata:** `lmn012o` (docs: complete plan)
 
 _Note: TDD tasks may have multiple commits (test → feat → refactor)_
+
+## Checks
+
+- **Tested revision:** [Tested revision or commit]
+- **Command and scenario:** [Command and scenario]
+- **Result:** [Observed result, including failures or skips]
+
+[Repeat for each actual check. Explain remaining gaps; do not claim unrun checks passed.
+For a TDD plan, also add a TDD Evidence section with the contract's RED/GREEN/REFACTOR evidence.]
 
 ## Files Created/Modified
 - `path/to/file.ts` - What it does
@@ -172,7 +185,7 @@ None - no external service configuration required.
 
 **Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
 
-**Status (#2830):** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
+**Status:** For the local Python runtime, use `status: complete` only when assigned requirements, acceptance and documentation are covered and checks support completion. Use `status: blocked` when incomplete and explain remaining gaps. The upstream `halted` convention describes a designed stop; the local runtime requires `blocked` for that result and refuses integration until a complete summary is provided.
 </frontmatter_guidance>
 
 <coverage_guidance>
