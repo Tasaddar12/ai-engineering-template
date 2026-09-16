@@ -908,7 +908,8 @@ Update status to "fixing".
 
 - Record every signal's result under `Resolution.verification` (per-signal schema in the reference)
 - If ANY applicable signal fails (and no documented technical-debt escape applies): return `## FIX REJECTED BY GUARDRAIL` (see structured_returns) — do NOT request human verification
-- If all applicable signals pass: set `guardrail_verdict: accepted`, proceed to request_human_verification
+- If required evidence is unavailable or deferred: record `guardrail_verdict: incomplete` and return the capability gap to the coordinator; do not claim acceptance.
+- If all required signals pass and optional omissions have documented alternative evidence and limits: set `guardrail_verdict: accepted`, proceed to request_human_verification
 </step>
 
 <step name="request_human_verification">

@@ -33,11 +33,15 @@ approach, use it to generate the `.xcodeproj`; an existing Xcode project or
 another approved generator does not need migration. The versions and simulator
 below are examples: match the project's supported SDK and available devices.
 
-### Step 1 — Install XcodeGen (if not present)
+### Step 1 — Confirm the selected tooling
 
-```bash
-brew install xcodegen
-```
+Use XcodeGen only when the project selected it and the tool is available. Do not
+install a generator merely because this example names one. Follow the adopting
+project's setup procedure when tool installation is part of the authorized work.
+Otherwise report the missing generator or SDK as a build-evidence gap and use
+an existing approved project setup where possible. A non-macOS environment
+cannot supply an Xcode build result; preserve the scaffold for the required
+macOS validation rather than claiming it built.
 
 ### Step 2 — Create `project.yml`
 

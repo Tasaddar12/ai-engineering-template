@@ -88,7 +88,7 @@ Apply first 10: broken → bug in first 10.
 3. Test: Does it still reproduce? YES = keep removed. NO = put back.
 4. Repeat until bare minimum
 5. Bug is now obvious in stripped-down code
-6. **Shrinking (input-space bugs)** — when the bug triggers on a class of inputs, wrap it in a property (fast-check for JS/TS, Hypothesis for Python) and let the shrinker auto-minimize the counterexample; store the **minimized** input as the regression seed. See [reproduction hardening](debugger-repro-hardening.md).
+6. **Shrinking (input-space bugs)** — when the bug triggers on a class of inputs, use an existing property-testing framework (for example fast-check or Hypothesis) to minimize the counterexample; otherwise reduce the input manually and record the limitation; store the **minimized** input as the regression seed. See [reproduction hardening](debugger-repro-hardening.md).
 
 **Example:**
 ```jsx

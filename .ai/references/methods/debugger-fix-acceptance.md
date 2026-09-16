@@ -32,10 +32,16 @@ fix and returns `## FIX REJECTED BY GUARDRAIL`.
 1. **Target test greens** — the regression test that reproduced the bug now
    passes. (Existing bar; the driving test.)
 
-2. **Mutation check** — run Stryker scoped to the changed line(s). The
-   regression test must **kill** a mutant seeded at the fix site. A **surviving
-   mutant** means the test asserts the symptom, not the root cause, and the fix
-   is **rejected**. `mutationScore = killed / totalValid`.
+2. **Mutation check** — use the project's existing configured mutation tool
+   (Stryker is one example), scoped to the changed behavior. The driving
+   regression should fail against a meaningful faulty variant at the fix site.
+   If no tool is available, a narrowly scoped manual fault injection in an
+   assigned diagnostic checkout can supply this evidence. Do not install a
+   mutation framework to follow this method. Inspect surviving variants: an
+   equivalent mutation is not a defect, but a valid behavior-breaking mutation
+   that survives exposes a test gap and rejects this signal. Record the mutation,
+   expected wrong behavior, test result and any excluded equivalent variants.
+   A numerical score alone is not proof of coverage.
 
 3. **No-op / behavior-deleting detector** — inspect `git diff` of the fix. If
    the net change only **deletes** or short-circuits behavior (removed branches,
@@ -66,10 +72,16 @@ auditable); a skipped signal is never silently passed.
 
 | Signal | When unavailable | Behavior |
 |---|---|---|
-| 2. Mutation check | no Stryker configured / Stryker absent / not configured | **skip** with a logged note (`mutation_check: skipped, reason`) — never assume pass |
+| 2. Mutation check | no configured tool and no safe assigned diagnostic setup | Record the capability gap and `mutation_check: skipped`; never assume pass |
 | 4. Adjacent tests | no test suite touching the import graph | skip with a logged note |
 | 1, 3, 5 | no test suite at all | guardrail **reduces** to signals 3 + 5 (no-op/deletion detector + revert-and-reconfirm) |
 | 1, 3, 5 | no test suite AND no repro | cannot verify at all → return a `CHECKPOINT REACHED` to the human; do not silently pass |
+
+A skipped optional technique must name the alternative evidence used and its
+limits. If the PLAN requires that signal, or the remaining evidence cannot
+establish the required behavior, set `guardrail_verdict: incomplete` and return
+the capability gap to the coordinator. Do not relabel a required signal optional
+because its tool is missing. User-deferred checks follow the same rule.
 
 The reduction path matters: with **no test suite**, the guardrail still bites via
 the no-op/deletion detector (signal 3) and revert-and-reconfirm (signal 5).
@@ -81,12 +93,12 @@ per-signal record (see the Debug File Protocol in [the debugger role](../../agen
 
 ```yaml
 verification:
-  target_test:        { result: pass | fail }
+  target_test:        { result: pass | fail | skipped, reason_if_skipped }
   mutation_check:     { result: pass | fail | skipped, reason_if_skipped, mutant_killed }
   no_op_deletion:     { result: pass | flagged, deletion_justified_by_rca: true | false }
   adjacent_tests:     { result: pass | fail | skipped, suites_run: [...] }
-  revert_and_reconfirm: { result: pass | fail, bug_returned_on_revert: true | false, fixed_on_reapply: true | false }
-  guardrail_verdict:  accepted | rejected
+  revert_and_reconfirm: { result: pass | fail | not-run, bug_returned_on_revert: true | false, fixed_on_reapply: true | false }
+  guardrail_verdict:  accepted | rejected | incomplete
   rejected_signal:    <signal name, if rejected>
 ```
 
@@ -120,24 +132,23 @@ Revise the fix so the failing signal passes, or accept as documented technical
 debt (requires explicit justification recorded in the debug file).
 ```
 
-The session-manager continuation loop handles this return: it surfaces the
+The coordinator continuation handles this return: it surfaces the
 failing signal and offers revise / accept-as-debt / abandon. It does **not** mark
 the session resolved.
 
 ## Bounded subprocesses (local subprocess limits)
 
-The mutation check shells out to Stryker; revert-and-reconfirm shells out to
-git. Every such subprocess is **bounded** with a timeout (npm/Stryker: 60s per
-the local default; git: 5–30s per the gauntlet). On timeout, the signal is recorded as
-`skipped — <reason> timed out` (logged, never a silent pass) and the guardrail
-proceeds on the remaining signals. Never run an unbounded Stryker or git op;
-never let a subprocess hang the debug session. Pass Stryker/git arguments as an
-**argv array**, never a shell-interpolated string.
+Use the project's existing check commands with a bounded timeout suitable for
+its suite. A timeout is `not-run` or `skipped` with the exact reason, never a
+pass. Required evidence remains incomplete until established. Do not invent
+universal timeout settings or command-line flags for tools not configured here.
+Pass arguments as an argv array where possible; do not interpolate untrusted
+report text into shell commands.
 
-Scope Stryker to the changed lines (`--mutate` on the fix's diff hunk) and run
-the **driving regression test** (not the whole suite) so the mutant is killed by
-the test that should catch the bug; a mutant killed only by a non-driving test is
-still a finding (the driving test is too weak).
+Scope mutation to the changed behavior and select the driving regression with
+the installed runner's documented options. A mutant killed only by another test
+is a finding about the driving regression's coverage. Record the commands and
+revision so the comparison can be reproduced.
 
 ## Test provenance (security)
 

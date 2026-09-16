@@ -38,7 +38,7 @@ actionable condition.
 **Reuse the diagnosis branches:** the `reasoning_checkpoint.candidate_causes`
 recorded at Phase 2A already enumerated the candidate causes across the four
 categories (**code / config / environment / data** — see
-`debugger-rca-branching.md`); start the postmortem from those branches and the
+[debugger rca branching](debugger-rca-branching.md)); start the postmortem from those branches and the
 AND-gate answer rather than re-deriving a chain from scratch.
 
 **Blame-free:** treat "agent error" / "human error" as a prompt for *"why was

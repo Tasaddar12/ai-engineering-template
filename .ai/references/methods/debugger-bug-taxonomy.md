@@ -47,7 +47,7 @@ and revise it as evidence accumulates.
 | bug_class | Route to | Revoke if already run |
 |---|---|---|
 | **Bohrbug** | deterministic reproduction → **SBFL (Phase 1.25)** → git bisect → binary search | — |
-| **Heisenbug / Mandelbug** | record-replay (`rr`) → stability-stress → statistical sampling; for Mandelbug, look for resource-exhaustion / uptime-dependent patterns | **SBFL** — if Phase 1.25 already ran, **mark its Evidence entry revoked** (flaky spectrum poisons `failed(s)`) |
+| **Heisenbug / Mandelbug** | available record-replay tooling → bounded stability-stress → statistical sampling; for Mandelbug, look for resource-exhaustion / uptime-dependent patterns | **SBFL** — if Phase 1.25 already ran, **mark its Evidence entry revoked** (flaky spectrum poisons `failed(s)`) |
 | **Concurrency** | the atomicity / order / deadlock checklist (below) FIRST, then general techniques | — |
 | **General (any class — situation-cued)** | Binary search (large codebase), Working backwards (known desired output), Differential debugging (worked-before/works-elsewhere), Delta debugging (large change set), Comment out everything (many possible causes), Follow the indirection (constructed paths/URLs/keys), Rubber duck (confused), Observability first (always, before changes) | — |
 
@@ -62,7 +62,7 @@ Note the ordering: Phase 1.25 (SBFL) runs **before** Phase 1.75 (classification)
 so for a Heisenbug the SBFL-skip cannot fire proactively — it fires as
 **retroactive revocation**. When the class later resolves to Heisenbug or
 Mandelbug, mark the prior SBFL Evidence entry as revoked (do not delete — see
-`debugger-sbfl.md`) and note why. A flaky "failing" test makes `failed(s)`
+[debugger sbfl](debugger-sbfl.md)) and note why. A flaky "failing" test makes `failed(s)`
 unreliable, so the Ochiai ranking is noise on a Heisenbug spectrum.
 
 ## The concurrency checklist (suspected Concurrency class)
@@ -79,7 +79,7 @@ Run this BEFORE general techniques:
 
 If any branch hits, that becomes the leading hypothesis for Phase 2 (and feeds
 the RCA `candidate_causes` — concurrency bugs typically bridge code +
-environment, per `debugger-rca-branching.md`).
+environment, per [debugger rca branching](debugger-rca-branching.md)).
 
 ## Relationship to the other disciplines
 
@@ -90,11 +90,20 @@ environment, per `debugger-rca-branching.md`).
   hypothesis — concurrency bugs almost always AND-gate (code race +
   environment/config amplification), so branch across categories.
 
+## Tool availability
+
+Use record-replay only when compatible tooling is already available (`rr` is
+one platform-specific example, not a prerequisite). Otherwise use bounded
+repetition, existing logs and controlled scheduling or load with project tools.
+Record what timing and interleaving evidence these alternatives cannot capture.
+If the required diagnosis or acceptance cannot be established, return that gap;
+do not auto-install a recorder or call a timeout a successful reproduction.
+
 ## Bound the Heisenbug-chase runs (bounded subprocesses)
 
-`rr record` on a real application, stability-stress runs, and statistical
+Record-replay runs on a real application, stability-stress runs, and statistical
 sampling (N repeated executions) can each run minutes-to-hours. Bound them:
-cap `rr record` and each stress/sampling loop (60s for npm-tier, scale with
+cap the recorder and each stress/sampling loop (60s for npm-tier, scale with
 suite size; a fixed iteration count for sampling), and **degrade to a logged
 skip on timeout** — never let a Heisenbug chase hang the debug session. If a
 run is cut short, note how far it got in Evidence.

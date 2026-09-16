@@ -105,7 +105,7 @@ Checklist of frequent bug patterns to scan before forming hypotheses. Ordered by
 
 ### Pattern categories → bug taxonomy (Phase 1.75)
 
-The categories here feed bug-class classification (see `debugger-bug-taxonomy.md`):
+The categories here feed bug-class classification (see [debugger bug taxonomy](debugger-bug-taxonomy.md)):
 
 | Pattern category | Typical bug_class |
 |---|---|
