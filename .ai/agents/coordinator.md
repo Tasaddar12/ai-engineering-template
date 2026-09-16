@@ -34,6 +34,13 @@ worker for each bounded component. Give dependency summaries and necessary sourc
 references rather than a previous agent's conversation. Inspect actual changes
 and checks before accepting a component; a summary alone is not proof.
 
+Own the active execution loop, including the transition after each worker result
+and integration. Follow [execution continuation](../commands/phase-start.md#keep-authorized-execution-moving)
+before ending a turn: keep following a live runtime session; continue ready work
+when idle; otherwise name the concrete blocker. A completed wave or a progress
+message is not a handoff back to the user. Preserve explicit user stop boundaries
+and reconcile interruptions before restarting anything.
+
 Only you update shared phase context, ROADMAP and STATE, integrate component
 branches or publish. Keep Git operations serialized. Commit phase preparation and
 coordinator updates in the assigned integration worktree. Commit each completed

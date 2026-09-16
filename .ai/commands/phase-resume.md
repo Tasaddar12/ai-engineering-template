@@ -31,3 +31,9 @@ worktrees; after resumption repeat checks invalidated by changed content.
 An interrupted independent verifier has its own saved attempt. Follow
 [phase-verify](phase-verify.md) to reuse its valid current report or explicitly
 allow a fresh verifier after confirming the previous process stopped.
+
+After reconciliation, follow the [execution continuation loop](phase-start.md#keep-authorized-execution-moving).
+Keep following the resumed runtime through newly ready components; do not stop
+at the recovered worker's result or the end of its wave. If it exits with work
+unfinished, inspect and report the specific blocker instead of leaving an idle
+phase waiting for an unspecified next prompt.

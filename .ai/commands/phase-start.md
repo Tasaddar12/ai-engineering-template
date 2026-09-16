@@ -20,6 +20,33 @@ exclusive resources serialize conflicting assignments. A dependent component
 starts after its own prerequisites are integrated and checked on the phase
 branch. Unrelated earlier-wave work is not a barrier.
 
+## Keep authorized execution moving
+
+The coordinator owns continuation until the authorized phase reaches its delivery
+boundary or a concrete blocker prevents further progress. Finishing a displayed
+wave, receiving a worker result, or posting a progress update is not a stopping
+point and does not require another user prompt.
+
+- Keep following the active runtime process until it exits. A tool returning a
+  process/session handle means execution is still active; collect subsequent
+  output through that handle. Do not launch a second scheduler beside it.
+- After a worker completion or integration, account for every remaining
+  component: active, ready, or blocked with its specific reason. The runtime
+  dispatches ready components as dependencies, capacity and resources permit;
+  wave numbers do not introduce an extra approval or execution barrier.
+- Before ending the turn, inspect actual runtime/process evidence. If no workers
+  are active and authorized components remain ready, continue execution now.
+  For an interrupted attempt, follow [phase-resume](phase-resume.md) to reconcile
+  prior processes and results before resuming; never blindly start replacements.
+- If unfinished work cannot proceed, report the affected component IDs, exact
+  unmet prerequisite or failure, preserved evidence, and the next action needed.
+  Resolve blockers already within scope and continue other independent ready
+  work when the runtime permits it. Do not describe an idle unfinished phase as
+  complete or merely promise to start the next wave later.
+- When every component is integrated, proceed to the authorized verification and
+  delivery steps. Honor explicit pauses, deferred tests, human-only gates and
+  delivery limits; this continuation rule never authorizes another phase.
+
 Workers commit each completed meaningful slice immediately and commit their
 SUMMARY. The coordinator audits scope, actual
 commits and required checks before integration. A blocked or invalid result
