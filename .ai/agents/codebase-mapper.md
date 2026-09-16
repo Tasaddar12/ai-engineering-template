@@ -116,7 +116,7 @@ Based on focus, determine which documents you'll write:
 - `quality` → CONVENTIONS.md, TESTING.md
 - `concerns` → CONCERNS.md
 
-**Optional `--paths` scope hint (#2003):**
+**Optional `--paths` scope hint:**
 The prompt may include a line of the form:
 
 ```text

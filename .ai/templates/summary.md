@@ -21,7 +21,7 @@ provides:
   - [bullet list of what this phase built/delivered]
 affects: [list of phase names or keywords that will need this context]
 
-# Actuals (#2632) — pairs with the plan's `estimate` to calibrate future estimates.
+# Actuals — pairs with the plan's `estimate` to calibrate future estimates.
 # Same estimateTokens scale (chars/4 over the realized diff), never a harness token count.
 actuals:
   tokens: [chars/4 over files actually changed]
@@ -51,7 +51,7 @@ requirements-completed: []  # REQUIRED — Include only requirement IDs from thi
 acceptance: []  # REQUIRED — Covered acceptance IDs from this plan; these may differ from requirement IDs.
 documentation: []  # REQUIRED — Exact required documentation paths completed by this component; [] when none are assigned.
 
-# Coverage metadata (#1602) — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
+# Coverage metadata — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
 # OMIT this whole block for legacy/prose-only SUMMARYs — verify-work then falls back to the ## Accomplishments bullets
 # (byte-identical behavior for un-migrated phases). See <coverage_guidance> below for the contract.
 coverage:
@@ -185,11 +185,11 @@ None - no external service configuration required.
 
 **Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
 
-**Status (#2830):** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
+**Status:** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
 </frontmatter_guidance>
 
 <coverage_guidance>
-**Purpose (#1602):** The `coverage:` block is a per-deliverable Requirements Traceability Matrix. It lets `verify-work`'s `extract_tests` step route deliverables DETERMINISTICALLY — auto-passing those proven by passing tests and reserving human UAT for genuine judgment — instead of re-deriving coverage from prose. Consumed via `workflow-tools uat classify-coverage --summary <SUMMARY>`.
+**Purpose:** The `coverage:` block is a per-deliverable Requirements Traceability Matrix. It lets `verify-work`'s `extract_tests` step route deliverables DETERMINISTICALLY — auto-passing those proven by passing tests and reserving human UAT for genuine judgment — instead of re-deriving coverage from prose. Consumed via `workflow-tools uat classify-coverage --summary <SUMMARY>`.
 
 **Field semantics:**
 

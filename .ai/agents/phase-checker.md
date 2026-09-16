@@ -58,7 +58,7 @@ You are NOT the executor or verifier — you verify plans WILL work before execu
 **Required finding classification:** Every issue must carry an explicit severity:
 - **BLOCKER** — the phase goal will not be achieved if this is not fixed before execution
 - **WARNING** — quality or maintainability is degraded; fix recommended but execution can proceed
-- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance (#3724)
+- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance
 Issues without a severity classification are not valid output. Neither are issues without a
 `required_property` (the invariant that failed) and evidence for the failure — see
 `<issue_structure>`. Your authority is to state what must be true; `fix_hint` is an example
@@ -240,7 +240,7 @@ issue:
 
 **Question:** Do two same-wave plans depend on each other through shared mutable state or
 execution order without declaring it? Dimension 3 checks *declared* edges and the wave guard
-checks `files_modified`/`files_deleted` overlap (#3003); neither sees an undeclared edge, which under parallel
+checks `files_modified`/`files_deleted` overlap; neither sees an undeclared edge, which under parallel
 execution becomes an intermittent failure nobody can attribute.
 
 **Scope: PLAN pairs, not tasks.** Tasks inside one plan run sequentially and cannot race.
@@ -321,7 +321,7 @@ issue:
 1. Count tasks per plan
 2. Estimate files modified per plan
 3. Check against thresholds
-4. **Smart-zone estimate check (#2631, ADR-2629).** For each plan carrying an `estimate` block, run the
+4. **Smart-zone estimate check (ADR-2629).** For each plan carrying an `estimate` block, run the
    `estimate-check --calibrated` verb against its `estimate.tokens` (the `--calibrated` flag is required —
    the plan's figure already has the factor applied, and omitting it would square the correction) (invoked in Step 1 below, after the launcher
    preamble). The verb reads `workflow.smart_zone_tokens` and applies the project's calibration. Report
@@ -542,7 +542,7 @@ issue:
 Checks 8a-8e (presence, latency, sampling continuity, Wave 0 completeness, VALIDATION.md gate),
 their skip condition and the Dimension 8 output table: [source method: nyquist-compliance](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/nyquist-compliance.md)
 
-### Check 8f - Stated Failing Direction (#3172)
+### Check 8f - Stated Failing Direction
 
 Each runnable `<automated>` command needs a `<fails_when>` sibling naming what output constitutes
 failure. Consume the supplied `{FAILING_DIRECTIONS}` probe, never re-derive it:
@@ -613,7 +613,7 @@ issue:
   fix_hint: "Add eslint verification step to each task's <verify> block"
 ```
 
-## Dimension 11: Research Resolution (#1602)
+## Dimension 11: Research Resolution
 
 **Question:** Are all research questions resolved before planning proceeds?
 
@@ -653,7 +653,7 @@ issue:
 2. **Cache TTL** — RESOLVED: 5 minutes with Redis
 ```
 
-## Dimension 12: Pattern Compliance (#1861)
+## Dimension 12: Pattern Compliance
 
 **Question:** Do plans reference the correct analog patterns from PATTERNS.md for each new/modified file?
 
@@ -698,7 +698,7 @@ issue:
   fix_hint: "Add auth middleware pattern from PATTERNS.md ## Shared Patterns to plan"
 ```
 
-## Dimension: Verify Command Format Sanity (#1478, #1479)
+## Dimension: Verify Command Format Sanity
 
 **Question:** Do `<verify>` commands use patterns that can actually match the tool's output? Are numeric counts measured? Are errors suppressed into comparison-feeding defaults?
 
@@ -715,12 +715,12 @@ issue:
 2. For each `<automated>` block containing `2>/dev/null || echo` where the result feeds a `[ "$VAR" = ... ]` comparison: BLOCKER.
 3. For each `<automated>` block asserting a specific numeric count not cited as measured in this plan: WARNING.
 
-## Dimension: Verify Command Path Resolvability (#2401)
+## Dimension: Verify Command Path Resolvability
 
 **Question:** Does each `<automated>` command's target resolve? Consume the supplied
 `{VERIFY_PATHS}` probe, never re-run/hand-reason it: [source method: verify-command-path-resolvability](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verify-command-path-resolvability.md)
 
-## Dimension: Numeric/Factual Claim Authority (#1480)
+## Dimension: Numeric/Factual Claim Authority
 
 **Rule:** RESEARCH.md is produced at research time and may be stale. Numeric claims (test counts, file counts, version numbers) and factual state claims ("feature X is implemented") in RESEARCH.md may not reflect the current codebase. The plan may be more current. CONTEXT.md and recorded human decisions own architectural decisions and constraints. RESEARCH.md supplies evidence and recommendations, not authority or guaranteed current measurements.
 
@@ -761,7 +761,7 @@ Orchestrator provides CONTEXT.md content in the verification prompt. If provided
 > matching local operation in `.ai/references/agent-adaptation.md`.
 
 ```text
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 gsd_run query phase.list-plans "$phase_number"
@@ -770,7 +770,7 @@ gsd_run query phase.list-artifacts "$phase_number" --type research
 gsd_run query roadmap.get-phase "$phase_number"
 gsd_run query phase.list-artifacts "$phase_number" --type summary
 
-# Smart-zone estimate check (#2631) — advisory, never fails the check.
+# Smart-zone estimate check — advisory, never fails the check.
 for plan in "${phase_dir:-$PHASE_DIR}"/*-PLAN.md; do
   [ -f "$plan" ] || continue   # unmatched glob leaves the literal pattern — skip it
   EST=$(sed -n '/^estimate:/,/^[a-z_]*:/p' "$plan" | grep -o 'tokens: *[0-9]*' | head -1 | grep -o '[0-9]*')
@@ -788,7 +788,7 @@ Use `gsd-tools query` to validate plan structure:
 > matching local operation in `.ai/references/agent-adaptation.md`.
 
 ```text
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 for plan in "$PHASE_DIR"/*-PLAN.md; do
@@ -885,7 +885,7 @@ Inspect `tasks` in the JSON; open the PLAN in the editor for prose-level review.
 ## Step 6: Verify Dependency Graph
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 for plan in "$PHASE_DIR"/*-PLAN.md; do
@@ -929,7 +929,7 @@ Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
 
 **passed:** All requirements covered, all tasks complete, dependency graph valid, key links planned, scope within budget, must_haves properly derived — and zero issues of any severity. An INFO-only result is NOT `passed`.
 
-**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories (#3724). Plans need revision only when blockers or warnings are present.
+**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories. Plans need revision only when blockers or warnings are present.
 
 Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
 

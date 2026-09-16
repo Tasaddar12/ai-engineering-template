@@ -212,16 +212,16 @@ Every task has four required fields:
 
 **Nyquist Rule:** Every `<verify>` includes `<automated>`. If no test exists, set `<automated>MISSING — Wave 0 must create {test_file} first</automated>` and create that scaffold.
 
-**Inherit the command that already worked (#2401):** reuse `prior_verify_commands` verbatim, prefer `npm --prefix <dir> run <script>`, ground every path you author. [source method: planner-verify-command-grounding](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-verify-command-grounding.md)
+**Inherit the command that already worked:** reuse `prior_verify_commands` verbatim, prefer `npm --prefix <dir> run <script>`, ground every path you author. [source method: planner-verify-command-grounding](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-verify-command-grounding.md)
 
 **Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden.
 
 <comment_text_discipline>
-**Comment-text discipline (HARD GATE, #429):** A literal an acceptance criterion negative-greps for must NOT appear verbatim in any `<action>` body. Full rules + `<!-- planner-discipline-allow: LIT -->` allowlist + worked examples: [source method: planner-antipatterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-antipatterns.md) ("Comment-Text Discipline").
+**Comment-text discipline (HARD GATE):** A literal an acceptance criterion negative-greps for must NOT appear verbatim in any `<action>` body. Full rules + `<!-- planner-discipline-allow: LIT -->` allowlist + worked examples: [source method: planner-antipatterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-antipatterns.md) ("Comment-Text Discipline").
 </comment_text_discipline>
 
 <region_scoped_negative_gate>
-**Region-scoped negative gates (WARN, #968)** and **Verify-gate hygiene (#1478/#1479):** [source method: planner-antipatterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-antipatterns.md).
+**Region-scoped negative gates (WARN)** and **Verify-gate hygiene:** [source method: planner-antipatterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-antipatterns.md).
 </region_scoped_negative_gate>
 
 **<done>:** Acceptance criteria - measurable state of completion.
@@ -615,7 +615,7 @@ Check the invocation mode and load the relevant reference file:
 - If `--gaps` flag or gap_closure context present: Read [source method: planner-gap-closure](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-gap-closure.md)
 - If `<revision_context>` provided by orchestrator: Read [source method: planner-revision](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-revision.md)
 - If `--reviews` flag present or reviews mode active: Read [source method: planner-reviews](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-reviews.md)
-- If `**Mode:** quick-batch` in `<planning_context>` (#3676, epic #3344): Read [source method: planner-quick-batch](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-quick-batch.md)
+- If `**Mode:** quick-batch` in `<planning_context>`: Read [source method: planner-quick-batch](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-quick-batch.md)
 - Standard planning mode: no additional file to read
 
 Load the file before proceeding to planning steps. The reference file contains the full
@@ -787,7 +787,7 @@ for each plan B in plan_order:
 
 **Rule:** Same-wave plans must have zero `files_modified`/`files_deleted` overlap. After assigning waves, scan each wave; if any file appears in 2+ plans, bump the later plan to the next wave and repeat.
 
-**External review ordering:** When a PR opening has known automatic external review (for example a GitHub App reviewer such as CodeRabbit, configured via `.coderabbit.yaml`, which reviews automatically on PR open) and the plan includes internal review lanes, run internal review and apply the accepted internal-review fixes before the final open. If an open-time property exists (for example a not-behind-base check that must legitimately be measured at PR-open instant), re-check it immediately before opening, with nothing intervening; post-open CI, review, and tracking may follow. Examples: [source method: planner-antipatterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-antipatterns.md) ("External Review Before PR Open (#4107)").
+**External review ordering:** When a PR opening has known automatic external review (for example a GitHub App reviewer such as CodeRabbit, configured via `.coderabbit.yaml`, which reviews automatically on PR open) and the plan includes internal review lanes, run internal review and apply the accepted internal-review fixes before the final open. If an open-time property exists (for example a not-behind-base check that must legitimately be measured at PR-open instant), re-check it immediately before opening, with nothing intervening; post-open CI, review, and tracking may follow. Examples: [source method: planner-antipatterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-antipatterns.md) ("External Review Before PR Open").
 
 Non-file coupling: [source method: planner-coupling](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-coupling.md)
 </step>
@@ -947,7 +947,7 @@ Return structured planning outcome to orchestrator.
 
 <structured_returns>
 
-See [source method: planner-guidance](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-guidance.md) for return formats; gap-closure returns are artifact-based (#3440).
+See [source method: planner-guidance](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-guidance.md) for return formats; gap-closure returns are artifact-based.
 
 See [source method: planner-chunked](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-chunked.md) for `## OUTLINE COMPLETE` and `## PLAN COMPLETE` return formats used in chunked mode.
 

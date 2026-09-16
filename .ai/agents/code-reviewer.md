@@ -163,7 +163,7 @@ git diff --name-only ${DIFF_BASE}..HEAD -- . ':!.planning/' ':!ROADMAP.md' ':!ST
 ```
 parse JSON payload and cache it as `STRUCTURAL_FINDINGS`. When present, include these findings in the `## Structural Findings (fallow)` section of `REVIEW.md` during `write_review` (verbatim when small; concise structured summary when large). This block is optional; missing block means no structural pre-pass was provided.
 
-**5. Parse external reviewer evidence when present (#4209).** If the prompt includes:
+**5. Parse external reviewer evidence when present.** If the prompt includes:
 ```xml
 <external_reviewer_evidence>...</external_reviewer_evidence>
 ```

@@ -136,7 +136,7 @@ PLAN_START_EPOCH=$(date +%s)
 If running inside a git worktree, capture authoritative worktree identity before
 any task commit changes HEAD. The execute-phase orchestrator consumes this from
 your final `<worktree_metadata>` return block to build the wave cleanup manifest
-without relying on runtime harness metadata (#1297).
+without relying on runtime harness metadata.
 
 ```bash
 GSD_WORKTREE_PATH=""
@@ -188,7 +188,7 @@ For each task:
    - **Then run the tracer feedback gate BEFORE any expansion task** — an early integration checkpoint on the proven slice. In order (full chain: "Tracer feedback gate", checkpoints.md):
      - **`gate="blocking-human"` → STOP**, return a `checkpoint:human-verify`. Every mode, auto included (golden rule 6).
      - **Auto mode active** (`AUTO_CHAIN`/`AUTO_CFG` is `"true"`, per `<auto_mode_detection>`): re-run `<verify>` end-to-end. Fails → HALT, surface as deviation Rule 1, never expand — pouring more layers onto a broken foundation is exactly the failure this gate prevents. Passes → log `⚡ Tracer verified end-to-end — expanding`, continue.
-     - **Interactive:** per `HUMAN_VERIFY_MODE` — `end-of-phase` (default) + automated-only `<verify>` → re-run; fails → HALT as above, passes → continue, no checkpoint; else STOP → `checkpoint:human-verify` (#3299).
+     - **Interactive:** per `HUMAN_VERIFY_MODE` — `end-of-phase` (default) + automated-only `<verify>` → re-run; fails → HALT as above, passes → continue, no checkpoint; else STOP → `checkpoint:human-verify`.
 
 3. **If `type="checkpoint:*"`:**
    - STOP immediately — return structured checkpoint message
@@ -352,7 +352,7 @@ For full automation-first patterns, server lifecycle, CLI handling:
 
 **Quick reference:** Users NEVER run CLI commands. Users ONLY visit URLs, click UI, evaluate visuals, provide secrets. Claude does all automation.
 
-**Tracer feedback gate:** synthesized after a `type="tracer"` task; `gate="blocking-human"` STOPs in every mode. Branch in `<execution_flow>` → `execute_tasks`; full chain in checkpoints.md (#3299).
+**Tracer feedback gate:** synthesized after a `type="tracer"` task; `gate="blocking-human"` STOPs in every mode. Branch in `<execution_flow>` → `execute_tasks`; full chain in checkpoints.md.
 
 ---
 
@@ -427,16 +427,16 @@ When executing task with `tdd="true"`:
 
 **1. Check test infrastructure** (if first TDD task): detect project type, install test framework if needed.
 
-**2-4. RED → GREEN → REFACTOR (#3990: stated ONCE; #4267: cited correctly):** execute the
+**2-4. RED → GREEN → REFACTOR:** execute the
 cycle exactly as the canonical [source method: tdd](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/tdd.md) reference specifies (embedded when
 TDD applies) — the "Red-Green-Refactor Cycle" section's commit-scope contract, the "Gate
 Enforcement Rules" section's "Fail-Fast Rules" subsection, and the "Error Handling" section.
 The reference is the single source; do not improvise a variant.
 
-## Plan-Level TDD Gate Enforcement (type: tdd plans, #4269: stated ONCE)
+## Plan-Level TDD Gate Enforcement (type: tdd plans)
 
 When the plan frontmatter has `type: tdd`, the mandatory RED/GREEN/REFACTOR gate sequence,
-its fail-fast rules (including the #3770 INVALID_RED / intentional-RED-evidence requirement
+its fail-fast rules (including the INVALID_RED / intentional-RED-evidence requirement
 enforced via `gsd_run check tdd-red-evidence`), and the `## TDD Gate Compliance` SUMMARY.md contract are
 specified in the canonical [source method: tdd](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/tdd.md) "Gate Enforcement Rules" section
 (embedded when TDD applies). The reference is the single source; do not improvise a variant.
@@ -444,7 +444,7 @@ specified in the canonical [source method: tdd](https://github.com/open-gsd/gsd-
 
 ## MVP+TDD Gate
 
-**When the orchestrator passes `TDD_MODE=true` (#4011 — MVP not required):** Before running the implementation step of any task with `tdd="true"`, run the runtime gate from `~/.claude/gsd-core/references/execute-mvp-tdd.md` (Read it). If the gate trips, halt and report — do NOT proceed to the implementation step.
+**When the orchestrator passes `TDD_MODE=true` (MVP not required):** Before running the implementation step of any task with `tdd="true"`, run the runtime gate from `~/.claude/gsd-core/references/execute-mvp-tdd.md` (Read it). If the gate trips, halt and report — do NOT proceed to the implementation step.
 
 **Halt-and-report protocol:**
 
@@ -469,7 +469,7 @@ The verb owns the canonical predicate (tdd="true" frontmatter AND `<behavior>` b
 <task_commit_protocol>
 After each task completes (verification passed, done criteria met), commit immediately.
 
-**0a. cwd-drift assertion (worktree mode only, MANDATORY before staging — #3097):**
+**0a. cwd-drift assertion (worktree mode only, MANDATORY before staging):**
 A prior Bash call may have `cd`'d out of the worktree into the main repo. When that happens
 `[ -f .git ]` is false (main repo's `.git` is a directory), silently skipping all worktree guards.
 Capture the spawn-time toplevel via a sentinel on first commit, then verify on every subsequent commit:
@@ -482,7 +482,7 @@ case "$WT_GIT_DIR" in
       EXPECTED_TL=$(cat "$SENTINEL" 2>/dev/null)
       ACTUAL_TL=$(git rev-parse --show-toplevel 2>/dev/null)
       if [ -n "$EXPECTED_TL" ] && [ "$ACTUAL_TL" != "$EXPECTED_TL" ]; then
-        echo "FATAL: cwd drifted from spawn-time worktree root (#3097)" >&2
+        echo "FATAL: cwd drifted from spawn-time worktree root" >&2
         echo "  Spawn-time: $EXPECTED_TL" >&2
         echo "  Current:    $ACTUAL_TL" >&2
         echo "RECOVERY: cd \"$EXPECTED_TL\" before staging, then re-run this commit." >&2
@@ -492,7 +492,7 @@ case "$WT_GIT_DIR" in
 esac
 ```
 
-**0b. absolute-path safety (worktree mode only, MANDATORY before Edit/Write — #3099):**
+**0b. absolute-path safety (worktree mode only, MANDATORY before Edit/Write):**
 Before any Edit or Write call that uses an absolute path, verify the path resolves inside the
 current worktree. Absolute paths constructed from prior `pwd` output (orchestrator's cwd) will
 resolve to the **main repo**, not the worktree — silently writing files to the wrong location.
@@ -510,8 +510,8 @@ Prefer **relative paths** for all Edit/Write operations inside a worktree. When 
 is unavoidable, always derive it from `git rev-parse --show-toplevel` run inside the worktree,
 not from a `pwd` captured in the orchestrator context.
 
-**0. Pre-commit HEAD safety assertion (MANDATORY — #2924, #3819):**
-Assert HEAD is not the protected/default branch before committing (#3819). If drifted onto it, HALT — never self-recover via `git update-ref refs/heads/<protected>`:
+**0. Pre-commit HEAD safety assertion (MANDATORY):**
+Assert HEAD is not the protected/default branch before committing. If drifted onto it, HALT — never self-recover via `git update-ref refs/heads/<protected>`:
 > Source-runtime example only. Do not execute this SDK/host block here; apply the
 > matching local operation in `.ai/references/agent-adaptation.md`.
 
@@ -522,7 +522,7 @@ if [ "$HEAD_REF" = "DETACHED" ]; then
   echo "FATAL: refusing to commit — HEAD is detached." >&2
   exit 1
 fi
-# #3819: real default branch; override git.allow_default_branch_commits; else five-name fallback.
+# real default branch; override git.allow_default_branch_commits; else five-name fallback.
 IS_PROTECTED=$(gsd_run query git.base-branch --is-protected "$ACTUAL_BRANCH" 2>/dev/null) || IS_PROTECTED="__GSD_RUN_UNAVAILABLE__"
 if [ "$IS_PROTECTED" = "__GSD_RUN_UNAVAILABLE__" ] || [ -z "$IS_PROTECTED" ]; then
   if echo "$ACTUAL_BRANCH" | grep -Eq '^(main|master|develop|trunk|release/.*)$'; then
@@ -533,16 +533,16 @@ if [ "$IS_PROTECTED" = "__GSD_RUN_UNAVAILABLE__" ] || [ -z "$IS_PROTECTED" ]; th
 fi
 if [ "$IS_PROTECTED" != "false" ]; then
   echo "FATAL: refusing to commit — HEAD is on '$ACTUAL_BRANCH' (protected/default branch)." >&2
-  echo "Re-home onto a phase/agent branch (#2924, #3819); override: git.allow_default_branch_commits:true in .planning/config.json." >&2
+  echo "Re-home onto a phase/agent branch; override: git.allow_default_branch_commits:true in .planning/config.json." >&2
   exit 1
 fi
 if [ -f .git ]; then  # worktree
   # Positive allow-list: HEAD must be on a per-agent branch (`agent-<id>` or
   # legacy `worktree-agent-<id>`). This catches feature/* and any other
-  # arbitrary branch that the deny-list would silently allow (#2924, #1995).
+  # arbitrary branch that the deny-list would silently allow.
   if ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
     echo "FATAL: refusing to commit — worktree HEAD '$ACTUAL_BRANCH' is not in the agent-* / worktree-agent-* / worktree-wf_* namespace." >&2
-    echo "Agent commits must live on per-agent branches; surface as blocker (#2924)." >&2
+    echo "Agent commits must live on per-agent branches; surface as blocker." >&2
     exit 1
   fi
 fi
@@ -578,8 +578,8 @@ git add src/types/user.ts
 ```text
 gsd_run query commit-to-subrepo "{type}({phase}-{plan}): {concise task description}" --files file1 file2 ...
 ```
-**0c. Plan commit ledger (#3968, single-repo — before the first commit):**
-Each Bash call is a FRESH shell, so the ledger persists on disk like the #3097 sentinel above
+**0c. Plan commit ledger (single-repo — before the first commit):**
+Each Bash call is a FRESH shell, so the ledger persists on disk like the cwd-drift sentinel above
 (a variable would be unset at SUMMARY time and `rev-list ..HEAD` would measure zero).
 Per-plan filename, so sequential plans cannot contaminate each other:
 > Source-runtime example only. Do not execute this SDK/host block here; apply the
@@ -627,14 +627,14 @@ When running as a parallel executor inside a git worktree, `git clean` treats fi
 on the feature branch as "untracked" — because the worktree branch was just created and has
 not yet seen those commits in its own history. Running `git clean -fd` or `git clean -fdx`
 will delete those files from the worktree filesystem. When the worktree branch is later merged
-back, those deletions appear on the main branch, destroying prior-wave work (#2075, commit c6f4753).
+back, those deletions appear on the main branch, destroying prior-wave work (commit c6f4753).
 
 **Prohibited commands in worktree context:**
 - `git clean` (any flags — `-f`, `-fd`, `-fdx`, `-n`, etc.)
 - `git rm` on files not explicitly created by the current task
 - `git checkout -- .` or `git restore .` (blanket working-tree resets that discard files)
 - `git reset --hard`, including startup; return mismatched worktree/branch evidence to the coordinator for reconciliation
-- `git update-ref refs/heads/<protected>` (resolved protected branch, #2924, #3819). Prohibited.
+- `git update-ref refs/heads/<protected>` (resolved protected branch). Prohibited.
   If you discover that your worktree HEAD is attached to a protected branch and your
   commits landed there, **DO NOT** "recover" by force-rewinding the protected ref —
   that silently destroys concurrent commits in multi-active scenarios (parallel
@@ -653,7 +653,7 @@ back, those deletions appear on the main branch, destroying prior-wave work (#20
   changes to save" will silently apply WIP from a sibling worktree's prior
   session — typically producing UU/UD merge-conflict states, phantom untracked
   files, and a contaminated working tree that violates the `isolation="worktree"`
-  invariant of your execution (#3542).
+  invariant of your execution.
 
   **Sanctioned alternatives** when you need to set aside or inspect work without
   touching `refs/stash`:
@@ -697,18 +697,18 @@ This file is the canonical output of this step. The orchestrator reads `.plannin
 
 **Use template:** @.ai/templates/summary.md
 
-**Frontmatter:** phase, plan, subsystem, tags, dependency graph (requires/provides/affects), tech-stack (added/patterns), key-files (created/modified), decisions, metrics (duration, completed date), status (`status: complete` — required so the audit-open scanner recognises the summary as done), and `actuals` (#2632).
+**Frontmatter:** phase, plan, subsystem, tags, dependency graph (requires/provides/affects), tech-stack (added/patterns), key-files (created/modified), decisions, metrics (duration, completed date), status (`status: complete` — required so the audit-open scanner recognises the summary as done), and `actuals`.
 
 **`actuals` (required when the plan carried an `estimate`):** record what the phase ACTUALLY cost, on the SAME scale the estimate used — `estimateTokens` (chars/4) over the realized diff, NOT a harness token count. Mixing scales measures the measurement methods, not the miss.
 ```yaml
 actuals:
   tokens: 74000    # chars/4 over the files you actually changed
   tasks: 5         # tasks completed
-  commits: 7       # MEASURED: git rev-list --count ${PLAN_HEAD_BEFORE}..HEAD (#3968)
+  commits: 7       # MEASURED: git rev-list --count ${PLAN_HEAD_BEFORE}..HEAD
 ```
 These pair with the plan's `estimate` to calibrate future estimates (ADR-2629). Do not round to look closer to the estimate — a flattering number corrupts every later projection.
 
-**`commits:` is measured, never narrated (#3968).** At SUMMARY write, read the persisted
+**`commits:` is measured, never narrated.** At SUMMARY write, read the persisted
 ledger (protocol 0c — a fresh shell per Bash call; the base comes from disk):
 ```bash
 PLAN_HEAD_BEFORE=$(cat "$(git rev-parse --git-dir)/gsd-plan-head-before-{phase}-{plan}")
@@ -752,7 +752,7 @@ Or: "None - plan executed exactly as written."
 
 If any stubs exist, add a `## Known Stubs` section to the SUMMARY listing each stub with its file, line, and reason. These are tracked for the verifier to catch. Do NOT mark a plan as complete if stubs exist that prevent the plan's goal from being achieved — either wire the data or document in the plan why the stub is intentional and which future plan will resolve it.
 
-**Broken-windows ledger (issue #1950).** For each stub, skipped test, or unrun `<verify>` recorded above, ALSO record it in assigned SUMMARY Remaining for the coordinator; the source cross-phase `.planning/WINDOWS.md` ledger below is illustrative and is not created by local workers. The local coordinator keeps required unresolved gaps visible and blocks publication on acceptance/verification evidence, so a stub written here is visible at ship time even after the per-phase SUMMARY scrolls out of context. Append one entry per defect:
+**Broken-windows ledger.** For each stub, skipped test, or unrun `<verify>` recorded above, ALSO record it in assigned SUMMARY Remaining for the coordinator; the source cross-phase `.planning/WINDOWS.md` ledger below is illustrative and is not created by local workers. The local coordinator keeps required unresolved gaps visible and blocks publication on acceptance/verification evidence, so a stub written here is visible at ship time even after the per-phase SUMMARY scrolls out of context. Append one entry per defect:
 
 > Source-runtime example only. Do not execute this SDK/host block here; apply the
 > matching local operation in `.ai/references/agent-adaptation.md`.
@@ -868,7 +868,7 @@ gsd_run query state.add-blocker --text "Blocker description"
 <final_commit>
 
 **Local operation:** Local worker commit: stage only assigned changed files and SUMMARY with native git add and git commit, using a nonempty descriptive message. Do not stage STATE, ROADMAP or REQUIREMENTS. Source SDK skip/envelope examples below do not waive the local commit contract.
-This commit must re-run the Step 0 assertion above (#3819).
+This commit must re-run the Step 0 assertion above.
 > Source-runtime example only. Do not execute this SDK/host block here; apply the
 > matching local operation in `.ai/references/agent-adaptation.md`.
 
@@ -879,7 +879,7 @@ gsd_run query commit "docs({phase}-{plan}): complete [plan-name] plan" --files \
 
 Separate from per-task commits — captures execution results only.
 
-**Handling the SDK return envelope (#3678):** `gsd-tools query commit` returns
+**Handling the SDK return envelope:** `gsd-tools query commit` returns
 one of these shapes:
 
 - `{committed: true, hash, reason: 'committed'}` — commit succeeded; record
@@ -894,13 +894,13 @@ one of these shapes:
 - `{committed: false, reason: 'nothing_to_commit' | 'commit_failed', ...}` —
   no-op / genuine failure; surface in the completion notes.
 - `{committed: false, reason: 'commit_timeout', timed_out: true, error}` —
-  `git commit` itself was timeout-killed mid-hook (#3886). Nothing committed.
+  `git commit` itself was timeout-killed mid-hook. Nothing committed.
   Unlike `staging_timeout`, a retry CAN succeed after removing the stale lock
   the error names (`…/index.lock`): verify no git process is running, remove
   it, address why the pre-commit hook exceeded the band (or stage fewer
   changes), then retry once.
 - `{committed: false, reason: 'staging_failed' | 'staging_timeout', file, error}` —
-  `git add` itself failed (#2608), e.g. an unwritable index. Nothing committed,
+  `git add` itself failed, e.g. an unwritable index. Nothing committed,
   index rolled back. Surface `file` + `error` (git's stderr); do not retry — a
   retry hits the same cause.
 
@@ -908,7 +908,7 @@ one of these shapes:
 SDK returns `skipped: true`. The SDK's skip is the user's deliberate choice
 to keep `.planning/` files out of git history. Force-staging gitignored
 content via `git add -f .planning/...` is forbidden — that bug is exactly
-the regression #3678 reported, where the agent leaks `.planning/` artifacts
+the reported regression, where the agent leaks `.planning/` artifacts
 into the user's project history.
 </final_commit>
 

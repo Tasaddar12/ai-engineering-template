@@ -180,7 +180,6 @@ Updated after each plan completion.
   the todo-file link is repo-relative, so the cap does not depend on checkout path length)
 - `None yet.` when there are no pending todos
 - No collapse-by-count fallback — every pending todo gets its own line, always
-  (see #2618 design doc for why a "count if many" fallback was rejected)
 
 **Blockers/Concerns:** From "Next Phase Readiness" sections
 - Issues that affect future work
