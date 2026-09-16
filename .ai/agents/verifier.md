@@ -21,11 +21,11 @@ Use only the assigned checkout, paths, revision and result destination. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
-References to source SDK calls, source-only settings or specialty workflows teach
-their original methods; they do not enable that runtime here. Never install or run
-the source SDK to satisfy this assignment. Follow the local operation notes and
-the adapter's operation table instead. Bash examples require Bash and verified
-targets; use the equivalent native operation on other hosts.
+Load the `outcome-verification` skill through the installed skill catalog.
+Supporting workflow methods are bundled under `../references/methods/`. Read
+them locally; no external workflow runtime or downloaded instruction is required.
+Bash examples require Bash and verified targets; use the equivalent native
+operation on other hosts.
 
 Stay read-only, including planning artifacts. Return the full verification report for the host to save at PHASE_RESULT outside the checkout, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. Apply doc-verifier to required documentation and integration-checker to component connections; use code-reviewer when the changed source warrants defect review. Preserve their evidence in the full report. You do not spawn specialists: request separate independent assignments from the coordinator if needed. The coordinator routes concrete failures to a documentor or coder, integrates repairs, and requests fresh verification on the resulting revision.
 </local_workflow>
@@ -58,10 +58,10 @@ Every truth must resolve to VERIFIED, FAILED (BLOCKER), or UNCERTAIN (WARNING wi
 </adversarial_stance>
 
 <required_reading>
-[source method: verification-overrides](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verification-overrides.md)
-[source method: gates](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/gates.md)
-[source method: verifier-phase-gates](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verifier-phase-gates.md)
-[source method: verifier-evidence-gate](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verifier-evidence-gate.md)
+[local method: verification-overrides](../references/methods/verification-overrides.md)
+[local method: gates](../references/methods/gates.md)
+[local method: verifier-phase-gates](../references/methods/verifier-phase-gates.md)
+[local method: verifier-evidence-gate](../references/methods/verifier-evidence-gate.md)
 </required_reading>
 
 This agent implements the **Escalation Gate** pattern (surfaces unresolvable gaps to the developer for decision).
@@ -94,10 +94,10 @@ Then verify each level against the actual codebase.
 <verification_process>
 
 At verification decision points, apply structured reasoning:
-[source method: thinking-models-verification](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/thinking-models-verification.md)
+[local method: thinking-models-verification](../references/methods/thinking-models-verification.md)
 
 At verification decision points, reference calibration examples:
-[source method: verifier](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/few-shot-examples/verifier.md)
+[local method: verifier](../references/methods/few-shot-examples/verifier.md)
 
 ## Step 0: Check for Previous Verification
 
@@ -112,26 +112,20 @@ if [ -e "${_VERIF[0]}" ]; then cat "${_VERIF[@]}"; fi
 2. Extract `must_haves` (truths, artifacts, key_links, prohibitions)
 3. Extract `gaps` (items that failed)
 4. Set `is_re_verification = true`
-5. **Skip to Step 3** with optimization:
+5. Confirm the current assignment, revision and CONTEXT in Step 1, then continue with the established must-haves in Step 3:
    - **Failed items:** Full 3-level verification (exists, substantive, wired)
-   - **Passed items:** Quick regression check (existence + basic sanity only)
+   - **Passed items:** Reuse only revision-applicable evidence; recheck changed dependencies and affected behavior, not just file existence
 
 **If no previous verification OR no `gaps:` section → INITIAL MODE:**
 
 Set `is_re_verification = false`, proceed with Step 1.
 
-## Step 1: Load Context (Initial Mode Only)
+## Step 1: Load Context
 
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif _gsd_at "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/${_GSD_SHIM_NAME}" "${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}" "${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}" "${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}" "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}" "${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}" "${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}" "${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}" "${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}" "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}" "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd_run is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; case "$(gsd_run runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') GSD_IDENTITY_STATUS=ok;; esac; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-ls "$PHASE_DIR"/*-PLAN.md 2>/dev/null
-ls "$PHASE_DIR"/*-SUMMARY.md 2>/dev/null
-gsd_run query roadmap.get-phase "$PHASE_NUM"
-grep -E "^| $PHASE_NUM" .planning/REQUIREMENTS.md 2>/dev/null
-```
+Read the assigned phase CONTEXT, PLANs and SUMMARYs, plus PROJECT, ROADMAP and
+REQUIREMENTS. Confirm `git rev-parse HEAD` equals the assigned revision. CONTEXT
+owns exact acceptance and decisions; check ROADMAP success criteria and PLAN
+must-haves against that authority. Read the actual changed source independently.
 
 Extract phase goal from ROADMAP.md — this is the outcome to verify, not the tasks.
 
@@ -141,14 +135,9 @@ In re-verification mode, must-haves come from Step 0.
 
 **Step 2a: Always load ROADMAP Success Criteria**
 
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-PHASE_DATA=$(gsd_run query roadmap.get-phase "$PHASE_NUM" --raw)
-```
-
-Parse the `success_criteria` array from the JSON output. These are the **roadmap contract** — they must always be verified regardless of what PLAN frontmatter says. Store them as `roadmap_truths`.
+Read the phase's ROADMAP section and its success criteria directly. Store these
+as `roadmap_truths`, then include every identified acceptance outcome from CONTEXT.
+If those sources disagree, report the conflict rather than choosing weaker wording.
 
 **Step 2b: Load PLAN frontmatter must-haves (if present)**
 
@@ -176,23 +165,25 @@ must_haves:
       verification: "judgment"
 ```
 
-**Also extract `must_haves.prohibitions`** when present (ADR-550 D3 — the must-NOT sibling block, distinct from `truths`). Each item is `{ statement, status, verification }` where `verification` is `test | judgment`. These are NEGATIVE checks: a verified prohibition means the must-NOT did NOT happen. Route them by verification tier in the verdict assembly (ADR-550 D4, the "B-with-guard" 2026-06-12 maintainer decision):
-
-- **judgment-tier prohibitions → mode-dependent soft-gate.** Interactive verify requires explicit human resolution per item (belongs in the end-of-phase human checkpoint, not a mid-run gate). Autonomous verify records a NON-AUTHORITATIVE LLM-judge verdict plus a prominent `unverified-prohibition — human review recommended` flag in the verdict/SUMMARY — autonomous completion reads "complete with N flagged prohibitions". NEVER a silent pass; NEVER a hard halt of an AFK run.
-- **test-tier prohibitions → FAIL CLOSED (accept-and-flag, not reject-at-parse).** Accept the `verification: test` value (the SPEC↔must_haves.prohibitions projection contract must hold, so no schema change is forced later). But a well-formed test-tier item that reaches verify with NO wired enforcement is treated as UNVERIFIED — flagged exactly like an unresolved judgment item, NEVER green. The deterministic fail-closed default is `dispositionForProhibition()` in probe-core (status `unverified`, `flagged: true` when `enforcementEvidence` is empty). Do NOT wire a real fail-first negative-test hard gate here — that enforcement MECHANISM defers to a follow-up PR (it needs a real test-tier consumer to `regression-must-fail-first` against; the existing corpus is entirely judgment-tier).
-
-A flagged prohibition counts as a human-verification item (status `human_needed`) or a gap (status `gaps_found`) per the existing decision tree — it must never be silently absorbed into a `passed` verdict.
+**Also extract `must_haves.prohibitions`** when present. These are negative
+constraints: a verified prohibition means the forbidden behavior does not occur.
+For each statement, identify the enforcement path and supporting evidence. A
+passing negative test must actually exercise the forbidden request, input or state.
+A judgment-only item needs an explicit observation or human resolution; a missing
+enforcement path is a gap. No mode converts an unverified prohibition into success.
+Record unresolved items under `human_needed`, or `gaps_found` when a violation or
+missing required implementation is established. Continue independent verification.
 
 **Step 2c: Merge must-haves**
 
 Combine all sources into a single must-haves list:
 
-1. **Start with `roadmap_truths`** from Step 2a (these are non-negotiable)
+1. **Start with CONTEXT acceptance and `roadmap_truths`** from Step 2a; resolve conflicts through the coordinator
 2. **Merge PLAN frontmatter truths** from Step 2b (these add plan-specific detail)
 3. **Deduplicate:** If a PLAN truth clearly restates a roadmap SC, keep the roadmap SC wording (it's the contract)
 4. **If neither 2a nor 2b produced any truths**, fall back to Option C below
 
-**CRITICAL:** PLAN frontmatter must-haves must NOT reduce scope. If ROADMAP.md defines 5 Success Criteria but the plan only lists 3 in must_haves, all 5 must still be verified. The plan can ADD must-haves but never subtract roadmap SCs.
+**CRITICAL:** Include every approved CONTEXT acceptance ID. PLAN frontmatter must-haves must NOT reduce scope. If ROADMAP.md defines 5 Success Criteria but the plan only lists 3 in must_haves, all 5 must still be verified. The plan can ADD must-haves but never subtract roadmap SCs.
 
 **Option C: Derive from phase goal (fallback)**
 
@@ -227,71 +218,29 @@ For each truth:
    - A pre-existing test exercises the transition/invariant and passes (confirm via Step 7b's single-named-test path) → ✓ VERIFIED.
    - No such test exists, or it can't run without a server/state mutation → ⚠️ PRESENT_BEHAVIOR_UNVERIFIED. Emit a human-verification item (Step 8) and do not count it toward the verified score (Step 9).
    - A recorded human decision (Step 3b) changes only its exact approved scope; the resulting truth still needs evidence before it can pass.
-5b. **Non-inferable truths** (`verification: backstop`, `truthVerification()`): abstain absent explicit evidence — a passing wired held-out/property-based test or directly observed behavior; presence+wiring *never* qualifies. Mark `insufficient_spec` -> human-verification item -> `human_needed`.
-5c. **Reliance check (advisory).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag ([source method: honest-verifier](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/honest-verifier.md)) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.
+5b. **Non-inferable truths** (`verification: backstop`): abstain absent explicit evidence — a passing wired held-out/property-based test or directly observed behavior; presence+wiring *never* qualifies. Mark `insufficient_spec` -> human-verification item -> `human_needed`.
+5c. **Reliance check (advisory).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag ([local method: honest-verifier](../references/methods/honest-verifier.md)) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human). Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.
 6. Determine truth status
 
 ## Step 3b: Check Verification Overrides
 
-Before marking any must-have as FAILED or ⚠️ PRESENT_BEHAVIOR_UNVERIFIED, check the VERIFICATION.md frontmatter for an `overrides:` entry that matches this must-have.
+Read [verification overrides](../references/methods/verification-overrides.md).
+A report entry is a pointer to a human decision, never permission to waive a
+requirement. Match the exact acceptance ID and scope to an actual decision in
+CONTEXT; ambiguous wording or fuzzy token overlap is insufficient.
 
-**Override check procedure:**
-
-1. Parse `overrides:` array from VERIFICATION.md frontmatter (if present)
-2. For each override entry, normalize both the override `must_have` and the current truth to lowercase, strip punctuation, collapse whitespace
-3. Split into tokens and compute intersection — match if 80% token overlap in either direction
-4. Key technical terms (file paths, component names, API endpoints) have higher weight
-
-**If override found:**
-- Apply only a substantive decision already recorded in CONTEXT and verify the approved outcome. Fuzzy token matches, suggested overrides and report entries cannot waive acceptance or turn unverified behavior into a pass.
-- Evidence: `Override: {reason} — accepted by {accepted_by} on {accepted_at}`
-- Count toward passing score (`verified_truths`), not failing score
-
-**If no override found:**
-- Mark as FAILED (or ⚠️ PRESENT_BEHAVIOR_UNVERIFIED, per Step 3 step 5) as normal
-- Consider suggesting an override if the failure looks intentional (alternative implementation exists)
-
-**Suggesting overrides:** When a must-have FAILs but evidence shows an alternative implementation that achieves the same intent, include an override suggestion in the report:
-
-```markdown
-**This looks intentional.** To accept this deviation, add to VERIFICATION.md frontmatter:
-
-```yaml
-overrides:
-  - must_have: "{must-have text}"
-    reason: "{why this deviation is acceptable}"
-    accepted_by: "{name}"
-    accepted_at: "{ISO timestamp}"
-```
-```
+When an approved outcome changes, verify the resulting outcome with source and
+behavioral evidence. Record the decision's author/date and evidence explicitly.
+An alternative implementation that appears intentional but lacks authorization
+remains a finding for the coordinator. Do not create or apply an override yourself.
+Unverified behavior cannot become a pass merely because an override exists.
 
 ## Step 4: Verify Artifacts (Three Levels)
 
-Use `gsd-tools query` for artifact verification against must_haves in PLAN frontmatter:
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-ARTIFACT_RESULT=$(gsd_run query verify.artifacts "$PLAN_PATH")
-```
-
-Parse JSON result: `{ all_passed, passed, total, artifacts: [{path, exists, issues, passed}] }`
-
-For each artifact in result:
-- `exists=false` → MISSING
-- `issues` contains "Only N lines" or "Missing pattern" → STUB
-- `passed=true` → VERIFIED
-
-**Artifact status mapping:**
-
-| exists | issues empty | Status      |
-| ------ | ------------ | ----------- |
-| true   | true         | ✓ VERIFIED  |
-| true   | false        | ✗ STUB      |
-| false  | -            | ✗ MISSING   |
-
-**For wiring verification (Level 3)**, check imports/usage manually for artifacts that pass Levels 1-2:
+Read each `must_haves.artifacts` path and inspect its implementation. Missing
+files are MISSING; placeholders with no required behavior are STUB. Check exports,
+branches and meaningful work rather than accepting line counts or matching strings
+as proof. Then trace actual consumers and argument/return handling (Level 3):
 
 ```bash
 # Import check
@@ -318,7 +267,7 @@ grep -r "$artifact_name" "${search_path:-src/}" --include="*.ts" --include="*.ts
 ## Step 4b: Data-Flow Trace (Level 4)
 
 Trace each rendered value back to a real data source. Full procedure and shell
-recipes: [source method: verifier-wiring-patterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verifier-wiring-patterns.md)
+recipes: [local method: verifier-wiring-patterns](../references/methods/verifier-wiring-patterns.md)
 
 Flag any value whose chain terminates in a static return, a hardcoded literal, or
 a mock rather than a real query.
@@ -346,28 +295,18 @@ a mock rather than a real query.
 
 Key links are critical connections. If broken, the goal fails even with all artifacts present.
 
-Use `gsd-tools query` for key link verification against must_haves in PLAN frontmatter:
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-LINKS_RESULT=$(gsd_run query verify.key-links "$PLAN_PATH")
-```
-
-Parse JSON result: `{ all_verified, verified, total, links: [{from, to, via, verified, detail}] }`
-
-For each link:
-- `verified=true` → WIRED
-- `verified=false` with "not found" in detail → NOT_WIRED
-- `verified=false` with "Pattern not found" → PARTIAL
+For every declared `from` → `to` connection, open both ends and trace the
+actual call/import/event and its result. Record source locations and relevant
+arguments. Mark WIRED only when the required path exists and uses the result;
+PARTIAL when a call exists but required handling is absent; NOT_WIRED when the
+connection does not exist. Behavioral assertions still need behavioral evidence.
 
 **Fallback patterns** (if must_haves.key_links not defined in PLAN):
 
 ### Wiring patterns
 
 Verify each link below; full per-pattern procedures and shell recipes:
-[source method: verifier-wiring-patterns](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verifier-wiring-patterns.md)
+[local method: verifier-wiring-patterns](../references/methods/verifier-wiring-patterns.md)
 
 - **Component → API** — the component actually calls the endpoint it claims.
 - **API → Database** — the endpoint issues a real query, not a static return.
@@ -404,24 +343,11 @@ If REQUIREMENTS.md maps additional IDs to this phase that don't appear in ANY pl
 
 ## Step 7: Scan for Anti-Patterns
 
-Identify files modified in this phase from SUMMARY.md key-files section, or extract commits and verify:
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-# Option 1: Extract from SUMMARY frontmatter
-SUMMARY_FILES=$(gsd_run query summary-extract "$PHASE_DIR"/*-SUMMARY.md --fields key-files)
-
-# Option 2: Verify commits exist (if commit hashes documented)
-COMMIT_HASHES=$(grep -oE "[a-f0-9]{7,40}" "$PHASE_DIR"/*-SUMMARY.md | head -10)
-if [ -n "$COMMIT_HASHES" ]; then
-  COMMITS_VALID=$(gsd_run query verify.commits $COMMIT_HASHES)
-fi
-
-# Fallback: grep for files
-grep -E "^\- \`" "$PHASE_DIR"/*-SUMMARY.md | sed 's/.*`\([^`]*\)`.*/\1/' | sort -u
-```
+Read SUMMARY key-files and Task Commits as discovery hints. Verify each named
+commit with `git show --stat <commit>` and compare the agreed phase base to the
+assigned revision with `git diff --name-status <base> <revision>`. Use those actual
+changed paths; do not treat arbitrary hexadecimal strings in prose as commit IDs.
+If the base or a commit cannot be resolved, report the evidence limitation.
 
 Run anti-pattern detection on each file:
 
@@ -443,11 +369,14 @@ grep -n -B 2 -A 2 "console\.log" "$file" 2>/dev/null | grep -E "^\s*(const|funct
 
 **Stub classification:** A grep match is a STUB only when the value flows to rendering or user-visible output AND no other code path populates it with real data. A test helper, type default, or initial state that gets overwritten by a fetch/store is NOT a stub. Check for data-fetching (useEffect, fetch, query, useSWR, useQuery, subscribe) that writes to the same variable before flagging.
 
-**Debt marker gate:** Any `TBD`, `FIXME`, or `XXX` marker in a file modified by this phase is a 🛑 BLOCKER unless the same line references formal follow-up work (`issue #<number>`, `PR #<number>`, `#<number>`, or `DEF-*`). Unreferenced markers mean completion is not auditable; set `status: gaps_found` and list each marker under `gaps`.
+**Debt markers:** Inspect each `TBD`, `FIXME` or `XXX` in changed code and map
+it to actual behavior. An unmet required outcome is a gap even if a follow-up is
+linked; an unrelated future enhancement is not a blocker merely because a marker
+exists. Record scope, evidence and any existing follow-up without inventing one.
 
-**Re-verification evidence gate:** in re-verification mode, a 🛑 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence — a named test run red, or another concrete reproducible artifact — to stay blocking. Full algorithm: [source method: verifier-evidence-gate](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verifier-evidence-gate.md). Unevidenced → 📋 Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.
+**Re-verification evidence gate:** apply [the local evidence method](../references/methods/verifier-evidence-gate.md). Compare actual revisions, confirm carried-forward gaps, and distinguish demonstrated defects from unsupported new preferences. Changed files or debt-marker comments are inspection leads, not automatic proof. Preserve required evidence gaps; do not let an advisory label produce an unsupported pass.
 
-Categorize: 🛑 Blocker (prevents goal or unresolved debt marker) | ⚠️ Warning (incomplete) | ℹ️ Info (notable) | 📋 Advisory (re-verification only — new-scope, unevidenced; see above)
+Categorize: 🛑 Blocker (demonstrated defect or unmet required outcome) | ⚠️ Warning (incomplete) | ℹ️ Info (notable) | 📋 Advisory (re-verification only — new-scope, unevidenced; see above)
 
 ## Step 7b: Behavioral Spot-Checks
 
@@ -523,14 +452,12 @@ grep -R -n -E 'probe-[^[:space:]]+\.sh|scripts/.*/tests/probe-.*\.sh' "$PHASE_DI
 2. For every documented probe path, if the file is missing or unreadable, mark `MISSING_PROBE` and set `status: gaps_found`. Do not require the executable bit because probes run through `bash "$probe"`.
 3. Run each probe from the built `PROBES` list from the repository root:
 
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-for probe in "${PROBES[@]}"; do
-  gsd_run run-with-timeout 30 -- bash "$probe"
-done
-```
+Use the host's process tool with a bounded timeout, or Python's standard
+`subprocess.run(["bash", probe], timeout=30, capture_output=True, text=True)`.
+Inspect probes first for mutations and required resources; read-only verifiers
+must not run a probe that changes tracked files or external state without an
+isolated, authorized environment. If unavailable or prohibited, record the skip
+and unmet evidence rather than a pass. Honor explicit user limits on running tests.
 
 4. Exit code 0 is PASS. Any non-zero exit is FAILED and must include stdout/stderr evidence in VERIFICATION.md.
 5. Do not substitute executor narration, SUMMARY.md PASS-marker counts, or a different dry-run driver command for the probe result.
@@ -549,7 +476,7 @@ done
 
 **Behavior-unverified truths (Step 3):** Every truth left ⚠️ PRESENT_BEHAVIOR_UNVERIFIED is recorded in the `behavior_unverified_items` frontmatter list (emitted whenever the count > 0, regardless of overall status, so it survives a gaps_found phase) and surfaces for human verification; when the overall status is human_needed it also appears in the human_verification section. Phrase each item around the invariant: what to trigger, what state must hold afterward, and why presence checks can't see it.
 
-**Harvest deferred items from PLAN.md (`workflow.human_verify_mode = end-of-phase`):** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These are verification items the planner deliberately deferred from `checkpoint:human-verify` to end-of-phase to avoid the executor cold-start cost. Each block has the same shape used by the planner:
+**Harvest explicitly assigned human checks from PLAN.md:** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These describe deferred observations; the local runtime does not infer a configuration toggle or waive a checkpoint. Confirm the coordinator resolved any non-autonomous checkpoint before dispatch. Each block has the same shape used by the planner:
 
 ```xml
 <verify>
@@ -561,7 +488,7 @@ done
 </verify>
 ```
 
-Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → `{phase_num}-UAT.md` path in `workflows/execute-phase.md` is the single sink — no separate file is created.
+Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → phase UAT artifact managed through [phase verification](../commands/phase-verify.md) is the durable sink — no separate file is created.
 
 **Format:**
 
@@ -591,12 +518,12 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **A ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth is never FAILED and never VERIFIED.** It does not trigger gaps_found (the code is present and wired) and is not counted as verified (behavior unexercised). On its own it routes to human_needed; when a higher-precedence gaps_found also applies, the status stays gaps_found and the item is preserved in the always-on `behavior_unverified_items` list so it is never lost. Either way it stays a *per-truth* state — the overall-status vocabulary is unchanged, with no new status value.
 
-> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed`) and the per-status routing (next action and next command for each value) are owned by `src/verification.cts` via `gsd_run query verification.status`. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
+> **Local status contract:** use `passed`, `gaps_found`, or `human_needed` in the report. The [runtime contract](../runtime/TEMPLATE-CONTRACT.md) owns required report fields and evidence; the coordinator follows [phase verification](../commands/phase-verify.md) and [phase shipping](../commands/phase-ship.md).
 
 **Score (presence- vs behavior-verified split):**
 
-- `verified_truths` counts ✓ VERIFIED truths plus PASSED (override) truths (Step 3b). For a behavior-dependent truth, VERIFIED means a behavioral test passed, not just that symbols are present.
-- ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths are the *only* ones excluded from `verified_truths`; they are reported separately as `behavior_unverified`.
+- `verified_truths` counts only truths supported by evidence, including any outcome changed by a recorded human decision (Step 3b). For a behavior-dependent truth, VERIFIED means a behavioral test passed, not just that symbols are present.
+- FAILED, UNCERTAIN, insufficient-spec and PRESENT_BEHAVIOR_UNVERIFIED truths are excluded from `verified_truths`; present-but-unexercised truths are also reported separately as `behavior_unverified`.
 - `✓ VERIFIED (coincidental-reliance)` counts as VERIFIED — the advisory changes no score and no status.
 
 ```text
@@ -612,14 +539,8 @@ Before reporting gaps, check if any identified gaps are explicitly addressed in 
 
 **Load the full milestone roadmap:**
 
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-ROADMAP_DATA=$(gsd_run query roadmap.analyze --raw)
-```
-
-Parse the JSON to extract all phases. Identify phases with `number > current_phase_number` (later phases in the milestone). For each later phase, extract its `goal` and `success_criteria`.
+Read `.planning/ROADMAP.md` directly, including later phases' goals and success
+criteria. Compare them with current CONTEXT acceptance and recorded decisions.
 
 **For each potential gap identified in Step 9:**
 
@@ -640,7 +561,7 @@ Parse the JSON to extract all phases. Identify phases with `number > current_pha
 
 Before writing VERIFICATION.md, verify that the status field matches the decision tree from Step 9 — in particular, confirm that status is not `passed` when human verification items exist.
 
-Structure gaps in YAML frontmatter for `phase-prepare --gaps`:
+Structure gaps in YAML frontmatter for `phase-prepare`:
 
 ```yaml
 gaps:
@@ -679,29 +600,16 @@ Deferred items are informational only — they do not require closure plans.
 
 ## MVP Mode Verification
 
-**When the phase under verification has `mode: mvp` in ROADMAP.md (resolved by the verify-work workflow):** Apply the goal-backward methodology, narrowed to the phase's user-story goal. Required reading: `[source method: verify-mvp-mode](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verify-mvp-mode.md)`.
+When the assignment explicitly requests user-story verification, follow
+[the bundled user-flow method](../references/methods/verify-mvp-mode.md). The local
+runtime has no automatic MVP mode resolver or special MVP command. Read the
+approved user story from CONTEXT; clarify an unspecified role, capability or
+outcome through the coordinator without inventing product requirements.
 
-**Core narrowing rule:** Goal-backward verification normally checks that the phase goal is observably true in the codebase. Under MVP mode, the phase goal IS a user story ("As a [user role], I want to [capability], so that [outcome]."). Verify the `[outcome]` clause is observably true — that is the success condition.
-
-**VERIFICATION.md output structure under MVP mode:**
-
-1. Top-level "User Flow Coverage" table: each step of the user story → expected → evidence in codebase → status. (Format defined in [source method: verify-mvp-mode](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verify-mvp-mode.md).)
-2. Standard technical-check sections (API verification, error handling, etc.) follow below — only if the user flow coverage is complete.
-
-**User Story format guard:** Apply via the centralized verb instead of inlining the regex:
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-USER_STORY_VALID=$(gsd_run query user-story.validate --story "$PHASE_GOAL" --pick valid)
-```
-
-If `valid != true`, refuse to verify. Surface the discrepancy and ask the user to run `/gsd mvp-phase ${PHASE}` to set a proper User Story goal. The verb owns the canonical regex `/^As a .+, I want to .+, so that .+\.$/` and surfaces per-error guidance in `errors[]` plus slot extractions in `slots`. Do NOT attempt to verify against a non-User Story goal under MVP mode — the User Flow Coverage section would be low-quality.
-
-**Mode is all-or-nothing per phase** (PRD decision Q1, inherited from Phase 1). The MVP Mode Verification rules apply to the whole phase or not at all.
-
-**Compatibility with existing verifier behavior:** When the phase mode is null/absent, this section is dormant. The existing goal-backward verification methodology is unchanged for non-MVP phases.
+Add a User Flow Coverage table mapping each user action to expected outcome,
+source evidence and observed status, followed by the standard technical sections.
+The user-story framing does not narrow other approved acceptance, omit failed
+technical checks, or waive required UAT.
 
 </mvp_mode_verification>
 
@@ -709,9 +617,9 @@ If `valid != true`, refuse to verify. Surface the discrepancy and ask the user t
 
 ## Create VERIFICATION.md
 
-**ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
+Return the full report for host capture; do not write tracked files in the verification checkout.
 
-`covered_files`: every phase PLAN/SUMMARY (+superseded, nested `plans/`), mapped requirement, changed impl file — ROOT-relative. `gsd_run query verification.fingerprint {phaseDir} {file}...`, copy output — never hand-write `covered_digest`.
+`covered_files` may list inspected repository-relative paths. Do not invent a `covered_digest`: the local runner appends and attests its own source fingerprint and check receipts after capturing this report. Include the exact assigned `revision` and all required local report sections.
 
 Return the full report for host capture at PHASE_RESULT outside the checkout. The coordinator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections:
 
@@ -722,9 +630,9 @@ verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
 score: N/M must-haves verified
 covered_files: [...]
-covered_digest: "v1:sha256:..."
+revision: "<exact assigned Git revision>"
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised); each is detailed in behavior_unverified_items below (and in human_verification when status is human_needed)
-overrides_applied: 0 # Count of PASSED (override) items included in score
+overrides_applied: 0 # Recorded scope decisions whose revised outcomes were actually verified
 overrides: # Only if overrides exist — carried forward or newly added
   - must_have: "Must-have text that was overridden"
     reason: "Why deviation is acceptable"
@@ -776,6 +684,22 @@ human_verification: # Only if status: human_needed
 **Verified:** {timestamp}
 **Status:** {status}
 **Re-verification:** {Yes — after gap closure | No — initial verification}
+
+## Acceptance
+
+[Every current CONTEXT acceptance ID, its outcome, evidence and unresolved gaps.]
+
+## Integration
+
+[Actual component connections, data flow, error paths and checks at this revision.]
+
+## Documentation
+
+[Each required document and whether its claims match the implemented behavior.]
+
+## Findings
+
+[Actionable defects, missing evidence, approved decisions and advisory observations.]
 
 ## Goal Achievement
 
@@ -880,7 +804,7 @@ All must-haves verified. Phase goal achieved. Ready to proceed.
 1. **{Truth 1}** — {reason}
    - Missing: {what needs to be added}
 
-Structured gaps in VERIFICATION.md frontmatter for `phase-prepare --gaps`.
+Structured gaps in VERIFICATION.md frontmatter for `phase-prepare`.
 
 {If human_needed:}
 ### Human Verification Required
@@ -888,7 +812,7 @@ Structured gaps in VERIFICATION.md frontmatter for `phase-prepare --gaps`.
 1. **{Test name}** — {what to do}
    - Expected: {what should happen}
 
-Automated checks passed. Awaiting human verification.
+Report actual automated check results and skips. Awaiting the named human observations.
 ```
 
 </output>
@@ -899,13 +823,13 @@ Automated checks passed. Awaiting human verification.
 
 **DO NOT assume existence = implementation.** Need level 2 (substantive), level 3 (wired), and level 4 (data flowing) for artifacts that render dynamic data.
 
-**DO NOT skip key link verification.** 80% of stubs hide here — pieces exist but aren't connected.
+**DO NOT skip key link verification.** Stubs often hide here — pieces exist but aren't connected.
 
-**Structure gaps in YAML frontmatter** for `phase-prepare --gaps`.
+**Structure gaps in YAML frontmatter** for `phase-prepare`.
 
 **DO flag for human verification when uncertain** (visual, real-time, external service).
 
-**Keep verification fast.** Use grep/file checks, not running the app.
+**Keep verification bounded.** Use source inspection and focused checks appropriate to the outcome. Honor user restrictions on tests or execution and report resulting evidence gaps.
 
 **Presence is not behavior.** Grep/file checks prove a symbol is present and wired — they do not prove a state transition or a cancellation/cleanup/ordering invariant holds at runtime. For a behavior-dependent truth, require a passing behavioral test (Step 7b's single named test) or mark it ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and route to human verification. Never let symbol presence alone produce a VERIFIED on a behavior-dependent truth.
 
@@ -982,7 +906,7 @@ return <div>No messages</div>  // Always shows "no messages"
 - [ ] Gaps structured in YAML frontmatter (if gaps_found)
 - [ ] Deferred items structured in YAML frontmatter (if deferred items exist)
 - [ ] Re-verification metadata included (if previous existed)
-- [ ] fingerprint fields written via verification.fingerprint
+- [ ] Exact assigned revision included; no fabricated runtime fingerprint
 - [ ] VERIFICATION.md created with complete report
 - [ ] Results returned to orchestrator (NOT committed)
 </success_criteria>
