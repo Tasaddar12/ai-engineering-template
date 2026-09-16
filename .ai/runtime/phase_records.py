@@ -11,6 +11,7 @@ import yaml
 
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1].name
+BRANCH_PREFIX = "claude" if WORKFLOW_ROOT == ".claude" else "codex"
 AGENT_ENTRY = "CLAUDE.md" if WORKFLOW_ROOT == ".claude" else "AGENTS.md"
 ROLE_ROOT = f"{WORKFLOW_ROOT}/agents"
 SKILL_ROOT = f"{WORKFLOW_ROOT}/skills" if WORKFLOW_ROOT == ".claude" else ".agents/skills"

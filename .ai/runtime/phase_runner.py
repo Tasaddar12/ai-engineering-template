@@ -18,7 +18,7 @@ import yaml
 
 from phase_records import (PhaseError, commands, git, load_phase, overlaps, owns,
                            read_yaml, record, require, safe_path, section, string_list, file_template, phase_goal,
-                           WORKFLOW_ROOT, ROLE_ROOT, SKILL_ROOT, AGENT_ENTRY)
+                           WORKFLOW_ROOT, ROLE_ROOT, SKILL_ROOT, AGENT_ENTRY, BRANCH_PREFIX)
 
 
 class CheckMutation(PhaseError):
@@ -436,7 +436,7 @@ def create_worker(phase, component, state):
     token = uuid.uuid4().hex[:8]
     parent = primary(root)
     path = parent / ".worktrees" / f"phase-{component.id}-{token}"
-    branch = f"codex/phase-{component.id}-{token}"
+    branch = f"{BRANCH_PREFIX}/phase-{component.id}-{token}"
     entry = {"status": "creating", "worktree": str(path), "branch": branch,
              "base": revision(root), "instruction": hashlib.sha256(component.path.read_bytes()).hexdigest()}
     state["components"][component.id] = entry
@@ -668,7 +668,7 @@ def verify_phase(phase, workers_stopped=False):
         attempt = {"status": "creating", "worktree": str(path), "revision": source_revision, "source": fingerprint}
         state["verification_attempt"] = attempt
         save(phase, state)
-        git(phase.root, "worktree", "add", "-b", f"codex/phase-{phase.number}-verify-{token}", str(path), source_revision)
+        git(phase.root, "worktree", "add", "-b", f"{BRANCH_PREFIX}/phase-{phase.number}-verify-{token}", str(path), source_revision)
 
         def before_start(result, log, receipt):
             attempt.update(status="launching", result=str(result), log=str(log), receipt=str(receipt))
