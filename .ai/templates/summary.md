@@ -185,7 +185,7 @@ None - no external service configuration required.
 
 **Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
 
-**Status:** For the local Python runtime, use `status: complete` only when assigned requirements, acceptance and documentation are covered and checks support completion. Use `status: blocked` when incomplete and explain remaining gaps. The upstream `halted` convention describes a designed stop; the local runtime requires `blocked` for that result and refuses integration until a complete summary is provided.
+**Status (#2830):** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
 </frontmatter_guidance>
 
 <coverage_guidance>
