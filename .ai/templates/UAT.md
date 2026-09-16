@@ -115,12 +115,12 @@ blocked: [N]
 **After testing complete (status: complete), if gaps exist:**
 
 1. Coordinator routes the observed failure to bounded debugger diagnosis within the authorized scope
-2. diagnose-issues workflow spawns parallel debug agents
+2. Coordinator assigns bounded investigations using the local debugger role
 3. Each agent investigates one gap, returns root cause
 4. UAT.md Gaps section updated with diagnosis:
    - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
 5. status → "diagnosed"
-6. Ready for phase-prepare with the recorded verification gaps with root causes
+6. Return the diagnosed gaps to `phase-prepare` for repair planning
 
 **After diagnosis:**
 ```yaml
