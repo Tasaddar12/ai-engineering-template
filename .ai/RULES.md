@@ -208,7 +208,7 @@ records; instructional examples are not real project decisions.
 
 The [template adaptation](references/template-adaptation.md) defines local runtime, host and
 authority differences; [third-party notices](THIRD-PARTY-NOTICES.md) identify
-upstream sources and adaptation history. Complete agent methods and their pinned external supporting sources
+upstream sources and adaptation history. Complete agent methods and their bundled local supporting documents
 supply guidance, not installed slash commands. Use actual local procedures and
 the runtime contract for execution.
 Project records belong to `.planning/`; reusable rules, templates and tooling

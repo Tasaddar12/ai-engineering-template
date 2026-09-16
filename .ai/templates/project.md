@@ -143,8 +143,12 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 <evolution>
 
 PROJECT.md evolves throughout the project lifecycle.
-These rules are embedded in the generated PROJECT.md (## Evolution section)
-and implemented by https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/transition.md and https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/complete-milestone.md.
+The coordinator applies the checklist below after inspecting phase summaries,
+verification, actual human observations and delivery state. Follow the local
+[phase-status](../commands/phase-status.md) and [phase-ship](../commands/phase-ship.md)
+procedures; no separate transition or milestone command is installed. Workers
+return evidence and proposed updates instead of editing shared project records.
+Completing one phase does not authorize implementation of the next.
 
 **After each phase transition:**
 1. Requirements invalidated? → Move to Out of Scope with reason
@@ -217,8 +221,8 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 `.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
 examples describe supporting source capabilities; no JSON config template is shipped;
 this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

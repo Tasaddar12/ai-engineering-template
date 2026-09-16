@@ -4,8 +4,8 @@
 [the workflow guide](../guides/PHASE-WORKFLOW.md). It consumes Markdown records
 with complete phase template bodies and additive YAML execution fields and
 [config.yaml](../../.planning/config.yaml). The Python runtime requires no schema
-files, schedule snapshots or separate work-item registry. Optional upstream
-methods and schema sources remain available in the imported library.
+files, schedule snapshots or separate work-item registry. Supporting agent methods are bundled locally under `references/methods/`;
+reading the workflow does not require a separate SDK or external schema generator.
 Python 3.11+ and PyYAML are required. Install `requirements.txt` into the host's
 virtual environment. Git and the chosen worker executable must be available;
 publication additionally requires an authenticated GitHub CLI.
@@ -15,6 +15,10 @@ It locates rules, role methods, workflow procedures and skills in the same host
 layout. Project records remain under `.planning`. Commands and references in
 the installed guides use the selected layout; the template authoring checkout
 continues to use its internal layout.
+
+New worker and verifier branches use the installed host name (`claude` or `codex`)
+followed by `/phase-...`. The authoring checkout defaults to the Codex prefix.
+Existing recorded branch names remain unchanged during recovery.
 
 Run from an assigned immediate-child worktree under the primary checkout's
 ignored `.worktrees/`. Commands use the current repository and named branch.

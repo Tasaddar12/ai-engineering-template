@@ -59,7 +59,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 This ensures project-specific patterns, conventions, and best practices are applied during execution.
 
 <why_this_matters>
-**These documents are consumed by other GSD commands:**
+**These documents inform the local research and phase-preparation procedures:**
 
 **`phase-prepare`** loads relevant codebase docs when creating implementation plans:
 | Phase Type | Documents Loaded |

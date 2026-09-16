@@ -371,8 +371,8 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 `.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
 examples describe supporting source capabilities; no JSON config template is shipped;
 this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

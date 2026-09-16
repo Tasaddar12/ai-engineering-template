@@ -48,7 +48,7 @@ Output: [What artifacts will be created]
 @.ai/commands/phase-start.md
 @.ai/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
-https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md
+.ai/references/methods/checkpoints.md
 </execution_context>
 
 <context>
@@ -92,7 +92,7 @@ https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e49
   <done>[Acceptance criteria]</done>
 </task>
 
-<!-- For checkpoint task examples and patterns, see https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md -->
+<!-- For checkpoint task examples and patterns, see .ai/references/methods/checkpoints.md -->
 
 <task type="checkpoint:decision" gate="blocking">
   <decision>[What needs deciding]</decision>
@@ -391,7 +391,7 @@ Output: Working dashboard component.
 <execution_context>
 @.ai/commands/phase-start.md
 @.ai/templates/summary.md
-https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md
+.ai/references/methods/checkpoints.md
 </execution_context>
 
 <context>
@@ -629,8 +629,8 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 `.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
 examples describe supporting source capabilities; no JSON config template is shipped;
 this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

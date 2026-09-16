@@ -122,7 +122,7 @@ Do NOT verify the following:
 - **Quoted prose**: Claims inside quotation marks attributed to a vendor or third party ("according to the vendor...", "the npm documentation says...").
 - **Example prefixes**: Any claim immediately preceded by "e.g.", "example:", "for instance", "such as", or "like:".
 - **Placeholder paths**: Paths containing `your-`, `<name>`, `{...}`, `example`, `sample`, `placeholder`, or `my-`. These are templates, not real paths.
-- **GSD marker**: The comment `<!-- generated-by: doc-writer -->` — skip entirely.
+- **generation marker**: The comment `<!-- generated-by: doc-writer -->` — skip entirely.
 - **Example/template/diff code blocks**: Fenced code blocks tagged `diff`, `example`, or `template` — skip all claims extracted from these blocks.
 - **Version numbers in prose**: Strings like "`3.0.2`" or "`v1.4`" that are version references, not paths or functions.
 </skip_rules>

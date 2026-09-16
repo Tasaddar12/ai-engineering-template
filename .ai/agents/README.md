@@ -39,8 +39,8 @@ Eleven complete, non-compact source agents are adapted here. Coordinator remains
 the local scheduling role; documentation assignments read doc-writer directly. Optional
 upstream agents for dedicated UI/DOM, security, AI/eval, domain-specific research,
 profiling, knowledge-store curation and milestone services are not installed.
-Their useful general checks remain in the selected full methods. Pinned external
-supporting references do not register those omitted agents or workflows.
+Their useful general checks remain in the selected full methods. Bundled local
+supporting methods do not register those omitted agents or workflows.
 
 [notices](../THIRD-PARTY-NOTICES.md) preserve the license and attribution.
 

@@ -6,18 +6,16 @@ Template for `.planning/STATE.md` — the project's living memory.
 
 ## File Template
 
-The source frontmatter block below was generated from `STATE_FIELD_SCHEMA`
-([source schema](https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/state-md-schema.cts),
-[source ADR](https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/docs/adr/3473-enforcement-by-construction.md) §8.8)
-by the [source generator](https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/scripts/gen-state-md-docs.cjs)
-with `--write` — do not hand-edit the source-generated schema region; the body
-below it is hand-authored. That generator is external reference material, not a
-local command. The local runtime's STATE behavior is defined in TEMPLATE-CONTRACT.
+The frontmatter below is authoring metadata. The coordinator maintains it from
+actual project evidence; no external schema generator or hidden state command is
+required. The local runtime's `sync` operation updates only the dedicated Runtime
+Status section, preserving the authored body and frontmatter. See the
+[STATE contract](../runtime/TEMPLATE-CONTRACT.md).
 
-<!-- STATE-MD-SCHEMA:START:frontmatter — source-generated schema; see pinned generator and schema above; do not edit by hand -->
+<!-- STATE-MD-SCHEMA:START:frontmatter -->
 ```markdown
 ---
-workflow_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on first state.* call
+workflow_state_version: '1.0'  # authoring metadata; coordinator maintains from observed evidence
 status: planning
 progress:
   total_phases: 0
@@ -221,8 +219,8 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 `.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
 examples describe supporting source capabilities; no JSON config template is shipped;
 this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->
