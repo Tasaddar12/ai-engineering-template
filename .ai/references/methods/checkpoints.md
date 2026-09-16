@@ -439,31 +439,27 @@ I'll verify: vercel whoami returns your account
 | Supabase | `supabase secrets set` | `supabase secrets set MY_SECRET=value` |
 
 **Secret collection pattern:**
+
+Use the host's secure secret-entry or authentication flow when available. If no
+secure automation path exists, the user may enter the value directly in the
+provider's secure UI; then resume the automatable work. Do not ask the user to
+paste secrets into the conversation, interpolate them into logged commands, or
+read them back for verification.
+
 ```xml
-<!-- WRONG: Asking user to add env vars in dashboard -->
 <task type="checkpoint:human-action">
-  <action>Add OPENAI_API_KEY to Convex dashboard</action>
-  <instructions>Go to dashboard.convex.dev → Settings → Environment Variables → Add</instructions>
-</task>
-
-<!-- RIGHT: the agent asks for value, then adds via CLI -->
-<task type="checkpoint:human-action">
-  <action>Provide your OpenAI API key</action>
+  <action>Configure the required credential through the secure provider flow</action>
   <instructions>
-    I need your OpenAI API key for Convex backend.
-    Get it from: https://platform.openai.com/api-keys
-    Paste the key (starts with sk-)
+    Complete the provider authentication or secure secret-entry prompt.
+    Return only confirmation, not the secret value.
   </instructions>
-  <verification>I'll add it via `npx convex env set` and verify</verification>
-  <resume-signal>Paste your API key</resume-signal>
-</task>
-
-<task type="auto">
-  <name>Configure OpenAI key in Convex</name>
-  <action>Run `npx convex env set OPENAI_API_KEY {user-provided-key}`</action>
-  <verify>`npx convex env get OPENAI_API_KEY` returns the key (masked)</verify>
+  <verification>Check credential presence without printing it, then perform an authorized authenticated request.</verification>
+  <resume-signal>Confirm the secure setup is complete</resume-signal>
 </task>
 ```
+
+These are descriptive checkpoint examples. The coordinator records unresolved
+setup and prepares supported executable tasks after the prerequisite is met.
 
 ## Dev Server Automation
 
@@ -513,7 +509,7 @@ documentation; none is required just to read this workflow method.
 |---------|----------|
 | Server won't start | Check error, fix issue, retry (don't proceed to checkpoint) |
 | Port in use | Inspect ownership; use an available port or stop only an owned process |
-| Missing dependency | Run `npm install`, retry |
+| Missing dependency | Use the authorized project setup and lockfile within owned paths, or report the missing capability |
 | Build error | Fix the error first (bug, not checkpoint issue) |
 | Auth error | Create auth gate checkpoint |
 | Network timeout | Retry with backoff, then checkpoint if persistent |

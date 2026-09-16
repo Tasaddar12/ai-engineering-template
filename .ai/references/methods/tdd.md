@@ -148,7 +148,12 @@ After completion, create SUMMARY.md with:
 <framework_setup>
 ## Test Framework Setup (If None Exists)
 
-When executing a TDD plan but no test framework is configured, set it up as part of the RED phase:
+First inspect the existing project tooling and reuse its configured runner.
+If no framework is available, setup belongs in the assigned plan with ownership
+of its manifest/configuration files. Only perform installation when that setup is
+authorized; otherwise report the missing capability to the coordinator. The
+following are examples for an authorized setup, not default package choices or
+permission to install globally. Honor any instruction to defer tests.
 
 **1. Detect project type:**
 ```bash
@@ -165,7 +170,7 @@ if [ -f go.mod ]; then echo "go"; fi
 if [ -f Cargo.toml ]; then echo "rust"; fi
 ```
 
-**2. Install minimal framework:**
+**2. Select the project-approved framework (installation only when authorized):**
 | Project | Framework | Install |
 |---------|-----------|---------|
 | Node.js | Jest | `npm install -D jest @types/jest ts-jest` |

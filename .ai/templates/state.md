@@ -172,12 +172,10 @@ Updated after each plan completion.
 
 **Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
 
-**Pending Todos:** Ideas captured via /workflow-add-todo
-- One bullet per pending todo, rendered by `init.todos`'s `pending_todos_markdown`
-  (each bullet capped at 240 characters: `- [date] [area] title — [todo file](path) — Needs ...`;
-  the todo-file link is repo-relative, so the cap does not depend on checkout path length)
-- `None yet.` when there are no pending todos
-- No collapse-by-count fallback — every pending todo gets its own line, always
+**Pending Todos:** Ideas recorded by the coordinator from the current assignment.
+- Keep one concise bullet per pending item, linking to its repository record when one exists.
+- Use `None yet.` when there are no pending items.
+- Maintain this section directly; no separate todo command or generated init payload is installed.
 
 **Blockers/Concerns:** From "Next Phase Readiness" sections
 - Issues that affect future work
@@ -216,10 +214,9 @@ boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.

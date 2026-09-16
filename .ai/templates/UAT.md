@@ -106,7 +106,7 @@ blocked: [N]
 **Gaps:**
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
-- This section feeds directly into /workflow:plan-phase --gaps
+- This section feeds directly into phase-prepare with the recorded verification gaps
 
 </section_rules>
 
@@ -114,13 +114,13 @@ blocked: [N]
 
 **After testing complete (status: complete), if gaps exist:**
 
-1. User runs diagnosis (from verify-work offer or manually)
+1. Coordinator routes the observed failure to bounded debugger diagnosis within the authorized scope
 2. diagnose-issues workflow spawns parallel debug agents
 3. Each agent investigates one gap, returns root cause
 4. UAT.md Gaps section updated with diagnosis:
    - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
 5. status → "diagnosed"
-6. Ready for /workflow:plan-phase --gaps with root causes
+6. Ready for phase-prepare with the recorded verification gaps with root causes
 
 **After diagnosis:**
 ```yaml
@@ -144,7 +144,7 @@ blocked: [N]
 
 <lifecycle>
 
-**Creation:** When /workflow:verify-work starts new session
+**Creation:** When phase-uat starts new session
 - Extract tests from SUMMARY.md files
 - Set status to "testing"
 - Current Test points to test 1
@@ -171,7 +171,7 @@ blocked: [N]
 - Present summary with outstanding items highlighted
 
 **Resuming partial session:**
-- `/workflow:verify-work {phase}` picks up from first pending/blocked test
+- `phase-uat {phase}` picks up from first pending/blocked test
 - When all items resolved, status advances to "complete"
 
 **Resume after /clear:**
@@ -276,10 +276,9 @@ boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.

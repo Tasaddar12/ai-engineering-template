@@ -34,7 +34,7 @@ Template for spawning planner agent. The agent contains all planning expertise -
 </planning_context>
 
 <downstream_consumer>
-Output consumed by /workflow:execute-phase
+Output consumed by phase-start
 Plans must be executable prompts with:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format
@@ -68,7 +68,7 @@ Before returning PLANNING COMPLETE:
 
 ## Usage
 
-**From /workflow:plan-phase (standard mode):**
+**From phase-prepare (standard mode):**
 ```python
 Task(
   prompt=filled_template,
@@ -77,7 +77,7 @@ Task(
 )
 ```
 
-**From /workflow:plan-phase --gaps (gap closure mode):**
+**From phase-prepare with the recorded verification gaps (gap closure mode):**
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure
@@ -128,10 +128,9 @@ boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Bundled supporting methods provide local guidance for explicit assignments;
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.

@@ -140,14 +140,12 @@ For each task:
    - Commit (see task_commit_protocol)
    - Track completion + commit hash for Summary
 
-2. **If `type="tracer"`:** (production-quality, never a throwaway)
-   - Execute and commit exactly like `type="auto"`.
-   - **Then run the tracer feedback gate BEFORE any expansion task** — an early integration checkpoint on the proven slice. In order (full chain: "Tracer feedback gate", checkpoints.md):
-     - **`gate="blocking-human"` → STOP**, return a `checkpoint:human-verify`. Every mode, auto included (golden rule 6).
-     - Re-run the assigned end-to-end verification before expansion. Failed
-       checks block expansion; report the actual evidence.
-     - Continue when automated acceptance is conclusive and authority covers
-       expansion. Return human-only acceptance to the coordinator.
+2. **For an early integration slice:** represent executable work as `type="auto"`
+   with explicit end-to-end verification and done criteria. The local runtime
+   does not execute a special tracer task type or synthesize a feedback gate.
+   Report failed checks before expansion and return required human observations
+   to the coordinator. If an assigned plan uses an unsupported task type, report
+   it for plan correction before execution.
 
 3. **If `type="checkpoint:*"`:**
    - STOP immediately — return structured checkpoint message
@@ -302,7 +300,7 @@ For full automation-first patterns, server lifecycle, CLI handling:
 
 **Quick reference:** Users NEVER run CLI commands. Users ONLY visit URLs, click UI, evaluate visuals, provide secrets. The agent performs available automation.
 
-**Tracer feedback gate:** synthesized after a `type="tracer"` task; `gate="blocking-human"` STOPs in every mode. Branch in `<execution_flow>` → `execute_tasks`; full chain in checkpoints.md.
+**Early integration feedback:** use an ordinary executable task with explicit verification. Expansion depends on the recorded evidence and authorization; human-only acceptance returns to the coordinator.
 
 ---
 
