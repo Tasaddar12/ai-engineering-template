@@ -48,8 +48,8 @@ patterns-established:
 requirements-completed: []  # REQUIRED — Include only requirement IDs from this plan's `requirements` that the delivered changes and verification evidence actually complete. Record incomplete, failed, or blocked requirements under remaining gaps; never copy them here merely because they were assigned.
 
 # Local runtime coverage — populate from actual delivered and checked results.
-acceptance: []  # Covered acceptance IDs from this plan; these may differ from requirement IDs.
-documentation: []  # Exact required documentation paths completed by this component; [] when none are assigned.
+acceptance: []  # REQUIRED — Covered acceptance IDs from this plan; these may differ from requirement IDs.
+documentation: []  # REQUIRED — Exact required documentation paths completed by this component; [] when none are assigned.
 
 # Coverage metadata (#1602) — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
 # OMIT this whole block for legacy/prose-only SUMMARYs — verify-work then falls back to the ## Accomplishments bullets
