@@ -49,21 +49,19 @@ Plan -> Execute -> Ship -> Learn -> Repeat
 
 ## Task Sizing
 
-Each task targets **10–30% context consumption**.
+Group actions that produce one verifiable task result. Name its exact files,
+input/output contract and pass/fail command. Keep a route, service and persistence
+change together when all three are required for the same observable result.
+Separate independently deliverable outcomes and prerequisites under the
+preparer's `estimate_scope` rules; enforce the configured task cap.
 
-| Context Cost | Action |
-|--------------|--------|
-| < 10% context | Too small — combine with a related task |
-| 10-30% context | Right size — proceed |
-| > 30% context | Too large — split into two tasks |
+Do not convert file counts into invented context percentages or split a task
+because it touches seven files. An optional estimate must state its assumptions
+and cite actual calibration when available. See [context-budget](context-budget.md).
 
-**Context cost signals (use these, not time estimates):**
-- Files modified: 0-3 = ~10-15%, 4-6 = ~20-30%, 7+ = ~40%+ (split)
-- New subsystem: ~25-35%
-- Migration + data transform: ~30-40%
-- Pure config/wiring: ~5-10%
-
-**Too large signals:** Touches >3-5 files, multiple distinct chunks, action section >1 paragraph.
+**Split requirement:** Apply `estimate_scope` when actions deliver separate
+component outcomes or need different prerequisite components. Paragraph count
+does not justify a split; retain all concrete instructions needed for the task.
 
 **Combine signals:** One task sets up for the next, separate tasks touch same file, neither meaningful alone.
 

@@ -11,6 +11,18 @@ Template for spawning planner agent. The agent contains all planning expertise -
 
 **Phase:** {phase_number}
 **Mode:** {standard | gap_closure}
+**Checkout:** {absolute_worktree_path}
+**Branch:** {assigned_branch}
+**Input revision:** {commit_sha}
+**Owned outputs:** {exact_PLAN_and_VALIDATION_paths}
+
+**Source inputs:**
+- {repository_relative_path} — {exact_symbol_and_question_this_file_answers}
+
+**Consumed prior components:**
+- {exact_SUMMARY_path} — {export_schema_command_or_decision_consumed}
+Use `None` when this phase consumes no prior component; do not select history
+just to fill this field.
 
 **Project State:**
 @.planning/STATE.md
@@ -62,6 +74,9 @@ Before returning PLANNING COMPLETE:
 | `{phase_number}` | From roadmap/arguments | `5` or `2.1` |
 | `{phase_dir}` | Phase directory name | `05-user-profiles` |
 | `{phase}` | Phase prefix | `05` |
+| `{absolute_worktree_path}`, `{assigned_branch}`, `{commit_sha}` | Verified assigned Git checkout | Absolute root, branch and full input revision |
+| `{exact_PLAN_and_VALIDATION_paths}` | Coordinator-owned output assignment | Exact repository-relative paths; omit VALIDATION when unneeded |
+| Source/dependency fields | Inspected code and actual component prerequisites | Path, symbol and the question or contract it supplies |
 | `{standard \| gap_closure}` | Coordinator-assigned planning mode | `standard` |
 
 ---
@@ -117,6 +132,13 @@ Continue: {standard | gap_closure}
 ---
 
 **Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the planner agent. This template only passes context.
+
+For revision assignments, replace the standard context block with the exact
+checkout/branch/revision, CONTEXT path, affected PLAN paths, prior checker report
+and finding IDs, and changed source/contract paths. Apply
+[correction rounds](../commands/phase-prepare.md#preparation-assignments-and-correction-rounds).
+Do not paste PLAN bodies or the previous agent conversation. The preparer reads
+the canonical files and preserves every concrete requirement it edits.
 
 
 <!-- LOCAL-ADOPTION:START -->

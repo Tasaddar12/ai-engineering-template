@@ -51,36 +51,38 @@ this method.
 
 ## Estimate Emission
 
-A plan may carry an optional advisory `estimate` block. It is the quantitative reason a phase must be sliced — tracer-first says *slice thin*, the estimate says *how thin, for this codebase*.
+A plan may carry an optional advisory `estimate` block. Do not create one unless
+the assignment requests estimates or comparable measured execution data exists.
+Missing estimates are not preparation defects. Do not read extra source files
+solely to calculate an estimate.
 
 **Compute it:**
 1. Sum `estimateTokens`-scale cost across the plan: implementation + the files each task reads + verification output. Roughly chars/4 over what the executor will actually touch.
 2. If comparable historical measurements exist, cite them and state any correction factor. Otherwise label the estimate uncalibrated; there is no calibration CLI here.
 3. Report measurement count and limitations. Never invent observed costs or claim self-rated confidence is measured history.
 
-**Over budget?** The plan-checker flags a plan whose estimate exceeds the assignment's known context budget. This is advisory — it never blocks. When flagged, re-slice: a tracer plus expansion slices, each inside the budget. Prefer more, smaller plans over one that spends the agent's best early-context tokens and finishes degraded.
+**Over budget?** Report the estimate and assumptions as INFO. A split requires
+one of phase-preparer's `estimate_scope` conditions; an uncalibrated estimate or
+file count alone does not require another PLAN or correction round. Actual
+host-reported context still triggers the worker-handoff threshold.
 
 ## Context Budget Rules
 
-Plans should complete within ~50% context (not 80%). No context anxiety, quality maintained start to finish, room for unexpected complexity.
+The ~50% context target reserves room for execution errors and verification; it
+is an estimate, not evidence of the worker's current context use.
 
-**Task sizing target: 2-3 tasks per plan, not a mandatory count.** Enforce `execution.max_tasks_per_component` when set; apply the mandatory split conditions in [phase-preparer](../../agents/phase-preparer.md) (`estimate_scope`) even when the numeric cap is null. The table below supplies sizing estimates, not permission to exceed the context handoff threshold.
-
-| Context Weight | Tasks/Plan | Context/Task | Total |
-|----------------|------------|--------------|-------|
-| Light (CRUD, config) | 3 | ~10-15% | ~30-45% |
-| Medium (auth, payments) | 2 | ~20-30% | ~40-50% |
-| Heavy (migrations, multi-subsystem) | 1-2 | ~30-40% | ~30-50% |
+**Task sizing target: 2-3 tasks per plan, not a mandatory count.** Enforce `execution.max_tasks_per_component` when set; apply the mandatory split conditions in [phase-preparer](../../agents/phase-preparer.md) (`estimate_scope`) even when the numeric cap is null. Do not infer a context percentage from a task's label, file count or subsystem name.
 
 ## Split Signals
 
-**Review for splitting when:**
-- More than 3 tasks
-- Multiple subsystems exceed a coherent thin end-to-end slice
-- Any task with >5 file modifications
-- Checkpoint + implementation in same plan
-- Discovery + implementation in same plan
+Apply the preparer's `estimate_scope` conditions. For each split, name the
+separate outcomes, different prerequisite components or configured task cap it
+addresses. Keep an end-to-end outcome together when none of those conditions
+applies, even when it touches several layers or more than five files.
 
-**CONSIDER splitting:** >5 files total, natural semantic boundaries, context cost estimate exceeds 40% for a single plan. Context size is not permission to remove required outcomes; propose a scope split to the coordinator.
+Unresolved research and human decisions block only their dependent tasks; return
+the exact question or decision to the coordinator before dispatch. Splitting
+files into extra PLANs does not resolve that blocker. Preserve all required
+outcomes and exact acceptance when redistributing tasks.
 
 See [planner-guidance.md](planner-guidance.md) for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).

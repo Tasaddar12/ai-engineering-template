@@ -61,7 +61,7 @@ If every required row is COVERED and each non-required suggestion has a recorded
 The planner's only legitimate reasons to split or flag a feature are **constraints**, not judgments about difficulty:
 
 **Valid (constraints):**
-- ✓ "This task touches 9 files and would consume ~45% context — split into two tasks"
+- ✓ "Account creation and invoice export are separate component outcomes — assign each its own PLAN and preserve both acceptance mappings"
 - ✓ "No API key or endpoint is defined in any source artifact — need developer input"
 - ✓ "This feature depends on the auth system built in Phase 03, which is not yet complete"
 
@@ -70,4 +70,8 @@ The planner's only legitimate reasons to split or flag a feature are **constrain
 - ✗ "Integrating with an external service could take a long time"
 - ✗ "This is a challenging feature that might be better left to a future phase"
 
-If a feature has none of the three legitimate constraints (context cost, missing information, dependency conflict), it gets planned. Period.
+Apply phase-preparer `estimate_scope` for component splits. Missing information
+and unmet dependencies must identify the blocked task and required fact or
+artifact. File counts and advisory token estimates alone do not require a split.
+Every required feature retains a plan or an explicit unresolved coverage gap;
+difficulty never authorizes its removal.

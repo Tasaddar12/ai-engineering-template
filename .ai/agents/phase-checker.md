@@ -313,8 +313,9 @@ issue:
    with the assignment's known context budget. Report the estimate, budget and
    assumptions. Historical calibration is optional and must cite actual comparable
    measurements; without those, call the estimate uncalibrated. An estimate over
-   budget is advisory: recommend smaller slices and weigh concrete task/file
-   thresholds more heavily than a speculative token figure.
+   budget is INFO-only unless a mandatory `estimate_scope` condition is violated.
+   Identify that condition and the exact tasks that violate it before requiring
+   a split. File counts do not measure context usage.
 
    A plan with no `estimate` block is not a defect; the field is optional and additive.
 
@@ -322,13 +323,13 @@ issue:
 | Metric | Target | Warning | Blocker |
 |--------|--------|---------|---------|
 | Tasks/plan | 2-3 (sizing target) | Separate outcomes or prerequisites need splitting | Exceeds configured `execution.max_tasks_per_component` |
-| Files/plan | 5-8 | 10 | 15+ |
-| Total context | ~50% | ~70% | 80%+ |
+| Files/plan | Inspect ownership and one component outcome | No count-only warning | Undeclared ownership or separate outcomes requiring a split |
+| Estimated context | Optional advisory estimate | No estimate-only warning | No estimate-only blocker |
 
 **Red flags:**
 - Plan exceeds the configured task cap or combines separate component outcomes
-- Plan with 15+ file modifications
-- Single task with 10+ files
+- Files implement separate outcomes or require different prerequisite components
+- Ownership omits a required path, regardless of the total file count
 - Complex work (auth, payments) crammed into one plan
 
 **Example issue:**
@@ -336,7 +337,7 @@ issue:
 issue:
   dimension: scope_sanity
   severity: warning
-  required_property: "Each plan stays within the per-plan context budget"
+  required_property: "Each plan delivers one component outcome"
   description: "Plan 01 combines independent account-creation and billing outcomes"
   plan: "01"
   metrics:
@@ -822,6 +823,15 @@ Rules:
 
 ## Step 1: Load Context
 
+For a correction review, first read the prior findings, reviewed revision and
+changed paths supplied under [preparation correction rounds](../commands/phase-prepare.md#preparation-assignments-and-correction-rounds).
+Inspect corrected properties and affected contracts directly in PLANs and source.
+Carry forward only checks whose PLAN content, acceptance and inspected source
+are unchanged; cite their prior revision. Recheck the entire dependency/ownership
+graph if an edge or owned path changed. If prior evidence or change scope is
+missing, perform the full assessment below. Never accept the preparer's claim
+that a finding is fixed without inspecting the changed task and its evidence.
+
 Read the assigned phase CONTEXT, ROADMAP, REQUIREMENTS, relevant RESEARCH and
 current PLAN/SUMMARY records locally. Resolve the exact phase directory and
 revision from the assignment. Use recorded decisions, discretion and deferred
@@ -829,7 +839,10 @@ scope; do not infer authorization from plan readiness.
 
 ## Step 2: Load All Plans
 
-Read each complete PLAN. Inspect YAML and XML against
+On the first assessment, read each complete PLAN. On a correction assessment,
+read the complete changed and affected PLANs selected in Step 1; apply Steps 3-9
+to that scope, plus any required whole-graph check. Do not restart the full review
+when its unchanged checks have revision-specific evidence. Inspect YAML and XML against
 [the runtime contract](../runtime/TEMPLATE-CONTRACT.md), including ownership,
 acceptance, documentation, argv checks, dependencies and checkpoint compatibility.
 The coordinator can supply `phase.py check` results when authorized; do not claim

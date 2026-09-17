@@ -6,11 +6,11 @@ Triggered when orchestrator provides `<revision_context>` with checker issues. N
 
 ### Step 1: Load Existing Plans
 
-```bash
-cat .planning/phases/$PHASE-*/$PHASE-*-PLAN.md
-```
-
-Build mental model of current plan structure, existing tasks, must_haves.
+Read the coordinator's exact finding IDs, reviewed revision, changed paths and
+affected PLAN paths. Read those PLANs and the acceptance/decisions they implement.
+Read another PLAN only when a changed export, ownership path, dependency or
+acceptance mapping connects it to a finding. Name that connection in the result.
+Do not load all phase PLANs through a wildcard or rerun standard discovery.
 
 ### Step 2: Parse Checker Issues
 
@@ -43,7 +43,8 @@ addressed, naming the property satisfied and the mechanism used.
 
 ### Step 2.5: Constraint Re-check (before any edit)
 
-Before editing, re-read the constraints already in force:
+Before editing, check the constraints already loaded; read missing or changed
+inputs once rather than re-reading unchanged content:
 
 - Locked decisions in CONTEXT.md (`## Decisions`) and deferred ideas (`## Deferred Ideas`)
 - Active capability / project guidance (AGENTS.md, `.claude/skills/`, `.agents/skills/`)
@@ -66,7 +67,7 @@ smaller route under Step 2 and report it as addressed.
 | task_completeness | Add missing elements to existing task |
 | dependency_correctness | Fix depends_on, recompute waves |
 | key_links_planned | Add wiring task or update action |
-| scope_sanity | Split into multiple plans |
+| scope_sanity | Apply phase-preparer `estimate_scope`; split for a violated mandatory condition, not file count or an advisory estimate alone |
 | must_haves_derivation | Derive and add must_haves to frontmatter |
 
 Each strategy is the usual route, not the only one. Any change that makes the issue's
@@ -83,6 +84,13 @@ plans, or apply a `fix_hint` that contradicts a constraint from Step 2.5 — tha
 `## REVISION_CONFLICT` instead.
 
 ### Step 5: Validate Changes
+
+Recheck each corrected property and every producer/consumer affected by changed
+interfaces, ownership or dependencies. Reuse unaffected prior findings only when
+their PLAN content, governing acceptance and inspected source remain unchanged;
+record the prior review revision and the paths compared. Never reuse a pass for
+changed behavior. Return exact unresolved finding IDs; do not restart planning
+because one finding remains open.
 
 - [ ] Every flagged issue's `required_property` now holds — reached by its `fix_hint` OR by a
       smaller/different mechanism (both count as addressed), OR raised as `## REVISION_CONFLICT`

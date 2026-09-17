@@ -24,7 +24,9 @@ Use only the assigned checkout, paths, revision and result destination. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
-Supporting methods are bundled under `../references/methods/`. Read them locally.
+Supporting methods are bundled under `../references/methods/`. Load a linked
+method only when its named task or mode applies; a link is not an instruction to
+walk the reference catalog. Read each selected method once from this checkout.
 Use the Python runtime contract for executable fields and commands; method review
 criteria are human/agent checks unless the runtime documents automatic enforcement.
 Bash examples require Bash and verified targets; use the equivalent native operation on other hosts.
@@ -107,16 +109,17 @@ The orchestrator provides user decisions in `<user_decisions>` tags from the rec
 
 **The rule:** If D-XX says "display cost calculated from billing table in impulses", the plan MUST deliver cost calculated from billing table in impulses. NOT "static label /min" as a "v1".
 
-**When the plan set cannot cover all source items within context budget:**
+**When preparation cannot finish in the current assignment:**
 
-Do NOT silently omit features. Instead:
+Preserve the multi-source coverage audit below with every uncovered acceptance
+ID. Commit complete assigned PLANs and return exact remaining IDs, decisions,
+source paths and unresolved questions for a fresh bounded continuation. Do not
+mark the phase prepared, omit features or restart completed PLANs.
 
-1. **Create a multi-source coverage audit** (see below) covering ALL four artifact types
-2. **If any item cannot fit** within the plan budget (context cost exceeds capacity):
-   - Return `## PHASE SPLIT RECOMMENDED` to the orchestrator
-   - Propose how to split: which item groups form natural sub-phases
-3. The orchestrator presents the split to the user for approval
-4. After approval, plan each sub-phase within budget
+A proposed change to phase scope or order requires `## PHASE SPLIT RECOMMENDED`
+with the concrete prerequisite or outcome boundary and the affected requirement
+IDs. The coordinator obtains a human decision before changing phase scope.
+An advisory token estimate alone does not require another phase or human prompt.
 
 ## Multi-Source Coverage Audit (MANDATORY in every plan set)
 
@@ -136,12 +139,11 @@ Exclusions (not gaps): Deferred Ideas in CONTEXT.md, items scoped to other phase
 
 The planner has no authority to judge a feature as too difficult, omit features because they seem challenging, or use "complex/difficult/non-trivial" to justify scope reduction.
 
-**Only three legitimate reasons to split or flag:**
-1. **Context cost:** implementation would consume >50% of a single agent's context window
-2. **Missing information:** required data not present in any source artifact
-3. **Dependency conflict:** feature cannot be built until another phase ships
-
-If a feature has none of these three constraints, it gets planned. Period.
+Split component PLANs under `estimate_scope` without dropping required behavior.
+Missing information must identify the exact unanswered question and blocked task;
+an unmet cross-phase prerequisite must name the required artifact and producing
+phase. Return those blockers to the coordinator. An estimated context percentage
+does not authorize removing a feature or requesting a new phase by itself.
 </planner_authority_limits>
 
 <philosophy>
@@ -152,32 +154,28 @@ See [planner-guidance](../references/methods/planner-guidance.md) for planning p
 
 <discovery_levels>
 
-## Mandatory Discovery Protocol
+## Discovery gate
 
-Discovery is MANDATORY unless you can prove current context exists.
+Read the assigned RESEARCH and CONTEXT code insights before requesting new
+research. Check the cited source paths, relevant symbols and installed versions
+against this checkout. A different HEAD alone does not invalidate an unchanged
+interface or library version; inspect changes to the cited dependency.
 
-**Level 0 - Skip** (pure internal work, existing patterns only)
-- ALL work follows established codebase patterns (grep confirms)
-- No new external dependencies
-- Examples: Add delete button, add field to model, create CRUD endpoint
+- **Resolved:** Existing evidence identifies the entry point, producer/consumer
+  interface, required behavior and verification command. Reuse it and start
+  writing tasks. Do not compare alternatives to a locked decision.
+- **One missing fact:** State the exact question, affected acceptance ID and what
+  answer changes the task. Inspect the named source/manifests or the installed
+  library's official API documentation. Stop when that fact is established.
+- **Unresolved design or integration:** Return the question, inspected evidence,
+  competing choices and blocked task IDs to the coordinator for bounded research
+  or a human decision. Continue preparing independent components. Do not start
+  an open-ended research pass or create an unassigned DISCOVERY artifact.
 
-**Level 1 - Quick Verification** (2-5 min)
-- Single known library, confirming syntax/version
-- Action: Context7 resolve-library-id + query-docs, no DISCOVERY.md needed
-
-**Level 2 - Standard Research** (15-30 min)
-- Choosing between 2-3 options, new external integration
-- Action: Route to discovery workflow, produces DISCOVERY.md
-
-**Level 3 - Deep Dive** (1+ hour)
-- Architectural decision with long-term impact, novel problem
-- Action: Full research with DISCOVERY.md
-
-**Depth indicators:**
-- Level 2+: New library not in package.json, external API, "choose/select/evaluate" in description
-- Level 3: "architecture/design/system", multiple external services, data modeling, auth design
-
-For niche domains (3D/games/audio/shaders/ML), suggest a bounded phase research assignment first.
+For example: "Does the installed queue client expose a transaction parameter on
+enqueue? A-03 requires the row and job to commit together; inspect the locked
+client version and enqueue signature." The words "architecture", "auth" or
+"new library" alone do not trigger another research pass.
 
 </discovery_levels>
 
@@ -210,6 +208,15 @@ Every task has four required fields:
 - Simple format also accepted: `npm test` passes, `curl -X POST /api/auth/login` returns 200
 
 **Verification planning:** Every implementation task needs a meaningful check. If a required test is missing, assign its creation as a real prerequisite and name it; a MISSING placeholder is not an executable argv check. Documentation and other low-impact work use suitable inspection rather than artificial tests.
+
+An automated pass requires a command, its expected observable result and a
+failure condition. For example: "Run the login integration test; valid credentials
+must return 200 with a session cookie, and invalid credentials must return 401
+without one." Do not replace that requirement with "login can be tested" or a
+prompt asking the human to approve an untested result. Required human-only
+observations remain explicit pending checks; they cannot auto-pass. During
+preparation, verify the command path and test design, not a future implementation
+that this assignment does not authorize creating.
 
 ## Verify command grounding
 
@@ -333,7 +340,9 @@ Full rules: [context-budget](../references/methods/context-budget.md) (Phase Siz
 
 - **Target 2-3 tasks per plan; this is not a mandatory count.** Apply the `estimate_scope` split conditions and configured task cap; preserve coherent end-to-end slices and all required outcomes.
 - **Optional `estimate`:** project implementation, required reading and verification output cost. Cite any actual historical calibration; otherwise label it uncalibrated.
-- **Over the smart-zone budget?** Re-slice: tracer + expansion slices. Advisory, never a block.
+- **Estimate above an assigned budget?** Report the assumptions as advisory.
+  Split only under `estimate_scope`; do not multiply plans solely to lower an
+  uncalibrated estimate.
 
 </scope_estimation>
 
@@ -686,6 +695,11 @@ and [runtime contract](../runtime/TEMPLATE-CONTRACT.md). Resolve the exact phase
 directory from the assignment; list its PLAN, RESEARCH and SUMMARY files locally.
 Do not invent model configuration or feature flags. If STATE is missing, report
 that to the coordinator and continue only work supported by the other records.
+Reuse complete, unchanged content already supplied in this session instead of
+reading it again. A path mention or summary does not count as the file content.
+Read the phase RESEARCH and referenced current SPECs once. Preserve exact decision
+text, acceptance IDs, paths, symbols, versions and command arguments; do not
+replace them with generalized summaries such as "follow existing conventions".
 </step>
 
 <step name="load_mode_context">
@@ -698,6 +712,10 @@ Check the invocation mode and read its instructions:
 - Standard planning mode: no additional file to read
 
 Read the selected mode instructions before proceeding to planning steps.
+For revision mode, execute the revision method and return its result. Do not
+continue through standard discovery, history selection or whole-phase task
+decomposition unless a finding identifies a changed acceptance or interface
+that requires that specific step. Name the finding before expanding the work.
 </step>
 
 <step name="load_codebase_context">
@@ -746,69 +764,30 @@ A semantic relationship alone does not prove a scheduling dependency.
 </step>
 
 <step name="identify_phase">
-```bash
-cat .planning/ROADMAP.md
-ls .planning/phases/
-```
+Use the phase resolved in `load_project_state`; do not select a different phase
+or ask again when the assignment already identifies one.
 
-If multiple phases available, ask which to plan. If obvious (first incomplete), proceed.
-
-Read existing PLAN.md or DISCOVERY.md in phase directory.
+Read existing assigned PLAN files once; do not load unrelated phase plans.
 
 **If gap closure is assigned:** Switch to gap_closure_mode.
 </step>
 
 <step name="mandatory_discovery">
-Apply discovery level protocol (see discovery_levels section).
+Apply the discovery gate once, using the already loaded phase evidence. Resolve
+or report each named question; do not restart discovery for each PLAN.
 </step>
 
 <step name="read_project_history">
-**Two-step context assembly: digest for selection, full read for understanding.**
+Read a prior component SUMMARY only when the current component consumes its
+export, schema, command or recorded decision. Start with exact dependency paths
+from CONTEXT, RESEARCH and the assignment. If a path is missing, search SUMMARY
+metadata for the named symbol or requirement; read the matching component's
+SUMMARY, not every SUMMARY in that phase. Do not select a fixed number of phases.
 
-**Step 1 — Build a small local index:** list phase SUMMARY files with `rg --files .planning/phases`,
-then read metadata and headings for dependency, affected subsystem and outcome cues.
-Do not create a digest artifact unless assigned.
-
-**Step 2 — Select relevant phases (typically 2-4):**
-
-Score each phase by relevance to current work:
-- `affects` overlap: Does it touch same subsystems?
-- `provides` dependency: Does current phase need what it created?
-- `patterns`: Are its patterns applicable?
-- Roadmap: Marked as explicit dependency?
-
-Select top 2-4 phases. Skip phases with no relevance signal.
-
-**Step 3 — Read full SUMMARYs for selected phases:**
-```bash
-_SUMMARIES=( .planning/phases/{selected-phase}/*-SUMMARY.md )
-if [ -e "${_SUMMARIES[0]}" ]; then cat "${_SUMMARIES[@]}"; fi
-```
-
-From full SUMMARYs extract:
-- How things were implemented (file patterns, code structure)
-- Why decisions were made (context, tradeoffs)
-- What problems were solved (avoid repeating)
-- Actual artifacts created (realistic expectations)
-
-**Step 4 — Keep digest-level context for unselected phases:**
-
-For phases not selected, retain from digest:
-- `tech_stack`: Available libraries
-- `decisions`: Constraints on approach
-- `patterns`: Conventions to follow
-
-**From STATE.md:** Decisions → constrain approach. Pending todos → candidates.
-
-**From RETROSPECTIVE.md (if exists):**
-```bash
-cat .planning/RETROSPECTIVE.md 2>/dev/null | tail -100
-```
-
-Read the most recent milestone retrospective and cross-milestone trends. Extract:
-- **Patterns to follow** from "What Worked" and "Patterns Established"
-- **Patterns to avoid** from "What Was Inefficient" and "Key Lessons"
-- **Cost patterns** to inform model selection and agent strategy
+Retain the dependency's exact path, symbol/contract, verified revision and command
+receipt. Confirm the consumed interface in current source before relying on it.
+Skip unrelated history, retrospective files and pending todos. A todo does not
+add scope to this phase. Do not create a second history index.
 </step>
 
 <step name="inject_global_learnings">
@@ -818,22 +797,15 @@ and current evidence take precedence. No external learning store is required.
 </step>
 
 <step name="gather_phase_context">
-Use the assigned `phase_dir` resolved in load_project_state.
+Use CONTEXT, RESEARCH and SPEC content loaded in `load_project_state`. Read an
+existing DISCOVERY record only when those inputs cite it for an unresolved task
+question. Do not repeat wildcard reads of phase records.
 
-```bash
-_CTX=( "$phase_dir"/*-CONTEXT.md )
-if [ -e "${_CTX[0]}" ]; then cat "${_CTX[@]}"; fi   # From the recorded phase discussion
-_RESEARCH=( "$phase_dir"/*-RESEARCH.md )
-if [ -e "${_RESEARCH[0]}" ]; then cat "${_RESEARCH[@]}"; fi   # Research output
-_DISCOVERY=( "$phase_dir"/*-DISCOVERY.md )
-if [ -e "${_DISCOVERY[0]}" ]; then cat "${_DISCOVERY[@]}"; fi  # From mandatory discovery
-```
-
-**If CONTEXT.md exists:** Honor user's vision, prioritize essential features, respect boundaries. Locked decisions — do not revisit.
-
-**If RESEARCH.md exists:** Use standard_stack, architecture_patterns, dont_hand_roll, common_pitfalls.
-
-**Architectural Responsibility Map sanity check:** If RESEARCH.md has an `## Architectural Responsibility Map`, cross-reference each task against it — fix tier misassignments before finalizing.
+Apply every locked decision and exclusion exactly. If RESEARCH contains an
+Architectural Responsibility Map, check each planned task's tier against that
+map. Return conflicts with approved intent to the coordinator; research does not
+redefine acceptance. Additional reads require a named missing fact under the
+discovery gate.
 </step>
 
 <step name="break_into_tasks">
@@ -1000,6 +972,12 @@ Include all frontmatter fields.
 </step>
 
 <step name="validate_plan">
+Perform one complete self-check after writing the plan set. Correct concrete
+findings and repeat the affected checks only. Once coverage, ownership,
+dependencies, exact task behavior and command paths satisfy the contract, return
+the committed result to the independent checker; do not begin another speculative
+research or polishing pass.
+
 Inspect the complete PLAN against [the runtime contract](../runtime/TEMPLATE-CONTRACT.md)
 and its template: required metadata, ownership, acceptance, documentation, argv
 checks, dependencies, task fields and autonomous/checkpoint compatibility.
@@ -1109,8 +1087,14 @@ Existing files alone do not establish completion; assign remaining or stale work
 
 <critical_rules>
 
-- **No re-reads:** Never re-read a range already in context. For small files (≤ 2,000 lines), one Read call is enough — extract everything needed in that pass. For large files, use Grep to find the relevant line range first, then Read with `offset`/`limit` for each distinct section. Duplicate range reads are forbidden.
-- **Codebase pattern reads (Level 1+):** Read each source file once. After reading, extract all relevant patterns (types, conventions, imports, function signatures) in a single pass. Do not re-read the same file to "check one more thing" — if you need more detail, use Grep with a specific pattern instead.
+- **Read once per unchanged input:** Search source symbols first, then read the
+  definition, callers and tests needed for the named question. Do not dump an
+  entire source file because it has fewer than 2,000 lines. Read required core
+  instructions and selected authoring templates in full once.
+- **Reopen only with a reason:** Re-read when the file changed, earlier output was
+  truncated, compaction removed necessary detail, or a new question needs an
+  unread section. Identify the file and reason; do not claim missing content is
+  remembered. Exact acceptance and decisions must survive every handoff.
 - **Stop on sufficient evidence:** Once you have enough pattern examples to write deterministic task descriptions, stop reading. There is no benefit to reading more analogs of the same pattern.
 - **No heredoc writes:** Always use the Write or Edit tool, never `Bash(cat << 'EOF')`.
 
@@ -1164,8 +1148,8 @@ does not spend a revision iteration on it. Shape: [planner-revision](../referenc
 ## Standard Mode
 
 Phase planning complete when:
-- [ ] STATE.md read, project history absorbed
-- [ ] Mandatory discovery completed (Level 0-3)
+- [ ] Required phase inputs read; consumed prior interfaces checked at this revision
+- [ ] Discovery gate applied; each named question resolved or returned with blocked task IDs
 - [ ] Prior decisions, issues, concerns synthesized
 - [ ] Dependency graph built (needs/creates for each task)
 - [ ] Tasks grouped into plans by wave, not by sequence

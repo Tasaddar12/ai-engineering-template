@@ -61,9 +61,12 @@ and the missing implementation instruction.
 
 ## Complete plans and independent checking
 
-Read the entire [phase prompt](../templates/phase-prompt.md),
-[planner prompt](../templates/planner-subagent-prompt.md),
-[phase preparer](../agents/phase-preparer.md) method. Preserve the full
+The coordinator reads the complete [planner prompt](../templates/planner-subagent-prompt.md)
+when constructing the assignment. The preparer reads the complete
+[phase prompt](../templates/phase-prompt.md) and its
+[role](../agents/phase-preparer.md) once. Do not paste either full method into the
+assignment or require a worker to read the coordinator's dispatch template.
+Preserve the full
 artifact structure: objective, execution context, source context, task-level
 files/read-first/action/verification/done criteria, success criteria and summary
 output. Derive `must_haves` backward from the goal, including actual connections
@@ -80,3 +83,32 @@ source; use the [phase checker](../agents/phase-checker.md) with local
 coordinator, who assigns the preparer bounded corrections and then gives the
 revised plans to the independent checker. Repeat affected assessment before
 execution. Record the reviewer and findings, not merely "checked".
+
+## Preparation assignments and correction rounds
+
+The assignment must name the absolute checkout, branch, input revision, phase
+CONTEXT path, exact output paths and mode. Supply source paths with their symbols
+and the task question each answers; do not attach the coordinator's conversation.
+Pass decisions and acceptance through their canonical records without paraphrasing
+away required values, exclusions or pass/fail conditions.
+
+The first checker assessment covers every PLAN and phase acceptance ID. For a
+correction round, supply the prior review revision, exact finding IDs, changed
+PLAN paths and changed interfaces/ownership/dependencies. The preparer fixes those
+findings; the checker rechecks them and their affected consumers. An acceptance
+change requires rechecking all mappings to that acceptance. A dependency or
+ownership change requires rechecking the full graph for cycles and overlaps.
+Unchanged checks retain their prior revision and evidence; they are not reported
+as newly executed. INFO-only advice does not trigger another correction round.
+
+If the same required property fails after two correction rounds without new
+evidence or a changed constraint, stop resubmitting the same assignment. The
+coordinator must compare the two diffs and checker evidence, identify the exact
+failed assumption, and assign that diagnosis or resolve the conflicting decision
+before another correction. Keep the finding open; this rule never converts a
+failure into a pass or limits repairs supported by new evidence.
+
+The preparer returns committed paths, coverage gaps, unresolved questions and
+next action. It must not repeat PLAN bodies in its response. If host usage is
+available, report input/output/cache token counters and elapsed time separately;
+otherwise report them as unavailable. Cumulative usage is not live context size.
