@@ -152,6 +152,15 @@ decimal proposal as a planning artifact until compatible tooling is provided.
 `sync` updates only a dedicated Runtime Status section in the full STATE artifact.
 Project reference, current position, metrics, accumulated context, deferred items
 and session continuity remain coordinator-authored and are never discarded by sync.
+The generated section is bounded by `<!-- phase-runtime-status:start -->` and
+`<!-- phase-runtime-status:end -->`. Put authored notes outside those markers;
+sync replaces the entire marked block and preserves bytes outside it. On the
+first sync of legacy unmarked output, only its recognized status table and PR
+observation comments are replaced; subsequent notes and headings remain intact.
+Duplicate headings, malformed or duplicate markers, and unrecognized legacy
+tables stop sync without changing STATE or creating a commit. Reconcile the
+reported boundaries while preserving authored content before retrying. A
+successful sync commits the refreshed STATE; it does not publish that commit.
 
 ## Native TDD feature plans
 

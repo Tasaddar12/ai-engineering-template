@@ -1192,20 +1192,63 @@ def status_text(root, name=None, remote=False):
     return "\n".join(lines) + "\n"
 
 
+def replace_runtime_status(existing, view):
+    """Replace the owned block, migrating only recognizable legacy table lines."""
+    start = "<!-- phase-runtime-status:start -->"
+    end = "<!-- phase-runtime-status:end -->"
+    marker_prefix = "<!-- phase-runtime-status:"
+    newline = "\r\n" if "\r\n" in existing else "\n"
+    content = (start + "\n## Runtime Status\n\n"
+               + view.removeprefix("# Phase status\n").strip() + "\n" + end + "\n")
+    content = content.replace("\n", newline)
+    lines = existing.splitlines(keepends=True)
+    text = [line.rstrip("\r\n") for line in lines]
+    headings = [i for i, line in enumerate(text)
+                if re.fullmatch(r"##[ \t]+Runtime Status[ \t]*#*[ \t]*", line)]
+    require(len(headings) <= 1, "STATE has duplicate Runtime Status headings; reconcile them before sync")
+    if marker_prefix in existing:
+        require(existing.count(marker_prefix) == 2 and text.count(start) == 1 and text.count(end) == 1,
+                "STATE has malformed or duplicate Runtime Status markers; no state was changed")
+        first, last = text.index(start), text.index(end)
+        require(first < last and len(headings) == 1 and first < headings[0] < last,
+                "STATE has invalid Runtime Status boundaries; no state was changed")
+        return "".join(lines[:first]) + content + "".join(lines[last + 1:])
+    if not headings:
+        separator = "" if not existing or existing.endswith(newline * 2) else newline if existing.endswith(newline) else newline * 2
+        return existing + separator + content
+
+    # Old releases appended an unmarked section. Its table is recognizable;
+    # section extent is not ownership of trailing notes or subsequent headings.
+    first = headings[0]
+    cursor = first + 1
+    while cursor < len(text) and not text[cursor].strip():
+        cursor += 1
+    require(text[first] == "## Runtime Status"
+            and text[cursor:cursor + 2] == ["| Phase | Evidence | Next action |", "|---|---|---|"],
+            "STATE has an unrecognized legacy Runtime Status table; reconcile it before sync")
+    cursor += 2
+    rows = 0
+    while cursor < len(text):
+        line = text[cursor]
+        if re.fullmatch(r"\| (?:None|[0-9]+-[a-z0-9-]+) \| [^|\r\n]+ \| [^|\r\n]+ \|", line):
+            rows += 1
+        elif re.fullmatch(r"<!-- Last PR observation: \S+ -->", line):
+            pass
+        else:
+            break
+        cursor += 1
+    require(rows > 0 and (cursor == len(text) or not text[cursor].lstrip().startswith(("|", "<!-- Last PR observation:"))),
+            "STATE has an ambiguous legacy Runtime Status table; reconcile it before sync")
+    return "".join(lines[:first]) + content + "".join(lines[cursor:])
+
+
 def sync_state(root):
     assigned(root)
     clean(root)
     path = root / ".planning/STATE.md"
-    existing = path.read_text(encoding="utf-8") if path.exists() else file_template(root, "state.md")
+    existing = path.read_bytes().decode("utf-8") if path.exists() else file_template(root, "state.md")
     view = status_text(root)
-    # This runtime owns only its view; authored state, decisions and session
-    # continuity retain their full upstream structure and their original text.
-    content = "## Runtime Status\n\n" + view.removeprefix("# Phase status\n").strip() + "\n"
-    if re.search(r"(?m)^## Runtime Status$", existing):
-        existing = re.sub(r"(?ms)^## Runtime Status\n.*?(?=^## |\Z)", lambda m: content + "\n", existing)
-    else:
-        existing = existing.rstrip() + "\n\n" + content
-    path.write_text(existing, encoding="utf-8")
+    path.write_bytes(replace_runtime_status(existing, view).encode("utf-8"))
     commit_paths(root, [path], "Refresh derived phase status")
     print(str(path))
 

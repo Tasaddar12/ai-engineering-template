@@ -153,6 +153,84 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertIn("01-example", (f.checkout / ".planning/STATE.md").read_text(encoding='utf-8'))
         f.assert_primary_untouched()
 
+    def test_sync_preserves_notes_appended_after_first_sync_and_refreshes_evidence(self):
+        f = self.fixture
+        f.cli("sync")
+        path = f.checkout / ".planning/STATE.md"
+        original = path.read_bytes()
+        authored = ("\nCoordinator note: retain customer decision.\n"
+                    "# Session Continuity\nResume the migration at customer 42.\n"
+                    "## Deferred Items\nRetain the deferred import.\n").encode("utf-8")
+        path.write_bytes(original + authored)
+        f.context(approval="pending")
+        f.commit("Record authored continuation and change phase evidence")
+        before = f.git(f.checkout, "rev-parse", "HEAD")
+        f.cli("sync")
+        updated = path.read_bytes()
+        self.assertTrue(updated.endswith(authored))
+        self.assertTrue(updated.startswith(original.split(b"<!-- phase-runtime-status:start -->")[0]))
+        self.assertIn(b"| 01-example | pending approval |", updated)
+        self.assertNotIn(b"| 01-example | approved |", updated)
+        self.assertEqual(f.git(f.checkout, "diff", "--name-only", before, "HEAD"), ".planning/STATE.md")
+        refreshed = f.git(f.checkout, "rev-parse", "HEAD")
+        f.cli("sync")
+        self.assertEqual(path.read_bytes(), updated)
+        self.assertEqual(f.git(f.checkout, "rev-parse", "HEAD"), refreshed)
+        f.assert_primary_untouched()
+
+    def test_sync_migrates_legacy_table_without_consuming_authored_suffix(self):
+        f = self.fixture
+        path = f.checkout / ".planning/STATE.md"
+        prefix = "# State\r\n\r\nPreserve identity and spacing.  \r\n\r\n"
+        legacy = ("## Runtime Status\r\n\r\n| Phase | Evidence | Next action |\r\n"
+                  "|---|---|---|\r\n<!-- Last PR observation: https://example.invalid/pr/1 -->\r\n"
+                  "| 01-example | obsolete evidence | obsolete next action |\r\n")
+        suffix = ("\r\nCoordinator note: preserve this decision.\r\n"
+                  "# Session Continuity\r\nResume at customer 42.\r\n"
+                  "## Deferred Items\r\nPreserve the deferred import.\r\n")
+        path.write_bytes((prefix + legacy + suffix).encode("utf-8"))
+        f.commit("Seed legacy runtime table and authored state")
+        f.cli("sync")
+        updated = path.read_bytes()
+        self.assertTrue(updated.startswith(prefix.encode("utf-8")))
+        self.assertTrue(updated.endswith(suffix.encode("utf-8")))
+        self.assertNotIn(b"obsolete evidence", updated)
+        self.assertNotIn(b"example.invalid/pr/1", updated)
+        self.assertEqual(updated.count(b"<!-- phase-runtime-status:start -->"), 1)
+        f.cli("sync")
+        self.assertEqual(path.read_bytes(), updated)
+        f.assert_primary_untouched()
+
+    def test_sync_rejects_ambiguous_boundaries_without_writes_or_commits(self):
+        f = self.fixture
+        path = f.checkout / ".planning/STATE.md"
+        start = "<!-- phase-runtime-status:start -->\n"
+        end = "<!-- phase-runtime-status:end -->\n"
+        section = "## Runtime Status\n\n| Phase | Evidence | Next action |\n|---|---|---|\n| None | No phases yet | Define intent |\n"
+        cases = {
+            "missing end": start + section,
+            "missing start": section + end,
+            "duplicate start": start + start + section + end,
+            "duplicate end": start + section + end + end,
+            "reversed markers": end + section + start,
+            "malformed marker": start.replace(" -->", "-->") + section + end,
+            "duplicate legacy headings": section + section,
+            "unknown legacy content": "## Runtime Status\n\nAuthored prose must survive.\n",
+            "unknown legacy table row": section + "| customer decision | preserve | always |\n",
+        }
+        for name, body in cases.items():
+            with self.subTest(name=name):
+                original = ("# State\n\n" + body + "\nCustomer decision: retain all records.\n").encode("utf-8")
+                path.write_bytes(original)
+                f.commit("Seed ambiguous state: " + name)
+                before = f.git(f.checkout, "rev-parse", "HEAD")
+                result = f.cli("sync", succeeds=False)
+                self.assertIn("Runtime Status", result.stderr)
+                self.assertEqual(path.read_bytes(), original)
+                self.assertEqual(f.git(f.checkout, "rev-parse", "HEAD"), before)
+                self.assertEqual(f.git(f.checkout, "status", "--porcelain"), "")
+        f.assert_primary_untouched()
+
     def test_full_upstream_outputs_execute_verify_uat_and_preserve_authored_state(self):
         f = self.fixture
         f.prepare_remote()
