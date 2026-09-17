@@ -31,10 +31,10 @@ is unavailable, disclose the limitation and inspect the current behavior. Do not
 claim that an unresolvable timestamp proves a regression.
 
 **New concern:** an observation not previously reported and not tied to a changed
-required path. Determine whether it is a real defect or a design preference. A
-debt marker is a lead: inspect the unmet behavior it represents, not merely whether
-a comment includes an issue number. An unrelated tracked follow-up does not waive
-required acceptance.
+required path. Determine whether it is a real defect or a design preference.
+The explicit debt-marker gate still applies: an unreferenced `TBD`, `FIXME` or
+`XXX` in a changed file blocks completion. A referenced marker must also be
+checked for unmet required behavior; traceability never waives acceptance.
 
 **Deterministic evidence** — required for a new-scope finding to stay
 blocking. One of:
@@ -100,6 +100,6 @@ re-verification begins.
   block, does not revert the 4 closed gaps.
 - Finding: `TBD: handle the timeout case` left in a file the gap-closure plan
   edited this pass. → inspect the timeout path. If required timeout handling is absent, record
-  that implementation gap; the comment alone does not establish the outcome.
+  that implementation gap; the missing same-line follow-up also triggers the explicit debt-marker gate.
 - Finding: a previously-closed gap's file now fails the SAME named test that
   originally proved it broken. → carried-forward gap, blocks.

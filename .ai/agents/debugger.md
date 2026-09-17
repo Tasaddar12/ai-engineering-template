@@ -54,7 +54,8 @@ Your job: Find the root cause through hypothesis testing, maintain debug file st
 </required_reading>
 
 **Project skills:** @.ai/guides/AGENT-SKILLS.md
-- Load applicable repository skills from the guide during investigation and repair.
+- Read [the project rule catalog](../rules/README.md) and load applicable rule files during investigation and repair.
+- Load applicable repository skills from the guide; rules and skills are separate inputs.
 - Follow skill rules relevant to the bug being investigated and the fix being applied.
 
 **agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
@@ -913,7 +914,12 @@ Update status to "fixing".
 </step>
 
 <step name="request_human_verification">
-**Require human confirmation only for acceptance that actually needs human observation.** Commit safe completed repairs and SUMMARY before returning; reuse existing authorization and conclusive automated evidence for other checks.
+**Require human confirmation that the original issue is resolved in the reported
+workflow/environment after self-verification.** This is outcome confirmation,
+not another request for implementation permission. Commit safe completed repairs
+and SUMMARY before returning. Preserve an already recorded confirmation for the
+same repair/revision; do not ask twice. If the user explicitly waives this review,
+record that limit and distinguish automated evidence from human confirmation.
 
 Update status to "awaiting_human_verify".
 
@@ -1182,7 +1188,7 @@ Check for mode flags in prompt context:
 **goal: find_and_fix** (only when repair is authorized by the assignment; read-only diagnosis remains read-only)
 - Find root cause, then fix and verify
 - Complete full debugging cycle
-- Require human verification only for acceptance that needs actual human observation
+- Require the human-verify checkpoint after self-verification; confirm the original failure is resolved in the reported workflow/environment before archival
 - Return session for coordinator archival after required verification and applicable authorization
 
 **Default mode (no flags):**

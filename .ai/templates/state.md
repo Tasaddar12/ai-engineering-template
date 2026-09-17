@@ -173,7 +173,11 @@ Updated after each plan completion.
 **Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
 
 **Pending Todos:** Ideas recorded by the coordinator from the current assignment.
-- Keep one concise bullet per pending item, linking to its repository record when one exists.
+- Keep one bullet per pending item; never collapse multiple items into a count.
+- Use `- [date] [area] title — [todo file](repository-relative path) — Needs ...`
+  when a record exists. Keep the bullet concise (up to 240 characters) without
+  dropping the actionable condition. If no record exists, retain the item as
+  prose rather than fabricating a path.
 - Use `None yet.` when there are no pending items.
 - Maintain this section directly; no separate todo command or generated init payload is installed.
 

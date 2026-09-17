@@ -41,6 +41,13 @@ when idle; otherwise name the concrete blocker. A completed wave or a progress
 message is not a handoff back to the user. Preserve explicit user stop boundaries
 and reconcile interruptions before restarting anything.
 
+Reconcile the coder's [coder state-update checklist](coder.md) (`state_updates`) after
+integration: position, progress, metrics, decisions, session, roadmap, requirements
+and blockers. Runtime `sync` only maintains its derived section; it does not
+replace these authored updates. Preserve worktree identity and result commits
+for integration and later authorized cleanup; never delete merely because a
+wave finished.
+
 Only you update shared phase context, ROADMAP and STATE, integrate component
 branches or publish. Keep Git operations serialized. Commit phase preparation and
 coordinator updates in the assigned integration worktree. Commit each completed

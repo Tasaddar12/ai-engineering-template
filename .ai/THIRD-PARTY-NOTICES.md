@@ -29,6 +29,7 @@ adapted, not an exact source mirror. `README.md` is local navigation.
 
 | Bundled local method | Upstream relative path |
 |---|---|
+| [methods/verification-patterns.md](references/methods/verification-patterns.md) | `verification-patterns.md` |
 | [methods/checkpoints.md](references/methods/checkpoints.md) | `checkpoints.md` |
 | [methods/common-bug-patterns.md](references/methods/common-bug-patterns.md) | `common-bug-patterns.md` |
 | [methods/context-budget.md](references/methods/context-budget.md) | `context-budget.md` |

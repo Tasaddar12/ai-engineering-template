@@ -46,6 +46,18 @@ question. Do not assume a host-specific MCP name or CLI exists, and do not
 install a documentation client just to follow this role. Report unavailable
 sources and resulting uncertainty. The workflow methods below are local and
 require no network lookup.
+
+When Context7 is available, resolve the library ID first, then query that exact
+library/version for the question. Use the actual tool names and argument schema
+exposed by the host; frontmatter names alone do not establish availability.
+If an existing `ctx7` CLI is available, inspect its help and use its library
+resolution then documentation query commands. Otherwise read official versioned
+documentation with an available tool. Do not install a client or use an automatic
+package download just to follow this procedure.
+
+Record the version, source and relevant result. Do not skip a necessary lookup
+because one provider is unavailable or substitute remembered API behavior for
+version-specific evidence. If no source is reachable, report the precise uncertainty.
 </documentation_lookup>
 
 <project_context>
@@ -54,7 +66,8 @@ Before executing, discover project context:
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
 **Project skills:** @.ai/guides/AGENT-SKILLS.md
-- Load applicable repository skills from the guide during implementation.
+- Read [the project rule catalog](../rules/README.md) and load applicable rule files during implementation.
+- Load applicable repository skills from the guide; rules and skills are separate inputs.
 - Follow skill rules relevant to the task you are about to commit.
 
 **agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
@@ -70,14 +83,19 @@ the assigned phase CONTEXT and committed PLAN. The assignment supplies the
 component ID, owned paths, dependency summaries, input revision and result path.
 Use `git rev-parse --show-toplevel`, `git branch --show-current` and
 `git rev-parse HEAD` to confirm the assigned checkout before writes.
-Report missing required inputs to the coordinator; do not reconstruct shared
-state or initialize an adopting project as a worker.
+If STATE.md is missing but `.planning/` exists, report the missing state and
+propose reconstruction from existing records or continuation using sufficient
+verified inputs. The coordinator chooses the recovery within existing authority;
+workers do not reconstruct shared state themselves.
+If `.planning/` is missing: Error — project not initialized. Return this specific
+blocker; do not invent project records or continue implementation.
+Report other missing required inputs with their exact paths and affected work.
 </step>
 
 <step name="load_plan">
 Read the plan file provided in your prompt context.
 
-Parse: frontmatter (phase, plan, type, autonomous, depends_on), objective, context (@-references), tasks with types, verification/success criteria, output spec.
+Parse: frontmatter (phase, plan, type, autonomous, wave, depends_on), objective, context (@-references), tasks with types, verification/success criteria, output spec.
 
 **If plan references CONTEXT.md:** Honor user's vision throughout execution.
 </step>
@@ -92,8 +110,10 @@ PLAN_START_EPOCH=$(date +%s)
 <worktree_metadata_capture>
 If running inside a git worktree, capture authoritative worktree identity before
 any task commit changes HEAD. The coordinator consumes this from
-your final `<worktree_metadata>` return block to build the integration handoff
-without relying on runtime harness metadata.
+your final `<worktree_metadata>` return block for integration and a later safe
+cleanup inventory (worker ID, absolute path, branch, expected base, result commit
+and disposition). No automatic wave-cleanup manifest consumer is installed.
+Preserve this evidence; completing a wave does not authorize deleting its worktrees.
 
 ```bash
 WORKER_WORKTREE_PATH=""
@@ -143,8 +163,13 @@ For each task:
 2. **For an early integration slice:** represent executable work as `type="auto"`
    with explicit end-to-end verification and done criteria. The local runtime
    does not execute a special tracer task type or synthesize a feedback gate.
-   Report failed checks before expansion and return required human observations
-   to the coordinator. If an assigned plan uses an unsupported task type, report
+   Before any expansion task, rerun the slice's assigned end-to-end verification.
+   Failure halts dependent expansion. If the task carries `blocking-human`, stop
+   for the human response even when automated checks pass. If a human-check is
+   required before expansion, return the concrete checkpoint to the coordinator.
+   Continue only after required evidence and responses are present; production
+   quality and real error handling apply to the tracer just as to any other task.
+   If an assigned plan uses an unsupported task type, report
    it for plan correction before execution.
 
 3. **If `type="checkpoint:*"`:**
@@ -206,7 +231,7 @@ This exclusion exists because a failed install may indicate a slopsquatted or ha
     `[package-name]` could not be installed. Before proceeding:
     1. Verify the package exists and is legitimate: https://npmjs.com/package/[package-name]
     2. Confirm the package name is spelled correctly in PLAN.md
-    3. If the package does not exist, re-run the local phase-prepare procedure with the corrected dependency evidence to find the correct package
+    3. If the package does not exist, return the failed lookup to the coordinator for bounded phase research using the researcher role. Feed the confirmed package identity into phase-prepare to correct the PLAN before installation.
   </how-to-verify>
   <resume-signal>Type "verified" with the correct package name, or "abort" to stop the phase</resume-signal>
 </task>
@@ -304,7 +329,12 @@ For full automation-first patterns, server lifecycle, CLI handling:
 
 ---
 
-**Checkpoint behavior:** Use [local checkpoint guidance](../references/methods/checkpoints.md).
+**Checkpoint behavior:** Evaluate the precedence table in
+[local checkpoint guidance](../references/methods/checkpoints.md).
+`gate="blocking-human"` stops dependent work in every mode. Return the structured
+checkpoint with the gate intact; the coordinator must preserve that requirement
+rather than auto-approve by checkpoint type. A passing automated test does not
+satisfy an outstanding required human response.
 A worker returns blocked work and the precise prerequisite to the coordinator.
 Do not auto-approve human-only observations or unresolved decisions. Reuse
 approval already recorded for the same scope.
@@ -387,6 +417,25 @@ Git metadata. The checkout must be an immediate child of the primary checkout's
 ignored `.worktrees/` directory. Resolve every edited path within that root and
 its assigned ownership. Record the starting revision in SUMMARY; shell variables
 alone do not persist across tool calls.
+
+**0a. Directory drift:** Before every staging/commit operation, compare the current
+absolute Git root with the root recorded in the assignment. A previous shell may
+have moved into the primary checkout; checking only whether `.git` is a file can
+silently skip protections there. Stop on a mismatch and return to the known
+assigned checkout before rechecking. Do not derive the expected root from the
+same current-directory query you are trying to verify.
+
+**0b. Absolute-path containment:** Before Edit/Write, resolve the destination and
+its parent links against the assigned root. A path copied from the coordinator's
+working directory can point at primary. Compare complete path components, not a
+string prefix that also accepts a sibling such as `worker-other`. Reject escape
+through `..`, symlinks or junctions. Then check the path against assigned ownership.
+
+**0c. HEAD and persistent base:** Immediately before each commit, check the actual
+branch against the assigned worker branch and reject detached HEAD or the primary
+branch. Never repair this with `git update-ref`, branch switching, or shared Git
+metadata edits. Preserve the starting revision in the assigned record before
+commits; fresh shell variables alone are not a durable commit ledger.
 
 **1. Check modified files:** `git status --short`
 
@@ -519,12 +568,27 @@ and [runtime contract](../runtime/TEMPLATE-CONTRACT.md), including assigned
 acceptance IDs, exact documentation paths, status and a nonempty Checks section.
 Only claim outcomes supported by actual evidence.
 
-**Metrics:** If the PLAN includes an estimate, record actual duration, completed
-tasks and measured commits. Use `git rev-list --count <assigned-base>..HEAD`
-and record that base; do not estimate commit counts from memory. Optional cost
-estimates must name their measurement method and must not be presented as
-provider-reported token usage. Record implementation commit hashes and the
-final SUMMARY commit separately.
+**Actuals (required when the PLAN carries an estimate):** Preserve the estimate's
+measurement scale. Record `actuals.tokens` as chars/4 over the realized diff,
+not provider/harness token usage. State the compared base/head and how binary
+or generated files were treated; an unmeasurable value is an evidence gap, not
+permission to invent a favorable number. Record duration and completed tasks too.
+
+```yaml
+actuals:
+  tokens: 74000   # illustrative; compute chars/4 over the realized diff
+  tasks: 5       # actually completed tasks
+  commits: 7     # measured from assigned base, not recalled
+plan_head_before: "<assigned starting commit>"
+```
+
+Use `git rev-list --count <assigned-base>..HEAD` and record that immutable base
+before the first task commit in the assigned durable record. Reuse the assignment's
+recorded input/base revision after context loss; never redefine it from current
+HEAD. Report implementation commit hashes and the final SUMMARY commit separately.
+If the count is zero while intended changes are uncommitted, halt completion and
+return `git status --short`; do not narrate commits that do not exist. A legitimate
+no-change result must explain what was inspected and why no edit was needed.
 
 **Title:** `# Phase [X] Plan [Y]: [Name] Summary`
 
@@ -602,6 +666,24 @@ planned IDs by default. Include the exact blocked task and next action if work
 is incomplete. The coordinator reconciles shared CONTEXT, ROADMAP and REQUIREMENTS
 and uses `python .ai/runtime/phase.py status` and `sync` for runtime status.
 Workers never edit shared state or execute those mutations.
+
+Return this explicit reconciliation checklist with values/evidence, not merely
+"update state":
+
+| Operation | Worker supplies | Coordinator reconciles |
+|---|---|---|
+| Advance position | Completed component and remaining dependencies | Current plan/phase and last-plan boundary |
+| Update progress | Integrated-result evidence, incomplete/blocked items | Counts and progress; SUMMARY presence alone is not completion |
+| Record metrics | Duration, tasks, files, measured actuals and base | Performance Metrics without mixing measurement scales |
+| Add decisions | Decision text, source and affected acceptance | Decisions section; preserve authority and remove resolved placeholders |
+| Record session | Last completed action, stopped-at point and resume evidence | Session Continuity and next action |
+| Update roadmap | Completed versus remaining plans and verified outcomes | Phase progress row |
+| Complete requirements | Exact PLAN requirement IDs supported by outcome evidence | Requirement checkboxes and traceability |
+| Record blockers | Exact task, cause, evidence and next action | Open blockers; clear only when resolved |
+
+`phase.py sync` updates derived Runtime Status only. It does not perform all of
+these authored-record operations. The coordinator must apply the remaining
+record changes explicitly within its assigned checkout.
 </state_updates>
 
 <final_commit>

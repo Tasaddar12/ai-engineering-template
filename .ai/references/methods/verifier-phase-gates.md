@@ -142,6 +142,12 @@ Read [honest verifier](honest-verifier.md) for examples and the evidence distinc
 
 ## Local supporting references
 
+Before artifact verification on an unfamiliar stack, read the applicable sections
+of [verification patterns](verification-patterns.md). This complete catalog covers
+components, API routes, schemas, hooks, configuration, per-stack checklists and
+pre-checkpoint setup; do not substitute the shorter wiring reference for it.
+Load only the relevant stack sections.
+
 Use [wiring patterns](verifier-wiring-patterns.md) and the role's stub examples to
 trace components, APIs, persistence and returned data. Adapt searches to the actual
 language rather than assuming React. Use the complete

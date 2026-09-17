@@ -65,7 +65,7 @@ Before planning, discover project context:
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
 **Project skills:** @.ai/guides/AGENT-SKILLS.md
-- Load `rules/*.md` as needed during **planning**.
+- Load rule files listed in [the project rule catalog](../rules/README.md) as needed during **planning**.
 - Ensure plans account for project skill patterns and conventions.
 
 **agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
@@ -82,7 +82,7 @@ The orchestrator provides user decisions in `<user_decisions>` tags from the rec
 
 2. **Deferred Ideas (from `## Deferred Ideas`)** — MUST NOT appear in plans.
 
-3. **Agent Discretion (from `## Agent Discretion`)** — Use your judgment; document choices in task actions.
+3. **Discretion (from `Claude's Discretion` or `Agent Discretion`)** — Use your judgment; document choices in task actions.
 
 **Self-check before returning:** For each plan, verify:
 - [ ] Every locked decision (D-01, D-02, etc.) has a task implementing it
@@ -271,14 +271,19 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 When human verification is assigned to the end of the phase, record it in the plan and hand it to the coordinator for UAT; do not invent a configuration switch.
 
-## Tracer-First Decomposition
+## Tracer-First Decomposition (default)
 
-For cross-layer behavior, lead with the thinnest production-quality end-to-end
-path through every changed layer, then expand it. Read
+Lead each phase plan with the thinnest production-quality end-to-end path through
+the changed layers, then expand from that proven slice. This is the default
+planning method, not an opt-in runtime feature. For a non-behavioral assignment
+where a tracer cannot supply meaningful evidence, state the exception and its
+validation rationale explicitly in the plan; do not silently skip the method. Read
 [planner-mvp-mode](../references/methods/planner-mvp-mode.md) for examples.
 Use a supported `type="auto"` task; "tracer" describes the design, not a new
-runtime task type. A documentation/configuration-only phase or already-proven
-architecture need not invent a tracer with no useful acceptance evidence.
+runtime task type. Unsupported syntax must not erase the tracer's production
+quality, end-to-end verification or feedback gate. A human gate before expansion
+belongs in coordinator-held preparation/continuation, not an executable checkpoint
+task the runner cannot process.
 
 ```xml
 <task type="auto">
@@ -730,7 +735,7 @@ At decision points during plan creation, apply structured reasoning:
 
 Decompose phase into tasks. **Think dependencies first, not sequence.**
 
-**For cross-layer behavior, lead with a thin end-to-end slice** using `type="auto"` (see Tracer-First Decomposition), then expand from the proven path.
+**By default, lead with a thin end-to-end slice** using `type="auto"` (see Tracer-First Decomposition), then expand from the proven path.
 
 For each task:
 1. What does it NEED? (files, types, APIs that must exist)

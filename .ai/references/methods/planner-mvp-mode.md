@@ -1,9 +1,10 @@
 # Planner — Tracer-First Decomposition (Vertical Slices)
 
-Use for phases adding behavior across multiple layers. "Tracer" means a thin
-production-quality end-to-end slice, expressed as a supported `type="auto"` task.
-It is a planning method, not a runtime mode flag. Use ordinary bounded tasks when
-a tracer adds no evidence (for example a documentation-only phase).
+Tracer-first is the default planning method. A tracer is a thin production-quality
+end-to-end slice, expressed as a supported `type="auto"` task. The syntax change
+does not waive the early integration feedback gate. If a non-behavioral assignment
+cannot benefit from a tracer, explicitly record the exception and its verification
+rationale in the PLAN rather than silently treating the method as optional.
 
 ## Core Rule
 

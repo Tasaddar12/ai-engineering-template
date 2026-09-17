@@ -26,6 +26,24 @@ whose expected behavior is already settled. A test written by assuming the same
 missing rule as the implementation does not resolve the specification gap. Symbol
 presence and wiring alone never resolve it either.
 
+## Why an external backstop annotation matters
+
+The trigger is the supplied `verification: backstop` annotation, not whether the
+verifier feels uncertain. A model can be confidently wrong about an omitted rule.
+Asking it to reconsider its confidence does not establish the missing contract.
+
+For a tagged truth, absence of independent explicit evidence requires abstention.
+The verifier need not correctly guess the omitted edge case to honor the tag.
+Route the missing decision or held-out test to the coordinator rather than using
+the implementation's own assumptions to generate an approving test.
+
+Do not silently discard a tag because the implementation appears obvious. If a
+tag seems incorrect, cite the approved contract and return that discrepancy for
+reconciliation. An untagged, determinate truth is graded normally; avoid blanket
+abstention. A concrete ambiguity discovered in an untagged truth still needs a
+recorded resolution. Distinguish insufficient specification from specified but
+unobserved behavior in the report.
+
 ## Reporting
 
 If explicit evidence is missing, abstain on that truth with
@@ -34,8 +52,8 @@ If explicit evidence is missing, abstain on that truth with
 `gaps_found`. Infrastructure phases follow the same rule. Continue independent
 review; do not silently pass, invent a decision, or say all outcomes are complete.
 
-A false annotation can create unnecessary uncertainty: read the approved contract
-before abstaining. An omitted annotation does not excuse a concrete ambiguity
+A false annotation can create unnecessary uncertainty: report the conflict with
+the approved contract rather than quietly overriding the supplied annotation. An omitted annotation does not excuse a concrete ambiguity
 found during review. The procedure is an evidence discipline, not a claim that a
 particular model or deterministic helper guarantees accurate judgments.
 

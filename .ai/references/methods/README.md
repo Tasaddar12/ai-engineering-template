@@ -19,3 +19,8 @@ Methods do not add CLI subcommands, enable unsupported task forms, override
 human instructions or authorize new work. The [rules](../../RULES.md),
 [runtime contract](../../runtime/TEMPLATE-CONTRACT.md) and assigned CONTEXT/PLAN
 remain authoritative. User limits on testing, publishing and merging apply.
+
+For stack-specific review, use [verification patterns](verification-patterns.md)
+for components, routes, schemas, hooks and configuration, alongside the focused
+[wiring patterns](verifier-wiring-patterns.md). The catalog's structural heuristics
+help locate code to inspect; they do not substitute for outcome evidence.

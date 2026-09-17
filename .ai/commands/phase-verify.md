@@ -7,6 +7,12 @@ the actual integrated code. Use the assigned clean integration worktree.
 python .ai/runtime/phase.py verify 01-authentication
 ```
 
+For assigned TDD plans, first complete the coordinator's
+[end-of-phase TDD review](../references/methods/tdd.md#end-of-phase-tdd-review-checkpoint):
+present per-plan RED/GREEN/REFACTOR evidence, gate violations and required human
+review. Preserve test deferrals as missing evidence. This review does not replace
+independent verification and is not automatically performed by the runner.
+
 The runtime dispatches the independent [verifier](../agents/verifier.md). It
 checks phase acceptance, component connections, regressions and documentation at
 the assigned revision. The host saves the report externally while the checkout

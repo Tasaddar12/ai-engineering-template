@@ -112,6 +112,13 @@ section with evidence and the scope boundary. A separately authorized change can
 become another phase. Search before duplicating a finding. Deferring a required
 gap does not make the original phase complete.
 
+## Modular project rules
+
+Read the [project rule catalog](rules/README.md) and applicable rule files for
+this assignment. Rules supplement project conventions; they do not replace
+skills, approved specifications or actual user instructions. Use the
+[rule template](templates/rule.md) when recording a new established convention.
+
 ## Components and handoffs
 
 The coordinator owns phase records, scheduling and integration. It starts fresh

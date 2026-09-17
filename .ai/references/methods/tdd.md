@@ -295,6 +295,29 @@ steps without inventing retrospective RED evidence.
 </gate_enforcement>
 
 <end_of_phase_review>
+## End-of-phase TDD review checkpoint
+
+After the assigned TDD plans are integrated and before final phase verification,
+the coordinator gathers a per-plan review. This is an explicit coordinator step;
+the Python runtime does not synthesize the checkpoint or invoke a TDD SDK gate.
+
+```text
+### TDD REVIEW — Phase {X}
+TDD Plans: {count} | Gate violations: {count} | Unverified: {count}
+
+| Plan | RED commit/result | GREEN commit/result | REFACTOR | Status |
+|------|-------------------|---------------------|----------|--------|
+| {id} | {hash, command, intended failure} | {hash, command, pass/fail} | {result or not needed} | {status} |
+```
+
+Review gate order, intentional RED (not setup failure), minimal GREEN without
+premature optimization, and passing checks after any refactor. Show violations
+and missing evidence explicitly; preserve previous commits. Obtain any assigned
+human review using the checkpoint procedure, including `blocking-human` when
+specified. Do not invent an automatic approval or defer a required human gate.
+Discipline observations are advisory unless they violate assigned acceptance;
+missing required behavioral evidence still prevents a verified completion.
+
 ## Independent TDD evidence review
 
 During [phase verification](../../commands/phase-verify.md), compare each assigned
@@ -309,7 +332,8 @@ TDD plan's behavior with the implemented result and its recorded evidence:
 
 The verifier independently assesses this evidence. A missing required result is
 a gap, not an advisory that can silently pass. Human acceptance follows the
-local UAT procedure only where the phase requires human observations.
+local UAT/checkpoint procedure for every assigned human review; preserve explicit
+`blocking-human` gates even when automated evidence is conclusive.
 </end_of_phase_review>
 
 <context_budget>

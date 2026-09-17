@@ -369,10 +369,12 @@ grep -n -B 2 -A 2 "console\.log" "$file" 2>/dev/null | grep -E "^\s*(const|funct
 
 **Stub classification:** A grep match is a STUB only when the value flows to rendering or user-visible output AND no other code path populates it with real data. A test helper, type default, or initial state that gets overwritten by a fetch/store is NOT a stub. Check for data-fetching (useEffect, fetch, query, useSWR, useQuery, subscribe) that writes to the same variable before flagging.
 
-**Debt markers:** Inspect each `TBD`, `FIXME` or `XXX` in changed code and map
-it to actual behavior. An unmet required outcome is a gap even if a follow-up is
-linked; an unrelated future enhancement is not a blocker merely because a marker
-exists. Record scope, evidence and any existing follow-up without inventing one.
+**Debt marker gate:** A `TBD`, `FIXME` or `XXX` marker in a file modified by this
+phase is a blocker unless that same line references formal follow-up work (an
+issue/PR reference, `DEF-*`, or an exact repository record). Report the path, line,
+marker and missing follow-up in gaps. A reference establishes traceability only:
+if the marker represents an unmet required outcome, it remains a blocker even
+with a follow-up. Do not invent follow-up work to make this gate pass.
 
 **Re-verification evidence gate:** apply [the local evidence method](../references/methods/verifier-evidence-gate.md). Compare actual revisions, confirm carried-forward gaps, and distinguish demonstrated defects from unsupported new preferences. Changed files or debt-marker comments are inspection leads, not automatic proof. Preserve required evidence gaps; do not let an advisory label produce an unsupported pass.
 

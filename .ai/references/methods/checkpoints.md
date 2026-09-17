@@ -26,8 +26,32 @@ actual decisions, credentials and observations requiring human judgment.
 6. Report missing credentials through the host's secure authentication mechanism;
    do not expose secrets in logs, command history or committed artifacts.
 
-A blocking human decision remains blocking in every mode. The coordinator owns
-recording the answer and deciding whether an interrupted component can resume.
+**`gate="blocking-human"` is never auto-approved.** It stops dependent work for
+an actual human response in every mode, regardless of checkpoint type. This
+includes human verification, a decision whose default cannot be assumed, package
+legitimacy checks, and unmet prerequisites the worker cannot establish itself.
+A previous general instruction to work autonomously does not satisfy this gate.
+Reuse an actual recorded response only when it resolves this exact gate and scope.
+
+Both layers must preserve it: the worker returns `CHECKPOINT REACHED` with the
+exact gate, completed commits, blocker and requested input; the coordinator shows
+the unresolved gate to the human and records the answer. Dispatching solely on
+checkpoint type must never erase `blocking-human` one layer up.
+
+| Condition (evaluate in this order) | Required action |
+|---|---|
+| `gate="blocking-human"` without a matching recorded human response | Stop dependent work and return the human checkpoint, regardless of type or mode |
+| Unmet prerequisite or failed required verification | Stop dependent work; report the failed fact/evidence, never offer a false pass |
+| Human-only action or observation remains outstanding | Present the concrete action/check and await the actual response |
+| Unresolved decision outside delegated discretion | Present alternatives and consequences; never auto-select the first option |
+| Exact decision already resolved, or work within delegated discretion with conclusive required evidence | Continue without asking for the same approval again |
+
+`gate="blocking"` does not by itself grant auto-approval. The local workflow has
+no auto-approval configuration flag. Independent authorized work may continue
+while the coordinator awaits a response, but dependent expansion cannot.
+
+The coordinator owns recording the answer and reconciling an interrupted
+component before preparing an executable continuation.
 </overview>
 
 <checkpoint_types>
