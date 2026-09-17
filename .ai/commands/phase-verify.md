@@ -70,8 +70,11 @@ python .ai/runtime/phase.py run 01-authentication --replan --workers-stopped
 The flags assert a reconciled attempt; they do not stop workers or authorize scope.
 Rerun affected checks and independent verification on the resulting revision.
 
-A summary assertion or successful process is not a pass. Report human-only checks
-as pending and use [phase-uat](phase-uat.md). Required missing evidence prevents
+A summary assertion or successful process is not a pass. For required human-only
+checks not yet performed, set VERIFICATION frontmatter `status: human_needed` and
+list each pending check under Human Verification Required; use [phase-uat](phase-uat.md).
+If demonstrated gaps also exist, set `status: gaps_found` and retain the pending
+human checks. Required missing evidence prevents
 final readiness and merge. Draft progress pushes follow
 [phase-ship](phase-ship.md); the runtime publisher still requires verification.
 Additional review follows the risks and changes; there is no fixed

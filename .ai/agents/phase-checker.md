@@ -832,7 +832,7 @@ Set a blocking finding when a PLAN exceeds a configured positive `execution.max_
 
 **issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories. Plans need revision only when blockers or warnings are present.
 
-Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
+For `blocker` or `warning`, return `## ISSUES FOUND` and require correction of the stated property before execution. For `info` only, return the same heading with `Advisory only — no revision required`; do not require the example fix mechanism.
 
 </verification_process>
 
@@ -877,10 +877,10 @@ constraint. A hint carrying a forbidden route is applied by anyone who trusts hi
 - Missing requirement coverage
 - Missing required task fields
 - Circular dependencies
-- Scope > 5 tasks per plan
+- Task count exceeds configured `execution.max_tasks_per_component`
 
-**warning** - Should fix, execution may work
-- Scope 4 tasks (borderline)
+**warning** - Correct the stated property before execution; do not require the example mechanism
+- Separate component outcomes or prerequisite components combined in one PLAN
 - Implementation-focused truths
 - Minor wiring missing
 
@@ -937,7 +937,7 @@ Plans checked. Return readiness to the coordinator; implementation still require
 - Evidence: {description}
 - Example fix (non-binding — any mechanism reaching the property counts): {fix_hint}
 
-### Warnings — these properties should hold
+### Warnings — correct these properties before execution
 
 **1. [{dimension}] {required_property}**
 - Plan: {plan}
