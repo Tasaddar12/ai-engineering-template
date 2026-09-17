@@ -168,7 +168,8 @@ infrastructure problem must be diagnosed before it can count as a behavioral RED
 The worker writes and commits a named behavioral test first, runs it and records
 why the failure is the expected assertion (RED), then implements and commits the
 passing behavior (GREEN). Refactor only to remove duplication introduced by the
-change, simplify changed control flow, or satisfy an applicable project convention
+change, simplify changed control flow, improve names, extract constants or helpers,
+or satisfy an applicable project convention
 in the assigned code. Preserve acceptance behavior and owned paths; do not add
 features or clean up unrelated code. After refactoring, rerun the named behavioral
 test and affected component checks; record the commands and results in TDD Evidence.

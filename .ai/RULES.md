@@ -151,9 +151,10 @@ repeat affected checks. Broaden review when changed behavior invalidates prior
 evidence. Keep findings visible and distinguish editorial details from defects.
 
 Coders may update tests, comments and assigned nearby explanations while their
-understanding is fresh. For required documentation, assign a documentor when
-creating a specification or guide, changing instructions that span multiple
-components, or changing installation, configuration, migration or recovery procedures.
+understanding is fresh, including assigned command corrections and option names.
+For required documentation, assign a documentor when creating a specification or
+guide, changing an operational sequence, or explaining behavior across components.
+A command or option-name correction alone does not require a separate documentor.
 Give the documentor exact document paths and the implementation evidence for each
 changed claim. These triggers do not authorize creating documentation outside the
 approved scope. Required documentation stays in the same phase and PR;

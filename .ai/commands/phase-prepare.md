@@ -30,8 +30,8 @@ Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 4. Write VALIDATION when the phase needs shared test setup, manual checks or a
    coverage explanation. Command values belong to config or PLAN; reference
    them rather than keeping competing copies.
-5. Have an independent [checker](../agents/phase-checker.md) assess substantial
-   phases. Record its findings and resolution in CONTEXT preparation notes.
+5. Obtain an independent [checker](../agents/phase-checker.md) assessment for the
+   mandatory preparation-check triggers in [RULES](../RULES.md#review-documentation-and-completion). Record its findings and resolution in CONTEXT preparation notes.
    Keep blocking unresolved behavior out of executable assignments.
 6. Commit prepared inputs and run the read-only readiness check:
 
@@ -66,8 +66,8 @@ vertical slices. Apply the [runtime contract](../runtime/TEMPLATE-CONTRACT.md)
 for executable metadata; do not replace these detailed tasks with five generic
 headings.
 
-For substantial phases, the coordinator assigns preparation and checking to fresh
-independent agents. The local Python `check` command is structural inspection,
+For phases meeting the mandatory preparation-check triggers in RULES, assign
+preparation and checking to separate fresh agents. The local Python `check` command is structural inspection,
 not the checker agent. Give the checker the completed plans, context and actual
 source; use the [phase checker](../agents/phase-checker.md) with local
 [agent adaptation](../references/agent-adaptation.md). Return findings to the

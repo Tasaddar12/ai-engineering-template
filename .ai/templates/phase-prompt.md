@@ -253,14 +253,14 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 
 **Plan sizing:**
 
-- 2-3 tasks per plan
+- Use 2-3 tasks as a sizing target; enforce `execution.max_tasks_per_component` when set.
 - ~50% context usage maximum
 - Complex phases: Multiple focused plans, not one large plan
 
 **When to split:**
 
-- Different subsystems (auth vs API vs UI)
-- >3 tasks
+- Separate component outcomes or different prerequisite components; keep model/API/UI work together when it delivers one outcome.
+- Task count exceeds a configured positive `execution.max_tasks_per_component`; null disables that numeric cap.
 - Risk of context overflow
 - TDD candidates - separate plans
 
@@ -513,7 +513,7 @@ files_modified: [...]
 - Prefer vertical slices over horizontal layers
 - Only reference prior SUMMARYs when genuinely needed
 - Group checkpoints with related auto tasks in same plan
-- 2-3 tasks per plan, ~50% context max
+- Target 2-3 tasks per plan and ~50% context; enforce the configured task cap and preserve the context handoff limit.
 
 ---
 

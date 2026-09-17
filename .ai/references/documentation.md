@@ -26,8 +26,9 @@ prevents phase completion. A removed obligation changes the approved instruction
 it cannot be dropped simply because implementation did not satisfy it.
 
 Coders update nearby explanation while their understanding is fresh. Assign a
-documentor for substantial SPECs and guides, with dependencies on the code it
-describes. Verify claims against code/callers/checks at the integrated revision.
+documentor for new SPECs/guides, changed operational sequences or explanations
+spanning components; declare dependencies on the code it describes. Coders may
+correct assigned commands, option names and nearby explanations. Verify claims against code/callers/checks at the integrated revision.
 Run documented commands where appropriate and inspect links and configuration
 examples. References provide navigation; a guide is not evidence for its own claim.
 

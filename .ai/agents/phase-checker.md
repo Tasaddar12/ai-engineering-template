@@ -321,12 +321,12 @@ issue:
 **Thresholds:**
 | Metric | Target | Warning | Blocker |
 |--------|--------|---------|---------|
-| Tasks/plan | 2-3 | 4 | 5+ |
+| Tasks/plan | 2-3 (sizing target) | Separate outcomes or prerequisites need splitting | Exceeds configured `execution.max_tasks_per_component` |
 | Files/plan | 5-8 | 10 | 15+ |
 | Total context | ~50% | ~70% | 80%+ |
 
 **Red flags:**
-- Plan with 5+ tasks (quality degrades)
+- Plan exceeds the configured task cap or combines separate component outcomes
 - Plan with 15+ file modifications
 - Single task with 10+ files
 - Complex work (auth, payments) crammed into one plan
@@ -337,12 +337,12 @@ issue:
   dimension: scope_sanity
   severity: warning
   required_property: "Each plan stays within the per-plan context budget"
-  description: "Plan 01 has 4 tasks - borderline, split recommended"
+  description: "Plan 01 combines independent account-creation and billing outcomes"
   plan: "01"
   metrics:
     tasks: 4
     files: 8
-  fix_hint: "Split into 2 plans: foundation (01) and integration (02)"
+  fix_hint: "Split into account-creation and billing plans; preserve each outcome and declare dependencies"
 ```
 
 ## Dimension 6: Verification Derivation
@@ -816,7 +816,7 @@ Count tasks and owned paths in each PLAN. Consider dependency complexity, requir
 reading and expected verification output. Use [context budget](../references/methods/context-budget.md)
 for advisory estimates, never fabricated calibration results.
 
-Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
+Set a blocking finding when a PLAN exceeds a configured positive `execution.max_tasks_per_component`. When the cap is null, do not reject a PLAN by task count alone; cite separate outcomes or prerequisite components when requiring a split. Keep 2-3 tasks as a sizing target.
 
 ## Step 9: Verify must_haves Derivation
 
