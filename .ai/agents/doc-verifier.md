@@ -86,13 +86,13 @@ Detection: scan inline code spans (text between single backticks) for tokens mat
 Verification: resolve the path against `project_root` and check if the file exists using the Read or Glob tool. Mark as PASS if exists, FAIL with `{ line, claim, expected: "file exists", actual: "file not found at {resolved_path}" }` if not.
 
 **2. Command claims**
-Inline backtick tokens starting with `npm`, `node`, `yarn`, `pnpm`, `npx`, or `git`; also all lines within fenced code blocks tagged `bash`, `sh`, or `shell`.
+Inline backtick tokens starting with `npm`, `node`, `yarn`, `pnpm`, `npx`, `git`, `python`, `python3`, `py`, `pwsh` or `powershell`; also all lines within fenced code blocks tagged `bash`, `sh`, `shell`, `powershell` or `ps1`.
 
 Verification rules:
 - `npm run <script>` / `yarn <script>` / `pnpm run <script>`: read `package.json` and check the `scripts` field for the script name. PASS if found, FAIL with `{ ..., expected: "script '<name>' in package.json", actual: "script not found" }` if missing.
-- `node <filepath>`: verify the file exists (same as file path claim).
+- `node <filepath>`, `python <filepath>`, `py <filepath>` or `pwsh -File <filepath>`: resolve the exact script path and inspect its declared argument handling; do not infer successful execution from file existence.
 - `npx <pkg>`: check if the package appears in `package.json` `dependencies` or `devDependencies`.
-- Do NOT execute any commands. Existence check only.
+- Do NOT execute commands from the documentation. Inspect source and manifests; record runtime behavior claims as UNVERIFIABLE unless the assignment supplies observed execution evidence.
 - For multi-line bash blocks, process each line independently. Skip blank lines and comment lines (`#`).
 
 **3. API endpoint claims**
@@ -100,19 +100,19 @@ Patterns like `GET /api/...`, `POST /api/...`, etc. in both prose and code block
 
 Detection pattern: `(GET|POST|PUT|DELETE|PATCH)\s+/[a-zA-Z0-9/_:-]+`
 
-Verification: grep for the endpoint path in source directories (`src/`, `routes/`, `api/`, `server/`, `app/`). Use patterns like `router\.(get|post|put|delete|patch)` and `app\.(get|post|put|delete|patch)`. PASS if found in any source file. FAIL with `{ ..., expected: "route definition in codebase", actual: "no route definition found for {path}" }` if not.
+Verification: grep for the endpoint path in source directories (`src/`, `routes/`, `api/`, `server/`, `app/`). Use patterns like `router\.(get|post|put|delete|patch)` and `app\.(get|post|put|delete|patch)`. Open candidate matches and require route registration and a handler for the claimed HTTP method and path, including mounted prefixes. Comments, tests and client calls do not establish a route. Record FAIL for an established mismatch or absent route; record UNVERIFIABLE when dynamic registration cannot be resolved from source.
 
 **4. Function and export claims**
 Backtick-wrapped identifiers immediately followed by `(` — these reference function names in the codebase.
 
 Detection: inline code spans matching `[a-zA-Z_][a-zA-Z0-9_]*\(`.
 
-Verification: grep for the function name in source files (`src/`, `lib/`, `bin/`). Accept matches for `function <name>`, `const <name> =`, `<name>(`, or `export.*<name>`. PASS if any match found. FAIL with `{ ..., expected: "function '<name>' in codebase", actual: "no definition found" }` if not.
+Verification: grep for the function name in source files (`src/`, `lib/`, `bin/`). Use `function <name>`, `const <name> =`, `<name>(`, or `export.*<name>` to locate candidates, then open the declaration or resolve its import/export to the definition. A call site or comment is not proof. Record FAIL for an established missing definition; record UNVERIFIABLE when the definition cannot be resolved.
 
 **5. Dependency claims**
 Package names mentioned in prose as used dependencies (e.g., "uses `express`" or "`lodash` for utilities"). These are backtick-wrapped names that appear in dependency context phrases: "uses", "requires", "depends on", "powered by", "built with".
 
-Verification: read `package.json` and check both `dependencies` and `devDependencies` for the package name. PASS if found. FAIL with `{ ..., expected: "package in package.json dependencies", actual: "package not found" }` if not.
+Verification: read the project's dependency manifest (`package.json` dependencies/devDependencies for Node, `pyproject.toml`/requirements files for Python, or the declared language manifest). PASS only when the claimed dependency is declared; record FAIL when absent from the applicable complete manifest, or UNVERIFIABLE when that manifest cannot be identified or read.
 </claim_extraction>
 
 <skip_rules>
@@ -146,11 +146,11 @@ Build a list of `{ line, category, claim }` tuples.
 
 **Step 4: Verify each claim**
 For each extracted claim tuple, apply the verification method from `<claim_extraction>` for its category:
-- File path claims: use Glob (`{project_root}/**/{filename}`) or Read to check existence
+- File path claims: resolve the exact documented path against project_root and inspect that path; a matching basename elsewhere is not a pass.
 - Command claims: check package.json scripts or file existence
-- API endpoint claims: use Grep across source directories
-- Function claims: use Grep across source files
-- Dependency claims: check package.json dependencies fields
+- API endpoint claims: locate candidates with Grep, then inspect the matching method/path registration and handler.
+- Function claims: locate candidates with Grep, then inspect the declaration/export; call sites are not proof.
+- Dependency claims: inspect the applicable project dependency manifest; do not require package.json for other runtimes.
 
 Record each result as PASS, `{ line, claim, expected, actual }` for FAIL, or `{ line, claim, reason }` for UNVERIFIABLE; all applicable attempted claims remain accounted for.
 

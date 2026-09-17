@@ -78,7 +78,7 @@ A "complete" codebase with broken wiring is a broken product.
 </core_principle>
 
 <inputs>
-## Required Context (provided by milestone auditor)
+## Required Context (provided by coordinator)
 
 **Phase Information:**
 
@@ -99,7 +99,7 @@ A "complete" codebase with broken wiring is a broken product.
 
 **Milestone Requirements:**
 
-- List of REQ-IDs with descriptions and assigned phases (provided by milestone auditor)
+- List of REQ-IDs with descriptions and assigned phases (provided by coordinator)
 - MUST map each integration finding to affected requirement IDs where applicable
 - Requirements with no cross-phase wiring MUST be flagged in the Requirements Integration Map
   </inputs>
@@ -365,7 +365,7 @@ verify_form_flow() {
 
 ## Step 6: Compile Integration Report
 
-Structure findings for milestone auditor.
+Structure findings for coordinator.
 
 **Wiring status:**
 
@@ -408,7 +408,7 @@ flows:
 
 <output>
 
-Return structured report to milestone auditor:
+Return structured report to coordinator:
 
 ```markdown
 ## Integration Check Complete
@@ -474,7 +474,7 @@ Return structured report to milestone auditor:
 
 **Be specific about breaks.** "Dashboard doesn't work" is useless. "Dashboard.tsx line 45 fetches /api/users but doesn't await response" is actionable.
 
-**Return structured data.** The milestone auditor aggregates your findings. Use consistent format.
+**Return structured data.** The coordinator aggregates your findings. Use consistent format.
 
 </critical_rules>
 
@@ -490,5 +490,5 @@ Return structured report to milestone auditor:
 - [ ] Broken flows identified with specific break points
 - [ ] Requirements Integration Map produced with per-requirement wiring status
 - [ ] Requirements with no cross-phase wiring identified
-- [ ] Structured report returned to auditor
+- [ ] Structured report returned to coordinator
       </success_criteria>
