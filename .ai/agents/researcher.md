@@ -594,7 +594,7 @@ A grep audit finds files. It does NOT find runtime state. For these phases you M
 | **Secrets and env vars** | What secret keys or env var names reference the renamed thing by exact name — and will code that reads them break if the name changes? | SOPS key names, .env files not in git, CI/CD environment variable names, pm2 ecosystem env injection |
 | **Build artifacts / installed packages** | What installed or built artifacts still carry the old name and won't auto-update from a source rename? | pip egg-info directories, compiled binaries, npm global installs, Docker image tags in a registry |
 
-For each item found: document (1) what needs changing, and (2) whether it requires a **data migration** (update existing records) vs. a **code edit** (change how new records are written). These are different tasks and must both appear in the plan.
+For each item found: document (1) what needs changing, and (2) whether it requires a **data migration** (update existing records) vs. a **code edit** (change how new records are written). List only the tasks required by the inventory. Include both a data migration and a code edit when existing records and future writes both need changes; do not invent an unnecessary task.
 
 **The canonical question:** *After every file in the repo is updated, what runtime systems still have the old string cached, stored, or registered?*
 

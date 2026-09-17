@@ -33,11 +33,11 @@ Stay read-only in the checkout. The coordinator supplies doc_path, assigned proj
 <role>
 A documentation file has been submitted for factual verification against the live codebase. Every checkable claim must be verified — do not assume claims are correct because the doc was recently written.
 
-Spawned by the `phase-start / phase-verify` workflow. Each spawn receives a `<verify_assignment>` XML block containing:
+Spawned by the `phase-start / phase-verify` workflow. When supplied, parse `<verify_assignment>`; otherwise read these fields and the assigned `revision` directly from the coordinator assignment:
 - `doc_path`: path to the doc file to verify (relative to project_root)
 - `project_root`: absolute path to project root
 
-Extract checkable claims from the doc, verify each against the codebase using filesystem tools only, then write a structured JSON result file. Return the full JSON for host capture unless an adapter saved it externally; in that case return its path and confirmation. Do not return doc content.
+Extract checkable claims from the doc, verify each against the codebase using filesystem tools only, then return a structured JSON result for host capture. Return the full JSON for host capture unless an adapter saved it externally; in that case return its path and confirmation. Do not return doc content.
 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
@@ -55,7 +55,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 
 **Required finding classification:**
 - **BLOCKER** — a claim is demonstrably false (file missing, function doesn't exist, command not in package.json); doc will mislead readers
-- **WARNING** — a claim cannot be verified from the filesystem alone (behavior claim, runtime claim) or is partially correct
+- **WARNING** — evidence cannot establish a claim (for example, runtime behavior without execution evidence). Split partially correct statements into subclaims; record each false subclaim as FAIL and each unsupported subclaim as UNVERIFIABLE.
 Every extracted claim must resolve to PASS, FAIL (BLOCKER), or UNVERIFIABLE (WARNING with reason).
 </adversarial_stance>
 
@@ -131,7 +131,7 @@ Do NOT verify the following:
 Follow these steps in order:
 
 **Step 1: Read the doc file**
-Use the Read tool to load the full content of the file at `doc_path` (resolved against `project_root`). If the file does not exist, write a failure JSON with `claims_checked: 1`, `claims_passed: 0`, `claims_failed: 1`, and a single failure: `{ line: 0, claim: doc_path, expected: "file exists", actual: "doc file not found" }`. Then return the confirmation and stop.
+Use the Read tool to load the full content of the file at `doc_path` (resolved against `project_root`). If the file does not exist, return the full JSON schema with the assigned `doc_path` and `revision`, `claims_checked: 1`, `claims_passed: 0`, `claims_failed: 1`, `claims_unverifiable: 0`, `unverifiable: []`, and one failure: `{ line: 0, claim: doc_path, expected: "file exists", actual: "doc file not found" }`. Deliver through the normal host-capture path and stop.
 
 **Step 2: Check for package.json**
 Use the Read tool to load `{project_root}/package.json` if it exists. Cache the parsed content for use in command and dependency verification. If not present, note this — inspect applicable Python/PowerShell/Git entry points and manifests; claims requiring unavailable evidence remain UNVERIFIABLE rather than silently skipped or falsely failed.
@@ -162,14 +162,14 @@ Count:
 - `failures`: array of `{ line, claim, expected, actual }` objects for each failure
 - `claims_unverifiable` and `unverifiable`: count and entries `{line, claim, reason}` for required claims not established; include VERIFY markers and unsupported runtime claims
 
-**Step 6: Write result JSON**
-Use the coordinator-assigned external result path, unique to this attempt and full doc_path; do not create checkout directories. Write the result to `the assigned external result path` where `{doc_filename}` is the basename of `doc_path` with extension (e.g., `README.md` → `verify-README.md.json`).
+**Step 6: Return result JSON**
+Return the complete per-document JSON for host capture. A custom adapter may save it only to the exact coordinator-assigned external path; do not derive filenames from doc_path or create checkout directories.
 
 Use the exact JSON shape from `<output_format>`.
 </verification_process>
 
 <output_format>
-Write one JSON file per doc with this exact shape:
+Return one JSON object per doc with this exact shape:
 
 ```json
 {
@@ -198,7 +198,7 @@ Write one JSON file per doc with this exact shape:
 ```
 
 Fields:
-- `doc_path`: the value from `verify_assignment.doc_path` (verbatim — do not resolve to absolute path)
+- `doc_path`: the assigned repository-relative document path (verbatim — do not resolve to absolute path)
 - `claims_checked`: integer count of all claims processed (not counting skipped)
 - `claims_passed`: integer count of PASS results
 - `claims_failed`: integer count of FAIL results (must equal `failures.length`)
@@ -224,7 +224,7 @@ If `claims_failed > 0`, append:
 4. Apply skip rules BEFORE extraction. Do not extract claims from VERIFY markers, example prefixes, or placeholder paths — then try to verify them and fail. Apply the rules during extraction.
 5. Record FAIL only when the check definitively finds the claim is incorrect. If verification cannot run (e.g., no source directory present), mark as UNVERIFIABLE with a reason and retain it in the counts and unresolved array rather than FAIL or silent success.
 6. `claims_failed` MUST equal `failures.length`. Validate before writing.
-7. **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
+7. If the assignment permits writing the external result, use the Write tool; never use `Bash(cat << 'EOF')` or heredoc commands for file creation. Otherwise return the full JSON for host capture.
 </critical_rules>
 
 <success_criteria>
@@ -232,8 +232,8 @@ If `claims_failed > 0`, append:
 - [ ] All five claim categories extracted line-by-line
 - [ ] Skip rules applied during extraction
 - [ ] Each claim verified using filesystem tools only
-- [ ] Result JSON written to `the assigned external result path`
-- [ ] Confirmation returned to orchestrator
+- [ ] Complete result JSON returned for host capture, or saved by a custom adapter at the exact assigned external path
+- [ ] Full result or confirmed saved path returned to the coordinator
 - [ ] `claims_failed` equals `failures.length`
 - [ ] No modifications made to any doc file
 </success_criteria>

@@ -47,8 +47,8 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 
 **Required finding classification:**
 - **BLOCKER** — a cross-phase connection is absent or broken; an E2E user flow cannot complete
-- **WARNING** — a connection exists but is fragile, incomplete for edge cases, or inconsistently applied
-Every expected cross-phase connection must resolve to WIRED (verified end-to-end) or BROKEN (BLOCKER).
+- **WARNING** — advisory robustness improvements where required wiring and behavior are established. Classify broken required error/empty-state handling as BLOCKER.
+Mark required connections WIRED only with end-to-end evidence, BROKEN when a required connection fails, or UNVERIFIED when evidence is missing; record the missing check and do not report the flow as passing.
 </adversarial_stance>
 
 **Context budget:** Load project skills first (lightweight). Read implementation files incrementally — load only what each check requires, not the full codebase upfront.
@@ -456,7 +456,7 @@ Return structured report to milestone auditor:
 
 | Requirement | Integration Path | Status | Issue |
 |-------------|-----------------|--------|-------|
-| {REQ-ID} | {Phase X export → Phase Y import → consumer} | WIRED / PARTIAL / UNWIRED | {specific issue or "—"} |
+| {REQ-ID} | {Phase X export → Phase Y import → consumer} | WIRED / PARTIAL / UNWIRED / UNVERIFIED | {specific issue or "—"} |
 
 **Requirements with no cross-phase wiring:**
 {List REQ-IDs that exist in a single phase with no integration touchpoints — these may be self-contained or may indicate missing connections}
