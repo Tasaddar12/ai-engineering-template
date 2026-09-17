@@ -193,9 +193,9 @@ NOTE: Do NOT exclude all `.md` files — commands, workflows, and agents are sou
 - Go: `.go`
 - C/C++: `.c`, `.cpp`, `.h`, `.hpp`
 - Shell: `.sh`, `.bash`
-- Other: Review generically
+- Other: Inspect changed inputs, outputs, error paths and callers; apply the assigned review depth.
 
-**3. Exit early if empty:** If no source files remain after filtering, create REVIEW.md with:
+**3. Exit early if empty:** If no source files remain after filtering, return the full report for external capture with these finding fields:
 ```yaml
 status: skipped
 findings:
@@ -204,7 +204,7 @@ findings:
   info: 0
   total: 0
 ```
-Body: "No source files to review after filtering. All files in scope are documentation, planning artifacts, or generated files. Use `status: skipped` (not `clean`) because no actual review was performed."
+Retain the assigned `revision`, `diff_base` and required report sections. State `No source files remain after filtering; review was not performed` in Summary, and write `None` under Critical Issues and Warnings. Return `status: skipped`; do not write a checkout file or report `status: clean`.
 
 NOTE: `status: clean` means "reviewed and found no issues." `status: skipped` means "no reviewable files — review was not performed." This distinction matters for downstream consumers.
 </step>
@@ -323,7 +323,7 @@ Never merge these into one section; structural substrate must stay distinguishab
 
 **Severity fields:** Return blocking counts under `findings.critical`; the local runtime does not accept `blocker` as a replacement field. Convert externally supplied `blocker` counts and `BL-` IDs to `critical` and `CR-` before returning the report; retain the original ID in the finding text for traceability.
 
-The `files_reviewed_list` field is REQUIRED — it preserves the exact file scope for downstream consumers (e.g., --auto re-review in code-review-fix workflow). List every file that was reviewed, one per line in YAML list format.
+Set `files_reviewed_list` to every repository-relative file path actually reviewed, one per YAML list item. Set it to `[]` for a skipped review; do not list excluded or unread files.
 
 **3. Body structure:**
 
