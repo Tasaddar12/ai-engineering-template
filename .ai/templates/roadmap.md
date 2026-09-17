@@ -209,7 +209,7 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/runtime/README.md` (Template runtime behavior) for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with

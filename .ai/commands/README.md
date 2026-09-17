@@ -32,7 +32,7 @@ The [template catalog](../templates/README.md) identifies retained authoring sou
 The complete [agent methods](../agents/README.md) define the selected responsibilities
 and their handoffs within these existing procedures.
 The local procedures above connect the main lifecycle to this repository's Python
-runtime; use [adaptation](../references/template-adaptation.md) and the
+runtime; use [adaptation](../runtime/README.md#template-runtime-behavior) and the
 [template guide](../guides/ARTIFACT-GUIDE.md) to distinguish a callable operation
 from an agent method. A named method is not proof that the host has
 registered a slash command or agent type.

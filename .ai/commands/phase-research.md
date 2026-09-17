@@ -30,4 +30,4 @@ in the actual result. Project-wide research can use the complete
 [research-project templates](../templates/research-project/). Distinguish the
 question being answered from background information; link the evidence the planner
 will need instead of replacing it with a confidence claim. Follow the
-[local adaptation](../references/template-adaptation.md) for host-specific tools.
+[local adaptation](../references/agent-adaptation.md) for host-specific tools.

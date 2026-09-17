@@ -46,6 +46,6 @@ and checking implications, and remaining uncertainty. Link substantial sources
 instead of copying them. Stop when the question is answered sufficiently for
 the next step; expand research only when a discovered dependency warrants it.
 
-Research supports [phase decisions](../../../.ai/references/phase-artifacts.md).
+Research supports [phase decisions](../../../.planning/phases/README.md#phase-artifacts).
 It does not approve new scope, turn uncertain compatibility into a guarantee,
 or justify claiming implementation is complete.

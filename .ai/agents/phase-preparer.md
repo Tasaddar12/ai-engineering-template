@@ -494,6 +494,32 @@ Read ROADMAP.md `**Requirements:**` line for this phase. Strip brackets if prese
 
 **Security (for behavior crossing trust boundaries):** Identify trust boundaries in this phase's scope. Map STRIDE categories to applicable tech stack from RESEARCH.md security domain. For each threat: assign a **severity** (critical|high|medium|low) based on impact × likelihood, and a disposition (`mitigate`/`accept`/`transfer`) at the review depth assigned in phase context using the levels below. Include `<threat_model>` when relevant to the assigned security scope; this is review evidence, not an automatic runtime security gate.
 
+**Dependency identity:** Before planning a new install, establish the exact package,
+version constraints and official source from available project or research evidence.
+Do not invent package names or treat a model-recalled name as verified. If research
+cannot resolve identity or a consequential source choice, record that specific
+uncertainty and return dependent work to the coordinator. Existing explicit approval
+is not repeated. There is no automatic package-legitimacy SDK gate in this runtime.
+
+**Step 1: State the Goal**
+Take phase goal from ROADMAP.md. Must be outcome-shaped, not task-shaped.
+- Good: "Working chat interface" (outcome)
+- Bad: "Build chat components" (task)
+
+**Step 2: Derive Observable Truths**
+"What must be TRUE for this goal to be achieved?" List 3-7 truths from USER's perspective.
+
+**Step 3: Derive Required Artifacts**
+For each truth: "What must EXIST for this to be true?"
+
+**Step 4: Derive Required Wiring**
+For each artifact: "What must be CONNECTED for this to function?"
+
+**Step 5: Identify Key Links**
+"Where is this most likely to break?" Key links = critical connections where breakage causes cascading failures.
+
+See [planner-guidance](../references/methods/planner-guidance.md) for a worked example and the `must_haves` YAML format.
+
 ## Security review levels
 
 These locally adapted review-depth categories are inspired by OWASP ASVS levels;
@@ -526,32 +552,6 @@ behavioral evidence. A matching string alone cannot prove it mitigates the threa
 **Planner disposition:** `mitigate` all threats except those explicitly accepted with documented sign-off. Defense-in-depth layers required for critical threats (multiple independent controls).
 
 **Auditor verification depth:** Deep verification — trace data flow end-to-end, check edge cases and ordering, confirm the mitigation cannot be bypassed via alternate code paths or parameter manipulation.
-
-**Dependency identity:** Before planning a new install, establish the exact package,
-version constraints and official source from available project or research evidence.
-Do not invent package names or treat a model-recalled name as verified. If research
-cannot resolve identity or a consequential source choice, record that specific
-uncertainty and return dependent work to the coordinator. Existing explicit approval
-is not repeated. There is no automatic package-legitimacy SDK gate in this runtime.
-
-**Step 1: State the Goal**
-Take phase goal from ROADMAP.md. Must be outcome-shaped, not task-shaped.
-- Good: "Working chat interface" (outcome)
-- Bad: "Build chat components" (task)
-
-**Step 2: Derive Observable Truths**
-"What must be TRUE for this goal to be achieved?" List 3-7 truths from USER's perspective.
-
-**Step 3: Derive Required Artifacts**
-For each truth: "What must EXIST for this to be true?"
-
-**Step 4: Derive Required Wiring**
-For each artifact: "What must be CONNECTED for this to function?"
-
-**Step 5: Identify Key Links**
-"Where is this most likely to break?" Key links = critical connections where breakage causes cascading failures.
-
-See [planner-guidance](../references/methods/planner-guidance.md) for a worked example and the `must_haves` YAML format.
 
 </goal_backward>
 
@@ -619,6 +619,7 @@ TDD plans target ~40% context (lower than standard 50%). The RED→GREEN→REFAC
 </tdd_integration>
 
 <quick_batch_mode>
+
 ## Bounded batch planning
 
 Use when a coordinator supplies a catalog of small, related phase components.
@@ -721,6 +722,7 @@ If exists, load relevant documents by phase type:
 </step>
 
 <step name="load_graph_context">
+
 ## Load dependency context
 
 Use an existing local dependency map when the assignment supplies one. This

@@ -754,6 +754,7 @@ Gather symptoms through questioning. Update file after EACH answer.
 </step>
 
 <step name="investigation_loop">
+
 At investigation decision points, apply structured reasoning:
 ## Debugging decision models
 
@@ -805,6 +806,8 @@ Skip structured reasoning models when the situation does not benefit from them:
 - **Reproducing a known fix** -- If you already know the root cause from a previous investigation or the user told you exactly what is wrong, skip hypothesis-driven investigation and go straight to the fix.
 - **Typos, missing imports, wrong paths** -- If Occam's Razor would immediately resolve it, apply the fix without invoking the full model. The model exists for when simple checks fail, not to gate simple checks.
 - **Reading error logs** -- Reading and understanding error output is normal debugging, not a "decision point." Only invoke models when you have multiple plausible hypotheses and need to choose which to test first.
+
+## Investigation loop
 
 **Autonomous investigation. Update file continuously.**
 

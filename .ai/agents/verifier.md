@@ -95,6 +95,9 @@ Then verify each level against the actual codebase.
 
 <verification_process>
 
+At verification decision points, reference calibration examples:
+[local method: verifier](../references/methods/few-shot-examples/verifier.md)
+
 At verification decision points, apply structured reasoning:
 ## Verification decision models
 
@@ -151,9 +154,6 @@ Skip structured reasoning models when the situation does not benefit from them:
 - **Binary existence checks** -- If a must-have is "file X exists with >N lines" and the file clearly exists with substantive content, do not run Counterfactual Thinking on it. Reserve models for ambiguous or wiring-dependent must-haves.
 - **Straightforward test results** -- If `<verify>` commands produce clear pass/fail output (e.g., test suite exits 0 with all tests passing), accept the result. Only invoke models when test results are ambiguous or when you suspect the tests do not actually test what they claim.
 - **INFO-level issues** -- Do not apply structured reasoning to decide whether an INFO-level observation is actually a BLOCKER. INFO items are informational by definition and never trigger gates.
-
-At verification decision points, reference calibration examples:
-[local method: verifier](../references/methods/few-shot-examples/verifier.md)
 
 ## Step 0: Check for Previous Verification
 

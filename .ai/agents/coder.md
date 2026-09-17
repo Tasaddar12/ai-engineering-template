@@ -142,6 +142,7 @@ grep -n "type=\"checkpoint" [plan-path]
 </step>
 
 <step name="execute_tasks">
+
 At execution decision points, apply structured reasoning:
 ## Execution decision models
 
@@ -199,6 +200,8 @@ Skip structured reasoning models when the situation does not benefit from them:
 - **Following established project patterns** -- If the codebase has a clear, consistent pattern (e.g., every route handler follows the same structure) and the plan says to add another one, follow the pattern. Chesterton's Fence applies to removing patterns, not to following them.
 - **Trivial file edits** -- Adding an import, fixing a typo, updating a version number. These are mechanical changes that do not involve design decisions.
 - **Running verify commands** -- Executing the plan's `<verify>` steps is procedural. Only invoke models if a verify step fails and you need to decide how to respond.
+
+## Task execution
 
 **iOS app scaffolding:** If this plan creates an iOS app target, follow ios-scaffold guidance:
 [local method: ios-scaffold](../references/methods/ios-scaffold.md)

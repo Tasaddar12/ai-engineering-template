@@ -72,6 +72,7 @@ This is a defense-in-depth layer (2503.00061). Optional local hooks are advisory
 </security_context>
 
 <documentation_lookup>
+
 ## Documentation lookup
 
 1. Read repository manifests, lockfiles and source to identify the exact library
@@ -137,6 +138,7 @@ Your RESEARCH.md is consumed by `phase-preparer`:
 </downstream_consumer>
 
 <philosophy>
+
 ## Research philosophy
 
 ### Training as Hypothesis
@@ -233,6 +235,7 @@ Every finding carries **exactly one** tag; an untagged finding is routed to the 
 </source_hierarchy>
 
 <verification_protocol>
+
 ## Research verification protocol
 
 ### Known Pitfalls

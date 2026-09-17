@@ -75,3 +75,30 @@ only reads a role file. Customize runtime routes separately when needed.
 
 Formats: [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 and [Claude Code subagents](https://code.claude.com/docs/en/sub-agents).
+
+## Supporting methods
+
+The role sections and remaining reference files supply the detailed examples
+and procedures used by the local agents. They are adapted from pinned sources identified in
+[third-party notices](../THIRD-PARTY-NOTICES.md). Use the local copies; no network
+fetch or separately installed workflow SDK is needed to read their instructions.
+
+Read only the methods named by the selected role and relevant to the assignment.
+Planning, coding, research, debugging and verification methods retain their
+substantive techniques while using the local runtime contract and role boundaries.
+Start with the selected role; this catalog does not require reading the entire
+method library.
+
+Product-specific research may still need current official documentation, and
+project checks may require their configured tools. Those are actual project
+needs, distinct from fetching instructions for operating this workflow.
+
+Methods do not add CLI subcommands, enable unsupported task forms, override
+human instructions or authorize new work. The [rules](../RULES.md),
+[runtime contract](../runtime/TEMPLATE-CONTRACT.md) and assigned CONTEXT/PLAN
+remain authoritative. User limits on testing, publishing and merging apply.
+
+For stack-specific review, use [verification patterns](../references/methods/verification-patterns.md)
+for components, routes, schemas, hooks and configuration, alongside the focused
+[wiring patterns](../references/methods/verifier-wiring-patterns.md). The catalog's structural heuristics
+help locate code to inspect; they do not substitute for outcome evidence.

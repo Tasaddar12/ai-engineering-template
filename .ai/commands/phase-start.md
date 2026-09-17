@@ -74,7 +74,7 @@ The [coder](../agents/coder.md) method explains task execution, deviations,
 checkpoints and result writing. Documentation components use the
 [doc-writer](../agents/doc-writer.md)
 method to author claims against integrated evidence. Use the selected role with
-[local adaptation](../references/template-adaptation.md), the assigned PLAN, and the
+[local adaptation](../references/agent-adaptation.md), the assigned PLAN, and the
 full [summary template](../templates/summary.md). Preserve task completion evidence,
 actual changes, decisions, dependency effects, issues and remaining work. Add
 [runtime result fields](../runtime/TEMPLATE-CONTRACT.md); a blocked task cannot

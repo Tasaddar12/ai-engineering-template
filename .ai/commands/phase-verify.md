@@ -84,7 +84,7 @@ limit that strands known repairable work.
 
 Use the complete [verification report](../templates/verification-report.md) and
 [verifier method](../agents/verifier.md) with the
-[local adapter](../references/template-adaptation.md). Trace observable truths, real
+[local adapter](../references/agent-adaptation.md). Trace observable truths, real
 artifacts and critical connections, with requirement coverage, regression evidence,
 anti-pattern findings and human-only checks. Add the assigned revision and
 [runtime result metadata](../runtime/TEMPLATE-CONTRACT.md). Do not substitute
