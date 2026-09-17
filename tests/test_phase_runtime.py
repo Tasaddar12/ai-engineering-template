@@ -211,7 +211,7 @@ class PhaseRuntimeTests(unittest.TestCase):
     def events(self, *, include_verifier: bool = False) -> list[dict]:
         directory = self.directory / "events"
         events = [read_fixture_event(path) for path in directory.glob("*.yaml")]
-        return [event for event in events if include_verifier or event["kind"] != "verifier"]
+        return [event for event in events if include_verifier or event["kind"] not in ("verifier", "code-reviewer")]
 
     def summary(self, identifier: str) -> Path:
         return self.checkout / PHASE_PATH / f"{identifier}-SUMMARY.md"
@@ -342,6 +342,89 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertEqual(len(self.events()), 1)
         self.assertEqual(self.git(self.checkout, "status", "--porcelain"), "")
         self.assert_primary_untouched()
+
+    def test_independent_review_uses_worker_revision_without_editing_checkout(self) -> None:
+        self.cli("run", PHASE)
+        author = self.events()[0]
+        review = next(event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer")
+        self.assertNotEqual(review["worktree"], author["worktree"])
+        self.assertEqual(review["revision"], author["committed"])
+        self.assertEqual(self.git(Path(review["worktree"]), "rev-parse", "HEAD"), author["committed"])
+        self.assertEqual(self.git(Path(review["worktree"]), "status", "--porcelain"), "")
+        self.assertFalse(Path(review["report_written"]).is_relative_to(Path(review["worktree"])))
+        self.assertLessEqual(author["finished"], review["started"])
+
+    def test_skipped_review_retries_same_revision_and_preserves_original_report(self) -> None:
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "skipped"
+        self.cli("run", PHASE, succeeds=False)
+        first = next(event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer")
+        report = Path(first["report_written"])
+        original = report.read_bytes()
+        self.assertFalse((self.checkout / "src/01-01.txt").exists())
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "clean"
+        self.cli("resume", PHASE, "--workers-stopped")
+        reviews = [event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer"]
+        self.assertEqual(len(reviews), 2)
+        self.assertEqual({event["revision"] for event in reviews}, {first["revision"]})
+        self.assertEqual(report.read_bytes(), original)
+        self.assertEqual(len(self.events()), 1, "Review retry must not replay the coder")
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding="utf-8"), "01-01 implemented\n")
+        self.cli("verify", PHASE)
+
+    def test_critical_review_cannot_retry_unchanged_code(self) -> None:
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "critical"
+        self.cli("run", PHASE, succeeds=False)
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "clean"
+        self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
+        reviews = [event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer"]
+        self.assertEqual(len(reviews), 1)
+        self.assertFalse((self.checkout / "src/01-01.txt").exists())
+
+    def test_historical_skipped_review_is_reconciled_before_verification(self) -> None:
+        self.cli("run", PHASE)
+        # Reproduce a persisted historical review without changing source history.
+        checkpoint = next((self.primary / ".git/ai").rglob("state.yaml"))
+        state = yaml.safe_load(checkpoint.read_text(encoding="utf-8"))
+        attempt = state["components"]["01-01"]["review_attempt"]
+        report = Path(attempt["result"])
+        report.write_text(report.read_text(encoding="utf-8").replace("status: clean", "status: skipped"), encoding="utf-8")
+        attempt.update(verdict="skipped", report_hash=hashlib.sha256(report.read_bytes()).hexdigest())
+        checkpoint.write_text(yaml.safe_dump(state), encoding="utf-8")
+        original = report.read_bytes()
+        self.cli("verify", PHASE, succeeds=False)
+        self.cli("verify", PHASE, "--workers-stopped")
+        reviews = [event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer"]
+        self.assertEqual(len(reviews), 2)
+        self.assertEqual({event["revision"] for event in reviews}, {attempt["revision"]})
+        self.assertEqual(report.read_bytes(), original)
+        self.assertEqual(len(self.events()), 1)
+
+    def test_review_warning_requires_revision_bound_coordinator_disposition(self) -> None:
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "warning"
+        self.cli("run", PHASE)
+        rejected = self.cli("verify", PHASE, succeeds=False)
+        self.assertIn("record one warning_dispositions item", rejected.stderr)
+        review = next(event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer")
+        self.record(PHASE_PATH / "01-VERIFICATION.md", {"warning_dispositions": [{
+            "component": "01-01", "revision": review["revision"], "finding": "WR-01",
+            "disposition": "accepted", "reason": "Fixture advisory does not affect assigned acceptance.",
+        }]}, "# Coordinator warning decision\n")
+        self.commit("Record coordinator decision for advisory finding")
+        self.cli("verify", PHASE)
+        data = yaml.safe_load((self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text(encoding="utf-8").split("---", 2)[1])
+        self.assertEqual(data["warning_dispositions"][0]["revision"], review["revision"])
+        self.assertEqual(data["status"], "passed")
+
+    def test_skipped_review_retry_rejects_modified_original_report(self) -> None:
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "skipped"
+        self.cli("run", PHASE, succeeds=False)
+        first = next(event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer")
+        report = Path(first["report_written"])
+        report.write_text(report.read_text(encoding="utf-8") + "\nTampered evidence.\n", encoding="utf-8")
+        self.environment["PHASE_FIXTURE_REVIEW_MODE"] = "clean"
+        self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
+        self.assertEqual(len([event for event in self.events(include_verifier=True) if event["kind"] == "code-reviewer"]), 1)
+        self.assertFalse((self.checkout / "src/01-01.txt").exists())
 
     def test_bounded_bug_has_failing_reproduction_and_passing_regression(self) -> None:
         self.write(self.checkout, "src/total.py", "def total(values):\n    return len(values)\n")

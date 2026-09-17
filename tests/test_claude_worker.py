@@ -3,6 +3,7 @@
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -34,6 +35,9 @@ class ClaudeWorkerTests(unittest.TestCase):
         self.cwd = patch.object(worker.Path, "cwd", return_value=self.checkout)
         self.cwd.start()
         self.addCleanup(self.cwd.stop)
+        self.environment = patch.dict(os.environ, {"PHASE_MAX_TURNS": "40"})
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
         self.result = self.base / "verification.md"
         self.prompt = "Full assignment\n\nUnicode: café 日本語\n" + "detail\n" * 12000
 
@@ -53,9 +57,11 @@ class ClaudeWorkerTests(unittest.TestCase):
                 self.assertEqual(summary.read_text(encoding="utf-8"), "Committed component summary")
                 argv = launch.call_args.args[0]
                 self.assertEqual(argv, ["claude", "-p", "--output-format", "json",
-                                        "--no-session-persistence"])
+                                        "--no-session-persistence", "--max-turns", "40",
+                                        "--disallowedTools", "Agent,Task"])
                 options = launch.call_args.kwargs
-                self.assertEqual(options["input"], self.prompt)
+                self.assertTrue(options["input"].startswith(self.prompt))
+                self.assertIn("40 agentic turns", options["input"][len(self.prompt):])
                 self.assertEqual(options["cwd"], self.checkout)
                 self.assertEqual(options["encoding"], "utf-8")
                 self.assertNotIn("start_new_session", options)
@@ -81,32 +87,52 @@ class ClaudeWorkerTests(unittest.TestCase):
             return native_run([sys.executable, "-c", program, *argv[1:]], **kwargs)
         with patch.object(worker.subprocess, "run", side_effect=launch):
             result = json.loads(worker.execute("code", str(self.result), self.prompt))
-        self.assertEqual(result["prompt"], self.prompt)
+        self.assertTrue(result["prompt"].startswith(self.prompt))
+        self.assertIn("40 agentic turns", result["prompt"][len(self.prompt):])
         self.assertEqual(Path(result["cwd"]), self.checkout)
         self.assertEqual(result["argv"], ["-p", "--output-format", "json",
-                                          "--no-session-persistence"])
+                                          "--no-session-persistence", "--max-turns", "40",
+                                          "--disallowedTools", "Agent,Task"])
 
-    def test_verifier_captures_external_report_and_restricts_tools(self):
-        report = "---\nstatus: passed\n---\n\n# Findings\n\nRévision verified.\n"
-        with self.native(success(report)) as launch:
-            self.assertEqual(worker.execute("verifier", str(self.result), self.prompt), report)
-        self.assertEqual(self.result.read_bytes(), report.encode("utf-8"))
-        argv = launch.call_args.args[0]
-        self.assertEqual(argv[argv.index("--tools") + 1], "Read,Glob,Grep")
-        self.assertEqual(argv[argv.index("--disallowedTools") + 1], "mcp__*")
-        self.assertIn("read-only verifier", argv[-1])
-        for forbidden in ("--bare", "--dangerously-skip-permissions", "--permission-mode",
-                          "--allowedTools", "--model", "--worktree"):
-            self.assertNotIn(forbidden, argv)
+    def test_review_routes_capture_external_report_and_restrict_tools(self):
+        for kind, status in (("verifier", "passed"), ("code-reviewer", "clean")):
+            with self.subTest(kind=kind):
+                result_path = self.base / (kind + ".md")
+                report = f"---\nstatus: {status}\n---\n\n# Findings\n\nRévision verified.\n"
+                with self.native(success(report)) as launch:
+                    self.assertEqual(worker.execute(kind, str(result_path), self.prompt), report)
+                self.assertEqual(result_path.read_bytes(), report.encode("utf-8"))
+                argv = launch.call_args.args[0]
+                self.assertEqual(argv[argv.index("--tools") + 1], "Read,Glob,Grep")
+                self.assertEqual(argv[argv.index("--disallowedTools") + 1], "Agent,Task,mcp__*")
+                self.assertIn("read-only reviewer", argv[-1])
+                self.assertEqual(list(self.checkout.iterdir()), [])
+                for forbidden in ("--bare", "--dangerously-skip-permissions", "--permission-mode",
+                                  "--allowedTools", "--model", "--worktree"):
+                    self.assertNotIn(forbidden, argv)
+
+    def test_configured_turn_limit_is_forwarded_and_invalid_limits_do_not_launch(self):
+        for limit in ("1", "80", "200"):
+            with self.subTest(limit=limit), patch.dict(os.environ, {"PHASE_MAX_TURNS": limit}), self.native() as launch:
+                worker.execute("code", str(self.result), self.prompt)
+                argv = launch.call_args.args[0]
+                self.assertEqual(argv[argv.index("--max-turns") + 1], limit)
+                self.assertIn(limit + " agentic turns", launch.call_args.kwargs["input"])
+        for limit in ("0", "201", "-1", "1.5", "", "true"):
+            with self.subTest(limit=limit), patch.dict(os.environ, {"PHASE_MAX_TURNS": limit}), self.native() as launch:
+                with self.assertRaisesRegex(worker.AdapterError, "PHASE_MAX_TURNS"):
+                    worker.execute("code", str(self.result), self.prompt)
+                launch.assert_not_called()
 
     def test_invalid_verifier_destinations_do_not_launch(self):
         self.result.write_text("Existing evidence", encoding="utf-8")
-        for result in (self.checkout / "report.md", self.result,
-                       self.base / "missing" / "report.md", self.checkout):
-            with self.subTest(result=result), self.native() as launch:
-                with self.assertRaises(worker.AdapterError):
-                    worker.execute("verifier", str(result), self.prompt)
-                launch.assert_not_called()
+        for kind in ("verifier", "code-reviewer"):
+            for result in (self.checkout / "report.md", self.result,
+                           self.base / "missing" / "report.md", self.checkout):
+                with self.subTest(kind=kind, result=result), self.native() as launch:
+                    with self.assertRaises(worker.AdapterError):
+                        worker.execute(kind, str(result), self.prompt)
+                    launch.assert_not_called()
         self.assertEqual(self.result.read_text(encoding="utf-8"), "Existing evidence")
 
     def test_result_created_during_run_is_preserved(self):
@@ -174,13 +200,24 @@ class ClaudeWorkerTests(unittest.TestCase):
                     patch.object(worker.sys, "stderr", io.StringIO()) as stderr:
                 code = worker.main(["--kind", "code", "--result", str(self.result)])
                 self.assertEqual(code, 0 if returncode == 0 else 1)
+                prefix = "Claude usage (reported totals, not peak context): {}\n"
                 if returncode == 0:
-                    self.assertEqual(stdout.getvalue(), "Complete report — café\n")
+                    self.assertEqual(stdout.getvalue(), prefix + "Complete report — café\n")
                 else:
-                    self.assertEqual(stdout.getvalue(), "")
+                    self.assertEqual(stdout.getvalue(), prefix)
                     self.assertIn("status 12", stderr.getvalue())
                     self.assertNotIn("private native diagnostic", stderr.getvalue())
                     self.assertNotIn("Full assignment", stderr.getvalue())
+
+    def test_usage_output_keeps_numeric_metrics_without_native_diagnostics(self):
+        output = success(num_turns=3, duration_ms=1500, total_cost_usd=0.12,
+                         usage={"input_tokens": 32, "output_tokens": 9,
+                                "private": "private diagnostic", "invalid": True})
+        with self.native(output), patch.object(worker.sys, "stdout", io.StringIO()) as stdout:
+            worker.execute("code", str(self.result), self.prompt)
+        payload = stdout.getvalue().split(": ", 1)[1]
+        self.assertEqual(json.loads(payload), {"num_turns": 3, "duration_ms": 1500,
+            "total_cost_usd": 0.12, "usage": {"input_tokens": 32, "output_tokens": 9}})
 
 
 if __name__ == "__main__":

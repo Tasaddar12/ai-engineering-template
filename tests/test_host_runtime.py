@@ -147,17 +147,24 @@ class HostRuntimeTests(unittest.TestCase):
         report = (self.checkout / PHASE_PATH / "01-VERIFICATION.md").read_text(encoding="utf-8")
         self.assertIn("status: passed", report)
         events = self.events(include_verifier=True)
-        self.assertEqual({event["kind"] for event in events}, {"code", "documentation", "verifier"})
+        self.assertEqual({event["kind"] for event in events}, {"code", "documentation", "code-reviewer", "verifier"})
         self.assertTrue(all(event["methods"] for event in events))
         self.assertTrue(all(method.startswith(host + "/") for event in events for method in event["methods"]))
+        for event in events:
+            branch = self.git(Path(event["worktree"]), "branch", "--show-current")
+            self.assertTrue(branch.startswith(host[1:] + "/"), branch)
 
         prompts = list((self.primary / ".git/ai").rglob("*-assignment.md"))
-        self.assertEqual(len(prompts), 3)
+        self.assertEqual(len(prompts), 4)
         for path in prompts:
             text = path.read_text(encoding="utf-8")
             self.assertNotIn(".ai/", text)
             self.assertIn(f"{host}/RULES.md", text)
-            self.assertIn(f"{host}/runtime/TEMPLATE-CONTRACT.md", text)
+            if "-code-reviewer-" in path.name:
+                self.assertIn(f"{host}/agents/code-reviewer.md", text)
+                self.assertIn("Read the captured revision diff", text)
+            else:
+                self.assertIn(f"{host}/runtime/TEMPLATE-CONTRACT.md", text)
             self.assertIn("Read CLAUDE.md" if host == ".claude" else "Read AGENTS.md", text)
 
         # TDD prompts use the same installed skill namespace without executing

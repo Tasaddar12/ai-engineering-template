@@ -319,7 +319,7 @@ def review_component(phase, component, entry, state, head, peers=None, *, retry=
         if not retry or not previous:
             raise
         changed = previous.get("revision") != head
-        if previous.get("status") == "complete" and not changed:
+        if previous.get("status") == "complete" and previous.get("verdict") != "skipped" and not changed:
             raise
         require_stopped(previous)
         require(previous.get("base") == entry["base"], "Review base changed; reconcile before retrying review")
@@ -792,7 +792,8 @@ def complete_components(phase, *, reconcile_reviews=False):
                 f"{cid}: integrated history is missing from this branch")
         validate_summary(phase, component, phase.root)
         if component.data["kind"] == "code":
-            if reconcile_reviews and entry.get("review_attempt", {}).get("status") != "complete":
+            prior_review = entry.get("review_attempt", {})
+            if reconcile_reviews and (prior_review.get("status") != "complete" or prior_review.get("verdict") == "skipped"):
                 head = entry.get("worker_revision")
                 require(head and entry.get("base"), f"{cid}: recover the recorded worker revision and base before reviewing")
                 git(phase.root, "rev-parse", "--verify", f"{head}^{{commit}}")
