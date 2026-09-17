@@ -31,7 +31,7 @@ the local lifecycle. Agent names and tool lists describe responsibilities and
 capabilities. The installer supplies native agent definitions as described in the
 [agent catalog](../agents/README.md#native-host-models); role names do not register
 host tools, slash commands or Python worker routes.
-The configured runtime routes remain code, documentation and verifier. The
+The runtime dispatches code, documentation, independent code review and phase verification. Code review uses `reviewer_command`, falling back to the read-only verifier route when omitted. The
 documentor loads doc-writer; the independent verifier applies doc-verifier and
 integration-checker, with code-reviewer when appropriate. The coordinator may
 assign a separate fresh specialist through the host when useful, supplying an

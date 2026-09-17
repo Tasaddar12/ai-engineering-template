@@ -9,7 +9,9 @@ when that instruction is absent; follow
 Read [RULES](../RULES.md), CONTEXT, relevant current SPECs, research and code.
 Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 
-1. Define bounded components using [PLAN](../templates/phase-prompt.md). Each
+1. Limit each component to at most three executable tasks, or one native TDD
+   feature. Split heavy work into independently reviewable slices; do not hide
+   an entire phase inside one oversized task. Define bounded components using [PLAN](../templates/phase-prompt.md). Each
    component must state its outcome, owned paths, dependencies, shared interfaces,
    acceptance IDs, required reads, commands and documentation obligations.
    Select useful [repository skills](../guides/AGENT-SKILLS.md) for the actual

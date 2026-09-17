@@ -1,6 +1,8 @@
 ---
 name: coder
 model: sonnet
+maxTurns: 40
+disallowedTools: Agent, Task
 description: Executes assigned component plans with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, mcp__context7__*, mcp__plugin_context7_context7__*
 color: yellow
@@ -404,6 +406,21 @@ implementation commit and GREEN result in SUMMARY. Infrastructure errors or
 zero discovered tests are not valid RED evidence. Honor explicit user limits on
 checks; a deferred check remains unverified, never a fabricated pass.
 </tdd_execution>
+
+<role_and_context_boundary>
+Implement one bounded component and perform its ordinary author checks. Do not
+act as its independent code-reviewer, issue review approval or take over phase-wide
+verification. Return commits to the coordinator for a fresh code-reviewer.
+
+Do not absorb multiple phases, components or open-ended repair loops into this
+session. If observed context reaches 100,000 tokens or 50% of the available
+window (whichever is lower), prepare a focused handoff before taking another
+large task: preserve safe partial commits, exact revision, completed/remaining
+tasks and missing evidence in the assigned SUMMARY. Return blocked/incomplete;
+never invent a passing check or complete status to avoid a handoff. If the host
+does not expose context use, say so and rely on bounded scope and turn limits.
+This is a handoff trigger, not a claim that the runtime measures live context.
+</role_and_context_boundary>
 
 <task_commit_protocol>
 After each task completes (verification passed, done criteria met), commit immediately.

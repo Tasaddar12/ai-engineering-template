@@ -49,7 +49,12 @@ point and does not require another user prompt.
 
 Workers commit each completed meaningful slice immediately and commit their
 SUMMARY. The coordinator audits scope, actual
-commits and required checks before integration. A blocked or invalid result
+commits and required checks before integration. Each code component also receives
+a fresh independent code-reviewer process in a separate read-only checkout at its
+exact commit. The runner saves the diff for reviewers without shell access and
+requires a clean report with no critical/warning findings before integration.
+Author self-checks cannot satisfy this gate. Native host orchestration must
+explicitly dispatch the same separate role and preserve its evidence. A blocked or invalid result
 remains visible and its checkout is preserved. Status distinguishes worker exit,
 integration, verification and publication.
 

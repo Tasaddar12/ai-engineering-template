@@ -225,3 +225,38 @@ deterministic workers and a local bare publication remote. Only GitHub's API
 boundary is simulated. They test execution, ownership, dependency availability,
 failure preservation, recovery, stale evidence and publication without merging.
 The separate [hook suites](../hooks/README.md) check optional advisory notices.
+
+## Independent component review and bounded assignments
+
+Every code component is reviewed by a fresh code-reviewer process in a separate
+read-only worktree before integration. `execution.reviewer_command` is optional;
+when absent the runner uses `verifier_command` with a code-reviewer assignment and
+read-only sandbox. Custom adapters must handle `kind=code-reviewer`, capture the
+full report at `{result}`, and preserve read-only behavior. This is a separate
+invocation, not the coder reading a review method. Report YAML carries revision,
+diff_base, status and findings.critical/warning counts. Skipped, stale, incomplete
+and non-clean reviews block integration. Saved attempts include process identity,
+result path and hash; final verification retains the component review evidence.
+Reviews are serialized with integration; already-running independent coders may
+continue. The final verifier still checks integrated behavior and cross-component
+regressions. Older attempts without review receipts need their original runtime.
+
+`execution.max_tasks_per_component` defaults to 3 and accepts 1..3; readiness
+rejects larger auto-task plans. TDD stays bounded to one feature. This task count
+cannot detect a phase hidden in one oversized task; preparation review must also
+assess scope and context. Split large work rather than packing it into one task.
+
+`execution.claude_max_turns` defaults to 40 and accepts 1..200. The Claude adapter
+passes it as `--max-turns`, denies nested Agent/Task delegation and reports numeric
+terminal usage totals in the runtime log even for unsuccessful terminal results.
+Native Claude coder, documentor, reviewer and verifier definitions also set
+`maxTurns: 40`. Native configuration and CLI configuration are separate surfaces.
+An exhausted limit is incomplete work, not completion; inspect and preserve work
+before a smaller fresh continuation. No automatic restart is performed.
+
+Turn limits are not a hard token/context ceiling. When the host exposes live
+context, coordinator/coder guidance requests handoff at 100,000 tokens or half
+the window, whichever is lower. The adapter does not measure peak context; its
+reported token usage is labeled as totals. No peak-context metric is fabricated.
+Claude option sources: [CLI reference](https://code.claude.com/docs/en/cli-reference)
+and [native subagent fields](https://code.claude.com/docs/en/sub-agents).

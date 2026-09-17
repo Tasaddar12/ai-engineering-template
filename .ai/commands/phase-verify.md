@@ -18,7 +18,9 @@ checks phase acceptance, component connections, regressions and documentation at
 the assigned revision. The host saves the report externally while the checkout
 stays unchanged; the coordinator audits, stores and commits VERIFICATION.
 
-For relevant risks, the coordinator also assigns bounded independent reviews to
+Component code reviews are required before integration and retained in the final
+verification report. They do not replace assessment of integrated behavior.
+For additional risks, the coordinator also assigns bounded independent reviews to
 [doc-verifier](../agents/doc-verifier.md) for concrete documentation claims,
 [integration-checker](../agents/integration-checker.md) for cross-component flows,
 and [code-reviewer](../agents/code-reviewer.md) for changed-code defects. These are

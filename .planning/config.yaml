@@ -2,6 +2,8 @@
 # Intent belongs to PROJECT.md; acceptance belongs to phase CONTEXT.
 execution:
   max_parallel: 3
+  max_tasks_per_component: 3
+  claude_max_turns: 40
   worker_timeout_seconds: 3600
   check_timeout_seconds: 300
   # argv lists, without a shell. Each invocation gets one fresh assignment.

@@ -54,3 +54,17 @@ Verifier attempts retain their process identity, source revision, result path an
 worktree. Reuse requires a stopped process and valid current evidence. Follow
 phase-verify with --workers-stopped when inspection establishes that a fresh
 verification attempt is needed; component resume does not restart a reviewer.
+
+## Context and partial results
+
+Hand off one component, not a whole phase or review-and-repair loop. An author
+performs its implementation checks; independent review belongs to a separate
+fresh reviewer. Do not reuse the same growing author session for another component.
+
+When context pressure or a turn limit prevents completion, preserve safe partial
+commits and report the exact base/head, completed and remaining tasks, dirty files,
+observed checks and missing evidence. A partial return is not a completed SUMMARY.
+The coordinator inspects the stopped process/worktree and prepares a smaller fresh
+assignment using existing evidence; it does not blindly replay completed work or
+keep resuming the same session past its limit. If the host exposes live context,
+request this handoff at 100,000 tokens or half its window, whichever is lower.

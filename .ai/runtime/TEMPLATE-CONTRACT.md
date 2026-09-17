@@ -191,3 +191,25 @@ A combined Decisions & Deviations heading can remain, but it does not substitute
 for the separately reviewable named evidence. TDD plans also add TDD Evidence.
 Do not replace the complete default with a shorter variant without an explicit
 assignment choice; use additional sections, not deleted source guidance.
+
+## Independent component code review
+
+Before integrating a code component, the runner dispatches a fresh code-reviewer
+on its committed revision in a separate read-only worktree. The author continues
+to run component checks but cannot supply its own independent review. Reviewers
+receive the exact base/head, changed paths and a saved diff, including deletions.
+
+The external report preserves the code-reviewer structure and adds exact
+`revision` and `diff_base` fields. `findings.critical` and `findings.warning` are
+nonnegative integer counts. Summary, Critical Issues and Warnings sections are
+required; use None for empty findings. Integration requires `status: clean` and
+zero critical/warning counts, a successful supervisor receipt and an unchanged
+review checkout. `skipped` never satisfies this gate. Reuse is bound to the exact
+revision, base and report hash. Findings return to a bounded coder correction,
+followed by fresh review. The final phase verifier assesses integrated outcomes
+and includes the saved component review evidence.
+
+Readiness limits ordinary PLANs to three executable tasks by default;
+`execution.max_tasks_per_component` can narrow that to 1 or 2. Native TDD plans
+retain the single-feature contract. These structural limits complement semantic
+scope review; a single task may still be too large and need decomposition.

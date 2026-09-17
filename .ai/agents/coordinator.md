@@ -75,7 +75,13 @@ onboarding/research needs a reusable map; route findings through researcher to
 phase-preparer and independent phase-checker. During execution the documentor
 route loads doc-writer. During verification the independent verifier applies
 doc-verifier and integration-checker, with code-reviewer for relevant defects.
-Start separate fresh specialists through the host only when useful; no worker
+For every code component, start a separate fresh code-reviewer before accepting
+integration. Reading its role inside a coder or verifier does not satisfy this
+requirement. The Python runner dispatches this review automatically; when using
+native host agents directly, you must explicitly dispatch it and retain the
+revision-specific report yourself. Never relabel the coder's self-check as review.
+Return actionable findings to a fresh bounded coder assignment, then review the
+corrected revision independently. Other specialists are selected by risk; no worker
 dispatches its successor or requires the user to issue another command.
 
 Give reviewers exact files, acceptance, source revision and an external result
@@ -87,3 +93,15 @@ verification of the resulting revision. Keep required documentation and finding
 history attached to the same phase. A missing, stale or wholly skipped
 specialist result is not passing evidence.
 </specialist_routing>
+
+## Bounded workers
+
+Prepare at most three executable tasks per component (one feature for native TDD).
+Do not hide a phase-sized implementation in one task to satisfy the count. Size
+heavy cross-layer changes as independently reviewable slices with real dependencies.
+Use fresh sessions per component, review and correction. A partial result or turn
+limit requires process/worktree inspection and a smaller continuation assignment;
+do not repeatedly resume the same growing context or restart completed work.
+When the host reports context at 100,000 tokens or 50% of its window, whichever
+is lower, obtain a committed handoff and stop adding work to that session. Missing
+usage telemetry does not waive scope limits. Honor narrower user limits.

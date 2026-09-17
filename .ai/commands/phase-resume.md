@@ -37,3 +37,16 @@ Keep following the resumed runtime through newly ready components; do not stop
 at the recovered worker's result or the end of its wave. If it exits with work
 unfinished, inspect and report the specific blocker instead of leaving an idle
 phase waiting for an unspecified next prompt.
+
+Inspect each component's saved `review_attempt` as well as its coder process.
+A stopped review with a valid report for the exact same base and commit can be
+reused; missing/failed/stale reports require explicit reconciliation and replanning.
+For review findings, preserve the implementation and report, prepare a bounded
+correction assignment that identifies reusable commits and remaining changes,
+and obtain a fresh independent review. Never discard the original work or blindly
+rerun its entire plan. Older attempts without review receipts require their
+original compatible runtime; this runtime refuses to certify them as reviewed.
+
+After a turn/context limit, inspect actual commits, dirty files and SUMMARY before
+preparing a smaller fresh assignment. Do not repeatedly resume the same growing
+native subagent context to bypass the limit.

@@ -1,7 +1,9 @@
 ---
 name: code-reviewer
 model: sonnet
-description: Reviews source files for bugs, security issues, and code quality problems. Produces structured REVIEW.md with severity-classified findings. Spawned by phase-verify.
+maxTurns: 40
+disallowedTools: Agent, Task
+description: Reviews source files for bugs, security issues, and code quality problems. Produces structured REVIEW.md with severity-classified findings. Dispatched independently before code-component integration and for phase verification.
 tools: Read, Write, Bash, Grep, Glob, Skill
 color: orange
 # hooks:

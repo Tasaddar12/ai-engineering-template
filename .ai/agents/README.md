@@ -22,10 +22,10 @@ defines actual host execution, source examples and result contracts.
 | [Verifier](verifier.md) | phase-verify | Integrated acceptance, source and specialist evidence → full independent external report → coordinator correction or publication |
 
 The coordinator selects useful responsibilities; a small change need not run
-every specialist. The Python runtime launches code, documentation and verifier
+every specialist. The Python runtime launches code, documentation, independent code-reviewer and verifier
 routes from [config](../../.planning/config.yaml). The documentation route reads doc-writer directly. The independent verifier
 loads doc-verifier for documentation obligations and integration-checker for
-connections, using code-reviewer when relevant. The coordinator can assign fresh
+connections. A fresh code-reviewer separately assesses each code component before integration; the verifier cannot substitute for that dispatch. The coordinator can assign fresh
 specialists separately through available host capabilities when risk warrants;
 workers never spawn each other. Existing procedures own every handoff.
 

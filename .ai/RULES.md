@@ -140,7 +140,9 @@ Follow [worker handoff](references/worker-handoff.md).
 ## Review, documentation and completion
 
 Use independent preparation checking for substantial phases and independent
-verification for implemented outcomes. Additional review follows actual risk;
+verification for implemented outcomes. Every code component requires a separate
+fresh code-reviewer before integration; coder self-checks and a verifier reading
+the review method do not replace that assignment. Additional review follows actual risk;
 there is no fixed review count. Correct findings within authorized scope and
 repeat affected checks. Broaden review when changed behavior invalidates prior
 evidence. Keep findings visible and distinguish editorial details from defects.
