@@ -973,7 +973,7 @@ Plans checked. Return readiness to the coordinator; implementation still require
 
 **DO NOT** skip dependency analysis. Circular/broken dependencies cause execution failures.
 
-**DO NOT** ignore scope. 5+ tasks/plan degrades quality. Report and split.
+**DO NOT** ignore scope. Enforce the configured task cap; require a split for separate outcomes or prerequisite components. When the cap is null, do not reject a PLAN by task count alone.
 
 **DO NOT** verify implementation details. Check that plans describe what to build.
 

@@ -45,7 +45,7 @@ delivery limits remain valid within their scope.
 | Choose phase boundaries | Group coherent outcomes and identify what each phase needs from earlier work | ROADMAP order and phase mapping, with reasons for dependencies |
 | Capture phase context | Record the exact goal, acceptance, decisions, references and authorization | Complete `NN-CONTEXT.md`; phase `NN-SPEC.md` when detailed desired behavior needs one |
 | Resolve technical uncertainty | Inspect or research only what affects the selected scope | Relevant evidence and decisions linked from CONTEXT; unresolved dependent work remains blocked |
-| Prepare and check components | Specify bounded tasks, interfaces, ownership, dependencies, checks and documentation | Complete `NN-CC-PLAN.md` files, independent preparation findings for substantial scope, and structural readiness results |
+| Prepare and check components | Specify bounded tasks, interfaces, ownership, dependencies, checks and documentation | Complete `NN-CC-PLAN.md` files, independent findings for the mandatory preparation-check triggers in RULES, and structural readiness results |
 | Implement and verify | Execute authorized prepared work, integrate checked commits, correct gaps and verify behavior | Committed changes and SUMMARY files, current independent VERIFICATION, and passing required UAT |
 | Continue to the next goal | Compare the next proposed scope with what was actually implemented and delivered | Updated context and prerequisites; a freshly assessed next phase |
 
@@ -134,7 +134,7 @@ assignments and meaningful project checks. Every acceptance outcome needs an
 implementation owner and evidence, including the connections between components.
 Assign required documentation to the component that will actually complete it.
 
-Substantial scope receives an independent preparation check of coverage,
+For the mandatory preparation-check triggers in RULES, obtain an independent check of coverage,
 feasibility, interfaces and source evidence. The Python runtime's `check` command
 also validates structure and dependencies. These are separate assessments.
 Neither supplies user authorization or proves the future implementation works.
@@ -228,8 +228,8 @@ support that work. Define bounded component plans with real ownership, interface
 dependencies, required reads, applicable skills, checks and documentation owners.
 Map each acceptance outcome to implementation and evidence, including interactions
 between components. Configure actual project checks and available worker routes;
-leave unavailable prerequisites visible. Have substantial preparation independently
-checked, resolve findings and run the runtime readiness check on committed inputs.
+leave unavailable prerequisites visible. Obtain independent checking for the mandatory preparation-check triggers in RULES,
+resolve findings and run the runtime readiness check on committed inputs.
 Distinguish structural readiness from the checker's semantic assessment.
 
 Return the agreed goal, current-versus-target evidence, requirements and phase
@@ -287,7 +287,7 @@ Prepare detailed component plans only for the next useful decided scope. Cover
 its exact acceptance, source inputs, ownership, shared interfaces, integration
 checks, exclusive resources, documentation and true prerequisites. Use actual
 project checks and worker routes. Obtain independent preparation checking for
-substantial work, resolve its findings, commit inputs and run structural readiness.
+the mandatory triggers in RULES, resolve its findings, commit inputs and run structural readiness.
 Leave later implementation details open when they depend on what earlier work
 teaches us; record what evidence will be needed before preparing them.
 

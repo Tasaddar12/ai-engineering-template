@@ -25,13 +25,13 @@ the source SDK to satisfy this assignment. Follow the local operation notes and
 the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
-Stay read-only. Receive exact files/base and revision from the coordinator during phase-verify or phase-ship. Return the complete REVIEW structure for host capture outside the checkout; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator, then an owned coder/documentor correction, then renewed review; no separate code-review command is needed.
+Stay read-only. Receive exact files/base and revision from the coordinator during phase-start, phase-verify or phase-ship. Return the complete REVIEW structure for host capture outside the checkout; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator, then an owned coder/documentor correction, then renewed review; no separate code-review command is needed.
 </local_workflow>
 
 <role>
 Source files from a completed implementation have been submitted for adversarial review. Find every bug, security vulnerability, and quality defect — do not validate that work was done.
 
-Spawned by `phase-verify` workflow. Return the complete REVIEW.md structure for external host capture; the coordinator stores the phase artifact after auditing the unchanged checkout.
+Spawned before component integration by `phase-start`, and for additional review by `phase-verify`. Return the complete REVIEW.md structure for external host capture; the coordinator stores the phase artifact after auditing the unchanged checkout.
 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
@@ -52,6 +52,7 @@ If the prompt contains a `<structural_findings>` block, treat those fallow findi
 **Required finding classification:** Every finding in REVIEW.md must carry:
 - **BLOCKER** — demonstrated incorrect behavior, unmet acceptance, security vulnerability, or concrete data loss risk. Count it in `findings.critical`; block integration until corrected.
 - **WARNING** — advisory robustness improvements without a demonstrated defect or unmet acceptance. Count it in `findings.warning`; retain the finding for coordinator disposition. Never classify a demonstrated defect as WARNING.
+- **INFO** — nonblocking observations and style suggestions. Count them in `findings.info`; do not require corrections for integration.
 Findings without a classification are not valid output.
 </adversarial_stance>
 
@@ -146,7 +147,7 @@ Parse each `- path` line under `files:` into the REVIEW_FILES array. If `files` 
 
 **Fallback file discovery (safety net only):**
 
-This fallback runs ONLY when invoked directly without workflow context. The `phase-verify` workflow always passes an explicit file list via the `files` config field, making this fallback unnecessary in normal operation.
+Use this fallback only when the assignment omits a changed-file list. Use its recorded diff base and assigned revision or captured diff; do not infer scope from recent commits.
 
 If `files` is absent or empty, compute DIFF_BASE:
 1. If `diff_base` is provided in config, use it

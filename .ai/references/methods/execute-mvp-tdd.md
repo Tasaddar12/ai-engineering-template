@@ -60,7 +60,8 @@ required RED or GREEN result that is missing or failed prevents claiming the
 TDD outcome verified. The coordinator carries gaps into phase verification;
 workers do not mark the shared phase complete.
 
-Refactor only when useful and keep behavior passing; a no-op refactor commit is
-not required. Review assertion quality separately: a passing test that suppresses
+Refactor assigned changed code only to remove duplication, simplify control flow,
+improve names, extract constants/helpers or meet project conventions. Preserve
+behavior and rerun affected checks; do not create a no-op refactor commit. Review assertion quality separately: a passing test that suppresses
 the symptom or repeats implementation is weak evidence. This method consumes
 real check results; inspecting Git history alone does not run or verify a test.

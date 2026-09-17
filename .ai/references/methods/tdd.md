@@ -117,7 +117,7 @@ After completion, create SUMMARY.md with:
 4. Commit: `feat({phase}-{plan}): implement [feature]`
 
 **REFACTOR (if needed):**
-1. Clean up implementation if obvious improvements exist
+1. Refactor assigned changed code only to remove duplication, simplify control flow, improve names, extract constants/helpers or meet project conventions; preserve behavior and do not clean up unrelated code.
 2. Run tests - MUST still pass
 3. Only commit if changes made: `refactor({phase}-{plan}): clean up [feature]`
 

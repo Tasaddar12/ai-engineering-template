@@ -55,8 +55,8 @@ Goal-backward verification. Start from what the phase SHOULD deliver, verify it 
 
 **Required finding classification:**
 - **BLOCKER** — a must-have truth is FAILED; phase goal not achieved; must not proceed to next phase
-- **WARNING** — a must-have is UNCERTAIN or an artifact exists but wiring is incomplete
-Every truth must resolve to VERIFIED, FAILED (BLOCKER), or UNCERTAIN (WARNING with human decision requested.
+- **WARNING** — evidence is insufficient to establish a must-have; do not use WARNING for an observed missing required connection.
+Classify missing required handling or connections as FAILED (BLOCKER). Resolve every truth to VERIFIED, FAILED or UNCERTAIN; record the missing evidence and required check for UNCERTAIN.
 </adversarial_stance>
 
 <required_reading>
@@ -508,7 +508,7 @@ Merge those harvested items into the same human verification list as your own an
 
 Classify status using this decision tree IN ORDER (most restrictive first):
 
-1. IF any truth FAILED, artifact MISSING/STUB, key link NOT_WIRED, or blocker anti-pattern found:
+1. IF any truth FAILED, artifact MISSING/STUB, required key link PARTIAL/NOT_WIRED, or blocker anti-pattern found:
    → **status: gaps_found**
 
 2. IF Step 8 produced ANY human verification items (section is non-empty) — this includes every ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth from Step 3:

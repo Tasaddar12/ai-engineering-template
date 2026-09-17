@@ -155,7 +155,7 @@ Work through the following sequence:
    unresolved questions and the authorization actually supplied. Where decisions
    are resolved, prepare bounded component instructions with real dependencies,
    ownership, meaningful checks and required documentation. Use independent
-   preparation checking for substantial scope. Do not dispatch implementation
+   preparation checking for the mandatory triggers in RULES. Do not dispatch implementation
    workers merely because a plan exists.
 
 7. Check that setup documents, links and configured commands agree with the actual
@@ -268,8 +268,8 @@ Work through the following sequence:
    Record desired next outcomes in REQUIREMENTS and ROADMAP without erasing existing
    progress. Prepare the next agreed phase's CONTEXT and, where decisions allow,
    bounded instructions with acceptance, ownership, dependencies, validation and
-   documentation coverage. Use independent preparation checking for substantial
-   scope. If I requested onboarding only, report the recommended next action
+   documentation coverage. Use independent preparation checking for the mandatory
+   triggers in RULES. If I requested onboarding only, report the recommended next action
    without inventing feature work or launching implementation.
 
 7. Verify the adoption changes and commit each completed setup slice with a

@@ -26,16 +26,16 @@ PR/MR and verified automatic merge under [phase-ship](../commands/phase-ship.md)
 `commit_docs` settings do not waive that contract. Read-only reviewers neither
 edit the checkout nor commit; the host captures their full report externally.
 
-Only the Python runtime described in [runtime](../runtime/README.md) executes
-the local lifecycle. Agent names and tool lists describe responsibilities and
+Use the Python runtime or coordinator-dispatched native host agents under the same
+local lifecycle rules. Agent names and tool lists describe responsibilities and
 capabilities. The installer supplies native agent definitions as described in the
 [agent catalog](../agents/README.md#native-host-models); role names do not register
 host tools, slash commands or Python worker routes.
 The runtime dispatches code, documentation, independent code review and phase verification. Code review uses `reviewer_command`, falling back to the read-only verifier route when omitted. The
 documentor loads doc-writer; the independent verifier applies doc-verifier and
-integration-checker, with code-reviewer when appropriate. The coordinator may
-assign a separate fresh specialist through the host when useful, supplying an
-exact revision and external result for read-only review. Workers never dispatch
+integration-checker. Dispatch an independent code-reviewer before each code component
+integrates; assign additional specialists for unresolved documentation claims,
+cross-component flows or source-defect findings, with exact revision and external result. Workers never dispatch
 each other, and changing a role name does not create a new CLI subcommand.
 
 ## Local methods and operations
@@ -71,8 +71,8 @@ locally or report what cannot be established; do not install an unrelated SDK.
 
 The existing phase-start and phase-verify procedures own this loop:
 
-1. Assign substantial guides/SPECs to a documentation component dependent on the
-   implementation it describes. Put each required path on the component that
+1. Assign new guides/SPECs, changed operational sequences and explanations spanning
+   components to a documentor; declare the implementation dependencies. Put each required path on the component that
    actually covers it. The documentor loads the full doc-writer method, preserves
    accurate user prose, writes only owned paths and commits its SUMMARY.
 2. Integrate and check that committed output. The coordinator gives the

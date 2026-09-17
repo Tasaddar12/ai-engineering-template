@@ -562,7 +562,7 @@ Output: [Working, tested feature]
 
 **GREEN:** Write minimal code to pass → run test (MUST pass) → commit: `feat({phase}-{plan}): implement [feature]`
 
-**REFACTOR (if needed):** Clean up → run tests (MUST pass) → commit: `refactor({phase}-{plan}): clean up [feature]`
+**REFACTOR:** Remove duplication, simplify control flow, improve names, extract constants/helpers or apply project conventions within changed owned code; preserve behavior. Run affected tests (MUST pass), then commit changes as `refactor({phase}-{plan}): clean up [feature]`; omit the commit when no refactor is required.
 
 Each TDD plan produces 2-3 atomic commits.
 
@@ -871,11 +871,11 @@ readiness when checks are authorized. Independent content review is still needed
 **Local operation:** Coordinator handoff: return proposed roadmap changes and their PLAN evidence; do not edit ROADMAP as a worker.
 Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; do not mutate shared phase records as a worker:
 
-**CRITICAL — use `Edit` (scoped), NOT `Write`, for ROADMAP.md.** A whole-file `Write` destroys all phase entries outside your diff window. Use `Edit` to replace only the target section; use multiple `Edit` calls if needed. NEVER pass the entire ROADMAP.md content to `Write`.
+**Coordinator instruction — use `Edit` (scoped), NOT `Write`, for ROADMAP.md.** A whole-file `Write` destroys phase entries outside the replacement window. The coordinator applies the returned proposals with scoped `Edit` calls; NEVER pass the entire ROADMAP.md content to `Write`. The preparer returns the proposals without editing ROADMAP.
 
 1. Read `.planning/ROADMAP.md`
 2. Find phase entry (`### Phase {N}:`)
-3. Update placeholders using `Edit` (scoped replacement only):
+3. Prepare exact placeholder replacements for the coordinator (target section only):
 
 **Goal** (only if placeholder):
 - `[To be planned]` → derive from CONTEXT.md and actual human instructions; research supplies evidence and cannot define or authorize a goal

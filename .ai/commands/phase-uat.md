@@ -16,7 +16,9 @@ actually reports; do not turn silence or an agent's guess into a pass. For examp
 python .ai/runtime/phase.py uat 01-authentication --case 1 --result pass --note "The user confirmed the expected outcome."
 ```
 
-Use `fail`, `blocked` or `skipped` as appropriate, with the observed detail.
+Set `--result fail` for an observed mismatch, `blocked` when a prerequisite prevents
+execution, or `skipped` when the user explicitly declines the case. Record the
+observation or reason in `--note`; do not treat missing feedback as a skipped case.
 Only record that example statement when it is true. Resume the existing file
 rather than replacing earlier results. Required cases must pass before final readiness and merge. Draft progress pushes
 follow [phase-ship](phase-ship.md); the runtime publisher still requires UAT.

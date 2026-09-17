@@ -23,8 +23,9 @@ Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
    resources. Overlap serializes workers; dependency edges mean a prerequisite
    really must exist. Reject cycles and unnecessary coupling.
 3. Agree interfaces before concurrent work. Include integration checks that prove
-   independently implemented pieces connect. Assign substantial docs explicitly,
-   often as a documentation component dependent on the code it describes. Declare
+   independently implemented pieces connect. Assign a documentor for new
+   specifications/guides, changed operational sequences or explanations spanning
+   components; declare dependencies on the code it describes. Declare
    each required document on the component that will cover it; reference later
    documentation handoffs in coder prose rather than claiming future coverage.
 4. Write VALIDATION when the phase needs shared test setup, manual checks or a

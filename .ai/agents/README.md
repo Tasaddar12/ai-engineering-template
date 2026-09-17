@@ -17,7 +17,7 @@ defines actual host execution, source examples and result contracts.
 | [Doc writer](doc-writer.md) | phase-start | Owned docs and integrated implementation, or claim failures in fix mode → committed docs/SUMMARY → independent verification |
 | [Doc verifier](doc-verifier.md) | phase-verify | Exact doc paths and integrated revision → read-only claim results → phase verifier/coordinator → writer or coder correction |
 | [Integration checker](integration-checker.md) | phase-verify | Expected component/phase connections → read-only wiring and flow evidence → phase verifier/coordinator |
-| [Code reviewer](code-reviewer.md) | phase-verify, phase-ship | Exact changed files/base and revision → read-only classified findings → coordinator/coder |
+| [Code reviewer](code-reviewer.md) | phase-start, phase-verify, phase-ship | Exact changed files/base and revision → read-only classified findings → coordinator/coder |
 | [Debugger](debugger.md) | phase-resume, phase-verify | Reproduction and assigned failure → diagnosis and regression/fix proposal → coordinator/coder |
 | [Verifier](verifier.md) | phase-verify | Integrated acceptance, source and specialist evidence → full independent external report → coordinator correction or publication |
 

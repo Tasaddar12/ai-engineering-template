@@ -26,8 +26,8 @@ created by an earlier declared dependency as pending creation, not missing.
 
 Rules:
 - **Report, never prescribe.** State the target that failed to resolve and what was missing.
-  Choosing the replacement is the planner's job; it should inspect prior committed
-  command receipts and current paths.
+  The planner must inspect prior committed command receipts and current paths
+  before choosing the replacement.
 - `status: pending_creation` means an earlier task in this phase creates that directory. **Not
   a finding.** Say nothing.
 - `unresolvable` means inspection could not ground the path (a variable, glob, substitution, or
