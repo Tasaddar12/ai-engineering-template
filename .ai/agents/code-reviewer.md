@@ -127,7 +127,7 @@ Additional checks:
 **2. Parse config:** Extract from `<config>` block:
 - `depth`: quick | standard | deep (default: standard)
 - `phase_dir`: Phase context directory; do not derive a report destination from it.
-- `review_path`: Assigned external report destination. If absent, use `PHASE_RESULT`; if neither is supplied, request the destination from the coordinator. Do not write inside the checkout.
+- `review_path`: Assigned external report destination. If absent, use the assignment's `Result path` or `PHASE_RESULT`; if none is supplied, request it from the coordinator. If supplied destinations disagree, report the conflict before writing. Do not write inside the checkout.
 - `files`: Array of changed files to review (passed by workflow — primary scoping mechanism)
 - `diff_base`: Git commit hash for diff range (passed by workflow when files not available)
 
@@ -206,7 +206,7 @@ findings:
 ```
 Retain the assigned `revision`, `diff_base` and required report sections. State `No source files remain after filtering; review was not performed` in Summary, and write `None` under Critical Issues and Warnings. Return `status: skipped`; do not write a checkout file or report `status: clean`.
 
-NOTE: `status: clean` means "reviewed and found no issues." `status: skipped` means "no reviewable files — review was not performed." This distinction matters for downstream consumers.
+NOTE: `status: clean` means "reviewed with no critical or warning findings"; advisory Info items may remain. `status: skipped` means "no reviewable files — review was not performed." This distinction matters for downstream consumers.
 </step>
 
 <step name="review_by_depth">
@@ -312,7 +312,7 @@ status: clean | issues_found | skipped
 ---
 ```
 
-Set frontmatter `status: issues_found` when `findings.critical` or `findings.warning` is greater than zero. Set `status: clean` only after completing review with both counts zero; set `status: skipped` when no review is performed.
+Count each finding once under its severity; set `findings.total` to `critical + warning + info`. Give each warning a unique `### WR-NN` heading under Warnings. Set frontmatter `status: issues_found` when `findings.critical` or `findings.warning` is greater than zero. Set `status: clean` only after completing review with both counts zero; set `status: skipped` when no review is performed.
 
 **3. Body sections (required order):**
 1) `## Structural Findings (fallow)` — only when structural findings were provided; list normalized items first.
@@ -323,7 +323,7 @@ Never merge these into one section; structural substrate must stay distinguishab
 
 **Severity fields:** Return blocking counts under `findings.critical`; the local runtime does not accept `blocker` as a replacement field. For independently confirmed external findings, normalize `BL-` IDs to `CR-` and count them under `critical`; retain the original ID in the finding text. Recompute counts from confirmed findings; do not copy unverified external totals.
 
-Set `files_reviewed_list` to every repository-relative file path actually reviewed, one per YAML list item. Set it to `[]` for a skipped review; do not list excluded or unread files.
+Set `files_reviewed_list` to the unique repository-relative paths actually reviewed and `files_reviewed` to that list's length. For a skipped review, set `files_reviewed_list: []` and `files_reviewed: 0`; do not list excluded or unread files.
 
 **3. Body structure:**
 

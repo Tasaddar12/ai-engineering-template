@@ -22,8 +22,8 @@ do not borrow another checkout or reconstruct instructions from unrelated histor
 Read required skill paths from PLAN's Read first section in the assigned
 checkout. The coordinator commits required skills before dispatch; each worker
 reads the copy at its recorded assigned revision, including already integrated
-changes. Select additional matching skills only when useful, without injecting
-every skill body. See [skill use](../guides/AGENT-SKILLS.md) for native discovery,
+changes. Load an additional skill only when its catalog description addresses an
+assigned task or an unresolved failure in that task; do not load every skill body. See [skill use](../guides/AGENT-SKILLS.md) for native discovery,
 method changes and hosts that need explicit paths.
 
 ## Component result
