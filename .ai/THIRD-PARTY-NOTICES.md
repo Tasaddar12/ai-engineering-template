@@ -5,7 +5,8 @@ The complete adapted agents in `.ai/agents/` derive from [open-gsd/gsd-core](htt
 The retained project templates derive from the same MIT-licensed project at
 revision `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; their original adaptation
 history is preserved in [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/).
-Supporting methods are now adapted and bundled in `.ai/references/methods/`.
+Supporting methods are adapted and bundled in `.ai/references/methods/` or in
+their consuming role sections; the table below locates each method.
 They were downloaded from the pinned sources below before adaptation. The local
 copies replace external required reading and SDK commands; these provenance URLs
 are historical records, not instructions for agents to fetch during assignments.
@@ -23,9 +24,9 @@ This is attribution, not an additional runtime dependency.
 ## Bundled method provenance
 
 All entries below originate at revision `4713ffba761a069bbd79e4833b4bea4e14848388`
-in the upstream repository's `gsd-core/references/` directory. Paths are preserved
-relative to that directory under `.ai/references/methods/`; their content is
-adapted, not an exact source mirror. `README.md` is local navigation.
+in the upstream repository's `gsd-core/references/` directory. The table maps
+each adapted method's current local location to its original upstream path.
+The content is adapted, not an exact source mirror.
 
 | Bundled local method | Upstream relative path |
 |---|---|
@@ -66,17 +67,17 @@ adapted, not an exact source mirror. `README.md` is local navigation.
 | [methods/planner-revision.md](references/methods/planner-revision.md) | `planner-revision.md` |
 | [methods/planner-source-audit.md](references/methods/planner-source-audit.md) | `planner-source-audit.md` |
 | [methods/planner-verify-command-grounding.md](references/methods/planner-verify-command-grounding.md) | `planner-verify-command-grounding.md` |
-| [methods/research-documentation-lookup.md](references/methods/research-documentation-lookup.md) | `research-documentation-lookup.md` |
-| [methods/research-philosophy.md](references/methods/research-philosophy.md) | `research-philosophy.md` |
-| [methods/research-verification-protocol.md](references/methods/research-verification-protocol.md) | `research-verification-protocol.md` |
+| [researcher: Documentation lookup](agents/researcher.md#documentation-lookup) | `research-documentation-lookup.md` |
+| [researcher: Research philosophy](agents/researcher.md#research-philosophy) | `research-philosophy.md` |
+| [researcher: Research verification protocol](agents/researcher.md#research-verification-protocol) | `research-verification-protocol.md` |
 | [methods/security-asvs-levels.md](references/methods/security-asvs-levels.md) | `security-asvs-levels.md` |
 | [methods/tdd.md](references/methods/tdd.md) | `tdd.md` |
 | [methods/thinking-models-debug.md](references/methods/thinking-models-debug.md) | `thinking-models-debug.md` |
 | [methods/thinking-models-execution.md](references/methods/thinking-models-execution.md) | `thinking-models-execution.md` |
 | [methods/thinking-models-planning.md](references/methods/thinking-models-planning.md) | `thinking-models-planning.md` |
-| [methods/thinking-models-research.md](references/methods/thinking-models-research.md) | `thinking-models-research.md` |
+| [researcher: Research decision models](agents/researcher.md#research-decision-models) | `thinking-models-research.md` |
 | [methods/thinking-models-verification.md](references/methods/thinking-models-verification.md) | `thinking-models-verification.md` |
-| [methods/untrusted-input-boundary.md](references/methods/untrusted-input-boundary.md) | `untrusted-input-boundary.md` |
+| [researcher: Untrusted-Input Boundary](agents/researcher.md#untrusted-input-boundary) | `untrusted-input-boundary.md` |
 | [methods/verification-overrides.md](references/methods/verification-overrides.md) | `verification-overrides.md` |
 | [methods/verifier-evidence-gate.md](references/methods/verifier-evidence-gate.md) | `verifier-evidence-gate.md` |
 | [methods/verifier-phase-gates.md](references/methods/verifier-phase-gates.md) | `verifier-phase-gates.md` |
