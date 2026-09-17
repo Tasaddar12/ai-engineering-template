@@ -54,7 +54,8 @@ a fresh independent code-reviewer process in a separate read-only checkout at it
 exact commit. The runner saves the diff for reviewers without shell access and
 requires a completed report with `findings.critical: 0` before integration.
 Warnings are advisory. Before verification, commit VERIFICATION frontmatter
-`warning_dispositions` with the [required fields](../runtime/TEMPLATE-CONTRACT.md#independent-component-code-review).
+`warning_dispositions`: one mapping per warning with `component`, reviewed `revision`,
+`finding` (WR-NN), `disposition` (`accepted` or `deferred`) and a nonempty `reason`.
 Never downgrade a blocking defect to a warning.
 Author self-checks cannot satisfy this gate. Native host orchestration must
 explicitly dispatch the same separate role and preserve its evidence. A blocked or invalid result

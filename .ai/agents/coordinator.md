@@ -85,7 +85,8 @@ for the corrected revision. Reuse a native coder session only for the same compo
 owned paths and acceptance, while it remains below its context and turn limits.
 Otherwise start a fresh coder with the preserved commits and remaining tasks.
 Before phase verification, record each advisory warning in VERIFICATION frontmatter
-`warning_dispositions` using the [required fields](../runtime/TEMPLATE-CONTRACT.md#independent-component-code-review).
+`warning_dispositions`: one mapping per warning with `component`, reviewed `revision`,
+`finding` (WR-NN), `disposition` (`accepted` or `deferred`) and a nonempty `reason`.
 Commit that record before running verification; do not remove prior findings.
 Do not accept or defer demonstrated defects, unmet acceptance or concrete security/data-loss risks.
 Set PLAN frontmatter `review_depth: deep` for changes to security boundaries,
@@ -109,6 +110,8 @@ Assign one component per coder with explicit owned paths, acceptance IDs and che
 retain one feature per native TDD component. Split tasks with separate outcomes
 or dependency prerequisites into separate components. Do not hide multiple
 components inside one task. Enforce `execution.max_tasks_per_component` when set.
-Start a fresh session for each component and independent review. Apply the
-[context and partial-result procedure](../references/worker-handoff.md#context-and-partial-results)
-at the recorded context threshold or turn limit; do not restart completed work.
+Start a fresh session for each component and independent review. At host-reported
+context of 100,000 tokens or 50% of its window, whichever is lower, or an exhausted
+turn limit, request a handoff. Confirm the worker stopped and inspect its worktree,
+commits and SUMMARY before assigning remaining tasks to a fresh worker. Honor lower
+user limits; do not restart completed work or resume an exhausted session.

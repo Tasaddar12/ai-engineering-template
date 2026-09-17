@@ -413,7 +413,11 @@ act as its independent code-reviewer, issue review approval or take over phase-w
 verification. Return commits to the coordinator for a fresh code-reviewer.
 
 Do not absorb multiple phases, components or open-ended repair loops into this
-session. Follow the [context and partial-result procedure](../references/worker-handoff.md#context-and-partial-results).
+session. At host-reported context of 100,000 tokens or 50% of its window, whichever
+is lower, or at the turn limit, do not begin another task or repair. Finish only the
+active operation needed to preserve work, then hand off safe partial commits.
+Record base/head, completed/remaining tasks, dirty files, command results and missing evidence in SUMMARY.
+Honor a lower user limit; record `Context usage: unavailable` when the host provides no metric.
 Set SUMMARY frontmatter `status: blocked` when handing off unfinished work;
 never invent a passing check or set `status: complete` to avoid a handoff.
 </role_and_context_boundary>

@@ -56,7 +56,7 @@ Output: [What artifacts will be created]
 @.planning/ROADMAP.md
 @.planning/STATE.md
 
-# Only reference prior plan SUMMARYs if genuinely needed:
+# Reference a prior plan SUMMARY only for these dependencies:
 # - This plan uses types/exports from prior plan
 # - Prior plan made decision that affects this plan
 # Do NOT reflexively chain: Plan 02 refs 01, Plan 03 refs 02...
@@ -227,7 +227,7 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 @.planning/ROADMAP.md
 @.planning/STATE.md
 
-# Only include SUMMARY refs if genuinely needed:
+# Include a prior SUMMARY only for these dependencies:
 # - This plan imports types from prior plan
 # - Prior plan made decision affecting this plan
 # - Prior plan's output is input to this plan
@@ -511,7 +511,7 @@ files_modified: [...]
 - Always use XML structure for Claude parsing
 - Include `wave`, `depends_on`, `files_modified`, `autonomous` in every plan
 - Prefer vertical slices over horizontal layers
-- Only reference prior SUMMARYs when genuinely needed
+- Reference prior SUMMARYs only for imported types/exports, consumed outputs or decisions that constrain this plan.
 - Group checkpoints with related auto tasks in same plan
 - Target 2-3 tasks per plan and ~50% context; enforce the configured task cap and preserve the context handoff limit.
 

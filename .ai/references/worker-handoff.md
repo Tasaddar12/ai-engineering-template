@@ -51,9 +51,9 @@ A committed result may be recoverable without another worker. Uncommitted or
 out-of-scope output requires reconciliation, not automatic acceptance.
 
 Verifier attempts retain their process identity, source revision, result path and
-worktree. Reuse requires a stopped process and valid current evidence. Follow
-phase-verify with --workers-stopped when inspection establishes that a fresh
-verification attempt is needed. For component code-review failures, inspect the
+worktree. Reuse requires a stopped process and valid current evidence. Run
+`verify PHASE --workers-stopped` after confirming the verifier stopped and its
+report is missing, incomplete or stale. For component code-review process failures before integration, inspect the
 review process and worktree, then run `resume PHASE --workers-stopped`; the runner
 preserves the failed attempt and starts a new reviewer against the same base/head.
 
