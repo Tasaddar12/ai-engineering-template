@@ -8,7 +8,7 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 
 ```markdown
 ---
-status: testing | partial | complete | diagnosed
+status: testing | partial | complete
 phase: XX-name
 source: [list of SUMMARY.md files tested]
 started: [ISO timestamp]
@@ -96,12 +96,12 @@ blocked: [N]
 - Each test: OVERWRITE result field when user responds
 - `result` values: [pending], pass, issue, skipped, blocked
 - If issue: add `reported` (verbatim) and `severity` (inferred)
-- If skipped: add `reason` if provided
-- If blocked: add `blocked_by` (tag) and `reason` (if provided)
+- If skipped: record the user's explicit decision in `reason` and the CLI `--note`.
+- If blocked: record the prerequisite in `blocked_by` and the reason in `reason` and `--note`.
 
 **Summary:**
 - OVERWRITE counts after each response
-- Tracks: total, passed, issues, pending, skipped
+- Tracks: total, passed, issues, pending, skipped, blocked
 
 **Gaps:**
 - APPEND only when issue found (YAML format)
@@ -112,14 +112,14 @@ blocked: [N]
 
 <diagnosis_lifecycle>
 
-**After testing complete (status: complete), if gaps exist:**
+**When an observed failure creates a gap, diagnose it while `status: partial`:**
 
 1. Coordinator routes the observed failure to bounded debugger diagnosis within the authorized scope
 2. Coordinator assigns bounded investigations using the local debugger role
 3. Each agent investigates one gap, returns root cause
 4. UAT.md Gaps section updated with diagnosis:
    - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
-5. status → "diagnosed"
+5. Retain `status: partial`; store diagnosis in Gaps, not in a new session status
 6. Return the diagnosed gaps to `phase-prepare` for repair planning
 
 **After diagnosis:**
@@ -145,7 +145,7 @@ blocked: [N]
 <lifecycle>
 
 **Creation:** When phase-uat starts new session
-- Extract tests from SUMMARY.md files
+- Derive one case per CONTEXT acceptance ID; use SUMMARY files as implementation evidence.
 - Set status to "testing"
 - Current Test points to test 1
 - All tests have result: [pending]
@@ -156,28 +156,28 @@ blocked: [N]
 - Update test result (pass/issue/skipped)
 - Update Summary counts
 - If issue: append to Gaps section (YAML format), infer severity
-- Move Current Test to next pending test
+- Current Test names the first nonpassing case; select a different remaining case explicitly with `--case N`.
 
 **On completion:**
-- status → "complete"
+- Set `status: complete` only when every case result is `pass`.
 - Current Test → "[testing complete]"
 - Commit file
 - Present summary with next steps
 
 **Partial completion:**
-- status → "partial" (if pending, blocked, or unresolved skipped tests remain)
+- After any recorded response, set `status: partial` while any case is pending, issue/failed, blocked or skipped.
 - Current Test → "[testing paused — {N} items outstanding]"
 - Commit file
 - Present summary with outstanding items highlighted
 
 **Resuming partial session:**
-- `phase-uat {phase}` picks up from first pending/blocked test
-- When all items resolved, status advances to "complete"
+- Run `python .ai/runtime/phase.py uat PHASE`; inspect the first nonpassing case and preserve prior observations.
+- Set `status: complete` only after every case records `pass`.
 
 **Resume after /clear:**
 1. Read frontmatter → know phase and status
 2. Read Current Test → know where we are
-3. Find first [pending] result → continue from there
+3. Inspect the first nonpassing result and its prior observations; record a new outcome only from fresh user feedback.
 4. Summary shows progress so far
 
 </lifecycle>
@@ -200,7 +200,7 @@ Default: **major** (safe default, user can clarify if wrong)
 <good_example>
 ```markdown
 ---
-status: diagnosed
+status: partial
 phase: 04-comments
 source: 04-01-SUMMARY.md, 04-02-SUMMARY.md
 started: 2025-01-15T10:30:00Z
@@ -209,7 +209,10 @@ updated: 2025-01-15T10:45:00Z
 
 ## Current Test
 
-[testing complete]
+number: 2
+name: Create Top-Level Comment
+expected: Comment appears immediately after submission
+awaiting: correction and user retest
 
 ## Tests
 

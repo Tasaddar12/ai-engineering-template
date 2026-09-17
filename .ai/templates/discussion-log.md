@@ -55,7 +55,7 @@ Template for `.planning/phases/XX-name/{phase_num}-DISCUSSION-LOG.md` — audit 
 
 ## Rules
 
-- Generated automatically at end of every discuss-phase session
+- When preserving discussion history, the coordinator writes this log alongside CONTEXT at the end of the discussion.
 - Includes ALL options considered, not just the selected one
 - Includes user's freeform notes and clarifications
 - Clearly marked as audit-only, not an implementation artifact
