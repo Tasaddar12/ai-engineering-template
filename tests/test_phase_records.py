@@ -66,11 +66,74 @@ class PhaseRecordTests(unittest.TestCase):
                 with self.assertRaisesRegex(PhaseError, "Duplicate acceptance identifiers"):
                     load_phase(f.checkout, "01", ready=True)
 
+    def test_approval_alone_cannot_bypass_discussion(self):
+        f = self.fixture
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        for state in (None, "pending"):
+            with self.subTest(discussion=state):
+                if state is None:
+                    metadata.pop("discussion", None)
+                else:
+                    metadata["discussion"] = state
+                f.record(context_path.relative_to(f.checkout), metadata, body)
+                self.assertEqual(load_phase(f.checkout, "01").context["approval"], "approved")
+                with self.assertRaisesRegex(PhaseError, "Complete phase discussion"):
+                    load_phase(f.checkout, "01", ready=True)
+
+    def test_completed_discussion_requires_a_nonempty_log(self):
+        f = self.fixture
+        log = f.checkout / fixtures.PHASE_PATH / "01-DISCUSSION-LOG.md"
+        log.unlink()
+        with self.assertRaisesRegex(PhaseError, "nonempty 01-DISCUSSION-LOG.md"):
+            load_phase(f.checkout, "01", ready=True)
+        log.write_text(" \n\t", encoding="utf-8")
+        with self.assertRaisesRegex(PhaseError, "nonempty 01-DISCUSSION-LOG.md"):
+            load_phase(f.checkout, "01", ready=True)
+        log.write_text("# Discussion\n\nThe user chose independent worktrees.\n", encoding="utf-8")
+        self.assertEqual(load_phase(f.checkout, "01", ready=True).context["discussion"], "complete")
+
+    def test_run_and_resume_do_not_dispatch_without_discussion(self):
+        f = self.fixture
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        metadata["discussion"] = "pending"
+        f.record(context_path.relative_to(f.checkout), metadata, body)
+        f.commit("Record unfinished discussion")
+        self.assertIn("pending discussion", f.cli("status", "01").stdout)
+        for command in ("run", "resume"):
+            with self.subTest(command=command):
+                result = f.cli(command, "01", succeeds=False)
+                self.assertIn("Complete phase discussion", result.stderr)
+                self.assertEqual(f.events(), [])
+
+    def test_saved_run_reports_discussion_blocker_without_replaying_workers(self):
+        f = self.fixture
+        f.cli("run", "01")
+        original_events = f.events()
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        for missing in ("marker", "log"):
+            with self.subTest(missing=missing):
+                metadata["discussion"] = "pending" if missing == "marker" else "complete"
+                f.record(context_path.relative_to(f.checkout), metadata, body)
+                if missing == "log":
+                    (f.checkout / fixtures.PHASE_PATH / "01-DISCUSSION-LOG.md").unlink()
+                f.commit("Record missing discussion prerequisite")
+                status = f.cli("status", "01").stdout
+                expected = "Complete phase discussion" if missing == "marker" else "nonempty 01-DISCUSSION-LOG.md"
+                self.assertIn(expected, status)
+                result = f.cli("resume", "01", "--workers-stopped", succeeds=False)
+                self.assertIn(expected, result.stderr)
+                self.assertEqual(f.events(), original_events)
+
     def test_new_phase_stays_pending_and_allocates_across_worktrees(self):
         f = self.fixture
         f.cli("new", "second", "--title", "Second change")
         context = f.checkout / ".planning/phases/02-second/02-CONTEXT.md"
         self.assertEqual(record(context)[0]["approval"], "pending")
+        self.assertEqual(record(context)[0]["discussion"], "pending")
+        self.assertFalse(context.with_name("02-DISCUSSION-LOG.md").exists())
         self.assertIn("02-CONTEXT.md", (f.checkout / ".planning/ROADMAP.md").read_text(encoding='utf-8'))
         self.assertEqual(f.git(f.checkout, "status", "--porcelain"), "")
         sibling = f.primary / ".worktrees/another"

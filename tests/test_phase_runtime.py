@@ -136,13 +136,18 @@ class PhaseRuntimeTests(unittest.TestCase):
     def context(self, *, approval: str = "approved", uat: bool = False) -> None:
         self.record(
             PHASE_PATH / "01-CONTEXT.md",
-            {"phase": "01", "title": "Example", "approval": approval, "depends_on": [], "uat": uat},
+            {"phase": "01", "title": "Example", "approval": approval, "discussion": "complete", "depends_on": [], "uat": uat},
             "# Example phase\n\n## Goal\n\nDeliver integrated fixture components.\n\n"
             "## Scope\n\nOnly the assigned components.\n\n"
             "## Acceptance\n\n- [ ] A1: Every component is present and works with its prerequisites.\n\n"
             "## Decisions\n\nUse independent component worktrees.\n\n"
             "## Authorization\n\nThe user approved implementing and verifying this phase in worktrees.\n\n"
             "## Open questions\n\nNone.\n\n## Deferred\n\nNone.\n",
+        )
+        self.write(
+            self.checkout, PHASE_PATH / "01-DISCUSSION-LOG.md",
+            "# Example discussion\n\nThe fixture user chose independent component worktrees "
+            "and agreed that every assigned output must work with its prerequisites.\n",
         )
         self.write(
             self.checkout, PHASE_PATH / "01-VALIDATION.md",
@@ -428,9 +433,11 @@ class PhaseRuntimeTests(unittest.TestCase):
         source_context = (self.checkout / PHASE_PATH / "01-CONTEXT.md").read_text(encoding='utf-8').split("---", 2)[2]
         self.record(
             next_phase / "02-CONTEXT.md",
-            {"phase": "02", "approval": "approved", "depends_on": [PHASE], "uat": False},
+            {"phase": "02", "approval": "approved", "discussion": "complete", "depends_on": [PHASE], "uat": False},
             source_context,
         )
+        self.write(self.checkout, next_phase / "02-DISCUSSION-LOG.md",
+                   "# Follow-up discussion\n\nThe fixture user agreed to consume the delivered prerequisite.\n")
         source_instruction = (self.checkout / PHASE_PATH / "01-01-PLAN.md").read_text(encoding='utf-8').split("---", 2)
         metadata = yaml.safe_load(source_instruction[1])
         metadata.update(phase="02-dependent", plan="01", files_modified=["src/02-01.txt"], checks=[[

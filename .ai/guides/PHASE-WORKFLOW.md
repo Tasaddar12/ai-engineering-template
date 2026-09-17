@@ -67,7 +67,7 @@ workers and changes no records.
 | Activity | Question answered | Artifact |
 |---|---|---|
 | Specify when useful | What does this phase deliver, and what proves it? | `NN-SPEC.md` from `spec.md` |
-| Discuss | Which implementation choices are fixed, delegated or unresolved? | `NN-CONTEXT.md`; optional discussion log |
+| Discuss | Which implementation choices are fixed, delegated or unresolved? | `NN-CONTEXT.md` and required `NN-DISCUSSION-LOG.md` |
 | Research | Which technical uncertainty could invalidate the approach? | `NN-RESEARCH.md`; relevant project research |
 | Define validation | Which checks will expose plausible incorrect implementations? | `NN-VALIDATION.md` when useful |
 

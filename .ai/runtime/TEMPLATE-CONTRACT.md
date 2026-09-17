@@ -7,7 +7,8 @@ This contract adds local execution evidence; it does not replace upstream guidan
 
 | Artifact | Producer | Consumer | Local additions |
 |---|---|---|---|
-| NN-CONTEXT.md | Discussion coordinator; `new` seeds the full context skeleton | Researcher, preparer, checker, runtime | YAML phase number, approval, depends_on, uat; Acceptance and Authorization sections |
+| NN-CONTEXT.md | Discussion coordinator; `new` seeds the full context skeleton | Researcher, preparer, checker, runtime | YAML phase number, discussion, approval, depends_on, uat; Acceptance and Authorization sections |
+| NN-DISCUSSION-LOG.md | Discussion coordinator; update with CONTEXT after every exchange | Human audit; runtime checks presence and nonempty content | Actual questions, options, recommendation evidence, replies and rationale |
 | NN-CC-PLAN.md | Phase preparer | Checker, scheduler, assigned worker | kind, resources, acceptance, documentation, checks; Documentation handoff section |
 | NN-CC-SUMMARY.md | Assigned worker | Integrator, downstream workers, verifier | acceptance, documentation; Checks section with actual evidence |
 | NN-VERIFICATION.md | Independent verifier | Coordinator and publication gate | revision; Acceptance, Integration, Documentation, Findings sections; runtime source and check receipts |
@@ -24,9 +25,21 @@ human approval from a template status label. Add this frontmatter:
 ```yaml
 phase: "01"
 approval: pending  # approved only when actual authorization is recorded below
+discussion: pending  # complete only after actual phase discussion is recorded
 depends_on: []     # delivered phase directory names, e.g. 02-foundation
 uat: false
 ```
+
+Every phase requires `NN-DISCUSSION-LOG.md`. The coordinator creates it at the
+first discussion exchange and commits updates with CONTEXT after each exchange.
+Set `discussion: complete` only after discussing and recording the current scope;
+reset it to `pending` when a scope or consequential decision change needs further
+discussion. `check`, `run` and `resume` reject a missing/pending discussion marker
+or a missing/empty log even when `approval: approved`. Existing records without
+the field remain readable but are not execution-ready. Recover missing records
+from actual conversation evidence; never invent a discussion or auto-approve one.
+The runtime checks the marker and nonempty log; the coordinator must verify that
+they represent a real discussion. Workers consume CONTEXT, not the audit log.
 
 Append `## Acceptance` with observable outcomes such as
 `- [ ] AUTH-01: A signed-out visitor cannot retrieve another user's profile.`

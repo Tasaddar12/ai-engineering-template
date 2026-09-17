@@ -4,6 +4,10 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 
 **Purpose:** Document decisions that downstream agents need. Researcher uses this to know WHAT to investigate. Planner uses this to know WHAT choices are locked vs flexible.
 
+**Discussion gate:** Discuss every phase with the user and maintain its required
+discussion log. Set frontmatter `discussion: complete` only after recording the
+actual discussion for the current scope; phase creation does not satisfy it.
+
 **Implementation gate:** NEVER implement a phase unless the user explicitly
 tells you to implement it. Record that instruction in Authorization using the
 [runtime contract](../runtime/TEMPLATE-CONTRACT.md). Planning decisions and a

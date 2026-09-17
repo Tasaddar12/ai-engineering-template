@@ -4,7 +4,10 @@ Template for `.planning/phases/XX-name/{phase_num}-DISCUSSION-LOG.md` — audit 
 
 **Purpose:** Software audit trail for decision-making. Captures all options considered, not just the selected one. Separate from CONTEXT.md which is the implementation artifact consumed by downstream agents.
 
-**NOT for LLM consumption.** This file should never be referenced in `<required_reading>` blocks or agent prompts.
+**Audit record only.** The coordinator writes and updates this log. Downstream
+research, planning and execution workers must not load it as instructions or add
+it to `<required_reading>`; they read decisions in CONTEXT. The runtime checks
+that the log exists and is nonempty, not whether its decisions are correct.
 
 ## Format
 
@@ -30,6 +33,8 @@ Template for `.planning/phases/XX-name/{phase_num}-DISCUSSION-LOG.md` — audit 
 
 **User's choice:** [Selected option or verbatim free-text response]
 **Notes:** [Any clarifications or rationale provided during discussion]
+**Recommendation evidence:** [Inspected source paths or primary documentation,
+applicable versions, supported claims, and any unresolved evidence gaps]
 
 ---
 
@@ -55,7 +60,10 @@ Template for `.planning/phases/XX-name/{phase_num}-DISCUSSION-LOG.md` — audit 
 
 ## Rules
 
-- When preserving discussion history, the coordinator writes this log alongside CONTEXT at the end of the discussion.
+- Required for every phase discussion, including a short exchange. Create it at
+  the first exchange; append updates after each exchange and before pausing.
+- Record only actual discussion. Mark unanswered questions pending; never invent
+  user choices, evidence or a retrospective conversation.
 - Includes ALL options considered, not just the selected one
 - Includes user's freeform notes and clarifications
 - Clearly marked as audit-only, not an implementation artifact

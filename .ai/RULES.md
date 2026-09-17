@@ -53,6 +53,19 @@ Read-only work needs no commit or publication; reviewers do not edit or commit.
 
 ## Phase authority
 
+**Every phase requires discussion with the user before component preparation or
+implementation.** Phase creation, an implementation request and an existing PLAN
+cannot substitute for that discussion. The coordinator creates
+`NN-DISCUSSION-LOG.md` at the first discussion exchange and updates it with CONTEXT
+after each exchange. Record only actual questions, options, evidence and replies.
+Set CONTEXT frontmatter `discussion: complete` only after the current phase's
+outcome, scope, acceptance and consequential choices have been discussed and
+recorded; unresolved choices must identify the work they block. Set it back to
+`pending` when the outcome, scope or a consequential choice changes and needs
+further discussion. Do not dispatch implementation workers while discussion is
+pending or its log is missing. Discussion completion never grants implementation
+permission. Keep the log audit-only; downstream workers read decisions in CONTEXT.
+
 **NEVER start implementing a phase unless the user explicitly tells you to
 implement that phase.** Creating, discussing, researching or preparing a phase,
 approving its design, passing readiness checks, and merging planning records do

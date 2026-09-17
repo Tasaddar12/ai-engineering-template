@@ -6,6 +6,11 @@ PR does not grant permission. Finish authorized preparation and report readiness
 when that instruction is absent; follow
 [phase authority](../RULES.md#phase-authority).
 
+Require CONTEXT frontmatter `discussion: complete` and the recorded discussion
+log before preparing component PLANs. If discussion is missing or pending, return
+to [phase-discuss](phase-discuss.md); inspect unresolved technical questions as
+needed to inform that discussion without inventing decisions.
+
 Read [RULES](../RULES.md), CONTEXT, relevant current SPECs, research and code.
 Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 

@@ -51,7 +51,11 @@ has no phases and no verification commands until adoption.
 
 [CONTEXT](../templates/context.md) owns goal, identified acceptance, decisions
 and actual authorization. `approval: approved` is a recorded human instruction,
-not permission a worker can invent. Open questions remain a coordinator
+not permission a worker can invent. Execution also requires CONTEXT
+`discussion: complete` and a nonempty `NN-DISCUSSION-LOG.md`; new phases start with
+`discussion: pending`. Missing fields in older records block execution until the
+coordinator records actual discussion. These structural checks do not prove a
+conversation occurred or validate recommendations. Open questions remain a coordinator
 judgment: prepare only independent, decided scope for execution.
 
 Each [PLAN](../templates/phase-prompt.md) declares kind (`code` or

@@ -5,6 +5,11 @@ this phase, recorded with its scope in CONTEXT Authorization. NEVER infer it fro
 phase creation, plan approval or readiness. Earlier explicit authorization still
 applies to its stated scope; follow [phase authority](../RULES.md#phase-authority).
 
+Require CONTEXT frontmatter `discussion: complete` and a nonempty
+`NN-DISCUSSION-LOG.md` before starting any implementation worker, including native
+host dispatch. If either is absent, complete [discussion](phase-discuss.md) first;
+do not mark it complete merely to pass the gate.
+
 Read [RULES](../RULES.md) and verify the assigned integration worktree. Inputs
 must be committed, the tree clean, relevant decisions resolved and execution
 authorized. Follow [phase-prepare](phase-prepare.md) for incomplete instructions.
