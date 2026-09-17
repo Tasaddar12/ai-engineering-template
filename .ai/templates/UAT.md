@@ -166,7 +166,7 @@ blocked: [N]
 
 **Partial completion:**
 - After any recorded response, set `status: partial` while any case is pending, issue/failed, blocked or skipped.
-- Current Test → "[testing paused — {N} items outstanding]"
+- Keep Current Test on the first nonpassing case with its expected result and `awaiting: user response`.
 - Commit file
 - Present summary with outstanding items highlighted
 
