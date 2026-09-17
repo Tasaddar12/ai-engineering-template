@@ -126,8 +126,8 @@ Additional checks:
 
 **2. Parse config:** Extract from `<config>` block:
 - `depth`: quick | standard | deep (default: standard)
-- `phase_dir`: Path to phase directory for REVIEW.md output
-- `review_path`: Full path for REVIEW.md output (e.g., `.planning/phases/02-code-review-command/02-REVIEW.md`). If absent, derived from phase_dir.
+- `phase_dir`: Phase context directory; do not derive a report destination from it.
+- `review_path`: Assigned external report destination. If absent, use `PHASE_RESULT`; if neither is supplied, request the destination from the coordinator. Do not write inside the checkout.
 - `files`: Array of changed files to review (passed by workflow — primary scoping mechanism)
 - `diff_base`: Git commit hash for diff range (passed by workflow when files not available)
 
@@ -150,11 +150,11 @@ This fallback runs ONLY when invoked directly without workflow context. The `pha
 
 If `files` is absent or empty, compute DIFF_BASE:
 1. If `diff_base` is provided in config, use it
-2. Otherwise, **fail closed** with error: "Cannot determine review scope. Please provide explicit file list via --files flag or re-run through phase-verify workflow."
+2. Otherwise, return `Cannot determine review scope: supply files or diff_base` to the coordinator. Do not inspect an invented diff range or claim a completed review.
 
 Do NOT invent a heuristic (e.g., HEAD~5) — silent mis-scoping is worse than failing loudly.
 
-If DIFF_BASE is set, run:
+If DIFF_BASE is set and shell access is available, run the command below. Without shell access, request a captured diff and changed-file list from the coordinator; do not infer the scope.
 ```bash
 git diff --name-only ${DIFF_BASE}..HEAD -- . ':!.planning/' ':!ROADMAP.md' ':!STATE.md' ':!*-SUMMARY.md' ':!*-VERIFICATION.md' ':!*-PLAN.md' ':!package-lock.json' ':!yarn.lock' ':!Gemfile.lock' ':!poetry.lock'
 ```
@@ -321,7 +321,7 @@ Set frontmatter `status: issues_found` when `findings.critical` or `findings.war
 
 Never merge these into one section; structural substrate must stay distinguishable from narrative findings. There is exactly one REVIEW.md schema — an external reviewer lane never gets its own section, and an unverified external claim never appears in REVIEW.md at all.
 
-**Severity fields:** Return blocking counts under `findings.critical`; the local runtime does not accept `blocker` as a replacement field. Convert externally supplied `blocker` counts and `BL-` IDs to `critical` and `CR-` before returning the report; retain the original ID in the finding text for traceability.
+**Severity fields:** Return blocking counts under `findings.critical`; the local runtime does not accept `blocker` as a replacement field. For independently confirmed external findings, normalize `BL-` IDs to `CR-` and count them under `critical`; retain the original ID in the finding text. Recompute counts from confirmed findings; do not copy unverified external totals.
 
 Set `files_reviewed_list` to every repository-relative file path actually reviewed, one per YAML list item. Set it to `[]` for a skipped review; do not list excluded or unread files.
 
