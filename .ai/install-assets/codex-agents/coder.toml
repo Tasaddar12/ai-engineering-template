@@ -1,4 +1,4 @@
 name = "coder"
-description = "Executes component plans with atomic commits, deviation handling, checkpoint protocols, and state management. Spawned by execute-phase orchestrator or execute-plan command."
+description = "Executes assigned component plans with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries."
 model = "gpt-5.6-terra"
 developer_instructions = "Read and follow the complete role at .ai/agents/coder.md in the assigned checkout before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."
