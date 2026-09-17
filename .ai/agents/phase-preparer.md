@@ -47,7 +47,7 @@ Your job: Produce PLAN.md files that worker agents can implement without interpr
 
 **Core responsibilities:**
 - **FIRST: Parse and honor user decisions from CONTEXT.md** (locked decisions are NON-NEGOTIABLE)
-- Decompose phases into parallel-optimized plans with 2-3 tasks each
+- Decompose phases into parallel-optimized plans; use 2-3 tasks as a sizing target and apply the mandatory split conditions in `estimate_scope`.
 - Build dependency graphs and assign execution waves
 - Derive must-haves using goal-backward methodology
 - Handle both standard planning and gap closure mode
@@ -318,7 +318,7 @@ See [planner-guidance](../references/methods/planner-guidance.md) for dependency
 
 Full rules: [context-budget](../references/methods/context-budget.md) (Phase Sizing). Read before sizing.
 
-- **Target 2-3 tasks per plan.** Review larger plans for splitting; preserve coherent end-to-end slices and all required outcomes.
+- **Target 2-3 tasks per plan; this is not a mandatory count.** Apply the `estimate_scope` split conditions and configured task cap; preserve coherent end-to-end slices and all required outcomes.
 - **Optional `estimate`:** project implementation, required reading and verification output cost. Cite any actual historical calibration; otherwise label it uncalibrated.
 - **Over the smart-zone budget?** Re-slice: tracer + expansion slices. Advisory, never a block.
 
@@ -781,7 +781,7 @@ Rules:
 1. Same-wave tasks with no file conflicts → parallel plans
 2. Shared files → same plan or sequential plans (shared file = implicit dependency → later wave)
 3. Checkpoint tasks → `autonomous: false`
-4. Each plan: 2-3 tasks, single concern, ~50% context target
+4. Each plan: one component outcome, a 2-3 task sizing target and a ~50% context target; apply `estimate_scope` before accepting the grouping.
 </step>
 
 <step name="derive_must_haves">
@@ -803,7 +803,10 @@ UNREACHABLE (no path) → revise plan.
 </step>
 
 <step name="estimate_scope">
-Verify each plan fits context budget: 2-3 tasks, ~50% target. Split if necessary. Check granularity setting.
+- Use 2-3 tasks and ~50% context as sizing targets, not permission to exceed the [context handoff threshold](../references/worker-handoff.md#context-and-partial-results). Do not add tasks solely to reach the target count; retain exactly one feature per native TDD PLAN.
+- Split a PLAN when tasks deliver separate component outcomes or need different prerequisite components. Preserve every required outcome and declare the resulting dependency edges; keep optional context estimates advisory as specified in `scope_estimation` and never report them as observed context usage.
+- When `execution.max_tasks_per_component` is a positive integer, split any ordinary PLAN above that count. When it is null, no numeric task cap applies; the preceding split conditions still apply.
+- Read `**Granularity:**` from the planning context; use `Standard` when absent and apply the [granularity table](../references/methods/planner-guidance.md#granularity-calibration). Do not use that setting to omit required outcomes, combine separate component outcomes or bypass the task cap or context threshold.
 </step>
 
 <step name="confirm_breakdown">
@@ -977,7 +980,7 @@ Phase planning complete when:
 - [ ] Each plan: depends_on, files_modified, autonomous, must_haves in frontmatter
 - [ ] Each plan: user_setup declared if external services involved
 - [ ] Each plan: Objective, context, tasks, verification, success criteria, output
-- [ ] Each plan: 2-3 tasks (~50% context)
+- [ ] Each plan has one component outcome and satisfies `estimate_scope`; 2-3 tasks and ~50% context remain sizing targets, not mandatory counts or permission to exceed limits.
 - [ ] Each task: Type, Files (if auto), Action, Verify, Done
 - [ ] Checkpoints properly structured
 - [ ] Wave structure maximizes parallelism

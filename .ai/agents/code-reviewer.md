@@ -36,7 +36,7 @@ Spawned by `phase-verify` workflow. Return the complete REVIEW.md structure for 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
 
-If the prompt contains a `<structural_findings>` block, treat those fallow findings as **evidence candidates** for cross-module facts (unused exports, duplicate blocks, circular dependencies); independently validate them against the assigned source revision. Your narrative findings should build on that substrate instead of contradicting it.
+If the prompt contains a `<structural_findings>` block, treat those fallow findings as **evidence candidates** for cross-module facts (unused exports, duplicate blocks, circular dependencies); independently validate them against the assigned source revision. Retain supported claims and cite the confirming source. Explicitly reject contradicted claims with the source evidence; mark claims without sufficient evidence as unverified and do not present them as confirmed defects.
 </role>
 
 <adversarial_stance>

@@ -26,7 +26,7 @@ These ranges are planning heuristics, not measured guarantees.
 | 50-70% | DEGRADING | Efficiency mode begins |
 | 70%+ | POOR | Rushed, minimal |
 
-**Rule:** Plans should complete within ~50% context. More plans, smaller scope, consistent quality. Each plan: 2-3 tasks max.
+**Sizing targets:** Aim for 2-3 tasks and ~50% context per plan. Enforce the configured `execution.max_tasks_per_component` when set and the mandatory split conditions in [phase-preparer](../../agents/phase-preparer.md) (`estimate_scope`); neither sizing target overrides those restrictions.
 
 ## Ship Fast
 

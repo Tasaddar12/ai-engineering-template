@@ -139,7 +139,10 @@ Follow [worker handoff](references/worker-handoff.md).
 
 ## Review, documentation and completion
 
-Use independent preparation checking for substantial phases and independent
+Before dispatching implementation, obtain an independent phase-checker assessment
+when the phase has multiple components, changes a shared interface, migrates
+persisted data, or changes authentication, authorization or another security boundary.
+Correct blocking preparation findings before dispatch. Obtain independent
 verification for implemented outcomes. Every code component requires a separate
 fresh code-reviewer before integration; coder self-checks and a verifier reading
 the review method do not replace that assignment. Additional review follows actual risk;
@@ -148,8 +151,12 @@ repeat affected checks. Broaden review when changed behavior invalidates prior
 evidence. Keep findings visible and distinguish editorial details from defects.
 
 Coders may update tests, comments and assigned nearby explanations while their
-understanding is fresh. Assign substantial specifications and guides to a
-documentor when useful. Required documentation stays in the same phase and PR;
+understanding is fresh. For required documentation, assign a documentor when
+creating a specification or guide, changing instructions that span multiple
+components, or changing installation, configuration, migration or recovery procedures.
+Give the documentor exact document paths and the implementation evidence for each
+changed claim. These triggers do not authorize creating documentation outside the
+approved scope. Required documentation stays in the same phase and PR;
 [documentation coverage](references/documentation.md) defines the handoff.
 
 Completion requires the observable outcome, integrated behavior, passing required

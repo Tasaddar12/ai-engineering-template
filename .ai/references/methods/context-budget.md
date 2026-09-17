@@ -64,7 +64,7 @@ A plan may carry an optional advisory `estimate` block. It is the quantitative r
 
 Plans should complete within ~50% context (not 80%). No context anxiety, quality maintained start to finish, room for unexpected complexity.
 
-**Each plan: 2-3 tasks maximum.**
+**Task sizing target: 2-3 tasks per plan, not a mandatory count.** Enforce `execution.max_tasks_per_component` when set; apply the mandatory split conditions in [phase-preparer](../../agents/phase-preparer.md) (`estimate_scope`) even when the numeric cap is null. The table below supplies sizing estimates, not permission to exceed the context handoff threshold.
 
 | Context Weight | Tasks/Plan | Context/Task | Total |
 |----------------|------------|--------------|-------|

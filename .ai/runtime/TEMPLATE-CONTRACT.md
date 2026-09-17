@@ -167,7 +167,12 @@ infrastructure problem must be diagnosed before it can count as a behavioral RED
 
 The worker writes and commits a named behavioral test first, runs it and records
 why the failure is the expected assertion (RED), then implements and commits the
-passing behavior (GREEN). Refactor only when useful and rerun checks. A startup
+passing behavior (GREEN). Refactor only to remove duplication introduced by the
+change, simplify changed control flow, or satisfy an applicable project convention
+in the assigned code. Preserve acceptance behavior and owned paths; do not add
+features or clean up unrelated code. After refactoring, rerun the named behavioral
+test and affected component checks; record the commands and results in TDD Evidence.
+If no listed purpose applies, record `Refactor: not required` in TDD Evidence. A startup
 error, fixture failure, zero discovered tests or unrelated assertion is not RED.
 Add `## TDD Evidence` to the complete SUMMARY with the command, target test,
 expected/actual assertion, exit codes, RED/GREEN commit IDs and refactor outcome.

@@ -20,11 +20,15 @@ stays unchanged; the coordinator audits, stores and commits VERIFICATION.
 
 Component code reviews are required before integration and retained in the final
 verification report. They do not replace assessment of integrated behavior.
-For additional risks, the coordinator also assigns bounded independent reviews to
-[doc-verifier](../agents/doc-verifier.md) for concrete documentation claims,
-[integration-checker](../agents/integration-checker.md) for cross-component flows,
-and [code-reviewer](../agents/code-reviewer.md) for changed-code defects. These are
-specialist assignments within phase-verify, not extra runtime routes or commands.
+Dispatch a separate specialist when existing evidence leaves any of these questions unresolved:
+
+- Assign [doc-verifier](../agents/doc-verifier.md) when a required documentation claim lacks source evidence or conflicts with observed behavior.
+- Assign [integration-checker](../agents/integration-checker.md) when a required cross-component flow lacks end-to-end evidence or its wiring evidence conflicts.
+- Assign [code-reviewer](../agents/code-reviewer.md) when a source-defect finding lacks an independent verdict on the current revision or integration changes invalidate its prior review.
+
+These assignments supplement the required component reviews; do not skip a
+component review because no additional question is unresolved. They are specialist
+assignments within phase-verify, not extra runtime routes or commands.
 The verifier incorporates their evidence at the same assigned revision and remains
 responsible for a conclusive phase assessment. A reviewer does not edit its target
 or spawn more reviewers; missing specialist evidence is returned to the coordinator.
@@ -45,7 +49,13 @@ python .ai/runtime/phase.py verify 01-authentication --workers-stopped
 ```
 
 The flag asserts an inspected, stopped attempt; it does not stop a live process.
-Use this verification route for an interrupted review, rather than component resume.
+For an interrupted phase-verifier process, use `verify PHASE --workers-stopped`.
+For a failed or interrupted component code-reviewer before integration, use
+`resume PHASE --workers-stopped` after inspecting its process, worktree and report.
+For missing review receipts on an already-integrated component, use
+`verify PHASE --workers-stopped`. Follow [phase-resume](phase-resume.md) for
+correction commits and historical finding resolution; do not replay implementation
+to recover a failed review process.
 
 Keep missing behavior, documentation or evidence as gaps. Correct bounded
 findings within authorized scope; obtain a real decision if the target must
