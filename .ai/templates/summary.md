@@ -21,7 +21,7 @@ provides:
   - [bullet list of what this phase built/delivered]
 affects: [list of phase names or keywords that will need this context]
 
-# Actuals (#2632) — pairs with the plan's `estimate` to calibrate future estimates.
+# Actuals — pairs with the plan's `estimate` to calibrate future estimates.
 # Same estimateTokens scale (chars/4 over the realized diff), never a harness token count.
 actuals:
   tokens: [chars/4 over files actually changed]
@@ -47,9 +47,13 @@ patterns-established:
 
 requirements-completed: []  # REQUIRED — Include only requirement IDs from this plan's `requirements` that the delivered changes and verification evidence actually complete. Record incomplete, failed, or blocked requirements under remaining gaps; never copy them here merely because they were assigned.
 
-# Coverage metadata (#1602) — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
-# OMIT this whole block for legacy/prose-only SUMMARYs — verify-work then falls back to the ## Accomplishments bullets
-# (byte-identical behavior for un-migrated phases). See <coverage_guidance> below for the contract.
+# Local runtime coverage — populate from actual delivered and checked results.
+acceptance: []  # REQUIRED — Covered acceptance IDs from this plan; these may differ from requirement IDs.
+documentation: []  # REQUIRED — Exact required documentation paths completed by this component; [] when none are assigned.
+
+# Coverage metadata — one entry per shipped deliverable for evidence review and UAT planning.
+# For legacy/prose-only SUMMARYs, inspect the ## Accomplishments evidence instead.
+# See <coverage_guidance> for interpretation; the local runtime does not auto-approve UAT from this block.
 coverage:
   - id: D1
     description: "[deliverable in human-readable form — what would have been a prose ## Accomplishments bullet]"
@@ -58,7 +62,7 @@ coverage:
       - kind: unit            # unit | integration | e2e | automated_ui | manual_procedural | other
         ref: "[tests/path.test.ts#test name | playwright:shot.png | command invocation]"
         status: pass          # pass | fail | unknown — from the latest run
-    human_judgment: false     # REQUIRED boolean. false => may auto-pass IF every verification status is `pass`.
+    human_judgment: false     # REQUIRED boolean. Auto-pass requires nonempty verification with every status pass; required human UAT is never waived.
   - id: D2
     description: "[a deliverable that needs a human to sign off]"
     verification: []
@@ -99,6 +103,15 @@ Each task was committed atomically:
 **Plan metadata:** `lmn012o` (docs: complete plan)
 
 _Note: TDD tasks may have multiple commits (test → feat → refactor)_
+
+## Checks
+
+- **Tested revision:** [Tested revision or commit]
+- **Command and scenario:** [Command and scenario]
+- **Result:** [Observed result, including failures or skips]
+
+[Repeat for each actual check. Explain remaining gaps; do not claim unrun checks passed.
+For a TDD plan, also add a TDD Evidence section with the contract's RED/GREEN/REFACTOR evidence.]
 
 ## Files Created/Modified
 - `path/to/file.ts` - What it does
@@ -170,13 +183,13 @@ None - no external service configuration required.
 
 **Patterns:** Established conventions future phases should maintain.
 
-**Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
+**Population:** Populate frontmatter during the [coder method](../agents/coder.md) summary step using the [local contract](../runtime/TEMPLATE-CONTRACT.md).
 
-**Status (#2830):** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
+**Status:** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
 </frontmatter_guidance>
 
 <coverage_guidance>
-**Purpose (#1602):** The `coverage:` block is a per-deliverable Requirements Traceability Matrix. It lets `verify-work`'s `extract_tests` step route deliverables DETERMINISTICALLY — auto-passing those proven by passing tests and reserving human UAT for genuine judgment — instead of re-deriving coverage from prose. Consumed via `workflow-tools uat classify-coverage --summary <SUMMARY>`.
+**Purpose:** The `coverage:` block records each deliverable, related requirement and observed verification evidence. The coordinator and verifier MUST apply the deterministic classification below when assessing acceptance and preparing UAT. They record each classification and its evidence in VERIFICATION. The local runtime does not implement a coverage-classification command; this mandatory review procedure supplies the classification and never invents human observations.
 
 **Field semantics:**
 
@@ -191,11 +204,11 @@ None - no external service configuration required.
 | `human_judgment` | Explicit boolean; REQUIRED. `true` always routes to a human. |
 | `rationale` | REQUIRED when `human_judgment: true`. The audit trail for why automation is insufficient. |
 
-**Deterministic contract (what the classifier does):**
-- A deliverable auto-passes (no human prompt) **only** when `human_judgment: false` AND `verification` is non-empty AND every `verification[].status` is `pass`. This is the narrow, fully-proven case.
-- **Everything else is presented to a human** — `human_judgment: true`, an empty `verification:`, any non-`pass`/`unknown` status, or any schema error. A false-negative is a redundant prompt (the status quo); a false-positive ships a bug UAT existed to catch.
-- **Fail-safe default:** if you cannot determine coverage for a deliverable, you MUST set `human_judgment: true` with `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never leave a deliverable's `human_judgment` empty, and never set it `false` just to skip the prompt — auto-pass additionally requires a passing `verification` entry, so the flag alone cannot skip the human.
-- `coverage: []` means "no deliverables to classify" (the single-confirmation path). OMITTING the block entirely means "legacy" — `verify-work` falls back to prose `## Accomplishments` extraction unchanged.
+**Deterministic classification contract (coordinator/verifier MUST apply):**
+- A deliverable requires automated evidence to auto-pass (no human prompt). Auto-pass **only** when `human_judgment: false` AND `verification` is non-empty AND every `verification[].status` is `pass`. Inspect each entry's `ref` and actual result at the reviewed revision; a declared pass without evidence is not a pass. Required human UAT remains pending even when automated checks pass.
+- **Everything else is presented to a human** — `human_judgment: true`, empty `verification`, any non-`pass`/`unknown` status, missing evidence, or any schema error. Record the exact failed condition and retain the deliverable as pending or failed. A human response does not waive a required automated check or turn its failure into success.
+- **Fail-safe default:** if coverage cannot be determined, set `human_judgment: true` and `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never omit `human_judgment` or set it `false` to skip a prompt. Auto-pass additionally requires a nonempty `verification` list whose entries all have passing evidence; the flag alone never bypasses the human.
+- `coverage: []` means **"no deliverables to classify"**: ask for one confirmation that no deliverables require classification. If Accomplishments or the implemented work lists a deliverable, report the empty list as a coverage defect and require its entry before completion. OMITTING `coverage` means **legacy**: the coordinator/verifier extracts each deliverable from `## Accomplishments`, matches actual Checks evidence, and applies the same classification. Neither path waives phase acceptance or required UAT.
 </coverage_guidance>
 
 <one_liner_rules>
@@ -295,7 +308,16 @@ The one-liner should tell someone what actually shipped.
 - Extracted to STATE.md accumulated context
 - Use "None - followed plan as specified" if no deviations
 
-**After creation:** STATE.md updated with position, decisions, issues.
+**After creation:** The worker MUST return position, decisions and issues in its
+committed SUMMARY. The coordinator MUST update STATE.md's current position,
+progress, accumulated decisions, blockers and session continuity from integrated
+results. For native orchestration, do this before dispatching the next dependent
+worker. The Python scheduler dispatches dependents inside its running process:
+reconcile all integrated results immediately after it exits or safely stops,
+before verification, resume/new execution, or ending the turn. Do not edit shared
+records concurrently with that scheduler. Update CONTEXT for consequential decisions and ROADMAP/REQUIREMENTS for
+verified progress; retain pending and failed items. `phase.py sync` refreshes only
+the marked Runtime Status block and does not perform these authored updates.
 </guidelines>
 
 
@@ -306,15 +328,14 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

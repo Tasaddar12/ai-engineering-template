@@ -63,7 +63,7 @@ runtime routes or commands.
   phases/NN-name/
     NN-SPEC.md                  Optional locked desired phase requirements
     NN-CONTEXT.md               Acceptance, choices, questions and authorization
-    NN-DISCUSSION-LOG.md         Optional preserved discussion details
+    NN-DISCUSSION-LOG.md         Required phase discussion audit trail
     NN-RESEARCH.md              Relevant phase investigation
     NN-VALIDATION.md            Checking strategy when useful
     NN-01-PLAN.md               Bounded executable component instructions

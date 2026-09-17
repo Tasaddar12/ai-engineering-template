@@ -140,7 +140,13 @@ def render_asset(name, content, host):
         text = re.sub(r"(\[[^\]\n]*\]\()([^\)\n]+)(\))", link, text)
     namespace = "." + host
     def local_paths(part):
-        if part.startswith(("https://", "http://")) or name == ".ai/commands/install.md":
+        if part.startswith(("https://", "http://")):
+            return part
+        if host == "claude":
+            # Branch examples are host-specific; .codex/ filesystem paths and
+            # provenance URLs must retain their separate meaning.
+            part = re.sub(r"(?<![\w./-])codex/", "claude/", part)
+        if name == ".ai/commands/install.md":
             return part
         part = part.replace(".ai-venv", namespace + "-venv")
         part = part.replace(".agents/skills/", skill_root(host) + "/")

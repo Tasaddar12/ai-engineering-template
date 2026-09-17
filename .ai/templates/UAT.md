@@ -8,7 +8,7 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 
 ```markdown
 ---
-status: testing | partial | complete | diagnosed
+status: testing | partial | complete
 phase: XX-name
 source: [list of SUMMARY.md files tested]
 started: [ISO timestamp]
@@ -64,7 +64,7 @@ blocked: [N]
 
 ## Gaps
 
-<!-- YAML format for plan-phase --gaps consumption -->
+<!-- YAML evidence for phase-prepare assignments with mode: gap_closure -->
 - truth: "[expected behavior from test]"
   status: failed
   reason: "User reported: [verbatim response]"
@@ -96,31 +96,31 @@ blocked: [N]
 - Each test: OVERWRITE result field when user responds
 - `result` values: [pending], pass, issue, skipped, blocked
 - If issue: add `reported` (verbatim) and `severity` (inferred)
-- If skipped: add `reason` if provided
-- If blocked: add `blocked_by` (tag) and `reason` (if provided)
+- If skipped: record the user's explicit decision in `reason` and the CLI `--note`.
+- If blocked: record the prerequisite in `blocked_by` and the reason in `reason` and `--note`.
 
 **Summary:**
 - OVERWRITE counts after each response
-- Tracks: total, passed, issues, pending, skipped
+- Tracks: total, passed, issues, pending, skipped, blocked
 
 **Gaps:**
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
-- This section feeds directly into /workflow:plan-phase --gaps
+- This section feeds directly into phase-prepare with the recorded verification gaps
 
 </section_rules>
 
 <diagnosis_lifecycle>
 
-**After testing complete (status: complete), if gaps exist:**
+**When an observed failure creates a gap, diagnose it while `status: partial`:**
 
-1. User runs diagnosis (from verify-work offer or manually)
-2. diagnose-issues workflow spawns parallel debug agents
+1. Coordinator routes the observed failure to bounded debugger diagnosis within the authorized scope
+2. Coordinator assigns bounded investigations using the local debugger role
 3. Each agent investigates one gap, returns root cause
 4. UAT.md Gaps section updated with diagnosis:
    - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
-5. status → "diagnosed"
-6. Ready for /workflow:plan-phase --gaps with root causes
+5. Retain `status: partial`; store diagnosis in Gaps, not in a new session status
+6. Return the diagnosed gaps to `phase-prepare` for repair planning
 
 **After diagnosis:**
 ```yaml
@@ -144,8 +144,8 @@ blocked: [N]
 
 <lifecycle>
 
-**Creation:** When /workflow:verify-work starts new session
-- Extract tests from SUMMARY.md files
+**Creation:** When phase-uat starts new session
+- Derive one case per CONTEXT acceptance ID; use SUMMARY files as implementation evidence.
 - Set status to "testing"
 - Current Test points to test 1
 - All tests have result: [pending]
@@ -156,28 +156,28 @@ blocked: [N]
 - Update test result (pass/issue/skipped)
 - Update Summary counts
 - If issue: append to Gaps section (YAML format), infer severity
-- Move Current Test to next pending test
+- Current Test names the first nonpassing case; select a different remaining case explicitly with `--case N`.
 
 **On completion:**
-- status → "complete"
+- Set `status: complete` only when every case result is `pass`.
 - Current Test → "[testing complete]"
 - Commit file
 - Present summary with next steps
 
 **Partial completion:**
-- status → "partial" (if pending, blocked, or unresolved skipped tests remain)
-- Current Test → "[testing paused — {N} items outstanding]"
+- After any recorded response, set `status: partial` while any case is pending, issue/failed, blocked or skipped.
+- Keep Current Test on the first nonpassing case with its expected result and `awaiting: user response`.
 - Commit file
 - Present summary with outstanding items highlighted
 
 **Resuming partial session:**
-- `/workflow:verify-work {phase}` picks up from first pending/blocked test
-- When all items resolved, status advances to "complete"
+- Run `python .ai/runtime/phase.py uat PHASE`; inspect the first nonpassing case and preserve prior observations.
+- Set `status: complete` only after every case records `pass`.
 
 **Resume after /clear:**
 1. Read frontmatter → know phase and status
 2. Read Current Test → know where we are
-3. Find first [pending] result → continue from there
+3. Inspect the first nonpassing result and its prior observations; record a new outcome only from fresh user feedback.
 4. Summary shows progress so far
 
 </lifecycle>
@@ -200,7 +200,7 @@ Default: **major** (safe default, user can clarify if wrong)
 <good_example>
 ```markdown
 ---
-status: diagnosed
+status: partial
 phase: 04-comments
 source: 04-01-SUMMARY.md, 04-02-SUMMARY.md
 started: 2025-01-15T10:30:00Z
@@ -209,7 +209,10 @@ updated: 2025-01-15T10:45:00Z
 
 ## Current Test
 
-[testing complete]
+number: 2
+name: Create Top-Level Comment
+expected: Comment appears immediately after submission
+awaiting: correction and user retest
 
 ## Tests
 
@@ -272,15 +275,14 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

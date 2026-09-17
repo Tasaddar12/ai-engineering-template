@@ -22,8 +22,8 @@ do not borrow another checkout or reconstruct instructions from unrelated histor
 Read required skill paths from PLAN's Read first section in the assigned
 checkout. The coordinator commits required skills before dispatch; each worker
 reads the copy at its recorded assigned revision, including already integrated
-changes. Select additional matching skills only when useful, without injecting
-every skill body. See [skill use](../guides/AGENT-SKILLS.md) for native discovery,
+changes. Load an additional skill only when its catalog description addresses an
+assigned task or an unresolved failure in that task; do not load every skill body. See [skill use](../guides/AGENT-SKILLS.md) for native discovery,
 method changes and hosts that need explicit paths.
 
 ## Component result
@@ -51,6 +51,28 @@ A committed result may be recoverable without another worker. Uncommitted or
 out-of-scope output requires reconciliation, not automatic acceptance.
 
 Verifier attempts retain their process identity, source revision, result path and
-worktree. Reuse requires a stopped process and valid current evidence. Follow
-phase-verify with --workers-stopped when inspection establishes that a fresh
-verification attempt is needed; component resume does not restart a reviewer.
+worktree. Reuse requires a stopped process and valid current evidence. Run
+`verify PHASE --workers-stopped` after confirming the verifier stopped and its
+report is missing, incomplete or stale. For component code-review process failures before integration, inspect the
+review process and worktree, then run `resume PHASE --workers-stopped`; the runner
+preserves the failed attempt and starts a new reviewer against the same base/head.
+
+## Context and partial results
+
+Hand off one component, not a whole phase or review-and-repair loop. An author
+performs its implementation checks; independent review belongs to a separate
+fresh reviewer. Do not reuse the same growing author session for another component.
+
+- When host-reported context reaches 100,000 tokens or 50% of its window, whichever
+  is lower, start the handoff immediately. Do not begin another implementation task
+  or repair; finish only the active operation needed to preserve work. Honor a lower user-specified limit.
+- Preserve safe partial commits. Set SUMMARY frontmatter `status: blocked`; record
+  exact base/head, completed and remaining tasks, dirty files, observed command
+  results and missing evidence. Do not fabricate passing checks or completion.
+- If the host does not expose context use, record `Context usage: unavailable` in
+  SUMMARY. Keep the assignment scope and existing turn limits; do not invent telemetry.
+- After a handoff or exhausted turn limit, the coordinator must inspect the stopped
+  process, worktree, commits and SUMMARY before assigning the remaining tasks to a
+  fresh coder. Do not replay completed tasks or resume the exhausted session.
+
+The token threshold is a handoff instruction; the runtime does not measure live context.

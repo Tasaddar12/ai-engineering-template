@@ -122,7 +122,7 @@ Status: ✓ = met minimum, ⚠ = below minimum (planner treats as assumption)
 
 *Phase: [XX-name]*
 *Spec created: [date]*
-*Next step: /workflow:discuss-phase [X] — implementation decisions (how to build what's specified above)*
+*Next step: phase-discuss [X] — implementation decisions (how to build what's specified above)*
 ```
 
 <good_examples>
@@ -218,7 +218,7 @@ The database has a `posts` table and `follows` table. No feed query or feed UI e
 
 *Phase: 03-post-feed*
 *Spec created: 2025-01-20*
-*Next step: /workflow:discuss-phase 3 — implementation decisions (card layout, loading skeleton, etc.)*
+*Next step: phase-discuss 3 — implementation decisions (card layout, loading skeleton, etc.)*
 ```
 
 **Example 2: CLI tool (Database backup)**
@@ -306,7 +306,7 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 
 *Phase: 02-backup-command*
 *Spec created: 2025-01-20*
-*Next step: /workflow:discuss-phase 2 — implementation decisions (progress reporting, flag design, etc.)*
+*Next step: phase-discuss 2 — implementation decisions (progress reporting, flag design, etc.)*
 ```
 
 </good_examples>
@@ -340,15 +340,14 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

@@ -47,8 +47,8 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 
 **Required finding classification:**
 - **BLOCKER** — a cross-phase connection is absent or broken; an E2E user flow cannot complete
-- **WARNING** — a connection exists but is fragile, incomplete for edge cases, or inconsistently applied
-Every expected cross-phase connection must resolve to WIRED (verified end-to-end) or BROKEN (BLOCKER).
+- **WARNING** — advisory robustness improvements where required wiring and behavior are established. Classify broken required error/empty-state handling as BLOCKER.
+Mark required connections WIRED only with end-to-end evidence, BROKEN when a required connection fails, or UNVERIFIED when evidence is missing; record the missing check and do not report the flow as passing.
 </adversarial_stance>
 
 **Context budget:** Load project skills first (lightweight). Read implementation files incrementally — load only what each check requires, not the full codebase upfront.
@@ -78,7 +78,7 @@ A "complete" codebase with broken wiring is a broken product.
 </core_principle>
 
 <inputs>
-## Required Context (provided by milestone auditor)
+## Required Context (provided by coordinator)
 
 **Phase Information:**
 
@@ -99,7 +99,7 @@ A "complete" codebase with broken wiring is a broken product.
 
 **Milestone Requirements:**
 
-- List of REQ-IDs with descriptions and assigned phases (provided by milestone auditor)
+- List of REQ-IDs with descriptions and assigned phases (provided by coordinator)
 - MUST map each integration finding to affected requirement IDs where applicable
 - Requirements with no cross-phase wiring MUST be flagged in the Requirements Integration Map
   </inputs>
@@ -113,7 +113,7 @@ For each phase, extract what it provides and what it should consume.
 **From SUMMARYs, extract:**
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 # Key exports from each phase
@@ -365,7 +365,7 @@ verify_form_flow() {
 
 ## Step 6: Compile Integration Report
 
-Structure findings for milestone auditor.
+Structure findings for coordinator.
 
 **Wiring status:**
 
@@ -408,7 +408,7 @@ flows:
 
 <output>
 
-Return structured report to milestone auditor:
+Return structured report to coordinator:
 
 ```markdown
 ## Integration Check Complete
@@ -456,7 +456,7 @@ Return structured report to milestone auditor:
 
 | Requirement | Integration Path | Status | Issue |
 |-------------|-----------------|--------|-------|
-| {REQ-ID} | {Phase X export → Phase Y import → consumer} | WIRED / PARTIAL / UNWIRED | {specific issue or "—"} |
+| {REQ-ID} | {Phase X export → Phase Y import → consumer} | WIRED / PARTIAL / UNWIRED / UNVERIFIED | {specific issue or "—"} |
 
 **Requirements with no cross-phase wiring:**
 {List REQ-IDs that exist in a single phase with no integration touchpoints — these may be self-contained or may indicate missing connections}
@@ -474,7 +474,7 @@ Return structured report to milestone auditor:
 
 **Be specific about breaks.** "Dashboard doesn't work" is useless. "Dashboard.tsx line 45 fetches /api/users but doesn't await response" is actionable.
 
-**Return structured data.** The milestone auditor aggregates your findings. Use consistent format.
+**Return structured data.** The coordinator aggregates your findings. Use consistent format.
 
 </critical_rules>
 
@@ -490,5 +490,5 @@ Return structured report to milestone auditor:
 - [ ] Broken flows identified with specific break points
 - [ ] Requirements Integration Map produced with per-requirement wiring status
 - [ ] Requirements with no cross-phase wiring identified
-- [ ] Structured report returned to auditor
+- [ ] Structured report returned to coordinator
       </success_criteria>

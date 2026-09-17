@@ -8,6 +8,15 @@ worktree, commit each completed slice, push, PR/MR and automatic verified merge.
 Preserve prior decisions and authorization. These ordinary-language
 requests use the installed phase procedures; they do not create slash commands.
 
+## Discuss an existing phase
+
+> Let's discuss phase 01.
+
+Route this request directly to [phase-discuss](../commands/phase-discuss.md).
+Resolve the phase, reuse its confirmed source paths and follow the bounded search
+order there. The user does not need to supply a slash command or file inventory.
+This request does not authorize implementation.
+
 ## Prepare a feature for parallel work
 
 > Discuss and research the selected phase, then use the complete phase-prompt

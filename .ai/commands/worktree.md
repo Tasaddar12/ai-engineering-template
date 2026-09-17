@@ -6,7 +6,8 @@ Follow [RULES: Worktrees](../RULES.md#worktrees-recovery-and-cleanup).
    and status. Resolve the primary checkout and its Git common directory.
 2. Reuse the explicitly assigned checkout. If another is needed, create an
    immediate child of the primary's ignored `.worktrees/` root with a
-   `codex/` branch, from the agreed base revision. Verify that the root is
+   `codex/` branch, from the agreed base revision. The installer adapts this
+   prefix to the selected host; honor an explicit user branch name. Verify that the root is
    ignored and that the resolved target remains under it before creation.
 3. Confirm the new absolute root, branch and starting revision. Never create a
    nested worktree beneath a linked checkout or write tracked files in primary.

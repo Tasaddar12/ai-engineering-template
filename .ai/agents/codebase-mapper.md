@@ -1,7 +1,7 @@
 ---
 name: codebase-mapper
 model: sonnet
-description: Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
+description: Explores codebase and writes structured analysis documents. Assigned by the coordinator during onboard or phase-research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
 tools: Read, Bash, Grep, Glob, Write, Skill
 color: cyan
 # hooks:
@@ -59,7 +59,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 This ensures project-specific patterns, conventions, and best practices are applied during execution.
 
 <why_this_matters>
-**These documents are consumed by other GSD commands:**
+**These documents inform the local research and phase-preparation procedures:**
 
 **`phase-prepare`** loads relevant codebase docs when creating implementation plans:
 | Phase Type | Documents Loaded |
@@ -116,16 +116,16 @@ Based on focus, determine which documents you'll write:
 - `quality` → CONVENTIONS.md, TESTING.md
 - `concerns` → CONCERNS.md
 
-**Optional `--paths` scope hint (#2003):**
+**Optional `--paths` scope hint:**
 The prompt may include a line of the form:
 
 ```text
 --paths <p1>,<p2>,...
 ```
 
-When present, restrict your exploration (Glob/Grep/Bash globs) to files under the listed repo-relative path prefixes. This is the incremental-remap path used by the post-execute codebase-drift gate in `phase-start`. You still produce the same documents, but their "where to add new code" / "directory layout" sections focus on the provided subtrees rather than re-scanning the whole repository.
+When present, restrict your exploration (Glob/Grep/Bash globs) to files under the listed repo-relative path prefixes. The coordinator supplies this scope for an incremental remap; it does not enable an automatic drift gate. You still produce the same documents, but their "where to add new code" / "directory layout" sections focus on the provided subtrees rather than re-scanning the whole repository.
 
-**Path validation:** Reject any `--paths` value containing `..`, starting with `/`, or containing shell metacharacters (`;`, `` ` ``, `$`, `&`, `|`, `<`, `>`). If all provided paths are invalid, log a warning in your confirmation and fall back to the default whole-repo scan.
+**Path validation:** Reject traversal (`..`), absolute paths (POSIX, Windows drive or UNC), glob patterns and shell metacharacters (`;`, `` ` ``, `$`, `&`, `|`, `<`, `>`). Report each rejected value and inspect only valid assigned prefixes. If none remain, request corrected scope from the coordinator; do not fall back to a whole-repository scan or claim completion.
 
 If no `--paths` hint is provided, behave exactly as before.
 </step>

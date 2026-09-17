@@ -25,7 +25,7 @@ files_deleted: []           # OPTIONAL. Files this plan REMOVES. Declaring a pat
 coupling_justified: []      # OPTIONAL. Deliberate, order-independent same-wave couplings: one
                             # "plan-id: reason" string per coupled peer, e.g.
                             # ["03-02: both append independent config keys"]. Exempts the pair
-                            # from the plan-checker's Dimension 3b advisory (#3724).
+                            # from the plan-checker's Dimension 3b advisory.
 autonomous: true            # false if plan has checkpoints requiring user interaction
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
 user_setup: []              # Human-required setup Claude cannot automate (see below)
@@ -48,7 +48,7 @@ Output: [What artifacts will be created]
 @.ai/commands/phase-start.md
 @.ai/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
-https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md
+.ai/references/methods/checkpoints.md
 </execution_context>
 
 <context>
@@ -56,7 +56,7 @@ https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e49
 @.planning/ROADMAP.md
 @.planning/STATE.md
 
-# Only reference prior plan SUMMARYs if genuinely needed:
+# Reference a prior plan SUMMARY only for these dependencies:
 # - This plan uses types/exports from prior plan
 # - Prior plan made decision that affects this plan
 # Do NOT reflexively chain: Plan 02 refs 01, Plan 03 refs 02...
@@ -92,7 +92,7 @@ https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e49
   <done>[Acceptance criteria]</done>
 </task>
 
-<!-- For checkpoint task examples and patterns, see https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md -->
+<!-- For checkpoint task examples and patterns, see .ai/references/methods/checkpoints.md -->
 
 <task type="checkpoint:decision" gate="blocking">
   <decision>[What needs deciding]</decision>
@@ -149,9 +149,9 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `user_setup` | No | Array of human-required setup items (external services) |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
-**Wave is advisory:** Wave numbers are assigned during preparation to explain the dependency graph. The local execute-phase runtime evaluates `depends_on`, integrated and checked prerequisites, file ownership, exclusive resources, and available capacity. Ready plans may start immediately; a displayed wave is not a global barrier. Declare every real prerequisite rather than relying on wave order.
+**Wave is advisory:** Wave numbers are assigned during preparation to explain the dependency graph. The local `phase.py run` scheduler evaluates `depends_on`, integrated and checked prerequisites, file ownership, exclusive resources, and available capacity. Ready plans may start immediately; a displayed wave is not a global barrier. Declare every real prerequisite rather than relying on wave order.
 
-**Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all plans complete, execute-phase spawns a verification subagent that checks these criteria against the actual codebase.
+**Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all components integrate, the coordinator runs `phase-verify` to dispatch the independent verifier against these criteria and the integrated code. `phase.py run` does not start final verification automatically.
 
 ---
 
@@ -227,7 +227,7 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 @.planning/ROADMAP.md
 @.planning/STATE.md
 
-# Only include SUMMARY refs if genuinely needed:
+# Include a prior SUMMARY only for these dependencies:
 # - This plan imports types from prior plan
 # - Prior plan made decision affecting this plan
 # - Prior plan's output is input to this plan
@@ -253,14 +253,14 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 
 **Plan sizing:**
 
-- 2-3 tasks per plan
+- Use 2-3 tasks as a sizing target; enforce `execution.max_tasks_per_component` when set.
 - ~50% context usage maximum
 - Complex phases: Multiple focused plans, not one large plan
 
 **When to split:**
 
-- Different subsystems (auth vs API vs UI)
-- >3 tasks
+- Separate component outcomes or different prerequisite components; keep model/API/UI work together when it delivers one outcome.
+- Task count exceeds a configured positive `execution.max_tasks_per_component`; null disables that numeric cap.
 - Risk of context overflow
 - TDD candidates - separate plans
 
@@ -391,7 +391,7 @@ Output: Working dashboard component.
 <execution_context>
 @.ai/commands/phase-start.md
 @.ai/templates/summary.md
-https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/references/checkpoints.md
+.ai/references/methods/checkpoints.md
 </execution_context>
 
 <context>
@@ -511,9 +511,9 @@ files_modified: [...]
 - Always use XML structure for Claude parsing
 - Include `wave`, `depends_on`, `files_modified`, `autonomous` in every plan
 - Prefer vertical slices over horizontal layers
-- Only reference prior SUMMARYs when genuinely needed
+- Reference prior SUMMARYs only for imported types/exports, consumed outputs or decisions that constrain this plan.
 - Group checkpoints with related auto tasks in same plan
-- 2-3 tasks per plan, ~50% context max
+- Target 2-3 tasks per plan and ~50% context; enforce the configured task cap and preserve the context handoff limit.
 
 ---
 
@@ -622,15 +622,14 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

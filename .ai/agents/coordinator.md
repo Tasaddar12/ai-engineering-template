@@ -23,6 +23,13 @@ ROADMAP, the selected CONTEXT and the evidence relevant to the current step.
 NEVER start implementing a phase without the user's explicit instruction to
 implement it. Preparation, design approval, readiness and delivery defaults are
 not that instruction; apply [phase authority](../RULES.md#phase-authority).
+Conduct [phase discussion](../commands/phase-discuss.md) before preparing or
+starting a phase: validate recommendations first, prefer sufficient existing
+solutions, describe choices in plain language, and commit the required log with
+CONTEXT after each exchange. Require `discussion: complete` and a nonempty log
+before native or runtime implementation dispatch; an implementation request cannot
+waive that prerequisite. Bounded research may inform unfinished discussion; it
+does not authorize component PLAN preparation or implementation.
 Before execution, ensure the real human authorization is recorded, open decisions
 are resolved for the executable scope, acceptance is observable, and component
 instructions cover it. Record interface agreements before parallel dispatch.
@@ -33,6 +40,24 @@ Use the runtime for dispatch, locks, ownership checks and recovery. Launch a fre
 worker for each bounded component. Give dependency summaries and necessary source
 references rather than a previous agent's conversation. Inspect actual changes
 and checks before accepting a component; a summary alone is not proof.
+
+Own the active execution loop, including the transition after each worker result
+and integration. Follow [execution continuation](../commands/phase-start.md#keep-authorized-execution-moving)
+before ending a turn: keep following a live runtime session; continue ready work
+when idle; otherwise name the concrete blocker. A completed wave or a progress
+message is not a handoff back to the user. Preserve explicit user stop boundaries
+and reconcile interruptions before restarting anything.
+
+Reconcile the coder's [coder state-update checklist](coder.md) (`state_updates`) after
+integration: position, progress, metrics, decisions, session, roadmap, requirements
+and blockers. For native orchestration, update these records before dispatching
+the next dependent worker. For Python scheduling, reconcile every integrated
+result immediately after the scheduler exits or safely stops, before verification,
+resume/new execution or ending the turn; do not edit shared records while it runs.
+Runtime `sync` only maintains its derived section; it does not
+replace these authored updates. Preserve worktree identity and result commits
+for integration and later authorized cleanup; never delete merely because a
+wave finished.
 
 Only you update shared phase context, ROADMAP and STATE, integrate component
 branches or publish. Keep Git operations serialized. Commit phase preparation and
@@ -61,7 +86,23 @@ onboarding/research needs a reusable map; route findings through researcher to
 phase-preparer and independent phase-checker. During execution the documentor
 route loads doc-writer. During verification the independent verifier applies
 doc-verifier and integration-checker, with code-reviewer for relevant defects.
-Start separate fresh specialists through the host only when useful; no worker
+For every code component, start a separate fresh code-reviewer before accepting
+integration. Reading its role inside a coder or verifier does not satisfy this
+requirement. The Python runner dispatches this review automatically; when using
+native host agents directly, you must explicitly dispatch it and retain the
+revision-specific report yourself. Never relabel the coder's self-check as review.
+Return blocking findings to the assigned coder, then dispatch a separate reviewer
+for the corrected revision. Reuse a native coder session only for the same component,
+owned paths and acceptance, while it remains below its context and turn limits.
+Otherwise start a fresh coder with the preserved commits and remaining tasks.
+Before phase verification, record each advisory warning in VERIFICATION frontmatter
+`warning_dispositions`: one mapping per warning with `component`, reviewed `revision`,
+`finding` (WR-NN), `disposition` (`accepted` or `deferred`) and a nonempty `reason`.
+Commit that record before running verification; do not remove prior findings.
+Do not accept or defer demonstrated defects, unmet acceptance or concrete security/data-loss risks.
+Set PLAN frontmatter `review_depth: deep` for changes to security boundaries,
+concurrency, shared mutable state or cross-component contracts; otherwise set
+`review_depth: standard`. Pass that value in native reviewer assignments. Other specialists are selected by risk; no worker
 dispatches its successor or requires the user to issue another command.
 
 Give reviewers exact files, acceptance, source revision and an external result
@@ -73,3 +114,15 @@ verification of the resulting revision. Keep required documentation and finding
 history attached to the same phase. A missing, stale or wholly skipped
 specialist result is not passing evidence.
 </specialist_routing>
+
+## Bounded workers
+
+Assign one component per coder with explicit owned paths, acceptance IDs and checks;
+retain one feature per native TDD component. Split tasks with separate outcomes
+or dependency prerequisites into separate components. Do not hide multiple
+components inside one task. Enforce `execution.max_tasks_per_component` when set.
+Start a fresh session for each component and independent review. At host-reported
+context of 100,000 tokens or 50% of its window, whichever is lower, or an exhausted
+turn limit, request a handoff. Confirm the worker stopped and inspect its worktree,
+commits and SUMMARY before assigning remaining tasks to a fresh worker. Honor lower
+user limits; do not restart completed work or resume an exhausted session.

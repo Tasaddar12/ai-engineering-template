@@ -6,18 +6,16 @@ Template for `.planning/STATE.md` — the project's living memory.
 
 ## File Template
 
-The source frontmatter block below was generated from `STATE_FIELD_SCHEMA`
-([source schema](https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/src/state-md-schema.cts),
-[source ADR](https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/docs/adr/3473-enforcement-by-construction.md) §8.8)
-by the [source generator](https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/scripts/gen-state-md-docs.cjs)
-with `--write` — do not hand-edit the source-generated schema region; the body
-below it is hand-authored. That generator is external reference material, not a
-local command. The local runtime's STATE behavior is defined in TEMPLATE-CONTRACT.
+The frontmatter below is authoring metadata. The coordinator maintains it from
+actual project evidence; no external schema generator or hidden state command is
+required. The local runtime's `sync` operation updates only the dedicated Runtime
+Status section, preserving the authored body and frontmatter. See the
+[STATE contract](../runtime/TEMPLATE-CONTRACT.md).
 
-<!-- STATE-MD-SCHEMA:START:frontmatter — source-generated schema; see pinned generator and schema above; do not edit by hand -->
+<!-- STATE-MD-SCHEMA:START:frontmatter -->
 ```markdown
 ---
-workflow_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on first state.* call
+workflow_state_version: '1.0'  # authoring metadata; coordinator maintains from observed evidence
 status: planning
 progress:
   total_phases: 0
@@ -174,13 +172,14 @@ Updated after each plan completion.
 
 **Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
 
-**Pending Todos:** Ideas captured via /workflow-add-todo
-- One bullet per pending todo, rendered by `init.todos`'s `pending_todos_markdown`
-  (each bullet capped at 240 characters: `- [date] [area] title — [todo file](path) — Needs ...`;
-  the todo-file link is repo-relative, so the cap does not depend on checkout path length)
-- `None yet.` when there are no pending todos
-- No collapse-by-count fallback — every pending todo gets its own line, always
-  (see #2618 design doc for why a "count if many" fallback was rejected)
+**Pending Todos:** Ideas recorded by the coordinator from the current assignment.
+- Keep one bullet per pending item; never collapse multiple items into a count.
+- Use `- [date] [area] title — [todo file](repository-relative path) — Needs ...`
+  when a record exists. Keep the bullet concise (up to 240 characters) without
+  dropping the actionable condition. If no record exists, retain the item as
+  prose rather than fabricating a path.
+- Use `None yet.` when there are no pending items.
+- Maintain this section directly; no separate todo command or generated init payload is installed.
 
 **Blockers/Concerns:** From "Next Phase Readiness" sections
 - Issues that affect future work
@@ -215,15 +214,14 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

@@ -7,7 +7,8 @@ This contract adds local execution evidence; it does not replace upstream guidan
 
 | Artifact | Producer | Consumer | Local additions |
 |---|---|---|---|
-| NN-CONTEXT.md | Discussion coordinator; `new` seeds the full context skeleton | Researcher, preparer, checker, runtime | YAML phase number, approval, depends_on, uat; Acceptance and Authorization sections |
+| NN-CONTEXT.md | Discussion coordinator; `new` seeds the full context skeleton | Researcher, preparer, checker, runtime | YAML phase number, discussion, approval, depends_on, uat; Acceptance and Authorization sections |
+| NN-DISCUSSION-LOG.md | Discussion coordinator; update with CONTEXT after every exchange | Human audit; runtime checks presence and nonempty content | Actual questions, options, recommendation evidence, replies and rationale |
 | NN-CC-PLAN.md | Phase preparer | Checker, scheduler, assigned worker | kind, resources, acceptance, documentation, checks; Documentation handoff section |
 | NN-CC-SUMMARY.md | Assigned worker | Integrator, downstream workers, verifier | acceptance, documentation; Checks section with actual evidence |
 | NN-VERIFICATION.md | Independent verifier | Coordinator and publication gate | revision; Acceptance, Integration, Documentation, Findings sections; runtime source and check receipts |
@@ -24,15 +25,30 @@ human approval from a template status label. Add this frontmatter:
 ```yaml
 phase: "01"
 approval: pending  # approved only when actual authorization is recorded below
+discussion: pending  # complete only after actual phase discussion is recorded
 depends_on: []     # delivered phase directory names, e.g. 02-foundation
 uat: false
 ```
+
+Every phase requires `NN-DISCUSSION-LOG.md`. The coordinator creates it at the
+first discussion exchange and commits updates with CONTEXT after each exchange.
+Set `discussion: complete` only after discussing and recording the current scope;
+reset it to `pending` when a scope or consequential decision change needs further
+discussion. `check`, `run` and `resume` reject a missing/pending discussion marker
+or a missing/empty log even when `approval: approved`. Existing records without
+the field remain readable but are not execution-ready. Recover missing records
+from actual conversation evidence; never invent a discussion or auto-approve one.
+The runtime checks the marker and nonempty log; the coordinator must verify that
+they represent a real discussion. Workers consume CONTEXT, not the audit log.
 
 Append `## Acceptance` with observable outcomes such as
 `- [ ] AUTH-01: A signed-out visitor cannot retrieve another user's profile.`
 Append `## Authorization` with the actual user instruction and its scope/date.
 Keep unresolved choices in `## Open Questions`; dispatch only decided scope.
 Acceptance IDs may be requirement IDs or finer phase criteria with their own IDs.
+Write each outcome as `- A1: text`, `- **A1**: text`, or `- **A1:** text`;
+an optional `[ ]`, `[x]`, or `[X]` checkbox follows the bullet. Keep IDs unique
+across all three formats. PLAN and SUMMARY acceptance lists use the unformatted IDs.
 
 Good authorization quotes or faithfully records the user's explicit instruction
 to implement this phase and its boundary. Keep `approval: pending` for creation,
@@ -136,6 +152,15 @@ decimal proposal as a planning artifact until compatible tooling is provided.
 `sync` updates only a dedicated Runtime Status section in the full STATE artifact.
 Project reference, current position, metrics, accumulated context, deferred items
 and session continuity remain coordinator-authored and are never discarded by sync.
+The generated section is bounded by `<!-- phase-runtime-status:start -->` and
+`<!-- phase-runtime-status:end -->`. Put authored notes outside those markers;
+sync replaces the entire marked block and preserves bytes outside it. On the
+first sync of legacy unmarked output, only its recognized status table and PR
+observation comments are replaced; subsequent notes and headings remain intact.
+Duplicate headings, malformed or duplicate markers, and unrecognized legacy
+tables stop sync without changing STATE or creating a commit. Reconcile the
+reported boundaries while preserving authored content before retrying. A
+successful sync commits the refreshed STATE; it does not publish that commit.
 
 ## Native TDD feature plans
 
@@ -167,7 +192,13 @@ infrastructure problem must be diagnosed before it can count as a behavioral RED
 
 The worker writes and commits a named behavioral test first, runs it and records
 why the failure is the expected assertion (RED), then implements and commits the
-passing behavior (GREEN). Refactor only when useful and rerun checks. A startup
+passing behavior (GREEN). Refactor only to remove duplication introduced by the
+change, simplify changed control flow, improve names, extract constants or helpers,
+or satisfy an applicable project convention
+in the assigned code. Preserve acceptance behavior and owned paths; do not add
+features or clean up unrelated code. After refactoring, rerun the named behavioral
+test and affected component checks; record the commands and results in TDD Evidence.
+If no listed purpose applies, record `Refactor: not required` in TDD Evidence. A startup
 error, fixture failure, zero discovered tests or unrelated assertion is not RED.
 Add `## TDD Evidence` to the complete SUMMARY with the command, target test,
 expected/actual assertion, exit codes, RED/GREEN commit IDs and refactor outcome.
@@ -191,3 +222,48 @@ A combined Decisions & Deviations heading can remain, but it does not substitute
 for the separately reviewable named evidence. TDD plans also add TDD Evidence.
 Do not replace the complete default with a shorter variant without an explicit
 assignment choice; use additional sections, not deleted source guidance.
+
+## Independent component code review
+
+Before integrating a code component, the runner dispatches a fresh code-reviewer
+on its committed revision in a separate read-only worktree. The author continues
+to run component checks but cannot supply its own independent review. Reviewers
+receive the exact base/head, changed paths and a saved diff, including deletions.
+
+The external report preserves the code-reviewer structure and adds exact
+`revision` and `diff_base` fields. `findings.critical` and `findings.warning` are
+nonnegative integer counts. Summary, Critical Issues and Warnings sections are
+required; write `None` for empty findings. Set `status: issues_found` when either
+critical or warning findings exist. Integration requires `status: clean` or
+`status: issues_found` with `findings.critical: 0`, a successful supervisor receipt and an unchanged
+review checkout. `skipped` never satisfies this gate. Reuse is bound to the exact
+revision, base and report hash. Findings return to a bounded coder correction,
+followed by fresh review. The final phase verifier assesses integrated outcomes
+and includes the saved component review evidence.
+
+Set `execution.max_tasks_per_component` to a positive integer to enforce a task
+count; null leaves the numeric count uncapped. Native TDD PLANs require exactly
+one feature. Set PLAN `review_depth: deep` for security boundaries, concurrency,
+shared mutable state or cross-component contracts; otherwise set `review_depth: standard`.
+Classify demonstrated defects, unmet acceptance and concrete security/data-loss
+risks as critical. Classify advisory robustness improvements without those defects
+as warning. Do not downgrade defects to permit integration.
+
+Before verification, commit VERIFICATION frontmatter `warning_dispositions` as a
+list of mappings with `component`, `revision` (reviewed commit), `finding` (WR-NN),
+`disposition` (`accepted` or `deferred`) and nonempty `reason`. Include exactly one
+matching item per advisory warning in the retained component/resolution reports.
+Set `status: gaps_found` when creating this record before verification; only a
+completed independent verifier can replace it with `status: passed`. The runner
+supplies these decisions and reports to the verifier and preserves the decisions
+in its output. The verifier must report demonstrated defects as gaps regardless
+of the coordinator disposition. Missing decisions block verification.
+
+Retry failed review execution with `resume PHASE --workers-stopped` after process
+and checkout inspection. Corrected worker commits must descend from the reviewed
+revision and retain the same base and PLAN; preserve prior reports in `review_history`.
+Use `verify PHASE --workers-stopped` to capture missing historical reviews. If
+that review finds critical defects, integrate a correction component and repeat
+the command to capture `review_resolution` against the corrected integrated
+revision. The reviewer must name each original critical finding and its resolution
+evidence. Retain the original report; source changes invalidate resolution evidence.

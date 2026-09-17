@@ -53,6 +53,19 @@ Read-only work needs no commit or publication; reviewers do not edit or commit.
 
 ## Phase authority
 
+**Every phase requires discussion with the user before component preparation or
+implementation.** Phase creation, an implementation request and an existing PLAN
+cannot substitute for that discussion. The coordinator creates
+`NN-DISCUSSION-LOG.md` at the first discussion exchange and updates it with CONTEXT
+after each exchange. Record only actual questions, options, evidence and replies.
+Set CONTEXT frontmatter `discussion: complete` only after the current phase's
+outcome, scope, acceptance and consequential choices have been discussed and
+recorded; unresolved choices must identify the work they block. Set it back to
+`pending` when the outcome, scope or a consequential choice changes and needs
+further discussion. Do not dispatch implementation workers while discussion is
+pending or its log is missing. Discussion completion never grants implementation
+permission. Keep the log audit-only; downstream workers read decisions in CONTEXT.
+
 **NEVER start implementing a phase unless the user explicitly tells you to
 implement that phase.** Creating, discussing, researching or preparing a phase,
 approving its design, passing readiness checks, and merging planning records do
@@ -112,6 +125,13 @@ section with evidence and the scope boundary. A separately authorized change can
 become another phase. Search before duplicating a finding. Deferring a required
 gap does not make the original phase complete.
 
+## Modular project rules
+
+Read the [project rule catalog](rules/README.md) and applicable rule files for
+this assignment. Rules supplement project conventions; they do not replace
+skills, approved specifications or actual user instructions. Use the
+[rule template](templates/rule.md) when recording a new established convention.
+
 ## Components and handoffs
 
 The coordinator owns phase records, scheduling and integration. It starts fresh
@@ -132,15 +152,25 @@ Follow [worker handoff](references/worker-handoff.md).
 
 ## Review, documentation and completion
 
-Use independent preparation checking for substantial phases and independent
-verification for implemented outcomes. Additional review follows actual risk;
+Before dispatching implementation, obtain an independent phase-checker assessment
+when the phase has multiple components, changes a shared interface, migrates
+persisted data, or changes authentication, authorization or another security boundary.
+Correct blocking preparation findings before dispatch. Obtain independent
+verification for implemented outcomes. Every code component requires a separate
+fresh code-reviewer before integration; coder self-checks and a verifier reading
+the review method do not replace that assignment. Additional review follows actual risk;
 there is no fixed review count. Correct findings within authorized scope and
 repeat affected checks. Broaden review when changed behavior invalidates prior
 evidence. Keep findings visible and distinguish editorial details from defects.
 
 Coders may update tests, comments and assigned nearby explanations while their
-understanding is fresh. Assign substantial specifications and guides to a
-documentor when useful. Required documentation stays in the same phase and PR;
+understanding is fresh, including assigned command corrections and option names.
+For required documentation, assign a documentor when creating a specification or
+guide, changing an operational sequence, or explaining behavior across components.
+A command or option-name correction alone does not require a separate documentor.
+Give the documentor exact document paths and the implementation evidence for each
+changed claim. These triggers do not authorize creating documentation outside the
+approved scope. Required documentation stays in the same phase and PR;
 [documentation coverage](references/documentation.md) defines the handoff.
 
 Completion requires the observable outcome, integrated behavior, passing required
@@ -182,7 +212,9 @@ Do not blindly restart an interrupted worker. Inspect its process, worktree,
 commits and result before reconciliation. Preserve incomplete and unmerged work.
 Status is read-only; the coordinator explicitly syncs the derived STATE view.
 Local checkpoints are operational data; durable summaries and reports ship with
-the phase. Old attempts require their compatible original runtime.
+the phase. For integrated components missing review receipts, follow
+[phase-resume](commands/phase-resume.md) to review their recorded base/revision;
+do not mark historical work reviewed without a captured report.
 
 Remove only identified clean merged worktrees when cleanup is authorized. Verify
 absolute targets stay within the intended worktree root. Preserve dirty, unmerged,
@@ -206,9 +238,9 @@ and lifecycle instructions. Do not shorten them or substitute a compact variant
 without an assignment calling for it. Use the artifact block to write project
 records; instructional examples are not real project decisions.
 
-The [template adaptation](references/template-adaptation.md) defines local runtime, host and
+The [runtime behavior](references/template-adaptation.md) defines local runtime, host and
 authority differences; [third-party notices](THIRD-PARTY-NOTICES.md) identify
-upstream sources and adaptation history. Complete agent methods and their pinned external supporting sources
+upstream sources and adaptation history. Complete agent methods and their bundled local supporting documents
 supply guidance, not installed slash commands. Use actual local procedures and
 the runtime contract for execution.
 Project records belong to `.planning/`; reusable rules, templates and tooling

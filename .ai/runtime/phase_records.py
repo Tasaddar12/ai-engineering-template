@@ -11,6 +11,7 @@ import yaml
 
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1].name
+BRANCH_PREFIX = "claude" if WORKFLOW_ROOT == ".claude" else "codex"
 AGENT_ENTRY = "CLAUDE.md" if WORKFLOW_ROOT == ".claude" else "AGENTS.md"
 ROLE_ROOT = f"{WORKFLOW_ROOT}/agents"
 SKILL_ROOT = f"{WORKFLOW_ROOT}/skills" if WORKFLOW_ROOT == ".claude" else ".agents/skills"
@@ -76,6 +77,21 @@ def record(path):
     match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)(.*)", text, re.S)
     require(match is not None, f"Missing YAML frontmatter: {path}")
     return read_yaml(match[1]), match[2]
+
+
+def acceptance_outcomes(body):
+    """Read ordered acceptance IDs and outcome text, with optional bold IDs."""
+    identifier = r"([A-Z][A-Z0-9_-]*\d+)"
+    pattern = (rf"^[ \t]*-[ \t]+(?:\[[ xX]\][ \t]+)?"
+               rf"(?:{identifier}[ \t]*:|\*\*{identifier}\*\*[ \t]*:|"
+               rf"\*\*{identifier}[ \t]*:\*\*)[ \t]*(.*)$")
+    outcomes = []
+    for match in re.finditer(pattern, section(body, "Acceptance"), re.M):
+        acceptance_id = next(value for value in match.groups()[:3] if value is not None)
+        outcomes.append((acceptance_id, match[4]))
+    ids = [acceptance_id for acceptance_id, _ in outcomes]
+    require(len(ids) == len(set(ids)), "Duplicate acceptance identifiers in CONTEXT")
+    return outcomes
 
 
 def section(body, name):
@@ -192,6 +208,14 @@ class Phase:
         return digest.hexdigest()
 
 
+def require_discussion(phase):
+    require(phase.context.get("discussion", "pending") == "complete",
+            "Complete phase discussion and set CONTEXT discussion: complete before execution")
+    path = phase.artifact("DISCUSSION-LOG")
+    require(path.is_file() and bool(path.read_text(encoding="utf-8-sig").strip()),
+            "Record the actual phase discussion in a nonempty " + path.name + " before execution")
+
+
 def planning_boundary(root):
     """Fail explicitly instead of hiding project data or incompatible old attempts."""
     legacy = [str(p.relative_to(root)) for name in
@@ -216,13 +240,14 @@ def load_phase(root, name, ready=False):
     context, body = record(directory / f"{number}-CONTEXT.md")
     require(str(context.get("phase")) == number, "CONTEXT phase must match its folder number (quote it in YAML)")
     require(context.get("approval") in ("pending", "approved"), "CONTEXT approval must be pending or approved")
+    require(context.get("discussion", "pending") in ("pending", "complete"),
+            "CONTEXT discussion must be pending or complete")
     require(isinstance(context.get("uat", False), bool), "CONTEXT uat must be true or false")
     deps = string_list(context.get("depends_on", []), "phase depends_on")
     for dep in deps:
         require(re.fullmatch(r"\d{2,}-[a-z0-9]+(?:-[a-z0-9]+)*", dep) and dep != directory.name,
                 f"Invalid phase dependency: {dep}")
-    acceptance = re.findall(r"(?m)^\s*-\s+(?:\[[ xX]\]\s+)?([A-Z][A-Z0-9_-]*\d+)\s*:", section(body, "Acceptance"))
-    require(len(acceptance) == len(set(acceptance)), "Duplicate acceptance identifiers in CONTEXT")
+    acceptance = [acceptance_id for acceptance_id, _ in acceptance_outcomes(body)]
     config = read_yaml((root / ".planning/config.yaml").read_text(encoding="utf-8-sig"))
     execution = config.get("execution", {})
     require(isinstance(execution, dict), "execution must be a mapping")
@@ -231,6 +256,13 @@ def load_phase(root, name, ready=False):
     for key, default in (("worker_timeout_seconds", 3600), ("check_timeout_seconds", 300)):
         value = execution.get(key, default)
         require(type(value) is int and 1 <= value <= 86400, f"execution.{key} must be an integer from 1 to 86400")
+    for key, default, maximum in (("claude_max_turns", 40, 200),):
+        value = execution.get(key, default)
+        require(type(value) is int and 1 <= value <= maximum,
+                f"execution.{key} must be an integer from 1 to {maximum}")
+    task_limit = execution.get("max_tasks_per_component")
+    require(task_limit is None or (type(task_limit) is int and task_limit >= 1),
+            "execution.max_tasks_per_component must be null or a positive integer")
     require(isinstance(config.get("verification", {}), dict), "verification must be a mapping")
     require(isinstance(config.get("publication", {}), dict), "publication must be a mapping")
     string_list(config.get("publication", {}).get("required_checks", []), "publication.required_checks")
@@ -255,6 +287,8 @@ def load_phase(root, name, ready=False):
         data["requirements"] = string_list(data.get("requirements", []), f"{cid}.requirements")
         data.setdefault("acceptance", data["requirements"])
         data.setdefault("kind", "code")
+        require(data.get("review_depth", "standard") in ("standard", "deep"),
+                f"{cid}: review_depth must be standard or deep")
         require(data.get("kind") in ("code", "documentation"), f"{cid}: kind must be code or documentation")
         for key in ("depends_on", "files", "resources", "acceptance", "documentation"):
             data[key] = string_list(data.get(key, []), f"{cid}.{key}")
@@ -287,6 +321,8 @@ def load_phase(root, name, ready=False):
                     require(bool(xml_section(content, tag)), f"{cid}: missing <{tag}> instructions")
                 tasks = re.findall(r'<task\s+type=[\'"]auto[\'"][^>]*>(.*?)</task>', content, re.S)
                 require(bool(tasks), f"{cid}: prepare at least one executable auto task")
+                require(task_limit is None or len(tasks) <= task_limit,
+                        f"{cid}: split into components of at most {task_limit} tasks before dispatch")
                 for task in tasks:
                     for tag in ("name", "files", "read_first", "action", "verify", "done"):
                         require(bool(xml_section(task, tag)), f"{cid}: task missing <{tag}> instructions")
@@ -307,8 +343,10 @@ def load_phase(root, name, ready=False):
 
     for cid in components:
         visit(cid)
+    phase = Phase(root, directory, number, context, body, components, config, acceptance)
     if ready:
         require(context["approval"] == "approved", "Phase needs recorded human approval before execution")
+        require_discussion(phase)
         require(bool(section(body, "Authorization")) and "CHANGEME" not in section(body, "Authorization"),
                 "Record the actual human authorization in CONTEXT")
         require(bool(phase_goal(body)) and bool(acceptance) and "CHANGEME" not in section(body, "Acceptance"), "CONTEXT needs a goal and identified acceptance outcomes")
@@ -316,11 +354,11 @@ def load_phase(root, name, ready=False):
         covered = {a for c in components.values() for a in c.data["acceptance"]}
         require(set(acceptance) <= covered, "Every acceptance outcome needs component coverage")
         commands(config.get("verification", {}).get("commands", []), "verification.commands", required=True)
-        for key in ("worker_command", "documentor_command", "verifier_command"):
+        for key in ("worker_command", "documentor_command", "verifier_command", "reviewer_command"):
             if key in execution:
                 commands([execution[key]], f"execution.{key}", required=True)
         for kind in {c.data["kind"] for c in components.values()}:
             key = "documentor_command" if kind == "documentation" and execution.get("documentor_command") else "worker_command"
             commands([execution.get(key)], f"execution.{key}", required=True)
         commands([execution.get("verifier_command")], "execution.verifier_command", required=True)
-    return Phase(root, directory, number, context, body, components, config, acceptance)
+    return phase

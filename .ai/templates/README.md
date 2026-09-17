@@ -1,8 +1,9 @@
 # Retained artifact templates
 
-Read the selected template in full, including examples and consumer guidance.
-Copy its File Template or artifact block into the assigned project record; keep
-teaching instructions in the source. Apply the
+Read the selected template in full, including examples, counterexamples, field
+explanations and consumer guidance. Generate the assigned project record from its
+**File Template** or corresponding artifact block; do not copy the whole
+instructional document into a phase result. Apply the
 [runtime contract](../runtime/TEMPLATE-CONTRACT.md) to executable phase artifacts.
 
 The [template guide](../guides/ARTIFACT-GUIDE.md) maps every retained source to
@@ -23,3 +24,5 @@ These 25 artifact templates are the available sources. Configuration belongs in
 [config.yaml](../../.planning/config.yaml). Removed variants and specialty templates
 are not required dependencies, and a template does not create records or register
 a command. Keep adopting-project identity unfilled until actual onboarding.
+
+Use the [template adaptation handoff checklist](../references/template-adaptation.md#handoff-checklist) when producing or checking artifacts.

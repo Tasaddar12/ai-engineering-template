@@ -152,6 +152,28 @@ def main() -> int:
             assert (root / method).is_file(), f"Assignment requires missing method: {method}"
             assert (root / method).read_text(encoding="utf-8").strip(), f"Assignment method is empty: {method}"
         event["methods"] = methods
+        if kind == "code-reviewer":
+            scope_match = re.search(r"(?s)<config>\n(.*?)</config>", prompt)
+            assert scope_match, "Reviewer must receive an explicit diff scope"
+            scope = yaml.safe_load(scope_match[1])
+            revision = git(root, "rev-parse", "HEAD")
+            assert git(root, "merge-base", scope["diff_base"], revision) == scope["diff_base"]
+            changed = git(root, "diff", "--name-only", scope["diff_base"], revision).splitlines()
+            assert set(changed) == set(scope["files"]), "Review scope must cover the actual diff"
+            review_mode = os.environ.get("PHASE_FIXTURE_REVIEW_MODE", "clean")
+            critical = int(review_mode == "critical")
+            warning = int(review_mode == "warning")
+            write_record(
+                result,
+                {"status": "issues_found" if critical or warning else review_mode,
+                 "revision": revision, "diff_base": scope["diff_base"],
+                 "findings": {"critical": critical, "warning": warning}},
+                "# Component review\n\n## Summary\n\nInspected the assigned diff.\n\n"
+                "## Critical Issues\n\n" + ("CR-01: Fixture defect.\n" if critical else "None.\n")
+                + "\n## Warnings\n\n" + ("### WR-01: Fixture advisory\n\nOptional robustness improvement.\n" if warning else "None.\n"),
+            )
+            event.update(review_scope=scope, revision=revision, report_written=str(result))
+            return 0
         if kind == "verifier":
             scope_match = re.search(r"(?s)<config>\n(.*?)</config>", prompt)
             assert scope_match, "Code-reviewer cannot run without a review scope"

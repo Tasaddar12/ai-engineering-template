@@ -7,16 +7,28 @@ the actual integrated code. Use the assigned clean integration worktree.
 python .ai/runtime/phase.py verify 01-authentication
 ```
 
+For assigned TDD plans, first complete the coordinator's
+[end-of-phase TDD review](../references/methods/tdd.md#end-of-phase-tdd-review-checkpoint):
+present per-plan RED/GREEN/REFACTOR evidence, gate violations and required human
+review. Preserve test deferrals as missing evidence. This review does not replace
+independent verification and is not automatically performed by the runner.
+
 The runtime dispatches the independent [verifier](../agents/verifier.md). It
 checks phase acceptance, component connections, regressions and documentation at
 the assigned revision. The host saves the report externally while the checkout
 stays unchanged; the coordinator audits, stores and commits VERIFICATION.
 
-For relevant risks, the coordinator also assigns bounded independent reviews to
-[doc-verifier](../agents/doc-verifier.md) for concrete documentation claims,
-[integration-checker](../agents/integration-checker.md) for cross-component flows,
-and [code-reviewer](../agents/code-reviewer.md) for changed-code defects. These are
-specialist assignments within phase-verify, not extra runtime routes or commands.
+Component code reviews are required before integration and retained in the final
+verification report. They do not replace assessment of integrated behavior.
+Dispatch a separate specialist when existing evidence leaves any of these questions unresolved:
+
+- Assign [doc-verifier](../agents/doc-verifier.md) when a required documentation claim lacks source evidence or conflicts with observed behavior.
+- Assign [integration-checker](../agents/integration-checker.md) when a required cross-component flow lacks end-to-end evidence or its wiring evidence conflicts.
+- Assign [code-reviewer](../agents/code-reviewer.md) when a source-defect finding lacks an independent verdict on the current revision or integration changes invalidate its prior review.
+
+These assignments supplement the required component reviews; do not skip a
+component review because no additional question is unresolved. They are specialist
+assignments within phase-verify, not extra runtime routes or commands.
 The verifier incorporates their evidence at the same assigned revision and remains
 responsible for a conclusive phase assessment. A reviewer does not edit its target
 or spawn more reviewers; missing specialist evidence is returned to the coordinator.
@@ -37,7 +49,13 @@ python .ai/runtime/phase.py verify 01-authentication --workers-stopped
 ```
 
 The flag asserts an inspected, stopped attempt; it does not stop a live process.
-Use this verification route for an interrupted review, rather than component resume.
+For an interrupted phase-verifier process, use `verify PHASE --workers-stopped`.
+For a failed or interrupted component code-reviewer before integration, use
+`resume PHASE --workers-stopped` after inspecting its process, worktree and report.
+For missing review receipts on an already-integrated component, use
+`verify PHASE --workers-stopped`. Follow [phase-resume](phase-resume.md) for
+correction commits and historical finding resolution; do not replay implementation
+to recover a failed review process.
 
 Keep missing behavior, documentation or evidence as gaps. Correct bounded
 findings within authorized scope; obtain a real decision if the target must
@@ -52,8 +70,11 @@ python .ai/runtime/phase.py run 01-authentication --replan --workers-stopped
 The flags assert a reconciled attempt; they do not stop workers or authorize scope.
 Rerun affected checks and independent verification on the resulting revision.
 
-A summary assertion or successful process is not a pass. Report human-only checks
-as pending and use [phase-uat](phase-uat.md). Required missing evidence prevents
+A summary assertion or successful process is not a pass. For required human-only
+checks not yet performed, set VERIFICATION frontmatter `status: human_needed` and
+list each pending check under Human Verification Required; use [phase-uat](phase-uat.md).
+If demonstrated gaps also exist, set `status: gaps_found` and retain the pending
+human checks. Required missing evidence prevents
 final readiness and merge. Draft progress pushes follow
 [phase-ship](phase-ship.md); the runtime publisher still requires verification.
 Additional review follows the risks and changes; there is no fixed
@@ -63,7 +84,7 @@ limit that strands known repairable work.
 
 Use the complete [verification report](../templates/verification-report.md) and
 [verifier method](../agents/verifier.md) with the
-[local adapter](../references/template-adaptation.md). Trace observable truths, real
+[local adapter](../references/agent-adaptation.md). Trace observable truths, real
 artifacts and critical connections, with requirement coverage, regression evidence,
 anti-pattern findings and human-only checks. Add the assigned revision and
 [runtime result metadata](../runtime/TEMPLATE-CONTRACT.md). Do not substitute

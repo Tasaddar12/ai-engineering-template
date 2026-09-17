@@ -6,7 +6,7 @@
 | Desired outcomes | [REQUIREMENTS](../.planning/REQUIREMENTS.md) | Map them to phases |
 | Phase order and navigation | [ROADMAP](../.planning/ROADMAP.md) | Link to the phase |
 | Exact scope, acceptance, decisions and authorization | `NN-CONTEXT.md` | Reference acceptance IDs and decisions |
-| What was discussed | Optional `NN-DISCUSSION-LOG.md` | Do not infer decisions from transcripts |
+| What was discussed | Required `NN-DISCUSSION-LOG.md` | Do not infer decisions from transcripts |
 | Technical findings at a revision | Optional `NN-RESEARCH.md` and `.planning/codebase/` maps | Verify relevant findings before reuse |
 | Component actions, ownership, prerequisites and checks | `NN-CC-PLAN.md` | Dispatch the committed assignment |
 | Component's observed result | `NN-CC-SUMMARY.md` | Use commits and actual evidence |

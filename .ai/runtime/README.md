@@ -4,8 +4,8 @@
 [the workflow guide](../guides/PHASE-WORKFLOW.md). It consumes Markdown records
 with complete phase template bodies and additive YAML execution fields and
 [config.yaml](../../.planning/config.yaml). The Python runtime requires no schema
-files, schedule snapshots or separate work-item registry. Optional upstream
-methods and schema sources remain available in the imported library.
+files, schedule snapshots or separate work-item registry. Supporting agent methods are bundled locally under `references/methods/`;
+reading the workflow does not require a separate SDK or external schema generator.
 Python 3.11+ and PyYAML are required. Install `requirements.txt` into the host's
 virtual environment. Git and the chosen worker executable must be available;
 publication additionally requires an authenticated GitHub CLI.
@@ -15,6 +15,10 @@ It locates rules, role methods, workflow procedures and skills in the same host
 layout. Project records remain under `.planning`. Commands and references in
 the installed guides use the selected layout; the template authoring checkout
 continues to use its internal layout.
+
+New worker and verifier branches use the installed host name (`claude` or `codex`)
+followed by `/phase-...`. The authoring checkout defaults to the Codex prefix.
+Existing recorded branch names remain unchanged during recovery.
 
 Run from an assigned immediate-child worktree under the primary checkout's
 ignored `.worktrees/`. Commands use the current repository and named branch.
@@ -47,7 +51,11 @@ has no phases and no verification commands until adoption.
 
 [CONTEXT](../templates/context.md) owns goal, identified acceptance, decisions
 and actual authorization. `approval: approved` is a recorded human instruction,
-not permission a worker can invent. Open questions remain a coordinator
+not permission a worker can invent. Execution also requires CONTEXT
+`discussion: complete` and a nonempty `NN-DISCUSSION-LOG.md`; new phases start with
+`discussion: pending`. Missing fields in older records block execution until the
+coordinator records actual discussion. These structural checks do not prove a
+conversation occurred or validate recommendations. Open questions remain a coordinator
 judgment: prepare only independent, decided scope for execution.
 
 Each [PLAN](../templates/phase-prompt.md) declares kind (`code` or
@@ -221,3 +229,55 @@ deterministic workers and a local bare publication remote. Only GitHub's API
 boundary is simulated. They test execution, ownership, dependency availability,
 failure preservation, recovery, stale evidence and publication without merging.
 The separate [hook suites](../hooks/README.md) check optional advisory notices.
+
+## Independent component review and bounded assignments
+
+Every code component is reviewed by a fresh code-reviewer process in a separate
+read-only worktree before integration. `execution.reviewer_command` is optional;
+when absent the runner uses `verifier_command` with a code-reviewer assignment and
+read-only sandbox. Custom adapters must handle `kind=code-reviewer`, capture the
+full report at `{result}`, and preserve read-only behavior. This is a separate
+invocation, not the coder reading a review method. Report YAML carries revision,
+diff_base, status and findings.critical/warning counts. Skipped, stale, incomplete
+and reviews with critical findings block integration. Advisory warnings remain in
+the report; the coordinator commits their disposition in VERIFICATION frontmatter
+`warning_dispositions` before verification. The runner requires those records,
+supplies them and the reports to the verifier, and preserves them in its output. Saved attempts include process identity,
+result path and hash; final verification retains the component review evidence.
+Reviews are serialized with integration; already-running independent coders may
+continue. The final verifier still checks integrated behavior and cross-component
+regressions. Run `verify PHASE --workers-stopped` after process inspection to
+review integrated components missing receipts at their recorded base/revision.
+Run `resume PHASE --workers-stopped` to retry failed component reviews on an
+unchanged base/revision; prior attempts remain in `review_history`. Completed
+reports with blocking findings require correction. For an unintegrated component,
+commit the correction on its worker branch, preserving the original commits, then
+resume; the runner archives the prior report and reviews the corrected revision.
+For historical integrated defects, integrate a correction component and run
+`verify PHASE --workers-stopped`; a separate `review_resolution` retains evidence
+for each original finding at the corrected integrated revision. Source changes
+invalidate that resolution evidence.
+
+`execution.max_tasks_per_component` defaults to null (no numeric task cap); set a
+positive integer to reject auto-task plans above that count. TDD retains exactly
+one feature. Require each PLAN to declare one component outcome, owned paths,
+acceptance and checks; split separate outcomes or dependency prerequisites.
+PLAN `review_depth` accepts `standard` (default) or `deep`; set `deep` for security
+boundaries, concurrency, shared mutable state or cross-component contracts.
+
+`execution.claude_max_turns` defaults to 40 and accepts 1..200. The Claude adapter
+passes it as `--max-turns`, denies nested Agent/Task delegation and reports numeric
+terminal usage totals in the runtime log even for unsuccessful terminal results.
+Native Claude coder, documentor, reviewer and verifier definitions also set
+`maxTurns: 40`. Native configuration and CLI configuration are separate surfaces.
+An exhausted limit is incomplete work, not completion; inspect and preserve work
+before a smaller fresh continuation. No automatic restart is performed.
+
+Turn limits are not a hard token/context ceiling. Follow the
+[context handoff procedure](../references/worker-handoff.md#context-and-partial-results).
+The adapter does not measure peak context; its reported token usage is labeled
+as totals. Do not report those totals as peak context.
+Claude option sources: [CLI reference](https://code.claude.com/docs/en/cli-reference)
+and [native subagent fields](https://code.claude.com/docs/en/sub-agents).
+
+See [template adaptation](../references/template-adaptation.md) for workflow layers and artifact behavior.

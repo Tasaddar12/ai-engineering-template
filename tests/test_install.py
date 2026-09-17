@@ -72,6 +72,44 @@ class InstallerTests(unittest.TestCase):
         return {p.relative_to(self.target).as_posix(): p.read_bytes()
                 for p in self.target.rglob("*") if p.is_file() and ".git" not in p.relative_to(self.target).parts}
 
+    def test_installed_summary_skeleton_satisfies_runtime_contract(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                # Fill existing slots only: adding missing keys/sections here would
+                # hide the authoring defect this producer/consumer check protects.
+                script = r'''
+import re
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+sys.path.insert(0, str(Path.cwd() / sys.argv[1] / "runtime"))
+from phase_records import file_template
+from phase_runner import validate_summary
+root = Path.cwd()
+text = file_template(root, "summary.md")
+for key, value in {"requirements-completed": "[R1]", "acceptance": "[A1]",
+                   "documentation": "[docs/result.md]"}.items():
+    text = re.sub(r"(?m)^" + key + r":.*$", key + ": " + value, text)
+text = text.replace("[Tested revision or commit]", "a" * 40)
+text = text.replace("[Command and scenario]", "python -m unittest tests.test_result")
+text = text.replace("[Observed result, including failures or skips]", "PASS: 1 test")
+summary = root / "01-01-SUMMARY.md"
+summary.write_text(text, encoding="utf-8")
+(root / "docs").mkdir()
+(root / "docs/result.md").write_text("Verified result documentation", encoding="utf-8")
+component = SimpleNamespace(id="01-01", summary=summary, data={
+    "requirements": ["R1"], "acceptance": ["A1"],
+    "documentation": ["docs/result.md"], "type": "execute"})
+validate_summary(SimpleNamespace(root=root), component, root)
+'''
+                checked = subprocess.run([sys.executable, "-c", script, "." + host],
+                                         cwd=self.target, text=True, encoding="utf-8",
+                                         capture_output=True)
+                self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+
     def test_new_project_starts_runtime_and_omits_template_history(self):
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)

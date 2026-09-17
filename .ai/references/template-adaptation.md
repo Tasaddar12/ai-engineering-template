@@ -17,9 +17,9 @@ instructional document into a phase result. Use the complete templates.
 
 The selected full agent methods are available to read in `.ai/agents/`. Role files
 do not register host commands or agent types. Use the existing local procedures
-and the host mappings in agent adaptation. A reference to an upstream tool does
-not make it installed. Never claim an unavailable CLI command ran when only a
-Markdown file was read.
+and the host mappings in agent adaptation. Supporting methods live in [the local methods directory](methods/README.md).
+They contain adapted procedures rather than instructions to install a separate
+workflow SDK. Never claim a command ran when only a Markdown method was read.
 
 ## Runtime behavior
 

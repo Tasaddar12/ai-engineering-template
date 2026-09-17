@@ -46,17 +46,26 @@ def terminal_result(output):
 
 def execute(kind, result_path, prompt):
     root = Path.cwd().resolve()
-    destination = report_destination(result_path, root) if kind == "verifier" else None
+    destination = report_destination(result_path, root) if kind in ("verifier", "code-reviewer") else None
     if not prompt.strip():
         raise AdapterError("The phase assignment on stdin is empty.")
-    argv = ["claude", "-p", "--output-format", "json", "--no-session-persistence"]
-    if kind == "verifier":
+    limit = os.environ.get("PHASE_MAX_TURNS", "40")
+    if not limit.isdigit() or not 1 <= int(limit) <= 200:
+        raise AdapterError("PHASE_MAX_TURNS must be an integer from 1 to 200.")
+    argv = ["claude", "-p", "--output-format", "json", "--no-session-persistence",
+            "--max-turns", limit, "--disallowedTools",
+            "Agent,Task,mcp__*" if kind in ("verifier", "code-reviewer") else "Agent,Task"]
+    prompt += ("\nThis invocation is bounded to " + limit + " agentic turns. Preserve safe "
+               "partial commits and return a blocked SUMMARY before exhausting the limit if "
+               "implementation cannot finish; reviewers return incomplete evidence without edits. "
+               "Do not delegate or take on another role.\n")
+    if kind in ("verifier", "code-reviewer"):
         # --tools restricts native tools only; deny MCP tools separately. Keep
         # host permissions and project context, including advisory hooks.
-        argv += ["--tools", "Read,Glob,Grep", "--disallowedTools", "mcp__*",
+        argv += ["--tools", "Read,Glob,Grep",
                  "--append-system-prompt",
-                 "You are a read-only verifier. Do not modify files, create commits, "
-                 "or delegate work. Return the complete requested Markdown verification "
+                 "You are an independent read-only reviewer. Do not modify files, create commits, "
+                 "or delegate work. Return the complete requested Markdown review "
                  "report as your final response. The adapter saves it outside the checkout."]
     try:
         # Inherit the phase worker's process group: the runtime must be able to
@@ -68,6 +77,17 @@ def execute(kind, result_path, prompt):
                            "make 'claude' available on PATH before retrying.") from error
     except (OSError, UnicodeError) as error:
         raise AdapterError("Could not run Claude Code or decode its UTF-8 output.") from error
+    try:
+        terminal = json.loads(process.stdout)
+        if isinstance(terminal, dict):
+            usage = {k: terminal[k] for k in ("num_turns", "duration_ms", "total_cost_usd")
+                     if type(terminal.get(k)) in (int, float)}
+            if isinstance(terminal.get("usage"), dict):
+                usage["usage"] = {k: v for k, v in terminal["usage"].items()
+                                  if type(v) in (int, float)}
+            print("Claude usage (reported totals, not peak context): " + json.dumps(usage), flush=True)
+    except (ValueError, TypeError):
+        pass
     if process.returncode != 0:
         # Native diagnostics can contain assignment content; don't echo them.
         raise AdapterError(f"Claude Code exited with status {process.returncode}; no result "
@@ -92,7 +112,7 @@ def execute(kind, result_path, prompt):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--kind", required=True, choices=("code", "documentation", "verifier"))
+    parser.add_argument("--kind", required=True, choices=("code", "documentation", "verifier", "code-reviewer"))
     parser.add_argument("--result", required=True)
     args = parser.parse_args(argv)
     for stream in (sys.stdin, sys.stdout, sys.stderr):

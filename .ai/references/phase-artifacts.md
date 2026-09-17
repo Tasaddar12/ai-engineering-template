@@ -7,7 +7,7 @@ lifecycle. Use [templates](../templates/README.md) for their shapes.
 | Artifact | Created when | Consumed by |
 |---|---|---|
 | `NN-CONTEXT.md` | Request/discussion | Everyone working on relevant phase scope |
-| `NN-DISCUSSION-LOG.md` | Conversation history is worth retaining | Human reference; decisions come from CONTEXT |
+| `NN-DISCUSSION-LOG.md` | Every phase discussion; update after each exchange | Human reference; decisions come from CONTEXT |
 | `NN-RESEARCH.md` | Investigation is needed | Preparer, checker and affected workers |
 | `NN-VALIDATION.md` | Checks need a shared strategy | Preparer, checker and verifier |
 | `NN-CC-PLAN.md` | A component is ready to specify | Its fresh coder or documentor |
@@ -28,8 +28,8 @@ evidence. Do not substitute the previous shortened records for these full output
 Dependencies use NN-CC IDs within a phase; ownership prefixes end in `/` and
 required documentation names exact files.
 
-A small bug phase may have only CONTEXT, one PLAN/SUMMARY pair and
-VERIFICATION. Add reproduction and regression proof. A documentation-only phase
+A small bug phase may have only CONTEXT, DISCUSSION-LOG, one PLAN/SUMMARY pair
+and VERIFICATION. Add reproduction and regression proof. A documentation-only phase
 uses `kind: documentation`; research-only work can end with findings without
 claiming implemented or delivered product behavior. Optional files are omitted
 when they would repeat another owner.

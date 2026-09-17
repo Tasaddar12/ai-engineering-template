@@ -26,56 +26,53 @@ PR/MR and verified automatic merge under [phase-ship](../commands/phase-ship.md)
 `commit_docs` settings do not waive that contract. Read-only reviewers neither
 edit the checkout nor commit; the host captures their full report externally.
 
-Only the Python runtime described in [runtime](../runtime/README.md) executes
-the local lifecycle. Agent names and tool lists describe responsibilities and
+Use the Python runtime or coordinator-dispatched native host agents under the same
+local lifecycle rules. Agent names and tool lists describe responsibilities and
 capabilities. The installer supplies native agent definitions as described in the
 [agent catalog](../agents/README.md#native-host-models); role names do not register
 host tools, slash commands or Python worker routes.
-The configured runtime routes remain code, documentation and verifier. The
+The runtime dispatches code, documentation, independent code review and phase verification. Code review uses `reviewer_command`, falling back to the read-only verifier route when omitted. The
 documentor loads doc-writer; the independent verifier applies doc-verifier and
-integration-checker, with code-reviewer when appropriate. The coordinator may
-assign a separate fresh specialist through the host when useful, supplying an
-exact revision and external result for read-only review. Workers never dispatch
+integration-checker. Dispatch an independent code-reviewer before each code component
+integrates; assign additional specialists for unresolved documentation claims,
+cross-component flows or source-defect findings, with exact revision and external result. Workers never dispatch
 each other, and changing a role name does not create a new CLI subcommand.
 
-## Source operation to local operation
+## Local methods and operations
 
-Source SDK snippets remain in their original method sections as explicitly
-labelled examples. Do not execute `gsd_run`, install its SDK, interpret its JSON
-settings as local YAML settings, or claim a missing source probe ran. Pinned
-external source-method links provide full supporting instructions.
-Read only applicable methods; the same
-local boundaries also govern their nested references and examples. If remote
-content cannot be read, use a substantive local equivalent or report the exact
-missing dependency; never claim the source method was loaded.
+The [method catalog](methods/README.md) locates supporting instructions. Read
+only the methods relevant to the assignment. They are ordinary local documents,
+not installed tools or additional runtime commands. Attribution records identify
+their sources; fetching those sources is not a prerequisite for using the workflow.
 
-| Source operation or convention | Actual local operation |
+The role and method files describe the following actual local operations:
+
+| Need | Local operation and owner |
 |---|---|
-| Runtime identity, `init.*`, `state.load`, phase lists, roadmap queries, history/summary extraction | Read the assignment and actual `.planning/` records at its revision; coordinator uses `python .ai/runtime/phase.py status` and `check` where applicable |
-| PLAN/frontmatter/decision/command-path probes | `check` validates the documented local fields; phase-checker independently examines semantics, ownership, dependencies and grounded commands |
-| `state.*` writes, roadmap updates, requirement completion, WINDOWS/deferred ledgers | Worker returns evidence/proposals in SUMMARY; coordinator reconciles CONTEXT and other owners and explicitly uses `sync` for derived STATE |
-| `commit`, commit-to-subrepo, SDK commit envelopes | Native `git add` of owned paths and `git commit -m` with a descriptive message; no blanket staging, automatic subrepo operation or skipped SUMMARY commit |
-| `verify.artifacts`, `verify.key-links`, fingerprint/status probes | Trace actual implementation/callers and run required checks; exact assigned `revision` in the full external report; local runtime owns readiness attestation |
-| Source `workflow.*`, MVP/Nyquist/security modes, auto-chain, `commit_docs` and `config.json` | Source-only examples unless an assignment supplies a compatible method; `.planning/config.yaml` owns actual routes, capacity, checks and publication settings |
-| Checkpoints, `autonomous: false`, pending user setup, tracer gates | Coordinator resolves real decisions or human-only observations and commits an executable continuation; current `check` rejects unsupported/non-autonomous task forms rather than auto-approving them |
-| Source TDD probes and `type: tdd` | Full native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans); regression-design supplies the local method |
-| Wave execution and decimal phases | Source planning examples remain; local scheduler releases each component after its own checked integrated prerequisites and the current runtime uses integer phase directories |
-| Estimation calibration, code graphs, learning caches, knowledge stores | Use observed source/test evidence and clearly labelled estimates; do not fabricate tool outputs or create global knowledge/debug records outside ownership |
-| Research plan/store/confidence/package/websearch SDK calls | Use available host tools and primary sources, record versions, citations and uncertainty; absence of a helper does not authorize changing the product target |
-| `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, Skill and optional MCP names | Use callable host equivalents: file reads, targeted patches, native shell or Bash, `rg`, relevant skills and available research tools. Tool metadata grants no permissions |
-| `.planning/tmp/verify-{basename}.json`, checkout REVIEW/VERIFICATION reports | Host captures the full result at an external path unique to attempt, revision and full document path; coordinator audits and stores required phase evidence |
+| Load context or locate phase records | Read the assignment and `.planning/` records at the assigned revision; coordinator uses `python .ai/runtime/phase.py status` and `check` |
+| Validate executable plans | `check` covers structural fields; the preparation checker separately assesses semantics, exact ownership, dependency order and actual command paths |
+| Update shared project records | Workers propose changes in SUMMARY; coordinator updates CONTEXT, ROADMAP, REQUIREMENTS and uses `sync` for derived Runtime Status |
+| Commit authored work | Native Git staging of exact owned paths and descriptive commits; include assigned SUMMARY and preserve other workers' files |
+| Verify artifacts, wiring or behavior | Trace source and callers, inspect actual results and run the authorized project checks; return a report with the exact revision |
+| Configure execution | `.planning/config.yaml` owns worker routes, capacity, checks and publication; do not invent unsupported configuration keys or mode flags |
+| Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
+| Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
+| Schedule work | Coordinator releases each component after its own checked integrated prerequisites; displayed waves do not impose a global barrier |
+| Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
+| Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
 
-Examples using source SDK declarations such as `covered_digest`, provenance
-fingerprints or package legitimacy verdicts remain examples unless a compatible
-tool actually produced them. Never populate these fields by guessing. Retain
-the exact revision and real commands/results required by the local contract.
+The runtime owns its verification attestation. Do not hand-compute or invent
+foreign schema fields, package verdicts or provenance digests. Record exact
+revisions and the commands/results actually observed. If a useful operation has
+no installed implementation, do the bounded evidence-based procedure described
+locally or report what cannot be established; do not install an unrelated SDK.
 
 ## Documentation handoff
 
 The existing phase-start and phase-verify procedures own this loop:
 
-1. Assign substantial guides/SPECs to a documentation component dependent on the
-   implementation it describes. Put each required path on the component that
+1. Assign new guides/SPECs, changed operational sequences and explanations spanning
+   components to a documentor; declare the implementation dependencies. Put each required path on the component that
    actually covers it. The documentor loads the full doc-writer method, preserves
    accurate user prose, writes only owned paths and commits its SUMMARY.
 2. Integrate and check that committed output. The coordinator gives the

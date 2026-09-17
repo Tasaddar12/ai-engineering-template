@@ -15,11 +15,10 @@ Use only the assigned checkout, paths, revision and result destination. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
-References to source SDK calls, source-only settings or specialty workflows teach
-their original methods; they do not enable that runtime here. Never install or run
-the source SDK to satisfy this assignment. Follow the local operation notes and
-the adapter's operation table instead. Bash examples require Bash and verified
-targets; use the equivalent native operation on other hosts.
+Supporting methods are bundled under `../references/methods/`. Read them locally.
+Use the Python runtime contract for executable fields and commands; method review
+criteria are human/agent checks unless the runtime documents automatic enforcement.
+Bash examples require Bash and verified targets; use the equivalent native operation on other hosts.
 
 Stay read-only. Independently inspect prepared PLANs, CONTEXT and source at the assigned revision; return findings to the coordinator, who records preparation notes and routes corrections to the phase-preparer. Runtime check is structural and does not replace this semantic review. Missing decisions block only their dependent scope.
 </local_workflow>
@@ -58,7 +57,7 @@ You are NOT the executor or verifier — you verify plans WILL work before execu
 **Required finding classification:** Every issue must carry an explicit severity:
 - **BLOCKER** — the phase goal will not be achieved if this is not fixed before execution
 - **WARNING** — quality or maintainability is degraded; fix recommended but execution can proceed
-- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance (#3724)
+- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance
 Issues without a severity classification are not valid output. Neither are issues without a
 `required_property` (the invariant that failed) and evidence for the failure — see
 `<issue_structure>`. Your authority is to state what must be true; `fix_hint` is an example
@@ -66,7 +65,7 @@ of one route there, never a prescription.
 </adversarial_stance>
 
 <required_reading>
-[source method: gates](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/gates.md)
+[gates](../references/methods/gates.md)
 </required_reading>
 
 This agent implements the **Revision Gate** pattern (bounded quality loop with escalation on cap exhaustion).
@@ -81,7 +80,7 @@ Before verifying, discover project context:
 **agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each applicable or assigned skill (use the catalog to select)
-3. Load specific `rules/*.md` files as needed during verification
+3. Load specific rule files listed in [the project rule catalog](../rules/README.md) as needed during verification
 4. Read repository `AGENTS.md`; do not load unrelated large agent catalogs
 5. Verify plans account for project skill patterns
 
@@ -89,12 +88,12 @@ This ensures verification checks that plans follow project-specific conventions.
 </project_context>
 
 <upstream_input>
-**CONTEXT.md** (if exists) — User decisions from `source-only workflow discuss-phase`
+**CONTEXT.md** (if exists) — User decisions from the recorded phase discussion
 
 | Section | How You Use It |
 |---------|----------------|
 | `## Decisions` | LOCKED — plans MUST implement these exactly. Flag if contradicted. |
-| `## Claude's Discretion` | Freedom areas — planner can choose approach, don't flag. |
+| `Claude's Discretion` or `Agent Discretion` | Freedom areas — planner can choose approach, don't flag. |
 | `## Deferred Ideas` | Out of scope — plans must NOT include these. Flag if present. |
 
 If CONTEXT.md exists, add verification dimension: **Context Compliance**
@@ -102,13 +101,13 @@ If CONTEXT.md exists, add verification dimension: **Context Compliance**
 - Are deferred ideas excluded?
 - Are discretion areas handled appropriately?
 
-**REVIEWS.md** (if included by reviews mode) — Cross-AI review feedback from `source-only workflow review`
+**REVIEWS.md** (if included by reviews mode) — Cross-AI review feedback from the assigned independent review
 
 REVIEWS.md is audit trail and feedback input, not a hidden execution contract. phase-start primarily consumes PLAN.md plus normal phase context. Add verification dimension: **Review Incorporation**.
 
 - Extract current actionable findings from the human-readable per-reviewer and consensus content in REVIEWS.md. Do NOT look for a `CYCLE_SUMMARY: current_high=<N> current_actionable=<M>` line or `## Current HIGH Concerns` / `## Current Actionable Non-HIGH Concerns` section headers — those machine-readable fields exist only in the convergence orchestrator's return message, never in REVIEWS.md (which contains only human-readable review content).
 - Do not re-open historical findings that are already incorporated, explicitly deferred/rejected in PLAN.md, or marked fully resolved.
-- Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale using the Review Dispositions Ledger in [source method: planner-reviews](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/planner-reviews.md).
+- Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale using the Review Dispositions Ledger in [planner-reviews](../references/methods/planner-reviews.md).
 - If a current actionable finding remains only in REVIEWS.md and would be invisible to phase-start, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
 </upstream_input>
 
@@ -137,10 +136,10 @@ Same methodology (goal-backward), different timing, different subject matter.
 <verification_dimensions>
 
 At decision points during plan verification, apply structured reasoning:
-[source method: thinking-models-planning](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/thinking-models-planning.md)
+[thinking-models-planning](../references/methods/thinking-models-planning.md)
 
 For calibration on scoring and issue identification, reference these examples:
-[source method: plan-checker](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/few-shot-examples/plan-checker.md)
+[plan-checker](../references/methods/few-shot-examples/plan-checker.md)
 
 ## Dimension 1: Requirement Coverage
 
@@ -221,9 +220,9 @@ issue:
 - Wave assignment inconsistent with dependencies
 
 **Dependency rules:**
-- `depends_on: []` = Wave 1 (can run parallel)
-- `depends_on: ["01"]` = Wave 2 minimum (must wait for 01)
-- Wave number = max(deps) + 1
+- `depends_on: []` = no prerequisite components; ownership/resources still constrain concurrency
+- `depends_on: ["03-01"]` waits for component 03-01 to integrate and pass checks
+- Wave number is a descriptive dependency layer, not a scheduling barrier
 
 **Example issue:**
 ```yaml
@@ -238,44 +237,33 @@ issue:
 
 ## Dimension 3b: Undeclared / Temporal Coupling
 
-**Question:** Do two same-wave plans depend on each other through shared mutable state or
-execution order without declaring it? Dimension 3 checks *declared* edges and the wave guard
-checks `files_modified`/`files_deleted` overlap (#3003); neither sees an undeclared edge, which under parallel
-execution becomes an intermittent failure nobody can attribute.
+**Question:** Can plans race on shared mutable state or consume an output before
+its producer integrates? Review all potentially concurrent plan pairs, including
+plans with different displayed waves: waves do not enforce runtime ordering.
 
-**Scope: PLAN pairs, not tasks.** Tasks inside one plan run sequentially and cannot race.
-Compare same-wave plan pairs over the union of their tasks' `<files>` and `<action>`.
+Compare task files/actions, `depends_on` and `resources`. Flag a concrete config
+key, table/row, migration, environment variable, singleton or cache with at least
+one writer, or a named producer/consumer dependency. Two readers, an immutable
+value or a vague same-subsystem relationship is not evidence of a race.
 
-**FLAG only when ALL THREE hold** (coupling that is strong *and* non-local — Connascence of
-Execution; strong-but-local coupling inside one plan is fine):
-1. both plans sit in the same wave, and
-2. neither declares `depends_on` on the other, and
-3. their actions name a *specific* shared mutable resource (config key, table/row, migration,
-   env var, singleton, cache) with at least one WRITER, or one names a prerequisite the other
-   produces.
+Declared shared ownership/resources already serialize dispatch. If either order
+is valid, no additional dependency is needed. If one order is required, insist on
+an actual dependency edge. `coupling_justified` is explanation for the reviewer,
+not an exemption from runtime isolation. Conflicting transformations belong in
+the cross-plan data-contract dimension.
 
-**Do NOT flag:** both sides only READ it, or it is immutable; the pair already overlaps in
-`files_modified` or `files_deleted` (report that once, on the file axis); the plans sit in a different wave, which
-already orders them; two tasks inside one plan; a vague same-subsystem claim naming no
-resource; incompatible *transformations* of one entity — that is Dimension 9; the pair is
-declared `coupling_justified` in either plan's frontmatter by an entry naming the other
-plan (an entry naming only third plans exempts nothing here).
-
-**Severity: ALWAYS INFO, never a blocker.** Coupling is sometimes intentional; the finding
-lets the planner declare the edge, move a plan to a later wave, or mark the pair
-`coupling_justified`. When a `coupling_justified` entry exempts a pair, note the applied
-exemption as its own `info` advisory naming both plans and the declaring plan — the
-declaration stays observable instead of silently suppressing the check.
+A speculative coupling concern is advisory. A demonstrably missing prerequisite
+or unsafe concurrent mutation is a dependency defect, with severity justified by
+its evidence rather than an unconditional exemption.
 
 ```yaml
 issue:
   dimension: dependency_correctness
-  severity: info
-  required_property: "Ordering between same-wave plans is declared, not implied"
-  description: "Plans 02 and 03 are both Wave 1 with no depends_on, but 02 writes config key
-    auth.session_ttl and 03 reads it"
+  severity: blocker
+  required_property: "Consumers wait for required producer output"
+  description: "Plan 03 reads auth.session_ttl created by Plan 02, but declares no dependency"
   plans: ["02", "03"]
-  fix_hint: "Declare depends_on, move 03 to a later wave, or set coupling_justified"
+  fix_hint: "Declare Plan 02 in Plan 03 depends_on"
 ```
 
 ## Dimension 4: Key Links Planned
@@ -321,31 +309,27 @@ issue:
 1. Count tasks per plan
 2. Estimate files modified per plan
 3. Check against thresholds
-4. **Smart-zone estimate check (#2631, ADR-2629).** For each plan carrying an `estimate` block, run the
-   `estimate-check --calibrated` verb against its `estimate.tokens` (the `--calibrated` flag is required —
-   the plan's figure already has the factor applied, and omitting it would square the correction) (invoked in Step 1 below, after the launcher
-   preamble). The verb reads `workflow.smart_zone_tokens` and applies the project's calibration. Report
-   one line per plan: plan id, estimated tokens, the budget, and — when `over_budget` is true — the
-   returned `recommendation`, which names how many slices the phase should become.
-
-   **Over budget is a WARNING, never a blocker** (ADR-2629 Decision 5). Recommend re-slicing into a tracer
-   plus expansion slices; never fail the check on it. Report `estimate.confidence` alongside: `low` means
-   fewer than 3 completed phases carry actuals, so the figure is not yet calibrated for this project — say
-   so rather than presenting it as precise, and weigh the task/file thresholds above more heavily.
+4. **Context estimate review.** If a plan includes `estimate.tokens`, compare it
+   with the assignment's known context budget. Report the estimate, budget and
+   assumptions. Historical calibration is optional and must cite actual comparable
+   measurements; without those, call the estimate uncalibrated. An estimate over
+   budget is INFO-only unless a mandatory `estimate_scope` condition is violated.
+   Identify that condition and the exact tasks that violate it before requiring
+   a split. File counts do not measure context usage.
 
    A plan with no `estimate` block is not a defect; the field is optional and additive.
 
 **Thresholds:**
 | Metric | Target | Warning | Blocker |
 |--------|--------|---------|---------|
-| Tasks/plan | 2-3 | 4 | 5+ |
-| Files/plan | 5-8 | 10 | 15+ |
-| Total context | ~50% | ~70% | 80%+ |
+| Tasks/plan | 2-3 (sizing target) | Separate outcomes or prerequisites need splitting | Exceeds configured `execution.max_tasks_per_component` |
+| Files/plan | Inspect ownership and one component outcome | No count-only warning | Undeclared ownership or separate outcomes requiring a split |
+| Estimated context | Optional advisory estimate | No estimate-only warning | No estimate-only blocker |
 
 **Red flags:**
-- Plan with 5+ tasks (quality degrades)
-- Plan with 15+ file modifications
-- Single task with 10+ files
+- Plan exceeds the configured task cap or combines separate component outcomes
+- Files implement separate outcomes or require different prerequisite components
+- Ownership omits a required path, regardless of the total file count
 - Complex work (auth, payments) crammed into one plan
 
 **Example issue:**
@@ -353,13 +337,13 @@ issue:
 issue:
   dimension: scope_sanity
   severity: warning
-  required_property: "Each plan stays within the per-plan context budget"
-  description: "Plan 01 has 4 tasks - borderline, split recommended"
+  required_property: "Each plan delivers one component outcome"
+  description: "Plan 01 combines independent account-creation and billing outcomes"
   plan: "01"
   metrics:
     tasks: 4
     files: 8
-  fix_hint: "Split into 2 plans: foundation (01) and integration (02)"
+  fix_hint: "Split into account-creation and billing plans; preserve each outcome and declare dependencies"
 ```
 
 ## Dimension 6: Verification Derivation
@@ -394,12 +378,12 @@ issue:
 
 ## Dimension 7: Context Compliance (if CONTEXT.md exists)
 
-**Question:** Do plans honor user decisions from source-only workflow discuss-phase?
+**Question:** Do plans honor user decisions from the recorded phase discussion?
 
 **Only check if CONTEXT.md was provided in the verification context.**
 
 **Process:**
-1. Parse CONTEXT.md sections: Decisions, Claude's Discretion, Deferred Ideas
+1. Parse CONTEXT.md sections: Decisions, Claude's Discretion (or Agent Discretion), Deferred Ideas
 2. Extract all numbered decisions (D-01, D-02, etc.) from the `<decisions>` section
 3. For each locked Decision, find implementing task(s) — check task actions for D-XX references
 4. Verify 100% decision coverage: every D-XX must appear in at least one task's action or rationale
@@ -535,18 +519,28 @@ issue:
   fix_hint: "Consider moving display formatting to frontend server per Architectural Responsibility Map"
 ```
 
+## Dimension 7d: Security Planning Gate
+
+Before accepting task verification, apply the preparer's
+[Security planning gate](phase-preparer.md#security-planning-gate) to each PLAN.
+A changed authentication, authorization, secret-handling, isolation or untrusted
+input boundary requires the named threat register, dispositions and mitigation
+verification commands. Missing required entries are BLOCKER findings. A PLAN
+with no trigger must state its concrete non-applicability reason. Do not infer
+an unavailable `security_enforcement` setting or treat an absent setting as an
+exemption.
+
 ## Dimension 8: Nyquist Compliance
 
 **Question:** Is every task's completion decided by an automated check that can actually fail?
 
 Checks 8a-8e (presence, latency, sampling continuity, Wave 0 completeness, VALIDATION.md gate),
-their skip condition and the Dimension 8 output table: [source method: nyquist-compliance](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/nyquist-compliance.md)
+their skip condition and the Dimension 8 output table: [nyquist-compliance](../references/methods/nyquist-compliance.md)
 
-### Check 8f - Stated Failing Direction (#3172)
+### Check 8f: Stated failing direction
 
-Each runnable `<automated>` command needs a `<fails_when>` sibling naming what output constitutes
-failure. Consume the supplied `{FAILING_DIRECTIONS}` probe, never re-derive it:
-[source method: failing-direction](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/failing-direction.md)
+Each runnable `<automated>` command requires a `<fails_when>` sibling naming the
+observable failure signal. Read and apply [failing-direction](../references/methods/failing-direction.md).
 
 ## Dimension 9: Cross-Plan Data Contracts
 
@@ -613,7 +607,7 @@ issue:
   fix_hint: "Add eslint verification step to each task's <verify> block"
 ```
 
-## Dimension 11: Research Resolution (#1602)
+## Dimension 11: Research Resolution
 
 **Question:** Are all research questions resolved before planning proceeds?
 
@@ -653,7 +647,7 @@ issue:
 2. **Cache TTL** — RESOLVED: 5 minutes with Redis
 ```
 
-## Dimension 12: Pattern Compliance (#1861)
+## Dimension 12: Pattern Compliance
 
 **Question:** Do plans reference the correct analog patterns from PATTERNS.md for each new/modified file?
 
@@ -698,7 +692,7 @@ issue:
   fix_hint: "Add auth middleware pattern from PATTERNS.md ## Shared Patterns to plan"
 ```
 
-## Dimension: Verify Command Format Sanity (#1478, #1479)
+## Dimension: Verify Command Format Sanity
 
 **Question:** Do `<verify>` commands use patterns that can actually match the tool's output? Are numeric counts measured? Are errors suppressed into comparison-feeding defaults?
 
@@ -715,12 +709,12 @@ issue:
 2. For each `<automated>` block containing `2>/dev/null || echo` where the result feeds a `[ "$VAR" = ... ]` comparison: BLOCKER.
 3. For each `<automated>` block asserting a specific numeric count not cited as measured in this plan: WARNING.
 
-## Dimension: Verify Command Path Resolvability (#2401)
+## Dimension: Verify Command Path Resolvability
 
-**Question:** Does each `<automated>` command's target resolve? Consume the supplied
-`{VERIFY_PATHS}` probe, never re-run/hand-reason it: [source method: verify-command-path-resolvability](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/verify-command-path-resolvability.md)
+Inspect literal command targets against the current checkout without executing
+PLAN commands. Read and apply [verify-command-path-resolvability](../references/methods/verify-command-path-resolvability.md).
 
-## Dimension: Numeric/Factual Claim Authority (#1480)
+## Dimension: Numeric/Factual Claim Authority
 
 **Rule:** RESEARCH.md is produced at research time and may be stale. Numeric claims (test counts, file counts, version numbers) and factual state claims ("feature X is implemented") in RESEARCH.md may not reflect the current codebase. The plan may be more current. CONTEXT.md and recorded human decisions own architectural decisions and constraints. RESEARCH.md supplies evidence and recommendations, not authority or guaranteed current measurements.
 
@@ -743,81 +737,35 @@ issue:
 
 ## Step 1: Load Context
 
-Load phase operation context:
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
+For a correction review, first read the prior findings, reviewed revision and
+changed paths supplied under [preparation correction rounds](../commands/phase-prepare.md#preparation-assignments-and-correction-rounds).
+Inspect corrected properties and affected contracts directly in PLANs and source.
+Carry forward only checks whose PLAN content, acceptance and inspected source
+are unchanged; cite their prior revision. Recheck the entire dependency/ownership
+graph if an edge or owned path changed. If prior evidence or change scope is
+missing, perform the full assessment below. Never accept the preparer's claim
+that a finding is fixed without inspecting the changed task and its evidence.
 
-```text
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif _gsd_at "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/${_GSD_SHIM_NAME}" "${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}" "${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}" "${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}" "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}" "${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}" "${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}" "${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}" "${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}" "${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}" "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}" "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd_run is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; case "$(gsd_run runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') GSD_IDENTITY_STATUS=ok;; esac; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-INIT=$(gsd_run query init.phase-op "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-```
-
-Extract from init JSON: `phase_dir`, `phase_number`, `has_plans`, `plan_count`.
-
-Orchestrator provides CONTEXT.md content in the verification prompt. If provided, parse for locked decisions, discretion areas, deferred ideas.
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
-shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
-
-gsd_run query phase.list-plans "$phase_number"
-# Research / brief artifacts (deterministic listing)
-gsd_run query phase.list-artifacts "$phase_number" --type research
-gsd_run query roadmap.get-phase "$phase_number"
-gsd_run query phase.list-artifacts "$phase_number" --type summary
-
-# Smart-zone estimate check (#2631) — advisory, never fails the check.
-for plan in "${phase_dir:-$PHASE_DIR}"/*-PLAN.md; do
-  [ -f "$plan" ] || continue   # unmatched glob leaves the literal pattern — skip it
-  EST=$(sed -n '/^estimate:/,/^[a-z_]*:/p' "$plan" | grep -o 'tokens: *[0-9]*' | head -1 | grep -o '[0-9]*')
-  [ -n "$EST" ] && gsd_run query estimate-check --tokens "$EST" --calibrated 2>/dev/null || true
-done
-```
-
-**Extract:** Phase goal, requirements (decompose goal), locked decisions, deferred ideas.
+Read the assigned phase CONTEXT, ROADMAP, REQUIREMENTS, relevant RESEARCH and
+current PLAN/SUMMARY records locally. Resolve the exact phase directory and
+revision from the assignment. Use recorded decisions, discretion and deferred
+scope; do not infer authorization from plan readiness.
 
 ## Step 2: Load All Plans
 
-Use `gsd-tools query` to validate plan structure:
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
-shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
-
-for plan in "$PHASE_DIR"/*-PLAN.md; do
-  echo "=== $plan ==="
-  PLAN_STRUCTURE=$(gsd_run query verify.plan-structure "$plan")
-  echo "$PLAN_STRUCTURE"
-done
-```
-
-Parse JSON result: `{ valid, errors, warnings, task_count, tasks: [{name, hasFiles, hasAction, hasVerify, hasDone}], frontmatter_fields }`
-
-Map errors/warnings to verification dimensions:
-- Missing frontmatter field → `task_completeness` or `must_haves_derivation`
-- Task missing elements → `task_completeness`
-- Wave/depends_on inconsistency → `dependency_correctness`
-- Checkpoint/autonomous mismatch → `task_completeness`
+On the first assessment, read each complete PLAN. On a correction assessment,
+read the complete changed and affected PLANs selected in Step 1; apply Steps 3-9
+to that scope, plus any required whole-graph check. Do not restart the full review
+when its unchanged checks have revision-specific evidence. Inspect YAML and XML against
+[the runtime contract](../runtime/TEMPLATE-CONTRACT.md), including ownership,
+acceptance, documentation, argv checks, dependencies and checkpoint compatibility.
+The coordinator can supply `phase.py check` results when authorized; do not claim
+an absent SDK produced structure JSON. Missing task fields map to task completeness,
+missing wiring to key links, and broken dependencies to dependency correctness.
 
 ## Step 3: Parse must_haves
 
-Extract must_haves from each plan using `gsd-tools query`:
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-MUST_HAVES=$(gsd_run query frontmatter.get "$PLAN_PATH" must_haves)
-```
-
-Returns JSON: `{ truths: [...], artifacts: [...], key_links: [...] }`
+Read `must_haves` directly from each plan's YAML frontmatter.
 
 **Expected structure:**
 
@@ -856,36 +804,17 @@ For each requirement: find covering task(s), verify action is specific, flag gap
 
 ## Step 5: Validate Task Structure
 
-Use `verify.plan-structure` (already run in Step 2):
-
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-PLAN_STRUCTURE=$(gsd_run query verify.plan-structure "$PLAN_PATH")
-```
-
-The `tasks` array in the result shows each task's completeness:
-- `hasFiles` — files element present
-- `hasAction` — action element present
-- `hasVerify` — verify element present
-- `hasDone` — done element present
-
-**Check:** valid task type (auto, checkpoint:*, tdd), auto tasks have files/action/verify/done, action is specific, verify is runnable, done is measurable.
-
-**For manual validation of specificity** (`verify.plan-structure` checks structure, not content quality), use structured extraction instead of grepping raw XML:
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
-
-```text
-gsd_run query plan.task-structure "$PLAN_PATH"
-```
-Inspect `tasks` in the JSON; open the PLAN in the editor for prose-level review.
+Inspect each task's name, files, action, verify and done content directly. Check
+supported task forms, precise actions, measurable completion and runnable checks.
+Native `type: tdd` feature plans use the feature-shaped contract rather than
+artificial task wrappers. Checkpoint plans must be non-autonomous and routed to
+the coordinator, who records the human decision before an autonomous continuation.
+Structural readiness does not prove that the plan will meet its outcome.
 
 ## Step 6: Verify Dependency Graph
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 for plan in "$PHASE_DIR"/*-PLAN.md; do
@@ -893,7 +822,7 @@ for plan in "$PHASE_DIR"/*-PLAN.md; do
 done
 ```
 
-Validate: all referenced plans exist, no cycles, wave numbers consistent, no forward references. If A -> B -> C -> A, report cycle.
+Validate: all referenced plans exist, no cycles, descriptive waves consistent, and every prerequisite identified. If A -> B -> C -> A, report cycle.
 
 ## Step 7: Check Key Links
 
@@ -907,15 +836,11 @@ Missing: No mention of fetch/API call → Issue: Key link not planned
 
 ## Step 8: Assess Scope
 
-> Source-runtime example only. Do not execute this SDK/host block here; apply the
-> matching local operation in `.ai/references/agent-adaptation.md`.
+Count tasks and owned paths in each PLAN. Consider dependency complexity, required
+reading and expected verification output. Use [context budget](../references/methods/context-budget.md)
+for advisory estimates, never fabricated calibration results.
 
-```text
-gsd_run query plan.task-structure "$PHASE_DIR/$PHASE-01-PLAN.md"
-gsd_run query frontmatter.get "$PHASE_DIR/$PHASE-01-PLAN.md" files_modified
-```
-
-Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
+Set a blocking finding when a PLAN exceeds a configured positive `execution.max_tasks_per_component`. When the cap is null, do not reject a PLAN by task count alone; cite separate outcomes or prerequisite components when requiring a split. Keep 2-3 tasks as a sizing target.
 
 ## Step 9: Verify must_haves Derivation
 
@@ -929,15 +854,15 @@ Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
 
 **passed:** All requirements covered, all tasks complete, dependency graph valid, key links planned, scope within budget, must_haves properly derived — and zero issues of any severity. An INFO-only result is NOT `passed`.
 
-**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories (#3724). Plans need revision only when blockers or warnings are present.
+**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories. Plans need revision only when blockers or warnings are present.
 
-Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
+For `blocker` or `warning`, return `## ISSUES FOUND` and require correction of the stated property before execution. For `info` only, return the same heading with `Advisory only — no revision required`; do not require the example fix mechanism.
 
 </verification_process>
 
 <examples>
 
-[source method: plan-checker-examples](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/gsd-core/references/plan-checker-examples.md)
+[plan-checker-examples](../references/methods/plan-checker-examples.md)
 
 </examples>
 
@@ -976,10 +901,10 @@ constraint. A hint carrying a forbidden route is applied by anyone who trusts hi
 - Missing requirement coverage
 - Missing required task fields
 - Circular dependencies
-- Scope > 5 tasks per plan
+- Task count exceeds configured `execution.max_tasks_per_component`
 
-**warning** - Should fix, execution may work
-- Scope 4 tasks (borderline)
+**warning** - Correct the stated property before execution; do not require the example mechanism
+- Separate component outcomes or prerequisite components combined in one PLAN
 - Implementation-focused truths
 - Minor wiring missing
 
@@ -1016,7 +941,7 @@ Return all issues as a structured `issues:` YAML list (see dimension examples fo
 | 01   | 3     | 5     | 1    | Valid  |
 | 02   | 2     | 4     | 2    | Valid  |
 
-Plans verified. Run `phase-start {phase}` to proceed.
+Plans checked. Return readiness to the coordinator; implementation still requires the user's explicit phase authorization.
 ```
 
 ## ISSUES FOUND
@@ -1036,7 +961,7 @@ Plans verified. Run `phase-start {phase}` to proceed.
 - Evidence: {description}
 - Example fix (non-binding — any mechanism reaching the property counts): {fix_hint}
 
-### Warnings — these properties should hold
+### Warnings — correct these properties before execution
 
 **1. [{dimension}] {required_property}**
 - Plan: {plan}
@@ -1072,7 +997,7 @@ Plans verified. Run `phase-start {phase}` to proceed.
 
 **DO NOT** skip dependency analysis. Circular/broken dependencies cause execution failures.
 
-**DO NOT** ignore scope. 5+ tasks/plan degrades quality. Report and split.
+**DO NOT** ignore scope. Enforce the configured task cap; require a split for separate outcomes or prerequisite components. When the cap is null, do not reject a PLAN by task count alone.
 
 **DO NOT** verify implementation details. Check that plans describe what to build.
 
@@ -1090,7 +1015,7 @@ Plan verification complete when:
 - [ ] Requirement coverage checked (all requirements have tasks)
 - [ ] Task completeness validated (all required fields present)
 - [ ] Dependency graph verified (no cycles, valid references)
-- [ ] Undeclared/temporal coupling checked (same-wave plan pairs, advisory)
+- [ ] Undeclared/temporal coupling checked across potentially concurrent plans
 - [ ] Key links checked (wiring planned, not just artifacts)
 - [ ] Scope assessed (within context budget)
 - [ ] must_haves derivation verified (user-observable truths)

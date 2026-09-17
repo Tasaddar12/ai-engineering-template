@@ -143,8 +143,12 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 <evolution>
 
 PROJECT.md evolves throughout the project lifecycle.
-These rules are embedded in the generated PROJECT.md (## Evolution section)
-and implemented by https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/transition.md and https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977/gsd-core/workflows/complete-milestone.md.
+The coordinator applies the checklist below after inspecting phase summaries,
+verification, actual human observations and delivery state. Follow the local
+[phase-status](../commands/phase-status.md) and [phase-ship](../commands/phase-ship.md)
+procedures; no separate transition or milestone command is installed. Workers
+return evidence and proposed updates instead of editing shared project records.
+Completing one phase does not authorize implementation of the next.
 
 **After each phase transition:**
 1. Requirements invalidated? → Move to Out of Scope with reason
@@ -166,7 +170,7 @@ and implemented by https://github.com/open-gsd/gsd-core/blob/c0b2a05d2f310adc0a1
 
 For existing codebases:
 
-1. **Onboard or map codebase first** via `/workflow:onboard` (recommended first-time path) or `/workflow:map-codebase`
+1. **Onboard or map codebase first** using [onboard](../commands/onboard.md) and the [codebase-mapper](../agents/codebase-mapper.md) method as needed
 
 2. **Infer Validated requirements** from existing code:
    - What does the codebase actually do?
@@ -210,15 +214,14 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
-`.planning/config.yaml`. Source `config.json`, `/workflow:*` command, tool-name, hook, and Node CLI
-examples describe supporting source capabilities; no JSON config template is shipped;
-this import does not install or activate them. Source catalog pointers in examples
-identify provenance, not executable command arguments. Pinned specialty workflow references provide external source
-guidance for explicit assignments, not promises of installed features.
+`.planning/config.yaml`. Only the documented local runtime commands are installed. Tool names and product
+examples do not establish that a tool is available; inspect the actual project
+configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
+they do not install additional runtime features.
 Local rules, assigned worktrees, recorded authorization, runtime ownership and
 verification safeguards govern execution. The local runtime never merges.
 <!-- LOCAL-ADOPTION:END -->

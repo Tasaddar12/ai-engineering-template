@@ -15,7 +15,35 @@ import test_phase_runtime as fixtures
 SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE / ".ai/runtime"))
 from phase_runner import validate_summary  # noqa: E402
-from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record, file_template, load_phase  # noqa: E402
+from phase_records import acceptance_outcomes, PhaseError, git as record_git, overlaps, owns, read_yaml, record, file_template, load_phase  # noqa: E402
+
+
+class AcceptanceParsingTests(unittest.TestCase):
+    def test_plain_and_bold_ids_preserve_order_and_outcome_text(self):
+        body = ("## Acceptance\n\n"
+                "- A1: Plain outcome.\n"
+                "- [ ] **AUTH-02**: Outcome with **bold text**.\n"
+                "- [x] **A3:** Checked outcome.\n"
+                "- [X] A4: Another checked outcome.\n"
+                "\n## Other\n- A5: Outside acceptance.\n")
+        self.assertEqual(acceptance_outcomes(body), [
+            ("A1", "Plain outcome."), ("AUTH-02", "Outcome with **bold text**."),
+            ("A3", "Checked outcome."), ("A4", "Another checked outcome.")])
+
+    def test_duplicate_ids_rejected_across_formats(self):
+        for duplicate in ("A1:", "**A1**:", "**A1:**"):
+            with self.subTest(duplicate=duplicate):
+                with self.assertRaisesRegex(PhaseError, "Duplicate acceptance identifiers"):
+                    acceptance_outcomes(f"## Acceptance\n- A1: First.\n- {duplicate} Second.\n")
+
+    def test_unbalanced_bold_is_not_an_identifier(self):
+        for malformed in ("**A1:", "A1**:", "**A1*:"):
+            with self.subTest(malformed=malformed):
+                self.assertEqual(acceptance_outcomes(f"## Acceptance\n- {malformed} Outcome.\n"), [])
+
+    def test_empty_outcome_does_not_consume_next_bullet(self):
+        self.assertEqual(acceptance_outcomes("## Acceptance\n- **A1:**\n- A2: Second.\n"),
+                         [("A1", ""), ("A2", "Second.")])
 
 
 class PhaseRecordTests(unittest.TestCase):
@@ -24,11 +52,88 @@ class PhaseRecordTests(unittest.TestCase):
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
 
+    def test_phase_loading_accepts_bold_ids_and_rejects_styled_duplicates(self):
+        f = self.fixture
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        for styled in ("**A1**:", "**A1:**"):
+            with self.subTest(styled=styled):
+                styled_body = body.replace("A1:", styled)
+                f.record(context_path.relative_to(f.checkout), metadata, styled_body)
+                self.assertEqual(load_phase(f.checkout, "01", ready=True).acceptance, ["A1"])
+                duplicate_body = styled_body.replace(styled, "A1: Duplicate.\n- " + styled, 1)
+                f.record(context_path.relative_to(f.checkout), metadata, duplicate_body)
+                with self.assertRaisesRegex(PhaseError, "Duplicate acceptance identifiers"):
+                    load_phase(f.checkout, "01", ready=True)
+
+    def test_approval_alone_cannot_bypass_discussion(self):
+        f = self.fixture
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        for state in (None, "pending"):
+            with self.subTest(discussion=state):
+                if state is None:
+                    metadata.pop("discussion", None)
+                else:
+                    metadata["discussion"] = state
+                f.record(context_path.relative_to(f.checkout), metadata, body)
+                self.assertEqual(load_phase(f.checkout, "01").context["approval"], "approved")
+                with self.assertRaisesRegex(PhaseError, "Complete phase discussion"):
+                    load_phase(f.checkout, "01", ready=True)
+
+    def test_completed_discussion_requires_a_nonempty_log(self):
+        f = self.fixture
+        log = f.checkout / fixtures.PHASE_PATH / "01-DISCUSSION-LOG.md"
+        log.unlink()
+        with self.assertRaisesRegex(PhaseError, "nonempty 01-DISCUSSION-LOG.md"):
+            load_phase(f.checkout, "01", ready=True)
+        log.write_text(" \n\t", encoding="utf-8")
+        with self.assertRaisesRegex(PhaseError, "nonempty 01-DISCUSSION-LOG.md"):
+            load_phase(f.checkout, "01", ready=True)
+        log.write_text("# Discussion\n\nThe user chose independent worktrees.\n", encoding="utf-8")
+        self.assertEqual(load_phase(f.checkout, "01", ready=True).context["discussion"], "complete")
+
+    def test_run_and_resume_do_not_dispatch_without_discussion(self):
+        f = self.fixture
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        metadata["discussion"] = "pending"
+        f.record(context_path.relative_to(f.checkout), metadata, body)
+        f.commit("Record unfinished discussion")
+        self.assertIn("pending discussion", f.cli("status", "01").stdout)
+        for command in ("run", "resume"):
+            with self.subTest(command=command):
+                result = f.cli(command, "01", succeeds=False)
+                self.assertIn("Complete phase discussion", result.stderr)
+                self.assertEqual(f.events(), [])
+
+    def test_saved_run_reports_discussion_blocker_without_replaying_workers(self):
+        f = self.fixture
+        f.cli("run", "01")
+        original_events = f.events()
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        for missing in ("marker", "log"):
+            with self.subTest(missing=missing):
+                metadata["discussion"] = "pending" if missing == "marker" else "complete"
+                f.record(context_path.relative_to(f.checkout), metadata, body)
+                if missing == "log":
+                    (f.checkout / fixtures.PHASE_PATH / "01-DISCUSSION-LOG.md").unlink()
+                f.commit("Record missing discussion prerequisite")
+                status = f.cli("status", "01").stdout
+                expected = "Complete phase discussion" if missing == "marker" else "nonempty 01-DISCUSSION-LOG.md"
+                self.assertIn(expected, status)
+                result = f.cli("resume", "01", "--workers-stopped", succeeds=False)
+                self.assertIn(expected, result.stderr)
+                self.assertEqual(f.events(), original_events)
+
     def test_new_phase_stays_pending_and_allocates_across_worktrees(self):
         f = self.fixture
         f.cli("new", "second", "--title", "Second change")
         context = f.checkout / ".planning/phases/02-second/02-CONTEXT.md"
         self.assertEqual(record(context)[0]["approval"], "pending")
+        self.assertEqual(record(context)[0]["discussion"], "pending")
+        self.assertFalse(context.with_name("02-DISCUSSION-LOG.md").exists())
         self.assertIn("02-CONTEXT.md", (f.checkout / ".planning/ROADMAP.md").read_text(encoding='utf-8'))
         self.assertEqual(f.git(f.checkout, "status", "--porcelain"), "")
         sibling = f.primary / ".worktrees/another"
@@ -48,6 +153,84 @@ class PhaseRecordTests(unittest.TestCase):
         self.assertIn("01-example", (f.checkout / ".planning/STATE.md").read_text(encoding='utf-8'))
         f.assert_primary_untouched()
 
+    def test_sync_preserves_notes_appended_after_first_sync_and_refreshes_evidence(self):
+        f = self.fixture
+        f.cli("sync")
+        path = f.checkout / ".planning/STATE.md"
+        original = path.read_bytes()
+        authored = ("\nCoordinator note: retain customer decision.\n"
+                    "# Session Continuity\nResume the migration at customer 42.\n"
+                    "## Deferred Items\nRetain the deferred import.\n").encode("utf-8")
+        path.write_bytes(original + authored)
+        f.context(approval="pending")
+        f.commit("Record authored continuation and change phase evidence")
+        before = f.git(f.checkout, "rev-parse", "HEAD")
+        f.cli("sync")
+        updated = path.read_bytes()
+        self.assertTrue(updated.endswith(authored))
+        self.assertTrue(updated.startswith(original.split(b"<!-- phase-runtime-status:start -->")[0]))
+        self.assertIn(b"| 01-example | pending approval |", updated)
+        self.assertNotIn(b"| 01-example | approved |", updated)
+        self.assertEqual(f.git(f.checkout, "diff", "--name-only", before, "HEAD"), ".planning/STATE.md")
+        refreshed = f.git(f.checkout, "rev-parse", "HEAD")
+        f.cli("sync")
+        self.assertEqual(path.read_bytes(), updated)
+        self.assertEqual(f.git(f.checkout, "rev-parse", "HEAD"), refreshed)
+        f.assert_primary_untouched()
+
+    def test_sync_migrates_legacy_table_without_consuming_authored_suffix(self):
+        f = self.fixture
+        path = f.checkout / ".planning/STATE.md"
+        prefix = "# State\r\n\r\nPreserve identity and spacing.  \r\n\r\n"
+        legacy = ("## Runtime Status\r\n\r\n| Phase | Evidence | Next action |\r\n"
+                  "|---|---|---|\r\n<!-- Last PR observation: https://example.invalid/pr/1 -->\r\n"
+                  "| 01-example | obsolete evidence | obsolete next action |\r\n")
+        suffix = ("\r\nCoordinator note: preserve this decision.\r\n"
+                  "# Session Continuity\r\nResume at customer 42.\r\n"
+                  "## Deferred Items\r\nPreserve the deferred import.\r\n")
+        path.write_bytes((prefix + legacy + suffix).encode("utf-8"))
+        f.commit("Seed legacy runtime table and authored state")
+        f.cli("sync")
+        updated = path.read_bytes()
+        self.assertTrue(updated.startswith(prefix.encode("utf-8")))
+        self.assertTrue(updated.endswith(suffix.encode("utf-8")))
+        self.assertNotIn(b"obsolete evidence", updated)
+        self.assertNotIn(b"example.invalid/pr/1", updated)
+        self.assertEqual(updated.count(b"<!-- phase-runtime-status:start -->"), 1)
+        f.cli("sync")
+        self.assertEqual(path.read_bytes(), updated)
+        f.assert_primary_untouched()
+
+    def test_sync_rejects_ambiguous_boundaries_without_writes_or_commits(self):
+        f = self.fixture
+        path = f.checkout / ".planning/STATE.md"
+        start = "<!-- phase-runtime-status:start -->\n"
+        end = "<!-- phase-runtime-status:end -->\n"
+        section = "## Runtime Status\n\n| Phase | Evidence | Next action |\n|---|---|---|\n| None | No phases yet | Define intent |\n"
+        cases = {
+            "missing end": start + section,
+            "missing start": section + end,
+            "duplicate start": start + start + section + end,
+            "duplicate end": start + section + end + end,
+            "reversed markers": end + section + start,
+            "malformed marker": start.replace(" -->", "-->") + section + end,
+            "duplicate legacy headings": section + section,
+            "unknown legacy content": "## Runtime Status\n\nAuthored prose must survive.\n",
+            "unknown legacy table row": section + "| customer decision | preserve | always |\n",
+        }
+        for name, body in cases.items():
+            with self.subTest(name=name):
+                original = ("# State\n\n" + body + "\nCustomer decision: retain all records.\n").encode("utf-8")
+                path.write_bytes(original)
+                f.commit("Seed ambiguous state: " + name)
+                before = f.git(f.checkout, "rev-parse", "HEAD")
+                result = f.cli("sync", succeeds=False)
+                self.assertIn("Runtime Status", result.stderr)
+                self.assertEqual(path.read_bytes(), original)
+                self.assertEqual(f.git(f.checkout, "rev-parse", "HEAD"), before)
+                self.assertEqual(f.git(f.checkout, "status", "--porcelain"), "")
+        f.assert_primary_untouched()
+
     def test_full_upstream_outputs_execute_verify_uat_and_preserve_authored_state(self):
         f = self.fixture
         f.prepare_remote()
@@ -59,7 +242,7 @@ class PhaseRecordTests(unittest.TestCase):
         context_body = context_body.replace("[X]", "01").replace("[Name]", "Example")
         context_body = context_body.replace("[Clear statement of what this phase delivers — the scope anchor. This comes from ROADMAP.md and is fixed. Discussion clarifies implementation within this boundary.]", "Deliver integrated fixture output.")
         f.record(fixtures.PHASE_PATH / "01-CONTEXT.md", context_data,
-                 context_body + "\n## Acceptance\n\n- [ ] A1: Assigned output works.\n\n## Authorization\n\nUser requested fixture execution and testing.\n")
+                 context_body + "\n## Acceptance\n\n- [ ] **A1:** Assigned output works.\n\n## Authorization\n\nUser requested fixture execution and testing.\n")
         plan_path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
         plan_data, _ = record(plan_path)
         plan = file_template(f.checkout, "phase-prompt.md")

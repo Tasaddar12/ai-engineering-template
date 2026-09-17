@@ -61,7 +61,7 @@ their applicable structure; an unavailable upstream health command is not a chec
 |---|---|---|
 | [spec.md](../templates/spec.md) | `NN-SPEC.md`: locked desired requirements, boundaries, edge and negative coverage | Specification discussion → discuss/planner/verifier |
 | [context.md](../templates/context.md) | `NN-CONTEXT.md`: implementation choices and applicable context | Discussion coordinator → researcher/planner; local authorization additions feed runner |
-| [discussion-log.md](../templates/discussion-log.md) | `NN-DISCUSSION-LOG.md`: discussion audit trail | Discussion recorder → human audit; excluded from routine worker required reading |
+| [discussion-log.md](../templates/discussion-log.md) | `NN-DISCUSSION-LOG.md`: required discussion audit trail | Discussion coordinator → human audit; excluded from routine worker required reading |
 | [research.md](../templates/research.md) | `NN-RESEARCH.md`: relevant ecosystem research | Phase researcher → planner and implementation workers |
 | [phase-prompt.md](../templates/phase-prompt.md) | `NN-CC-PLAN.md`: executable task instructions | Planner → checker, scheduler and assigned worker |
 | [planner-subagent-prompt.md](../templates/planner-subagent-prompt.md) | Context envelope for a fresh planning agent | Coordinator → planner; planning expertise resides in the referenced agent guidance |
