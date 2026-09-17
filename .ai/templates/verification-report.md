@@ -200,13 +200,13 @@ None — all verifiable items checked programmatically.
 
 **Severity levels:**
 - 🛑 Blocker: Prevents goal achievement, must fix
-- ⚠️ Warning: Indicates incomplete but doesn't block
+- ⚠️ Warning: Insufficient evidence or an advisory concern; classify observed missing required behavior as Blocker.
 - ℹ️ Info: Notable but not problematic
 
-**Fix plan generation:**
-- Only generate if gaps_found
+**Fix-plan handoff:**
+- When `status: gaps_found`, return gap evidence to the coordinator for correction planning; the verifier does not author PLANs.
 - Group related fixes into single plans
-- Keep to 2-3 tasks per plan
+- Use 2-3 tasks as a sizing target; enforce `execution.max_tasks_per_component` when set.
 - Include verification task in each plan
 
 ---

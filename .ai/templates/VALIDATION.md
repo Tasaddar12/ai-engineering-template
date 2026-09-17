@@ -1,8 +1,8 @@
 ---
 phase: "{N}"
 slug: "{phase-slug}"
-# status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
-# audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false)
+# Retain status: draft until independent preparation checking completes; then set status: validated.
+# Set nyquist_compliant: true only when the other Validation Sign-Off checks pass; otherwise retain false.
 status: draft
 nyquist_compliant: false
 wave_0_complete: false
@@ -69,7 +69,7 @@ created: "{date}"
 ## Validation Sign-Off
 
 - [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
+- [ ] Sampling continuity: at least 2 automated verifications in every consecutive 3-task window within a wave
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < {N}s

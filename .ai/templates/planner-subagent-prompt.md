@@ -27,7 +27,7 @@ Template for spawning planner agent. The agent contains all planning expertise -
 **Research (if exists):**
 @.planning/phases/{phase_dir}/{phase_num}-RESEARCH.md
 
-**Gap Closure (if --gaps mode):**
+**Gap Closure (when Mode is gap_closure):**
 @.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md
 @.planning/phases/{phase_dir}/{phase_num}-UAT.md
 
@@ -62,17 +62,19 @@ Before returning PLANNING COMPLETE:
 | `{phase_number}` | From roadmap/arguments | `5` or `2.1` |
 | `{phase_dir}` | Phase directory name | `05-user-profiles` |
 | `{phase}` | Phase prefix | `05` |
-| `{standard \| gap_closure}` | Mode flag | `standard` |
+| `{standard \| gap_closure}` | Coordinator-assigned planning mode | `standard` |
 
 ---
 
 ## Usage
 
+The `Task(...)` examples are host pseudocode. Use the available host dispatcher with the installed `phase-preparer` role; they are not Python runtime commands.
+
 **From phase-prepare (standard mode):**
 ```python
 Task(
   prompt=filled_template,
-  subagent_type="planner",
+  subagent_type="phase-preparer",
   description="Plan Phase {phase}"
 )
 ```
@@ -81,7 +83,7 @@ Task(
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure
-  subagent_type="planner",
+  subagent_type="phase-preparer",
   description="Plan gaps for Phase {phase}"
 )
 ```

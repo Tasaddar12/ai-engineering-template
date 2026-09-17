@@ -589,7 +589,7 @@ function useVehicleControls(rigidBodyRef) {
 **After creation:**
 - File lives in phase directory: `.planning/phases/XX-name/{phase_num}-RESEARCH.md`
 - Referenced during planning workflow
-- plan-phase loads it automatically when present
+- The preparer reads existing phase RESEARCH and carries applicable findings into PLAN; do not assume automatic loading.
 
 
 <!-- LOCAL-ADOPTION:START -->

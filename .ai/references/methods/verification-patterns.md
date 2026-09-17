@@ -624,7 +624,7 @@ For automation-first checkpoint patterns, server lifecycle management, CLI insta
 
 Key principles:
 - Claude sets up verification environment BEFORE presenting checkpoints
-- Users never run CLI commands (visit URLs only)
+- Run setup commands with available authorized tools; ask users to run commands only for product checks or authentication requiring their session.
 - Server lifecycle: start before checkpoint, handle port conflicts, keep running for duration
 - CLI installation: use existing project tooling; perform setup only within the assigned ownership and authorization, otherwise report the missing capability
 - Error handling: fix broken environment before checkpoint, never present checkpoint with failed setup

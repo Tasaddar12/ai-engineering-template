@@ -64,7 +64,7 @@ blocked: [N]
 
 ## Gaps
 
-<!-- YAML format for plan-phase --gaps consumption -->
+<!-- YAML evidence for phase-prepare assignments with mode: gap_closure -->
 - truth: "[expected behavior from test]"
   status: failed
   reason: "User reported: [verbatim response]"

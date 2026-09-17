@@ -793,7 +793,7 @@ documentation; none is required just to read this workflow method.
 </task>
 ```
 
-**Why bad:** the agent can run these commands. User should never execute CLI commands.
+**Why bad:** Run setup commands with available authorized tools. Ask the user to run commands only for product checks or authentication that require their own session.
 
 ### ❌ BAD: Asking user to copy values between services
 
