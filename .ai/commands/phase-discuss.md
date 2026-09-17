@@ -5,9 +5,40 @@ approval only from an explicit user instruction to implement this phase; follow
 [phase authority](../RULES.md#phase-authority).
 
 Read [RULES](../RULES.md), selected CONTEXT, project constraints and relevant
-requirements. Inspect nearby code enough to ask informed questions. Create
+requirements. Use the source-search order below before asking implementation
+questions. Create
 `NN-DISCUSSION-LOG.md` from the discussion-log template at the first exchange;
 append each later exchange rather than replacing earlier history.
+
+## Phase selection and focused source search
+
+1. Resolve the requested phase number or name to exactly one directory under
+   `.planning/phases/`. List matching CONTEXT filenames; do not read every phase
+   body to find the target. If no phase matches or several match, report the
+   matches and ask which phase the user means; do not guess or create a phase.
+2. Read the selected CONTEXT's Canonical References and Existing Code Insights
+   first, then relevant supplied codebase maps. Confirm the named paths exist
+   and the cited symbols and relationships still match current source. Treat
+   missing paths, stale maps and unverified relationships as investigation leads.
+3. Use `rg` within those exact files or directories first; use the host's Grep
+   tool if `rg` is unavailable. Take search terms from the discussed behavior,
+   entry point or symbols. Read the matching definitions
+   and follow their imports, callers, state boundaries and relevant tests. A
+   search hit alone is not evidence that the behavior runs.
+4. If no useful source paths are recorded, start with filename/path discovery
+   and the nearest relevant entry point. Use the `codebase-recon` skill when the
+   entry point or affected flow remains unclear; scope it to that question.
+   Broaden each content search only to answer a named unresolved question, and
+   state that question and the next directory or dependency being inspected.
+   Do not begin with repository-wide content dumps or load every codebase map.
+5. Record confirmed repository-relative paths, relevant symbols, their purpose
+   and the inspected revision under the existing CONTEXT code-insight categories.
+   Record uncommitted source changes when they affect a finding. Replace stale
+   entries after checking their replacements; do not maintain a separate index.
+6. Reuse unchanged material already read in this session. Check whether its files
+   changed after edits, integration or a checkout change; reopen affected sources
+   and their relevant consumers. Reopen additional sections when a new question
+   requires them. Never omit required core instructions or evidence to save tokens.
 
 ## Recommendations and questions
 
