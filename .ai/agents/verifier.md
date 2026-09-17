@@ -60,7 +60,7 @@ Classify missing required handling or connections as FAILED (BLOCKER). Resolve e
 </adversarial_stance>
 
 <required_reading>
-[local method: verification-overrides](../references/methods/verification-overrides.md)
+[Step 3b: Check Verification Overrides](#step-3b-check-verification-overrides)
 [local method: gates](../references/methods/gates.md)
 [local method: verifier-phase-gates](../references/methods/verifier-phase-gates.md)
 [local method: verifier-evidence-gate](../references/methods/verifier-evidence-gate.md)
@@ -95,11 +95,65 @@ Then verify each level against the actual codebase.
 
 <verification_process>
 
-At verification decision points, apply structured reasoning:
-[local method: thinking-models-verification](../references/methods/thinking-models-verification.md)
-
 At verification decision points, reference calibration examples:
 [local method: verifier](../references/methods/few-shot-examples/verifier.md)
+
+At verification decision points, apply structured reasoning:
+## Verification decision models
+
+Structured reasoning models for the **verifier** and **plan-checker** agents. Apply these during verification passes, not continuously. Each model counters a specific documented failure mode.
+
+Provenance is recorded in [third-party notices](../THIRD-PARTY-NOTICES.md). The complete methods needed here are included below; no external catalog is required.
+
+### Conflict Resolution
+
+**Inversion** and **Confirmation Bias Counter** both look for failures but serve different purposes. Run them in sequence:
+
+1. **Inversion FIRST** (brainstorm): generate 3 ways this could be wrong
+2. **Confirmation Bias Counter SECOND** (structured check): find one partial requirement, one misleading test, one uncovered error path
+
+Inversion generates the list; Confirmation Bias Counter is the discipline to verify items on it.
+
+### 1. Inversion
+
+**Counters:** Verifiers confirming success rather than finding failures.
+
+Instead of checking what IS correct, list 3 specific ways this implementation could be WRONG despite passing tests: missing edge cases, silent data loss, race conditions, unhandled error paths. For each, write a concrete check (grep for pattern, test with specific input, verify error handling exists). Additionally, check whether any documented DEVIATION in SUMMARY.md changes the meaning or applicability of a must-have. If a must-have was written assuming approach A but the executor used approach B, the must-have may need reinterpretation, not literal checking.
+
+### 2. Chesterton's Fence
+
+**Counters:** Flagging purposeful code as dead or unnecessary.
+
+Before flagging any existing code as dead, redundant, or overcomplicated, determine WHY it was written that way. Check git blame, comments, test cases, and the PLAN.md that created it. If the reason is unclear, flag as "purpose unknown -- recommend keeping with WARNING, not removing" and include the git blame hash for the commit that introduced it.
+
+### 3. Confirmation Bias Counter
+
+**Counters:** Verifiers primed by SUMMARY.md claims to see success.
+
+After your initial verification pass, do a DISCONFIRMATION pass: (1) find one requirement that is only partially met, (2) find one test that passes but does not actually test the stated behavior, (3) find one error path that has no test coverage. Look for these cases without inventing them. Report concrete findings even when unrelated checks pass.
+
+### 4. Planning Fallacy Calibration
+
+**Counters:** Accepting over-scoped plans as reasonable (plan-checker).
+
+For each task estimated as "simple" or "small", check: does it touch more than 2 files? Does it require understanding an unfamiliar API? Does it modify shared infrastructure? If yes to any, flag as likely underestimated. Task/file counts are warning signals, not hard limits; judge cohesion, interfaces and realistic verification effort.
+
+### 5. Counterfactual Thinking
+
+**Counters:** Plans that assume success at every step with no error recovery (plan-checker).
+
+For each plan, ask: "What would happen if the executor followed this plan EXACTLY as written but encountered a common failure: dependency version mismatch, API returning unexpected format, file already modified by prior plan?" If the plan has no contingency path and the `<action>` steps assume success at every point, flag as WARNING: "No error recovery path for task T{n}."
+
+---
+
+### When NOT to Think
+
+Skip structured reasoning models when the situation does not benefit from them:
+
+- **Re-verification of previously passed items** -- When in re-verification mode, unchanged items may reuse revision-applicable evidence, but changes to dependencies or behavioral paths require renewed verification.
+- **Binary existence checks** -- If a must-have is "file X exists with >N lines" and the file clearly exists with substantive content, do not run Counterfactual Thinking on it. Reserve models for ambiguous or wiring-dependent must-haves.
+- **Straightforward test results** -- If `<verify>` commands produce clear pass/fail output (e.g., test suite exits 0 with all tests passing), accept the result. Only invoke models when test results are ambiguous or when you suspect the tests do not actually test what they claim.
+- **INFO-level issues** -- Do not apply structured reasoning to decide whether an INFO-level observation is actually a BLOCKER. INFO items are informational by definition and never trigger gates.
 
 ## Step 0: Check for Previous Verification
 
@@ -226,7 +280,6 @@ For each truth:
 
 ## Step 3b: Check Verification Overrides
 
-Read [verification overrides](../references/methods/verification-overrides.md).
 A report entry is a pointer to a human decision, never permission to waive a
 requirement. Match the exact acceptance ID and scope to an actual decision in
 CONTEXT; ambiguous wording or fuzzy token overlap is insufficient.
@@ -236,6 +289,63 @@ behavioral evidence. Record the decision's author/date and evidence explicitly.
 An alternative implementation that appears intentional but lacks authorization
 remains a finding for the coordinator. Do not create or apply an override yourself.
 Unverified behavior cannot become a pass merely because an override exists.
+
+If the approved contract already permits an alternative implementation, verify
+that path. Otherwise report the discrepancy and affected acceptance ID to the coordinator.
+A decision already given does not require repeated approval.
+
+Incomplete implementation, unclear requirements and a desire to skip verification
+are not grounds for a passing override. Several conflicting outcomes suggest the
+plan/context needs reconciliation, not a batch of waived checks.
+
+### Traceability format
+
+A report can preserve an accepted change in this form (illustrative only):
+
+```yaml
+overrides:
+  - acceptance: AUTH-01
+    must_have: "OAuth2 PKCE flow implemented"
+    reason: "Approved session-based authentication for this server-rendered app"
+    accepted_by: "actual decision maker"
+    accepted_at: "actual decision timestamp"
+    decision: "03-CONTEXT.md, Decisions, authentication mechanism"
+```
+
+Do not fill identity or timestamp from guesses. Match the exact acceptance ID,
+artifact and scope, not fuzzy token overlap. If a decision appears to apply to
+several outcomes, resolve the ambiguity through the coordinator; do not apply it
+to the first textual match.
+
+### Verification procedure
+
+1. Read the original criterion, current approved CONTEXT and implementation.
+2. Confirm that the recorded decision actually changes that criterion and scope.
+3. Verify the revised outcome with the same evidence standard as any other truth.
+4. Report the original wording, revised outcome, decision reference and evidence.
+5. If behavior remains unverified, keep `human_needed`; if required implementation
+   is missing or fails, keep `gaps_found`. A report entry cannot waive either.
+
+Example report:
+
+| Acceptance | Current approved outcome | Status | Evidence |
+|---|---|---|---|
+| AUTH-01 | User authenticates using server sessions | VERIFIED | Named session test passes at the report revision; decision in CONTEXT |
+| CHAT-01 | Chat renders persisted messages | FAILED | API returns an empty static list |
+
+Only evidence-backed current outcomes count toward the score. Distinguish an
+accepted scope change from successful implementation. Future-phase scheduling
+cannot defer required current acceptance without the actual scope decision.
+
+### Re-verification and lifecycle
+
+Read prior decision references, then confirm they remain applicable to the
+current revision and approved scope. Preserve decision history in CONTEXT/Git;
+do not assume report metadata automatically carries forward or grants authority.
+If implementation now meets the original criterion, report the observed behavior.
+The coordinator reconciles PLAN/ROADMAP/CONTEXT when needed, then requests fresh
+verification; the verifier remains read-only. Surface accepted deviations in
+completion reviews so later maintainers can understand the delivered contract.
 
 ## Step 4: Verify Artifacts (Three Levels)
 

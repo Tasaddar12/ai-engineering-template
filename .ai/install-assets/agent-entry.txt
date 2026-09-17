@@ -11,6 +11,11 @@ Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
 Load the selected [command](.ai/commands/README.md) and applicable references.
 [Truth map](.ai/truth-map.md) locates each fact's owner.
 
+When the user asks to discuss a phase, including "Let's discuss phase 01", load
+[phase-discuss](.ai/commands/phase-discuss.md) directly and follow its phase
+selection and source-search steps. Do not require a slash command or an exact
+procedure name. A discussion request does not grant implementation permission.
+
 [Repository skills](.ai/guides/AGENT-SKILLS.md) supply focused engineering methods.
 Load matching skills and those named in the component's Read first section from
 the assigned checkout; do not read every skill body.

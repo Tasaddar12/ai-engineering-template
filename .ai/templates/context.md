@@ -4,6 +4,10 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 
 **Purpose:** Document decisions that downstream agents need. Researcher uses this to know WHAT to investigate. Planner uses this to know WHAT choices are locked vs flexible.
 
+**Discussion gate:** Discuss every phase with the user and maintain its required
+discussion log. Set frontmatter `discussion: complete` only after recording the
+actual discussion for the current scope; phase creation does not satisfy it.
+
 **Implementation gate:** NEVER implement a phase unless the user explicitly
 tells you to implement it. Record that instruction in Authorization using the
 [runtime contract](../runtime/TEMPLATE-CONTRACT.md). Planning decisions and a
@@ -364,7 +368,7 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/references/template-adaptation.md` for local conflict decisions,
+boundary, `.ai/runtime/README.md` (Template runtime behavior) for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with

@@ -48,3 +48,16 @@ python -m unittest discover -s tests -p test_install.py -k registered_hooks -v
 The tests exercise JSON/stdin behavior, real Git worktrees, host registrations,
 patch paths and direct Bash launchers. They do not establish trusted live host
 execution.
+
+## Future hook work
+
+These are planned improvements, not implemented or enabled hooks.
+
+- **Pre-commit linting:** Run the project's configured linter before a Git commit
+  and block the commit when linting fails.
+- **Context-triggered handoff:** At 100,000 context tokens or 50% of the context
+  window, whichever is reached first, require the current subagent to save a
+  handoff and stop taking new work. Preserve its revision, completed work,
+  remaining tasks and evidence. Have the coordinator confirm the old worker has
+  stopped before assigning the remaining work to a fresh subagent. Use actual
+  host-reported context occupancy; cumulative token usage is not a substitute.

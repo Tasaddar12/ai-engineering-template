@@ -5,6 +5,11 @@ this phase, recorded with its scope in CONTEXT Authorization. NEVER infer it fro
 phase creation, plan approval or readiness. Earlier explicit authorization still
 applies to its stated scope; follow [phase authority](../RULES.md#phase-authority).
 
+Require CONTEXT frontmatter `discussion: complete` and a nonempty
+`NN-DISCUSSION-LOG.md` before starting any implementation worker, including native
+host dispatch. If either is absent, complete [discussion](phase-discuss.md) first;
+do not mark it complete merely to pass the gate.
+
 Read [RULES](../RULES.md) and verify the assigned integration worktree. Inputs
 must be committed, the tree clean, relevant decisions resolved and execution
 authorized. Follow [phase-prepare](phase-prepare.md) for incomplete instructions.
@@ -74,7 +79,7 @@ The [coder](../agents/coder.md) method explains task execution, deviations,
 checkpoints and result writing. Documentation components use the
 [doc-writer](../agents/doc-writer.md)
 method to author claims against integrated evidence. Use the selected role with
-[local adaptation](../references/template-adaptation.md), the assigned PLAN, and the
+[local adaptation](../references/agent-adaptation.md), the assigned PLAN, and the
 full [summary template](../templates/summary.md). Preserve task completion evidence,
 actual changes, decisions, dependency effects, issues and remaining work. Add
 [runtime result fields](../runtime/TEMPLATE-CONTRACT.md); a blocked task cannot

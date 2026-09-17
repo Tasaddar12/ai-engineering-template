@@ -4,7 +4,7 @@ Use to review feedback quality when the phase has a Validation Architecture in
 its research or an explicitly assigned VALIDATION artifact. The Python runtime
 has no nyquist feature switch and does not enforce this entire review method.
 If neither applies, mark this detailed dimension not applicable; still inspect
-required PLAN checks under the local contract. See [failing-direction](failing-direction.md).
+required PLAN checks under the local contract. See [failing-direction](../../agents/phase-checker.md#check-8f-stated-failing-direction).
 
 ## Check 8e — VALIDATION.md Existence (Gate)
 

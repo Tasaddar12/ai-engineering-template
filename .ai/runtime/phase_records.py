@@ -208,6 +208,14 @@ class Phase:
         return digest.hexdigest()
 
 
+def require_discussion(phase):
+    require(phase.context.get("discussion", "pending") == "complete",
+            "Complete phase discussion and set CONTEXT discussion: complete before execution")
+    path = phase.artifact("DISCUSSION-LOG")
+    require(path.is_file() and bool(path.read_text(encoding="utf-8-sig").strip()),
+            "Record the actual phase discussion in a nonempty " + path.name + " before execution")
+
+
 def planning_boundary(root):
     """Fail explicitly instead of hiding project data or incompatible old attempts."""
     legacy = [str(p.relative_to(root)) for name in
@@ -232,6 +240,8 @@ def load_phase(root, name, ready=False):
     context, body = record(directory / f"{number}-CONTEXT.md")
     require(str(context.get("phase")) == number, "CONTEXT phase must match its folder number (quote it in YAML)")
     require(context.get("approval") in ("pending", "approved"), "CONTEXT approval must be pending or approved")
+    require(context.get("discussion", "pending") in ("pending", "complete"),
+            "CONTEXT discussion must be pending or complete")
     require(isinstance(context.get("uat", False), bool), "CONTEXT uat must be true or false")
     deps = string_list(context.get("depends_on", []), "phase depends_on")
     for dep in deps:
@@ -333,8 +343,10 @@ def load_phase(root, name, ready=False):
 
     for cid in components:
         visit(cid)
+    phase = Phase(root, directory, number, context, body, components, config, acceptance)
     if ready:
         require(context["approval"] == "approved", "Phase needs recorded human approval before execution")
+        require_discussion(phase)
         require(bool(section(body, "Authorization")) and "CHANGEME" not in section(body, "Authorization"),
                 "Record the actual human authorization in CONTEXT")
         require(bool(phase_goal(body)) and bool(acceptance) and "CHANGEME" not in section(body, "Acceptance"), "CONTEXT needs a goal and identified acceptance outcomes")
@@ -349,4 +361,4 @@ def load_phase(root, name, ready=False):
             key = "documentor_command" if kind == "documentation" and execution.get("documentor_command") else "worker_command"
             commands([execution.get(key)], f"execution.{key}", required=True)
         commands([execution.get("verifier_command")], "execution.verifier_command", required=True)
-    return Phase(root, directory, number, context, body, components, config, acceptance)
+    return phase

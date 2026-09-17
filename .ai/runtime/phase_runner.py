@@ -17,7 +17,7 @@ import uuid
 import yaml
 
 from phase_records import (PhaseError, acceptance_outcomes, commands, git, load_phase, overlaps, owns,
-                           read_yaml, record, require, safe_path, section, string_list, file_template, phase_goal,
+                           read_yaml, record, require, require_discussion, safe_path, section, string_list, file_template, phase_goal,
                            WORKFLOW_ROOT, ROLE_ROOT, SKILL_ROOT, AGENT_ENTRY, BRANCH_PREFIX)
 
 
@@ -635,6 +635,7 @@ def check_phase_dependencies(phase):
 
 
 def run_phase(phase, *, resume=False, workers_stopped=False, replan=False):
+    require_discussion(phase)
     assigned(phase.root)
     clean(phase.root)
     check_phase_dependencies(phase)
@@ -1178,6 +1179,12 @@ def status_text(root, name=None, remote=False):
                 lines.append(f"<!-- Last PR observation: {publication['url']} -->")
         if git(root, "status", "--porcelain", "--untracked-files=all"):
             stage, next_action = "uncommitted changes", "Commit/reconcile changes before reusing phase evidence"
+        try:
+            require_discussion(phase)
+        except PhaseError as error:
+            if not state and not phase.artifact("VERIFICATION").is_file() and stage != "uncommitted changes":
+                stage = "pending discussion"
+            next_action = str(error)
         lines.append(f"| {phase.directory.name} | {stage} | {next_action} |")
     if not directories:
         lines.append("| None | No phases yet | Define project intent, then create a phase |")
@@ -1228,7 +1235,7 @@ def new_phase(root, slug, title):
     body += ("\n## Acceptance\n\n- [ ] A1: CHANGEME — define an observable outcome.\n\n"
              "## Authorization\n\nCHANGEME: record the user's actual authorization.\n\n"
              "## Open Questions\n\nDefine scope, acceptance, and required decisions before dispatch.\n")
-    write_record(context, {"phase": number, "approval": "pending", "depends_on": [], "uat": False}, body)
+    write_record(context, {"phase": number, "approval": "pending", "discussion": "pending", "depends_on": [], "uat": False}, body)
     roadmap = root / ".planning/ROADMAP.md"
     existing = roadmap.read_text(encoding="utf-8") if roadmap.exists() else "# Roadmap\n"
     roadmap.write_text(existing.rstrip() + f"\n\n- [{number}: {title}](phases/{directory.name}/{context.name}) - pending discussion.\n", encoding="utf-8")

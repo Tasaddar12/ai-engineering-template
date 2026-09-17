@@ -40,7 +40,7 @@ each other, and changing a role name does not create a new CLI subcommand.
 
 ## Local methods and operations
 
-Supporting instructions are bundled under [methods](methods/README.md). Read
+The [method catalog](../agents/README.md#supporting-methods) locates supporting instructions. Read
 only the methods relevant to the assignment. They are ordinary local documents,
 not installed tools or additional runtime commands. Attribution records identify
 their sources; fetching those sources is not a prerequisite for using the workflow.

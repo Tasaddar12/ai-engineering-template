@@ -2,7 +2,9 @@
 
 Before restarting implementation workers, confirm that the user explicitly
 authorized implementation of this phase and has not withdrawn that instruction.
-A saved attempt or continuation note cannot grant permission; follow
+Require CONTEXT `discussion: complete` and its nonempty discussion log before
+restarting workers. Preserve stopped work while reconciling missing discussion;
+never fabricate a prior exchange. A saved attempt or continuation note cannot grant permission; follow
 [phase authority](../RULES.md#phase-authority).
 
 Read [RULES](../RULES.md) and inspect status before taking action. Use the

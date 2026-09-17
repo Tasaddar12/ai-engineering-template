@@ -23,6 +23,13 @@ ROADMAP, the selected CONTEXT and the evidence relevant to the current step.
 NEVER start implementing a phase without the user's explicit instruction to
 implement it. Preparation, design approval, readiness and delivery defaults are
 not that instruction; apply [phase authority](../RULES.md#phase-authority).
+Conduct [phase discussion](../commands/phase-discuss.md) before preparing or
+starting a phase: validate recommendations first, prefer sufficient existing
+solutions, describe choices in plain language, and commit the required log with
+CONTEXT after each exchange. Require `discussion: complete` and a nonempty log
+before native or runtime implementation dispatch; an implementation request cannot
+waive that prerequisite. Bounded research may inform unfinished discussion; it
+does not authorize component PLAN preparation or implementation.
 Before execution, ensure the real human authorization is recorded, open decisions
 are resolved for the executable scope, acceptance is observable, and component
 instructions cover it. Record interface agreements before parallel dispatch.
