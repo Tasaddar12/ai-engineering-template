@@ -80,8 +80,17 @@ integration. Reading its role inside a coder or verifier does not satisfy this
 requirement. The Python runner dispatches this review automatically; when using
 native host agents directly, you must explicitly dispatch it and retain the
 revision-specific report yourself. Never relabel the coder's self-check as review.
-Return actionable findings to a fresh bounded coder assignment, then review the
-corrected revision independently. Other specialists are selected by risk; no worker
+Return blocking findings to the assigned coder, then dispatch a separate reviewer
+for the corrected revision. Reuse a native coder session only for the same component,
+owned paths and acceptance, while it remains below its context and turn limits.
+Otherwise start a fresh coder with the preserved commits and remaining tasks.
+Before phase verification, record each advisory warning in VERIFICATION frontmatter
+`warning_dispositions` using the [required fields](../runtime/TEMPLATE-CONTRACT.md#independent-component-code-review).
+Commit that record before running verification; do not remove prior findings.
+Do not accept or defer demonstrated defects, unmet acceptance or concrete security/data-loss risks.
+Set PLAN frontmatter `review_depth: deep` for changes to security boundaries,
+concurrency, shared mutable state or cross-component contracts; otherwise set
+`review_depth: standard`. Pass that value in native reviewer assignments. Other specialists are selected by risk; no worker
 dispatches its successor or requires the user to issue another command.
 
 Give reviewers exact files, acceptance, source revision and an external result
@@ -96,12 +105,10 @@ specialist result is not passing evidence.
 
 ## Bounded workers
 
-Prepare at most three executable tasks per component (one feature for native TDD).
-Do not hide a phase-sized implementation in one task to satisfy the count. Size
-heavy cross-layer changes as independently reviewable slices with real dependencies.
-Use fresh sessions per component, review and correction. A partial result or turn
-limit requires process/worktree inspection and a smaller continuation assignment;
-do not repeatedly resume the same growing context or restart completed work.
-When the host reports context at 100,000 tokens or 50% of its window, whichever
-is lower, obtain a committed handoff and stop adding work to that session. Missing
-usage telemetry does not waive scope limits. Honor narrower user limits.
+Assign one component per coder with explicit owned paths, acceptance IDs and checks;
+retain one feature per native TDD component. Split tasks with separate outcomes
+or dependency prerequisites into separate components. Do not hide multiple
+components inside one task. Enforce `execution.max_tasks_per_component` when set.
+Start a fresh session for each component and independent review. Apply the
+[context and partial-result procedure](../references/worker-handoff.md#context-and-partial-results)
+at the recorded context threshold or turn limit; do not restart completed work.

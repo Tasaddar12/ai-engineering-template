@@ -53,7 +53,9 @@ out-of-scope output requires reconciliation, not automatic acceptance.
 Verifier attempts retain their process identity, source revision, result path and
 worktree. Reuse requires a stopped process and valid current evidence. Follow
 phase-verify with --workers-stopped when inspection establishes that a fresh
-verification attempt is needed; component resume does not restart a reviewer.
+verification attempt is needed. For component code-review failures, inspect the
+review process and worktree, then run `resume PHASE --workers-stopped`; the runner
+preserves the failed attempt and starts a new reviewer against the same base/head.
 
 ## Context and partial results
 
@@ -61,10 +63,16 @@ Hand off one component, not a whole phase or review-and-repair loop. An author
 performs its implementation checks; independent review belongs to a separate
 fresh reviewer. Do not reuse the same growing author session for another component.
 
-When context pressure or a turn limit prevents completion, preserve safe partial
-commits and report the exact base/head, completed and remaining tasks, dirty files,
-observed checks and missing evidence. A partial return is not a completed SUMMARY.
-The coordinator inspects the stopped process/worktree and prepares a smaller fresh
-assignment using existing evidence; it does not blindly replay completed work or
-keep resuming the same session past its limit. If the host exposes live context,
-request this handoff at 100,000 tokens or half its window, whichever is lower.
+- When host-reported context reaches 100,000 tokens or 50% of its window, whichever
+  is lower, start the handoff immediately. Do not begin another implementation task
+  or repair; finish only the active operation needed to preserve work. Honor a lower user-specified limit.
+- Preserve safe partial commits. Set SUMMARY frontmatter `status: blocked`; record
+  exact base/head, completed and remaining tasks, dirty files, observed command
+  results and missing evidence. Do not fabricate passing checks or completion.
+- If the host does not expose context use, record `Context usage: unavailable` in
+  SUMMARY. Keep the assignment scope and existing turn limits; do not invent telemetry.
+- After a handoff or exhausted turn limit, the coordinator must inspect the stopped
+  process, worktree, commits and SUMMARY before assigning the remaining tasks to a
+  fresh coder. Do not replay completed tasks or resume the exhausted session.
+
+The token threshold is a handoff instruction; the runtime does not measure live context.

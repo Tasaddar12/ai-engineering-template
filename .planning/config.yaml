@@ -2,7 +2,7 @@
 # Intent belongs to PROJECT.md; acceptance belongs to phase CONTEXT.
 execution:
   max_parallel: 3
-  max_tasks_per_component: 3
+  max_tasks_per_component: null  # Set a positive integer to enforce a task-count limit.
   claude_max_turns: 40
   worker_timeout_seconds: 3600
   check_timeout_seconds: 300

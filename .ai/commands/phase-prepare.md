@@ -9,9 +9,12 @@ when that instruction is absent; follow
 Read [RULES](../RULES.md), CONTEXT, relevant current SPECs, research and code.
 Use the [preparer](../agents/phase-preparer.md) for substantial decomposition.
 
-1. Limit each component to at most three executable tasks, or one native TDD
-   feature. Split heavy work into independently reviewable slices; do not hide
-   an entire phase inside one oversized task. Define bounded components using [PLAN](../templates/phase-prompt.md). Each
+1. Assign one component outcome per PLAN and one feature per native TDD PLAN.
+   Split tasks with separate outcomes or dependency prerequisites into separate
+   components; do not hide an entire phase inside one task. Enforce
+   `execution.max_tasks_per_component` when set. Set `review_depth: deep` for code
+   changing security boundaries, concurrency, shared mutable state or cross-component
+   contracts; otherwise set `review_depth: standard`. Define components using [PLAN](../templates/phase-prompt.md). Each
    component must state its outcome, owned paths, dependencies, shared interfaces,
    acceptance IDs, required reads, commands and documentation obligations.
    Select useful [repository skills](../guides/AGENT-SKILLS.md) for the actual

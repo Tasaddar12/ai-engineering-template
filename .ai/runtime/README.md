@@ -235,16 +235,31 @@ read-only sandbox. Custom adapters must handle `kind=code-reviewer`, capture the
 full report at `{result}`, and preserve read-only behavior. This is a separate
 invocation, not the coder reading a review method. Report YAML carries revision,
 diff_base, status and findings.critical/warning counts. Skipped, stale, incomplete
-and non-clean reviews block integration. Saved attempts include process identity,
+and reviews with critical findings block integration. Advisory warnings remain in
+the report; the coordinator commits their disposition in VERIFICATION frontmatter
+`warning_dispositions` before verification. The runner requires those records,
+supplies them and the reports to the verifier, and preserves them in its output. Saved attempts include process identity,
 result path and hash; final verification retains the component review evidence.
 Reviews are serialized with integration; already-running independent coders may
 continue. The final verifier still checks integrated behavior and cross-component
-regressions. Older attempts without review receipts need their original runtime.
+regressions. Run `verify PHASE --workers-stopped` after process inspection to
+review integrated components missing receipts at their recorded base/revision.
+Run `resume PHASE --workers-stopped` to retry failed component reviews on an
+unchanged base/revision; prior attempts remain in `review_history`. Completed
+reports with blocking findings require correction. For an unintegrated component,
+commit the correction on its worker branch, preserving the original commits, then
+resume; the runner archives the prior report and reviews the corrected revision.
+For historical integrated defects, integrate a correction component and run
+`verify PHASE --workers-stopped`; a separate `review_resolution` retains evidence
+for each original finding at the corrected integrated revision. Source changes
+invalidate that resolution evidence.
 
-`execution.max_tasks_per_component` defaults to 3 and accepts 1..3; readiness
-rejects larger auto-task plans. TDD stays bounded to one feature. This task count
-cannot detect a phase hidden in one oversized task; preparation review must also
-assess scope and context. Split large work rather than packing it into one task.
+`execution.max_tasks_per_component` defaults to null (no numeric task cap); set a
+positive integer to reject auto-task plans above that count. TDD retains exactly
+one feature. Require each PLAN to declare one component outcome, owned paths,
+acceptance and checks; split separate outcomes or dependency prerequisites.
+PLAN `review_depth` accepts `standard` (default) or `deep`; set `deep` for security
+boundaries, concurrency, shared mutable state or cross-component contracts.
 
 `execution.claude_max_turns` defaults to 40 and accepts 1..200. The Claude adapter
 passes it as `--max-turns`, denies nested Agent/Task delegation and reports numeric
@@ -254,9 +269,9 @@ Native Claude coder, documentor, reviewer and verifier definitions also set
 An exhausted limit is incomplete work, not completion; inspect and preserve work
 before a smaller fresh continuation. No automatic restart is performed.
 
-Turn limits are not a hard token/context ceiling. When the host exposes live
-context, coordinator/coder guidance requests handoff at 100,000 tokens or half
-the window, whichever is lower. The adapter does not measure peak context; its
-reported token usage is labeled as totals. No peak-context metric is fabricated.
+Turn limits are not a hard token/context ceiling. Follow the
+[context handoff procedure](../references/worker-handoff.md#context-and-partial-results).
+The adapter does not measure peak context; its reported token usage is labeled
+as totals. Do not report those totals as peak context.
 Claude option sources: [CLI reference](https://code.claude.com/docs/en/cli-reference)
 and [native subagent fields](https://code.claude.com/docs/en/sub-agents).

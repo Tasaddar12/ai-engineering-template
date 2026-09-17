@@ -50,8 +50,8 @@ If the prompt contains a `<structural_findings>` block, treat those fallow findi
 - Downgrading findings from BLOCKER to WARNING to avoid seeming harsh
 
 **Required finding classification:** Every finding in REVIEW.md must carry:
-- **BLOCKER** — incorrect behavior, security vulnerability, or data loss risk; must be fixed before this code ships
-- **WARNING** — degrades quality, maintainability, or robustness; should be fixed
+- **BLOCKER** — demonstrated incorrect behavior, unmet acceptance, security vulnerability, or concrete data loss risk. Count it in `findings.critical`; block integration until corrected.
+- **WARNING** — advisory robustness improvements without a demonstrated defect or unmet acceptance. Count it in `findings.warning`; retain the finding for coordinator disposition. Never classify a demonstrated defect as WARNING.
 Findings without a classification are not valid output.
 </adversarial_stance>
 
@@ -228,7 +228,7 @@ grep -n -E "console\.log|debugger;|TODO|FIXME|XXX|HACK" file
 grep -n -E "catch\s*\([^)]*\)\s*\{\s*\}" file
 ```
 
-Record findings with severity: secrets/dangerous=Critical, debug=Info, empty catch=Warning
+Record findings with severity: secrets/dangerous=Critical, debug=Info. Trace each empty catch error path; classify demonstrated defects as Critical and advisory robustness improvements as Warning.
 
 **For depth=standard:**
 For each file:
@@ -265,7 +265,7 @@ For each finding, assign severity:
 - Unsafe deserialization
 - Buffer overflows
 
-**Warning** — Logic errors, unhandled edge cases, missing error handling, code smells that could cause bugs:
+**Critical when demonstrated; Warning only when advisory** — For each case below, trace the input and execution path. Classify a demonstrated defect, unmet acceptance, or concrete security/data-loss risk as Critical; classify a robustness suggestion without that evidence as Warning:
 - Unchecked array access (`.length` or index without validation)
 - Missing error handling in async/await
 - Off-by-one errors in loops
@@ -312,6 +312,8 @@ status: clean | issues_found | skipped
 ---
 ```
 
+Set frontmatter `status: issues_found` when `findings.critical` or `findings.warning` is greater than zero. Set `status: clean` only after completing review with both counts zero; set `status: skipped` when no review is performed.
+
 **3. Body sections (required order):**
 1) `## Structural Findings (fallow)` — only when structural findings were provided; list normalized items first.
 2) `## Narrative Findings (AI reviewer)` — your adversarial findings from direct code review, including any external-reviewer claim you independently verified (`(external: {slug})`, see `load_context` step 5).
@@ -338,11 +340,11 @@ The `files_reviewed_list` field is REQUIRED — it preserves the exact file scop
 
 {If status=clean: "All reviewed files meet quality standards. No issues found."}
 
-{If issues_found, include sections below}
+{Always include Summary, Critical Issues and Warnings. Include Info only when present.}
 
 ## Critical Issues
 
-{If no critical issues, omit this section}
+{If no critical issues, write None. Do not omit this section.}
 
 ### CR-01: {Issue Title}
 
@@ -355,7 +357,7 @@ The `files_reviewed_list` field is REQUIRED — it preserves the exact file scop
 
 ## Warnings
 
-{If no warnings, omit this section}
+{If no warnings, write None. Do not omit this section.}
 
 ### WR-01: {Issue Title}
 

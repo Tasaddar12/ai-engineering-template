@@ -413,13 +413,9 @@ act as its independent code-reviewer, issue review approval or take over phase-w
 verification. Return commits to the coordinator for a fresh code-reviewer.
 
 Do not absorb multiple phases, components or open-ended repair loops into this
-session. If observed context reaches 100,000 tokens or 50% of the available
-window (whichever is lower), prepare a focused handoff before taking another
-large task: preserve safe partial commits, exact revision, completed/remaining
-tasks and missing evidence in the assigned SUMMARY. Return blocked/incomplete;
-never invent a passing check or complete status to avoid a handoff. If the host
-does not expose context use, say so and rely on bounded scope and turn limits.
-This is a handoff trigger, not a claim that the runtime measures live context.
+session. Follow the [context and partial-result procedure](../references/worker-handoff.md#context-and-partial-results).
+Set SUMMARY frontmatter `status: blocked` when handing off unfinished work;
+never invent a passing check or set `status: complete` to avoid a handoff.
 </role_and_context_boundary>
 
 <task_commit_protocol>

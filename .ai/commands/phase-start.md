@@ -52,7 +52,10 @@ SUMMARY. The coordinator audits scope, actual
 commits and required checks before integration. Each code component also receives
 a fresh independent code-reviewer process in a separate read-only checkout at its
 exact commit. The runner saves the diff for reviewers without shell access and
-requires a clean report with no critical/warning findings before integration.
+requires a completed report with `findings.critical: 0` before integration.
+Warnings are advisory. Before verification, commit VERIFICATION frontmatter
+`warning_dispositions` with the [required fields](../runtime/TEMPLATE-CONTRACT.md#independent-component-code-review).
+Never downgrade a blocking defect to a warning.
 Author self-checks cannot satisfy this gate. Native host orchestration must
 explicitly dispatch the same separate role and preserve its evidence. A blocked or invalid result
 remains visible and its checkout is preserved. Status distinguishes worker exit,

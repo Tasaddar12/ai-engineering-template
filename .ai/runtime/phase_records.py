@@ -232,10 +232,13 @@ def load_phase(root, name, ready=False):
     for key, default in (("worker_timeout_seconds", 3600), ("check_timeout_seconds", 300)):
         value = execution.get(key, default)
         require(type(value) is int and 1 <= value <= 86400, f"execution.{key} must be an integer from 1 to 86400")
-    for key, default, maximum in (("max_tasks_per_component", 3, 3), ("claude_max_turns", 40, 200)):
+    for key, default, maximum in (("claude_max_turns", 40, 200),):
         value = execution.get(key, default)
         require(type(value) is int and 1 <= value <= maximum,
                 f"execution.{key} must be an integer from 1 to {maximum}")
+    task_limit = execution.get("max_tasks_per_component")
+    require(task_limit is None or (type(task_limit) is int and task_limit >= 1),
+            "execution.max_tasks_per_component must be null or a positive integer")
     require(isinstance(config.get("verification", {}), dict), "verification must be a mapping")
     require(isinstance(config.get("publication", {}), dict), "publication must be a mapping")
     string_list(config.get("publication", {}).get("required_checks", []), "publication.required_checks")
@@ -260,6 +263,8 @@ def load_phase(root, name, ready=False):
         data["requirements"] = string_list(data.get("requirements", []), f"{cid}.requirements")
         data.setdefault("acceptance", data["requirements"])
         data.setdefault("kind", "code")
+        require(data.get("review_depth", "standard") in ("standard", "deep"),
+                f"{cid}: review_depth must be standard or deep")
         require(data.get("kind") in ("code", "documentation"), f"{cid}: kind must be code or documentation")
         for key in ("depends_on", "files", "resources", "acceptance", "documentation"):
             data[key] = string_list(data.get(key, []), f"{cid}.{key}")
@@ -292,8 +297,8 @@ def load_phase(root, name, ready=False):
                     require(bool(xml_section(content, tag)), f"{cid}: missing <{tag}> instructions")
                 tasks = re.findall(r'<task\s+type=[\'"]auto[\'"][^>]*>(.*?)</task>', content, re.S)
                 require(bool(tasks), f"{cid}: prepare at least one executable auto task")
-                require(len(tasks) <= execution.get("max_tasks_per_component", 3),
-                        f"{cid}: split into bounded components of at most three tasks before dispatch")
+                require(task_limit is None or len(tasks) <= task_limit,
+                        f"{cid}: split into components of at most {task_limit} tasks before dispatch")
                 for task in tasks:
                     for tag in ("name", "files", "read_first", "action", "verify", "done"):
                         require(bool(xml_section(task, tag)), f"{cid}: task missing <{tag}> instructions")

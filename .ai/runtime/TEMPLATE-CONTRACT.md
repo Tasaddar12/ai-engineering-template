@@ -202,14 +202,37 @@ receive the exact base/head, changed paths and a saved diff, including deletions
 The external report preserves the code-reviewer structure and adds exact
 `revision` and `diff_base` fields. `findings.critical` and `findings.warning` are
 nonnegative integer counts. Summary, Critical Issues and Warnings sections are
-required; use None for empty findings. Integration requires `status: clean` and
-zero critical/warning counts, a successful supervisor receipt and an unchanged
+required; write `None` for empty findings. Set `status: issues_found` when either
+critical or warning findings exist. Integration requires `status: clean` or
+`status: issues_found` with `findings.critical: 0`, a successful supervisor receipt and an unchanged
 review checkout. `skipped` never satisfies this gate. Reuse is bound to the exact
 revision, base and report hash. Findings return to a bounded coder correction,
 followed by fresh review. The final phase verifier assesses integrated outcomes
 and includes the saved component review evidence.
 
-Readiness limits ordinary PLANs to three executable tasks by default;
-`execution.max_tasks_per_component` can narrow that to 1 or 2. Native TDD plans
-retain the single-feature contract. These structural limits complement semantic
-scope review; a single task may still be too large and need decomposition.
+Set `execution.max_tasks_per_component` to a positive integer to enforce a task
+count; null leaves the numeric count uncapped. Native TDD PLANs require exactly
+one feature. Set PLAN `review_depth: deep` for security boundaries, concurrency,
+shared mutable state or cross-component contracts; otherwise set `review_depth: standard`.
+Classify demonstrated defects, unmet acceptance and concrete security/data-loss
+risks as critical. Classify advisory robustness improvements without those defects
+as warning. Do not downgrade defects to permit integration.
+
+Before verification, commit VERIFICATION frontmatter `warning_dispositions` as a
+list of mappings with `component`, `revision` (reviewed commit), `finding` (WR-NN),
+`disposition` (`accepted` or `deferred`) and nonempty `reason`. Include exactly one
+matching item per advisory warning in the retained component/resolution reports.
+Set `status: gaps_found` when creating this record before verification; only a
+completed independent verifier can replace it with `status: passed`. The runner
+supplies these decisions and reports to the verifier and preserves the decisions
+in its output. The verifier must report demonstrated defects as gaps regardless
+of the coordinator disposition. Missing decisions block verification.
+
+Retry failed review execution with `resume PHASE --workers-stopped` after process
+and checkout inspection. Corrected worker commits must descend from the reviewed
+revision and retain the same base and PLAN; preserve prior reports in `review_history`.
+Use `verify PHASE --workers-stopped` to capture missing historical reviews. If
+that review finds critical defects, integrate a correction component and repeat
+the command to capture `review_resolution` against the corrected integrated
+revision. The reviewer must name each original critical finding and its resolution
+evidence. Retain the original report; source changes invalidate resolution evidence.

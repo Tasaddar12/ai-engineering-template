@@ -191,7 +191,9 @@ Do not blindly restart an interrupted worker. Inspect its process, worktree,
 commits and result before reconciliation. Preserve incomplete and unmerged work.
 Status is read-only; the coordinator explicitly syncs the derived STATE view.
 Local checkpoints are operational data; durable summaries and reports ship with
-the phase. Old attempts require their compatible original runtime.
+the phase. For integrated components missing review receipts, follow
+[phase-resume](commands/phase-resume.md) to review their recorded base/revision;
+do not mark historical work reviewed without a captured report.
 
 Remove only identified clean merged worktrees when cleanup is authorized. Verify
 absolute targets stay within the intended worktree root. Preserve dirty, unmerged,
