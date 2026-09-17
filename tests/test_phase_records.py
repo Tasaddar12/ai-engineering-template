@@ -15,7 +15,35 @@ import test_phase_runtime as fixtures
 SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE / ".ai/runtime"))
 from phase_runner import validate_summary  # noqa: E402
-from phase_records import PhaseError, git as record_git, overlaps, owns, read_yaml, record, file_template, load_phase  # noqa: E402
+from phase_records import acceptance_outcomes, PhaseError, git as record_git, overlaps, owns, read_yaml, record, file_template, load_phase  # noqa: E402
+
+
+class AcceptanceParsingTests(unittest.TestCase):
+    def test_plain_and_bold_ids_preserve_order_and_outcome_text(self):
+        body = ("## Acceptance\n\n"
+                "- A1: Plain outcome.\n"
+                "- [ ] **AUTH-02**: Outcome with **bold text**.\n"
+                "- [x] **A3:** Checked outcome.\n"
+                "- [X] A4: Another checked outcome.\n"
+                "\n## Other\n- A5: Outside acceptance.\n")
+        self.assertEqual(acceptance_outcomes(body), [
+            ("A1", "Plain outcome."), ("AUTH-02", "Outcome with **bold text**."),
+            ("A3", "Checked outcome."), ("A4", "Another checked outcome.")])
+
+    def test_duplicate_ids_rejected_across_formats(self):
+        for duplicate in ("A1:", "**A1**:", "**A1:**"):
+            with self.subTest(duplicate=duplicate):
+                with self.assertRaisesRegex(PhaseError, "Duplicate acceptance identifiers"):
+                    acceptance_outcomes(f"## Acceptance\n- A1: First.\n- {duplicate} Second.\n")
+
+    def test_unbalanced_bold_is_not_an_identifier(self):
+        for malformed in ("**A1:", "A1**:", "**A1*:"):
+            with self.subTest(malformed=malformed):
+                self.assertEqual(acceptance_outcomes(f"## Acceptance\n- {malformed} Outcome.\n"), [])
+
+    def test_empty_outcome_does_not_consume_next_bullet(self):
+        self.assertEqual(acceptance_outcomes("## Acceptance\n- **A1:**\n- A2: Second.\n"),
+                         [("A1", ""), ("A2", "Second.")])
 
 
 class PhaseRecordTests(unittest.TestCase):
@@ -23,6 +51,20 @@ class PhaseRecordTests(unittest.TestCase):
         self.fixture = fixtures.PhaseRuntimeTests()
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
+
+    def test_phase_loading_accepts_bold_ids_and_rejects_styled_duplicates(self):
+        f = self.fixture
+        context_path = f.checkout / fixtures.PHASE_PATH / "01-CONTEXT.md"
+        metadata, body = record(context_path)
+        for styled in ("**A1**:", "**A1:**"):
+            with self.subTest(styled=styled):
+                styled_body = body.replace("A1:", styled)
+                f.record(context_path.relative_to(f.checkout), metadata, styled_body)
+                self.assertEqual(load_phase(f.checkout, "01", ready=True).acceptance, ["A1"])
+                duplicate_body = styled_body.replace(styled, "A1: Duplicate.\n- " + styled, 1)
+                f.record(context_path.relative_to(f.checkout), metadata, duplicate_body)
+                with self.assertRaisesRegex(PhaseError, "Duplicate acceptance identifiers"):
+                    load_phase(f.checkout, "01", ready=True)
 
     def test_new_phase_stays_pending_and_allocates_across_worktrees(self):
         f = self.fixture
@@ -59,7 +101,7 @@ class PhaseRecordTests(unittest.TestCase):
         context_body = context_body.replace("[X]", "01").replace("[Name]", "Example")
         context_body = context_body.replace("[Clear statement of what this phase delivers — the scope anchor. This comes from ROADMAP.md and is fixed. Discussion clarifies implementation within this boundary.]", "Deliver integrated fixture output.")
         f.record(fixtures.PHASE_PATH / "01-CONTEXT.md", context_data,
-                 context_body + "\n## Acceptance\n\n- [ ] A1: Assigned output works.\n\n## Authorization\n\nUser requested fixture execution and testing.\n")
+                 context_body + "\n## Acceptance\n\n- [ ] **A1:** Assigned output works.\n\n## Authorization\n\nUser requested fixture execution and testing.\n")
         plan_path = f.checkout / fixtures.PHASE_PATH / "01-01-PLAN.md"
         plan_data, _ = record(plan_path)
         plan = file_template(f.checkout, "phase-prompt.md")

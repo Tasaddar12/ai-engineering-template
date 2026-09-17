@@ -79,6 +79,21 @@ def record(path):
     return read_yaml(match[1]), match[2]
 
 
+def acceptance_outcomes(body):
+    """Read ordered acceptance IDs and outcome text, with optional bold IDs."""
+    identifier = r"([A-Z][A-Z0-9_-]*\d+)"
+    pattern = (rf"^[ \t]*-[ \t]+(?:\[[ xX]\][ \t]+)?"
+               rf"(?:{identifier}[ \t]*:|\*\*{identifier}\*\*[ \t]*:|"
+               rf"\*\*{identifier}[ \t]*:\*\*)[ \t]*(.*)$")
+    outcomes = []
+    for match in re.finditer(pattern, section(body, "Acceptance"), re.M):
+        acceptance_id = next(value for value in match.groups()[:3] if value is not None)
+        outcomes.append((acceptance_id, match[4]))
+    ids = [acceptance_id for acceptance_id, _ in outcomes]
+    require(len(ids) == len(set(ids)), "Duplicate acceptance identifiers in CONTEXT")
+    return outcomes
+
+
 def section(body, name):
     match = re.search(rf"(?im)^##\s+{re.escape(name)}\s*$\n?(.*?)(?=^##\s|\Z)", body, re.S | re.M)
     return match[1].strip() if match else ""
@@ -222,8 +237,7 @@ def load_phase(root, name, ready=False):
     for dep in deps:
         require(re.fullmatch(r"\d{2,}-[a-z0-9]+(?:-[a-z0-9]+)*", dep) and dep != directory.name,
                 f"Invalid phase dependency: {dep}")
-    acceptance = re.findall(r"(?m)^\s*-\s+(?:\[[ xX]\]\s+)?([A-Z][A-Z0-9_-]*\d+)\s*:", section(body, "Acceptance"))
-    require(len(acceptance) == len(set(acceptance)), "Duplicate acceptance identifiers in CONTEXT")
+    acceptance = [acceptance_id for acceptance_id, _ in acceptance_outcomes(body)]
     config = read_yaml((root / ".planning/config.yaml").read_text(encoding="utf-8-sig"))
     execution = config.get("execution", {})
     require(isinstance(execution, dict), "execution must be a mapping")

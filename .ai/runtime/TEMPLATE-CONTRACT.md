@@ -33,6 +33,9 @@ Append `## Acceptance` with observable outcomes such as
 Append `## Authorization` with the actual user instruction and its scope/date.
 Keep unresolved choices in `## Open Questions`; dispatch only decided scope.
 Acceptance IDs may be requirement IDs or finer phase criteria with their own IDs.
+Write each outcome as `- A1: text`, `- **A1**: text`, or `- **A1:** text`;
+an optional `[ ]`, `[x]`, or `[X]` checkbox follows the bullet. Keep IDs unique
+across all three formats. PLAN and SUMMARY acceptance lists use the unformatted IDs.
 
 Good authorization quotes or faithfully records the user's explicit instruction
 to implement this phase and its boundary. Keep `approval: pending` for creation,

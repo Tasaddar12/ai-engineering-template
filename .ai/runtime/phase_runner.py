@@ -16,7 +16,7 @@ import uuid
 
 import yaml
 
-from phase_records import (PhaseError, commands, git, load_phase, overlaps, owns,
+from phase_records import (PhaseError, acceptance_outcomes, commands, git, load_phase, overlaps, owns,
                            read_yaml, record, require, safe_path, section, string_list, file_template, phase_goal,
                            WORKFLOW_ROOT, ROLE_ROOT, SKILL_ROOT, AGENT_ENTRY, BRANCH_PREFIX)
 
@@ -994,7 +994,7 @@ def uat_phase(phase, case=None, result=None, note=None):
         "partial" if any(c["result"] != "pending" for c in cases) else "testing")
     template = file_template(phase.root, "UAT.md")
     body = re.sub(r"\A---\n.*?\n---\n", "", template, count=1, flags=re.S) if fresh_session else previous_body
-    acceptance_text = dict(re.findall(r"(?m)^\s*-\s+(?:\[[ xX]\]\s+)?([A-Z][A-Z0-9_-]*\d+)\s*:\s*(.*)$", section(phase.body, "Acceptance")))
+    acceptance_text = dict(acceptance_outcomes(phase.body))
     current = next((c for c in cases if c["result"] != "pass"), None)
     current_text = (f"number: {current['id']}\nname: {current['acceptance']}\nexpected: {acceptance_text[current['acceptance']]}\nawaiting: user response"
                     if current else "[testing complete]")
