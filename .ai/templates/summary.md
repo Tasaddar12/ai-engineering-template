@@ -62,7 +62,7 @@ coverage:
       - kind: unit            # unit | integration | e2e | automated_ui | manual_procedural | other
         ref: "[tests/path.test.ts#test name | playwright:shot.png | command invocation]"
         status: pass          # pass | fail | unknown — from the latest run
-    human_judgment: false     # REQUIRED boolean. false => automated evidence may suffice; never waives required human UAT.
+    human_judgment: false     # REQUIRED boolean. Auto-pass requires nonempty verification with every status pass; required human UAT is never waived.
   - id: D2
     description: "[a deliverable that needs a human to sign off]"
     verification: []
@@ -189,7 +189,7 @@ None - no external service configuration required.
 </frontmatter_guidance>
 
 <coverage_guidance>
-**Purpose:** The `coverage:` block records each deliverable, related requirement and observed verification evidence. The coordinator and verifier inspect it when assessing acceptance and preparing UAT. The local runtime does not provide a coverage-classification command or automatically approve human observations from these fields.
+**Purpose:** The `coverage:` block records each deliverable, related requirement and observed verification evidence. The coordinator and verifier MUST apply the deterministic classification below when assessing acceptance and preparing UAT. They record each classification and its evidence in VERIFICATION. The local runtime does not implement a coverage-classification command; this mandatory review procedure supplies the classification and never invents human observations.
 
 **Field semantics:**
 
@@ -204,11 +204,11 @@ None - no external service configuration required.
 | `human_judgment` | Explicit boolean; REQUIRED. `true` always routes to a human. |
 | `rationale` | REQUIRED when `human_judgment: true`. The audit trail for why automation is insufficient. |
 
-**Evidence interpretation (for coordinator/verifier review):**
-- Automated evidence can support a deliverable **only** when `human_judgment: false` AND `verification` is non-empty AND every `verification[].status` is `pass`. This is the narrow, fully-proven case.
-- **Everything else needs further evidence or an actual human observation, as appropriate** — `human_judgment: true`, an empty `verification:`, any non-`pass`/`unknown` status, or any schema error. A false-negative is a redundant prompt (the status quo); a false-positive ships a bug UAT existed to catch.
-- **Fail-safe default:** if you cannot determine coverage for a deliverable, you MUST set `human_judgment: true` with `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never leave a deliverable's `human_judgment` empty, and never set it `false` just to skip the prompt — record actual verification evidence and preserve every required human observation.
-- An empty or absent `coverage` block supplies no structured deliverable evidence. Inspect the actual Accomplishments and Checks; neither form waives required acceptance or UAT.
+**Deterministic classification contract (coordinator/verifier MUST apply):**
+- A deliverable requires automated evidence to auto-pass (no human prompt). Auto-pass **only** when `human_judgment: false` AND `verification` is non-empty AND every `verification[].status` is `pass`. Inspect each entry's `ref` and actual result at the reviewed revision; a declared pass without evidence is not a pass. Required human UAT remains pending even when automated checks pass.
+- **Everything else is presented to a human** — `human_judgment: true`, empty `verification`, any non-`pass`/`unknown` status, missing evidence, or any schema error. Record the exact failed condition and retain the deliverable as pending or failed. A human response does not waive a required automated check or turn its failure into success.
+- **Fail-safe default:** if coverage cannot be determined, set `human_judgment: true` and `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never omit `human_judgment` or set it `false` to skip a prompt. Auto-pass additionally requires a nonempty `verification` list whose entries all have passing evidence; the flag alone never bypasses the human.
+- `coverage: []` means **"no deliverables to classify"**: ask for one confirmation that no deliverables require classification. If Accomplishments or the implemented work lists a deliverable, report the empty list as a coverage defect and require its entry before completion. OMITTING `coverage` means **legacy**: the coordinator/verifier extracts each deliverable from `## Accomplishments`, matches actual Checks evidence, and applies the same classification. Neither path waives phase acceptance or required UAT.
 </coverage_guidance>
 
 <one_liner_rules>
@@ -308,7 +308,16 @@ The one-liner should tell someone what actually shipped.
 - Extracted to STATE.md accumulated context
 - Use "None - followed plan as specified" if no deviations
 
-**After creation:** Return position, decision and issue evidence to the coordinator for shared-record updates.
+**After creation:** The worker MUST return position, decisions and issues in its
+committed SUMMARY. The coordinator MUST update STATE.md's current position,
+progress, accumulated decisions, blockers and session continuity from integrated
+results. For native orchestration, do this before dispatching the next dependent
+worker. The Python scheduler dispatches dependents inside its running process:
+reconcile all integrated results immediately after it exits or safely stops,
+before verification, resume/new execution, or ending the turn. Do not edit shared
+records concurrently with that scheduler. Update CONTEXT for consequential decisions and ROADMAP/REQUIREMENTS for
+verified progress; retain pending and failed items. `phase.py sync` refreshes only
+the marked Runtime Status block and does not perform these authored updates.
 </guidelines>
 
 
@@ -319,7 +328,7 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/runtime/README.md` (Template runtime behavior) for local runtime behavior,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with

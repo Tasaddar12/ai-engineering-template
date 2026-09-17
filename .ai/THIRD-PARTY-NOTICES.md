@@ -5,8 +5,8 @@ The complete adapted agents in `.ai/agents/` derive from [open-gsd/gsd-core](htt
 The retained project templates derive from the same MIT-licensed project at
 revision `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; their original adaptation
 history is preserved in [upstream Git history](https://github.com/Tasaddar12/ai-engineering-template/commits/main/).
-Supporting methods are adapted and bundled in `.ai/references/methods/` or in
-their consuming role sections; the table below locates each method.
+Supporting methods are adapted and bundled in `.ai/references/methods/`;
+the table below locates each method. Roles link to these reference files.
 They were downloaded from the pinned sources below before adaptation. The local
 copies replace external required reading and SDK commands; these provenance URLs
 are historical records, not instructions for agents to fetch during assignments.
@@ -45,7 +45,7 @@ The content is adapted, not an exact source mirror.
 | [methods/debugger-techniques.md](references/methods/debugger-techniques.md) | `debugger-techniques.md` |
 | [methods/execute-mvp-tdd.md](references/methods/execute-mvp-tdd.md) | `execute-mvp-tdd.md` |
 | [methods/executor-examples.md](references/methods/executor-examples.md) | `executor-examples.md` |
-| [phase-checker: Check 8f: Stated failing direction](agents/phase-checker.md#check-8f-stated-failing-direction) | `failing-direction.md` |
+| [methods/failing-direction.md](references/methods/failing-direction.md) | `failing-direction.md` |
 | [methods/few-shot-examples/plan-checker.md](references/methods/few-shot-examples/plan-checker.md) | `few-shot-examples/plan-checker.md` |
 | [methods/few-shot-examples/verifier.md](references/methods/few-shot-examples/verifier.md) | `few-shot-examples/verifier.md` |
 | [methods/gates.md](references/methods/gates.md) | `gates.md` |
@@ -54,35 +54,35 @@ The content is adapted, not an exact source mirror.
 | [methods/nyquist-compliance.md](references/methods/nyquist-compliance.md) | `nyquist-compliance.md` |
 | [methods/plan-checker-examples.md](references/methods/plan-checker-examples.md) | `plan-checker-examples.md` |
 | [methods/planner-antipatterns.md](references/methods/planner-antipatterns.md) | `planner-antipatterns.md` |
-| [phase-preparer: Chunked mode return formats](agents/phase-preparer.md#chunked-mode-return-formats) | `planner-chunked.md` |
-| [phase-preparer: Shared mutable state coupling](agents/phase-preparer.md#shared-mutable-state-coupling) | `planner-coupling.md` |
+| [methods/planner-chunked.md](references/methods/planner-chunked.md) | `planner-chunked.md` |
+| [methods/planner-coupling.md](references/methods/planner-coupling.md) | `planner-coupling.md` |
 | [methods/planner-gap-closure.md](references/methods/planner-gap-closure.md) | `planner-gap-closure.md` |
 | [methods/planner-guidance.md](references/methods/planner-guidance.md) | `planner-guidance.md` |
 | [methods/planner-interface-context.md](references/methods/planner-interface-context.md) | `planner-interface-context.md` |
-| [phase-preparer: Load dependency context](agents/phase-preparer.md#load-dependency-context) | `planner-load-graph-context.md` |
+| [methods/planner-load-graph-context.md](references/methods/planner-load-graph-context.md) | `planner-load-graph-context.md` |
 | [methods/planner-preconditions.md](references/methods/planner-preconditions.md) | `planner-preconditions.md` |
-| [phase-preparer: Bounded batch planning](agents/phase-preparer.md#bounded-batch-planning) | `planner-quick-batch.md` |
+| [methods/planner-quick-batch.md](references/methods/planner-quick-batch.md) | `planner-quick-batch.md` |
 | [methods/planner-reversibility.md](references/methods/planner-reversibility.md) | `planner-reversibility.md` |
 | [methods/planner-reviews.md](references/methods/planner-reviews.md) | `planner-reviews.md` |
 | [methods/planner-revision.md](references/methods/planner-revision.md) | `planner-revision.md` |
 | [methods/planner-source-audit.md](references/methods/planner-source-audit.md) | `planner-source-audit.md` |
-| [phase-preparer: Verify command grounding](agents/phase-preparer.md#verify-command-grounding) | `planner-verify-command-grounding.md` |
-| [researcher: Documentation lookup](agents/researcher.md#documentation-lookup) | `research-documentation-lookup.md` |
-| [researcher: Research philosophy](agents/researcher.md#research-philosophy) | `research-philosophy.md` |
-| [researcher: Research verification protocol](agents/researcher.md#research-verification-protocol) | `research-verification-protocol.md` |
-| [phase-preparer: Security review levels](agents/phase-preparer.md#security-review-levels) | `security-asvs-levels.md` |
+| [methods/planner-verify-command-grounding.md](references/methods/planner-verify-command-grounding.md) | `planner-verify-command-grounding.md` |
+| [methods/research-documentation-lookup.md](references/methods/research-documentation-lookup.md) | `research-documentation-lookup.md` |
+| [methods/research-philosophy.md](references/methods/research-philosophy.md) | `research-philosophy.md` |
+| [methods/research-verification-protocol.md](references/methods/research-verification-protocol.md) | `research-verification-protocol.md` |
+| [methods/security-asvs-levels.md](references/methods/security-asvs-levels.md) | `security-asvs-levels.md` |
 | [methods/tdd.md](references/methods/tdd.md) | `tdd.md` |
-| [debugger: Debugging decision models](agents/debugger.md#debugging-decision-models) | `thinking-models-debug.md` |
-| [coder: Execution decision models](agents/coder.md#execution-decision-models) | `thinking-models-execution.md` |
+| [methods/thinking-models-debug.md](references/methods/thinking-models-debug.md) | `thinking-models-debug.md` |
+| [methods/thinking-models-execution.md](references/methods/thinking-models-execution.md) | `thinking-models-execution.md` |
 | [methods/thinking-models-planning.md](references/methods/thinking-models-planning.md) | `thinking-models-planning.md` |
-| [researcher: Research decision models](agents/researcher.md#research-decision-models) | `thinking-models-research.md` |
-| [verifier: Verification decision models](agents/verifier.md#verification-decision-models) | `thinking-models-verification.md` |
-| [researcher: Untrusted-Input Boundary](agents/researcher.md#untrusted-input-boundary) | `untrusted-input-boundary.md` |
-| [verifier: Step 3b: Check Verification Overrides](agents/verifier.md#step-3b-check-verification-overrides) | `verification-overrides.md` |
+| [methods/thinking-models-research.md](references/methods/thinking-models-research.md) | `thinking-models-research.md` |
+| [methods/thinking-models-verification.md](references/methods/thinking-models-verification.md) | `thinking-models-verification.md` |
+| [methods/untrusted-input-boundary.md](references/methods/untrusted-input-boundary.md) | `untrusted-input-boundary.md` |
+| [methods/verification-overrides.md](references/methods/verification-overrides.md) | `verification-overrides.md` |
 | [methods/verifier-evidence-gate.md](references/methods/verifier-evidence-gate.md) | `verifier-evidence-gate.md` |
 | [methods/verifier-phase-gates.md](references/methods/verifier-phase-gates.md) | `verifier-phase-gates.md` |
 | [methods/verifier-wiring-patterns.md](references/methods/verifier-wiring-patterns.md) | `verifier-wiring-patterns.md` |
-| [phase-checker: Dimension: Verify Command Path Resolvability](agents/phase-checker.md#dimension-verify-command-path-resolvability) | `verify-command-path-resolvability.md` |
+| [methods/verify-command-path-resolvability.md](references/methods/verify-command-path-resolvability.md) | `verify-command-path-resolvability.md` |
 | [methods/verify-mvp-mode.md](references/methods/verify-mvp-mode.md) | `verify-mvp-mode.md` |
 
 The PROJECT evolution guidance was reconciled against the source

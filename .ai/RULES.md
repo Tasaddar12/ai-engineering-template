@@ -238,7 +238,7 @@ and lifecycle instructions. Do not shorten them or substitute a compact variant
 without an assignment calling for it. Use the artifact block to write project
 records; instructional examples are not real project decisions.
 
-The [runtime behavior](runtime/README.md#template-runtime-behavior) defines local runtime, host and
+The [runtime behavior](references/template-adaptation.md) defines local runtime, host and
 authority differences; [third-party notices](THIRD-PARTY-NOTICES.md) identify
 upstream sources and adaptation history. Complete agent methods and their bundled local supporting documents
 supply guidance, not installed slash commands. Use actual local procedures and

@@ -110,5 +110,5 @@ and [spec](../templates/spec.md) for a phase-level specification of desired
 behavior. A phase specification is distinct from a current-behavior contract.
 Add the [runtime fields](../runtime/TEMPLATE-CONTRACT.md) to the full context
 output. The coordinator carries these decisions into the existing research and
-preparation procedures; [adaptation](../runtime/README.md#template-runtime-behavior) resolves
+preparation procedures; [adaptation](../references/template-adaptation.md) resolves
 local authority, host and storage differences.

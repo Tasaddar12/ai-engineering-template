@@ -218,20 +218,7 @@ observations remain explicit pending checks; they cannot auto-pass. During
 preparation, verify the command path and test design, not a future implementation
 that this assignment does not authorize creating.
 
-## Verify command grounding
-
-**Inherit the command that already worked.** Read prior verified commands from relevant committed SUMMARY evidence, or from
-`prior_verify_commands` when the coordinator supplied it. Do not assume automatic injection. When this phase's build
-or test story is the same one a prior phase already proved, **reuse that command verbatim**
-rather than re-deriving a path. Re-invention is what produced `cd ../../frontend && npm run
-lint` against a directory that holds no `package.json`, and cost two revision cycles.
-
-Ground every path you do author: a command's `cd` target or `npm --prefix` target must be a
-directory that exists (or that an earlier task in this phase creates) and, for an npm/make
-command, must hold the matching `package.json`/`Makefile`. `npm --prefix <dir> run <script>` is
-preferred over `cd <dir> && npm run <script>` — it does not depend on the executor's cwd. If
-no prior verified command is available and you cannot ground a path, say so in the plan instead of
-guessing one.
+Read [verify command grounding](../references/methods/planner-verify-command-grounding.md) before selecting task verification commands.
 
 **Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden.
 
@@ -501,7 +488,22 @@ Only include what Claude literally cannot do.
 **Step 0: Extract Requirement IDs**
 Read ROADMAP.md `**Requirements:**` line for this phase. Strip brackets if present (e.g., `[AUTH-01, AUTH-02]` → `AUTH-01, AUTH-02`). Distribute requirement IDs across plans — each plan's `requirements` frontmatter field MUST list the IDs its tasks address. **CRITICAL:** Every requirement ID MUST appear in at least one plan. Plans with an empty `requirements` field are invalid.
 
-**Security (for behavior crossing trust boundaries):** Identify trust boundaries in this phase's scope. Map STRIDE categories to applicable tech stack from RESEARCH.md security domain. For each threat: assign a **severity** (critical|high|medium|low) based on impact × likelihood, and a disposition (`mitigate`/`accept`/`transfer`) at the review depth assigned in phase context using the levels below. Include `<threat_model>` when relevant to the assigned security scope; this is review evidence, not an automatic runtime security gate.
+## Security planning gate
+
+A PLAN requires `<threat_model>` when it changes authentication, authorization,
+secret handling, privilege/tenant isolation, or validation of untrusted input
+crossing into a trusted service, database or privileged operation. Name each
+changed boundary, the applicable STRIDE threats, severity
+(`critical|high|medium|low`) and disposition (`mitigate|accept|transfer`). Each
+mitigation must name its implementing task and verification command; accepted or
+transferred threats require the rationale and responsible boundary/party. Apply
+[security review levels](../references/methods/security-asvs-levels.md).
+
+When none of those triggers applies, state `Security review: not applicable`
+with the exact unchanged boundary or documentation/configuration-only scope in
+the PLAN verification section. The independent checker must reject a triggered
+PLAN with a missing register or disposition. These are mandatory preparation
+checks, not a claim that the Python runtime performs threat analysis.
 
 **Dependency identity:** Before planning a new install, establish the exact package,
 version constraints and official source from available project or research evidence.
@@ -529,38 +531,7 @@ For each artifact: "What must be CONNECTED for this to function?"
 
 See [planner-guidance](../references/methods/planner-guidance.md) for a worked example and the `must_haves` YAML format.
 
-## Security review levels
-
-These locally adapted review-depth categories are inspired by OWASP ASVS levels;
-they are not a complete ASVS control catalog or a certification claim. Select
-depth from the actual phase security scope. Formal compliance requires the
-project's authoritative adopted standard and control evidence. Higher review
-depths include the lower-depth checks.
-
-### L1 — Opportunistic (default)
-
-**Scope:** Cover threats on primary trust boundaries and high-impact components.
-
-**Planner disposition:** `mitigate` critical/high-severity threats. `mitigate` medium-severity threats if they occur on a primary trust boundary; otherwise `accept` with documented rationale explaining the specific risk tolerance. `accept` low-risk threats with a rationale statement. `transfer` when threat is third-party responsibility.
-
-**Auditor verification depth:** Confirm the mitigation exists at the relevant trust boundary and inspect its
-behavioral evidence. A matching string alone cannot prove it mitigates the threat.
-
-### L2 — Standard
-
-**Scope:** Map ALL applicable STRIDE categories for every in-scope component.
-
-**Planner disposition:** `mitigate` medium-severity-and-above threats. Every `accept` MUST have explicit documented rationale explaining why the risk is tolerable for this specific context.
-
-**Auditor verification depth:** Verify the mitigation ACTUALLY ADDRESSES the threat vector (not just that some pattern is present) and is placed at the correct trust boundary. A login check in the wrong layer does not close the threat.
-
-### L3 — Comprehensive
-
-**Scope:** Exhaustive STRIDE × all components; defense-in-depth for critical threats.
-
-**Planner disposition:** `mitigate` all threats except those explicitly accepted with documented sign-off. Defense-in-depth layers required for critical threats (multiple independent controls).
-
-**Auditor verification depth:** Deep verification — trace data flow end-to-end, check edge cases and ordering, confirm the mitigation cannot be bypassed via alternate code paths or parameter manipulation.
+Apply [security review levels](../references/methods/security-asvs-levels.md) when the phase changes a trust boundary.
 
 </goal_backward>
 
@@ -629,46 +600,8 @@ TDD plans target ~40% context (lower than standard 50%). The RED→GREEN→REFAC
 
 <quick_batch_mode>
 
-## Bounded batch planning
+For an assigned quick-batch, read [bounded batch planning](../references/methods/planner-quick-batch.md).
 
-Use when a coordinator supplies a catalog of small, related phase components.
-Each worker prepares one bounded plan with 1-3 tasks. There is no separate quick
-runtime or batch registry: every executable plan follows the complete
-[runtime contract](../runtime/TEMPLATE-CONTRACT.md).
-
-### Dependencies — reference assigned sibling plan IDs
-
-The catalog names relevant components and their objectives. If a component
-consumes another component's output, use that exact sibling ID in `depends_on`.
-Never invent IDs, refer to another phase's component as a local dependency, or
-include the current component itself. Independent plans use `depends_on: []`.
-Cross-phase prerequisites belong in phase CONTEXT through the coordinator.
-
-```yaml
-depends_on: ["03-01"]
-files_modified: ["src/foo.ts", "tests/foo.test.ts"]
-```
-
-### Ownership — declare every path the component touches
-
-`files_modified` lists exact files or directory prefixes ending in `/`.
-`files_deleted` names exact deleted files separately; no implicit deletion grant.
-Shared paths and exclusive resources serialize in the local runner even if two
-plans share a displayed wave. Keep declarations accurate after revisions.
-
-```yaml
-files_deleted: ["legacy/old-module.ts"]
-resources: ["integration-test-database"]
-```
-
-### Complete contract
-
-Small scope does not waive nonempty requirements, acceptance, documentation,
-meaningful argv checks, autonomous metadata or complete task/verification/output
-sections. `must_haves` expresses observable outcomes and important wiring;
-`user_setup` lists actual unresolved external prerequisites. Do not manufacture
-requirements for standalone maintenance that has no phase; return the bounded
-assignment to its coordinator instead of creating project identity records.
 </quick_batch_mode>
 
 <gap_closure_mode>
@@ -708,7 +641,7 @@ Check the invocation mode and read its instructions:
 - If gap_closure context is assigned: Read [planner-gap-closure](../references/methods/planner-gap-closure.md)
 - If `<revision_context>` provided by orchestrator: Read [planner-revision](../references/methods/planner-revision.md)
 - If review incorporation is assigned: Read [planner-reviews](../references/methods/planner-reviews.md)
-- If `**Mode:** quick-batch` in `<planning_context>`: Read [Bounded batch planning](#bounded-batch-planning)
+- If `**Mode:** quick-batch` in `<planning_context>`: Read [bounded batch planning](../references/methods/planner-quick-batch.md)
 - Standard planning mode: no additional file to read
 
 Read the selected mode instructions before proceeding to planning steps.
@@ -741,26 +674,8 @@ If exists, load relevant documents by phase type:
 
 <step name="load_graph_context">
 
-## Load dependency context
+Read [dependency context](../references/methods/planner-load-graph-context.md) only when the assignment supplies an existing map; verify consumed edges against source. Otherwise trace the named task interface directly.
 
-Use an existing local dependency map when the assignment supplies one. This
-runtime does not provide graph generation or a graph query CLI. Do not install
-a tool or fetch an external method merely to read planning context.
-
-1. Locate the supplied map (for example an existing `.planning/graphs/graph.json`)
-   or relevant `.planning/codebase/` architecture records.
-2. Inspect its recorded revision/time and compare relevant nodes with current
-   source imports, callers and data flow. Unknown freshness means unverified.
-3. Select the phase-relevant subset: authentication → auth modules; payment
-   integration → payment modules; database migration → schema/migration modules.
-4. Use confirmed edges to identify required interfaces, affected subsystems and
-   producer/consumer ordering. Cite the source files that confirm them.
-5. Annotate approximate or stale relationships rather than presenting them as
-   current facts. If no useful map exists, trace the necessary dependency directly
-   with targeted file reads/search and continue; do not create a graph subsystem.
-
-Dependencies belong in `depends_on`; shared mutable resources belong in `resources`.
-A semantic relationship alone does not prove a scheduling dependency.
 </step>
 
 <step name="identify_phase">
@@ -852,43 +767,8 @@ order is valid. A different wave or `coupling_justified` does not bypass isolati
 
 **External review ordering:** Follow the repository delivery rules: publish the first slice as a draft, keep it current, and resolve internal and external findings before final readiness.
 
-## Shared mutable state coupling
+Check non-file dependencies using [shared mutable state coupling](../references/methods/planner-coupling.md) when components access the same mutable resource.
 
-> Use with the phase-preparer dependency analysis and phase-checker review.
-
-### The rule
-
-`files_modified`/`files_deleted` overlap is not the only coupling between
-same-wave plans. If two plans in the same wave touch the same **mutable
-resource** through their task actions — a config key, DB table/row, migration,
-env var, singleton, cache — with at least one writer, or one plan produces a
-prerequisite the other consumes, the pair is coupled through shared state even
-though no file overlaps: under parallel execution the outcome depends on which
-executor gets there first.
-
-Resolve it one of three ways, in order of preference:
-
-1. **Declare the edge** — add the producing plan to the consumer's
-   `depends_on`. The scheduler waits for that prerequisite to integrate and pass checks.
-2. **Declare shared resources** — name the same exclusive resource in both
-   plans' `resources` lists when either ordering is valid but concurrent use is not.
-3. **Justify the pair** — when the coupling is deliberate and genuinely
-   order-independent (both orders produce a correct result), record it in
-   either plan's frontmatter, one `"plan-id: reason"` entry per coupled peer:
-
-   ```yaml
-   coupling_justified: ["03-02: both plans append independent keys to config; order irrelevant"]
-   ```
-
-   This is review explanation, not a runtime exemption. Declared shared paths
-   and resources still serialize; wave numbers alone do not enforce ordering.
-
-### Why declare it up front
-
-Dimension 3b flags same-wave plan pairs with an undeclared shared-mutable-state
-dependency (advisory severity — it never blocks). Declaring the edge, shared resource,
-or justifying the pair at plan time means the first checker pass comes back
-clean instead of surfacing an advisory the planner then has to interpret.
 </step>
 
 <step name="group_into_plans">
@@ -1031,57 +911,7 @@ Return structured planning outcome to orchestrator.
 
 See [planner-guidance](../references/methods/planner-guidance.md) for return formats; gap-closure returns are artifact-based.
 
-## Chunked mode return formats
-
-Use when the coordinator explicitly assigns bounded outline-only or single-plan
-preparation. This method keeps worker context focused; it does not install
-chunking flags or automatic dispatch settings. Only the coordinator starts workers.
-
-### Modes
-
-#### outline-only
-
-Write **only** `{PHASE_DIR}/{PADDED_PHASE}-PLAN-OUTLINE.md`. Do not write any PLAN.md files.
-Return:
-
-```markdown
-## OUTLINE COMPLETE
-
-**Phase:** {phase-name}
-**Plans:** {N} plan(s) in {M} wave(s)
-
-| Plan ID | Objective | Wave | Depends On | Requirements |
-|---------|-----------|------|-----------|-------------|
-| {padded_phase}-01 | [brief objective] | 1 | none | REQ-001, REQ-002 |
-| {padded_phase}-02 | [brief objective] | 1 | none | REQ-003 |
-```
-
-The coordinator reviews the outline and assigns one bounded plan per worker when
-useful. Dependencies, ownership and available capacity govern assignment order;
-wave numbers are a descriptive view, not a global barrier.
-
-#### single-plan
-
-Write **exactly one** `{PHASE_DIR}/{plan_id}-PLAN.md`. Do not write any other plan files.
-Return:
-
-```markdown
-## PLAN COMPLETE
-
-**Plan:** {plan-id}
-**Objective:** {brief}
-**File:** {PHASE_DIR}/{plan-id}-PLAN.md
-**Tasks:** {N}
-```
-
-The worker commits its assigned plan and SUMMARY. The coordinator checks the
-actual content, integrates the commit and continues with ready assignments.
-
-### Resume Behaviour
-
-If the orchestrator detects that `PLAN-OUTLINE.md` already exists (from a prior interrupted
-run), it inspects the outline and existing plans against the current inputs and revision.
-Existing files alone do not establish completion; assign remaining or stale work.
+For assigned outline-only or single-plan preparation, use [chunked mode return formats](../references/methods/planner-chunked.md).
 
 </structured_returns>
 
@@ -1163,7 +993,7 @@ Phase planning complete when:
 - [ ] Wave structure maximizes parallelism
 - [ ] PLAN file(s) committed to git
 - [ ] User knows next steps and wave structure
-- [ ] `<threat_model>` present with STRIDE register (when `security_enforcement` enabled)
+- [ ] Every PLAN satisfies the Security planning gate: required STRIDE register or explicit non-applicability with the concrete scope reason
 - [ ] Every threat has a disposition (mitigate / accept / transfer)
 - [ ] Every threat has a Severity (critical|high|medium|low)
 - [ ] Mitigations reference specific implementation (not generic advice)

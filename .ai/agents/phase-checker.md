@@ -519,6 +519,17 @@ issue:
   fix_hint: "Consider moving display formatting to frontend server per Architectural Responsibility Map"
 ```
 
+## Dimension 7d: Security Planning Gate
+
+Before accepting task verification, apply the preparer's
+[Security planning gate](phase-preparer.md#security-planning-gate) to each PLAN.
+A changed authentication, authorization, secret-handling, isolation or untrusted
+input boundary requires the named threat register, dispositions and mitigation
+verification commands. Missing required entries are BLOCKER findings. A PLAN
+with no trigger must state its concrete non-applicability reason. Do not infer
+an unavailable `security_enforcement` setting or treat an absent setting as an
+exemption.
+
 ## Dimension 8: Nyquist Compliance
 
 **Question:** Is every task's completion decided by an automated check that can actually fail?

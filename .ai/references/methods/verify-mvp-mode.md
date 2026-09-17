@@ -1,7 +1,8 @@
 # Verify-Work — MVP Mode UAT Framing
 
-Use this optional framing when the coordinator assigns verification of an
-approved user story. The local runtime has no automatic MVP mode or slash command.
+When the coordinator assigns verification of an approved user story, the verifier
+MUST use the user-flow framing and ordered UAT script below. Without that assignment,
+use the normal phase verification procedure. The local runtime has no automatic MVP mode or slash command.
 User-flow evidence supplements, and never replaces, other required acceptance.
 
 ## Core rule

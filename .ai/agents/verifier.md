@@ -465,6 +465,15 @@ and unmet evidence rather than a pass. Honor explicit user limits on running tes
 
 ## Step 8: Identify Human Verification Needs
 
+Apply the [SUMMARY deterministic coverage contract](../templates/summary.md)
+to every deliverable. Record its ID, `human_judgment`, inspected verification
+references, result and reviewed revision in the report's Deliverable Coverage
+section. Auto-pass requires `human_judgment: false`, nonempty verification and
+passing evidence for every entry; it never completes required human-only UAT.
+Present every other deliverable to the human with the exact failed or missing
+condition. Handle empty coverage and legacy omitted coverage by the template's
+separate rules. Missing classification is missing verification evidence.
+
 **Always needs human:** Visual appearance, user flow completion, real-time behavior, external service integration, performance feel, error message clarity.
 
 **Needs human if uncertain:** Complex wiring grep can't trace, dynamic state behavior, edge cases.

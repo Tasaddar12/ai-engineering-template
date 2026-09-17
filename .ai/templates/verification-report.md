@@ -89,6 +89,17 @@ coincidental_reliance_items: # Only if a âœ“ VERIFIED truth holds incidentally â
 
 **Anti-patterns:** {N} found ({blockers} blockers, {warnings} warnings)
 
+## Deliverable Coverage
+
+| Deliverable ID | Human judgment | Verification references and actual results | Reviewed revision | Classification and missing condition |
+|---|---|---|---|---|
+| {SUMMARY coverage ID} | {true/false} | {test/command references and observed results} | {commit} | {auto-pass / human required / failed; exact reason} |
+
+Apply the SUMMARY deterministic coverage contract to every deliverable. Preserve
+failed automated checks and pending human-only observations. An empty coverage
+list requires the single-confirmation path; absent coverage requires extracting
+legacy deliverables from Accomplishments and classifying each one.
+
 ## Human Verification Required
 
 {If no human verification needed:}
@@ -355,7 +366,7 @@ Read this complete authoring guide, including its examples and methods.
 Source attribution is available in `.ai/THIRD-PARTY-NOTICES.md`.
 
 Read `.ai/agents/README.md` for the local producer/consumer mapping and execution
-boundary, `.ai/runtime/README.md` (Template runtime behavior) for local runtime behavior,
+boundary, `.ai/references/template-adaptation.md` for local runtime behavior,
 and `.ai/runtime/TEMPLATE-CONTRACT.md` for additive local artifact
 fields. Project records live in `.planning/`; reusable guidance lives in `.ai/`.
 The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with

@@ -3,6 +3,15 @@
 Read [RULES](../RULES.md), phase acceptance, summaries and VERIFICATION.
 Use UAT when the user must establish behavior or the phase requires it.
 
+Before presenting cases, the coordinator and verifier MUST classify every
+deliverable using the [SUMMARY coverage contract](../templates/summary.md).
+Record the deliverable ID, classification, inspected verification references and
+reviewed revision in VERIFICATION. Auto-pass requires `human_judgment: false`,
+nonempty verification and passing evidence for every entry. Present every other
+deliverable to the human with its exact missing or failing condition. Required
+human-only acceptance cases remain pending until the user reports their result;
+automated classification cannot supply that report.
+
 Create or inspect the persistent acceptance session:
 
 ```text

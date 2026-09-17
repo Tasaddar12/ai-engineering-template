@@ -50,7 +50,11 @@ and reconcile interruptions before restarting anything.
 
 Reconcile the coder's [coder state-update checklist](coder.md) (`state_updates`) after
 integration: position, progress, metrics, decisions, session, roadmap, requirements
-and blockers. Runtime `sync` only maintains its derived section; it does not
+and blockers. For native orchestration, update these records before dispatching
+the next dependent worker. For Python scheduling, reconcile every integrated
+result immediately after the scheduler exits or safely stops, before verification,
+resume/new execution or ending the turn; do not edit shared records while it runs.
+Runtime `sync` only maintains its derived section; it does not
 replace these authored updates. Preserve worktree identity and result commits
 for integration and later authorized cleanup; never delete merely because a
 wave finished.
