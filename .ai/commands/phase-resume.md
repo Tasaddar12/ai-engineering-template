@@ -9,8 +9,10 @@ never fabricate a prior exchange. A saved attempt or continuation note cannot gr
 
 Read [RULES](../RULES.md) and inspect status before taking action. Use the
 original assigned integration checkout and its preserved operational state.
-The coordinator must invoke this procedure automatically after a worker timeout,
-idle cutoff, context limit or turn limit. Existing implementation authorization
+The active runtime handles recognized worker capacity handoffs within its scheduler;
+keep following that process and do not launch a second scheduler. If the scheduler
+itself stops, or a native worker reaches a timeout, idle cutoff, context limit or
+turn limit, the coordinator must invoke this procedure automatically. Existing implementation authorization
 covers the recovery; do not wait for another user prompt. Continue independent
 ready components while reconciling the interrupted component.
 

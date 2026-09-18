@@ -94,6 +94,41 @@ class ClaudeWorkerTests(unittest.TestCase):
                                           "--no-session-persistence", "--max-turns", "40",
                                           "--disallowedTools", "Agent,Task"])
 
+    def test_managed_adapter_records_native_process_identity(self):
+        import yaml
+        receipt = self.base / "native.yaml"
+        native_popen = subprocess.Popen
+        program = "import json,sys; sys.stdin.read(); print(json.dumps({'type':'result','subtype':'success','is_error':False,'result':'done'}))"
+        def launch(argv, **kwargs):
+            return native_popen([sys.executable, "-c", program], **kwargs)
+        with patch.dict(os.environ, {"PHASE_NATIVE_RECEIPT": str(receipt)}), \
+                patch.object(sys, "path", [str(ROOT / ".ai/runtime"), *sys.path]), \
+                patch.object(worker.subprocess, "Popen", side_effect=launch):
+            self.assertEqual(worker.execute("code", str(self.result), self.prompt), "done")
+        data = yaml.safe_load(receipt.read_text(encoding="utf-8"))
+        self.assertEqual(data["status"], "finished")
+        self.assertEqual(data["returncode"], 0)
+        self.assertIsInstance(data["pid"], int)
+        self.assertTrue(data["process_identity"])
+
+    def test_stopped_adapter_does_not_hide_live_native_process(self):
+        with patch.object(sys, "path", [str(ROOT / ".ai/runtime"), *sys.path]):
+            from phase_runner import atomic_yaml, process_identity, require_stopped
+            from phase_records import PhaseError
+        receipt = self.base / "supervisor.yaml"
+        atomic_yaml(receipt, {"status": "finished", "returncode": 1})
+        native = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        try:
+            atomic_yaml(receipt.with_suffix(".native.yaml"), {
+                "status": "running", "pid": native.pid, "process_identity": process_identity(native.pid),
+            })
+            with self.assertRaisesRegex(PhaseError, "still running"):
+                require_stopped({"status": "blocked", "receipt": str(receipt)})
+        finally:
+            native.kill()
+            native.wait(timeout=10)
+        require_stopped({"status": "blocked", "receipt": str(receipt)})
+
     def test_review_routes_capture_external_report_and_restrict_tools(self):
         for kind, status in (("verifier", "passed"), ("code-reviewer", "clean")):
             with self.subTest(kind=kind):
@@ -218,6 +253,25 @@ class ClaudeWorkerTests(unittest.TestCase):
         payload = stdout.getvalue().split(": ", 1)[1]
         self.assertEqual(json.loads(payload), {"num_turns": 3, "duration_ms": 1500,
             "total_cost_usd": 0.12, "usage": {"input_tokens": 32, "output_tokens": 9}})
+
+    def test_turn_exhaustion_returns_handoff_instead_of_failure(self):
+        output = success(subtype="error_max_turns", is_error=True)
+        for kind in ("code", "documentation"):
+            with self.subTest(kind=kind), self.native(output, returncode=1), \
+                    patch.object(worker.sys, "stdin", io.StringIO(self.prompt)), \
+                    patch.object(worker.sys, "stdout", io.StringIO()), \
+                    patch.object(worker.sys, "stderr", io.StringIO()):
+                self.assertEqual(worker.main(["--kind", kind, "--result", str(self.result)]), 75)
+                self.assertFalse(self.result.exists())
+
+    def test_permission_denials_and_other_failures_are_not_capacity_handoffs(self):
+        for output in (success(subtype="error_max_turns", is_error=True, permission_denials=[{"tool": "Write"}]),
+                       success(subtype="error_during_execution", is_error=True), "invalid json"):
+            with self.subTest(output=output), self.native(output, returncode=1), \
+                    patch.object(worker.sys, "stdin", io.StringIO(self.prompt)), \
+                    patch.object(worker.sys, "stdout", io.StringIO()), \
+                    patch.object(worker.sys, "stderr", io.StringIO()):
+                self.assertEqual(worker.main(["--kind", "code", "--result", str(self.result)]), 1)
 
 
 if __name__ == "__main__":

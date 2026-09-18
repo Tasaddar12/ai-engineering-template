@@ -167,14 +167,35 @@ Durable summaries, reports and UAT travel with the phase; a fresh clone does not
 inherit local process checkpoints.
 
 A small supervisor records its process identity before launching the worker.
-Recovery inspects both identities and refuses observable live writers, including
+The managed Claude adapter also records its native CLI child's identity in a
+separate receipt. Recovery inspects these identities and refuses observable live writers, including
 when a coordinator stopped before saving the worker PID. Missing or ambiguous
 launch evidence requires inspection, not an automatic replay.
 
-Interrupted workers are never automatically restarted. Confirm the recorded
-processes stopped, inspect each worktree, then use resume. A clean committed
-result can be audited and integrated without another worker. Dirty, missing,
-blocked or out-of-scope output stays preserved. An already integrated component
+Worker timeouts, adapter exit code 75 (capacity exhausted), and successful worker
+exits with SUMMARY `status: blocked` and `continuation: context_limit|turn_limit`
+require automatic continuation. The scheduler confirms recorded processes stopped,
+audits committed and unfinished paths against the original ownership and declared
+deletions, and launches a fresh process in the same worktree and branch. It preserves
+staged/unstaged files and commits, original base, prior receipts/logs and attempt
+history. Replacement assignments require inspecting preserved work and completing
+only remaining tasks. Replacements obey capacity, resource and dependency limits.
+There is no fixed retry count: repeated capacity exhaustion requires narrowing the
+next task and changing a stalled approach, not ending the phase.
+
+A clean committed complete result must pass the ordinary audit, checks and review;
+it is consumed without replaying implementation even after a timeout. Missing or
+ambiguous process identity, scope violations, permission failures and failed checks
+remain concrete recovery findings. Ordinary nonzero exits and blocked summaries
+without the continuation field do not trigger blind retries. The coordinator must
+diagnose these findings, correct those within scope and continue independent work;
+it must not end the phase merely because a worker stopped.
+
+If the scheduler itself was interrupted, the coordinator must confirm recorded
+processes stopped and invoke `resume PHASE --workers-stopped` without another user
+prompt. Resume audits completed output first and hands unfinished owned work to a
+fresh process. Out-of-scope or uncertain output stays preserved for reconciliation.
+An already integrated component
 whose checks failed is rechecked without rerunning its edits. Integration failure
 does not release its dependents. Other successful outputs remain available.
 
@@ -191,7 +212,7 @@ component instructions as history; add a new correction component instead of
 rewriting completed instructions. Update CONTEXT only with authorized decisions,
 commit inputs, and use `run --replan --workers-stopped`. Incomplete worktrees and
 prior checkpoint generations are retained for audit. The runtime does not force
-cleanup, retry indefinitely or merge a phase into its publication base.
+cleanup or merge a phase into its publication base.
 
 Old dispatcher attempts must finish or be inspected using their original
 repository revision. There is no silent conversion of old checkpoints.

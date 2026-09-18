@@ -109,6 +109,17 @@ metadata. Add `acceptance`, `documentation` and `## Checks` naming actual comman
 results, failures/skips and tested revision. `status: complete` is already part of
 the upstream template; use `blocked` when incomplete and explain why.
 
+For an implementation worker stopped only by context or turn capacity, also set
+SUMMARY YAML `continuation: context_limit` or `continuation: turn_limit`. Record
+completed tasks, preserved commits, unfinished files, remaining tasks and actual
+check results. The scheduler must confirm the old process stopped, audit ownership
+and dispatch a fresh worker for the remaining work without a user prompt. Adapter
+exit code 75 carries the same capacity-handoff meaning when no complete SUMMARY
+could be written. The Claude adapter returns 75 for its native `error_max_turns`
+result only when no permission denial is reported. Other failures must not use
+this signal. A continuation is not passing evidence; complete output still requires
+the normal checks and independent review before integration.
+
 Good evidence names the scenario, command, observed result and revision. Bad
 evidence repeats "all requirements satisfied" without demonstrating behavior.
 The runtime audits every commit's ownership, clean ancestry, non-summary changes,

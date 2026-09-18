@@ -13,6 +13,10 @@ class AdapterError(Exception):
     """The native worker did not produce a usable successful result."""
 
 
+class CapacityHandoff(AdapterError):
+    """The coordinator must continue this component in a fresh worker process."""
+
+
 def report_destination(value, root):
     destination = Path(value).absolute()
     if os.path.lexists(destination):
@@ -56,7 +60,7 @@ def execute(kind, result_path, prompt):
             "--max-turns", limit, "--disallowedTools",
             "Agent,Task,mcp__*" if kind in ("verifier", "code-reviewer") else "Agent,Task"]
     prompt += ("\nThis invocation is bounded to " + limit + " agentic turns. Preserve safe "
-               "partial commits and return a blocked SUMMARY before exhausting the limit if "
+               "partial commits and return a blocked SUMMARY with continuation: turn_limit before exhausting the limit if "
                "implementation cannot finish; reviewers return incomplete evidence without edits. "
                "Do not delegate or take on another role.\n")
     if kind in ("verifier", "code-reviewer"):
@@ -70,13 +74,27 @@ def execute(kind, result_path, prompt):
     try:
         # Inherit the phase worker's process group: the runtime must be able to
         # terminate this adapter and its native child together on timeout.
-        process = subprocess.run(argv, cwd=root, input=prompt, text=True,
-                                 encoding="utf-8", capture_output=True)
+        native_receipt = os.environ.get("PHASE_NATIVE_RECEIPT")
+        if native_receipt:
+            from phase_runner import atomic_yaml, process_identity
+            receipt_path = Path(native_receipt)
+            atomic_yaml(receipt_path, {"status": "starting"})
+            native = subprocess.Popen(argv, cwd=root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE, text=True, encoding="utf-8")
+            identity = {"pid": native.pid, "process_identity": process_identity(native.pid), "status": "running"}
+            atomic_yaml(receipt_path, identity)
+            stdout, stderr = native.communicate(prompt)
+            atomic_yaml(receipt_path, dict(identity, status="finished", returncode=native.returncode))
+            process = subprocess.CompletedProcess(argv, native.returncode, stdout, stderr)
+        else:
+            process = subprocess.run(argv, cwd=root, input=prompt, text=True,
+                                     encoding="utf-8", capture_output=True)
     except FileNotFoundError as error:
         raise AdapterError("Claude Code command was not found. Install Claude Code and "
                            "make 'claude' available on PATH before retrying.") from error
     except (OSError, UnicodeError) as error:
         raise AdapterError("Could not run Claude Code or decode its UTF-8 output.") from error
+    terminal = None
     try:
         terminal = json.loads(process.stdout)
         if isinstance(terminal, dict):
@@ -88,6 +106,12 @@ def execute(kind, result_path, prompt):
             print("Claude usage (reported totals, not peak context): " + json.dumps(usage), flush=True)
     except (ValueError, TypeError):
         pass
+    # A native turn-limit result is a handoff, even when the CLI exits nonzero.
+    # Permission failures never qualify for automatic capacity continuation.
+    if (kind in ("code", "documentation") and isinstance(terminal, dict)
+            and terminal.get("type") == "result" and terminal.get("subtype") == "error_max_turns"
+            and terminal.get("permission_denials", []) == []):
+        raise CapacityHandoff("Claude exhausted its turn limit; preserve work and dispatch a fresh worker.")
     if process.returncode != 0:
         # Native diagnostics can contain assignment content; don't echo them.
         raise AdapterError(f"Claude Code exited with status {process.returncode}; no result "
@@ -120,6 +144,9 @@ def main(argv=None):
             stream.reconfigure(encoding="utf-8")
     try:
         result = execute(args.kind, args.result, sys.stdin.read())
+    except CapacityHandoff as error:
+        print(f"Claude worker handoff: {error}", file=sys.stderr)
+        return 75
     except (AdapterError, OSError, UnicodeError) as error:
         print(f"Claude worker failed: {error}", file=sys.stderr)
         return 1

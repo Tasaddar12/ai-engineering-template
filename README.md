@@ -79,7 +79,8 @@ https://github.com/Tasaddar12/ai-engineering-template. Follow its install guide
 in an assigned worktree; compare and reconcile upstream changes with our installed
 host layout. Preserve project identity, planning/history, settings, worker routes,
 checks and custom instructions. Do not re-onboard or reset project records.
-Validate the updated workflow and project checks, then open a PR; do not merge.
+Validate the updated workflow and project checks, then follow this project's
+delivery rules.
 ```
 
 ### Install the workflow
@@ -88,8 +89,8 @@ Validate the updated workflow and project checks, then open a PR; do not merge.
 Install https://github.com/Tasaddar12/ai-engineering-template from its latest main
 revision into this project for [codex|claude]. Follow its install guide in an
 assigned worktree, preserve existing project files/settings, install dependencies
-and validate the host setup. Open a PR; do not merge. Report the onboarding next
-step; do not implement product work.
+and validate the host setup. Follow the delivery rules and report the onboarding
+next step; do not implement product work.
 ```
 
 See the [install guide](.ai/commands/install.md) for prerequisites and bootstrap
