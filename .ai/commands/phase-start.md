@@ -48,8 +48,9 @@ context limit or turn limit is a recovery trigger, not a phase stopping point.
   bounded worker for its remaining tasks without waiting for a user prompt.
   Preserve its commits and dirty files; consume a valid completed result instead
   of repeating completed work. Keep independent ready components moving during
-  recovery. If the runtime exits for a recoverable handoff, the coordinator must
-  perform this recovery loop and resume; that exit does not end the phase.
+  recovery. The runtime replaces recognized stopped-worker handoffs within its
+  scheduler. If the runtime itself is interrupted, the coordinator must perform
+  this recovery loop and resume; that interruption does not end the phase.
 - If unfinished work cannot proceed, report the affected component IDs, exact
   unmet prerequisite or failure, preserved evidence, and the next action needed.
   Resolve blockers already within scope and continue other independent ready

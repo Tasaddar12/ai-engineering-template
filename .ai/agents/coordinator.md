@@ -49,9 +49,10 @@ message is not a handoff back to the user. Preserve explicit user stop boundarie
 and reconcile interruptions before restarting anything. A worker timeout, idle
 cutoff, context limit or turn limit requires you to reconcile preserved work and
 dispatch a fresh bounded worker under [phase-resume](../commands/phase-resume.md)
-without another user prompt. Keep independent ready work moving. A scheduler exit
-for a recoverable handoff is a transition you must handle, not a reason to end the
-phase. Stop dependent work only for a concrete blocker you cannot resolve within
+without another user prompt. Keep independent ready work moving. Follow runtime
+replacement workers while the scheduler remains active; if the scheduler itself
+is interrupted, reconcile and resume it instead of ending the phase.
+Stop dependent work only for a concrete blocker you cannot resolve within
 authorized scope; name the unavailable access, external change or user decision.
 
 Reconcile the coder's [coder state-update checklist](coder.md) (`state_updates`) after
