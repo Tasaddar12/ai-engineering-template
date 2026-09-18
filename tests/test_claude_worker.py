@@ -147,17 +147,30 @@ class ClaudeWorkerTests(unittest.TestCase):
                     self.assertNotIn(forbidden, argv)
 
     def test_configured_turn_limit_is_forwarded_and_invalid_limits_do_not_launch(self):
-        for limit in ("1", "80", "200"):
+        for limit in ("1", "80", "200", "500"):
             with self.subTest(limit=limit), patch.dict(os.environ, {"PHASE_MAX_TURNS": limit}), self.native() as launch:
                 worker.execute("code", str(self.result), self.prompt)
                 argv = launch.call_args.args[0]
                 self.assertEqual(argv[argv.index("--max-turns") + 1], limit)
                 self.assertIn(limit + " agentic turns", launch.call_args.kwargs["input"])
-        for limit in ("0", "201", "-1", "1.5", "", "true"):
+        for limit in ("0", "-1", "1.5", "true", "None", "１２"):
             with self.subTest(limit=limit), patch.dict(os.environ, {"PHASE_MAX_TURNS": limit}), self.native() as launch:
                 with self.assertRaisesRegex(worker.AdapterError, "PHASE_MAX_TURNS"):
                     worker.execute("code", str(self.result), self.prompt)
                 launch.assert_not_called()
+
+    def test_missing_or_empty_turn_limit_omits_cli_cap_for_every_role(self):
+        for limit in (None, ""):
+            for kind in ("code", "documentation", "code-reviewer", "verifier"):
+                with self.subTest(limit=limit, kind=kind), patch.dict(os.environ), self.native() as launch:
+                    if limit is None:
+                        os.environ.pop("PHASE_MAX_TURNS", None)
+                    else:
+                        os.environ["PHASE_MAX_TURNS"] = limit
+                    destination = self.base / f"{kind}-{limit}.md"
+                    worker.execute(kind, str(destination), self.prompt)
+                    self.assertNotIn("--max-turns", launch.call_args.args[0])
+                    self.assertNotIn("40 agentic turns", launch.call_args.kwargs["input"])
 
     def test_invalid_verifier_destinations_do_not_launch(self):
         self.result.write_text("Existing evidence", encoding="utf-8")

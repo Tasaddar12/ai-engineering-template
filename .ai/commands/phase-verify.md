@@ -9,9 +9,16 @@ python .ai/runtime/phase.py verify 01-authentication
 
 For assigned TDD plans, first complete the coordinator's
 [end-of-phase TDD review](../references/methods/tdd.md#end-of-phase-tdd-review-checkpoint):
-present per-plan RED/GREEN/REFACTOR evidence, gate violations and required human
-review. Preserve test deferrals as missing evidence. This review does not replace
-independent verification and is not automatically performed by the runner.
+triage per-plan RED/GREEN/REFACTOR evidence and gate violations automatically.
+Every row MUST produce a next action: sufficient required evidence MUST auto-pass
+without a human prompt and proceed immediately to independent verification;
+missing required evidence MUST trigger a bounded automated reproduction or
+correction, followed by the affected checks. Preserve original history and never
+invent retrospective RED evidence. Preserve explicit test deferrals as missing
+evidence. This coordinator review is not a user survey, a permission request or
+a stopping point; it does not replace independent verification and is not
+automatically performed by the runner. Only an actually assigned human-only
+acceptance check follows UAT; template checkpoint wording does not create one.
 
 The runtime dispatches the independent [verifier](../agents/verifier.md). It
 checks phase acceptance, component connections, regressions and documentation at
@@ -79,6 +86,13 @@ final readiness and merge. Draft progress pushes follow
 [phase-ship](phase-ship.md); the runtime publisher still requires verification.
 Additional review follows the risks and changes; there is no fixed
 limit that strands known repairable work.
+
+After recording each report, the coordinator MUST immediately dispatch its
+required correction, obtain current independent verification, or proceed to
+[phase-ship](phase-ship.md) when all required evidence passes. A report with gaps
+MUST NOT end the execution loop while an authorized correction is possible.
+Continue independent work before escalating a concrete unavailable dependency;
+honor the user's actual pauses and delivery boundary.
 
 ## Full verification artifact
 

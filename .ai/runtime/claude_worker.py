@@ -53,16 +53,23 @@ def execute(kind, result_path, prompt):
     destination = report_destination(result_path, root) if kind in ("verifier", "code-reviewer") else None
     if not prompt.strip():
         raise AdapterError("The phase assignment on stdin is empty.")
-    limit = os.environ.get("PHASE_MAX_TURNS", "40")
-    if not limit.isdigit() or not 1 <= int(limit) <= 200:
-        raise AdapterError("PHASE_MAX_TURNS must be an integer from 1 to 200.")
+    limit = os.environ.get("PHASE_MAX_TURNS", "")
+    if limit and (not limit.isascii() or not limit.isdigit() or int(limit) < 1):
+        raise AdapterError("PHASE_MAX_TURNS must be empty or a positive integer.")
     argv = ["claude", "-p", "--output-format", "json", "--no-session-persistence",
-            "--max-turns", limit, "--disallowedTools",
+            *( ["--max-turns", limit] if limit else [] ), "--disallowedTools",
             "Agent,Task,mcp__*" if kind in ("verifier", "code-reviewer") else "Agent,Task"]
-    prompt += ("\nThis invocation is bounded to " + limit + " agentic turns. Preserve safe "
-               "partial commits and return a blocked SUMMARY with continuation: turn_limit before exhausting the limit if "
-               "implementation cannot finish; reviewers return incomplete evidence without edits. "
-               "Do not delegate or take on another role.\n")
+    if limit:
+        prompt += ("\nThis invocation is bounded to " + limit + " agentic turns. Preserve safe "
+                   "partial commits and return a blocked SUMMARY with continuation: turn_limit before exhausting the limit if "
+                   "implementation cannot finish; reviewers return incomplete evidence without edits.\n")
+    prompt += ("\nComplete the assigned work and required checks. A test run, evidence survey, "
+               "measurement or progress report is not completion: immediately perform its next "
+               "required action. Do not spend tools estimating token use or rerunning unchanged "
+               "passing checks. If actual host context exhaustion requires a handoff, preserve "
+               "progress and identify remaining tasks; implementation SUMMARY must set "
+               "status: blocked and continuation: context_limit. Reviewers return incomplete "
+               "evidence without edits. Do not delegate or take on another role.\n")
     if kind in ("verifier", "code-reviewer"):
         # --tools restricts native tools only; deny MCP tools separately. Keep
         # host permissions and project context, including advisory hooks.

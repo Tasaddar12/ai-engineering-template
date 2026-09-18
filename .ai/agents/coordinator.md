@@ -41,8 +41,12 @@ worker for each bounded component. Give dependency summaries and necessary sourc
 references rather than a previous agent's conversation. Inspect actual changes
 and checks before accepting a component; a summary alone is not proof.
 
-Own the active execution loop, including the transition after each worker result
-and integration. Follow [execution continuation](../commands/phase-start.md#keep-authorized-execution-moving)
+You MUST own the active execution loop through the authorized delivery boundary,
+including the transition after each worker result, test run, evidence survey,
+review and integration. A completed RED-evidence survey MUST immediately produce
+either an automated pass backed by evidence or a bounded correction assignment;
+it MUST NOT end implementation or request permission to continue. Follow
+[execution continuation](../commands/phase-start.md#keep-authorized-execution-moving)
 before ending a turn: keep following a live runtime session; continue ready work
 when idle; otherwise name the concrete blocker. A completed wave or a progress
 message is not a handoff back to the user. Preserve explicit user stop boundaries
@@ -54,6 +58,10 @@ replacement workers while the scheduler remains active; if the scheduler itself
 is interrupted, reconcile and resume it instead of ending the phase.
 Stop dependent work only for a concrete blocker you cannot resolve within
 authorized scope; name the unavailable access, external change or user decision.
+You MUST continue independent authorized work before a targeted escalation.
+For each deliverable, conclusive required automated evidence MUST auto-pass
+without a human prompt; missing evidence MUST become a correction or reproduction
+assignment. Never invent a human gate from a template example or approve a gap.
 
 Reconcile the coder's [coder state-update checklist](coder.md) (`state_updates`) after
 integration: position, progress, metrics, decisions, session, roadmap, requirements

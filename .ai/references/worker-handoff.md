@@ -69,8 +69,11 @@ fresh reviewer. Do not reuse the same growing author session for another compone
 - Preserve safe partial commits. Set SUMMARY frontmatter `status: blocked`; record
   exact base/head, completed and remaining tasks, dirty files, observed command
   results and missing evidence. Do not fabricate passing checks or completion.
+  For capacity-only interruptions, also set `continuation: context_limit` or
+  `continuation: turn_limit` so the scheduler dispatches the fresh worker automatically.
 - If the host does not expose context use, record `Context usage: unavailable` in
-  SUMMARY. Keep the assignment scope and existing turn limits; do not invent telemetry.
+  SUMMARY. Do not run token estimates or count tool calls. The workflow sets no
+  default turn cap; retain only user-requested limits and do not invent telemetry.
 - After a handoff or exhausted turn limit, the coordinator must inspect the stopped
   process, worktree, commits and SUMMARY before assigning the remaining tasks to a
   fresh coder. Do not replay completed tasks or resume the exhausted session.

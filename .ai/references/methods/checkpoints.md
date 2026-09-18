@@ -17,6 +17,13 @@ and returns to the coordinator. Do not dispatch another worker yourself.
 Automate authorized work with available tools. Reserve human interaction for
 actual decisions, credentials and observations requiring human judgment.
 
+A checkpoint label or example in this method MUST NOT create a human requirement.
+The coordinator must identify the actual user instruction, approved human-only
+acceptance requirement or unavailable external action before asking for a response.
+Automatable verification requires real passing evidence and then immediate
+continuation without a human prompt. Failed checks require correction and rerun;
+completing an evidence survey MUST NOT end phase execution.
+
 1. Prepare a concrete result before requesting its review.
 2. Set up and check the environment before asking the user to try it.
 3. Never infer approval from silence, a recommended option or a mode flag.
@@ -28,8 +35,10 @@ actual decisions, credentials and observations requiring human judgment.
 
 **`gate="blocking-human"` is never auto-approved.** It stops dependent work for
 an actual human response in every mode, regardless of checkpoint type. This
-includes human verification, a decision whose default cannot be assumed, package
-legitimacy checks, and unmet prerequisites the worker cannot establish itself.
+includes actually assigned human verification, a decision whose default cannot
+be assumed, and prerequisites that genuinely require unavailable human action.
+An install error or an automatable unmet prerequisite does not create this gate;
+establish the missing fact with source evidence and correct authorized problems.
 A previous general instruction to work autonomously does not satisfy this gate.
 Reuse an actual recorded response only when it resolves this exact gate and scope.
 
@@ -41,13 +50,13 @@ checkpoint type must never erase `blocking-human` one layer up.
 | Condition (evaluate in this order) | Required action |
 |---|---|
 | `gate="blocking-human"` without a matching recorded human response | Stop dependent work and return the human checkpoint, regardless of type or mode |
-| Unmet prerequisite or failed required verification | Stop dependent work; report the failed fact/evidence, never offer a false pass |
+| Automatable unmet prerequisite or failed required verification | Correct within authorized ownership, rerun, then continue; preserve failure evidence and never offer a false pass |
 | Human-only action or observation remains outstanding | Present the concrete action/check and await the actual response |
 | Unresolved decision outside delegated discretion | Present alternatives and consequences; never auto-select the first option |
 | Exact decision already resolved, or work within delegated discretion with conclusive required evidence | Continue without asking for the same approval again |
 
 `gate="blocking"` does not by itself grant auto-approval. The local workflow has
-no auto-approval configuration flag. Independent authorized work may continue
+no auto-approval configuration flag. Independent authorized work MUST continue
 while the coordinator awaits a response, but dependent expansion cannot.
 
 The coordinator owns recording the answer and reconciling an interrupted
@@ -57,9 +66,11 @@ component before preparing an executable continuation.
 <checkpoint_types>
 
 <type name="human-verify">
-## checkpoint:human-verify (Most Common - 90%)
+## checkpoint:human-verify (only when actually required)
 
-**When:** the agent completed automated work, human confirms it works correctly.
+**When:** an actual assigned acceptance requirement needs human judgment that
+available automation cannot establish. Finishing automated work alone does not
+require asking a human to confirm it again.
 
 Human observations are collected through the local phase UAT procedure when
 required. Record the expected behavior and concrete steps in the plan's validation

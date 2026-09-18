@@ -256,10 +256,9 @@ def load_phase(root, name, ready=False):
     for key, default in (("worker_timeout_seconds", 3600), ("check_timeout_seconds", 300)):
         value = execution.get(key, default)
         require(type(value) is int and 1 <= value <= 86400, f"execution.{key} must be an integer from 1 to 86400")
-    for key, default, maximum in (("claude_max_turns", 40, 200),):
-        value = execution.get(key, default)
-        require(type(value) is int and 1 <= value <= maximum,
-                f"execution.{key} must be an integer from 1 to {maximum}")
+    turn_limit = execution.get("claude_max_turns")
+    require(turn_limit is None or (type(turn_limit) is int and turn_limit >= 1),
+            "execution.claude_max_turns must be null or a positive integer")
     task_limit = execution.get("max_tasks_per_component")
     require(task_limit is None or (type(task_limit) is int and task_limit >= 1),
             "execution.max_tasks_per_component must be null or a positive integer")

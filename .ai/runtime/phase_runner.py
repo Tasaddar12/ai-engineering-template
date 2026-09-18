@@ -606,7 +606,9 @@ def launch(phase, component, root, kind, state_directory, revision_id, before_st
     env = os.environ.copy()
     env.update(phase.config.get("execution", {}).get("environment", {}))
     env.update({"PHASE_" + key.upper(): value for key, value in values.items() if key != "sandbox"})
-    env["PHASE_MAX_TURNS"] = str(phase.config.get("execution", {}).get("claude_max_turns", 40))
+    turn_limit = phase.config.get("execution", {}).get("claude_max_turns")
+    # Empty explicitly disables an inherited adapter environment cap.
+    env["PHASE_MAX_TURNS"] = "" if turn_limit is None else str(turn_limit)
     log = state_directory / f"{cid}-{kind}-{token}.log"
     receipt = state_directory / f"{cid}-{kind}-{token}-process.yaml"
     env["PHASE_NATIVE_RECEIPT"] = str(receipt.with_suffix(".native.yaml"))

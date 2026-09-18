@@ -279,8 +279,8 @@ For an assigned `type: tdd` plan, follow RED/GREEN/REFACTOR and preserve observa
 
 ### Fail-Fast Rules
 
-1. **Unexpected GREEN in RED phase:** If the test passes before any implementation code is written, STOP. The feature may already exist or the test is wrong. Investigate before proceeding.
-2. **INVALID_RED in RED phase:** A nonzero exit is not RED by itself. Zero-test discovery, fixture/load crashes, nonzero exits with no failing test, unrelated failing tests, and unexpected greens all classify as INVALID_RED. STOP and fix the RED phase — do NOT proceed to GREEN.
+1. **Unexpected GREEN in RED phase:** If the test passes before implementation, investigate immediately: establish whether the feature already exists or the test is wrong. Correct the test when needed; record existing behavior honestly. Do not fabricate a failure or halt the phase at this finding.
+2. **INVALID_RED in RED phase:** A nonzero exit is not RED by itself. Zero-test discovery, fixture/load crashes, nonzero exits with no failing test, unrelated failing tests, and unexpected greens all classify as INVALID_RED. Fix the RED evidence before GREEN. This blocks the dependent implementation step, not investigation, correction or independent phase work.
 3. **Missing RED commit:** If no `test(...)` commit precedes the `feat(...)` commit, the TDD discipline was violated. Flag in SUMMARY.md.
 4. **REFACTOR breaks tests:** Undo the refactor immediately. Commit was premature — refactor in smaller steps.
 
@@ -298,25 +298,45 @@ steps without inventing retrospective RED evidence.
 ## End-of-phase TDD review checkpoint
 
 After the assigned TDD plans are integrated and before final phase verification,
-the coordinator gathers a per-plan review. This is an explicit coordinator step;
-the Python runtime does not synthesize the checkpoint or invoke a TDD SDK gate.
+the coordinator MUST perform automated evidence triage for each plan. The heading
+retains its existing link target; this checkpoint is not a user survey or a stop
+boundary. The Python runtime does not synthesize this coordinator review or invoke
+a TDD SDK gate. The coordinator MUST execute the resulting next action immediately.
 
 ```text
 ### TDD REVIEW — Phase {X}
 TDD Plans: {count} | Gate violations: {count} | Unverified: {count}
 
-| Plan | RED commit/result | GREEN commit/result | REFACTOR | Status |
-|------|-------------------|---------------------|----------|--------|
-| {id} | {hash, command, intended failure} | {hash, command, pass/fail} | {result or not needed} | {status} |
+| Plan | RED commit/result | GREEN commit/result | REFACTOR | Status | Next action |
+|------|-------------------|---------------------|----------|--------|-------------|
+| {id} | {hash, command, intended failure} | {hash, command, pass/fail} | {result or not needed} | {status} | {verification or owned correction} |
 ```
 
 Review gate order, intentional RED (not setup failure), minimal GREEN without
-premature optimization, and passing checks after any refactor. Show violations
-and missing evidence explicitly; preserve previous commits. Obtain any assigned
-human review using the checkpoint procedure, including `blocking-human` when
-specified. Do not invent an automatic approval or defer a required human gate.
-Discipline observations are advisory unless they violate assigned acceptance;
-missing required behavioral evidence still prevents a verified completion.
+premature optimization, and passing checks after any refactor. Preserve every
+violation, missing result and previous commit. For every row, the coordinator MUST
+choose and execute one of these concrete next actions without asking to continue:
+
+- Required evidence is sufficient: auto-pass the evidence review without a human
+  prompt and proceed immediately to independent phase verification.
+- Required evidence is missing or fails: assign a bounded automated reproduction
+  or correction with owned paths, the named missing result and its check. Recover
+  authentic logs or reproduce against the recorded pre-change revision in an
+  isolated worktree when available; label new runs as reproductions. Never rewrite
+  history or present later reproduction as RED observed before implementation.
+  Rerun affected checks and review the new evidence, then continue verification.
+- A historical discipline violation remains but does not violate assigned
+  acceptance: record it as advisory and continue with required current behavioral
+  checks and independent verification. Do not manufacture a human approval gate.
+- An explicitly assigned human-only acceptance check or genuinely unavailable
+  dependency remains: preserve the gap, complete independent authorized work, and
+  request only the specific required result or access. Template examples alone
+  never establish `blocking-human` or other human review requirements.
+
+Missing required behavioral evidence still prevents verified completion. If the
+original historical evidence cannot be recovered, retain that fact; a later pass
+does not prove a historical TDD sequence. The coordinator MUST continue all
+available corrective work without weakening acceptance or fabricating a pass.
 
 ## Independent TDD evidence review
 
@@ -331,9 +351,12 @@ TDD plan's behavior with the implemented result and its recorded evidence:
 | Regression value | The assertion would catch the original defect or missing behavior |
 
 The verifier independently assesses this evidence. A missing required result is
-a gap, not an advisory that can silently pass. Human acceptance follows the
-local UAT/checkpoint procedure for every assigned human review; preserve explicit
-`blocking-human` gates even when automated evidence is conclusive.
+a gap, not an advisory that can silently pass. Conclusive required automated
+evidence MUST auto-pass its evidence review without a human prompt. Human
+acceptance follows local UAT only for actually assigned human-only checks;
+preserve explicit user-required `blocking-human` gates even when automated
+evidence is conclusive. After the review, immediately continue corrective work
+or the next verification/delivery action; never return only a completed survey.
 </end_of_phase_review>
 
 <context_budget>

@@ -328,6 +328,17 @@ class PhaseRuntimeTests(unittest.TestCase):
         self.assertEqual(self.events(), [])
         self.assert_primary_untouched()
 
+    def test_uncapped_config_overrides_inherited_turn_limit_for_workers_and_reviews(self) -> None:
+        self.config["execution"]["claude_max_turns"] = None
+        self.configure()
+        self.environment["PHASE_MAX_TURNS"] = "40"
+        self.commit("Use uncapped workflow despite inherited adapter limit")
+        self.cli("run", PHASE)
+        self.cli("verify", PHASE)
+        events = self.events(include_verifier=True)
+        self.assertEqual({e["kind"] for e in events}, {"code", "code-reviewer", "verifier"})
+        self.assertTrue(all(e["turn_limit"] == "" for e in events))
+
     def test_runs_component_commits_summary_and_verifies_phase(self) -> None:
         review_base = self.git(self.checkout, "rev-parse", "HEAD")
         self.cli("run", PHASE)

@@ -221,6 +221,8 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.target = self.base / host
                 result = self.install("--host", host, "--no-hooks")
                 self.assertEqual(0, result.returncode, result.stderr)
+                installed_config = yaml.safe_load((self.target / ".planning/config.yaml").read_text(encoding="utf-8"))
+                self.assertIsNone(installed_config["execution"]["claude_max_turns"])
                 agents = self.target / ("." + host) / "agents"
                 methods = {}
                 for role in agents.glob("*.md"):
@@ -231,6 +233,7 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
                     self.assertEqual("sonnet", metadata["model"], name)
+                    self.assertNotIn("maxTurns", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
                         (self.source / ".ai/agents" / role.name).read_bytes(), host),
