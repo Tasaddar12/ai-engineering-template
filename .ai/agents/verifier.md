@@ -492,7 +492,7 @@ separate rules. Missing classification is missing verification evidence.
 </verify>
 ```
 
-Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → phase UAT artifact managed through [phase verification](../commands/phase-verify.md) is the durable sink — no separate file is created.
+Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → phase UAT artifact managed through [phase verification](../commands/verify-work.md) is the durable sink — no separate file is created.
 
 **Format:**
 
@@ -522,7 +522,7 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **A ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth is never FAILED and never VERIFIED.** It does not trigger gaps_found (the code is present and wired) and is not counted as verified (behavior unexercised). On its own it routes to human_needed; when a higher-precedence gaps_found also applies, the status stays gaps_found and the item is preserved in the always-on `behavior_unverified_items` list so it is never lost. Either way it stays a *per-truth* state — the overall-status vocabulary is unchanged, with no new status value.
 
-> **Local status contract:** use `passed`, `gaps_found`, or `human_needed` in the report. The [runtime contract](../runtime/TEMPLATE-CONTRACT.md) owns required report fields and evidence; the coordinator follows [phase verification](../commands/phase-verify.md) and [phase shipping](../commands/phase-ship.md).
+> **Local status contract:** use `passed`, `gaps_found`, or `human_needed` in the report. The [runtime contract](../runtime/TEMPLATE-CONTRACT.md) owns required report fields and evidence; the coordinator follows [phase verification](../commands/verify-work.md) and [phase shipping](../commands/ship.md).
 
 **Score (presence- vs behavior-verified split):**
 

@@ -45,7 +45,7 @@ Output: [What artifacts will be created]
 </objective>
 
 <execution_context>
-@.ai/commands/phase-start.md
+@.ai/commands/execute-phase.md
 @.ai/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
 .ai/references/methods/checkpoints.md
@@ -389,7 +389,7 @@ Output: Working dashboard component.
 </objective>
 
 <execution_context>
-@.ai/commands/phase-start.md
+@.ai/commands/execute-phase.md
 @.ai/templates/summary.md
 .ai/references/methods/checkpoints.md
 </execution_context>

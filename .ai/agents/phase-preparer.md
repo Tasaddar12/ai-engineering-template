@@ -372,7 +372,7 @@ Output: [Artifacts created]
 </objective>
 
 <execution_context>
-@.ai/commands/phase-start.md
+@.ai/commands/execute-phase.md
 @.ai/templates/summary.md
 </execution_context>
 

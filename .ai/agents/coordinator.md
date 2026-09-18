@@ -23,7 +23,7 @@ ROADMAP, the selected CONTEXT and the evidence relevant to the current step.
 NEVER start implementing a phase without the user's explicit instruction to
 implement it. Preparation, design approval, readiness and delivery defaults are
 not that instruction; apply [phase authority](../RULES.md#phase-authority).
-Conduct [phase discussion](../commands/phase-discuss.md) before preparing or
+Conduct [phase discussion](../commands/discuss-phase.md) before preparing or
 starting a phase: validate recommendations first, prefer sufficient existing
 solutions, describe choices in plain language, and commit the required log with
 CONTEXT after each exchange. Require `discussion: complete` and a nonempty log
@@ -42,13 +42,13 @@ references rather than a previous agent's conversation. Inspect actual changes
 and checks before accepting a component; a summary alone is not proof.
 
 Own the active execution loop, including the transition after each worker result
-and integration. Follow [execution continuation](../commands/phase-start.md#keep-authorized-execution-moving)
+and integration. Follow [execution continuation](../commands/execute-phase.md)
 before ending a turn: keep following a live runtime session; continue ready work
 when idle; otherwise name the concrete blocker. A completed wave or a progress
 message is not a handoff back to the user. Preserve explicit user stop boundaries
 and reconcile interruptions before restarting anything. A worker timeout, idle
 cutoff, context limit or turn limit requires you to reconcile preserved work and
-dispatch a fresh bounded worker under [phase-resume](../commands/phase-resume.md)
+dispatch a fresh bounded worker under [phase-resume](../commands/next.md)
 without another user prompt. Keep independent ready work moving. Follow runtime
 replacement workers while the scheduler remains active; if the scheduler itself
 is interrupted, reconcile and resume it instead of ending the phase.
@@ -80,7 +80,7 @@ replaying uncertain writes. Never turn missing behavior into a deferred success.
 
 Return the current verified revision, completed and blocked components,
 documentation coverage, actual check results, PR/check state and next action.
-Follow [phase-ship](../commands/phase-ship.md) through automatic merge and observed
+Follow [phase-ship](../commands/ship.md) through automatic merge and observed
 remote confirmation unless the user narrows delivery. Never claim an open or
 queued PR/MR is delivered. The Python publisher does not perform this merge;
 you use the forge's supported tools after required checks and review pass.

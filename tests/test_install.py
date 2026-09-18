@@ -72,43 +72,29 @@ class InstallerTests(unittest.TestCase):
         return {p.relative_to(self.target).as_posix(): p.read_bytes()
                 for p in self.target.rglob("*") if p.is_file() and ".git" not in p.relative_to(self.target).parts}
 
-    def test_installed_summary_skeleton_satisfies_runtime_contract(self):
+    def test_installed_runtime_answers_its_verb_contract(self):
+        """The installed runtime resolves its own namespace and returns pure results."""
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
-                # Fill existing slots only: adding missing keys/sections here would
-                # hide the authoring defect this producer/consumer check protects.
-                script = r'''
-import re
-import sys
-from pathlib import Path
-from types import SimpleNamespace
-sys.path.insert(0, str(Path.cwd() / sys.argv[1] / "runtime"))
-from phase_records import file_template
-from phase_runner import validate_summary
-root = Path.cwd()
-text = file_template(root, "summary.md")
-for key, value in {"requirements-completed": "[R1]", "acceptance": "[A1]",
-                   "documentation": "[docs/result.md]"}.items():
-    text = re.sub(r"(?m)^" + key + r":.*$", key + ": " + value, text)
-text = text.replace("[Tested revision or commit]", "a" * 40)
-text = text.replace("[Command and scenario]", "python -m unittest tests.test_result")
-text = text.replace("[Observed result, including failures or skips]", "PASS: 1 test")
-summary = root / "01-01-SUMMARY.md"
-summary.write_text(text, encoding="utf-8")
-(root / "docs").mkdir()
-(root / "docs/result.md").write_text("Verified result documentation", encoding="utf-8")
-component = SimpleNamespace(id="01-01", summary=summary, data={
-    "requirements": ["R1"], "acceptance": ["A1"],
-    "documentation": ["docs/result.md"], "type": "execute"})
-validate_summary(SimpleNamespace(root=root), component, root)
-'''
-                checked = subprocess.run([sys.executable, "-c", script, "." + host],
-                                         cwd=self.target, text=True, encoding="utf-8",
-                                         capture_output=True)
-                self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+                runtime = "." + host + "/runtime/phase.py"
+                identity = json.loads(command(sys.executable, runtime, "query",
+                                              "runtime-identity", cwd=self.target))
+                self.assertTrue(identity["ok"])
+                self.assertEqual("ai-phase-runtime", identity["packageName"])
+                listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
+                                            cwd=self.target))
+                self.assertTrue(listed["ok"])
+                self.assertEqual([], listed["phases"])
+                # An expected failure is a result, not a traceback.
+                failed = subprocess.run([sys.executable, runtime, "query", "roadmap.get-phase", "9"],
+                                        cwd=self.target, text=True, encoding="utf-8",
+                                        capture_output=True)
+                self.assertEqual(1, failed.returncode)
+                self.assertNotIn("Traceback", failed.stderr)
+                self.assertEqual("phase-not-found", json.loads(failed.stdout)["code"])
 
     def test_new_project_starts_runtime_and_omits_template_history(self):
         result = self.install()
@@ -117,8 +103,9 @@ validate_summary(SimpleNamespace(root=root), component, root)
         self.assertIn("human must review and commit", result.stdout)
         self.assertEqual(self.target.resolve(), Path(command("git", "rev-parse", "--show-toplevel", cwd=self.target).strip()).resolve())
         self.assertEqual("", command("git", "remote", cwd=self.target))
-        status = command(sys.executable, ".codex/runtime/phase.py", "status", cwd=self.target)
-        self.assertIn("No phases yet", status)
+        listed = json.loads(command(sys.executable, ".codex/runtime/phase.py", "query",
+                                    "phases.list", cwd=self.target))
+        self.assertEqual([], listed["phases"])
         self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
         for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
                         "docs", ".ai/install-assets",
@@ -135,7 +122,7 @@ validate_summary(SimpleNamespace(root=root), component, root)
         self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
         self.assertTrue((self.target / ".codex/commands/install.md").is_file())
         self.assertTrue((self.target / ".codex/commands/onboard.md").is_file())
-        self.assertTrue((self.target / ".codex/commands/goal-plan.md").is_file())
+        self.assertTrue((self.target / ".codex/commands/new-milestone.md").is_file())
         self.assertFalse((self.target / ".ai").exists())
         self.assertIn(".codex/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
@@ -195,9 +182,11 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.assertIn(namespace + "/RULES.md", body)
                 self.assertNotIn("@AGENTS.md", body)
                 config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
-                self.assertEqual(host == "claude", "claude_worker.py" in config)
+                self.assertIn("verification:", config)
                 self.assertNotIn(".ai/", config)
-                self.assertIn("No phases yet", command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target))
+                listed = json.loads(command(sys.executable, namespace + "/runtime/phase.py",
+                                            "query", "phases.list", cwd=self.target))
+                self.assertEqual([], listed["phases"])
                 self.assertIn(namespace + "-venv/", (self.target / ".gitignore").read_text())
                 skills = self.target / (".agents/skills" if host == "codex" else ".claude/skills")
                 full = (skills / "codebase-recon/SKILL.md").read_text(encoding="utf-8")
@@ -288,12 +277,21 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 worktree = self.target / ".worktrees/phase"
                 command("git", "worktree", "add", "-b", "codex/phase", str(worktree), cwd=self.target)
                 runtime = "." + host + "/runtime/phase.py"
-                command(sys.executable, runtime, "new", "example", "--title", "Installed runtime", cwd=worktree)
-                context = worktree / ".planning/phases/01-example/01-CONTEXT.md"
-                self.assertIn("<domain>", context.read_text(encoding="utf-8"))
-                self.assertIn("01-example", command(sys.executable, runtime, "status", cwd=worktree))
+                added = json.loads(command(sys.executable, runtime, "query", "phase.add",
+                                           "Installed runtime", "--goal", "Prove the install",
+                                           cwd=worktree))
+                self.assertTrue(added["ok"])
+                self.assertEqual("01", added["padded"])
+                self.assertEqual(".planning/phases/01-installed-runtime", added["directory"])
+                self.assertTrue((worktree / added["directory"]).is_dir())
+                roadmap = (worktree / ".planning/ROADMAP.md").read_text(encoding="utf-8")
+                self.assertIn("### Phase 1: Installed runtime", roadmap)
+                listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
+                                            cwd=worktree))
+                self.assertEqual(["Installed runtime"],
+                                 [phase["name"] for phase in listed["phases"]])
                 self.assertFalse((worktree / ".ai").exists())
-                self.assertFalse((self.target / ".planning/phases/01-example").exists())
+                self.assertFalse((self.target / ".planning/phases/01-installed-runtime").exists())
 
     def test_selected_host_preserves_settings_instructions_and_worker_routes(self):
         for host in ("codex", "claude"):

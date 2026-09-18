@@ -64,6 +64,6 @@ A later documentor can depend on implemented code; its predecessor must not clai
 that future documentation as already complete.
 
 Return components, interface agreements, coverage, dependency reasoning and
-unresolved choices for [preparation checking](../../../.ai/commands/phase-prepare.md).
+unresolved choices for [preparation checking](../../../.ai/commands/plan-phase.md).
 Preserve completed instructions when corrections are needed; add corrective
 components through the coordinator's existing replan procedure.

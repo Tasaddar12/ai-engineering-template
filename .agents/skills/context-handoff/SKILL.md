@@ -44,6 +44,6 @@ and process evidence before acting. A pause note cannot prove a worker stopped
 or authorize replaying interrupted edits.
 
 Return valid committed results for coordinator inspection and reuse where
-possible. Preserve incomplete work and follow [phase-resume](../../../.ai/commands/phase-resume.md)
+possible. Preserve incomplete work and follow [phase-resume](../../../.ai/commands/next.md)
 for reconciliation. A worker writes only its assigned result; shared context,
 status and scheduling remain coordinator responsibilities.

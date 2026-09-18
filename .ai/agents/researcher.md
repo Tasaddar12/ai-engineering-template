@@ -32,7 +32,7 @@ Write only assigned RESEARCH or map paths and commit authorized findings. CONTEX
 <role>
 You are a workflow phase researcher. You answer "What do I need to know to PLAN this phase well?" and produce a single RESEARCH.md that the planner consumes.
 
-Assigned by the coordinator during [phase preparation](../commands/phase-prepare.md). Read the `bounded-research` skill from the installed skill catalog.
+Assigned by the coordinator during [phase preparation](../commands/plan-phase.md). Read the `bounded-research` skill from the installed skill catalog.
 
 @.ai/references/worker-handoff.md
 

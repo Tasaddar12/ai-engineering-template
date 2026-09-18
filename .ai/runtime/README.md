@@ -1,304 +1,208 @@
 # Phase runtime
 
-`phase.py` executes the phase procedures described in
-[the workflow guide](../guides/PHASE-WORKFLOW.md). It consumes Markdown records
-with complete phase template bodies and additive YAML execution fields and
-[config.yaml](../../.planning/config.yaml). The Python runtime requires no schema
-files, schedule snapshots or separate work-item registry. Supporting agent methods are bundled locally under `references/methods/`;
-reading the workflow does not require a separate SDK or external schema generator.
-Python 3.11+ and PyYAML are required. Install `requirements.txt` into the host's
-virtual environment. Git and the chosen worker executable must be available;
-publication additionally requires an authenticated GitHub CLI.
+`phase.py` performs every planning-record read and write that the
+[workflows](../workflows/) describe. Workflows orchestrate — they decide what to
+do, which agents to spawn and what to ask the user. The runtime owns the records:
+phase numbering, slugs, directory layout, the roadmap checklist and progress
+table, STATE.md frontmatter derivation, todos, quick tasks and milestones.
 
-Installation places this runtime under `.codex/runtime` or `.claude/runtime`.
-It locates rules, role methods, workflow procedures and skills in the same host
-layout. Project records remain under `.planning`. Commands and references in
-the installed guides use the selected layout; the template authoring checkout
-continues to use its internal layout.
+A workflow that edits those files directly will drift from the runtime. Go
+through a verb.
 
-New worker and verifier branches use the installed host name (`claude` or `codex`)
-followed by `/phase-...`. The authoring checkout defaults to the Codex prefix.
-Existing recorded branch names remain unchanged during recovery.
+Python 3.11+ and PyYAML are required; install `requirements.txt` into the host's
+virtual environment. Git is required for the commit verb and for repository-root
+resolution.
 
-Run from an assigned immediate-child worktree under the primary checkout's
-ignored `.worktrees/`. Commands use the current repository and named branch.
-The primary checkout accepts inspection only. Config and phase inputs must be
-committed, and the worktree must be clean before mutation.
+## Invocation
 
-## Commands
+One call shape:
 
-| Invocation | Effect |
-|---|---|
-| `python .ai/runtime/phase.py new authentication --title "Authentication"` | Allocate the next phase number across registered worktrees; commit pending CONTEXT and a roadmap link |
-| `python .ai/runtime/phase.py check 03` | Read-only structural readiness and dependency checks; does not replace an independent feasibility review |
-| `python .ai/runtime/phase.py status [03]` | Read-only local status, including pending components and next action |
-| `python .ai/runtime/phase.py status 03 --remote` | Also observe the published PR and its checks without editing local status |
-| `python .ai/runtime/phase.py run 03` | Dispatch ready components; audit and integrate committed results |
-| `python .ai/runtime/phase.py resume 03 --workers-stopped` | Reconcile interrupted work after confirming old processes stopped; reuse committed output without replay |
-| `python .ai/runtime/phase.py run 03 --replan --workers-stopped` | Explicit new attempt after reconciliation and approval; retain incorporated work and add correction components |
-| `python .ai/runtime/phase.py verify 03` | Run checks, start a fresh independent verifier and commit the assessment |
-| `python .ai/runtime/phase.py verify 03 --workers-stopped` | Reconcile an interrupted verifier; retry when its saved report is incomplete or stale |
-| `python .ai/runtime/phase.py uat 03` | Create or show a persistent acceptance session |
-| `python .ai/runtime/phase.py uat 03 --case 1 --result pass --note "Observed result"` | Commit an actual human observation; also accepts fail, blocked and skipped |
-| `python .ai/runtime/phase.py publish 03 --authorized --base main [--draft]` | Push and create/update the phase PR; never merge it |
-| `python .ai/runtime/phase.py sync` | Update only Runtime Status in the full STATE artifact |
-
-Phase arguments accept a number or full directory name. Read-only status and
-check do not launch agents, reserve IDs or write checkpoints. An empty template
-has no phases and no verification commands until adoption.
-
-## Input and result contract
-
-[CONTEXT](../templates/context.md) owns goal, identified acceptance, decisions
-and actual authorization. `approval: approved` is a recorded human instruction,
-not permission a worker can invent. Execution also requires CONTEXT
-`discussion: complete` and a nonempty `NN-DISCUSSION-LOG.md`; new phases start with
-`discussion: pending`. Missing fields in older records block execution until the
-coordinator records actual discussion. These structural checks do not prove a
-conversation occurred or validate recommendations. Open questions remain a coordinator
-judgment: prepare only independent, decided scope for execution.
-
-Each [PLAN](../templates/phase-prompt.md) declares kind (`code` or
-`documentation`), prerequisite component IDs, owned paths, exclusive resources,
-acceptance IDs, required documentation paths and meaningful argv checks. Paths
-are exact repository-relative files or directory prefixes ending in `/`. Globs,
-traversal, shared Git metadata and phase-record ownership are rejected. Its own
-SUMMARY is automatically owned. Authorization matches exact Git path spelling,
-including case and whitespace. Scheduling treats case variants conservatively
-as overlapping across platforms, but that does not authorize a differently
-spelled path during the committed-output audit.
-
-[TEMPLATE-CONTRACT](TEMPLATE-CONTRACT.md) defines complete upstream artifact consumption,
-local evidence extensions, checkpoint and decimal-numbering boundaries, and migration.
-
-The coordinator also owns immutable PROJECT, REQUIREMENTS, RULES and config
-inputs. Broad ownership such as `.ai/` is rejected because it contains those
-inputs. Change them during preparation, then commit and explicitly replan.
-
-Every acceptance outcome needs at least one component. Give substantive guide
-or specification obligations to a documentor component that depends on the code;
-the code component's body points to that handoff. Declare documentation on the
-component responsible for completing or verifying it, not a predecessor finishing
-before it exists. Overlapping files or resources serialize. Dependencies wait
-for integrated commits and passing checks. Cross-phase dependencies need verified
-code and its report on the fetched publication base.
-
-Workers commit actual changes and [SUMMARY](../templates/summary.md), with
-`status: complete|blocked`, acceptance and documentation coverage. The runner
-audits every commit's paths, clean output, ancestry and nonempty implementation,
-then reruns checks. Exit code zero and summary claims alone do not prove success.
-Required documentation must exist and have summary coverage; the independent
-verifier checks its truth. No runtime can infer product correctness from file
-existence or a command that does not test the intended outcome.
-
-## Worker adapters and context
-
-Configuration commands are argument lists; no shell interpolation is performed.
-Supported substitutions are `{worktree}`, `{assignment}`, `{result}`, `{kind}`,
-`{component}` and `{sandbox}`. Runtime also provides `PHASE_WORKTREE`,
-`PHASE_ASSIGNMENT`, `PHASE_RESULT`, `PHASE_KIND` and `PHASE_COMPONENT` environment
-variables, plus the Markdown assignment on standard input. An optional
-`execution.documentor_command` selects a separate executable/model route.
-
-The coordinator starts fresh processes. Each gets the role, relevant core
-constraints, CONTEXT, its PLAN, required source and dependency summaries.
-Worker processes do not start agents. The template's Codex commands explicitly
-select `gpt-5.6-terra` for coders and `gpt-5.6-luna` for documentors and verifiers
-through `--model` in `.planning/config.yaml`. Other model settings, including
-reasoning effort, retain the host defaults unless overridden in those commands.
-Check the installed host's execution and worktree permissions;
-prompts and Git auditing do not sandbox arbitrary commands or external services.
-
-The [installer](../commands/install.md) selects initial routes by host: Codex for
-`--host codex`, and [claude_worker.py](claude_worker.py) for a fresh `--host claude`
-project. Existing `.planning/config.yaml` remains authoritative. To choose Claude
-explicitly during onboarding, set
-the worker, documentor and verifier command lists to:
-
-```yaml
-[python, .claude/runtime/claude_worker.py, --kind, "{kind}", --result, "{result}"]
+```bash
+python .ai/runtime/phase.py query <verb> [positional ...] [--option value ...] [--raw]
 ```
 
-The Claude adapter runs `claude -p --output-format json --no-session-persistence`
-with the complete assignment on stdin and the assigned checkout as cwd. It uses
-Claude's configured model and permission defaults, preserving project context
-and hooks. Install/authenticate Claude separately and configure needed project
-tool permissions before dispatch; permission denials return a failed result,
-not a fabricated completion. No permission bypass or `--bare` mode is added.
+Every verb prints JSON on stdout. A handled failure prints
+`{"ok": false, "error": "...", "code": "..."}` and exits 1. An unhandled error
+raises with a traceback, so a defect is never mistaken for a handled outcome.
 
-For code/documentation, the final response goes to the runtime log and never
-overwrites the worker's committed SUMMARY. The verifier exposes only Read, Glob
-and Grep, separately denies MCP tools, and saves a successful final report to
-the external result path without overwriting an existing file. Configured checks
-run through the runtime; the Claude verifier cannot run Bash checks itself.
-Tool restrictions and prompts are not an OS sandbox; configured host hooks can
-still run, and the runtime audits verifier checkout changes. Failed CLI runs,
-invalid result JSON, empty reports or permission denials fail the adapter.
+`--raw` prints a bare scalar for shell capture, where the verb returns one.
 
-Complete skills are installed directly under `.agents/skills` for Codex or
-`.claude/skills` for Claude and travel with committed inputs into fresh worker
-checkouts. Both hosts discover the full skills at those locations. Required methods are also named by path
-in PLAN's Read first section. Other adapters can read those same Markdown paths.
-The runtime needs no new skill configuration; follow the
-[repository skill guide](../guides/AGENT-SKILLS.md) for selection and upkeep.
+Workflows do not hard-code the path. They paste the launcher from
+[`_runtime.snippet.sh`](../workflows/_runtime.snippet.sh), which resolves the
+runtime from the repository namespace (`.ai`, `.claude` or `.codex`) or the host
+config directory, then call `phase_run query ...`.
 
-For code/documentation, PHASE_RESULT is the SUMMARY path inside the worker's
-worktree. Do not use `--output-last-message` to write there after a commit.
-For the verifier it is an external report path. The default verifier adapter
-saves its final Markdown message there. Custom adapters may write it directly.
-Preserve the complete upstream verification-report sections and add the local
-evidence sections below. Verifier YAML is `status: passed|gaps_found|human_needed` and the exact assigned
-`revision`. Required sections are Acceptance, Integration, Documentation and
-Findings. The verifier has its own worktree; any tracked edit or commit invalidates
-its result and preserves the worktree for inspection.
+## Verbs
 
-## Integration, failures and recovery
+### Context bundles
 
-One operating-system lock in the common Git directory protects the coordinator
-and shared Git operations. One coordinator runs per repository at a time;
-components within that phase use `execution.max_parallel` (1–8). This deliberate
-limit avoids concurrent coordinators allocating and integrating against each other.
+A workflow makes one `init.<name>` call and parses the result rather than issuing
+a dozen reads of its own. Bundles never mutate anything.
 
-Operational state is atomic internal YAML under the common Git directory's
-`ai/phases/`, keyed by phase and assigned checkout. It records immutable inputs,
-initial revision, worktrees, processes, checks and integrated commits. Assignment
-prompts and logs live beside it. These are machine-maintained local checkpoints.
-Durable summaries, reports and UAT travel with the phase; a fresh clone does not
-inherit local process checkpoints.
+| Verb | Returns |
+|---|---|
+| `init.phase-op <phase>` | The shared phase view: numbering, directory, artifacts, roadmap entry, state |
+| `init.plan-phase <phase>` | Phase view plus planning models, agent availability, prior context |
+| `init.execute-phase <phase>` | Phase view plus the plan index, verification status, check configuration |
+| `init.verify-work <phase>` | Phase view plus verification status and the configured checks |
+| `init.new-milestone` | Milestones, open phases, next phase number, planning models |
+| `init.complete-milestone [version]` | Milestone membership and whether it is ready to close |
+| `init.todos` | Pending todos plus `pending_todos_markdown` ready for STATE.md |
+| `init.progress` | Roadmap totals, progress bar, next phase, incomplete-phase invariant |
+| `init.quick` | Quick tasks, open tasks, models, check configuration |
 
-A small supervisor records its process identity before launching the worker.
-The managed Claude adapter also records its native CLI child's identity in a
-separate receipt. Recovery inspects these identities and refuses observable live writers, including
-when a coordinator stopped before saving the worker PID. Missing or ambiguous
-launch evidence requires inspection, not an automatic replay.
+Every bundle also carries `commit_docs`, `response_language`, `text_mode`,
+`context_window`, `date`, `timestamp` and a `paths` map.
 
-Worker timeouts, adapter exit code 75 (capacity exhausted), and successful worker
-exits with SUMMARY `status: blocked` and `continuation: context_limit|turn_limit`
-require automatic continuation. The scheduler confirms recorded processes stopped,
-audits committed and unfinished paths against the original ownership and declared
-deletions, and launches a fresh process in the same worktree and branch. It preserves
-staged/unstaged files and commits, original base, prior receipts/logs and attempt
-history. Replacement assignments require inspecting preserved work and completing
-only remaining tasks. Replacements obey capacity, resource and dependency limits.
-There is no fixed retry count: repeated capacity exhaustion requires narrowing the
-next task and changing a stalled approach, not ending the phase.
+### Phases
 
-A clean committed complete result must pass the ordinary audit, checks and review;
-it is consumed without replaying implementation even after a timeout. Missing or
-ambiguous process identity, scope violations, permission failures and failed checks
-remain concrete recovery findings. Ordinary nonzero exits and blocked summaries
-without the continuation field do not trigger blind retries. The coordinator must
-diagnose these findings, correct those within scope and continue independent work;
-it must not end the phase merely because a worker stopped.
+| Verb | Effect |
+|---|---|
+| `phase.add <description> [--goal G] [--requirements IDS]` | Append the next integer phase; create its directory; update the roadmap and checklist |
+| `phase.insert <after> <description> [--goal G]` | Insert a decimal phase after `<after>`, marked `(INSERTED)` |
+| `phase.remove <phase> [--force] [--no-renumber]` | Remove a future phase, renumber later phases, rename their directories and files |
+| `phase.edit <phase> [--name] [--goal] [--depends-on] [--requirements]` | Edit fields in place; number, position and plan checklist preserved |
+| `phase.complete <phase>` | Tick every plan and the checklist entry; refresh progress |
+| `phase.next-decimal <after>` | The decimal number an insert would allocate |
+| `phases.list` | Every phase with status, plan counts, directory and execution completeness |
+| `find-phase <number-or-slug>` | Resolve a phase by number or name fragment |
+| `phase-plan-index <phase>` | Plan files on disk with their declared dependencies and summaries |
 
-If the scheduler itself was interrupted, the coordinator must confirm recorded
-processes stopped and invoke `resume PHASE --workers-stopped` without another user
-prompt. Resume audits completed output first and hands unfinished owned work to a
-fresh process. Out-of-scope or uncertain output stays preserved for reconciliation.
-An already integrated component
-whose checks failed is rechecked without rerunning its edits. Integration failure
-does not release its dependents. Other successful outputs remain available.
+`phase.remove` refuses a phase with completed plans or a non-empty directory
+unless `--force` is passed.
 
-Verifier attempts also preserve their source, worktree, process and result.
-A stopped verifier's valid report can be reused for unchanged source. Use
-`verify --workers-stopped` to retry an incomplete/stale attempt after inspection.
-Checks that change tracked files or commits stop for inspection, even if the
-check itself reports success. Commit or resolve preserved changes before retrying.
-After inspecting and correcting a check mutation, use explicit replanning to
-recheck incorporated work. Ordinary resume cannot clear an inspection finding.
+### Roadmap and state
 
-Changes to execution inputs require explicit replanning. Keep incorporated
-component instructions as history; add a new correction component instead of
-rewriting completed instructions. Update CONTEXT only with authorized decisions,
-commit inputs, and use `run --replan --workers-stopped`. Incomplete worktrees and
-prior checkpoint generations are retained for audit. The runtime does not force
-cleanup or merge a phase into its publication base.
+| Verb | Effect |
+|---|---|
+| `roadmap.get-phase <phase>` | One phase's parsed entry |
+| `roadmap.analyze` | Counts, the next open phase, and phases blocked on dependencies |
+| `roadmap.update-plan-progress <plan-id> [--undo]` | Tick or untick one plan and re-derive state |
+| `state.get [key]` | The parsed STATE.md view |
+| `state.record-session [--stopped-at] [--resume-file] [--status]` | Update Session Continuity |
+| `state.begin-phase <phase> [--status]` | Point Current Position at a phase |
+| `state.update-progress` | Re-derive counters and the progress bar from the roadmap |
+| `state.advance-plan <plan-id>` | Tick a plan and update state in one call |
+| `state.add-decision <text>` | Append to Decisions |
+| `state.add-blocker <text>` | Append to Blockers/Concerns |
+| `state.add-roadmap-evolution <text>` | Append to Roadmap Evolution, creating the section |
+| `state.sync-todos` | Replace the Pending Todos body from the todos on disk |
 
-Old dispatcher attempts must finish or be inspected using their original
-repository revision. There is no silent conversion of old checkpoints.
+STATE.md's Markdown body is authoritative; its frontmatter counters are
+re-derived from ROADMAP.md on every write, so the two cannot disagree. Writers
+serialize on `.planning/.lock`.
 
-## Verification, UAT and publication
+### Milestones, todos and quick tasks
 
-Independent reports name the reviewed source revision and a content fingerprint.
-Only generated STATE, this phase's verification/UAT and interruption note are
-excluded from that fingerprint. Changed code, docs, instructions or checks
-invalidate verification. Modifying the report invalidates its recorded attestation.
-Component and project checks run again at publication.
+| Verb | Effect |
+|---|---|
+| `milestone.list` | Declared milestones and which is current |
+| `milestone.create <name> [--goal G]` | Declare a milestone in progress; demote any previous one |
+| `milestone.complete <version> [--name N] --confirm` | Mark shipped and write the MILESTONES.md entry |
+| `todo.add <title> [--problem] [--solution] [--area] [--severity] [--files]` | Write a pending todo |
+| `todo.list [--state pending\|completed]` | Todos sorted by severity then age |
+| `todo.complete <name>` | Move a todo to `completed/` |
+| `todo.match-phase <phase>` | Score pending todos against a phase's name and goal |
+| `quick.create <description>` | Open `.planning/quick/YYMMDD-NNN-slug/` with its QUICK.md |
+| `quick.list [--status]` | Quick tasks, newest first |
+| `quick.update <id> [--status] [--files] [--verification]` | Record progress or completion |
 
-When CONTEXT requires UAT, every acceptance case must have a current passing
-observation and a note. Pending, failed, blocked and skipped cases prevent
-publication; skipped means unresolved, even with a reason. Changes in tested
-content start a new session after re-verification and retain prior observations.
+`milestone.complete` refuses without `--confirm`, and refuses while any phase in
+the milestone is open. There is deliberately no force path: a milestone entry
+claiming phases shipped when they did not is the record this exists to keep honest.
 
-`--authorized` records authorization already supplied by the human. Publication
-pushes one phase branch and creates/updates its PR. It reports observed GitHub
-checks. PR creation can start CI; it does not imply checks have finished or the
-PR is ready. Configure `publication.required_checks` and use status with `--remote`
-to inspect them. A delivered status requires an observed merge of the published
-revision matching the current branch HEAD. A later commit must not be reported
-as delivered using the older PR's merge observation. No command merges a PR or
-moves the primary branch.
+### Dispatch, verification and project basics
+
+| Verb | Effect |
+|---|---|
+| `resolve-model <agent>` | Model for an agent: config override, then agent file, then `inherit` |
+| `resolve-agent <agent>` | Model, tools, disallowed tools, max turns and declared skills |
+| `agent-skills <agent>` | The agent's declared skills resolved against the installed skills root |
+| `agents.list` / `skills.list` | What is installed |
+| `verification.status <phase>` | Whether a verification report exists, and what it concluded |
+| `verification.resolve-file <phase>` | The path a verifier should write |
+| `verification.run-checks` | Run `verification.commands` from config and report each result |
+| `config-get <dotted>` / `config-set <dotted> <value>` | Read or write `.planning/config.yaml` |
+| `commit <message> --files ...` | Stage the named paths and commit, honouring `commit_docs` |
+| `git.base-branch` | The repository's default branch |
+| `generate-slug <text>` | The slug the runtime would derive |
+| `progress.bar <percent>` | The rendered progress bar |
+| `runtime-identity` | Identifies the runtime to the launcher's verification step |
+| `help` | Every verb and bundle |
+
+## Layout
+
+```
+runtime/
+  phase.py          CLI dispatcher: argument parsing and the verb table
+  lib/
+    results.py      the pure-result contract, JSON emission, exit codes
+    paths.py        repository root and .planning path resolution
+    text.py         slugs, YAML frontmatter, Markdown section editing
+    config.py       .planning/config.yaml with dotted access and defaults
+    roadmap.py      ROADMAP.md parsing and editing
+    state.py        STATE.md reading, writing and the planning lock
+    phases.py       phase CRUD across the roadmap and phase directories
+    milestones.py   milestone declaration, membership and archival
+    todos.py        captured todos and phase matching
+    quick.py        quick tasks outside the roadmap
+    verification.py verification reports and configured project checks
+    models.py       agent, model and skill resolution for dispatch
+    bundles.py      the init.* context bundles
+```
+
+Installation places this runtime under `.codex/runtime` or `.claude/runtime`, and
+the launcher resolves either. Project records stay under `.planning/`.
+
+## Project records
+
+```
+.planning/
+  PROJECT.md              vision, constraints, key decisions
+  REQUIREMENTS.md         scoped requirements with REQ ids
+  ROADMAP.md              phases, plan checklists, milestones, progress table
+  STATE.md                position, decisions, blockers, session continuity
+  MILESTONES.md           what each milestone shipped
+  config.yaml             commit_docs, workflow flags, agent models, checks
+  phases/NN-slug/         NN-CONTEXT.md, NN-RESEARCH.md, NN-MM-PLAN.md,
+                          NN-MM-SUMMARY.md, NN-VERIFICATION.md
+  todos/pending|completed captured todos
+  quick/YYMMDD-NNN-slug/  quick tasks
+```
+
+Phase numbering is continuous across milestones and never restarts. Integer
+phases are planned work; decimal phases (2.1, 2.2) are urgent insertions.
+
+## Configuration
+
+```yaml
+commit_docs: true          # false makes every commit verb a no-op
+response_language: null    # when set, workflows present user-facing output in it
+context_window: 200000     # 500000+ enables richer cross-phase agent context
+workflow:
+  text_mode: false         # plain-text prompts instead of AskUserQuestion
+  auto_advance: false
+  discuss_mode: discuss
+agents:
+  coder:
+    model: sonnet          # overrides the agent file's own model
+verification:
+  commands: []             # argv lists; run by verification.run-checks
+```
+
+`verification.commands` is empty in the template. An adopting project configures
+its real checks during onboarding; until then, verification rests on reading
+alone and the verification report must say so.
 
 ## Validation
 
-In the upstream workflow source repository, run
-`python -m unittest discover -s tests -v` from its test environment. The installer
-does not copy that source test suite into projects. Configure the adopting
-project's actual verification commands in `.planning/config.yaml` during onboarding.
-Integration tests use temporary real repositories, isolated component worktrees,
-deterministic workers and a local bare publication remote. Only GitHub's API
-boundary is simulated. They test execution, ownership, dependency availability,
-failure preservation, recovery, stale evidence and publication without merging.
-The separate [hook suites](../hooks/README.md) check optional advisory notices.
+From the authoring checkout:
 
-## Independent component review and bounded assignments
+```bash
+python -m unittest discover -s tests -v
+```
 
-Every code component is reviewed by a fresh code-reviewer process in a separate
-read-only worktree before integration. `execution.reviewer_command` is optional;
-when absent the runner uses `verifier_command` with a code-reviewer assignment and
-read-only sandbox. Custom adapters must handle `kind=code-reviewer`, capture the
-full report at `{result}`, and preserve read-only behavior. This is a separate
-invocation, not the coder reading a review method. Report YAML carries revision,
-diff_base, status and findings.critical/warning counts. Skipped, stale, incomplete
-and reviews with critical findings block integration. Advisory warnings remain in
-the report; the coordinator commits their disposition in VERIFICATION frontmatter
-`warning_dispositions` before verification. The runner requires those records,
-supplies them and the reports to the verifier, and preserves them in its output. Saved attempts include process identity,
-result path and hash; final verification retains the component review evidence.
-Reviews are serialized with integration; already-running independent coders may
-continue. The final verifier still checks integrated behavior and cross-component
-regressions. Run `verify PHASE --workers-stopped` after process inspection to
-review integrated components missing receipts at their recorded base/revision.
-Run `resume PHASE --workers-stopped` to retry failed component reviews on an
-unchanged base/revision; prior attempts remain in `review_history`. Completed
-reports with blocking findings require correction. For an unintegrated component,
-commit the correction on its worker branch, preserving the original commits, then
-resume; the runner archives the prior report and reviews the corrected revision.
-For historical integrated defects, integrate a correction component and run
-`verify PHASE --workers-stopped`; a separate `review_resolution` retains evidence
-for each original finding at the corrected integrated revision. Source changes
-invalidate that resolution evidence.
-
-`execution.max_tasks_per_component` defaults to null (no numeric task cap); set a
-positive integer to reject auto-task plans above that count. TDD retains exactly
-one feature. Require each PLAN to declare one component outcome, owned paths,
-acceptance and checks; split separate outcomes or dependency prerequisites.
-PLAN `review_depth` accepts `standard` (default) or `deep`; set `deep` for security
-boundaries, concurrency, shared mutable state or cross-component contracts.
-
-`execution.claude_max_turns` defaults to 40 and accepts 1..200. The Claude adapter
-passes it as `--max-turns`, denies nested Agent/Task delegation and reports numeric
-terminal usage totals in the runtime log even for unsuccessful terminal results.
-Native Claude coder, documentor, reviewer and verifier definitions also set
-`maxTurns: 40`. Native configuration and CLI configuration are separate surfaces.
-An exhausted limit is incomplete work, not completion; inspect and preserve work
-before a smaller fresh continuation. No automatic restart is performed.
-
-Turn limits are not a hard token/context ceiling. Follow the
-[context handoff procedure](../references/worker-handoff.md#context-and-partial-results).
-The adapter does not measure peak context; its reported token usage is labeled
-as totals. Do not report those totals as peak context.
-Claude option sources: [CLI reference](https://code.claude.com/docs/en/cli-reference)
-and [native subagent fields](https://code.claude.com/docs/en/sub-agents).
-
-See [template adaptation](../references/template-adaptation.md) for workflow layers and artifact behavior.
+`tests/test_phase_runtime.py` drives `phase.py` as a subprocess against real
+temporary git repositories, so it exercises the contract the workflows depend on
+rather than internals. The installer does not copy the source test suite into
+adopting projects.

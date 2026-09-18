@@ -738,7 +738,7 @@ PLAN commands. Read and apply [verify-command-path-resolvability](../references/
 ## Step 1: Load Context
 
 For a correction review, first read the prior findings, reviewed revision and
-changed paths supplied under [preparation correction rounds](../commands/phase-prepare.md#preparation-assignments-and-correction-rounds).
+changed paths supplied under [preparation correction rounds](../commands/plan-phase.md).
 Inspect corrected properties and affected contracts directly in PLANs and source.
 Carry forward only checks whose PLAN content, acceptance and inspected source
 are unchanged; cite their prior revision. Recheck the entire dependency/ownership

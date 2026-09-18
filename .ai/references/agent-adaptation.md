@@ -22,7 +22,7 @@ sentinels, scratch branches, stash/reset, subrepositories or ledger writes are
 not local worker operations. Return recovery needs and shared-record proposals
 in the assigned result. Authors commit each completed meaningful slice of owned
 files immediately and commit SUMMARY; the coordinator handles default push,
-PR/MR and verified automatic merge under [phase-ship](../commands/phase-ship.md). Source
+PR/MR and verified automatic merge under [phase-ship](../commands/ship.md). Source
 `commit_docs` settings do not waive that contract. Read-only reviewers neither
 edit the checkout nor commit; the host captures their full report externally.
 

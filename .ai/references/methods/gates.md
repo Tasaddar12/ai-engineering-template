@@ -35,7 +35,7 @@ already supplied or let a mode flag choose on the user's behalf.
 Stop an operation that would overwrite unrelated data, violate ownership,
 continue from uncertain running processes or use incompatible execution state.
 Preserve the checkout, commits, evidence and checkpoint. Follow
-[phase-resume](../../commands/phase-resume.md) before retrying interrupted work;
+[phase-resume](../../commands/next.md) before retrying interrupted work;
 do not delete state or restart a worker blindly.
 
 ## Gate placement

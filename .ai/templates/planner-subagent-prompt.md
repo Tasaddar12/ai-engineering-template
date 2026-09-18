@@ -136,7 +136,7 @@ Continue: {standard | gap_closure}
 For revision assignments, replace the standard context block with the exact
 checkout/branch/revision, CONTEXT path, affected PLAN paths, prior checker report
 and finding IDs, and changed source/contract paths. Apply
-[correction rounds](../commands/phase-prepare.md#preparation-assignments-and-correction-rounds).
+[correction rounds](../commands/plan-phase.md).
 Do not paste PLAN bodies or the previous agent conversation. The preparer reads
 the canonical files and preserves every concrete requirement it edits.
 

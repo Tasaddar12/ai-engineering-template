@@ -232,32 +232,28 @@ dependency failures return a nonzero exit code; files already installed remain
 available for inspection and retry. Conflict detection is a preflight check,
 not a transaction protecting against concurrent writers or disk failures.
 
-## Existing projects and worktrees
+## Existing projects
 
-For adoption by an agent, follow the [worktree procedure](worktree.md)
-and run the installer against its assigned immediate-child worktree. For example,
-after verifying the primary checkout and ensuring `.worktrees/` is ignored:
+Install on a branch, not on the repository's default branch, so the installed
+workflow can be reviewed as a diff before it lands:
 
 ```text
-git worktree add .worktrees/ai-setup -b codex/ai-setup HEAD
-python /path/to/downloaded/install.py --target .worktrees/ai-setup
+git switch -c install-ai-workflow
+python /path/to/downloaded/install.py --target .
 ```
 
 If this is the first bootstrap in a repository without workflow rules, a human
 can install directly into its root, review the changes, and commit the installed
-workflow before handing off to an agent. A worktree created from HEAD only gets
-committed files. Subsequent agent edits and commits follow the installed
-worktree procedure. Preserve any
-conflicting guidance and reconcile it explicitly; the installer has no overwrite
-switch. It leaves unrelated dirty files alone.
+workflow before handing off to an agent. Preserve any conflicting guidance and
+reconcile it explicitly; the installer has no overwrite switch. It leaves
+unrelated dirty files alone.
 
 ## Finish onboarding
 
-**Commit the human bootstrap first when installing into a primary checkout.**
-A newly initialized repository has no HEAD until its first commit, so it cannot
-create the worktree required for agent onboarding. An existing repository also
-needs the installed files committed before they can travel into a new worktree.
-Git needs your author name and email configured for this step.
+**Commit the installed workflow before onboarding.** The workflows and runtime
+must be committed before an agent can rely on them, and a newly initialized
+repository has no HEAD until its first commit. Git needs your author name and
+email configured for this step.
 
 For a brand-new, otherwise empty Codex project, review the installed files and run:
 
@@ -271,8 +267,7 @@ For a fresh Claude project, stage `CLAUDE.md`, `.claude`, `.planning` and
 
 If the directory contained existing files, inspect `git status` and stage only
 the installer additions and reviewed instruction/ignore changes; the directory
-arguments above can also stage unrelated work. If installing into an already
-assigned worktree, the agent can review and commit setup there directly.
+arguments above can also stage unrelated work.
 Inspect individual paths before staging a pre-existing host directory; never
 stage personal settings or credentials.
 
@@ -297,7 +292,7 @@ CLI separately. The [runtime guide](../runtime/README.md) describes configuratio
 
 Give the agent your project description and the appropriate
 [onboarding prompt](onboard.md). Once onboarding is complete, use
-[goal planning](goal-plan.md) to define the first goal or order several goals
+[goal planning](new-milestone.md) to define the first goal or order several goals
 into phases. The agent should inspect existing code,
 preserve useful guidance, fill project intent, set actual worker routes and
 nonempty verification commands, run baseline checks, and commit reviewed setup
