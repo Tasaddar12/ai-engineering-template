@@ -89,6 +89,14 @@ can conflict with customized or older files and requires reconciliation. Existin
 project context, settings and runtime config remain authoritative; choosing a
 host does not rewrite an existing project's worker routes.
 
+When updating the former 40-turn defaults, reconcile both Claude limit surfaces:
+set the inherited `.planning/config.yaml` `execution.claude_max_turns` to null and
+remove inherited `maxTurns: 40` from `.claude/agents/{coder,doc-writer,code-reviewer,verifier}.md`.
+Preserve any limit explicitly requested by the user and all unrelated configuration.
+The installer preserves existing config and conflicting customized files, so copying
+new runtime files alone does not remove an old cap. Follow the runtime guide's
+[turn-limit contract](../runtime/README.md#independent-component-review-and-bounded-assignments).
+
 An older installation with a separate `.ai` directory needs migration in an
 assigned worktree. The installer refuses to leave that older workflow beside a
 new host layout. Use the migration mode below to preserve existing project data

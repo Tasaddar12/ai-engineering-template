@@ -134,6 +134,7 @@ def main() -> int:
         "worktree": str(root),
         "pid": os.getpid(),
         "started": time.monotonic(),
+        "turn_limit": os.environ.get("PHASE_MAX_TURNS"),
     }
 
     def save_event() -> None:

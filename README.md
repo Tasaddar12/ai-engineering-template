@@ -79,6 +79,7 @@ https://github.com/Tasaddar12/ai-engineering-template. Follow its install guide
 in an assigned worktree; compare and reconcile upstream changes with our installed
 host layout. Preserve project identity, planning/history, settings, worker routes,
 checks and custom instructions. Do not re-onboard or reset project records.
+Remove inherited 40-turn caps; retain limits I explicitly requested.
 Validate the updated workflow and project checks, then follow this project's
 delivery rules.
 ```

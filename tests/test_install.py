@@ -231,6 +231,7 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
                     self.assertEqual("sonnet", metadata["model"], name)
+                    self.assertNotIn("maxTurns", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
                         (self.source / ".ai/agents" / role.name).read_bytes(), host),

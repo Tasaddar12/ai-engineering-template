@@ -286,13 +286,24 @@ acceptance and checks; split separate outcomes or dependency prerequisites.
 PLAN `review_depth` accepts `standard` (default) or `deep`; set `deep` for security
 boundaries, concurrency, shared mutable state or cross-component contracts.
 
-`execution.claude_max_turns` defaults to 40 and accepts 1..200. The Claude adapter
-passes it as `--max-turns`, denies nested Agent/Task delegation and reports numeric
-terminal usage totals in the runtime log even for unsuccessful terminal results.
-Native Claude coder, documentor, reviewer and verifier definitions also set
-`maxTurns: 40`. Native configuration and CLI configuration are separate surfaces.
-An exhausted limit is incomplete work, not completion; inspect and preserve work
-before a smaller fresh continuation. No automatic restart is performed.
+`execution.claude_max_turns` defaults to null. Missing or null means the adapter
+omits `--max-turns`; the workflow imposes no numeric turn cap. A positive integer
+sets an explicit cap when the user requests one. The runtime overrides an inherited
+`PHASE_MAX_TURNS` environment setting with the project configuration, including an
+empty value for uncapped execution. Native Claude agent definitions omit `maxTurns`
+as well. Native configuration and CLI configuration are separate surfaces.
+
+The adapter denies nested Agent/Task delegation and records terminal usage totals
+already reported by Claude. Coders must not spend tools estimating tokens or
+performing an accounting survey. An explicitly configured turn limit still requires
+the automatic fresh-worker continuation described above; it is not phase completion.
+Host context exhaustion requires a bounded handoff, not a fabricated passing result.
+
+For an existing installation, update both surfaces: replace the inherited template
+`claude_max_turns: 40` with `claude_max_turns: null` in `.planning/config.yaml` and
+remove inherited `maxTurns: 40` from the installed coder, doc-writer, code-reviewer
+and verifier definitions. Preserve limits explicitly requested by the user. Updating
+runtime files alone does not change an existing project's preserved configuration.
 
 Turn limits are not a hard token/context ceiling. Follow the
 [context handoff procedure](../references/worker-handoff.md#context-and-partial-results).

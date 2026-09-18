@@ -451,6 +451,21 @@ class PhaseRecordTests(unittest.TestCase):
         f.cli("check", "01", succeeds=False)
         self.assertEqual(f.events(), [])
 
+    def test_claude_turn_cap_is_optional_and_only_accepts_positive_integers(self):
+        f = self.fixture
+        for limit in (None, 40, 500, 0, -1, True, "40"):
+            with self.subTest(limit=limit):
+                f.config["execution"]["claude_max_turns"] = limit
+                f.configure()
+                if limit is None or type(limit) is int and limit > 0:
+                    self.assertEqual(load_phase(f.checkout, "01").config["execution"]["claude_max_turns"], limit)
+                else:
+                    with self.assertRaisesRegex(PhaseError, "claude_max_turns"):
+                        load_phase(f.checkout, "01")
+        del f.config["execution"]["claude_max_turns"]
+        f.configure()
+        self.assertNotIn("claude_max_turns", load_phase(f.checkout, "01").config["execution"])
+
     def test_explicit_replan_after_check_mutation_preserves_prior_implementation(self):
         f = self.fixture
         original = f.config["verification"]["commands"]

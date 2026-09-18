@@ -21,10 +21,10 @@ provides:
   - [bullet list of what this phase built/delivered]
 affects: [list of phase names or keywords that will need this context]
 
-# Actuals — pairs with the plan's `estimate` to calibrate future estimates.
-# Same estimateTokens scale (chars/4 over the realized diff), never a harness token count.
+# Actuals — use evidence already collected during implementation.
+# Token estimation is optional and requires an explicit user request, even for estimated plans.
 actuals:
-  tokens: [chars/4 over files actually changed]
+  tokens: null  # Do not calculate token/diff-size estimates as a completion requirement.
   tasks: [tasks completed]
   commits: [commits made]
 
