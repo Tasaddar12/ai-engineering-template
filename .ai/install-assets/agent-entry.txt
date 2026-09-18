@@ -16,9 +16,9 @@ When the user asks to discuss a phase, including "Let's discuss phase 01", load
 selection and source-search steps. Do not require a slash command or an exact
 procedure name. A discussion request does not grant implementation permission.
 
-[Repository skills](.ai/guides/AGENT-SKILLS.md) supply focused engineering methods.
-Load matching skills and those named in the component's Read first section from
-the assigned checkout; do not read every skill body.
+The skills under `.agents/skills/` mirror [.ai/commands/](.ai/commands/README.md)
+one-for-one. Load matching skills and those named in the component's Read first
+section from the assigned checkout; do not read every skill body.
 
 NEVER start implementing a phase unless the user explicitly tells you to implement
 that phase. Phase creation, planning, design approval and readiness do not grant

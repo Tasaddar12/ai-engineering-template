@@ -73,7 +73,7 @@ runtime registry is introduced by this document.
 | Area | Available now | Proposed next-stage work |
 |---|---|---|
 | Request handling | Coordinator-led onboarding and phase procedures | Clear selection between feature, bug and small-change entry workflows |
-| Investigation | Reconnaissance, bounded research, debugging and regression-design skills | Tailored question/research sequences and escalation rules for each entry path |
+| Investigation | Coordinator-assigned mapping, research, debugging and verification roles | Tailored question/research sequences and escalation rules for each entry path |
 | Phase design | Roadmap, context/specification templates and decomposition method | Consistent handoff from request investigation to phase goals; optional feature grouping |
 | Detailed preparation | Full plan template, local runtime contract and independent checker role | Explicit workflow orchestration and revision loop for each entry path |
 | Parallel implementation | Runtime readiness, ownership/resource scheduling and checked integration | Reuse this machinery; change only where the new workflows demonstrate a concrete need |

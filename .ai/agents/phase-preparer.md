@@ -66,11 +66,11 @@ Before planning, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @.ai/guides/AGENT-SKILLS.md
+**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Load rule files listed in [the project rule catalog](../rules/README.md) as needed during **planning**.
 - Ensure plans account for project skill patterns and conventions.
 
-**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 </project_context>
 
 <context_fidelity>

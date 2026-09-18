@@ -38,7 +38,6 @@ runtime — a workflow that edits them by hand drifts from it.
 | [commands](commands/README.md) | Entry points, mirrored by `.agents/skills/` |
 | [workflows](workflows/) | The procedures those commands run |
 | [agents](agents/README.md) | Responsibilities and handoffs |
-| [skills](guides/AGENT-SKILLS.md) | Reusable engineering methods selected per assignment |
 | `references/` | Artifact and handoff details loaded on demand |
 | [templates](templates/README.md) | Complete artifact instructions and examples |
 | [runtime](runtime/README.md) | The verb interface every workflow calls |

@@ -11,13 +11,13 @@ owners and their operational limits. For the end-to-end procedure, read
 | Feature | What it provides | Owner or entry point | Boundary |
 |---|---|---|---|
 | Greenfield onboarding | Establish real product intent, outcomes, phase order and executable checks | [onboard](../commands/onboard.md) | Project intent comes from the user and observed evidence, never from the template |
-| Brownfield adoption | Inspect existing code and establish the baseline before scoping | [codebase-mapper](../agents/codebase-mapper.md), [codebase-recon](../../.agents/skills/codebase-recon/SKILL.md) | Maps are evidence from inspection, not automatic truth |
+| Brownfield adoption | Inspect existing code and establish the baseline before scoping | [codebase-mapper](../agents/codebase-mapper.md) | Maps are evidence from inspection, not automatic truth |
 | Roadmap phase CRUD | Add, insert, remove or edit phases with numbering, directories and checklists kept consistent | [phase](../commands/phase.md) | The runtime allocates every number; decimal phases avoid renumbering |
 | Milestone cycles | Group phases, then close with an honest record of what shipped | [new-milestone](../commands/new-milestone.md), [complete-milestone](../commands/complete-milestone.md) | Closing refuses while any phase is open — deliberately no force path |
 | Discuss and specify | Falsifiable scope, locked decisions, canonical refs and explicit deferred ideas | [discuss-phase](../commands/discuss-phase.md) | Recorded decisions do not prove implementation |
 | Todo capture | Park an idea mid-session without derailing the work, and fold it into the phase it belongs to | [capture](../commands/capture.md) | Severity is confirmed with the user, never silently assigned |
 | Quick tasks | One small change with a plan, atomic commits and tracked state, outside the roadmap | [quick](../commands/quick.md) | Work needing more than three tasks is a phase |
-| Bounded research | Resolve technical uncertainty with source evidence before planning | [researcher](../agents/researcher.md), [bounded-research](../../.agents/skills/bounded-research/SKILL.md) | Research cannot authorize a new product direction |
+| Bounded research | Resolve technical uncertainty with source evidence before planning | [researcher](../agents/researcher.md) | Research cannot authorize a new product direction |
 | Detailed phase plans | Concrete tasks with read-first inputs, acceptance, ownership, dependencies and must-haves | [plan-phase](../commands/plan-phase.md); [template contract](../runtime/TEMPLATE-CONTRACT.md) | Every runnable verify command must state its failure signal |
 | Independent plan check | Goal-backward examination of coverage, interfaces and task quality | [phase-checker](../agents/phase-checker.md) | Capped at three revision rounds, then escalated rather than approved |
 | Fresh implementation agents | A focused coder per ready plan, with its own context | [execute-phase](../commands/execute-phase.md) | Agents stay inside their plan's declared paths and do not dispatch more agents |

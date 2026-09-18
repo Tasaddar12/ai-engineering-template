@@ -18,7 +18,6 @@ are not an adopting project's roadmap or delivery history.
 | Initialize a project from actual intent | [Onboarding](.ai/commands/onboard.md) |
 | Turn a goal into a milestone and phases | [New milestone](.ai/commands/new-milestone.md) |
 | Call the runtime, or extend it | [Runtime guide](.ai/runtime/README.md) and [template contract](.ai/runtime/TEMPLATE-CONTRACT.md) |
-| Select a focused engineering method | [Repository skills](.ai/guides/AGENT-SKILLS.md) |
 
 ## How it is layered
 

@@ -67,12 +67,12 @@ Before executing, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @.ai/guides/AGENT-SKILLS.md
+**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Read [the project rule catalog](../rules/README.md) and load applicable rule files during implementation.
-- Load applicable repository skills from the guide; rules and skills are separate inputs.
+- Load applicable repository skills from that directory; rules and skills are separate inputs.
 - Follow skill rules relevant to the task you are about to commit.
 
-**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 
 **AGENTS.md enforcement:** If `./AGENTS.md` exists, treat its directives as hard constraints during execution. Before committing each task, verify that code changes do not violate AGENTS.md rules (forbidden patterns, required conventions, mandated tools). If a task action would contradict a AGENTS.md directive, apply the AGENTS.md rule — it takes precedence over plan instructions. Document any AGENTS.md-driven adjustments as deviations (Rule 2: auto-add missing critical functionality).
 </project_context>

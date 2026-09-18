@@ -67,13 +67,10 @@ complete. Treat it as blocked.
 
 ## Skills
 
-[Repository skills](.ai/guides/AGENT-SKILLS.md) supply focused engineering
-methods. Load the skills that match the work, plus those named in the plan's
+The skills under `.agents/skills/` mirror `.ai/commands/` one-for-one; a host
+that discovers skills and a host that registers slash commands behave
+identically. Load the skills that match the work, plus those named in the plan's
 `read_first` section — do not read every skill body.
-
-The command skills under `.agents/skills/` mirror `.ai/commands/` one-for-one; a
-host that discovers skills and a host that registers slash commands behave
-identically.
 
 ## Delivery
 

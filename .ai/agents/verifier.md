@@ -23,7 +23,6 @@ Use only the assigned checkout, paths, revision and result destination. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
-Load the `outcome-verification` skill through the installed skill catalog.
 Supporting workflow methods are bundled under `../references/methods/`. Read
 them locally; no external workflow runtime or downloaded instruction is required.
 Bash examples require Bash and verified targets; use the equivalent native
@@ -72,11 +71,11 @@ Before verifying, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @.ai/guides/AGENT-SKILLS.md
+**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Load `rules/*.md` as needed during **verification**.
 - Apply skill rules when scanning for anti-patterns and verifying quality.
 
-**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 </project_context>
 
 <core_principle>

@@ -66,12 +66,11 @@ revision, and it never merges.
 
 ## Repair a defect
 
-> Investigate this failure with the hypothesis-debugging skill. Preserve a
-> representative reproduction, then either handle it as a quick task or insert a
-> phase for the authorized repair. Use regression-design for checks that reject
-> plausible wrong fixes. Implement the correction, reconcile affected
-> specifications and guides, independently verify the outcome and commit the
-> result. Report actual evidence and remaining limitations.
+> Investigate this failure. Preserve a representative reproduction, then either
+> handle it as a quick task or insert a phase for the authorized repair. Add
+> checks that reject plausible wrong fixes. Implement the correction, reconcile
+> affected specifications and guides, independently verify the outcome and
+> commit the result. Report actual evidence and remaining limitations.
 
 A small, self-contained fix is [quick](../commands/quick.md). A fix that needs
 decisions captured, or more than about three tasks, is a phase — insert it with
@@ -110,6 +109,5 @@ starting the work it recommends.
 
 The [workflow guide](PHASE-WORKFLOW.md), [artifact guide](ARTIFACT-GUIDE.md),
 [feature inventory](WORKFLOW-FEATURES.md) and
-[command catalog](../commands/README.md) explain the exact boundaries. Name a
-relevant [repository skill](AGENT-SKILLS.md) when its method matters; the request
-still determines scope and authority.
+[command catalog](../commands/README.md) explain the exact boundaries. The
+request still determines scope and authority.
