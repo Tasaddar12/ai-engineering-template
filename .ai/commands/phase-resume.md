@@ -9,13 +9,28 @@ never fabricate a prior exchange. A saved attempt or continuation note cannot gr
 
 Read [RULES](../RULES.md) and inspect status before taking action. Use the
 original assigned integration checkout and its preserved operational state.
+The active runtime handles recognized worker capacity handoffs within its scheduler;
+keep following that process and do not launch a second scheduler. If the scheduler
+itself stops, or a native worker reaches a timeout, idle cutoff, context limit or
+turn limit, the coordinator must invoke this procedure automatically. Existing implementation authorization
+covers the recovery; do not wait for another user prompt. Continue independent
+ready components while reconciling the interrupted component.
 
 1. Inspect the recorded worker processes, actual worktrees, commits and summaries.
    Do not start replacements while prior workers may still be writing.
 2. Reconcile completed committed results, incomplete changes and any input
    revisions that differ from the original attempt. Preserve out-of-scope or
    uncertain output for inspection rather than accepting it automatically.
-3. After confirming prior workers have stopped, use:
+   Record the stopped attempt's base/head, worktree, dirty files, completed tasks,
+   remaining tasks, checks and missing evidence in the replacement handoff. Do
+   not reset, clean or delete its checkout to make retry easier.
+3. If no valid completed result exists, prepare a bounded handoff for a fresh
+   worker covering only the remaining authorized tasks. Preserve the component's worktree,
+   commits and dirty work when its ownership and acceptance remain unchanged;
+   do not repeat completed tasks or reuse an exhausted agent context. Resolve
+   changed inputs before dispatch, and replan changed ownership or acceptance.
+4. After confirming prior workers have stopped, resume runtime dispatch below.
+   For native host orchestration, dispatch the fresh worker with that handoff.
 
 ```text
 python .ai/runtime/phase.py resume 01-authentication --workers-stopped
@@ -38,7 +53,11 @@ After reconciliation, follow the [execution continuation loop](phase-start.md#ke
 Keep following the resumed runtime through newly ready components; do not stop
 at the recovered worker's result or the end of its wave. If it exits with work
 unfinished, inspect and report the specific blocker instead of leaving an idle
-phase waiting for an unspecified next prompt.
+phase waiting for an unspecified next prompt. A recoverable handoff requires
+another reconciliation and fresh dispatch, not a terminal blocked report. Resolve
+failures within authorized scope. Stop dependent work only when a concrete
+blocker requires unavailable access, an external change or a new user decision;
+report that requirement and preserve the work while independent work continues.
 
 Inspect each component's saved `review_attempt` as well as its coder process.
 A stopped review with a valid report for the exact same base and commit can be
@@ -63,6 +82,7 @@ component, then run `verify PHASE --workers-stopped`. The runner captures a sepa
 `review_resolution` on the corrected integration revision and retains the original
 findings; it does not rewrite the original worker revision or mark it clean.
 
-After a turn/context limit, inspect actual commits, dirty files and SUMMARY before
-preparing a smaller fresh assignment. Do not repeatedly resume the same growing
-native subagent context to bypass the limit.
+After a turn/context limit, inspect actual commits, dirty files and SUMMARY,
+prepare a smaller assignment for the remaining tasks, and dispatch a fresh worker
+without a user prompt. Do not repeatedly resume the same growing native subagent
+context to bypass the limit.

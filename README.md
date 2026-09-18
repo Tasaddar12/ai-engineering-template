@@ -66,6 +66,38 @@ their presence does not install commands, dispatchers or host integrations.
 `.planning/config.yaml` configures this runtime. Upstream configuration examples
 are not silently translated into Python runtime settings.
 
+## Install or update with an agent
+
+Replace `[codex|claude]` with your host. Copy the appropriate prompt into the
+project's agent session; both authorize workflow changes only.
+
+### Update an already configured project
+
+```text
+Update this project's installed workflow from the latest main revision of
+https://github.com/Tasaddar12/ai-engineering-template. Follow its install guide
+in an assigned worktree; compare and reconcile upstream changes with our installed
+host layout. Preserve project identity, planning/history, settings, worker routes,
+checks and custom instructions. Do not re-onboard or reset project records.
+Validate the updated workflow and project checks, then follow this project's
+delivery rules.
+```
+
+### Install the workflow
+
+```text
+Install https://github.com/Tasaddar12/ai-engineering-template from its latest main
+revision into this project for [codex|claude]. Follow its install guide in an
+assigned worktree, preserve existing project files/settings, install dependencies
+and validate the host setup. Follow the delivery rules and report the onboarding
+next step; do not implement product work.
+```
+
+See the [install guide](.ai/commands/install.md) for prerequisites and bootstrap
+steps. Re-running the installer does not overwrite conflicting workflow files:
+updates require reconciliation. Use `--migrate-existing` only for the legacy
+separate `.ai` layout described in that guide.
+
 ## Adopt the template
 
 Start with the [download-and-run installer](.ai/commands/install.md) for a new directory

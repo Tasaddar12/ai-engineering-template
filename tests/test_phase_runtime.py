@@ -256,9 +256,9 @@ class PhaseRuntimeTests(unittest.TestCase):
         return [json.loads(line) for line in log.read_text(encoding='utf-8').splitlines()] if log.exists() else []
 
     @contextmanager
-    def live_worker_after_coordinator_interruption(self, *, crash_before_pid_save: bool = False):
+    def live_worker_after_coordinator_interruption(self, *, crash_before_pid_save: bool = False, mode="commit-then-wait"):
         release = self.directory / "release-worker"
-        self.configure(PHASE_FIXTURE_MODE="commit-then-wait", PHASE_FIXTURE_RELEASE=str(release))
+        self.configure(PHASE_FIXTURE_MODE=mode, PHASE_FIXTURE_RELEASE=str(release))
         self.commit("Prepare interrupted coordinator")
         command = [sys.executable, str(self.checkout / ".ai/runtime/phase.py"), "run", PHASE]
         if crash_before_pid_save:
@@ -861,6 +861,133 @@ class PhaseRuntimeTests(unittest.TestCase):
             self.cli("resume", PHASE, "--workers-stopped")
             self.assertTrue(self.summary("01-01").is_file())
             self.assertEqual(len(self.events()), 1)
+
+    def test_capacity_handoffs_preserve_commits_and_dirty_work_without_another_command(self) -> None:
+        self.component("01-02", depends_on=["01-01"])
+        self.configure(PHASE_FIXTURE_MODE="handoff-context")
+        self.commit("Prepare explicit context handoff")
+        self.cli("run", PHASE)
+        attempts = sorted([e for e in self.events() if e["component"] == "01-01"], key=lambda e: e["started"])
+        self.assertEqual(len(attempts), 2)
+        self.assertNotEqual(attempts[0]["pid"], attempts[1]["pid"])
+        self.assertEqual(attempts[0]["worktree"], attempts[1]["worktree"])
+        self.assertGreaterEqual(attempts[1]["started"], attempts[0]["finished"])
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding="utf-8"),
+                         "preserved commit\npreserved dirty work\n01-01 implemented\n")
+        self.assertTrue(self.summary("01-02").exists())
+        self.cli("verify", PHASE)
+
+    def test_worker_timeout_dispatches_fresh_worker_and_retains_attempt_evidence(self) -> None:
+        self.config["execution"]["worker_timeout_seconds"] = 8
+        self.configure(PHASE_FIXTURE_MODE="handoff-timeout")
+        self.commit("Prepare timed-out partial worker")
+        self.cli("run", PHASE)
+        attempts = sorted(self.events(), key=lambda e: e["started"])
+        self.assertEqual(len(attempts), 2)
+        self.assertTrue(attempts[1]["continued"])
+        checkpoint = next((self.primary / ".git/ai").rglob("state.yaml"))
+        entry = yaml.safe_load(checkpoint.read_text(encoding="utf-8"))["components"]["01-01"]
+        self.assertEqual(entry["status"], "integrated")
+        self.assertEqual(entry["attempt_history"][0]["reason"], "timeout")
+        self.assertNotEqual(entry["log"], entry["attempt_history"][0]["log"])
+        self.assertTrue(Path(entry["attempt_history"][0]["receipt"]).exists())
+        self.assertIn("preserved dirty work", (self.checkout / "src/01-01.txt").read_text(encoding="utf-8"))
+
+    def test_repeated_capacity_handoffs_without_source_edits_still_continue(self) -> None:
+        self.configure(PHASE_FIXTURE_MODE="handoff-research")
+        self.commit("Prepare consecutive research handoffs")
+        self.cli("run", PHASE)
+        self.assertEqual(len(self.events()), 3)
+        self.assertTrue(self.summary("01-01").exists())
+
+    def test_capacity_exit_with_complete_committed_result_does_not_replay(self) -> None:
+        self.configure(PHASE_FIXTURE_MODE="complete-then-handoff")
+        self.commit("Prepare complete result at capacity boundary")
+        self.cli("run", PHASE)
+        self.assertEqual(len(self.events()), 1)
+        self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding="utf-8"), "01-01 implemented\n")
+
+    def test_resume_hands_partial_work_to_a_fresh_worker_in_the_same_tree(self) -> None:
+        with self.live_worker_after_coordinator_interruption(mode="handoff-wait") as release:
+            self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
+            self.assertEqual(len(self.events()), 1)
+            self.release_worker(release)
+            self.cli("resume", PHASE, "--workers-stopped")
+            attempts = sorted(self.events(), key=lambda e: e["started"])
+            self.assertEqual(len(attempts), 2)
+            self.assertEqual(attempts[0]["worktree"], attempts[1]["worktree"])
+            self.assertEqual((self.checkout / "src/01-01.txt").read_text(encoding="utf-8"),
+                             "preserved commit\npreserved dirty work\n01-01 implemented\n")
+
+    def test_handoff_keeps_overlapping_components_serialized(self) -> None:
+        self.component("01-01", files=["src/shared.txt"], resources=["shared-service"])
+        self.component("01-02", files=["src/shared.txt"], resources=["shared-service"])
+        self.configure(PHASE_FIXTURE_MODE="handoff-context")
+        self.commit("Prepare shared-path handoff")
+        self.cli("run", PHASE)
+        events = sorted(self.events(), key=lambda e: e["started"])
+        self.assertEqual([e["component"] for e in events], ["01-01", "01-01", "01-02"])
+        self.assertGreaterEqual(events[2]["started"], events[1]["finished"])
+        self.assertEqual((self.checkout / "src/shared.txt").read_text(encoding="utf-8"),
+                         "preserved commit\npreserved dirty work\n01-01 implemented\n01-02 implemented\n")
+
+    def test_peer_timeout_during_independent_review_still_dispatches_replacement(self) -> None:
+        self.component("01-02")
+        self.configure(PHASE_FIXTURE_MODE="handoff-timeout")
+        self.commit("Prepare peer interrupted during independent review")
+        # Advance only the first worker's deadline when its peer reaches review.
+        # The real review polling loop must kill it and record timed_out.
+        launcher = (
+            "import sys,time\nsys.path.insert(0,'.ai/runtime')\nimport phase_runner,phase\n"
+            "original=phase_runner.capture_component_review\n"
+            "def review(p,c,e,s,h,peers=None,**kw):\n"
+            "    if c.id=='01-02' and peers and '01-01' in peers:\n"
+            "        s['components']['01-01']['started']=time.time()-4000\n"
+            "    return original(p,c,e,s,h,peers,**kw)\n"
+            "phase_runner.capture_component_review=review\n"
+            f"raise SystemExit(phase.main(['run',{PHASE!r}]))\n"
+        )
+        result = subprocess.run([sys.executable, "-c", launcher], cwd=self.checkout, env=self.environment,
+                                capture_output=True, text=True, encoding="utf-8", timeout=60)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        attempts = [e for e in self.events() if e["component"] == "01-01"]
+        self.assertEqual(len(attempts), 2)
+        self.assertTrue(self.summary("01-01").exists())
+        self.assertTrue(self.summary("01-02").exists())
+
+    def test_capacity_handoff_rejects_unowned_dirty_work(self) -> None:
+        self.configure(PHASE_FIXTURE_MODE="handoff-outside")
+        self.commit("Prepare out-of-scope partial worker")
+        result = self.cli("run", PHASE, succeeds=False)
+        self.assertIn("out-of-scope unfinished change: outside.txt", result.stdout)
+        self.assertEqual(len(self.events()), 1)
+        self.assertTrue((Path(self.events()[0]["worktree"]) / "outside.txt").exists())
+
+    def test_resume_does_not_reuse_stale_handoff_after_replacement_permission_failure(self) -> None:
+        self.configure(PHASE_FIXTURE_MODE="handoff-permission")
+        self.commit("Prepare handoff followed by permission failure")
+        self.cli("run", PHASE, succeeds=False)
+        self.assertEqual(len(self.events()), 2)
+        self.cli("resume", PHASE, "--workers-stopped", succeeds=False)
+        self.assertEqual(len(self.events()), 2)
+        self.assertFalse(self.summary("01-01").exists())
+
+    def test_timeout_preserves_truncated_utf8_summary_and_independent_work(self) -> None:
+        self.component("01-02")
+        self.config["execution"]["worker_timeout_seconds"] = 8
+        self.configure(PHASE_FIXTURE_MODE="handoff-truncated")
+        self.commit("Prepare interruption during multibyte summary write")
+        self.cli("run", PHASE)
+        self.assertEqual(len([e for e in self.events() if e["component"] == "01-01"]), 2)
+        self.assertTrue(self.summary("01-01").exists())
+        self.assertTrue(self.summary("01-02").exists())
+
+    def test_capacity_handoff_rejects_undeclared_dirty_deletion(self) -> None:
+        self.configure(PHASE_FIXTURE_MODE="handoff-delete")
+        self.commit("Prepare undeclared partial deletion")
+        result = self.cli("run", PHASE, succeeds=False)
+        self.assertIn("undeclared unfinished deletion", result.stdout)
+        self.assertEqual(len(self.events()), 1)
 
     def test_resume_refuses_to_integrate_a_still_running_worker(self) -> None:
         with self.live_worker_after_coordinator_interruption() as release:

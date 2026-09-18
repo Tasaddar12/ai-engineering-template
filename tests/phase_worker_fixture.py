@@ -223,6 +223,47 @@ def main() -> int:
             print("Deliberate component failure", file=sys.stderr)
             return 7
 
+        if mode.startswith("handoff-") and component == "01-01":
+            prior_attempts = [yaml.safe_load(p.read_text(encoding="utf-8")) for p in event_directory.glob("*.yaml") if p != event_path]
+            prior_attempts = [e for e in prior_attempts if e["component"] == component and e["kind"] == kind]
+            if mode == "handoff-research" and len(prior_attempts) < 2:
+                return 75
+            target = root / metadata["files_modified"][0]
+            if not prior_attempts and mode != "handoff-research":
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("preserved commit\n", encoding="utf-8")
+                git(root, "add", "--", str(target.relative_to(root)))
+                git(root, "commit", "-m", "Preserve partial component work")
+                event["partial_commit"] = git(root, "rev-parse", "HEAD")
+                target.write_text("preserved commit\npreserved dirty work\n", encoding="utf-8")
+                if mode == "handoff-outside":
+                    (root / "outside.txt").write_text("Preserve but reject", encoding="utf-8")
+                if mode == "handoff-delete":
+                    target.unlink()
+                if mode in ("handoff-context", "handoff-permission"):
+                    write_record(result, {"status": "blocked", "continuation": "context_limit"},
+                                 "# Handoff\n\nPreserved first task. Finish the remaining output and checks.\n")
+                    return 0
+                if mode == "handoff-wait":
+                    event["committed"] = event["partial_commit"]
+                    save_event()
+                    await_fixture_release()
+                    return 75
+                save_event()
+                if mode == "handoff-truncated":
+                    result.write_bytes(b"---\nstatus: blocked\n---\nPartial UTF8: \xe6\x9d")
+                if mode in ("handoff-timeout", "handoff-truncated"):
+                    time.sleep(120)
+                return 75
+            if mode == "handoff-permission":
+                print("Access is denied", file=sys.stderr)
+                return 7
+            assert "Required continuation from a stopped worker" in prompt
+            if mode != "handoff-research":
+                assert target.read_text(encoding="utf-8") == "preserved commit\npreserved dirty work\n"
+                assert git(root, "merge-base", prior_attempts[0]["partial_commit"], "HEAD") == prior_attempts[0]["partial_commit"]
+            event["continued"] = True
+
         tdd_evidence = ""
         if mode == "native-tdd":
             test = root / "tests/test_total.py"
@@ -317,6 +358,8 @@ def main() -> int:
             git(root, "commit", "-m", f"Implement fixture component {component}")
             event["committed"] = git(root, "rev-parse", "HEAD")
             save_event()
+        if mode == "complete-then-handoff":
+            return 75
         if mode == "commit-then-wait":
             await_fixture_release()
         return 0
