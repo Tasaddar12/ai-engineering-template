@@ -221,6 +221,8 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.target = self.base / host
                 result = self.install("--host", host, "--no-hooks")
                 self.assertEqual(0, result.returncode, result.stderr)
+                installed_config = yaml.safe_load((self.target / ".planning/config.yaml").read_text(encoding="utf-8"))
+                self.assertIsNone(installed_config["execution"]["claude_max_turns"])
                 agents = self.target / ("." + host) / "agents"
                 methods = {}
                 for role in agents.glob("*.md"):

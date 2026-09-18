@@ -242,28 +242,34 @@ No user permission needed for Rules 1-3.
 
 **Examples:** Wrong types, broken imports, missing env var, DB connection error, build config error, missing referenced file, circular dependency
 
-**EXCLUDED from RULE 3 — package manager installs:**
-Running `npm install <pkg>`, `pip install <pkg>`, `cargo add <pkg>`, or any equivalent package-manager install command is **NOT** auto-fixable. If a referenced package fails to install or cannot be found:
+**Package manager failures require evidence before correction:**
+If `npm install <pkg>`, `pip install <pkg>`, `cargo add <pkg>`, or an equivalent command fails:
 1. Do NOT attempt to install a similarly-named alternative.
-2. Do NOT retry with a different package name.
-3. Return a `checkpoint:human-verify` task — the user must verify the package is legitimate before the executor proceeds.
+2. Inspect the actual error, existing manifest/lockfile and the dependency's official
+   documentation or registry record. Confirm the intended exact identity before retrying.
+3. Correct an evidenced transient, environment or configuration problem within
+   ownership, retry the confirmed dependency, run affected checks and continue.
+4. If a different identity or PLAN correction is needed, give the coordinator the
+   source evidence and bounded correction. The coordinator MUST reconcile authorized
+   changes and dispatch the next action immediately. Do not ask the user to approve
+   a routine evidence-backed correction or label the failure `blocking-human`.
+5. Request only genuinely unavailable credentials/access or a choice outside the
+   approved scope. Preserve that exact requirement while independent work continues.
 
-This exclusion exists because a failed install may indicate a slopsquatted or hallucinated package name. Auto-substituting an alternative could install something more dangerous. If a package install fails, emit:
+A failed lookup is not permission to install a guessed substitute. Example of a
+coordinator-prepared correction after confirming the intended dependency:
 
 ```xml
-<task type="checkpoint:human-verify" gate="blocking-human">
-  <what-built>Package install failed — human verification required</what-built>
-  <how-to-verify>
-    `[package-name]` could not be installed. Before proceeding:
-    1. Verify the package exists and is legitimate: https://npmjs.com/package/[package-name]
-    2. Confirm the package name is spelled correctly in PLAN.md
-    3. If the package does not exist, return the failed lookup to the coordinator for bounded phase research using the researcher role. Feed the confirmed package identity into phase-prepare to correct the PLAN before installation.
-  </how-to-verify>
-  <resume-signal>Type "verified" with the correct package name, or "abort" to stop the phase</resume-signal>
+<task type="auto">
+  <name>Repair the confirmed dependency installation</name>
+  <action>Use the recorded official identity and corrected configuration; do not substitute a guessed package.</action>
+  <verify>Installation and the affected import/build check pass.</verify>
+  <done>Dependency works and the next implementation task resumes.</done>
 </task>
 ```
 
-Use `gate="blocking-human"` for package-legitimacy checkpoints so they are unambiguously excluded from auto-approval behavior.
+An actually user-required package approval remains required; record its source
+and exact missing response rather than deriving it from an install error alone.
 
 ---
 
@@ -383,7 +389,7 @@ When hitting checkpoint or auth gate, return this structure:
 ## CHECKPOINT REACHED
 
 **Type:** [human-verify | decision | human-action]
-**Gate:** [blocking | blocking-human] — copy the task's `gate` attribute verbatim (precondition-unmet checkpoints report `blocking-human`)
+**Gate:** [blocking | blocking-human] — preserve an actually assigned gate; use `blocking-human` only for a required human response, not an automatable unmet precondition
 **Plan:** {phase}-{plan}
 **Progress:** {completed}/{total} tasks complete
 

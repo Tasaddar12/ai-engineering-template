@@ -3,7 +3,7 @@
 execution:
   max_parallel: 3
   max_tasks_per_component: null  # Set a positive integer to enforce a task-count limit.
-  claude_max_turns: 40
+  claude_max_turns: null  # No workflow-imposed turn cap; set a positive integer only when explicitly requested.
   worker_timeout_seconds: 3600
   check_timeout_seconds: 300
   # Each invocation reads the runtime's assignment from stdin in its worktree.
