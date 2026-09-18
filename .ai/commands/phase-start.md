@@ -27,10 +27,12 @@ branch. Unrelated earlier-wave work is not a barrier.
 
 ## Keep authorized execution moving
 
-The coordinator owns continuation until the authorized phase reaches its delivery
+The coordinator MUST continue until the authorized phase reaches its delivery
 boundary or a concrete blocker prevents further progress. Finishing a displayed
-wave, receiving a worker result, or posting a progress update is not a stopping
-point and does not require another user prompt. A worker timeout, idle cutoff,
+wave, receiving a worker result, completing tests, an evidence survey or a review,
+or posting a progress update is not a stopping point. After each event, the
+coordinator MUST immediately execute the next ready action without another user
+prompt. A worker timeout, idle cutoff,
 context limit or turn limit is a recovery trigger, not a phase stopping point.
 
 - Keep following the active runtime process until it exits. A tool returning a
@@ -57,7 +59,10 @@ context limit or turn limit is a recovery trigger, not a phase stopping point.
   work when the runtime permits it. Do not describe an idle unfinished phase as
   complete or merely promise to start the next wave later.
 - When every component is integrated, proceed to the authorized verification and
-  delivery steps. Honor explicit pauses, deferred tests, human-only gates and
+  delivery steps. A TDD evidence survey MUST feed the automated triage in
+  [phase-verify](phase-verify.md), then verification or corrective work in the same
+  execution loop. A survey or report alone MUST NOT end the phase. Honor explicit
+  user pauses, deferred tests, actually assigned human-only gates and
   delivery limits; this continuation rule never authorizes another phase.
 
 Workers commit each completed meaningful slice immediately and commit their

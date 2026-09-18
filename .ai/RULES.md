@@ -178,6 +178,24 @@ checks, accurate required documentation and conclusive independent verification.
 Required UAT must pass. A process exit, summary assertion, checkbox or existing
 file is not proof. Bug repairs need reproduction and regression evidence.
 
+Once phase implementation is authorized, the coordinator MUST continue through
+implementation, corrections, required checks, independent verification and the
+authorized delivery boundary. After every worker result, test run, evidence
+survey, review or progress report, it MUST perform the next ready action in the
+same execution loop without asking the user to continue. Producing a report is
+not phase completion. An automatically checkable deliverable requires conclusive
+automated evidence to auto-pass without a human prompt; missing or failing
+evidence requires an owned correction and another affected check, not a survey
+followed by a halt. Never fabricate evidence, weaken acceptance or treat an
+advisory process observation as a new human approval requirement.
+
+Only an actual user pause or delivery limit, an explicitly assigned human-only
+check, or an unresolved condition requiring unavailable access, an external
+change or a new user decision suspends its dependent work. The coordinator MUST
+first continue all independent authorized work, then report the exact remaining
+blocker and the targeted action needed. Template examples and ordinary internal
+checkpoints do not establish human-only gates.
+
 Evidence names the tested revision and actual commands/results. Material content
 changes invalidate prior verification. Final publication readiness needs applicable
 authorization, current verification and configured nonempty local checks. Default
