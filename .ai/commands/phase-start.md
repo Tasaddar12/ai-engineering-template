@@ -30,7 +30,8 @@ branch. Unrelated earlier-wave work is not a barrier.
 The coordinator owns continuation until the authorized phase reaches its delivery
 boundary or a concrete blocker prevents further progress. Finishing a displayed
 wave, receiving a worker result, or posting a progress update is not a stopping
-point and does not require another user prompt.
+point and does not require another user prompt. A worker timeout, idle cutoff,
+context limit or turn limit is a recovery trigger, not a phase stopping point.
 
 - Keep following the active runtime process until it exits. A tool returning a
   process/session handle means execution is still active; collect subsequent
@@ -43,6 +44,12 @@ point and does not require another user prompt.
   are active and authorized components remain ready, continue execution now.
   For an interrupted attempt, follow [phase-resume](phase-resume.md) to reconcile
   prior processes and results before resuming; never blindly start replacements.
+  After confirming a limited or interrupted worker stopped, dispatch a fresh
+  bounded worker for its remaining tasks without waiting for a user prompt.
+  Preserve its commits and dirty files; consume a valid completed result instead
+  of repeating completed work. Keep independent ready components moving during
+  recovery. If the runtime exits for a recoverable handoff, the coordinator must
+  perform this recovery loop and resume; that exit does not end the phase.
 - If unfinished work cannot proceed, report the affected component IDs, exact
   unmet prerequisite or failure, preserved evidence, and the next action needed.
   Resolve blockers already within scope and continue other independent ready

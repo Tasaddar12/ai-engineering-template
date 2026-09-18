@@ -208,8 +208,16 @@ operations and protect runtime state with its common-directory lock. Worktrees
 isolate Git changes, not ports, databases or arbitrary external writes; declare
 exclusive resources and respect host permissions.
 
-Do not blindly restart an interrupted worker. Inspect its process, worktree,
-commits and result before reconciliation. Preserve incomplete and unmerged work.
+A worker timeout, idle cutoff, context limit or turn limit requires automatic
+coordinator recovery; it does not end the authorized phase or require another
+user prompt. Confirm the old worker has stopped, inspect its worktree, commits,
+dirty files and result, then assign only the remaining work to a fresh bounded
+worker. Preserve incomplete and unmerged work, reuse valid completed results,
+and keep independent ready components moving. Follow
+[phase-resume](commands/phase-resume.md) for reconciliation before dispatch.
+Resolve failures within authorized scope; stop dependent work only for a concrete
+blocker that requires unavailable access, an external change or a new user
+decision. Honor explicit user pauses and delivery limits.
 Status is read-only; the coordinator explicitly syncs the derived STATE view.
 Local checkpoints are operational data; durable summaries and reports ship with
 the phase. For integrated components missing review receipts, follow

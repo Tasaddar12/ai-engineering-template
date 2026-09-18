@@ -46,7 +46,13 @@ and integration. Follow [execution continuation](../commands/phase-start.md#keep
 before ending a turn: keep following a live runtime session; continue ready work
 when idle; otherwise name the concrete blocker. A completed wave or a progress
 message is not a handoff back to the user. Preserve explicit user stop boundaries
-and reconcile interruptions before restarting anything.
+and reconcile interruptions before restarting anything. A worker timeout, idle
+cutoff, context limit or turn limit requires you to reconcile preserved work and
+dispatch a fresh bounded worker under [phase-resume](../commands/phase-resume.md)
+without another user prompt. Keep independent ready work moving. A scheduler exit
+for a recoverable handoff is a transition you must handle, not a reason to end the
+phase. Stop dependent work only for a concrete blocker you cannot resolve within
+authorized scope; name the unavailable access, external change or user decision.
 
 Reconcile the coder's [coder state-update checklist](coder.md) (`state_updates`) after
 integration: position, progress, metrics, decisions, session, roadmap, requirements
