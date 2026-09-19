@@ -1,6 +1,5 @@
 ---
 name: phase-checker
-model: sonnet
 description: Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by phase-prepare orchestrator.
 tools: Read, Bash, Glob, Grep, Skill
 color: green

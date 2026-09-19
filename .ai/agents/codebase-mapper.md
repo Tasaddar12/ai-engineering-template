@@ -1,6 +1,5 @@
 ---
 name: codebase-mapper
-model: sonnet
 description: Explores codebase and writes structured analysis documents. Assigned by the coordinator during onboard or phase-research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
 tools: Read, Bash, Grep, Glob, Write, Skill
 color: cyan

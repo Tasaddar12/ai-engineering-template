@@ -486,16 +486,19 @@ class Dispatch(RuntimeCase):
         failure = self.run_verb("no-such-verb", expect_ok=False)
         self.assertEqual(failure["code"], "unknown-verb")
 
-    def test_resolve_model_reads_the_agent_definition(self):
+    def test_resolve_model_inherits_when_no_override_is_configured(self):
+        """Agent files carry no model; the host chooses unless config overrides."""
         result = self.run_verb("resolve-model", "coder")
-        self.assertEqual(result["source"], "agent-file")
-        self.assertTrue(result["model"])
+        self.assertEqual(result["source"], "default")
+        self.assertEqual(result["model"], "inherit")
+        self.assertTrue(result["inherit"])
 
     def test_config_overrides_the_agent_model(self):
         self.run_verb("config-set", "agents.coder.model", "opus")
         result = self.run_verb("resolve-model", "coder")
         self.assertEqual(result["model"], "opus")
         self.assertEqual(result["source"], "config")
+        self.assertFalse(result["inherit"])
 
 
 if __name__ == "__main__":

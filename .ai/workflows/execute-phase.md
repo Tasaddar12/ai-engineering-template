@@ -28,6 +28,20 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - debugger — investigates a failure the coder could not resolve
 </available_agent_types>
 
+<model_selection>
+Models are injected inline at dispatch, never read from an agent's frontmatter.
+Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+
+```bash
+phase_run query resolve-model <agent> --raw
+```
+
+A result of `inherit` means the project set no override — **omit the `model`
+argument entirely** in that case and let the host choose. Pass `model` only when
+resolution returned a concrete model name. The `models` map in each init bundle
+carries the same resolved values for every agent that workflow dispatches.
+</model_selection>
+
 <authority>
 **Executing a phase changes the codebase.** Do not start execution unless the
 user has explicitly asked for this phase to be implemented. Phase creation,
@@ -205,7 +219,7 @@ Return: ## EXECUTION COMPLETE with status and the summary path
 </output>
 ",
   subagent_type="coder",
-  model="{models['coder']}",
+  ${models['coder'] === 'inherit' ? '' : `model="${models['coder']}",`}
   description="Execute {plan_id}"
 )
 ```
@@ -284,7 +298,7 @@ Return:
 Findings: <numbered, each with file:line, severity (critical|warning), and why it is wrong>
 ",
   subagent_type="code-reviewer",
-  model="{models['code-reviewer']}",
+  ${models['code-reviewer'] === 'inherit' ? '' : `model="${models['code-reviewer']}",`}
   description="Review phase {phase_number} changes"
 )
 ```

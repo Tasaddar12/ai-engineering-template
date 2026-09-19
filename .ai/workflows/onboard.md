@@ -25,6 +25,20 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - codebase-mapper — explores an existing codebase and writes structured analysis
 </available_agent_types>
 
+<model_selection>
+Models are injected inline at dispatch, never read from an agent's frontmatter.
+Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+
+```bash
+phase_run query resolve-model <agent> --raw
+```
+
+A result of `inherit` means the project set no override — **omit the `model`
+argument entirely** in that case and let the host choose. Pass `model` only when
+resolution returned a concrete model name. The `models` map in each init bundle
+carries the same resolved values for every agent that workflow dispatches.
+</model_selection>
+
 <process>
 
 <step name="setup">
@@ -87,7 +101,7 @@ Return: ## MAP COMPLETE with the files written and the three constraints that
 matter most for planning new work.
 ",
   subagent_type="codebase-mapper",
-  model="{models['codebase-mapper']}",
+  ${models['codebase-mapper'] === 'inherit' ? '' : `model="${models['codebase-mapper']}",`}
   description="Map the existing codebase"
 )
 ```
@@ -182,7 +196,7 @@ versions and APIs. Do not pick for the user — surface what the choice costs.
 Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
 ",
   subagent_type="researcher",
-  model="{models['researcher']}",
+  ${models['researcher'] === 'inherit' ? '' : `model="${models['researcher']}",`}
   description="Research project decisions"
 )
 ```

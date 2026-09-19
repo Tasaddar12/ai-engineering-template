@@ -29,6 +29,20 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - code-reviewer — reviews source files for bugs and security issues
 </available_agent_types>
 
+<model_selection>
+Models are injected inline at dispatch, never read from an agent's frontmatter.
+Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+
+```bash
+phase_run query resolve-model <agent> --raw
+```
+
+A result of `inherit` means the project set no override — **omit the `model`
+argument entirely** in that case and let the host choose. Pass `model` only when
+resolution returned a concrete model name. The `models` map in each init bundle
+carries the same resolved values for every agent that workflow dispatches.
+</model_selection>
+
 <scope_guardrail>
 **A quick task is one focused change.** If the work needs more than three tasks,
 touches several subsystems, or needs decisions captured for later, it is a phase:
@@ -154,7 +168,7 @@ Return: ## PLANNING COMPLETE with the plan path
 </output>
 ",
   subagent_type="phase-preparer",
-  model="{models['phase-preparer']}",
+  ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
   description="Quick plan: ${DESCRIPTION}"
 )
 ```
@@ -187,7 +201,7 @@ Verdict: approved | needs-revision
 Findings: <numbered, each naming the task it affects>
 ",
   subagent_type="phase-checker",
-  model="{models['phase-checker']}",
+  ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
   description="Check quick plan ${QUICK_ID}"
 )
 ```
@@ -234,7 +248,7 @@ and the verification you actually ran
 </output>
 ",
   subagent_type="coder",
-  model="{models['coder']}",
+  ${models['coder'] === 'inherit' ? '' : `model="${models['coder']}",`}
   description="Execute quick task ${QUICK_ID}"
 )
 ```
@@ -275,7 +289,7 @@ Status: passed | gaps_found | human_needed
 Findings: <what is actually true in the code>
 ",
   subagent_type="verifier",
-  model="{models['verifier']}",
+  ${models['verifier'] === 'inherit' ? '' : `model="${models['verifier']}",`}
   description="Verify quick task ${QUICK_ID}"
 )
 ```

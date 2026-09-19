@@ -115,8 +115,14 @@ claiming phases shipped when they did not is the record this exists to keep hone
 
 | Verb | Effect |
 |---|---|
-| `resolve-model <agent>` | Model for an agent: config override, then agent file, then `inherit` |
+| `resolve-model <agent>` | Model for an agent: a project config override, otherwise `inherit` |
 | `resolve-agent <agent>` | Model, tools, disallowed tools, max turns and declared skills |
+
+Agent definitions carry no `model:` frontmatter — the host no longer reads one
+from there, so the model is injected inline on the `Agent(...)` call. A resolved
+value of `inherit` means the project set no override, and the caller omits the
+model argument entirely.
+
 | `agent-skills <agent>` | The agent's declared skills resolved against the installed skills root |
 | `agents.list` / `skills.list` | What is installed |
 | `verification.status <phase>` | Whether a verification report exists, and what it concluded |

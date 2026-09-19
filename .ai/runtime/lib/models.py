@@ -49,17 +49,17 @@ def split_list(value):
 
 
 def resolve_model(workspace, name):
-    """Model for an agent: config override, then agent file, then inherit."""
+    """Model for an agent: a project config override, otherwise `inherit`.
+
+    Agent definitions deliberately carry no `model:` frontmatter — the host no
+    longer reads one from there, so the model is injected inline at spawn time.
+    `inherit` means the caller omits the model argument and lets the host choose.
+    """
     override = config_get(workspace, "agents." + name + ".model")
     if override:
-        return {"agent": name, "model": str(override), "source": "config"}
-    path = agent_file(name)
-    if path is None:
-        return {"agent": name, "model": "inherit", "source": "default"}
-    frontmatter, _ = split_frontmatter(read_text(path, ""))
-    model = str(frontmatter.get("model") or "inherit")
-    return {"agent": name, "model": model, "source": "agent-file",
-            "file": str(path)}
+        return {"agent": name, "model": str(override), "source": "config",
+                "inherit": False}
+    return {"agent": name, "model": "inherit", "source": "default", "inherit": True}
 
 
 def resolve_agent(workspace, name):
@@ -72,6 +72,7 @@ def resolve_agent(workspace, name):
         "description": frontmatter.get("description", ""),
         "model": model["model"],
         "model_source": model["source"],
+        "inherit": model["inherit"],
         "tools": split_list(frontmatter.get("tools")),
         "disallowed_tools": split_list(frontmatter.get("disallowedTools")),
         "max_turns": frontmatter.get("maxTurns"),

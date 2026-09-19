@@ -28,6 +28,20 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - codebase-mapper — maps existing code when no map exists
 </available_agent_types>
 
+<model_selection>
+Models are injected inline at dispatch, never read from an agent's frontmatter.
+Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+
+```bash
+phase_run query resolve-model <agent> --raw
+```
+
+A result of `inherit` means the project set no override — **omit the `model`
+argument entirely** in that case and let the host choose. Pass `model` only when
+resolution returned a concrete model name. The `models` map in each init bundle
+carries the same resolved values for every agent that workflow dispatches.
+</model_selection>
+
 <process>
 
 <step name="initialize">
@@ -163,7 +177,7 @@ Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks
 </output>
 ",
   subagent_type="researcher",
-  model="{models['researcher']}",
+  ${models['researcher'] === 'inherit' ? '' : `model="${models['researcher']}",`}
   description="Research phase {phase_number}"
 )
 ```
@@ -294,7 +308,7 @@ Return: ## PLANNING COMPLETE with each plan path and its wave
 </output>
 ",
   subagent_type="phase-preparer",
-  model="{models['phase-preparer']}",
+  ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
   description="Plan phase {phase_number}"
 )
 ```
@@ -350,7 +364,7 @@ Verdict: approved | needs-revision
 Findings: <numbered; each names the plan and task it affects>
 ",
   subagent_type="phase-checker",
-  model="{models['phase-checker']}",
+  ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
   description="Check plans for phase {phase_number}"
 )
 ```

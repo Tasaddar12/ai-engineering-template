@@ -21,6 +21,20 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - codebase-mapper — maps existing code before scoping new work
 </available_agent_types>
 
+<model_selection>
+Models are injected inline at dispatch, never read from an agent's frontmatter.
+Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+
+```bash
+phase_run query resolve-model <agent> --raw
+```
+
+A result of `inherit` means the project set no override — **omit the `model`
+argument entirely** in that case and let the host choose. Pass `model` only when
+resolution returned a concrete model name. The `models` map in each init bundle
+carries the same resolved values for every agent that workflow dispatches.
+</model_selection>
+
 <process>
 
 <step name="load_context">
@@ -107,7 +121,7 @@ trade-offs, not a single recommendation.
 Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
 ",
   subagent_type="researcher",
-  model="{models['researcher']}",
+  ${models['researcher'] === 'inherit' ? '' : `model="${models['researcher']}",`}
   description="Research milestone ${MILESTONE_NAME}"
 )
 ```

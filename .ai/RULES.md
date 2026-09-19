@@ -155,8 +155,9 @@ Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`. Never
 substitute a generic agent type; the project's own definitions carry the prompts,
 tool permissions and model assignment that make the result trustworthy. Resolve
-the model through `phase_run query resolve-model <agent>` rather than choosing
-one inline.
+the model through `phase_run query resolve-model <agent>` and pass it inline on
+the dispatch call; agent definitions carry no `model:` frontmatter. A resolved
+`inherit` means omit the model argument and let the host choose.
 
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
 not spawn agents, switch branches, merge, publish or edit shared status.

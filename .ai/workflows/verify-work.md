@@ -28,6 +28,20 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - coder — executes gap-closure plans
 </available_agent_types>
 
+<model_selection>
+Models are injected inline at dispatch, never read from an agent's frontmatter.
+Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+
+```bash
+phase_run query resolve-model <agent> --raw
+```
+
+A result of `inherit` means the project set no override — **omit the `model`
+argument entirely** in that case and let the host choose. Pass `model` only when
+resolution returned a concrete model name. The `models` map in each init bundle
+carries the same resolved values for every agent that workflow dispatches.
+</model_selection>
+
 <process>
 
 <step name="initialize">
@@ -155,7 +169,7 @@ Return: ## VERIFICATION COMPLETE with the status and a one-line reason
 </output>
 ",
   subagent_type="verifier",
-  model="{models['verifier']}",
+  ${models['verifier'] === 'inherit' ? '' : `model="${models['verifier']}",`}
   description="Verify phase {phase_number}"
 )
 ```
@@ -186,7 +200,7 @@ Status: passed | gaps_found
 Findings: <numbered, with file:line>
 ",
   subagent_type="integration-checker",
-  model="{models['integration-checker']}",
+  ${models['integration-checker'] === 'inherit' ? '' : `model="${models['integration-checker']}",`}
   description="Integration check phase {phase_number}"
 )
 ```
@@ -208,7 +222,7 @@ live codebase.
 Return per doc: claims checked, claims that are wrong, claims you could not confirm.
 ",
   subagent_type="doc-verifier",
-  model="{models['doc-verifier']}",
+  ${models['doc-verifier'] === 'inherit' ? '' : `model="${models['doc-verifier']}",`}
   description="Verify docs for phase {phase_number}"
 )
 ```
@@ -260,7 +274,7 @@ Return: ## PLANNING COMPLETE with the plan path
 </output>
 ",
   subagent_type="phase-preparer",
-  model="{models['phase-preparer']}",
+  ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
   description="Plan gap closure for phase {phase_number}"
 )
 ```

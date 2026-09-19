@@ -26,3 +26,8 @@ identify the source packaging script.
 
 Changes to these inputs require testing the rendered destination, including
 project context, preservation, links and runtime startup.
+
+The `codex-agents/*.toml` files keep a native `model` field: that is Codex's own
+agent configuration surface, separate from the Markdown definitions. The
+Markdown agents carry no `model:` frontmatter — their model is injected inline
+at dispatch, resolved from `.planning/config.yaml`.

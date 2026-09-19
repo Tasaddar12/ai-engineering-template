@@ -1,6 +1,5 @@
 ---
 name: verifier
-model: sonnet
 maxTurns: 40
 disallowedTools: Agent, Task
 description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.

@@ -1,6 +1,5 @@
 ---
 name: coder
-model: sonnet
 maxTurns: 40
 disallowedTools: Agent, Task
 description: Executes assigned component plans with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries.
