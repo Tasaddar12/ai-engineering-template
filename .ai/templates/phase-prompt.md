@@ -19,9 +19,8 @@ type: execute
 wave: N                     # Advisory execution wave (1, 2, 3...). Derived from dependencies at plan time.
 depends_on: []              # Plan IDs this plan requires (e.g., ["01-01"]).
 files_modified: []          # Files this plan modifies.
-files_deleted: []           # OPTIONAL. Files this plan REMOVES. Declaring a path here is what
-                            # lets worktree cleanup-wave merge the branch that deletes it; an
-                            # undeclared deletion still blocks. Exact paths, not globs or dirs.
+files_deleted: []           # OPTIONAL. Files this plan REMOVES. A deletion not declared here
+                            # is out of scope and blocks. Exact paths, not globs or dirs.
 coupling_justified: []      # OPTIONAL. Deliberate, order-independent same-wave couplings: one
                             # "plan-id: reason" string per coupled peer, e.g.
                             # ["03-02: both append independent config keys"]. Exempts the pair
@@ -630,6 +629,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

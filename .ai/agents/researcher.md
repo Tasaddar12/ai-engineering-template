@@ -16,7 +16,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -79,7 +79,7 @@ Before researching, discover project context:
 </project_context>
 
 <upstream_input>
-**CONTEXT.md** (if exists) — User decisions from the coordinator's recorded discussion
+**CONTEXT.md** (if exists) — User decisions from the orchestrator's recorded discussion
 
 | Section | How You Use It |
 |---------|----------------|
@@ -127,7 +127,7 @@ Do not reopen decisions already locked in CONTEXT.
 
 ### Step B — Select available sources
 
-Read the source of truth in the assigned checkout first for repository behavior.
+Read the source of truth in the repository first for repository behavior.
 For external APIs use official versioned documentation, release notes and source;
 use Context7 only if actually available. Search tools can locate sources but do
 not confer authority on search snippets. Follow the bundled documentation-lookup

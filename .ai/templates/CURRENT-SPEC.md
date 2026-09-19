@@ -143,10 +143,10 @@ requirement or authorize a weaker contract.]
 
 ### Observable behavior
 
-**Good:** “Given a stopped worker with a clean committed SUMMARY, resume audits
-its commits and runs the required checks before integration. It does not launch
-another worker for that completed output. Evidence E3 covers the recorded source
-revision using an interrupted-process fixture.”
+**Good:** “Given a phase whose plan files outnumber its summary files, routing
+resumes that phase before starting any later one, and reports which plans lack
+summaries. It does not re-dispatch a plan that already has a complete summary.
+Evidence E3 covers this against a repository fixture with a half-executed phase.”
 
 **Why it works:** It describes a trigger, conditions, observable effects and a
 specific recovery boundary that can be checked independently.
@@ -157,8 +157,9 @@ specific recovery boundary that can be checked independently.
 
 ### Evidence strength
 
-**Good:** “The ownership regression creates a real Git worktree and commits an
-unassigned file; the coordinator rejects integration and preserves the checkout.
+**Good:** “The ownership regression creates a real Git repository and commits a
+file the plan never declared; the orchestrator reports it rather than ticking
+the plan.
 The external hosting API is simulated, so this check does not prove live hosting
 permissions.”
 

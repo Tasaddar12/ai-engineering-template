@@ -14,7 +14,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -24,7 +24,7 @@ the source SDK to satisfy this assignment. Follow the local operation notes and
 the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
-Stay read-only. Receive exact files/base and revision from the coordinator during execute-phase, verify-work or ship. Return the complete REVIEW structure for host capture outside the checkout; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator, then an owned coder/documentor correction, then renewed review; no separate code-review command is needed.
+Stay read-only. Receive exact files/base and revision from the orchestrator during execute-phase, verify-work or ship. Return the complete REVIEW structure for host capture outside the repository; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator, then an owned coder/documentor correction, then renewed review; no separate code-review command is needed.
 </local_workflow>
 
 <role>
@@ -127,7 +127,7 @@ Additional checks:
 **2. Parse config:** Extract from `<config>` block:
 - `depth`: quick | standard | deep (default: standard)
 - `phase_dir`: Phase context directory; do not derive a report destination from it.
-- `review_path`: Assigned external report destination. If absent, use the assignment's `Result path` or `PHASE_RESULT`; if none is supplied, request it from the coordinator. If supplied destinations disagree, report the conflict before writing. Do not write inside the checkout.
+- `review_path`: Assigned external report destination. If absent, use the assignment's `Result path` or the result path named in your assignment; if none is supplied, request it from the orchestrator. If supplied destinations disagree, report the conflict before writing. Do not write inside the checkout.
 - `files`: Array of changed files to review (passed by workflow — primary scoping mechanism)
 - `diff_base`: Git commit hash for diff range (passed by workflow when files not available)
 
@@ -154,7 +154,7 @@ If `files` is absent or empty, compute DIFF_BASE:
 
 Do NOT invent a heuristic (e.g., HEAD~5) — silent mis-scoping is worse than failing loudly.
 
-If DIFF_BASE is set and shell access is available, run the command below. Without shell access, request a captured diff and changed-file list from the coordinator; do not infer the scope.
+If DIFF_BASE is set and shell access is available, run the command below. Without shell access, request a captured diff and changed-file list from the orchestrator; do not infer the scope.
 ```bash
 git diff --name-only ${DIFF_BASE}..HEAD -- . ':!.planning/' ':!ROADMAP.md' ':!STATE.md' ':!*-SUMMARY.md' ':!*-VERIFICATION.md' ':!*-PLAN.md' ':!package-lock.json' ':!yarn.lock' ':!Gemfile.lock' ':!poetry.lock'
 ```
@@ -400,7 +400,7 @@ _Depth: {depth}_
 
 Return the report for host capture unless the assignment explicitly permits writing the external result path. For that permitted write, use the Write tool; never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-**DO NOT modify source files.** Review is read-only. The host captures REVIEW.md outside the checkout; a custom adapter may write only that assigned external result.
+**DO NOT modify source files.** Review is read-only. The host captures REVIEW.md outside the repository; a custom adapter may write only that assigned external result.
 
 **DO NOT flag style preferences as warnings.** Only flag issues that cause or risk bugs.
 

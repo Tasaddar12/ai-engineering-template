@@ -150,7 +150,7 @@ def plan_migration(source, target, host, hooks, installer):
         raise ValueError(f"A second workflow exists under {other}; reconcile dual cores before migration.")
     backups = set(old_files + planning_files + skill_files)
     notes = ["Project history in .planning is preserved; only config runtime paths may change.",
-             "Git checkpoints and existing worktrees are not modified or copied.",
+             "Existing Git history and branches are not modified or copied.",
              "The old .ai-venv is preserved without traversal; the selected host uses a separate environment."]
     desired = dict(incoming)
     refreshed = []
@@ -186,11 +186,11 @@ def plan_migration(source, target, host, hooks, installer):
             original_default = source / name
             if original_default.is_file() and current.replace(b"\r\n", b"\n") == original_default.read_bytes().replace(b"\r\n", b"\n"):
                 desired[name] = incoming[name]
-                notes.append("Select host worker defaults from the unchanged template config.")
+                notes.append("Review the unchanged template config and set the project's real checks.")
             else:
                 # Byte replacement preserves comments, custom commands and formatting.
                 desired[name] = relocate_paths(current, host)
-                notes.append("Custom worker commands and checks are retained; review their host compatibility.")
+                notes.append("Custom configuration and checks are retained; review their host compatibility.")
     entry = "CLAUDE.md" if host == "claude" else "AGENTS.md"
     entry_paths = {name: target / name for name in ("AGENTS.md", "CLAUDE.md")}
     remainders = {}

@@ -28,7 +28,9 @@ PROJECT_RECORDS = {f".planning/{name}" for name in
                    ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml")}
 PLANNING_RESOURCES = {f".planning/{name}" for name in
                       ("README.md", "config.yaml", "phases/README.md", "codebase/README.md",
-                       "specs/.gitkeep", "decisions/.gitkeep")}
+                       "specs/.gitkeep", "decisions/.gitkeep", "todos/README.md",
+                       "todos/pending/.gitkeep", "todos/completed/.gitkeep",
+                       "milestones/.gitkeep")}
 IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.ai-venv/\n.workflow-backups/\n__pycache__/\n*.pyc\n"
 
 

@@ -16,7 +16,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -124,7 +124,7 @@ The prompt may include a line of the form:
 
 When present, restrict your exploration (Glob/Grep/Bash globs) to files under the listed repo-relative path prefixes. The coordinator supplies this scope for an incremental remap; it does not enable an automatic drift gate. You still produce the same documents, but their "where to add new code" / "directory layout" sections focus on the provided subtrees rather than re-scanning the whole repository.
 
-**Path validation:** Reject traversal (`..`), absolute paths (POSIX, Windows drive or UNC), glob patterns and shell metacharacters (`;`, `` ` ``, `$`, `&`, `|`, `<`, `>`). Report each rejected value and inspect only valid assigned prefixes. If none remain, request corrected scope from the coordinator; do not fall back to a whole-repository scan or claim completion.
+**Path validation:** Reject traversal (`..`), absolute paths (POSIX, Windows drive or UNC), glob patterns and shell metacharacters (`;`, `` ` ``, `$`, `&`, `|`, `<`, `>`). Report each rejected value and inspect only valid assigned prefixes. If none remain, request corrected scope from the orchestrator; do not fall back to a whole-repository scan or claim completion.
 
 If no `--paths` hint is provided, behave exactly as before.
 </step>

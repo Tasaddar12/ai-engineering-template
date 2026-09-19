@@ -308,15 +308,13 @@ The one-liner should tell someone what actually shipped.
 - Extracted to STATE.md accumulated context
 - Use "None - followed plan as specified" if no deviations
 
-**After creation:** The worker MUST return position, decisions and issues in its
-committed SUMMARY. The coordinator MUST update STATE.md's current position,
-progress, accumulated decisions, blockers and session continuity from integrated
-results. For native orchestration, do this before dispatching the next dependent
-worker. The Python scheduler dispatches dependents inside its running process:
-reconcile all integrated results immediately after it exits or safely stops,
-before verification, resume/new execution, or ending the turn. Do not edit shared
-records concurrently with that scheduler. Update CONTEXT for consequential decisions and ROADMAP/REQUIREMENTS for
-verified progress; retain pending and failed items. `phase.py query state.update-progress` refreshes only
+**After creation:** the agent MUST return position, decisions and issues in its
+committed SUMMARY. The orchestrator MUST update STATE.md's current position,
+progress, accumulated decisions, blockers and session continuity from the
+integrated results, before dispatching the next dependent agent. Only the
+orchestrator edits those shared records. Update CONTEXT for consequential
+decisions and ROADMAP/REQUIREMENTS for verified progress; retain pending and
+failed items. `phase.py query state.update-progress` refreshes only
 the marked Runtime Status block and does not perform these authored updates.
 </guidelines>
 
@@ -336,6 +334,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

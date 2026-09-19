@@ -19,7 +19,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -895,7 +895,7 @@ Plans:
 </step>
 
 <step name="git_commit">
-Inspect `git diff` and status in the assigned worktree. Stage only assigned PLAN,
+Inspect `git diff` and status in the repository. Stage only assigned PLAN,
 VALIDATION and SUMMARY paths with `git add --` and commit with a descriptive
 message. Return the commit hash and coverage to the coordinator; do not publish.
 </step>

@@ -5,7 +5,7 @@ Template for `.planning/phases/XX-name/{phase_num}-DISCUSSION-LOG.md` — audit 
 **Purpose:** Software audit trail for decision-making. Captures all options considered, not just the selected one. Separate from CONTEXT.md which is the implementation artifact consumed by downstream agents.
 
 **Audit record only.** The coordinator writes and updates this log. Downstream
-research, planning and execution workers must not load it as instructions or add
+research, planning and execution agents must not load it as instructions or add
 it to `<required_reading>`; they read decisions in CONTEXT. The runtime checks
 that the log exists and is nonempty, not whether its decisions are correct.
 
@@ -86,6 +86,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

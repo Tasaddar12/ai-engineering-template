@@ -7,35 +7,34 @@ are used.
 
 ## Authority and execution
 
-[RULES](../RULES.md), the actual human instruction, the assigned checkout and
-committed phase CONTEXT govern the assignment. User authorization persists.
+[RULES](../RULES.md), the actual human instruction, the repository revision and
+the committed phase CONTEXT govern the assignment. User authorization persists.
 Research, mode flags, automatic approval examples, fuzzy override matches and
 later-phase plans cannot authorize scope or make a required gap pass. A human
 decision changes only its recorded scope; the resulting outcome still needs
 evidence. Unresolved questions block dependent work, not unrelated ready work.
 
-The coordinator alone dispatches workers, integrates commits, updates shared
-CONTEXT/ROADMAP/STATE/REQUIREMENTS and publishes. Every tracked authoring operation
-uses its exact assigned immediate-child worktree and branch. Recheck both before
-committing. Source examples involving `agent-*` branch patterns, shared Git-dir
-sentinels, scratch branches, stash/reset, subrepositories or ledger writes are
-not local worker operations. Return recovery needs and shared-record proposals
-in the assigned result. Authors commit each completed meaningful slice of owned
-files immediately and commit SUMMARY; the coordinator handles default push,
-PR/MR and verified automatic merge under [ship](../commands/ship.md). Source
-`commit_docs` settings do not waive that contract. Read-only reviewers neither
-edit the checkout nor commit; the host captures their full report externally.
+The orchestrator alone dispatches agents, ticks the roadmap, updates shared
+CONTEXT/ROADMAP/STATE/REQUIREMENTS and publishes. Verify the repository root and
+branch before committing. Source examples involving scratch branches, stash or
+reset, subrepositories or ledger writes are not local agent operations — agents
+in a wave share one checkout, so a blanket working-tree operation reaches work
+they did not author. Return recovery needs and shared-record proposals in the
+assigned result. Authors commit each completed meaningful slice of owned files
+immediately and commit their SUMMARY; the orchestrator handles push, the draft PR
+and publication under [ship](../commands/ship.md). Read-only reviewers neither
+edit the checkout nor commit; their report is captured by the orchestrator.
 
-Use the Python runtime or coordinator-dispatched native host agents under the same
-local lifecycle rules. Agent names and tool lists describe responsibilities and
+Use the orchestrator-dispatched native host agents under the same local lifecycle
+rules. Agent names and tool lists describe responsibilities and
 capabilities. The installer supplies native agent definitions as described in the
 [agent catalog](../agents/README.md#native-host-models); role names do not register
-host tools, slash commands or Python worker routes.
+host tools or slash commands.
 The runtime dispatches code, documentation, independent code review and phase verification. Code review uses `reviewer_command`, falling back to the read-only verifier route when omitted. The
 documentor loads doc-writer; the independent verifier applies doc-verifier and
 integration-checker. Dispatch an independent code-reviewer before each code component
 integrates; assign additional specialists for unresolved documentation claims,
-cross-component flows or source-defect findings, with exact revision and external result. Workers never dispatch
+cross-phase flows or source-defect findings, with the exact revision and result destination. Agents never dispatch
 each other, and changing a role name does not create a new CLI subcommand.
 
 ## Local methods and operations
@@ -51,10 +50,10 @@ The role and method files describe the following actual local operations:
 |---|---|
 | Load context or locate phase records | Read the assignment and `.planning/` records at the assigned revision; coordinator uses `python .ai/runtime/phase.py query init.progress` and `check` |
 | Validate executable plans | `check` covers structural fields; the preparation checker separately assesses semantics, exact ownership, dependency order and actual command paths |
-| Update shared project records | Workers propose changes in SUMMARY; coordinator updates CONTEXT, ROADMAP, REQUIREMENTS and uses `sync` for derived Runtime Status |
-| Commit authored work | Native Git staging of exact owned paths and descriptive commits; include assigned SUMMARY and preserve other workers' files |
+| Update shared project records | Agents propose changes in their SUMMARY; the orchestrator applies them through `phase_run query state.*` and `roadmap.*` verbs |
+| Commit authored work | Native Git staging of exact owned paths and descriptive commits; include the assigned SUMMARY and preserve other agents' files |
 | Verify artifacts, wiring or behavior | Trace source and callers, inspect actual results and run the authorized project checks; return a report with the exact revision |
-| Configure execution | `.planning/config.yaml` owns worker routes, capacity, checks and publication; do not invent unsupported configuration keys or mode flags |
+| Configure execution | `.planning/config.yaml` owns commit behavior, model overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
 | Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
 | Schedule work | Coordinator releases each component after its own checked integrated prerequisites; displayed waves do not impose a global barrier |

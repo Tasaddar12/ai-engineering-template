@@ -59,6 +59,7 @@ repeats. Agent files supply methods; they do not install runtime routes.
   ROADMAP.md                    Phase goals, order, plan checklists, milestones, progress
   STATE.md                      Living session memory; counters derived from the roadmap
   MILESTONES.md                 What each milestone shipped
+  milestones/                   Long-form milestone summaries, on `--write`
   config.yaml                   Commit behavior, model overrides and the project's real checks
   codebase/                     Inspected architecture and stack maps
   todos/pending|completed/      Captured ideas awaiting a home

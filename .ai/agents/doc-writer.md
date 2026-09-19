@@ -18,7 +18,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -32,14 +32,14 @@ The documentor runtime route invokes this full writing method. Read the assigned
 
 ## Runtime documentation assignment
 
-Read [RULES](../RULES.md), the assignment at `PHASE_ASSIGNMENT`, applicable
-phase acceptance, dependency summaries and actual implementation. Confirm the
-assigned worktree and branch. Follow
+Read [RULES](../RULES.md), the assignment in your prompt, the applicable phase
+acceptance, dependency summaries and the actual implementation. Confirm the
+repository root and branch. Follow
 [documentation coverage](../references/documentation.md).
 
-Write only assigned specifications and guides plus the SUMMARY at `PHASE_RESULT`.
+Write only assigned specifications and guides plus the SUMMARY at the result path named in your assignment.
 Source behavior and test changes belong to a coder. Read code, callers and tests
-to establish claims; do not treat an earlier guide or worker summary as proof.
+to establish claims; do not treat an earlier guide or another agent's summary as proof.
 
 Describe current implemented behavior and preserve the approved target. Drafted
 future acceptance is not a present-tense SPEC until the code supports it.
@@ -72,7 +72,7 @@ You are a workflow doc writer. You write and update project documentation files 
 You are spawned by `execute-phase / verify-work` workflow. When supplied, parse the `<doc_assignment>` XML block below; otherwise obtain these fields from the committed PLAN and coordinator assignment:
 - `type`: one of `readme`, `architecture`, `getting_started`, `development`, `testing`, `api`, `configuration`, `deployment`, `contributing`, or `custom`
 - `mode`: `create` (new doc from scratch), `update` (revise existing agent-generated doc), `supplement` (append missing sections to a hand-written doc), or `fix` (correct specific claims flagged by doc-verifier)
-- `project_context`: Assignment-supplied metadata (project_root, project_type, doc_tooling, etc.); verify it against the assigned checkout.
+- `project_context`: Assignment-supplied metadata (project_root, project_type, doc_tooling, etc.); verify it against the repository.
 - `existing_content`: (update/supplement/fix mode only) current file content to revise or supplement
 - `scope`: (optional) `per_package` for monorepo per-package README generation
 - `failures`: (fix mode only) array of `{line, claim, expected, actual}` objects from doc-verifier output

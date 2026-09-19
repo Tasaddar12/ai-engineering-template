@@ -119,6 +119,10 @@ class InstallerTests(unittest.TestCase):
             for source_claim in ("This repository is a reusable engineering workflow template",
                                  "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
                 self.assertNotIn(source_claim, body, name)
+        # Capture and milestone destinations exist before the first todo is written.
+        for scaffold in (".planning/todos/README.md", ".planning/todos/pending/.gitkeep",
+                         ".planning/todos/completed/.gitkeep", ".planning/milestones/.gitkeep"):
+            self.assertTrue((self.target / scaffold).is_file(), scaffold)
         self.assertTrue((self.target / ".agents/skills/onboard/SKILL.md").is_file())
         self.assertTrue((self.target / ".codex/commands/install.md").is_file())
         self.assertTrue((self.target / ".codex/commands/onboard.md").is_file())

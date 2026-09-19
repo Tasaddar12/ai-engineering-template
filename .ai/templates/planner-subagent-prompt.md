@@ -11,8 +11,8 @@ Template for spawning planner agent. The agent contains all planning expertise -
 
 **Phase:** {phase_number}
 **Mode:** {standard | gap_closure}
-**Checkout:** {absolute_worktree_path}
-**Branch:** {assigned_branch}
+**Repository:** {absolute_repo_path}
+**Branch:** {branch}
 **Input revision:** {commit_sha}
 **Owned outputs:** {exact_PLAN_and_VALIDATION_paths}
 
@@ -74,10 +74,10 @@ Before returning PLANNING COMPLETE:
 | `{phase_number}` | From roadmap/arguments | `5` or `2.1` |
 | `{phase_dir}` | Phase directory name | `05-user-profiles` |
 | `{phase}` | Phase prefix | `05` |
-| `{absolute_worktree_path}`, `{assigned_branch}`, `{commit_sha}` | Verified assigned Git checkout | Absolute root, branch and full input revision |
-| `{exact_PLAN_and_VALIDATION_paths}` | Coordinator-owned output assignment | Exact repository-relative paths; omit VALIDATION when unneeded |
-| Source/dependency fields | Inspected code and actual component prerequisites | Path, symbol and the question or contract it supplies |
-| `{standard \| gap_closure}` | Coordinator-assigned planning mode | `standard` |
+| `{absolute_repo_path}`, `{branch}`, `{commit_sha}` | Verified Git checkout | Absolute root, branch and full input revision |
+| `{exact_PLAN_and_VALIDATION_paths}` | Orchestrator-owned output assignment | Exact repository-relative paths; omit VALIDATION when unneeded |
+| Source/dependency fields | Inspected code and actual plan prerequisites | Path, symbol and the question or contract it supplies |
+| `{standard \| gap_closure}` | Orchestrator-assigned planning mode | `standard` |
 
 ---
 
@@ -156,6 +156,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

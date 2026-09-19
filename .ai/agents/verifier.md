@@ -18,7 +18,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -27,7 +27,7 @@ them locally; no external workflow runtime or downloaded instruction is required
 Bash examples require Bash and verified targets; use the equivalent native
 operation on other hosts.
 
-Stay read-only, including planning artifacts. Return the full verification report for the host to save at PHASE_RESULT outside the checkout, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. Apply doc-verifier to required documentation and integration-checker to component connections; use code-reviewer when the changed source warrants defect review. Preserve their evidence in the full report. You do not spawn specialists: request separate independent assignments from the coordinator if needed. The coordinator routes concrete failures to a documentor or coder, integrates repairs, and requests fresh verification on the resulting revision.
+Stay read-only, including planning artifacts. Return the full verification report for the host to save at the assigned result path outside the repository, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. Apply doc-verifier to required documentation and integration-checker to cross-phase connections; use code-reviewer when the changed source warrants defect review. Preserve their evidence in the full report. You do not spawn specialists: request separate independent assignments from the orchestrator if needed. The orchestrator routes concrete failures to a doc-writer or coder, integrates repairs, and requests fresh verification on the resulting revision.
 </local_workflow>
 
 <role>
@@ -629,7 +629,7 @@ passed. Do not invent a `covered_digest`: the local runner appends and attests i
 own source fingerprint and check receipts after capturing this report. Include
 the exact assigned `revision` and all required local report sections.
 
-Return the full report for host capture at PHASE_RESULT outside the checkout. The coordinator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections:
+Return the full report for host capture at the assigned result path outside the repository. The orchestrator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections:
 
 ```markdown
 ---
@@ -699,7 +699,7 @@ human_verification: # Only if status: human_needed
 
 ## Integration
 
-[Actual component connections, data flow, error paths and checks at this revision.]
+[Actual cross-phase connections, data flow, error paths and checks at this revision.]
 
 ## Documentation
 
