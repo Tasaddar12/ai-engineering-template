@@ -46,7 +46,7 @@ just to fill this field.
 </planning_context>
 
 <downstream_consumer>
-Output consumed by phase-start
+Output consumed by execute-phase
 Plans must be executable prompts with:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format
@@ -85,7 +85,7 @@ Before returning PLANNING COMPLETE:
 
 The `Task(...)` examples are host pseudocode. Use the available host dispatcher with the installed `phase-preparer` role; they are not Python runtime commands.
 
-**From phase-prepare (standard mode):**
+**From plan-phase (standard mode):**
 ```python
 Task(
   prompt=filled_template,
@@ -94,7 +94,7 @@ Task(
 )
 ```
 
-**From phase-prepare with the recorded verification gaps (gap closure mode):**
+**From plan-phase with the recorded verification gaps (gap closure mode):**
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure

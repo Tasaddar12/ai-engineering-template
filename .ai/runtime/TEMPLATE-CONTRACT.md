@@ -1,280 +1,204 @@
 # Full phase templates and the local runtime
 
-Read the complete upstream template before authoring or reviewing its output.
-The template's File Template is the output skeleton; examples and teaching
-sections remain in the source template. Keep all applicable output sections.
-This contract adds local execution evidence; it does not replace upstream guidance.
+Read the complete template before authoring or reviewing its output. The
+template's File Template is the output skeleton; its examples and teaching
+sections stay in the source template. Keep every applicable output section. This
+contract adds the local execution metadata; it does not replace upstream guidance.
 
 | Artifact | Producer | Consumer | Local additions |
 |---|---|---|---|
-| NN-CONTEXT.md | Discussion coordinator; `new` seeds the full context skeleton | Researcher, preparer, checker, runtime | YAML phase number, discussion, approval, depends_on, uat; Acceptance and Authorization sections |
-| NN-DISCUSSION-LOG.md | Discussion coordinator; update with CONTEXT after every exchange | Human audit; runtime checks presence and nonempty content | Actual questions, options, recommendation evidence, replies and rationale |
-| NN-CC-PLAN.md | Phase preparer | Checker, scheduler, assigned worker | kind, resources, acceptance, documentation, checks; Documentation handoff section |
-| NN-CC-SUMMARY.md | Assigned worker | Integrator, downstream workers, verifier | acceptance, documentation; Checks section with actual evidence |
-| NN-VERIFICATION.md | Independent verifier | Coordinator and publication gate | revision; Acceptance, Integration, Documentation, Findings sections; runtime source and check receipts |
-| NN-UAT.md | Coordinator recording actual human observations | Returning sessions and publication gate | revision, source_fingerprint, cases, history; source keeps upstream's list of summaries |
+| NN-CONTEXT.md | discuss-phase | researcher, phase-preparer, phase-checker | Decisions, canonical refs, code context, deferred ideas, folded todos |
+| NN-DISCUSSION-LOG.md | discuss-phase | Human audit only | Actual questions, options, selections and rationale |
+| NN-RESEARCH.md | researcher | phase-preparer | Findings tied to a revision, with what they unblock |
+| NN-MM-PLAN.md | phase-preparer | phase-checker, orchestrator, coder | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when |
+| NN-MM-SUMMARY.md | coder / doc-writer | orchestrator, downstream plans, verifier | status, commits, acceptance and documentation coverage, actual check results |
+| NN-VERIFICATION.md | verifier | orchestrator, ship gate | status, reviewed revision, verified_at, finding counts |
 
 ## Author a context
 
-Use `.ai/templates/context.md` in full. `new` copies its first File Template,
-substitutes phase/name/date, and adds pending authorization and acceptance.
-Fill Phase Boundary, decision categories, canonical references, code insights,
-specific ideas and deferred ideas according to its instructions. Do not infer
-human approval from a template status label. Add this frontmatter:
+Use `.ai/templates/context.md` in full. `discuss-phase` writes it at the end of
+the discussion, from the decisions actually taken.
 
-```yaml
-phase: "01"
-approval: pending  # approved only when actual authorization is recorded below
-discussion: pending  # complete only after actual phase discussion is recorded
-depends_on: []     # delivered phase directory names, e.g. 02-foundation
-uat: false
-```
+`NN-DISCUSSION-LOG.md` is written alongside it and is audit-only — downstream
+agents read decisions from CONTEXT, never from the log. Record only real
+questions, options, evidence and replies. Never invent a discussion.
 
-Every phase requires `NN-DISCUSSION-LOG.md`. The coordinator creates it at the
-first discussion exchange and commits updates with CONTEXT after each exchange.
-Set `discussion: complete` only after discussing and recording the current scope;
-reset it to `pending` when a scope or consequential decision change needs further
-discussion. `check`, `run` and `resume` reject a missing/pending discussion marker
-or a missing/empty log even when `approval: approved`. Existing records without
-the field remain readable but are not execution-ready. Recover missing records
-from actual conversation evidence; never invent a discussion or auto-approve one.
-The runtime checks the marker and nonempty log; the coordinator must verify that
-they represent a real discussion. Workers consume CONTEXT, not the audit log.
+Capture unresolved choices explicitly and name the work each one blocks; plan only
+decided scope. Record the user's actual implementation instruction and its
+boundary when one has been given. Creation, discussion, research, planning and
+design approval are not that instruction, and no agent can grant it.
 
-Append `## Acceptance` with observable outcomes such as
+Acceptance outcomes are observable, for example
 `- [ ] AUTH-01: A signed-out visitor cannot retrieve another user's profile.`
-Append `## Authorization` with the actual user instruction and its scope/date.
-Keep unresolved choices in `## Open Questions`; dispatch only decided scope.
-Acceptance IDs may be requirement IDs or finer phase criteria with their own IDs.
-Write each outcome as `- A1: text`, `- **A1**: text`, or `- **A1:** text`;
-an optional `[ ]`, `[x]`, or `[X]` checkbox follows the bullet. Keep IDs unique
-across all three formats. PLAN and SUMMARY acceptance lists use the unformatted IDs.
+Acceptance ids may be requirement ids or finer phase criteria with their own ids.
+Keep ids unique; PLAN and SUMMARY acceptance lists use the bare ids.
 
-Good authorization quotes or faithfully records the user's explicit instruction
-to implement this phase and its boundary. Keep `approval: pending` for creation,
-discussion, research, preparation or design approval alone. Bad authorization
-says "approved because the plan looks ready." A checker cannot grant permission.
+`<canonical_refs>` is mandatory and every entry carries a full relative path. It
+is how a downstream agent finds the spec or ADR the user expects it to follow. If
+no external docs exist, say so explicitly rather than omitting the section.
 
 ## Author an executable plan
 
-Use `.ai/templates/phase-prompt.md` without shortening its instructions or removing
-its task-level action, verification, done, context or success sections. The file
-name is phase-local `01-01-PLAN.md`; no separate work-item lifecycle is introduced.
-Use the upstream `phase: 01-name`, quoted `plan: "01"`, `type: execute|tdd`,
-`files_modified`, `files_deleted`, `requirements`, `depends_on` and XML wrappers.
-Add the following to its existing YAML frontmatter, never a second YAML header:
+Use `.ai/templates/phase-prompt.md` without shortening its instructions or
+removing its task-level action, verification, done, context or success sections.
+The file name is phase-local: `01-01-PLAN.md`. Frontmatter carries:
 
 ```yaml
-kind: code  # or documentation; omitted means code
-resources: []  # exclusive ports, databases or other shared mutable resources
-acceptance: [AUTH-01]  # defaults to requirements only when the IDs are identical
-documentation: [docs/authentication.md]  # exact paths this component completes
-checks:
-  - [python, -m, unittest, tests.test_authentication]
+phase: 01-name
+plan: "01"
+wave: 1
+depends_on: []            # plan ids whose summaries must exist first
+files_modified: []        # exact paths, or directory prefixes ending in /
+files_deleted: []         # exact files only
+requirements: [REQ-01]    # never empty
+acceptance: [AUTH-01]     # the phase outcomes this plan covers
 ```
 
-`files_modified` grants exact paths or directory prefixes ending in `/`.
-`files_deleted` grants exact files only. A path belongs in one of these fields,
-not both. Declarations use Git's exact case/spelling; traversal and globs fail.
-Phase records, STATE, PROJECT, REQUIREMENTS, ROADMAP, RULES and config are coordinator-owned.
-Every committed deletion must name its exact path in files_deleted, even when a
-directory prefix or files_modified otherwise grants ownership.
-The worker automatically owns its assigned SUMMARY. `requirements` stays nonempty;
-`acceptance` covers the phase's identified outcomes. Add `## Documentation` after
-the upstream output explaining the assigned documentation or dependent handoff.
+`files_modified` grants exact paths or directory prefixes ending in `/`;
+`files_deleted` grants exact files. A path belongs in one field, not both.
+Declarations use Git's exact case and spelling; traversal and globs fail. Every
+committed deletion names its exact path in `files_deleted`, even when a directory
+prefix otherwise grants ownership. Phase records, STATE, PROJECT, REQUIREMENTS,
+ROADMAP, RULES and config are orchestrator-owned. An agent automatically owns its
+own SUMMARY.
 
-Good checks exercise the observable outcome (including a denied request).
-Bad checks only assert a file exists when the acceptance concerns access control.
-The runtime executes argv lists without a shell. Keep explanatory verification
-prose and commands in the upstream task and verification sections too.
+**Every task carries four fields, and none is optional:**
 
-`depends_on` drives readiness after integration and checks. `wave` is descriptive;
-it does not impose a global scheduling barrier. Overlapping paths/resources
-serialize even when `coupling_justified` explains an upstream same-wave coupling.
-That upstream advisory exemption cannot override this runtime's isolation gate.
-`must_haves` and `user_setup` remain available to the checker and verifier.
+- `<read_first>` — the files the executor must read before touching anything: the
+  file being modified, any source of truth named in CONTEXT.md, and any file whose
+  patterns, signatures or conventions must be replicated.
+- `<action>` — what changes, specifically enough to execute without inventing scope.
+- `<acceptance_criteria>` — what must be observably true when the task is done.
+- `<verify>` — a runnable command paired with its failure signal.
 
-The process scheduler dispatches autonomous plans. Non-autonomous/checkpoint plans
-remain valid planning artifacts but cannot be launched by `run`. The coordinator
-must handle their checkpoint with the human, record the decision in CONTEXT, and
-prepare an autonomous continuation; never delete a checkpoint to make a gate pass.
-An unresolved external `user_setup` prerequisite is likewise a readiness blocker.
+### Stated failing direction
+
+Every runnable `<automated>` command MUST be followed by a `<fails_when>` sibling
+naming what output constitutes failure — an exit code, a string in the output, a
+missing line. A command with no expressible failure mode is not an acceptance test.
+
+```xml
+<verify>
+  <automated>python -m unittest discover -s tests</automated>
+  <fails_when>non-zero exit, or "Ran 0 tests" in the output</fails_when>
+</verify>
+```
+
+One statement per runnable command, immediately after it. Name an observable
+signal, never the word "failure": `non-zero exit` is complete, `the command fails`
+is a restatement. `TBD`, `TODO`, `N/A` and `unknown` are rejected outright.
+
+Good checks exercise the observable outcome, including a denied request. Bad
+checks assert that a file exists when the acceptance concerns access control.
+
+### Scheduling
+
+`depends_on` drives readiness: a plan becomes eligible once every id it names has
+a SUMMARY.md. `wave` is the preparer's proposal, not an authority — the
+orchestrator separates plans whose `files_modified` overlap into different waves
+regardless of their declared wave, because two agents editing one file is the
+failure this ordering exists to prevent.
+
+`must_haves` (truths and artifacts) carries the plan's own success criteria
+forward to the verifier for goal-backward checking.
+
+A plan that needs a human decision mid-flight records it as a checkpoint. The
+orchestrator takes that decision to the user, records the answer with
+`state.add-decision`, and re-dispatches the plan with the decision in context.
+Never delete a checkpoint to make a gate pass.
 
 ## Produce and validate results
 
-Use the complete `.ai/templates/summary.md` File Template. Keep performance,
-accomplishments, task commits, files, decisions, deviations, issues, setup and next
-phase readiness. Preserve `requirements-completed`, coverage and other upstream
-metadata. Add `acceptance`, `documentation` and `## Checks` naming actual commands,
-results, failures/skips and tested revision. `status: complete` is already part of
-the upstream template; use `blocked` when incomplete and explain why.
+Use the complete `.ai/templates/summary.md` File Template. Keep accomplishments,
+task commits, files, decisions, deviations, issues and next-phase readiness.
+Preserve `requirements-completed` and the other upstream metadata. Add
+`acceptance`, `documentation` and a `## Checks` section naming the actual
+commands, their results, any failures or skips, and the tested revision.
 
-For an implementation worker stopped only by context or turn capacity, also set
-SUMMARY YAML `continuation: context_limit` or `continuation: turn_limit`. Record
-completed tasks, preserved commits, unfinished files, remaining tasks and actual
-check results. The scheduler must confirm the old process stopped, audit ownership
-and dispatch a fresh worker for the remaining work without a user prompt. Adapter
-exit code 75 carries the same capacity-handoff meaning when no complete SUMMARY
-could be written. The Claude adapter returns 75 for its native `error_max_turns`
-result only when no permission denial is reported. Other failures must not use
-this signal. A continuation is not passing evidence; complete output still requires
-the normal checks and independent review before integration.
+`status: complete` or `blocked`; use `blocked` when incomplete and explain why.
+A blocked result preserves findings and safe partial work without claiming
+integration.
 
-Good evidence names the scenario, command, observed result and revision. Bad
-evidence repeats "all requirements satisfied" without demonstrating behavior.
-The runtime audits every commit's ownership, clean ancestry, non-summary changes,
-coverage and required document existence, then reruns the declared checks.
-The independent verifier still establishes whether claims match real behavior.
+**A returned "complete" with no SUMMARY.md, or with no commits, is not a
+completion.** The orchestrator treats it as blocked.
 
-Use `.ai/templates/verification-report.md` in full. Add the exact assigned
-`revision` and the Acceptance, Integration, Documentation and Findings sections.
-The runner appends its own source fingerprint/check evidence and attests the
-committed report; upstream covered_files/covered_digest remain separate upstream
-metadata and cannot substitute for this runtime's attestation. Never invent an
-upstream digest or claim it was calculated by an unrun tool.
+When an agent is stopped only by context or turn capacity, record the completed
+tasks, preserved commits, unfinished files, remaining tasks and actual check
+results. The orchestrator inspects that evidence and dispatches a fresh agent for
+the remaining work without another user prompt. A continuation is not passing
+evidence: complete output still requires the normal checks and independent review.
 
-UAT keeps upstream Current Test, Tests, Summary and Gaps sections, phase identity,
-summary source list and timestamps. Runtime case receipts keep every observation,
-and previous sessions retain their source and cases. `fail` in the CLI displays
-as upstream `issue`. A skipped or blocked case remains unresolved; every required
-case needs an actual passing human observation. Source changes invalidate evidence.
+Good evidence names the scenario, the command, the observed result and the
+revision. Bad evidence repeats "all requirements satisfied" without demonstrating
+behavior.
 
-## Storage and migration boundary
+Use `.ai/templates/verification-report.md` in full, with frontmatter carrying:
 
-Project data lives in `.planning/`; reusable instructions, templates and tooling
-live in `.ai/`. `.planning/config.yaml` is this Python runtime's execution config.
-No JSON configuration template is supplied; upstream JSON examples do not
-configure this Python runtime.
-
-Local process/checkpoint data remains in the Git common directory under
-`ai/phases/`. It is operational data, separate from project records. Checkpoint
-keys include the `.planning` phase path.
-
-## Phase numbering boundary
-
-The full upstream roadmap retains decimal insertion examples and instructions.
-This Python allocator currently creates and accepts integer phase identifiers
-only (NN-slug). Decimal insertion is an upstream method pending a future command
-expansion; it is not silently rounded, ignored, or advertised as executable here.
-Keep the example guidance in the template. Use an explicitly authorized next
-integer phase with recorded dependency decisions for this runtime, or retain the
-decimal proposal as a planning artifact until compatible tooling is provided.
-
-`sync` updates only a dedicated Runtime Status section in the full STATE artifact.
-Project reference, current position, metrics, accumulated context, deferred items
-and session continuity remain coordinator-authored and are never discarded by sync.
-The generated section is bounded by `<!-- phase-runtime-status:start -->` and
-`<!-- phase-runtime-status:end -->`. Put authored notes outside those markers;
-sync replaces the entire marked block and preserves bytes outside it. On the
-first sync of legacy unmarked output, only its recognized status table and PR
-observation comments are replaced; subsequent notes and headings remain intact.
-Duplicate headings, malformed or duplicate markers, and unrecognized legacy
-tables stop sync without changing STATE or creating a commit. Reconcile the
-reported boundaries while preserving authored content before retrying. A
-successful sync commits the refreshed STATE; it does not publish that commit.
-
-## Native TDD feature plans
-
-A `type: tdd` plan uses a feature-shaped output. Keep its `<feature>` block with
-`<name>`, `<files>`, `<behavior>` and `<implementation>`, plus objective, context,
-verification, success criteria and output. It does not need artificial `<tasks>`
-or an execution_context section; the feature block supplies the task contract.
-Add the same local ownership, requirement, acceptance, documentation, argv-check,
-autonomy and wave metadata as other plans, and the Documentation handoff section.
-
-The feature block names one behavior small enough for a complete RED/GREEN cycle:
-
-```xml
-<feature>
-  <name>[One observable behavior]</name>
-  <files>[Exact implementation and test paths]</files>
-  <behavior>
-    [Inputs, expected outputs, boundary cases and the assertion that fails before repair]
-  </behavior>
-  <implementation>
-    [Implementation approach after the failing behavioral check is established]
-  </implementation>
-</feature>
+```yaml
+status: passed | gaps_found | human_needed
+revision: <the revision reviewed>
+verified_at: <timestamp>
+findings: {critical: 0, warning: 0}
 ```
 
-Keep this inside the complete PLAN with the metadata and surrounding sections
-listed above. Choose TDD when the behavior has a clear test oracle; a fixture or
-infrastructure problem must be diagnosed before it can count as a behavioral RED.
+The recorded `revision` is what makes the report falsifiable later: once HEAD
+moves past it, the report is stale and re-verification is required rather than
+optional. `phase_run query verification.status <phase>` reads exactly these
+fields, and [ship](../commands/ship.md) gates on `passed`.
 
-The worker writes and commits a named behavioral test first, runs it and records
-why the failure is the expected assertion (RED), then implements and commits the
-passing behavior (GREEN). Refactor only to remove duplication introduced by the
-change, simplify changed control flow, improve names, extract constants or helpers,
-or satisfy an applicable project convention
-in the assigned code. Preserve acceptance behavior and owned paths; do not add
-features or clean up unrelated code. After refactoring, rerun the named behavioral
-test and affected component checks; record the commands and results in TDD Evidence.
-If no listed purpose applies, record `Refactor: not required` in TDD Evidence. A startup
-error, fixture failure, zero discovered tests or unrelated assertion is not RED.
-Add `## TDD Evidence` to the complete SUMMARY with the command, target test,
-expected/actual assertion, exit codes, RED/GREEN commit IDs and refactor outcome.
+A `must_have` the verifier cannot confirm with explicit evidence is not a pass.
+It reports the gap, or `human_needed` where the criterion itself is unverifiable.
+Only the user converts an abstention into acceptance.
 
-The Python runtime accepts this structure, requires the evidence section, audits
-all commits and reruns final GREEN checks. The independent verifier judges the
-RED evidence and intended outcome. This runtime does not implement the imported
-Node tool's pre-GREEN evidence verdict or config-driven commit-pattern gate;
-those examples remain reference methods, not claims about automatic enforcement.
+## Storage boundary
 
-## Explicitly selected summary variants
+Project data lives in `.planning/`; reusable instructions, workflows, templates
+and tooling live in `.ai/`. `.planning/config.yaml` is the runtime's execution
+config: `commit_docs`, `response_language`, `context_window`, workflow flags,
+per-agent model overrides and `verification.commands`.
 
-The complete `summary.md` is the supplied executable output; compact, minimal,
-standard and complex variant templates are not retained. A separately authorized
-alternative does not waive integration evidence. Preserve applicable authoring
-sections and every named section required by this runtime: Accomplishments,
-Task Commits, Files Created/Modified, Decisions Made, Deviations from Plan,
-Issues Encountered, User Setup Required, Next Phase Readiness and Checks.
-Also include status, requirements-completed, acceptance and documentation metadata.
-A combined Decisions & Deviations heading can remain, but it does not substitute
-for the separately reviewable named evidence. TDD plans also add TDD Evidence.
-Do not replace the complete default with a shorter variant without an explicit
-assignment choice; use additional sections, not deleted source guidance.
+The runtime holds no separate operational store. Everything it records is a
+tracked project record, so a fresh clone inherits the full picture.
 
-## Independent component code review
+## Phase numbering
 
-Before integrating a code component, the runner dispatches a fresh code-reviewer
-on its committed revision in a separate read-only worktree. The author continues
-to run component checks but cannot supply its own independent review. Reviewers
-receive the exact base/head, changed paths and a saved diff, including deletions.
+Integer phases (1, 2, 3) are planned milestone work. Decimal phases (2.1, 2.2)
+are urgent insertions, carrying an `(INSERTED)` marker, and exist so that urgent
+work never renumbers the phases around it.
 
-The external report preserves the code-reviewer structure and adds exact
-`revision` and `diff_base` fields. `findings.critical` and `findings.warning` are
-nonnegative integer counts. Summary, Critical Issues and Warnings sections are
-required; write `None` for empty findings. Set `status: issues_found` when either
-critical or warning findings exist. Integration requires `status: clean` or
-`status: issues_found` with `findings.critical: 0`, a successful supervisor receipt and an unchanged
-review checkout. `skipped` never satisfies this gate. Reuse is bound to the exact
-revision, base and report hash. Findings return to a bounded coder correction,
-followed by fresh review. The final phase verifier assesses integrated outcomes
-and includes the saved component review evidence.
+Numbering is continuous across milestones and never restarts. The runtime
+allocates every number — `phase.add` takes the next integer, `phase.insert` takes
+the next decimal after a given phase, and `phase.remove` renumbers what follows.
+Do not choose a number by hand.
 
-Set `execution.max_tasks_per_component` to a positive integer to enforce a task
-count; null leaves the numeric count uncapped. Native TDD PLANs require exactly
-one feature. Set PLAN `review_depth: deep` for security boundaries, concurrency,
-shared mutable state or cross-component contracts; otherwise set `review_depth: standard`.
-Classify demonstrated defects, unmet acceptance and concrete security/data-loss
-risks as critical. Classify advisory robustness improvements without those defects
-as warning. Do not downgrade defects to permit integration.
+`padded_phase` is the display spelling used in filenames: `2` becomes `02`, and
+`2.1` becomes `02.1`.
 
-Before verification, commit VERIFICATION frontmatter `warning_dispositions` as a
-list of mappings with `component`, `revision` (reviewed commit), `finding` (WR-NN),
-`disposition` (`accepted` or `deferred`) and nonempty `reason`. Include exactly one
-matching item per advisory warning in the retained component/resolution reports.
-Set `status: gaps_found` when creating this record before verification; only a
-completed independent verifier can replace it with `status: passed`. The runner
-supplies these decisions and reports to the verifier and preserves the decisions
-in its output. The verifier must report demonstrated defects as gaps regardless
-of the coordinator disposition. Missing decisions block verification.
+## STATE.md write path
 
-Retry failed review execution with `resume PHASE --workers-stopped` after process
-and checkout inspection. Corrected worker commits must descend from the reviewed
-revision and retain the same base and PLAN; preserve prior reports in `review_history`.
-Use `verify PHASE --workers-stopped` to capture missing historical reviews. If
-that review finds critical defects, integrate a correction component and repeat
-the command to capture `review_resolution` against the corrected integrated
-revision. The reviewer must name each original critical finding and its resolution
-evidence. Retain the original report; source changes invalidate resolution evidence.
+The Markdown body is authoritative. The frontmatter counters — total and completed
+phases and plans, and percent — are **re-derived from ROADMAP.md on every write**,
+so the two cannot disagree. A wrong counter is not corrected by editing STATE.md;
+correct the roadmap and the next write follows.
+
+Concurrent writers serialize on `.planning/.lock`. Section updates replace a
+section's body wholesale rather than appending, which is how a stale run-on
+section gets superseded cleanly with no migration step.
+
+First-time creation of STATE.md from its template is the one case where a
+workflow writes the file directly. Every later change goes through a `state.*`
+verb.
+
+## Model and dispatch metadata
+
+Agent definitions under `.ai/agents/` carry `name`, `description`, `tools` and
+optionally `disallowedTools`, `maxTurns`, `skills` and `color`. They deliberately
+carry **no `model:` field**: the host no longer reads a model from frontmatter, so
+it is injected inline on the dispatch call.
+
+`phase_run query resolve-model <agent>` returns a project override from
+`agents.<name>.model` in config, or `inherit`. On `inherit` the caller omits the
+model argument and lets the host choose.
+
+Codex's `install-assets/codex-agents/*.toml` keep a native `model` field. That is
+Codex's own agent configuration surface and is unrelated to this contract.

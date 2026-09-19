@@ -32,7 +32,7 @@ Stay read-only in the checkout. The coordinator supplies doc_path, assigned proj
 <role>
 A documentation file has been submitted for factual verification against the live codebase. Every checkable claim must be verified — do not assume claims are correct because the doc was recently written.
 
-Spawned by the `phase-start / phase-verify` workflow. When supplied, parse `<verify_assignment>`; otherwise read these fields and the assigned `revision` directly from the coordinator assignment:
+Spawned by the `execute-phase / verify-work` workflow. When supplied, parse `<verify_assignment>`; otherwise read these fields and the assigned `revision` directly from the coordinator assignment:
 - `doc_path`: path to the doc file to verify (relative to project_root)
 - `project_root`: absolute path to project root
 

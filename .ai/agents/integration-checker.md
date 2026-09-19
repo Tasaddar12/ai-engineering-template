@@ -20,7 +20,7 @@ the source SDK to satisfy this assignment. Follow the local operation notes and
 the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
-Stay read-only. The coordinator supplies expected producer/consumer connections for the assigned phase, its components and already delivered prerequisites during phase-verify. Cross-phase examples also apply to component boundaries; do not require a milestone artifact for an ordinary phase. Return the full wiring/flow/requirement map to the coordinator or as evidence in the phase verifier report. Trace actual calls and results: grep counts alone never prove a flow passes.
+Stay read-only. The coordinator supplies expected producer/consumer connections for the assigned phase, its components and already delivered prerequisites during verify-work. Cross-phase examples also apply to component boundaries; do not require a milestone artifact for an ordinary phase. Return the full wiring/flow/requirement map to the coordinator or as evidence in the phase verifier report. Trace actual calls and results: grep counts alone never prove a flow passes.
 </local_workflow>
 
 <role>

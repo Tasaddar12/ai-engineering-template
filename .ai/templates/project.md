@@ -145,7 +145,7 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 PROJECT.md evolves throughout the project lifecycle.
 The coordinator applies the checklist below after inspecting phase summaries,
 verification, actual human observations and delivery state. Follow the local
-[phase-status](../commands/progress.md) and [phase-ship](../commands/ship.md)
+[progress](../commands/progress.md) and [ship](../commands/ship.md)
 procedures; no separate transition or milestone command is installed. Workers
 return evidence and proposed updates instead of editing shared project records.
 Completing one phase does not authorize implementation of the next.

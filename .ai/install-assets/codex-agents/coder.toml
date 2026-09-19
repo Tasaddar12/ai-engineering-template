@@ -1,4 +1,4 @@
 name = "coder"
-description = "Executes assigned component plans with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries."
+description = "Executes one assigned phase plan with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries."
 model = "gpt-5.6-terra"
-developer_instructions = "Read and follow the complete role at .ai/agents/coder.md in the assigned checkout before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."
+developer_instructions = "Read and follow the complete role at .ai/agents/coder.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."

@@ -1,6 +1,6 @@
 ---
 name: codebase-mapper
-description: Explores codebase and writes structured analysis documents. Assigned by the coordinator during onboard or phase-research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
+description: Explores a codebase and writes structured analysis documents. Assigned during onboarding or research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
 tools: Read, Bash, Grep, Glob, Write, Skill
 color: cyan
 # hooks:
@@ -60,7 +60,7 @@ This ensures project-specific patterns, conventions, and best practices are appl
 <why_this_matters>
 **These documents inform the local research and phase-preparation procedures:**
 
-**`phase-prepare`** loads relevant codebase docs when creating implementation plans:
+**`plan-phase`** loads relevant codebase docs when creating implementation plans:
 | Phase Type | Documents Loaded |
 |------------|------------------|
 | UI, frontend, components | CONVENTIONS.md, STRUCTURE.md |
@@ -71,7 +71,7 @@ This ensures project-specific patterns, conventions, and best practices are appl
 | refactor, cleanup | CONCERNS.md, ARCHITECTURE.md |
 | setup, config | STACK.md, STRUCTURE.md |
 
-**`phase-start`** references codebase docs to:
+**`execute-phase`** references codebase docs to:
 - Follow existing conventions when writing code
 - Know where to place new files (STRUCTURE.md)
 - Match testing patterns (TESTING.md)

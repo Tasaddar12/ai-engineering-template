@@ -1,6 +1,6 @@
 ---
 name: researcher
-description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by phase-preparer. Spawned by phase-prepare orchestrator.
+description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by phase-preparer. Spawned by plan-phase orchestrator.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*, mcp__perplexity__*
 color: cyan
 # hooks:
@@ -446,7 +446,7 @@ Verified patterns from official sources:
 ### Sampling Rate
 - **Per task commit:** `{quick run command}`
 - **Per wave merge:** `{full suite command}`
-- **Phase gate:** Full suite green before `phase-verify`
+- **Phase gate:** Full suite green before `verify-work`
 
 ### Wave 0 Gaps
 - [ ] `{tests/test_file.py}` — covers REQ-{XX}

@@ -22,7 +22,7 @@ sentinels, scratch branches, stash/reset, subrepositories or ledger writes are
 not local worker operations. Return recovery needs and shared-record proposals
 in the assigned result. Authors commit each completed meaningful slice of owned
 files immediately and commit SUMMARY; the coordinator handles default push,
-PR/MR and verified automatic merge under [phase-ship](../commands/ship.md). Source
+PR/MR and verified automatic merge under [ship](../commands/ship.md). Source
 `commit_docs` settings do not waive that contract. Read-only reviewers neither
 edit the checkout nor commit; the host captures their full report externally.
 
@@ -49,7 +49,7 @@ The role and method files describe the following actual local operations:
 
 | Need | Local operation and owner |
 |---|---|
-| Load context or locate phase records | Read the assignment and `.planning/` records at the assigned revision; coordinator uses `python .ai/runtime/phase.py status` and `check` |
+| Load context or locate phase records | Read the assignment and `.planning/` records at the assigned revision; coordinator uses `python .ai/runtime/phase.py query init.progress` and `check` |
 | Validate executable plans | `check` covers structural fields; the preparation checker separately assesses semantics, exact ownership, dependency order and actual command paths |
 | Update shared project records | Workers propose changes in SUMMARY; coordinator updates CONTEXT, ROADMAP, REQUIREMENTS and uses `sync` for derived Runtime Status |
 | Commit authored work | Native Git staging of exact owned paths and descriptive commits; include assigned SUMMARY and preserve other workers' files |
@@ -69,7 +69,7 @@ locally or report what cannot be established; do not install an unrelated SDK.
 
 ## Documentation handoff
 
-The existing phase-start and phase-verify procedures own this loop:
+The existing execute-phase and verify-work procedures own this loop:
 
 1. Assign new guides/SPECs, changed operational sequences and explanations spanning
    components to a documentor; declare the implementation dependencies. Put each required path on the component that
@@ -122,10 +122,10 @@ Codebase-mapper returns a focused source map to researcher or phase-preparer.
 Phase-preparer returns complete bounded plans to the coordinator; a fresh
 phase-checker returns evidence and findings for corrections before execution.
 Debugger returns reproduction, hypotheses and a bounded regression/fix proposal
-to the coordinator inside phase-resume or phase-verify. Repair requires explicit
+to the coordinator inside next or verify-work. Repair requires explicit
 path ownership; diagnosis alone does not authorize writes or new debug records.
 
-During phase-verify, integration-checker traces both producer and consumer and
+During verify-work, integration-checker traces both producer and consumer and
 the result through the actual entry point. Preserve unverified/partial flows
 when execution evidence is unavailable. Code-reviewer's pattern-only quick mode
 is triage, not final phase verification. Structural tool findings and external

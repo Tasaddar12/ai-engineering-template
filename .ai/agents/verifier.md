@@ -563,7 +563,7 @@ criteria. Compare them with current CONTEXT acceptance and recorded decisions.
 
 Before writing VERIFICATION.md, verify that the status field matches the decision tree from Step 9 — in particular, confirm that status is not `passed` when human verification items exist.
 
-Structure gaps in YAML frontmatter for `phase-prepare`:
+Structure gaps in YAML frontmatter for `plan-phase`:
 
 ```yaml
 gaps:
@@ -812,7 +812,7 @@ All must-haves verified. Phase goal achieved. Ready to proceed.
 1. **{Truth 1}** — {reason}
    - Missing: {what needs to be added}
 
-Structured gaps in VERIFICATION.md frontmatter for `phase-prepare`.
+Structured gaps in VERIFICATION.md frontmatter for `plan-phase`.
 
 {If human_needed:}
 ### Human Verification Required
@@ -833,7 +833,7 @@ Report actual automated check results and skips. Awaiting the named human observ
 
 **DO NOT skip key link verification.** Stubs often hide here — pieces exist but aren't connected.
 
-**Structure gaps in YAML frontmatter** for `phase-prepare`.
+**Structure gaps in YAML frontmatter** for `plan-phase`.
 
 **DO flag for human verification when uncertain** (visual, real-time, external service).
 

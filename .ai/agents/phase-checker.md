@@ -1,6 +1,6 @@
 ---
 name: phase-checker
-description: Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by phase-prepare orchestrator.
+description: Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by plan-phase orchestrator.
 tools: Read, Bash, Glob, Grep, Skill
 color: green
 ---
@@ -25,7 +25,7 @@ Stay read-only. Independently inspect prepared PLANs, CONTEXT and source at the 
 <role>
 A set of phase plans has been submitted for pre-execution review. Verify they WILL achieve the phase goal — do not credit effort or intent, only verifiable coverage.
 
-Spawned by `phase-prepare` orchestrator (after planner creates PLAN.md) or re-verification (after planner revises).
+Spawned by `plan-phase` orchestrator (after planner creates PLAN.md) or re-verification (after planner revises).
 
 Goal-backward verification of PLANS before execution. Start from what the phase SHOULD deliver, verify plans address it.
 
@@ -102,12 +102,12 @@ If CONTEXT.md exists, add verification dimension: **Context Compliance**
 
 **REVIEWS.md** (if included by reviews mode) — Cross-AI review feedback from the assigned independent review
 
-REVIEWS.md is audit trail and feedback input, not a hidden execution contract. phase-start primarily consumes PLAN.md plus normal phase context. Add verification dimension: **Review Incorporation**.
+REVIEWS.md is audit trail and feedback input, not a hidden execution contract. execute-phase primarily consumes PLAN.md plus normal phase context. Add verification dimension: **Review Incorporation**.
 
 - Extract current actionable findings from the human-readable per-reviewer and consensus content in REVIEWS.md. Do NOT look for a `CYCLE_SUMMARY: current_high=<N> current_actionable=<M>` line or `## Current HIGH Concerns` / `## Current Actionable Non-HIGH Concerns` section headers — those machine-readable fields exist only in the convergence orchestrator's return message, never in REVIEWS.md (which contains only human-readable review content).
 - Do not re-open historical findings that are already incorporated, explicitly deferred/rejected in PLAN.md, or marked fully resolved.
 - Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale using the Review Dispositions Ledger in [planner-reviews](../references/methods/planner-reviews.md).
-- If a current actionable finding remains only in REVIEWS.md and would be invisible to phase-start, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
+- If a current actionable finding remains only in REVIEWS.md and would be invisible to execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
 </upstream_input>
 
 <core_principle>

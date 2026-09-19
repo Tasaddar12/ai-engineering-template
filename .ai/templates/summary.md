@@ -316,7 +316,7 @@ worker. The Python scheduler dispatches dependents inside its running process:
 reconcile all integrated results immediately after it exits or safely stops,
 before verification, resume/new execution, or ending the turn. Do not edit shared
 records concurrently with that scheduler. Update CONTEXT for consequential decisions and ROADMAP/REQUIREMENTS for
-verified progress; retain pending and failed items. `phase.py sync` refreshes only
+verified progress; retain pending and failed items. `phase.py query state.update-progress` refreshes only
 the marked Runtime Status block and does not perform these authored updates.
 </guidelines>
 

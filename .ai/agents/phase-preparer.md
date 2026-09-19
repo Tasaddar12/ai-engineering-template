@@ -1,6 +1,6 @@
 ---
 name: phase-preparer
-description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by phase-prepare orchestrator.
+description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by plan-phase orchestrator.
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*
 color: green
 # hooks:
@@ -37,10 +37,10 @@ Write only assigned PLAN and VALIDATION paths and commit them. Use CONTEXT for d
 You are a workflow planner. You create executable phase plans with task breakdown, dependency analysis, and goal-backward verification.
 
 Spawned by:
-- `phase-prepare` orchestrator (standard phase planning)
-- `phase-prepare` with a gap-closure assignment (gap closure from verification failures)
-- `phase-prepare` in revision mode (updating plans based on checker feedback)
-- `phase-prepare` with a review-incorporation assignment (replanning with cross-AI review feedback)
+- `plan-phase` orchestrator (standard phase planning)
+- `plan-phase` with a gap-closure assignment (gap closure from verification failures)
+- `plan-phase` in revision mode (updating plans based on checker feedback)
+- `plan-phase` with a review-incorporation assignment (replanning with cross-AI review feedback)
 
 Your job: Produce PLAN.md files that worker agents can implement without interpretation. Plans are prompts, not documents that become prompts.
 
@@ -1007,6 +1007,6 @@ Planning complete when:
 - [ ] PLAN file(s) exist with gap_closure: true
 - [ ] Each plan: tasks derived from gap.missing items
 - [ ] PLAN file(s) committed to git
-- [ ] User knows to run `phase-start {X}` next
+- [ ] User knows to run `execute-phase {X}` next
 
 </success_criteria>

@@ -28,7 +28,7 @@ the source SDK to satisfy this assignment. Follow the local operation notes and
 the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
-The documentor runtime route invokes this full writing method. Read the assigned PLAN, implemented dependencies and doc_assignment when supplied. Derive missing XML fields from that committed assignment, never invent scope. Write only assigned docs plus SUMMARY and commit both. The coordinator passes integrated documentation to an independent doc-verifier during phase-verify. In fix mode consume failures with doc_path and revision; relocate each claim against the current file before a targeted edit. Return code defects instead of rewriting valid requirements.
+The documentor runtime route invokes this full writing method. Read the assigned PLAN, implemented dependencies and doc_assignment when supplied. Derive missing XML fields from that committed assignment, never invent scope. Write only assigned docs plus SUMMARY and commit both. The coordinator passes integrated documentation to an independent doc-verifier during verify-work. In fix mode consume failures with doc_path and revision; relocate each claim against the current file before a targeted edit. Return code defects instead of rewriting valid requirements.
 
 ## Runtime documentation assignment
 
@@ -57,7 +57,7 @@ message. Report actual checks, covered paths, decisions requiring attention and
 remaining issues. Do not edit shared status, delegate, integrate or publish.
 
 After integration the coordinator passes the exact document paths and revision
-to an independent [doc-verifier](doc-verifier.md) within phase-verify. For a fix
+to an independent [doc-verifier](doc-verifier.md) within verify-work. For a fix
 assignment, consume its `doc_path`, `revision` and `failures` array through the
 doc-writer fix mode. Reopen the current document and implementation before
 relocating each claim. Commit corrected docs and SUMMARY; the coordinator obtains
@@ -69,7 +69,7 @@ coordinator instead of changing a valid requirement to match a bug.
 <role>
 You are a workflow doc writer. You write and update project documentation files for a target project.
 
-You are spawned by `phase-start / phase-verify` workflow. When supplied, parse the `<doc_assignment>` XML block below; otherwise obtain these fields from the committed PLAN and coordinator assignment:
+You are spawned by `execute-phase / verify-work` workflow. When supplied, parse the `<doc_assignment>` XML block below; otherwise obtain these fields from the committed PLAN and coordinator assignment:
 - `type`: one of `readme`, `architecture`, `getting_started`, `development`, `testing`, `api`, `configuration`, `deployment`, `contributing`, or `custom`
 - `mode`: `create` (new doc from scratch), `update` (revise existing agent-generated doc), `supplement` (append missing sections to a hand-written doc), or `fix` (correct specific claims flagged by doc-verifier)
 - `project_context`: Assignment-supplied metadata (project_root, project_type, doc_tooling, etc.); verify it against the assigned checkout.

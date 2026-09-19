@@ -48,7 +48,7 @@ failure and commit the RED slice before resuming implementation.
 
 Preserve previous commits; do not roll back unrelated work or mutate shared
 STATE. Put the exact task and gate failure in assigned SUMMARY Remaining. The
-coordinator reconciles continuation using the local phase-resume procedure.
+coordinator reconciles continuation using the local next procedure.
 No force-gate flag exists. An explicit user instruction deferring tests must be
 honored and reported as unverified work; it does not fabricate RED or GREEN.
 
