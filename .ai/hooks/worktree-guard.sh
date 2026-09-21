@@ -83,6 +83,30 @@ field() {
   esac
 }
 
+# Append one allowed write-capable dispatch to the session's active-agent
+# stack, which context-handoff.sh reads at SubagentStop. The plan path is the
+# only field that matters downstream, and it is pulled out of the dispatch
+# prompt by shape -- the orchestrator always names the plan it is assigning.
+# When the prompt is unreadable (the sed tier of field() truncates prose), the
+# entry is still recorded with an empty plan: an unattributed handoff the
+# orchestrator must inspect beats no handoff at all.
+record_dispatch() {
+  local guard_dir slug dir prompt plan
+  guard_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  [[ -f "$guard_dir/lib/handoff-io.sh" ]] || return 0
+  # shellcheck source=lib/handoff-io.sh
+  . "$guard_dir/lib/handoff-io.sh" || return 0
+  slug="$(handoff_slug "$(field session_id)")" || return 0
+  dir="$(handoff_dir)"
+  prompt="$(field prompt)"
+  [[ -n "$prompt" ]] || prompt="$(field description)"
+  plan="$(printf '%s' "$prompt" \
+    | grep -oE '[A-Za-z0-9_./-]*[0-9]{2}(\.[0-9]+)?-[0-9]{2}-PLAN\.md' \
+    | head -n 1)"
+  handoff_append_active "$dir/.active-$slug.jsonl" "$1" "$plan"
+  return 0
+}
+
 tool="$(field tool_name)"
 
 # --- job 1: an unisolated executor dispatch is refused -----------------------
@@ -116,6 +140,17 @@ write files, it does not belong in the write-capable list in
 .ai/hooks/worktree-guard.sh.
 REASON
       exit 2
+    fi
+  done
+  # An allowed write-capable dispatch is recorded so context-handoff.sh can
+  # tell, at SubagentStop, whether this agent left a finished plan behind. The
+  # guard is the only place that sees a dispatch at all, and a dispatch that
+  # reached this line is one that will actually run. Purely additive: nothing
+  # below changes the decision above, and every failure is swallowed.
+  for candidate in $WRITE_CAPABLE_AGENTS; do
+    if [[ "$subagent" == "$candidate" ]]; then
+      record_dispatch "$subagent"
+      break
     fi
   done
   exit 0

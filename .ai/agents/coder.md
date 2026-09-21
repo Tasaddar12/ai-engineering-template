@@ -428,9 +428,14 @@ act as its independent code-reviewer, issue review approval or take over phase-w
 verification. Return commits to the coordinator for a fresh code-reviewer.
 
 Do not absorb multiple phases, components or open-ended repair loops into this
-session. At host-reported context of 100,000 tokens or 50% of its window, whichever
-is lower, or at the turn limit, do not begin another task or repair. Finish only the
+session. At 60% of the context window or 250,000 tokens, whichever comes first,
+or at the turn limit, do not begin another task or repair. Finish only the
 active operation needed to preserve work, then hand off safe partial commits.
+[context-handoff.sh](../hooks/context-handoff.sh) measures this and injects a
+`CONTEXT HANDOFF` advisory when you cross it; treat that advisory as the
+instruction above, already fired. A record is written to `.planning/handoffs/`
+whether or not you act on it, so ignoring it does not hide the stop — it only
+costs the orchestrator the description of what is left that you could have given.
 Record base/head, completed/remaining tasks, dirty files, command results and missing evidence in SUMMARY.
 Honor a lower user limit; record `Context usage: unavailable` when the host provides no metric.
 Set SUMMARY frontmatter `status: blocked` when handing off unfinished work;

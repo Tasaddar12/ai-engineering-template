@@ -1,5 +1,9 @@
 # The immediate-child worktree root is local orchestration state, never a scaffold file.
 .worktrees/
+# Handoff records for interrupted attempts. Local to one machine, deleted the
+# moment they are consumed, and never evidence of what a plan did -- that stays
+# in the plan's committed SUMMARY.md.
+.planning/handoffs/
 # Local agent settings and operating-system/editor noise.
 .codex/settings.local.*
 .DS_Store

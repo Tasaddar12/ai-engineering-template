@@ -23,6 +23,14 @@ DEFAULTS = {
         "root": ".worktrees",
         "base_ref": "fork-point",
     },
+    # When an agent must stop taking new work and hand off. Whichever of the
+    # two comes first: the percentage binds on a small window, the absolute
+    # ceiling on a large one. Read by .ai/hooks/context-handoff.sh and by
+    # `phase_run query handoff.limits`.
+    "handoff": {
+        "context_percent": 60,
+        "context_tokens": 250000,
+    },
     # How a session worktree's work reaches the base branch. There is no key
     # here that means "commit directly": the pull request is the only route.
     "delivery": {

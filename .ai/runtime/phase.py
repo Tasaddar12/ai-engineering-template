@@ -15,8 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (bundles, delivery, gitops, milestones, models, phases, quick,  # noqa: E402
-                 state, todos, verification, worktrees)
+from lib import (bundles, delivery, gitops, handoff, milestones, models, phases,  # noqa: E402
+                 quick, state, todos, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -26,7 +26,7 @@ from lib.state import planning_lock  # noqa: E402
 from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
-LIST_OPTIONS = {"files", "requirements", "plans", "deletions"}
+LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining"}
 
 
 def parse(argv):
@@ -259,6 +259,36 @@ def verb_worktree_reap_orphans(workspace, positionals, options):
 
 def verb_worktree_health(workspace, positionals, options):
     return worktrees.health(workspace)
+
+
+# --- handoffs -------------------------------------------------------------
+
+def verb_handoff_limits(workspace, positionals, options):
+    return success(handoff.limits(workspace))
+
+
+def verb_handoff_list(workspace, positionals, options):
+    found = handoff.records(workspace)
+    return success({"count": len(found), "handoffs": found})
+
+
+def verb_handoff_read(workspace, positionals, options):
+    return success(handoff.read_one(workspace, argument(positionals, 0, "handoff id")))
+
+
+def verb_handoff_consume(workspace, positionals, options):
+    return success(handoff.consume(workspace, argument(positionals, 0, "handoff id")))
+
+
+def verb_handoff_write(workspace, positionals, options):
+    return success(handoff.write(
+        workspace, argument(positionals, 0, "handoff id"),
+        option_text(options, "reason"),
+        plan=option_text(options, "plan"),
+        agent=option_text(options, "agent"),
+        summary=option_text(options, "summary"),
+        remaining=options.get("remaining"),
+        notes=option_text(options, "notes")))
 
 
 # --- phases ---------------------------------------------------------------
@@ -565,6 +595,12 @@ VERBS = {
     "worktree.list": verb_worktree_list,
     "worktree.reap-orphans": verb_worktree_reap_orphans,
     "worktree.health": verb_worktree_health,
+
+    "handoff.limits": verb_handoff_limits,
+    "handoff.list": verb_handoff_list,
+    "handoff.read": verb_handoff_read,
+    "handoff.consume": verb_handoff_consume,
+    "handoff.write": verb_handoff_write,
 
     "phase.add": verb_phase_add,
     "phase.insert": verb_phase_insert,

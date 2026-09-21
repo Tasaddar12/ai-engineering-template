@@ -156,8 +156,20 @@ Assign one plan per coder with explicit owned paths, acceptance ids and checks.
 Split tasks with separate outcomes or dependency prerequisites into separate
 plans. Do not hide several plans inside one task.
 
-Start a fresh session for each plan and each independent review. At host-reported
-context of 100,000 tokens or 50% of the window, whichever is lower, or an
-exhausted turn limit, request a handoff. Confirm the agent stopped and inspect its
-commits and SUMMARY before assigning the remaining tasks to a fresh agent. Honour
-lower user limits; do not restart completed work or resume an exhausted session.
+Start a fresh session for each plan and each independent review. At 60% of the
+context window or 250,000 tokens, whichever comes first, or an exhausted turn
+limit, request a handoff. Confirm the agent stopped and inspect its commits and
+SUMMARY before assigning the remaining tasks to a fresh agent. Honour lower user
+limits; do not restart completed work or resume an exhausted session.
+
+Check `phase_run query handoff.list` before dispatching new work and after any
+agent returns. A pending record means an attempt stopped early — from the
+context limit, or from an executor that exited without a `complete` SUMMARY —
+and the work is unassigned until you place it. For each record, read it with
+`phase_run query handoff.read <id>`, put its `continuation` brief in the fresh
+subagent's prompt, dispatch against the remaining tasks only, then
+`phase_run query handoff.consume <id>` in that same turn. Consuming is what
+stops a second agent from being handed a plan the first is already finishing;
+a record you leave behind is one you will dispatch twice. Handoffs are local and
+gitignored, so never commit one or cite one as evidence — the committed SUMMARY
+remains the record of what a plan did.

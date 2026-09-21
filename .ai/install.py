@@ -220,6 +220,14 @@ MANAGED_HOOKS = (
     ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
     ("PreToolUse", "worktree-guard.sh",
      "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+    # The handoff hook measures on PostToolUse, catches an executor that
+    # stopped early on SubagentStop, and clears its own session state on Stop.
+    # SubagentStop and Stop carry no tool, so they carry no matcher: a matcher
+    # on an event with nothing to match against is refused by both hosts.
+    ("PostToolUse", "context-handoff.sh",
+     "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch|Agent|Task)$"),
+    ("SubagentStop", "context-handoff.sh", None),
+    ("Stop", "context-handoff.sh", None),
 )
 
 
@@ -238,7 +246,9 @@ def hook_settings(host):
                 "& (Join-Path (Split-Path (Get-Command git).Source) '../bin/bash.exe') "
                 f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}'); "
                 "exit $LASTEXITCODE")
-        events.setdefault(event, []).append({"matcher": matcher, "hooks": [handler]})
+        group = {"hooks": [handler]} if matcher is None else {"matcher": matcher,
+                                                               "hooks": [handler]}
+        events.setdefault(event, []).append(group)
     return {"hooks": events}
 
 

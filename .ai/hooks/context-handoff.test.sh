@@ -1,0 +1,268 @@
+#!/usr/bin/env bash
+# Behavioural suite for context-handoff.sh. Builds a real repository with real
+# transcripts and runs the hook as a host would: JSON on stdin, decisions read
+# back off the filesystem and stdout.
+set -eu
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+hook="$script_dir/context-handoff.sh"
+guard="$script_dir/worktree-guard.sh"
+passed=0
+failed=0
+
+check() {
+  if [[ "$2" == "$3" ]]; then
+    passed=$((passed + 1))
+  else
+    failed=$((failed + 1))
+    printf 'FAIL  %s\n      expected: %s\n      actual:   %s\n' "$1" "$3" "$2" >&2
+  fi
+}
+
+contains() {
+  if [[ "$2" == *"$3"* ]]; then
+    passed=$((passed + 1))
+  else
+    failed=$((failed + 1))
+    printf 'FAIL  %s\n      %q does not contain %q\n' "$1" "$2" "$3" >&2
+  fi
+}
+
+workspace="$(mktemp -d)"
+trap 'rm -rf "$workspace"' EXIT
+
+repo="$workspace/repo"
+mkdir -p "$repo/.planning"
+git -C "$repo" init --quiet
+git -C "$repo" config user.email test@example.com
+git -C "$repo" config user.name Test
+printf 'seed\n' > "$repo/seed.txt"
+git -C "$repo" add seed.txt
+git -C "$repo" commit --quiet -m seed
+
+# 200000 * 60% = 120000, which is below the 250000 ceiling, so the percentage
+# binds. Both keys are set explicitly so the suite tests the resolution rather
+# than the defaults happening to agree with it.
+cat > "$repo/.planning/config.yaml" <<'YAML'
+context_window: 200000
+handoff:
+  context_percent: 60
+  context_tokens: 250000
+YAML
+
+handoffs="$repo/.planning/handoffs"
+
+# A Claude Code transcript: the LAST usage block is current occupancy, so an
+# earlier larger reading must not win.
+claude_transcript() {
+  local path="$1" total="$2"
+  {
+    printf '{"type":"assistant","message":{"usage":{"input_tokens":999000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}\n'
+    printf '{"type":"user","content":"no usage here"}\n'
+    printf '{"type":"assistant","message":{"usage":{"input_tokens":%s,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}\n' "$total"
+  } > "$path"
+}
+
+# A Codex rollout: a TokenUsageRecord carrying thread_token_usage.total_tokens.
+codex_transcript() {
+  printf '{"type":"token_usage_record","payload":{"turn_token_usage":{"total_tokens":10},"thread_token_usage":{"total_tokens":%s}}}\n' "$2" > "$1"
+}
+
+run_hook() {
+  ( cd "$repo" && printf '%s' "$1" | bash "$hook" 2>/dev/null )
+}
+
+payload_for() {
+  printf '{"hook_event_name":"%s","session_id":"%s","cwd":"%s","transcript_path":"%s"}' \
+    "$1" "$2" "$repo" "$3"
+}
+
+# --- below the limit stays silent --------------------------------------------
+
+claude_transcript "$workspace/low.jsonl" 100000
+out="$(run_hook "$(payload_for PostToolUse sess-low "$workspace/low.jsonl")")"
+check "below limit emits nothing" "$out" ""
+check "below limit writes no handoff" "$(ls "$handoffs" 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# --- at the limit warns and records ------------------------------------------
+
+claude_transcript "$workspace/high.jsonl" 130000
+out="$(run_hook "$(payload_for PostToolUse sess-high "$workspace/high.jsonl")")"
+contains "over limit emits an advisory" "$out" "CONTEXT HANDOFF"
+contains "advisory names the occupancy" "$out" "130000"
+contains "advisory names the limit" "$out" "120000"
+contains "advisory uses the injection envelope" "$out" "additionalContext"
+check "over limit writes a handoff" "$([[ -f "$handoffs/sess-high.json" ]] && echo yes)" "yes"
+
+record="$(cat "$handoffs/sess-high.json")"
+contains "handoff records the reason" "$record" '"reason": "context-threshold"'
+contains "handoff records occupancy" "$record" '"used_tokens": 130000'
+contains "handoff records the threshold" "$record" '"threshold_tokens": 120000'
+contains "handoff is pending" "$record" '"status": "pending"'
+contains "handoff records the branch" "$record" '"branch": "'
+
+# --- the exact boundary counts as over ---------------------------------------
+
+claude_transcript "$workspace/exact.jsonl" 120000
+out="$(run_hook "$(payload_for PostToolUse sess-exact "$workspace/exact.jsonl")")"
+contains "the threshold itself fires" "$out" "CONTEXT HANDOFF"
+
+# --- the ceiling binds when the percentage would not -------------------------
+
+cat > "$repo/.planning/config.yaml" <<'YAML'
+context_window: 1000000
+handoff:
+  context_percent: 60
+  context_tokens: 250000
+YAML
+claude_transcript "$workspace/big.jsonl" 260000
+out="$(run_hook "$(payload_for PostToolUse sess-big "$workspace/big.jsonl")")"
+contains "the absolute ceiling binds on a large window" "$out" "at or over the 250000-token limit"
+# 600000 would be 60% of this window; a reading under the ceiling must not fire.
+claude_transcript "$workspace/mid.jsonl" 240000
+out="$(run_hook "$(payload_for PostToolUse sess-mid "$workspace/mid.jsonl")")"
+check "under the ceiling stays silent on a large window" "$out" ""
+cat > "$repo/.planning/config.yaml" <<'YAML'
+context_window: 200000
+handoff:
+  context_percent: 60
+  context_tokens: 250000
+YAML
+
+# --- Codex rollout transcripts are understood --------------------------------
+
+codex_transcript "$workspace/codex.jsonl" 150000
+out="$(run_hook "$(payload_for PostToolUse sess-codex "$workspace/codex.jsonl")")"
+contains "a Codex rollout is measured" "$out" "150000"
+check "a Codex session gets a handoff" \
+  "$([[ -f "$handoffs/sess-codex.json" ]] && echo yes)" "yes"
+
+# --- repeats debounce but keep the record current ----------------------------
+
+emitted=0
+for _ in 1 2 3 4; do
+  out="$(run_hook "$(payload_for PostToolUse sess-high "$workspace/high.jsonl")")"
+  [[ -n "$out" ]] && emitted=$((emitted + 1))
+done
+check "four repeats inside the debounce window stay silent" "$emitted" "0"
+out="$(run_hook "$(payload_for PostToolUse sess-high "$workspace/high.jsonl")")"
+contains "the fifth repeat warns again" "$out" "CONTEXT HANDOFF"
+check "repeats do not duplicate the handoff" \
+  "$(ls "$handoffs"/sess-high*.json | wc -l | tr -d ' ')" "1"
+
+# --- unusable input fails open -----------------------------------------------
+
+check "a missing transcript is silent" \
+  "$(run_hook "$(payload_for PostToolUse sess-none "$workspace/absent.jsonl")")" ""
+check "an empty payload is silent" "$(run_hook '{}')" ""
+check "malformed JSON is silent" "$(run_hook 'not json at all')" ""
+out="$(run_hook '{"hook_event_name":"PostToolUse","session_id":"../escape","cwd":"'"$repo"'","transcript_path":"'"$workspace/high.jsonl"'"}')"
+check "a traversing session id is refused" "$out" ""
+check "a traversing session id writes nothing" \
+  "$(ls "$handoffs"/*escape* 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# --- Stop clears state without writing a handoff -----------------------------
+
+before="$(ls "$handoffs"/*.json | wc -l | tr -d ' ')"
+run_hook "$(payload_for Stop sess-high "$workspace/high.jsonl")" >/dev/null
+check "Stop leaves the handoff count unchanged" \
+  "$(ls "$handoffs"/*.json | wc -l | tr -d ' ')" "$before"
+check "Stop clears the debounce sentinel" \
+  "$([[ -f "$handoffs/.state-sess-high.json" ]] && echo present || echo gone)" "gone"
+
+# --- an executor that stopped early gets a handoff ---------------------------
+
+mkdir -p "$repo/.planning/phases/03-thing"
+printf '{"agent": "coder", "plan": ".planning/phases/03-thing/03-01-PLAN.md", "at": "now"}\n' \
+  > "$handoffs/.active-sess-exit.jsonl"
+run_hook "$(payload_for SubagentStop sess-exit "$workspace/high.jsonl")" >/dev/null
+check "an executor with no SUMMARY produces a handoff" \
+  "$([[ -f "$handoffs/sess-exit--03-01.json" ]] && echo yes)" "yes"
+record="$(cat "$handoffs/sess-exit--03-01.json")"
+contains "the exit handoff names the reason" "$record" '"reason": "incomplete-exit"'
+contains "the exit handoff names the plan" "$record" '03-01-PLAN.md'
+contains "the exit handoff names the SUMMARY to read" "$record" '03-01-SUMMARY.md'
+contains "the exit handoff names the agent" "$record" '"agent": "coder"'
+check "a consumed dispatch leaves the active stack" \
+  "$([[ -f "$handoffs/.active-sess-exit.jsonl" ]] && echo present || echo gone)" "gone"
+
+# --- a completed executor produces nothing -----------------------------------
+
+printf -- '---\nstatus: complete\n---\n' > "$repo/.planning/phases/03-thing/03-02-SUMMARY.md"
+printf '{"agent": "coder", "plan": ".planning/phases/03-thing/03-02-PLAN.md", "at": "now"}\n' \
+  > "$handoffs/.active-sess-done.jsonl"
+run_hook "$(payload_for SubagentStop sess-done "$workspace/high.jsonl")" >/dev/null
+check "a complete SUMMARY produces no handoff" \
+  "$(ls "$handoffs"/sess-done*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
+check "a complete dispatch still leaves the stack" \
+  "$([[ -f "$handoffs/.active-sess-done.jsonl" ]] && echo present || echo gone)" "gone"
+
+# --- a blocked SUMMARY is still unfinished work ------------------------------
+
+printf -- '---\nstatus: blocked\n---\n' > "$repo/.planning/phases/03-thing/03-03-SUMMARY.md"
+printf '{"agent": "coder", "plan": ".planning/phases/03-thing/03-03-PLAN.md", "at": "now"}\n' \
+  > "$handoffs/.active-sess-blocked.jsonl"
+run_hook "$(payload_for SubagentStop sess-blocked "$workspace/high.jsonl")" >/dev/null
+check "a blocked SUMMARY produces a handoff" \
+  "$([[ -f "$handoffs/sess-blocked--03-03.json" ]] && echo yes)" "yes"
+
+# --- SubagentStop never emits an envelope ------------------------------------
+
+printf '{"agent": "coder", "plan": ".planning/phases/03-thing/03-04-PLAN.md", "at": "now"}\n' \
+  > "$handoffs/.active-sess-quiet.jsonl"
+check "SubagentStop emits nothing on stdout" \
+  "$(run_hook "$(payload_for SubagentStop sess-quiet "$workspace/high.jsonl")")" ""
+
+# --- only one dispatch closes per stop ---------------------------------------
+
+{
+  printf '{"agent": "coder", "plan": ".planning/phases/03-thing/03-05-PLAN.md", "at": "now"}\n'
+  printf '{"agent": "debugger", "plan": ".planning/phases/03-thing/03-06-PLAN.md", "at": "now"}\n'
+} > "$handoffs/.active-sess-two.jsonl"
+run_hook "$(payload_for SubagentStop sess-two "$workspace/high.jsonl")" >/dev/null
+check "the first dispatch is handed off" \
+  "$([[ -f "$handoffs/sess-two--03-05.json" ]] && echo yes)" "yes"
+check "the second dispatch is not yet handed off" \
+  "$([[ -f "$handoffs/sess-two--03-06.json" ]] && echo yes || echo no)" "no"
+check "the second dispatch stays on the stack" \
+  "$(grep -c '03-06-PLAN' "$handoffs/.active-sess-two.jsonl" 2>/dev/null || echo 0)" "1"
+run_hook "$(payload_for SubagentStop sess-two "$workspace/high.jsonl")" >/dev/null
+check "the second stop hands off the second dispatch" \
+  "$([[ -f "$handoffs/sess-two--03-06.json" ]] && echo yes)" "yes"
+
+# --- the dispatch guard records what it lets through -------------------------
+
+dispatch='{"hook_event_name":"PreToolUse","session_id":"sess-guard","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"coder","isolation":"worktree","prompt":"Execute .planning/phases/03-thing/03-09-PLAN.md now"}}'
+set +e
+( cd "$repo" && printf '%s' "$dispatch" | bash "$guard" >/dev/null 2>&1 )
+status=$?
+set -e
+check "an isolated dispatch is still allowed" "$status" "0"
+check "the guard records the dispatch" \
+  "$([[ -f "$handoffs/.active-sess-guard.jsonl" ]] && echo yes)" "yes"
+contains "the guard captured the plan path" \
+  "$(cat "$handoffs/.active-sess-guard.jsonl" 2>/dev/null)" "03-09-PLAN.md"
+
+# An unisolated dispatch is refused, and a refused dispatch never runs, so it
+# must not leave an active entry behind for a stop that will never come.
+blocked='{"hook_event_name":"PreToolUse","session_id":"sess-blockedguard","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"coder","prompt":"Execute .planning/phases/03-thing/03-10-PLAN.md now"}}'
+set +e
+( cd "$repo" && printf '%s' "$blocked" | bash "$guard" >/dev/null 2>&1 )
+status=$?
+set -e
+check "an unisolated dispatch is still blocked" "$status" "2"
+check "a blocked dispatch records nothing" \
+  "$([[ -f "$handoffs/.active-sess-blockedguard.jsonl" ]] && echo present || echo gone)" "gone"
+
+# A read-only agent needs no worktree and no handoff.
+readonly_dispatch='{"hook_event_name":"PreToolUse","session_id":"sess-ro","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"researcher","prompt":"Research .planning/phases/03-thing/03-11-PLAN.md"}}'
+set +e
+( cd "$repo" && printf '%s' "$readonly_dispatch" | bash "$guard" >/dev/null 2>&1 )
+status=$?
+set -e
+check "a read-only dispatch is allowed" "$status" "0"
+check "a read-only dispatch records nothing" \
+  "$([[ -f "$handoffs/.active-sess-ro.jsonl" ]] && echo present || echo gone)" "gone"
+
+printf '%s passed, %s failed\n' "$passed" "$failed"
+[[ "$failed" -eq 0 ]]
