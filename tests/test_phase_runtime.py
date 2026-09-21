@@ -649,6 +649,33 @@ class WorktreeIsolation(RuntimeCase):
         self.assertTrue(result["wave_clean"], "a declared deletion is authorized")
         self.assertFalse((self.directory / "src" / "kept.txt").exists())
 
+    def test_merge_wave_blocks_a_rename_that_removes_an_undeclared_path(self):
+        """A rename is a removal of the old path, and needs the same authority.
+
+        Git reports a move as a single `R` entry naming the destination, so with
+        rename detection on the vanished source never reaches the guard.
+        """
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt,src/moved.txt")
+        self.worktree_git(created["worktree"], "mv", "src/kept.txt", "src/moved.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "refactor: move")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertFalse(result["wave_clean"])
+        self.assertEqual(result["blocked"][0]["undeclared_deletions"],
+                         ["src/kept.txt"])
+        self.assertTrue((self.directory / "src" / "kept.txt").is_file())
+
+    def test_merge_wave_allows_a_rename_whose_source_is_declared(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt,src/moved.txt",
+                                "--deletions", "src/kept.txt")
+        self.worktree_git(created["worktree"], "mv", "src/kept.txt", "src/moved.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "refactor: move")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertTrue(result["wave_clean"])
+        self.assertTrue((self.directory / "src" / "moved.txt").is_file())
+        self.assertFalse((self.directory / "src" / "kept.txt").exists())
+
     def test_merge_wave_reports_out_of_scope_paths_without_blocking(self):
         created = self.run_verb("worktree.create", "01-01", "--phase", "1",
                                 "--files", "src/declared.txt")

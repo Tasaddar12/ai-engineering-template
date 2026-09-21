@@ -207,8 +207,9 @@ Integrate every isolated wave through `worktree.merge-wave` before running
 checks or review — both judge the merged tree, not one the work has not landed
 in. A merge into a protected branch is refused. A branch that deletes a path its
 plan did not declare in `files_deleted` is blocked, because a deletion
-authorization is never inferred from a general scope declaration. Conflicts
-abort with the worktree preserved.
+authorization is never inferred from a general scope declaration. A rename
+counts: moving a file away removes its old path, so the source needs the same
+authority as any other removal. Conflicts abort with the worktree preserved.
 
 Cleanup requires merge evidence from the repository, not a manifest's claim:
 `worktree.cleanup-wave` removes a checkout only when git agrees its branch is an

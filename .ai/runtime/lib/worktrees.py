@@ -374,9 +374,16 @@ def record_agent(workspace, plan, branch, phase=None, base=None, files=None,
 # --- integration ----------------------------------------------------------
 
 def changed_paths(workspace, base, branch):
-    """`(status, path)` pairs a branch changed relative to its base."""
-    raw = gitops.git(workspace, "diff", "--name-status", base + "..." + branch,
-                     check=False)
+    """`(status, path)` pairs a branch changed relative to its base.
+
+    `--no-renames` is deliberate. With rename detection on, moving a file away
+    reports as one `R` entry naming the new path, and the removal of the old one
+    becomes invisible -- a plan could rename a file out of existence without
+    ever declaring a deletion. Splitting a rename into its `D` and `A` halves
+    puts the removal back in front of the deletion guard, where it belongs.
+    """
+    raw = gitops.git(workspace, "diff", "--name-status", "--no-renames",
+                     base + "..." + branch, check=False)
     changes = []
     for line in raw.stdout.splitlines():
         parts = line.split("\t")

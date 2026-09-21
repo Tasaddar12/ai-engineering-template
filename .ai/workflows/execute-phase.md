@@ -376,7 +376,7 @@ Read the result rather than assuming it worked:
 
 | `status` | Means | What to do |
 |---|---|---|
-| `blocked` | deleted a path the plan never declared | Show `undeclared_deletions` and ask the user. Do not re-run the merge to get past it |
+| `blocked` | deleted a path the plan never declared | Show `undeclared_deletions` and ask the user. Do not re-run the merge to get past it. A rename counts: its source path is a removal |
 | `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
 | `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
 | `empty` | the branch has no commits | Same: nothing was produced |
