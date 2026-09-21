@@ -75,32 +75,37 @@ git worktree add -q -b agent-probe .worktrees/probe HEAD
 primary="$work"
 worktree="$work/.worktrees/probe"
 
-check 'a source edit in the primary checkout warns' 0 'editing outside a worktree' \
+check 'a source edit in the primary checkout is blocked' 2 'editing outside a worktree' \
   '{"tool_name":"Write","tool_input":{"file_path":"src/a.txt"}}' "$primary"
-check 'an Edit in the primary checkout warns' 0 'editing outside a worktree' \
+check 'an Edit in the primary checkout is blocked' 2 'editing outside a worktree' \
   '{"tool_name":"Edit","tool_input":{"file_path":"src/a.txt"}}' "$primary"
-check 'the warning names the hard requirement' 0 'hard requirement' \
+check 'the block names the hard requirement' 2 'hard requirement' \
+  '{"tool_name":"Write","tool_input":{"file_path":"src/a.txt"}}' "$primary"
+check 'the block names the session verb that unblocks it' 2 'session.open' \
   '{"tool_name":"Write","tool_input":{"file_path":"src/a.txt"}}' "$primary"
 
-# Planning records belong to the orchestrator, which works in the primary
-# checkout by design -- warning there would bury the signal.
-check 'a planning record in the primary checkout is silent' 0 '-' \
-  '{"tool_name":"Write","tool_input":{".planning/STATE.md":""},"tool_input":{"file_path":".planning/STATE.md"}}' "$primary"
-check 'a nested planning record is silent' 0 '-' \
+# Planning records are no longer exempt. The orchestrator opens a session
+# worktree before it writes, so a planning write landing in the primary
+# checkout means that never happened.
+check 'a planning record in the primary checkout is blocked' 2 'editing outside a worktree' \
+  '{"tool_name":"Write","tool_input":{"file_path":".planning/STATE.md"}}' "$primary"
+check 'a nested planning record is blocked' 2 'editing outside a worktree' \
   '{"tool_name":"Write","tool_input":{"file_path":"repo/.planning/phases/01-x/01-CONTEXT.md"}}' "$primary"
 
 check 'a relative edit inside the worktree is silent' 0 '-' \
   '{"tool_name":"Write","tool_input":{"file_path":"src/a.txt"}}' "$worktree"
+check 'a planning record inside the worktree is silent' 0 '-' \
+  '{"tool_name":"Write","tool_input":{"file_path":".planning/STATE.md"}}' "$worktree"
 check 'an absolute path inside the worktree is silent' 0 '-' \
   "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$worktree/src/a.txt\"}}" "$worktree"
-check 'an absolute path into the primary checkout warns' 0 'outside the active worktree' \
+check 'an absolute path into the primary checkout is blocked' 2 'outside the active worktree' \
   "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$primary/src/a.txt\"}}" "$worktree"
-check 'a Windows-escaped path into the primary checkout warns' 0 'outside the active worktree' \
+check 'a Windows-escaped path into the primary checkout is blocked' 2 'outside the active worktree' \
   "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$(printf '%s' "$primary" | sed 's#/#\\\\#g')\\\\src\\\\a.txt\"}}" "$worktree"
 
-check 'a notebook edit is covered' 0 'editing outside a worktree' \
+check 'a notebook edit is covered' 2 'editing outside a worktree' \
   '{"tool_name":"NotebookEdit","tool_input":{"notebook_path":"src/nb.ipynb"}}' "$primary"
-check 'an apply_patch Add File is covered' 0 'editing outside a worktree' \
+check 'an apply_patch Add File is covered' 2 'editing outside a worktree' \
   '{"tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Add File: src/new.txt\n+x\n*** End Patch"}}' "$primary"
 
 # A path with no file field has nothing to judge.

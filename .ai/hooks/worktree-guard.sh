@@ -12,15 +12,23 @@
 #
 #   2. Write/Edit/MultiEdit/NotebookEdit/apply_patch from a checkout that is not
 #      a linked worktree, or targeting a path outside the active worktree ->
-#      WARN on stderr, exit 0. Never blocks: the orchestrator legitimately edits
-#      planning records in the primary checkout, and a hook that cannot tell an
-#      orchestrator from a stray executor must not stop the user's work.
+#      BLOCK (exit 2). Nothing in this project is written outside a session
+#      worktree, planning records included: every unit of work reaches the base
+#      branch through a pull request from its own checkout, so a write in the
+#      primary checkout has no route to land and no audit trail behind it.
+#
+#      Planning records used to be exempt here, on the reasoning that the
+#      orchestrator owns them and works in the primary checkout by design. That
+#      premise no longer holds -- the orchestrator now opens a session worktree
+#      first (`phase_run query session.open <kind> <label>`) and works there, so
+#      a planning write landing in the primary checkout means the session was
+#      never opened.
 #
 # Fails OPEN on anything it cannot determine -- no git, no JSON parser, an
 # unparseable payload. A guard that blocks when it cannot see is worse than one
-# that admits it cannot see, EXCEPT for job 1, where the whole point is that an
-# unisolated dispatch must not proceed: there, a dispatch that positively names
-# a write-capable agent and positively lacks the isolation argument is blocked.
+# that admits it cannot see. Both jobs block only on a positive determination:
+# job 1 on a dispatch that names a write-capable agent and lacks the isolation
+# argument, job 2 on a path git itself places outside a linked worktree.
 
 set -u
 
@@ -165,25 +173,29 @@ while IFS= read -r path; do
   path="${path//\\\\//}"
   path="${path//\\//}"
 
-  # Planning records are the orchestrator's own, and the orchestrator works in
-  # the primary checkout by design. Warning about those would bury the signal
-  # this hook exists to raise.
-  case "$path" in
-    .planning/*|*/.planning/*) continue ;;
-  esac
-
   if [[ "$in_worktree" -eq 0 ]]; then
     cat >&2 <<NOTICE
-WARNING  editing outside a worktree: $path
+BLOCKED  editing outside a worktree: $path
 
-This checkout is not a linked worktree, so this edit lands in the primary
-checkout. If you are an executor running a plan, you were meant to be dispatched
-with isolation="worktree" and should stop and report rather than write here.
+This checkout is not a linked worktree, so this write would land in the primary
+checkout, on a branch with no pull request behind it. Nothing in this project
+reaches the base branch that way -- planning records included.
+
+Open the session this work belongs to and write there instead:
+
+  phase_run query session.open <phase|quick|milestone|onboard> <label>
+
+It returns the worktree path; run the rest of the command from it. An existing
+session for the same unit is reused, so a phase accumulates onto one branch and
+into one pull request.
+
+If you are an executor running a plan, you were meant to be dispatched with
+isolation="worktree" -- stop and report rather than writing here.
 
 Worktree isolation is a hard requirement of this project
 (.ai/RULES.md#worktrees-integration-and-cleanup).
 NOTICE
-    exit 0
+    exit 2
   fi
 
   # Inside a worktree, an absolute path built from the orchestrator's directory
@@ -205,17 +217,17 @@ NOTICE
       [[ -n "$target_top" ]] || continue
       if [[ -n "$toplevel" && "$target_top" != "$toplevel" ]]; then
         cat >&2 <<NOTICE
-WARNING  absolute path outside the active worktree: $path
+BLOCKED  absolute path outside the active worktree: $path
 
 The active worktree is $toplevel. A path built from the orchestrator's directory
 resolves to a different checkout, where the write would be invisible to this
-worktree's commit.
+worktree's commit -- the work would appear to succeed and then be lost.
 
 Use a relative path, or rebuild the absolute path from
 \`git rev-parse --show-toplevel\` run inside this worktree
 (.ai/references/worktree-path-safety.md).
 NOTICE
-        exit 0
+        exit 2
       fi
       ;;
   esac
