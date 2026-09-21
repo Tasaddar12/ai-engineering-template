@@ -211,17 +211,28 @@ def merge_codex_config(current, incoming, path):
                          "reconcile the TOML hook tables before installation.") from error
 
 
+#: Managed hook registrations: (event, script, matcher). The worktree guard is
+#: registered twice because its two jobs watch different tools -- refusing an
+#: unisolated subagent dispatch, and warning about a write outside a worktree.
+MANAGED_HOOKS = (
+    ("PostToolUse", "ai-tier-notice.sh",
+     "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+    ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
+    ("PreToolUse", "worktree-guard.sh",
+     "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+)
+
+
 def hook_settings(host):
     events = {}
-    for event, script in (("PostToolUse", "ai-tier-notice.sh"),):
+    for event, script, matcher in MANAGED_HOOKS:
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": 10}
         if host == "codex":
             handler["commandWindows"] = (
                 "& (Join-Path (Split-Path (Get-Command git).Source) '../bin/bash.exe') "
                 f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}')")
-        events[event] = [{"matcher": "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$",
-                          "hooks": [handler]}]
+        events.setdefault(event, []).append({"matcher": matcher, "hooks": [handler]})
     return {"hooks": events}
 
 
@@ -265,14 +276,24 @@ def merge_hooks(current, incoming, path):
                     raise ValueError(f"invalid matcher/handler group for {event}")
         additions = json.loads(incoming)["hooks"]
         changed = False
+        managed_scripts = {script for _, script, _ in MANAGED_HOOKS}
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
                 if group in existing:
                     continue
-                if any("/hooks/ai-tier-notice.sh" in json.dumps(item)
-                       for item in existing):
-                    raise ValueError(f"managed {event} registration differs; reconcile it manually")
+                script = next((name for name in managed_scripts
+                               if f"/hooks/{name}" in json.dumps(group)), None)
+                # A group already registering THIS script under THIS matcher,
+                # but not byte-identical, is a customized managed registration:
+                # refuse rather than install a second, conflicting copy. A user
+                # hook on the same event that names a different script is
+                # theirs, and is left alone.
+                if script and any(f"/hooks/{script}" in json.dumps(other)
+                                  and other.get("matcher") == group.get("matcher")
+                                  for other in existing):
+                    raise ValueError(f"managed {event} registration for {script} "
+                                     "differs; reconcile it manually")
                 existing.append(group)
                 changed = True
         return json_bytes(settings) if changed else current

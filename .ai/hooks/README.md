@@ -11,6 +11,17 @@ title: Advisory host hooks
 | Script | Event | Output |
 |---|---|---|
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
+| [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | **Blocks** (exit 2) a write-capable subagent dispatched without `isolation="worktree"` |
+| [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A `WARNING` when an edit lands outside a linked worktree |
+
+`worktree-guard.sh` is the exception to the advisory rule below: worktree
+isolation is a hard requirement of this project, so its dispatch check emits a
+real permission decision. The workflow text asks the orchestrator to pass
+`isolation="worktree"`, but a prose instruction cannot enforce itself — a model
+under load skips it, and the executor then commits into the primary checkout
+unnoticed. Its write check only warns, because the orchestrator legitimately
+edits planning records in the primary checkout and a hook that cannot tell an
+orchestrator from a stray executor must not stop the user's work.
 
 Codex registrations use `.codex/config.toml`; Claude uses `.claude/settings.json`.
 Scripts live in the selected host's `hooks` folder. There is no Python hook
@@ -28,15 +39,17 @@ JSON extraction uses jq when available, then Python, with a limited text
 fallback. The script supports file fields and Codex `apply_patch`
 Add/Update/Delete/Move headers.
 
-The hook is advisory: it exits successfully and never emits a permission
-decision. These checks do not parse arbitrary scripts, resolve every symlink,
-validate runtime ownership or create a sandbox. Repository instructions and host
-permissions still govern the work.
+`ai-tier-notice.sh` is advisory: it exits successfully and never emits a
+permission decision. `worktree-guard.sh` warns on writes and blocks only an
+unisolated write-capable dispatch. Neither parses arbitrary scripts, resolves
+every symlink, validates runtime ownership or creates a sandbox. Repository
+instructions and host permissions still govern the work.
 
 Run the Bash suite and the installed-launcher test after hook changes:
 
 ```text
 bash .ai/hooks/ai-tier-notice.test.sh
+bash .ai/hooks/worktree-guard.test.sh
 python -m unittest discover -s tests -p test_install.py -k registered_hooks -v
 ```
 

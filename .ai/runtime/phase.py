@@ -136,14 +136,14 @@ def verb_base_branch(workspace, positionals, options):
 # --- worktree isolation ---------------------------------------------------
 
 def verb_dispatch_isolation(workspace, positionals, options):
-    """Resolve — and record — how this dispatch is isolated.
+    """Which isolation model this dispatch uses.
 
-    `--raw` prints the bare mode so a workflow can branch on it directly.
+    `--raw` prints the bare mode so a workflow can branch on it directly. There
+    is no flag that forces a weaker answer: isolation is mandatory, so the verb
+    either names a worktree model or fails with the reason it could not.
     """
-    payload = worktrees.resolve_isolation(
-        workspace,
-        force=options.get("force_isolation") if options.get("force_isolation") is not True else None,
-        phase=options.get("phase"), plan=options.get("plan"))
+    payload = worktrees.resolve_isolation(workspace, phase=options.get("phase"),
+                                          plan=options.get("plan"))
     return payload["isolation"] if options.get("raw") else payload
 
 

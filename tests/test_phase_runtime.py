@@ -536,55 +536,53 @@ class WorktreeIsolation(RuntimeCase):
 
     # --- resolution -------------------------------------------------------
 
-    def test_isolation_resolves_to_a_known_mode_and_records_it(self):
+    def test_isolation_resolves_to_a_worktree_model(self):
         result = self.run_verb("dispatch-isolation", "--phase", "1")
         self.assertIn(result["isolation"],
                       ("harness-worktree", "orchestrator-worktree"))
-        self.assertTrue(result["resolved"])
         self.assertEqual(result["phase"], "1")
-        recorded = json.loads(
-            (self.directory / ".git" / "ai-phase" / "isolation.json").read_text(
-                encoding="utf-8"))
-        self.assertEqual(recorded["isolation"], result["isolation"],
-                         "the recorded verdict must match the one returned")
 
-    def test_use_worktrees_false_turns_isolation_off(self):
+    def test_isolation_never_resolves_to_none(self):
+        """There is no configuration, and no flag, that buys an unisolated run."""
+        for key, value in (("workflow.isolation", "none"),
+                           ("workflow.isolation", "sequential-ish"),
+                           ("workflow.isolation", "false")):
+            with self.subTest(key=key, value=value):
+                self.run_verb("config-set", key, value)
+                failure = self.run_verb("dispatch-isolation", expect_ok=False)
+                self.assertEqual(failure["code"], "bad-isolation")
+                self.assertIn("cannot be turned off", failure["error"])
+        self.run_verb("config-set", "workflow.isolation", "auto")
+
+    def test_a_retired_opt_out_key_has_no_effect(self):
+        """`use_worktrees: false` used to disable isolation. It no longer exists,
+        so a project carrying it from an older config is still isolated."""
         self.run_verb("config-set", "workflow.use_worktrees", "false")
         result = self.run_verb("dispatch-isolation")
-        self.assertEqual(result["isolation"], "none")
-        self.assertTrue(result["resolved"], "an explicit opt-out is a verdict")
+        self.assertIn(result["isolation"],
+                      ("harness-worktree", "orchestrator-worktree"))
 
-    def test_an_unknown_isolation_setting_fails_closed(self):
-        self.run_verb("config-set", "workflow.isolation", "sequential-ish")
-        result = self.run_verb("dispatch-isolation")
-        self.assertEqual(result["isolation"], "none")
-        self.assertFalse(result["resolved"],
-                         "out of vocabulary is not a verdict; it must not claim one")
-
-    def test_forced_isolation_overrides_the_configuration(self):
-        result = self.run_verb("dispatch-isolation", "--force-isolation", "none")
-        self.assertEqual(result["isolation"], "none")
-        self.assertIsNone(result["harness_flag"])
-
-    def test_runtime_isolation_requires_an_ignored_worktree_root(self):
+    def test_runtime_isolation_fails_when_the_worktree_root_is_not_ignored(self):
         (self.directory / ".gitignore").write_text("", encoding="utf-8", newline="\n")
         self.git("commit", "-qam", "stop ignoring the worktree root")
         self.run_verb("config-set", "workflow.isolation", "orchestrator-worktree")
-        result = self.run_verb("dispatch-isolation")
-        self.assertEqual(result["isolation"], "none")
-        self.assertIn("gitignored", result["reason"])
+        failure = self.run_verb("dispatch-isolation", expect_ok=False)
+        self.assertEqual(failure["code"], "root-not-ignored")
+        self.assertIn(".gitignore", failure["error"])
 
-    def test_base_check_degrades_when_head_diverged_from_the_fork_base(self):
+    def test_base_check_warns_when_head_diverged_from_the_fork_base(self):
+        """Advisory: upstream degrades to sequential here, which this project
+        cannot do, so divergence is reported and execution continues."""
         self.commit_in(self.directory, "src/ahead.txt", "ahead\n", "feat: get ahead")
         result = self.run_verb("worktree.base-check", "--mode", "harness-worktree")
-        self.assertTrue(result["should_degrade"])
+        self.assertTrue(result["warn"])
         self.assertIn("ahead of", result["message"])
 
-    def test_base_check_does_not_degrade_when_base_ref_is_head(self):
+    def test_base_check_is_quiet_when_base_ref_is_head(self):
         self.commit_in(self.directory, "src/ahead.txt", "ahead\n", "feat: get ahead")
         self.run_verb("config-set", "worktree.base_ref", "head")
         result = self.run_verb("worktree.base-check")
-        self.assertFalse(result["should_degrade"])
+        self.assertFalse(result["warn"])
 
     # --- creation ---------------------------------------------------------
 

@@ -150,24 +150,27 @@ model argument entirely.
 | `worktree.reap-orphans` | Prune stale metadata without deleting a live checkout |
 | `worktree.health` | Findings about the worktree setup |
 
-`dispatch-isolation` returns one of `harness-worktree`, `orchestrator-worktree`
-or `none`, and **persists what it resolved as a side effect of resolving it**.
-That is deliberate: it is the only call that tells a workflow what its isolation
-is, so the recorded value can never drift from the one the workflow acted on.
-Resolution fails closed to `none` — an unknown setting, a git without worktree
-support, an un-ignored worktree root, or a HEAD that has diverged from the fork
-base all degrade to sequential execution rather than reporting isolation that is
-not there.
+`dispatch-isolation` returns `harness-worktree` or `orchestrator-worktree` —
+**never a value meaning "unisolated"**, because isolation is mandatory here. It
+raises instead: `bad-isolation` for a setting that asks to disable it,
+`no-worktree-support` for a git too old for worktrees, `root-not-ignored` when
+the worktree root is not gitignored. There is no flag that forces a weaker
+answer, and the verb writes nothing to disk.
 
-`--force-isolation <mode>` pushes a value the resolver cannot see for itself,
-such as the `--sequential` flag or a base-check degrade the workflow decided,
-through the same single write path.
+`worktree.base-check` is advisory. Upstream degrades to sequential execution on
+a diverged HEAD; that is not available here, so it reports `warn` with a message
+and the workflow continues. Each executor's own spawn-time branch check is the
+backstop that halts on a genuinely wrong base.
 
 Integration is explicit and conservative. `merge-wave` blocks a branch that
-deletes a path its plan did not declare in `--deletions`, aborts a conflicting
-merge with the worktree preserved, and refuses a protected target branch or a
-dirty tree. `cleanup-wave` removes a checkout only when git agrees its branch is
-an ancestor of HEAD, and reports everything it kept with the reason.
+deletes a path its plan did not declare, aborts a conflicting merge with the
+worktree preserved, and refuses a protected target branch or a dirty tree.
+`cleanup-wave` removes a checkout only when git agrees its branch is an
+ancestor of HEAD, and reports everything it kept with the reason.
+
+The dispatch itself is enforced outside the runtime, in
+[hooks/worktree-guard.sh](../hooks/worktree-guard.sh) — a verb cannot see an
+`Agent(...)` call that never mentioned it.
 
 ## Layout
 
@@ -223,11 +226,11 @@ workflow:
   text_mode: false         # plain-text prompts instead of AskUserQuestion
   auto_advance: false
   discuss_mode: discuss
-  use_worktrees: true      # false runs every plan sequentially in the main tree
-  isolation: auto          # or harness-worktree / orchestrator-worktree / none
+  isolation: auto          # or harness-worktree / orchestrator-worktree
+                           # there is no value that disables isolation
 worktree:
-  root: .worktrees         # must be gitignored, or isolation degrades to none
-  base_ref: fork-point     # or head, where the host forks worktrees from HEAD
+  root: .worktrees         # must be gitignored, or execution stops
+  base_ref: fork-point     # or head; affects a warning only, never isolation
 agents:
   coder:
     model: sonnet          # overrides the agent file's own model

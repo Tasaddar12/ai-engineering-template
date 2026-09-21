@@ -52,8 +52,17 @@ creation, wave merge with a deletion guard, conservative cleanup, orphan reaping
 and health — and keeps upstream's contracts: isolation is a negotiated
 capability that fails closed, the orchestrator owns the worktree lifecycle, a
 deletion authorization is never inferred from a general scope declaration, and
-metadata pruning never removes a checkout that still exists. The
-`workflow.use_worktrees` setting keeps upstream's name and its `true` default.
+metadata pruning never removes a checkout that still exists.
+
+It departs from upstream on one point deliberately. Upstream treats isolation as
+a preference: `workflow.use_worktrees: false` disables it, and several
+conditions (a diverged fork base, a submodule in scope, an unresolvable
+capability) degrade to sequential execution. This project requires isolation, so
+that setting does not exist here, `none` is not a mode, and those conditions
+either raise or warn instead of degrading. The enforcement upstream places in
+`hooks/gsd-agent-isolation-guard.js` is served here by
+[hooks/worktree-guard.sh](hooks/worktree-guard.sh), which is an independent
+implementation reading the dispatch payload rather than a persisted sentinel.
 
 ## Bundled method provenance
 

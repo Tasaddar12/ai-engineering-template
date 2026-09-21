@@ -63,8 +63,8 @@ discussion, planning and readiness do not grant implementation permission.
 Recognised flags:
 - `--plan {id}` — execute only this plan
 - `--wave {n}` — execute only this wave
-- `--sequential` — run one plan at a time even when a wave allows parallelism
-  (this also turns isolation off: one plan at a time in the main checkout)
+- `--sequential` — run one plan at a time even when a wave allows parallelism.
+  Each plan is still isolated; only the concurrency changes
 - `--resume` — continue a phase whose execution stopped partway
 - `--no-review` — skip the code review gate (requires the user to say so)
 </step>
@@ -84,11 +84,11 @@ Parse: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_dir`,
 `goal`, `has_context`, `has_plans`, `plan_count`, `summary_count`, `plan_index`,
 `verification`, `checks_configured`, `models`, `agents_installed`,
 `missing_agents`, `context_window`, `commit_docs`, `response_language`, `paths`,
-`use_worktrees`, `isolation_configured`.
+`isolation_configured`.
 
-`isolation_configured` is the project's *setting*, not a verdict. The bundle
-never resolves isolation, because resolving it records it. The
-`resolve_isolation` step below is the only thing that decides.
+`isolation_configured` is the project's configured *model*, not a verdict — and
+never a way to skip isolation. A bundle is read-only and resolution can fail, so
+the `resolve_isolation` step below is the only thing that decides.
 
 **If `response_language` is set:** all user-facing output MUST be presented in
 `{response_language}`; technical terms, code, file paths and subagent prompts
@@ -174,40 +174,42 @@ on disk can never disagree.
 ISOLATION=$(phase_run query dispatch-isolation --raw --phase "${phase_number}")
 ```
 
-`ISOLATION` — never the host's name — selects how the wave fans out:
+`ISOLATION` — never the host's name — selects who creates the checkout:
 
 | `ISOLATION` | Fan-out | What this workflow does |
 |---|---|---|
 | `harness-worktree` | host-driven | Pass `isolation="worktree"` on each `Agent(...)` call and let the host create and bind the checkout. This workflow runs no git for setup. |
 | `orchestrator-worktree` | runtime-driven | Call `worktree.create` per plan and give the executor its path as a root pin. The runtime performs every git operation. |
-| `none` | none | Plans run inline, sequentially, in the main checkout. |
 
-Fail closed. If the verb fails or returns nothing, treat isolation as `none`
-**and say so** — a guard that cannot verify must not report "safe".
+**There is no third value, and no way to opt out.** Every executor in this
+project runs in its own worktree. If the verb fails, it is telling you isolation
+could not be established — a git too old for worktrees, or a worktree root that
+is not gitignored. **Stop and report its message.** Do not continue unisolated,
+and do not look for a flag that lets you: `--sequential` still runs one plan at
+a time, but each plan is still isolated.
 
-When `--sequential` was passed, force `none` so the recorded value matches what
-actually happens:
+This is enforced, not requested: `hooks/worktree-guard.sh` refuses an
+`Agent(...)` dispatch of `coder`, `doc-writer` or `debugger` that arrives
+without `isolation="worktree"`, and warns on any write from outside a worktree.
+A dispatch you forget to isolate will be blocked, not silently run.
 
-```bash
-phase_run query dispatch-isolation --raw --phase "${phase_number}" --force-isolation none
-```
-
-Then, when `ISOLATION` is not `none`:
+Then clear any metadata a crashed earlier session left behind, and check the
+base:
 
 ```bash
 phase_run query worktree.reap-orphans
-phase_run query worktree.base-check --mode "${ISOLATION}" --pick should_degrade --raw
+phase_run query worktree.base-check --mode "${ISOLATION}" --pick warn --raw
 ```
 
-`reap-orphans` clears metadata left by a crashed earlier session; it never
-deletes a checkout that still exists. If `base-check` returns `true`, print its
-`message` and degrade to `none` for this run — HEAD carries commits the fork
-base does not, so an isolated executor would start from a tree missing them and
-halt at its own branch check. Re-record the degrade so the sentinel is accurate:
+`reap-orphans` never deletes a checkout that still exists. If `base-check`
+returns `true`, print its `message` as a warning and **continue** — it means
+HEAD carries commits the fork base does not, which matters only if this host
+forks dispatch worktrees from the fork base rather than from HEAD. Each
+executor's own branch check is the backstop that halts on a genuinely wrong
+base.
 
 ```bash
 phase_run query worktree.base-check --mode "${ISOLATION}" --pick message --raw
-phase_run query dispatch-isolation --raw --phase "${phase_number}" --force-isolation none
 ```
 
 Report the outcome in one line before dispatching:
@@ -252,6 +254,11 @@ and record each plan's declared scope so the wave can be integrated:
 ```bash
 EXPECTED_BASE=$(git rev-parse HEAD)
 ```
+
+Both calls below take the plan's declared scope. It comes from the plan file's
+own frontmatter — `files_modified` and `files_deleted`, which you already read
+in `discover_and_group_plans` — passed as comma-separated lists. A plan that
+declares no `files_deleted` authorizes no deletion, which is the point.
 
 **When `ISOLATION` is `harness-worktree`** — record the branch the host will use
 for each plan. Claude Code names its dispatch worktrees `agent-<id>`; read the
@@ -308,12 +315,11 @@ files and follow their rules.
 - If the plan is wrong, stop and report it. Do not improvise a different change
 </constraints>
 
-${ISOLATION !== 'none' ? `
 <worktree_branch_check>
 {the block from references/worktree-branch-check.md, verbatim, with
  {EXPECTED_BASE} substituted and {EXPECTED_BASE_ALTERNATE} left empty}
 </worktree_branch_check>
-` : ''}${ISOLATION === 'orchestrator-worktree' ? `
+${ISOLATION === 'orchestrator-worktree' ? `
 <project_root_pin>
 {the root-pin guard from references/worktree-path-safety.md, with {PINNED_ROOT}
  substituted by this plan's worktree path, single-quoted}
@@ -325,8 +331,8 @@ Write: {phase_dir}/{plan_id}-SUMMARY.md with:
 - frontmatter: status (complete|blocked), commits, files changed, requirements covered
 - what was built, and the evidence each acceptance criterion was met
 - anything deferred, and why
-Return: ## EXECUTION COMPLETE with status and the summary path${ISOLATION !== 'none' ? `
-Also return the branch you committed on, so the wave can be integrated.` : ''}
+Return: ## EXECUTION COMPLETE with status and the summary path
+Also return the branch you committed on, so the wave can be integrated.
 </output>
 ",
   subagent_type="coder",
@@ -358,11 +364,9 @@ not complete. Treat it as blocked and say so.
 </step>
 
 <step name="integrate_wave">
-**Skip entirely when `ISOLATION` is `none`** — those plans committed in place
-and there is nothing to merge.
-
-Otherwise the wave's work is on branches, not in your tree. Integrate it before
-running checks, reviewing, or starting the next wave:
+The wave's work is on branches, not in your tree — it always is, because every
+plan ran isolated. Integrate it before running checks, reviewing, or starting
+the next wave:
 
 ```bash
 git status --porcelain     # must be clean; commit planning records first
@@ -527,7 +531,7 @@ phase_run query commit "chore(${padded_phase}): record phase execution" \
 Phase {phase_number} executed.
 
 Plans: {completed}/{plan_count} complete{blocked ? ", {blocked} blocked" : ""}
-Isolation: {ISOLATION}
+Isolation: {ISOLATION}{base_warning ? " (warning: {base_warning})" : ""}
 Integration: {waves merged clean | N entries blocked with reasons | not isolated}
 Worktrees preserved: {paths and reasons, or none}
 Requirements covered: {ids}
@@ -559,8 +563,9 @@ Code review: {clean | N warnings recorded | N critical fixed}
 - Don't skip the code review gate on your own initiative
 - Don't treat execution completing as the phase being verified
 - Don't branch on the host's name; branch on `ISOLATION`
-- Don't report isolation as active when the resolver failed — fail closed to
-  `none` and say that is what happened
+- Don't continue when isolation could not be established; report and stop
+- Don't look for a way to run a plan unisolated — there isn't one, and the
+  dispatch hook will block it
 - Don't run checks or review before the wave is integrated; you would be
   judging a tree the work has not landed in
 - Don't pass `--force` to cleanup to get past a preserved worktree
@@ -572,7 +577,7 @@ Code review: {clean | N warnings recorded | N critical fixed}
 <success_criteria>
 - [ ] Implementation authority confirmed before execution started
 - [ ] Blocking anti-patterns answered before any work
-- [ ] Isolation resolved once, recorded, and reported before dispatch
+- [ ] Isolation resolved and reported before dispatch, and every plan isolated
 - [ ] Plans grouped into waves respecting dependencies and file overlap
 - [ ] Each plan executed by a coder subagent, verified on disk
 - [ ] Each isolated executor carried the branch check, and any exit-42 halt was

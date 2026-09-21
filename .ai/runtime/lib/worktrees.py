@@ -6,7 +6,9 @@ attributed or reverted and two agents editing the same file race. Isolation
 gives each plan its own checkout on its own branch, and the wave is integrated
 afterwards through an explicit merge with a deletion guard.
 
-Three isolation models, matching what the host can actually do:
+Isolation is mandatory here. There is no mode that means "run unisolated" and
+no configuration that can ask for one, so the two models below differ only in
+*who* creates the checkout:
 
 - ``harness-worktree`` -- the host creates and binds the worktree itself (Claude
   Code's ``isolation="worktree"`` dispatch argument). The runtime runs no git to
@@ -14,11 +16,15 @@ Three isolation models, matching what the host can actually do:
   and cleaned up.
 - ``orchestrator-worktree`` -- the runtime creates the worktree and the workflow
   binds an executor to it. Every git operation belongs to the runtime.
-- ``none`` -- plans run inline, sequentially.
 
-Resolution fails closed to ``none``. A host whose capability cannot be
-determined runs sequentially rather than dispatching agents unisolated while the
-workflow believes they are isolated.
+When isolation cannot be established -- a git too old for worktrees, a worktree
+root that is not ignored -- resolution *fails* and the workflow halts. It never
+degrades to a shared checkout, because a degrade is the one outcome the project
+has ruled out.
+
+Enforcement of the dispatch itself lives in ``hooks/worktree-guard.sh``: this
+module decides and creates, the hook refuses a write-capable dispatch that
+arrives without isolation.
 
 Cleanup is never destructive by default: a worktree whose branch is not proven
 merged is preserved for inspection.
@@ -33,8 +39,9 @@ from .config import get as config_get
 from .paths import write_text
 from .results import require
 
-#: The only isolation values the workflows may branch on.
-ISOLATION_MODES = ("harness-worktree", "orchestrator-worktree", "none")
+#: The only isolation values the workflows may branch on. `none` is absent on
+#: purpose: an unisolated dispatch is not a mode this project can select.
+ISOLATION_MODES = ("harness-worktree", "orchestrator-worktree")
 
 #: Branches a worktree may never be created on or merged into.
 PROTECTED_BRANCH = re.compile(r"^(main|master|develop|trunk|release/.*)$")
@@ -116,81 +123,73 @@ def host_capability():
             "no host namespace installed; the runtime creates worktrees")
 
 
-def resolve_isolation(workspace, force=None, phase=None, plan=None):
-    """How this dispatch should be isolated, recorded as a side effect.
+def resolve_isolation(workspace, phase=None, plan=None):
+    """Which isolation model this dispatch uses.
 
-    Recording is not optional: this is the only call that tells a workflow what
-    its isolation is, so the persisted value can never drift from the one the
-    workflow acted on.
+    There is deliberately no argument and no configuration that can answer
+    "none". Every failure below raises instead of returning a weaker mode: the
+    workflow is meant to stop and have the cause fixed, and a verb that
+    answered "unisolated" would be handing back the one outcome this project
+    does not allow.
     """
-    if force is not None:
-        forced = str(force)
-        require(forced in ISOLATION_MODES,
-                "unknown isolation: " + forced, "bad-isolation")
-        mode, reason, resolved = forced, "forced by the caller", True
-    elif config_get(workspace, "workflow.use_worktrees", True) is False:
-        mode, reason, resolved = "none", "workflow.use_worktrees is false", True
+    # `or "auto"` would be wrong here. config.coerce turns the strings "none",
+    # "null" and "false" into Python None/False on the way in, so a falsy value
+    # is not an absent one -- it is somebody explicitly asking to disable
+    # isolation, which is the request this project refuses. Absent keys still
+    # arrive as the "auto" default from config.DEFAULTS, so the two are
+    # distinguishable and a disable attempt must reach the check below.
+    raw = config_get(workspace, "workflow.isolation", "auto")
+    configured = "none" if raw is None else str(raw)
+    if configured == "auto":
+        mode, reason = host_capability()
     else:
-        configured = str(config_get(workspace, "workflow.isolation", "auto") or "auto")
-        if configured == "auto":
-            mode, reason = host_capability()
-            resolved = True
-        elif configured in ISOLATION_MODES:
-            mode = configured
-            reason = "workflow.isolation is " + configured
-            resolved = True
-        else:
-            mode, reason, resolved = "none", "workflow.isolation is not a known mode", False
+        require(configured in ISOLATION_MODES,
+                "workflow.isolation must be auto, " + " or ".join(ISOLATION_MODES)
+                + " (got " + configured + "). Worktree isolation cannot be "
+                "turned off in this project.", "bad-isolation")
+        mode, reason = configured, "workflow.isolation is " + configured
 
-    if mode != "none" and not gitops.supports_worktrees(workspace):
-        mode, reason, resolved = "none", "this git does not support worktrees", True
-    if mode == "orchestrator-worktree" and not root_is_ignored(workspace):
-        mode = "none"
-        reason = (configured_root(workspace) + " is not gitignored in the primary "
-                  "checkout; runtime-created worktrees would appear as untracked files")
-        resolved = True
+    require(gitops.supports_worktrees(workspace),
+            "this git does not support worktrees, which this project requires "
+            "for every plan dispatch", "no-worktree-support")
+    if mode == "orchestrator-worktree":
+        require(root_is_ignored(workspace),
+                "add " + configured_root(workspace) + " to .gitignore in the "
+                "primary checkout before executing: runtime-created worktrees "
+                "would otherwise appear as untracked files",
+                "root-not-ignored")
 
-    payload = {
+    return {
         "isolation": mode,
-        "resolved": resolved,
         "reason": reason,
         # What the workflow passes on its dispatch call. Only the harness model
-        # has one; the other two are the runtime's work or nobody's.
+        # has one; in the other the runtime does the work itself.
         "harness_flag": "worktree" if mode == "harness-worktree" else None,
         "phase": str(phase) if phase not in (None, "", True) else None,
         "plan": str(plan) if plan not in (None, "", True) else None,
-        "use_worktrees": config_get(workspace, "workflow.use_worktrees", True),
         "worktree_root": workspace.relative(worktree_root(workspace)),
     }
-    record_isolation(workspace, payload)
-    return payload
-
-
-def record_isolation(workspace, payload):
-    """Persist the resolved isolation. Best effort: never fail a dispatch."""
-    try:
-        target = state_dir(workspace) / "isolation.json"
-        body = dict(payload, recorded_at=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
-        write_text(target, json.dumps(body, ensure_ascii=False, indent=2) + "\n")
-    except OSError:
-        pass
-    return payload
 
 
 def base_check(workspace, mode="harness-worktree"):
-    """Whether HEAD has diverged from the base a new worktree would fork from.
+    """Whether HEAD has diverged from the base a new worktree might fork from.
 
-    A harness forks its worktree from the fork point with the base branch, not
-    from HEAD. When HEAD carries commits the base does not, an isolated executor
-    would start from a tree missing them and its own branch check would halt.
-    Degrading to sequential execution is correct until HEAD is merged;
-    `worktree.base_ref: head` opts out where the host forks from HEAD instead.
+    Advisory only. A harness may fork its worktree from the fork point with the
+    base branch rather than from HEAD, in which case an executor would start
+    from a tree missing HEAD's commits. Upstream answers that by degrading to
+    sequential execution; this project cannot, so the divergence is reported as
+    a warning and the real backstop stays where it belongs -- each executor's
+    own spawn-time branch check, which compares its actual base against the
+    revision the orchestrator captured and halts with exit 42 on a mismatch.
+
+    `worktree.base_ref: head` silences the warning where the host is known to
+    fork from HEAD.
     """
     head = gitops.head_revision(workspace)
     base_ref = str(config_get(workspace, "worktree.base_ref", "fork-point")
                    or "fork-point")
     result = {"mode": mode, "head": head, "base_ref": base_ref,
-              "should_degrade": False, "message": None}
+              "warn": False, "message": None}
     if base_ref == "head":
         result["reason"] = "worktree.base_ref is head; worktrees fork from HEAD"
         return result
@@ -208,14 +207,15 @@ def base_check(workspace, mode="harness-worktree"):
     result["fork_base"] = fork
     if fork and fork != head:
         ahead = gitops.output(workspace, "rev-list", "--count", reference + "..HEAD")
-        result["should_degrade"] = True
+        result["warn"] = True
         result["commits_ahead"] = int(ahead) if ahead.isdigit() else None
         result["message"] = (
             "HEAD is " + (ahead or "?") + " commit(s) ahead of "
             + result.get("compared_to", base)
-            + "; an isolated executor would fork from " + fork[:8]
-            + " and miss them. Running sequentially. Merge or push HEAD, or set "
-            "worktree.base_ref: head, to restore isolated execution.")
+            + ". If this host forks a dispatch worktree from the fork base ("
+            + fork[:8] + ") rather than from HEAD, executors will halt at their "
+            "branch check. Merge or push HEAD, or set worktree.base_ref: head "
+            "once you have confirmed the host forks from HEAD.")
         result["reason"] = "head diverged from the fork base"
         return result
     result["reason"] = "head matches the fork base"

@@ -14,7 +14,9 @@ DEFAULTS = {
         "text_mode": False,
         "auto_advance": False,
         "discuss_mode": "discuss",
-        "use_worktrees": True,
+        # Which isolation model to use, never whether to isolate. Worktree
+        # isolation is a requirement of this project: there is no value here
+        # that means "run unisolated", and no key that turns it off.
         "isolation": "auto",
     },
     "worktree": {

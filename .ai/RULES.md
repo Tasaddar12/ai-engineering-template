@@ -174,25 +174,35 @@ transcript. Follow [worker handoff](references/worker-handoff.md).
 
 ## Worktrees, integration and cleanup
 
-Parallel executors get isolated checkouts. Without them, concurrent agents edit
-one working tree and interleave their commits into one history, and a plan can
-no longer be attributed or reverted. Declaring non-overlapping paths is a
-planning discipline, not an enforcement mechanism.
+**Every executor runs in its own worktree. This is not configurable.** Without
+isolation, concurrent agents edit one working tree and interleave their commits
+into one history, and a plan can no longer be attributed or reverted. Declaring
+non-overlapping paths is a planning discipline, not an enforcement mechanism.
 
-Isolation is a negotiated capability, never a host's name. Resolve it once per
-dispatch through `phase_run query dispatch-isolation`, which records what it
-resolved, and branch only on the result:
+Resolve the model once per dispatch through
+`phase_run query dispatch-isolation`, and branch only on the result:
 
 - `harness-worktree` — the host creates and binds the checkout; pass its
   isolation argument on dispatch and run no git for setup.
 - `orchestrator-worktree` — the runtime creates the checkout through
   `worktree.create`; every git operation is the runtime's.
-- `none` — plans run inline, sequentially.
 
-**Fail closed.** A resolver that fails, a git without worktree support, an
-un-ignored worktree root, or a HEAD that has diverged from the fork base all
-degrade to `none`. Degrading is correct; reporting isolation that is not there
-is not. Say which happened.
+There is no third value. No setting disables isolation, and a config that asks
+for `none`, `null` or `false` is an error, not a fallback. When isolation cannot
+be established — a git too old for worktrees, a worktree root that is not
+ignored — the verb **fails and execution stops** with the cause. It never
+degrades to a shared checkout.
+
+**Enforcement is not prose.** [worktree-guard.sh](hooks/worktree-guard.sh)
+refuses (exit 2) an `Agent`/`Task` dispatch of a write-capable subagent —
+`coder`, `doc-writer`, `debugger` — that arrives without `isolation="worktree"`,
+and warns on any edit or write from a checkout that is not a linked worktree.
+The instruction in the workflow tells you to isolate; the hook is what makes
+skipping it fail. A read-only agent has nothing to isolate and is not gated.
+
+A diverged HEAD is a **warning**, not a degrade: `worktree.base-check` reports
+when HEAD carries commits the fork base does not, and each executor's own
+spawn-time branch check is the backstop that halts on a genuinely wrong base.
 
 The orchestrator owns the worktree lifecycle. An executor verifies its branch
 and base at spawn through
