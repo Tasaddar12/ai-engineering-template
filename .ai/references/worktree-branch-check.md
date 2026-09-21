@@ -45,6 +45,7 @@ if [ "$ACTUAL_BASE" != "{EXPECTED_BASE}" ] && { [ -z "$EXPECTED_BASE_ALTERNATE" 
   exit 42
 fi
 ```
+
 </worktree_branch_check>
 
 ## What the orchestrator does with exit 42
@@ -58,6 +59,3 @@ An executor that exits 42 has not committed anything. Treat its plan as
 
 Never proceed past a halted executor on the assumption it succeeded. Its commits
 are absent, not pending.
-
-Adapted from `gsd-core/references/worktree-branch-check.md`; see
-[THIRD-PARTY-NOTICES](../THIRD-PARTY-NOTICES.md).

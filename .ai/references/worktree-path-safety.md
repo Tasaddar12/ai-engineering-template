@@ -126,7 +126,7 @@ the main repository, not the worktree. The write lands in the wrong directory,
 `git commit` in the worktree sees a clean tree, and the work is silently lost.
 
 **Prefer relative paths for every edit.** Where an absolute path is unavoidable,
-derive it from `git rev-parse --show-toplevel` run *inside* the worktree — never
+derive it from `git rev-parse --show-toplevel` run _inside_ the worktree — never
 from a directory captured in the orchestrator's context.
 
 ```bash
@@ -136,6 +136,3 @@ if [ "${ABS_PATH#"$WT_ROOT"}" = "$ABS_PATH" ]; then
   echo "Use a relative path, or recompute the absolute path from WT_ROOT." >&2
 fi
 ```
-
-Adapted from `gsd-core/references/worktree-path-safety.md`; see
-[THIRD-PARTY-NOTICES](../THIRD-PARTY-NOTICES.md).

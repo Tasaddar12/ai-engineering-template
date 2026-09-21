@@ -22,7 +22,7 @@ halted executor on the assumption it succeeded.
 
 ## A rejected isolated run stays isolated
 
-When an isolated run is *rejected* — the user declines the merge, the
+When an isolated run is _rejected_ — the user declines the merge, the
 orchestrator surfaces recovery guidance for a blocked plan, or the run reached
 past the scope it was asked for — the isolation contract still holds through
 recovery.
@@ -47,6 +47,3 @@ reported with the reason.
 Ignored files are not automatically disposable, and worktree isolation does not
 isolate databases, ports, accounts or caches. Declare those resources before
 running plans in parallel; two isolated checkouts still share one dev database.
-
-Adapted from `gsd-core/workflows/execute-phase/steps/worktree-recovery-policy.md`;
-see [THIRD-PARTY-NOTICES](../THIRD-PARTY-NOTICES.md).
