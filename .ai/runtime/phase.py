@@ -188,7 +188,7 @@ def verb_session_open(workspace, positionals, options):
     label = argument(positionals, 1, "label")
     return worktrees.open_session(workspace, kind, label,
                                   base=option_text(options, "base"),
-                                  sync=options.get("sync") is not False)
+                                  sync=not options.get("no_sync"))
 
 
 def verb_session_status(workspace, positionals, options):
@@ -206,8 +206,8 @@ def verb_pr_open(workspace, positionals, options):
     pull = delivery.open_pr(
         workspace, branch, base=option_text(options, "base"),
         title=option_text(options, "title"), body=option_text(options, "body"),
-        body_file=option_text(options, "body-file"),
-        draft=options.get("draft") is not False)
+        body_file=option_text(options, "body_file"),
+        draft=bool(options.get("draft")))
     try:
         worktrees.record_session_pr(workspace, branch, pull.get("url"),
                                     pull.get("number"))
@@ -225,7 +225,7 @@ def verb_pr_checks(workspace, positionals, options):
 
 def verb_pr_merge(workspace, positionals, options):
     branch = argument(positionals, 0, "branch")
-    local = options.get("local-checks-passed")
+    local = options.get("local_checks_passed")
     return delivery.merge_pr(workspace, branch,
                              local_checks_passed=True if local is True else None)
 
