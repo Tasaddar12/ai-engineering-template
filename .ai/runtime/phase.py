@@ -15,8 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (bundles, gitops, milestones, models, phases, quick, state,  # noqa: E402
-                 todos, verification, worktrees)
+from lib import (bundles, delivery, gitops, milestones, models, phases, quick,  # noqa: E402
+                 state, todos, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -176,6 +176,66 @@ def verb_worktree_record_agent(workspace, positionals, options):
         base=options.get("base") if isinstance(options.get("base"), str) else None,
         files=options.get("files"), deletions=options.get("deletions"),
         path=options.get("path") if isinstance(options.get("path"), str) else None)
+
+
+def option_text(options, name):
+    value = options.get(name)
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def verb_session_open(workspace, positionals, options):
+    kind = argument(positionals, 0, "kind")
+    label = argument(positionals, 1, "label")
+    return worktrees.open_session(workspace, kind, label,
+                                  base=option_text(options, "base"),
+                                  sync=options.get("sync") is not False)
+
+
+def verb_session_status(workspace, positionals, options):
+    return worktrees.session_status(workspace)
+
+
+def verb_session_close(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    return worktrees.close_session(workspace, branch,
+                                   force=bool(options.get("force")))
+
+
+def verb_pr_open(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    pull = delivery.open_pr(
+        workspace, branch, base=option_text(options, "base"),
+        title=option_text(options, "title"), body=option_text(options, "body"),
+        body_file=option_text(options, "body-file"),
+        draft=options.get("draft") is not False)
+    try:
+        worktrees.record_session_pr(workspace, branch, pull.get("url"),
+                                    pull.get("number"))
+    except VerbError:
+        # A pull request opened for a branch this runtime did not create is
+        # still a valid pull request; it just has no session to annotate.
+        pass
+    return pull
+
+
+def verb_pr_checks(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    return delivery.checks(workspace, branch)
+
+
+def verb_pr_merge(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    local = options.get("local-checks-passed")
+    return delivery.merge_pr(workspace, branch,
+                             local_checks_passed=True if local is True else None)
+
+
+def verb_pr_sync(workspace, positionals, options):
+    return delivery.sync_base(workspace)
+
+
+def verb_gh_status(workspace, positionals, options):
+    return delivery.availability(workspace)
 
 
 def verb_worktree_merge_wave(workspace, positionals, options):
@@ -489,6 +549,14 @@ VERBS = {
     "git.base-branch": verb_base_branch,
 
     "dispatch-isolation": verb_dispatch_isolation,
+    "session.open": verb_session_open,
+    "session.status": verb_session_status,
+    "session.close": verb_session_close,
+    "pr.open": verb_pr_open,
+    "pr.checks": verb_pr_checks,
+    "pr.merge": verb_pr_merge,
+    "pr.sync": verb_pr_sync,
+    "gh.status": verb_gh_status,
     "worktree.base-check": verb_worktree_base_check,
     "worktree.create": verb_worktree_create,
     "worktree.record-agent": verb_worktree_record_agent,

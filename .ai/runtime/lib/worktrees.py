@@ -37,7 +37,7 @@ from pathlib import Path
 from . import gitops
 from .config import get as config_get
 from .paths import write_text
-from .results import require
+from .results import VerbError, require
 
 #: The only isolation values the workflows may branch on. `none` is absent on
 #: purpose: an unisolated dispatch is not a mode this project can select.
@@ -50,7 +50,16 @@ PROTECTED_BRANCH = re.compile(r"^(main|master|develop|trunk|release/.*)$")
 #: and `worktree-agent-*` are what Claude Code names its own worktrees; the
 #: rest are what this runtime creates.
 ISOLATION_BRANCH = re.compile(
-    r"^((worktree-)?agent-|worktree-wf_|phase-|quick-|review-|verify-)[A-Za-z0-9._/-]+$")
+    r"^((worktree-)?agent-|worktree-wf_|phase-|quick-|review-|verify-"
+    r"|milestone-|onboard-)[A-Za-z0-9._/-]+$")
+
+#: A session is the worktree a whole unit of work lives in -- one phase from
+#: discussion through verification, one quick fix, one milestone record. It is
+#: distinct from the per-plan dispatch worktrees a wave creates inside it: a
+#: session is long-lived, holds the planning records, and is what a pull request
+#: is opened from. Nothing in this project writes to the base branch outside one.
+SESSION_KINDS = ("phase", "quick", "milestone", "onboard")
+SESSIONS_FILE = "sessions.json"
 
 STATE_DIR = "ai-phase"
 IGNORE_PROBE = ".phase-ignore-probe"
@@ -649,3 +658,226 @@ def health(workspace):
         "findings": findings,
         "worktrees": view["count"],
     }
+
+
+# --- sessions -------------------------------------------------------------
+#
+# A session worktree holds one whole unit of work. Every command that writes
+# anything -- a planning record as much as a line of source -- runs inside one,
+# because the base branch is never written to directly. The per-plan worktrees a
+# wave creates live alongside it under the same root rather than nested inside
+# it, and merge back into the session's branch, not into the base.
+
+def sessions_path(workspace):
+    return state_dir(workspace) / SESSIONS_FILE
+
+
+def load_sessions(workspace):
+    path = sessions_path(workspace)
+    if not path.is_file():
+        return {"sessions": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"sessions": []}
+    if not isinstance(data, dict) or not isinstance(data.get("sessions"), list):
+        return {"sessions": []}
+    return data
+
+
+def save_sessions(workspace, data):
+    write_text(sessions_path(workspace),
+               json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    return data
+
+
+def put_session(workspace, entry):
+    data = load_sessions(workspace)
+    data["sessions"] = [item for item in data["sessions"]
+                        if item.get("branch") != entry.get("branch")]
+    data["sessions"].append(entry)
+    save_sessions(workspace, data)
+    return entry
+
+
+def session_for(workspace, kind, label):
+    """The open session for this unit of work, or None.
+
+    Reuse is the whole point: `/discuss-phase 01` opens the session and
+    `/plan-phase 01`, `/execute-phase 01` and `/verify-work 01` find the same
+    one, so a phase accumulates into a single branch and a single pull request.
+    """
+    for entry in load_sessions(workspace).get("sessions", []):
+        if (entry.get("kind") == str(kind) and entry.get("label") == str(label)
+                and entry.get("status") == "open"):
+            path = entry.get("worktree")
+            if path and Path(path).is_dir():
+                return entry
+            # Registered but gone: a crashed session, not a reusable one.
+            entry["status"] = "missing"
+            put_session(workspace, entry)
+    return None
+
+
+def open_session(workspace, kind, label, base=None, sync=True):
+    """Create the worktree one unit of work lives in, forked from a fresh base."""
+    from . import delivery
+
+    require(str(kind) in SESSION_KINDS,
+            "session kind must be one of " + ", ".join(SESSION_KINDS)
+            + " (got " + str(kind) + ")", "bad-session-kind")
+    require(gitops.is_repository(workspace), "not a git repository", "not-a-repo")
+    require(gitops.supports_worktrees(workspace),
+            "this git does not support worktrees, which this project requires",
+            "no-worktree-support")
+    require(root_is_ignored(workspace),
+            "add " + configured_root(workspace) + " to .gitignore in the primary "
+            "checkout before opening a session worktree", "root-not-ignored")
+
+    existing = session_for(workspace, kind, label)
+    if existing:
+        return dict(existing, reused=True)
+
+    synced = None
+    if sync:
+        # Fork from a base that already carries everything merged before now,
+        # so a phase never plans against a stale roadmap.
+        synced = delivery.sync_base(workspace)
+
+    base_branch_name = gitops.base_branch(workspace)
+    if not base:
+        primary = str(primary_checkout(workspace))
+        base = (gitops.rev_parse(workspace, "origin/" + base_branch_name, cwd=primary)
+                or gitops.rev_parse(workspace, base_branch_name, cwd=primary)
+                or gitops.head_revision(workspace))
+    require(bool(gitops.rev_parse(workspace, base + "^{commit}")),
+            "base revision does not resolve: " + str(base), "bad-base")
+
+    token = datetime.now().strftime("%H%M%S%f")[:9]
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", str(label)).strip("-") or str(kind)
+    branch = validate_branch(str(kind) + "-" + slug + "-" + token)
+    require(not gitops.rev_parse(workspace, "refs/heads/" + branch),
+            "branch already exists: " + branch, "branch-exists")
+
+    root = worktree_root(workspace)
+    path = (root / (str(kind) + "-" + slug + "-" + token)).resolve()
+    require(path.parent == root,
+            "a worktree must be an immediate child of " + str(root),
+            "bad-worktree-path")
+    require(not path.exists(), "worktree path already exists: " + str(path),
+            "path-exists")
+
+    root.mkdir(parents=True, exist_ok=True)
+    gitops.git(workspace, "worktree", "add", "-b", branch, str(path), base)
+    require(not path.is_symlink(),
+            "worktree path resolved to a link: " + str(path), "bad-worktree-path")
+
+    entry = {
+        "kind": str(kind),
+        "label": str(label),
+        "branch": branch,
+        "base_branch": base_branch_name,
+        "base": base,
+        "worktree": str(path),
+        "status": "open",
+        "pr": None,
+        "created_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+    put_session(workspace, entry)
+    return dict(entry, reused=False, synced=synced,
+                worktree_relative=workspace.relative(path))
+
+
+def record_session_pr(workspace, branch, url, number=None):
+    """Attach the pull request to its session so close can find it."""
+    data = load_sessions(workspace)
+    for entry in data["sessions"]:
+        if entry.get("branch") == branch:
+            entry["pr"] = {"url": url, "number": number}
+            save_sessions(workspace, data)
+            return entry
+    raise VerbError("no session for branch " + branch, "no-session")
+
+
+def session_merged(workspace, entry):
+    """Whether this session's work actually landed on the base branch.
+
+    Ancestry alone is the wrong test. A squash merge replays the branch as one
+    new commit, so the branch is never an ancestor of the base afterwards and an
+    ancestry check would call genuinely merged work unmerged forever. The pull
+    request's own state is the authority; ancestry is the fallback for a merge
+    that happened some other way.
+    """
+    from . import delivery
+
+    branch = entry.get("branch") or ""
+    try:
+        pull = delivery.view(workspace, branch)
+    except VerbError:
+        pull = None
+    if pull and pull.get("state"):
+        return {"merged": pull["state"] == "MERGED", "evidence": "pull request",
+                "pr_state": pull["state"], "url": pull.get("url")}
+    base = entry.get("base_branch") or gitops.base_branch(workspace)
+    primary = str(primary_checkout(workspace))
+    reference = (gitops.rev_parse(workspace, "origin/" + base, cwd=primary)
+                 or gitops.rev_parse(workspace, base, cwd=primary))
+    if not reference:
+        return {"merged": False, "evidence": "none",
+                "reason": "no base branch to compare against"}
+    ancestor = gitops.git(workspace, "merge-base", "--is-ancestor", branch,
+                          reference, check=False).returncode == 0
+    return {"merged": ancestor, "evidence": "ancestry", "base": base}
+
+
+def close_session(workspace, branch, force=False):
+    """Remove a session's worktree and branch once its work is proven merged.
+
+    Conservative by the same rule as wave cleanup: no merge evidence means the
+    checkout is preserved and reported, never discarded to tidy up.
+    """
+    data = load_sessions(workspace)
+    entry = next((item for item in data["sessions"]
+                  if item.get("branch") == branch), None)
+    require(entry is not None, "no session for branch " + branch, "no-session")
+    if entry.get("status") == "closed":
+        return {"branch": branch, "closed": True, "already": True}
+
+    evidence = session_merged(workspace, entry)
+    if not evidence["merged"] and not force:
+        return {"branch": branch, "closed": False, "preserved": True,
+                "worktree": entry.get("worktree"), "evidence": evidence,
+                "reason": "no evidence this session's work merged; the worktree "
+                          "is kept so the work is not lost"}
+
+    path = entry.get("worktree")
+    if path and Path(path).exists():
+        arguments = ["worktree", "remove", str(path)]
+        if force:
+            arguments.append("--force")
+        result = gitops.git(workspace, *arguments, check=False)
+        if result.returncode != 0:
+            return {"branch": branch, "closed": False, "preserved": True,
+                    "worktree": path,
+                    "reason": (result.stderr or result.stdout).strip()[:500]}
+    gitops.git(workspace, "branch", "-D" if force else "-d", branch, check=False)
+    gitops.git(workspace, "worktree", "prune", check=False)
+
+    entry["status"] = "closed"
+    entry["closed_at"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    entry["evidence"] = evidence
+    save_sessions(workspace, data)
+    return {"branch": branch, "closed": True, "worktree": path,
+            "evidence": evidence, "forced": bool(force)}
+
+
+def session_status(workspace):
+    """Every session this repository knows about, open ones first."""
+    sessions = load_sessions(workspace).get("sessions", [])
+    for entry in sessions:
+        path = entry.get("worktree")
+        entry["exists"] = bool(path and Path(path).is_dir())
+    open_sessions = [item for item in sessions if item.get("status") == "open"]
+    return {"sessions": sessions, "open": open_sessions,
+            "open_count": len(open_sessions),
+            "worktree_root": str(worktree_root(workspace))}
