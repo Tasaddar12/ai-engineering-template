@@ -14,7 +14,6 @@ Task completion is a claim. Verification is evidence.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 @~/.ai/references/universal-anti-patterns.md
 @~/.ai/references/methods/honest-verifier.md
 @~/.ai/references/methods/verifier-evidence-gate.md
@@ -77,31 +76,6 @@ Exit.
 Display: `► VERIFY PHASE {phase_number}: {phase_name}`
 </step>
 
-<step name="open_session">
-Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
-
-```bash
-SESSION=$(phase_run query session.open phase "${padded_phase}")
-```
-
-Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command in this workflow from `worktree`.** An open session for
-this phase is reused rather than replaced, so the work accumulates onto one branch
-and arrives as one pull request.
-
-Report it in one line:
-
-```
-Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
-```
-
-If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the dispatch guard would block the write anyway.
-</step>
-
-
 <step name="check_existing_verification">
 If `verification.exists` is true:
 
@@ -118,6 +92,29 @@ git rev-parse HEAD
 
 If the code changed since, the report is stale — say so and re-verify. If nothing
 changed, offer to show the existing report instead of re-running.
+</step>
+
+<step name="open_session">
+This phase's work lives in one session worktree, shared by `/discuss-phase`,
+`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
+one pull request. Join it before writing anything:
+
+```bash
+SESSION=$(phase_run query session.open phase "${padded_phase}")
+```
+
+An open session for this phase is reused, not replaced. **Run every subsequent
+command from its `worktree`**, and report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, stop and report its message rather than continuing in the
+checkout you were invoked from.
+
+**Do not deliver it here.** `/ship` opens the pull request, judges its checks and
+closes the session once the phase is verified.
 </step>
 
 <step name="scan_phase_artifacts">
@@ -345,25 +342,6 @@ phase_run query commit "docs(${padded_phase}): verify phase" \
 ```
 </step>
 
-<step name="session_handoff">
-**Do not deliver this session here.** A phase session is opened by
-`/discuss-phase` and reused by `/plan-phase`, `/execute-phase` and
-`/verify-work`, so that the whole phase accumulates onto one branch and arrives
-as one pull request. Delivering it from this workflow would cut the phase into
-separate pull requests and strand whatever comes after.
-
-The session stays open, with its commits on its branch. `/ship` is the phase's
-delivery step: it opens the pull request, judges its checks, merges and closes
-the session. See @~/.ai/workflows/_session.snippet.md.
-
-Carry the session into the output below so the user knows where the work is and
-what closes it:
-
-```
-Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
-```
-</step>
-
 <step name="present_ready">
 ```
 Phase {phase_number} verification: {status}
@@ -417,6 +395,5 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - [ ] VERIFICATION.md written with status, revision and findings
 - [ ] Gaps either closed and re-verified, or recorded as todos with the user's agreement
 - [ ] Roadmap and STATE.md updated only on a pass or an explicit acceptance
-- [ ] Phase session left open and reported, with `/ship` named as what
-      delivers it
+- [ ] Phase session joined before any write, and left open for `/ship`
 </success_criteria>

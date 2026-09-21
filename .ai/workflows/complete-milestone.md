@@ -12,7 +12,6 @@ roadmap, and commit.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -47,31 +46,6 @@ Declare one with `/new-milestone "<name>"`, or name the milestone to close.
 
 Exit.
 </step>
-
-<step name="open_session">
-Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
-
-```bash
-SESSION=$(phase_run query session.open milestone "${VERSION}")
-```
-
-Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command in this workflow from `worktree`.** An open session for
-this milestone is reused rather than replaced, so the work accumulates onto one branch
-and arrives as one pull request.
-
-Report it in one line:
-
-```
-Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
-```
-
-If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the dispatch guard would block the write anyway.
-</step>
-
 
 <step name="pre_close_artifact_audit">
 Audit the milestone's phases for missing artifacts before claiming completion.
@@ -169,25 +143,6 @@ phase_run query commit "docs(milestone): ship ${VERSION} ${NAME}" \
 ```
 </step>
 
-<step name="deliver_session">
-This workflow owns the whole unit of work, so it delivers the session rather
-than leaving it open. Follow the delivery sequence in
-@~/.ai/workflows/_session.snippet.md exactly and in order: the empty-session
-check, `git push -u`, `pr.open`, `pr.checks`, the merge confirmation, then
-`pr.merge`, `pr.sync` and `session.close`.
-
-Every command runs from `SESSION.worktree`.
-
-**Title:** `Complete milestone ${VERSION}`
-
-**Body:** what the milestone delivered, the phases it closed, and what verification confirmed. Carry over any gap the archive recorded as accepted, with the reason it was accepted rather than closed.
-
-
-Report the snippet's delivery line before the output below. A `failing` check
-verdict, a declined merge or a preserved session are all reported as they stand
-and none of them is worked around — a preserved session is unmerged work.
-</step>
-
 <step name="offer_next">
 ```
 Milestone shipped: {version} {name} ({date})
@@ -216,10 +171,6 @@ Recorded: .planning/MILESTONES.md
 - Don't claim accomplishments that no SUMMARY.md supports
 - Don't delete phase directories on close; they are the evidence behind the entry
 - Don't renumber phases — numbering stays continuous across milestones
-- Don't finish with the session still open — an undelivered session is
-  work on a branch nobody merged
-- Don't merge past a `failing` or `pending` check verdict, and don't
-  `--force` a preserved session away
 </anti_patterns>
 
 <success_criteria>
@@ -230,7 +181,4 @@ Recorded: .planning/MILESTONES.md
 - [ ] Roadmap shows the milestone shipped
 - [ ] STATE.md updated and everything committed
 - [ ] User knows the next step
-- [ ] Session delivered: pull request opened, its check verdict judged,
-      the merge confirmed, and the session closed or its preservation
-      reported
 </success_criteria>

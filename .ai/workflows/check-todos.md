@@ -12,7 +12,6 @@ phase, or put it back.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -144,31 +143,6 @@ Use AskUserQuestion:
   - "Put it back" — return to the list
 </step>
 
-<step name="open_session">
-**Only when the chosen action moves a todo or starts work on one** — that is
-"Work on it now", and nothing else. The other actions keep the todo pending and
-write nothing, so they need no session and must not open one.
-
-```bash
-SESSION=$(phase_run query session.open milestone "todos")
-```
-
-Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command from `worktree`**, including the work the todo asks for. An
-open `todos` session is reused, so captures and resolutions accumulate onto one
-branch and arrive as one pull request.
-
-Report it in one line:
-
-```
-Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
-```
-
-If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the write guard would block the commit anyway.
-</step>
-
 <step name="execute_action">
 **Work on it now:**
 
@@ -210,29 +184,6 @@ phase_run query commit "docs: resolve todo - ${title}" --files .planning/todos .
 Skip this step when nothing moved.
 </step>
 
-<step name="deliver_session">
-**Only when a session was opened.** Nothing moved means nothing to deliver, and
-the workflow ends at the list.
-
-Follow the delivery sequence in @~/.ai/workflows/_session.snippet.md exactly and
-in order: the empty-session check, `git push -u`, `pr.open`, `pr.checks`, the
-merge confirmation, then `pr.merge`, `pr.sync` and `session.close`. Every command
-runs from `SESSION.worktree`.
-
-**Title:** `Resolve todo: ${title}`
-
-**Body:** the todo's problem and what resolving it actually changed. When the
-action was "Work on it now" and real work followed, describe the change, not the
-todo — the todo is why the work happened, the work is what a reviewer judges.
-
-A resumed `todos` session may already carry earlier captures or resolutions.
-Name everything in the range, not only this todo.
-
-Report the snippet's delivery line before finishing. A `failing` check verdict, a
-declined merge or a preserved session are reported as they stand and none of them
-is worked around.
-</step>
-
 </process>
 
 <anti_patterns>
@@ -240,12 +191,6 @@ is worked around.
 - Don't start implementing a todo that the user only asked to review
 - Don't hand-edit the STATE.md Pending Todos section — use `state.sync-todos`
 - Don't fold a todo into a phase by editing its plans here; discussion owns that
-- Don't open a session for an action that keeps the todo pending — it writes
-  nothing, and an empty session is noise
-- Don't finish with the session still open — an undelivered session is work on a
-  branch nobody merged
-- Don't merge past a `failing` or `pending` check verdict, and don't `--force` a
-  preserved session away
 </anti_patterns>
 
 <success_criteria>
@@ -255,7 +200,4 @@ is worked around.
 - [ ] Action chosen by the user and executed
 - [ ] STATE.md refreshed when a todo moved
 - [ ] Movement committed
-- [ ] A session opened before anything was written, and only then
-- [ ] Session delivered: pull request opened, its check verdict judged, the
-      merge confirmed, and the session closed or its preservation reported
 </success_criteria>

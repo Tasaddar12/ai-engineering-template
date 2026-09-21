@@ -14,7 +14,7 @@ The orchestrator routes and integrates. It does not write the implementation.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
+@~/.ai/references/worktree-sessions.md
 @~/.ai/references/universal-anti-patterns.md
 @~/.ai/references/methods/checkpoints.md
 @~/.ai/references/methods/gates.md
@@ -113,7 +113,7 @@ Display: `► EXECUTE PHASE {phase_number}: {phase_name}`
 
 <step name="open_session">
 Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
+@~/.ai/references/worktree-sessions.md for the full contract.
 
 ```bash
 SESSION=$(phase_run query session.open phase "${padded_phase}")
@@ -565,7 +565,7 @@ separate pull requests and strand whatever comes after.
 
 The session stays open, with its commits on its branch. `/ship` is the phase's
 delivery step: it opens the pull request, judges its checks, merges and closes
-the session. See @~/.ai/workflows/_session.snippet.md.
+the session. See @~/.ai/references/worktree-sessions.md.
 
 Carry the session into the output below so the user knows where the work is and
 what closes it:

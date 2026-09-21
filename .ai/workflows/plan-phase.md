@@ -15,7 +15,6 @@ The orchestrator routes. It does not write the plans itself.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 @~/.ai/references/universal-anti-patterns.md
 @~/.ai/references/methods/planner-guidance.md
 @~/.ai/references/methods/failing-direction.md
@@ -80,31 +79,6 @@ If `agents_installed` is false, report `missing_agents` and stop.
 Display the banner: `► PLAN PHASE {phase_number}: {phase_name}`
 </step>
 
-<step name="open_session">
-Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
-
-```bash
-SESSION=$(phase_run query session.open phase "${padded_phase}")
-```
-
-Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command in this workflow from `worktree`.** An open session for
-this phase is reused rather than replaced, so the work accumulates onto one branch
-and arrives as one pull request.
-
-Report it in one line:
-
-```
-Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
-```
-
-If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the dispatch guard would block the write anyway.
-</step>
-
-
 <step name="parse_arguments">
 Recognised flags:
 - `--skip-research` — do not run the research step
@@ -113,6 +87,29 @@ Recognised flags:
 - `--text` — plain-text prompts instead of AskUserQuestion
 
 Set `MODE` to `standard` or `gap_closure` accordingly.
+</step>
+
+<step name="open_session">
+This phase's work lives in one session worktree, shared by `/discuss-phase`,
+`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
+one pull request. Join it before writing anything:
+
+```bash
+SESSION=$(phase_run query session.open phase "${padded_phase}")
+```
+
+An open session for this phase is reused, not replaced. **Run every subsequent
+command from its `worktree`**, and report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, stop and report its message rather than continuing in the
+checkout you were invoked from.
+
+**Do not deliver it here.** `/ship` opens the pull request, judges its checks and
+closes the session once the phase is verified.
 </step>
 
 <step name="closed_phase_gate">
@@ -433,25 +430,6 @@ phase_run query commit "docs(${padded_phase}): plan phase" --files "${phase_dir}
 ```
 </step>
 
-<step name="session_handoff">
-**Do not deliver this session here.** A phase session is opened by
-`/discuss-phase` and reused by `/plan-phase`, `/execute-phase` and
-`/verify-work`, so that the whole phase accumulates onto one branch and arrives
-as one pull request. Delivering it from this workflow would cut the phase into
-separate pull requests and strand whatever comes after.
-
-The session stays open, with its commits on its branch. `/ship` is the phase's
-delivery step: it opens the pull request, judges its checks, merges and closes
-the session. See @~/.ai/workflows/_session.snippet.md.
-
-Carry the session into the output below so the user knows where the work is and
-what closes it:
-
-```
-Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
-```
-</step>
-
 <step name="completion">
 ```
 Phase {phase_number} planned: {plan_count} plan(s)
@@ -500,6 +478,5 @@ Plan review: {approved | approved with noted findings}
 - [ ] Revisions capped at 3 iterations, with escalation instead of a silent pass
 - [ ] Roadmap plan checklist matches the plans that exist
 - [ ] STATE.md updated and everything committed
-- [ ] Phase session left open and reported, with `/ship` named as what
-      delivers it
+- [ ] Phase session joined before any write, and left open for `/ship`
 </success_criteria>

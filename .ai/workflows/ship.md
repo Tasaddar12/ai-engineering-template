@@ -18,7 +18,6 @@ verdict that is anything other than genuinely green.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 @~/.ai/references/universal-anti-patterns.md
 </required_reading>
 

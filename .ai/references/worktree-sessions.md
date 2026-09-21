@@ -1,22 +1,43 @@
-<!-- workflow-fragment
-name: session
-owns: session worktree lifecycle, pull-request delivery
-consumed-by: every workflow that writes anything
--->
+# Worktree sessions and delivery
 
-# Session worktree and delivery
+The two ends of the contract a workflow obeys when it writes source: open the
+worktree the work lives in, and deliver that worktree's branch through a pull
+request. Companion to [worktree-branch-check](worktree-branch-check.md),
+[worktree-path-safety](worktree-path-safety.md) and
+[worktree-recovery-policy](worktree-recovery-policy.md), which cover the
+per-plan dispatch checkouts a session's executors run in.
 
-Workflows include this fragment rather than restating it. It holds the two ends
-of the contract every writing workflow obeys: open the worktree the work lives
-in, and deliver that worktree's branch through a pull request.
+**Work that touches source does not reach the base branch directly.** It happens
+in its own worktree, on its own branch, and lands by being merged from a pull
+request whose checks passed. There is no flag, no configuration and no recovery
+path around that, and [worktree-guard.sh](../hooks/worktree-guard.sh) blocks the
+attempt rather than warning about it.
 
-**Nothing in this project writes to the base branch.** Not source, not a
-planning record, not a one-line todo. Every unit of work happens in its own
-worktree, on its own branch, and reaches the base branch by being merged from a
-pull request whose checks passed. There is no flag, no configuration and no
-recovery path that writes directly, and
-[worktree-guard.sh](../hooks/worktree-guard.sh) blocks the attempt rather than
-warning about it.
+## Scope
+
+Only two workflows carry this contract, because only two write source:
+
+| Workflow | Session | Delivered by |
+|---|---|---|
+| `/quick` | `quick` | itself — one task, one branch, one pull request |
+| `/execute-phase` | `phase` | `/ship` |
+
+The phase session is shared. `/discuss-phase`, `/plan-phase` and `/verify-work`
+join the same one so a phase's records travel with the code they describe and
+the whole phase arrives as one pull request. They carry a short join step rather
+than this contract, and none of them delivers — `/ship` does that once the phase
+is verified.
+
+**The planning workflows are deliberately outside this.** `/capture`,
+`/check-todos`, `/phase` and its roadmap edits, `/new-milestone`,
+`/complete-milestone`, `/milestone-summary` and `/onboard` write planning records
+and nothing else, through runtime verbs (`todo.add`, `roadmap.*`, `commit`) and
+never the editing tools. The guard intercepts the editing tools, so it does not
+fire on them; and putting a one-line todo or a roadmap tweak through a pull
+request, a merge and a session close costs more than the record is worth.
+
+Work a planning record *leads to* is a different matter. `/check-todos` hands
+implementation to `/quick` or `/phase`, and those open sessions of their own.
 
 ## Opening
 
@@ -67,24 +88,6 @@ and merged back **into it**, never into the base branch. They live beside the
 session under the same worktree root rather than nested inside it, and
 `worktree.merge-wave` targets whatever branch is current, which inside the
 session is the session branch. No change is needed at the dispatch site.
-
-## Who delivers
-
-A session is delivered once, by the workflow that completes the unit of work —
-not by every workflow that writes into it.
-
-| Kind | Opened by | Delivered by |
-|---|---|---|
-| `phase` | `/discuss-phase`, `/plan-phase`, `/execute-phase`, `/verify-work` | `/ship` |
-| `quick` | `/quick` | `/quick` |
-| `milestone` | `/new-milestone`, `/complete-milestone`, `/milestone-summary`, `/add-phase`, `/edit-phase`, `/insert-phase`, `/remove-phase`, `/capture` | the same workflow |
-| `onboard` | `/onboard` | `/onboard` |
-
-**A phase is the exception, and reuse is why.** Its session accumulates across
-four workflows, so delivering at the end of any one of them would cut the phase
-into four pull requests and strand the rest. `/ship` is the phase's delivery
-step, and it is not optional: a phase whose session is never shipped is work
-sitting on a branch nobody merged.
 
 ## Delivering
 
@@ -179,6 +182,9 @@ Delivered: {url} — merged by {method}, evidence {evidence}; session {closed | 
 - Don't deliver a phase session from `/discuss-phase`, `/plan-phase`,
   `/execute-phase` or `/verify-work` — they accumulate onto it and `/ship`
   delivers it
+- Don't open a session in a workflow that only writes planning records; it
+  writes through runtime verbs, the guard does not fire on it, and the
+  ceremony buys nothing
 - Don't leave a session open at the end of a workflow that owns the whole unit;
   an undelivered session is work on a branch nobody merged
 - Don't open a pull request for a session that wrote nothing

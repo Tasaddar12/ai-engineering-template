@@ -16,7 +16,6 @@ planning, not to figure out implementation yourself.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 @~/.ai/references/domain-probes.md
 @~/.ai/references/gate-prompts.md
 @~/.ai/references/universal-anti-patterns.md
@@ -178,31 +177,6 @@ Exit the workflow.
 **If `phase_found` is true:** continue to `check_blocking_antipatterns`.
 </step>
 
-<step name="open_session">
-Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
-
-```bash
-SESSION=$(phase_run query session.open phase "${padded_phase}")
-```
-
-Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command in this workflow from `worktree`.** An open session for
-this phase is reused rather than replaced, so the work accumulates onto one branch
-and arrives as one pull request.
-
-Report it in one line:
-
-```
-Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
-```
-
-If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the dispatch guard would block the write anyway.
-</step>
-
-
 <step name="check_blocking_antipatterns" priority="first">
 **MANDATORY — check for blocking anti-patterns before any other work.**
 
@@ -228,6 +202,29 @@ answered from the context in `.continue-here.md`, stop and ask the user.
 
 **If no `.continue-here.md` exists, or no blocking rows are found:** proceed to
 `check_spec`.
+</step>
+
+<step name="open_session">
+This phase's work lives in one session worktree, shared by `/discuss-phase`,
+`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
+one pull request. Join it before writing anything:
+
+```bash
+SESSION=$(phase_run query session.open phase "${padded_phase}")
+```
+
+An open session for this phase is reused, not replaced. **Run every subsequent
+command from its `worktree`**, and report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, stop and report its message rather than continuing in the
+checkout you were invoked from.
+
+**Do not deliver it here.** `/ship` opens the pull request, judges its checks and
+closes the session once the phase is verified.
 </step>
 
 <step name="check_spec">
@@ -569,25 +566,6 @@ phase_run query commit "docs(state): record phase ${phase_number} context sessio
 ```
 </step>
 
-<step name="session_handoff">
-**Do not deliver this session here.** A phase session is opened by
-`/discuss-phase` and reused by `/plan-phase`, `/execute-phase` and
-`/verify-work`, so that the whole phase accumulates onto one branch and arrives
-as one pull request. Delivering it from this workflow would cut the phase into
-separate pull requests and strand whatever comes after.
-
-The session stays open, with its commits on its branch. `/ship` is the phase's
-delivery step: it opens the pull request, judges its checks, merges and closes
-the session. See @~/.ai/workflows/_session.snippet.md.
-
-Carry the session into the output below so the user knows where the work is and
-what closes it:
-
-```
-Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
-```
-</step>
-
 </process>
 
 <success_criteria>
@@ -608,6 +586,5 @@ Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
 - STATE.md updated with session info
 - User knows the next step
 - Checkpoint written after each area completes, and removed after CONTEXT.md is written
-- [ ] Phase session left open and reported, with `/ship` named as what
-      delivers it
+- [ ] Phase session joined before any write, and left open for `/ship`
 </success_criteria>

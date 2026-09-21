@@ -16,7 +16,7 @@ Use when the change touches something you cannot afford to get wrong.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
+@~/.ai/references/worktree-sessions.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -121,7 +121,7 @@ Use AskUserQuestion (header: "Quick task"; options: "Start a new one" /
 
 <step name="open_session">
 Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
+@~/.ai/references/worktree-sessions.md for the full contract.
 
 ```bash
 SESSION=$(phase_run query session.open quick "${QUICK_LABEL}")
@@ -378,7 +378,7 @@ phase_run query commit "chore(quick): ${DESCRIPTION}" --files "${QUICK_DIR}" .pl
 <step name="deliver_session">
 This workflow owns the whole unit of work, so it delivers the session rather
 than leaving it open. Follow the delivery sequence in
-@~/.ai/workflows/_session.snippet.md exactly and in order: the empty-session
+@~/.ai/references/worktree-sessions.md exactly and in order: the empty-session
 check, `git push -u`, `pr.open`, `pr.checks`, the merge confirmation, then
 `pr.merge`, `pr.sync` and `session.close`.
 

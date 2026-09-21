@@ -12,7 +12,6 @@ with REQ ids, breaks the milestone into phases, and commits the result.
 </purpose>
 
 <required_reading>
-@~/.ai/workflows/_session.snippet.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -75,31 +74,6 @@ Exit.
 Read PROJECT.md and REQUIREMENTS.md for the project's vision, constraints and
 existing requirement ids.
 </step>
-
-<step name="open_session">
-Open the worktree this work lives in, before writing anything. Read
-@~/.ai/workflows/_session.snippet.md for the full contract.
-
-```bash
-SESSION=$(phase_run query session.open milestone "${MILESTONE_NAME}")
-```
-
-Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command in this workflow from `worktree`.** An open session for
-this milestone is reused rather than replaced, so the work accumulates onto one branch
-and arrives as one pull request.
-
-Report it in one line:
-
-```
-Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
-```
-
-If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the dispatch guard would block the write anyway.
-</step>
-
 
 <step name="check_open_work">
 If `open_phases` is non-empty, the current milestone has unfinished phases:
@@ -212,25 +186,6 @@ phase_run query commit "docs(roadmap): start milestone ${MILESTONE_NAME}" \
 ```
 </step>
 
-<step name="deliver_session">
-This workflow owns the whole unit of work, so it delivers the session rather
-than leaving it open. Follow the delivery sequence in
-@~/.ai/workflows/_session.snippet.md exactly and in order: the empty-session
-check, `git push -u`, `pr.open`, `pr.checks`, the merge confirmation, then
-`pr.merge`, `pr.sync` and `session.close`.
-
-Every command runs from `SESSION.worktree`.
-
-**Title:** `Milestone ${VERSION}: ${MILESTONE_NAME}`
-
-**Body:** the milestone's goal and the phases it was broken into, one line each. This pull request introduces a plan, not an implementation — say so, so a reviewer judges the shape of the work rather than looking for code.
-
-
-Report the snippet's delivery line before the output below. A `failing` check
-verdict, a declined merge or a preserved session are all reported as they stand
-and none of them is worked around — a preserved session is unmerged work.
-</step>
-
 <step name="completion">
 ```
 Milestone started: {name}
@@ -263,10 +218,6 @@ Roadmap updated: .planning/ROADMAP.md
 - Don't hand-edit ROADMAP.md — `milestone.create` and `phase.add` own its structure
 - Don't research by default; research a genuine unknown or skip the step
 - Don't start a milestone over open phases without the user saying so
-- Don't finish with the session still open — an undelivered session is
-  work on a branch nobody merged
-- Don't merge past a `failing` or `pending` check verdict, and don't
-  `--force` a preserved session away
 </anti_patterns>
 
 <success_criteria>
@@ -277,7 +228,4 @@ Roadmap updated: .planning/ROADMAP.md
 - [ ] STATE.md pointed at the first phase
 - [ ] Everything committed
 - [ ] User knows the next step
-- [ ] Session delivered: pull request opened, its check verdict judged,
-      the merge confirmed, and the session closed or its preservation
-      reported
 </success_criteria>
