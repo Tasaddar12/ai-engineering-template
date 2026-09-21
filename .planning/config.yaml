@@ -33,11 +33,6 @@ worktree:
   # Where runtime-created checkouts live, relative to the primary checkout.
   # It must be gitignored; execution stops with that instruction if it is not.
   root: .worktrees
-  # What a new checkout is compared against when warning about a diverged HEAD.
-  # `fork-point` is the merge base with the base branch. Set `head` once you
-  # have confirmed the host forks dispatch worktrees from HEAD, which silences
-  # the warning. Neither value disables isolation.
-  base_ref: fork-point
 
 # When an agent must stop taking new work and write a handoff. The trigger is
 # whichever of these comes first, measured against actual transcript occupancy:

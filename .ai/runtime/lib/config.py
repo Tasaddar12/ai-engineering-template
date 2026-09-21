@@ -21,7 +21,6 @@ DEFAULTS = {
     },
     "worktree": {
         "root": ".worktrees",
-        "base_ref": "fork-point",
     },
     # When an agent must stop taking new work and hand off. Whichever of the
     # two comes first: the percentage binds on a small window, the absolute

@@ -180,57 +180,6 @@ def resolve_isolation(workspace, phase=None, plan=None):
     }
 
 
-def base_check(workspace, mode="harness-worktree"):
-    """Whether HEAD has diverged from the base a new worktree might fork from.
-
-    Advisory only. A harness may fork its worktree from the fork point with the
-    base branch rather than from HEAD, in which case an executor would start
-    from a tree missing HEAD's commits. Upstream answers that by degrading to
-    sequential execution; this project cannot, so the divergence is reported as
-    a warning and the real backstop stays where it belongs -- each executor's
-    own spawn-time branch check, which compares its actual base against the
-    revision the orchestrator captured and halts with exit 42 on a mismatch.
-
-    `worktree.base_ref: head` silences the warning where the host is known to
-    fork from HEAD.
-    """
-    head = gitops.head_revision(workspace)
-    base_ref = str(config_get(workspace, "worktree.base_ref", "fork-point")
-                   or "fork-point")
-    result = {"mode": mode, "head": head, "base_ref": base_ref,
-              "warn": False, "message": None}
-    if base_ref == "head":
-        result["reason"] = "worktree.base_ref is head; worktrees fork from HEAD"
-        return result
-    base = gitops.base_branch(workspace)
-    reference = ""
-    for candidate in ("origin/" + base, base):
-        reference = gitops.rev_parse(workspace, candidate)
-        if reference:
-            result["compared_to"] = candidate
-            break
-    if not reference or not head:
-        result["reason"] = "no base revision to compare against"
-        return result
-    fork = gitops.merge_base(workspace, head, reference)
-    result["fork_base"] = fork
-    if fork and fork != head:
-        ahead = gitops.output(workspace, "rev-list", "--count", reference + "..HEAD")
-        result["warn"] = True
-        result["commits_ahead"] = int(ahead) if ahead.isdigit() else None
-        result["message"] = (
-            "HEAD is " + (ahead or "?") + " commit(s) ahead of "
-            + result.get("compared_to", base)
-            + ". If this host forks a dispatch worktree from the fork base ("
-            + fork[:8] + ") rather than from HEAD, executors will halt at their "
-            "branch check. Merge or push HEAD, or set worktree.base_ref: head "
-            "once you have confirmed the host forks from HEAD.")
-        result["reason"] = "head diverged from the fork base"
-        return result
-    result["reason"] = "head matches the fork base"
-    return result
-
-
 # --- wave manifest --------------------------------------------------------
 
 def manifest_path(workspace, phase):

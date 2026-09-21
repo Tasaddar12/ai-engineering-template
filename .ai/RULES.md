@@ -200,16 +200,18 @@ and warns on any edit or write from a checkout that is not a linked worktree.
 The instruction in the workflow tells you to isolate; the hook is what makes
 skipping it fail. A read-only agent has nothing to isolate and is not gated.
 
-A diverged HEAD is a **warning**, not a degrade: `worktree.base-check` reports
-when HEAD carries commits the fork base does not, and each executor's own
-spawn-time branch check is the backstop that halts on a genuinely wrong base.
+A wrong base is caught where it happens, not predicted beforehand: under
+`harness-worktree` each executor's spawn-time branch check compares its real
+base against the revision the orchestrator captured and halts on a mismatch.
 
-The orchestrator owns the worktree lifecycle. An executor verifies its branch
-and base at spawn through
+The orchestrator owns the worktree lifecycle, and each model carries the one
+guard it needs. Under `harness-worktree` the executor verifies its branch and
+base at spawn through
 [worktree-branch-check](references/worktree-branch-check.md) and halts with
-`exit 42` on a mismatch; it never repairs a checkout it did not create. Follow
-[worktree-path-safety](references/worktree-path-safety.md) for root pinning and
-path guards, and
+`exit 42` on a mismatch; it never repairs a checkout it did not create. Under
+`orchestrator-worktree` the runtime already set the base, so the executor is
+pinned to its root instead — see
+[worktree-path-safety](references/worktree-path-safety.md). Follow
 [worktree-recovery-policy](references/worktree-recovery-policy.md) when a run
 does not go cleanly.
 

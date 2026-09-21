@@ -141,7 +141,6 @@ model argument entirely.
 | Verb | Effect |
 |---|---|
 | `dispatch-isolation` | Resolve how this dispatch is isolated, and record it |
-| `worktree.base-check` | Whether HEAD diverged from the base a worktree would fork from |
 | `worktree.create <plan>` | Create a runtime-owned checkout on its own branch |
 | `worktree.record-agent <plan> --branch` | Record a checkout the host created |
 | `worktree.merge-wave` | Merge the wave's branches, with the deletion guard |
@@ -157,10 +156,11 @@ raises instead: `bad-isolation` for a setting that asks to disable it,
 the worktree root is not gitignored. There is no flag that forces a weaker
 answer, and the verb writes nothing to disk.
 
-`worktree.base-check` is advisory. Upstream degrades to sequential execution on
-a diverged HEAD; that is not available here, so it reports `warn` with a message
-and the workflow continues. Each executor's own spawn-time branch check is the
-backstop that halts on a genuinely wrong base.
+A host that forks a dispatch worktree from the fork base rather than from HEAD
+would hand an executor a tree missing HEAD's commits. There is no advisory verb
+for that: the executor's own spawn-time branch check compares its real base
+against the revision the orchestrator captured and halts with exit 42, which is
+the only check that sees what actually happened.
 
 Integration is explicit and conservative. `merge-wave` blocks a branch that
 deletes a path its plan did not declare, aborts a conflicting merge with the
@@ -230,7 +230,6 @@ workflow:
                            # there is no value that disables isolation
 worktree:
   root: .worktrees         # must be gitignored, or execution stops
-  base_ref: fork-point     # or head; affects a warning only, never isolation
 agents:
   coder:
     model: sonnet          # overrides the agent file's own model

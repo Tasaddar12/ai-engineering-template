@@ -570,20 +570,6 @@ class WorktreeIsolation(RuntimeCase):
         self.assertEqual(failure["code"], "root-not-ignored")
         self.assertIn(".gitignore", failure["error"])
 
-    def test_base_check_warns_when_head_diverged_from_the_fork_base(self):
-        """Advisory: upstream degrades to sequential here, which this project
-        cannot do, so divergence is reported and execution continues."""
-        self.commit_in(self.directory, "src/ahead.txt", "ahead\n", "feat: get ahead")
-        result = self.run_verb("worktree.base-check", "--mode", "harness-worktree")
-        self.assertTrue(result["warn"])
-        self.assertIn("ahead of", result["message"])
-
-    def test_base_check_is_quiet_when_base_ref_is_head(self):
-        self.commit_in(self.directory, "src/ahead.txt", "ahead\n", "feat: get ahead")
-        self.run_verb("config-set", "worktree.base_ref", "head")
-        result = self.run_verb("worktree.base-check")
-        self.assertFalse(result["warn"])
-
     # --- creation ---------------------------------------------------------
 
     def test_create_makes_an_immediate_child_on_its_own_branch(self):

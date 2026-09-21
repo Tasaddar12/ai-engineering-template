@@ -22,11 +22,14 @@ The orchestrator routes and integrates. It does not write the implementation.
 </required_reading>
 
 <isolation_reading>
-Read these two only when isolation resolves to something other than `none`.
-They are the guards you embed in each executor prompt:
+Isolation is always on, so which of these you need depends only on the model
+`resolve_isolation` returns:
 
-@~/.ai/references/worktree-branch-check.md
-@~/.ai/references/worktree-path-safety.md
+- `harness-worktree` — @~/.ai/references/worktree-branch-check.md. The host
+  picked the base, so the executor asserts it at spawn.
+- `orchestrator-worktree` — @~/.ai/references/worktree-path-safety.md. The
+  runtime created the checkout and set its base, so there is nothing for the
+  executor to re-derive; it is pinned to its root instead.
 </isolation_reading>
 
 <available_agent_types>
@@ -86,12 +89,11 @@ INIT=$(phase_run query init.execute-phase "${PHASE}")
 Parse: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_dir`,
 `goal`, `has_context`, `has_plans`, `plan_count`, `summary_count`, `plan_index`,
 `verification`, `checks_configured`, `models`, `agents_installed`,
-`missing_agents`, `context_window`, `commit_docs`, `response_language`, `paths`,
-`isolation_configured`.
+`missing_agents`, `context_window`, `commit_docs`, `response_language`, `paths`.
 
-`isolation_configured` is the project's configured *model*, not a verdict — and
-never a way to skip isolation. A bundle is read-only and resolution can fail, so
-the `resolve_isolation` step below is the only thing that decides.
+The bundle says nothing about isolation on purpose. It is read-only and
+resolution can fail, so `resolve_isolation` below is the only thing that
+decides — and there is no second value to reconcile it against.
 
 **If `response_language` is set:** all user-facing output MUST be presented in
 `{response_language}`; technical terms, code, file paths and subagent prompts
@@ -180,16 +182,12 @@ If the tree has uncommitted changes outside `.planning/`, report them and ask
 whether to continue. Executing over dirty state makes the phase's commits
 ambiguous.
 
-You are inside the phase's session worktree by now, so the current branch is the
-session branch and cannot be the default branch — `session.open` refuses to
-create one on a protected name. Confirm it anyway, because a wave is integrated
-by merging into the current branch and that must never be `main`:
+You are inside the phase's session worktree by now, so the branch that reports
+is the session branch and cannot be the default branch — `session.open` refuses
+to create one on a protected name. Check it anyway, because a wave is integrated
+by merging into the current branch and that must never be `main`.
 
-```bash
-git rev-parse --abbrev-ref HEAD
-```
-
-If this reports the default branch, the session was not opened and the earlier
+If it reports the default branch, the session was not opened and the earlier
 step was skipped. Stop and open it rather than executing here.
 </step>
 
@@ -221,24 +219,19 @@ This is enforced, not requested: `hooks/worktree-guard.sh` refuses an
 without `isolation="worktree"`, and warns on any write from outside a worktree.
 A dispatch you forget to isolate will be blocked, not silently run.
 
-Then clear any metadata a crashed earlier session left behind, and check the
-base:
+Then clear any metadata a crashed earlier session left behind:
 
 ```bash
 phase_run query worktree.reap-orphans
-phase_run query worktree.base-check --mode "${ISOLATION}" --pick warn --raw
 ```
 
-`reap-orphans` never deletes a checkout that still exists. If `base-check`
-returns `true`, print its `message` as a warning and **continue** — it means
-HEAD carries commits the fork base does not, which matters only if this host
-forks dispatch worktrees from the fork base rather than from HEAD. Each
-executor's own branch check is the backstop that halts on a genuinely wrong
-base.
+`reap-orphans` never deletes a checkout that still exists.
 
-```bash
-phase_run query worktree.base-check --mode "${ISOLATION}" --pick message --raw
-```
+A host that forks its dispatch worktrees from the fork base rather than from
+HEAD would start an executor on a tree missing HEAD's commits. That is caught
+where it actually happens — the executor's own branch check compares its real
+base against `EXPECTED_BASE` and halts with exit 42 — not by guessing about it
+here.
 
 Report the outcome in one line before dispatching:
 
@@ -343,16 +336,17 @@ files and follow their rules.
 - If the plan is wrong, stop and report it. Do not improvise a different change
 </constraints>
 
+${ISOLATION === 'harness-worktree' ? `
 <worktree_branch_check>
 {the block from references/worktree-branch-check.md, verbatim, with
  {EXPECTED_BASE} substituted and {EXPECTED_BASE_ALTERNATE} left empty}
 </worktree_branch_check>
-${ISOLATION === 'orchestrator-worktree' ? `
+` : `
 <project_root_pin>
 {the root-pin guard from references/worktree-path-safety.md, with {PINNED_ROOT}
  substituted by this plan's worktree path, single-quoted}
 </project_root_pin>
-` : ''}
+`}
 
 <output>
 Write: {phase_dir}/{plan_id}-SUMMARY.md with:
@@ -370,8 +364,8 @@ Also return the branch you committed on, so the wave can be integrated.
 )
 ```
 
-An executor that prints `FATAL:` or exits 42 halted at its branch check and
-committed nothing. Follow
+Under `harness-worktree`, an executor that prints `FATAL:` or exits 42 halted at
+its branch check and committed nothing. Follow
 [worktree-recovery-policy](../references/worktree-recovery-policy.md): mark that
 plan blocked, preserve its worktree, and do not count the wave as successful.
 
@@ -580,7 +574,7 @@ Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
 Phase {phase_number} executed.
 
 Plans: {completed}/{plan_count} complete{blocked ? ", {blocked} blocked" : ""}
-Isolation: {ISOLATION}{base_warning ? " (warning: {base_warning})" : ""}
+Isolation: {ISOLATION}
 Integration: {waves merged clean | N entries blocked with reasons | not isolated}
 Worktrees preserved: {paths and reasons, or none}
 Requirements covered: {ids}
@@ -632,8 +626,10 @@ Code review: {clean | N warnings recorded | N critical fixed}
 - [ ] Isolation resolved and reported before dispatch, and every plan isolated
 - [ ] Plans grouped into waves respecting dependencies and file overlap
 - [ ] Each plan executed by a coder subagent, verified on disk
-- [ ] Each isolated executor carried the branch check, and any exit-42 halt was
-      treated as blocked with its worktree preserved
+- [ ] Every executor carried the guard its isolation model calls for — the
+      branch check under `harness-worktree`, the root pin under
+      `orchestrator-worktree` — and any exit-42 halt was treated as blocked
+      with its worktree preserved
 - [ ] Every wave integrated through `worktree.merge-wave` before checks or review
 - [ ] Undeclared deletions and merge conflicts escalated, never merged past
 - [ ] Cleanup ran without `--force`, and anything preserved was reported

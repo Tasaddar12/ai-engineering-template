@@ -147,16 +147,6 @@ def verb_dispatch_isolation(workspace, positionals, options):
     return payload["isolation"] if options.get("raw") else payload
 
 
-def verb_worktree_base_check(workspace, positionals, options):
-    mode = options.get("mode")
-    result = worktrees.base_check(workspace,
-                                 mode if isinstance(mode, str) else "harness-worktree")
-    pick = options.get("pick")
-    if isinstance(pick, str):
-        return result.get(pick)
-    return result
-
-
 def verb_worktree_create(workspace, positionals, options):
     plan = argument(positionals, 0, "plan")
     return worktrees.create(workspace, plan, phase=options.get("phase"),
@@ -587,7 +577,6 @@ VERBS = {
     "pr.merge": verb_pr_merge,
     "pr.sync": verb_pr_sync,
     "gh.status": verb_gh_status,
-    "worktree.base-check": verb_worktree_base_check,
     "worktree.create": verb_worktree_create,
     "worktree.record-agent": verb_worktree_record_agent,
     "worktree.merge-wave": verb_worktree_merge_wave,

@@ -38,9 +38,6 @@ def common(workspace):
         "text_mode": workflow.get("text_mode", False),
         "auto_advance": workflow.get("auto_advance", False),
         "discuss_mode": workflow.get("discuss_mode", "discuss"),
-        # The configured model only, never a verdict: `dispatch-isolation`
-        # decides, and it can fail, which a read-only bundle must not do.
-        "isolation_configured": workflow.get("isolation", "auto"),
         "context_window": config.get("context_window", 200000),
         "date": datetime.now().strftime("%Y-%m-%d"),
         "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),

@@ -1,8 +1,12 @@
 # Worktree branch check (spawn-time guard)
 
-The canonical, fail-closed, **verify-only** guard embedded into every isolated
-executor prompt at dispatch. This file is the single source of truth for the
-block — do not inline a copy elsewhere.
+The canonical, fail-closed, **verify-only** guard embedded into an executor
+prompt under `harness-worktree`, where the host chose the checkout's base and
+the orchestrator cannot know what it picked. Under `orchestrator-worktree` the
+runtime created the worktree and set its base, so there is nothing to
+re-derive and the root pin in [worktree-path-safety](worktree-path-safety.md)
+is the guard instead. This file is the single source of truth for the block —
+do not inline a copy elsewhere.
 
 **Contract for the orchestrator:** before dispatch, capture
 `EXPECTED_BASE=$(git rev-parse HEAD)`, then embed the block below into the
