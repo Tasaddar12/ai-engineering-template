@@ -320,7 +320,7 @@ missing required behavioral evidence still prevents a verified completion.
 
 ## Independent TDD evidence review
 
-During [phase verification](../../commands/phase-verify.md), compare each assigned
+During [phase verification](../../commands/verify-work.md), compare each assigned
 TDD plan's behavior with the implemented result and its recorded evidence:
 
 | Item | Evidence to inspect |

@@ -72,43 +72,29 @@ class InstallerTests(unittest.TestCase):
         return {p.relative_to(self.target).as_posix(): p.read_bytes()
                 for p in self.target.rglob("*") if p.is_file() and ".git" not in p.relative_to(self.target).parts}
 
-    def test_installed_summary_skeleton_satisfies_runtime_contract(self):
+    def test_installed_runtime_answers_its_verb_contract(self):
+        """The installed runtime resolves its own namespace and returns pure results."""
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
-                # Fill existing slots only: adding missing keys/sections here would
-                # hide the authoring defect this producer/consumer check protects.
-                script = r'''
-import re
-import sys
-from pathlib import Path
-from types import SimpleNamespace
-sys.path.insert(0, str(Path.cwd() / sys.argv[1] / "runtime"))
-from phase_records import file_template
-from phase_runner import validate_summary
-root = Path.cwd()
-text = file_template(root, "summary.md")
-for key, value in {"requirements-completed": "[R1]", "acceptance": "[A1]",
-                   "documentation": "[docs/result.md]"}.items():
-    text = re.sub(r"(?m)^" + key + r":.*$", key + ": " + value, text)
-text = text.replace("[Tested revision or commit]", "a" * 40)
-text = text.replace("[Command and scenario]", "python -m unittest tests.test_result")
-text = text.replace("[Observed result, including failures or skips]", "PASS: 1 test")
-summary = root / "01-01-SUMMARY.md"
-summary.write_text(text, encoding="utf-8")
-(root / "docs").mkdir()
-(root / "docs/result.md").write_text("Verified result documentation", encoding="utf-8")
-component = SimpleNamespace(id="01-01", summary=summary, data={
-    "requirements": ["R1"], "acceptance": ["A1"],
-    "documentation": ["docs/result.md"], "type": "execute"})
-validate_summary(SimpleNamespace(root=root), component, root)
-'''
-                checked = subprocess.run([sys.executable, "-c", script, "." + host],
-                                         cwd=self.target, text=True, encoding="utf-8",
-                                         capture_output=True)
-                self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+                runtime = "." + host + "/runtime/phase.py"
+                identity = json.loads(command(sys.executable, runtime, "query",
+                                              "runtime-identity", cwd=self.target))
+                self.assertTrue(identity["ok"])
+                self.assertEqual("ai-phase-runtime", identity["packageName"])
+                listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
+                                            cwd=self.target))
+                self.assertTrue(listed["ok"])
+                self.assertEqual([], listed["phases"])
+                # An expected failure is a result, not a traceback.
+                failed = subprocess.run([sys.executable, runtime, "query", "roadmap.get-phase", "9"],
+                                        cwd=self.target, text=True, encoding="utf-8",
+                                        capture_output=True)
+                self.assertEqual(1, failed.returncode)
+                self.assertNotIn("Traceback", failed.stderr)
+                self.assertEqual("phase-not-found", json.loads(failed.stdout)["code"])
 
     def test_new_project_starts_runtime_and_omits_template_history(self):
         result = self.install()
@@ -117,8 +103,9 @@ validate_summary(SimpleNamespace(root=root), component, root)
         self.assertIn("human must review and commit", result.stdout)
         self.assertEqual(self.target.resolve(), Path(command("git", "rev-parse", "--show-toplevel", cwd=self.target).strip()).resolve())
         self.assertEqual("", command("git", "remote", cwd=self.target))
-        status = command(sys.executable, ".codex/runtime/phase.py", "status", cwd=self.target)
-        self.assertIn("No phases yet", status)
+        listed = json.loads(command(sys.executable, ".codex/runtime/phase.py", "query",
+                                    "phases.list", cwd=self.target))
+        self.assertEqual([], listed["phases"])
         self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
         for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
                         "docs", ".ai/install-assets",
@@ -132,17 +119,23 @@ validate_summary(SimpleNamespace(root=root), component, root)
             for source_claim in ("This repository is a reusable engineering workflow template",
                                  "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
                 self.assertNotIn(source_claim, body, name)
-        self.assertTrue((self.target / ".agents/skills/codebase-recon/SKILL.md").is_file())
+        # Capture and milestone destinations exist before the first todo is written.
+        for scaffold in (".planning/todos/README.md", ".planning/todos/pending/.gitkeep",
+                         ".planning/todos/completed/.gitkeep", ".planning/milestones/.gitkeep"):
+            self.assertTrue((self.target / scaffold).is_file(), scaffold)
+        self.assertTrue((self.target / ".agents/skills/onboard/SKILL.md").is_file())
         self.assertTrue((self.target / ".codex/commands/install.md").is_file())
         self.assertTrue((self.target / ".codex/commands/onboard.md").is_file())
-        self.assertTrue((self.target / ".codex/commands/goal-plan.md").is_file())
+        self.assertTrue((self.target / ".codex/commands/new-milestone.md").is_file())
         self.assertFalse((self.target / ".ai").exists())
-        self.assertIn(".codex/guides/AGENT-SKILLS.md", (self.target / "AGENTS.md").read_text())
+        self.assertIn(".agents/skills/", (self.target / "AGENTS.md").read_text())
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
         self.assertIn("/main/.ai/install.py", guide)
-        (self.target / ".worktrees").mkdir()
-        (self.target / ".worktrees/local.txt").write_text("local")
-        self.assertIn(".worktrees/local.txt", command("git", "check-ignore", ".worktrees/local.txt", cwd=self.target))
+        # Local-only workflow scratch stays out of the project's history.
+        for ignored in (".codex-venv/probe.txt", ".workflow-backups/probe.txt"):
+            (self.target / ignored).parent.mkdir(parents=True, exist_ok=True)
+            (self.target / ignored).write_text("local")
+            self.assertIn(ignored, command("git", "check-ignore", ignored, cwd=self.target))
 
     def test_existing_repository_preserves_files_history_remote_and_reruns(self):
         self.target.mkdir()
@@ -195,16 +188,20 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.assertIn(namespace + "/RULES.md", body)
                 self.assertNotIn("@AGENTS.md", body)
                 config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
-                self.assertEqual(host == "claude", "claude_worker.py" in config)
+                self.assertIn("verification:", config)
                 self.assertNotIn(".ai/", config)
-                self.assertIn("No phases yet", command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target))
+                listed = json.loads(command(sys.executable, namespace + "/runtime/phase.py",
+                                            "query", "phases.list", cwd=self.target))
+                self.assertEqual([], listed["phases"])
                 self.assertIn(namespace + "-venv/", (self.target / ".gitignore").read_text())
                 skills = self.target / (".agents/skills" if host == "codex" else ".claude/skills")
-                full = (skills / "codebase-recon/SKILL.md").read_text(encoding="utf-8")
-                self.assertIn("##", full)
+                full = (skills / "onboard/SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("<objective>", full)
                 self.assertNotIn("Read and follow the complete skill at", full)
                 self.assertFalse((self.target / namespace / "roles").exists())
-                self.assertFalse((self.target / namespace / "workflows").exists())
+                for workflow in ("execute-phase.md", "plan-phase.md", "onboard.md"):
+                    self.assertTrue((self.target / namespace / "workflows" / workflow).is_file(),
+                                    workflow)
                 if host == "codex":
                     self.assertFalse((self.target / ".codex/skills").exists())
                     self.assertFalse((self.target / ".codex/hooks.json").exists())
@@ -230,7 +227,7 @@ validate_summary(SimpleNamespace(root=root), component, root)
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    self.assertEqual("sonnet", metadata["model"], name)
+                    self.assertNotIn("model", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
                         (self.source / ".ai/agents" / role.name).read_bytes(), host),
@@ -261,10 +258,9 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host).returncode)
                 role = self.target / ("." + host) / "agents" / ("coder." + suffix)
-                role.write_text(role.read_text(encoding="utf-8").replace(
-                    'model = "gpt-5.6-terra"' if host == "codex" else 'model: sonnet',
-                    'model = "chosen-model"' if host == "codex" else 'model: opus'),
-                    encoding="utf-8")
+                # A comment is valid in both formats, so the edit stays representative.
+                role.write_text(role.read_text(encoding="utf-8") + "\n# local customization\n",
+                                encoding="utf-8")
                 before = self.snapshot()
                 result = self.install("--host", host)
                 self.assertNotEqual(0, result.returncode)
@@ -288,12 +284,21 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 worktree = self.target / ".worktrees/phase"
                 command("git", "worktree", "add", "-b", "codex/phase", str(worktree), cwd=self.target)
                 runtime = "." + host + "/runtime/phase.py"
-                command(sys.executable, runtime, "new", "example", "--title", "Installed runtime", cwd=worktree)
-                context = worktree / ".planning/phases/01-example/01-CONTEXT.md"
-                self.assertIn("<domain>", context.read_text(encoding="utf-8"))
-                self.assertIn("01-example", command(sys.executable, runtime, "status", cwd=worktree))
+                added = json.loads(command(sys.executable, runtime, "query", "phase.add",
+                                           "Installed runtime", "--goal", "Prove the install",
+                                           cwd=worktree))
+                self.assertTrue(added["ok"])
+                self.assertEqual("01", added["padded"])
+                self.assertEqual(".planning/phases/01-installed-runtime", added["directory"])
+                self.assertTrue((worktree / added["directory"]).is_dir())
+                roadmap = (worktree / ".planning/ROADMAP.md").read_text(encoding="utf-8")
+                self.assertIn("### Phase 1: Installed runtime", roadmap)
+                listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
+                                            cwd=worktree))
+                self.assertEqual(["Installed runtime"],
+                                 [phase["name"] for phase in listed["phases"]])
                 self.assertFalse((worktree / ".ai").exists())
-                self.assertFalse((self.target / ".planning/phases/01-example").exists())
+                self.assertFalse((self.target / ".planning/phases/01-installed-runtime").exists())
 
     def test_selected_host_preserves_settings_instructions_and_worker_routes(self):
         for host in ("codex", "claude"):
@@ -323,8 +328,11 @@ validate_summary(SimpleNamespace(root=root), component, root)
                     self.assertEqual(settings["permissions"], merged["permissions"])
                 else:
                     self.assertTrue((self.target / name).read_bytes().startswith(original_settings))
-                self.assertIn(settings["hooks"]["PreToolUse"][0], merged["hooks"]["PreToolUse"])
-                self.assertEqual(2, len(merged["hooks"]["PreToolUse"]))
+                # The user's own event keeps its single group; the managed hook is
+                # registered alongside it under the event the installer owns.
+                self.assertEqual(settings["hooks"]["PreToolUse"], merged["hooks"]["PreToolUse"])
+                self.assertEqual(installer.hook_settings(host)["hooks"]["PostToolUse"],
+                                 merged["hooks"]["PostToolUse"])
                 self.assertTrue((self.target / entry).read_bytes().startswith(prose))
                 (self.target / ".planning/config.yaml").write_text("existing: project worker routes\n")
                 before = self.snapshot()
@@ -416,55 +424,43 @@ validate_summary(SimpleNamespace(root=root), component, root)
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 self.assertEqual(before, self.snapshot())
 
-    def test_registered_hooks_execute_from_installed_linked_worktree_subdirectory(self):
+    def test_registered_hooks_execute_from_installed_subdirectory(self):
+        """The one managed hook resolves the project root from a nested directory."""
         for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
-            self.target = self.base / (host + " projet caf\u00e9 \u65e5\u672c\u8a9e")
+            self.target = self.base / (host + " projet café 日本語")
             result = self.install("--host", host)
             self.assertEqual(0, result.returncode, result.stderr)
-            command("git", "add", ".", cwd=self.target)
-            command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
-                    "commit", "--quiet", "-m", "Installed host", cwd=self.target)
-            worktree = self.target / ".worktrees/assigned space"
-            command("git", "worktree", "add", "-b", "codex/installed", str(worktree), cwd=self.target)
-            cwd = worktree / "sub directory"
+            cwd = self.target / "sub directory"
             cwd.mkdir()
             environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
-            settings = read_settings(worktree / name)
-            for event, destination in (("PreToolUse", self.target / "outside.txt"),
-                                       ("PreToolUse", worktree / "inside.txt"),
-                                       ("PostToolUse", worktree / ("." + host) / "RULES.md")):
-                with self.subTest(host=host, event=event, destination=destination):
-                    handler = settings["hooks"][event][0]["hooks"][0]
-                    if host == "codex" and os.name == "nt":
-                        argv = ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
-                    elif host == "codex":
-                        argv = ["sh", "-c", handler["command"]]
-                    else:
-                        bash = shutil.which("bash")
-                        if os.name == "nt":
-                            git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
-                            if git_bash.is_file():
-                                bash = str(git_bash)
-                        self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
-                        argv = [bash, "-c", handler["command"]]
-                    tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
-                                  if host == "codex" else {"file_path": str(destination)})
-                    payload = {"cwd": str(cwd), "hook_event_name": event,
-                               "tool_name": "apply_patch" if host == "codex" else "Write",
-                               "tool_input": tool_input}
-                    observed = subprocess.run(argv, cwd=cwd, env=environment,
-                                              input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-                                              capture_output=True)
-                    self.assertEqual(0, observed.returncode, observed.stderr)
-                    if destination == worktree / "inside.txt":
-                        self.assertEqual(b"", observed.stdout.strip())
-                    else:
-                        self.assertNotIn(b"permissionDecision", observed.stdout)
-                        if event == "PostToolUse":
-                            self.assertIn(b"NOTICE", observed.stdout)
-                            self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
-                        else:
-                            self.assertTrue(json.loads(observed.stdout)["systemMessage"])
+            settings = read_settings(self.target / name)
+            destination = self.target / ("." + host) / "RULES.md"
+            with self.subTest(host=host, destination=destination):
+                handler = settings["hooks"]["PostToolUse"][0]["hooks"][0]
+                if host == "codex" and os.name == "nt":
+                    argv = ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
+                elif host == "codex":
+                    argv = ["sh", "-c", handler["command"]]
+                else:
+                    bash = shutil.which("bash")
+                    if os.name == "nt":
+                        git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
+                        if git_bash.is_file():
+                            bash = str(git_bash)
+                    self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
+                    argv = [bash, "-c", handler["command"]]
+                tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
+                              if host == "codex" else {"file_path": str(destination)})
+                payload = {"cwd": str(cwd), "hook_event_name": "PostToolUse",
+                           "tool_name": "apply_patch" if host == "codex" else "Write",
+                           "tool_input": tool_input}
+                observed = subprocess.run(argv, cwd=cwd, env=environment,
+                                          input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                          capture_output=True)
+                self.assertEqual(0, observed.returncode, observed.stderr)
+                self.assertNotIn(b"permissionDecision", observed.stdout)
+                self.assertIn(b"NOTICE", observed.stdout)
+                self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
 
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")

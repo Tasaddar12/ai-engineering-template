@@ -5,3 +5,4 @@
 .ai/library/** text eol=lf
 .ai/templates/** text eol=lf
 .ai/install-assets/** text eol=lf
+.ai/bin/** text eol=lf

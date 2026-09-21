@@ -1,78 +1,86 @@
-# Worker handoff
+# Agent handoff
 
-The coordinator dispatches one bounded component with Markdown instructions.
-Human-authored inputs use small YAML frontmatter, not external schema documents.
+The orchestrator dispatches one bounded plan per agent. Human-authored inputs use
+small YAML frontmatter, not external schema documents.
 
 ## Assignment
 
-Read the file named by `PHASE_ASSIGNMENT`. Environment also supplies:
+An agent receives its assignment in the spawn prompt. The prompt identifies:
 
-| Variable | Meaning |
+| Element | Meaning |
 |---|---|
-| `PHASE_COMPONENT` | Assigned component ID |
-| `PHASE_KIND` | Worker responsibility |
-| `PHASE_WORKTREE` | Exact assigned checkout |
-| `PHASE_RESULT` | Required result destination |
+| Phase | The phase number, name and goal |
+| Plan | The exact `NN-MM-PLAN.md` path — the authority on what to change |
+| Required reading | CONTEXT.md, the plan, and every file the plan's `read_first` names |
+| Constraints | Scope, commit expectations, and what is explicitly out of bounds |
+| Output | The SUMMARY.md path to write and what its return must state |
 
-The assignment identifies the phase and input revision, relevant decisions,
-component instructions, owned paths, checks and dependency results. Read the
-mandatory core plus relevant sources. Ask the coordinator for missing scope;
-do not borrow another checkout or reconstruct instructions from unrelated history.
+The plan identifies the input revision, the relevant decisions, the task
+instructions, owned paths, checks and dependency results. Read the mandatory core
+plus the relevant sources. Ask the orchestrator for missing scope; do not
+reconstruct instructions from unrelated history.
 
-Read required skill paths from PLAN's Read first section in the assigned
-checkout. The coordinator commits required skills before dispatch; each worker
-reads the copy at its recorded assigned revision, including already integrated
-changes. Load an additional skill only when its catalog description addresses an
-assigned task or an unresolved failure in that task; do not load every skill body. See [skill use](../guides/AGENT-SKILLS.md) for native discovery,
-method changes and hosts that need explicit paths.
+Read required skill paths from the plan's `read_first` section. Load an
+additional skill only when its description addresses an assigned task or an
+unresolved failure in that task — do not read every skill body. See
+[install](../commands/install.md) for each host's discovery location.
 
-## Component result
+## Plan result
 
-Coder/documentor workers write and commit the supplied SUMMARY path. Its
-frontmatter reports `status: complete|blocked`, covered `acceptance` IDs and
-covered `documentation` paths. Its body records Changes, Checks, Deviations and
-Remaining, including actual command results and source areas.
+Coder and doc-writer agents write and commit the supplied SUMMARY path. Its
+frontmatter reports `status: complete|blocked`, the covered `acceptance` ids, the
+covered `documentation` paths and the commits made. Its body records Changes,
+Checks, Deviations and Remaining, including actual command results.
 
 A completed result must be supported by real work and evidence. Required
-documentation can be verified unchanged with a reason; listing a path alone is
-not proof. A blocked result preserves findings and safe partial work without
-claiming successful integration. Only the coordinator integrates commits.
+documentation can be verified unchanged with a reason; listing a path alone is not
+proof. A blocked result preserves findings and safe partial work without claiming
+successful integration. Only the orchestrator ticks the roadmap.
 
-The verifier returns a complete report for the host adapter to save at the external
-result path. A custom adapter may write it directly. The checkout stays unchanged,
-and `revision` identifies the assigned HEAD. The coordinator stores the report
-after auditing the tree. There is no worker-authored status registry.
+**A returned "complete" with no SUMMARY.md, or with no commits, is not a
+completion.** The orchestrator treats it as blocked.
+
+The verifier writes its report to the phase's `NN-VERIFICATION.md` with
+frontmatter carrying `status`, the reviewed `revision`, `verified_at` and finding
+counts. The revision it names is what makes the report falsifiable later: once
+HEAD moves past it, the report is stale and re-verification is required.
 
 ## Revision and recovery
 
-Runtime checkpoints preserve the assignment inputs and observed state. If the
-worker exits or the host interrupts, inspect commits and the result before retrying.
-A committed result may be recoverable without another worker. Uncommitted or
-out-of-scope output requires reconciliation, not automatic acceptance.
+If an agent exits or the host interrupts it, inspect its commits and its SUMMARY
+before retrying. A committed result may be usable without another agent.
+Uncommitted or out-of-scope output requires reconciliation, not automatic
+acceptance.
 
-Verifier attempts retain their process identity, source revision, result path and
-worktree. Reuse requires a stopped process and valid current evidence. Run
-`verify PHASE --workers-stopped` after confirming the verifier stopped and its
-report is missing, incomplete or stale. For component code-review process failures before integration, inspect the
-review process and worktree, then run `resume PHASE --workers-stopped`; the runner
-preserves the failed attempt and starts a new reviewer against the same base/head.
+For a review that failed before the work was accepted, inspect what the reviewer
+produced, then dispatch a fresh reviewer against the same base and head. Preserve
+the failed attempt rather than overwriting it.
+
+The orchestrator detects unfinished execution structurally: the lowest-numbered
+phase whose plan files outnumber its summary files has work left, and
+[progress](../commands/progress.md) and [next](../commands/next.md) resume it
+ahead of new work.
 
 ## Context and partial results
 
-Hand off one component, not a whole phase or review-and-repair loop. An author
-performs its implementation checks; independent review belongs to a separate
-fresh reviewer. Do not reuse the same growing author session for another component.
+Hand off one plan, not a whole phase or a review-and-repair loop. An author runs
+its own implementation checks; independent review belongs to a separate fresh
+reviewer. Do not reuse the same growing author session for another plan.
 
-- When host-reported context reaches 100,000 tokens or 50% of its window, whichever
-  is lower, start the handoff immediately. Do not begin another implementation task
-  or repair; finish only the active operation needed to preserve work. Honor a lower user-specified limit.
+- When host-reported context reaches 100,000 tokens or 50% of its window,
+  whichever is lower, start the handoff immediately. Do not begin another
+  implementation task or repair; finish only the active operation needed to
+  preserve work. Honour a lower user-specified limit.
 - Preserve safe partial commits. Set SUMMARY frontmatter `status: blocked`; record
-  exact base/head, completed and remaining tasks, dirty files, observed command
-  results and missing evidence. Do not fabricate passing checks or completion.
+  the exact base and head, completed and remaining tasks, dirty files, observed
+  command results and missing evidence. Do not fabricate passing checks or
+  completion.
 - If the host does not expose context use, record `Context usage: unavailable` in
-  SUMMARY. Keep the assignment scope and existing turn limits; do not invent telemetry.
-- After a handoff or exhausted turn limit, the coordinator must inspect the stopped
-  process, worktree, commits and SUMMARY before assigning the remaining tasks to a
-  fresh coder. Do not replay completed tasks or resume the exhausted session.
+  the SUMMARY. Keep the assignment scope and the existing turn limits; do not
+  invent telemetry.
+- After a handoff or an exhausted turn limit, the orchestrator inspects the
+  commits and SUMMARY before assigning the remaining tasks to a fresh coder. Do
+  not replay completed tasks or resume the exhausted session.
 
-The token threshold is a handoff instruction; the runtime does not measure live context.
+The token threshold is a handoff instruction; the runtime does not measure live
+context.

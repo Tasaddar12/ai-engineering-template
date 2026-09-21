@@ -1,67 +1,42 @@
-# Configure an adopting project's actual workers and checks here.
+# Project execution settings read by .ai/runtime/phase.py.
 # Intent belongs to PROJECT.md; acceptance belongs to phase CONTEXT.
-execution:
-  max_parallel: 3
-  max_tasks_per_component: null  # Set a positive integer to enforce a task-count limit.
-  claude_max_turns: 40
-  worker_timeout_seconds: 3600
-  check_timeout_seconds: 300
-  # argv lists, without a shell. Each invocation gets one fresh assignment.
-  # Workers commit SUMMARY; do not overwrite it with CLI output after a commit.
-  worker_command:
-    - codex
-    - -a
-    - never
-    - exec
-    - --model
-    - gpt-5.6-terra
-    - --ephemeral
-    - --sandbox
-    - "{sandbox}"
-    - -C
-    - "{worktree}"
-    - "-"
-  # Documentation uses Luna with the same bounded worker invocation.
-  documentor_command:
-    - codex
-    - -a
-    - never
-    - exec
-    - --model
-    - gpt-5.6-luna
-    - --ephemeral
-    - --sandbox
-    - "{sandbox}"
-    - -C
-    - "{worktree}"
-    - "-"
-  verifier_command:
-    - codex
-    - -a
-    - never
-    - exec
-    - --model
-    - gpt-5.6-luna
-    - --ephemeral
-    - --sandbox
-    - "{sandbox}"
-    - -C
-    - "{worktree}"
-    - --output-last-message
-    - "{result}"
-    - "-"
-  # Nonsecret adapter settings only. Use the host environment for credentials.
-  environment: {}
+# Every key below has a working default — set only what this project overrides.
+
+# Commit planning records as the workflows produce them. Set false to make every
+# commit verb a no-op and leave staging to the user.
+commit_docs: true
+
+# When set, workflows present user-facing output in this language. Technical
+# terms, code, file paths and subagent prompts stay in English.
+response_language: null
+
+# Drives how much cross-phase context agents receive. At 500000 or above,
+# planners and executors are given prior phase summaries and decisions.
+context_window: 200000
+
+workflow:
+  # Replace AskUserQuestion with plain-text numbered lists. Required on runtimes
+  # that do not provide an interactive question API.
+  text_mode: false
+  # Let a workflow continue into the next step without being asked again.
+  auto_advance: false
+  discuss_mode: discuss
+
+# Per-agent model overrides. Omitted agents use the model in their own
+# definition under .ai/agents/, falling back to the host's choice.
+agents: {}
+  # coder:
+  #   model: opus
+  # verifier:
+  #   model: sonnet
 
 verification:
-  # Required before run/verify/publish. Configure meaningful project checks.
+  # The project's real checks, as argv lists without a shell. Run by
+  # `phase_run query verification.run-checks` during execute, verify and ship.
+  #
+  # CHANGEME: this is empty until onboarding configures actual commands. While it
+  # is empty, phases are verified by reading alone and the verification report
+  # must say so.
   commands: []
     # - [python, -m, unittest, discover, -s, tests, -v]
     # - [npm, test, --, --run]
-
-publication:
-  remote: origin
-  base_branch: main
-  # Names to inspect in GitHub's statusCheckRollup. Publication can start CI;
-  # readiness is separate and requires successful observations of these checks.
-  required_checks: []

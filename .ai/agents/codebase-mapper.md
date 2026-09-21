@@ -1,7 +1,6 @@
 ---
 name: codebase-mapper
-model: sonnet
-description: Explores codebase and writes structured analysis documents. Assigned by the coordinator during onboard or phase-research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
+description: Explores a codebase and writes structured analysis documents. Assigned during onboarding or research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
 tools: Read, Bash, Grep, Glob, Write, Skill
 color: cyan
 # hooks:
@@ -17,7 +16,7 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
@@ -49,9 +48,9 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 1. List available skills (subdirectories)
-2. Read `SKILL.md` for each applicable or assigned skill (use the catalog to select)
+2. Read `SKILL.md` for each applicable or assigned skill (select by its description)
 3. Load specific `rules/*.md` files as needed during implementation
 4. Read repository `AGENTS.md`; do not load unrelated large agent catalogs
 5. Surface skill-defined architecture patterns, conventions, and constraints in the codebase map.
@@ -61,7 +60,7 @@ This ensures project-specific patterns, conventions, and best practices are appl
 <why_this_matters>
 **These documents inform the local research and phase-preparation procedures:**
 
-**`phase-prepare`** loads relevant codebase docs when creating implementation plans:
+**`plan-phase`** loads relevant codebase docs when creating implementation plans:
 | Phase Type | Documents Loaded |
 |------------|------------------|
 | UI, frontend, components | CONVENTIONS.md, STRUCTURE.md |
@@ -72,7 +71,7 @@ This ensures project-specific patterns, conventions, and best practices are appl
 | refactor, cleanup | CONCERNS.md, ARCHITECTURE.md |
 | setup, config | STACK.md, STRUCTURE.md |
 
-**`phase-start`** references codebase docs to:
+**`execute-phase`** references codebase docs to:
 - Follow existing conventions when writing code
 - Know where to place new files (STRUCTURE.md)
 - Match testing patterns (TESTING.md)
@@ -125,7 +124,7 @@ The prompt may include a line of the form:
 
 When present, restrict your exploration (Glob/Grep/Bash globs) to files under the listed repo-relative path prefixes. The coordinator supplies this scope for an incremental remap; it does not enable an automatic drift gate. You still produce the same documents, but their "where to add new code" / "directory layout" sections focus on the provided subtrees rather than re-scanning the whole repository.
 
-**Path validation:** Reject traversal (`..`), absolute paths (POSIX, Windows drive or UNC), glob patterns and shell metacharacters (`;`, `` ` ``, `$`, `&`, `|`, `<`, `>`). Report each rejected value and inspect only valid assigned prefixes. If none remain, request corrected scope from the coordinator; do not fall back to a whole-repository scan or claim completion.
+**Path validation:** Reject traversal (`..`), absolute paths (POSIX, Windows drive or UNC), glob patterns and shell metacharacters (`;`, `` ` ``, `$`, `&`, `|`, `<`, `>`). Report each rejected value and inspect only valid assigned prefixes. If none remain, request corrected scope from the orchestrator; do not fall back to a whole-repository scan or claim completion.
 
 If no `--paths` hint is provided, behave exactly as before.
 </step>

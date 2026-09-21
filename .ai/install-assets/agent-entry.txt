@@ -2,53 +2,91 @@
 
 This is the project's working repository. Preserve its established identity,
 source, documentation, decisions and history. Use onboarding to inspect the actual
-project and complete missing context from evidence and the user's intent.
-Do not replace existing project guidance or infer product requirements from the
+project and complete missing context from evidence and the user's intent. Do not
+replace existing project guidance or infer product requirements from the
 workflow's instructional examples.
 
 Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
-[STATE](.planning/STATE.md), the selected phase and your [role](.ai/agents/README.md).
-Load the selected [command](.ai/commands/README.md) and applicable references.
+[STATE](.planning/STATE.md), the selected phase and your
+[role](.ai/agents/README.md). Load the selected
+[command](.ai/commands/README.md) and the references it names.
 [Truth map](.ai/truth-map.md) locates each fact's owner.
 
-When the user asks to discuss a phase, including "Let's discuss phase 01", load
-[phase-discuss](.ai/commands/phase-discuss.md) directly and follow its phase
-selection and source-search steps. Do not require a slash command or an exact
-procedure name. A discussion request does not grant implementation permission.
+## How work flows
 
-[Repository skills](.ai/guides/AGENT-SKILLS.md) supply focused engineering methods.
-Load matching skills and those named in the component's Read first section from
-the assigned checkout; do not read every skill body.
+A command names a workflow. The workflow is the procedure: it decides what to
+load, which agents to spawn with what context, and which runtime verbs to call.
+The [runtime](.ai/runtime/README.md) performs every planning-record change — phase
+numbering, the roadmap, STATE.md, todos, quick tasks, milestones. Do not edit
+those files by hand; `python .ai/runtime/phase.py query <verb>` owns their
+structure, and hand edits drift from it.
+
+```
+/onboard                   initialize the project    → PROJECT / REQUIREMENTS / ROADMAP
+/phase "<description>"     add a phase to the roadmap
+  → /discuss-phase {N}     capture decisions         → NN-CONTEXT.md
+  → /plan-phase {N}        research and plan         → NN-MM-PLAN.md
+  → /execute-phase {N}     implement                 → NN-MM-SUMMARY.md
+  → /verify-work {N}       confirm the goal is met   → NN-VERIFICATION.md
+  → /ship {N}              publish                   → pull request
+  → /complete-milestone    when the milestone's phases are done
+```
+
+`/progress` reports where things stand and recommends one next step; `/next`
+decides and proceeds. `/quick` handles changes too small for a phase, and
+`/capture` parks an idea without derailing the current work.
+
+When the user asks to discuss a phase — including "let's discuss phase 01" —
+load [discuss-phase](.ai/commands/discuss-phase.md) directly and follow it. Do not
+require a slash command or an exact procedure name. A discussion request does not
+grant implementation permission.
+
+## Authority
 
 NEVER start implementing a phase unless the user explicitly tells you to implement
 that phase. Phase creation, planning, design approval and readiness do not grant
-implementation permission. Follow [phase authority](.ai/RULES.md#phase-authority).
+implementation permission. Follow
+[phase authority](.ai/RULES.md#phase-authority).
 
 Report when asked to report; implement the scope already authorized. Do not ask
-again for an approval already supplied. Record consequential decisions in phase
-context. When code and documents disagree, establish which side is wrong with
-evidence and preserve approved outcomes.
+again for an approval already supplied. Record consequential decisions in the
+phase's context. When code and documents disagree, establish which side is wrong
+with evidence and preserve approved outcomes.
 
-All tracked changes and commits use an assigned immediate-child worktree under
-the primary checkout's ignored `.worktrees/`. Verify the absolute root and branch
-before writes; follow [worktree](.ai/commands/worktree.md). The primary checkout is
-read-only for tracked changes and commits.
+## Dispatch
 
-Commit each completed meaningful slice immediately with a descriptive nonempty
-message, including component summaries. The coordinator immediately pushes every
-standalone or integrated slice and opens a draft PR/MR on the first push for
-tracking. Keep that same draft current after every slice; do not wait until the
-work is finished. Merge automatically after verification and required checks. Explicit user limits override
-these defaults; read-only work needs no commit or publication. Follow
+The orchestrator routes; it does not do the work it dispatched. After spawning an
+agent, wait for it — reading files, editing code or running tests while an agent
+is active conflicts with that agent's edits.
+
+Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
+`coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
+`integration-checker`, `codebase-mapper`, `debugger`). Resolve the model with
+`phase_run query resolve-model <agent>` and pass it inline on the dispatch call —
+agent files carry no `model:` frontmatter, and a resolved `inherit` means omit the
+argument. Never fall back to a generic agent type.
+
+An agent that returns "complete" with no SUMMARY.md, or with no commits, did not
+complete. Treat it as blocked.
+
+## Skills
+
+The skills under `.agents/skills/` mirror
+[.ai/commands/](.ai/commands/README.md) one-for-one. Load the skills that match
+the work, plus those named in the plan's `read_first` section — do not read every
+skill body.
+
+## Delivery
+
+Commit each completed meaningful slice immediately with a descriptive message,
+including agent summaries. Push when delivery is authorized, and open a draft PR
+on the first push for tracking. Keep that draft current after every slice rather
+than waiting until the work is finished.
+
+[ship](.ai/commands/ship.md) publishes verified work; it does not merge, and it
+has no bypass for a phase whose verification is not `passed`. Explicit user limits
+override these defaults; read-only work needs no commit or publication. Follow
 [delivery rules](.ai/RULES.md#session-and-authorization).
 
-The coordinator starts workers; role files do not install a dispatcher. Workers
-follow their assigned paths and return evidence. Phase paths stay stable, and
-required documentation remains attached to its phase.
-
-Start at [onboard](.ai/commands/onboard.md) and
-[phase-status](.ai/commands/phase-status.md). Use
-[phase-verify](.ai/commands/phase-verify.md) before final readiness and
-[phase-ship](.ai/commands/phase-ship.md) through confirmed merge by default.
-The coordinator merges through the forge; the Python publisher only publishes.
-Preserve blocked or unmerged work and honor the user's delivery overrides.
+Start at [onboard](.ai/commands/onboard.md) for a new project, or
+[progress](.ai/commands/progress.md) to see where an existing one stands.

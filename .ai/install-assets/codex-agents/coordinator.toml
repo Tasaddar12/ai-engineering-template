@@ -1,4 +1,4 @@
 name = "coordinator"
-description = "Coordinates phase intake, assignments, integration, status, and authorized delivery through the project commands."
+description = "Orchestrates phase intake, dispatch, integration, status and authorized delivery through the project commands."
 model = "gpt-5.6-terra"
-developer_instructions = "Read and follow the complete role at .ai/agents/coordinator.md in the assigned checkout before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."
+developer_instructions = "Read and follow the complete role at .ai/agents/coordinator.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."

@@ -28,8 +28,10 @@ PROJECT_RECORDS = {f".planning/{name}" for name in
                    ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml")}
 PLANNING_RESOURCES = {f".planning/{name}" for name in
                       ("README.md", "config.yaml", "phases/README.md", "codebase/README.md",
-                       "specs/.gitkeep", "decisions/.gitkeep")}
-IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.worktrees/\n.ai-venv/\n.workflow-backups/\n__pycache__/\n*.pyc\n"
+                       "specs/.gitkeep", "decisions/.gitkeep", "todos/README.md",
+                       "todos/pending/.gitkeep", "todos/completed/.gitkeep",
+                       "milestones/.gitkeep")}
+IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.ai-venv/\n.workflow-backups/\n__pycache__/\n*.pyc\n"
 
 
 def run(*args, cwd=None, capture=False):
@@ -82,9 +84,7 @@ def payload(source, host="codex", hooks=True):
             raise ValueError(f"Source is not a workflow template: missing {required}")
     if host not in ("codex", "claude"):
         raise ValueError(f"Unknown host: {host}")
-    if host == "claude":
-        selected[".planning/config.yaml"] = (source / ASSETS / "claude-config.txt").read_bytes()
-    else:
+    if host == "codex":
         # Native Codex definitions point to the full role, beside the installed TOML.
         # Packaging inputs stay out of Claude installs and are required per role.
         for name, content in list(selected.items()):
@@ -150,11 +150,8 @@ def render_asset(name, content, host):
             return part
         part = part.replace(".ai-venv", namespace + "-venv")
         part = part.replace(".agents/skills/", skill_root(host) + "/")
-        if host == "claude" and name == ".ai/guides/AGENT-SKILLS.md":
-            part = part.replace("\n.agents/\n  skills/", "\n" + namespace + "/\n  skills/")
         part = re.sub(r"\.ai(?![\w-])", lambda _: namespace, part)
-        if host == "claude" and name not in (".ai/commands/install.md", ".ai/runtime/README.md",
-                                              ".ai/guides/AGENT-SKILLS.md"):
+        if host == "claude" and name not in (".ai/commands/install.md", ".ai/runtime/README.md"):
             part = part.replace("AGENTS.md", "CLAUDE.md")
         return part
     # Source download and attribution URLs must keep the authoring paths.
@@ -216,8 +213,7 @@ def merge_codex_config(current, incoming, path):
 
 def hook_settings(host):
     events = {}
-    for event, script in (("PreToolUse", "worktree-confine.sh"),
-                          ("PostToolUse", "ai-tier-notice.sh")):
+    for event, script in (("PostToolUse", "ai-tier-notice.sh"),):
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": 10}
         if host == "codex":
@@ -274,8 +270,7 @@ def merge_hooks(current, incoming, path):
             for group in groups:
                 if group in existing:
                     continue
-                if any(any("/hooks/" + script in json.dumps(item)
-                           for script in ("worktree-confine.sh", "ai-tier-notice.sh"))
+                if any("/hooks/ai-tier-notice.sh" in json.dumps(item)
                        for item in existing):
                     raise ValueError(f"managed {event} registration differs; reconcile it manually")
                 existing.append(group)
@@ -308,11 +303,11 @@ def plan_install(source, target, host="codex", hooks=True):
     other = ".claude" if host == "codex" else ".codex"
     if (target / other / "runtime/phase.py").exists() and (target / other / "RULES.md").exists():
         raise ValueError(f"An existing workflow is installed under {other}; use that host or "
-                         "migrate it in a worktree before switching. Nothing was installed.")
+                         "migrate it on a branch before switching. Nothing was installed.")
     old_root = target / ".ai"
     safe_path(old_root)
     if old_root.exists():
-        raise ValueError("Existing .ai requires --migrate-existing in an assigned worktree; "
+        raise ValueError("Existing .ai requires --migrate-existing on a review branch; "
                          "nothing was installed.")
     for name, incoming in payload(source, host, hooks).items():
         relative = Path(name)
@@ -357,7 +352,7 @@ def plan_install(source, target, host="codex", hooks=True):
             changes.append((ignore, current + ignore_block))
     if conflicts:
         raise ValueError("Existing files conflict; nothing was installed. Reconcile these paths "
-                         "in a worktree, then retry:\n  " + "\n  ".join(sorted(set(conflicts))))
+                         "on a review branch, then retry:\n  " + "\n  ".join(sorted(set(conflicts))))
     return sorted(changes, key=lambda item: item[1] is None)
 
 
@@ -413,7 +408,7 @@ def install(args):
                            text=True, encoding="utf-8", capture_output=True)
     in_git = probe.returncode == 0
     if in_git and Path(probe.stdout.strip()).resolve() != target:
-        raise ValueError("Target is inside another repository. Choose its root or an assigned worktree.")
+        raise ValueError("Target is inside another repository. Choose its root.")
     namespace = "." + args.host
     if not args.skip_deps:
         environment = target / (namespace + "-venv")
@@ -478,12 +473,13 @@ def install(args):
             interpreter = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
             run(str(interpreter), "-m", "pip", "install", "-r",
                 str(target / namespace / "runtime/requirements.txt"))
-            run(str(interpreter), str(target / namespace / "runtime/phase.py"), "status", cwd=target)
+            run(str(interpreter), str(target / namespace / "runtime/phase.py"),
+                "query", "runtime-identity", cwd=target)
         print("Installed. No project files were committed and no remote was changed.\n"
-              "If installed into a primary checkout, a human must review and commit the "
-              f"bootstrap before an agent creates a worktree (see {namespace}/commands/install.md).\n"
-              f"Next: follow {namespace}/commands/onboard.md to fill project intent, configure actual "
-              "checks and worker commands, and commit setup.")
+              "A human must review and commit the bootstrap before handing off to an "
+              f"agent (see {namespace}/commands/install.md).\n"
+              f"Next: follow {namespace}/commands/onboard.md to fill project intent, configure "
+              "the project's real verification commands, and commit setup.")
         if not args.no_hooks:
             print("Review project hook registrations in /hooks in each selected host. "
                   "Codex requires project and hook trust before running them; existing "
@@ -495,7 +491,7 @@ def main():
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", default=".", help="Project root or assigned worktree (default: current directory)")
+    parser.add_argument("--target", default=".", help="Project root (default: current directory)")
     parser.add_argument("--source", default=SOURCE, help="Template Git URL or local repository")
     parser.add_argument("--ref", default="main", help="Template branch, tag or commit (default: main)")
     location = Path(globals().get("__file__", ".ai/install.py")).parent.name

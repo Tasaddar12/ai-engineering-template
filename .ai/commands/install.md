@@ -13,7 +13,7 @@ python -c "from urllib.request import urlopen; exec(urlopen('https://raw.githubu
 ```
 
 Use `python3` on macOS/Linux if needed. For an existing project, use `--target .`
-from its root or assigned worktree. This executes the repository's script in
+from its root. This executes the repository's script in
 memory; the saved-file commands below are an alternative.
 
 Choose `--host codex` or `--host claude`; the downloaded script defaults to Codex.
@@ -31,7 +31,7 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 | Complete skills, discovered directly | `.agents/skills` | `.claude/skills` |
 | Hook registration | `.codex/config.toml` | `.claude/settings.json` |
 | Local Python environment | `.codex-venv` | `.claude-venv` |
-| Initial worker routes | Codex | Claude Code |
+| Native agent definitions | `.toml` beside each role | Markdown roles |
 
 References in installed instructions, skills, procedures and runtime routes point
 to the selected host layout. Agents stay under `agents` and commands
@@ -41,10 +41,9 @@ model in Markdown frontmatter. See [native host models](../agents/README.md#nati
 for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are
-project files intended for Git. Once committed, they propagate into fresh Git
-worktrees along with rules, full skills and hook implementations. The
-installer never copies your home `.codex`/`.claude`, credentials, trust approvals,
-session history, or local settings. It leaves existing worker routes authoritative.
+project files intended for Git. Once committed, they travel with the repository
+along with rules, skills and hook implementations. The installer never copies your home `.codex`/`.claude`, credentials, trust approvals,
+session history, or local settings. It leaves an existing project's configuration authoritative.
 
 ## Hooks and existing host settings
 
@@ -87,16 +86,16 @@ python .claude/install.py --target . --host claude --skip-deps --ref COMMIT
 Replace COMMIT with the revision that installed the workflow. A newer template
 can conflict with customized or older files and requires reconciliation. Existing
 project context, settings and runtime config remain authoritative; choosing a
-host does not rewrite an existing project's worker routes.
+host does not rewrite an existing project's configuration.
 
-An older installation with a separate `.ai` directory needs migration in an
-assigned worktree. The installer refuses to leave that older workflow beside a
+An older installation with a separate `.ai` directory needs migration on a
+review branch. The installer refuses to leave that older workflow beside a
 new host layout. Use the migration mode below to preserve existing project data
 and custom material. Changing `--host` alone is not a migration command.
 
 ## Migrate an existing `.ai` and `.planning` project
 
-Use an assigned worktree with the existing setup committed. Download the current
+Work on a review branch with the existing setup committed. Download the current
 installer as described below, then preview the selected destination:
 
 ```text
@@ -114,7 +113,7 @@ Each snapshot has a `files/` tree with the originals and a `MANIFEST.json` recor
 their paths, SHA-256 hashes and file modes. Its own ignore file also protects an
 incomplete backup when setup fails before the project ignore rules are updated. Keep that local
 backup until you have reviewed and tested the migration; it is not included in
-Git commits or automatically propagated to another worktree. The backup holds
+Git commits or pushed anywhere. The backup holds
 the original bytes for recovery, including replaced runtime files and settings.
 
 - All existing `.planning` records, phase summaries, specs, decisions and history
@@ -143,16 +142,16 @@ routes deliberately if the project should run only Claude workers.
 PLAN ownership and Read first paths must name the actual installed files before
 dispatch. Migration does not add aliases or historical path mappings.
 
-Migration does not modify Git-common-directory checkpoints, running processes or
-other worktrees. Finish or reconcile old attempts with their original runtime
-before starting new work; changed runtime inputs invalidate old verification.
+Migration does not modify Git history, running processes or other checkouts.
+Finish or reconcile old attempts with their original runtime before starting new
+work; changed runtime inputs invalidate old verification.
 Do not remove the original backup when inspecting a failed or interrupted setup.
 
 ## Download and run
 
 For a new project, run the following from its intended parent directory. Change
-`./my-project` to your destination. For an existing project, use its root or an
-assigned worktree instead; use `.` when already there.
+`./my-project` to your destination. For an existing project, use its root; use
+`.` when already there.
 
 PowerShell:
 
@@ -212,10 +211,10 @@ Uncommitted source edits are not installed.
   and list conflicts. Existing project records are preserved rather than conflicts.
   Linked paths (including junctions) are refused.
 - Initializes Git if the target is outside a repository. An existing Git root
-  or linked worktree keeps its repository. A subdirectory of another repository
-  is rejected to avoid installing at the wrong level.
-- Creates `.codex-venv` or `.claude-venv`, installs runtime requirements, and runs phase status as a
-  smoke check. It registers selected-host hooks and installs complete skills. The AI references
+  keeps its repository. A subdirectory of another repository is rejected to avoid
+  installing at the wrong level.
+- Creates `.codex-venv` or `.claude-venv`, installs runtime requirements, and asks
+  the runtime to identify itself as a smoke check. It registers selected-host hooks and installs complete skills. The AI references
   commands and agents directly in their installed folders. Setup does not install
   agent CLIs, configure credentials, fill project identity, commit files or publish anything.
 
@@ -232,32 +231,28 @@ dependency failures return a nonzero exit code; files already installed remain
 available for inspection and retry. Conflict detection is a preflight check,
 not a transaction protecting against concurrent writers or disk failures.
 
-## Existing projects and worktrees
+## Existing projects
 
-For adoption by an agent, follow the [worktree procedure](worktree.md)
-and run the installer against its assigned immediate-child worktree. For example,
-after verifying the primary checkout and ensuring `.worktrees/` is ignored:
+Install on a branch, not on the repository's default branch, so the installed
+workflow can be reviewed as a diff before it lands:
 
 ```text
-git worktree add .worktrees/ai-setup -b codex/ai-setup HEAD
-python /path/to/downloaded/install.py --target .worktrees/ai-setup
+git switch -c install-ai-workflow
+python /path/to/downloaded/install.py --target .
 ```
 
 If this is the first bootstrap in a repository without workflow rules, a human
 can install directly into its root, review the changes, and commit the installed
-workflow before handing off to an agent. A worktree created from HEAD only gets
-committed files. Subsequent agent edits and commits follow the installed
-worktree procedure. Preserve any
-conflicting guidance and reconcile it explicitly; the installer has no overwrite
-switch. It leaves unrelated dirty files alone.
+workflow before handing off to an agent. Preserve any conflicting guidance and
+reconcile it explicitly; the installer has no overwrite switch. It leaves
+unrelated dirty files alone.
 
 ## Finish onboarding
 
-**Commit the human bootstrap first when installing into a primary checkout.**
-A newly initialized repository has no HEAD until its first commit, so it cannot
-create the worktree required for agent onboarding. An existing repository also
-needs the installed files committed before they can travel into a new worktree.
-Git needs your author name and email configured for this step.
+**Commit the installed workflow before onboarding.** The workflows and runtime
+must be committed before an agent can rely on them, and a newly initialized
+repository has no HEAD until its first commit. Git needs your author name and
+email configured for this step.
 
 For a brand-new, otherwise empty Codex project, review the installed files and run:
 
@@ -271,8 +266,7 @@ For a fresh Claude project, stage `CLAUDE.md`, `.claude`, `.planning` and
 
 If the directory contained existing files, inspect `git status` and stage only
 the installer additions and reviewed instruction/ignore changes; the directory
-arguments above can also stage unrelated work. If installing into an already
-assigned worktree, the agent can review and commit setup there directly.
+arguments above can also stage unrelated work.
 Inspect individual paths before staging a pre-existing host directory; never
 stage personal settings or credentials.
 
@@ -297,15 +291,14 @@ CLI separately. The [runtime guide](../runtime/README.md) describes configuratio
 
 Give the agent your project description and the appropriate
 [onboarding prompt](onboard.md). Once onboarding is complete, use
-[goal planning](goal-plan.md) to define the first goal or order several goals
+[goal planning](new-milestone.md) to define the first goal or order several goals
 into phases. The agent should inspect existing code,
-preserve useful guidance, fill project intent, set actual worker routes and
-nonempty verification commands, run baseline checks, and commit reviewed setup
-in its assigned worktree. A successful install with an empty phase list proves
-the runtime starts; onboarding establishes project readiness.
+preserve useful guidance, fill project intent, set non-empty verification
+commands, run baseline checks, and commit the reviewed setup. A successful
+install with an empty phase list proves the runtime starts; onboarding
+establishes project readiness.
 
-The virtual environment is local to this checkout. Before removing a setup
-worktree, retain any local data you need; create an environment in your continuing
-checkout using `python -m venv .codex-venv` and its Python's
+The virtual environment is local to this checkout and is not committed. Recreate
+it in another checkout using `python -m venv .codex-venv` and its Python's
 `-m pip install -r .codex/runtime/requirements.txt` as needed. Use the matching
 `.claude-venv` and `.claude/runtime/requirements.txt` paths for Claude.

@@ -1,11 +1,11 @@
 # Phases
 
-Create stable `NN-slug/` directories through [phase-new](../../.ai/commands/phase-new.md).
+Create stable `NN-slug/` directories through [phase-new](../../.ai/commands/phase.md).
 Start with CONTEXT, add research when needed, prepare component instructions,
 execute ready components and collect summaries, verification and applicable UAT.
 
 See [the workflow guide](../../.ai/guides/PHASE-WORKFLOW.md) for the full operation.
-[ROADMAP](../ROADMAP.md) indexes phases; [phase-status](../../.ai/commands/phase-status.md)
+[ROADMAP](../ROADMAP.md) indexes phases; [phase-status](../../.ai/commands/progress.md)
 reports observed progress. Do not move folders to represent status.
 
 Create phases only for this project's agreed outcomes; instructional examples

@@ -18,7 +18,7 @@ Template for `.planning/phases/XX-name/{phase_num}-RESEARCH.md` - comprehensive 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
 
-**CRITICAL:** If CONTEXT.md exists from phase-discuss, copy locked decisions here verbatim. These MUST be honored by the planner.
+**CRITICAL:** If CONTEXT.md exists from discuss-phase, copy locked decisions here verbatim. These MUST be honored by the planner.
 
 ### Locked Decisions
 [Copy from CONTEXT.md `## Decisions` section - these are NON-NEGOTIABLE]
@@ -607,6 +607,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

@@ -28,9 +28,8 @@ records and detailed routing rules remain open for the next implementation stage
 | Small change | A precise, limited adjustment with a known outcome | Inspect the affected source and relevant contract; check that scope is actually small | One bounded phase/plan using the applicable complete artifact structure | Route into feature discovery or diagnosis if uncertainty or impact grows |
 
 These paths should differ in the questions and investigation they need. They
-should share the same ownership, dependency scheduler, worktree isolation,
-committed results, documentation coverage, verification, recovery and delivery
-rules. Three entry paths do not require three competing execution systems.
+should share the same ownership rules, dependency ordering, committed results,
+documentation coverage, verification, recovery and delivery rules. Three entry paths do not require three competing execution systems.
 
 ## Proposed request-to-phase flow
 
@@ -40,8 +39,8 @@ rules. Three entry paths do not require three competing execution systems.
 | Inspect existing reality | Read relevant source, current specifications, tests, configuration and useful history | Findings or codebase references | The current baseline and affected interfaces are understood |
 | Research and resolve questions | Investigate material technical uncertainty; obtain missing consequential product decisions | Bounded findings and recorded decisions | Dependent planning no longer hides a missing decision as an assumption |
 | Define phase goals | Connect outcomes to falsifiable acceptance, boundaries and genuine prerequisites | Roadmap goals and phase context/specification as applicable | Each selected phase has a coherent observable outcome |
-| Prepare the next phase | Write concrete tasks, ownership, dependencies, resources, checks and documentation | Full PLAN artifacts; independent preparation findings | A fresh worker has sufficient instructions and substantial preparation has been checked |
-| Execute and verify | Run ready bounded workers, integrate checked results, assess the full outcome and close gaps | Commits, summaries, verification and required UAT | Current evidence supports acceptance and required documentation |
+| Plan the next phase | Write concrete tasks, ownership, dependencies, checks and documentation | Full PLAN artifacts; independent plan-check findings | A fresh agent has sufficient instructions and the plan has been checked |
+| Execute and verify | Dispatch ready bounded agents, integrate checked results, assess the outcome and close gaps | Commits, summaries and verification | Current evidence supports acceptance and required documentation |
 | Finish the delivery boundary | Publish progress/final results and perform authorized merge/cleanup | PR and observed delivery evidence | The user's actual requested boundary is reached |
 
 “Research first” should mean evidence before commitments. It should not force an
@@ -60,7 +59,7 @@ every internal transition.
 |---|---|---|
 | Feature or milestone group | The user-visible outcome spanning multiple phases | Links related phase goals and their completion criteria |
 | Phase | A coherent outcome that can be implemented and verified together | Keeps context, detailed plans, results and verification attached |
-| Component plan | One bounded worker assignment within a phase | Declares actual prerequisite components, owned paths, checks and handoffs |
+| Plan | One bounded agent assignment within a phase | Declares prerequisite plans, owned paths, checks and handoffs |
 
 A group should add a useful overview without duplicating phase status or moving
 phase folders to indicate progress. Milestone templates are not retained in the
@@ -73,7 +72,7 @@ runtime registry is introduced by this document.
 | Area | Available now | Proposed next-stage work |
 |---|---|---|
 | Request handling | Coordinator-led onboarding and phase procedures | Clear selection between feature, bug and small-change entry workflows |
-| Investigation | Reconnaissance, bounded research, debugging and regression-design skills | Tailored question/research sequences and escalation rules for each entry path |
+| Investigation | Coordinator-assigned mapping, research, debugging and verification roles | Tailored question/research sequences and escalation rules for each entry path |
 | Phase design | Roadmap, context/specification templates and decomposition method | Consistent handoff from request investigation to phase goals; optional feature grouping |
 | Detailed preparation | Full plan template, local runtime contract and independent checker role | Explicit workflow orchestration and revision loop for each entry path |
 | Parallel implementation | Runtime readiness, ownership/resource scheduling and checked integration | Reuse this machinery; change only where the new workflows demonstrate a concrete need |

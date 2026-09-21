@@ -6,110 +6,120 @@ title: Shared engineering rules
 
 # Shared engineering rules
 
-Every agent reads this core. Commands own procedures, roles own responsibilities,
-references supply operation-specific details, and repository skills supply
-reusable engineering methods. Use [truth-map](truth-map.md) to find the owner
-rather than maintaining another copy of a rule.
+Every agent reads this core. Commands name procedures, workflows own those
+procedures, agents own responsibilities, references supply operation-specific
+detail, and repository skills supply reusable engineering methods. Use
+[truth-map](truth-map.md) to find a fact's owner rather than maintaining another
+copy of a rule.
+
+## Layering
+
+```
+command (.ai/commands/) ── the entry point; names a workflow, changes nothing
+  └─ workflow (.ai/workflows/) ── the procedure: what to load, whom to spawn,
+                                   what to ask, which runtime verbs to call
+       ├─ runtime (.ai/runtime/phase.py) ── every planning-record read and write
+       └─ agent (.ai/agents/) ── a bounded role, spawned with its own context
+```
+
+A workflow orchestrates and a runtime verb mutates. A workflow that edits
+ROADMAP.md, STATE.md or a phase directory by hand will drift from the runtime
+that owns their structure: go through a verb. First-time creation of a record
+from its template is the one exception.
+
+Skills under `.agents/skills/` mirror the commands one-for-one, so a host that
+discovers skills and a host that registers slash commands behave identically.
 
 ## Session and authorization
 
 Preserve the project's established identity, requirements, decisions and history.
 [PROJECT](../.planning/PROJECT.md) owns project context. Complete missing context
-through onboarding from the user's intent and inspected source; do not treat
-workflow examples or upstream maintenance records as this project's scope.
+through [onboarding](commands/onboard.md) from the user's intent and inspected
+source; do not treat workflow examples or upstream maintenance records as this
+project's scope.
 
-Read PROJECT, STATE, the selected phase and role. Verify the assigned checkout's
-absolute root and branch before writes. Inspect relevant sources at that
-revision; another worker's checkout is not an integrated dependency.
+Read PROJECT, STATE, the selected phase and your role. Verify the repository root
+and branch before writes. Inspect relevant sources at that revision.
 
 A report request authorizes inspection, not implementation. An implementation
-request authorizes its stated scope and ordinary necessary steps. Record actual
-human instructions; do not invent approval or repeatedly ask at internal stage
-boundaries. A later instruction can change or cancel scope. For authorized tracked
-changes, the default delivery boundary includes slice commits, pushes, a pull
-request (PR) or merge request (MR), and automatic merge after verification and
-required checks. This standing authorization applies unless the user narrows it
-(for example: no commit, local only, draft only, or do not merge). It does not
-authorize additional product scope or destructive cleanup. Read-only requests
-remain read-only. Record the applicable default or explicit override in existing
-phase CONTEXT; standalone template maintenance needs no invented project records.
+request authorizes its stated scope and the ordinary steps it implies. Record
+actual human instructions; do not invent approval, and do not re-ask at internal
+stage boundaries. A later instruction can change or cancel scope. For authorized
+tracked changes, the default delivery boundary includes slice commits, pushes and
+a pull request. This standing authorization applies unless the user narrows it
+(no commit, local only, draft only, do not merge). It does not authorize
+additional product scope or destructive cleanup. Read-only requests stay
+read-only. Record the applicable default or explicit override in the phase's
+CONTEXT.
 
 ### Commit and push workflow
 
-1. **Finish one slice.** Run its applicable checks. This includes preparation,
-   code, tests, documentation and corrections.
-2. **Commit immediately.** Use a descriptive message. Workers include their SUMMARY.
-3. **Push immediately.** The coordinator pushes every standalone or integrated slice.
-4. **First push: open a draft PR/MR for tracking.** Later pushes update that same PR/MR.
+1. **Finish one slice.** Run its applicable checks — preparation, code, tests,
+   documentation or corrections.
+2. **Commit immediately,** with a descriptive message. Agents include their SUMMARY.
+3. **Push** when delivery is authorized.
+4. **First push: open a draft PR for tracking.** Later pushes update that same PR.
 5. **Repeat before starting the next slice or ending the turn.** Never batch
-   completed slices into a later commit or push.
-6. **Finish delivery.** Keep the PR/MR draft while work remains. Verify, pass required
-   checks, then merge under the user's delivery instructions.
+   completed slices into a later commit.
+6. **Finish delivery** through [ship](commands/ship.md): verification passed,
+   required checks green, then the user's merge instruction.
 
-Workers hand commits to the coordinator; they do not publish or merge.
 If a push or draft creation fails, report the blocker and preserve the commit.
 Explicit no-commit, local-only or no-merge instructions override these defaults.
-Read-only work needs no commit or publication; reviewers do not edit or commit.
+Read-only work needs no commit; reviewers do not edit or commit.
 
 ## Phase authority
 
-**Every phase requires discussion with the user before component preparation or
+**Every phase requires discussion with the user before planning or
 implementation.** Phase creation, an implementation request and an existing PLAN
-cannot substitute for that discussion. The coordinator creates
-`NN-DISCUSSION-LOG.md` at the first discussion exchange and updates it with CONTEXT
-after each exchange. Record only actual questions, options, evidence and replies.
-Set CONTEXT frontmatter `discussion: complete` only after the current phase's
-outcome, scope, acceptance and consequential choices have been discussed and
-recorded; unresolved choices must identify the work they block. Set it back to
-`pending` when the outcome, scope or a consequential choice changes and needs
-further discussion. Do not dispatch implementation workers while discussion is
-pending or its log is missing. Discussion completion never grants implementation
-permission. Keep the log audit-only; downstream workers read decisions in CONTEXT.
+cannot substitute for that discussion. [discuss-phase](commands/discuss-phase.md)
+writes `NN-CONTEXT.md` and `NN-DISCUSSION-LOG.md`, recording only actual
+questions, options, evidence and replies. Unresolved choices must name the work
+they block. Do not spawn implementation agents while a phase's decisions are
+unrecorded. Discussion completion never grants implementation permission. The
+log is audit-only; downstream agents read decisions in CONTEXT.
 
 **NEVER start implementing a phase unless the user explicitly tells you to
-implement that phase.** Creating, discussing, researching or preparing a phase,
+implement that phase.** Creating, discussing, researching or planning a phase,
 approving its design, passing readiness checks, and merging planning records do
 not authorize implementation. Do not infer permission from a roadmap, a suggested
 next action, an automatic continuation, or the default delivery workflow.
 
-Record the user's explicit implementation instruction and covered phase scope in
-CONTEXT Authorization before starting implementation workers or `run`/`resume`.
-Without it, finish authorized preparation and report that implementation awaits
-an explicit user instruction. Earlier explicit implementation authorization remains
-valid for its stated phases unless changed or withdrawn; do not ask again for
-that same permission. Completing one phase never authorizes the next phase unless
-the user's explicit instruction also covers it.
+Record the user's explicit implementation instruction and the phase scope it
+covers in CONTEXT before running [execute-phase](commands/execute-phase.md).
+Without it, finish authorized planning and report that implementation awaits an
+explicit instruction. Earlier explicit authorization stays valid for its stated
+phases unless changed or withdrawn; do not ask again for the same permission.
+Completing one phase never authorizes the next unless the instruction covers it.
 
-PROJECT owns purpose and boundaries; REQUIREMENTS owns desired product outcomes.
-Phase CONTEXT owns exact acceptance, decisions, open questions and execution
-authorization. PLAN documents supply bounded instructions and reference
-that acceptance. Research, transcripts, worker results and status views cannot
-authorize new scope.
+PROJECT owns purpose and boundaries; REQUIREMENTS owns desired product outcomes;
+ROADMAP owns the phase boundary. Phase CONTEXT owns acceptance, decisions, open
+questions and execution authorization. PLAN documents supply bounded instructions
+and reference that acceptance. Research, transcripts, agent results and status
+views cannot authorize new scope.
 
 Resolve changes to human intent before implementing dependent behavior. Record
 the actual resolution in CONTEXT. Distinguish a choice within delegated discretion
 from human approval. Questions block only dependent scope; continue independent
-research or prepared components. Never dispatch an assignment with a missing
-decision disguised as an implementation detail.
+research or planned work. Never dispatch an assignment with a missing decision
+disguised as an implementation detail.
 
 Existing valid contracts govern unchanged behavior. Preserve approved outcomes;
 never weaken acceptance or document missing behavior as complete. Substantive
-scope changes need a recorded human decision. Routine implementation adjustments
-within scope need evidence and a recorded deviation.
+scope changes need a recorded human decision. Routine adjustments within scope
+need evidence and a recorded deviation.
 
-Commit ready inputs before execution. An attempt uses its recorded input revision
-and fingerprint. Reconcile changed inputs before a new attempt; never silently
-reinterpret running workers' assignments.
+Commit ready inputs before execution. An attempt uses its recorded input revision.
+Reconcile changed inputs before a new attempt.
 
 ## Documents and conflicts
 
-Current specifications under `.planning/specs/` describe verified behavior on
-the deliverable revision. Phase `NN-SPEC.md` records desired behavior. Proposed
+Current specifications under `.planning/specs/` describe verified behavior on the
+deliverable revision. Phase `NN-SPEC.md` records desired behavior. Proposed
 behavior stays in the phase until implemented. Guides explain actual use and
 operation. Significant ADRs preserve rationale; supersede a decision with a new
 ADR and links instead of rewriting its historical reasoning. Git and phase
-records preserve ordinary change history; no separate amendment or journal is
-required. Current contracts remain readable without historical debate.
+records preserve ordinary change history; no separate journal is required.
 
 When sources disagree, identify both claims and inspect their evidence:
 
@@ -121,123 +131,121 @@ When sources disagree, identify both claims and inspect their evidence:
 
 Research and tests provide evidence; neither alone changes user intent. Record
 relevant findings in the affected phase. Unrelated discoveries go in its Deferred
-section with evidence and the scope boundary. A separately authorized change can
-become another phase. Search before duplicating a finding. Deferring a required
-gap does not make the original phase complete.
+section with evidence and the scope boundary, or become a todo through
+[capture](commands/capture.md). A separately authorized change can become another
+phase. Search before duplicating a finding. Deferring a required gap does not make
+the original phase complete.
 
 ## Modular project rules
 
-Read the [project rule catalog](rules/README.md) and applicable rule files for
-this assignment. Rules supplement project conventions; they do not replace
-skills, approved specifications or actual user instructions. Use the
+Read the [project rule catalog](rules/README.md) and the rule files applicable to
+this assignment. Rules supplement project conventions; they do not replace skills,
+approved specifications or actual user instructions. Use the
 [rule template](templates/rule.md) when recording a new established convention.
 
-## Components and handoffs
+## Orchestration and handoffs
 
-The coordinator owns phase records, scheduling and integration. It starts fresh
-workers for bounded components. Workers edit only assigned paths in their own
-worktrees, plus their assigned SUMMARY. They do not spawn agents, switch branches,
-merge, rebase, publish, edit shared status or write other checkouts.
+The orchestrator owns routing, phase records and integration. It spawns agents
+with fresh context for bounded work, and it does not do that work itself: a
+workflow that reads files, edits code or runs tests while an agent is active
+conflicts with the agent it dispatched.
 
-Ownership uses exact repository-relative paths or directory prefixes ending in
-`/`, without traversal, globs or whole-repository scope. Shared files and exclusive
-resources serialize execution. Genuine prerequisites define dependency edges.
-Agree shared interfaces before dispatch. Ready components wait for their own
-integrated and checked prerequisites, capacity and resources; displayed waves
-are not a global barrier. Only the coordinator integrates component commits.
+Spawn agents by their exact name — `researcher`, `phase-preparer`,
+`phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,
+`doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`. Never
+substitute a generic agent type; the project's own definitions carry the prompts,
+tool permissions and model assignment that make the result trustworthy. Resolve
+the model through `phase_run query resolve-model <agent>` and pass it inline on
+the dispatch call; agent definitions carry no `model:` frontmatter. A resolved
+`inherit` means omit the model argument and let the host choose.
 
-Give workers applicable constraints, their assignment, required source, relevant
-research and dependency summaries. Do not load every transcript or component.
-Follow [worker handoff](references/worker-handoff.md).
+Agents edit only the paths their plan declares, plus their own SUMMARY. They do
+not spawn agents, switch branches, merge, publish or edit shared status.
+
+Plan ownership uses exact repository-relative paths or directory prefixes ending
+in `/`, without traversal, globs or whole-repository scope. Plans that declare
+overlapping paths must not share an execution wave, whatever their declared wave
+says. Genuine prerequisites define dependency edges; agree shared interfaces
+before dispatch.
+
+Give agents their assignment, the applicable constraints, the files their plan
+names in `read_first`, and the dependency summaries they need — not every
+transcript. Follow [worker handoff](references/worker-handoff.md).
 
 ## Review, documentation and completion
 
 Before dispatching implementation, obtain an independent phase-checker assessment
-when the phase has multiple components, changes a shared interface, migrates
-persisted data, or changes authentication, authorization or another security boundary.
-Correct blocking preparation findings before dispatch. Obtain independent
-verification for implemented outcomes. Every code component requires a separate
-fresh code-reviewer before integration; coder self-checks and a verifier reading
-the review method do not replace that assignment. Additional review follows actual risk;
-there is no fixed review count. Correct findings within authorized scope and
-repeat affected checks. Broaden review when changed behavior invalidates prior
-evidence. Keep findings visible and distinguish editorial details from defects.
+when the phase has multiple plans, changes a shared interface, migrates persisted
+data, or changes authentication, authorization or another security boundary.
+Correct blocking findings before dispatch. Obtain independent verification for
+implemented outcomes through [verify-work](commands/verify-work.md). Every phase
+that changes source requires a separate fresh code-reviewer before completion;
+a coder's self-check and a verifier reading a review method do not replace that
+assignment. Additional review follows actual risk; there is no fixed count.
+Correct findings within authorized scope and repeat the affected checks. Broaden
+review when changed behavior invalidates prior evidence. Keep findings visible and
+distinguish editorial details from defects.
 
-Coders may update tests, comments and assigned nearby explanations while their
-understanding is fresh, including assigned command corrections and option names.
-For required documentation, assign a documentor when creating a specification or
-guide, changing an operational sequence, or explaining behavior across components.
-A command or option-name correction alone does not require a separate documentor.
-Give the documentor exact document paths and the implementation evidence for each
-changed claim. These triggers do not authorize creating documentation outside the
-approved scope. Required documentation stays in the same phase and PR;
-[documentation coverage](references/documentation.md) defines the handoff.
+Coders may update tests, comments and nearby explanations while their
+understanding is fresh. For required documentation, assign a doc-writer when
+creating a specification or guide, changing an operational sequence, or explaining
+behavior across components. A command or option-name correction alone does not
+require a separate doc-writer. Give the doc-writer exact document paths and the
+implementation evidence for each changed claim. These triggers do not authorize
+documentation outside the approved scope. Required documentation stays in the same
+phase and PR; [documentation coverage](references/documentation.md) defines the
+handoff.
 
 Completion requires the observable outcome, integrated behavior, passing required
 checks, accurate required documentation and conclusive independent verification.
-Required UAT must pass. A process exit, summary assertion, checkbox or existing
-file is not proof. Bug repairs need reproduction and regression evidence.
+A process exit, a summary assertion, a ticked checkbox or an existing file is not
+proof. Bug repairs need reproduction and regression evidence.
 
-Evidence names the tested revision and actual commands/results. Material content
-changes invalidate prior verification. Final publication readiness needs applicable
-authorization, current verification and configured nonempty local checks. Default
-draft progress pushes may precede completion; describe their unfinished scope
-honestly. Observe required remote checks
-after creating/updating the PR; pending or failed checks prevent declaring it
-ready. Published, verified and merged are distinct facts. Never claim delivery
-from an open PR or replace failed publication with a local merge. The coordinator
-automatically merges the verified PR/MR through the forge unless the user opts
-out, then confirms the remote merged state and revision. Follow
-[phase-ship](commands/phase-ship.md) for both standalone and phase delivery.
-The Python runtime publishes GitHub PRs only; the coordinator performs the merge
-and uses the forge's supported tools for MRs. Missing credentials, unavailable
-remotes, failed checks or required human reviews are concrete blockers: preserve
-the branch and report them without bypassing repository protections or claiming
-delivery. Do not ask again merely because delivery reached an internal step.
+Evidence names the tested revision and the actual commands and results. Material
+content changes invalidate prior verification: a verification report whose
+recorded revision is behind HEAD is stale, and re-verification is required rather
+than optional. Publication readiness needs applicable authorization, current
+verification and configured non-empty project checks. Observe required remote
+checks after creating or updating the PR; pending or failed checks prevent
+declaring it ready. Published, verified and merged are distinct facts. Never claim
+delivery from an open PR. Follow [ship](commands/ship.md); it publishes and does
+not merge. Missing credentials, unavailable remotes, failed checks and required
+human reviews are concrete blockers: preserve the branch and report them without
+bypassing repository protections or claiming delivery.
 
-## Worktrees, recovery and cleanup
+## Interruption and recovery
 
-Every tracked mutation uses an assigned immediate-child worktree under the primary
-checkout's ignored `.worktrees/`. Create siblings from the verified primary root;
-never nest one under a linked checkout. The primary allows inspection, fetch and
-verified fast-forward synchronization, not tracked edits or commits.
-Follow [worktree](commands/worktree.md).
+An agent that times out, exhausts its context or turn limit, or returns blocked
+does not end the authorized phase and does not require another user prompt.
+Inspect what it committed, what it left dirty and what it reported, then assign
+only the remaining work to a fresh bounded agent. Preserve incomplete work, reuse
+valid completed results, and keep independent ready plans moving.
 
-Require clean committed inputs at runtime boundaries. Serialize shared Git
-operations and protect runtime state with its common-directory lock. Worktrees
-isolate Git changes, not ports, databases or arbitrary external writes; declare
-exclusive resources and respect host permissions.
+A plan whose agent reported "complete" with no SUMMARY.md, or with no commits,
+did not complete. Treat it as blocked and say so rather than ticking it.
 
-A worker timeout, idle cutoff, context limit or turn limit requires automatic
-coordinator recovery; it does not end the authorized phase or require another
-user prompt. Confirm the old worker has stopped, inspect its worktree, commits,
-dirty files and result, then assign only the remaining work to a fresh bounded
-worker. Preserve incomplete and unmerged work, reuse valid completed results,
-and keep independent ready components moving. Follow
-[phase-resume](commands/phase-resume.md) for reconciliation before dispatch.
+The lowest-numbered phase whose plan files outnumber its summary files has
+unfinished execution. [progress](commands/progress.md) and [next](commands/next.md)
+check this before routing, and resume it ahead of new work — an advanced STATE.md
+position is exactly when work gets silently dropped.
+
 Resolve failures within authorized scope; stop dependent work only for a concrete
-blocker that requires unavailable access, an external change or a new user
-decision. Honor explicit user pauses and delivery limits.
-Status is read-only; the coordinator explicitly syncs the derived STATE view.
-Local checkpoints are operational data; durable summaries and reports ship with
-the phase. For integrated components missing review receipts, follow
-[phase-resume](commands/phase-resume.md) to review their recorded base/revision;
-do not mark historical work reviewed without a captured report.
-
-Remove only identified clean merged worktrees when cleanup is authorized. Verify
-absolute targets stay within the intended worktree root. Preserve dirty, unmerged,
-ignored or unrelated data. Uncertain cleanup is a report, not a forced deletion.
+blocker requiring unavailable access, an external change or a new user decision.
+Honor explicit user pauses and delivery limits. STATE.md's counters are derived
+from ROADMAP.md on every write, so they cannot be corrected by editing them —
+correct the roadmap.
 
 ## Hooks and validation
 
 Hooks are optional advisory notices: they warn and return success. They neither
 grant permission nor create a sandbox, and lexical path detection has limits.
 
-Run checks appropriate to changed behavior and required project commands. Runtime
-changes need real Git/process workflow tests; hook changes need their Bash suites.
-Report actual outcomes, failures and skips. Checks that repeat implementation
-wording do not establish behavior. [Config](../.planning/config.yaml) owns command values and
-worker routes; [runtime documentation](runtime/README.md) owns the CLI interface.
+Run checks appropriate to the changed behavior plus the project's required
+commands. Runtime changes need real Git and subprocess tests; hook changes need
+their Bash suites. Report actual outcomes, failures and skips. A check that
+restates the implementation's wording does not establish behavior.
+[Config](../.planning/config.yaml) owns command values and model overrides;
+[runtime documentation](runtime/README.md) owns the verb interface.
 
 ## Complete template use
 
@@ -246,10 +254,10 @@ and lifecycle instructions. Do not shorten them or substitute a compact variant
 without an assignment calling for it. Use the artifact block to write project
 records; instructional examples are not real project decisions.
 
-The [runtime behavior](references/template-adaptation.md) defines local runtime, host and
-authority differences; [third-party notices](THIRD-PARTY-NOTICES.md) identify
-upstream sources and adaptation history. Complete agent methods and their bundled local supporting documents
-supply guidance, not installed slash commands. Use actual local procedures and
-the runtime contract for execution.
-Project records belong to `.planning/`; reusable rules, templates and tooling
-belong to `.ai/`.
+[Runtime behavior](references/template-adaptation.md) defines local runtime, host
+and authority differences; [third-party notices](THIRD-PARTY-NOTICES.md) identify
+upstream sources and adaptation history. A named agent method is not proof that
+the host registered a slash command or agent type.
+
+Project records belong to `.planning/`; reusable rules, workflows, templates and
+tooling belong to `.ai/`.

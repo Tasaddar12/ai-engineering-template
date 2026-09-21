@@ -107,7 +107,7 @@ prove implementation correctness or make an untested benefit an observed fact.]
 
 1. Confirm the decision is significant enough to outlive the current assignment.
    Routine variable naming, a small refactor or ordinary progress belongs in the
-   component SUMMARY and Git history.
+   plan SUMMARY and Git history.
 2. Read the phase acceptance, relevant existing ADRs and current implementation.
    Establish which constraints are confirmed and which are assumptions.
 3. State one coherent decision. Split unrelated decisions with different reasons
@@ -128,10 +128,10 @@ prove implementation correctness or make an untested benefit an observed fact.]
 
 ### Concrete context
 
-**Good:** “Three independent report workers write to the same generated index.
-The integration fixture at revision `<revision>` reproduces a lost entry when
-both writers replace the file. We will serialize index writes while independent
-report generation remains parallel.”
+**Good:** “Three plans in the same wave write to the same generated index. The
+fixture at revision `<revision>` reproduces a lost entry when two of them
+replace the file. We will separate index-writing plans into consecutive waves
+while independent report generation stays parallel.”
 
 **Why it works:** It names the shared resource, observed failure and exact scope
 of the remedy. Another agent can evaluate whether the constraint still applies.
@@ -149,7 +149,8 @@ independent phase branches need simultaneous coordinators and shared allocation
 and integration can be isolated safely.”
 
 **Why it works:** The benefit, limitation and reconsideration trigger are explicit.
-It does not claim worktree isolation also isolates shared databases or ports.
+It does not claim that separating plans by declared files also isolates shared
+databases or ports.
 
 **Bad:** “The lock guarantees all operations are safe and has no disadvantages.”
 
@@ -191,7 +192,7 @@ original date.
 - Status and authority match actual decisions.
 - Links identify the owning phase and relevant behavior; missing future evidence
   is described as pending instead of fabricated.
-- The component SUMMARY tells downstream workers which decision affects their
+- The plan SUMMARY tells downstream agents which decision affects their
   interfaces, compatibility or operational checks.
 
 ## Lifecycle

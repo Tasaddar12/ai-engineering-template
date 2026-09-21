@@ -38,7 +38,7 @@ in the affected project phase.
 ## Complete template catalog
 
 The tables list retained authoring sources and their producing/consuming roles.
-The navigation catalog is separate from the 25 artifact templates. Select only
+The navigation catalog is separate from the 26 artifact templates. Select only
 the artifacts needed for the current project outcome.
 
 ### Project identity and continuity
@@ -75,6 +75,7 @@ their applicable structure; an unavailable upstream health command is not a chec
 | [summary.md](../templates/summary.md) | Full `NN-CC-SUMMARY.md` guidance and skeleton | Component worker → integrator, dependents and verifier |
 | [verification-report.md](../templates/verification-report.md) | `NN-VERIFICATION.md`: independent goal evidence and findings | Verifier → coordinator and publication gate |
 | [UAT.md](../templates/UAT.md) | `NN-UAT.md`: persistent acceptance session and gaps | Coordinator recording human observations → returning sessions and acceptance gate |
+| [milestone.md](../templates/milestone.md) | One `.planning/MILESTONES.md` entry: what a milestone shipped | `milestone.complete` and the closing coordinator → returning sessions, milestone summariser and onboarding readers |
 
 The Python adapter instructs component workers to use the full `summary.md`
 skeleton plus its local coverage/check fields. Compact and alternative summary

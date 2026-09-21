@@ -11,8 +11,8 @@ Template for spawning planner agent. The agent contains all planning expertise -
 
 **Phase:** {phase_number}
 **Mode:** {standard | gap_closure}
-**Checkout:** {absolute_worktree_path}
-**Branch:** {assigned_branch}
+**Repository:** {absolute_repo_path}
+**Branch:** {branch}
 **Input revision:** {commit_sha}
 **Owned outputs:** {exact_PLAN_and_VALIDATION_paths}
 
@@ -46,7 +46,7 @@ just to fill this field.
 </planning_context>
 
 <downstream_consumer>
-Output consumed by phase-start
+Output consumed by execute-phase
 Plans must be executable prompts with:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format
@@ -74,10 +74,10 @@ Before returning PLANNING COMPLETE:
 | `{phase_number}` | From roadmap/arguments | `5` or `2.1` |
 | `{phase_dir}` | Phase directory name | `05-user-profiles` |
 | `{phase}` | Phase prefix | `05` |
-| `{absolute_worktree_path}`, `{assigned_branch}`, `{commit_sha}` | Verified assigned Git checkout | Absolute root, branch and full input revision |
-| `{exact_PLAN_and_VALIDATION_paths}` | Coordinator-owned output assignment | Exact repository-relative paths; omit VALIDATION when unneeded |
-| Source/dependency fields | Inspected code and actual component prerequisites | Path, symbol and the question or contract it supplies |
-| `{standard \| gap_closure}` | Coordinator-assigned planning mode | `standard` |
+| `{absolute_repo_path}`, `{branch}`, `{commit_sha}` | Verified Git checkout | Absolute root, branch and full input revision |
+| `{exact_PLAN_and_VALIDATION_paths}` | Orchestrator-owned output assignment | Exact repository-relative paths; omit VALIDATION when unneeded |
+| Source/dependency fields | Inspected code and actual plan prerequisites | Path, symbol and the question or contract it supplies |
+| `{standard \| gap_closure}` | Orchestrator-assigned planning mode | `standard` |
 
 ---
 
@@ -85,7 +85,7 @@ Before returning PLANNING COMPLETE:
 
 The `Task(...)` examples are host pseudocode. Use the available host dispatcher with the installed `phase-preparer` role; they are not Python runtime commands.
 
-**From phase-prepare (standard mode):**
+**From plan-phase (standard mode):**
 ```python
 Task(
   prompt=filled_template,
@@ -94,7 +94,7 @@ Task(
 )
 ```
 
-**From phase-prepare with the recorded verification gaps (gap closure mode):**
+**From plan-phase with the recorded verification gaps (gap closure mode):**
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure
@@ -136,7 +136,7 @@ Continue: {standard | gap_closure}
 For revision assignments, replace the standard context block with the exact
 checkout/branch/revision, CONTEXT path, affected PLAN paths, prior checker report
 and finding IDs, and changed source/contract paths. Apply
-[correction rounds](../commands/phase-prepare.md#preparation-assignments-and-correction-rounds).
+[correction rounds](../commands/plan-phase.md).
 Do not paste PLAN bodies or the previous agent conversation. The preparer reads
 the canonical files and preserves every concrete requirement it edits.
 
@@ -156,6 +156,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

@@ -85,6 +85,19 @@ The content is adapted, not an exact source mirror.
 | [methods/verify-command-path-resolvability.md](references/methods/verify-command-path-resolvability.md) | `verify-command-path-resolvability.md` |
 | [methods/verify-mvp-mode.md](references/methods/verify-mvp-mode.md) | `verify-mvp-mode.md` |
 
+[templates/milestone.md](templates/milestone.md) derives from
+`gsd-core/templates/milestone.md` at revision
+`4713ffba761a069bbd79e4833b4bea4e14848388`. Its File Template, structure block,
+guidelines and example are the upstream text, reduced to the fields this
+project's runtime and complete-milestone workflow actually produce: the task
+count and language-specific line count are dropped, the Git range is respelled
+for local phase-scoped commit subjects, and the file header matches what
+`milestone.complete` writes. The upstream `templates/milestone-archive.md` is
+not copied — it describes per-milestone archive files under
+`.planning/milestones/`, and this project writes long-form
+`{version}-SUMMARY.md` files there from a skeleton the milestone-summary
+workflow owns instead.
+
 The PROJECT evolution guidance was reconciled against the source
 `gsd-core/workflows/transition.md` and `complete-milestone.md` at template revision
 `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`. Its relevant checklist remains in the

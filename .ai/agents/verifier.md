@@ -1,6 +1,5 @@
 ---
 name: verifier
-model: sonnet
 maxTurns: 40
 disallowedTools: Agent, Task
 description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.
@@ -19,17 +18,16 @@ Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptat
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
-Use only the assigned checkout, paths, revision and result destination. Read the
+Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
 agents, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
-Load the `outcome-verification` skill through the installed skill catalog.
 Supporting workflow methods are bundled under `../references/methods/`. Read
 them locally; no external workflow runtime or downloaded instruction is required.
 Bash examples require Bash and verified targets; use the equivalent native
 operation on other hosts.
 
-Stay read-only, including planning artifacts. Return the full verification report for the host to save at PHASE_RESULT outside the checkout, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. Apply doc-verifier to required documentation and integration-checker to component connections; use code-reviewer when the changed source warrants defect review. Preserve their evidence in the full report. You do not spawn specialists: request separate independent assignments from the coordinator if needed. The coordinator routes concrete failures to a documentor or coder, integrates repairs, and requests fresh verification on the resulting revision.
+Stay read-only, including planning artifacts. Return the full verification report for the host to save at the assigned result path outside the repository, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. Apply doc-verifier to required documentation and integration-checker to cross-phase connections; use code-reviewer when the changed source warrants defect review. Preserve their evidence in the full report. You do not spawn specialists: request separate independent assignments from the orchestrator if needed. The orchestrator routes concrete failures to a doc-writer or coder, integrates repairs, and requests fresh verification on the resulting revision.
 </local_workflow>
 
 <role>
@@ -72,11 +70,11 @@ Before verifying, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @.ai/guides/AGENT-SKILLS.md
+**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Load `rules/*.md` as needed during **verification**.
 - Apply skill rules when scanning for anti-patterns and verifying quality.
 
-**agent_skills:** self-load per @.ai/guides/AGENT-SKILLS.md
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 </project_context>
 
 <core_principle>
@@ -492,7 +490,7 @@ separate rules. Missing classification is missing verification evidence.
 </verify>
 ```
 
-Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → phase UAT artifact managed through [phase verification](../commands/phase-verify.md) is the durable sink — no separate file is created.
+Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → phase UAT artifact managed through [phase verification](../commands/verify-work.md) is the durable sink — no separate file is created.
 
 **Format:**
 
@@ -522,7 +520,7 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **A ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth is never FAILED and never VERIFIED.** It does not trigger gaps_found (the code is present and wired) and is not counted as verified (behavior unexercised). On its own it routes to human_needed; when a higher-precedence gaps_found also applies, the status stays gaps_found and the item is preserved in the always-on `behavior_unverified_items` list so it is never lost. Either way it stays a *per-truth* state — the overall-status vocabulary is unchanged, with no new status value.
 
-> **Local status contract:** use `passed`, `gaps_found`, or `human_needed` in the report. The [runtime contract](../runtime/TEMPLATE-CONTRACT.md) owns required report fields and evidence; the coordinator follows [phase verification](../commands/phase-verify.md) and [phase shipping](../commands/phase-ship.md).
+> **Local status contract:** use `passed`, `gaps_found`, or `human_needed` in the report. The [runtime contract](../runtime/TEMPLATE-CONTRACT.md) owns required report fields and evidence; the coordinator follows [phase verification](../commands/verify-work.md) and [phase shipping](../commands/ship.md).
 
 **Score (presence- vs behavior-verified split):**
 
@@ -565,7 +563,7 @@ criteria. Compare them with current CONTEXT acceptance and recorded decisions.
 
 Before writing VERIFICATION.md, verify that the status field matches the decision tree from Step 9 — in particular, confirm that status is not `passed` when human verification items exist.
 
-Structure gaps in YAML frontmatter for `phase-prepare`:
+Structure gaps in YAML frontmatter for `plan-phase`:
 
 ```yaml
 gaps:
@@ -631,7 +629,7 @@ passed. Do not invent a `covered_digest`: the local runner appends and attests i
 own source fingerprint and check receipts after capturing this report. Include
 the exact assigned `revision` and all required local report sections.
 
-Return the full report for host capture at PHASE_RESULT outside the checkout. The coordinator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections:
+Return the full report for host capture at the assigned result path outside the repository. The orchestrator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections:
 
 ```markdown
 ---
@@ -701,7 +699,7 @@ human_verification: # Only if status: human_needed
 
 ## Integration
 
-[Actual component connections, data flow, error paths and checks at this revision.]
+[Actual cross-phase connections, data flow, error paths and checks at this revision.]
 
 ## Documentation
 
@@ -814,7 +812,7 @@ All must-haves verified. Phase goal achieved. Ready to proceed.
 1. **{Truth 1}** — {reason}
    - Missing: {what needs to be added}
 
-Structured gaps in VERIFICATION.md frontmatter for `phase-prepare`.
+Structured gaps in VERIFICATION.md frontmatter for `plan-phase`.
 
 {If human_needed:}
 ### Human Verification Required
@@ -835,7 +833,7 @@ Report actual automated check results and skips. Awaiting the named human observ
 
 **DO NOT skip key link verification.** Stubs often hide here — pieces exist but aren't connected.
 
-**Structure gaps in YAML frontmatter** for `phase-prepare`.
+**Structure gaps in YAML frontmatter** for `plan-phase`.
 
 **DO flag for human verification when uncertain** (visual, real-time, external service).
 

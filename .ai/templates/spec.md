@@ -122,7 +122,7 @@ Status: ✓ = met minimum, ⚠ = below minimum (planner treats as assumption)
 
 *Phase: [XX-name]*
 *Spec created: [date]*
-*Next step: phase-discuss [X] — implementation decisions (how to build what's specified above)*
+*Next step: discuss-phase [X] — implementation decisions (how to build what's specified above)*
 ```
 
 <good_examples>
@@ -218,7 +218,7 @@ The database has a `posts` table and `follows` table. No feed query or feed UI e
 
 *Phase: 03-post-feed*
 *Spec created: 2025-01-20*
-*Next step: phase-discuss 3 — implementation decisions (card layout, loading skeleton, etc.)*
+*Next step: discuss-phase 3 — implementation decisions (card layout, loading skeleton, etc.)*
 ```
 
 **Example 2: CLI tool (Database backup)**
@@ -306,7 +306,7 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 
 *Phase: 02-backup-command*
 *Spec created: 2025-01-20*
-*Next step: phase-discuss 2 — implementation decisions (progress reporting, flag design, etc.)*
+*Next step: discuss-phase 2 — implementation decisions (progress reporting, flag design, etc.)*
 ```
 
 </good_examples>
@@ -348,6 +348,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

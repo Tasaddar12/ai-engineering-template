@@ -9,7 +9,7 @@ The XML below illustrates how to describe a decision or human observation. It is
 not a supported executable checkpoint task in the Python runner. Before dispatch,
 the coordinator resolves decisions and setup prerequisites in phase CONTEXT and
 commits an executable continuation. Required human acceptance follows
-[phase-uat](../../commands/phase-uat.md). A worker encountering a new blocker
+[verify-work](../../commands/verify-work.md). A worker encountering a new blocker
 records the completed work, exact blocker and next needed input in its SUMMARY
 and returns to the coordinator. Do not dispatch another worker yourself.
 

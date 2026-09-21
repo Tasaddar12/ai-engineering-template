@@ -1,4 +1,4 @@
 name = "phase-checker"
-description = "Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by phase-prepare orchestrator."
+description = "Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by plan-phase orchestrator."
 model = "gpt-5.6-luna"
-developer_instructions = "Read and follow the complete role at .ai/agents/phase-checker.md in the assigned checkout before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."
+developer_instructions = "Read and follow the complete role at .ai/agents/phase-checker.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."

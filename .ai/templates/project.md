@@ -145,9 +145,9 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 PROJECT.md evolves throughout the project lifecycle.
 The coordinator applies the checklist below after inspecting phase summaries,
 verification, actual human observations and delivery state. Follow the local
-[phase-status](../commands/phase-status.md) and [phase-ship](../commands/phase-ship.md)
-procedures; no separate transition or milestone command is installed. Workers
-return evidence and proposed updates instead of editing shared project records.
+[progress](../commands/progress.md) and [ship](../commands/ship.md)
+procedures. Agents return evidence and proposed updates instead of editing
+shared project records.
 Completing one phase does not authorize implementation of the next.
 
 **After each phase transition:**
@@ -222,6 +222,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

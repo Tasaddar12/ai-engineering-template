@@ -35,8 +35,8 @@ already supplied or let a mode flag choose on the user's behalf.
 Stop an operation that would overwrite unrelated data, violate ownership,
 continue from uncertain running processes or use incompatible execution state.
 Preserve the checkout, commits, evidence and checkpoint. Follow
-[phase-resume](../../commands/phase-resume.md) before retrying interrupted work;
-do not delete state or restart a worker blindly.
+[next](../../commands/next.md) before retrying interrupted work;
+do not delete state or re-dispatch an agent blindly.
 
 ## Gate placement
 
@@ -49,7 +49,7 @@ do not delete state or restart a worker blindly.
 | Phase verification | Revision | Behavior, wiring, documentation, tested revision | Route evidenced gaps to owned corrections |
 | UAT | Escalation | Actual human observations | Keep pending/failed cases visible |
 | Publication | Pre-flight | Current verification and required checks, user delivery limit | Keep draft/unmerged work; disclose any blocker |
-| Recovery | Stop and preserve | Process identity, worktree, commits, compatible state | Reconcile before choosing a continuation |
+| Recovery | Stop and preserve | Commits, dirty files, the agent's reported state | Reconcile before choosing a continuation |
 
 Use the [runtime contract](../../runtime/TEMPLATE-CONTRACT.md) for machine-checked
 fields and the [rules](../../RULES.md) for authority. Examples and review methods

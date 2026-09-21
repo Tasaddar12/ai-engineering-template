@@ -64,7 +64,7 @@ blocked: [N]
 
 ## Gaps
 
-<!-- YAML evidence for phase-prepare assignments with mode: gap_closure -->
+<!-- YAML evidence for plan-phase assignments with mode: gap_closure -->
 - truth: "[expected behavior from test]"
   status: failed
   reason: "User reported: [verbatim response]"
@@ -106,7 +106,7 @@ blocked: [N]
 **Gaps:**
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
-- This section feeds directly into phase-prepare with the recorded verification gaps
+- This section feeds directly into plan-phase with the recorded verification gaps
 
 </section_rules>
 
@@ -120,7 +120,7 @@ blocked: [N]
 4. UAT.md Gaps section updated with diagnosis:
    - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
 5. Retain `status: partial`; store diagnosis in Gaps, not in a new session status
-6. Return the diagnosed gaps to `phase-prepare` for repair planning
+6. Return the diagnosed gaps to `plan-phase` for repair planning
 
 **After diagnosis:**
 ```yaml
@@ -144,7 +144,7 @@ blocked: [N]
 
 <lifecycle>
 
-**Creation:** When phase-uat starts new session
+**Creation:** When verify-work starts new session
 - Derive one case per CONTEXT acceptance ID; use SUMMARY files as implementation evidence.
 - Set status to "testing"
 - Current Test points to test 1
@@ -171,7 +171,7 @@ blocked: [N]
 - Present summary with outstanding items highlighted
 
 **Resuming partial session:**
-- Run `python .ai/runtime/phase.py uat PHASE`; inspect the first nonpassing case and preserve prior observations.
+- Run `python .ai/runtime/phase.py query verification.status PHASE`; inspect the first nonpassing case and preserve prior observations.
 - Set `status: complete` only after every case records `pass`.
 
 **Resume after /clear:**
@@ -283,6 +283,6 @@ The active lifecycle uses `.ai/commands/` and `.ai/runtime/phase.py` with
 examples do not establish that a tool is available; inspect the actual project
 configuration and host capabilities before using them. Bundled supporting methods provide local guidance for explicit assignments;
 they do not install additional runtime features.
-Local rules, assigned worktrees, recorded authorization, runtime ownership and
-verification safeguards govern execution. The local runtime never merges.
+Local rules, recorded authorization, plan-declared ownership and verification
+safeguards govern execution. Publication never merges.
 <!-- LOCAL-ADOPTION:END -->

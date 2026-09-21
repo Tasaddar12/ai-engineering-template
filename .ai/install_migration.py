@@ -64,30 +64,6 @@ def render_existing(name, content, host, installer):
         return content
 
 
-def seed_agent_model(content, incoming, name, notes):
-    """Add a missing default to simple legacy frontmatter without reserializing it."""
-    header = re.match(rb"\A---\r?\n(.*?)^---(?:\r?\n|$)", content, re.M | re.S)
-    default = re.search(rb"^model:[^\r\n]+", incoming, re.M)
-    if header and default:
-        lines = [line for line in header[1].splitlines()
-                 if line.strip() and not line.lstrip().startswith(b"#")]
-        fields = [re.fullmatch(rb"([A-Za-z_][\w-]*):(?:[ \t].*)?", line)
-                  for line in lines]
-        if all(fields):
-            keys = [field[1] for field in fields]
-            if len(keys) == len(set(keys)):
-                if b"model" in keys:
-                    return content  # Even inherit or an empty value is the user's choice.
-                newline = b"\r\n" if content.startswith(b"---\r\n") else b"\n"
-                offset = header.end(1)
-                notes.append(f"Add missing Claude model default to {name}; preserve role instructions.")
-                return content[:offset] + default[0] + newline + content[offset:]
-    # No YAML parser is required for the standalone installer. Do not guess at
-    # flow mappings, quoted keys, merge keys, nested values or malformed metadata.
-    notes.append(f"Preserve unusual agent frontmatter in {name}; reconcile its model manually.")
-    return content
-
-
 def entry_remainder(content, installer, name):
     """Remove exactly one complete managed block, never guessed user content."""
     start, end = installer.AGENT_MARKER.encode(), installer.AGENT_END.encode()
@@ -150,7 +126,7 @@ def plan_migration(source, target, host, hooks, installer):
         raise ValueError(f"A second workflow exists under {other}; reconcile dual cores before migration.")
     backups = set(old_files + planning_files + skill_files)
     notes = ["Project history in .planning is preserved; only config runtime paths may change.",
-             "Git checkpoints and existing worktrees are not modified or copied.",
+             "Existing Git history and branches are not modified or copied.",
              "The old .ai-venv is preserved without traversal; the selected host uses a separate environment."]
     desired = dict(incoming)
     refreshed = []
@@ -169,12 +145,9 @@ def plan_migration(source, target, host, hooks, installer):
             if current != incoming[destination]:
                 refreshed.append(name)
         else:
+            # Markdown roles carry no model frontmatter; models reach Claude on the
+            # dispatch call and Codex through its own TOML, so nothing is seeded here.
             desired[destination] = render_existing(name, current, host, installer)
-            if (host == "claude" and name.startswith(".ai/agents/")
-                    and name.endswith(".md") and destination in incoming
-                    and re.search(rb"^model:", incoming[destination], re.M)):
-                desired[destination] = seed_agent_model(
-                    desired[destination], incoming[destination], name, notes)
     if refreshed:
         notes.append("Refresh shipped implementation; original versions remain in backup: "
                      + ", ".join(sorted(refreshed)))
@@ -186,11 +159,11 @@ def plan_migration(source, target, host, hooks, installer):
             original_default = source / name
             if original_default.is_file() and current.replace(b"\r\n", b"\n") == original_default.read_bytes().replace(b"\r\n", b"\n"):
                 desired[name] = incoming[name]
-                notes.append("Select host worker defaults from the unchanged template config.")
+                notes.append("Review the unchanged template config and set the project's real checks.")
             else:
                 # Byte replacement preserves comments, custom commands and formatting.
                 desired[name] = relocate_paths(current, host)
-                notes.append("Custom worker commands and checks are retained; review their host compatibility.")
+                notes.append("Custom configuration and checks are retained; review their host compatibility.")
     entry = "CLAUDE.md" if host == "claude" else "AGENTS.md"
     entry_paths = {name: target / name for name in ("AGENTS.md", "CLAUDE.md")}
     remainders = {}

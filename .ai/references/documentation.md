@@ -44,13 +44,13 @@ spun out to make an unfinished phase appear complete.
 
 ## Writer and independent verifier handoff
 
-During [phase-prepare](../commands/phase-prepare.md), assign required paths and the
+During [plan-phase](../commands/plan-phase.md), assign required paths and the
 code prerequisites that establish their claims. During
-[phase-start](../commands/phase-start.md), the [doc-writer](../agents/doc-writer.md) returns committed
+[execute-phase](../commands/execute-phase.md), the [doc-writer](../agents/doc-writer.md) returns committed
 changes, checked claims and coverage evidence. Its own validation does not replace
 independent review.
 
-During [phase-verify](../commands/phase-verify.md), the coordinator assigns the
+During [verify-work](../commands/verify-work.md), the coordinator assigns the
 [doc-verifier](../agents/doc-verifier.md) the integrated revision, changed documents,
 required coverage and source evidence. It returns claim-specific findings without
 editing the checkout. The independent [verifier](../agents/verifier.md) includes
