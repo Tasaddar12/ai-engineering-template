@@ -1,20 +1,24 @@
 <!-- workflow
 step: ship
 agent-roles: orchestrator, code-reviewer
-produces: pushed branch, pull request
+produces: pull request, merged base branch, closed session
 consumes: VERIFICATION.md, SUMMARY.md, ROADMAP.md, STATE.md
 -->
 
 <purpose>
-Publish verified work as a pull request. Confirms the phase actually passed
-verification, checks the tree and remote are in a fit state, composes a PR body
-from the phase's own records, and opens or updates the PR.
+Deliver a phase's session worktree. A phase is discussed, planned, executed and
+verified onto one session branch; this is the workflow that takes that branch to
+the base branch. It confirms the phase actually passed verification, opens the
+pull request, judges its checks, and -- once the user confirms -- merges, syncs
+the base branch and closes the session.
 
-Shipping publishes. It does not merge, and it does not decide that unverified
-work is good enough.
+Shipping is the only route a phase's work has to the base branch. It does not
+decide that unverified work is good enough, and it does not merge on a check
+verdict that is anything other than genuinely green.
 </purpose>
 
 <required_reading>
+@~/.ai/workflows/_session.snippet.md
 @~/.ai/references/universal-anti-patterns.md
 </required_reading>
 
@@ -44,6 +48,11 @@ Parse `$ARGUMENTS`: an optional phase number, plus:
 - `--draft` — open the PR as a draft
 - `--review` — run a code review over the full diff before opening the PR
 - `--no-push` — compose and show the PR body without pushing or opening anything
+- `--no-merge` — open or update the PR and stop; the session stays open
+
+`--no-merge` leaves the phase undelivered. Say so in the report, because a
+session left open is work on a branch nobody merged, and a later `/ship` of the
+same phase is what finishes it.
 
 ```bash
 _root="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
@@ -65,6 +74,38 @@ Extract: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_dir
 in English.
 
 Display: `► SHIP PHASE {phase_number}: {phase_name}`
+</step>
+
+<step name="resolve_session">
+The phase's work is on its session branch, not in the checkout you were invoked
+from. Find it before checking anything, because every check below has to run
+against the tree being shipped:
+
+```bash
+phase_run query session.status
+```
+
+Take the open session whose `kind` is `phase` and whose `label` is
+`${padded_phase}`. **Run every subsequent command in this workflow from its
+`worktree`**, and use its `branch` wherever a branch is named.
+
+If there is no such open session, the phase was never worked in one. Stop:
+
+```
+No open session for Phase {N}.
+
+Its work was either never started, or already delivered. Run `/progress` to see
+where the phase stands; `/discuss-phase {N}` opens a session for new work.
+```
+
+Do not fall back to the current branch. Shipping whatever happens to be checked
+out is how unrelated work reaches the base branch.
+
+Report it in one line before continuing:
+
+```
+Session: {branch} at {worktree}
+```
 </step>
 
 <step name="preflight_checks">
@@ -91,25 +132,37 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    Also compare the report's `revision` to the current HEAD. If the code moved
    since verification, the report is stale — say so and require re-verification.
 
-2. **Clean working tree.**
+2. **Clean session worktree.**
 
    ```bash
-   git status --short
+   git -C "${SESSION_WORKTREE}" status --short
    ```
 
-   If there are uncommitted changes, ask the user to commit or stash them first.
-   Shipping over a dirty tree publishes something nobody reviewed.
+   If there are uncommitted changes, ask the user to commit them first. Shipping
+   over a dirty tree publishes something nobody reviewed, and the uncommitted
+   part does not reach the pull request at all.
 
-3. **Not on a protected branch.**
-
-   If `git.is_protected` is true, the current branch is the base branch. Offer to
-   create a feature branch from here:
+3. **The session branch is checked out, and it is not the base branch.**
 
    ```bash
-   git switch -c "phase/${padded_phase}-${phase_slug}"
+   git -C "${SESSION_WORKTREE}" rev-parse --abbrev-ref HEAD
    ```
 
-4. **Remote configured.**
+   This must report the session branch. If it reports the base branch, you are
+   not in the session worktree — go back and resolve it. There is no offer to
+   create a branch here: `session.open` already did that, and a `/ship` that
+   branches for itself is shipping work from outside the session.
+
+4. **The session has something to deliver.**
+
+   ```bash
+   git -C "${SESSION_WORKTREE}" log --oneline "${SESSION_BASE}..${SESSION_BRANCH}"
+   ```
+
+   An empty range means the phase wrote nothing to its branch. Report that and
+   stop rather than opening an empty pull request.
+
+5. **Remote configured.**
 
    If `git.has_remote` is false:
 
@@ -119,7 +172,7 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
 
    Exit.
 
-5. **`gh` available and authenticated.**
+6. **`gh` available and authenticated.**
 
    ```bash
    gh auth status
@@ -127,7 +180,7 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
 
    If `gh` is missing or unauthenticated, report the setup steps and exit.
 
-6. **Configured checks pass.**
+7. **Configured checks pass.**
 
    ```bash
    phase_run query verification.run-checks
@@ -144,7 +197,7 @@ Agent(
   prompt="
 Review everything Phase {phase_number} is about to publish.
 
-**Diff:** {base_branch}...HEAD
+**Diff:** {SESSION_BASE}...{SESSION_BRANCH}, in {SESSION_WORKTREE}
 **Phase goal:** {goal}
 
 Review the changed source for correctness bugs, security issues and anything a
@@ -168,7 +221,7 @@ publish with a known critical finding and a note about it.
 **Skip when `--no-push` was passed.**
 
 ```bash
-git push -u origin "$(git branch --show-current)"
+git -C "${SESSION_WORKTREE}" push -u origin "${SESSION_BRANCH}"
 ```
 
 If the push is rejected because the remote moved, report it and stop. Do not
@@ -216,26 +269,71 @@ Show the composed body to the user before opening the PR.
 **Skip when `--no-push` was passed.**
 
 ```bash
-gh pr create \
-  --base "${git.base_branch}" \
+phase_run query pr.open "${SESSION_BRANCH}" \
   --title "Phase ${phase_number}: ${phase_name}" \
   --body-file "${body_path}" \
   ${draft:+--draft}
 ```
 
-If a PR already exists for this branch, update it instead:
+Use the verb, not `gh` directly: it records the pull request against the session,
+which is what `session.close` later reads to prove the work merged.
 
-```bash
-gh pr edit --title "..." --body-file "${body_path}"
-```
+`pr.open` is idempotent. On a re-run it edits the pull request already open for
+this branch rather than failing, so a second `/ship` of the same phase updates
+that pull request instead of creating a rival one. The result's `created` and
+`updated` fields say which happened — report it.
 
 Opening a PR can start CI. It does not mean the checks have finished, and it
-never means the PR is ready to merge. Report the URL and the check state as
-observed, not as assumed:
+never means the PR is ready to merge.
+</step>
+
+<step name="judge_checks">
+**Skip when `--no-push` was passed.**
 
 ```bash
-gh pr view --json url,state,statusCheckRollup
+phase_run query pr.checks "${SESSION_BRANCH}"
 ```
+
+The verdict decides; you do not. Report the state and the check names behind it
+exactly as observed:
+
+| `state` | What to do |
+|---|---|
+| `passing` | Continue to the merge gate |
+| `pending` | Report the unfinished checks and stop. Re-run `/ship {N}` when they settle — waiting is the whole point of the state |
+| `failing` | Report the failing check names and stop. Fix them on this same branch, in this same session worktree, and push again. The pull request stays open and keeps its history; do not open a second one |
+| `none` | The pull request has no checks. The `verification.run-checks` run in preflight is the project's own evidence — carry `--local-checks-passed` into the merge only because it passed there. If no checks are configured either, there is no evidence and `pr.merge` refuses; report that refusal as correct |
+</step>
+
+<step name="merge_and_close">
+**Skip when `--no-push` or `--no-merge` was passed.** On `--no-merge`, report the
+pull request URL and that the session stays open, then go to the report step.
+
+Merging moves the base branch. Unless `workflow.auto_advance` is true, confirm
+first, showing the pull request URL, the check verdict and the merge method.
+
+Use AskUserQuestion (header: "Merge"; options: "Merge now" — land Phase {N} and
+close its session / "Leave it open" — stop here and leave the PR for review). In
+text mode, ask the same question as a numbered list.
+
+On "Leave it open", report the URL and stop. The session stays open and a later
+`/ship {N}` resumes from here.
+
+On "Merge now":
+
+```bash
+phase_run query pr.merge "${SESSION_BRANCH}"
+phase_run query pr.sync
+phase_run query session.close "${SESSION_BRANCH}"
+```
+
+Add `--local-checks-passed` to `pr.merge` only in the `none` case above, and only
+because the project's own checks passed in preflight.
+
+`session.close` returns `preserved: true` with a reason when it cannot prove the
+work merged. Report that as it stands and leave the worktree in place. **Never
+pass `--force` to tidy it up:** a preserved session is unmerged work, and the
+reason it was kept is the reason not to delete it.
 </step>
 
 <step name="track_shipping">
@@ -249,26 +347,35 @@ phase_run query state.add-decision "Phase ${phase_number} published as ${pr_url}
 phase_run query commit "docs(state): record phase ${phase_number} publication" \
   --files .planning/STATE.md
 ```
+
+**Run this from the session worktree, before the merge gate**, so the record
+travels in the pull request it describes. Once the session is merged and closed
+its worktree is gone, and a commit made after that has nowhere to land.
 </step>
 
 <step name="report">
 ```
 Phase {phase_number} shipped.
 
-PR: {url} ({draft ? "draft" : "ready for review"})
+PR: {url} ({created ? "opened" : "updated"}{draft ? ", draft" : ""})
 Base: {base_branch}
+Session: {branch} — {closed | preserved: {reason} | open}
 Verification: passed (revision {revision})
-Checks: {observed state, or "none configured"}
+Checks: {observed state, and the check names behind it}
+Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 
 ---
 
 ## What's Next
 
-- Watch the PR's checks; opening it may have started them
+{If merged:}
+- `/next` — the base branch now carries this phase
 - `/progress` — where the project stands
-- `/next` — continue with the next phase while this one is in review
 
-Merging is not this workflow's job, and no command here moves the base branch.
+{If not merged:}
+- Watch the PR's checks; opening it may have started them
+- `/ship {phase_number}` again once they settle — it resumes this same PR
+- The session stays open at {worktree}; its work is not on the base branch yet
 
 ---
 ```
@@ -280,7 +387,16 @@ Merging is not this workflow's job, and no command here moves the base branch.
 - Don't ship work whose verification is not `passed` — there is no bypass
 - Don't ship against a stale verification report; code that moved needs re-verifying
 - Don't force-push a branch that already exists on the remote
-- Don't merge the PR or move the base branch
+- Don't ship from the invoking checkout — resolve the phase's session and work
+  from its worktree, or ship nothing
+- Don't create a branch here; `session.open` already did, and branching in
+  `/ship` means shipping work from outside the session
+- Don't merge past a `pending` or `failing` verdict, and don't merge on `none`
+  without the project's own passing checks
+- Don't open a second pull request because the first one's checks failed — fix
+  them on the same branch and push again
+- Don't merge without confirming, unless `workflow.auto_advance` says otherwise
+- Don't `--force` a preserved session away to make the report look clean
 - Don't report CI as passing because the PR opened; report what `gh` observed
 - Don't compose the PR body from the diff when the phase's own records say it better
 - Don't ship over an uncommitted working tree
@@ -288,11 +404,15 @@ Merging is not this workflow's job, and no command here moves the base branch.
 
 <success_criteria>
 - [ ] Verification confirmed `passed` and current for the revision being shipped
-- [ ] Working tree clean, branch not the protected base, remote and `gh` available
-- [ ] Configured checks run and passing
+- [ ] The phase's open session resolved, and every command run from its worktree
+- [ ] Session worktree clean, on the session branch, with commits to deliver
+- [ ] Remote and `gh` available; configured checks run and passing
 - [ ] Review run and critical findings resolved when `--review` was passed
-- [ ] Branch pushed and the PR opened or updated
+- [ ] Session branch pushed and the PR opened or updated through `pr.open`
 - [ ] PR body composed from the phase's summaries and verification report
-- [ ] Check state reported as observed, never assumed
-- [ ] Publication recorded in STATE.md and committed
+- [ ] Publication recorded in STATE.md and committed before the merge gate
+- [ ] Check verdict judged, reported as observed, and never merged past
+- [ ] Merge confirmed with the user unless `workflow.auto_advance` is set
+- [ ] Base branch synced and the session closed, or its preservation reported
+      with the reason, unforced
 </success_criteria>

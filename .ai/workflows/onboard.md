@@ -15,6 +15,7 @@ Everything it writes comes from the user, not from the template's placeholders.
 </purpose>
 
 <required_reading>
+@~/.ai/workflows/_session.snippet.md
 @~/.ai/references/questioning.md
 @~/.ai/references/universal-anti-patterns.md
 </required_reading>
@@ -75,6 +76,31 @@ point at `/new-milestone`.
 
 Display: `► ONBOARDING`
 </step>
+
+<step name="open_session">
+Open the worktree this work lives in, before writing anything. Read
+@~/.ai/workflows/_session.snippet.md for the full contract.
+
+```bash
+SESSION=$(phase_run query session.open onboard "project")
+```
+
+Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
+subsequent command in this workflow from `worktree`.** An open session for
+onboarding is reused rather than replaced, so the work accumulates onto one branch
+and arrives as one pull request.
+
+Report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, **stop and report its message**. It means isolation could not
+be established, and continuing in the invoking checkout is the one outcome this
+project does not allow — the dispatch guard would block the write anyway.
+</step>
+
 
 <step name="detect_existing_code">
 Determine whether this is a greenfield project or an existing codebase:
@@ -266,6 +292,25 @@ phase_run query commit "docs: initialize project planning" \
 ```
 </step>
 
+<step name="deliver_session">
+This workflow owns the whole unit of work, so it delivers the session rather
+than leaving it open. Follow the delivery sequence in
+@~/.ai/workflows/_session.snippet.md exactly and in order: the empty-session
+check, `git push -u`, `pr.open`, `pr.checks`, the merge confirmation, then
+`pr.merge`, `pr.sync` and `session.close`.
+
+Every command runs from `SESSION.worktree`.
+
+**Title:** `Onboard: initialise project planning`
+
+**Body:** summarise what onboarding established — the project's scope from PROJECT.md, the number of requirements captured, and the phases the roadmap now holds. A reader should be able to tell what was decided without opening the files.
+
+
+Report the snippet's delivery line before the output below. A `failing` check
+verdict, a declined merge or a preserved session are all reported as they stand
+and none of them is worked around — a preserved session is unmerged work.
+</step>
+
 <step name="completion">
 ```
 ► PROJECT INITIALIZED
@@ -307,6 +352,10 @@ Records:
 - Don't create plans here — phases only
 - Don't hand-write ROADMAP.md phase entries; `phase.add` owns numbering and structure
 - Don't skip the out-of-scope list; without it nothing downstream can refuse scope creep
+- Don't finish with the session still open — an undelivered session is
+  work on a branch nobody merged
+- Don't merge past a `failing` or `pending` check verdict, and don't
+  `--force` a preserved session away
 </anti_patterns>
 
 <success_criteria>
@@ -318,4 +367,7 @@ Records:
 - [ ] Phases created through the runtime, every REQ id claimed by some phase
 - [ ] STATE.md initialized and pointed at the first phase
 - [ ] Everything committed, and the user knows the next step
+- [ ] Session delivered: pull request opened, its check verdict judged,
+      the merge confirmed, and the session closed or its preservation
+      reported
 </success_criteria>

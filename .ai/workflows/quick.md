@@ -16,6 +16,7 @@ Use when the change touches something you cannot afford to get wrong.
 </purpose>
 
 <required_reading>
+@~/.ai/workflows/_session.snippet.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -103,6 +104,8 @@ Display the banner:
 ```
 </step>
 
+
+
 <step name="check_open_tasks">
 If the init `open` array is non-empty, show those tasks and ask whether this is
 new work or a continuation:
@@ -114,6 +117,34 @@ Open quick tasks:
 
 Use AskUserQuestion (header: "Quick task"; options: "Start a new one" /
 "Resume {id}"). On resume, skip `create_task` and load the existing directory.
+</step>
+
+<step name="open_session">
+Open the worktree this work lives in, before writing anything. Read
+@~/.ai/workflows/_session.snippet.md for the full contract.
+
+```bash
+SESSION=$(phase_run query session.open quick "${QUICK_LABEL}")
+```
+
+`QUICK_LABEL` is the id being resumed, or a slug of `DESCRIPTION` for new
+work — the runtime allocates the real quick id inside the session, so the
+label has to be stable before that happens.
+
+Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
+subsequent command in this workflow from `worktree`.** An open session for
+this quick task is reused rather than replaced, so the work accumulates onto one branch
+and arrives as one pull request.
+
+Report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, **stop and report its message**. It means isolation could not
+be established, and continuing in the invoking checkout is the one outcome this
+project does not allow — the dispatch guard would block the write anyway.
 </step>
 
 <step name="create_task">
@@ -218,6 +249,24 @@ Mark the task in progress, then dispatch the coder:
 phase_run query quick.update "${QUICK_ID}" --status in_progress
 ```
 
+The coder is a write-capable agent, so it gets its own checkout forked from the
+session branch — the session worktree is where *you* work, not where the
+executor does. Resolve the model and record the base first:
+
+```bash
+ISOLATION=$(phase_run query dispatch-isolation --raw --plan "${QUICK_ID}")
+EXPECTED_BASE=$(git rev-parse HEAD)
+```
+
+Under `orchestrator-worktree`, create the checkout and pass its path as a root
+pin; under `harness-worktree`, pass `isolation="worktree"` and record the branch
+the agent reports:
+
+```bash
+phase_run query worktree.create "${QUICK_ID}" --phase "quick-${QUICK_ID}" \
+  --base "${EXPECTED_BASE}" --files ${plan_files} --deletions ${plan_deletions}
+```
+
 ```
 Agent(
   prompt="
@@ -249,6 +298,7 @@ and the verification you actually ran
 ",
   subagent_type="coder",
   ${models['coder'] === 'inherit' ? '' : `model="${models['coder']}",`}
+  isolation="worktree",
   description="Execute quick task ${QUICK_ID}"
 )
 ```
@@ -258,6 +308,18 @@ and the verification you actually ran
 After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`. A returned
 "complete" with no summary file, or with no commits, is not a completion —
 report it as blocked.
+
+Integrate the executor's branch into the session branch before checking
+anything, for the same reason a wave is integrated before its checks run — the
+work is not in your tree until it is merged:
+
+```bash
+phase_run query worktree.merge-wave --phase "quick-${QUICK_ID}"
+phase_run query worktree.cleanup-wave --phase "quick-${QUICK_ID}"
+```
+
+Read the result. `blocked` non-empty means an undeclared deletion or a conflict;
+escalate it rather than re-running the merge to get past it.
 </step>
 
 <step name="run_checks">
@@ -313,6 +375,27 @@ phase_run query commit "chore(quick): ${DESCRIPTION}" --files "${QUICK_DIR}" .pl
 ```
 </step>
 
+<step name="deliver_session">
+This workflow owns the whole unit of work, so it delivers the session rather
+than leaving it open. Follow the delivery sequence in
+@~/.ai/workflows/_session.snippet.md exactly and in order: the empty-session
+check, `git push -u`, `pr.open`, `pr.checks`, the merge confirmation, then
+`pr.merge`, `pr.sync` and `session.close`.
+
+Every command runs from `SESSION.worktree`.
+
+**Title:** `Quick: ${DESCRIPTION}`
+
+**Body:** compose it from the task's own records — the `QUICK.md` entry and the coder's `${QUICK_ID}-SUMMARY.md` — not from the diff. State what the task fixed, the files it touched, and how the change was confirmed. When `--validate` ran, include the verification status.
+
+If the coder halted and the task was reported blocked, do **not** deliver: the session stays open with the work in it, and the report says so. Delivery is for completed work.
+
+
+Report the snippet's delivery line before the output below. A `failing` check
+verdict, a declined merge or a preserved session are all reported as they stand
+and none of them is worked around — a preserved session is unmerged work.
+</step>
+
 <step name="completion">
 ```
 Quick task complete: {QUICK_ID}
@@ -344,6 +427,10 @@ Record: {QUICK_DIR}/QUICK.md
 - Don't accept a coder's "complete" without a SUMMARY.md and real commits
 - Don't hand-write the QUICK.md record — `quick.create` and `quick.update` own it
 - Don't add quick tasks to ROADMAP.md; they deliberately live outside it
+- Don't finish with the session still open — an undelivered session is
+  work on a branch nobody merged
+- Don't merge past a `failing` or `pending` check verdict, and don't
+  `--force` a preserved session away
 </anti_patterns>
 
 <success_criteria>
@@ -355,4 +442,7 @@ Record: {QUICK_DIR}/QUICK.md
 - [ ] Verification run when `--validate` was passed
 - [ ] QUICK.md marked complete with files and verification recorded
 - [ ] STATE.md updated and the change committed
+- [ ] Session delivered: pull request opened, its check verdict judged,
+      the merge confirmed, and the session closed or its preservation
+      reported
 </success_criteria>

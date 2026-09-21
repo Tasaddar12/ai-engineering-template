@@ -12,6 +12,7 @@ derailing the current phase.
 </purpose>
 
 <required_reading>
+@~/.ai/workflows/_session.snippet.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -40,6 +41,31 @@ subagent prompts stay in English.
 Note the existing areas in the `todos` array — reuse one in `infer_area` rather
 than coining a near-duplicate.
 </step>
+
+<step name="open_session">
+Open the worktree this work lives in, before writing anything. Read
+@~/.ai/workflows/_session.snippet.md for the full contract.
+
+```bash
+SESSION=$(phase_run query session.open milestone "todos")
+```
+
+Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
+subsequent command in this workflow from `worktree`.** An open session for
+captured ideas is reused rather than replaced, so the work accumulates onto one branch
+and arrives as one pull request.
+
+Report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, **stop and report its message**. It means isolation could not
+be established, and continuing in the invoking checkout is the one outcome this
+project does not allow — the dispatch guard would block the write anyway.
+</step>
+
 
 <step name="extract_content">
 **With arguments:** use them as the title/focus.
@@ -181,6 +207,27 @@ phase_run query commit "docs: capture todo - ${title}" --files "${todo_file}" .p
 The runtime respects `commit_docs` and skips gitignored paths automatically.
 </step>
 
+<step name="deliver_session">
+This workflow owns the whole unit of work, so it delivers the session rather
+than leaving it open. Follow the delivery sequence in
+@~/.ai/workflows/_session.snippet.md exactly and in order: the empty-session
+check, `git push -u`, `pr.open`, `pr.checks`, the merge confirmation, then
+`pr.merge`, `pr.sync` and `session.close`.
+
+Every command runs from `SESSION.worktree`.
+
+**Title:** `Capture todo: ${title}`
+
+**Body:** the todo's own problem and solution sections, plus its area and the severity the user confirmed. Keep it short; the todo file is the record, and the pull request only carries it to the base branch.
+
+A `todos` session is shared, so a resumed one may already carry other captures. Name every todo in the range, not only this one — `pr.open` is editing a pull request that describes all of them.
+
+
+Report the snippet's delivery line before the output below. A `failing` check
+verdict, a declined merge or a preserved session are all reported as they stand
+and none of them is worked around — a preserved session is unmerged work.
+</step>
+
 <step name="confirm">
 ```
 Todo saved: {file}
@@ -207,6 +254,10 @@ Would you like to:
 - Don't auto-assign severity without confirming it
 - Don't hand-edit the STATE.md Pending Todos section — use `state.sync-todos`
 - Don't act on the todo now; capture it and return to the current work
+- Don't finish with the session still open — an undelivered session is
+  work on a branch nobody merged
+- Don't merge past a `failing` or `pending` check verdict, and don't
+  `--force` a preserved session away
 </anti_patterns>
 
 <success_criteria>
@@ -217,4 +268,7 @@ Would you like to:
 - [ ] Area consistent with existing todos
 - [ ] STATE.md Pending Todos refreshed from disk
 - [ ] Todo and state committed
+- [ ] Session delivered: pull request opened, its check verdict judged,
+      the merge confirmed, and the session closed or its preservation
+      reported
 </success_criteria>
