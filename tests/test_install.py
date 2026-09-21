@@ -131,9 +131,11 @@ class InstallerTests(unittest.TestCase):
         self.assertIn(".agents/skills/", (self.target / "AGENTS.md").read_text())
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
         self.assertIn("/main/.ai/install.py", guide)
-        (self.target / ".worktrees").mkdir()
-        (self.target / ".worktrees/local.txt").write_text("local")
-        self.assertIn(".worktrees/local.txt", command("git", "check-ignore", ".worktrees/local.txt", cwd=self.target))
+        # Local-only workflow scratch stays out of the project's history.
+        for ignored in (".codex-venv/probe.txt", ".workflow-backups/probe.txt"):
+            (self.target / ignored).parent.mkdir(parents=True, exist_ok=True)
+            (self.target / ignored).write_text("local")
+            self.assertIn(ignored, command("git", "check-ignore", ignored, cwd=self.target))
 
     def test_existing_repository_preserves_files_history_remote_and_reruns(self):
         self.target.mkdir()
@@ -197,7 +199,9 @@ class InstallerTests(unittest.TestCase):
                 self.assertIn("<objective>", full)
                 self.assertNotIn("Read and follow the complete skill at", full)
                 self.assertFalse((self.target / namespace / "roles").exists())
-                self.assertFalse((self.target / namespace / "workflows").exists())
+                for workflow in ("execute-phase.md", "plan-phase.md", "onboard.md"):
+                    self.assertTrue((self.target / namespace / "workflows" / workflow).is_file(),
+                                    workflow)
                 if host == "codex":
                     self.assertFalse((self.target / ".codex/skills").exists())
                     self.assertFalse((self.target / ".codex/hooks.json").exists())
@@ -223,7 +227,7 @@ class InstallerTests(unittest.TestCase):
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    self.assertEqual("sonnet", metadata["model"], name)
+                    self.assertNotIn("model", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
                         (self.source / ".ai/agents" / role.name).read_bytes(), host),
@@ -254,10 +258,9 @@ class InstallerTests(unittest.TestCase):
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host).returncode)
                 role = self.target / ("." + host) / "agents" / ("coder." + suffix)
-                role.write_text(role.read_text(encoding="utf-8").replace(
-                    'model = "gpt-5.6-terra"' if host == "codex" else 'model: sonnet',
-                    'model = "chosen-model"' if host == "codex" else 'model: opus'),
-                    encoding="utf-8")
+                # A comment is valid in both formats, so the edit stays representative.
+                role.write_text(role.read_text(encoding="utf-8") + "\n# local customization\n",
+                                encoding="utf-8")
                 before = self.snapshot()
                 result = self.install("--host", host)
                 self.assertNotEqual(0, result.returncode)
@@ -325,8 +328,11 @@ class InstallerTests(unittest.TestCase):
                     self.assertEqual(settings["permissions"], merged["permissions"])
                 else:
                     self.assertTrue((self.target / name).read_bytes().startswith(original_settings))
-                self.assertIn(settings["hooks"]["PreToolUse"][0], merged["hooks"]["PreToolUse"])
-                self.assertEqual(2, len(merged["hooks"]["PreToolUse"]))
+                # The user's own event keeps its single group; the managed hook is
+                # registered alongside it under the event the installer owns.
+                self.assertEqual(settings["hooks"]["PreToolUse"], merged["hooks"]["PreToolUse"])
+                self.assertEqual(installer.hook_settings(host)["hooks"]["PostToolUse"],
+                                 merged["hooks"]["PostToolUse"])
                 self.assertTrue((self.target / entry).read_bytes().startswith(prose))
                 (self.target / ".planning/config.yaml").write_text("existing: project worker routes\n")
                 before = self.snapshot()
@@ -418,55 +424,43 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 self.assertEqual(before, self.snapshot())
 
-    def test_registered_hooks_execute_from_installed_linked_worktree_subdirectory(self):
+    def test_registered_hooks_execute_from_installed_subdirectory(self):
+        """The one managed hook resolves the project root from a nested directory."""
         for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
-            self.target = self.base / (host + " projet caf\u00e9 \u65e5\u672c\u8a9e")
+            self.target = self.base / (host + " projet café 日本語")
             result = self.install("--host", host)
             self.assertEqual(0, result.returncode, result.stderr)
-            command("git", "add", ".", cwd=self.target)
-            command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
-                    "commit", "--quiet", "-m", "Installed host", cwd=self.target)
-            worktree = self.target / ".worktrees/assigned space"
-            command("git", "worktree", "add", "-b", "codex/installed", str(worktree), cwd=self.target)
-            cwd = worktree / "sub directory"
+            cwd = self.target / "sub directory"
             cwd.mkdir()
             environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
-            settings = read_settings(worktree / name)
-            for event, destination in (("PreToolUse", self.target / "outside.txt"),
-                                       ("PreToolUse", worktree / "inside.txt"),
-                                       ("PostToolUse", worktree / ("." + host) / "RULES.md")):
-                with self.subTest(host=host, event=event, destination=destination):
-                    handler = settings["hooks"][event][0]["hooks"][0]
-                    if host == "codex" and os.name == "nt":
-                        argv = ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
-                    elif host == "codex":
-                        argv = ["sh", "-c", handler["command"]]
-                    else:
-                        bash = shutil.which("bash")
-                        if os.name == "nt":
-                            git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
-                            if git_bash.is_file():
-                                bash = str(git_bash)
-                        self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
-                        argv = [bash, "-c", handler["command"]]
-                    tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
-                                  if host == "codex" else {"file_path": str(destination)})
-                    payload = {"cwd": str(cwd), "hook_event_name": event,
-                               "tool_name": "apply_patch" if host == "codex" else "Write",
-                               "tool_input": tool_input}
-                    observed = subprocess.run(argv, cwd=cwd, env=environment,
-                                              input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-                                              capture_output=True)
-                    self.assertEqual(0, observed.returncode, observed.stderr)
-                    if destination == worktree / "inside.txt":
-                        self.assertEqual(b"", observed.stdout.strip())
-                    else:
-                        self.assertNotIn(b"permissionDecision", observed.stdout)
-                        if event == "PostToolUse":
-                            self.assertIn(b"NOTICE", observed.stdout)
-                            self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
-                        else:
-                            self.assertTrue(json.loads(observed.stdout)["systemMessage"])
+            settings = read_settings(self.target / name)
+            destination = self.target / ("." + host) / "RULES.md"
+            with self.subTest(host=host, destination=destination):
+                handler = settings["hooks"]["PostToolUse"][0]["hooks"][0]
+                if host == "codex" and os.name == "nt":
+                    argv = ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
+                elif host == "codex":
+                    argv = ["sh", "-c", handler["command"]]
+                else:
+                    bash = shutil.which("bash")
+                    if os.name == "nt":
+                        git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
+                        if git_bash.is_file():
+                            bash = str(git_bash)
+                    self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
+                    argv = [bash, "-c", handler["command"]]
+                tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
+                              if host == "codex" else {"file_path": str(destination)})
+                payload = {"cwd": str(cwd), "hook_event_name": "PostToolUse",
+                           "tool_name": "apply_patch" if host == "codex" else "Write",
+                           "tool_input": tool_input}
+                observed = subprocess.run(argv, cwd=cwd, env=environment,
+                                          input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                          capture_output=True)
+                self.assertEqual(0, observed.returncode, observed.stderr)
+                self.assertNotIn(b"permissionDecision", observed.stdout)
+                self.assertIn(b"NOTICE", observed.stdout)
+                self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
 
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")

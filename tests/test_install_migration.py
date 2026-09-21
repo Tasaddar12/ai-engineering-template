@@ -103,11 +103,11 @@ class MigrationTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(content)
 
-    def test_claude_migration_seeds_missing_models_and_preserves_custom_roles(self):
-        import yaml
+    def test_claude_migration_preserves_custom_roles(self):
+        """Agent bodies and frontmatter survive relocation untouched."""
         legacy = b"---\r\nname: coder\r\ndescription: My coding rules\r\n---\r\nKeep this custom body.\r\n"
-        custom = b"---\nname: verifier\ndescription: Custom verifier\nmodel: opus\n---\nKeep my checks.\n"
-        unusual = b'---\n{"name": "debugger", "model": "haiku"}\n---\nKeep my YAML.\n'
+        custom = b"---\nname: verifier\ndescription: Custom verifier\n---\nKeep my checks.\n"
+        unusual = b'---\n{"name": "debugger"}\n---\nKeep my YAML.\n'
         unrelated = b"---\nname: custom\ndescription: Custom role\n---\nKeep unchanged.\n"
         for role, content in (("coder", legacy), ("verifier", custom),
                               ("debugger", unusual), ("custom", unrelated)):
@@ -118,11 +118,11 @@ class MigrationTests(unittest.TestCase):
         self.assertIn(self.target / ".ai/agents/coder.md", backups)
         self.apply(changes)
         coder = (self.target / ".claude/agents/coder.md").read_bytes()
-        self.assertEqual("sonnet", yaml.safe_load(coder.decode().split("---", 2)[1])["model"])
-        self.assertEqual(legacy.replace(b"\r\n", b"\n"), coder.replace(b"model: sonnet\n", b""))
+        self.assertEqual(legacy.replace(b"\r\n", b"\n"), coder)
+        # Markdown roles carry no model frontmatter; nothing is seeded into them.
+        self.assertNotIn(b"model:", coder)
         for role, content in (("verifier", custom), ("debugger", unusual), ("custom", unrelated)):
             self.assertEqual(content, (self.target / ".claude/agents" / (role + ".md")).read_bytes())
-        self.assertTrue(any("debugger.md" in note and "manually" in note for note in notes))
         self.assertFalse(list((self.target / ".claude/agents").glob("*.toml")))
 
     def test_both_hosts_preserve_real_data_refresh_runtime_and_remove_old_tree(self):
@@ -181,7 +181,7 @@ class MigrationTests(unittest.TestCase):
         settings = (self.target / ".claude/settings.json").read_text()
         self.assertIn('"chosen"', settings)
         self.assertIn('"Stop"', settings)
-        self.assertIn('"PreToolUse"', settings)
+        self.assertIn('"PostToolUse"', settings)
 
     def test_unmarked_entry_preserves_customer_guidance(self):
         custom = b"Custom .ai instructions without a managed block\r\n"
@@ -214,7 +214,7 @@ class MigrationTests(unittest.TestCase):
         self.apply(changes)
         import json
         result = tomllib.loads((self.target / ".codex/config.toml").read_text())
-        for event in ("PreToolUse", "PostToolUse"):
+        for event in ("PostToolUse",):
             self.assertEqual(1, len(result["hooks"][event]))
             self.assertNotIn("/.ai/hooks/", str(result["hooks"][event]))
 

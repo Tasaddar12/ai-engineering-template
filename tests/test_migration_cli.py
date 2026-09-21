@@ -91,8 +91,11 @@ class MigrationCliTests(unittest.TestCase):
                 for directory in ("agents", "commands"):
                     expected = namespace + "/" + directory + "/private/example"
                     self.assertIn(expected, support.command("git", "check-ignore", expected, cwd=self.target))
-                status = support.command(sys.executable, namespace + "/runtime/phase.py", "status", cwd=self.target)
-                self.assertIn("No phases yet", status)
+                listed = json.loads(support.command(
+                    sys.executable, namespace + "/runtime/phase.py", "query", "phases.list",
+                    cwd=self.target))
+                self.assertTrue(listed["ok"])
+                self.assertEqual([], listed["phases"])
 
     def test_native_collision_leaves_all_originals_and_no_backup(self):
         self.seed_project()
