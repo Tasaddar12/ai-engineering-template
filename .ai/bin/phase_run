@@ -1,0 +1,45 @@
+#!/usr/bin/env sh
+# phase_run — standalone launcher so workflow bash blocks can invoke the phase
+# runtime from a fresh shell. Each fenced bash block runs in its own process, so
+# a phase_run() function defined in an earlier block is undefined in later ones.
+# This executable is shipped beside the runtime and exposed on PATH by the
+# workflow launcher preamble, so every block resolves it.
+#
+# It resolves its own real location (following symlinks), then delegates to
+# runtime/phase.py using the host venv interpreter when one is installed.
+set -e
+
+src="$0"
+while [ -h "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in
+    /*) ;;
+    [A-Za-z]:[\\/]*) ;;
+    *) src="$dir/$src" ;;
+  esac
+done
+dir="$(cd -P "$(dirname "$src")" && pwd)"
+
+namespace_dir="$(cd -P "$dir/.." && pwd)"
+runtime="$namespace_dir/runtime/phase.py"
+if [ ! -f "$runtime" ]; then
+  echo "ERROR: phase runtime not found at $runtime." >&2
+  exit 1
+fi
+
+# The installer creates <root>/<namespace>-venv (.ai-venv, .claude-venv,
+# .codex-venv) and installs PyYAML there. A bare python3 usually lacks it.
+venv="$(dirname "$namespace_dir")/$(basename "$namespace_dir")-venv"
+for candidate in "$venv/bin/python" "$venv/Scripts/python.exe"; do
+  if [ -x "$candidate" ]; then
+    exec "$candidate" "$runtime" "$@"
+  fi
+done
+
+python="$(command -v python3 || command -v python || true)"
+if [ -z "$python" ]; then
+  echo "ERROR: python3 is required to run the phase runtime." >&2
+  exit 1
+fi
+exec "$python" "$runtime" "$@"
