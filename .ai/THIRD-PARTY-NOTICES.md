@@ -21,6 +21,40 @@ limits. Installation carries the local documents into either host namespace.
 [mattnowdev/thinking-partner model catalog](https://github.com/mattnowdev/thinking-partner).
 This is attribution, not an additional runtime dependency.
 
+## Worktree isolation provenance
+
+The worktree isolation references derive from
+[open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) at revision
+`b956bb7`, which is **later** than the `4713ffba` revision the agents and
+methods above are pinned to. The worktree work in that project moved
+substantially after `4713ffba` — the persisted isolation resolution, orphan
+reaping and the Windows path-pin hardening all postdate it — so these files
+record their own, newer revision rather than claiming the older pin.
+
+| Bundled local reference | Upstream relative path |
+|---|---|
+| [references/worktree-branch-check.md](references/worktree-branch-check.md) | `gsd-core/references/worktree-branch-check.md` |
+| [references/worktree-path-safety.md](references/worktree-path-safety.md) | `gsd-core/references/worktree-path-safety.md` |
+| [references/worktree-recovery-policy.md](references/worktree-recovery-policy.md) | `gsd-core/workflows/execute-phase/steps/worktree-recovery-policy.md` |
+
+The two guard blocks are adapted closely, because they are portable shell with
+no upstream tooling dependency: the branch namespaces are respelled for the
+branches this runtime and Claude Code actually create, the issue references are
+dropped, and the sentinel file is renamed. The recovery policy is upstream
+policy prose with its merge-evidence rule extended to name this project's
+`worktree.cleanup-wave` behavior.
+
+`.ai/runtime/lib/worktrees.py` is **not** a copy. Upstream implements this as
+TypeScript (`src/worktree-safety.cts` and neighbours) behind a Node tool shim;
+this project's runtime is Python behind `phase.py`. The module reimplements the
+subset this project needs — isolation resolution, fork-base checking, worktree
+creation, wave merge with a deletion guard, conservative cleanup, orphan reaping
+and health — and keeps upstream's contracts: isolation is a negotiated
+capability that fails closed, the orchestrator owns the worktree lifecycle, a
+deletion authorization is never inferred from a general scope declaration, and
+metadata pruning never removes a checkout that still exists. The
+`workflow.use_worktrees` setting keeps upstream's name and its `true` default.
+
 ## Bundled method provenance
 
 All entries below originate at revision `4713ffba761a069bbd79e4833b4bea4e14848388`

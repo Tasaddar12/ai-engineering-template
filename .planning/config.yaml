@@ -21,6 +21,23 @@ workflow:
   # Let a workflow continue into the next step without being asked again.
   auto_advance: false
   discuss_mode: discuss
+  # Give each parallel executor its own checkout on its own branch. Set false to
+  # run every plan sequentially in the main working tree.
+  use_worktrees: true
+  # Which isolation model to use. `auto` reads it from the installed host:
+  # Claude Code binds its own worktree, every other host has the runtime create
+  # one. Override with harness-worktree, orchestrator-worktree or none.
+  isolation: auto
+
+worktree:
+  # Where runtime-created checkouts live, relative to the primary checkout.
+  # It must be gitignored, or isolation degrades to sequential execution.
+  root: .worktrees
+  # What a new checkout forks from. `fork-point` is the merge base with the base
+  # branch and matches how a harness forks; it degrades to sequential execution
+  # while HEAD carries commits the base branch does not. Set `head` where the
+  # host forks from HEAD instead.
+  base_ref: fork-point
 
 # Per-agent model overrides. Omitted agents use the model in their own
 # definition under .ai/agents/, falling back to the host's choice.

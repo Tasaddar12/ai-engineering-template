@@ -15,7 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import bundles, gitops, milestones, models, phases, quick, state, todos, verification  # noqa: E402
+from lib import (bundles, gitops, milestones, models, phases, quick, state,  # noqa: E402
+                 todos, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -25,7 +26,7 @@ from lib.state import planning_lock  # noqa: E402
 from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
-LIST_OPTIONS = {"files", "requirements", "plans"}
+LIST_OPTIONS = {"files", "requirements", "plans", "deletions"}
 
 
 def parse(argv):
@@ -130,6 +131,74 @@ def verb_base_branch(workspace, positionals, options):
         "base_branch": base, "current_branch": current,
         "is_protected": current in {base, "main", "master"},
         "has_remote": gitops.has_remote(workspace)}
+
+
+# --- worktree isolation ---------------------------------------------------
+
+def verb_dispatch_isolation(workspace, positionals, options):
+    """Resolve — and record — how this dispatch is isolated.
+
+    `--raw` prints the bare mode so a workflow can branch on it directly.
+    """
+    payload = worktrees.resolve_isolation(
+        workspace,
+        force=options.get("force_isolation") if options.get("force_isolation") is not True else None,
+        phase=options.get("phase"), plan=options.get("plan"))
+    return payload["isolation"] if options.get("raw") else payload
+
+
+def verb_worktree_base_check(workspace, positionals, options):
+    mode = options.get("mode")
+    result = worktrees.base_check(workspace,
+                                 mode if isinstance(mode, str) else "harness-worktree")
+    pick = options.get("pick")
+    if isinstance(pick, str):
+        return result.get(pick)
+    return result
+
+
+def verb_worktree_create(workspace, positionals, options):
+    plan = argument(positionals, 0, "plan")
+    return worktrees.create(workspace, plan, phase=options.get("phase"),
+                            base=options.get("base") if isinstance(options.get("base"), str) else None,
+                            branch=options.get("branch") if isinstance(options.get("branch"), str) else None,
+                            files=options.get("files"), deletions=options.get("deletions"))
+
+
+def verb_worktree_record_agent(workspace, positionals, options):
+    plan = argument(positionals, 0, "plan")
+    branch = options.get("branch")
+    require(isinstance(branch, str) and branch.strip(),
+            "--branch is required: the harness reports the branch it created",
+            "missing-branch")
+    return worktrees.record_agent(
+        workspace, plan, branch, phase=options.get("phase"),
+        base=options.get("base") if isinstance(options.get("base"), str) else None,
+        files=options.get("files"), deletions=options.get("deletions"),
+        path=options.get("path") if isinstance(options.get("path"), str) else None)
+
+
+def verb_worktree_merge_wave(workspace, positionals, options):
+    return worktrees.merge_wave(
+        workspace, options.get("phase"),
+        plan=options.get("plan") if isinstance(options.get("plan"), str) else None)
+
+
+def verb_worktree_cleanup_wave(workspace, positionals, options):
+    return worktrees.cleanup_wave(workspace, options.get("phase"),
+                                  force=bool(options.get("force")))
+
+
+def verb_worktree_list(workspace, positionals, options):
+    return worktrees.listing(workspace)
+
+
+def verb_worktree_reap_orphans(workspace, positionals, options):
+    return worktrees.reap_orphans(workspace)
+
+
+def verb_worktree_health(workspace, positionals, options):
+    return worktrees.health(workspace)
 
 
 # --- phases ---------------------------------------------------------------
@@ -418,6 +487,16 @@ VERBS = {
     "config-set": verb_config_set,
     "commit": verb_commit,
     "git.base-branch": verb_base_branch,
+
+    "dispatch-isolation": verb_dispatch_isolation,
+    "worktree.base-check": verb_worktree_base_check,
+    "worktree.create": verb_worktree_create,
+    "worktree.record-agent": verb_worktree_record_agent,
+    "worktree.merge-wave": verb_worktree_merge_wave,
+    "worktree.cleanup-wave": verb_worktree_cleanup_wave,
+    "worktree.list": verb_worktree_list,
+    "worktree.reap-orphans": verb_worktree_reap_orphans,
+    "worktree.health": verb_worktree_health,
 
     "phase.add": verb_phase_add,
     "phase.insert": verb_phase_insert,

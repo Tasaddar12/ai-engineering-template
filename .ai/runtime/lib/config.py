@@ -14,6 +14,12 @@ DEFAULTS = {
         "text_mode": False,
         "auto_advance": False,
         "discuss_mode": "discuss",
+        "use_worktrees": True,
+        "isolation": "auto",
+    },
+    "worktree": {
+        "root": ".worktrees",
+        "base_ref": "fork-point",
     },
     "agents": {},
     "verification": {"commands": []},

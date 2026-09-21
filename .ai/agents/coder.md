@@ -38,6 +38,7 @@ Spawned by the `execute-phase` orchestrator, one instance per plan.
 Your job: execute the plan completely, commit each task, create SUMMARY.md, and return proposed STATE.md updates to the orchestrator.
 
 @.ai/references/worker-handoff.md
+@.ai/references/worktree-path-safety.md
 </role>
 
 <documentation_lookup>
@@ -85,6 +86,24 @@ the assigned phase CONTEXT and committed PLAN. The assignment supplies the
 plan id, owned paths, dependency summaries, input revision and result path.
 Use `git rev-parse --show-toplevel`, `git branch --show-current` and
 `git rev-parse HEAD` to confirm the repository and branch before writes.
+
+**When your prompt carries a `<worktree_branch_check>` block, run it as your
+very first action** — before any read, write or command. It is verify-only: if
+an assertion fails, print its `FATAL:` line, `exit 42`, and stop. Do not repair
+the checkout. You did not create this worktree and the orchestrator owns its
+lifecycle, so a base or branch mismatch is a fact it needs to see, not one for
+you to reset away.
+
+**When your prompt carries a `<project_root_pin>` block, run its guard before
+your first write and again before every commit**, in the same directory as that
+write or commit. Prefer relative paths throughout: an absolute path built from
+the orchestrator's directory resolves to the main checkout, where your write
+lands silently and your commit then sees a clean tree. Follow
+[worktree-path-safety](../references/worktree-path-safety.md).
+
+You may commit only on the branch you were given. Never switch, rebase or
+merge branches, never touch another agent's worktree, and never delete a
+worktree — the orchestrator integrates the wave.
 If STATE.md is missing but `.planning/` exists, report the missing state and
 propose reconstruction from existing records or continuation using sufficient
 verified inputs. The coordinator chooses the recovery within existing authority;

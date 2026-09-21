@@ -136,6 +136,39 @@ model argument entirely.
 | `runtime-identity` | Identifies the runtime to the launcher's verification step |
 | `help` | Every verb and bundle |
 
+### Worktree isolation
+
+| Verb | Effect |
+|---|---|
+| `dispatch-isolation` | Resolve how this dispatch is isolated, and record it |
+| `worktree.base-check` | Whether HEAD diverged from the base a worktree would fork from |
+| `worktree.create <plan>` | Create a runtime-owned checkout on its own branch |
+| `worktree.record-agent <plan> --branch` | Record a checkout the host created |
+| `worktree.merge-wave` | Merge the wave's branches, with the deletion guard |
+| `worktree.cleanup-wave` | Remove proven-merged checkouts; preserve the rest |
+| `worktree.list` | Every linked worktree, with its branch and state |
+| `worktree.reap-orphans` | Prune stale metadata without deleting a live checkout |
+| `worktree.health` | Findings about the worktree setup |
+
+`dispatch-isolation` returns one of `harness-worktree`, `orchestrator-worktree`
+or `none`, and **persists what it resolved as a side effect of resolving it**.
+That is deliberate: it is the only call that tells a workflow what its isolation
+is, so the recorded value can never drift from the one the workflow acted on.
+Resolution fails closed to `none` — an unknown setting, a git without worktree
+support, an un-ignored worktree root, or a HEAD that has diverged from the fork
+base all degrade to sequential execution rather than reporting isolation that is
+not there.
+
+`--force-isolation <mode>` pushes a value the resolver cannot see for itself,
+such as the `--sequential` flag or a base-check degrade the workflow decided,
+through the same single write path.
+
+Integration is explicit and conservative. `merge-wave` blocks a branch that
+deletes a path its plan did not declare in `--deletions`, aborts a conflicting
+merge with the worktree preserved, and refuses a protected target branch or a
+dirty tree. `cleanup-wave` removes a checkout only when git agrees its branch is
+an ancestor of HEAD, and reports everything it kept with the reason.
+
 ## Layout
 
 ```
@@ -154,6 +187,7 @@ runtime/
     quick.py        quick tasks outside the roadmap
     verification.py verification reports and configured project checks
     models.py       agent, model and skill resolution for dispatch
+    worktrees.py    isolation resolution, wave integration and cleanup
     bundles.py      the init.* context bundles
 ```
 
@@ -189,6 +223,11 @@ workflow:
   text_mode: false         # plain-text prompts instead of AskUserQuestion
   auto_advance: false
   discuss_mode: discuss
+  use_worktrees: true      # false runs every plan sequentially in the main tree
+  isolation: auto          # or harness-worktree / orchestrator-worktree / none
+worktree:
+  root: .worktrees         # must be gitignored, or isolation degrades to none
+  base_ref: fork-point     # or head, where the host forks worktrees from HEAD
 agents:
   coder:
     model: sonnet          # overrides the agent file's own model

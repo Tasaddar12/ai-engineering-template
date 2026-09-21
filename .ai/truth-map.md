@@ -23,6 +23,8 @@
 | Ordinary change history | Git and phase artifacts | No duplicate journal required |
 | Project usage/operations guidance | The project's established documentation paths | Link to the relevant guide |
 | Shared rules | [RULES](RULES.md) | Link rather than restating |
+| Whether a dispatch is isolated | `dispatch-isolation`, recorded by the runtime | Workflows branch on the result, never on the host name |
+| What an isolated wave produced | The wave manifest and `worktree.merge-wave` | Summaries do not establish that a branch merged |
 | Role scope, inputs and outputs | [agents](agents/README.md) | Assign a responsibility |
 | Workflow entry points | [commands](commands/README.md) | Mirrored one-for-one by `.agents/skills/` |
 | Workflow procedure | `workflows/*.md` | The command names it; the workflow owns it |

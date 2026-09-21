@@ -172,6 +172,54 @@ Give agents their assignment, the applicable constraints, the files their plan
 names in `read_first`, and the dependency summaries they need — not every
 transcript. Follow [worker handoff](references/worker-handoff.md).
 
+## Worktrees, integration and cleanup
+
+Parallel executors get isolated checkouts. Without them, concurrent agents edit
+one working tree and interleave their commits into one history, and a plan can
+no longer be attributed or reverted. Declaring non-overlapping paths is a
+planning discipline, not an enforcement mechanism.
+
+Isolation is a negotiated capability, never a host's name. Resolve it once per
+dispatch through `phase_run query dispatch-isolation`, which records what it
+resolved, and branch only on the result:
+
+- `harness-worktree` — the host creates and binds the checkout; pass its
+  isolation argument on dispatch and run no git for setup.
+- `orchestrator-worktree` — the runtime creates the checkout through
+  `worktree.create`; every git operation is the runtime's.
+- `none` — plans run inline, sequentially.
+
+**Fail closed.** A resolver that fails, a git without worktree support, an
+un-ignored worktree root, or a HEAD that has diverged from the fork base all
+degrade to `none`. Degrading is correct; reporting isolation that is not there
+is not. Say which happened.
+
+The orchestrator owns the worktree lifecycle. An executor verifies its branch
+and base at spawn through
+[worktree-branch-check](references/worktree-branch-check.md) and halts with
+`exit 42` on a mismatch; it never repairs a checkout it did not create. Follow
+[worktree-path-safety](references/worktree-path-safety.md) for root pinning and
+path guards, and
+[worktree-recovery-policy](references/worktree-recovery-policy.md) when a run
+does not go cleanly.
+
+Integrate every isolated wave through `worktree.merge-wave` before running
+checks or review — both judge the merged tree, not one the work has not landed
+in. A merge into a protected branch is refused. A branch that deletes a path its
+plan did not declare in `files_deleted` is blocked, because a deletion
+authorization is never inferred from a general scope declaration. Conflicts
+abort with the worktree preserved.
+
+Cleanup requires merge evidence from the repository, not a manifest's claim:
+`worktree.cleanup-wave` removes a checkout only when git agrees its branch is an
+ancestor of HEAD, preserves everything else with a reason, and reports it.
+Preserve unmerged, dirty and blocked worktrees. `--force` discards work and is
+the user's decision, never the orchestrator's.
+
+Worktree isolation does not isolate databases, ports, accounts or caches, and
+ignored data is not automatically disposable. Declare shared resources before
+running plans in parallel. Read-only reporting never needs a checkout.
+
 ## Review, documentation and completion
 
 Before dispatching implementation, obtain an independent phase-checker assessment

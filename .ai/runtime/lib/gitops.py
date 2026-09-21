@@ -7,9 +7,16 @@ from .results import VerbError, require
 TIMEOUT = 120
 
 
-def git(workspace, *args, check=True):
+def git(workspace, *args, check=True, cwd=None):
+    """Run one git command.
+
+    `cwd` runs it in another checkout of the same repository — a linked
+    worktree. It defaults to the workspace root, so every existing caller is
+    unaffected; worktree isolation is the only reason to override it.
+    """
+    target = str(cwd) if cwd else str(workspace.root)
     try:
-        result = subprocess.run(["git", *args], cwd=str(workspace.root),
+        result = subprocess.run(["git", *args], cwd=target,
                                 capture_output=True, text=True, timeout=TIMEOUT)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise VerbError("git " + " ".join(args) + " failed: " + str(exc), "git-failed")
@@ -17,6 +24,36 @@ def git(workspace, *args, check=True):
         raise VerbError("git " + " ".join(args) + " failed: "
                         + (result.stderr or result.stdout).strip(), "git-failed")
     return result
+
+
+def output(workspace, *args, cwd=None):
+    """Stripped stdout of a git command, or "" when it fails."""
+    return git(workspace, *args, check=False, cwd=cwd).stdout.strip()
+
+
+def head_revision(workspace, cwd=None):
+    return output(workspace, "rev-parse", "HEAD", cwd=cwd)
+
+
+def rev_parse(workspace, ref, cwd=None):
+    """Resolved revision for a ref, or "" when it does not resolve."""
+    return output(workspace, "rev-parse", "--verify", "--quiet", ref, cwd=cwd)
+
+
+def merge_base(workspace, left, right, cwd=None):
+    return output(workspace, "merge-base", left, right, cwd=cwd)
+
+
+def porcelain(workspace, cwd=None):
+    """Working-tree status lines, as `git status --porcelain` emits them."""
+    return [line for line in git(workspace, "status", "--porcelain",
+                                 check=False, cwd=cwd).stdout.splitlines() if line.strip()]
+
+
+def supports_worktrees(workspace):
+    """Whether this git understands `git worktree list`."""
+    return git(workspace, "worktree", "list", "--porcelain",
+               check=False).returncode == 0
 
 
 def is_repository(workspace):
