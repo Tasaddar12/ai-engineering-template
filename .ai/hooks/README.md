@@ -29,7 +29,27 @@ orchestrator from a stray executor must not stop the user's work.
 Codex registrations use `.codex/config.toml`; Claude uses `.claude/settings.json`.
 The Codex Windows launcher ends in `; exit $LASTEXITCODE` because PowerShell
 `-Command` does not otherwise propagate the script's exit status, which would
-discard a denial the hook had already decided.
+discard a denial the hook had already decided. Three other details of that one
+line are each load-bearing, and each was a hook that silently did not run:
+
+- **Git Bash is probed, not computed.** `git.exe` sits at `<root>/cmd/git.exe`
+  in an installer-managed install but at `<root>/mingw64/bin/git.exe` in a
+  portable, scoop or winget one. Resolving `../bin/bash.exe` from the second
+  layout names a file that does not exist, so every Codex hook failed to launch
+  on those machines. The launcher now tries the known layouts and takes the
+  first bash that is really there. PATH is deliberately not a fallback: on
+  Windows it commonly finds WSL's `bash.exe`, which cannot see the Windows
+  checkout the hook is about to inspect. Finding none exits 1 -- an error worth
+  seeing, not a silent no-op and not a denial the hook never made.
+- **The repository path never crosses into PowerShell.** Capturing
+  `git rev-parse` there and passing the result to bash mangles every non-ASCII
+  component; a checkout under `projet café 日本語` reached bash as box-drawing
+  characters. bash gets an ASCII-only `-c` string and resolves the root itself,
+  exactly as the POSIX `command` does.
+- **The inner quotes are written `\"`.** PowerShell re-parses a native command's
+  arguments and consumes a bare `"` rather than passing it, which re-split the
+  script at its spaces and left bash treating `rev-parse` as its own name.
+
 Scripts live in the selected host's `hooks` folder. There is no Python hook
 adapter. The command locates the script from the active Git root, including when
 the host starts from a subdirectory.
@@ -40,7 +60,7 @@ before running them. Installed files alone do not prove live host execution.
 See [Codex hooks](https://learn.chatgpt.com/docs/hooks).
 
 Bash and Git must be available. On Windows, the Codex launcher locates Git Bash
-beside the Git executable instead of using WSL's `bash.exe`; Claude uses Git Bash.
+near the Git executable instead of using WSL's `bash.exe`; Claude uses Git Bash.
 JSON extraction uses jq when available, then Python, with a limited text
 fallback. The script supports file fields and Codex `apply_patch`
 Add/Update/Delete/Move headers.

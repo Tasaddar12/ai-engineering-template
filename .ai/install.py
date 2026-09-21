@@ -237,14 +237,50 @@ def hook_settings(host):
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": 10}
         if host == "codex":
+            # Git for Windows does not put git.exe in one fixed place. An
+            # installer-managed install has it at <root>\cmd\git.exe, so
+            # ../bin/bash.exe resolves; a portable, scoop or winget layout has
+            # it at <root>\mingw64\bin\git.exe, where the same relative path
+            # points at mingw64\bin\bash.exe, which does not exist. Assuming
+            # the first layout meant every Codex hook failed to launch on the
+            # second -- including the dispatch guard, so an unisolated executor
+            # went through while PowerShell printed CommandNotFoundException.
+            #
+            # Probe the known layouts and take the first bash that is really
+            # there. PATH is deliberately not a fallback: on Windows it
+            # commonly resolves to WSL's bash, which cannot see the Windows
+            # checkout the hook is about to inspect. Finding none is a
+            # misconfiguration worth surfacing, so it exits 1 (an error) rather
+            # than 0 (silently no hook) or 2 (a denial the hook never made).
+            #
             # `; exit $LASTEXITCODE` is load-bearing. PowerShell -Command does not
             # propagate a native command's exit status, so a hook that exits 2 to
             # deny a tool call arrived at the host as 1 -- the decision was made
             # and then thrown away. It went unnoticed while every managed hook
             # exited 0; worktree-guard.sh is the first that denies.
             handler["commandWindows"] = (
-                "& (Join-Path (Split-Path (Get-Command git).Source) '../bin/bash.exe') "
-                f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}'); "
+                "$d=Split-Path (Get-Command git).Source; "
+                "$b=@('..\\bin\\bash.exe','..\\..\\bin\\bash.exe',"
+                "'..\\usr\\bin\\bash.exe','..\\..\\usr\\bin\\bash.exe') "
+                "| ForEach-Object { Join-Path $d $_ } "
+                "| Where-Object { Test-Path $_ } | Select-Object -First 1; "
+                "if (-not $b) { Write-Error 'Git Bash not found near git.exe'; exit 1 }; "
+                # The repository path never crosses the PowerShell/bash
+                # boundary. Capturing `git rev-parse` in PowerShell and passing
+                # the result as a native argument mangles every non-ASCII path
+                # component -- a checkout under "projet cafe 日本語" reached bash
+                # as box-drawing characters and the hook died with "No such
+                # file or directory", which reads like a missing hook rather
+                # than an encoding fault. Handing bash an ASCII-only -c string
+                # and letting it resolve the root itself removes the boundary,
+                # and matches what the POSIX `command` above already does.
+                # The inner quotes are written \" rather than ": PowerShell
+                # re-parses a native command's arguments, and a bare double
+                # quote inside them is consumed rather than passed, which
+                # re-split this script at its spaces and left bash reading
+                # "rev-parse" as its own name.
+                "& $b -c 'exec bash \\\"$(git rev-parse --show-toplevel)"
+                f"/.{host}/hooks/{script}\\\"'; "
                 "exit $LASTEXITCODE")
         group = {"hooks": [handler]} if matcher is None else {"matcher": matcher,
                                                                "hooks": [handler]}
