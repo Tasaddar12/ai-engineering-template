@@ -24,6 +24,9 @@ edits planning records in the primary checkout and a hook that cannot tell an
 orchestrator from a stray executor must not stop the user's work.
 
 Codex registrations use `.codex/config.toml`; Claude uses `.claude/settings.json`.
+The Codex Windows launcher ends in `; exit $LASTEXITCODE` because PowerShell
+`-Command` does not otherwise propagate the script's exit status, which would
+discard a denial the hook had already decided.
 Scripts live in the selected host's `hooks` folder. There is no Python hook
 adapter. The command locates the script from the active Git root, including when
 the host starts from a subdirectory.

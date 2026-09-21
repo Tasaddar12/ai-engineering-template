@@ -229,9 +229,15 @@ def hook_settings(host):
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": 10}
         if host == "codex":
+            # `; exit $LASTEXITCODE` is load-bearing. PowerShell -Command does not
+            # propagate a native command's exit status, so a hook that exits 2 to
+            # deny a tool call arrived at the host as 1 -- the decision was made
+            # and then thrown away. It went unnoticed while every managed hook
+            # exited 0; worktree-guard.sh is the first that denies.
             handler["commandWindows"] = (
                 "& (Join-Path (Split-Path (Get-Command git).Source) '../bin/bash.exe') "
-                f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}')")
+                f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}'); "
+                "exit $LASTEXITCODE")
         events.setdefault(event, []).append({"matcher": matcher, "hooks": [handler]})
     return {"hooks": events}
 
