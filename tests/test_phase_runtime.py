@@ -899,7 +899,7 @@ class StateDigestBudget(RuntimeCase):
             self.run_verb("state.add-blocker", "Blocker " + str(index))
             self.run_verb("state.clear-blocker", "Blocker " + str(index))
         lines = len(self.read(".planning/STATE.md").splitlines())
-        self.assertLessEqual(lines, 125, "STATE.md grew past its digest budget")
+        self.assertLessEqual(lines, 150, "STATE.md grew past its digest budget")
 
 
 class PlanningValidation(RuntimeCase):

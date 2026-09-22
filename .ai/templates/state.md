@@ -187,43 +187,33 @@ Enables instant resumption:
 
 <size_constraint>
 
-**Budget: 125 lines.** The empty skeleton above is already around 55, so a single
-global number was never enough guidance on its own. The budget is enforced per
-section, by the runtime, on every write:
+Keep STATE.md under 150 lines.
 
-| Section | Cap | Trims itself | Because |
-|---------|-----|--------------|---------|
-| Decisions | 5 entries | yes | `state.add-decision` writes it to PROJECT.md Key Decisions at the same time, so the durable copy already exists |
-| Roadmap Evolution | 5 entries | yes | the roadmap itself and git hold the history |
-| Blockers/Concerns | 10 entries | no | an open blocker must not vanish because a newer one arrived; clear it with `state.clear-blocker` |
-| Deferred Items | 10 rows | no | the deferral is the record; clear it when it is taken up or dropped |
-| Pending Todos | - | replaced wholesale from `.planning/todos/` by `state.sync-todos` | the files on disk are the record |
-
-Only a section with a durable copy elsewhere trims itself. The rest are capped
-and reported: `planning.validate` warns when one is over, and a human clears the
-entries that are resolved. Nothing is filed away — a cleared entry is gone from
-the digest, and git holds what the file used to say.
+It's a DIGEST, not an archive. If accumulated context grows too large:
+- Keep only 3-5 recent decisions in summary (full log in PROJECT.md)
+- Keep only active blockers, remove resolved ones
 
 The goal is "read once, know where we are" — if it's too long, that fails.
-`planning.validate` reports a warning when the file exceeds the budget, so the
-overrun is visible at `/progress` instead of being discovered a week later.
+
+The runtime does both: `state.add-decision` writes the full entry to PROJECT.md
+and keeps the 5 most recent here, and `planning.validate` warns when the file or
+a section runs over.
 
 </size_constraint>
 
 <retirement>
 
 **Never strike through an entry, and never annotate one as "Closed", "Done" or
-"Superseded" in place.** An item that no longer applies is removed from STATE.md
-and recorded where that kind of fact is owned:
+"Superseded" in place.** An item that no longer applies is removed. Where the
+fact still matters, the record that owns it already has it:
 
-| Item | How it retires | Where it lands |
-|------|----------------|----------------|
-| Decision | Already in PROJECT.md when added; rotates out of the digest | PROJECT.md Key Decisions |
-| Decision reversed | Record the replacement; supersede the ADR | New ADR with `supersedes` set |
-| Blocker | `state.clear-blocker "<match>"` | Archive log |
-| Requirement satisfied | `requirements.set-status <id> Complete` | REQUIREMENTS.md Traceability |
-| Todo | `todo.complete` | `.planning/todos/completed/` |
-| Item deferred at milestone close | `state.add-deferred` | Deferred Items table |
+| Item | How it retires |
+|------|----------------|
+| Decision | already in PROJECT.md when added; leaves the digest at 5 |
+| Blocker resolved | `state.clear-blocker "<match>"` |
+| Requirement met | `requirements.set-status <id> Complete` |
+| Todo done | `todo.complete` |
+| Scope deferred at milestone close | `state.add-deferred` |
 
 Strikethrough is what agents reach for when no retirement path exists. Each row
 above is that path. `planning.validate` flags `~~strikethrough~~` and in-place

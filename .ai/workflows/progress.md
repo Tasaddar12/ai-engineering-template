@@ -67,17 +67,12 @@ ls -t .planning/phases/*/*-SUMMARY.md 2>/dev/null | head -3
 </step>
 
 <step name="record_health">
-Report the shape of the records alongside the state of the work. This is the
-cheapest moment to see drift: someone is already reading the project's status.
-
 ```bash
 phase_run query planning.validate
 ```
 
-Warn-only by design — it returns `ok` with a warning list, and `/progress` never
-blocks on it. Include the section below only when `warning_count` is above zero,
-and present the findings as they are. Do not fix them here; `/progress` reports,
-it does not edit.
+Include the Record Health section below only when `warning_count` is above zero.
+Report the findings as they are; do not fix them here.
 </step>
 
 <step name="report">
@@ -121,10 +116,7 @@ CONTEXT: {✓ when the current phase has_context, otherwise -}
 {next_phase.number}: {next_phase.name} — {next_phase.goal}
 ````
 
-A stale codebase map or a requirement still `Pending` under a complete phase
-shows up here, which is the point: these are the findings nobody went looking
-for. Name the verb that fixes each one when you present it, and let the user
-decide whether it is worth doing now.
+Name the verb that resolves each warning when you present it.
 </step>
 
 <step name="route">

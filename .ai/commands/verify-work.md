@@ -23,6 +23,7 @@ Establish what is actually true after a phase executed.
 4. Check integration and documentation where they apply
 5. Close gaps and re-verify, or record them with the user's agreement
 6. Close the phase's requirements in REQUIREMENTS.md when the status is a pass
+6. Close the phase's requirements in REQUIREMENTS.md when the status is a pass
 
 **Output:** `{phase}-VERIFICATION.md` with status, revision and findings.
 
@@ -57,6 +58,8 @@ improvise from the summary.
 - Unconfirmable criteria abstained rather than passed
 - Gaps closed and re-verified, or recorded as todos with the user's agreement
 - Roadmap and STATE.md updated only on a pass or an explicit acceptance
+- Requirements closed in the Traceability table on a pass, never on recorded gaps
+- Record drift reported, warn-only, without blocking the verification
 - Requirements closed in the Traceability table on a pass, never on recorded gaps
 - Record drift reported, warn-only, without blocking the verification
 </success_criteria>

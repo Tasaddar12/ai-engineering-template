@@ -214,25 +214,17 @@ Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
 
 > **ORCHESTRATOR RULE**: wait for the subagent before continuing.
 
-Present the findings and let the user decide.
+Present the findings and let the user decide. Validate a technology choice before
+recommending it: run the smallest spike that could fail, and use what it printed
+as the rationale.
 
-**A project-level technology choice is validated before it is proposed.** The
-whole project rests on it, and research reports what a technology claims rather
-than what it does here. Run the smallest spike that could fail first: install the
-dependency and call the one API the project depends on, run the target runtime
-version, or make the integration return one real response. Enough to find out
-that it does not work before the roadmap is built on the assumption that it does.
-
-Then record the decision with what the spike actually printed:
+Record each decision:
 
 ```bash
 phase_run query state.add-decision "{the choice}" \
-  --rationale "{what was run and what it printed; what was ruled out and why}" \
+  --rationale "{evidence, and what was ruled out}" \
   --outcome "Accepted"
 ```
-
-That writes PROJECT.md's Key Decisions table and the STATE digest in one call, so
-PROJECT.md is the durable log without a second hand edit.
 </step>
 
 <step name="define_requirements">

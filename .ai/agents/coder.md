@@ -266,14 +266,11 @@ Use `gate="blocking-human"` for package-legitimacy checkpoints so they are unamb
 
 **Action:** STOP → return checkpoint with: what found, proposed change, why needed, impact, alternatives. **User decision required.**
 
-Do not decide it in passing. Surface the choice in the checkpoint, or record it
-as a blocker, and let planning decide it:
+Do not decide it in passing. Surface it in the checkpoint, or record a blocker:
 
 ```bash
 phase_run query state.add-blocker "Phase {N}: {the undecided choice} — needs a decision"
 ```
-
-A decision made while implementing is the one nobody validated.
 
 ---
 

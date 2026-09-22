@@ -525,39 +525,18 @@ research; review or edit CONTEXT.md before continuing.
 </step>
 
 <step name="record_decisions">
-A decision that will constrain work after this phase goes in PROJECT.md's Key
-Decisions table, which is where the durable log lives. CONTEXT.md holds the
-phase's own implementation choices; this step is only for the ones that outlive
-it.
+Record the decisions that outlive this phase; CONTEXT.md keeps the phase's own
+implementation choices. Validate a technology choice before recommending it: run
+the smallest spike that could fail, and use what it printed as the rationale.
 
 ```bash
-phase_run query state.add-decision "{the decision, stated specifically}" \
-  --rationale "{why, including what was ruled out}" \
+phase_run query state.add-decision "{the decision}" \
+  --rationale "{evidence, and what was ruled out}" \
   --outcome "Accepted"
 ```
 
-One call writes both: the row in PROJECT.md and the entry in the STATE digest,
-so trimming the digest later loses nothing.
-
-**Validate a technology choice before you propose it.** If the decision is to
-adopt a library, runtime, service or integration, run the smallest thing that
-could fail first — install it and call the one API this project depends on, or
-make the integration return one real response — and put what it actually printed
-in the rationale:
-
-```bash
-phase_run query state.add-decision "Use SQLite for the local cache" \
-  --rationale "Spike: 10k row round trip via python spike/cache.py, p99 3ms, no lock contention. Postgres ruled out: no server to operate." \
-  --outcome "Accepted"
-```
-
-Recommending a solution asserts it will work; for anything that executes, the
-only evidence for that is having executed it. If the spike fails, say so and pick
-something else — a failed spike here is the cheapest possible version of finding
-out.
-
-A handful of decisions per phase at most. Ordinary implementation choices belong
-in CONTEXT.md and the plan SUMMARY.
+A handful per phase at most.
+</step>
 
 <step name="git_commit">
 **Write DISCUSSION-LOG.md before committing.**

@@ -34,7 +34,7 @@ DIGEST_LIMITS = {
 # open blocker that vanished because a newer one arrived is worse than a long
 # section, so `planning.validate` reports the overflow and a human clears it.
 ROTATING = ("Decisions", "Roadmap Evolution")
-LINE_BUDGET = 125
+LINE_BUDGET = 150
 
 POSITION = re.compile(
     r"^(?P<key>Phase|Plan|Status|Last activity)[ 	]*:[ 	]*(?P<value>.*?)[ 	]*$",

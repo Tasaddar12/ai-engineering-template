@@ -131,25 +131,18 @@ complete".
 </step>
 
 <step name="record_deferrals">
-Scope that was acknowledged and not delivered is deferred, not dropped and not
-struck through. Write each one to the Deferred Items table so it survives the
-milestone close in a form the next milestone can read:
+Confirm with the user what scope is being deferred, then record each item:
 
 ```bash
 phase_run query state.add-deferred "{category}" "{item}" \
   --status Deferred --milestone "${VERSION}"
 ```
 
-Where the deferred scope has a requirement id, say so in REQUIREMENTS.md too, so
-the Traceability table does not leave it reading `Pending` indefinitely:
+Where the item has a requirement id, set it there too:
 
 ```bash
 phase_run query requirements.set-status "{REQ-ID}" Deferred
 ```
-
-Deferring is a decision about scope. Confirm the list with the user before
-writing it; do not infer a deferral from a phase that simply did not mention a
-requirement.
 </step>
 
 <step name="update_state">
@@ -159,8 +152,6 @@ phase_run query state.add-decision "Milestone ${VERSION} (${NAME}) shipped ${DAT
   --rationale "Milestone close" --outcome "Shipped"
 ```
 
-`state.add-decision` records the decision in PROJECT.md's Key Decisions table as
-well as the digest, so it survives the digest being trimmed.
 </step>
 
 <step name="git_commit">
@@ -170,14 +161,11 @@ phase_run query commit "docs(milestone): ship ${VERSION} ${NAME}" \
   .planning/PROJECT.md .planning/REQUIREMENTS.md
 ```
 
-Then report drift, warn-only:
-
 ```bash
 phase_run query planning.validate
 ```
 
-A milestone close is the natural point to see the records' shape. Present the
-warnings; fixing them is separate work, not part of the close.
+Present any warnings; fixing them is separate work.
 </step>
 
 <step name="offer_next">

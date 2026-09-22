@@ -64,6 +64,9 @@ improvise from the summary.
 - Any project-level technology choice validated by a check that was run,
   recorded as an ADR, and accepted by the user
 - Codebase maps written and stamped with the revision they describe
+- Any project-level technology choice validated by a check that was run,
+  recorded as an ADR, and accepted by the user
+- Codebase maps written and stamped with the revision they describe
 - Phases created through the runtime, every REQ id claimed
 - STATE.md initialized, everything committed
 </success_criteria>

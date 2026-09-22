@@ -217,7 +217,7 @@ automatically — an open blocker that vanished because a newer one arrived is w
 than a long section — so `planning.validate` reports the overflow and a human
 clears what is resolved. A cleared entry is gone; git holds what the file said.
 
-The file budget is 125 lines. `planning.validate` warns above it and never
+The file budget is 150 lines. `planning.validate` warns above it and never
 blocks: a cosmetic finding must not stall a session, and `--strict` is there for
 a caller that explicitly wants drift to fail.
 

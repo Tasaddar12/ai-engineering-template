@@ -246,15 +246,13 @@ delivered.}
 
 {Each REQ id claimed by the phase, and where it is satisfied.}
 
-{Read the recorded status of each one rather than asserting it:}
+{Read each one's recorded status:}
 
 ```bash
 phase_run query requirements.list
 ```
 
-{A requirement the phase claims but the table still shows as `Pending` means
-verify-work did not close it. Say so in the PR body rather than quietly
-implying it shipped.}
+{Say so in the PR body when one the phase claims still reads `Pending`.}
 
 ### Verification
 
@@ -271,17 +269,12 @@ Checks: {each command and its result}
 {Each one, with why it was accepted rather than closed.}
 ```
 
-Before showing the body, report record drift — non-blocking, and deliberately
-outside the preflight gates above, which all block:
-
 ```bash
 phase_run query planning.validate
 ```
 
 Append a short `### Record health` section when `warning_count` is above zero,
-naming each finding and the verb that resolves it. A reviewer seeing a stale
-STACK.md or an unclosed requirement in the PR is the point; refusing to open the
-PR over it is not.
+naming each finding and the verb that resolves it. This never blocks the PR.
 
 Show the composed body to the user before opening the PR.
 </step>
