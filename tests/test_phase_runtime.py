@@ -868,3 +868,212 @@ class StateDigestBudget(RuntimeCase):
             self.run_verb("state.add-roadmap-evolution", "Change " + str(index))
         lines = len(self.read(".planning/STATE.md").splitlines())
         self.assertLessEqual(lines, 125, "STATE.md grew past its digest budget")
+
+
+class PlanningValidation(RuntimeCase):
+    """Drift is reported, and reporting never stalls the session by default."""
+
+    def setUp(self):
+        super().setUp()
+        requirements = self.directory / ".planning" / "REQUIREMENTS.md"
+        requirements.write_text(
+            "# Requirements\n\n## Traceability\n\n"
+            "| Requirement | Phase | Status |\n"
+            "|-------------|-------|--------|\n"
+            "| REQ-01 | Phase 1 | Pending |\n"
+            "| REQ-02 | Phase 1 | Pending |\n"
+            "| REQ-03 | Phase 2 | Pending |\n",
+            encoding="utf-8", newline="\n")
+
+    def validate(self, *args, expect_ok=True):
+        return self.run_verb("planning.validate", "--skip", "codebase-freshness",
+                             *args, expect_ok=expect_ok)
+
+    def test_a_conforming_project_reports_clean(self):
+        result = self.validate()
+        self.assertEqual(result["status"], "clean", result["warnings"])
+
+    def test_warnings_do_not_fail_the_verb(self):
+        """Warn-only is the default so a cosmetic finding cannot stall work."""
+        self.run_verb("state.add-blocker", "Phase 1: ~~resolved~~ flaky suite")
+        result = self.validate()
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["status"], "warnings")
+        self.assertFalse(result["strict"])
+
+    def test_strict_is_opt_in_and_fails(self):
+        self.run_verb("state.add-blocker", "Phase 1: ~~resolved~~ flaky suite")
+        result = self.validate("--strict", expect_ok=False)
+        self.assertEqual(result["code"], "validation-failed")
+
+    def test_strikethrough_is_reported(self):
+        self.run_verb("state.add-decision", "~~Use MySQL~~ use Postgres")
+        checks = [item["check"] for item in self.validate()["warnings"]]
+        self.assertIn("retirement-markers", checks)
+
+    def test_in_place_closure_marker_is_reported(self):
+        self.run_verb("state.add-blocker", "Phase 1: missing secrets (Closed)")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("closed in place" in message for message in messages),
+                        messages)
+
+    def test_a_section_outside_the_contract_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        state.write_text(state.read_text(encoding="utf-8")
+                         + "\n## Performance Metrics\n\nNot tracked.\n",
+                         encoding="utf-8", newline="\n")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("not part of the STATE contract" in message
+                            for message in messages), messages)
+
+    def test_a_missing_required_section_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        text = state.read_text(encoding="utf-8").replace("## Session Continuity",
+                                                         "## Retired Section")
+        state.write_text(text, encoding="utf-8", newline="\n")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("Session Continuity" in message for message in messages),
+                        messages)
+
+    def test_requirements_pending_under_a_complete_phase_are_reported(self):
+        self.run_verb("phase.complete", "1")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("still Pending" in message for message in messages),
+                        messages)
+
+    def test_an_over_cap_section_edited_by_hand_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        hand_written = "\n".join("- Decision " + str(index) for index in range(9))
+        text = state.read_text(encoding="utf-8").replace(
+            "### Decisions\n\nNone yet.", "### Decisions\n\n" + hand_written)
+        state.write_text(text, encoding="utf-8", newline="\n")
+        checks = [item["check"] for item in self.validate()["warnings"]]
+        self.assertIn("state-caps", checks)
+
+    def test_an_oversized_digest_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        padding = "\n".join("Filler line " + str(index) for index in range(200))
+        state.write_text(state.read_text(encoding="utf-8") + "\n" + padding,
+                         encoding="utf-8", newline="\n")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("digest budget" in message for message in messages),
+                        messages)
+
+
+class CodebaseMapFreshness(RuntimeCase):
+    """A map's freshness is a git question, not a hand-typed date."""
+
+    def write_map(self, name, body="# Map\n\nContents.\n"):
+        target = self.directory / ".planning" / "codebase" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body, encoding="utf-8", newline="\n")
+        return target
+
+    def test_an_absent_map_reports_missing_with_its_focus(self):
+        result = self.run_verb("codebase.status")
+        states = {report["name"]: report for report in result["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "missing")
+        self.assertEqual(states["ARCHITECTURE.md"]["focus"], "arch")
+        self.assertEqual(states["STACK.md"]["focus"], "tech")
+        self.assertIn("arch", result["focus_areas"])
+
+    def test_an_undated_map_cannot_claim_freshness(self):
+        self.write_map("ARCHITECTURE.md")
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "unstamped")
+
+    def test_stamping_records_the_revision_and_reports_fresh(self):
+        self.write_map("ARCHITECTURE.md")
+        stamped = self.run_verb("codebase.stamp", "ARCHITECTURE.md")
+        self.assertTrue(stamped["revision"])
+        content = self.read(".planning/codebase/ARCHITECTURE.md")
+        self.assertTrue(content.startswith("<!-- mapped_revision: "))
+        self.assertIn("Contents.", content)
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "fresh")
+
+    def test_restamping_replaces_the_stamp_instead_of_stacking_it(self):
+        self.write_map("STACK.md")
+        self.run_verb("codebase.stamp", "STACK.md")
+        self.run_verb("codebase.stamp", "STACK.md")
+        content = self.read(".planning/codebase/STACK.md")
+        self.assertEqual(content.count("mapped_revision"), 1)
+
+    def test_a_manifest_change_makes_the_stack_map_stale(self):
+        self.write_map("STACK.md")
+        self.run_verb("codebase.stamp", "STACK.md")
+        (self.directory / "package.json").write_text('{"name": "app"}\n',
+                                                     encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "add a manifest")
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["STACK.md"]["state"], "stale")
+        self.assertEqual(states["STACK.md"]["commits_since"], 1)
+
+    def test_the_architecture_map_tolerates_ordinary_churn(self):
+        """One commit is movement, not a changed architecture."""
+        self.write_map("ARCHITECTURE.md")
+        self.run_verb("codebase.stamp", "ARCHITECTURE.md")
+        (self.directory / "app.py").write_text("print('hi')\n",
+                                               encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "one source change")
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "fresh")
+        self.assertEqual(states["ARCHITECTURE.md"]["commits_since"], 1)
+
+    def test_planning_record_writes_do_not_age_the_architecture_map(self):
+        """A phase write-up is not a change to the architecture it describes."""
+        self.write_map("ARCHITECTURE.md")
+        self.run_verb("codebase.stamp", "ARCHITECTURE.md")
+        for index in range(20):
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+            self.git("add", "-A")
+            self.git("commit", "-qm", "planning churn " + str(index))
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["commits_since"], 0)
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "fresh")
+
+    def test_sustained_source_movement_makes_the_architecture_map_stale(self):
+        self.write_map("ARCHITECTURE.md")
+        self.run_verb("codebase.stamp", "ARCHITECTURE.md")
+        for index in range(15):
+            (self.directory / ("module_" + str(index) + ".py")).write_text(
+                "value = " + str(index) + "\n", encoding="utf-8", newline="\n")
+            self.git("add", "-A")
+            self.git("commit", "-qm", "source change " + str(index))
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "stale")
+
+    def test_the_staleness_threshold_is_configurable(self):
+        config = self.directory / ".planning" / "config.yaml"
+        config.write_text(config.read_text(encoding="utf-8")
+                          + "codebase:\n  staleness:\n    architecture: 1\n",
+                          encoding="utf-8", newline="\n")
+        self.write_map("ARCHITECTURE.md")
+        self.run_verb("codebase.stamp", "ARCHITECTURE.md")
+        (self.directory / "app.py").write_text("print('hi')\n",
+                                               encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "one source change")
+        states = {report["name"]: report
+                  for report in self.run_verb("codebase.status")["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "stale")
+
+    def test_validation_reports_a_stale_map(self):
+        self.write_map("STACK.md")
+        self.run_verb("codebase.stamp", "STACK.md")
+        (self.directory / "package.json").write_text('{"name": "app"}\n',
+                                                     encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "add a manifest")
+        warnings = self.run_verb("planning.validate")["warnings"]
+        self.assertTrue(any(item["check"] == "codebase-freshness"
+                            and "commits have touched" in item["message"]
+                            for item in warnings), warnings)

@@ -15,8 +15,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (bundles, delivery, gitops, handoff, milestones, models, phases,  # noqa: E402
-                 project_record, quick, state, todos, verification, worktrees)
+from lib import (bundles, codebase, delivery, gitops, handoff, milestones, models,  # noqa: E402
+                 phases, project_record, quick, state, todos, validate,
+                 verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -490,6 +491,32 @@ def verb_state_sync_todos(workspace, positionals, options):
     return result
 
 
+# --- record conformance ---------------------------------------------------
+
+def verb_planning_validate(workspace, positionals, options):
+    """Report planning-record drift. Warn-only unless `--strict` is passed.
+
+    Warn-only is the default on purpose: a cosmetic finding must never stall a
+    session. A caller that wants drift to block asks for it explicitly.
+    """
+    skip = set(as_list(options.get("skip")))
+    result = validate.run(workspace, strict=bool(options.get("strict")), skip=skip)
+    if options.get("strict") and result["warnings"]:
+        raise VerbError(str(result["warning_count"]) + " planning record warning(s): "
+                        + validate.summarize(result), "validation-failed")
+    return result
+
+
+def verb_codebase_status(workspace, positionals, options):
+    return codebase.status(workspace)
+
+
+def verb_codebase_stamp(workspace, positionals, options):
+    """Record the revision a freshly written map describes."""
+    return codebase.stamp(workspace, argument(positionals, 0, "map"),
+                          options.get("revision"))
+
+
 # --- milestones -----------------------------------------------------------
 
 def verb_milestone_list(workspace, positionals, options):
@@ -658,6 +685,10 @@ VERBS = {
 
     "project.add-decision": verb_project_add_decision,
     "project.decisions": verb_project_decisions,
+
+    "planning.validate": verb_planning_validate,
+    "codebase.status": verb_codebase_status,
+    "codebase.stamp": verb_codebase_stamp,
 
     "milestone.list": verb_milestone_list,
     "milestone.create": verb_milestone_create,
