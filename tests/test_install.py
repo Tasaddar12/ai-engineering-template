@@ -328,11 +328,14 @@ class InstallerTests(unittest.TestCase):
                     self.assertEqual(settings["permissions"], merged["permissions"])
                 else:
                     self.assertTrue((self.target / name).read_bytes().startswith(original_settings))
-                # The user's own event keeps its single group; the managed hook is
-                # registered alongside it under the event the installer owns.
-                self.assertEqual(settings["hooks"]["PreToolUse"], merged["hooks"]["PreToolUse"])
-                self.assertEqual(installer.hook_settings(host)["hooks"]["PostToolUse"],
-                                 merged["hooks"]["PostToolUse"])
+                # The user's own group survives verbatim, and every managed
+                # group is registered alongside it rather than replacing it.
+                managed = installer.hook_settings(host)["hooks"]
+                for event, groups in managed.items():
+                    for group in groups:
+                        self.assertIn(group, merged["hooks"][event])
+                self.assertIn(settings["hooks"]["PreToolUse"][0],
+                              merged["hooks"]["PreToolUse"])
                 self.assertTrue((self.target / entry).read_bytes().startswith(prose))
                 (self.target / ".planning/config.yaml").write_text("existing: project worker routes\n")
                 before = self.snapshot()
@@ -424,8 +427,22 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 self.assertEqual(before, self.snapshot())
 
+    def launcher_argv(self, host, handler):
+        """The command line the host would actually run for one registration."""
+        if host == "codex" and os.name == "nt":
+            return ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
+        if host == "codex":
+            return ["sh", "-c", handler["command"]]
+        bash = shutil.which("bash")
+        if os.name == "nt":
+            git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
+            if git_bash.is_file():
+                bash = str(git_bash)
+        self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
+        return [bash, "-c", handler["command"]]
+
     def test_registered_hooks_execute_from_installed_subdirectory(self):
-        """The one managed hook resolves the project root from a nested directory."""
+        """Every managed hook resolves the project root from a nested directory."""
         for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
             self.target = self.base / (host + " projet café 日本語")
             result = self.install("--host", host)
@@ -436,19 +453,7 @@ class InstallerTests(unittest.TestCase):
             settings = read_settings(self.target / name)
             destination = self.target / ("." + host) / "RULES.md"
             with self.subTest(host=host, destination=destination):
-                handler = settings["hooks"]["PostToolUse"][0]["hooks"][0]
-                if host == "codex" and os.name == "nt":
-                    argv = ["powershell", "-NoProfile", "-Command", handler["commandWindows"]]
-                elif host == "codex":
-                    argv = ["sh", "-c", handler["command"]]
-                else:
-                    bash = shutil.which("bash")
-                    if os.name == "nt":
-                        git_bash = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe"
-                        if git_bash.is_file():
-                            bash = str(git_bash)
-                    self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
-                    argv = [bash, "-c", handler["command"]]
+                argv = self.launcher_argv(host, settings["hooks"]["PostToolUse"][0]["hooks"][0])
                 tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
                               if host == "codex" else {"file_path": str(destination)})
                 payload = {"cwd": str(cwd), "hook_event_name": "PostToolUse",
@@ -461,6 +466,34 @@ class InstallerTests(unittest.TestCase):
                 self.assertNotIn(b"permissionDecision", observed.stdout)
                 self.assertIn(b"NOTICE", observed.stdout)
                 self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
+
+            # The dispatch guard is the only managed hook that returns a
+            # permission decision, so proving it launches from the installed
+            # path matters more than for an advisory one: a registration that
+            # silently fails to run is an isolation requirement that is not
+            # enforced at all.
+            groups = settings["hooks"]["PreToolUse"]
+            dispatch = [group for group in groups if "Agent" in group.get("matcher", "")]
+            self.assertEqual(1, len(dispatch),
+                             "exactly one managed Agent/Task registration is expected")
+            with self.subTest(host=host, hook="worktree-guard dispatch"):
+                argv = self.launcher_argv(host, dispatch[0]["hooks"][0])
+                payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse",
+                           "tool_name": "Agent",
+                           "tool_input": {"subagent_type": "coder", "description": "x"}}
+                observed = subprocess.run(argv, cwd=cwd, env=environment,
+                                          input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                          capture_output=True)
+                self.assertEqual(2, observed.returncode,
+                                 "an unisolated coder dispatch must be blocked: "
+                                 + observed.stderr.decode("utf-8", "replace"))
+                self.assertIn(b"BLOCKED", observed.stderr)
+                # Same registration, isolated dispatch: must get out of the way.
+                payload["tool_input"]["isolation"] = "worktree"
+                observed = subprocess.run(argv, cwd=cwd, env=environment,
+                                          input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                          capture_output=True)
+                self.assertEqual(0, observed.returncode, observed.stderr)
 
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")

@@ -172,6 +172,67 @@ Give agents their assignment, the applicable constraints, the files their plan
 names in `read_first`, and the dependency summaries they need — not every
 transcript. Follow [worker handoff](references/worker-handoff.md).
 
+## Worktrees, integration and cleanup
+
+**Every executor runs in its own worktree. This is not configurable.** Without
+isolation, concurrent agents edit one working tree and interleave their commits
+into one history, and a plan can no longer be attributed or reverted. Declaring
+non-overlapping paths is a planning discipline, not an enforcement mechanism.
+
+Resolve the model once per dispatch through
+`phase_run query dispatch-isolation`, and branch only on the result:
+
+- `harness-worktree` — the host creates and binds the checkout; pass its
+  isolation argument on dispatch and run no git for setup.
+- `orchestrator-worktree` — the runtime creates the checkout through
+  `worktree.create`; every git operation is the runtime's.
+
+There is no third value. No setting disables isolation, and a config that asks
+for `none`, `null` or `false` is an error, not a fallback. When isolation cannot
+be established — a git too old for worktrees, a worktree root that is not
+ignored — the verb **fails and execution stops** with the cause. It never
+degrades to a shared checkout.
+
+**Enforcement is not prose.** [worktree-guard.sh](hooks/worktree-guard.sh)
+refuses (exit 2) an `Agent`/`Task` dispatch of a write-capable subagent —
+`coder`, `doc-writer`, `debugger` — that arrives without `isolation="worktree"`,
+and warns on any edit or write from a checkout that is not a linked worktree.
+The instruction in the workflow tells you to isolate; the hook is what makes
+skipping it fail. A read-only agent has nothing to isolate and is not gated.
+
+A wrong base is caught where it happens, not predicted beforehand: under
+`harness-worktree` each executor's spawn-time branch check compares its real
+base against the revision the orchestrator captured and halts on a mismatch.
+
+The orchestrator owns the worktree lifecycle, and each model carries the one
+guard it needs. Under `harness-worktree` the executor verifies its branch and
+base at spawn through
+[worktree-branch-check](references/worktree-branch-check.md) and halts with
+`exit 42` on a mismatch; it never repairs a checkout it did not create. Under
+`orchestrator-worktree` the runtime already set the base, so the executor is
+pinned to its root instead — see
+[worktree-path-safety](references/worktree-path-safety.md). Follow
+[worktree-recovery-policy](references/worktree-recovery-policy.md) when a run
+does not go cleanly.
+
+Integrate every isolated wave through `worktree.merge-wave` before running
+checks or review — both judge the merged tree, not one the work has not landed
+in. A merge into a protected branch is refused. A branch that deletes a path its
+plan did not declare in `files_deleted` is blocked, because a deletion
+authorization is never inferred from a general scope declaration. A rename
+counts: moving a file away removes its old path, so the source needs the same
+authority as any other removal. Conflicts abort with the worktree preserved.
+
+Cleanup requires merge evidence from the repository, not a manifest's claim:
+`worktree.cleanup-wave` removes a checkout only when git agrees its branch is an
+ancestor of HEAD, preserves everything else with a reason, and reports it.
+Preserve unmerged, dirty and blocked worktrees. `--force` discards work and is
+the user's decision, never the orchestrator's.
+
+Worktree isolation does not isolate databases, ports, accounts or caches, and
+ignored data is not automatically disposable. Declare shared resources before
+running plans in parallel. Read-only reporting never needs a checkout.
+
 ## Review, documentation and completion
 
 Before dispatching implementation, obtain an independent phase-checker assessment

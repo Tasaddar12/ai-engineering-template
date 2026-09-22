@@ -136,6 +136,42 @@ model argument entirely.
 | `runtime-identity` | Identifies the runtime to the launcher's verification step |
 | `help` | Every verb and bundle |
 
+### Worktree isolation
+
+| Verb | Effect |
+|---|---|
+| `dispatch-isolation` | Resolve how this dispatch is isolated, and record it |
+| `worktree.create <plan>` | Create a runtime-owned checkout on its own branch |
+| `worktree.record-agent <plan> --branch` | Record a checkout the host created |
+| `worktree.merge-wave` | Merge the wave's branches, with the deletion guard |
+| `worktree.cleanup-wave` | Remove proven-merged checkouts; preserve the rest |
+| `worktree.list` | Every linked worktree, with its branch and state |
+| `worktree.reap-orphans` | Prune stale metadata without deleting a live checkout |
+| `worktree.health` | Findings about the worktree setup |
+
+`dispatch-isolation` returns `harness-worktree` or `orchestrator-worktree` —
+**never a value meaning "unisolated"**, because isolation is mandatory here. It
+raises instead: `bad-isolation` for a setting that asks to disable it,
+`no-worktree-support` for a git too old for worktrees, `root-not-ignored` when
+the worktree root is not gitignored. There is no flag that forces a weaker
+answer, and the verb writes nothing to disk.
+
+A host that forks a dispatch worktree from the fork base rather than from HEAD
+would hand an executor a tree missing HEAD's commits. There is no advisory verb
+for that: the executor's own spawn-time branch check compares its real base
+against the revision the orchestrator captured and halts with exit 42, which is
+the only check that sees what actually happened.
+
+Integration is explicit and conservative. `merge-wave` blocks a branch that
+deletes a path its plan did not declare, aborts a conflicting merge with the
+worktree preserved, and refuses a protected target branch or a dirty tree.
+`cleanup-wave` removes a checkout only when git agrees its branch is an
+ancestor of HEAD, and reports everything it kept with the reason.
+
+The dispatch itself is enforced outside the runtime, in
+[hooks/worktree-guard.sh](../hooks/worktree-guard.sh) — a verb cannot see an
+`Agent(...)` call that never mentioned it.
+
 ## Layout
 
 ```
@@ -154,6 +190,7 @@ runtime/
     quick.py        quick tasks outside the roadmap
     verification.py verification reports and configured project checks
     models.py       agent, model and skill resolution for dispatch
+    worktrees.py    isolation resolution, wave integration and cleanup
     bundles.py      the init.* context bundles
 ```
 
@@ -189,6 +226,10 @@ workflow:
   text_mode: false         # plain-text prompts instead of AskUserQuestion
   auto_advance: false
   discuss_mode: discuss
+  isolation: auto          # or harness-worktree / orchestrator-worktree
+                           # there is no value that disables isolation
+worktree:
+  root: .worktrees         # must be gitignored, or execution stops
 agents:
   coder:
     model: sonnet          # overrides the agent file's own model

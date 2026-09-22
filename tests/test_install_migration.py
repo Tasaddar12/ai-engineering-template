@@ -1,5 +1,6 @@
 """Preserve adopting projects while replacing their workflow implementation."""
 
+import collections
 import importlib.util
 from pathlib import Path
 import os
@@ -212,10 +213,15 @@ class MigrationTests(unittest.TestCase):
         self.write(".codex/config.toml", settings)
         changes, _, _ = self.plan()
         self.apply(changes)
-        import json
         result = tomllib.loads((self.target / ".codex/config.toml").read_text())
-        for event in ("PostToolUse",):
-            self.assertEqual(1, len(result["hooks"][event]))
+        # Counted from MANAGED_HOOKS rather than written as a literal. The
+        # assertion here is "relocated, not duplicated"; a hardcoded count means
+        # the next hook added to an already-registered event fails this test for
+        # a reason that has nothing to do with migration.
+        expected = collections.Counter(event for event, _, _ in installer.MANAGED_HOOKS)
+        for event, count in expected.items():
+            self.assertEqual(count, len(result["hooks"][event]),
+                             f"{event} registrations were duplicated rather than relocated")
             self.assertNotIn("/.ai/hooks/", str(result["hooks"][event]))
 
     def test_two_old_paths_mapping_to_same_destination_are_rejected(self):

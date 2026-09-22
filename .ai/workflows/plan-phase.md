@@ -89,6 +89,29 @@ Recognised flags:
 Set `MODE` to `standard` or `gap_closure` accordingly.
 </step>
 
+<step name="open_session">
+This phase's work lives in one session worktree, shared by `/discuss-phase`,
+`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
+one pull request. Join it before writing anything:
+
+```bash
+SESSION=$(phase_run query session.open phase "${padded_phase}")
+```
+
+An open session for this phase is reused, not replaced. **Run every subsequent
+command from its `worktree`**, and report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, stop and report its message rather than continuing in the
+checkout you were invoked from.
+
+**Do not deliver it here.** `/ship` opens the pull request, judges its checks and
+closes the session once the phase is verified.
+</step>
+
 <step name="closed_phase_gate">
 If the phase's roadmap status is `Complete` and `--gaps` was not passed:
 
@@ -440,6 +463,9 @@ Plan review: {approved | approved with noted findings}
 - Don't loop revisions past 3 iterations — escalate to the user
 - Don't research by default; research a real unknown or skip it
 - Don't silently replace plans that already have summaries
+- Don't open a pull request or merge from here — a phase session is
+  delivered once, by `/ship`
+- Don't close the phase session; the workflows after this one reuse it
 </anti_patterns>
 
 <success_criteria>
@@ -452,4 +478,5 @@ Plan review: {approved | approved with noted findings}
 - [ ] Revisions capped at 3 iterations, with escalation instead of a silent pass
 - [ ] Roadmap plan checklist matches the plans that exist
 - [ ] STATE.md updated and everything committed
+- [ ] Phase session joined before any write, and left open for `/ship`
 </success_criteria>

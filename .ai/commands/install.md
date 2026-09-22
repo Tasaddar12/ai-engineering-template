@@ -27,7 +27,7 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 | Root instructions | `AGENTS.md` | `CLAUDE.md` with the complete project instructions |
 | Rules, guides, templates and runtime | `.codex` | `.claude` |
 | Commands | `.codex/commands` | `.claude/commands` |
-| Agents | `.codex/agents/*.toml` plus full `.md` methods | `.claude/agents/*.md` with model frontmatter |
+| Agents | `.codex/agents/*.toml` plus full `.md` methods | `.claude/agents/*.md` |
 | Complete skills, discovered directly | `.agents/skills` | `.claude/skills` |
 | Hook registration | `.codex/config.toml` | `.claude/settings.json` |
 | Local Python environment | `.codex-venv` | `.claude-venv` |
@@ -36,8 +36,9 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 References in installed instructions, skills, procedures and runtime routes point
 to the selected host layout. Agents stay under `agents` and commands
 stay under `commands`. Codex TOML definitions explicitly select a model and direct
-the agent to read its full Markdown role; Claude roles explicitly select their
-model in Markdown frontmatter. See [native host models](../agents/README.md#native-host-models)
+the agent to read its full Markdown role. Claude roles carry no model
+frontmatter: the model is resolved from `.planning/config.yaml` and passed on
+the dispatch call. See [native host models](../agents/README.md#native-host-models)
 for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are
@@ -83,15 +84,68 @@ python .claude/install.py --target . --host claude --skip-deps --ref COMMIT --dr
 python .claude/install.py --target . --host claude --skip-deps --ref COMMIT
 ```
 
-Replace COMMIT with the revision that installed the workflow. A newer template
-can conflict with customized or older files and requires reconciliation. Existing
-project context, settings and runtime config remain authoritative; choosing a
-host does not rewrite an existing project's configuration.
+Replace COMMIT with the revision that installed the workflow. Repeating the same
+revision is a no-op. To move an installed project onto a *newer* revision, use
+`--update` below; a plain reinstall reports the differences as conflicts rather
+than replacing them. Existing project context, settings and runtime config remain
+authoritative; choosing a host does not rewrite an existing project's configuration.
 
 An older installation with a separate `.ai` directory needs migration on a
 review branch. The installer refuses to leave that older workflow beside a
 new host layout. Use the migration mode below to preserve existing project data
 and custom material. Changing `--host` alone is not a migration command.
+
+## Update an installed workflow
+
+This is how an installed project moves onto a newer template revision. It works
+for `.codex` and `.claude` alike and needs no `.ai` directory; it is the mode to
+use when the workflow is already installed and you want the current version of
+it. Work on a review branch with the existing setup committed:
+
+```text
+python .claude/install.py --target . --host claude --update --skip-deps --dry-run
+python .claude/install.py --target . --host claude --update --skip-deps
+```
+
+Use `--host codex` and `.codex/install.py` for Codex. Omit `--skip-deps` to also
+recreate the host virtual environment and reinstall its requirements, which a
+revision that added a dependency needs.
+
+What an update does:
+
+- **Replaces shipped workflow material** — runtime, hooks, commands, agents,
+  guides, references, templates, skills and rules — with this revision's copies.
+- **Never touches project data.** PROJECT, REQUIREMENTS, ROADMAP, STATE and
+  `config.yaml` stay exactly as they are, as do phases, specs, decisions and
+  todos. An update has no authority over intent or execution history.
+- **Merges rather than overwrites** the host settings file and the root entry
+  file. Existing hooks and unrelated settings are retained, and only the
+  delimited managed block in AGENTS.md/CLAUDE.md is swapped, so guidance you
+  wrote around it survives.
+- **Backs up and verifies every original it replaces or removes** under
+  `.workflow-backups/`, exactly as a migration does, before writing anything.
+- **Deletes nothing by default.** A file this revision no longer ships is
+  reported and left in place, because the installer cannot tell a retired
+  template file from one your project added.
+
+Two flags refine that last point:
+
+| Flag | Effect |
+|---|---|
+| `--from-ref COMMIT` | The revision this project was installed from. The report then names the files that already differed from it, so a local customization about to be replaced is a decision rather than a discovery weeks later. |
+| `--prune` | Also removes installed workflow files this revision no longer ships, after backing them up. It removes **any** unshipped file under the host directory, including ones your project added, so read the dry run first. |
+
+Without `--from-ref` the update cannot distinguish a local edit from an upstream
+change, so it says so and lists everything it refreshed; the backup holds the
+originals either way. Review the reported refresh list and the Git diff,
+reconcile any local runtime customizations from the backup, run the host's
+`runtime/phase.py status` and your project checks, then commit the update as its
+own slice.
+
+`--update` and `--migrate-existing` are different operations and cannot be
+combined: migration rebuilds a legacy `.ai` tree into a host layout, and update
+refreshes a host layout that already exists. A project still on `.ai` migrates
+first, then updates from there.
 
 ## Migrate an existing `.ai` and `.planning` project
 
@@ -218,7 +272,8 @@ Uncommitted source edits are not installed.
   commands and agents directly in their installed folders. Setup does not install
   agent CLIs, configure credentials, fill project identity, commit files or publish anything.
 
-This is an initial installer, not an updater for customized workflow files.
+A plain install is an initial installer, not an updater: `--update` is the mode
+that refreshes an installed workflow.
 Use `--dry-run` to fetch and preview without changing the target. Use
 `--skip-deps` to copy files without creating a virtual environment or contacting
 the package index. Repeating the same install with `--skip-deps` preserves

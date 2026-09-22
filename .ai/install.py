@@ -2,6 +2,7 @@
 """Install the workflow into a new directory or an existing project (Python 3.11+)."""
 
 import argparse
+from contextlib import ExitStack
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -211,17 +212,82 @@ def merge_codex_config(current, incoming, path):
                          "reconcile the TOML hook tables before installation.") from error
 
 
+#: Managed hook registrations: (event, script, matcher). The worktree guard is
+#: registered twice because its two jobs watch different tools -- refusing an
+#: unisolated subagent dispatch, and warning about a write outside a worktree.
+MANAGED_HOOKS = (
+    ("PostToolUse", "ai-tier-notice.sh",
+     "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+    ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
+    ("PreToolUse", "worktree-guard.sh",
+     "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+    # The handoff hook measures on PostToolUse, catches an executor that
+    # stopped early on SubagentStop, and clears its own session state on Stop.
+    # SubagentStop and Stop carry no tool, so neither carries a tool matcher.
+    # Codex does accept an `agent_type` matcher on SubagentStop, but the hook
+    # filters on the role itself and Claude has no equivalent, so one
+    # unmatched registration keeps the two hosts on the same shape.
+    ("PostToolUse", "context-handoff.sh",
+     "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch|Agent|Task)$"),
+    ("SubagentStop", "context-handoff.sh", None),
+    ("Stop", "context-handoff.sh", None),
+)
+
+
 def hook_settings(host):
     events = {}
-    for event, script in (("PostToolUse", "ai-tier-notice.sh"),):
+    for event, script, matcher in MANAGED_HOOKS:
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": 10}
         if host == "codex":
+            # Git for Windows does not put git.exe in one fixed place. An
+            # installer-managed install has it at <root>\cmd\git.exe, so
+            # ../bin/bash.exe resolves; a portable, scoop or winget layout has
+            # it at <root>\mingw64\bin\git.exe, where the same relative path
+            # points at mingw64\bin\bash.exe, which does not exist. Assuming
+            # the first layout meant every Codex hook failed to launch on the
+            # second -- including the dispatch guard, so an unisolated executor
+            # went through while PowerShell printed CommandNotFoundException.
+            #
+            # Probe the known layouts and take the first bash that is really
+            # there. PATH is deliberately not a fallback: on Windows it
+            # commonly resolves to WSL's bash, which cannot see the Windows
+            # checkout the hook is about to inspect. Finding none is a
+            # misconfiguration worth surfacing, so it exits 1 (an error) rather
+            # than 0 (silently no hook) or 2 (a denial the hook never made).
+            #
+            # `; exit $LASTEXITCODE` is load-bearing. PowerShell -Command does not
+            # propagate a native command's exit status, so a hook that exits 2 to
+            # deny a tool call arrived at the host as 1 -- the decision was made
+            # and then thrown away. It went unnoticed while every managed hook
+            # exited 0; worktree-guard.sh is the first that denies.
             handler["commandWindows"] = (
-                "& (Join-Path (Split-Path (Get-Command git).Source) '../bin/bash.exe') "
-                f"((git rev-parse --show-toplevel) + '/.{host}/hooks/{script}')")
-        events[event] = [{"matcher": "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$",
-                          "hooks": [handler]}]
+                "$d=Split-Path (Get-Command git).Source; "
+                "$b=@('..\\bin\\bash.exe','..\\..\\bin\\bash.exe',"
+                "'..\\usr\\bin\\bash.exe','..\\..\\usr\\bin\\bash.exe') "
+                "| ForEach-Object { Join-Path $d $_ } "
+                "| Where-Object { Test-Path $_ } | Select-Object -First 1; "
+                "if (-not $b) { Write-Error 'Git Bash not found near git.exe'; exit 1 }; "
+                # The repository path never crosses the PowerShell/bash
+                # boundary. Capturing `git rev-parse` in PowerShell and passing
+                # the result as a native argument mangles every non-ASCII path
+                # component -- a checkout under "projet cafe 日本語" reached bash
+                # as box-drawing characters and the hook died with "No such
+                # file or directory", which reads like a missing hook rather
+                # than an encoding fault. Handing bash an ASCII-only -c string
+                # and letting it resolve the root itself removes the boundary,
+                # and matches what the POSIX `command` above already does.
+                # The inner quotes are written \" rather than ": PowerShell
+                # re-parses a native command's arguments, and a bare double
+                # quote inside them is consumed rather than passed, which
+                # re-split this script at its spaces and left bash reading
+                # "rev-parse" as its own name.
+                "& $b -c 'exec bash \\\"$(git rev-parse --show-toplevel)"
+                f"/.{host}/hooks/{script}\\\"'; "
+                "exit $LASTEXITCODE")
+        group = {"hooks": [handler]} if matcher is None else {"matcher": matcher,
+                                                               "hooks": [handler]}
+        events.setdefault(event, []).append(group)
     return {"hooks": events}
 
 
@@ -265,14 +331,24 @@ def merge_hooks(current, incoming, path):
                     raise ValueError(f"invalid matcher/handler group for {event}")
         additions = json.loads(incoming)["hooks"]
         changed = False
+        managed_scripts = {script for _, script, _ in MANAGED_HOOKS}
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
                 if group in existing:
                     continue
-                if any("/hooks/ai-tier-notice.sh" in json.dumps(item)
-                       for item in existing):
-                    raise ValueError(f"managed {event} registration differs; reconcile it manually")
+                script = next((name for name in managed_scripts
+                               if f"/hooks/{name}" in json.dumps(group)), None)
+                # A group already registering THIS script under THIS matcher,
+                # but not byte-identical, is a customized managed registration:
+                # refuse rather than install a second, conflicting copy. A user
+                # hook on the same event that names a different script is
+                # theirs, and is left alone.
+                if script and any(f"/hooks/{script}" in json.dumps(other)
+                                  and other.get("matcher") == group.get("matcher")
+                                  for other in existing):
+                    raise ValueError(f"managed {event} registration for {script} "
+                                     "differs; reconcile it manually")
                 existing.append(group)
                 changed = True
         return json_bytes(settings) if changed else current
@@ -413,21 +489,37 @@ def install(args):
     if not args.skip_deps:
         environment = target / (namespace + "-venv")
         safe_path(environment)
-        if environment.exists():
+        if environment.exists() and not args.update:
             raise ValueError(f"{namespace}-venv already exists; preserve it and rerun with --skip-deps. "
                              f"See {namespace}/commands/install.md for dependency repair.")
-    with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
+    with ExitStack() as stack:
+        temporary = stack.enter_context(tempfile.TemporaryDirectory(prefix="ai-template-"))
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
         run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.ref, cwd=source)
         run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=source)
         revision = run("git", "rev-parse", "HEAD", cwd=source, capture=True).strip()
+        # The revision the project was installed from, fetched into its own tree
+        # so an update can tell a local customization from an upstream change.
+        previous = None
+        if args.from_ref:
+            baseline = stack.enter_context(tempfile.TemporaryDirectory(prefix="ai-baseline-"))
+            previous = Path(baseline)
+            run("git", "init", "--quiet", str(previous))
+            run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.from_ref,
+                cwd=previous)
+            run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=previous)
         backup_files = []
         notes = []
         if args.migrate_existing:
             migration = runpy.run_path(str(source / ".ai/install_migration.py"))
             changes, backup_files, notes = migration["plan_migration"](
                 source, target, args.host, not args.no_hooks, SimpleNamespace(**globals()))
+        elif args.update:
+            update = runpy.run_path(str(source / ".ai/install_update.py"))
+            changes, backup_files, notes = update["plan_update"](
+                source, target, args.host, not args.no_hooks, SimpleNamespace(**globals()),
+                prune=args.prune, previous=previous)
         else:
             changes = plan_install(source, target, args.host, not args.no_hooks)
         originals = {destination_path(name, args.host): source / name
@@ -436,7 +528,10 @@ def install(args):
         for original in backup_files:
             relative = original.relative_to(target).as_posix()
             originals.setdefault(destination_path(relative, args.host), original)
+        mode = ("update" if args.update else
+                "migrate" if args.migrate_existing else "install")
         print(f"Template revision: {revision}\nTarget: {target}\nHost: {args.host}; "
+              f"mode: {mode}; "
               f"hook registration: {'skip' if args.no_hooks else 'advisory'}", flush=True)
         print(f"{'Would change' if args.dry_run else 'Changing'} {len(changes)} workflow files.", flush=True)
         for note in notes:
@@ -447,7 +542,8 @@ def install(args):
             print(f"Git: {'preserve repository' if in_git else 'initialize repository'}; "
                   f"dependencies: {'skip' if args.skip_deps else 'create ' + namespace + '-venv and install PyYAML'}")
             if backup_files:
-                print(f"Would back up and verify {len(backup_files)} original files under .workflow-backups/ before migration.")
+                print(f"Would back up and verify {len(backup_files)} original files under "
+                      f".workflow-backups/ before {'updating' if args.update else 'migration'}.")
             return
         target.mkdir(parents=True, exist_ok=True)
         if backup_files:
@@ -504,7 +600,22 @@ def main():
     parser.add_argument("--skip-deps", action="store_true", help="Skip virtual environment and dependency setup")
     parser.add_argument("--migrate-existing", action="store_true",
                         help="Rebuild an existing .ai workflow for the selected host, preserving project data and verified originals")
+    parser.add_argument("--update", action="store_true",
+                        help="Refresh an already-installed .codex or .claude workflow onto "
+                             "this revision, preserving project records and merging host settings")
+    parser.add_argument("--from-ref", default=None,
+                        help="With --update, the revision this project was installed from; lets "
+                             "the report name local customizations it is about to replace")
+    parser.add_argument("--prune", action="store_true",
+                        help="With --update, also remove installed workflow files this revision "
+                             "no longer ships (backed up and verified first)")
     args = parser.parse_args()
+    if args.update and args.migrate_existing:
+        parser.error("--update refreshes an installed host tree and --migrate-existing "
+                     "rebuilds an older .ai one; run the migration first, then update.")
+    for flag, value in (("--from-ref", args.from_ref), ("--prune", args.prune)):
+        if value and not args.update:
+            parser.error(flag + " applies only to --update.")
     try:
         if sys.version_info < (3, 11):
             raise ValueError("Python 3.11 or newer is required.")

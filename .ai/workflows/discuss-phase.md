@@ -204,6 +204,29 @@ answered from the context in `.continue-here.md`, stop and ask the user.
 `check_spec`.
 </step>
 
+<step name="open_session">
+This phase's work lives in one session worktree, shared by `/discuss-phase`,
+`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
+one pull request. Join it before writing anything:
+
+```bash
+SESSION=$(phase_run query session.open phase "${padded_phase}")
+```
+
+An open session for this phase is reused, not replaced. **Run every subsequent
+command from its `worktree`**, and report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, stop and report its message rather than continuing in the
+checkout you were invoked from.
+
+**Do not deliver it here.** `/ship` opens the pull request, judges its checks and
+closes the session once the phase is verified.
+</step>
+
 <step name="check_spec">
 Check whether a SPEC.md exists for this phase (`has_spec` from init). A SPEC.md
 locks requirements before implementation decisions.
@@ -563,4 +586,5 @@ phase_run query commit "docs(state): record phase ${phase_number} context sessio
 - STATE.md updated with session info
 - User knows the next step
 - Checkpoint written after each area completes, and removed after CONTEXT.md is written
+- [ ] Phase session joined before any write, and left open for `/ship`
 </success_criteria>

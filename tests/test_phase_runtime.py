@@ -501,5 +501,258 @@ class Dispatch(RuntimeCase):
         self.assertFalse(result["inherit"])
 
 
+class WorktreeIsolation(RuntimeCase):
+    """Isolation resolution, wave integration and conservative cleanup.
+
+    Every test runs against a real repository with real worktrees, because the
+    behavior worth pinning here is git behavior, not the module bookkeeping.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # A worktree root has to be ignored before the runtime will use it, and
+        # a wave merges into the current branch, so never the default one.
+        (self.directory / ".gitignore").write_text(
+            ".worktrees/\n", encoding="utf-8", newline="\n")
+        (self.directory / "src").mkdir()
+        (self.directory / "src" / "kept.txt").write_text(
+            "kept\n", encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "baseline")
+        self.base_branch = self.git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+        self.git("checkout", "-q", "-b", "work")
+
+    def worktree_git(self, path, *args):
+        return subprocess.run(["git", *args], cwd=str(path), capture_output=True,
+                              text=True, check=False)
+
+    def commit_in(self, path, relative, content, message):
+        """Make one real commit inside a linked worktree."""
+        target = Path(path) / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8", newline="\n")
+        self.worktree_git(path, "add", "-A")
+        self.worktree_git(path, "commit", "-qm", message)
+
+    # --- resolution -------------------------------------------------------
+
+    def test_isolation_resolves_to_a_worktree_model(self):
+        result = self.run_verb("dispatch-isolation", "--phase", "1")
+        self.assertIn(result["isolation"],
+                      ("harness-worktree", "orchestrator-worktree"))
+        self.assertEqual(result["phase"], "1")
+
+    def test_isolation_never_resolves_to_none(self):
+        """There is no configuration, and no flag, that buys an unisolated run."""
+        for key, value in (("workflow.isolation", "none"),
+                           ("workflow.isolation", "sequential-ish"),
+                           ("workflow.isolation", "false")):
+            with self.subTest(key=key, value=value):
+                self.run_verb("config-set", key, value)
+                failure = self.run_verb("dispatch-isolation", expect_ok=False)
+                self.assertEqual(failure["code"], "bad-isolation")
+                self.assertIn("cannot be turned off", failure["error"])
+        self.run_verb("config-set", "workflow.isolation", "auto")
+
+    def test_a_retired_opt_out_key_has_no_effect(self):
+        """`use_worktrees: false` used to disable isolation. It no longer exists,
+        so a project carrying it from an older config is still isolated."""
+        self.run_verb("config-set", "workflow.use_worktrees", "false")
+        result = self.run_verb("dispatch-isolation")
+        self.assertIn(result["isolation"],
+                      ("harness-worktree", "orchestrator-worktree"))
+
+    def test_runtime_isolation_fails_when_the_worktree_root_is_not_ignored(self):
+        (self.directory / ".gitignore").write_text("", encoding="utf-8", newline="\n")
+        self.git("commit", "-qam", "stop ignoring the worktree root")
+        self.run_verb("config-set", "workflow.isolation", "orchestrator-worktree")
+        failure = self.run_verb("dispatch-isolation", expect_ok=False)
+        self.assertEqual(failure["code"], "root-not-ignored")
+        self.assertIn(".gitignore", failure["error"])
+
+    # --- creation ---------------------------------------------------------
+
+    def test_create_makes_an_immediate_child_on_its_own_branch(self):
+        result = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                               "--files", "src/kept.txt")
+        path = Path(result["worktree"])
+        self.assertTrue(path.is_dir())
+        self.assertEqual(path.parent.name, ".worktrees")
+        self.assertTrue(result["branch"].startswith("phase-01-01-"))
+        self.assertEqual(
+            self.worktree_git(path, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip(),
+            result["branch"])
+
+    def test_create_refuses_a_protected_branch_name(self):
+        failure = self.run_verb("worktree.create", "01-01", "--branch", "main",
+                                expect_ok=False)
+        self.assertEqual(failure["code"], "protected-branch")
+
+    def test_create_refuses_a_branch_outside_the_isolation_namespaces(self):
+        failure = self.run_verb("worktree.create", "01-01", "--branch", "my-feature",
+                                expect_ok=False)
+        self.assertEqual(failure["code"], "bad-branch")
+
+    def test_record_agent_needs_the_branch_the_harness_created(self):
+        failure = self.run_verb("worktree.record-agent", "01-01", expect_ok=False)
+        self.assertEqual(failure["code"], "missing-branch")
+
+    # --- integration ------------------------------------------------------
+
+    def test_merge_wave_integrates_a_committed_branch(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/added.txt")
+        self.commit_in(created["worktree"], "src/added.txt", "added\n", "feat: add")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertTrue(result["wave_clean"])
+        self.assertEqual(len(result["merged"]), 1)
+        self.assertEqual(result["merged"][0]["commits"], 1)
+        self.assertTrue((self.directory / "src" / "added.txt").is_file(),
+                        "the merged work must be present in the integration tree")
+
+    def test_merge_wave_blocks_a_deletion_the_plan_did_not_declare(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt")
+        self.worktree_git(created["worktree"], "rm", "-q", "src/kept.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "chore: remove")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertFalse(result["wave_clean"])
+        self.assertEqual(result["blocked"][0]["status"], "blocked")
+        self.assertEqual(result["blocked"][0]["undeclared_deletions"],
+                         ["src/kept.txt"])
+        self.assertTrue((self.directory / "src" / "kept.txt").is_file(),
+                        "a blocked branch must not have been merged")
+
+    def test_merge_wave_allows_a_declared_deletion(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt",
+                                "--deletions", "src/kept.txt")
+        self.worktree_git(created["worktree"], "rm", "-q", "src/kept.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "chore: remove")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertTrue(result["wave_clean"], "a declared deletion is authorized")
+        self.assertFalse((self.directory / "src" / "kept.txt").exists())
+
+    def test_merge_wave_blocks_a_rename_that_removes_an_undeclared_path(self):
+        """A rename is a removal of the old path, and needs the same authority.
+
+        Git reports a move as a single `R` entry naming the destination, so with
+        rename detection on the vanished source never reaches the guard.
+        """
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt,src/moved.txt")
+        self.worktree_git(created["worktree"], "mv", "src/kept.txt", "src/moved.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "refactor: move")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertFalse(result["wave_clean"])
+        self.assertEqual(result["blocked"][0]["undeclared_deletions"],
+                         ["src/kept.txt"])
+        self.assertTrue((self.directory / "src" / "kept.txt").is_file())
+
+    def test_merge_wave_allows_a_rename_whose_source_is_declared(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt,src/moved.txt",
+                                "--deletions", "src/kept.txt")
+        self.worktree_git(created["worktree"], "mv", "src/kept.txt", "src/moved.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "refactor: move")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertTrue(result["wave_clean"])
+        self.assertTrue((self.directory / "src" / "moved.txt").is_file())
+        self.assertFalse((self.directory / "src" / "kept.txt").exists())
+
+    def test_merge_wave_reports_out_of_scope_paths_without_blocking(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/declared.txt")
+        self.commit_in(created["worktree"], "src/declared.txt", "a\n",
+                       "feat: declared")
+        self.commit_in(created["worktree"], "other/stray.txt", "b\n", "feat: stray")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertTrue(result["wave_clean"],
+                        "scope drift is advisory, never blocking")
+        self.assertEqual(result["merged"][0]["out_of_scope"], ["other/stray.txt"])
+
+    def test_merge_wave_reports_a_branch_with_no_commits(self):
+        self.run_verb("worktree.create", "01-01", "--phase", "1")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.assertFalse(result["wave_clean"])
+        self.assertEqual(result["blocked"][0]["status"], "empty")
+
+    def test_merge_wave_refuses_a_protected_target_branch(self):
+        self.run_verb("worktree.create", "01-01", "--phase", "1")
+        self.git("checkout", "-q", self.base_branch)
+        failure = self.run_verb("worktree.merge-wave", "--phase", "1",
+                                expect_ok=False)
+        self.assertEqual(failure["code"], "protected-branch")
+
+    def test_merge_wave_refuses_a_dirty_integration_tree(self):
+        self.run_verb("worktree.create", "01-01", "--phase", "1")
+        (self.directory / "src" / "dirty.txt").write_text("x\n", encoding="utf-8")
+        failure = self.run_verb("worktree.merge-wave", "--phase", "1",
+                                expect_ok=False)
+        self.assertEqual(failure["code"], "dirty-tree")
+
+    # --- cleanup ----------------------------------------------------------
+
+    def test_cleanup_removes_a_worktree_whose_branch_is_merged(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/added.txt")
+        self.commit_in(created["worktree"], "src/added.txt", "added\n", "feat: add")
+        self.run_verb("worktree.merge-wave", "--phase", "1")
+        result = self.run_verb("worktree.cleanup-wave", "--phase", "1")
+        self.assertEqual(len(result["removed"]), 1)
+        self.assertEqual(result["preserved"], [])
+        self.assertFalse(Path(created["worktree"]).exists())
+
+    def test_cleanup_preserves_an_unmerged_worktree_with_a_reason(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1")
+        self.commit_in(created["worktree"], "src/unmerged.txt", "x\n",
+                       "feat: unmerged")
+        result = self.run_verb("worktree.cleanup-wave", "--phase", "1")
+        self.assertEqual(result["removed"], [])
+        self.assertEqual(len(result["preserved"]), 1)
+        self.assertIn("status is", result["preserved"][0]["reason"])
+        self.assertTrue(Path(created["worktree"]).is_dir(),
+                        "unmerged work is work in progress and must be kept")
+
+    def test_cleanup_preserves_a_blocked_entry(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1",
+                                "--files", "src/kept.txt")
+        self.worktree_git(created["worktree"], "rm", "-q", "src/kept.txt")
+        self.worktree_git(created["worktree"], "commit", "-qm", "chore: remove")
+        self.run_verb("worktree.merge-wave", "--phase", "1")
+        result = self.run_verb("worktree.cleanup-wave", "--phase", "1")
+        self.assertEqual(result["removed"], [])
+        self.assertIn("blocked", result["preserved"][0]["reason"])
+
+    # --- inspection -------------------------------------------------------
+
+    def test_list_separates_the_primary_checkout_from_managed_worktrees(self):
+        created = self.run_verb("worktree.create", "01-01", "--phase", "1")
+        result = self.run_verb("worktree.list")
+        primary = [item for item in result["worktrees"] if item["is_primary"]]
+        managed = [item for item in result["worktrees"] if item["managed"]]
+        self.assertEqual(len(primary), 1)
+        self.assertEqual(len(managed), 1)
+        self.assertEqual(managed[0]["branch"], created["branch"])
+        self.assertTrue(result["root_ignored"])
+
+    def test_reap_orphans_prunes_metadata_without_touching_a_live_checkout(self):
+        live = self.run_verb("worktree.create", "01-01", "--phase", "1")
+        orphan = self.run_verb("worktree.create", "01-02", "--phase", "1")
+        shutil.rmtree(orphan["worktree"], ignore_errors=True)
+        result = self.run_verb("worktree.reap-orphans")
+        self.assertEqual(result["pruned_count"], 1)
+        self.assertTrue(Path(live["worktree"]).is_dir(),
+                        "reaping must never remove a checkout that still exists")
+
+    def test_health_warns_when_the_worktree_root_is_not_ignored(self):
+        (self.directory / ".gitignore").write_text("", encoding="utf-8", newline="\n")
+        self.git("commit", "-qam", "stop ignoring the worktree root")
+        result = self.run_verb("worktree.health")
+        self.assertFalse(result["ok_to_isolate"])
+        self.assertIn("root-not-ignored",
+                      [item["code"] for item in result["findings"]])
+
+
 if __name__ == "__main__":
     unittest.main()

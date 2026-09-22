@@ -14,6 +14,27 @@ DEFAULTS = {
         "text_mode": False,
         "auto_advance": False,
         "discuss_mode": "discuss",
+        # Which isolation model to use, never whether to isolate. Worktree
+        # isolation is a requirement of this project: there is no value here
+        # that means "run unisolated", and no key that turns it off.
+        "isolation": "auto",
+    },
+    "worktree": {
+        "root": ".worktrees",
+    },
+    # When an agent must stop taking new work and hand off. Whichever of the
+    # two comes first: the percentage binds on a small window, the absolute
+    # ceiling on a large one. Read by .ai/hooks/context-handoff.sh and by
+    # `phase_run query handoff.limits`.
+    "handoff": {
+        "context_percent": 60,
+        "context_tokens": 250000,
+    },
+    # How a session worktree's work reaches the base branch. There is no key
+    # here that means "commit directly": the pull request is the only route.
+    "delivery": {
+        "merge_method": "squash",
+        "delete_branch": True,
     },
     "agents": {},
     "verification": {"commands": []},

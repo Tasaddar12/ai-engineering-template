@@ -94,6 +94,29 @@ If the code changed since, the report is stale — say so and re-verify. If noth
 changed, offer to show the existing report instead of re-running.
 </step>
 
+<step name="open_session">
+This phase's work lives in one session worktree, shared by `/discuss-phase`,
+`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
+one pull request. Join it before writing anything:
+
+```bash
+SESSION=$(phase_run query session.open phase "${padded_phase}")
+```
+
+An open session for this phase is reused, not replaced. **Run every subsequent
+command from its `worktree`**, and report it in one line:
+
+```
+Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
+```
+
+If the verb fails, stop and report its message rather than continuing in the
+checkout you were invoked from.
+
+**Do not deliver it here.** `/ship` opens the pull request, judges its checks and
+closes the session once the phase is verified.
+</step>
+
 <step name="scan_phase_artifacts">
 Establish what the phase claims before asking what is true:
 
@@ -358,6 +381,9 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - Don't close gaps without re-verifying
 - Don't loop past 3 verify/fix rounds — escalate to the user
 - Don't mark the phase complete on a `gaps_found` report without the user accepting it
+- Don't open a pull request or merge from here — a phase session is
+  delivered once, by `/ship`
+- Don't close the phase session; the workflows after this one reuse it
 </anti_patterns>
 
 <success_criteria>
@@ -369,4 +395,5 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - [ ] VERIFICATION.md written with status, revision and findings
 - [ ] Gaps either closed and re-verified, or recorded as todos with the user's agreement
 - [ ] Roadmap and STATE.md updated only on a pass or an explicit acceptance
+- [ ] Phase session joined before any write, and left open for `/ship`
 </success_criteria>

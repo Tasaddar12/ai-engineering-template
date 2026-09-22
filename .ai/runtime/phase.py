@@ -15,7 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import bundles, gitops, milestones, models, phases, quick, state, todos, verification  # noqa: E402
+from lib import (bundles, delivery, gitops, handoff, milestones, models, phases,  # noqa: E402
+                 quick, state, todos, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -25,7 +26,7 @@ from lib.state import planning_lock  # noqa: E402
 from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
-LIST_OPTIONS = {"files", "requirements", "plans"}
+LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining"}
 
 
 def parse(argv):
@@ -130,6 +131,154 @@ def verb_base_branch(workspace, positionals, options):
         "base_branch": base, "current_branch": current,
         "is_protected": current in {base, "main", "master"},
         "has_remote": gitops.has_remote(workspace)}
+
+
+# --- worktree isolation ---------------------------------------------------
+
+def verb_dispatch_isolation(workspace, positionals, options):
+    """Which isolation model this dispatch uses.
+
+    `--raw` prints the bare mode so a workflow can branch on it directly. There
+    is no flag that forces a weaker answer: isolation is mandatory, so the verb
+    either names a worktree model or fails with the reason it could not.
+    """
+    payload = worktrees.resolve_isolation(workspace, phase=options.get("phase"),
+                                          plan=options.get("plan"))
+    return payload["isolation"] if options.get("raw") else payload
+
+
+def verb_worktree_create(workspace, positionals, options):
+    plan = argument(positionals, 0, "plan")
+    return worktrees.create(workspace, plan, phase=options.get("phase"),
+                            base=options.get("base") if isinstance(options.get("base"), str) else None,
+                            branch=options.get("branch") if isinstance(options.get("branch"), str) else None,
+                            files=options.get("files"), deletions=options.get("deletions"))
+
+
+def verb_worktree_record_agent(workspace, positionals, options):
+    plan = argument(positionals, 0, "plan")
+    branch = options.get("branch")
+    require(isinstance(branch, str) and branch.strip(),
+            "--branch is required: the harness reports the branch it created",
+            "missing-branch")
+    return worktrees.record_agent(
+        workspace, plan, branch, phase=options.get("phase"),
+        base=options.get("base") if isinstance(options.get("base"), str) else None,
+        files=options.get("files"), deletions=options.get("deletions"),
+        path=options.get("path") if isinstance(options.get("path"), str) else None)
+
+
+def option_text(options, name):
+    value = options.get(name)
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def verb_session_open(workspace, positionals, options):
+    kind = argument(positionals, 0, "kind")
+    label = argument(positionals, 1, "label")
+    return worktrees.open_session(workspace, kind, label,
+                                  base=option_text(options, "base"),
+                                  sync=not options.get("no_sync"))
+
+
+def verb_session_status(workspace, positionals, options):
+    return worktrees.session_status(workspace)
+
+
+def verb_session_close(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    return worktrees.close_session(workspace, branch,
+                                   force=bool(options.get("force")))
+
+
+def verb_pr_open(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    pull = delivery.open_pr(
+        workspace, branch, base=option_text(options, "base"),
+        title=option_text(options, "title"), body=option_text(options, "body"),
+        body_file=option_text(options, "body_file"),
+        draft=bool(options.get("draft")))
+    try:
+        worktrees.record_session_pr(workspace, branch, pull.get("url"),
+                                    pull.get("number"))
+    except VerbError:
+        # A pull request opened for a branch this runtime did not create is
+        # still a valid pull request; it just has no session to annotate.
+        pass
+    return pull
+
+
+def verb_pr_checks(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    return delivery.checks(workspace, branch)
+
+
+def verb_pr_merge(workspace, positionals, options):
+    branch = argument(positionals, 0, "branch")
+    local = options.get("local_checks_passed")
+    return delivery.merge_pr(workspace, branch,
+                             local_checks_passed=True if local is True else None)
+
+
+def verb_pr_sync(workspace, positionals, options):
+    return delivery.sync_base(workspace)
+
+
+def verb_gh_status(workspace, positionals, options):
+    return delivery.availability(workspace)
+
+
+def verb_worktree_merge_wave(workspace, positionals, options):
+    return worktrees.merge_wave(
+        workspace, options.get("phase"),
+        plan=options.get("plan") if isinstance(options.get("plan"), str) else None)
+
+
+def verb_worktree_cleanup_wave(workspace, positionals, options):
+    return worktrees.cleanup_wave(workspace, options.get("phase"),
+                                  force=bool(options.get("force")))
+
+
+def verb_worktree_list(workspace, positionals, options):
+    return worktrees.listing(workspace)
+
+
+def verb_worktree_reap_orphans(workspace, positionals, options):
+    return worktrees.reap_orphans(workspace)
+
+
+def verb_worktree_health(workspace, positionals, options):
+    return worktrees.health(workspace)
+
+
+# --- handoffs -------------------------------------------------------------
+
+def verb_handoff_limits(workspace, positionals, options):
+    return success(handoff.limits(workspace))
+
+
+def verb_handoff_list(workspace, positionals, options):
+    found = handoff.records(workspace)
+    return success({"count": len(found), "handoffs": found})
+
+
+def verb_handoff_read(workspace, positionals, options):
+    return success(handoff.read_one(workspace, argument(positionals, 0, "handoff id")))
+
+
+def verb_handoff_consume(workspace, positionals, options):
+    return success(handoff.consume(workspace, argument(positionals, 0, "handoff id")))
+
+
+def verb_handoff_write(workspace, positionals, options):
+    return success(handoff.write(
+        workspace, argument(positionals, 0, "handoff id"),
+        option_text(options, "reason"),
+        plan=option_text(options, "plan"),
+        agent=option_text(options, "agent"),
+        summary=option_text(options, "summary"),
+        remaining=options.get("remaining"),
+        notes=option_text(options, "notes")))
 
 
 # --- phases ---------------------------------------------------------------
@@ -418,6 +567,29 @@ VERBS = {
     "config-set": verb_config_set,
     "commit": verb_commit,
     "git.base-branch": verb_base_branch,
+
+    "dispatch-isolation": verb_dispatch_isolation,
+    "session.open": verb_session_open,
+    "session.status": verb_session_status,
+    "session.close": verb_session_close,
+    "pr.open": verb_pr_open,
+    "pr.checks": verb_pr_checks,
+    "pr.merge": verb_pr_merge,
+    "pr.sync": verb_pr_sync,
+    "gh.status": verb_gh_status,
+    "worktree.create": verb_worktree_create,
+    "worktree.record-agent": verb_worktree_record_agent,
+    "worktree.merge-wave": verb_worktree_merge_wave,
+    "worktree.cleanup-wave": verb_worktree_cleanup_wave,
+    "worktree.list": verb_worktree_list,
+    "worktree.reap-orphans": verb_worktree_reap_orphans,
+    "worktree.health": verb_worktree_health,
+
+    "handoff.limits": verb_handoff_limits,
+    "handoff.list": verb_handoff_list,
+    "handoff.read": verb_handoff_read,
+    "handoff.consume": verb_handoff_consume,
+    "handoff.write": verb_handoff_write,
 
     "phase.add": verb_phase_add,
     "phase.insert": verb_phase_insert,

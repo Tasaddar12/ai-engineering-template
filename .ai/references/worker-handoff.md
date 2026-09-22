@@ -67,10 +67,12 @@ Hand off one plan, not a whole phase or a review-and-repair loop. An author runs
 its own implementation checks; independent review belongs to a separate fresh
 reviewer. Do not reuse the same growing author session for another plan.
 
-- When host-reported context reaches 100,000 tokens or 50% of its window,
-  whichever is lower, start the handoff immediately. Do not begin another
-  implementation task or repair; finish only the active operation needed to
-  preserve work. Honour a lower user-specified limit.
+- When context reaches 60% of the window or 250,000 tokens, whichever comes
+  first, start the handoff immediately. Do not begin another implementation task
+  or repair; finish only the active operation needed to preserve work. Honour a
+  lower user-specified limit. Both numbers are configurable per project as
+  `handoff.context_percent` and `handoff.context_tokens`; `phase_run query
+  handoff.limits` reports the resolved figure.
 - Preserve safe partial commits. Set SUMMARY frontmatter `status: blocked`; record
   the exact base and head, completed and remaining tasks, dirty files, observed
   command results and missing evidence. Do not fabricate passing checks or
@@ -82,5 +84,36 @@ reviewer. Do not reuse the same growing author session for another plan.
   commits and SUMMARY before assigning the remaining tasks to a fresh coder. Do
   not replay completed tasks or resume the exhausted session.
 
-The token threshold is a handoff instruction; the runtime does not measure live
-context.
+## Handoff records
+
+[context-handoff.sh](../hooks/context-handoff.sh) measures the live transcript
+and writes a record to `.planning/handoffs/` on two triggers: a session that
+crosses the limit above, and a write-capable subagent that stops without a
+`complete` SUMMARY. The threshold is therefore enforced, not merely instructed —
+but the enforcement is advisory injection, so an agent that ignores the warning
+still has its record on disk for the orchestrator to find.
+
+A record is local, ephemeral and gitignored. It names worktree paths, a revision
+and dirty files that mean nothing in another checkout, so it is never committed
+and never stands as evidence: what a plan actually did stays in its committed
+SUMMARY.md. A handoff only says where the previous attempt stopped.
+
+The orchestrator picks one up in three verbs:
+
+```text
+phase_run query handoff.list                     # what is pending, oldest first
+phase_run query handoff.read <id>                # the record, plus a continuation brief
+phase_run query handoff.consume <id>             # delete it once the work is reassigned
+```
+
+`handoff.read` returns a `continuation` brief to put in front of the fresh
+subagent: the plan, the SUMMARY to read first, the revision at interruption and
+the uncommitted paths. Dispatch the replacement against the remaining tasks
+only, then consume the record. **Consume it in the same turn you dispatch.** A
+record left on disk after its work is reassigned is what puts a second agent on
+a plan the first is already finishing.
+
+An agent that decides for itself that it cannot continue records the same thing
+deliberately with `phase_run query handoff.write <id> --reason <why> --plan
+<path> --remaining <task> ...` while it still has the context to describe what
+is left.
