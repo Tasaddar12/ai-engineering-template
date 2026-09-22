@@ -15,12 +15,28 @@
 # Extracted from ai-tier-notice.sh and worktree-guard.sh, which each carried
 # their own copy. New hooks source this rather than adding a fourth.
 
+# The interpreter is probed, not merely located: `command -v python3` answering
+# yes is not the same as an interpreter that runs, and on Windows the name
+# routinely resolves to a Store execution-alias stub that prints nothing. A stub
+# bound here makes every field come back empty, which reads exactly like a
+# payload that carried none. `py` is the Windows launcher, present on machines
+# where the bare names are not. The result is shared with lib/handoff-io.sh
+# through _HOOK_PY, so two sourced libraries probe once between them.
+if [[ -z "${_HOOK_PY+set}" ]]; then
+  _HOOK_PY=""
+  for _hook_candidate in python3 python py; do
+    if command -v "$_hook_candidate" >/dev/null 2>&1        && [[ "$("$_hook_candidate" -c 'print(1)' 2>/dev/null)" == 1* ]]; then
+      _HOOK_PY="$_hook_candidate"
+      break
+    fi
+  done
+  unset _hook_candidate
+fi
+
 if command -v jq >/dev/null 2>&1; then
   _JSON=jq
-elif command -v python3 >/dev/null 2>&1; then
-  _JSON=python3
-elif command -v python >/dev/null 2>&1; then
-  _JSON=python
+elif [[ -n "$_HOOK_PY" ]]; then
+  _JSON="$_HOOK_PY"
 else
   _JSON=sed
 fi
@@ -44,7 +60,7 @@ field() {
       printf '%s' "$payload" | jq -r --arg k "$1" \
         '(.[$k]? // .tool_input[$k]? // "") | if type=="string" then . else "" end' 2>/dev/null
       ;;
-    python3|python)
+    python3|python|py)
       printf '%s' "$payload" | "$_JSON" -c "$_PYEX" "$1" 2>/dev/null
       ;;
     *)
@@ -71,7 +87,7 @@ many_fields() {
         | (($d[$k]? // $d.tool_input[$k]? // "")
            | if type == "string" then gsub("\n"; " ") else "" end)' -- "$@" 2>/dev/null
       ;;
-    python3|python)
+    python3|python|py)
       printf '%s' "$payload" | "$_JSON" -c '
 import sys, json
 try:

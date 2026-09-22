@@ -77,6 +77,30 @@ payload_for() {
     "$1" "$2" "$repo" "$3"
 }
 
+# --- preflight ---------------------------------------------------------------
+#
+# The hook is deliberately silent when it cannot measure occupancy, so an
+# environment with no working interpreter turns every assertion below into a
+# vacuous pass -- which is how a mute hook reached CI unnoticed. Establish that
+# the measuring path works at all, and say which tier answered, before trusting
+# a single silence in this file.
+
+. "$script_dir/lib/handoff-io.sh"
+printf 'interpreter: %s   jq: %s
+'   "${HANDOFF_PY:-<none found>}" "$(command -v jq >/dev/null 2>&1 && echo yes || echo no)"
+if [[ -z "$HANDOFF_PY" ]]; then
+  echo "FAIL  no working python interpreter: the hook cannot measure occupancy," >&2
+  echo "      so every silence this suite checks would be silence for the wrong reason." >&2
+  exit 1
+fi
+claude_transcript "$workspace/preflight.jsonl" 123456
+preflight="$(handoff_used_tokens "$workspace/preflight.jsonl")"
+if [[ "$preflight" != "123456" ]]; then
+  echo "FAIL  the interpreter ran but could not read a transcript at this path shape" >&2
+  echo "      (measured '$preflight', wanted 123456; transcript at $workspace/preflight.jsonl)" >&2
+  exit 1
+fi
+
 # --- below the limit stays silent --------------------------------------------
 
 claude_transcript "$workspace/low.jsonl" 100000

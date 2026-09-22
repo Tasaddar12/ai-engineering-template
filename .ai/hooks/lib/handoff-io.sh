@@ -14,14 +14,52 @@
 HANDOFF_SCHEMA=1
 
 # Python does the structural work (YAML config, JSONL transcripts). Without it
-# the hook degrades to silence rather than guessing.
-if command -v python3 >/dev/null 2>&1; then
-  HANDOFF_PY=python3
-elif command -v python >/dev/null 2>&1; then
-  HANDOFF_PY=python
-else
-  HANDOFF_PY=""
+# the hook degrades to silence rather than guessing -- which is the safe
+# direction, and exactly why the interpreter is PROBED rather than merely
+# located.
+#
+# `command -v python3` answering yes is not the same as an interpreter that
+# runs. On Windows the name routinely resolves to a Microsoft Store
+# execution-alias stub that prints nothing and exits, and a CI runner can put a
+# python on PATH under a name this cascade did not try. Either way the old
+# cascade bound HANDOFF_PY to something that produced no output, every function
+# below returned empty, and the hook went quiet for a reason nothing reported:
+# occupancy was never measured, no handoff was ever written, and the suite that
+# would have caught it passed vacuously because the hook is meant to be silent
+# when it cannot measure.
+#
+# `py` is the Windows launcher, which is present on machines where the bare
+# names are not. The probe costs one process at source time, once.
+if [[ -z "${_HOOK_PY+set}" ]]; then
+  _HOOK_PY=""
+  for _hook_candidate in python3 python py; do
+    if command -v "$_hook_candidate" >/dev/null 2>&1        && [[ "$("$_hook_candidate" -c 'print(1)' 2>/dev/null)" == 1* ]]; then
+      _HOOK_PY="$_hook_candidate"
+      break
+    fi
+  done
+  unset _hook_candidate
 fi
+HANDOFF_PY="$_HOOK_PY"
+
+# A path spelled the way the interpreter can open it.
+#
+# Under Git Bash the shell and a native Windows python disagree about what a
+# path is: bash resolves /tmp/x, and python resolves it against the current
+# drive, where it does not exist. MSYS usually rewrites such an argument on the
+# way to a native binary, but that conversion is a heuristic and the
+# environment can switch it off -- and when it does not happen, `[[ -f ]]` says
+# yes, open() says no, and the measurement comes back empty with nothing
+# reported. cygpath is the authority where it exists; everywhere else the path
+# is already native and passes straight through.
+handoff_native_path() {
+  [[ -n "${1-}" ]] || return 0
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m -- "$1" 2>/dev/null || printf '%s' "$1"
+  else
+    printf '%s' "$1"
+  fi
+}
 
 handoff_root() {
   git rev-parse --show-toplevel 2>/dev/null || printf '%s' "${CLAUDE_PROJECT_DIR:-$PWD}"
@@ -104,7 +142,8 @@ sys.stdout.buffer.write(
 # Echoes: "<threshold_tokens> <context_window> <percent> <absolute_ceiling>"
 handoff_limits() {
   [[ -n "$HANDOFF_PY" ]] || { printf '120000 200000 60 250000'; return 0; }
-  "$HANDOFF_PY" -c "$_HANDOFF_CONFIG_PY" "$(handoff_root)/.planning/config.yaml" 2>/dev/null \
+  "$HANDOFF_PY" -c "$_HANDOFF_CONFIG_PY" \
+    "$(handoff_native_path "$(handoff_root)/.planning/config.yaml")" 2>/dev/null \
     || printf '120000 200000 60 250000'
 }
 
@@ -172,7 +211,7 @@ sys.stdout.buffer.write(
 # Echoes the transcript's latest token occupancy, or nothing when unavailable.
 handoff_used_tokens() {
   [[ -n "$HANDOFF_PY" && -n "${1:-}" && -f "$1" ]] || return 0
-  "$HANDOFF_PY" -c "$_HANDOFF_USAGE_PY" "$1" 2>/dev/null || true
+  "$HANDOFF_PY" -c "$_HANDOFF_USAGE_PY" "$(handoff_native_path "$1")" 2>/dev/null || true
 }
 
 
@@ -247,7 +286,7 @@ sys.stdout.buffer.write(found.encode("utf-8") + chr(10).encode("utf-8"))
 # Echoes the plan path named in a subagent transcript, or nothing.
 handoff_plan_in_transcript() {
   [[ -n "$HANDOFF_PY" && -n "${1:-}" && -f "$1" ]] || return 0
-  "$HANDOFF_PY" -c "$_HANDOFF_PLAN_PY" "$1" 2>/dev/null || true
+  "$HANDOFF_PY" -c "$_HANDOFF_PLAN_PY" "$(handoff_native_path "$1")" 2>/dev/null || true
 }
 
 # --- record writing -----------------------------------------------------------
@@ -316,7 +355,7 @@ handoff_record() {
   shift
   [[ -n "$HANDOFF_PY" ]] || return 0
   mkdir -p "${file%/*}" 2>/dev/null || return 0
-  "$HANDOFF_PY" -c "$_HANDOFF_RECORD_PY" "$file" "$@" 2>/dev/null
+  "$HANDOFF_PY" -c "$_HANDOFF_RECORD_PY" "$(handoff_native_path "$file")" "$@" 2>/dev/null
   return 0
 }
 
@@ -337,7 +376,7 @@ except Exception:
 handoff_append_active() {
   [[ -n "$HANDOFF_PY" ]] || return 0
   mkdir -p "${1%/*}" 2>/dev/null || return 0
-  "$HANDOFF_PY" -c "$_HANDOFF_ACTIVE_PY" "$1" "${2-}" "${3-}" \
+  "$HANDOFF_PY" -c "$_HANDOFF_ACTIVE_PY" "$(handoff_native_path "$1")" "${2-}" "${3-}" \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || printf 'unknown')" 2>/dev/null
   return 0
 }
