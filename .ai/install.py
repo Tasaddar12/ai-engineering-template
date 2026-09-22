@@ -2,6 +2,7 @@
 """Install the workflow into a new directory or an existing project (Python 3.11+)."""
 
 import argparse
+from contextlib import ExitStack
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -222,8 +223,10 @@ MANAGED_HOOKS = (
      "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
     # The handoff hook measures on PostToolUse, catches an executor that
     # stopped early on SubagentStop, and clears its own session state on Stop.
-    # SubagentStop and Stop carry no tool, so they carry no matcher: a matcher
-    # on an event with nothing to match against is refused by both hosts.
+    # SubagentStop and Stop carry no tool, so neither carries a tool matcher.
+    # Codex does accept an `agent_type` matcher on SubagentStop, but the hook
+    # filters on the role itself and Claude has no equivalent, so one
+    # unmatched registration keeps the two hosts on the same shape.
     ("PostToolUse", "context-handoff.sh",
      "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch|Agent|Task)$"),
     ("SubagentStop", "context-handoff.sh", None),
@@ -486,21 +489,37 @@ def install(args):
     if not args.skip_deps:
         environment = target / (namespace + "-venv")
         safe_path(environment)
-        if environment.exists():
+        if environment.exists() and not args.update:
             raise ValueError(f"{namespace}-venv already exists; preserve it and rerun with --skip-deps. "
                              f"See {namespace}/commands/install.md for dependency repair.")
-    with tempfile.TemporaryDirectory(prefix="ai-template-") as temporary:
+    with ExitStack() as stack:
+        temporary = stack.enter_context(tempfile.TemporaryDirectory(prefix="ai-template-"))
         source = Path(temporary)
         run("git", "init", "--quiet", str(source))
         run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.ref, cwd=source)
         run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=source)
         revision = run("git", "rev-parse", "HEAD", cwd=source, capture=True).strip()
+        # The revision the project was installed from, fetched into its own tree
+        # so an update can tell a local customization from an upstream change.
+        previous = None
+        if args.from_ref:
+            baseline = stack.enter_context(tempfile.TemporaryDirectory(prefix="ai-baseline-"))
+            previous = Path(baseline)
+            run("git", "init", "--quiet", str(previous))
+            run("git", "fetch", "--quiet", "--depth=1", "--", args.source, args.from_ref,
+                cwd=previous)
+            run("git", "checkout", "--quiet", "--detach", "FETCH_HEAD", cwd=previous)
         backup_files = []
         notes = []
         if args.migrate_existing:
             migration = runpy.run_path(str(source / ".ai/install_migration.py"))
             changes, backup_files, notes = migration["plan_migration"](
                 source, target, args.host, not args.no_hooks, SimpleNamespace(**globals()))
+        elif args.update:
+            update = runpy.run_path(str(source / ".ai/install_update.py"))
+            changes, backup_files, notes = update["plan_update"](
+                source, target, args.host, not args.no_hooks, SimpleNamespace(**globals()),
+                prune=args.prune, previous=previous)
         else:
             changes = plan_install(source, target, args.host, not args.no_hooks)
         originals = {destination_path(name, args.host): source / name
@@ -509,7 +528,10 @@ def install(args):
         for original in backup_files:
             relative = original.relative_to(target).as_posix()
             originals.setdefault(destination_path(relative, args.host), original)
+        mode = ("update" if args.update else
+                "migrate" if args.migrate_existing else "install")
         print(f"Template revision: {revision}\nTarget: {target}\nHost: {args.host}; "
+              f"mode: {mode}; "
               f"hook registration: {'skip' if args.no_hooks else 'advisory'}", flush=True)
         print(f"{'Would change' if args.dry_run else 'Changing'} {len(changes)} workflow files.", flush=True)
         for note in notes:
@@ -520,7 +542,8 @@ def install(args):
             print(f"Git: {'preserve repository' if in_git else 'initialize repository'}; "
                   f"dependencies: {'skip' if args.skip_deps else 'create ' + namespace + '-venv and install PyYAML'}")
             if backup_files:
-                print(f"Would back up and verify {len(backup_files)} original files under .workflow-backups/ before migration.")
+                print(f"Would back up and verify {len(backup_files)} original files under "
+                      f".workflow-backups/ before {'updating' if args.update else 'migration'}.")
             return
         target.mkdir(parents=True, exist_ok=True)
         if backup_files:
@@ -577,7 +600,22 @@ def main():
     parser.add_argument("--skip-deps", action="store_true", help="Skip virtual environment and dependency setup")
     parser.add_argument("--migrate-existing", action="store_true",
                         help="Rebuild an existing .ai workflow for the selected host, preserving project data and verified originals")
+    parser.add_argument("--update", action="store_true",
+                        help="Refresh an already-installed .codex or .claude workflow onto "
+                             "this revision, preserving project records and merging host settings")
+    parser.add_argument("--from-ref", default=None,
+                        help="With --update, the revision this project was installed from; lets "
+                             "the report name local customizations it is about to replace")
+    parser.add_argument("--prune", action="store_true",
+                        help="With --update, also remove installed workflow files this revision "
+                             "no longer ships (backed up and verified first)")
     args = parser.parse_args()
+    if args.update and args.migrate_existing:
+        parser.error("--update refreshes an installed host tree and --migrate-existing "
+                     "rebuilds an older .ai one; run the migration first, then update.")
+    for flag, value in (("--from-ref", args.from_ref), ("--prune", args.prune)):
+        if value and not args.update:
+            parser.error(flag + " applies only to --update.")
     try:
         if sys.version_info < (3, 11):
             raise ValueError("Python 3.11 or newer is required.")
