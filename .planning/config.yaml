@@ -44,13 +44,48 @@ handoff:
   context_percent: 60
   context_tokens: 250000
 
-# Per-agent model overrides. Omitted agents use the model in their own
-# definition under .ai/agents/, falling back to the host's choice.
-agents: {}
-  # coder:
-  #   model: opus
-  # verifier:
-  #   model: sonnet
+# Per-agent model overrides, and the only place a Claude subagent's model is
+# set. Agent definitions under .ai/agents/ deliberately carry no `model:`
+# frontmatter, so a role omitted here resolves to `inherit` and runs on whatever
+# model the orchestrator's own session is using.
+#
+# The tiers follow the work rather than the role name:
+#
+#   sonnet  authoring -- writing code, plans and prose against a settled
+#           decision, where the hard thinking already happened upstream
+#   opus    judgement -- research and independent review, where a miss is not
+#           caught by anything downstream and costs a whole phase
+#   haiku   mechanical -- running the project's commands and checking claims
+#           against their actual output
+#
+# `coordinator` is deliberately absent: it is the orchestrating conversation,
+# not a worker the runtime spawns, so it keeps the session's own model.
+#
+# These are Claude aliases. Codex reads its own `model` from each role's TOML in
+# .codex/agents/ and ignores this block entirely.
+agents:
+  coder:
+    model: sonnet
+  debugger:
+    model: sonnet
+  doc-writer:
+    model: sonnet
+  phase-preparer:
+    model: sonnet
+  codebase-mapper:
+    model: sonnet
+  researcher:
+    model: opus
+  code-reviewer:
+    model: opus
+  verifier:
+    model: opus
+  phase-checker:
+    model: opus
+  doc-verifier:
+    model: haiku
+  integration-checker:
+    model: haiku
 
 verification:
   # The project's real checks, as argv lists without a shell. Run by
