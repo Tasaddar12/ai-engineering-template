@@ -128,9 +128,13 @@ phase_run query handoff.consume <id>             # delete it once the work is re
 ```
 
 `handoff.read` returns a `continuation` brief to put in front of the fresh
-subagent: the plan, the SUMMARY to read first, the revision at interruption and
-the uncommitted paths. Dispatch the replacement against the remaining tasks
-only, then consume the record. **Consume it in the same turn you dispatch.** A
+subagent, shaped by the role that stopped. For a plan executor it names the
+plan, the SUMMARY to read first, the revision at interruption and the
+uncommitted paths. For a researcher it says to read the existing RESEARCH.md
+and research only its `## Not Yet Researched` questions; other artifact roles
+and reviewers are told to continue only what the previous attempt left
+uncovered. Dispatch the replacement against the remaining work only, then
+consume the record. **Consume it in the same turn you dispatch.** A
 record left on disk after its work is reassigned is what puts a second agent on
 a plan the first is already finishing.
 

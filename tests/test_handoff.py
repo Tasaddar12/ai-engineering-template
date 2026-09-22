@@ -5,8 +5,10 @@ This suite covers the other half: what the orchestrator can do with a record
 once it exists -- resolve the limit, list what is pending, read a continuation
 brief, and consume a record so no second agent picks up the same work.
 """
+import ast
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -142,6 +144,56 @@ class Reading(HandoffCase):
         self.assertIn("abc1234", brief)
         self.assertIn("src/thing.py", brief)
         self.assertIn("incomplete-exit", brief)
+
+    def test_a_researcher_brief_continues_the_open_questions(self):
+        """A researcher has no SUMMARY; its finished work is RESEARCH.md."""
+        self.put("sess--agent-r1", reason="context-threshold", agent="researcher")
+        brief = self.run_verb("handoff.read", "sess--agent-r1")["continuation"]
+        self.assertIn("Not Yet Researched", brief)
+        self.assertIn("RESEARCH PARTIAL", brief)
+        self.assertIn("never a blocker", brief)
+        self.assertNotIn("SUMMARY.md", brief)
+        self.assertNotIn("Do not restart the plan", brief)
+
+    def test_a_plugin_scoped_role_is_read_by_its_last_segment(self):
+        self.put("sess--agent-r2", agent="plugin:kit:researcher")
+        brief = self.run_verb("handoff.read", "sess--agent-r2")["continuation"]
+        self.assertIn("Not Yet Researched", brief)
+
+    def test_other_artifact_roles_continue_what_is_uncovered(self):
+        self.put("sess--agent-p1", agent="phase-preparer")
+        brief = self.run_verb("handoff.read", "sess--agent-p1")["continuation"]
+        self.assertIn("not yet covered", brief)
+        self.assertNotIn("SUMMARY.md", brief)
+
+    def test_a_reviewer_brief_continues_the_unreached_scope(self):
+        self.put("sess--agent-v1", agent="verifier")
+        brief = self.run_verb("handoff.read", "sess--agent-v1")["continuation"]
+        self.assertIn("Continue an interrupted review", brief)
+        self.assertIn("not reached", brief)
+
+    def test_recorded_remaining_tasks_reach_the_brief(self):
+        self.run_verb("handoff.write", "sess--05-01", "--reason", "context limit",
+                      "--plan", ".planning/phases/05-z/05-01-PLAN.md",
+                      "--remaining", "Task 3: wire the retry")
+        brief = self.run_verb("handoff.read", "sess--05-01")["continuation"]
+        self.assertIn("Remaining: Task 3: wire the retry", brief)
+
+    def test_role_lists_match_the_hook(self):
+        """The hook's advisory and this brief must classify roles the same way."""
+        # Read as source, not imported: the runtime's `lib` package name is
+        # generic enough to collide with another on the test path.
+        module = ast.parse((ROOT / ".ai" / "runtime" / "lib" / "handoff.py")
+                           .read_text(encoding="utf-8"))
+        python = {target.id: ast.literal_eval(node.value)
+                  for node in module.body if isinstance(node, ast.Assign)
+                  for target in node.targets if isinstance(target, ast.Name)}
+        shell = (ROOT / ".ai" / "hooks" / "lib" / "agent-roles.sh").read_text(encoding="utf-8")
+        for name in ("ARTIFACT_AGENTS", "REVIEW_AGENTS"):
+            with self.subTest(name=name):
+                match = re.search(r'^%s="([^"]*)"' % name, shell, re.MULTILINE)
+                self.assertIsNotNone(match, name + " is missing from agent-roles.sh")
+                self.assertEqual(sorted(python[name]), sorted(match.group(1).split()))
 
     def test_reading_does_not_consume(self):
         """Inspection is not dispatch. A read that deleted the record would lose

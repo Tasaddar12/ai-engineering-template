@@ -122,17 +122,60 @@ def read_one(workspace, identifier):
     return record
 
 
+#: Roles whose output is one assigned artifact rather than a plan executed to a
+#: SUMMARY, and roles that report on existing work. The same lists live in
+#: `.ai/hooks/lib/agent-roles.sh`, which the hook sources; a test holds the two
+#: copies equal, because the hook's advisory and this brief must agree on what
+#: a stopped agent was asked to do.
+ARTIFACT_AGENTS = ("researcher", "codebase-mapper", "phase-preparer")
+REVIEW_AGENTS = ("verifier", "code-reviewer", "doc-verifier", "phase-checker",
+                 "integration-checker")
+
+
+def _role(record):
+    agent = record.get("agent")
+    return agent.rsplit(":", 1)[-1] if isinstance(agent, str) else ""
+
+
 def _brief(record):
     """What the orchestrator must put in front of the continuation agent.
 
     Deliberately instructions, not prose: the failure this guards against is a
-    fresh agent replaying finished tasks because nobody told it what the last
-    one committed.
+    fresh agent replaying finished work because nobody told it what the last
+    one produced. What "finished work" means depends on the role: a coder's is
+    commits and a SUMMARY, a researcher's is the sections of RESEARCH.md it
+    already wrote.
     """
-    lines = [
-        "Continue an interrupted attempt. Do not restart the plan.",
-        f"Reason the previous attempt stopped: {record.get('reason') or 'unknown'}.",
-    ]
+    role = _role(record)
+    reason = f"Reason the previous attempt stopped: {record.get('reason') or 'unknown'}."
+    remaining = [item for item in (record.get("remaining") or []) if item]
+
+    if role in ARTIFACT_AGENTS or role in REVIEW_AGENTS:
+        noun = "review" if role in REVIEW_AGENTS else f"{role} pass"
+        lines = [f"Continue an interrupted {noun}. Do not restart it.", reason]
+        if record.get("plan"):
+            lines.append(f"Plan: {record['plan']}")
+        lines.extend("Remaining: " + item for item in remaining)
+        if role == "researcher":
+            lines.append(
+                "Read the existing RESEARCH.md first. Research only the questions under its "
+                "`## Not Yet Researched` section, edit each finding into the matching "
+                "section and remove it from the list, and do not rewrite or re-verify "
+                "sections already written. Set `**Coverage:** complete` when the list is "
+                "empty. Return RESEARCH COMPLETE, or RESEARCH PARTIAL if the limit arrives "
+                "again -- the limit is never a blocker.")
+        elif role in REVIEW_AGENTS:
+            lines.append(
+                "Read the previous report first. Examine only the scope it names as not "
+                "reached, and add your findings to it rather than starting a new one.")
+        else:
+            lines.append(
+                "Read what the previous attempt already wrote first. Produce only the part "
+                "it named as not yet covered, leaving what exists unchanged, and return "
+                "partial again if the limit arrives -- the limit is never a blocker.")
+        return "\n".join(lines)
+
+    lines = ["Continue an interrupted attempt. Do not restart the plan.", reason]
     if record.get("plan"):
         lines.append(f"Plan: {record['plan']}")
     if record.get("summary"):
@@ -143,6 +186,7 @@ def _brief(record):
         lines.append(f"Revision at interruption: {record['head']}")
     if record.get("dirty"):
         lines.append("Uncommitted paths at interruption:\n" + record["dirty"])
+    lines.extend("Remaining: " + item for item in remaining)
     lines.append(
         "Verify what is already committed with `git log --oneline` against that revision "
         "before doing anything. Complete only the remaining tasks, then write the plan's "
