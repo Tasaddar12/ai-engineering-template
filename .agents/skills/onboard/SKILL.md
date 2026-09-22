@@ -61,6 +61,9 @@ improvise from the summary.
 - PROJECT.md filled from the user's intent, no placeholders left
 - Verification commands configured, or their absence stated plainly
 - REQUIREMENTS.md written with REQ ids and an out-of-scope list
+- Any project-level technology choice validated by a check that was run,
+  recorded as an ADR, and accepted by the user
+- Codebase maps written and stamped with the revision they describe
 - Phases created through the runtime, every REQ id claimed
 - STATE.md initialized, everything committed
 </success_criteria>

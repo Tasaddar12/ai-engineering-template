@@ -18,10 +18,11 @@ Produce the plans that /execute-phase will run.
 **How it works:**
 
 1. Load the phase, its CONTEXT.md decisions and its canonical refs
-2. Research the approach when it is genuinely unknown (researcher subagent)
-3. Spawn the phase-preparer to write plans with tasks, dependencies and verification
-4. Spawn the phase-checker to confirm goal-backward that the plans deliver the phase
-5. Revise up to three times, then escalate rather than looping
+2. Refresh any codebase map that has gone stale since it was written
+3. Research the approach when it is genuinely unknown (researcher subagent)
+4. Spawn the phase-preparer to write plans with tasks, dependencies and verification
+5. Spawn the phase-checker to confirm goal-backward that the plans deliver the phase
+6. Revise up to three times, then escalate rather than looping
 
 **Output:** `{phase}-{NN}-PLAN.md` files the executor can run without inventing scope.
 </objective>

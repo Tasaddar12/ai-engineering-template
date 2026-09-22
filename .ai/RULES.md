@@ -121,6 +121,42 @@ operation. Significant ADRs preserve rationale; supersede a decision with a new
 ADR and links instead of rewriting its historical reasoning. Git and phase
 records preserve ordinary change history; no separate journal is required.
 
+### Retiring an entry
+
+**Never strike an entry through, and never annotate one as "Closed", "Done" or
+"Superseded" in place.** An item that no longer applies is removed from the
+digest and recorded where that kind of fact is owned. Strikethrough is what an
+agent reaches for when no retirement path exists; each of these is that path:
+
+| Item | Retire it with | It lands in |
+|---|---|---|
+| Decision | already recorded when added; rotates out of the digest | PROJECT.md Key Decisions |
+| Decision reversed | `decision.supersede <new> --replaces <old>` | Both ADRs, linked and status-changed |
+| Blocker resolved | `state.clear-blocker "<match>"` | `.planning/archive/STATE-LOG.md` |
+| Requirement met | `requirements.set-status <id> Complete` | REQUIREMENTS.md Traceability |
+| Scope deferred | `state.add-deferred <category> <item>` | STATE.md Deferred Items |
+| Todo done | `todo.complete <name>` | `.planning/todos/completed/` |
+
+`planning.validate` reports strikethroughs and in-place closure markers in any
+planning record. It is warn-only: it never blocks a session on a cosmetic
+finding, and `--strict` is for a caller that explicitly wants drift to fail.
+
+### Decision records
+
+An ADR is written while deciding — in discussion, planning or onboarding — never
+while building the code that follows from it. `decision.draft` refuses from a
+dispatched plan worktree. A choice that feels ADR-sized during execution means
+the phase was planned short of a decision it needed: record a blocker and let
+planning decide it.
+
+**A solution is validated before it is proposed.** `decision.propose` refuses
+until a check has actually been run and passed against the record, and a `stack`,
+`technology`, `dependency` or `integration` decision refuses a validation with no
+command. Proposing a solution asserts it will work; for anything that executes,
+the only evidence for that is having executed it. Record what the check actually
+printed, and record a failure as a failure — a failed spike is the cheapest
+possible version of discovering the problem.
+
 When sources disagree, identify both claims and inspect their evidence:
 
 - Code violating valid required behavior needs a code correction.

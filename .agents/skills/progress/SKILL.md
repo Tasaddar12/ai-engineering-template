@@ -17,8 +17,9 @@ Situational awareness before continuing work.
 1. Derive progress from the roadmap, never from prose claims
 2. Summarise recent work from the three newest phase summaries
 3. Report position, decisions, blockers, pending todos and open quick tasks
-4. Check the incomplete-phase invariant before routing
-5. Recommend one clear next action
+4. Report record health - drift, stale codebase maps, unclosed requirements
+5. Check the incomplete-phase invariant before routing
+6. Recommend one clear next action
 
 **Output:** a status report and a single recommended command.
 

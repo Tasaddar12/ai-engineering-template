@@ -15,9 +15,17 @@ Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
 A command names a workflow. The workflow is the procedure: it decides what to
 load, which agents to spawn with what context, and which runtime verbs to call.
 The [runtime](.ai/runtime/README.md) performs every planning-record change — phase
-numbering, the roadmap, STATE.md, todos, quick tasks, milestones. Do not edit
-those files by hand; `python .ai/runtime/phase.py query <verb>` owns their
-structure, and hand edits drift from it.
+numbering, the roadmap, STATE.md, PROJECT.md's Key Decisions, REQUIREMENTS.md's
+Traceability, decision records, todos, quick tasks, milestones. Do not edit those
+structures by hand; `python .ai/runtime/phase.py query <verb>` owns them, and
+hand edits drift from them.
+
+Prose the runtime does not own — a project's narrative sections, a requirement's
+wording, an ADR's argument — is written by hand, and `planning.validate` reports
+where either kind has drifted. It is warn-only, so it never stalls a session.
+
+Retirement has a path, and it is never a strikethrough or an in-place "Closed":
+see [retiring an entry](.ai/RULES.md#retiring-an-entry).
 
 ```
 /onboard                   initialize the project    → PROJECT / REQUIREMENTS / ROADMAP
@@ -33,6 +41,11 @@ structure, and hand edits drift from it.
 `/progress` reports where things stand and recommends one next step; `/next`
 decides and proceeds. `/quick` handles changes too small for a phase, and
 `/capture` parks an idea without derailing the current work.
+
+Decisions that outlive a phase become ADRs under `.planning/decisions/`, and they
+are written while deciding — during discussion, planning or onboarding — never
+while building. A solution is validated by a check that was actually run before
+it is proposed; `decision.propose` refuses otherwise.
 
 When the user asks to discuss a phase — including "let's discuss phase 01" —
 load [discuss-phase](.ai/commands/discuss-phase.md) directly and follow it. Do not

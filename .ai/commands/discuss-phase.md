@@ -23,6 +23,7 @@ phase-preparer use CONTEXT.md to know what to investigate and what choices are l
 3. Analyze the phase — skip gray areas already decided in prior phases
 4. Present the remaining gray areas — the user selects which to discuss
 5. Deep-dive each selected area until satisfied
+6. Record decisions that outlive the phase as ADRs, validated before proposal
 6. Write CONTEXT.md with decisions that guide research and planning
 
 **Output:** `{phase_num}-CONTEXT.md` — decisions clear enough that downstream agents

@@ -83,14 +83,54 @@ unless `--force` is passed.
 | `state.begin-phase <phase> [--status]` | Point Current Position at a phase |
 | `state.update-progress` | Re-derive counters and the progress bar from the roadmap |
 | `state.advance-plan <plan-id>` | Tick a plan and update state in one call |
-| `state.add-decision <text>` | Append to Decisions |
-| `state.add-blocker <text>` | Append to Blockers/Concerns |
-| `state.add-roadmap-evolution <text>` | Append to Roadmap Evolution, creating the section |
+| `state.add-decision <text> [--rationale] [--outcome]` | Digest it and record it in PROJECT.md Key Decisions |
+| `state.add-blocker <text>` | Add to Blockers/Concerns |
+| `state.add-roadmap-evolution <text>` | Add to Roadmap Evolution, creating the section |
+| `state.clear-blocker <match>` | Remove a resolved blocker and archive it |
+| `state.clear-entry <section> <match> [--level]` | Remove any digest entry and archive it |
+| `state.add-deferred <category> <item> [--status] [--milestone]` | Write a Deferred Items row |
 | `state.sync-todos` | Replace the Pending Todos body from the todos on disk |
+| `project.add-decision <decision> [--rationale] [--outcome]` | Write one PROJECT.md Key Decisions row |
+| `project.decisions` | The Key Decisions table, parsed |
 
 STATE.md's Markdown body is authoritative; its frontmatter counters are
 re-derived from ROADMAP.md on every write, so the two cannot disagree. Writers
 serialize on `.planning/.lock`.
+
+STATE.md is a digest, so its sections are bounded: Decisions and Roadmap
+Evolution keep 5 entries, Blockers/Concerns and Deferred Items keep 10. Trimming
+is never deletion — a rotated entry is appended to
+`.planning/archive/STATE-LOG.md` first, and a decision is written to PROJECT.md
+as it is added rather than as it is trimmed. That is what makes automatic
+trimming safe.
+
+### Requirements, decisions and record conformance
+
+| Verb | Effect |
+|---|---|
+| `requirements.list` | The Traceability table, parsed |
+| `requirements.outstanding` | Requirements not yet Complete, Deferred or Dropped |
+| `requirements.set-status <id> <status> [--phase]` | Set one requirement's Status cell |
+| `requirements.close-phase <phase> [--requirements ...] [--status]` | Close out a passing phase's requirements |
+| `decision.draft <title> [--kind] [--phase] [--question]` | Open an ADR as an unproven draft |
+| `decision.validate <id> --method --evidence [--command] [--result]` | Record a check actually run against it |
+| `decision.propose <id> [--basis]` | Promote a validated draft; refused while unproven |
+| `decision.accept <id> --basis` / `decision.reject <id> --basis` | Record the human decision |
+| `decision.supersede <new> --replaces <old> [--basis]` | Link and status-change both records |
+| `decision.list [--status]` | Every ADR, with which drafts remain unvalidated |
+| `planning.validate [--strict] [--skip ...]` | Report record drift; warn-only by default |
+| `codebase.status` | Freshness of ARCHITECTURE.md and STACK.md |
+| `codebase.stamp <map> [--revision]` | Record the revision a map describes |
+
+`decision.propose` refuses until a validation has passed, and a `stack`,
+`technology`, `dependency` or `integration` decision refuses a validation with no
+`--command`: a claim that a solution will work is earned by running something.
+`decision.draft` refuses from a dispatched plan worktree — ADRs are written while
+deciding, not while building.
+
+`planning.validate` returns `ok` with a warning list so a cosmetic finding never
+stalls a session. `--strict` turns the same findings into a failure, for a caller
+that asks for it.
 
 ### Milestones, todos and quick tasks
 
