@@ -10,9 +10,14 @@ commit_docs: true
 # terms, code, file paths and subagent prompts stay in English.
 response_language: null
 
-# Drives how much cross-phase context agents receive. At 500000 or above,
-# planners and executors are given prior phase summaries and decisions.
-context_window: 200000
+# The context window of the model the agents actually run on. It sets the
+# handoff threshold below as well as how much cross-phase context agents
+# receive: at 500000 or above, planners and executors are given prior phase
+# summaries and decisions. Understating it is not the safe direction -- a
+# 200000 here on a 1M-token model stops every agent at 120000 tokens, an eighth
+# of what it can hold, and a researcher reads its way there in a few fetches.
+# Set 200000 only on a host whose models really have a 200k window.
+context_window: 1000000
 
 workflow:
   # Replace AskUserQuestion with plain-text numbered lists. Required on runtimes
@@ -36,9 +41,9 @@ worktree:
 
 # When an agent must stop taking new work and write a handoff. The trigger is
 # whichever of these comes first, measured against actual transcript occupancy:
-# 60% of context_window above, or the absolute token ceiling. At the 200000
-# window above the percentage binds at 120000; on a 1000000-token host the
-# ceiling binds first. Handoff records land in .planning/handoffs/, which is
+# 60% of context_window above, or the absolute token ceiling. At the 1000000
+# window above the ceiling binds at 250000; on a 200000-token host the
+# percentage binds first, at 120000. Handoff records land in .planning/handoffs/, which is
 # gitignored -- they are local, ephemeral, and deleted once consumed.
 handoff:
   context_percent: 60

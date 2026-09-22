@@ -180,11 +180,15 @@ Establish how this project wants to run, and write it to `.planning/config.yaml`
 
 ```bash
 phase_run query config-set commit_docs true
-phase_run query config-set context_window 200000
+phase_run query config-set context_window <the agents' real window>
 ```
 
 Ask about, and configure:
 
+- **Context window** — the window of the model the agents actually run on,
+  `1000000` for a 1M-token model or `200000` for a 200k one. It sets the
+  handoff threshold every agent is measured against, so a value below the real
+  window stops agents early; do not write `200000` by default.
 - **Verification commands** — the project's real checks, as argv lists under
   `verification.commands`. This is the single most valuable thing to get right:
   without it, every phase is verified by reading alone.
