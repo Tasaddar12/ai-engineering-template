@@ -93,6 +93,27 @@ if [[ -z "$HANDOFF_PY" ]]; then
   echo "      so every silence this suite checks would be silence for the wrong reason." >&2
   exit 1
 fi
+# The extractor is checked before any behaviour that depends on it. jq on
+# Windows emits CRLF, and `read` keeps the CR, so `event` bound with a trailing
+# carriage return and matched no case arm -- the hook then exited silently on
+# every tool call. Nothing about that was visible: the value echoed identically
+# to the correct one, and a mute hook produces the silence most of the
+# assertions below are checking for, so the suite failed five tests for a
+# reason none of them named. %q prints the bytes, not the rendering.
+(
+  payload='{"hook_event_name":"PostToolUse","session_id":"probe-id","tool_input":{"file_path":"/x"}}'
+  . "$script_dir/lib/json-field.sh"
+  { read -r _event; read -r _session; read -r _path; read -r _absent; } \
+    < <(many_fields hook_event_name session_id file_path agent_type)
+  printf 'extractor: %s\n' "$_JSON"
+  if [[ "$_event" != "PostToolUse" || "$_session" != "probe-id" \
+        || "$_path" != "/x" || -n "$_absent" ]]; then
+    printf 'FAIL  many_fields via the %s tier bound %q %q %q %q\n' \
+      "$_JSON" "$_event" "$_session" "$_path" "$_absent" >&2
+    exit 1
+  fi
+) || exit 1
+
 claude_transcript "$workspace/preflight.jsonl" 123456
 preflight="$(handoff_used_tokens "$workspace/preflight.jsonl")"
 if [[ "$preflight" != "123456" ]]; then

@@ -58,7 +58,7 @@ field() {
   case "$_JSON" in
     jq)
       printf '%s' "$payload" | jq -r --arg k "$1" \
-        '(.[$k]? // .tool_input[$k]? // "") | if type=="string" then . else "" end' 2>/dev/null
+        '(.[$k]? // .tool_input[$k]? // "") | if type=="string" then . else "" end' 2>/dev/null | tr -d '\r'
       ;;
     python3|python|py)
       printf '%s' "$payload" | "$_JSON" -c "$_PYEX" "$1" 2>/dev/null
@@ -82,10 +82,23 @@ field() {
 many_fields() {
   case "$_JSON" in
     jq)
+      # jq on Windows writes stdout in text mode, so every value arrives as
+      # "value" plus CR LF. `field` never noticed: command substitution strips
+      # a trailing CRLF, so `$(field tool_name)` is clean and the two hooks that
+      # use only it behave. `many_fields` streams into `read`, which strips the
+      # newline and keeps the CR -- so `event` bound with a trailing CR, matched
+      # no case arm, and context-handoff.sh exited silently on every tool call.
+      # It echoed identically to the correct value, because a CR only returns
+      # the cursor, so the failing transcript looked exactly like a passing one.
+      #
+      # The Python tiers already avoid this by writing binary stdout; jq has no
+      # such switch, so the CR comes off here. Both arms are stripped: `field`
+      # is clean only because of how its callers capture it, and that is not a
+      # property the function should depend on.
       printf '%s' "$payload" | jq -r --args '
         . as $d | $ARGS.positional[] | . as $k
         | (($d[$k]? // $d.tool_input[$k]? // "")
-           | if type == "string" then gsub("\n"; " ") else "" end)' -- "$@" 2>/dev/null
+           | if type == "string" then gsub("\n"; " ") else "" end)' -- "$@" 2>/dev/null | tr -d '\r'
       ;;
     python3|python|py)
       printf '%s' "$payload" | "$_JSON" -c '
