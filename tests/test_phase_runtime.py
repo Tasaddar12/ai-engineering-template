@@ -1077,3 +1077,77 @@ class CodebaseMapFreshness(RuntimeCase):
         self.assertTrue(any(item["check"] == "codebase-freshness"
                             and "commits have touched" in item["message"]
                             for item in warnings), warnings)
+
+
+class RequirementTraceability(RuntimeCase):
+    """The Status column only means something if something writes it."""
+
+    def setUp(self):
+        super().setUp()
+        (self.directory / ".planning" / "REQUIREMENTS.md").write_text(
+            "# Requirements\n\n## v1 Requirements\n\n"
+            "### Authentication\n\n- AUTH-01: Sign in\n- AUTH-02: Sign out\n\n"
+            "## Traceability\n\n"
+            "| Requirement | Phase | Status |\n"
+            "|-------------|-------|--------|\n"
+            "| AUTH-01 | Phase 1 | Pending |\n"
+            "| AUTH-02 | Phase 1 | Pending |\n"
+            "| DATA-01 | Phase 2 | Pending |\n",
+            encoding="utf-8", newline="\n")
+
+    def test_set_status_rewrites_only_the_status_cell(self):
+        result = self.run_verb("requirements.set-status", "AUTH-01", "Complete")
+        self.assertEqual(result["previous"], "Pending")
+        self.assertTrue(result["changed"])
+        requirements = self.read(".planning/REQUIREMENTS.md")
+        self.assertIn("| AUTH-01 | Phase 1 | Complete |", requirements)
+        self.assertIn("| AUTH-02 | Phase 1 | Pending |", requirements)
+        # The requirement text itself is never annotated.
+        self.assertIn("- AUTH-01: Sign in", requirements)
+
+    def test_an_unknown_status_is_refused(self):
+        result = self.run_verb("requirements.set-status", "AUTH-01", "Doneish",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "bad-status")
+
+    def test_an_unknown_requirement_is_refused_rather_than_invented(self):
+        result = self.run_verb("requirements.set-status", "NOPE-01", "Complete",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "unknown-requirement")
+        self.assertNotIn("NOPE-01", self.read(".planning/REQUIREMENTS.md"))
+
+    def test_close_phase_closes_every_requirement_that_phase_owns(self):
+        result = self.run_verb("requirements.close-phase", "1")
+        self.assertEqual(sorted(result["changed"]), ["AUTH-01", "AUTH-02"])
+        requirements = self.read(".planning/REQUIREMENTS.md")
+        self.assertIn("| AUTH-01 | Phase 1 | Complete |", requirements)
+        self.assertIn("| DATA-01 | Phase 2 | Pending |", requirements)
+
+    def test_close_phase_reports_ids_the_table_does_not_carry(self):
+        result = self.run_verb("requirements.close-phase", "1",
+                               "--requirements", "AUTH-01", "GHOST-09")
+        self.assertEqual(result["unknown"], ["GHOST-09"])
+        self.assertEqual(result["changed"], ["AUTH-01"])
+
+    def test_close_phase_refuses_when_the_phase_owns_nothing(self):
+        result = self.run_verb("requirements.close-phase", "9", expect_ok=False)
+        self.assertEqual(result["code"], "no-requirements")
+
+    def test_outstanding_excludes_closed_requirements(self):
+        self.run_verb("requirements.set-status", "AUTH-01", "Complete")
+        self.run_verb("requirements.set-status", "AUTH-02", "Deferred")
+        outstanding = self.run_verb("requirements.outstanding")
+        self.assertEqual([row["Requirement"] for row in outstanding["outstanding"]],
+                         ["DATA-01"])
+
+    def test_closing_the_phase_clears_the_validation_warning(self):
+        self.run_verb("phase.complete", "1")
+        before = [item["check"] for item
+                  in self.run_verb("planning.validate", "--skip",
+                                   "codebase-freshness")["warnings"]]
+        self.assertIn("requirements-traceability", before)
+        self.run_verb("requirements.close-phase", "1")
+        after = [item["check"] for item
+                 in self.run_verb("planning.validate", "--skip",
+                                  "codebase-freshness")["warnings"]]
+        self.assertNotIn("requirements-traceability", after)

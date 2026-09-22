@@ -16,8 +16,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (bundles, codebase, delivery, gitops, handoff, milestones, models,  # noqa: E402
-                 phases, project_record, quick, state, todos, validate,
-                 verification, worktrees)
+                 phases, project_record, quick, requirements, state, todos,
+                 validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -491,6 +491,43 @@ def verb_state_sync_todos(workspace, positionals, options):
     return result
 
 
+# --- requirements ---------------------------------------------------------
+
+def verb_requirements_list(workspace, positionals, options):
+    return requirements.listing(workspace)
+
+
+def verb_requirements_outstanding(workspace, positionals, options):
+    rows = requirements.outstanding(workspace)
+    return {"count": len(rows), "outstanding": rows}
+
+
+def verb_requirements_set_status(workspace, positionals, options):
+    with planning_lock(workspace):
+        return requirements.set_status(workspace,
+                                       argument(positionals, 0, "requirement"),
+                                       argument(positionals, 1, "status"),
+                                       options.get("phase"))
+
+
+def verb_requirements_close_phase(workspace, positionals, options):
+    """Close out a passing phase's requirements in the Traceability table.
+
+    Called by verify-work once verification passes, so completion is recorded
+    where it is owned rather than annotated into the requirement text.
+    """
+    number = argument(positionals, 0, "phase")
+    ids = as_list(options.get("requirements")) or requirements.ids_for_phase(
+        workspace, number)
+    require(ids, "no requirements to close for phase " + str(number),
+            "no-requirements")
+    with planning_lock(workspace):
+        result = requirements.set_many(workspace, ids,
+                                       options.get("status", "Complete"))
+    result["phase"] = display_number(number)
+    return result
+
+
 # --- record conformance ---------------------------------------------------
 
 def verb_planning_validate(workspace, positionals, options):
@@ -685,6 +722,11 @@ VERBS = {
 
     "project.add-decision": verb_project_add_decision,
     "project.decisions": verb_project_decisions,
+
+    "requirements.list": verb_requirements_list,
+    "requirements.outstanding": verb_requirements_outstanding,
+    "requirements.set-status": verb_requirements_set_status,
+    "requirements.close-phase": verb_requirements_close_phase,
 
     "planning.validate": verb_planning_validate,
     "codebase.status": verb_codebase_status,

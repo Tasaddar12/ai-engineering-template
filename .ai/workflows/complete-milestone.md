@@ -1,7 +1,8 @@
 <!-- workflow
 step: complete-milestone
 agent-roles: orchestrator
-produces: MILESTONES.md entry, ROADMAP.md shipped markers, STATE.md update
+produces: MILESTONES.md entry, ROADMAP.md shipped markers, STATE.md update,
+  STATE.md Deferred Items rows, REQUIREMENTS.md status for deferred scope
 consumes: ROADMAP.md, STATE.md, phase SUMMARY.md files
 -->
 
@@ -129,18 +130,54 @@ Add `**What's next:**` describing the next milestone's goals, or "Project
 complete".
 </step>
 
+<step name="record_deferrals">
+Scope that was acknowledged and not delivered is deferred, not dropped and not
+struck through. Write each one to the Deferred Items table so it survives the
+milestone close in a form the next milestone can read:
+
+```bash
+phase_run query state.add-deferred "{category}" "{item}" \
+  --status Deferred --milestone "${VERSION}"
+```
+
+Where the deferred scope has a requirement id, say so in REQUIREMENTS.md too, so
+the Traceability table does not leave it reading `Pending` indefinitely:
+
+```bash
+phase_run query requirements.set-status "{REQ-ID}" Deferred
+```
+
+Deferring is a decision about scope. Confirm the list with the user before
+writing it; do not infer a deferral from a phase that simply did not mention a
+requirement.
+</step>
+
 <step name="update_state">
 ```bash
 phase_run query state.record-session --stopped-at "Milestone ${VERSION} shipped" --status "Milestone complete"
-phase_run query state.add-decision "Milestone ${VERSION} (${NAME}) shipped ${DATE}: phases ${PHASES}"
+phase_run query state.add-decision "Milestone ${VERSION} (${NAME}) shipped ${DATE}: phases ${PHASES}" \
+  --rationale "Milestone close" --outcome "Shipped"
 ```
+
+`state.add-decision` records the decision in PROJECT.md's Key Decisions table as
+well as the digest, so it survives the digest being trimmed.
 </step>
 
 <step name="git_commit">
 ```bash
 phase_run query commit "docs(milestone): ship ${VERSION} ${NAME}" \
-  --files .planning/MILESTONES.md .planning/ROADMAP.md .planning/STATE.md
+  --files .planning/MILESTONES.md .planning/ROADMAP.md .planning/STATE.md \
+  .planning/PROJECT.md .planning/REQUIREMENTS.md
 ```
+
+Then report drift, warn-only:
+
+```bash
+phase_run query planning.validate
+```
+
+A milestone close is the natural point to see the records' shape. Present the
+warnings; fixing them is separate work, not part of the close.
 </step>
 
 <step name="offer_next">

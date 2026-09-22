@@ -332,14 +332,49 @@ This ticks every plan for the phase, marks the overview checklist entry, refresh
 the progress table and re-derives STATE.md's counters.
 </step>
 
+<step name="close_requirements">
+A passing verification is the only evidence that a requirement is met, so it is
+where REQUIREMENTS.md gets written. Without this the Traceability table reads
+`Pending` forever and completion ends up annotated into the requirement text.
+
+**Only when the status is `passed`** (a phase whose gaps were merely recorded has
+not met its requirements):
+
+```bash
+phase_run query requirements.close-phase "${phase_number}"
+```
+
+The verb closes every requirement the Traceability table assigns to this phase.
+Pass `--requirements` explicitly when the phase covered a different set than the
+table records:
+
+```bash
+phase_run query requirements.close-phase "${phase_number}" \
+  --requirements REQ-01 REQ-04
+```
+
+`unknown` in the result names ids the table has no row for — report those; the
+roadmap and REQUIREMENTS.md disagreeing is worth seeing, not worth inventing a
+row for.
+</step>
+
 <step name="update_state">
 ```bash
 phase_run query state.record-session \
   --stopped-at "Phase ${phase_number} verified (${status})" \
   --resume-file "${phase_dir}/${padded_phase}-VERIFICATION.md"
 phase_run query commit "docs(${padded_phase}): verify phase" \
-  --files "${phase_dir}" .planning/ROADMAP.md .planning/STATE.md
+  --files "${phase_dir}" .planning/ROADMAP.md .planning/STATE.md \
+  .planning/REQUIREMENTS.md
 ```
+
+Then report any record drift. Warn-only: this never blocks the verification.
+
+```bash
+phase_run query planning.validate
+```
+
+Present the warnings with the result. Do not fix them silently mid-verification.
 </step>
 
 <step name="present_ready">
@@ -393,6 +428,7 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - [ ] A fresh verifier judged the codebase goal-backward
 - [ ] Integration and documentation checked where applicable
 - [ ] VERIFICATION.md written with status, revision and findings
+- [ ] Requirements closed in REQUIREMENTS.md when the status is `passed`
 - [ ] Gaps either closed and re-verified, or recorded as todos with the user's agreement
 - [ ] Roadmap and STATE.md updated only on a pass or an explicit acceptance
 - [ ] Phase session joined before any write, and left open for `/ship`
