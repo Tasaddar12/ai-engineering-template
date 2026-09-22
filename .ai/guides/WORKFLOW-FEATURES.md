@@ -84,6 +84,14 @@ of them. Do not create every possible record during onboarding; use the
 STATE.md's frontmatter counters are re-derived from ROADMAP.md on every write, so
 they cannot be corrected by editing them — correct the roadmap.
 
+STATE.md is a digest with a 150-line budget and a cap on every section. Decisions
+and roadmap changes trim themselves, because PROJECT.md and ROADMAP.md already
+hold them; blockers and deferrals are capped and reported instead, so an open one
+is never dropped to make room. Retiring an entry means removing it — never a
+strikethrough, never an in-place "Closed". `phase_run query planning.validate` reports drift across the
+records, warn-only, and `/progress`, `/verify-work`, `/complete-milestone` and
+`/ship` all surface its findings without blocking on them.
+
 ## Reusable instructions and human guides
 
 The installer places commands, workflows and agents inside the selected host

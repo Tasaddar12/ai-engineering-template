@@ -25,7 +25,7 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - researcher — researches how to implement a phase, produces RESEARCH.md
 - phase-preparer — writes executable plans with task breakdown and dependencies
 - phase-checker — verifies plans will achieve the phase goal before execution
-- codebase-mapper — maps existing code when no map exists
+- codebase-mapper — maps existing code when its map is missing or stale
 </available_agent_types>
 
 <model_selection>
@@ -402,6 +402,35 @@ choice: proceed as-is, revise a specific finding together, or cancel. Do not loo
 indefinitely, and do not approve the plans yourself to end the loop.
 </step>
 
+<step name="refresh_codebase_maps">
+Skip on a `--gaps` run.
+
+```bash
+phase_run query codebase.status
+```
+
+Every map `fresh` → continue. Any `missing` or `stale` → dispatch one
+codebase-mapper per focus area named in `focus_areas`:
+
+```
+Agent(
+  prompt="
+Refresh the codebase map for focus area: {focus}.
+
+Rewrite it against the current revision. Do not patch the old text.
+
+Write to: .planning/codebase/{MAP}.md
+Return: ## MAP COMPLETE with what changed since the previous revision.
+",
+  subagent_type="codebase-mapper",
+  ${models['codebase-mapper'] === 'inherit' ? '' : `model="${models['codebase-mapper']}",`}
+  description="Refresh the {focus} map"
+)
+```
+
+> **ORCHESTRATOR RULE**: wait for the subagent before continuing.
+</step>
+
 <step name="update_roadmap">
 Make the roadmap's plan checklist match the plans that now exist. For each plan
 the preparer wrote that has no roadmap entry, the phase entry's `Plans:` list
@@ -470,6 +499,7 @@ Plan review: {approved | approved with noted findings}
 
 <success_criteria>
 - [ ] Phase validated against the roadmap and not already complete
+- [ ] Codebase maps fresh, or regenerated before planning against them
 - [ ] CONTEXT.md loaded, with canonical refs passed to every downstream agent
 - [ ] Research run only where warranted, and its file verified on disk
 - [ ] Plans written by the phase-preparer, verified on disk via the plan index

@@ -20,6 +20,10 @@
 | Phase-level desired behavior | `NN-SPEC.md` using the complete `spec.md` template | Reference from CONTEXT canonical references |
 | Current correct behavior | `.planning/specs/SPEC-*.md` | Reference contracts instead of copying them |
 | Significant rationale | `.planning/decisions/ADR-*.md` | Accepted decisions govern; superseded ones are history |
+| Whether a proposed technology works | The evidence recorded in the decision's rationale | A check that was run, not a claim that it would pass |
+| Durable decision log | [PROJECT](../.planning/PROJECT.md) Key Decisions | STATE.md keeps only the 5 most recent |
+| Whether a requirement is met | [REQUIREMENTS](../.planning/REQUIREMENTS.md) Traceability Status | Written by `requirements.*` on a passing verification |
+| Whether a codebase map still holds | `codebase.status`, from the commit that last wrote it | A date says when someone looked, not whether the code moved |
 | Ordinary change history | Git and phase artifacts | No duplicate journal required |
 | Project usage/operations guidance | The project's established documentation paths | Link to the relevant guide |
 | Shared rules | [RULES](RULES.md) | Link rather than restating |

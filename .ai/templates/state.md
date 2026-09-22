@@ -6,11 +6,14 @@ Template for `.planning/STATE.md` — the project's living memory.
 
 ## File Template
 
-The frontmatter below is authoring metadata. The coordinator maintains it from
-actual project evidence; no external schema generator or hidden state command is
-required. The local runtime's `sync` operation updates only the dedicated Runtime
-Status section, preserving the authored body and frontmatter. See the
-[STATE contract](../runtime/TEMPLATE-CONTRACT.md).
+The frontmatter is derived, never authored: `state.save` recomputes `progress`
+from ROADMAP.md on every write, so the two cannot disagree.
+
+**Every section below has a runtime writer, and the set is closed.** A section
+that appears here but is written by nothing is dead weight that agents hand-fill
+and drift; a section the runtime writes but this template omits is an unbudgeted
+section nobody planned for. `planning.validate` checks both directions. See the
+[STATE contract](../runtime/TEMPLATE-CONTRACT.md) for the writer of each one.
 
 <!-- STATE-MD-SCHEMA:START:frontmatter -->
 ```markdown
@@ -44,25 +47,6 @@ Last activity: [YYYY-MM-DD] — [What happened]
 
 Progress: [░░░░░░░░░░] 0%
 
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: [N]
-- Average duration: [X] min
-- Total execution time: [X.X] hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-- Last 5 plans: [durations]
-- Trend: [Improving / Stable / Degrading]
-
-*Updated after each plan completion*
-
 ## Accumulated Context
 
 ### Decisions
@@ -81,13 +65,22 @@ None yet.
 
 ### Blockers/Concerns
 
-[Issues that affect future work]
+[Issues that affect future work. Cleared with `state.clear-blocker` when
+resolved - removed, not struck through.]
+
+None yet.
+
+### Roadmap Evolution
+
+[Phase added, inserted, edited or removed. Written by the roadmap verbs; the
+5 most recent survive.]
 
 None yet.
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close, most recent first:
+Items acknowledged and deferred at milestone close, written by
+`state.add-deferred`, most recent first:
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
@@ -159,18 +152,11 @@ Where we are right now:
 
 Progress calculation: (completed plans) / (total plans across all phases) × 100%
 
-### Performance Metrics
-Track velocity to understand execution patterns:
-- Total plans completed
-- Average duration per plan
-- Per-phase breakdown
-- Recent trend (improving/stable/degrading)
-
-Updated after each plan completion.
-
 ### Accumulated Context
 
-**Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
+**Decisions:** The 5 most recent, for quick access. `state.add-decision` writes
+each one to the PROJECT.md Key Decisions table at the same time, so the digest
+can be trimmed without consulting anything. The full log lives in PROJECT.md.
 
 **Pending Todos:** Ideas recorded by the coordinator from the current assignment.
 - Keep one bullet per pending item; never collapse multiple items into a count.
@@ -184,7 +170,12 @@ Updated after each plan completion.
 **Blockers/Concerns:** From "Next Phase Readiness" sections
 - Issues that affect future work
 - Prefix with originating phase
-- Cleared when addressed
+- Cleared with `state.clear-blocker` when addressed, which removes the entry.
+  Do not mark it resolved in place.
+
+**Roadmap Evolution:** One entry per phase added, inserted, edited or removed,
+written by the roadmap verbs so the digest explains why the phase numbering looks
+the way it does. Bounded to 5; ROADMAP.md and git hold the rest.
 
 ### Session Continuity
 Enables instant resumption:
@@ -196,7 +187,7 @@ Enables instant resumption:
 
 <size_constraint>
 
-Keep STATE.md under 100 lines.
+Keep STATE.md under 150 lines.
 
 It's a DIGEST, not an archive. If accumulated context grows too large:
 - Keep only 3-5 recent decisions in summary (full log in PROJECT.md)
@@ -204,7 +195,31 @@ It's a DIGEST, not an archive. If accumulated context grows too large:
 
 The goal is "read once, know where we are" — if it's too long, that fails.
 
+The runtime does both: `state.add-decision` writes the full entry to PROJECT.md
+and keeps the 5 most recent here, and `planning.validate` warns when the file or
+a section runs over.
+
 </size_constraint>
+
+<retirement>
+
+**Never strike through an entry, and never annotate one as "Closed", "Done" or
+"Superseded" in place.** An item that no longer applies is removed. Where the
+fact still matters, the record that owns it already has it:
+
+| Item | How it retires |
+|------|----------------|
+| Decision | already in PROJECT.md when added; leaves the digest at 5 |
+| Blocker resolved | `state.clear-blocker "<match>"` |
+| Requirement met | `requirements.set-status <id> Complete` |
+| Todo done | `todo.complete` |
+| Scope deferred at milestone close | `state.add-deferred` |
+
+Strikethrough is what agents reach for when no retirement path exists. Each row
+above is that path. `planning.validate` flags `~~strikethrough~~` and in-place
+closure markers in any planning record.
+
+</retirement>
 
 
 <!-- LOCAL-ADOPTION:START -->

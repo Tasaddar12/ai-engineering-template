@@ -332,14 +332,33 @@ This ticks every plan for the phase, marks the overview checklist entry, refresh
 the progress table and re-derives STATE.md's counters.
 </step>
 
+<step name="close_requirements">
+**Only when the status is `passed`:**
+
+```bash
+phase_run query requirements.close-phase "${phase_number}"
+```
+
+Closes every requirement the Traceability table assigns to this phase. Pass
+`--requirements REQ-01 REQ-04` when the phase covered a different set. Report any
+ids the result lists under `unknown`; do not add rows for them.
+</step>
+
 <step name="update_state">
 ```bash
 phase_run query state.record-session \
   --stopped-at "Phase ${phase_number} verified (${status})" \
   --resume-file "${phase_dir}/${padded_phase}-VERIFICATION.md"
 phase_run query commit "docs(${padded_phase}): verify phase" \
-  --files "${phase_dir}" .planning/ROADMAP.md .planning/STATE.md
+  --files "${phase_dir}" .planning/ROADMAP.md .planning/STATE.md \
+  .planning/REQUIREMENTS.md
 ```
+
+```bash
+phase_run query planning.validate
+```
+
+Present any warnings with the result; do not fix them here.
 </step>
 
 <step name="present_ready">
@@ -393,6 +412,7 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - [ ] A fresh verifier judged the codebase goal-backward
 - [ ] Integration and documentation checked where applicable
 - [ ] VERIFICATION.md written with status, revision and findings
+- [ ] Requirements closed in REQUIREMENTS.md when the status is `passed`
 - [ ] Gaps either closed and re-verified, or recorded as todos with the user's agreement
 - [ ] Roadmap and STATE.md updated only on a pass or an explicit acceptance
 - [ ] Phase session joined before any write, and left open for `/ship`

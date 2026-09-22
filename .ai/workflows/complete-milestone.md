@@ -1,7 +1,8 @@
 <!-- workflow
 step: complete-milestone
 agent-roles: orchestrator
-produces: MILESTONES.md entry, ROADMAP.md shipped markers, STATE.md update
+produces: MILESTONES.md entry, ROADMAP.md shipped markers, STATE.md update,
+  STATE.md Deferred Items rows, REQUIREMENTS.md status for deferred scope
 consumes: ROADMAP.md, STATE.md, phase SUMMARY.md files
 -->
 
@@ -129,18 +130,42 @@ Add `**What's next:**` describing the next milestone's goals, or "Project
 complete".
 </step>
 
+<step name="record_deferrals">
+Confirm with the user what scope is being deferred, then record each item:
+
+```bash
+phase_run query state.add-deferred "{category}" "{item}" \
+  --status Deferred --milestone "${VERSION}"
+```
+
+Where the item has a requirement id, set it there too:
+
+```bash
+phase_run query requirements.set-status "{REQ-ID}" Deferred
+```
+</step>
+
 <step name="update_state">
 ```bash
 phase_run query state.record-session --stopped-at "Milestone ${VERSION} shipped" --status "Milestone complete"
-phase_run query state.add-decision "Milestone ${VERSION} (${NAME}) shipped ${DATE}: phases ${PHASES}"
+phase_run query state.add-decision "Milestone ${VERSION} (${NAME}) shipped ${DATE}: phases ${PHASES}" \
+  --rationale "Milestone close" --outcome "Shipped"
 ```
+
 </step>
 
 <step name="git_commit">
 ```bash
 phase_run query commit "docs(milestone): ship ${VERSION} ${NAME}" \
-  --files .planning/MILESTONES.md .planning/ROADMAP.md .planning/STATE.md
+  --files .planning/MILESTONES.md .planning/ROADMAP.md .planning/STATE.md \
+  .planning/PROJECT.md .planning/REQUIREMENTS.md
 ```
+
+```bash
+phase_run query planning.validate
+```
+
+Present any warnings; fixing them is separate work.
 </step>
 
 <step name="offer_next">

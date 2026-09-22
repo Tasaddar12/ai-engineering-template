@@ -35,8 +35,12 @@ Pending inspection and user confirmation. Preserve established constraints.
 
 ## Key Decisions
 
-No project decisions have been inferred by installation. Reconcile existing
-decisions during onboarding.
+<!-- Decisions that constrain future work. Written by `state.add-decision` and
+     `project.add-decision`; reconcile any pre-existing ones during onboarding. -->
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| *(none)* | | |
 
 ## Evolution
 

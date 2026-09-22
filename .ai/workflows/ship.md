@@ -246,6 +246,14 @@ delivered.}
 
 {Each REQ id claimed by the phase, and where it is satisfied.}
 
+{Read each one's recorded status:}
+
+```bash
+phase_run query requirements.list
+```
+
+{Say so in the PR body when one the phase claims still reads `Pending`.}
+
 ### Verification
 
 Status: {verification.status} (revision {verification.revision})
@@ -260,6 +268,13 @@ Checks: {each command and its result}
 
 {Each one, with why it was accepted rather than closed.}
 ```
+
+```bash
+phase_run query planning.validate
+```
+
+Append a short `### Record health` section when `warning_count` is above zero,
+naming each finding and the verb that resolves it. This never blocks the PR.
 
 Show the composed body to the user before opening the PR.
 </step>

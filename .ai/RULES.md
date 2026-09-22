@@ -121,6 +121,45 @@ operation. Significant ADRs preserve rationale; supersede a decision with a new
 ADR and links instead of rewriting its historical reasoning. Git and phase
 records preserve ordinary change history; no separate journal is required.
 
+### Retiring an entry
+
+**Never strike an entry through, and never annotate one as "Closed", "Done" or
+"Superseded" in place.** An item that no longer applies is removed from the
+digest and recorded where that kind of fact is owned. Strikethrough is what an
+agent reaches for when no retirement path exists; each of these is that path:
+
+| Item | Retire it with | It lands in |
+|---|---|---|
+| Decision | already recorded when added; rotates out of the digest | PROJECT.md Key Decisions |
+| Decision reversed | `state.add-decision` recording the replacement | PROJECT.md Key Decisions, as a new row |
+| Blocker resolved | `state.clear-blocker "<match>"` | removed; git holds what it said |
+| Requirement met | `requirements.set-status <id> Complete` | REQUIREMENTS.md Traceability |
+| Scope deferred | `state.add-deferred <category> <item>` | STATE.md Deferred Items |
+| Todo done | `todo.complete <name>` | `.planning/todos/completed/` |
+
+`planning.validate` reports strikethroughs and in-place closure markers in any
+planning record. It is warn-only: it never blocks a session on a cosmetic
+finding, and `--strict` is for a caller that explicitly wants drift to fail.
+
+### Deciding
+
+Decisions that constrain future work belong in PROJECT.md's Key Decisions table,
+written by `state.add-decision` as they are taken. A reversal is a new row
+recording the replacement and what changed, not an edit to the old one.
+
+**A technology choice is validated before it is proposed.** Before recommending a
+library, runtime, service or integration, run the smallest thing that could fail
+— install it and call the one API the project depends on, or make the integration
+return one real response — and put what it actually printed in the decision's
+rationale. Proposing a solution asserts it will work, and for anything that
+executes, the only evidence for that is having executed it. A failed spike is
+recorded as a finding rather than hidden: it is the cheapest possible version of
+discovering the problem.
+
+Decisions are taken while deciding, not while building. A choice that feels
+consequential during execution means the phase was planned short of a decision it
+needed: record a blocker and let planning decide it.
+
 When sources disagree, identify both claims and inspect their evidence:
 
 - Code violating valid required behavior needs a code correction.

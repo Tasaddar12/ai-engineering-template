@@ -524,6 +524,20 @@ research; review or edit CONTEXT.md before continuing.
 ```
 </step>
 
+<step name="record_decisions">
+Record the decisions that outlive this phase; CONTEXT.md keeps the phase's own
+implementation choices. Validate a technology choice before recommending it: run
+the smallest spike that could fail, and use what it printed as the rationale.
+
+```bash
+phase_run query state.add-decision "{the decision}" \
+  --rationale "{evidence, and what was ruled out}" \
+  --outcome "Accepted"
+```
+
+A handful per phase at most.
+</step>
+
 <step name="git_commit">
 **Write DISCUSSION-LOG.md before committing.**
 
@@ -549,7 +563,8 @@ Commit the context and discussion log:
 
 ```bash
 phase_run query commit "docs(${padded_phase}): capture phase context" \
-  --files "${phase_dir}/${padded_phase}-CONTEXT.md" "${phase_dir}/${padded_phase}-DISCUSSION-LOG.md"
+  --files "${phase_dir}/${padded_phase}-CONTEXT.md" "${phase_dir}/${padded_phase}-DISCUSSION-LOG.md" \
+  .planning/PROJECT.md .planning/STATE.md
 ```
 
 Confirm: "Committed: docs(${padded_phase}): capture phase context"
@@ -583,6 +598,8 @@ phase_run query commit "docs(state): record phase ${phase_number} context sessio
   or doc downstream agents need (MANDATORY)
 - CONTEXT.md includes a code_context section with reusable assets and patterns
 - Deferred ideas preserved for future phases
+- Decisions that outlive the phase recorded in PROJECT.md Key Decisions, with
+  any technology choice validated by a check that was actually run
 - STATE.md updated with session info
 - User knows the next step
 - Checkpoint written after each area completes, and removed after CONTEXT.md is written

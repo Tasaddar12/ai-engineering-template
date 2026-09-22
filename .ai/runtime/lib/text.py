@@ -4,7 +4,7 @@ import unicodedata
 
 import yaml
 
-from .results import VerbError
+from .results import VerbError, require
 
 FRONTMATTER = re.compile(r"\A---\r?\n(.*?)\r?\n---[ \t]*\r?\n?", re.DOTALL)
 STOPWORDS = {"a", "an", "the", "and", "or", "for", "to", "of", "in", "on", "with"}
@@ -98,3 +98,83 @@ def is_placeholder(line):
     lowered = stripped.lower()
     return lowered in {"none yet.", "none.", "none", "n/a", "(none)", "*(none)*",
                        "tbd", "- none yet.", "- none"} or stripped.startswith("[")
+
+
+def split_row(line):
+    """Cells of a Markdown table row, or None when the line is not a row."""
+    stripped = line.strip()
+    if not stripped.startswith("|"):
+        return None
+    return [cell.strip() for cell in stripped.strip("|").split("|")]
+
+
+def render_row(cells):
+    return "| " + " | ".join(str(cell).strip() for cell in cells) + " |"
+
+
+def is_divider_row(line):
+    cells = split_row(line)
+    return bool(cells) and all(re.fullmatch(r":?-{2,}:?", cell or "") for cell in cells)
+
+
+def is_placeholder_row(cells):
+    return all(is_placeholder(cell) for cell in cells)
+
+
+def find_table(body):
+    """Return (divider_index, first_row_index, end_index) for the first table."""
+    lines = (body or "").splitlines()
+    for index, line in enumerate(lines):
+        if not is_divider_row(line) or index == 0 or split_row(lines[index - 1]) is None:
+            continue
+        end = index + 1
+        while end < len(lines) and split_row(lines[end]) is not None:
+            end += 1
+        return index, index + 1, end
+    return None
+
+
+def upsert_table_row(body, cells, key_index=0):
+    """Replace the row whose key cell matches, else append. Drops placeholders.
+
+    Rows live inside the table block; anything after it (footers, notes) stays
+    where the author put it.
+    """
+    found = find_table(body)
+    require(found is not None, "section has no Markdown table", "no-table")
+    _, first, end = found
+    lines = (body or "").splitlines()
+    width = len(split_row(lines[first - 1]))
+    row = list(cells) + [""] * (width - len(cells))
+    kept = []
+    replaced = False
+    for line in lines[first:end]:
+        existing = split_row(line)
+        if existing is None or is_placeholder_row(existing):
+            continue
+        if not replaced and existing[key_index].strip().lower() == str(row[key_index]).strip().lower():
+            kept.append(render_row(row[:width]))
+            replaced = True
+            continue
+        kept.append(line.rstrip())
+    if not replaced:
+        kept.append(render_row(row[:width]))
+    return "\n".join(lines[:first] + kept + lines[end:])
+
+
+def table_records(body, columns=None):
+    """Every non-placeholder row of the first table, as dicts keyed by header."""
+    found = find_table(body)
+    if not found:
+        return []
+    divider, first, end = found
+    lines = (body or "").splitlines()
+    headers = columns or split_row(lines[divider - 1])
+    records = []
+    for line in lines[first:end]:
+        cells = split_row(line)
+        if cells is None or is_placeholder_row(cells):
+            continue
+        padded = cells + [""] * (len(headers) - len(cells))
+        records.append({header: padded[index] for index, header in enumerate(headers)})
+    return records

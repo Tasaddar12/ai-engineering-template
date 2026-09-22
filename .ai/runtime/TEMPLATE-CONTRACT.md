@@ -13,6 +13,7 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 | NN-MM-PLAN.md | phase-preparer | phase-checker, orchestrator, coder | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when |
 | NN-MM-SUMMARY.md | coder / doc-writer | orchestrator, downstream plans, verifier | status, commits, acceptance and documentation coverage, actual check results |
 | NN-VERIFICATION.md | verifier | orchestrator, ship gate | status, reviewed revision, verified_at, finding counts |
+| ARCHITECTURE.md, STACK.md | codebase-mapper | plan-phase, researcher | freshness derived from the commit that last wrote the file, via `codebase.status` |
 
 ## Author a context
 
@@ -188,6 +189,37 @@ section gets superseded cleanly with no migration step.
 First-time creation of STATE.md from its template is the one case where a
 workflow writes the file directly. Every later change goes through a `state.*`
 verb.
+
+### The section set is closed
+
+STATE.md is a digest, so every section has exactly one writer and the set does
+not grow. A section with no writer becomes placeholder rot that agents hand-fill;
+a section the runtime writes but the template never declared is an unbudgeted
+section nobody accounted for. `planning.validate` checks both directions.
+
+| Section | Level | Writer | Cap |
+|---|---|---|---|
+| Project Reference | 2 | onboard, then hand-maintained prose | - |
+| Current Position | 2 | `state.begin-phase`, `state.update-progress` | - |
+| Accumulated Context | 2 | container for the three below | - |
+| Decisions | 3 | `state.add-decision` | 5 entries |
+| Pending Todos | 3 | `state.sync-todos`, replaced wholesale | - |
+| Blockers/Concerns | 3 | `state.add-blocker`, `state.clear-blocker` | 10 entries, reported not trimmed |
+| Roadmap Evolution | 3 | `state.add-roadmap-evolution` | 5 entries |
+| Deferred Items | 2 | `state.add-deferred` | 10 rows, reported not trimmed |
+| Session Continuity | 2 | `state.record-session` | - |
+
+Only a section with a durable copy elsewhere trims itself. `state.add-decision`
+writes the decision into PROJECT.md's Key Decisions table as it is added, so the
+durable copy exists before the digest copy is ever at risk, and roadmap history
+is in ROADMAP.md and git. Blockers and deferrals are capped but never dropped
+automatically — an open blocker that vanished because a newer one arrived is worse
+than a long section — so `planning.validate` reports the overflow and a human
+clears what is resolved. A cleared entry is gone; git holds what the file said.
+
+The file budget is 150 lines. `planning.validate` warns above it and never
+blocks: a cosmetic finding must not stall a session, and `--strict` is there for
+a caller that explicitly wants drift to fail.
 
 ## Model and dispatch metadata
 

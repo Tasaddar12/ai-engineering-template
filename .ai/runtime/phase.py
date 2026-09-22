@@ -15,8 +15,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (bundles, delivery, gitops, handoff, milestones, models, phases,  # noqa: E402
-                 quick, state, todos, verification, worktrees)
+from lib import (bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
+                 models, phases, project_record, quick, requirements, state,
+                 todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -428,8 +429,11 @@ def verb_state_advance_plan(workspace, positionals, options):
 
 
 def verb_state_add_decision(workspace, positionals, options):
+    """Digest the decision in STATE.md and record it durably in PROJECT.md."""
     with planning_lock(workspace):
-        return state.add_bullet(workspace, "Decisions", argument(positionals, 0, "text"))
+        return state.add_decision(workspace, argument(positionals, 0, "text"),
+                                  options.get("rationale", ""),
+                                  options.get("outcome"))
 
 
 def verb_state_add_blocker(workspace, positionals, options):
@@ -444,12 +448,104 @@ def verb_state_add_roadmap_evolution(workspace, positionals, options):
                                 argument(positionals, 0, "text"))
 
 
+def verb_state_clear_blocker(workspace, positionals, options):
+    """Remove a resolved blocker. Retirement is removal, never a strikethrough."""
+    with planning_lock(workspace):
+        return state.clear_bullet(workspace, "Blockers/Concerns",
+                                  argument(positionals, 0, "match"))
+
+
+def verb_state_clear_entry(workspace, positionals, options):
+    with planning_lock(workspace):
+        return state.clear_bullet(workspace, argument(positionals, 0, "section"),
+                                  argument(positionals, 1, "match"),
+                                  int(options.get("level", 3)))
+
+
+def verb_state_add_deferred(workspace, positionals, options):
+    with planning_lock(workspace):
+        return state.record_deferred(workspace, argument(positionals, 0, "category"),
+                                     argument(positionals, 1, "item"),
+                                     options.get("status", "Deferred"),
+                                     options.get("milestone", ""))
+
+
+def verb_project_add_decision(workspace, positionals, options):
+    with planning_lock(workspace):
+        return project_record.add_decision(workspace, argument(positionals, 0, "decision"),
+                                           options.get("rationale", ""),
+                                           options.get("outcome",
+                                                       project_record.PENDING))
+
+
+def verb_project_decisions(workspace, positionals, options):
+    records = project_record.decisions(workspace)
+    return {"count": len(records), "decisions": records}
+
+
 def verb_state_sync_todos(workspace, positionals, options):
     pending = todos.listing(workspace)
     with planning_lock(workspace):
         result = state.set_pending_todos(workspace, todos.render_bullets(pending["todos"]))
     result["todo_count"] = pending["count"]
     return result
+
+
+# --- requirements ---------------------------------------------------------
+
+def verb_requirements_list(workspace, positionals, options):
+    return requirements.listing(workspace)
+
+
+def verb_requirements_outstanding(workspace, positionals, options):
+    rows = requirements.outstanding(workspace)
+    return {"count": len(rows), "outstanding": rows}
+
+
+def verb_requirements_set_status(workspace, positionals, options):
+    with planning_lock(workspace):
+        return requirements.set_status(workspace,
+                                       argument(positionals, 0, "requirement"),
+                                       argument(positionals, 1, "status"),
+                                       options.get("phase"))
+
+
+def verb_requirements_close_phase(workspace, positionals, options):
+    """Close out a passing phase's requirements in the Traceability table.
+
+    Called by verify-work once verification passes, so completion is recorded
+    where it is owned rather than annotated into the requirement text.
+    """
+    number = argument(positionals, 0, "phase")
+    ids = as_list(options.get("requirements")) or requirements.ids_for_phase(
+        workspace, number)
+    require(ids, "no requirements to close for phase " + str(number),
+            "no-requirements")
+    with planning_lock(workspace):
+        result = requirements.set_many(workspace, ids,
+                                       options.get("status", "Complete"))
+    result["phase"] = display_number(number)
+    return result
+
+
+# --- record conformance ---------------------------------------------------
+
+def verb_planning_validate(workspace, positionals, options):
+    """Report planning-record drift. Warn-only unless `--strict` is passed.
+
+    Warn-only is the default on purpose: a cosmetic finding must never stall a
+    session. A caller that wants drift to block asks for it explicitly.
+    """
+    skip = set(as_list(options.get("skip")))
+    result = validate.run(workspace, strict=bool(options.get("strict")), skip=skip)
+    if options.get("strict") and result["warnings"]:
+        raise VerbError(str(result["warning_count"]) + " planning record warning(s): "
+                        + validate.summarize(result), "validation-failed")
+    return result
+
+
+def verb_codebase_status(workspace, positionals, options):
+    return codebase.status(workspace)
 
 
 # --- milestones -----------------------------------------------------------
@@ -613,7 +709,21 @@ VERBS = {
     "state.add-decision": verb_state_add_decision,
     "state.add-blocker": verb_state_add_blocker,
     "state.add-roadmap-evolution": verb_state_add_roadmap_evolution,
+    "state.clear-blocker": verb_state_clear_blocker,
+    "state.clear-entry": verb_state_clear_entry,
+    "state.add-deferred": verb_state_add_deferred,
     "state.sync-todos": verb_state_sync_todos,
+
+    "project.add-decision": verb_project_add_decision,
+    "project.decisions": verb_project_decisions,
+
+    "requirements.list": verb_requirements_list,
+    "requirements.outstanding": verb_requirements_outstanding,
+    "requirements.set-status": verb_requirements_set_status,
+    "requirements.close-phase": verb_requirements_close_phase,
+
+    "planning.validate": verb_planning_validate,
+    "codebase.status": verb_codebase_status,
 
     "milestone.list": verb_milestone_list,
     "milestone.create": verb_milestone_create,

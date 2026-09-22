@@ -91,11 +91,39 @@ None yet.
 
 None yet.
 
+### Roadmap Evolution
+
+None yet.
+
+## Deferred Items
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| *(none)* | | | | |
+
 ## Session Continuity
 
 Last session: [YYYY-MM-DD HH:MM]
 Stopped at: [Description]
 Resume file: None
+"""
+
+PROJECT = """# Test Project
+
+## What This Is
+
+A project for exercising the runtime.
+
+## Key Decisions
+
+<!-- Decisions that constrain future work. Add throughout project lifecycle. -->
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| [Choice] | [Why] | [Pending] |
+
+---
+*Last updated: 2026-01-01 after setup*
 """
 
 CONFIG = """commit_docs: true
@@ -118,7 +146,7 @@ class RuntimeCase(unittest.TestCase):
         (planning / "ROADMAP.md").write_text(ROADMAP, encoding="utf-8", newline="\n")
         (planning / "STATE.md").write_text(STATE, encoding="utf-8", newline="\n")
         (planning / "config.yaml").write_text(CONFIG, encoding="utf-8", newline="\n")
-        (planning / "PROJECT.md").write_text("# Project\n", encoding="utf-8", newline="\n")
+        (planning / "PROJECT.md").write_text(PROJECT, encoding="utf-8", newline="\n")
         (planning / "REQUIREMENTS.md").write_text(
             "# Requirements\n\n- REQ-01: one\n- REQ-02: two\n- REQ-03: three\n",
             encoding="utf-8", newline="\n")
@@ -756,3 +784,507 @@ class WorktreeIsolation(RuntimeCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StateDigestBudget(RuntimeCase):
+    """STATE.md is a digest: bounded sections, nothing lost when they trim."""
+
+    def test_decision_lands_in_project_md_as_well_as_the_digest(self):
+        result = self.run_verb("state.add-decision", "Use Postgres",
+                               "--rationale", "Already operated in-house")
+        self.assertIsNotNone(result["project_record"])
+        project = self.read(".planning/PROJECT.md")
+        self.assertIn("| Use Postgres | Already operated in-house |", project)
+        self.assertIn("- Use Postgres", self.read(".planning/STATE.md"))
+        # The placeholder row is replaced, not accumulated alongside real rows.
+        self.assertNotIn("| [Choice] |", project)
+
+    def test_a_technology_decision_carries_its_evidence_into_the_record(self):
+        """Validation before proposal lives in the rationale, not a separate file."""
+        self.run_verb(
+            "state.add-decision", "Use SQLite for the local cache",
+            "--rationale",
+            "Spike: python spike/cache.py, 10k rows, p99 3ms, no lock contention",
+            "--outcome", "Accepted")
+        project = self.read(".planning/PROJECT.md")
+        self.assertIn("| Use SQLite for the local cache |", project)
+        self.assertIn("p99 3ms", project)
+        self.assertIn("| Accepted |", project)
+
+    def test_a_reversal_is_a_new_row_rather_than_an_edit(self):
+        self.run_verb("state.add-decision", "Use SQLite for the local cache",
+                      "--rationale", "No server to operate", "--outcome", "Accepted")
+        self.run_verb("state.add-decision", "Move the cache to DuckDB",
+                      "--rationale", "Replaces SQLite: measured 3x on the same spike",
+                      "--outcome", "Accepted")
+        project = self.read(".planning/PROJECT.md")
+        self.assertIn("| Use SQLite for the local cache |", project)
+        self.assertIn("| Move the cache to DuckDB |", project)
+        # The superseded decision stays readable: no strikethrough, no "Closed".
+        self.assertNotIn("~~", project)
+
+    def test_decisions_trim_to_the_cap_without_losing_any(self):
+        """Safe to trim precisely because PROJECT.md already holds them all."""
+        for index in range(7):
+            self.run_verb("state.add-decision", "Decision " + str(index))
+        state = self.read(".planning/STATE.md")
+        kept = [line for line in state.splitlines() if line.startswith("- Decision ")]
+        self.assertEqual(len(kept), 5)
+        self.assertIn("- Decision 6", state)
+        self.assertNotIn("- Decision 0", state)
+        project = self.read(".planning/PROJECT.md")
+        for index in range(7):
+            self.assertIn("| Decision " + str(index) + " |", project)
+
+    def test_blockers_are_never_dropped_to_make_room(self):
+        """An open blocker has no durable copy, so nothing may trim it away."""
+        for index in range(12):
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+        state = self.read(".planning/STATE.md")
+        kept = [line for line in state.splitlines() if line.startswith("- Blocker ")]
+        self.assertEqual(len(kept), 12)
+        self.assertIn("- Blocker 0", state)
+
+    def test_an_over_cap_blocker_section_is_reported_instead(self):
+        for index in range(12):
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+        warnings = self.run_verb("planning.validate", "--skip",
+                                 "codebase-freshness")["warnings"]
+        self.assertTrue(any(item["check"] == "state-caps"
+                            and "Blockers/Concerns" in item["message"]
+                            for item in warnings), warnings)
+
+    def test_clear_blocker_removes_the_entry(self):
+        self.run_verb("state.add-blocker", "Phase 1: flaky integration suite")
+        self.run_verb("state.add-blocker", "Phase 2: missing staging secrets")
+        result = self.run_verb("state.clear-blocker", "flaky integration")
+        self.assertEqual(result["removed"], ["Phase 1: flaky integration suite"])
+        state = self.read(".planning/STATE.md")
+        self.assertNotIn("flaky integration", state)
+        self.assertIn("missing staging secrets", state)
+        # Removed, not struck through.
+        self.assertNotIn("~~", state)
+
+    def test_clearing_the_last_blocker_restores_the_placeholder(self):
+        self.run_verb("state.add-blocker", "Only blocker")
+        self.run_verb("state.clear-blocker", "Only blocker")
+        body = self.read(".planning/STATE.md").split("### Blockers/Concerns")[1]
+        self.assertIn("None yet.", body.split("###")[0])
+
+    def test_clear_blocker_reports_a_miss_instead_of_silently_passing(self):
+        result = self.run_verb("state.clear-blocker", "nothing like this",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "no-match")
+
+    def test_roadmap_evolution_is_bounded_too(self):
+        for index in range(8):
+            self.run_verb("state.add-roadmap-evolution", "Change " + str(index))
+        state = self.read(".planning/STATE.md")
+        kept = [line for line in state.splitlines() if line.startswith("- Change ")]
+        self.assertEqual(len(kept), 5)
+        self.assertNotIn("- Change 0", state)
+
+    def test_deferred_items_write_a_table_row(self):
+        self.run_verb("state.add-deferred", "perf", "Cache the roadmap parse",
+                      "--status", "Deferred", "--milestone", "v1")
+        state = self.read(".planning/STATE.md")
+        self.assertIn("| perf | Cache the roadmap parse | Deferred |", state)
+        self.assertNotIn("| *(none)* |", state)
+
+    def test_digest_stays_inside_its_line_budget_under_sustained_use(self):
+        """The failure the budget exists to prevent: a week of appends."""
+        for index in range(30):
+            self.run_verb("state.add-decision", "Decision " + str(index))
+            self.run_verb("state.add-roadmap-evolution", "Change " + str(index))
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+            self.run_verb("state.clear-blocker", "Blocker " + str(index))
+        lines = len(self.read(".planning/STATE.md").splitlines())
+        self.assertLessEqual(lines, 150, "STATE.md grew past its digest budget")
+
+
+class PlanningValidation(RuntimeCase):
+    """Drift is reported, and reporting never stalls the session by default."""
+
+    def setUp(self):
+        super().setUp()
+        requirements = self.directory / ".planning" / "REQUIREMENTS.md"
+        requirements.write_text(
+            "# Requirements\n\n## Traceability\n\n"
+            "| Requirement | Phase | Status |\n"
+            "|-------------|-------|--------|\n"
+            "| REQ-01 | Phase 1 | Pending |\n"
+            "| REQ-02 | Phase 1 | Pending |\n"
+            "| REQ-03 | Phase 2 | Pending |\n",
+            encoding="utf-8", newline="\n")
+
+    def validate(self, *args, expect_ok=True):
+        return self.run_verb("planning.validate", "--skip", "codebase-freshness",
+                             *args, expect_ok=expect_ok)
+
+    def test_a_conforming_project_reports_clean(self):
+        result = self.validate()
+        self.assertEqual(result["status"], "clean", result["warnings"])
+
+    def test_warnings_do_not_fail_the_verb(self):
+        """Warn-only is the default so a cosmetic finding cannot stall work."""
+        self.run_verb("state.add-blocker", "Phase 1: ~~resolved~~ flaky suite")
+        result = self.validate()
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["status"], "warnings")
+        self.assertFalse(result["strict"])
+
+    def test_strict_is_opt_in_and_fails(self):
+        self.run_verb("state.add-blocker", "Phase 1: ~~resolved~~ flaky suite")
+        result = self.validate("--strict", expect_ok=False)
+        self.assertEqual(result["code"], "validation-failed")
+
+    def test_strikethrough_is_reported(self):
+        self.run_verb("state.add-decision", "~~Use MySQL~~ use Postgres")
+        checks = [item["check"] for item in self.validate()["warnings"]]
+        self.assertIn("retirement-markers", checks)
+
+    def test_in_place_closure_marker_is_reported(self):
+        self.run_verb("state.add-blocker", "Phase 1: missing secrets (Closed)")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("closed in place" in message for message in messages),
+                        messages)
+
+    def test_a_section_outside_the_contract_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        state.write_text(state.read_text(encoding="utf-8")
+                         + "\n## Performance Metrics\n\nNot tracked.\n",
+                         encoding="utf-8", newline="\n")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("not part of the STATE contract" in message
+                            for message in messages), messages)
+
+    def test_a_missing_required_section_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        text = state.read_text(encoding="utf-8").replace("## Session Continuity",
+                                                         "## Retired Section")
+        state.write_text(text, encoding="utf-8", newline="\n")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("Session Continuity" in message for message in messages),
+                        messages)
+
+    def test_requirements_pending_under_a_complete_phase_are_reported(self):
+        self.run_verb("phase.complete", "1")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("still Pending" in message for message in messages),
+                        messages)
+
+    def test_an_over_cap_section_edited_by_hand_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        hand_written = "\n".join("- Decision " + str(index) for index in range(9))
+        text = state.read_text(encoding="utf-8").replace(
+            "### Decisions\n\nNone yet.", "### Decisions\n\n" + hand_written)
+        state.write_text(text, encoding="utf-8", newline="\n")
+        checks = [item["check"] for item in self.validate()["warnings"]]
+        self.assertIn("state-caps", checks)
+
+    def test_an_oversized_digest_is_reported(self):
+        state = self.directory / ".planning" / "STATE.md"
+        padding = "\n".join("Filler line " + str(index) for index in range(200))
+        state.write_text(state.read_text(encoding="utf-8") + "\n" + padding,
+                         encoding="utf-8", newline="\n")
+        messages = [item["message"] for item in self.validate()["warnings"]]
+        self.assertTrue(any("digest budget" in message for message in messages),
+                        messages)
+
+
+class CodebaseMapFreshness(RuntimeCase):
+    """A map's freshness is a git question, not a stamp anyone has to maintain."""
+
+    def write_map(self, name, body="# Map\n\nContents.\n", commit=True):
+        target = self.directory / ".planning" / "codebase" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body, encoding="utf-8", newline="\n")
+        if commit:
+            self.git("add", "-A")
+            self.git("commit", "-qm", "write " + name)
+        return target
+
+    def touch(self, name, contents, message):
+        (self.directory / name).write_text(contents, encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", message)
+
+    def states(self):
+        return {report["name"]: report
+                for report in self.run_verb("codebase.status")["maps"]}
+
+    def test_an_absent_map_reports_missing_with_its_focus(self):
+        result = self.run_verb("codebase.status")
+        states = {report["name"]: report for report in result["maps"]}
+        self.assertEqual(states["ARCHITECTURE.md"]["state"], "missing")
+        self.assertEqual(states["ARCHITECTURE.md"]["focus"], "arch")
+        self.assertEqual(states["STACK.md"]["focus"], "tech")
+        self.assertIn("arch", result["focus_areas"])
+
+    def test_a_committed_map_is_fresh_and_names_the_commit_that_wrote_it(self):
+        self.write_map("ARCHITECTURE.md")
+        report = self.states()["ARCHITECTURE.md"]
+        self.assertEqual(report["state"], "fresh")
+        self.assertTrue(report["revision"])
+        self.assertEqual(report["commits_since"], 0)
+
+    def test_an_uncommitted_map_is_current_by_definition(self):
+        """Just written: nothing can have happened to the code since."""
+        self.write_map("STACK.md", commit=False)
+        report = self.states()["STACK.md"]
+        self.assertEqual(report["state"], "fresh")
+        self.assertTrue(report.get("pending"))
+
+    def test_a_manifest_change_makes_the_stack_map_stale(self):
+        self.write_map("STACK.md")
+        self.touch("package.json", '{"name": "app"}\n', "add a manifest")
+        report = self.states()["STACK.md"]
+        self.assertEqual(report["state"], "stale")
+        self.assertEqual(report["commits_since"], 1)
+
+    def test_the_architecture_map_tolerates_ordinary_churn(self):
+        """One commit is movement, not a changed architecture."""
+        self.write_map("ARCHITECTURE.md")
+        self.touch("app.py", "print('hi')\n", "one source change")
+        report = self.states()["ARCHITECTURE.md"]
+        self.assertEqual(report["state"], "fresh")
+        self.assertEqual(report["commits_since"], 1)
+
+    def test_planning_record_writes_do_not_age_the_architecture_map(self):
+        """A phase write-up is not a change to the architecture it describes."""
+        self.write_map("ARCHITECTURE.md")
+        for index in range(20):
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+            self.git("add", "-A")
+            self.git("commit", "-qm", "planning churn " + str(index))
+        report = self.states()["ARCHITECTURE.md"]
+        self.assertEqual(report["commits_since"], 0)
+        self.assertEqual(report["state"], "fresh")
+
+    def test_sustained_source_movement_makes_the_architecture_map_stale(self):
+        self.write_map("ARCHITECTURE.md")
+        for index in range(15):
+            self.touch("module_" + str(index) + ".py", "value = " + str(index) + "\n",
+                       "source change " + str(index))
+        self.assertEqual(self.states()["ARCHITECTURE.md"]["state"], "stale")
+
+    def test_rewriting_a_stale_map_makes_it_fresh_again(self):
+        """Regeneration needs no bookkeeping step - writing the file is enough."""
+        self.write_map("STACK.md")
+        self.touch("package.json", '{"name": "app"}\n', "add a manifest")
+        self.assertEqual(self.states()["STACK.md"]["state"], "stale")
+        self.write_map("STACK.md", "# Map\n\nRewritten.\n")
+        self.assertEqual(self.states()["STACK.md"]["state"], "fresh")
+
+    def test_freshness_survives_a_squashed_history(self):
+        """A recorded SHA would not: squash is this project's merge default."""
+        self.write_map("STACK.md")
+        self.touch("notes.md", "notes\n", "unrelated work")
+        self.git("checkout", "-q", "--orphan", "squashed")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "squashed history")
+        report = self.states()["STACK.md"]
+        self.assertIn(report["state"], ("fresh", "stale"))
+        self.assertIsNotNone(report["revision"])
+
+    def test_the_staleness_threshold_is_configurable(self):
+        config = self.directory / ".planning" / "config.yaml"
+        config.write_text(config.read_text(encoding="utf-8")
+                          + "codebase:\n  staleness:\n    architecture: 1\n",
+                          encoding="utf-8", newline="\n")
+        self.write_map("ARCHITECTURE.md")
+        self.touch("app.py", "print('hi')\n", "one source change")
+        self.assertEqual(self.states()["ARCHITECTURE.md"]["state"], "stale")
+
+    def test_an_unfilled_skeleton_is_not_reported_as_a_missing_map(self):
+        """Before onboarding every record is an example, so nothing is drift."""
+        project = self.directory / ".planning" / "PROJECT.md"
+        project.write_text("> **Unfilled adoption skeleton:** CHANGEME.\n\n"
+                           + project.read_text(encoding="utf-8"),
+                           encoding="utf-8", newline="\n")
+        warnings = self.run_verb("planning.validate")["warnings"]
+        self.assertEqual([item for item in warnings
+                          if item["check"] == "codebase-freshness"], [])
+
+    def test_an_onboarded_project_is_told_its_maps_are_missing(self):
+        warnings = self.run_verb("planning.validate")["warnings"]
+        missing = [item["record"] for item in warnings
+                   if item["check"] == "codebase-freshness"]
+        self.assertEqual(sorted(missing), ["ARCHITECTURE.md", "STACK.md"])
+
+    def test_validation_reports_a_stale_map(self):
+        self.write_map("STACK.md")
+        self.touch("package.json", '{"name": "app"}\n', "add a manifest")
+        warnings = self.run_verb("planning.validate")["warnings"]
+        self.assertTrue(any(item["check"] == "codebase-freshness"
+                            and "commits have touched" in item["message"]
+                            for item in warnings), warnings)
+
+
+class RequirementTraceability(RuntimeCase):
+    """The Status column only means something if something writes it."""
+
+    def setUp(self):
+        super().setUp()
+        (self.directory / ".planning" / "REQUIREMENTS.md").write_text(
+            "# Requirements\n\n## v1 Requirements\n\n"
+            "### Authentication\n\n- AUTH-01: Sign in\n- AUTH-02: Sign out\n\n"
+            "## Traceability\n\n"
+            "| Requirement | Phase | Status |\n"
+            "|-------------|-------|--------|\n"
+            "| AUTH-01 | Phase 1 | Pending |\n"
+            "| AUTH-02 | Phase 1 | Pending |\n"
+            "| DATA-01 | Phase 2 | Pending |\n",
+            encoding="utf-8", newline="\n")
+
+    def test_set_status_rewrites_only_the_status_cell(self):
+        result = self.run_verb("requirements.set-status", "AUTH-01", "Complete")
+        self.assertEqual(result["previous"], "Pending")
+        self.assertTrue(result["changed"])
+        requirements = self.read(".planning/REQUIREMENTS.md")
+        self.assertIn("| AUTH-01 | Phase 1 | Complete |", requirements)
+        self.assertIn("| AUTH-02 | Phase 1 | Pending |", requirements)
+        # The requirement text itself is never annotated.
+        self.assertIn("- AUTH-01: Sign in", requirements)
+
+    def test_an_unknown_status_is_refused(self):
+        result = self.run_verb("requirements.set-status", "AUTH-01", "Doneish",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "bad-status")
+
+    def test_an_unknown_requirement_is_refused_rather_than_invented(self):
+        result = self.run_verb("requirements.set-status", "NOPE-01", "Complete",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "unknown-requirement")
+        self.assertNotIn("NOPE-01", self.read(".planning/REQUIREMENTS.md"))
+
+    def test_close_phase_closes_every_requirement_that_phase_owns(self):
+        result = self.run_verb("requirements.close-phase", "1")
+        self.assertEqual(sorted(result["changed"]), ["AUTH-01", "AUTH-02"])
+        requirements = self.read(".planning/REQUIREMENTS.md")
+        self.assertIn("| AUTH-01 | Phase 1 | Complete |", requirements)
+        self.assertIn("| DATA-01 | Phase 2 | Pending |", requirements)
+
+    def test_close_phase_reports_ids_the_table_does_not_carry(self):
+        result = self.run_verb("requirements.close-phase", "1",
+                               "--requirements", "AUTH-01", "GHOST-09")
+        self.assertEqual(result["unknown"], ["GHOST-09"])
+        self.assertEqual(result["changed"], ["AUTH-01"])
+
+    def test_close_phase_refuses_when_the_phase_owns_nothing(self):
+        result = self.run_verb("requirements.close-phase", "9", expect_ok=False)
+        self.assertEqual(result["code"], "no-requirements")
+
+    def test_outstanding_excludes_closed_requirements(self):
+        self.run_verb("requirements.set-status", "AUTH-01", "Complete")
+        self.run_verb("requirements.set-status", "AUTH-02", "Deferred")
+        outstanding = self.run_verb("requirements.outstanding")
+        self.assertEqual([row["Requirement"] for row in outstanding["outstanding"]],
+                         ["DATA-01"])
+
+    def test_closing_the_phase_clears_the_validation_warning(self):
+        self.run_verb("phase.complete", "1")
+        before = [item["check"] for item
+                  in self.run_verb("planning.validate", "--skip",
+                                   "codebase-freshness")["warnings"]]
+        self.assertIn("requirements-traceability", before)
+        self.run_verb("requirements.close-phase", "1")
+        after = [item["check"] for item
+                 in self.run_verb("planning.validate", "--skip",
+                                  "codebase-freshness")["warnings"]]
+        self.assertNotIn("requirements-traceability", after)
+
+
+class InstallSeedContract(RuntimeCase):
+    """The installed STATE.md must be the shape the state verbs write into.
+
+    The seed is not a copy of the template - its values are install-specific
+    prose - but its structure has to match, because `state.*` edits fields by
+    regex and silently does nothing when the field line is absent. A seed that
+    drifts from the template produces verbs that report success and write
+    nothing, for the whole life of the project until onboarding rewrites it.
+    """
+
+    SEED = ROOT / ".ai" / "install-assets" / "STATE.txt"
+    TEMPLATE = ROOT / ".ai" / "templates" / "state.md"
+
+    def install(self, asset, record):
+        """Write one install asset into the fixture as its planning record."""
+        target = self.directory / ".planning" / record
+        target.write_text(asset.read_text(encoding="utf-8"),
+                          encoding="utf-8", newline="\n")
+        return target
+
+    def setUp(self):
+        super().setUp()
+        (self.directory / ".planning" / "STATE.md").write_text(
+            self.SEED.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
+
+    @staticmethod
+    def headings(markdown):
+        return [line.strip() for line in markdown.splitlines()
+                if line.startswith("#") and not line.startswith("####")]
+
+    def template_skeleton(self):
+        """The File Template block: the shape an adopting project starts from."""
+        body = self.TEMPLATE.read_text(encoding="utf-8")
+        start = body.index("```markdown")
+        return body[start:body.index("```", start + 3)]
+
+    def test_the_seed_carries_the_templates_sections(self):
+        self.assertEqual(self.headings(self.SEED.read_text(encoding="utf-8")),
+                         self.headings(self.template_skeleton()))
+
+    def test_the_seed_carries_every_field_the_runtime_writes(self):
+        seed = self.SEED.read_text(encoding="utf-8")
+        for field in ("Phase:", "Plan:", "Status:", "Last activity:",
+                      "Last session:", "Stopped at:", "Resume file:", "Progress:"):
+            with self.subTest(field=field):
+                self.assertIn("\n" + field, seed,
+                              field + " is absent, so the verb that writes it "
+                              "would silently do nothing")
+
+    def test_begin_phase_actually_writes_to_the_installed_file(self):
+        self.run_verb("state.begin-phase", "1", "Foundation")
+        position = self.read(".planning/STATE.md")
+        self.assertIn("Phase: 1 of 2 (Foundation)", position)
+        self.assertNotIn("Phase: Not started", position)
+
+    def test_record_session_actually_writes_to_the_installed_file(self):
+        self.run_verb("state.record-session", "--stopped-at", "planned the phase")
+        continuity = self.read(".planning/STATE.md")
+        self.assertIn("Stopped at: planned the phase", continuity)
+        self.assertNotIn("Stopped at: Workflow installed", continuity)
+
+    def test_the_digest_verbs_reach_their_sections(self):
+        self.run_verb("state.add-blocker", "Phase 1: staging secrets missing")
+        self.run_verb("state.add-roadmap-evolution", "Phase 2 inserted")
+        self.run_verb("state.add-deferred", "perf", "Cache the roadmap parse")
+        state = self.read(".planning/STATE.md")
+        self.assertIn("- Phase 1: staging secrets missing", state)
+        self.assertIn("- Phase 2 inserted", state)
+        self.assertIn("| perf | Cache the roadmap parse |", state)
+
+    def test_updating_progress_keeps_the_blank_line_before_the_next_heading(self):
+        for _ in range(3):
+            self.run_verb("state.update-progress")
+        self.assertIn("%\n\n## Accumulated Context", self.read(".planning/STATE.md"))
+
+    def test_a_freshly_installed_record_set_validates_clean(self):
+        """What an adopting project sees on day one should not be drift."""
+        assets = ROOT / ".ai" / "install-assets"
+        for asset, record in (("PROJECT.txt", "PROJECT.md"),
+                              ("REQUIREMENTS.txt", "REQUIREMENTS.md")):
+            self.install(assets / asset, record)
+        result = self.run_verb("planning.validate", "--skip", "codebase-freshness")
+        self.assertEqual(result["status"], "clean", result["warnings"])
+
+    def test_a_decision_reaches_the_installed_project_record(self):
+        """The seed's Key Decisions table has to exist for the log to be durable."""
+        self.install(ROOT / ".ai" / "install-assets" / "PROJECT.txt", "PROJECT.md")
+        result = self.run_verb("state.add-decision", "Use Postgres",
+                               "--rationale", "Already operated in-house")
+        self.assertIsNotNone(result["project_record"],
+                             result.get("warning", "no warning reported"))
+        self.assertIn("| Use Postgres | Already operated in-house |",
+                      self.read(".planning/PROJECT.md"))

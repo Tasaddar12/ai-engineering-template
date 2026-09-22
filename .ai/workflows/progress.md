@@ -66,6 +66,15 @@ ls -t .planning/phases/*/*-SUMMARY.md 2>/dev/null | head -3
 ```
 </step>
 
+<step name="record_health">
+```bash
+phase_run query planning.validate
+```
+
+Include the Record Health section below only when `warning_count` is above zero.
+Report the findings as they are; do not fix them here.
+</step>
+
 <step name="report">
 Present the report:
 
@@ -99,9 +108,15 @@ CONTEXT: {✓ when the current phase has_context, otherwise -}
 - {open_quick} open — `/quick` to resume
 (omit this section when the count is 0)
 
+## Record Health
+- {each warning as "{record}: {message}"}
+(omit this section entirely when warning_count is 0)
+
 ## What's Next
 {next_phase.number}: {next_phase.name} — {next_phase.goal}
 ````
+
+Name the verb that resolves each warning when you present it.
 </step>
 
 <step name="route">
