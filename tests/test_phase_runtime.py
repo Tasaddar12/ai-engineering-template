@@ -1066,6 +1066,38 @@ class CodebaseMapFreshness(RuntimeCase):
                   for report in self.run_verb("codebase.status")["maps"]}
         self.assertEqual(states["ARCHITECTURE.md"]["state"], "stale")
 
+    def test_an_unfilled_skeleton_is_not_reported_as_a_missing_map(self):
+        """Before onboarding every record is an example, so nothing is drift."""
+        project = self.directory / ".planning" / "PROJECT.md"
+        project.write_text("> **Unfilled adoption skeleton:** CHANGEME.\n\n"
+                           + project.read_text(encoding="utf-8"),
+                           encoding="utf-8", newline="\n")
+        warnings = self.run_verb("planning.validate")["warnings"]
+        self.assertEqual([item for item in warnings
+                          if item["check"] == "codebase-freshness"], [])
+
+    def test_an_onboarded_project_is_told_its_maps_are_missing(self):
+        warnings = self.run_verb("planning.validate")["warnings"]
+        missing = [item["record"] for item in warnings
+                   if item["check"] == "codebase-freshness"]
+        self.assertEqual(sorted(missing), ["ARCHITECTURE.md", "STACK.md"])
+
+    def test_staleness_is_reported_even_before_onboarding(self):
+        """A map that exists is being read, whatever state the records are in."""
+        project = self.directory / ".planning" / "PROJECT.md"
+        project.write_text("> **Unfilled adoption skeleton:** CHANGEME.\n\n"
+                           + project.read_text(encoding="utf-8"),
+                           encoding="utf-8", newline="\n")
+        self.write_map("STACK.md")
+        self.run_verb("codebase.stamp", "STACK.md")
+        (self.directory / "package.json").write_text('{"name": "app"}\n',
+                                                     encoding="utf-8", newline="\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "add a manifest")
+        warnings = self.run_verb("planning.validate")["warnings"]
+        self.assertTrue(any(item["record"] == "STACK.md" for item in warnings),
+                        warnings)
+
     def test_validation_reports_a_stale_map(self):
         self.write_map("STACK.md")
         self.run_verb("codebase.stamp", "STACK.md")

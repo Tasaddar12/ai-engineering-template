@@ -36,6 +36,17 @@ DEFAULTS = {
         "merge_method": "squash",
         "delete_branch": True,
     },
+    # How far a `.planning/codebase/` map may drift before it is regenerated,
+    # in commits touching that map's own sources since its `mapped_revision`.
+    # A stack map ages on the first manifest change; an architecture map
+    # tolerates ordinary churn. `lib/codebase.py` holds the same values as its
+    # fallback for a project whose config predates this block.
+    "codebase": {
+        "staleness": {
+            "stack": 1,
+            "architecture": 15,
+        },
+    },
     "agents": {},
     "verification": {"commands": []},
 }

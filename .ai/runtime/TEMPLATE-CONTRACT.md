@@ -13,6 +13,8 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 | NN-MM-PLAN.md | phase-preparer | phase-checker, orchestrator, coder | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when |
 | NN-MM-SUMMARY.md | coder / doc-writer | orchestrator, downstream plans, verifier | status, commits, acceptance and documentation coverage, actual check results |
 | NN-VERIFICATION.md | verifier | orchestrator, ship gate | status, reviewed revision, verified_at, finding counts |
+| ADR-NNN-*.md | discuss-phase / onboard via `decision.*` | every later phase | kind, validated, supersedes/superseded_by, a Feasibility validation table |
+| ARCHITECTURE.md, STACK.md | codebase-mapper via `codebase.stamp` | plan-phase, researcher | `mapped_revision`, checked by `codebase.status` |
 
 ## Author a context
 
@@ -188,6 +190,36 @@ section gets superseded cleanly with no migration step.
 First-time creation of STATE.md from its template is the one case where a
 workflow writes the file directly. Every later change goes through a `state.*`
 verb.
+
+### The section set is closed
+
+STATE.md is a digest, so every section has exactly one writer and the set does
+not grow. A section with no writer becomes placeholder rot that agents hand-fill;
+a section the runtime writes but the template never declared is an unbudgeted
+section nobody accounted for. `planning.validate` checks both directions.
+
+| Section | Level | Writer | Cap |
+|---|---|---|---|
+| Project Reference | 2 | onboard, then hand-maintained prose | - |
+| Current Position | 2 | `state.begin-phase`, `state.update-progress` | - |
+| Accumulated Context | 2 | container for the three below | - |
+| Decisions | 3 | `state.add-decision` | 5 entries |
+| Pending Todos | 3 | `state.sync-todos`, replaced wholesale | - |
+| Blockers/Concerns | 3 | `state.add-blocker`, `state.clear-blocker` | 10 entries |
+| Roadmap Evolution | 3 | `state.add-roadmap-evolution` | 5 entries |
+| Deferred Items | 2 | `state.add-deferred` | 10 rows |
+| Session Continuity | 2 | `state.record-session` | - |
+
+Trimming a capped section is lossless. A rotated entry is appended to
+`.planning/archive/STATE-LOG.md` before it leaves, and `state.add-decision`
+writes the decision into PROJECT.md's Key Decisions table as it is added rather
+than as it is trimmed — so the durable copy exists before the digest copy is ever
+at risk. The archive log is append-only and never authoritative; it exists so the
+digest can be trimmed automatically, not so anything reads it back.
+
+The file budget is 125 lines. `planning.validate` warns above it and never
+blocks: a cosmetic finding must not stall a session, and `--strict` is there for
+a caller that explicitly wants drift to fail.
 
 ## Model and dispatch metadata
 

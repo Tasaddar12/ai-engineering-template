@@ -41,6 +41,23 @@ CLOSURE_MARKER = re.compile(
 RECORDS = ("STATE.md", "PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md")
 
 
+ADOPTION_MARKER = "Unfilled adoption skeleton"
+
+
+def unfilled(workspace):
+    """Whether the records are still the template's instructional skeleton.
+
+    Onboarding replaces this marker with the adopting project's own identity.
+    Until then every record is an example, and reporting them as drift would
+    train the reader to ignore the report.
+    """
+    for name in RECORDS:
+        path = workspace.planning / name
+        if path.is_file() and ADOPTION_MARKER in read_text(path, ""):
+            return True
+    return False
+
+
 def warn(findings, check, record, message, fix=""):
     findings.append({"check": check, "record": record, "message": message,
                      "fix": fix})
@@ -199,8 +216,17 @@ def check_project(workspace, findings):
 
 
 def check_codebase(workspace, findings):
+    """A missing map only matters once there is work being planned against it.
+
+    Before onboarding there is nothing to plan, so an absent map is the expected
+    state rather than drift. A map that exists and has gone stale is always worth
+    reporting: something is reading it.
+    """
+    onboarded = not unfilled(workspace)
     for report in codebase.status(workspace)["maps"]:
         if report["state"] == "missing":
+            if not onboarded:
+                continue
             warn(findings, "codebase-freshness", report["name"],
                  "no " + report["name"] + " has ever been generated",
                  "dispatch codebase-mapper with focus " + report["focus"])

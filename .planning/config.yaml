@@ -44,6 +44,23 @@ handoff:
   context_percent: 60
   context_tokens: 250000
 
+# How far a .planning/codebase/ map may drift before /plan-phase regenerates it,
+# measured in commits that touched that map's own sources since the revision it
+# was stamped with. Writes under .planning/ never count: a phase write-up is not
+# a change to the architecture it describes.
+#
+#   stack         1  -- a dependency change is a stack change, so a manifest,
+#                       lockfile, Dockerfile, CI workflow or version pin moving
+#                       at all makes STACK.md wrong about what runs
+#   architecture 15  -- ordinary churn is not a changed architecture; sustained
+#                       movement is
+#
+# `phase_run query codebase.status` reports the current answer.
+codebase:
+  staleness:
+    stack: 1
+    architecture: 15
+
 # Per-agent model overrides, and the only place a Claude subagent's model is
 # set. Agent definitions under .ai/agents/ deliberately carry no `model:`
 # frontmatter, so a role omitted here resolves to `inherit` and runs on whatever

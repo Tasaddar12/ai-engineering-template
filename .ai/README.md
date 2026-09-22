@@ -32,7 +32,8 @@ runtime — a workflow that edits them by hand drifts from it.
 | [phases](../.planning/phases/README.md) | Decisions, plans and evidence per phase |
 | [codebase](../.planning/codebase/README.md) | Useful maps of existing implementation |
 | `.planning/specs/` | Current verified behavioral contracts |
-| `.planning/decisions/` | Significant architectural rationale |
+| `.planning/decisions/` | Decision records, written during planning and validated before proposal |
+| `.planning/archive/` | Entries rotated out of the STATE digest; append-only, never authoritative |
 | `.planning/todos/` | Captured ideas awaiting a home |
 | `.planning/quick/` | Small changes tracked outside the roadmap |
 | [commands](commands/README.md) | Entry points, mirrored by `.agents/skills/` |

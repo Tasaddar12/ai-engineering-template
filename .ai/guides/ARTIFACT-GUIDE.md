@@ -95,8 +95,8 @@ prerequisite instead of inventing completion or removing it to permit dispatch.
 
 | Template | Artifact or use | Producer → consumer |
 |---|---|---|
-| [codebase/architecture.md](../templates/codebase/architecture.md) | `.planning/codebase/ARCHITECTURE.md`: inspected conceptual organization | Reconnaissance → planner/researcher/worker |
-| [codebase/stack.md](../templates/codebase/stack.md) | `.planning/codebase/STACK.md`: technologies actually executing | Reconnaissance → setup and implementation planning |
+| [codebase/architecture.md](../templates/codebase/architecture.md) | `.planning/codebase/ARCHITECTURE.md`: inspected conceptual organization, stamped with the revision it describes | codebase-mapper → planner/researcher/worker; refreshed by plan-phase when `codebase.status` reports it stale |
+| [codebase/stack.md](../templates/codebase/stack.md) | `.planning/codebase/STACK.md`: technologies actually executing, stamped with the revision it describes | codebase-mapper → setup and implementation planning; stale on the first manifest change |
 | [research-project/ARCHITECTURE.md](../templates/research-project/ARCHITECTURE.md) | `.planning/research/ARCHITECTURE.md`: domain architecture research | Project researcher → research synthesis and roadmap |
 | [research-project/FEATURES.md](../templates/research-project/FEATURES.md) | `.planning/research/FEATURES.md`: domain feature landscape | Project researcher → requirements/roadmap discussion |
 | [research-project/PITFALLS.md](../templates/research-project/PITFALLS.md) | `.planning/research/PITFALLS.md`: likely mistakes and prevention | Project researcher → planner/checker |
@@ -107,17 +107,29 @@ Codebase maps describe inspected current code. Project research describes possib
 approaches in the domain. Recommendations become constraints only through the
 recorded decision process; neither category invents product requirements.
 
+A map's freshness is computed, not asserted: `codebase.stamp` records the revision
+it was written against and `codebase.status` counts the commits that have touched
+its sources since. An analysis date says when somebody looked, which is why these
+maps went stale unnoticed before.
+
 ## Additional local templates
 
 | Template | Output | Why it exists |
 |---|---|---|
-| [ADR.md](../templates/ADR.md) | `.planning/decisions/ADR-NNN-name.md` | Preserve significant rationale, alternatives, tradeoffs and supersession history |
+| [ADR.md](../templates/ADR.md) | `.planning/decisions/ADR-NNN-name.md`, written by `decision.draft` during discussion, planning or onboarding | Preserve significant rationale, alternatives, tradeoffs and supersession history |
 | [CURRENT-SPEC.md](../templates/CURRENT-SPEC.md) | `.planning/specs/SPEC-NNN-capability.md` | Describe evidenced current behavior separately from desired phase requirements |
 
 Both follow the teaching design of the retained templates: complete output
 skeleton, purpose, producer/consumer map, authoring steps, good/bad examples with
 reasons, completion criteria and downstream handoff. Ordinary progress belongs
 in SUMMARY and Git rather than a new architectural decision record.
+
+A decision record is written while deciding, never while building: `decision.draft`
+refuses from a dispatched plan worktree. It carries a Feasibility validation table
+the runtime fills, and `decision.propose` refuses until a check recorded there has
+actually passed — a stack, technology, dependency or integration decision must name
+the command that was run. Reversal is `decision.supersede`, which status-changes
+both records and links them, rather than an edit to the original's reasoning.
 
 ## Connect a full template to the Python runtime
 
