@@ -1,6 +1,12 @@
 ---
 workflow_state_version: '1.0'
 status: planning
+progress:
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -14,8 +20,12 @@ See [PROJECT](PROJECT.md).
 
 ## Current Position
 
-Onboarding pending. No phase was selected or started by installation.
-Project implementation progress has not been assessed.
+Phase: Not started — onboarding pending
+Plan: 0 of 0 in current phase
+Status: Ready to plan
+Last activity: Workflow installed; no phase was selected or started by installation
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -47,5 +57,9 @@ Items acknowledged and deferred at milestone close, written by
 
 ## Session Continuity
 
-The workflow was installed. Follow [onboard](../.ai/commands/onboard.md) and
-the complete [state guide](../.ai/templates/state.md) to establish current context.
+Last session: Not started
+Stopped at: Workflow installed — onboarding not yet run
+Resume file: None
+
+Follow [onboard](../.ai/commands/onboard.md) and the complete
+[state guide](../.ai/templates/state.md) to establish current context.

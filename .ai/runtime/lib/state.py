@@ -247,7 +247,9 @@ def update_progress(workspace):
             state.set_field(POSITION, "Status", phase.status)
     progress = state.save()
     bar = progress_bar(progress.get("percent", 0))
-    state.body = re.sub(r"^Progress:\s*\[.*?\]\s*\d+%\s*$",
+    # `\s*$` would swallow the blank line before the next heading, closing the
+    # gap a little further on every write.
+    state.body = re.sub(r"^Progress:\s*\[.*?\]\s*\d+%[ 	]*$",
                         "Progress: " + bar + " " + str(progress.get("percent", 0)) + "%",
                         state.body, flags=re.MULTILINE)
     write_text(state.path, join_frontmatter(state.frontmatter, state.body))
