@@ -20,25 +20,21 @@ from .text import (is_divider_row, is_placeholder, join_frontmatter,
 NEWLINE = "\n"
 LOCK_TIMEOUT = 30
 
-# STATE.md is a digest, not an archive. Each bounded section keeps only its
-# most recent entries; older ones rotate into .planning/archive/STATE-LOG.md so
-# trimming never loses history. An absent limit means the section is replaced
-# wholesale by its own verb and needs no trimming.
+# STATE.md is a digest, not an archive. Each section has a cap.
 DIGEST_LIMITS = {
     "Decisions": 5,
     "Blockers/Concerns": 10,
     "Roadmap Evolution": 5,
     "Deferred Items": 10,
 }
+
+# Only these trim themselves, because only these have a durable copy elsewhere:
+# a decision is written to PROJECT.md as it is added, and a roadmap change is in
+# ROADMAP.md and git. Everything else is capped but never silently dropped - an
+# open blocker that vanished because a newer one arrived is worse than a long
+# section, so `planning.validate` reports the overflow and a human clears it.
+ROTATING = ("Decisions", "Roadmap Evolution")
 LINE_BUDGET = 125
-ARCHIVE_NAME = "STATE-LOG.md"
-ARCHIVE_HEADER = (
-    "# STATE digest archive\n\n"
-    "Entries rotated out of `.planning/STATE.md` so the digest stays readable.\n"
-    "Append-only, and nothing here is authoritative: decisions are owned by\n"
-    "PROJECT.md, requirements by REQUIREMENTS.md, roadmap history by the\n"
-    "milestone records.\n"
-)
 
 POSITION = re.compile(
     r"^(?P<key>Phase|Plan|Status|Last activity)[ 	]*:[ 	]*(?P<value>.*?)[ 	]*$",
@@ -149,7 +145,7 @@ class State:
         N data rows, leaving the header and divider in place.
         """
         limit = DIGEST_LIMITS.get(name)
-        if not limit:
+        if not limit or name not in ROTATING:
             return []
         body = section_body(self.body, name, level)
         lines = [line for line in body.splitlines() if line.strip()]
@@ -268,7 +264,6 @@ def add_bullet(workspace, section, text, level=3):
     state.append_bullet(section, "- " + text, level)
     rotated = state.enforce_limit(section, level)
     state.save()
-    archive(workspace, section, rotated, "rotated out of the digest")
     return {"section": section, "entry": text, "rotated": rotated,
             "limit": DIGEST_LIMITS.get(section)}
 
@@ -293,8 +288,8 @@ def add_decision(workspace, text, rationale="", outcome=None):
 def clear_bullet(workspace, section, match, level=3):
     """Retire entries by removing them, never by striking them through.
 
-    Cleared entries are appended to the archive log, so "cleared" means "moved
-    to where it belongs", not "lost".
+    A cleared entry is gone: the digest records what is live, and git holds what
+    it used to say.
     """
     state = State(workspace)
     require(state.exists, "no .planning/STATE.md to update", "missing-state")
@@ -309,7 +304,6 @@ def clear_bullet(workspace, section, match, level=3):
         kept.append("None yet.")
     state.set_section(section, NEWLINE.join(kept), level)
     state.save()
-    archive(workspace, section, removed, "resolved and cleared")
     return {"section": section,
             "removed": [re.sub(r"^[-*]\s*", "", item).strip() for item in removed]}
 
@@ -322,27 +316,9 @@ def record_deferred(workspace, category, item, status, milestone=""):
     require(body.strip(), "STATE.md has no Deferred Items section", "missing-section")
     row = [category, item, status, today(), milestone or "-"]
     state.set_section("Deferred Items", upsert_table_row(body, row, key_index=1), 2)
-    rotated = state.enforce_limit("Deferred Items", 2)
     state.save()
-    archive(workspace, "Deferred Items", rotated, "rotated out of the digest")
     return {"category": category, "item": item, "status": status,
-            "milestone": milestone, "rotated": rotated}
-
-
-def archive(workspace, section, entries, reason):
-    """Append rotated or cleared entries to `.planning/archive/STATE-LOG.md`."""
-    entries = [str(entry) for entry in entries or [] if str(entry).strip()]
-    if not entries:
-        return None
-    path = workspace.archive_dir / ARCHIVE_NAME
-    existing = read_text(path, ARCHIVE_HEADER) if path.is_file() else ARCHIVE_HEADER
-    rendered = NEWLINE.join(
-        entry if entry.strip().startswith(("-", "*", "|")) else "- " + entry.strip()
-        for entry in entries)
-    block = (NEWLINE + "## " + today() + " - " + section + " (" + reason + ")"
-             + NEWLINE + NEWLINE + rendered + NEWLINE)
-    write_text(path, existing.rstrip(NEWLINE) + NEWLINE + block)
-    return workspace.relative(path)
+            "milestone": milestone}
 
 
 def line_count(workspace):

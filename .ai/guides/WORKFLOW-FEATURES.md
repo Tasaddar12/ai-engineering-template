@@ -62,7 +62,6 @@ repeats. Agent files supply methods; they do not install runtime routes.
   milestones/                   Long-form milestone summaries, on `--write`
   config.yaml                   Commit behavior, model overrides and the project's real checks
   codebase/                     Inspected architecture and stack maps
-  archive/STATE-LOG.md          Entries rotated out of the STATE digest; never authoritative
   todos/pending|completed/      Captured ideas awaiting a home
   quick/YYMMDD-NNN-slug/        Small changes tracked outside the roadmap
   phases/NN-slug/
@@ -75,7 +74,7 @@ repeats. Agent files supply methods; they do not install runtime routes.
     NN-VERIFICATION.md          Independent integrated outcome assessment
     .continue-here.md           Optional continuation note
   specs/                        Verified current behavior contracts
-  decisions/                    Significant architectural rationale, validated before proposal
+  decisions/                    Significant architectural rationale
 ```
 
 The listing shows possible artifacts, not a requirement that a project create all
@@ -85,11 +84,11 @@ of them. Do not create every possible record during onboarding; use the
 STATE.md's frontmatter counters are re-derived from ROADMAP.md on every write, so
 they cannot be corrected by editing them — correct the roadmap.
 
-STATE.md is a digest with a 125-line budget, and its sections are bounded: the
-runtime trims them on every write and appends what it trimmed to
-`archive/STATE-LOG.md` first, so trimming loses nothing. Retiring an entry means
-removing it and recording it where it is owned — never a strikethrough, never an
-in-place "Closed". `phase_run query planning.validate` reports drift across the
+STATE.md is a digest with a 125-line budget and a cap on every section. Decisions
+and roadmap changes trim themselves, because PROJECT.md and ROADMAP.md already
+hold them; blockers and deferrals are capped and reported instead, so an open one
+is never dropped to make room. Retiring an entry means removing it — never a
+strikethrough, never an in-place "Closed". `phase_run query planning.validate` reports drift across the
 records, warn-only, and `/progress`, `/verify-work`, `/complete-milestone` and
 `/ship` all surface its findings without blocking on them.
 

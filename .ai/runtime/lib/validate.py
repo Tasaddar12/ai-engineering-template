@@ -149,7 +149,8 @@ def check_state_caps(workspace, findings):
             warn(findings, "state-caps", "STATE.md",
                  name + " holds " + str(count) + " entries, over its cap of "
                  + str(limit),
-                 "it was edited by hand; use the state verbs so trimming applies")
+                 "clear the ones that are resolved (state.clear-blocker, or "
+                 "state.clear-entry for another section)")
 
 
 def check_retirement_markers(workspace, findings):

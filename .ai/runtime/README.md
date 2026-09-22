@@ -86,8 +86,8 @@ unless `--force` is passed.
 | `state.add-decision <text> [--rationale] [--outcome]` | Digest it and record it in PROJECT.md Key Decisions |
 | `state.add-blocker <text>` | Add to Blockers/Concerns |
 | `state.add-roadmap-evolution <text>` | Add to Roadmap Evolution, creating the section |
-| `state.clear-blocker <match>` | Remove a resolved blocker and archive it |
-| `state.clear-entry <section> <match> [--level]` | Remove any digest entry and archive it |
+| `state.clear-blocker <match>` | Remove a resolved blocker |
+| `state.clear-entry <section> <match> [--level]` | Remove any digest entry |
 | `state.add-deferred <category> <item> [--status] [--milestone]` | Write a Deferred Items row |
 | `state.sync-todos` | Replace the Pending Todos body from the todos on disk |
 | `project.add-decision <decision> [--rationale] [--outcome]` | Write one PROJECT.md Key Decisions row |
@@ -97,14 +97,14 @@ STATE.md's Markdown body is authoritative; its frontmatter counters are
 re-derived from ROADMAP.md on every write, so the two cannot disagree. Writers
 serialize on `.planning/.lock`.
 
-STATE.md is a digest, so its sections are bounded: Decisions and Roadmap
-Evolution keep 5 entries, Blockers/Concerns and Deferred Items keep 10. Trimming
-is never deletion — a rotated entry is appended to
-`.planning/archive/STATE-LOG.md` first, and a decision is written to PROJECT.md
-as it is added rather than as it is trimmed. That is what makes automatic
-trimming safe.
+STATE.md is a digest, so its sections are capped: Decisions and Roadmap
+Evolution keep 5 entries, Blockers/Concerns and Deferred Items keep 10. Only the
+first two trim themselves, because only they have a durable copy elsewhere: a
+decision is written to PROJECT.md as it is added, and roadmap history is in
+ROADMAP.md and git. The others are capped and reported by `planning.validate`,
+so an open blocker is never dropped to make room for a newer one.
 
-### Requirements, decisions and record conformance
+### Requirements and record conformance
 
 | Verb | Effect |
 |---|---|
@@ -112,20 +112,8 @@ trimming safe.
 | `requirements.outstanding` | Requirements not yet Complete, Deferred or Dropped |
 | `requirements.set-status <id> <status> [--phase]` | Set one requirement's Status cell |
 | `requirements.close-phase <phase> [--requirements ...] [--status]` | Close out a passing phase's requirements |
-| `decision.draft <title> [--kind] [--phase] [--question]` | Open an ADR as an unproven draft |
-| `decision.validate <id> --method --evidence [--command] [--result]` | Record a check actually run against it |
-| `decision.propose <id> [--basis]` | Promote a validated draft; refused while unproven |
-| `decision.accept <id> --basis` / `decision.reject <id> --basis` | Record the human decision |
-| `decision.supersede <new> --replaces <old> [--basis]` | Link and status-change both records |
-| `decision.list [--status]` | Every ADR, with which drafts remain unvalidated |
 | `planning.validate [--strict] [--skip ...]` | Report record drift; warn-only by default |
 | `codebase.status` | Freshness of ARCHITECTURE.md and STACK.md, derived from git |
-
-`decision.propose` refuses until a validation has passed, and a `stack`,
-`technology`, `dependency` or `integration` decision refuses a validation with no
-`--command`: a claim that a solution will work is earned by running something.
-`decision.draft` refuses from a dispatched plan worktree — ADRs are written while
-deciding, not while building.
 
 `planning.validate` returns `ok` with a warning list so a cosmetic finding never
 stalls a session. `--strict` turns the same findings into a failure, for a caller

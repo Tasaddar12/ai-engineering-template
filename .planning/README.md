@@ -15,7 +15,7 @@ actual source, documentation and user intent.
 | `phases/NN-name/` | Context, research, PLAN/SUMMARY pairs and verification | Assigned agents; the orchestrator integrates |
 | `codebase/` | Revision-specific maps and research on existing implementation | codebase-mapper; freshness derived from git by `codebase.status` |
 | `specs/` | Verified current behavior | Assigned author or doc-writer |
-| `decisions/` | Significant architectural decisions and supersession | Runtime `decision.*` during planning; validated before proposal, accepted by the user |
+| `decisions/` | Significant architectural decisions and supersession | Recorded human decisions |
 | `todos/pending/`, `todos/completed/` | Captured ideas not yet scoped into a phase | Runtime `todo.add` and `todo.complete` |
 | `quick/YYMMDD-NNN-slug/` | Small changes tracked outside the roadmap | Runtime `quick.create` and `quick.update` |
 | `MILESTONES.md`, `milestones/` | What each milestone shipped, and its long-form summary | Runtime `milestone.complete`; summaries on `--write` |
@@ -27,10 +27,6 @@ start an agent or authorize a change.
 Everything the runtime records is a tracked project record, so a fresh clone
 inherits the full picture. The only untracked artifact is `.planning/.lock`,
 which serializes concurrent writers for the duration of a single write.
-
-`archive/STATE-LOG.md` holds entries rotated out of the STATE.md digest. It is
-append-only and never authoritative: it exists so trimming the digest is
-lossless, not so anything reads it back.
 
 `phase_run query planning.validate` reports where these records have drifted from
 their templates. It is warn-only — `/progress`, `/verify-work` and

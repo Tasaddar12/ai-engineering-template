@@ -116,7 +116,7 @@ looked, which is why these maps went stale unnoticed before.
 
 | Template | Output | Why it exists |
 |---|---|---|
-| [ADR.md](../templates/ADR.md) | `.planning/decisions/ADR-NNN-name.md`, written by `decision.draft` during discussion, planning or onboarding | Preserve significant rationale, alternatives, tradeoffs and supersession history |
+| [ADR.md](../templates/ADR.md) | `.planning/decisions/ADR-NNN-name.md` | Preserve significant rationale, alternatives, tradeoffs and supersession history |
 | [CURRENT-SPEC.md](../templates/CURRENT-SPEC.md) | `.planning/specs/SPEC-NNN-capability.md` | Describe evidenced current behavior separately from desired phase requirements |
 
 Both follow the teaching design of the retained templates: complete output
@@ -124,12 +124,11 @@ skeleton, purpose, producer/consumer map, authoring steps, good/bad examples wit
 reasons, completion criteria and downstream handoff. Ordinary progress belongs
 in SUMMARY and Git rather than a new architectural decision record.
 
-A decision record is written while deciding, never while building: `decision.draft`
-refuses from a dispatched plan worktree. It carries a Feasibility validation table
-the runtime fills, and `decision.propose` refuses until a check recorded there has
-actually passed — a stack, technology, dependency or integration decision must name
-the command that was run. Reversal is `decision.supersede`, which status-changes
-both records and links them, rather than an edit to the original's reasoning.
+Decisions that constrain future work are recorded in PROJECT.md's Key Decisions
+table by `state.add-decision`, taken while deciding rather than while building. A
+technology choice carries what its spike actually printed in its rationale: a
+recommendation asserts the solution will work, and for anything that executes the
+only evidence for that is having executed it.
 
 ## Connect a full template to the Python runtime
 

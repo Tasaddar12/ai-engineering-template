@@ -131,8 +131,8 @@ agent reaches for when no retirement path exists; each of these is that path:
 | Item | Retire it with | It lands in |
 |---|---|---|
 | Decision | already recorded when added; rotates out of the digest | PROJECT.md Key Decisions |
-| Decision reversed | `decision.supersede <new> --replaces <old>` | Both ADRs, linked and status-changed |
-| Blocker resolved | `state.clear-blocker "<match>"` | `.planning/archive/STATE-LOG.md` |
+| Decision reversed | `state.add-decision` recording the replacement | PROJECT.md Key Decisions, as a new row |
+| Blocker resolved | `state.clear-blocker "<match>"` | removed; git holds what it said |
 | Requirement met | `requirements.set-status <id> Complete` | REQUIREMENTS.md Traceability |
 | Scope deferred | `state.add-deferred <category> <item>` | STATE.md Deferred Items |
 | Todo done | `todo.complete <name>` | `.planning/todos/completed/` |
@@ -141,21 +141,24 @@ agent reaches for when no retirement path exists; each of these is that path:
 planning record. It is warn-only: it never blocks a session on a cosmetic
 finding, and `--strict` is for a caller that explicitly wants drift to fail.
 
-### Decision records
+### Deciding
 
-An ADR is written while deciding — in discussion, planning or onboarding — never
-while building the code that follows from it. `decision.draft` refuses from a
-dispatched plan worktree. A choice that feels ADR-sized during execution means
-the phase was planned short of a decision it needed: record a blocker and let
-planning decide it.
+Decisions that constrain future work belong in PROJECT.md's Key Decisions table,
+written by `state.add-decision` as they are taken. A reversal is a new row
+recording the replacement and what changed, not an edit to the old one.
 
-**A solution is validated before it is proposed.** `decision.propose` refuses
-until a check has actually been run and passed against the record, and a `stack`,
-`technology`, `dependency` or `integration` decision refuses a validation with no
-command. Proposing a solution asserts it will work; for anything that executes,
-the only evidence for that is having executed it. Record what the check actually
-printed, and record a failure as a failure — a failed spike is the cheapest
-possible version of discovering the problem.
+**A technology choice is validated before it is proposed.** Before recommending a
+library, runtime, service or integration, run the smallest thing that could fail
+— install it and call the one API the project depends on, or make the integration
+return one real response — and put what it actually printed in the decision's
+rationale. Proposing a solution asserts it will work, and for anything that
+executes, the only evidence for that is having executed it. A failed spike is
+recorded as a finding rather than hidden: it is the cheapest possible version of
+discovering the problem.
+
+Decisions are taken while deciding, not while building. A choice that feels
+consequential during execution means the phase was planned short of a decision it
+needed: record a blocker and let planning decide it.
 
 When sources disagree, identify both claims and inspect their evidence:
 

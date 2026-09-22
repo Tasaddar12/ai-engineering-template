@@ -73,7 +73,7 @@ None yet.
 ### Roadmap Evolution
 
 [Phase added, inserted, edited or removed. Written by the roadmap verbs; the
-5 most recent survive, older ones rotate to .planning/archive/STATE-LOG.md.]
+5 most recent survive.]
 
 None yet.
 
@@ -170,13 +170,12 @@ can be trimmed without consulting anything. The full log lives in PROJECT.md.
 **Blockers/Concerns:** From "Next Phase Readiness" sections
 - Issues that affect future work
 - Prefix with originating phase
-- Cleared with `state.clear-blocker` when addressed, which removes the entry and
-  appends it to the archive log. Do not mark it resolved in place.
+- Cleared with `state.clear-blocker` when addressed, which removes the entry.
+  Do not mark it resolved in place.
 
 **Roadmap Evolution:** One entry per phase added, inserted, edited or removed,
 written by the roadmap verbs so the digest explains why the phase numbering looks
-the way it does. Bounded to 5; the rest is in the archive log and the milestone
-records.
+the way it does. Bounded to 5; ROADMAP.md and git hold the rest.
 
 ### Session Continuity
 Enables instant resumption:
@@ -192,18 +191,18 @@ Enables instant resumption:
 global number was never enough guidance on its own. The budget is enforced per
 section, by the runtime, on every write:
 
-| Section | Cap | Enforced by | Overflow goes to |
-|---------|-----|-------------|------------------|
-| Decisions | 5 entries | `state.add-decision` | PROJECT.md Key Decisions (recorded at the same time), plus the archive log |
-| Blockers/Concerns | 10 entries | `state.add-blocker` | Archive log; resolve with `state.clear-blocker` |
-| Roadmap Evolution | 5 entries | `state.add-roadmap-evolution` | Archive log |
-| Deferred Items | 10 rows | `state.add-deferred` | Archive log |
-| Pending Todos | - | `state.sync-todos` replaces it wholesale from disk | `.planning/todos/` |
+| Section | Cap | Trims itself | Because |
+|---------|-----|--------------|---------|
+| Decisions | 5 entries | yes | `state.add-decision` writes it to PROJECT.md Key Decisions at the same time, so the durable copy already exists |
+| Roadmap Evolution | 5 entries | yes | the roadmap itself and git hold the history |
+| Blockers/Concerns | 10 entries | no | an open blocker must not vanish because a newer one arrived; clear it with `state.clear-blocker` |
+| Deferred Items | 10 rows | no | the deferral is the record; clear it when it is taken up or dropped |
+| Pending Todos | - | replaced wholesale from `.planning/todos/` by `state.sync-todos` | the files on disk are the record |
 
-Rotation is never deletion: every trimmed entry is appended to
-`.planning/archive/STATE-LOG.md` before it leaves the digest, and decisions are
-written to PROJECT.md as they are added, not as they are trimmed. That is what
-makes trimming safe enough to do automatically.
+Only a section with a durable copy elsewhere trims itself. The rest are capped
+and reported: `planning.validate` warns when one is over, and a human clears the
+entries that are resolved. Nothing is filed away — a cleared entry is gone from
+the digest, and git holds what the file used to say.
 
 The goal is "read once, know where we are" — if it's too long, that fails.
 `planning.validate` reports a warning when the file exceeds the budget, so the

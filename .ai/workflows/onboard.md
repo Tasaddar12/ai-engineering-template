@@ -218,32 +218,21 @@ Present the findings and let the user decide.
 
 **A project-level technology choice is validated before it is proposed.** The
 whole project rests on it, and research reports what a technology claims rather
-than what it does here. Open a record, prove the claim, then propose it:
+than what it does here. Run the smallest spike that could fail first: install the
+dependency and call the one API the project depends on, run the target runtime
+version, or make the integration return one real response. Enough to find out
+that it does not work before the roadmap is built on the assumption that it does.
+
+Then record the decision with what the spike actually printed:
 
 ```bash
-phase_run query decision.draft "{the choice}" --kind stack \
-  --question "{what the project needs from it}"
-phase_run query decision.validate ADR-00N \
-  --method "{the smallest spike that could fail}" \
-  --command "{what was run}" \
-  --evidence "{what it actually printed}" --result pass
-phase_run query decision.propose ADR-00N
+phase_run query state.add-decision "{the choice}" \
+  --rationale "{what was run and what it printed; what was ruled out and why}" \
+  --outcome "Accepted"
 ```
 
-The spike is deliberately small: install the dependency and call the one API the
-project depends on, run the target runtime version, or make the integration
-return one real response. Enough to find out that it does not work before the
-roadmap is built on the assumption that it does.
-
-Then record the user's answer, which is what makes it a decision:
-
-```bash
-phase_run query decision.accept ADR-00N --basis "{who decided, when, on what}"
-phase_run query state.add-decision "{the choice}" --rationale "{why}" --outcome "Accepted"
-```
-
-`state.add-decision` writes it to PROJECT.md's Key Decisions table as well as the
-digest, so PROJECT.md stays the durable log without a second hand edit.
+That writes PROJECT.md's Key Decisions table and the STATE digest in one call, so
+PROJECT.md is the durable log without a second hand edit.
 </step>
 
 <step name="define_requirements">
@@ -319,7 +308,7 @@ Checks configured: {yes, listing them | no — the first phase should establish 
 
 Records:
   .planning/PROJECT.md
-  .planning/REQUIREMENTS.md .planning/decisions
+  .planning/REQUIREMENTS.md
   .planning/ROADMAP.md
   .planning/STATE.md
 
