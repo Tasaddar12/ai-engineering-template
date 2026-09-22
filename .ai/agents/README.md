@@ -60,12 +60,12 @@ every role on every host. Set a per-agent override in `.planning/config.yaml`:
 ```yaml
 agents:
   coder:
-    model: claude-opus-5
+    model: opus
     effort: xhigh
 ```
 
-Models are full API ids, never a host's shorthand: `claude-opus-5` names one
-model everywhere, while `opus` names whatever that host points the alias at.
+Models are the host's aliases (`opus`, `sonnet`, `haiku`, `fable`), never full
+API ids: the Agent SDK's dispatch call accepts only an alias.
 Effort is `low`, `medium`, `high`, `xhigh` or `max` — the scale is closed, and
 an unrecognised value fails resolution rather than reaching the host. It is the
 cheaper of the two dials: raising a reviewer's effort costs far less than moving

@@ -58,9 +58,8 @@ def resolve_model(workspace, name):
 
     Agent definitions deliberately carry no `model:` frontmatter — the model is
     injected inline at spawn time instead, so one file decides it for every
-    host. Configured values are full API model ids (`claude-opus-5`), never a
-    host's own shorthand: an id names one model everywhere, while a shorthand
-    names whichever model that host currently points it at.
+    host. Configured values are the host's model aliases (`opus`, `sonnet`),
+    never full API ids: the Agent SDK's dispatch call accepts only an alias.
 
     `inherit` means the caller omits the model argument and lets the host choose.
     """

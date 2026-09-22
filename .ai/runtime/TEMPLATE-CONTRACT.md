@@ -239,9 +239,9 @@ on rather than dropping it.
 does the same for `agents.<name>.effort`. On `inherit` the caller omits that
 argument and lets the host choose; the two resolve independently.
 
-Configured models are full API ids (`claude-opus-5`, `claude-sonnet-5`,
-`claude-haiku-4-5`) and are not validated against a list — new ids ship between
-releases of this template. Effort is validated: `low`, `medium`, `high`,
+Configured models are the host's aliases (`opus`, `sonnet`, `haiku`, `fable`),
+not full API ids — the Agent SDK's dispatch call accepts only an alias — and
+are not validated against a list. Effort is validated: `low`, `medium`, `high`,
 `xhigh`, `max` or `inherit`, and anything else fails with `bad-effort`.
 
 Codex's `install-assets/codex-agents/*.toml` keep a native `model` field. That is

@@ -42,7 +42,7 @@ phase_run query resolve-effort <agent> --raw
 
 A result of `inherit` means the project set no override — **omit that argument
 entirely** and let the host choose. Pass `model` only when resolution returned a
-concrete model id, and `effort` only when it returned one of `low`, `medium`,
+model alias, and `effort` only when it returned one of `low`, `medium`,
 `high`, `xhigh` or `max`. The two resolve independently: a role can carry an
 effort and no model, or the reverse. The `models` and `efforts` maps in each
 init bundle carry the same resolved values for every agent that workflow

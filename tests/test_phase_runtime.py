@@ -522,17 +522,17 @@ class Dispatch(RuntimeCase):
         self.assertTrue(result["inherit"])
 
     def test_config_overrides_the_agent_model(self):
-        self.run_verb("config-set", "agents.coder.model", "claude-opus-5")
+        self.run_verb("config-set", "agents.coder.model", "opus")
         result = self.run_verb("resolve-model", "coder")
-        self.assertEqual(result["model"], "claude-opus-5")
+        self.assertEqual(result["model"], "opus")
         self.assertEqual(result["source"], "config")
         self.assertFalse(result["inherit"])
 
-    def test_any_model_id_is_accepted(self):
-        """Model ids are an open set — a new one must not need a patch here."""
-        self.run_verb("config-set", "agents.coder.model", "claude-fable-5-1")
+    def test_any_model_alias_is_accepted(self):
+        """Model aliases are an open set — a new one must not need a patch here."""
+        self.run_verb("config-set", "agents.coder.model", "fable")
         self.assertEqual(
-            self.run_verb("resolve-model", "coder")["model"], "claude-fable-5-1")
+            self.run_verb("resolve-model", "coder")["model"], "fable")
 
     def test_resolve_effort_inherits_when_no_override_is_configured(self):
         result = self.run_verb("resolve-effort", "coder")
@@ -562,10 +562,10 @@ class Dispatch(RuntimeCase):
         self.assertEqual(failure["code"], "bad-effort")
 
     def test_resolve_agent_carries_both_dials_and_no_turn_cap(self):
-        self.run_verb("config-set", "agents.coder.model", "claude-sonnet-5")
+        self.run_verb("config-set", "agents.coder.model", "sonnet")
         self.run_verb("config-set", "agents.coder.effort", "high")
         result = self.run_verb("resolve-agent", "coder")
-        self.assertEqual(result["model"], "claude-sonnet-5")
+        self.assertEqual(result["model"], "sonnet")
         self.assertEqual(result["effort"], "high")
         self.assertEqual(result["effort_source"], "config")
         self.assertNotIn("max_turns", result)
