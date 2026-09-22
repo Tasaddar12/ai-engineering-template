@@ -34,10 +34,17 @@ set -u
 
 payload="$(cat 2>/dev/null || true)"
 
-# Subagents that write files. A read-only agent (researcher, verifier,
-# code-reviewer, doc-verifier, codebase-mapper, phase-checker) has nothing to
-# isolate, so requiring a worktree of it would be gratuitous.
-WRITE_CAPABLE_AGENTS="coder doc-writer debugger"
+# Which roles write files comes from lib/agent-roles.sh, because
+# context-handoff.sh needs the same answer at SubagentStop and a list kept in
+# two places is a hole in whichever copy was missed. Sourced defensively: this
+# hook fails open, so an unreadable lib must not abort the dispatch check.
+_guard_lib="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/lib/agent-roles.sh"
+if [[ -f "$_guard_lib" ]]; then
+  # shellcheck source=lib/agent-roles.sh
+  . "$_guard_lib"
+else
+  WRITE_CAPABLE_AGENTS="coder doc-writer debugger"
+fi
 
 # --- extract a top-level or tool_input string field ---------------------------
 # Same tiering as ai-tier-notice.sh: jq, then Python, then a limited sed

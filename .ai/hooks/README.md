@@ -14,7 +14,7 @@ title: Advisory host hooks
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | **Blocks** (exit 2) a write-capable subagent dispatched without `isolation="worktree"` |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A `WARNING` when an edit lands outside a linked worktree |
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
-| [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY |
+| [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY. Works on both hosts, from different inputs — see below |
 | [context-handoff.sh](context-handoff.sh) | `Stop` | Nothing; clears the session's debounce state |
 
 `worktree-guard.sh` is the exception to the advisory rule below: worktree
@@ -89,7 +89,12 @@ direct Bash launchers. They do not establish trusted live host execution.
 
 `context-handoff.sh` is the one managed hook that measures rather than inspects.
 It reads the session's own transcript -- `transcript_path` in the hook payload,
-which both hosts supply -- and takes the latest token reading from it. That is
+which both hosts supply -- and takes the latest token reading from it. The
+advisory envelope is identical on both: `hookSpecificOutput.additionalContext`
+on `PostToolUse` is accepted by Claude Code and by Codex, which treats it as
+extra developer context, so one emitted shape satisfies both. Neither host shows
+a hook's plain stdout to the model, which is why the advisory is JSON rather
+than an echo. That is
 occupancy, not cumulative usage: a compaction lowers it, and the last reading
 wins. Two transcript shapes are understood, matched structurally rather than by
 wrapper name so an upstream rename does not silently zero the measurement:
@@ -113,10 +118,31 @@ Its two triggers write to `.planning/handoffs/`, which is gitignored:
   refreshed, not duplicated, on later tool uses, and the advisory debounces to
   one every five.
 - **A subagent stopping early** writes a record naming the plan and the SUMMARY
-  to read first. `worktree-guard.sh` supplies the other half: every write-capable
-  dispatch it lets through is appended to a per-session active-agent stack, and
-  `SubagentStop` closes one entry against its plan's SUMMARY. Missing or
-  `blocked` is unfinished; only `status: complete` clears without a handoff.
+  to read first. Missing or `blocked` is unfinished; only `status: complete`
+  clears without a handoff.
+
+  The two hosts reach that event from opposite directions, so the hook resolves
+  the agent's identity from whichever side actually carries it:
+
+  | | Claude Code | Codex |
+  |---|---|---|
+  | How a subagent is dispatched | an `Agent`/`Task` tool call | `SubagentStart`, not a tool call |
+  | Which role stopped | the active-agent stack `worktree-guard.sh` recorded at `PreToolUse` | `agent_type`, straight off the stop payload |
+  | Which plan it had | the plan named in the dispatch prompt | the plan named in `agent_transcript_path` |
+
+  Codex never produces a `PreToolUse` dispatch, so the active stack it would
+  read is always empty — this branch used to exit immediately and Codex got no
+  exit handoff at all. Its stop payload carries more than Claude's does, so
+  nothing had to be recorded in advance: the role arrives in `agent_type`, and
+  the assigned plan is recovered from the subagent's own transcript, matched
+  after JSON decoding so an escaped Windows path resolves to a real file. An
+  absolute path is cut back to its `.planning/` prefix, because the SUMMARY
+  lookup joins against `cwd`. A transcript that names no plan still produces a
+  handoff, unattributed: one the orchestrator must inspect beats none.
+
+  Which roles are write-capable lives in [lib/agent-roles.sh](lib/agent-roles.sh),
+  because both hooks need the same answer and a list kept in two places is a
+  hole in whichever copy was missed.
 
 Two implementation constraints are load-bearing on Windows. Records are written
 by one Python process each: the obvious shape -- a `printf` per key -- spawns an

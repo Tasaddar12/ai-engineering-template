@@ -264,5 +264,96 @@ check "a read-only dispatch is allowed" "$status" "0"
 check "a read-only dispatch records nothing" \
   "$([[ -f "$handoffs/.active-sess-ro.jsonl" ]] && echo present || echo gone)" "gone"
 
+
+# --- Codex SubagentStop: identity comes from the payload ---------------------
+#
+# Codex never produces a PreToolUse dispatch, so the active stack is empty and
+# every fact has to come from the stop payload plus the subagent's own
+# transcript. These cases run with NO .active-* file on purpose.
+
+codex_agent_transcript() { # <path> <plan-mention>
+  printf '{"type":"message","role":"user","content":"Execute the plan at %s and report."}\n' "$2" > "$1"
+}
+
+codex_stop_payload() { # <session> <agent_type> <agent_transcript_path>
+  printf '{"hook_event_name":"SubagentStop","session_id":"%s","cwd":"%s","transcript_path":"%s","turn_id":"t1","agent_id":"a1","agent_type":"%s","agent_transcript_path":"%s","stop_hook_active":false}' \
+    "$1" "$repo" "$workspace/high.jsonl" "$2" "$3"
+}
+
+mkdir -p "$repo/.planning/phases/05-codex"
+
+# An executor that stopped with no SUMMARY at all.
+codex_agent_transcript "$workspace/cx-exit.jsonl" ".planning/phases/05-codex/05-01-PLAN.md"
+run_hook "$(codex_stop_payload cx-exit coder "$workspace/cx-exit.jsonl")" >/dev/null
+check "codex: an executor with no SUMMARY produces a handoff" \
+  "$([[ -f "$handoffs/cx-exit--05-01.json" ]] && echo yes)" "yes"
+record="$(cat "$handoffs/cx-exit--05-01.json" 2>/dev/null || true)"
+contains "codex: the handoff names the reason" "$record" '"reason": "incomplete-exit"'
+contains "codex: the handoff names the plan" "$record" '05-01-PLAN.md'
+contains "codex: the handoff names the SUMMARY to read" "$record" '05-01-SUMMARY.md'
+contains "codex: the handoff names the agent from agent_type" "$record" '"agent": "coder"'
+
+# A finished plan is not handed off.
+printf -- '---\nstatus: complete\n---\n' > "$repo/.planning/phases/05-codex/05-02-SUMMARY.md"
+codex_agent_transcript "$workspace/cx-done.jsonl" ".planning/phases/05-codex/05-02-PLAN.md"
+run_hook "$(codex_stop_payload cx-done coder "$workspace/cx-done.jsonl")" >/dev/null
+check "codex: a complete SUMMARY produces no handoff" \
+  "$(ls "$handoffs"/cx-done*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# blocked is unfinished, exactly as on Claude.
+printf -- '---\nstatus: blocked\n---\n' > "$repo/.planning/phases/05-codex/05-03-SUMMARY.md"
+codex_agent_transcript "$workspace/cx-blocked.jsonl" ".planning/phases/05-codex/05-03-PLAN.md"
+run_hook "$(codex_stop_payload cx-blocked coder "$workspace/cx-blocked.jsonl")" >/dev/null
+check "codex: a blocked SUMMARY produces a handoff" \
+  "$([[ -f "$handoffs/cx-blocked--05-03.json" ]] && echo yes)" "yes"
+
+# Every write-capable role is covered, and read-only roles are not.
+for role in coder doc-writer debugger; do
+  codex_agent_transcript "$workspace/cx-$role.jsonl" ".planning/phases/05-codex/05-04-PLAN.md"
+  rm -f "$handoffs"/cx-role-$role*.json
+  run_hook "$(codex_stop_payload "cx-role-$role" "$role" "$workspace/cx-$role.jsonl")" >/dev/null
+  check "codex: write-capable $role is handed off" \
+    "$([[ -f "$handoffs/cx-role-$role--05-04.json" ]] && echo yes)" "yes"
+done
+for role in researcher verifier code-reviewer doc-verifier codebase-mapper phase-checker integration-checker; do
+  codex_agent_transcript "$workspace/cx-$role.jsonl" ".planning/phases/05-codex/05-05-PLAN.md"
+  run_hook "$(codex_stop_payload "cx-role-$role" "$role" "$workspace/cx-$role.jsonl")" >/dev/null
+  check "codex: read-only $role produces no handoff" \
+    "$(ls "$handoffs"/cx-role-$role*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
+done
+
+# An unreadable or absent agent transcript still produces an attributable
+# handoff -- an unattributed one the orchestrator must inspect beats none.
+run_hook "$(codex_stop_payload cx-noplan coder "$workspace/does-not-exist.jsonl")" >/dev/null
+check "codex: a missing agent transcript still produces a handoff" \
+  "$(ls "$handoffs"/cx-noplan*.json 2>/dev/null | wc -l | tr -d ' ')" "1"
+contains "codex: the unattributed handoff still names the agent" \
+  "$(cat "$handoffs"/cx-noplan*.json)" '"agent": "coder"'
+
+# A Windows checkout path in the transcript resolves to the repo-relative plan.
+BS=$(awk 'BEGIN{printf "%c", 92}')
+ESC="$BS$BS"
+printf '{"content":"run C:%swork%srepo%s.planning%sphases%s05-codex%s05-07-PLAN.md"}\n' "$ESC" "$ESC" "$ESC" "$ESC" "$ESC" "$ESC" > "$workspace/cx-win.jsonl"
+run_hook "$(codex_stop_payload cx-win coder "$workspace/cx-win.jsonl")" >/dev/null
+contains "codex: a Windows transcript path resolves repo-relative" \
+  "$(cat "$handoffs/cx-win--05-07.json" 2>/dev/null || true)" \
+  '".planning/phases/05-codex/05-07-PLAN.md"'
+
+# Codex SubagentStop is silent on stdout, exactly as Claude's is.
+codex_agent_transcript "$workspace/cx-quiet.jsonl" ".planning/phases/05-codex/05-08-PLAN.md"
+check "codex: SubagentStop emits nothing on stdout" \
+  "$(run_hook "$(codex_stop_payload cx-quiet coder "$workspace/cx-quiet.jsonl")")" ""
+
+# --- the advisory envelope is identical on both hosts ------------------------
+#
+# Codex's PostToolUse accepts hookSpecificOutput.additionalContext just as
+# Claude's does, so one emitted shape has to satisfy both.
+
+codex_transcript "$workspace/cx-ctx.jsonl" 150000
+out="$(run_hook "$(payload_for PostToolUse cx-ctx "$workspace/cx-ctx.jsonl")")"
+contains "codex: the advisory uses the shared envelope" "$out" '"hookEventName": "PostToolUse"'
+contains "codex: the advisory carries additionalContext" "$out" '"additionalContext"'
+contains "codex: the advisory names the handoff path" "$out" '.planning/handoffs/cx-ctx.json'
+
 printf '%s passed, %s failed\n' "$passed" "$failed"
 [[ "$failed" -eq 0 ]]

@@ -176,6 +176,80 @@ handoff_used_tokens() {
 }
 
 
+_HANDOFF_PLAN_PY='
+import sys, io, json, re
+
+# The plan a subagent was working on, recovered from its own transcript.
+#
+# Claude names the plan in the dispatch prompt, which worktree-guard.sh reads at
+# PreToolUse and records to the active stack. Codex dispatches through
+# SubagentStart/SubagentStop rather than through a tool call, so there is no
+# PreToolUse to record -- but its SubagentStop hands over
+# `agent_transcript_path`, and the prompt that named the plan is the first
+# thing in it.
+#
+# Strings are matched AFTER JSON decoding, never against the raw line. A
+# transcript spells a Windows path with escaped separators on the wire, and a
+# regex run over that undecoded text captures the escapes as literal
+# backslashes and yields a path that matches no file on disk.
+
+PATTERN = re.compile("[A-Za-z0-9_." + chr(92) * 2 + "/-]*"
+                     "[0-9]{2}(?:[.][0-9]+)?-[0-9]{2}-PLAN[.]md")
+
+
+def strings(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for value in node.values():
+            for item in strings(value):
+                yield item
+    elif isinstance(node, list):
+        for value in node:
+            for item in strings(value):
+                yield item
+
+
+found = ""
+try:
+    with io.open(sys.argv[1], "r", encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line.startswith(("{", "[")):
+                continue
+            try:
+                record = json.loads(line)
+            except Exception:
+                continue
+            for text in strings(record):
+                match = PATTERN.search(text)
+                if match:
+                    # The dispatch prompt is the earliest thing in the
+                    # transcript, so the first match is the assigned plan and
+                    # not one mentioned later in passing.
+                    found = match.group(0).replace(chr(92), "/")
+                    # Codex reports an absolute checkout path; the SUMMARY
+                    # lookup downstream joins against cwd, so anything above
+                    # .planning/ is cut rather than joined twice.
+                    marker = ".planning/"
+                    cut = found.find(marker)
+                    if cut > 0:
+                        found = found[cut:]
+                    break
+            if found:
+                break
+except Exception:
+    found = ""
+
+sys.stdout.buffer.write(found.encode("utf-8") + chr(10).encode("utf-8"))
+'
+
+# Echoes the plan path named in a subagent transcript, or nothing.
+handoff_plan_in_transcript() {
+  [[ -n "$HANDOFF_PY" && -n "${1:-}" && -f "$1" ]] || return 0
+  "$HANDOFF_PY" -c "$_HANDOFF_PLAN_PY" "$1" 2>/dev/null || true
+}
+
 # --- record writing -----------------------------------------------------------
 #
 # One Python process per record, not one per field. The obvious shape -- a

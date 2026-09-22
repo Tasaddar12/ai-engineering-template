@@ -34,17 +34,24 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 . "$script_dir/lib/json-field.sh"
 # shellcheck source=lib/handoff-io.sh
 . "$script_dir/lib/handoff-io.sh"
+# shellcheck source=lib/agent-roles.sh
+. "$script_dir/lib/agent-roles.sh"
 
 payload="$(cat 2>/dev/null || true)"
 
 # One extraction for all four: this hook rides every tool use, so a process per
 # field is the difference between an advisory and a tax.
+# `agent_type` and `agent_transcript_path` are Codex's SubagentStop fields and
+# are empty on every other event and host; reading them here costs nothing,
+# whereas a second extraction inside the branch costs another interpreter.
 {
   read -r event
   read -r session
   read -r transcript
   read -r cwd
-} < <(many_fields hook_event_name session_id transcript_path cwd)
+  read -r agent_type
+  read -r agent_transcript
+} < <(many_fields hook_event_name session_id transcript_path cwd                   agent_type agent_transcript_path)
 [[ -n "${cwd:-}" ]] || cwd="$PWD"
 
 slug="$(handoff_slug "$session")" || exit 0
@@ -81,6 +88,32 @@ write_handoff() {
     context_percent "$percent"
 }
 
+# --- shared by both SubagentStop paths ----------------------------------------
+
+# The SUMMARY a plan is expected to leave behind.
+summary_for() {
+  [[ -n "${1-}" ]] || return 0
+  printf '%s' "${1%-PLAN.md}-SUMMARY.md"
+}
+
+# A SUMMARY whose frontmatter says `complete` is finished work: no handoff.
+# Anything else -- missing, blocked, or a plan path that could not be recovered
+# -- is treated as unfinished. Over-reporting costs the orchestrator one
+# inspection; under-reporting silently drops the work.
+plan_finished() {
+  [[ -n "${1-}" && -f "$cwd/$1" ]] || return 1
+  grep -qE '^status:[[:space:]]*complete[[:space:]]*$' "$cwd/$1" 2>/dev/null
+}
+
+# Handoff filename stem: the plan identifier when one is known, a timestamp
+# otherwise, so two unattributed stops in one session do not collide.
+handoff_identifier() {
+  local identifier
+  identifier="$(printf '%s' "${1##*/}" | sed -n 's/^\([0-9][0-9.]*-[0-9][0-9]*\)-PLAN\.md$/\1/p')"
+  [[ -n "$identifier" ]] || identifier="$(date -u +%H%M%S 2>/dev/null || printf 'exit')"
+  printf '%s' "$identifier"
+}
+
 case "$event" in
   Stop)
     rm -f "$state_file" 2>/dev/null
@@ -88,8 +121,29 @@ case "$event" in
     ;;
 
   SubagentStop)
-    # Each line is one dispatch worktree-guard.sh let through. A line whose
-    # plan has no `complete` SUMMARY is work that stopped early.
+    # Two hosts reach this event from opposite directions, so identity is
+    # resolved from whichever side actually carries it.
+    #
+    # Codex dispatches a subagent through SubagentStart/SubagentStop rather
+    # than through a tool call, so worktree-guard.sh never sees a PreToolUse
+    # dispatch and the active stack is empty -- this branch used to exit here,
+    # and Codex got no exit handoff at all. Its stop payload carries more than
+    # Claude's does: the role in `agent_type`, and the subagent's own
+    # transcript in `agent_transcript_path`, where the assigned plan is named.
+    if [[ -n "${agent_type:-}" ]]; then
+      # A read-only role leaves no half-written plan behind.
+      agent_writes_files "$agent_type" || exit 0
+      plan="$(handoff_plan_in_transcript "${agent_transcript:-}")"
+      summary="$(summary_for "$plan")"
+      plan_finished "$summary" && exit 0
+      write_handoff "$dir/$slug--$(handoff_identifier "$plan").json" \
+        "incomplete-exit" "$agent_type" "$plan" "$summary" "" "" "" ""
+      exit 0
+    fi
+
+    # Claude: identity comes from the stack worktree-guard.sh recorded at
+    # dispatch. Each line is one dispatch it let through, and a line whose plan
+    # has no `complete` SUMMARY is work that stopped early.
     [[ -f "$active_file" ]] || exit 0
     remaining=""
     wrote=0
@@ -97,23 +151,15 @@ case "$event" in
       [[ -n "$line" ]] || continue
       agent="$(printf '%s' "$line" | sed -n 's/.*"agent"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       plan="$(printf '%s' "$line" | sed -n 's/.*"plan"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
-      summary=""
-      [[ -n "$plan" ]] && summary="${plan%-PLAN.md}-SUMMARY.md"
-      # A SUMMARY whose frontmatter says `complete` is a finished plan: no
-      # handoff, and the entry leaves the stack. Anything else -- missing,
-      # blocked, or a plan path that could not be read out of the dispatch --
-      # is treated as unfinished. Over-reporting costs the orchestrator one
-      # inspection; under-reporting silently drops the work.
-      if [[ -n "$summary" && -f "$cwd/$summary" ]] \
-         && grep -qE '^status:[[:space:]]*complete[[:space:]]*$' "$cwd/$summary" 2>/dev/null; then
+      summary="$(summary_for "$plan")"
+      # A finished plan leaves the stack without a handoff.
+      if plan_finished "$summary"; then
         continue
       fi
       # One SubagentStop closes one dispatch. Later entries stay on the stack
       # for their own stop events rather than all collapsing into this one.
       if [[ "$wrote" -eq 0 ]]; then
-        identifier="$(printf '%s' "${plan##*/}" | sed -n 's/^\([0-9][0-9.]*-[0-9][0-9]*\)-PLAN\.md$/\1/p')"
-        [[ -n "$identifier" ]] || identifier="$(date -u +%H%M%S 2>/dev/null || printf 'exit')"
-        write_handoff "$dir/$slug--$identifier.json" "incomplete-exit" \
+        write_handoff "$dir/$slug--$(handoff_identifier "$plan").json" "incomplete-exit" \
           "$agent" "$plan" "$summary" "" "" "" ""
         wrote=1
         continue
