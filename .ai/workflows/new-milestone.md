@@ -124,6 +124,8 @@ would change how this milestone is broken into phases. Report options with
 trade-offs, not a single recommendation.
 
 Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
+At the context limit, return ## RESEARCH PARTIAL with the findings so far and
+the questions not reached; the limit is not a blocker.
 ",
   subagent_type="researcher",
   ${models['researcher'] === 'inherit' ? '' : `model="${models['researcher']}",`}
@@ -134,6 +136,9 @@ Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
 
 > **ORCHESTRATOR RULE**: after calling Agent(), stop working on this task until
 > the subagent returns. Do not read more files or start scoping in parallel.
+
+A `RESEARCH PARTIAL` return is usable: scope from its findings, and carry each
+unreached question into the phase it affects as research that phase still needs.
 </step>
 
 <step name="define_requirements">

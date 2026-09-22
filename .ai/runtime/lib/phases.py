@@ -11,6 +11,25 @@ PLAN_FILE = re.compile(r"^(\d+(?:\.\d+)?)-(\d+)-PLAN\.md$")
 SUMMARY_FILE = re.compile(r"^(\d+(?:\.\d+)?)-(\d+)-SUMMARY\.md$")
 DIRECTORY = re.compile(r"^(\d+(?:\.\d+)?)-(.+)$")
 SENTENCE = re.compile(r"[.!?]\s+\S")
+#: A researcher that stopped at its context limit marks coverage partial and
+#: lists what it did not reach. Either marker is enough: the list is removed
+#: as questions are answered, and the coverage line is what a finished pass
+#: rewrites to `complete`.
+PARTIAL_RESEARCH = re.compile(
+    r"^\*\*Coverage:\*\*\s*partial\b|^##\s+Not Yet Researched\s*$",
+    re.IGNORECASE | re.MULTILINE)
+
+
+def research_partial(directory, name):
+    """True when a phase's RESEARCH.md says it stopped short of its questions.
+
+    Existence alone is not enough to skip research: a partial file exists too,
+    and planning on it as if it were finished drops every question it listed
+    as not yet researched.
+    """
+    if directory is None or not name:
+        return False
+    return bool(PARTIAL_RESEARCH.search(read_text(directory / name, "")))
 
 
 def title_warning(description):
@@ -89,6 +108,7 @@ def resolve(workspace, number):
     payload.update({
         "has_context": bool(files["context"]),
         "has_research": bool(files["research"]),
+        "research_partial": research_partial(directory, files["research"]),
         "has_verification": bool(files["verification"]),
         "has_spec": bool(files["spec"]),
         "has_plans": bool(files["plans"]),

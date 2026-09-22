@@ -438,6 +438,28 @@ class Bundles(RuntimeCase):
         self.assertEqual(bundle["expected_phase_dir"], ".planning/phases/01-foundation")
         self.assertEqual(bundle["paths"]["roadmap"], ".planning/ROADMAP.md")
 
+    def test_plan_phase_bundle_tells_partial_research_from_finished(self):
+        directory = self.directory / ".planning/phases/01-foundation"
+        directory.mkdir(parents=True)
+        research = directory / "01-RESEARCH.md"
+        bundle = self.run_verb("init.plan-phase", "1")
+        self.assertFalse(bundle["has_research"])
+        self.assertFalse(bundle["research_partial"])
+
+        research.write_text("# Research\n\n## Metadata\n\n**Coverage:** complete\n",
+                            encoding="utf-8")
+        bundle = self.run_verb("init.plan-phase", "1")
+        self.assertTrue(bundle["has_research"])
+        self.assertFalse(bundle["research_partial"])
+
+        # Either marker the researcher writes at its context limit is enough.
+        research.write_text("# Research\n\n## Metadata\n\n**Coverage:** partial (context limit)\n",
+                            encoding="utf-8")
+        self.assertTrue(self.run_verb("init.plan-phase", "1")["research_partial"])
+        research.write_text("# Research\n\n## Not Yet Researched\n\n1. **Auth flow**\n",
+                            encoding="utf-8")
+        self.assertTrue(self.run_verb("init.plan-phase", "1")["research_partial"])
+
     def test_phase_op_reports_a_missing_phase_without_failing(self):
         bundle = self.run_verb("init.phase-op", "9")
         self.assertFalse(bundle["phase_found"])
