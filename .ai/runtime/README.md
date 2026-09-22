@@ -152,9 +152,9 @@ role on every host. A resolved value of `inherit` means the project set no
 override, and the caller omits that argument entirely. The two resolve
 independently: a role can carry an effort and no model, or the reverse.
 
-Configured models are full API ids (`claude-opus-5`), not a host's shorthand,
-and are not checked against a list — new ids ship between releases of this
-template. Effort is checked: `low`, `medium`, `high`, `xhigh`, `max` or
+Configured models are the host's aliases (`opus`, `sonnet`, `haiku`, `fable`),
+not full API ids — the Agent SDK's dispatch call accepts only an alias — and
+are not checked against a list. Effort is checked: `low`, `medium`, `high`, `xhigh`, `max` or
 `inherit`, and anything else fails with `bad-effort` rather than reaching the
 host as an unrecognised argument.
 
@@ -267,7 +267,7 @@ worktree:
   root: .worktrees         # must be gitignored, or execution stops
 agents:
   coder:
-    model: claude-sonnet-5 # full API id, never a host alias
+    model: sonnet          # host alias, never a full API id
     effort: high           # low | medium | high | xhigh | max
 verification:
   commands: []             # argv lists; run by verification.run-checks

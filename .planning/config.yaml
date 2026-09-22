@@ -66,18 +66,18 @@ codebase:
 # `model:` or `effort:` frontmatter, so a role omitted here resolves to
 # `inherit` and runs on whatever the orchestrator's own session is using.
 #
-# Models are full API ids, not a host's shorthand. `claude-opus-5` names one
-# model on every host and in every log; `opus` names whichever model that host
-# happens to point the alias at, which changes without this file changing.
+# Models are the host's aliases -- `opus`, `sonnet`, `haiku` or `fable` -- not
+# full API ids. The Agent SDK's dispatch call accepts only an alias, so a full
+# id such as `claude-opus-5-5` cannot be passed through.
 #
 # The tiers follow the work rather than the role name:
 #
-#   claude-opus-5-5   the phase itself -- planning it, writing it, researching
-#                     it, reviewing it and verifying it, where a miss is not
-#                     caught by anything downstream and costs the whole phase
-#   claude-sonnet-5   the work around it -- debugging, documentation, mapping
-#                     and checking claims against their actual output, where a
-#                     miss surfaces immediately and costs one pass
+#   opus     the phase itself -- planning it, writing it, researching
+#            it, reviewing it and verifying it, where a miss is not
+#            caught by anything downstream and costs the whole phase
+#   sonnet   the work around it -- debugging, documentation, mapping
+#            and checking claims against their actual output, where a
+#            miss surfaces immediately and costs one pass
 #
 # `effort` is the second dial: how hard the chosen model thinks, on the scale
 # low / medium / high / xhigh / max. It is the cheaper dial of the two -- a role
@@ -94,37 +94,37 @@ codebase:
 # .codex/agents/ and ignores everything here.
 agents:
   coder:
-    model: claude-opus-5-5
+    model: opus
     effort: high
   debugger:
-    model: claude-sonnet-5
+    model: sonnet
     effort: high
   doc-writer:
-    model: claude-sonnet-5
+    model: sonnet
     effort: high
   phase-preparer:
-    model: claude-opus-5-5
+    model: opus
     effort: high
   codebase-mapper:
-    model: claude-sonnet-5
+    model: sonnet
     effort: high
   researcher:
-    model: claude-opus-5-5
+    model: opus
     effort: high
   code-reviewer:
-    model: claude-opus-5-5
+    model: opus
     effort: high
   verifier:
-    model: claude-opus-5-5
+    model: opus
     effort: high
   phase-checker:
-    model: claude-opus-5-5
+    model: opus
     effort: high
   doc-verifier:
-    model: claude-sonnet-5
+    model: sonnet
     effort: medium
   integration-checker:
-    model: claude-sonnet-5
+    model: sonnet
     effort: medium
 
 verification:
