@@ -15,9 +15,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (bundles, codebase, delivery, gitops, handoff, milestones, models,  # noqa: E402
-                 phases, project_record, quick, requirements, state, todos,
-                 validate, verification, worktrees)
+from lib import (bundles, codebase, decisions, delivery, gitops, handoff,  # noqa: E402
+                 milestones, models, phases, project_record, quick, requirements,
+                 state, todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -491,6 +491,61 @@ def verb_state_sync_todos(workspace, positionals, options):
     return result
 
 
+# --- decision records -----------------------------------------------------
+
+def verb_decision_draft(workspace, positionals, options):
+    """Open a decision record, from a planning context only.
+
+    A draft is not a proposal: it carries no accepted approach until a
+    validation has been recorded and `decision.propose` has been run.
+    """
+    with planning_lock(workspace):
+        return decisions.draft(workspace, argument(positionals, 0, "title"),
+                               options.get("kind", "design"),
+                               options.get("phase"), options.get("question", ""),
+                               bool(options.get("allow_execution_context")))
+
+
+def verb_decision_validate(workspace, positionals, options):
+    """Record a feasibility check that was actually run against the decision."""
+    with planning_lock(workspace):
+        return decisions.add_validation(
+            workspace, argument(positionals, 0, "id"),
+            options.get("method", ""), options.get("evidence", ""),
+            options.get("result", "pass"), options.get("command", ""),
+            options.get("revision"))
+
+
+def verb_decision_propose(workspace, positionals, options):
+    with planning_lock(workspace):
+        return decisions.propose(workspace, argument(positionals, 0, "id"),
+                                 options.get("basis", ""))
+
+
+def verb_decision_accept(workspace, positionals, options):
+    with planning_lock(workspace):
+        return decisions.decide(workspace, argument(positionals, 0, "id"),
+                                "accepted", options.get("basis", ""))
+
+
+def verb_decision_reject(workspace, positionals, options):
+    with planning_lock(workspace):
+        return decisions.decide(workspace, argument(positionals, 0, "id"),
+                                "rejected", options.get("basis", ""))
+
+
+def verb_decision_supersede(workspace, positionals, options):
+    with planning_lock(workspace):
+        return decisions.supersede(workspace, argument(positionals, 0, "id"),
+                                   options.get("replaces")
+                                   or argument(positionals, 1, "replaces"),
+                                   options.get("basis", ""))
+
+
+def verb_decision_list(workspace, positionals, options):
+    return decisions.listing(workspace, options.get("status"))
+
+
 # --- requirements ---------------------------------------------------------
 
 def verb_requirements_list(workspace, positionals, options):
@@ -722,6 +777,14 @@ VERBS = {
 
     "project.add-decision": verb_project_add_decision,
     "project.decisions": verb_project_decisions,
+
+    "decision.draft": verb_decision_draft,
+    "decision.validate": verb_decision_validate,
+    "decision.propose": verb_decision_propose,
+    "decision.accept": verb_decision_accept,
+    "decision.reject": verb_decision_reject,
+    "decision.supersede": verb_decision_supersede,
+    "decision.list": verb_decision_list,
 
     "requirements.list": verb_requirements_list,
     "requirements.outstanding": verb_requirements_outstanding,

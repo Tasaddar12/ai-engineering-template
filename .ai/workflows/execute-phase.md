@@ -61,6 +61,22 @@ user has explicitly asked for this phase to be implemented. Phase creation,
 discussion, planning and readiness do not grant implementation permission.
 </authority>
 
+<decision_boundary>
+**No decision records are written during execution.** `decision.draft` refuses
+from a dispatched plan worktree, and that refusal is the intended behavior, not
+an obstacle to work around with `--allow-execution-context`.
+
+A choice that feels ADR-sized while building is a sign the phase was planned
+short of a decision it needed. Record it as a blocker and let planning decide:
+
+```bash
+phase_run query state.add-blocker "Phase {N}: {the undecided choice} - needs a decision record"
+```
+
+Then continue with the plan as written, or stop if the plan cannot proceed
+without it. Do not decide it in passing and document it afterwards.
+</decision_boundary>
+
 <process>
 
 <step name="parse_args">

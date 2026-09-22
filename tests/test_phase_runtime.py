@@ -1151,3 +1151,176 @@ class RequirementTraceability(RuntimeCase):
                  in self.run_verb("planning.validate", "--skip",
                                   "codebase-freshness")["warnings"]]
         self.assertNotIn("requirements-traceability", after)
+
+
+class DecisionRecords(RuntimeCase):
+    """ADRs are minted while deciding, and nothing is proposed unproven."""
+
+    def draft(self, title="Use SQLite for the cache", kind="stack", **options):
+        args = ["decision.draft", title, "--kind", kind]
+        for key, value in options.items():
+            args += ["--" + key.replace("_", "-"), value]
+        return self.run_verb(*args)
+
+    def validate_it(self, identifier="ADR-001", result="pass", **overrides):
+        options = {"method": "spike: 10k row round trip",
+                   "command": "python spike/cache.py",
+                   "evidence": "200 runs, p99 3ms", "result": result}
+        options.update(overrides)
+        args = ["decision.validate", identifier]
+        for key, value in options.items():
+            args += ["--" + key, value]
+        return self.run_verb(*args, expect_ok=overrides.pop("expect_ok", True))
+
+    def test_a_draft_starts_unvalidated_and_says_what_is_next(self):
+        result = self.draft()
+        self.assertEqual(result["status"], "draft")
+        self.assertEqual(result["id"], "ADR-001")
+        self.assertIn("validation", result["next"])
+        content = self.read(result["path"])
+        self.assertIn("status: draft", content)
+        self.assertIn("validated: false", content)
+        self.assertIn("## Feasibility validation", content)
+
+    def test_proposing_an_unvalidated_decision_is_refused(self):
+        self.draft()
+        result = self.run_verb("decision.propose", "ADR-001", expect_ok=False)
+        self.assertEqual(result["code"], "unvalidated")
+        self.assertIn("status: draft", self.read(".planning/decisions/"
+                                                 "ADR-001-use-sqlite-cache.md"))
+
+    def test_a_stack_decision_needs_the_command_that_was_run(self):
+        self.draft()
+        result = self.run_verb("decision.validate", "ADR-001",
+                               "--method", "read the documentation",
+                               "--evidence", "the docs say it is fast",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "missing-command")
+
+    def test_a_design_decision_may_be_validated_without_a_command(self):
+        self.draft("Split the reader from the writer", kind="design")
+        result = self.run_verb("decision.validate", "ADR-001",
+                               "--method", "walked the call sites",
+                               "--evidence", "all 14 callers read-only")
+        self.assertTrue(result["validated"])
+
+    def test_evidence_is_required_so_a_validation_cannot_be_asserted(self):
+        self.draft()
+        result = self.run_verb("decision.validate", "ADR-001",
+                               "--method", "spike", "--command", "python spike.py",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "missing-evidence")
+
+    def test_a_validated_decision_can_be_proposed_then_accepted(self):
+        self.draft()
+        self.validate_it()
+        proposed = self.run_verb("decision.propose", "ADR-001")
+        self.assertEqual(proposed["status"], "proposed")
+        self.assertEqual(proposed["validations"], 1)
+        accepted = self.run_verb("decision.accept", "ADR-001",
+                                 "--basis", "User approved 2026-09-22")
+        self.assertEqual(accepted["status"], "accepted")
+        content = self.read(accepted["path"])
+        self.assertIn("| 2026-", content)
+        self.assertIn("Accepted", content)
+
+    def test_a_failed_validation_does_not_unlock_proposing(self):
+        """A recorded failure is a finding, not a ticket through the gate."""
+        self.draft()
+        self.validate_it(result="fail", evidence="locks under concurrent writes")
+        result = self.run_verb("decision.propose", "ADR-001", expect_ok=False)
+        self.assertEqual(result["code"], "unvalidated")
+        self.assertIn("locks under concurrent writes",
+                      self.read(".planning/decisions/ADR-001-use-sqlite-cache.md"))
+
+    def test_accepting_requires_a_proposal_and_a_basis(self):
+        self.draft()
+        self.validate_it()
+        early = self.run_verb("decision.accept", "ADR-001", "--basis", "sure",
+                              expect_ok=False)
+        self.assertEqual(early["code"], "bad-status")
+        self.run_verb("decision.propose", "ADR-001")
+        unbased = self.run_verb("decision.accept", "ADR-001", expect_ok=False)
+        self.assertEqual(unbased["code"], "missing-basis")
+
+    def test_superseding_transitions_both_records_and_links_them(self):
+        self.draft()
+        self.validate_it()
+        self.run_verb("decision.propose", "ADR-001")
+        self.run_verb("decision.accept", "ADR-001", "--basis", "approved")
+        self.draft("Move the cache to DuckDB")
+        self.validate_it("ADR-002", evidence="p99 1ms")
+        self.run_verb("decision.propose", "ADR-002")
+        result = self.run_verb("decision.supersede", "ADR-002",
+                               "--replaces", "ADR-001", "--basis", "measured faster")
+        self.assertEqual(result["supersedes"], "ADR-001")
+        old = self.read(result["superseded_path"])
+        self.assertIn("status: superseded", old)
+        self.assertIn("- ADR-002", old)
+        # The transition is recorded, never struck through.
+        self.assertNotIn("~~", old)
+        new = self.read(result["path"])
+        self.assertIn("- ADR-001", new)
+
+    def test_a_decision_cannot_supersede_itself(self):
+        self.draft()
+        self.validate_it()
+        self.run_verb("decision.propose", "ADR-001")
+        result = self.run_verb("decision.supersede", "ADR-001",
+                               "--replaces", "ADR-001", expect_ok=False)
+        self.assertEqual(result["code"], "self-supersede")
+
+    def test_an_unknown_kind_is_refused(self):
+        result = self.run_verb("decision.draft", "Something", "--kind", "vibes",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "bad-kind")
+
+    def test_listing_reports_which_drafts_are_still_unproven(self):
+        self.draft()
+        self.draft("Adopt structured logging", kind="design")
+        listing = self.run_verb("decision.list")
+        self.assertEqual(listing["count"], 2)
+        self.assertEqual(sorted(listing["unvalidated"]), ["ADR-001", "ADR-002"])
+        self.validate_it()
+        self.assertEqual(self.run_verb("decision.list")["unvalidated"], ["ADR-002"])
+
+    def test_numbering_continues_from_the_records_on_disk(self):
+        self.draft()
+        self.draft("Second decision", kind="design")
+        self.assertEqual(self.draft("Third decision", kind="design")["id"], "ADR-003")
+
+
+class DecisionExecutionBoundary(RuntimeCase):
+    """An ADR minted while building has skipped the discussion it needed."""
+
+    def dispatch_worktree(self):
+        """Record this checkout's branch as a dispatched plan, as execute-phase does."""
+        common = subprocess.run(["git", "rev-parse", "--git-common-dir"],
+                                cwd=str(self.directory), capture_output=True,
+                                text=True).stdout.strip()
+        root = (self.directory / common).resolve() if not Path(common).is_absolute() \
+            else Path(common)
+        branch = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                                cwd=str(self.directory), capture_output=True,
+                                text=True).stdout.strip()
+        waves = root / "ai-phase" / "waves"
+        waves.mkdir(parents=True, exist_ok=True)
+        (waves / "01.json").write_text(
+            json.dumps({"phase": "01", "entries": [{"plan": "01-01",
+                                                    "branch": branch}]}),
+            encoding="utf-8")
+        return branch
+
+    def test_drafting_is_refused_from_a_dispatched_plan_worktree(self):
+        self.dispatch_worktree()
+        result = self.run_verb("decision.draft", "Switch the queue backend",
+                               "--kind", "stack", expect_ok=False)
+        self.assertEqual(result["code"], "execution-context")
+        self.assertIn("01-01", result["error"])
+        self.assertFalse((self.directory / ".planning" / "decisions").exists())
+
+    def test_drafting_works_from_an_ordinary_planning_checkout(self):
+        result = self.run_verb("decision.draft", "Switch the queue backend",
+                               "--kind", "stack")
+        self.assertEqual(result["status"], "draft")
+        self.assertFalse(result["execution_context"])

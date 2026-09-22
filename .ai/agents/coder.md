@@ -266,6 +266,17 @@ Use `gate="blocking-human"` for package-legitimacy checkpoints so they are unamb
 
 **Action:** STOP → return checkpoint with: what found, proposed change, why needed, impact, alternatives. **User decision required.**
 
+**Do not write a decision record for it.** ADRs are written while deciding, in
+discussion or planning — never while building. `decision.draft` refuses from a
+dispatched plan worktree by design. Surface the choice in the checkpoint, or
+record it as a blocker, and let planning decide it:
+
+```bash
+phase_run query state.add-blocker "Phase {N}: {the undecided choice} — needs a decision record"
+```
+
+A decision made in passing while implementing is the one nobody validated.
+
 ---
 
 **RULE PRIORITY:**
@@ -705,7 +716,7 @@ Return this explicit reconciliation checklist with values/evidence, not merely
 |---|---|---|
 | Advance position | Completed component and remaining dependencies | Current plan/phase and last-plan boundary |
 | Update progress | Integrated-result evidence, incomplete/blocked items | Counts and progress; SUMMARY presence alone is not completion |
-| Record metrics | Duration, tasks, files, measured actuals and base | Performance Metrics without mixing measurement scales |
+| Record metrics | Duration, tasks, files, measured actuals and base | The SUMMARY's own metrics section, without mixing measurement scales |
 | Add decisions | Decision text, source and affected acceptance | Decisions section; preserve authority and remove resolved placeholders |
 | Record session | Last completed action, stopped-at point and resume evidence | Session Continuity and next action |
 | Update roadmap | Completed versus remaining plans and verified outcomes | Phase progress row |

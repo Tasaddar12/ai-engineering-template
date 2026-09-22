@@ -524,6 +524,67 @@ research; review or edit CONTEXT.md before continuing.
 ```
 </step>
 
+<step name="record_decisions">
+A decision that will constrain work after this phase belongs in a decision
+record, and this is where those are written. Discussion is the only place they
+come from: an ADR minted while building has skipped the discussion it needed,
+and `decision.draft` refuses from an execution checkout.
+
+**Which decisions earn a record.** One that outlives this phase - a technology
+choice, an integration boundary, a policy every later phase inherits. Ordinary
+implementation choices belong in CONTEXT.md and the plan SUMMARY, not here.
+A handful per phase at most; if every gray area produced an ADR, the discussion
+was not making decisions, it was cataloguing them.
+
+```bash
+phase_run query decision.draft "{the decision, stated specifically}" \
+  --kind stack|technology|dependency|integration|design|process|policy \
+  --phase "${padded_phase}" --question "{what made this consequential}"
+```
+
+**Then prove it before proposing it.** A draft carries no approved approach. It
+becomes a proposal only once a check has actually been run against it:
+
+```bash
+phase_run query decision.validate ADR-00N \
+  --method "{what was tried}" \
+  --command "{the command that was run}" \
+  --evidence "{what was observed - the actual result, not the expectation}" \
+  --result pass
+phase_run query decision.propose ADR-00N
+```
+
+`decision.propose` refuses while nothing has been validated, and a `stack`,
+`technology`, `dependency` or `integration` decision refuses a validation with no
+`--command`. That is deliberate: proposing a solution asserts it will work, and
+for anything that executes, the only evidence for that is having executed it.
+Build the smallest spike that could fail - a throwaway script, a one-file
+prototype, a version check against the real target - and record what it actually
+printed.
+
+If the check fails, record it with `--result fail` and say so. A failed
+validation is a finding, not a setback to hide: it is the cheapest possible
+version of discovering the problem.
+
+**Ask the user to decide.** A proposal is not an accepted decision. Present the
+validated proposal and its alternatives, then record their answer:
+
+```bash
+phase_run query decision.accept ADR-00N --basis "{who decided, when, on what}"
+```
+
+Add every record written here to CONTEXT.md's `<canonical_refs>` with its full
+path, so downstream agents read the decision rather than re-deriving it.
+
+**Reversing an earlier decision** is a new record that supersedes the old one,
+never an edit or a "Superseded" note on the original:
+
+```bash
+phase_run query decision.supersede ADR-00M --replaces ADR-00N \
+  --basis "{what changed}"
+```
+</step>
+
 <step name="git_commit">
 **Write DISCUSSION-LOG.md before committing.**
 
@@ -549,7 +610,8 @@ Commit the context and discussion log:
 
 ```bash
 phase_run query commit "docs(${padded_phase}): capture phase context" \
-  --files "${phase_dir}/${padded_phase}-CONTEXT.md" "${phase_dir}/${padded_phase}-DISCUSSION-LOG.md"
+  --files "${phase_dir}/${padded_phase}-CONTEXT.md" "${phase_dir}/${padded_phase}-DISCUSSION-LOG.md" \
+  .planning/decisions
 ```
 
 Confirm: "Committed: docs(${padded_phase}): capture phase context"
@@ -583,6 +645,9 @@ phase_run query commit "docs(state): record phase ${phase_number} context sessio
   or doc downstream agents need (MANDATORY)
 - CONTEXT.md includes a code_context section with reusable assets and patterns
 - Deferred ideas preserved for future phases
+- Decisions that outlive the phase recorded as ADRs, each validated
+  by a check that was actually run before it was proposed
+- Every ADR written here listed in CONTEXT.md canonical_refs
 - STATE.md updated with session info
 - User knows the next step
 - Checkpoint written after each area completes, and removed after CONTEXT.md is written
