@@ -9,9 +9,6 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 ## File Template
 
 ```markdown
-<!-- mapped_revision: [written by `codebase.stamp STACK.md`] -->
-<!-- mapped_at: [YYYY-MM-DD] -->
-
 # Technology Stack
 
 **Analysis Date:** [YYYY-MM-DD]
@@ -194,12 +191,11 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 `.planning/codebase/STACK.md` is a tracked map: the runtime knows it by that
 exact name and checks whether it still describes what executes.
 
-Stamp it after writing it — `codebase.stamp STACK.md` records the revision,
-replacing any earlier stamp. `codebase.status` then answers freshness by
-counting commits that touched a manifest, lockfile, Dockerfile, CI workflow or
-version pin since. The threshold is one: a dependency change is a stack change,
-and a stack map that is one lockfile behind is already wrong about what runs.
-Configure it under `codebase.staleness.stack`.
+There is nothing to stamp. `codebase.status` starts from the commit that last
+wrote this file and counts the commits that have touched a manifest, lockfile,
+Dockerfile, CI workflow or version pin since. The threshold is one: a dependency
+change is a stack change, and a stack map that is one lockfile behind is already
+wrong about what runs. Configure it under `codebase.staleness.stack`.
 
 `/plan-phase` regenerates this map when it is stale rather than planning against
 it. Re-read the manifests when that happens rather than carrying versions

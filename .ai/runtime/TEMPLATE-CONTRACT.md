@@ -14,7 +14,7 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 | NN-MM-SUMMARY.md | coder / doc-writer | orchestrator, downstream plans, verifier | status, commits, acceptance and documentation coverage, actual check results |
 | NN-VERIFICATION.md | verifier | orchestrator, ship gate | status, reviewed revision, verified_at, finding counts |
 | ADR-NNN-*.md | discuss-phase / onboard via `decision.*` | every later phase | kind, validated, supersedes/superseded_by, a Feasibility validation table |
-| ARCHITECTURE.md, STACK.md | codebase-mapper via `codebase.stamp` | plan-phase, researcher | `mapped_revision`, checked by `codebase.status` |
+| ARCHITECTURE.md, STACK.md | codebase-mapper | plan-phase, researcher | freshness derived from the commit that last wrote the file, via `codebase.status` |
 
 ## Author a context
 

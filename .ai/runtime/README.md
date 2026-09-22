@@ -119,8 +119,7 @@ trimming safe.
 | `decision.supersede <new> --replaces <old> [--basis]` | Link and status-change both records |
 | `decision.list [--status]` | Every ADR, with which drafts remain unvalidated |
 | `planning.validate [--strict] [--skip ...]` | Report record drift; warn-only by default |
-| `codebase.status` | Freshness of ARCHITECTURE.md and STACK.md |
-| `codebase.stamp <map> [--revision]` | Record the revision a map describes |
+| `codebase.status` | Freshness of ARCHITECTURE.md and STACK.md, derived from git |
 
 `decision.propose` refuses until a validation has passed, and a `stack`,
 `technology`, `dependency` or `integration` decision refuses a validation with no

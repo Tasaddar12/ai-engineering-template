@@ -61,7 +61,7 @@ repeats. Agent files supply methods; they do not install runtime routes.
   MILESTONES.md                 What each milestone shipped
   milestones/                   Long-form milestone summaries, on `--write`
   config.yaml                   Commit behavior, model overrides and the project's real checks
-  codebase/                     Inspected architecture and stack maps, revision-stamped
+  codebase/                     Inspected architecture and stack maps
   archive/STATE-LOG.md          Entries rotated out of the STATE digest; never authoritative
   todos/pending|completed/      Captured ideas awaiting a home
   quick/YYMMDD-NNN-slug/        Small changes tracked outside the roadmap

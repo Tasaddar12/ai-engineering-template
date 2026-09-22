@@ -13,7 +13,7 @@ actual source, documentation and user intent.
 | `STATE.md` | Position, decisions, blockers and session continuity | Runtime `state.*` verbs; counters derived from ROADMAP.md. A bounded digest, not an archive |
 | `config.yaml` | Commit behavior, model overrides and the project's real checks | Project setup |
 | `phases/NN-name/` | Context, research, PLAN/SUMMARY pairs and verification | Assigned agents; the orchestrator integrates |
-| `codebase/` | Revision-specific maps and research on existing implementation | codebase-mapper; freshness by `codebase.status` against each map's `mapped_revision` |
+| `codebase/` | Revision-specific maps and research on existing implementation | codebase-mapper; freshness derived from git by `codebase.status` |
 | `specs/` | Verified current behavior | Assigned author or doc-writer |
 | `decisions/` | Significant architectural decisions and supersession | Runtime `decision.*` during planning; validated before proposal, accepted by the user |
 | `todos/pending/`, `todos/completed/` | Captured ideas not yet scoped into a phase | Runtime `todo.add` and `todo.complete` |

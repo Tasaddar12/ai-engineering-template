@@ -99,11 +99,6 @@ constrains what can be built next.
 Write to: .planning/codebase/STACK.md and .planning/codebase/ARCHITECTURE.md
 (uppercase — the runtime tracks these exact names).
 
-Stamp each file you write with the revision it describes:
-
-    phase_run query codebase.stamp STACK.md
-    phase_run query codebase.stamp ARCHITECTURE.md
-
 Return: ## MAP COMPLETE with the files written and the three constraints that
 matter most for planning new work.
 ",
@@ -115,15 +110,14 @@ matter most for planning new work.
 
 > **ORCHESTRATOR RULE**: wait for the subagent before continuing.
 
-Confirm both maps exist and carry a revision:
+Confirm both maps exist:
 
 ```bash
 phase_run query codebase.status
 ```
 
-Every map should read `fresh`. A `missing` or `unstamped` map means the mapper
-did not finish its assignment — say so rather than continuing on a map that was
-never written.
+A `missing` map means the mapper did not finish its assignment — say so rather
+than continuing on a map that was never written.
 </step>
 
 <step name="questioning">

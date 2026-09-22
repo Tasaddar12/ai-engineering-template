@@ -232,11 +232,7 @@ def check_codebase(workspace, findings):
                  "dispatch codebase-mapper with focus " + report["focus"])
         elif report["state"] == "stale":
             warn(findings, "codebase-freshness", report["name"],
-                 report["name"] + " was mapped at " + (report["revision"] or "an "
-                 "unrecorded revision") + "; " + str(report["commits_since"])
+                 report["name"] + " was last written at " + str(report["revision"])
+                 + "; " + str(report["commits_since"])
                  + " commits have touched its sources since",
                  "dispatch codebase-mapper with focus " + report["focus"])
-        elif report["state"] == "unstamped":
-            warn(findings, "codebase-freshness", report["name"],
-                 report["name"] + " records no revision, so freshness cannot be "
-                 "established", "regenerate it so it carries a mapped_revision")

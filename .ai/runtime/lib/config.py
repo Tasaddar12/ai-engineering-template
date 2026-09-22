@@ -37,7 +37,8 @@ DEFAULTS = {
         "delete_branch": True,
     },
     # How far a `.planning/codebase/` map may drift before it is regenerated,
-    # in commits touching that map's own sources since its `mapped_revision`.
+    # in commits touching that map's own sources since the commit that last
+    # wrote it. Nothing is stamped; git already knows when the file changed.
     # A stack map ages on the first manifest change; an architecture map
     # tolerates ordinary churn. `lib/codebase.py` holds the same values as its
     # fallback for a project whose config predates this block.

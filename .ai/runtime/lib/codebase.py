@@ -1,23 +1,21 @@
 """Freshness of the `.planning/codebase/` maps.
 
 A map stamped only with an analysis date cannot be checked: a date says when
-someone looked, not whether the code has moved since. Each map therefore records
-the revision it was written against, and freshness is the answer to a git
-question — how many commits have touched this map's sources since then.
+someone looked, not whether the code has moved since. But the map does not need
+to carry a revision either — git already knows when the file was last written.
 
-That makes staleness observable, which is what turns "regenerate when missing"
-into "regenerate when wrong".
+Freshness is therefore two git questions and no bookkeeping: which commit last
+touched this map, and how many commits have touched its sources since. Nothing
+to stamp, nothing an agent can forget, and nothing that breaks when history is
+rewritten — a squash merge or a shallow clone would invalidate a recorded SHA,
+while `git log` always answers against the history in hand.
 """
-from datetime import datetime
-
 from . import gitops
 from .config import get as config_get
-from .paths import read_text, write_text
+from .paths import read_text
 from .results import require
 
 CODEBASE_DIR = "codebase"
-REVISION = "mapped_revision"
-MAPPED_AT = "mapped_at"
 
 # Sources whose movement invalidates each map. A stack map goes stale the moment
 # a manifest changes; an architecture map tolerates ordinary churn and goes stale
@@ -43,8 +41,6 @@ MAPS = {
         "sources": [".", ":(exclude).planning", ":(exclude)docs"],
     },
 }
-OPTIONAL = {"STRUCTURE.md": "arch", "INTEGRATIONS.md": "tech",
-            "CONVENTIONS.md": "patterns", "CONCERNS.md": "quality"}
 
 
 def directory(workspace):
@@ -55,36 +51,26 @@ def path_for(workspace, name):
     return directory(workspace) / name
 
 
-def read_stamp(content):
-    """The revision and date a map was written against, if it carries them."""
-    stamp = {}
-    for line in (content or "").splitlines():
-        text = line.strip()
-        if not text.startswith("<!--"):
-            continue
-        for key in (REVISION, MAPPED_AT):
-            marker = key + ":"
-            if marker in text:
-                value = text.split(marker, 1)[1]
-                stamp[key] = value.replace("-->", "").strip()
-        if len(stamp) == 2:
-            break
-    return stamp
-
-
 def threshold(workspace, name):
-    configured = config_get(workspace, "codebase.staleness." + name.replace(".md", "").lower())
+    configured = config_get(workspace,
+                            "codebase.staleness." + name.replace(".md", "").lower())
     if isinstance(configured, int) and configured > 0:
         return configured
     return MAPS[name]["threshold"]
 
 
+def written_at(workspace, relative):
+    """The commit that last wrote this map, or "" when it has never been committed."""
+    return gitops.output(workspace, "log", "-1", "--format=%H", "--", relative)
+
+
+def uncommitted(workspace, relative):
+    """Whether the map has changes git has not recorded yet."""
+    return bool(gitops.output(workspace, "status", "--porcelain", "--", relative))
+
+
 def commits_since(workspace, revision, sources):
-    """Commits touching this map's sources since the mapped revision."""
-    if not revision:
-        return None
-    if not gitops.rev_parse(workspace, revision + "^{commit}"):
-        return None
+    """Commits touching this map's sources since the map was last written."""
     count = gitops.output(workspace, "rev-list", "--count", revision + "..HEAD",
                           "--", *sources)
     try:
@@ -97,23 +83,29 @@ def inspect(workspace, name):
     """One map's freshness, as a state a workflow can branch on."""
     spec = MAPS[name]
     target = path_for(workspace, name)
-    report = {"name": name, "focus": spec["focus"],
-              "path": workspace.relative(target), "revision": None,
-              "mapped_at": None, "commits_since": None,
+    relative = workspace.relative(target)
+    report = {"name": name, "focus": spec["focus"], "path": relative,
+              "revision": None, "commits_since": None,
               "threshold": threshold(workspace, name)}
     if not target.is_file():
         report["state"] = "missing"
         return report
-    stamp = read_stamp(read_text(target, ""))
-    report["revision"] = stamp.get(REVISION) or None
-    report["mapped_at"] = stamp.get(MAPPED_AT) or None
-    if not report["revision"]:
-        report["state"] = "unstamped"
+    if uncommitted(workspace, relative):
+        # Just written, or edited and not yet committed: nothing has happened
+        # to the code since, by definition.
+        report["state"] = "fresh"
+        report["pending"] = True
         return report
-    count = commits_since(workspace, report["revision"], spec["sources"])
+    revision = written_at(workspace, relative)
+    if not revision:
+        # Tracked by nothing git can see - treat it as current rather than
+        # inventing staleness from an absent history.
+        report["state"] = "fresh"
+        return report
+    report["revision"] = revision[:12]
+    count = commits_since(workspace, revision, spec["sources"])
     if count is None:
-        # The stamped revision is not in this history (shallow clone, rebase).
-        report["state"] = "unstamped"
+        report["state"] = "fresh"
         return report
     report["commits_since"] = count
     report["state"] = "stale" if count >= report["threshold"] else "fresh"
@@ -132,25 +124,9 @@ def status(workspace):
     }
 
 
-def stamp(workspace, name, revision=None):
-    """Record the revision a freshly written map describes.
-
-    codebase-mapper calls this after writing the map, so freshness is recorded
-    by the runtime rather than trusted to a hand-typed date.
-    """
-    require(name in MAPS or name in OPTIONAL, "unknown map: " + name, "unknown-map")
+def read_map(workspace, name):
+    require(name in MAPS, "unknown map: " + str(name), "unknown-map")
     target = path_for(workspace, name)
     require(target.is_file(), "no such map: " + workspace.relative(target),
             "missing-map")
-    revision = revision or gitops.head_revision(workspace)
-    require(revision, "cannot resolve a revision to stamp", "no-revision")
-    today = datetime.now().strftime("%Y-%m-%d")
-    lines = [line for line in read_text(target, "").splitlines()
-             if REVISION not in line and MAPPED_AT not in line]
-    header = ["<!-- " + REVISION + ": " + revision + " -->",
-              "<!-- " + MAPPED_AT + ": " + today + " -->"]
-    # The stamp leads the file so a reader sees provenance before content.
-    body = "\n".join(header + lines).rstrip("\n") + "\n"
-    write_text(target, body)
-    return {"name": name, "path": workspace.relative(target),
-            "revision": revision, "mapped_at": today}
+    return read_text(target, "")

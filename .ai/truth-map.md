@@ -23,7 +23,7 @@
 | Whether a proposed solution works | The ADR's Feasibility validation table | A check that was run, not a claim that it would pass |
 | Durable decision log | [PROJECT](../.planning/PROJECT.md) Key Decisions | STATE.md keeps only the 5 most recent |
 | Whether a requirement is met | [REQUIREMENTS](../.planning/REQUIREMENTS.md) Traceability Status | Written by `requirements.*` on a passing verification |
-| Whether a codebase map still holds | `codebase.status` against its `mapped_revision` | A date says when someone looked, not whether the code moved |
+| Whether a codebase map still holds | `codebase.status`, from the commit that last wrote it | A date says when someone looked, not whether the code moved |
 | Retired entries | `.planning/archive/STATE-LOG.md` | Rotated out of the digest; never authoritative |
 | Ordinary change history | Git and phase artifacts | No duplicate journal required |
 | Project usage/operations guidance | The project's established documentation paths | Link to the relevant guide |

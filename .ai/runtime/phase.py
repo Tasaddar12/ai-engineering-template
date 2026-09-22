@@ -603,12 +603,6 @@ def verb_codebase_status(workspace, positionals, options):
     return codebase.status(workspace)
 
 
-def verb_codebase_stamp(workspace, positionals, options):
-    """Record the revision a freshly written map describes."""
-    return codebase.stamp(workspace, argument(positionals, 0, "map"),
-                          options.get("revision"))
-
-
 # --- milestones -----------------------------------------------------------
 
 def verb_milestone_list(workspace, positionals, options):
@@ -793,7 +787,6 @@ VERBS = {
 
     "planning.validate": verb_planning_validate,
     "codebase.status": verb_codebase_status,
-    "codebase.stamp": verb_codebase_stamp,
 
     "milestone.list": verb_milestone_list,
     "milestone.create": verb_milestone_create,

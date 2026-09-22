@@ -413,8 +413,8 @@ phase_run query codebase.status
 
 `fresh` for every map → continue.
 
-`missing`, `unstamped`, or `stale` → regenerate those focus areas before
-planning. `focus_areas` in the result names exactly what to dispatch:
+`missing` or `stale` → regenerate those focus areas before planning.
+`focus_areas` in the result names exactly what to dispatch:
 
 ```
 Agent(
@@ -425,7 +425,6 @@ The existing map is {missing|stale}. Rewrite it against the current revision —
 do not patch the old text, and do not keep a claim you have not re-checked.
 
 Write to: .planning/codebase/{MAP}.md
-Then stamp it: phase_run query codebase.stamp {MAP}.md
 
 Return: ## MAP COMPLETE with what changed since the previous revision.
 ",
@@ -437,9 +436,11 @@ Return: ## MAP COMPLETE with what changed since the previous revision.
 
 > **ORCHESTRATOR RULE**: wait for the subagent before continuing.
 
-Staleness is a git question, not a date: a stack map ages on the first manifest
-change, an architecture map on sustained source movement. Writes to `.planning/`
-never age a map, so a phase's own paperwork does not trigger a rewrite.
+Staleness is a git question, not a date, and nothing has to be stamped: the
+commit that last wrote the map is where the count starts. A stack map ages on the
+first manifest change, an architecture map on sustained source movement. Writes
+to `.planning/` never age a map, so a phase's own paperwork does not trigger a
+rewrite.
 
 Skip this step for `--gaps` runs: gap closure plans against the phase that was
 already planned, and re-mapping mid-phase would move the ground under it.

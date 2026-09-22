@@ -13,16 +13,9 @@ changed.
 
 ## Freshness is computed, not claimed
 
-Every map carries the revision it was written against:
-
-```markdown
-<!-- mapped_revision: 3f9a1c4e8b2d -->
-<!-- mapped_at: 2026-09-22 -->
-```
-
-`codebase.stamp <MAP>.md` writes that stamp; `codebase.status` answers how many
-commits have touched the map's sources since. A date alone says when somebody
-looked, not whether the code has moved, which is how these drifted before.
+`codebase.status` answers it from git, with nothing to stamp and nothing to keep
+up to date: the commit that last wrote the map is the starting point, and the
+question is how many commits have touched that map's sources since.
 
 | Map | Goes stale when | Because |
 |-----|-----------------|---------|
@@ -30,8 +23,8 @@ looked, not whether the code has moved, which is how these drifted before.
 | `ARCHITECTURE.md` | 15 commits have touched source since it was written | ordinary churn is not a changed architecture; sustained movement is |
 
 Writes under `.planning/` never age a map: a phase write-up is not a change to
-the architecture it describes. Both thresholds are configurable under
-`codebase.staleness` in `.planning/config.yaml`.
+the architecture it describes. An uncommitted map is current by definition. Both
+thresholds are configurable under `codebase.staleness` in `.planning/config.yaml`.
 
 `/plan-phase` regenerates a stale map before planning against it, and
 `/progress` reports staleness. Rewrite a stale map against the current revision
