@@ -25,7 +25,7 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - researcher — researches how to implement a phase, produces RESEARCH.md
 - phase-preparer — writes executable plans with task breakdown and dependencies
 - phase-checker — verifies plans will achieve the phase goal before execution
-- codebase-mapper — maps existing code when no map exists
+- codebase-mapper — maps existing code when its map is missing or stale
 </available_agent_types>
 
 <model_selection>
@@ -402,6 +402,49 @@ choice: proceed as-is, revise a specific finding together, or cancel. Do not loo
 indefinitely, and do not approve the plans yourself to end the loop.
 </step>
 
+<step name="refresh_codebase_maps">
+A planner reading a stale map plans against a codebase that no longer exists.
+Maps were previously regenerated only when absent, which is why ARCHITECTURE.md
+and STACK.md drifted: once written, nothing ever looked at them again.
+
+```bash
+phase_run query codebase.status
+```
+
+`fresh` for every map → continue.
+
+`missing`, `unstamped`, or `stale` → regenerate those focus areas before
+planning. `focus_areas` in the result names exactly what to dispatch:
+
+```
+Agent(
+  prompt="
+Refresh the codebase map for focus area: {focus}.
+
+The existing map is {missing|stale}. Rewrite it against the current revision —
+do not patch the old text, and do not keep a claim you have not re-checked.
+
+Write to: .planning/codebase/{MAP}.md
+Then stamp it: phase_run query codebase.stamp {MAP}.md
+
+Return: ## MAP COMPLETE with what changed since the previous revision.
+",
+  subagent_type="codebase-mapper",
+  ${models['codebase-mapper'] === 'inherit' ? '' : `model="${models['codebase-mapper']}",`}
+  description="Refresh the {focus} map"
+)
+```
+
+> **ORCHESTRATOR RULE**: wait for the subagent before continuing.
+
+Staleness is a git question, not a date: a stack map ages on the first manifest
+change, an architecture map on sustained source movement. Writes to `.planning/`
+never age a map, so a phase's own paperwork does not trigger a rewrite.
+
+Skip this step for `--gaps` runs: gap closure plans against the phase that was
+already planned, and re-mapping mid-phase would move the ground under it.
+</step>
+
 <step name="update_roadmap">
 Make the roadmap's plan checklist match the plans that now exist. For each plan
 the preparer wrote that has no roadmap entry, the phase entry's `Plans:` list
@@ -470,6 +513,7 @@ Plan review: {approved | approved with noted findings}
 
 <success_criteria>
 - [ ] Phase validated against the roadmap and not already complete
+- [ ] Codebase maps fresh, or regenerated before planning against them
 - [ ] CONTEXT.md loaded, with canonical refs passed to every downstream agent
 - [ ] Research run only where warranted, and its file verified on disk
 - [ ] Plans written by the phase-preparer, verified on disk via the plan index

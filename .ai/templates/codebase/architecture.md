@@ -9,6 +9,9 @@ Template for `.planning/codebase/ARCHITECTURE.md` - captures conceptual code org
 ## File Template
 
 ```markdown
+<!-- mapped_revision: [written by `codebase.stamp ARCHITECTURE.md`] -->
+<!-- mapped_at: [YYYY-MM-DD] -->
+
 # Architecture
 
 **Analysis Date:** [YYYY-MM-DD]
@@ -254,6 +257,25 @@ Include file paths as concrete examples of abstractions. Use backtick formatting
 - Understanding dependencies between components
 </guidelines>
 
+
+<freshness>
+
+`.planning/codebase/ARCHITECTURE.md` is a tracked map: the runtime knows it by
+that exact name and checks whether it still describes the code.
+
+Stamp it after writing it — `codebase.stamp ARCHITECTURE.md` records the
+revision, replacing any earlier stamp. `codebase.status` then answers freshness
+by counting commits that touched source since, ignoring writes under
+`.planning/`, because a phase write-up is not a change to the architecture it
+describes. The default threshold is 15 commits: ordinary churn is not a changed
+architecture, sustained movement is. Configure it under
+`codebase.staleness.architecture`.
+
+`/plan-phase` regenerates this map when it is stale rather than planning against
+it. Rewrite it against the current revision when that happens; do not patch the
+old text, and do not keep a claim you have not re-checked.
+
+</freshness>
 
 <!-- LOCAL-ADOPTION:START -->
 ## Local adoption — read before using this source

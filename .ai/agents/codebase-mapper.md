@@ -201,6 +201,24 @@ Write document(s) to `.planning/codebase/` using the templates below.
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 </step>
 
+<step name="stamp_documents">
+Record the revision each document describes. A date says when someone looked; a
+revision is what lets the runtime answer whether the code has moved since, which
+is what makes a map's staleness detectable instead of a judgment call.
+
+```bash
+phase_run query codebase.stamp {DOC}.md
+```
+
+Run it once per document you wrote, after writing it. The verb prepends the
+stamp and replaces any previous one, so re-running it on a refreshed map is
+correct and never stacks.
+
+A map you wrote and did not stamp reports as `unstamped` and will be regenerated
+again on the next plan — stamping is part of writing the document, not an
+optional extra.
+</step>
+
 <step name="return_confirmation">
 Return a brief confirmation. DO NOT include document contents.
 
@@ -210,8 +228,8 @@ Format:
 
 **Focus:** {focus}
 **Documents written:**
-- `.planning/codebase/{DOC1}.md` ({N} lines)
-- `.planning/codebase/{DOC2}.md` ({N} lines)
+- `.planning/codebase/{DOC1}.md` ({N} lines, stamped {revision})
+- `.planning/codebase/{DOC2}.md` ({N} lines, stamped {revision})
 
 Ready for orchestrator summary.
 ```
@@ -867,6 +885,7 @@ Ready for orchestrator summary.
 - [ ] Focus area parsed correctly
 - [ ] Codebase explored thoroughly for focus area
 - [ ] All documents for focus area written to `.planning/codebase/`
+- [ ] Every document stamped with `codebase.stamp`, so its freshness can be checked
 - [ ] Documents follow template structure
 - [ ] File paths included throughout documents
 - [ ] Confirmation returned (not document contents)
