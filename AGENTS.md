@@ -72,9 +72,10 @@ is active conflicts with that agent's edits.
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
 `integration-checker`, `codebase-mapper`, `debugger`). Resolve the model with
-`phase_run query resolve-model <agent>` and pass it inline on the dispatch call —
-agent files carry no `model:` frontmatter, and a resolved `inherit` means omit the
-argument. Never fall back to a generic agent type.
+`phase_run query resolve-model <agent>` and the effort with
+`phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
+call — agent files carry neither as frontmatter, and a resolved `inherit` means
+omit that argument. Never fall back to a generic agent type.
 
 An agent that returns "complete" with no SUMMARY.md, or with no commits, did not
 complete. Treat it as blocked.

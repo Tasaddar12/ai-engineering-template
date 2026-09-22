@@ -29,7 +29,7 @@ phase_run query init.<workflow> <phase>     # load context in one call
 phase_run query phase.add|insert|remove|edit|complete
 phase_run query roadmap.update-plan-progress <plan-id>
 phase_run query state.begin-phase|record-session|add-decision|add-blocker
-phase_run query resolve-model <agent>
+phase_run query resolve-model|resolve-effort <agent>
 phase_run query commit "<message>" --files <paths>
 ```
 
@@ -113,8 +113,9 @@ is delivered.
 <specialist_routing>
 Use the [agent handoff catalog](README.md) and
 [local adapter](../references/agent-adaptation.md). Spawn agents by their exact
-name and resolve the model with `phase_run query resolve-model <agent>` rather
-than choosing one inline. Never substitute a generic agent type.
+name and resolve the model and effort with `phase_run query resolve-model
+<agent>` and `phase_run query resolve-effort <agent>` rather than choosing
+either inline. Never substitute a generic agent type.
 
 Assign codebase-mapper when onboarding or research needs a reusable map; route
 findings through researcher to phase-preparer and the independent phase-checker.

@@ -221,16 +221,28 @@ The file budget is 150 lines. `planning.validate` warns above it and never
 blocks: a cosmetic finding must not stall a session, and `--strict` is there for
 a caller that explicitly wants drift to fail.
 
-## Model and dispatch metadata
+## Model, effort and dispatch metadata
 
 Agent definitions under `.ai/agents/` carry `name`, `description`, `tools` and
-optionally `disallowedTools`, `maxTurns`, `skills` and `color`. They deliberately
-carry **no `model:` field**: the host no longer reads a model from frontmatter, so
-it is injected inline on the dispatch call.
+optionally `disallowedTools`, `skills` and `color`. They deliberately carry
+**no `model:` and no `effort:` field**: both are injected inline on the dispatch
+call, so one config file answers for every role on every host.
+
+They also carry **no `maxTurns:`**. A turn ceiling stops an agent mid-slice with
+work committed and no SUMMARY.md written, which the orchestrator is required to
+read as blocked — the cap manufactures the failure it was meant to contain. The
+context handoff under `handoff` bounds a long agent instead, and hands the work
+on rather than dropping it.
 
 `phase_run query resolve-model <agent>` returns a project override from
-`agents.<name>.model` in config, or `inherit`. On `inherit` the caller omits the
-model argument and lets the host choose.
+`agents.<name>.model`, or `inherit`. `phase_run query resolve-effort <agent>`
+does the same for `agents.<name>.effort`. On `inherit` the caller omits that
+argument and lets the host choose; the two resolve independently.
+
+Configured models are full API ids (`claude-opus-5`, `claude-sonnet-5`,
+`claude-haiku-4-5`) and are not validated against a list — new ids ship between
+releases of this template. Effort is validated: `low`, `medium`, `high`,
+`xhigh`, `max` or `inherit`, and anything else fails with `bad-effort`.
 
 Codex's `install-assets/codex-agents/*.toml` keep a native `model` field. That is
 Codex's own agent configuration surface and is unrelated to this contract.

@@ -1,8 +1,9 @@
-"""Agent, model and skill resolution for orchestrator dispatch.
+"""Agent, model, effort and skill resolution for orchestrator dispatch.
 
-The orchestrator asks the runtime which model an agent runs on, which tools it
-may use and which skills it should load, rather than deciding inline. Project
-config overrides the agent file; the agent file overrides `inherit`.
+The orchestrator asks the runtime which model an agent runs on, how hard that
+model should think, which tools it may use and which skills it should load,
+rather than deciding inline. Project config is the only dial; whatever it leaves
+unset resolves to `inherit` and the host chooses.
 """
 from pathlib import Path
 
@@ -12,7 +13,11 @@ from .results import require
 from .text import split_frontmatter
 
 NAMESPACE = Path(__file__).resolve().parents[2]
-MODELS = ("opus", "sonnet", "haiku", "inherit")
+# Effort is a closed scale, so an unrecognised value is a configuration error
+# worth failing on. Model ids deliberately are not checked against a list: new
+# ones ship between releases of this template, and a project must be able to
+# name one without waiting for a patch here.
+EFFORTS = ("low", "medium", "high", "xhigh", "max", "inherit")
 SKILL_ROOTS = (".agents/skills", ".claude/skills", ".codex/skills")
 
 
@@ -51,8 +56,12 @@ def split_list(value):
 def resolve_model(workspace, name):
     """Model for an agent: a project config override, otherwise `inherit`.
 
-    Agent definitions deliberately carry no `model:` frontmatter — the host no
-    longer reads one from there, so the model is injected inline at spawn time.
+    Agent definitions deliberately carry no `model:` frontmatter — the model is
+    injected inline at spawn time instead, so one file decides it for every
+    host. Configured values are full API model ids (`claude-opus-5`), never a
+    host's own shorthand: an id names one model everywhere, while a shorthand
+    names whichever model that host currently points it at.
+
     `inherit` means the caller omits the model argument and lets the host choose.
     """
     override = config_get(workspace, "agents." + name + ".model")
@@ -62,10 +71,33 @@ def resolve_model(workspace, name):
     return {"agent": name, "model": "inherit", "source": "default", "inherit": True}
 
 
+def resolve_effort(workspace, name):
+    """Reasoning effort for an agent: a config override, otherwise `inherit`.
+
+    Effort buys thinking depth on a model that is already chosen, which makes it
+    the cheaper of the two dials: raising a reviewer to `max` costs far less than
+    moving it to a larger model, and dropping a mechanical role to `low` cuts
+    spend without changing what that role can do. `inherit` means the caller
+    omits the effort argument and lets the host choose.
+    """
+    override = config_get(workspace, "agents." + name + ".effort")
+    if not override:
+        return {"agent": name, "effort": "inherit", "source": "default",
+                "inherit": True}
+    effort = str(override).strip().lower()
+    require(effort in EFFORTS,
+            "unknown effort for " + name + ": " + str(override)
+            + " (expected one of " + ", ".join(EFFORTS) + ")",
+            "bad-effort")
+    return {"agent": name, "effort": effort, "source": "config",
+            "inherit": effort == "inherit"}
+
+
 def resolve_agent(workspace, name):
     """Everything the orchestrator needs to spawn one subagent."""
     path, frontmatter, _ = load_agent(name)
     model = resolve_model(workspace, name)
+    effort = resolve_effort(workspace, name)
     return {
         "agent": name,
         "file": str(path),
@@ -73,9 +105,11 @@ def resolve_agent(workspace, name):
         "model": model["model"],
         "model_source": model["source"],
         "inherit": model["inherit"],
+        "effort": effort["effort"],
+        "effort_source": effort["source"],
+        "effort_inherit": effort["inherit"],
         "tools": split_list(frontmatter.get("tools")),
         "disallowed_tools": split_list(frontmatter.get("disallowedTools")),
-        "max_turns": frontmatter.get("maxTurns"),
         "skills": split_list(frontmatter.get("skills")),
         "context_window": config_get(workspace, "context_window", 200000),
     }

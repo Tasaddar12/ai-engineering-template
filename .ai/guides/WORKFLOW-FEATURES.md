@@ -39,7 +39,7 @@ owners and their operational limits. For the end-to-end procedure, read
 | Python runtime | Reads and writes every planning record: phases, roadmap, state, todos, quick tasks, milestones, verification status, model resolution | `python .ai/runtime/phase.py query <verb>`; see the [runtime guide](../runtime/README.md) |
 | `.ai/commands/` | Thin routers naming a workflow, mirrored one-for-one by `.agents/skills/` | Ask in ordinary language or read the named file |
 | `.ai/workflows/` | The procedures themselves: context loading, agent dispatch, runtime calls, user interaction | Read the workflow end to end before acting; the command file is a summary |
-| `.ai/agents/` | Complete agent methods, responsibilities and write boundaries | Spawn by exact name; resolve the model with `resolve-model` |
+| `.ai/agents/` | Complete agent methods, responsibilities and write boundaries | Spawn by exact name; resolve model and effort with `resolve-model` and `resolve-effort` |
 | `.agents/skills/` | Command skills plus focused reusable engineering methods | Select relevant skills and name their exact paths in plan inputs |
 | `.ai/templates/` | Retained complete templates with local extensions | Use the [catalog](ARTIFACT-GUIDE.md), copy the fillable portion, follow all authoring guidance |
 | Documented host tools | Referenced where a workflow requires a separate installation | Do not assume `gh` or a host feature is available merely because it is documented |
@@ -60,7 +60,7 @@ repeats. Agent files supply methods; they do not install runtime routes.
   STATE.md                      Living session memory; counters derived from the roadmap
   MILESTONES.md                 What each milestone shipped
   milestones/                   Long-form milestone summaries, on `--write`
-  config.yaml                   Commit behavior, model overrides and the project's real checks
+  config.yaml                   Commit behavior, model and effort overrides and the project's real checks
   codebase/                     Inspected architecture and stack maps
   todos/pending|completed/      Captured ideas awaiting a home
   quick/YYMMDD-NNN-slug/        Small changes tracked outside the roadmap

@@ -82,7 +82,8 @@ integrations. [Agent adaptation](.ai/references/agent-adaptation.md) defines the
 local boundaries.
 
 `.planning/config.yaml` configures the runtime: `commit_docs`, workflow flags,
-per-agent model overrides and the project's real `verification.commands`.
+per-agent model and effort overrides and the project's real
+`verification.commands`.
 
 ## Install or update with an agent
 

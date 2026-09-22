@@ -41,7 +41,7 @@ runtime — a workflow that edits them by hand drifts from it.
 | `references/` | Artifact and handoff details loaded on demand |
 | [templates](templates/README.md) | Complete artifact instructions and examples |
 | [runtime](runtime/README.md) | The verb interface every workflow calls |
-| [config](../.planning/config.yaml) | Commit behavior, model overrides and project checks |
+| [config](../.planning/config.yaml) | Commit behavior, model and effort overrides and project checks |
 | [truth-map](truth-map.md) | Each fact's authoritative owner |
 
 A phase's CONTEXT owns acceptance and decisions. PLAN and SUMMARY pairs keep plan

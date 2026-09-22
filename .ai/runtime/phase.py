@@ -628,6 +628,11 @@ def verb_resolve_model(workspace, positionals, options):
     return result["model"] if options.get("raw") else result
 
 
+def verb_resolve_effort(workspace, positionals, options):
+    result = models.resolve_effort(workspace, argument(positionals, 0, "agent"))
+    return result["effort"] if options.get("raw") else result
+
+
 def verb_resolve_agent(workspace, positionals, options):
     return models.resolve_agent(workspace, argument(positionals, 0, "agent"))
 
@@ -743,6 +748,7 @@ VERBS = {
     "verification.run-checks": verb_run_checks,
 
     "resolve-model": verb_resolve_model,
+    "resolve-effort": verb_resolve_effort,
     "resolve-agent": verb_resolve_agent,
     "agent-skills": verb_agent_skills,
     "agents.list": verb_agents_list,

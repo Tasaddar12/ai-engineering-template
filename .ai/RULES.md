@@ -192,11 +192,12 @@ conflicts with the agent it dispatched.
 Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,
 `doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`. Never
-substitute a generic agent type; the project's own definitions carry the prompts,
-tool permissions and model assignment that make the result trustworthy. Resolve
-the model through `phase_run query resolve-model <agent>` and pass it inline on
-the dispatch call; agent definitions carry no `model:` frontmatter. A resolved
-`inherit` means omit the model argument and let the host choose.
+substitute a generic agent type; the project's own definitions carry the prompts
+and tool permissions that make the result trustworthy. Resolve the model through
+`phase_run query resolve-model <agent>` and the reasoning effort through
+`phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
+call; agent definitions carry neither as frontmatter. A resolved `inherit` means
+omit that argument and let the host choose.
 
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
 not spawn agents, switch branches, merge, publish or edit shared status.
@@ -344,8 +345,8 @@ Run checks appropriate to the changed behavior plus the project's required
 commands. Runtime changes need real Git and subprocess tests; hook changes need
 their Bash suites. Report actual outcomes, failures and skips. A check that
 restates the implementation's wording does not establish behavior.
-[Config](../.planning/config.yaml) owns command values and model overrides;
-[runtime documentation](runtime/README.md) owns the verb interface.
+[Config](../.planning/config.yaml) owns command values and the model and effort
+overrides; [runtime documentation](runtime/README.md) owns the verb interface.
 
 ## Complete template use
 
