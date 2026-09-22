@@ -91,11 +91,39 @@ None yet.
 
 None yet.
 
+### Roadmap Evolution
+
+None yet.
+
+## Deferred Items
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| *(none)* | | | | |
+
 ## Session Continuity
 
 Last session: [YYYY-MM-DD HH:MM]
 Stopped at: [Description]
 Resume file: None
+"""
+
+PROJECT = """# Test Project
+
+## What This Is
+
+A project for exercising the runtime.
+
+## Key Decisions
+
+<!-- Decisions that constrain future work. Add throughout project lifecycle. -->
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| [Choice] | [Why] | [Pending] |
+
+---
+*Last updated: 2026-01-01 after setup*
 """
 
 CONFIG = """commit_docs: true
@@ -118,7 +146,7 @@ class RuntimeCase(unittest.TestCase):
         (planning / "ROADMAP.md").write_text(ROADMAP, encoding="utf-8", newline="\n")
         (planning / "STATE.md").write_text(STATE, encoding="utf-8", newline="\n")
         (planning / "config.yaml").write_text(CONFIG, encoding="utf-8", newline="\n")
-        (planning / "PROJECT.md").write_text("# Project\n", encoding="utf-8", newline="\n")
+        (planning / "PROJECT.md").write_text(PROJECT, encoding="utf-8", newline="\n")
         (planning / "REQUIREMENTS.md").write_text(
             "# Requirements\n\n- REQ-01: one\n- REQ-02: two\n- REQ-03: three\n",
             encoding="utf-8", newline="\n")
@@ -756,3 +784,87 @@ class WorktreeIsolation(RuntimeCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StateDigestBudget(RuntimeCase):
+    """STATE.md is a digest: bounded sections, nothing lost when they trim."""
+
+    def test_decision_lands_in_project_md_as_well_as_the_digest(self):
+        result = self.run_verb("state.add-decision", "Use Postgres",
+                               "--rationale", "Already operated in-house")
+        self.assertIsNotNone(result["project_record"])
+        project = self.read(".planning/PROJECT.md")
+        self.assertIn("| Use Postgres | Already operated in-house |", project)
+        self.assertIn("- Use Postgres", self.read(".planning/STATE.md"))
+        # The placeholder row is replaced, not accumulated alongside real rows.
+        self.assertNotIn("| [Choice] |", project)
+
+    def test_decisions_trim_to_the_cap_and_rotate_into_the_archive(self):
+        for index in range(7):
+            self.run_verb("state.add-decision", "Decision " + str(index))
+        state = self.read(".planning/STATE.md")
+        kept = [line for line in state.splitlines() if line.startswith("- Decision ")]
+        self.assertEqual(len(kept), 5)
+        self.assertIn("- Decision 6", state)
+        self.assertNotIn("- Decision 0", state)
+        archive = self.read(".planning/archive/STATE-LOG.md")
+        self.assertIn("- Decision 0", archive)
+        self.assertIn("- Decision 1", archive)
+        # Nothing is lost: every trimmed decision is still in PROJECT.md.
+        project = self.read(".planning/PROJECT.md")
+        for index in range(7):
+            self.assertIn("| Decision " + str(index) + " |", project)
+
+    def test_blockers_trim_at_their_own_cap(self):
+        for index in range(12):
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+        kept = [line for line in self.read(".planning/STATE.md").splitlines()
+                if line.startswith("- Blocker ")]
+        self.assertEqual(len(kept), 10)
+
+    def test_clear_blocker_removes_the_entry_and_archives_it(self):
+        self.run_verb("state.add-blocker", "Phase 1: flaky integration suite")
+        self.run_verb("state.add-blocker", "Phase 2: missing staging secrets")
+        result = self.run_verb("state.clear-blocker", "flaky integration")
+        self.assertEqual(result["removed"], ["Phase 1: flaky integration suite"])
+        state = self.read(".planning/STATE.md")
+        self.assertNotIn("flaky integration", state)
+        self.assertIn("missing staging secrets", state)
+        # Removed, not struck through.
+        self.assertNotIn("~~", state)
+        self.assertIn("flaky integration suite", self.read(".planning/archive/STATE-LOG.md"))
+
+    def test_clearing_the_last_blocker_restores_the_placeholder(self):
+        self.run_verb("state.add-blocker", "Only blocker")
+        self.run_verb("state.clear-blocker", "Only blocker")
+        body = self.read(".planning/STATE.md").split("### Blockers/Concerns")[1]
+        self.assertIn("None yet.", body.split("###")[0])
+
+    def test_clear_blocker_reports_a_miss_instead_of_silently_passing(self):
+        result = self.run_verb("state.clear-blocker", "nothing like this",
+                               expect_ok=False)
+        self.assertEqual(result["code"], "no-match")
+
+    def test_roadmap_evolution_is_bounded_too(self):
+        for index in range(8):
+            self.run_verb("state.add-roadmap-evolution", "Change " + str(index))
+        kept = [line for line in self.read(".planning/STATE.md").splitlines()
+                if line.startswith("- Change ")]
+        self.assertEqual(len(kept), 5)
+        self.assertIn("- Change 0", self.read(".planning/archive/STATE-LOG.md"))
+
+    def test_deferred_items_write_a_table_row(self):
+        self.run_verb("state.add-deferred", "perf", "Cache the roadmap parse",
+                      "--status", "Deferred", "--milestone", "v1")
+        state = self.read(".planning/STATE.md")
+        self.assertIn("| perf | Cache the roadmap parse | Deferred |", state)
+        self.assertNotIn("| *(none)* |", state)
+
+    def test_digest_stays_inside_its_line_budget_under_sustained_use(self):
+        """The failure the budget exists to prevent: a week of appends."""
+        for index in range(30):
+            self.run_verb("state.add-decision", "Decision " + str(index))
+            self.run_verb("state.add-blocker", "Blocker " + str(index))
+            self.run_verb("state.add-roadmap-evolution", "Change " + str(index))
+        lines = len(self.read(".planning/STATE.md").splitlines())
+        self.assertLessEqual(lines, 125, "STATE.md grew past its digest budget")

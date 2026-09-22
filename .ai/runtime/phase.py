@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (bundles, delivery, gitops, handoff, milestones, models, phases,  # noqa: E402
-                 quick, state, todos, verification, worktrees)
+                 project_record, quick, state, todos, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -428,8 +428,11 @@ def verb_state_advance_plan(workspace, positionals, options):
 
 
 def verb_state_add_decision(workspace, positionals, options):
+    """Digest the decision in STATE.md and record it durably in PROJECT.md."""
     with planning_lock(workspace):
-        return state.add_bullet(workspace, "Decisions", argument(positionals, 0, "text"))
+        return state.add_decision(workspace, argument(positionals, 0, "text"),
+                                  options.get("rationale", ""),
+                                  options.get("outcome"))
 
 
 def verb_state_add_blocker(workspace, positionals, options):
@@ -442,6 +445,41 @@ def verb_state_add_roadmap_evolution(workspace, positionals, options):
     with planning_lock(workspace):
         return state.add_bullet(workspace, "Roadmap Evolution",
                                 argument(positionals, 0, "text"))
+
+
+def verb_state_clear_blocker(workspace, positionals, options):
+    """Remove a resolved blocker. Retirement is removal, never a strikethrough."""
+    with planning_lock(workspace):
+        return state.clear_bullet(workspace, "Blockers/Concerns",
+                                  argument(positionals, 0, "match"))
+
+
+def verb_state_clear_entry(workspace, positionals, options):
+    with planning_lock(workspace):
+        return state.clear_bullet(workspace, argument(positionals, 0, "section"),
+                                  argument(positionals, 1, "match"),
+                                  int(options.get("level", 3)))
+
+
+def verb_state_add_deferred(workspace, positionals, options):
+    with planning_lock(workspace):
+        return state.record_deferred(workspace, argument(positionals, 0, "category"),
+                                     argument(positionals, 1, "item"),
+                                     options.get("status", "Deferred"),
+                                     options.get("milestone", ""))
+
+
+def verb_project_add_decision(workspace, positionals, options):
+    with planning_lock(workspace):
+        return project_record.add_decision(workspace, argument(positionals, 0, "decision"),
+                                           options.get("rationale", ""),
+                                           options.get("outcome",
+                                                       project_record.PENDING))
+
+
+def verb_project_decisions(workspace, positionals, options):
+    records = project_record.decisions(workspace)
+    return {"count": len(records), "decisions": records}
 
 
 def verb_state_sync_todos(workspace, positionals, options):
@@ -613,7 +651,13 @@ VERBS = {
     "state.add-decision": verb_state_add_decision,
     "state.add-blocker": verb_state_add_blocker,
     "state.add-roadmap-evolution": verb_state_add_roadmap_evolution,
+    "state.clear-blocker": verb_state_clear_blocker,
+    "state.clear-entry": verb_state_clear_entry,
+    "state.add-deferred": verb_state_add_deferred,
     "state.sync-todos": verb_state_sync_todos,
+
+    "project.add-decision": verb_project_add_decision,
+    "project.decisions": verb_project_decisions,
 
     "milestone.list": verb_milestone_list,
     "milestone.create": verb_milestone_create,

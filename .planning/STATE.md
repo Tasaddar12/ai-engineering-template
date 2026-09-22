@@ -31,25 +31,6 @@ Last activity: [YYYY-MM-DD] — [What happened]
 
 Progress: [░░░░░░░░░░] 0%
 
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: [N]
-- Average duration: [X] min
-- Total execution time: [X.X] hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-- Last 5 plans: [durations]
-- Trend: [Improving / Stable / Degrading]
-
-*Updated after each plan completion*
-
 ## Accumulated Context
 
 ### Decisions
@@ -68,13 +49,21 @@ None yet.
 
 ### Blockers/Concerns
 
-[Issues that affect future work]
+[Issues that affect future work. `state.clear-blocker` removes one when it is
+resolved; never mark it closed in place.]
+
+None yet.
+
+### Roadmap Evolution
+
+[Phase added, inserted, edited or removed, written by the roadmap verbs.]
 
 None yet.
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close, most recent first:
+Items acknowledged and deferred at milestone close, written by
+`state.add-deferred`, most recent first:
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|

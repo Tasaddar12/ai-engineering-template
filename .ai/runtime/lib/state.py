@@ -9,14 +9,36 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 
+from . import project_record
 from .paths import read_text, write_text
 from .results import VerbError, require
 from .roadmap import Roadmap, as_number, display_number
-from .text import (is_placeholder, join_frontmatter, replace_section, section_body,
-                   split_frontmatter, upsert_bullet)
+from .text import (is_divider_row, is_placeholder, join_frontmatter,
+                   replace_section, section_body, split_frontmatter, upsert_bullet,
+                   upsert_table_row)
 
 NEWLINE = "\n"
 LOCK_TIMEOUT = 30
+
+# STATE.md is a digest, not an archive. Each bounded section keeps only its
+# most recent entries; older ones rotate into .planning/archive/STATE-LOG.md so
+# trimming never loses history. An absent limit means the section is replaced
+# wholesale by its own verb and needs no trimming.
+DIGEST_LIMITS = {
+    "Decisions": 5,
+    "Blockers/Concerns": 10,
+    "Roadmap Evolution": 5,
+    "Deferred Items": 10,
+}
+LINE_BUDGET = 125
+ARCHIVE_NAME = "STATE-LOG.md"
+ARCHIVE_HEADER = (
+    "# STATE digest archive\n\n"
+    "Entries rotated out of `.planning/STATE.md` so the digest stays readable.\n"
+    "Append-only, and nothing here is authoritative: decisions are owned by\n"
+    "PROJECT.md, requirements by REQUIREMENTS.md, roadmap history by the\n"
+    "milestone records.\n"
+)
 
 POSITION = re.compile(
     r"^(?P<key>Phase|Plan|Status|Last activity)[ 	]*:[ 	]*(?P<value>.*?)[ 	]*$",
@@ -120,6 +142,28 @@ class State:
         current = section_body(self.body, name, level)
         self.set_section(name, upsert_bullet(current, bullet), level)
 
+    def enforce_limit(self, name, level=3):
+        """Trim a bounded section to its most recent entries; return the rest.
+
+        Bullet sections keep the last N bullets. A table section keeps the last
+        N data rows, leaving the header and divider in place.
+        """
+        limit = DIGEST_LIMITS.get(name)
+        if not limit:
+            return []
+        body = section_body(self.body, name, level)
+        lines = [line for line in body.splitlines() if line.strip()]
+        rows = [line for line in lines
+                if line.strip().startswith("|") and not is_divider_row(line)]
+        tracked = rows[1:] if rows else [line for line in lines
+                                         if line.strip().startswith(("-", "*"))]
+        if len(tracked) <= limit:
+            return []
+        rotated = tracked[:-limit]
+        kept = [line for line in lines if line not in rotated]
+        self.set_section(name, NEWLINE.join(kept), level)
+        return rotated
+
     def derive_frontmatter(self):
         """Recompute counters from ROADMAP.md so frontmatter cannot drift."""
         roadmap = Roadmap(self.workspace)
@@ -216,11 +260,93 @@ def progress_bar(percent, width=10):
 
 
 def add_bullet(workspace, section, text, level=3):
+    """Add one digest entry, trimming the section back to its limit."""
     state = State(workspace)
     require(state.exists, "no .planning/STATE.md to update", "missing-state")
     state.append_bullet(section, "- " + text, level)
+    rotated = state.enforce_limit(section, level)
     state.save()
-    return {"section": section, "entry": text}
+    archive(workspace, section, rotated, "rotated out of the digest")
+    return {"section": section, "entry": text, "rotated": rotated,
+            "limit": DIGEST_LIMITS.get(section)}
+
+
+def add_decision(workspace, text, rationale="", outcome=None):
+    """Keep the decision in the digest and record it durably in PROJECT.md.
+
+    PROJECT.md owns the decision log; STATE.md shows only the recent ones. When
+    PROJECT.md has no Key Decisions table the digest still records the decision
+    and the shortfall is reported rather than silently swallowed.
+    """
+    result = add_bullet(workspace, "Decisions", text)
+    try:
+        result["project_record"] = project_record.add_decision(
+            workspace, text, rationale, outcome or project_record.PENDING)
+    except VerbError as exc:
+        result["project_record"] = None
+        result["warning"] = "not recorded in PROJECT.md: " + str(exc)
+    return result
+
+
+def clear_bullet(workspace, section, match, level=3):
+    """Retire entries by removing them, never by striking them through.
+
+    Cleared entries are appended to the archive log, so "cleared" means "moved
+    to where it belongs", not "lost".
+    """
+    state = State(workspace)
+    require(state.exists, "no .planning/STATE.md to update", "missing-state")
+    body = section_body(state.body, section, level)
+    needle = str(match).strip().lower()
+    lines = [line for line in body.splitlines() if line.strip()]
+    removed = [line for line in lines
+               if line.strip().startswith(("-", "*")) and needle in line.lower()]
+    require(removed, "no entry in " + section + " matching: " + str(match), "no-match")
+    kept = [line for line in lines if line not in removed]
+    if not any(line.strip().startswith(("-", "*")) for line in kept):
+        kept.append("None yet.")
+    state.set_section(section, NEWLINE.join(kept), level)
+    state.save()
+    archive(workspace, section, removed, "resolved and cleared")
+    return {"section": section,
+            "removed": [re.sub(r"^[-*]\s*", "", item).strip() for item in removed]}
+
+
+def record_deferred(workspace, category, item, status, milestone=""):
+    """Append one row to the Deferred Items table at milestone close."""
+    state = State(workspace)
+    require(state.exists, "no .planning/STATE.md to update", "missing-state")
+    body = section_body(state.body, "Deferred Items", 2)
+    require(body.strip(), "STATE.md has no Deferred Items section", "missing-section")
+    row = [category, item, status, today(), milestone or "-"]
+    state.set_section("Deferred Items", upsert_table_row(body, row, key_index=1), 2)
+    rotated = state.enforce_limit("Deferred Items", 2)
+    state.save()
+    archive(workspace, "Deferred Items", rotated, "rotated out of the digest")
+    return {"category": category, "item": item, "status": status,
+            "milestone": milestone, "rotated": rotated}
+
+
+def archive(workspace, section, entries, reason):
+    """Append rotated or cleared entries to `.planning/archive/STATE-LOG.md`."""
+    entries = [str(entry) for entry in entries or [] if str(entry).strip()]
+    if not entries:
+        return None
+    path = workspace.archive_dir / ARCHIVE_NAME
+    existing = read_text(path, ARCHIVE_HEADER) if path.is_file() else ARCHIVE_HEADER
+    rendered = NEWLINE.join(
+        entry if entry.strip().startswith(("-", "*", "|")) else "- " + entry.strip()
+        for entry in entries)
+    block = (NEWLINE + "## " + today() + " - " + section + " (" + reason + ")"
+             + NEWLINE + NEWLINE + rendered + NEWLINE)
+    write_text(path, existing.rstrip(NEWLINE) + NEWLINE + block)
+    return workspace.relative(path)
+
+
+def line_count(workspace):
+    """Length of STATE.md, for the digest budget check."""
+    state = State(workspace)
+    return len(read_text(state.path, "").splitlines()) if state.exists else 0
 
 
 def set_pending_todos(workspace, markdown):

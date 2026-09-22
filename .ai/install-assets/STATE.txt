@@ -17,10 +17,6 @@ See [PROJECT](PROJECT.md).
 Onboarding pending. No phase was selected or started by installation.
 Project implementation progress has not been assessed.
 
-## Performance Metrics
-
-Not assessed. Do not infer delivery metrics from installation.
-
 ## Accumulated Context
 
 ### Decisions
@@ -36,9 +32,18 @@ worker commands, and record their observed baseline.
 
 Project readiness is unverified until onboarding is complete.
 
+### Roadmap Evolution
+
+No roadmap changes recorded yet.
+
 ## Deferred Items
 
-Not assessed. Preserve existing deferrals.
+Items acknowledged and deferred at milestone close, written by
+`state.add-deferred`, most recent first:
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| *(none)* | | | | |
 
 ## Session Continuity
 
