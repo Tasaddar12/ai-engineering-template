@@ -29,17 +29,22 @@ Valid subagent types (use these exact names — never fall back to a generic age
 </available_agent_types>
 
 <model_selection>
-Models are injected inline at dispatch, never read from an agent's frontmatter.
-Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+Model and effort are injected inline at dispatch, never read from an agent's
+frontmatter. Resolve both from the runtime and pass them on the `Agent(...)`
+call:
 
 ```bash
 phase_run query resolve-model <agent> --raw
+phase_run query resolve-effort <agent> --raw
 ```
 
-A result of `inherit` means the project set no override — **omit the `model`
-argument entirely** in that case and let the host choose. Pass `model` only when
-resolution returned a concrete model name. The `models` map in each init bundle
-carries the same resolved values for every agent that workflow dispatches.
+A result of `inherit` means the project set no override — **omit that argument
+entirely** and let the host choose. Pass `model` only when resolution returned a
+concrete model id, and `effort` only when it returned one of `low`, `medium`,
+`high`, `xhigh` or `max`. The two resolve independently: a role can carry an
+effort and no model, or the reverse. The `models` and `efforts` maps in each
+init bundle carry the same resolved values for every agent that workflow
+dispatches.
 </model_selection>
 
 <process>
@@ -57,7 +62,7 @@ INIT=$(phase_run query init.verify-work "${PHASE}")
 
 Parse: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_dir`,
 `goal`, `requirements`, `artifacts`, `plan_count`, `summary_count`,
-`verification`, `checks`, `checks_configured`, `models`, `agents_installed`,
+`verification`, `checks`, `checks_configured`, `models`, `efforts`, `agents_installed`,
 `missing_agents`, `commit_docs`, `response_language`, `paths`.
 
 **If `response_language` is set:** all user-facing output MUST be presented in
@@ -193,6 +198,7 @@ Return: ## VERIFICATION COMPLETE with the status and a one-line reason
 ",
   subagent_type="verifier",
   ${models['verifier'] === 'inherit' ? '' : `model="${models['verifier']}",`}
+  ${efforts['verifier'] === 'inherit' ? '' : `effort="${efforts['verifier']}",`}
   description="Verify phase {phase_number}"
 )
 ```
@@ -224,6 +230,7 @@ Findings: <numbered, with file:line>
 ",
   subagent_type="integration-checker",
   ${models['integration-checker'] === 'inherit' ? '' : `model="${models['integration-checker']}",`}
+  ${efforts['integration-checker'] === 'inherit' ? '' : `effort="${efforts['integration-checker']}",`}
   description="Integration check phase {phase_number}"
 )
 ```
@@ -246,6 +253,7 @@ Return per doc: claims checked, claims that are wrong, claims you could not conf
 ",
   subagent_type="doc-verifier",
   ${models['doc-verifier'] === 'inherit' ? '' : `model="${models['doc-verifier']}",`}
+  ${efforts['doc-verifier'] === 'inherit' ? '' : `effort="${efforts['doc-verifier']}",`}
   description="Verify docs for phase {phase_number}"
 )
 ```
@@ -298,6 +306,7 @@ Return: ## PLANNING COMPLETE with the plan path
 ",
   subagent_type="phase-preparer",
   ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
+  ${efforts['phase-preparer'] === 'inherit' ? '' : `effort="${efforts['phase-preparer']}",`}
   description="Plan gap closure for phase {phase_number}"
 )
 ```

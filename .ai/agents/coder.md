@@ -1,6 +1,5 @@
 ---
 name: coder
-maxTurns: 40
 disallowedTools: Agent, Task
 description: Executes one assigned phase plan with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, mcp__context7__*, mcp__plugin_context7_context7__*

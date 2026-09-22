@@ -11,7 +11,7 @@ actual source, documentation and user intent.
 | `REQUIREMENTS.md` | Identified desired outcomes and traceability | Prose by the orchestrator; the Traceability Status column by `requirements.*` |
 | `ROADMAP.md` | Phase goals, order, plan checklists, milestones and progress | Runtime `phase.*`, `roadmap.*` and `milestone.*` verbs |
 | `STATE.md` | Position, decisions, blockers and session continuity | Runtime `state.*` verbs; counters derived from ROADMAP.md. A bounded digest, not an archive |
-| `config.yaml` | Commit behavior, model overrides and the project's real checks | Project setup |
+| `config.yaml` | Commit behavior, model and effort overrides and the project's real checks | Project setup |
 | `phases/NN-name/` | Context, research, PLAN/SUMMARY pairs and verification | Assigned agents; the orchestrator integrates |
 | `codebase/` | Revision-specific maps and research on existing implementation | codebase-mapper; freshness derived from git by `codebase.status` |
 | `specs/` | Verified current behavior | Assigned author or doc-writer |

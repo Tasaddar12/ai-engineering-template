@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import gitops, milestones, phases, quick, todos, verification
 from .config import load as load_config
-from .models import installed_agents, resolve_model
+from .models import installed_agents, resolve_effort, resolve_model
 from .paths import read_text
 from .roadmap import Roadmap, as_number, display_number
 from .state import State, progress_bar
@@ -59,6 +59,10 @@ def models_for(workspace, names):
     return {name: resolve_model(workspace, name)["model"] for name in names}
 
 
+def efforts_for(workspace, names):
+    return {name: resolve_effort(workspace, name)["effort"] for name in names}
+
+
 def phase_op(workspace, number):
     """Shared bundle for every workflow that operates on one phase."""
     payload = common(workspace)
@@ -74,6 +78,7 @@ def phase_op(workspace, number):
 def plan_phase(workspace, number):
     payload = phase_op(workspace, number)
     payload["models"] = models_for(workspace, PLANNING_AGENTS)
+    payload["efforts"] = efforts_for(workspace, PLANNING_AGENTS)
     payload.update(installed_agents(workspace, PLANNING_AGENTS))
     # `requirements` stays the phase's own ids from the roadmap; the project-wide
     # list is separate so a bundle can never clobber the narrower one.
@@ -85,6 +90,7 @@ def plan_phase(workspace, number):
 def execute_phase(workspace, number):
     payload = phase_op(workspace, number)
     payload["models"] = models_for(workspace, EXECUTION_AGENTS)
+    payload["efforts"] = efforts_for(workspace, EXECUTION_AGENTS)
     payload.update(installed_agents(workspace, EXECUTION_AGENTS))
     if payload.get("phase_found") and payload.get("phase_dir"):
         payload["plan_index"] = phases.plan_index(workspace, number)
@@ -96,6 +102,7 @@ def execute_phase(workspace, number):
 def verify_work(workspace, number):
     payload = phase_op(workspace, number)
     payload["models"] = models_for(workspace, VERIFY_AGENTS)
+    payload["efforts"] = efforts_for(workspace, VERIFY_AGENTS)
     payload.update(installed_agents(workspace, VERIFY_AGENTS))
     payload["verification"] = verification.status(workspace, number)
     payload["checks"] = verification.configured_checks(workspace)
@@ -114,6 +121,7 @@ def new_milestone(workspace):
                               if item.status != "Complete"]
     payload["next_phase_number"] = roadmap.next_integer() if roadmap.exists else 1
     payload["models"] = models_for(workspace, PLANNING_AGENTS)
+    payload["efforts"] = efforts_for(workspace, PLANNING_AGENTS)
     return payload
 
 
@@ -192,6 +200,8 @@ def onboard(workspace):
     payload["initialized"] = (payload["phase_count"] > 0
                               and unfilled["project"] == "filled")
     payload["models"] = models_for(workspace, PLANNING_AGENTS + ("codebase-mapper",))
+    payload["efforts"] = efforts_for(
+        workspace, PLANNING_AGENTS + ("codebase-mapper",))
     payload.update(installed_agents(workspace, PLANNING_AGENTS))
     payload["checks_configured"] = bool(verification.configured_checks(workspace))
     payload["templates_dir"] = str(TEMPLATES)
@@ -213,6 +223,7 @@ def ship(workspace, number=None):
     payload["git"]["is_protected"] = (
         payload["git"]["current_branch"] in {payload["git"]["base_branch"], "main", "master"})
     payload["models"] = models_for(workspace, ("code-reviewer",))
+    payload["efforts"] = efforts_for(workspace, ("code-reviewer",))
     return payload
 
 
@@ -222,6 +233,7 @@ def quick_bundle(workspace):
     payload["open"] = quick.listing(workspace, "open")["tasks"]
     payload["checks_configured"] = bool(verification.configured_checks(workspace))
     payload["models"] = models_for(workspace, QUICK_AGENTS)
+    payload["efforts"] = efforts_for(workspace, QUICK_AGENTS)
     payload.update(installed_agents(workspace, QUICK_AGENTS))
     return payload
 

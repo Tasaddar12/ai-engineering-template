@@ -1,6 +1,5 @@
 ---
 name: code-reviewer
-maxTurns: 40
 disallowedTools: Agent, Task
 description: Reviews source files for bugs, security issues, and code quality problems. Produces structured findings classified by severity. Dispatched independently before a phase closes and during verification.
 tools: Read, Write, Bash, Grep, Glob, Skill

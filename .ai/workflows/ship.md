@@ -27,17 +27,22 @@ Valid subagent types (use these exact names — never fall back to a generic age
 </available_agent_types>
 
 <model_selection>
-Models are injected inline at dispatch, never read from an agent's frontmatter.
-Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+Model and effort are injected inline at dispatch, never read from an agent's
+frontmatter. Resolve both from the runtime and pass them on the `Agent(...)`
+call:
 
 ```bash
 phase_run query resolve-model <agent> --raw
+phase_run query resolve-effort <agent> --raw
 ```
 
-A result of `inherit` means the project set no override — **omit the `model`
-argument entirely** in that case and let the host choose. Pass `model` only when
-resolution returned a concrete model name. The `models` map in each init bundle
-carries the same resolved values for every agent that workflow dispatches.
+A result of `inherit` means the project set no override — **omit that argument
+entirely** and let the host choose. Pass `model` only when resolution returned a
+concrete model id, and `effort` only when it returned one of `low`, `medium`,
+`high`, `xhigh` or `max`. The two resolve independently: a role can carry an
+effort and no model, or the reverse. The `models` and `efforts` maps in each
+init bundle carry the same resolved values for every agent that workflow
+dispatches.
 </model_selection>
 
 <process>
@@ -208,6 +213,7 @@ Findings: <numbered, each with file:line and severity (critical|warning)>
 ",
   subagent_type="code-reviewer",
   ${models['code-reviewer'] === 'inherit' ? '' : `model="${models['code-reviewer']}",`}
+  ${efforts['code-reviewer'] === 'inherit' ? '' : `effort="${efforts['code-reviewer']}",`}
   description="Pre-ship review of phase {phase_number}"
 )
 ```

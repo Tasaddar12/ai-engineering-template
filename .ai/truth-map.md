@@ -34,7 +34,7 @@
 | Workflow procedure | `workflows/*.md` | The command names it; the workflow owns it |
 | Artifact and handoff contract details | `references/` | Load only when relevant |
 | Skill discovery and installation | [install](commands/install.md) | Skills install at each host's discovery location |
-| Commit behavior, model overrides and project checks | [config](../.planning/config.yaml) | Avoid duplicating defaults |
+| Commit behavior, model and effort overrides and project checks | [config](../.planning/config.yaml) | Avoid duplicating defaults |
 | Runtime verb interface | [runtime](runtime/README.md) | Use verified verb spellings |
 | Phase numbering, roadmap structure, derived counters | The runtime | Never hand-edit what a verb owns |
 

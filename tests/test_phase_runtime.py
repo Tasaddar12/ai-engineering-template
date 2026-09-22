@@ -522,11 +522,60 @@ class Dispatch(RuntimeCase):
         self.assertTrue(result["inherit"])
 
     def test_config_overrides_the_agent_model(self):
-        self.run_verb("config-set", "agents.coder.model", "opus")
+        self.run_verb("config-set", "agents.coder.model", "claude-opus-5")
         result = self.run_verb("resolve-model", "coder")
-        self.assertEqual(result["model"], "opus")
+        self.assertEqual(result["model"], "claude-opus-5")
         self.assertEqual(result["source"], "config")
         self.assertFalse(result["inherit"])
+
+    def test_any_model_id_is_accepted(self):
+        """Model ids are an open set — a new one must not need a patch here."""
+        self.run_verb("config-set", "agents.coder.model", "claude-fable-5-1")
+        self.assertEqual(
+            self.run_verb("resolve-model", "coder")["model"], "claude-fable-5-1")
+
+    def test_resolve_effort_inherits_when_no_override_is_configured(self):
+        result = self.run_verb("resolve-effort", "coder")
+        self.assertEqual(result["source"], "default")
+        self.assertEqual(result["effort"], "inherit")
+        self.assertTrue(result["inherit"])
+
+    def test_config_overrides_the_agent_effort(self):
+        self.run_verb("config-set", "agents.coder.effort", "xhigh")
+        result = self.run_verb("resolve-effort", "coder")
+        self.assertEqual(result["effort"], "xhigh")
+        self.assertEqual(result["source"], "config")
+        self.assertFalse(result["inherit"])
+
+    def test_effort_resolves_independently_of_model(self):
+        """One dial set is not the other set — a role may carry either alone."""
+        self.run_verb("config-set", "agents.verifier.effort", "max")
+        self.assertEqual(
+            self.run_verb("resolve-model", "verifier")["model"], "inherit")
+        self.assertEqual(
+            self.run_verb("resolve-effort", "verifier")["effort"], "max")
+
+    def test_unknown_effort_fails_instead_of_reaching_the_host(self):
+        """The effort scale is closed, so a typo is caught here, not at dispatch."""
+        self.run_verb("config-set", "agents.coder.effort", "extreme")
+        failure = self.run_verb("resolve-effort", "coder", expect_ok=False)
+        self.assertEqual(failure["code"], "bad-effort")
+
+    def test_resolve_agent_carries_both_dials_and_no_turn_cap(self):
+        self.run_verb("config-set", "agents.coder.model", "claude-sonnet-5")
+        self.run_verb("config-set", "agents.coder.effort", "high")
+        result = self.run_verb("resolve-agent", "coder")
+        self.assertEqual(result["model"], "claude-sonnet-5")
+        self.assertEqual(result["effort"], "high")
+        self.assertEqual(result["effort_source"], "config")
+        self.assertNotIn("max_turns", result)
+
+    def test_init_bundles_carry_an_efforts_map_beside_models(self):
+        self.run_verb("config-set", "agents.coder.effort", "high")
+        bundle = self.run_verb("init.execute-phase", "1")
+        self.assertEqual(bundle["efforts"]["coder"], "high")
+        self.assertEqual(bundle["efforts"]["code-reviewer"], "inherit")
+        self.assertEqual(set(bundle["efforts"]), set(bundle["models"]))
 
 
 class WorktreeIsolation(RuntimeCase):

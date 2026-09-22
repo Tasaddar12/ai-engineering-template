@@ -31,17 +31,22 @@ Valid subagent types (use these exact names — never fall back to a generic age
 </available_agent_types>
 
 <model_selection>
-Models are injected inline at dispatch, never read from an agent's frontmatter.
-Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+Model and effort are injected inline at dispatch, never read from an agent's
+frontmatter. Resolve both from the runtime and pass them on the `Agent(...)`
+call:
 
 ```bash
 phase_run query resolve-model <agent> --raw
+phase_run query resolve-effort <agent> --raw
 ```
 
-A result of `inherit` means the project set no override — **omit the `model`
-argument entirely** in that case and let the host choose. Pass `model` only when
-resolution returned a concrete model name. The `models` map in each init bundle
-carries the same resolved values for every agent that workflow dispatches.
+A result of `inherit` means the project set no override — **omit that argument
+entirely** and let the host choose. Pass `model` only when resolution returned a
+concrete model id, and `effort` only when it returned one of `low`, `medium`,
+`high`, `xhigh` or `max`. The two resolve independently: a role can carry an
+effort and no model, or the reverse. The `models` and `efforts` maps in each
+init bundle carry the same resolved values for every agent that workflow
+dispatches.
 </model_selection>
 
 <scope_guardrail>
@@ -72,7 +77,7 @@ INIT=$(phase_run query init.quick)
 ```
 
 Extract from the init JSON: `commit_docs`, `response_language`, `text_mode`,
-`models`, `agents_installed`, `missing_agents`, `checks_configured`, `open`,
+`models`, `efforts`, `agents_installed`, `missing_agents`, `checks_configured`, `open`,
 `paths`.
 
 **If `response_language` is set:** all user-facing output MUST be presented in
@@ -200,6 +205,7 @@ Return: ## PLANNING COMPLETE with the plan path
 ",
   subagent_type="phase-preparer",
   ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
+  ${efforts['phase-preparer'] === 'inherit' ? '' : `effort="${efforts['phase-preparer']}",`}
   description="Quick plan: ${DESCRIPTION}"
 )
 ```
@@ -233,6 +239,7 @@ Findings: <numbered, each naming the task it affects>
 ",
   subagent_type="phase-checker",
   ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
+  ${efforts['phase-checker'] === 'inherit' ? '' : `effort="${efforts['phase-checker']}",`}
   description="Check quick plan ${QUICK_ID}"
 )
 ```
@@ -298,6 +305,7 @@ and the verification you actually ran
 ",
   subagent_type="coder",
   ${models['coder'] === 'inherit' ? '' : `model="${models['coder']}",`}
+  ${efforts['coder'] === 'inherit' ? '' : `effort="${efforts['coder']}",`}
   isolation="worktree",
   description="Execute quick task ${QUICK_ID}"
 )
@@ -352,6 +360,7 @@ Findings: <what is actually true in the code>
 ",
   subagent_type="verifier",
   ${models['verifier'] === 'inherit' ? '' : `model="${models['verifier']}",`}
+  ${efforts['verifier'] === 'inherit' ? '' : `effort="${efforts['verifier']}",`}
   description="Verify quick task ${QUICK_ID}"
 )
 ```

@@ -22,17 +22,22 @@ Valid subagent types (use these exact names — never fall back to a generic age
 </available_agent_types>
 
 <model_selection>
-Models are injected inline at dispatch, never read from an agent's frontmatter.
-Resolve each agent's model from the runtime and pass it on the `Agent(...)` call:
+Model and effort are injected inline at dispatch, never read from an agent's
+frontmatter. Resolve both from the runtime and pass them on the `Agent(...)`
+call:
 
 ```bash
 phase_run query resolve-model <agent> --raw
+phase_run query resolve-effort <agent> --raw
 ```
 
-A result of `inherit` means the project set no override — **omit the `model`
-argument entirely** in that case and let the host choose. Pass `model` only when
-resolution returned a concrete model name. The `models` map in each init bundle
-carries the same resolved values for every agent that workflow dispatches.
+A result of `inherit` means the project set no override — **omit that argument
+entirely** and let the host choose. Pass `model` only when resolution returned a
+concrete model id, and `effort` only when it returned one of `low`, `medium`,
+`high`, `xhigh` or `max`. The two resolve independently: a role can carry an
+effort and no model, or the reverse. The `models` and `efforts` maps in each
+init bundle carry the same resolved values for every agent that workflow
+dispatches.
 </model_selection>
 
 <process>
@@ -52,7 +57,7 @@ INIT=$(phase_run query init.new-milestone)
 ```
 
 Extract: `current_milestone`, `milestones`, `phase_count`, `open_phases`,
-`next_phase_number`, `project_exists`, `roadmap_exists`, `models`,
+`next_phase_number`, `project_exists`, `roadmap_exists`, `models`, `efforts`,
 `commit_docs`, `text_mode`, `response_language`, `paths`.
 
 **If `response_language` is set:** all user-facing output MUST be presented in
@@ -122,6 +127,7 @@ Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
 ",
   subagent_type="researcher",
   ${models['researcher'] === 'inherit' ? '' : `model="${models['researcher']}",`}
+  ${efforts['researcher'] === 'inherit' ? '' : `effort="${efforts['researcher']}",`}
   description="Research milestone ${MILESTONE_NAME}"
 )
 ```

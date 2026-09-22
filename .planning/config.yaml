@@ -61,48 +61,71 @@ codebase:
     stack: 1
     architecture: 15
 
-# Per-agent model overrides, and the only place a Claude subagent's model is
-# set. Agent definitions under .ai/agents/ deliberately carry no `model:`
-# frontmatter, so a role omitted here resolves to `inherit` and runs on whatever
-# model the orchestrator's own session is using.
+# Per-agent model and effort overrides, and the only place a Claude subagent's
+# model is set. Agent definitions under .ai/agents/ deliberately carry no
+# `model:` or `effort:` frontmatter, so a role omitted here resolves to
+# `inherit` and runs on whatever the orchestrator's own session is using.
+#
+# Models are full API ids, not a host's shorthand. `claude-opus-5` names one
+# model on every host and in every log; `opus` names whichever model that host
+# happens to point the alias at, which changes without this file changing.
 #
 # The tiers follow the work rather than the role name:
 #
-#   sonnet  authoring -- writing code, plans and prose against a settled
-#           decision, where the hard thinking already happened upstream
-#   opus    judgement -- research and independent review, where a miss is not
-#           caught by anything downstream and costs a whole phase
-#   haiku   mechanical -- running the project's commands and checking claims
-#           against their actual output
+#   claude-opus-5-5   the phase itself -- planning it, writing it, researching
+#                     it, reviewing it and verifying it, where a miss is not
+#                     caught by anything downstream and costs the whole phase
+#   claude-sonnet-5   the work around it -- debugging, documentation, mapping
+#                     and checking claims against their actual output, where a
+#                     miss surfaces immediately and costs one pass
+#
+# `effort` is the second dial: how hard the chosen model thinks, on the scale
+# low / medium / high / xhigh / max. It is the cheaper dial of the two -- a role
+# gains more from `high` than from a larger model, at a fraction of the cost of
+# moving it up a tier. Every role that produces something runs at `high`; the
+# two that only check what already exists run at `medium`, because reading an
+# artifact against a stated claim is bounded work and more thinking does not
+# find more of it.
 #
 # `coordinator` is deliberately absent: it is the orchestrating conversation,
 # not a worker the runtime spawns, so it keeps the session's own model.
 #
-# These are Claude aliases. Codex reads its own `model` from each role's TOML in
-# .codex/agents/ and ignores this block entirely.
+# This block is Claude's. Codex reads its own `model` from each role's TOML in
+# .codex/agents/ and ignores everything here.
 agents:
   coder:
-    model: sonnet
+    model: claude-opus-5-5
+    effort: high
   debugger:
-    model: sonnet
+    model: claude-sonnet-5
+    effort: high
   doc-writer:
-    model: sonnet
+    model: claude-sonnet-5
+    effort: high
   phase-preparer:
-    model: sonnet
+    model: claude-opus-5-5
+    effort: high
   codebase-mapper:
-    model: sonnet
+    model: claude-sonnet-5
+    effort: high
   researcher:
-    model: opus
+    model: claude-opus-5-5
+    effort: high
   code-reviewer:
-    model: opus
+    model: claude-opus-5-5
+    effort: high
   verifier:
-    model: opus
+    model: claude-opus-5-5
+    effort: high
   phase-checker:
-    model: opus
+    model: claude-opus-5-5
+    effort: high
   doc-verifier:
-    model: haiku
+    model: claude-sonnet-5
+    effort: medium
   integration-checker:
-    model: haiku
+    model: claude-sonnet-5
+    effort: medium
 
 verification:
   # The project's real checks, as argv lists without a shell. Run by

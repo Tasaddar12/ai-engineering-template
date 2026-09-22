@@ -39,27 +39,46 @@ evidence. Required docs and their corrections stay in the same phase. The
 
 ## Dispatching an agent
 
-Spawn by the exact role name above. Resolve the model from the runtime and pass
-it inline:
+Spawn by the exact role name above. Resolve the model and the effort from the
+runtime and pass both inline:
 
 ```bash
 phase_run query resolve-model <agent> --raw
+phase_run query resolve-effort <agent> --raw
 ```
 
-A resolved `inherit` means the project configured no override — omit the model
-argument and let the host choose. Pass `model` only when a concrete model came
-back. `phase_run query resolve-agent <agent>` returns the same value alongside
-the role's declared tools, disallowed tools, turn limit and skills.
+A resolved `inherit` means the project configured no override — omit that
+argument and let the host choose. The two resolve independently, so a role can
+carry an effort and no model, or the reverse. `phase_run query resolve-agent
+<agent>` returns both alongside the role's declared tools, disallowed tools and
+skills.
 
-**Markdown agent definitions carry no `model:` frontmatter.** Claude no longer
-reads a model from there, so it is supplied on the dispatch call instead. Set a
-per-agent override in `.planning/config.yaml`:
+**Markdown agent definitions carry no `model:` or `effort:` frontmatter.** Both
+are supplied on the dispatch call instead, which keeps one file answering for
+every role on every host. Set a per-agent override in `.planning/config.yaml`:
 
 ```yaml
 agents:
   coder:
-    model: opus
+    model: claude-opus-5
+    effort: xhigh
 ```
+
+Models are full API ids, never a host's shorthand: `claude-opus-5` names one
+model everywhere, while `opus` names whatever that host points the alias at.
+Effort is `low`, `medium`, `high`, `xhigh` or `max` — the scale is closed, and
+an unrecognised value fails resolution rather than reaching the host. It is the
+cheaper of the two dials: raising a reviewer's effort costs far less than moving
+that review to a larger model. Not every model has the scale (Haiku 4.5 does
+not), so leave effort unset for a role whose model does not take one.
+
+**No role caps its turns.** `maxTurns` is deliberately absent: the agents that
+used to carry it are the long ones — execution, review, documentation,
+verification — and a turn ceiling ends them mid-slice with committed work and no
+SUMMARY.md, which reads downstream as a blocked agent rather than a truncated
+one. Context, not turns, is what actually bounds an agent here, and
+`handoff.context_percent` already bounds that with a handoff that preserves the
+work.
 
 ## Native host definitions
 

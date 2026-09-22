@@ -143,12 +143,20 @@ claiming phases shipped when they did not is the record this exists to keep hone
 | Verb | Effect |
 |---|---|
 | `resolve-model <agent>` | Model for an agent: a project config override, otherwise `inherit` |
-| `resolve-agent <agent>` | Model, tools, disallowed tools, max turns and declared skills |
+| `resolve-effort <agent>` | Reasoning effort for an agent, on the same terms |
+| `resolve-agent <agent>` | Model, effort, tools, disallowed tools and declared skills |
 
-Agent definitions carry no `model:` frontmatter — the host no longer reads one
-from there, so the model is injected inline on the `Agent(...)` call. A resolved
-value of `inherit` means the project set no override, and the caller omits the
-model argument entirely.
+Agent definitions carry no `model:` and no `effort:` frontmatter — both are
+injected inline on the `Agent(...)` call, so one config file answers for every
+role on every host. A resolved value of `inherit` means the project set no
+override, and the caller omits that argument entirely. The two resolve
+independently: a role can carry an effort and no model, or the reverse.
+
+Configured models are full API ids (`claude-opus-5`), not a host's shorthand,
+and are not checked against a list — new ids ship between releases of this
+template. Effort is checked: `low`, `medium`, `high`, `xhigh`, `max` or
+`inherit`, and anything else fails with `bad-effort` rather than reaching the
+host as an unrecognised argument.
 
 | `agent-skills <agent>` | The agent's declared skills resolved against the installed skills root |
 | `agents.list` / `skills.list` | What is installed |
@@ -259,7 +267,8 @@ worktree:
   root: .worktrees         # must be gitignored, or execution stops
 agents:
   coder:
-    model: sonnet          # overrides the agent file's own model
+    model: claude-sonnet-5 # full API id, never a host alias
+    effort: high           # low | medium | high | xhigh | max
 verification:
   commands: []             # argv lists; run by verification.run-checks
 ```
