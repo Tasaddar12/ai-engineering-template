@@ -12,16 +12,13 @@ closed or recorded honestly.
 
 Task completion is a claim. Verification is evidence.
 
-**This workflow carries the phase through to publication.** Whether it was
-started by `/execute-phase` or directly, verification is followed by delivery:
-when it passes, run `/ship` in this same session. Never stop to tell the user to
-resume, start a fresh session, or run the next command, and never stop because a
-context advisory fired — the handoff limit applies to subagents, not to the
-orchestrating session. Issues found along the way never stop it either: fix
-what is in scope, leave everything else in the SUMMARY and the closing report,
-and block only the work that needs a person — see
-[issues found while working](../RULES.md#issues-found-while-working). The one
-question a run asks is the merge question in `/ship`.
+**Carry the phase through to publication in this session.** On `passed`, read
+`workflows/ship.md` and execute it.
+
+- Never tell the user to resume, `/clear`, start a fresh session, or run `/ship`.
+- Never stop because a `CONTEXT HANDOFF` advisory fired; it applies to subagents.
+- Route issues per [issues found while working](../RULES.md#issues-found-while-working).
+  Ask the user only the `/ship` merge question.
 </purpose>
 
 <required_reading>
@@ -231,10 +228,9 @@ A verifier that reached the context limit writes the report on what it examined
 and names the scope it did not reach. Continue that scope in a fresh verifier
 with the same `Agent(...)` call and its handoff in the `<handoff>` block — the
 four steps in
-[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation)
-— so the continuation adds to the existing report instead of re-reading every
-plan, summary and changed file to rebuild it. The integration and
-documentation checks below are continued the same way.
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
+The continuation adds its findings to the existing report. Continue the
+integration and documentation checks below the same way.
 </step>
 
 <step name="check_integration">
@@ -298,21 +294,20 @@ phase_run query verification.status "${phase_number}"
 
 **status: passed** → continue to `update_roadmap`.
 
-**status: human_needed** → the verifier could not judge some criterion. Do not
-convert it into a pass yourself, and do not stop to ask: report each such
-criterion — what a person must check and how — as what blocks shipping at the
-end of the run.
+**status: human_needed** → do not convert it to a pass and do not ask. List each
+such criterion — what a person must check and how — in the closing report as
+what blocks shipping.
 
 **status: gaps_found** → continue to `plan_gap_closure`.
 </step>
 
 <step name="plan_gap_closure">
-Do not ask how to proceed. Sort the gaps as
-[issues found while working](../RULES.md#issues-found-while-working) says:
-a gap between the phase and its goal or acceptance is closed now; a finding
-outside the phase's scope stays in the report. A gap whose fix would change a
-locked decision or acceptance is reported as a blocker. None of them becomes a
-todo.
+Do not ask how to proceed. Route each gap per
+[issues found while working](../RULES.md#issues-found-while-working):
+
+- Blocks the phase goal or acceptance: close it now (below).
+- Outside the phase's scope: leave it in the report.
+- Its fix changes a locked decision or acceptance: report it as a blocker.
 
 **Close the in-scope gaps now:** dispatch the phase-preparer in gap-closure mode:
 
@@ -348,16 +343,14 @@ Return: ## PLANNING COMPLETE with the plan path
 Then execute it through `workflows/execute-phase.md` and **re-verify**. Gap
 closure that is not re-verified is just more unverified work.
 
-**The rest** stays in the verification report, which is the record, and in the
-closing report. Do not create todos for it.
+Leave the rest in VERIFICATION.md and the closing report. Do not create todos.
 </step>
 
 <step name="revision_loop">
 Verify → close gaps → re-verify, at most **3** rounds.
 
-After the third, report the outstanding gaps, with the report, as what blocks
-shipping. Do not keep looping, do not stop
-mid-run to ask, and do not mark the phase verified to end the loop.
+After the third round, report the outstanding gaps and the report as what
+blocks shipping. Do not loop further, ask, or mark the phase verified.
 </step>
 
 <step name="update_roadmap">
@@ -413,14 +406,11 @@ Checks: {passed | failed | not configured}
 Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 ```
 
-**On `passed`, ship now.** Read `workflows/ship.md` and execute it for phase
-{phase_number} in this same session — do not print `/ship` for the user to run.
-Shipping opens or updates the pull request, waits for its checks, and asks the
-user only the merge question.
+**On `passed`:** read `workflows/ship.md` and execute it for phase
+{phase_number} in this session. Do not print `/ship` for the user.
 
-On any other status the phase cannot ship: report what blocks it — the gaps the
-user chose to record, or the `human_needed` criteria still undecided — as the
-blocker. Never report it as a command for the user to run.
+**On any other status:** report what blocks shipping — open gaps, undecided
+`human_needed` criteria. Do not tell the user to run a command.
 </step>
 
 </process>
@@ -436,8 +426,7 @@ blocker. Never report it as a command for the user to run.
 - Don't open a pull request or merge from here — a phase session is
   delivered once, by `/ship`
 - Don't close the phase session; the workflows after this one reuse it
-- Don't tell the user to `/clear`, resume, or run `/ship` — on `passed`, ship
-  yourself
+- Don't tell the user to `/clear`, resume, or run `/ship`
 </anti_patterns>
 
 <success_criteria>

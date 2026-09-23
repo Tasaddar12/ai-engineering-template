@@ -214,38 +214,32 @@ transcript. Follow [worker handoff](references/worker-handoff.md).
 
 ## Issues found while working
 
-An authorized run does not stop to ask about what it finds along the way, and it
-does not create todos for it either — a single phase would produce dozens, and a
-todo list nobody reads hides the few that matter. Every issue takes one of three
-routes:
+Never stop an authorized run to ask about an issue. Never create todos. Route
+each issue:
 
-1. **In scope: fix it now.** A defect, a failing check or test, a wrong
-   assumption in a plan, or a verification gap that stands between the phase and
-   its goal or acceptance, within the files and decisions the phase already
-   covers. The orchestrator hands it to the responsible coder or a debugger, or
-   plans gap closure, and records the deviation in the SUMMARY. Do not ask
-   whether to fix it.
-2. **Out of scope: note it and keep going.** Improvements, refactors,
-   pre-existing bugs the acceptance does not depend on, new capability, flaky
-   tests outside the phase, documentation debt, ideas. It stays in the plan
-   SUMMARY's Deferred section — what, where, the likely fix — and the run's
-   closing report lists what is still open once every plan has run.
-3. **Needs a human: block only what depends on it, keep going.** Changing a
-   locked decision or acceptance, anything destructive or irreversible, a
-   package whose legitimacy is unverified, credentials, access or spending.
-   Never guess these. Mark only the dependent plan or step blocked, continue
-   every independent piece of work, and report each blocked item — the options
-   and a recommendation — together at the end.
+1. **In scope** — a defect, failing check or test, wrong plan assumption, or
+   verification gap that blocks the phase goal or acceptance, inside the phase's
+   files and decisions: fix it now. Dispatch the responsible `coder` or a
+   `debugger` with `isolation="worktree"`, or plan gap closure. Record the
+   deviation in the SUMMARY.
+2. **Out of scope** — improvements, refactors, unrelated pre-existing bugs, new
+   capability, flaky tests outside the phase, documentation debt: leave it in the
+   plan SUMMARY's Deferred section (what, where, likely fix). List what is still
+   open in the closing report.
+3. **Needs a human** — changing a locked decision or acceptance; destructive or
+   irreversible actions; unverified packages; credentials, access or spending:
+   never guess. Mark only the dependent plan or step blocked, continue all
+   independent work, and list each item with its options and a recommendation
+   in the closing report.
 
-A choice that stays inside the phase's locked decisions, acceptance and declared
-scope is delegated discretion, not one of these: take the recommended option and
-record it with `state.add-decision`, saying it was decided within delegated
-discretion.
+For a choice inside the phase's locked decisions, acceptance and declared scope,
+take the recommended option and record it:
 
-None of these routes calls `todo.add`; todos come from the user, through
-[capture](commands/capture.md). The one question a run still asks is the merge
-question in `/ship`, because merging moves the base branch and needs the user's
-instruction.
+```bash
+phase_run query state.add-decision "<decision> (decided within delegated discretion)"
+```
+
+Do not call `todo.add`. Ask the user only the `/ship` merge question.
 
 ## Worktrees, integration and cleanup
 

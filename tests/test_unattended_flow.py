@@ -63,8 +63,8 @@ class UnattendedFlow(unittest.TestCase):
                             re.MULTILINE | re.DOTALL)
         self.assertIsNotNone(section, "RULES.md has no 'Issues found while working' section")
         body = section.group(1)
-        for route in ("In scope: fix it now", "Out of scope: note it and keep going",
-                      "Needs a human: block only what depends on it, keep going"):
+        for route in ("**In scope**", "**Out of scope**", "**Needs a human**",
+                      "Never stop an authorized run to ask", "Never create todos"):
             self.assertIn(route, body)
         self.assertNotIn("phase_run query todo.add", body)
 
@@ -104,7 +104,7 @@ class UnattendedFlow(unittest.TestCase):
         self.assertIn("does not apply to you", advisory.group(1))
         for name in ("execute-phase", "verify-work"):
             with self.subTest(workflow=name):
-                self.assertIn("never stop because", read(WORKFLOWS / (name + ".md")))
+                self.assertIn("never stop because", read(WORKFLOWS / (name + ".md")).lower())
 
 
 if __name__ == "__main__":

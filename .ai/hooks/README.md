@@ -16,9 +16,9 @@ title: Advisory host hooks
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
 | [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY. Works on both hosts, from different inputs — see below |
 | [context-handoff.sh](context-handoff.sh) | `Stop` | Nothing; clears the session's debounce state |
-| [context-handoff.sh](context-handoff.sh) | `SessionStart` (Codex only) | Nothing on stdout; records the orchestrating session's transcript so its tool uses are recognised and never measured |
-| [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Creates a subagent's isolated checkout under the project's worktree root (`.worktrees/`), branched from the dispatching checkout's `HEAD`, and prints its path |
-| [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Removes that checkout when git agrees it is clean; never its branch, never a dirty checkout |
+| [context-handoff.sh](context-handoff.sh) | `SessionStart` (Codex only) | Nothing on stdout; writes the orchestrator's transcript path to `.planning/handoffs/.root-<session>.json` |
+| [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Creates `.worktrees/<name>` on branch `worktree-<name>` from the dispatching checkout's `HEAD`; prints the path |
+| [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Runs `git worktree remove` without `--force`; keeps the branch |
 
 `worktree-guard.sh` is the exception to the advisory rule below: worktree
 isolation is a hard requirement of this project, so its dispatch check emits a
@@ -92,21 +92,15 @@ direct Bash launchers. They do not establish trusted live host execution.
 ## The handoff hook
 
 `context-handoff.sh` is the one managed hook that measures rather than inspects.
-It measures subagents only. The orchestrating session is never told to stop, and
-where it can be recognised it is not measured at all:
+It measures subagents only; it never tells the orchestrator to stop:
 
-- **Claude Code** names the calling agent with `agent_id` on every hook fired
-  inside a subagent, so a tool use with no agent identity is the orchestrator.
-- **Codex** gives a tool-use hook no agent identity — a subagent's call carries
-  the parent's session id and nothing naming the agent — so `SessionStart`
-  records the orchestrator's own transcript in `.planning/handoffs/.root-<session>.json`.
-  A tool use reporting that transcript is the orchestrator. Any other transcript
-  is a subagent's own: it is measured on that transcript and its record is keyed
-  by it, so parallel subagents sharing the parent's session id do not share one
-  record. The root record survives `Stop`, which ends a turn, not the session.
-
-Where neither applies — no `SessionStart` record, say — the advisory tells an
-orchestrator the limit does not apply to it and to keep running the workflow.
+- **Claude Code:** a tool use without `agent_id` is the orchestrator. Skip it.
+- **Codex:** a tool use whose `transcript_path` matches
+  `.planning/handoffs/.root-<session>.json` is the orchestrator. Skip it. Any
+  other transcript is a subagent: measure that transcript and key its record
+  `<session>--agent-<transcript stem>`. `Stop` keeps the root record.
+- **Neither recognised:** the advisory tells an orchestrator the limit does not
+  apply to it.
 It reads the session's own transcript -- `transcript_path` in the hook payload,
 which both hosts supply -- and takes the latest token reading from it. The
 advisory envelope is identical on both: `hookSpecificOutput.additionalContext`
@@ -213,27 +207,18 @@ orchestrator's job, not the hook's -- see
 
 ## Where worktrees are created
 
-Every worktree lives under the project's worktree root — `worktree.root` in
-`.planning/config.yaml`, `.worktrees/` by default — the same root the runtime
-creates its own checkouts under. Claude Code would otherwise create the checkout
-for a subagent dispatched with `isolation="worktree"` under `.claude/worktrees/`,
-branched from the repository's default branch. Both are wrong for a phase: the
-worktree is outside the root, and a coder in wave 2 starts without wave 1's work
-and halts at its branch check.
+Every worktree lives under `worktree.root` from `.planning/config.yaml`
+(default `.worktrees/`). Never under `.claude/worktrees/` or anywhere else.
 
-[worktree-location.sh](worktree-location.sh) replaces that step through
-Claude's `WorktreeCreate` event. It creates `<primary>/<root>/<name>` on branch
-`worktree-<name>` — Claude's own naming, which the integration step merges by —
-from the `HEAD` of the checkout that dispatched the agent, so a coder dispatched
-from the phase session starts on the phase branch. Claude reads the last line of
-stdout as the path; anything that fails exits non-zero, so the dispatch is
-refused rather than falling back to `.claude/worktrees/`. `WorktreeRemove`
-removes the checkout only when `git worktree remove` succeeds without `--force`,
-and keeps the branch for the wave to merge.
-
-The hook replaces Claude's creation entirely, so `.worktreeinclude` is not
-processed. Codex has no such event; its executors run in checkouts the runtime
-creates under the same root.
+- **Claude:** [worktree-location.sh](worktree-location.sh) handles
+  `WorktreeCreate`. It runs
+  `git worktree add -b worktree-<name> <primary>/<root>/<name> HEAD` from the
+  dispatching checkout and prints the path as the last stdout line. On any
+  failure it exits non-zero and the dispatch is refused. On `WorktreeRemove` it
+  runs `git worktree remove <path>` without `--force` and keeps the branch.
+  `.worktreeinclude` is not processed.
+- **Codex:** create each plan's checkout with
+  `phase_run query worktree.create <plan> --phase <N>`.
 
 ## Future hook work
 

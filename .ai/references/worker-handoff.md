@@ -122,85 +122,62 @@ SUMMARY.md. A handoff only says where the previous attempt stopped.
 
 ### Recording your digest
 
-The hook can record only where you stopped — revision, dirty paths, occupancy.
-What you *learned* exists only in your context, and without it the agent that
-continues re-reads your whole assignment to rebuild it. So at the limit, before
-you return, add it to the record the advisory named:
+At the limit, before you return, add your digest to the record the advisory
+named. Write it from what is already in your context; read nothing to write it.
 
-```text
-phase_run query handoff.write <id from the advisory>   --artifact <the file you are writing>   --completed <item> ...   --findings "<fact, with its path:line>" ...   --files-read <path> ...   --remaining <item> ...   --next-action "<the first thing to do next>"
+```bash
+phase_run query handoff.write <id from the advisory> \
+  --artifact <the file you are writing> \
+  --completed <item> ... \
+  --findings "<fact, with its path:line>" ... \
+  --files-read <path> ... \
+  --remaining <item> ... \
+  --next-action "<the first thing to do next>"
 ```
 
-- A **finding** is anything the next agent would otherwise open a file to learn:
-  a signature, where something lives, what a config says, a decision you reached
-  and why. Cite `path:line` so it can be checked without re-reading.
-- **Files read** are the files your findings cover. List a file only when the
-  findings carry what the next agent needs from it.
-- Write it from what is already in your context. Do not read anything to write
-  the digest.
-- `handoff.write` merges into the record: the hook's fields survive, and a later
-  call changes only the fields it names. `--reason` may be left out once the
-  record exists. An agent that stops for another reason — a turn limit, a
-  decision it cannot make — records the same digest under an id of its own,
-  with `--reason`.
-
-The digest is additional to your partial artifact, SUMMARY or report, never in
-place of it: those are the work, and the digest is what saves the next agent
-from rediscovering it.
+- `--findings`: each fact the next agent would otherwise open a file to learn —
+  a signature, a location, a config value, a decision and its reason. Cite
+  `path:line`.
+- `--files-read`: only files whose needed content the findings carry.
+- `handoff.write` merges into the existing record and changes only the fields
+  you pass. Omit `--reason` when the record exists.
+- Stopping for another reason (turn limit, a decision you cannot make): write
+  the same digest under your own id, with `--reason`.
+- Still produce your partial artifact, SUMMARY or report. The digest does not
+  replace it.
 
 ### Continuing from a handoff
 
-A prompt that carries a `<handoff>` block is a continuation. The block is the
-previous attempt's record — its findings, the files it already read, what it
-finished and what is left — and it is your starting context:
+A prompt with a `<handoff>` block is a continuation:
 
 - Ingest the block first. It replaces the assignment's required reading.
 - Do not re-read a file it lists as already read, repeat a search its findings
   answer, or re-verify an established finding.
-- Open a file only when you are about to edit it, when a fact the remaining work
-  needs is not in the block, or when `git diff <revision at interruption> --
-  <path>` shows it changed since — and then read only the part you need.
-- A plan executor still reads a file before editing it; of the plan's
-  `read_first` files it reads only those a remaining task edits or depends on.
-- Work only the remaining items. If the limit arrives again, record your own
-  digest the same way; the next continuation starts from yours.
+- Open a file only to edit it, for a fact the block lacks, or when
+  `git diff <revision at interruption> -- <path>` shows it changed. Read only
+  the part you need.
+- Plan executors: read each file before editing it; of the plan's `read_first`
+  files, read only those a remaining task edits or depends on.
+- Work only the remaining items. At the limit again, record your own digest.
 
 ### Dispatching a continuation
 
-The orchestrator picks a record up in three verbs:
-
-```text
-phase_run query handoff.list                     # what is pending, oldest first
-phase_run query handoff.read <id>                # the record, plus a continuation brief
-phase_run query handoff.consume <id>             # delete it once the work is reassigned
+```bash
+phase_run query handoff.list          # pending records, oldest first
+phase_run query handoff.read <id>     # the record plus its continuation brief
+phase_run query handoff.consume <id>  # delete it once the work is reassigned
 ```
 
-Records are written in the checkout the stopped agent worked in — the session
-worktree, or a plan's own worktree when the host isolated it. Run the verbs from
-that checkout.
+Run them from the checkout the stopped agent worked in: the session worktree,
+or the plan's own worktree when the host isolated it.
 
-Every continuation dispatch follows the same four steps, whichever workflow
-makes it:
+For every continuation:
 
-1. `handoff.list`, and pick the record whose `agent` is the role being
-   continued. A partial return with no record still continues, without a
-   `<handoff>` block.
-2. `handoff.read <id>` and take its `continuation` field.
-3. Dispatch the same `Agent(...)` call with that field, **verbatim**, in a
-   `<handoff>` block ahead of `<required_reading>`. Do not paraphrase it, trim
-   its findings or add the original required reading back: the block is what
-   the continuation ingests in place of that reading. Name only the remaining
-   work as the assignment.
-4. `handoff.consume <id>` in the same turn. The brief carries the whole record,
-   so the continuation has everything once the file is gone, and a record left
-   on disk after its work is reassigned is what puts a second agent on a plan
-   the first is already finishing.
-
-The `continuation` brief is shaped by the role that stopped. For a plan
-executor it names the plan, the SUMMARY to read first, the revision at
-interruption and the uncommitted paths. For a researcher it says to read the
-existing RESEARCH.md and research only its `## Not Yet Researched` questions;
-other artifact roles and reviewers are told to continue only what the previous
-attempt left uncovered. Every brief then carries the digest and the reading
-rule above; a record with no digest still tells the continuation to rebuild only
-what the remaining work needs.
+1. Run `handoff.list` and pick the record whose `agent` is the role being
+   continued. With no record, continue without a `<handoff>` block.
+2. Run `handoff.read <id>` and take its `continuation` field.
+3. Dispatch the same `Agent(...)` call with that field verbatim in a
+   `<handoff>` block ahead of `<required_reading>`. Do not paraphrase or trim
+   it, and do not add the original required reading back. Assign only the
+   remaining work.
+4. Run `handoff.consume <id>` in the same turn.

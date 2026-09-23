@@ -143,11 +143,9 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    git -C "${SESSION_WORKTREE}" status --short
    ```
 
-   If there are uncommitted changes, inspect them. Phase work that was left
-   uncommitted is committed with a descriptive message. Anything else is left in
-   place and reported as what blocks shipping. Never ship
-   over a dirty tree: it publishes something nobody reviewed, and the
-   uncommitted part does not reach the pull request at all.
+   If there are uncommitted changes, commit the phase's work with a descriptive
+   message. Leave anything else in place and report it as the blocker. Never
+   ship over a dirty tree.
 
 3. **The session branch is checked out, and it is not the base branch.**
 
@@ -317,10 +315,7 @@ never means the PR is ready to merge.
 phase_run query pr.checks "${SESSION_BRANCH}" --wait 240
 ```
 
-`--wait` re-reads a `pending` verdict until it settles, for up to four minutes a
-call — well inside the command limits of both Claude Code (ten minutes) and
-Codex's background polling (five). While the verdict is still `pending`, call it
-again, up to twelve calls in all. Waiting is this step's job; it is never handed
+Repeat the call while `state` is `pending`, up to 12 calls. Never hand the wait
 to the user.
 
 The verdict decides; you do not. Report the state and the check names behind it
@@ -329,19 +324,20 @@ exactly as observed:
 | `state` | What to do |
 |---|---|
 | `passing` | Continue to the merge gate |
-| `pending` | Still pending after twelve waiting calls: report the checks that never settled as the blocker, with their links. Do not tell the user to re-run `/ship` |
-| `failing` | Fix it and judge again — see below. The pull request stays open and keeps its history; do not open a second one |
+| `pending` | Still pending after 12 calls: report the unsettled checks and their links as the blocker |
+| `failing` | Fix and re-judge (below). Keep the same pull request; never open a second one |
 | `none` | The pull request has no checks. The `verification.run-checks` run in preflight is the project's own evidence — carry `--local-checks-passed` into the merge only because it passed there. If no checks are configured either, there is no evidence and `pr.merge` refuses; report that refusal as correct |
 
-**Fixing a failing check.** Read the failing checks' logs (`gh run view
---log-failed` for each run behind a failing check). Dispatch one `debugger`
-with `isolation="worktree"`, the failing check names, their log excerpts and
-the session branch as its scope; it commits the fix on its own branch. Merge
-that branch into the session branch fast-forward only
-(`git merge --ff-only <branch>` from the session worktree), push, and run the
-waiting `pr.checks` call again. At most two fix rounds. A check still failing
-after the second is a blocker: report it with its logs and stop — do not tell
-the user to re-run `/ship`.
+**Fixing a failing check** — at most 2 rounds:
+
+1. Read each failing run's log: `gh run view <run-id> --log-failed`
+2. Dispatch one `debugger` with `isolation="worktree"`, giving it the failing
+   check names, the log excerpts and the session branch.
+3. From the session worktree: `git merge --ff-only <debugger-branch>`, then
+   `git push`.
+4. Run `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240` again.
+
+Still failing after round 2: report it with its logs as the blocker.
 </step>
 
 <step name="merge_and_close">
@@ -434,10 +430,8 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - Don't open a second pull request because the first one's checks failed — fix
   them on the same branch and push again
 - Don't merge without confirming, unless `workflow.auto_advance` says otherwise
-- Don't stop on `pending` checks or hand waiting to the user — wait with
-  `pr.checks --wait`
-- Don't tell the user to re-run `/ship`; fix failing checks, or report a
-  blocker
+- Don't hand waiting on `pending` checks to the user
+- Don't tell the user to re-run `/ship`
 - Don't `--force` a preserved session away to make the report look clean
 - Don't report CI as passing because the PR opened; report what `gh` observed
 - Don't compose the PR body from the diff when the phase's own records say it better
