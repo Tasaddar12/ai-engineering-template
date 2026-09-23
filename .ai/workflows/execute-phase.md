@@ -548,11 +548,6 @@ re-review. Warnings are recorded in the phase summary for the verifier to weigh;
 they do not block.
 </step>
 
-<step name="verify_phase_goal">
-Do not verify here and do not print `/verify-work` for the user. `completion`
-runs it.
-</step>
-
 <step name="update_roadmap">
 Tick each completed plan through the runtime so the roadmap, the progress table
 and STATE.md counters all move together:
@@ -616,10 +611,12 @@ Blocked for a person: {plans, their options and the recommendation} | none
 
 Verifying phase {phase_number} now.
 ```
+</step>
 
-Then invoke the `verify-work` skill for phase {phase_number}
-(`/verify-work {phase_number}`) immediately, in this session. If plans are still
-blocked, report them as the blocker instead.
+<step name="run_verify_work">
+Invoke the `verify-work` skill for phase {phase_number}
+(`/verify-work {phase_number}`) in this session. If plans are still blocked,
+report them as the blocker instead.
 </step>
 
 </process>

@@ -37,10 +37,13 @@ class UnattendedFlow(unittest.TestCase):
 
     def test_execute_phase_continues_into_verification(self):
         text = read(WORKFLOWS / "execute-phase.md")
-        completion = step(text, "completion")
-        self.assertIn("`verify-work` skill", completion)
-        self.assertIn("immediately", completion)
-        self.assertNotIn("Next Up", completion)
+        self.assertNotIn("Next Up", step(text, "completion"))
+        hand_off = step(text, "run_verify_work")
+        self.assertIn("`verify-work` skill", hand_off)
+        self.assertIn("/verify-work {phase_number}", hand_off)
+        steps = re.findall(r'<step name="([a-z_]+)">', text)
+        self.assertEqual("run_verify_work", steps[-1], "the hand-off must be the last step")
+        self.assertNotIn("verify_phase_goal", steps)
         self.assertNotIn("workflows/verify-work.md", text)
 
     def test_a_partial_execution_continues_without_asking(self):
