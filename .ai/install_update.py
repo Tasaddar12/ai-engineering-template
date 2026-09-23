@@ -160,7 +160,7 @@ def plan_update(source, target, host, hooks, installer, prune=False, previous=No
         if name in (".codex/config.toml", ".claude/settings.json"):
             merge = (installer.merge_codex_config if name.endswith(".toml")
                      else installer.merge_hooks)
-            merged = merge(current, content, destination)
+            merged = merge(current, content, destination, replace=True)
             if merged != current:
                 backups.add(destination)
                 desired[name] = merged
