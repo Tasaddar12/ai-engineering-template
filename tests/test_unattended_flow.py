@@ -63,10 +63,10 @@ class UnattendedFlow(unittest.TestCase):
                             re.MULTILINE | re.DOTALL)
         self.assertIsNotNone(section, "RULES.md has no 'Issues found while working' section")
         body = section.group(1)
-        for route in ("In scope: fix it now", "Out of scope: record a todo and keep going",
-                      "Needs a human: record it, block only what depends on it, keep going"):
+        for route in ("In scope: fix it now", "Out of scope: note it and keep going",
+                      "Needs a human: block only what depends on it, keep going"):
             self.assertIn(route, body)
-        self.assertIn("phase_run query todo.add", body)
+        self.assertNotIn("phase_run query todo.add", body)
 
     def test_no_issue_along_the_way_stops_to_ask(self):
         execute = read(WORKFLOWS / "execute-phase.md")
@@ -82,13 +82,16 @@ class UnattendedFlow(unittest.TestCase):
                 # "Do not ask how to proceed" is the rule, not a question.
                 self.assertNotRegex(text, r"(?i)(?<!not )\bask (the user|for a decision|how to proceed)")
                 self.assertNotIn("offer to show", text)
-        self.assertIn("todo", step(execute, "checkpoint_handling"))
+        self.assertIn("closing report", step(execute, "checkpoint_handling"))
 
-    def test_deferred_items_become_todos(self):
+    def test_no_workflow_creates_todos_on_its_own(self):
+        """A single phase would otherwise record dozens; todos come from the user."""
+        for path in (WORKFLOWS / "execute-phase.md", WORKFLOWS / "verify-work.md",
+                     WORKFLOWS / "ship.md", ROOT / ".ai" / "agents" / "coder.md"):
+            with self.subTest(file=path.name):
+                self.assertNotIn("todo.add", read(path))
         aggregate = step(read(WORKFLOWS / "execute-phase.md"), "aggregate_results")
-        self.assertIn("phase_run query todo.add", aggregate)
-        self.assertIn("todo.list", aggregate)
-        self.assertIn("record as todos", read(ROOT / ".ai" / "agents" / "coder.md"))
+        self.assertIn("closing report", aggregate)
 
     def test_the_orchestrator_is_never_told_to_stop_at_the_limit(self):
         hook = read(ROOT / ".ai" / "hooks" / "context-handoff.sh")
