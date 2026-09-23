@@ -212,6 +212,48 @@ Give agents their assignment, the applicable constraints, the files their plan
 names in `read_first`, and the dependency summaries they need — not every
 transcript. Follow [worker handoff](references/worker-handoff.md).
 
+## Issues found while working
+
+An authorized run does not stop to ask about what it finds along the way. Every
+issue that comes up during planning, execution, verification or shipping takes
+one of three routes, and only the third ever waits on a person — and even then,
+only the work that depends on it waits.
+
+1. **In scope: fix it now.** A defect, a failing check or test, a wrong
+   assumption in a plan, or a verification gap that stands between the phase and
+   its goal or acceptance, within the files and decisions the phase already
+   covers. The orchestrator hands it to the responsible coder or a debugger, or
+   plans gap closure, and records the deviation in the SUMMARY. Do not ask
+   whether to fix it.
+2. **Out of scope: record a todo and keep going.** Improvements, refactors,
+   pre-existing bugs the acceptance does not depend on, new capability, flaky
+   tests outside the phase, documentation debt, ideas. The orchestrator records
+   each one — agents list them in their SUMMARY's Deferred section, since they
+   edit only their plan's paths:
+
+   ```bash
+   phase_run query todo.add "<title>" --problem "<what was found, where>" \
+     --solution "<the likely fix>" --area "<area>" --severity <minor|major|critical> \
+     --files <path> ...
+   ```
+
+   Check `todo.list` first so the same item is not recorded twice.
+3. **Needs a human: record it, block only what depends on it, keep going.**
+   Changing a locked decision or acceptance, anything destructive or
+   irreversible, a package whose legitimacy is unverified, credentials, access or
+   spending. Never guess these. Record a `critical` todo carrying the options and
+   a recommendation, mark only the dependent plan or step blocked, continue every
+   independent piece of work, and report the blocked items together at the end.
+
+A choice that stays inside the phase's locked decisions, acceptance and declared
+scope is delegated discretion, not one of these: take the recommended option,
+record it with `state.add-decision` saying it was decided within delegated
+discretion, and record a `minor` todo to review it.
+
+Every run's closing report lists the todos it recorded. The one question a run
+still asks is the merge question in `/ship`, because merging moves the base
+branch and needs the user's instruction.
+
 ## Worktrees, integration and cleanup
 
 **Every executor runs in its own worktree. This is not configurable.** Without

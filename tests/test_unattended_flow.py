@@ -57,6 +57,39 @@ class UnattendedFlow(unittest.TestCase):
         self.assertIn('pr.checks "${SESSION_BRANCH}" --wait', checks)
         self.assertIn("debugger", checks)
 
+    def test_the_rules_route_every_issue_without_stopping(self):
+        rules = read(ROOT / ".ai" / "RULES.md")
+        section = re.search(r"^## Issues found while working\n(.*?)^## ", rules,
+                            re.MULTILINE | re.DOTALL)
+        self.assertIsNotNone(section, "RULES.md has no 'Issues found while working' section")
+        body = section.group(1)
+        for route in ("In scope: fix it now", "Out of scope: record a todo and keep going",
+                      "Needs a human: record it, block only what depends on it, keep going"):
+            self.assertIn(route, body)
+        self.assertIn("phase_run query todo.add", body)
+
+    def test_no_issue_along_the_way_stops_to_ask(self):
+        execute = read(WORKFLOWS / "execute-phase.md")
+        verify = read(WORKFLOWS / "verify-work.md")
+        for name, text in (("checkpoint_handling", step(execute, "checkpoint_handling")),
+                           ("plan_gap_closure", step(verify, "plan_gap_closure")),
+                           ("revision_loop", step(verify, "revision_loop")),
+                           ("handle_result", step(verify, "handle_result")),
+                           ("check_existing_verification",
+                            step(verify, "check_existing_verification"))):
+            with self.subTest(step=name):
+                self.assertNotIn("AskUserQuestion", text)
+                # "Do not ask how to proceed" is the rule, not a question.
+                self.assertNotRegex(text, r"(?i)(?<!not )\bask (the user|for a decision|how to proceed)")
+                self.assertNotIn("offer to show", text)
+        self.assertIn("todo", step(execute, "checkpoint_handling"))
+
+    def test_deferred_items_become_todos(self):
+        aggregate = step(read(WORKFLOWS / "execute-phase.md"), "aggregate_results")
+        self.assertIn("phase_run query todo.add", aggregate)
+        self.assertIn("todo.list", aggregate)
+        self.assertIn("record as todos", read(ROOT / ".ai" / "agents" / "coder.md"))
+
     def test_the_orchestrator_is_never_told_to_stop_at_the_limit(self):
         hook = read(ROOT / ".ai" / "hooks" / "context-handoff.sh")
         # The advisory an agent without identity receives -- the one the

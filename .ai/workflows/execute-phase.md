@@ -18,8 +18,11 @@ delivery: when execution finishes, run `/verify-work` in this same session, and
 when verification passes, run `/ship`. Never stop to tell the user to resume,
 start a fresh session, or run the next command, and never stop because a context
 advisory fired — the handoff limit applies to subagents, not to the
-orchestrating session. Stop only for a real decision the workflows ask the user
-for, or a blocker you report as one.
+orchestrating session. Issues found along the way never stop it either: fix
+what is in scope, record a todo for everything else, and block only the work
+that needs a person — see
+[issues found while working](../RULES.md#issues-found-while-working). The one
+question a run asks is the merge question in `/ship`.
 </purpose>
 
 <required_reading>
@@ -179,7 +182,10 @@ rows. For each, answer inline before continuing:
 2. How did it manifest?
 3. What structural mechanism — not acknowledgment — prevents it recurring?
 
-If a blocking row cannot be answered from the file, stop and ask the user.
+If a blocking row cannot be answered from the file, answer it from the codebase
+and the phase's history. If it still cannot be answered, record it as a
+`critical` todo and apply the mechanism that most directly prevents it — do not
+stop to ask.
 </step>
 
 <step name="preflight">
@@ -445,7 +451,7 @@ Read the result rather than assuming it worked:
 
 | `status` | Means | What to do |
 |---|---|---|
-| `blocked` | deleted a path the plan never declared | Show `undeclared_deletions` and ask the user. Do not re-run the merge to get past it. A rename counts: its source path is a removal |
+| `blocked` | deleted a path the plan never declared | Do not merge that branch and do not re-run the merge to get past it. Record a `critical` todo naming the plan and its `undeclared_deletions`, treat the plan as blocked, and continue the rest of the wave. A rename counts: its source path is a removal |
 | `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
 | `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
 | `empty` | the branch has no commits | Same: nothing was produced |
@@ -469,19 +475,28 @@ preserved and let the user choose.
 
 <step name="checkpoint_handling">
 A plan may return `blocked` with a checkpoint — a decision it cannot make alone.
+Checkpoints do not stop the run; route each one as
+[issues found while working](../RULES.md#issues-found-while-working) says:
 
-For each checkpoint:
-1. Present what the coder found and the options it identified
-2. Ask the user to decide (AskUserQuestion, or plain text in text mode)
-3. Record the decision: `phase_run query state.add-decision "{decision}"`
-4. Re-dispatch that plan with the decision added to its execution context
+- **Within delegated discretion** — every option stays inside the phase's locked
+  decisions, acceptance and declared scope, and none is destructive: take the
+  coder's recommended option (or the one CONTEXT.md points to), record it with
+  `phase_run query state.add-decision "{decision} (decided within delegated
+  discretion)"`, record a `minor` todo to review it, and re-dispatch the plan
+  with the decision in its execution context.
+- **Needs a human** — an option would change a locked decision or acceptance,
+  is destructive or irreversible, installs a package whose legitimacy is
+  unverified, or needs credentials, access or spending, or an unmet
+  precondition only a person can satisfy: record a `critical` todo with the
+  options and the coder's recommendation, leave the plan blocked, skip only the
+  plans that depend on it, and continue every other wave.
 
 Re-dispatch into a **fresh** isolated checkout, not the main one. A plan the
 user configured to run isolated stays isolated through recovery; continuing it
 in the primary checkout needs explicit confirmation and is never the default.
 
-A checkpoint is not a failure. Do not resolve one by guessing so the wave can
-finish.
+A checkpoint is not a failure, and it is never resolved by guessing: a decision
+outside delegated discretion waits in its todo, not in the conversation.
 </step>
 
 <step name="run_checks">
@@ -509,6 +524,18 @@ Read each SUMMARY.md and build the phase picture:
 
 Report any phase requirement id that no summary claims. That is a gap, whether or
 not every plan reported complete.
+
+Record every deferred item as a todo — each SUMMARY's Deferred and Remaining
+entries, and out-of-scope findings from the code review. Check
+`phase_run query todo.list` first and skip any already recorded:
+
+```bash
+phase_run query todo.add "{item}" --problem "{what was found, where}" \
+  --solution "{the likely fix}" --area "{phase area}" --severity {minor|major} \
+  --files {paths}
+```
+
+Nothing deferred is left only in a SUMMARY; see [issues found while working](../RULES.md#issues-found-while-working).
 </step>
 
 <step name="code_review_gate">
@@ -614,6 +641,8 @@ Requirements covered: {ids}
 Checks: {passed | failed with detail | not configured}
 Code review: {clean | N warnings recorded | N critical fixed}
 {deferred ? "Deferred: {items}" : ""}
+Todos recorded: {count} — {titles} | none
+Blocked for a person: {plans and their todos} | none
 
 Verifying phase {phase_number} now.
 ```
@@ -653,6 +682,8 @@ not to is plans still blocked: report those as the blocker instead.
 - Don't stop because a context advisory fired; the handoff limit is for subagents
 - Don't ask whether to resume a partial execution; continue the plans without a
   SUMMARY
+- Don't stop to ask about an issue found along the way: fix what is in scope,
+  record a todo for everything else, and block only what needs a person
 </anti_patterns>
 
 <success_criteria>
@@ -668,7 +699,9 @@ not to is plans still blocked: report those as the blocker instead.
 - [ ] Every wave integrated through `worktree.merge-wave` before checks or review
 - [ ] Undeclared deletions and merge conflicts escalated, never merged past
 - [ ] Cleanup ran without `--force`, and anything preserved was reported
-- [ ] Checkpoints escalated to the user, not guessed
+- [ ] Checkpoints decided within delegated discretion or recorded as todos,
+      never guessed, and never a reason to stop the run
+- [ ] Every deferred item and out-of-scope finding recorded as a todo
 - [ ] Configured checks run per wave, against the integrated tree, and passing
 - [ ] Requirement coverage aggregated, with gaps reported
 - [ ] Code review run; critical findings fixed and re-reviewed

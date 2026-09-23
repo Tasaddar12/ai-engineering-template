@@ -143,9 +143,11 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    git -C "${SESSION_WORKTREE}" status --short
    ```
 
-   If there are uncommitted changes, ask the user to commit them first. Shipping
-   over a dirty tree publishes something nobody reviewed, and the uncommitted
-   part does not reach the pull request at all.
+   If there are uncommitted changes, inspect them. Phase work that was left
+   uncommitted is committed with a descriptive message. Anything else is left in
+   place, recorded as a todo, and reported as what blocks shipping. Never ship
+   over a dirty tree: it publishes something nobody reviewed, and the
+   uncommitted part does not reach the pull request at all.
 
 3. **The session branch is checked out, and it is not the base branch.**
 
