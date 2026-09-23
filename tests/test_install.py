@@ -262,6 +262,9 @@ class InstallerTests(unittest.TestCase):
                         self.assertEqual(methods[name][1]["description"], config["description"])
                         expected = "gpt-5.6-terra" if name in terra else "gpt-5.6-luna"
                         self.assertEqual(expected, config["model"])
+                        checkers = {"doc-verifier", "integration-checker"}
+                        effort = "medium" if name in checkers else "high"
+                        self.assertEqual(effort, config["model_reasoning_effort"])
                         role_path = ".codex/agents/" + name + ".md"
                         self.assertIn(role_path, config["developer_instructions"])
                         self.assertNotIn(".ai/", config["developer_instructions"])

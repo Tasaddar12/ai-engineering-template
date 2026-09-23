@@ -244,5 +244,6 @@ not full API ids — the Agent SDK's dispatch call accepts only an alias — and
 are not validated against a list. Effort is validated: `low`, `medium`, `high`,
 `xhigh`, `max` or `inherit`, and anything else fails with `bad-effort`.
 
-Codex's `install-assets/codex-agents/*.toml` keep a native `model` field. That is
-Codex's own agent configuration surface and is unrelated to this contract.
+Codex's `install-assets/codex-agents/*.toml` keep native `model` and
+`model_reasoning_effort` fields. Those are Codex's own agent configuration surface
+and are unrelated to this contract.

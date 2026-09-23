@@ -1,4 +1,5 @@
 name = "verifier"
 description = "Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report."
 model = "gpt-5.6-luna"
+model_reasoning_effort = "high"
 developer_instructions = "Read and follow the complete role at .ai/agents/verifier.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."

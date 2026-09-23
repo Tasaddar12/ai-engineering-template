@@ -83,21 +83,24 @@ work.
 ## Native host definitions
 
 Codex installation adds one `.toml` file per role beside its complete Markdown
-method in `.codex/agents/`. Each defines `name`, `description`, `model` and
-`developer_instructions` pointing at the role file; the installer relocates that
-path to `.codex/agents/<role>.md`. **Codex's TOML `model` is Codex's own
-configuration surface** and is unrelated to the inline injection above.
+method in `.codex/agents/`. Each defines `name`, `description`, `model`,
+`model_reasoning_effort` and `developer_instructions` pointing at the role file;
+the installer relocates that path to `.codex/agents/<role>.md`. **Codex's TOML
+`model` and `model_reasoning_effort` are Codex's own configuration surface** and
+are unrelated to the inline injection above.
 
 Claude installation copies the full Markdown agents to `.claude/agents/`.
 
-| Roles | Codex model |
-|---|---|
-| coordinator, researcher, phase-preparer, coder, debugger | `gpt-5.6-terra` |
-| codebase-mapper, phase-checker, doc-writer, doc-verifier, integration-checker, code-reviewer, verifier | `gpt-5.6-luna` |
+| Roles | Codex model | Codex effort |
+|---|---|---|
+| coordinator, researcher, phase-preparer, coder, debugger | `gpt-5.6-terra` | `high` |
+| codebase-mapper, phase-checker, doc-writer, code-reviewer, verifier | `gpt-5.6-luna` | `high` |
+| doc-verifier, integration-checker | `gpt-5.6-luna` | `medium` |
 
-Edit the installed TOML `model` to customise a Codex role; the host must support
-the chosen model. These files do not change the current orchestrator
-conversation's model, and they do not start agents on their own.
+Edit the installed TOML `model` or `model_reasoning_effort` to customise a Codex
+role; the host must support the chosen model and effort. These files do not
+change the current orchestrator conversation's model, and they do not start
+agents on their own.
 
 Formats: [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
 and [Claude Code subagents](https://code.claude.com/docs/en/sub-agents).

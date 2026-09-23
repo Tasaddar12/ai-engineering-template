@@ -95,8 +95,8 @@ codebase:
 # `coordinator` is deliberately absent: it is the orchestrating conversation,
 # not a worker the runtime spawns, so it keeps the session's own model.
 #
-# This block is Claude's. Codex reads its own `model` from each role's TOML in
-# .codex/agents/ and ignores everything here.
+# This block is Claude's. Codex reads its own `model` and `model_reasoning_effort`
+# from each role's TOML in .codex/agents/ and ignores everything here.
 agents:
   coder:
     model: opus
