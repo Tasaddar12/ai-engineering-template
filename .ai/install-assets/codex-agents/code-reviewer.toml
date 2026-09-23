@@ -1,5 +1,5 @@
 name = "code-reviewer"
 description = "Reviews source files for bugs, security issues, and code quality problems. Produces structured findings classified by severity. Dispatched independently before a phase closes and during verification."
-model = "gpt-5.6-luna"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 developer_instructions = "Read and follow the complete role at .ai/agents/code-reviewer.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase."

@@ -93,9 +93,10 @@ Claude installation copies the full Markdown agents to `.claude/agents/`.
 
 | Roles | Codex model | Codex effort |
 |---|---|---|
-| coordinator, researcher, phase-preparer, coder, debugger | `gpt-5.6-terra` | `high` |
-| codebase-mapper, phase-checker, doc-writer, code-reviewer, verifier | `gpt-5.6-luna` | `high` |
-| doc-verifier, integration-checker | `gpt-5.6-luna` | `medium` |
+| coordinator, researcher, phase-preparer, coder | `gpt-6-astra` | `high` |
+| debugger, code-reviewer, verifier, phase-checker | `gpt-6-sol` | `high` |
+| codebase-mapper, doc-writer | `gpt-6-luna` | `high` |
+| doc-verifier, integration-checker | `gpt-6-luna` | `medium` |
 
 Edit the installed TOML `model` or `model_reasoning_effort` to customise a Codex
 role; the host must support the chosen model and effort. These files do not

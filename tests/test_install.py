@@ -230,7 +230,8 @@ class InstallerTests(unittest.TestCase):
                     self.assertFalse((self.target / ".agents").exists())
 
     def test_native_agent_models_and_direct_roles_install_without_hooks(self):
-        terra = {"coordinator", "researcher", "phase-preparer", "coder", "debugger"}
+        astra = {"coordinator", "researcher", "phase-preparer", "coder"}
+        sol = {"debugger", "code-reviewer", "verifier", "phase-checker"}
         roles = {"coordinator", "codebase-mapper", "researcher", "phase-preparer",
                  "phase-checker", "coder", "doc-writer", "doc-verifier",
                  "integration-checker", "code-reviewer", "debugger", "verifier"}
@@ -260,7 +261,8 @@ class InstallerTests(unittest.TestCase):
                         name = config["name"]
                         self.assertEqual(definition.stem, name)
                         self.assertEqual(methods[name][1]["description"], config["description"])
-                        expected = "gpt-5.6-terra" if name in terra else "gpt-5.6-luna"
+                        expected = ("gpt-6-astra" if name in astra else
+                                    "gpt-6-sol" if name in sol else "gpt-6-luna")
                         self.assertEqual(expected, config["model"])
                         checkers = {"doc-verifier", "integration-checker"}
                         effort = "medium" if name in checkers else "high"
