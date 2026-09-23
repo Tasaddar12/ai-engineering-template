@@ -11,6 +11,8 @@
 #      its plan on, an artifact role such as the researcher writes what it has
 #      and returns it as partial. Advisory only: this hook NEVER blocks a tool
 #      call. An agent that ignores the warning still has its handoff on disk.
+#      The orchestrating session is never told to stop: on Claude it is not
+#      measured at all, and elsewhere the advisory tells it to keep going.
 #
 #   2. SubagentStop -- a write-capable subagent that was dispatched but left no
 #      `complete` SUMMARY.md did not finish. Write a handoff so the orchestrator
@@ -251,6 +253,23 @@ esac
 
 # --- PostToolUse: measure and advise -----------------------------------------
 
+# The limit is for subagents, never for the orchestrating session. A subagent
+# handing off costs one fresh subagent; an orchestrator that stops strands the
+# whole phase and leaves the user to resume it -- which is what the old advisory
+# did, telling the root session to "dispatch nothing new" at 250k of a 1M window.
+#
+# Claude Code names the calling agent (`agent_id`) on every hook fired inside a
+# subagent, so on Claude a tool use with no agent identity IS the orchestrator:
+# measure nothing, write nothing, say nothing. The host is read from where this
+# copy was installed, because CLAUDECODE leaks into every shell Claude starts
+# and would misfire for a Codex session launched from one.
+host_is_claude() {
+  [[ "$script_dir" == */.claude/hooks || -n "${CLAUDE_PROJECT_DIR:-}" ]]
+}
+if [[ -z "${agent_id:-}${agent_transcript:-}" ]] && host_is_claude; then
+  exit 0
+fi
+
 # A subagent is measured on its own transcript and keyed by its own id, so its
 # record, its debounce and its advisory are never the orchestrator's. When its
 # transcript cannot be found the hook stays silent rather than falling back to
@@ -316,8 +335,9 @@ reviewer for the remainder."
 unknown_stop="If you are executing a plan: $plan_stop If you are writing an assigned \
 artifact such as RESEARCH.md: write it now from what you have, list what it does not \
 cover, and return it as partial -- this limit is not a blocker. If you are the \
-orchestrating session: dispatch nothing new, record where the work stands, and recommend \
-continuing in a fresh session."
+orchestrating session, this limit does not apply to you: keep running the workflow to \
+its end -- dispatch the next wave, verify and ship as it says -- and never stop, hand \
+off, or tell the user to resume or start a fresh session because of it."
 
 case "$(agent_stop_kind "$role")" in
   plan) instruction="$plan_stop" ;;

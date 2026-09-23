@@ -77,8 +77,10 @@ codex_transcript() {
   printf '{"type":"token_usage_record","payload":{"turn_token_usage":{"total_tokens":10},"thread_token_usage":{"total_tokens":%s}}}\n' "$2" > "$1"
 }
 
+# CLAUDE_PROJECT_DIR marks a Claude Code hook; it is cleared here so the suite
+# tests the host-agnostic path unless a case sets it on purpose.
 run_hook() {
-  ( cd "$repo" && printf '%s' "$1" | bash "$hook" 2>/dev/null )
+  ( cd "$repo" && printf '%s' "$1" | env -u CLAUDE_PROJECT_DIR bash "$hook" 2>/dev/null )
 }
 
 payload_for() {
@@ -411,12 +413,17 @@ contains "codex: the advisory names the handoff path" "$out" '.planning/handoffs
 
 # --- the root session's advisory covers every reader -------------------------
 #
-# With no agent identity the hook cannot tell an orchestrator from a host that
-# does not name its subagents, so the advisory has to be right for both.
+# With no agent identity, and no way to tell which host installed it, the hook
+# cannot tell an orchestrator from a host that does not name its subagents, so
+# the advisory has to be right for both -- and it must never stop the
+# orchestrator: that is what stranded /execute-phase at 250k of a 1M window.
 
 out="$(run_hook "$(payload_for PostToolUse sess-rootmsg "$workspace/high.jsonl")")"
 contains "root: the advisory still tells a plan executor to block" "$out" "status: blocked"
-contains "root: the advisory tells an orchestrator what to do" "$out" "orchestrating session"
+contains "root: the advisory tells an orchestrator the limit is not its own" "$out" "does not apply to you"
+contains "root: the advisory tells an orchestrator to keep going" "$out" "keep running the workflow"
+lacks "root: the advisory never tells an orchestrator to stop dispatching" "$out" "dispatch nothing new"
+lacks "root: the advisory never recommends continuing elsewhere" "$out" "recommend continuing"
 contains "root: the advisory tells an artifact writer it is not blocked" "$out" "not a blocker"
 
 # --- a Claude subagent is measured on its own transcript ---------------------
@@ -559,6 +566,33 @@ contains "fold: the record now says the agent exited unfinished" "$record" '"rea
 contains "fold: the record gains the plan from the exit" "$record" "06-04-PLAN.md"
 contains "fold: the digest survives the exit" "$record" "api/auth.py:12"
 contains "fold: the occupancy survives the exit" "$record" '"used_tokens": 130000'
+
+# --- on Claude the orchestrator is never measured ----------------------------
+#
+# Claude Code names the calling agent on every hook fired inside a subagent, so
+# a tool use with no agent identity is the orchestrating session. It gets no
+# advisory and no record: the limit is for subagents.
+
+claude_hooks="$workspace/claude-install/.claude/hooks"
+mkdir -p "$claude_hooks"
+cp -R "$script_dir/." "$claude_hooks/"
+run_claude_hook() {
+  ( cd "$repo" && printf '%s' "$1" | env -u CLAUDE_PROJECT_DIR bash "$claude_hooks/context-handoff.sh" 2>/dev/null )
+}
+
+out="$(run_claude_hook "$(payload_for PostToolUse sess-corch "$workspace/high.jsonl")")"
+check "claude: the orchestrator over the limit gets no advisory" "$out" ""
+check "claude: the orchestrator over the limit gets no record" \
+  "$([[ -f "$handoffs/sess-corch.json" ]] && echo present || echo absent)" "absent"
+
+out="$( cd "$repo" && printf '%s' "$(payload_for PostToolUse sess-cenv "$workspace/high.jsonl")" \
+  | CLAUDE_PROJECT_DIR="$repo" bash "$hook" 2>/dev/null )"
+check "claude: CLAUDE_PROJECT_DIR alone marks the host" "$out" ""
+
+claude_transcript "$workspace/parent/subagents/agent-cs1.jsonl" 130000
+out="$(run_claude_hook "$(subagent_payload PostToolUse sess-csub cs1 coder)")"
+contains "claude: a subagent over the limit is still advised" "$out" "CONTEXT HANDOFF"
+contains "claude: a subagent still gets its role's instruction" "$out" "status: blocked"
 
 printf '%s passed, %s failed\n' "$passed" "$failed"
 [[ "$failed" -eq 0 ]]
