@@ -117,6 +117,21 @@ class UpdateTests(unittest.TestCase):
         self.assertIn(self.target / rules, backups)
         self.assertTrue(any("Refresh" in note for note in notes))
 
+    def test_an_update_adds_only_the_ignore_rules_a_project_lacks(self):
+        """Handoff records must stay out of commits in projects installed before
+        `.planning/handoffs/` was a rule, without duplicating the rules they have."""
+        older = ("\n# AI engineering workflow (local only)\n" + self.namespace + "-venv/\n"
+                 ".workflow-backups/\n__pycache__/\n*.pyc\n").encode()
+        self.write(".gitignore", older)
+        changes, backups, _ = self.plan()
+        self.apply(changes)
+        lines = self.read(".gitignore").decode("utf-8").splitlines()
+        self.assertTrue(self.read(".gitignore").startswith(older))
+        self.assertEqual(1, lines.count(".planning/handoffs/"))
+        self.assertEqual(1, lines.count(".workflow-backups/"))
+        self.assertEqual(1, lines.count("# AI engineering workflow (local only)"))
+        self.assertIn(self.target / ".gitignore", backups)
+
     def test_a_second_update_changes_nothing(self):
         self.write(self.namespace + "/RULES.md", b"# older\n")
         self.apply(self.plan()[0])

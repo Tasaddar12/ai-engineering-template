@@ -32,7 +32,29 @@ PLANNING_RESOURCES = {f".planning/{name}" for name in
                        "specs/.gitkeep", "decisions/.gitkeep", "todos/README.md",
                        "todos/pending/.gitkeep", "todos/completed/.gitkeep",
                        "milestones/.gitkeep")}
-IGNORE_BLOCK = "\n# AI engineering workflow (local only)\n.ai-venv/\n.workflow-backups/\n__pycache__/\n*.pyc\n"
+IGNORE_HEADER = "# AI engineering workflow (local only)"
+#: `.planning/handoffs/` holds handoff records: local to one checkout, deleted
+#: once consumed, and never evidence, so they must never reach a commit.
+IGNORE_ENTRIES = (".ai-venv/", ".workflow-backups/", ".planning/handoffs/", "__pycache__/",
+                  "*.pyc")
+IGNORE_BLOCK = "\n" + IGNORE_HEADER + "\n" + "".join(entry + "\n" for entry in IGNORE_ENTRIES)
+
+
+def ignore_addition(current, namespace):
+    """The ignore rules `current` still lacks, as bytes to append -- empty when none.
+
+    Compared rule by rule, not as one block. A project installed before a rule
+    was added carries the older block, and a whole-block test would append a
+    second copy of every rule it already has just to add the new one.
+    """
+    entries = [entry.replace(".ai-venv", namespace + "-venv") for entry in IGNORE_ENTRIES]
+    present = {line.strip() for line in
+               current.replace(b"\r\n", b"\n").decode("utf-8").split("\n")}
+    missing = [entry for entry in entries if entry not in present]
+    if not missing:
+        return b""
+    header = [] if IGNORE_HEADER in present else [IGNORE_HEADER]
+    return ("\n" + "\n".join(header + missing) + "\n").encode()
 
 
 def run(*args, cwd=None, capture=False):
@@ -423,9 +445,9 @@ def plan_install(source, target, host="codex", hooks=True):
     else:
         current = ignore.read_bytes() if ignore.exists() else b""
         require_utf8(current, ignore)
-        ignore_block = IGNORE_BLOCK.replace(".ai-venv", "." + host + "-venv").encode()
-        if ignore_block not in current.replace(b"\r\n", b"\n"):
-            changes.append((ignore, current + ignore_block))
+        addition = ignore_addition(current, "." + host)
+        if addition:
+            changes.append((ignore, current + addition))
     if conflicts:
         raise ValueError("Existing files conflict; nothing was installed. Reconcile these paths "
                          "on a review branch, then retry:\n  " + "\n  ".join(sorted(set(conflicts))))

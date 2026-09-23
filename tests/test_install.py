@@ -132,10 +132,31 @@ class InstallerTests(unittest.TestCase):
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
         self.assertIn("/main/.ai/install.py", guide)
         # Local-only workflow scratch stays out of the project's history.
-        for ignored in (".codex-venv/probe.txt", ".workflow-backups/probe.txt"):
+        for ignored in (".codex-venv/probe.txt", ".workflow-backups/probe.txt",
+                        ".planning/handoffs/sess--agent-a1.json"):
             (self.target / ignored).parent.mkdir(parents=True, exist_ok=True)
             (self.target / ignored).write_text("local")
             self.assertIn(ignored, command("git", "check-ignore", ignored, cwd=self.target))
+
+    def test_an_older_ignore_block_gains_only_the_missing_rules(self):
+        """A project installed before `.planning/handoffs/` was a rule carries the
+        older block. Installing again adds that one rule, not a second copy of
+        every rule the project already has."""
+        self.target.mkdir()
+        older = ("/build\n\n# AI engineering workflow (local only)\n.codex-venv/\n"
+                 ".workflow-backups/\n__pycache__/\n*.pyc\n")
+        (self.target / ".gitignore").write_bytes(older.encode())
+        result = self.install()
+        self.assertEqual(0, result.returncode, result.stderr)
+        text = (self.target / ".gitignore").read_text(encoding="utf-8")
+        self.assertTrue(text.startswith(older))
+        lines = text.splitlines()
+        for rule in (".codex-venv/", ".workflow-backups/", "__pycache__/", "*.pyc",
+                     ".planning/handoffs/", "# AI engineering workflow (local only)"):
+            self.assertEqual(1, lines.count(rule), rule)
+        before = self.snapshot()
+        self.assertEqual(0, self.install().returncode)
+        self.assertEqual(before, self.snapshot())
 
     def test_existing_repository_preserves_files_history_remote_and_reruns(self):
         self.target.mkdir()
