@@ -67,12 +67,16 @@ Hand off one plan, not a whole phase or a review-and-repair loop. An author runs
 its own implementation checks; independent review belongs to a separate fresh
 reviewer. Do not reuse the same growing author session for another plan.
 
-- When context reaches 60% of the window or 250,000 tokens, whichever comes
-  first, start the handoff immediately. Do not begin another implementation task
-  or repair; finish only the active operation needed to preserve work. Honour a
-  lower user-specified limit. Both numbers are configurable per project as
-  `handoff.context_percent` and `handoff.context_tokens`; `phase_run query
-  handoff.limits` reports the resolved figure.
+The limit is the same for every agent: 60% of the window or 250,000 tokens,
+whichever comes first, or a lower user-specified limit. Both numbers are
+configurable per project as `handoff.context_percent` and
+`handoff.context_tokens`; `phase_run query handoff.limits` reports the resolved
+figure. What reaching it asks of you depends on what you produce.
+
+**Plan executors** — coder, doc-writer, debugger:
+
+- Start the handoff immediately. Do not begin another implementation task or
+  repair; finish only the active operation needed to preserve work.
 - Preserve safe partial commits. Set SUMMARY frontmatter `status: blocked`; record
   the exact base and head, completed and remaining tasks, dirty files, observed
   command results and missing evidence. Do not fabricate passing checks or
@@ -84,14 +88,31 @@ reviewer. Do not reuse the same growing author session for another plan.
   commits and SUMMARY before assigning the remaining tasks to a fresh coder. Do
   not replay completed tasks or resume the exhausted session.
 
+**Artifact roles** — researcher, phase-preparer, codebase-mapper — write one
+assigned artifact and no SUMMARY. Stopping without it hands on nothing, so the
+limit tells them to converge rather than halt:
+
+- Start no new search, fetch or exploration. Write the assigned artifact now
+  from what you already have, and name inside it what it does not yet cover.
+- Return it marked partial (a researcher returns `## RESEARCH PARTIAL`). The
+  limit is not a blocker: do not return blocked for it and do not describe the
+  work as waiting for a human. The orchestrator continues the uncovered part in
+  a fresh agent against the same artifact.
+
+**Reviewers** — verifier, code-reviewer, doc-verifier, phase-checker,
+integration-checker — write the report on what they examined, name the scope
+they did not reach, and return; a fresh reviewer takes the remainder.
+
 ## Handoff records
 
-[context-handoff.sh](../hooks/context-handoff.sh) measures the live transcript
-and writes a record to `.planning/handoffs/` on two triggers: a session that
-crosses the limit above, and a write-capable subagent that stops without a
-`complete` SUMMARY. The threshold is therefore enforced, not merely instructed —
-but the enforcement is advisory injection, so an agent that ignores the warning
-still has its record on disk for the orchestrator to find.
+[context-handoff.sh](../hooks/context-handoff.sh) measures the calling agent's
+own transcript — a subagent's, never its parent's — and writes a record to
+`.planning/handoffs/` on two triggers: an agent that crosses the limit above,
+and a plan executor that stops without a `complete` SUMMARY. A subagent's
+record is keyed to it (`<session>--agent-<id>`) and names its role in
+`agent`. The threshold is therefore enforced, not merely instructed — but the
+enforcement is advisory injection, so an agent that ignores the warning still
+has its record on disk for the orchestrator to find.
 
 A record is local, ephemeral and gitignored. It names worktree paths, a revision
 and dirty files that mean nothing in another checkout, so it is never committed
@@ -107,9 +128,13 @@ phase_run query handoff.consume <id>             # delete it once the work is re
 ```
 
 `handoff.read` returns a `continuation` brief to put in front of the fresh
-subagent: the plan, the SUMMARY to read first, the revision at interruption and
-the uncommitted paths. Dispatch the replacement against the remaining tasks
-only, then consume the record. **Consume it in the same turn you dispatch.** A
+subagent, shaped by the role that stopped. For a plan executor it names the
+plan, the SUMMARY to read first, the revision at interruption and the
+uncommitted paths. For a researcher it says to read the existing RESEARCH.md
+and research only its `## Not Yet Researched` questions; other artifact roles
+and reviewers are told to continue only what the previous attempt left
+uncovered. Dispatch the replacement against the remaining work only, then
+consume the record. **Consume it in the same turn you dispatch.** A
 record left on disk after its work is reassigned is what puts a second agent on
 a plan the first is already finishing.
 

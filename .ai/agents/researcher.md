@@ -150,6 +150,39 @@ cache or provider-routing service in this runtime.
 
 </tool_strategy>
 
+<context_limit>
+
+## When context runs out: converge, do not halt
+
+Your one deliverable is RESEARCH.md. A coder stopped mid-plan hands the rest on;
+a researcher that stops without writing has handed on nothing. So the context
+limit changes how you finish, never whether you produce the file.
+
+A `CONTEXT HANDOFF` advisory — or your own judgement that the remaining
+questions will not fit — means:
+
+1. Start no new search, fetch or file read.
+2. Write RESEARCH.md from the findings you already have: every section you can
+   support, with honest confidence levels. A section you did not reach is
+   omitted or marked `Not researched`, never guessed at.
+3. List each question you did not reach under `## Not Yet Researched` — the
+   question, why it matters, the plan scope that depends on it, and where you
+   would have looked next. That list is the brief for the researcher who
+   continues, so make it specific enough to start from.
+4. Set `**Coverage:** partial (context limit)` in the Metadata section, commit
+   as Step 7 allows, and return `## RESEARCH PARTIAL`.
+
+The limit is not a blocker. Do not return `RESEARCH BLOCKED` for it, do not
+describe the work as waiting for a human, and do not write a handoff note in
+place of the research: the orchestrator continues the open questions in a
+fresh researcher without asking anyone.
+
+Write early so there is always something to converge on: open RESEARCH.md at
+Step 2.9 and record findings into it as Step D describes, rather than holding
+everything for a single write at the end.
+
+</context_limit>
+
 <source_hierarchy>
 
 Assign confidence from evidence, not a provider name: HIGH for a claim confirmed
@@ -412,6 +445,17 @@ Verified patterns from official sources:
    - What's unclear: [the gap]
    - Recommendation: [how to handle]
 
+## Not Yet Researched
+
+[Present only while coverage is partial. Each entry is a question this pass did
+not reach — distinct from Open Questions, which were researched and remain
+unresolved.]
+
+1. **[Question]**
+   - Why it matters: [the decision or acceptance it affects]
+   - Dependent scope: [which plans or tasks cannot be settled without it]
+   - Where to look next: [sources not yet read]
+
 ## Environment Availability
 
 > Skip this section if the phase has no external dependencies (code/config-only changes).
@@ -495,6 +539,7 @@ Verified patterns from official sources:
 - Architecture: [level] - [reason]
 - Pitfalls: [level] - [reason]
 
+**Coverage:** [complete | partial (context limit)]
 **Research date:** [date]
 **Valid until:** [estimate - 30 days for stable, 7 for fast-moving]
 ```
@@ -666,6 +711,15 @@ docker info 2>/dev/null | head -3
 
 **Skip condition:** If the phase is purely code/config changes with no external dependencies (e.g., refactoring, documentation), output: "Step 2.6: SKIPPED (no external dependencies identified)" and move on.
 
+## Step 2.9: Open RESEARCH.md
+
+Before the first external fetch, `Write` a working RESEARCH.md at the assigned
+path: the header, `## User Constraints` copied from CONTEXT.md, and
+`## Not Yet Researched` listing every question from Step A. As each question
+is answered, `Edit` its finding into the matching section and remove it from
+the list. The file is then usable at any point the research stops — see
+`<context_limit>`.
+
 ## Step 3: Execute Research Protocol
 
 For each domain, follow the bounded questions, source selection, cross-checking and evidence recording steps in `<tool_strategy>`. Assign confidence from the evidence described in `<source_hierarchy>`.
@@ -699,7 +753,7 @@ Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc
 
 This file is the canonical output of this agent. The orchestrator reads `$PHASE_DIR/$PADDED_PHASE-RESEARCH.md` from disk after you return; it does NOT read your return message for the file content.
 
-1. **Default: write the whole file in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
+1. **Default: write the finished file in a single `Write` call**, replacing the working draft from Step 2.9. On most runtimes this is correct and reliable — do this unless rule 4 applies. When research ended at the context limit, finish with `Edit`s to the draft instead of a full rewrite, and follow `<context_limit>`.
 2. **Do NOT return the RESEARCH.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
 3. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
 4. **Large-file / truncation fallback.** Some runtimes (e.g. OpenCode) cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
@@ -784,7 +838,42 @@ The coordinator publishes; a researcher never pushes or changes shared status.
 Research complete. Planner can now create PLAN.md files.
 ```
 
+## Research Partial
+
+Research stopped before every question was answered — the context limit, or a
+question that needs more room than this pass has. The file on disk is complete
+for what it covers. See `<context_limit>`.
+
+```markdown
+## RESEARCH PARTIAL
+
+**Phase:** {phase_number} - {phase_name}
+**Confidence:** [HIGH/MEDIUM/LOW] (for the covered scope)
+**Coverage:** partial — [why: context limit, or the question that did not fit]
+
+### Key Findings
+[3-5 bullet points of what was established]
+
+### File Created
+`$PHASE_DIR/$PADDED_PHASE-RESEARCH.md`
+
+### Not Yet Researched
+[The same questions as the file's `## Not Yet Researched`, one line each, with
+the plan scope that depends on each]
+
+### Ready for Planning
+Covered scope is ready to plan. The open questions block only their dependent
+scope; the orchestrator continues them in a fresh researcher.
+```
+
 ## Research Blocked
+
+Only for what a fresh researcher could not fix either: access or credentials the
+research needs and does not have, CONTEXT.md contradicting itself or the
+requirements, or a scope decision only the user can make. Never for the context
+limit, a token or turn budget, or questions you ran out of room for — those are
+`RESEARCH PARTIAL`. Write RESEARCH.md with what you found before returning
+blocked, so the findings survive.
 
 ```markdown
 ## RESEARCH BLOCKED
@@ -831,6 +920,12 @@ Research is complete when:
 - [ ] RESEARCH.md created in correct format
 - [ ] RESEARCH.md committed to git
 - [ ] Structured return provided to orchestrator
+
+Research that reaches the context limit first is still delivered, not abandoned:
+
+- [ ] RESEARCH.md written from the findings in hand, with honest confidence
+- [ ] Every unreached question listed under `## Not Yet Researched`
+- [ ] `**Coverage:** partial` set, and `## RESEARCH PARTIAL` returned — not BLOCKED
 
 Quality indicators:
 

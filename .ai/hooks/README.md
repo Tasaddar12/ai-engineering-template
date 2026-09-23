@@ -117,6 +117,22 @@ Its two triggers write to `.planning/handoffs/`, which is gitignored:
 - **Crossing the limit** writes a record and injects the advisory. The record is
   refreshed, not duplicated, on later tool uses, and the advisory debounces to
   one every five.
+
+  The agent measured is the one calling. Claude Code gives a hook fired inside
+  a subagent the *parent's* `transcript_path`, with `agent_id` and `agent_type`
+  beside it, so the hook reads the subagent's own transcript at
+  `<parent without .jsonl>/subagents/agent-<id>.jsonl` (Codex's
+  `agent_transcript_path` when present) and keys its record and debounce to
+  `<session>--agent-<id>`. When that transcript cannot be found it stays silent
+  rather than measuring the parent — which is how a researcher was once
+  stopped for its orchestrator's occupancy.
+
+  The advisory depends on what the role produces. A plan executor is told to
+  write its SUMMARY with `status: blocked` and hand the rest on. An artifact
+  role (researcher, phase-preparer, codebase-mapper) is told the limit is not a
+  blocker and to converge: write its artifact from what it has and return it
+  partial. A reviewer reports what it reached. A session with no agent identity
+  gets guidance that holds for any of them.
 - **A subagent stopping early** writes a record naming the plan and the SUMMARY
   to read first. Missing or `blocked` is unfinished; only `status: complete`
   clears without a handoff.
@@ -140,9 +156,16 @@ Its two triggers write to `.planning/handoffs/`, which is gitignored:
   lookup joins against `cwd`. A transcript that names no plan still produces a
   handoff, unattributed: one the orchestrator must inspect beats none.
 
-  Which roles are write-capable lives in [lib/agent-roles.sh](lib/agent-roles.sh),
-  because both hooks need the same answer and a list kept in two places is a
-  hole in whichever copy was missed.
+  Claude Code now sends `agent_type` and `agent_id` on its stop payload too, so
+  it takes the same payload-first path, recovering the plan from the
+  subagent's own transcript and dropping the closed dispatch from the active
+  stack. The stack still attributes a stop whose transcript cannot be read.
+
+  Which roles are write-capable, artifact or review lives in
+  [lib/agent-roles.sh](lib/agent-roles.sh), because both hooks need the same
+  answer and a list kept in two places is a hole in whichever copy was missed.
+  The runtime's continuation brief keeps a Python copy of the artifact and
+  review lists, held equal to this one by `tests/test_handoff.py`.
 
 Two implementation constraints are load-bearing on Windows. Records are written
 by one Python process each: the obvious shape -- a `printf` per key -- spawns an

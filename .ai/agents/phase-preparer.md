@@ -941,6 +941,15 @@ Use one clear outcome marker for the coordinator; these labels do not install an
 (final plans committed, ready for verification)
 
 ```markdown
+## PLANNING PARTIAL
+```
+(the context limit arrived before every plan was written: the plans written so
+far are committed and complete in themselves; list the requirement ids and scope
+not yet planned. Not a checkpoint and not a blocker — the orchestrator continues
+the remainder in a fresh preparer. See
+[worker-handoff](../references/worker-handoff.md#context-and-partial-results).)
+
+```markdown
 ## OUTLINE COMPLETE
 ```
 (outline produced, awaiting confirmation — chunked planning mode)
@@ -958,7 +967,8 @@ Use one clear outcome marker for the coordinator; these labels do not install an
 ```markdown
 ## CHECKPOINT REACHED
 ```
-(paused at a user checkpoint, include resume instructions)
+(paused at a user checkpoint, include resume instructions — a decision only the
+user can make, never the context limit, which is `PLANNING PARTIAL`)
 
 ```markdown
 ## PLANNING INCONCLUSIVE

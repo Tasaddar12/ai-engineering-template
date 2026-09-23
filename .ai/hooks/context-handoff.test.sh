@@ -28,6 +28,15 @@ contains() {
   fi
 }
 
+lacks() {
+  if [[ "$2" != *"$3"* ]]; then
+    passed=$((passed + 1))
+  else
+    failed=$((failed + 1))
+    printf 'FAIL  %s\n      %q contains %q\n' "$1" "$2" "$3" >&2
+  fi
+}
+
 workspace="$(mktemp -d)"
 trap 'rm -rf "$workspace"' EXIT
 
@@ -399,6 +408,107 @@ out="$(run_hook "$(payload_for PostToolUse cx-ctx "$workspace/cx-ctx.jsonl")")"
 contains "codex: the advisory uses the shared envelope" "$out" '"hookEventName": "PostToolUse"'
 contains "codex: the advisory carries additionalContext" "$out" '"additionalContext"'
 contains "codex: the advisory names the handoff path" "$out" '.planning/handoffs/cx-ctx.json'
+
+# --- the root session's advisory covers every reader -------------------------
+#
+# With no agent identity the hook cannot tell an orchestrator from a host that
+# does not name its subagents, so the advisory has to be right for both.
+
+out="$(run_hook "$(payload_for PostToolUse sess-rootmsg "$workspace/high.jsonl")")"
+contains "root: the advisory still tells a plan executor to block" "$out" "status: blocked"
+contains "root: the advisory tells an orchestrator what to do" "$out" "orchestrating session"
+contains "root: the advisory tells an artifact writer it is not blocked" "$out" "not a blocker"
+
+# --- a Claude subagent is measured on its own transcript ---------------------
+#
+# Claude Code hands a subagent's hook the PARENT's transcript_path, plus
+# agent_id and agent_type. The subagent's own transcript sits beside the
+# parent's, at <parent without .jsonl>/subagents/agent-<id>.jsonl.
+
+claude_transcript "$workspace/parent.jsonl" 130000
+mkdir -p "$workspace/parent/subagents"
+
+subagent_payload() { # <event> <session> <agent_id> <agent_type>
+  printf '{"hook_event_name":"%s","session_id":"%s","cwd":"%s","transcript_path":"%s","agent_id":"%s","agent_type":"%s"}' \
+    "$1" "$2" "$repo" "$workspace/parent.jsonl" "$3" "$4"
+}
+
+claude_transcript "$workspace/parent/subagents/agent-r1.jsonl" 30000
+out="$(run_hook "$(subagent_payload PostToolUse sess-sub r1 researcher)")"
+check "subagent: an over-limit parent does not stop a subagent under it" "$out" ""
+check "subagent: the parent's occupancy writes no record for the subagent" \
+  "$(ls "$handoffs"/sess-sub*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+out="$(run_hook "$(subagent_payload PostToolUse sess-sub r-missing researcher)")"
+check "subagent: a missing own transcript is silent, not the parent's reading" "$out" ""
+
+claude_transcript "$workspace/parent/subagents/agent-r2.jsonl" 130000
+out="$(run_hook "$(subagent_payload PostToolUse sess-sub r2 researcher)")"
+contains "researcher: an over-limit subagent is advised" "$out" "CONTEXT HANDOFF"
+contains "researcher: the advisory measures its own transcript" "$out" "130000 tokens"
+contains "researcher: the advisory says the limit is not a blocker" "$out" "not a blocker"
+contains "researcher: the advisory asks for a partial return" "$out" "RESEARCH PARTIAL"
+contains "researcher: the advisory names where open questions go" "$out" "Not Yet Researched"
+lacks "researcher: the advisory never asks for a SUMMARY" "$out" "SUMMARY.md"
+contains "researcher: the advisory names the per-agent record" "$out" ".planning/handoffs/sess-sub--agent-r2.json"
+record="$(cat "$handoffs/sess-sub--agent-r2.json" 2>/dev/null || true)"
+contains "researcher: the record is keyed to the agent and names its role" "$record" '"agent": "researcher"'
+check "researcher: the parent's record is not written by the subagent" \
+  "$([[ -f "$handoffs/sess-sub.json" ]] && echo present || echo absent)" "absent"
+
+# The root session's debounce does not swallow a subagent's first warning.
+run_hook "$(payload_for PostToolUse sess-deb "$workspace/parent.jsonl")" >/dev/null
+claude_transcript "$workspace/parent/subagents/agent-d1.jsonl" 130000
+out="$(run_hook "$(subagent_payload PostToolUse sess-deb d1 researcher)")"
+contains "subagent: the root's debounce does not silence a subagent" "$out" "CONTEXT HANDOFF"
+
+for pair in coder:"status: blocked" codebase-mapper:"marked partial" \
+            phase-preparer:"marked partial" verifier:"name the scope you did not reach" \
+            plugin:x:researcher:"RESEARCH PARTIAL"; do
+  role="${pair%:*}"
+  want="${pair##*:}"
+  id="role-${role//:/-}"
+  claude_transcript "$workspace/parent/subagents/agent-$id.jsonl" 130000
+  out="$(run_hook "$(subagent_payload PostToolUse sess-roles "$id" "$role")")"
+  contains "role: $role is advised for what it produces" "$out" "$want"
+done
+
+# Stop clears the per-agent sentinels as well as the root's.
+run_hook "$(payload_for Stop sess-roles "$workspace/parent.jsonl")" >/dev/null
+check "Stop clears per-agent debounce sentinels" \
+  "$(ls "$handoffs"/.state-sess-roles* 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# --- a Claude SubagentStop is attributed from the subagent's transcript ------
+
+mkdir -p "$repo/.planning/phases/06-claude"
+printf '{"type":"user","message":{"role":"user","content":"Execute .planning/phases/06-claude/06-01-PLAN.md"}}\n' \
+  > "$workspace/parent/subagents/agent-c1.jsonl"
+printf '{"agent": "coder", "plan": ".planning/phases/06-claude/06-01-PLAN.md", "at": "now"}\n' \
+  > "$handoffs/.active-sess-cstop.jsonl"
+run_hook "$(subagent_payload SubagentStop sess-cstop c1 coder)" >/dev/null
+check "claude stop: an unfinished coder is attributed to its plan" \
+  "$([[ -f "$handoffs/sess-cstop--06-01.json" ]] && echo yes)" "yes"
+check "claude stop: the closed dispatch leaves the active stack" \
+  "$([[ -f "$handoffs/.active-sess-cstop.jsonl" ]] && echo present || echo gone)" "gone"
+
+printf -- '---\nstatus: complete\n---\n' > "$repo/.planning/phases/06-claude/06-02-SUMMARY.md"
+printf '{"type":"user","message":{"role":"user","content":"Execute .planning/phases/06-claude/06-02-PLAN.md"}}\n' \
+  > "$workspace/parent/subagents/agent-c2.jsonl"
+run_hook "$(subagent_payload SubagentStop sess-cdone c2 coder)" >/dev/null
+check "claude stop: a finished coder leaves no handoff" \
+  "$(ls "$handoffs"/sess-cdone*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
+
+# No readable subagent transcript, but the dispatch was recorded: the stack
+# still attributes the stop rather than leaving it anonymous.
+printf '{"agent": "coder", "plan": ".planning/phases/06-claude/06-03-PLAN.md", "at": "now"}\n' \
+  > "$handoffs/.active-sess-cfall.jsonl"
+run_hook "$(subagent_payload SubagentStop sess-cfall c-missing coder)" >/dev/null
+check "claude stop: an unreadable transcript falls back to the stack" \
+  "$([[ -f "$handoffs/sess-cfall--06-03.json" ]] && echo yes)" "yes"
+
+run_hook "$(subagent_payload SubagentStop sess-cres r2 researcher)" >/dev/null
+check "claude stop: a researcher stop writes no exit record" \
+  "$(ls "$handoffs"/sess-cres*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
 
 printf '%s passed, %s failed\n' "$passed" "$failed"
 [[ "$failed" -eq 0 ]]

@@ -180,11 +180,15 @@ Establish how this project wants to run, and write it to `.planning/config.yaml`
 
 ```bash
 phase_run query config-set commit_docs true
-phase_run query config-set context_window 200000
+phase_run query config-set context_window <the agents' real window>
 ```
 
 Ask about, and configure:
 
+- **Context window** — the window of the model the agents actually run on,
+  `1000000` for a 1M-token model or `200000` for a 200k one. It sets the
+  handoff threshold every agent is measured against, so a value below the real
+  window stops agents early; do not write `200000` by default.
 - **Verification commands** — the project's real checks, as argv lists under
   `verification.commands`. This is the single most valuable thing to get right:
   without it, every phase is verified by reading alone.
@@ -211,6 +215,8 @@ Report options with trade-offs and cite what you actually read. Name real
 versions and APIs. Do not pick for the user — surface what the choice costs.
 
 Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
+At the context limit, return ## RESEARCH PARTIAL with the findings so far and
+the questions not reached; the limit is not a blocker.
 ",
   subagent_type="researcher",
   ${models['researcher'] === 'inherit' ? '' : `model="${models['researcher']}",`}
@@ -221,7 +227,9 @@ Return: ## RESEARCH COMPLETE with findings and their implications for scoping.
 
 > **ORCHESTRATOR RULE**: wait for the subagent before continuing.
 
-Present the findings and let the user decide. Validate a technology choice before
+Present the findings and let the user decide. A `RESEARCH PARTIAL` return is
+presented the same way, with its unreached questions listed so the user can
+have them researched or decide without them. Validate a technology choice before
 recommending it: run the smallest spike that could fail, and use what it printed
 as the rationale.
 

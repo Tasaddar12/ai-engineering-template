@@ -256,7 +256,8 @@ phases are planned work; decimal phases (2.1, 2.2) are urgent insertions.
 ```yaml
 commit_docs: true          # false makes every commit verb a no-op
 response_language: null    # when set, workflows present user-facing output in it
-context_window: 200000     # 500000+ enables richer cross-phase agent context
+context_window: 1000000    # the agents' real window; sets the handoff threshold,
+                           # and 500000+ enables richer cross-phase agent context
 workflow:
   text_mode: false         # plain-text prompts instead of AskUserQuestion
   auto_advance: false

@@ -62,7 +62,7 @@ INIT=$(phase_run query init.plan-phase "${PHASE}")
 
 Parse: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_slug`,
 `phase_dir`, `expected_phase_dir`, `goal`, `requirements`, `depends_on`,
-`has_context`, `has_research`, `has_spec`, `has_plans`, `plan_count`,
+`has_context`, `has_research`, `research_partial`, `has_spec`, `has_plans`, `plan_count`,
 `artifacts`, `prior_context`, `models`, `efforts`, `agents_installed`, `missing_agents`,
 `context_window`, `commit_docs`, `text_mode`, `response_language`, `paths`.
 
@@ -157,8 +157,10 @@ not re-derived by the preparer.
 </step>
 
 <step name="handle_research">
-**Skip when `--skip-research` is set, or `has_research` is true and `--research`
-was not passed.**
+**Skip when `--skip-research` is set, or `has_research` is true, `research_partial`
+is false and `--research` was not passed.** A partial RESEARCH.md is not finished
+research: when `research_partial` is true, go straight to a continuation dispatch
+(below) against the questions it lists as not yet researched.
 
 Decide whether research is warranted. Research answers "how do we implement this
 here?" — it is not a formality:
@@ -191,17 +193,28 @@ Agent(
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if present.
 </research_context>
-
+${continuing ? `
+<continuation>
+{phase_dir}/{padded_phase}-RESEARCH.md already exists and is partial. Read it
+first. Research ONLY the questions under its ## Not Yet Researched section.
+Edit each finding into the matching section and remove the question from the
+list; do not rewrite or re-verify sections that are already written. Set
+**Coverage:** complete when the list is empty.
+</continuation>
+` : ''}
 <constraints>
 - Research HOW to implement what CONTEXT.md decided; do not re-open those decisions
 - Report options with trade-offs and cite what you actually read
 - Name real files, versions and APIs; unverified claims are findings, not facts
 - Flag anything that would change the phase's scope rather than absorbing it
+- The context limit is not a blocker: at the limit, write what you have and
+  return RESEARCH PARTIAL, never BLOCKED
 </constraints>
 
 <output>
 Write research to: {phase_dir}/{padded_phase}-RESEARCH.md
-Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks
+Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks, or
+## RESEARCH PARTIAL with the questions not yet researched
 </output>
 ",
   subagent_type="researcher",
@@ -215,9 +228,35 @@ Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks
 > read more files, write plans or investigate in parallel while the subagent runs.
 > Wait for its result. This prevents duplicate work and wasted context.
 
-**Handle the return:** verify `{phase_dir}/{padded_phase}-RESEARCH.md` exists. If
-the agent claims completion but the file is absent, that is a failure — report it
-and do not proceed on the claim.
+**Handle the return.** First verify `{phase_dir}/{padded_phase}-RESEARCH.md`
+exists; a return of any kind with no file is a failure — report it and do not
+proceed on the claim. Then route on the header the researcher returned:
+
+| Return | Route |
+|---|---|
+| `## RESEARCH COMPLETE` | Continue to planning. |
+| `## RESEARCH PARTIAL` | Continue the research — do not stop for the user. |
+| `## RESEARCH BLOCKED` | Present the blocker and its options to the user; this is the only return that waits for them. |
+| no recognised header | A failure: report it, as for a missing file. |
+
+**Continuing partial research.** Re-dispatch the same `Agent(...)` call with the
+`<continuation>` block, against the same file:
+
+```
+◆ Research partial — continuing {N} open question(s) in a fresh researcher
+```
+
+Allow at most two continuations, and continue only while each pass shortens the
+`## Not Yet Researched` list. When the list is empty, continue to planning. When
+it stops shrinking, or the second continuation returns partial, continue to
+planning anyway: the phase-preparer plans the covered scope and carries each
+remaining question to the tasks that depend on it. Tell the user which questions
+went unresearched; do not ask them to resume anything.
+
+A researcher that crossed the context limit also left a handoff record. After
+routing, `phase_run query handoff.list` and `handoff.consume` every record whose
+`agent` is `researcher` — in the same turn as the continuation dispatch, when
+there is one — so a stale record never sends a second researcher after it.
 </step>
 
 <step name="check_existing_plans">
@@ -329,11 +368,23 @@ Every task MUST include:
 - Authorize edit scope only from what you observed at planning time
 - If the phase cannot be planned as scoped, say so and recommend a split rather
   than producing a plan you do not believe in
+- If RESEARCH.md still lists questions under ## Not Yet Researched, plan the
+  covered scope; a task that depends on one carries it as an [ASSUMED]
+  precondition to confirm, never an invented answer
+- The context limit is not a blocker: at the limit, commit the plans you have
+  and return PLANNING PARTIAL with the scope not yet planned
 </constraints>
-
+${continuing ? `
+<continuation>
+Plans already exist for part of this phase. They are read-only input: do not
+edit or renumber them. Plan ONLY the scope the previous preparer listed as not
+yet planned: {unplanned scope}. Number new plans after the last existing one.
+</continuation>
+` : ''}
 <output>
 Write plans to: {phase_dir}/{padded_phase}-{NN}-PLAN.md (01, 02, …)
-Return: ## PLANNING COMPLETE with each plan path and its wave
+Return: ## PLANNING COMPLETE with each plan path and its wave, or
+## PLANNING PARTIAL with the scope not yet planned
 </output>
 ",
   subagent_type="phase-preparer",
@@ -355,6 +406,14 @@ phase_run query phase-plan-index "${phase_number}"
 
 Extract `plans` and `count`. If the count is 0, the preparer failed — report it
 and stop. Do not write plans yourself to cover for a failed agent.
+
+If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
+the rest is unplanned. Re-dispatch the same `Agent(...)` call with the
+`<continuation>` block naming the scope it listed — once, without asking the
+user — then re-read the plan index. If the continuation also returns partial,
+continue to the checker with what exists: its coverage findings name the
+remainder, and the revision loop closes it. Consume any handoff record whose
+`agent` is `phase-preparer` in the same turn, as for the researcher.
 
 If the preparer recommended splitting the phase, surface that to the user and
 stop: splitting is a roadmap change (`/phase --insert`), not something to absorb
