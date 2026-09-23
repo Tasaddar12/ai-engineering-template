@@ -24,6 +24,7 @@ verdict that is anything other than genuinely green.
 <available_agent_types>
 Valid subagent types (use these exact names — never fall back to a generic agent):
 - code-reviewer — reviews the changes being published
+- debugger — fixes a failing check on the session branch
 </available_agent_types>
 
 <model_selection>
@@ -142,9 +143,9 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    git -C "${SESSION_WORKTREE}" status --short
    ```
 
-   If there are uncommitted changes, ask the user to commit them first. Shipping
-   over a dirty tree publishes something nobody reviewed, and the uncommitted
-   part does not reach the pull request at all.
+   If there are uncommitted changes, commit the phase's work with a descriptive
+   message. Leave anything else in place and report it as the blocker. Never
+   ship over a dirty tree.
 
 3. **The session branch is checked out, and it is not the base branch.**
 
@@ -311,8 +312,11 @@ never means the PR is ready to merge.
 **Skip when `--no-push` was passed.**
 
 ```bash
-phase_run query pr.checks "${SESSION_BRANCH}"
+phase_run query pr.checks "${SESSION_BRANCH}" --wait 240
 ```
+
+Repeat the call while `state` is `pending`, up to 12 calls. Never hand the wait
+to the user.
 
 The verdict decides; you do not. Report the state and the check names behind it
 exactly as observed:
@@ -320,9 +324,20 @@ exactly as observed:
 | `state` | What to do |
 |---|---|
 | `passing` | Continue to the merge gate |
-| `pending` | Report the unfinished checks and stop. Re-run `/ship {N}` when they settle — waiting is the whole point of the state |
-| `failing` | Report the failing check names and stop. Fix them on this same branch, in this same session worktree, and push again. The pull request stays open and keeps its history; do not open a second one |
+| `pending` | Still pending after 12 calls: report the unsettled checks and their links as the blocker |
+| `failing` | Fix and re-judge (below). Keep the same pull request; never open a second one |
 | `none` | The pull request has no checks. The `verification.run-checks` run in preflight is the project's own evidence — carry `--local-checks-passed` into the merge only because it passed there. If no checks are configured either, there is no evidence and `pr.merge` refuses; report that refusal as correct |
+
+**Fixing a failing check** — at most 2 rounds:
+
+1. Read each failing run's log: `gh run view <run-id> --log-failed`
+2. Dispatch one `debugger` with `isolation="worktree"`, giving it the failing
+   check names, the log excerpts and the session branch.
+3. From the session worktree: `git merge --ff-only <debugger-branch>`, then
+   `git push`.
+4. Run `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240` again.
+
+Still failing after round 2: report it with its logs as the blocker.
 </step>
 
 <step name="merge_and_close">
@@ -393,8 +408,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - `/progress` — where the project stands
 
 {If not merged:}
-- Watch the PR's checks; opening it may have started them
-- `/ship {phase_number}` again once they settle — it resumes this same PR
+- Why: {declined at the merge question | checks blocked: names and links}
 - The session stays open at {worktree}; its work is not on the base branch yet
 
 ---
@@ -416,6 +430,8 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - Don't open a second pull request because the first one's checks failed — fix
   them on the same branch and push again
 - Don't merge without confirming, unless `workflow.auto_advance` says otherwise
+- Don't hand waiting on `pending` checks to the user
+- Don't tell the user to re-run `/ship`
 - Don't `--force` a preserved session away to make the report look clean
 - Don't report CI as passing because the PR opened; report what `gh` observed
 - Don't compose the PR body from the diff when the phase's own records say it better

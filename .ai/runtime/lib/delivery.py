@@ -17,6 +17,7 @@ unchecked repository is allowed.
 """
 import json
 import subprocess
+import time
 
 from . import gitops
 from .config import get as config_get
@@ -185,16 +186,36 @@ def classify_checks(rollup):
             "failing": failing, "passing": passing}
 
 
-def checks(workspace, branch, cwd=None):
-    """The current check verdict for a branch's pull request."""
+#: How often a waiting `pr.checks` re-reads the verdict. Checks take minutes;
+#: polling faster only spends API quota.
+CHECK_POLL_SECONDS = 30
+
+
+def checks(workspace, branch, cwd=None, wait=0, interval=CHECK_POLL_SECONDS,
+           sleep=time.sleep, clock=time.monotonic):
+    """The check verdict for a branch's pull request.
+
+    With `wait`, a `pending` verdict is re-read until it settles or `wait`
+    seconds pass, so shipping waits for CI itself rather than stopping and
+    telling the user to run it again. The wait is bounded because a host's
+    shell call is: a caller that still sees `pending` calls again. `waited`
+    reports the seconds spent.
+    """
     require_gh(workspace)
-    pull = view(workspace, branch, cwd=cwd)
-    require(pull is not None, "no pull request for branch " + branch, "no-pr")
-    verdict = classify_checks(pull.get("statusCheckRollup"))
+    started = clock()
+    while True:
+        pull = view(workspace, branch, cwd=cwd)
+        require(pull is not None, "no pull request for branch " + branch, "no-pr")
+        verdict = classify_checks(pull.get("statusCheckRollup"))
+        elapsed = clock() - started
+        if verdict["state"] != "pending" or elapsed + interval > wait:
+            break
+        sleep(interval)
     return dict(verdict, branch=branch, number=pull.get("number"),
                 url=pull.get("url"), pr_state=pull.get("state"),
                 draft=pull.get("isDraft"), mergeable=pull.get("mergeable"),
-                merge_state=pull.get("mergeStateStatus"))
+                merge_state=pull.get("mergeStateStatus"),
+                waited=int(clock() - started))
 
 
 # --- merge ----------------------------------------------------------------

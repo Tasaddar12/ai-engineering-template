@@ -11,6 +11,14 @@
 #      its plan on, an artifact role such as the researcher writes what it has
 #      and returns it as partial. Advisory only: this hook NEVER blocks a tool
 #      call. An agent that ignores the warning still has its handoff on disk.
+#      The orchestrating session is never told to stop. It is not measured at
+#      all where it can be recognised -- on Claude by its missing agent_id, on
+#      Codex by the transcript SessionStart recorded -- and where it cannot,
+#      the advisory tells it the limit does not apply to it.
+#
+#   0. SessionStart -- record the orchestrating session's transcript, the only
+#      thing that tells it apart from a subagent on a host whose tool-use
+#      hooks carry no agent identity (Codex).
 #
 #   2. SubagentStop -- a write-capable subagent that was dispatched but left no
 #      `complete` SUMMARY.md did not finish. Write a handoff so the orchestrator
@@ -165,9 +173,28 @@ drop_active() {
   fi
 }
 
+# Where SessionStart records the orchestrating session's own transcript. Codex
+# gives a tool-use hook no agent identity at all -- a subagent's call carries
+# the parent's session id and nothing naming the agent -- so the transcript is
+# the one thing that can tell the orchestrator apart. Dot-prefixed: hook
+# bookkeeping, never listed as a handoff.
+root_file="$dir/.root-$slug.json"
+
 case "$event" in
+  SessionStart)
+    # Every source -- startup, resume, clear, compact -- names the transcript
+    # the orchestrator's own tool calls will report. Nothing on stdout: a
+    # SessionStart hook's output is injected into the model's context.
+    if [[ -n "${transcript:-}" ]]; then
+      mkdir -p "$dir" 2>/dev/null && printf '%s\n' "$transcript" > "$root_file" 2>/dev/null
+    fi
+    exit 0
+    ;;
+
   Stop)
-    # The root's sentinel and every subagent's, which are keyed per agent.
+    # The root's sentinel and every subagent's, which are keyed per agent. The
+    # root record stays: Stop ends a turn, not the session, and SessionStart
+    # does not fire again for the next one.
     rm -f "$state_file" "$dir/.state-$slug--"*.json 2>/dev/null
     exit 0
     ;;
@@ -251,6 +278,23 @@ esac
 
 # --- PostToolUse: measure and advise -----------------------------------------
 
+# The limit is for subagents, never for the orchestrating session. A subagent
+# handing off costs one fresh subagent; an orchestrator that stops strands the
+# whole phase and leaves the user to resume it -- which is what the old advisory
+# did, telling the root session to "dispatch nothing new" at 250k of a 1M window.
+#
+# Claude Code names the calling agent (`agent_id`) on every hook fired inside a
+# subagent, so on Claude a tool use with no agent identity IS the orchestrator:
+# measure nothing, write nothing, say nothing. The host is read from where this
+# copy was installed, because CLAUDECODE leaks into every shell Claude starts
+# and would misfire for a Codex session launched from one.
+host_is_claude() {
+  [[ "$script_dir" == */.claude/hooks || -n "${CLAUDE_PROJECT_DIR:-}" ]]
+}
+if [[ -z "${agent_id:-}${agent_transcript:-}" ]] && host_is_claude; then
+  exit 0
+fi
+
 # A subagent is measured on its own transcript and keyed by its own id, so its
 # record, its debounce and its advisory are never the orchestrator's. When its
 # transcript cannot be found the hook stays silent rather than falling back to
@@ -266,6 +310,24 @@ if [[ -n "${agent_id:-}${agent_transcript:-}" ]]; then
   handoff_slug "$ident" >/dev/null || exit 0
   key="$slug--agent-$ident"
   state_file="$dir/.state-$key.json"
+elif [[ -f "$root_file" ]]; then
+  # No agent identity, but SessionStart recorded the orchestrator's transcript
+  # (Codex). The same transcript is the orchestrator: silent, like on Claude.
+  # A different one is a subagent's own, so it is measured on that and keyed
+  # by it -- parallel subagents share the parent's session id and would
+  # otherwise share one record.
+  root_transcript="$(head -n 1 "$root_file" 2>/dev/null | tr -d '\r')"
+  if [[ -n "$root_transcript" && "$transcript" == "$root_transcript" ]]; then
+    exit 0
+  fi
+  if [[ -n "$root_transcript" && -n "$transcript" ]]; then
+    ident="${transcript//\\//}"
+    ident="${ident##*/}"
+    ident="${ident%.*}"
+    handoff_slug "$ident" >/dev/null || exit 0
+    key="$slug--agent-$ident"
+    state_file="$dir/.state-$key.json"
+  fi
 fi
 
 used="$(handoff_used_tokens "$measured")"
@@ -316,8 +378,9 @@ reviewer for the remainder."
 unknown_stop="If you are executing a plan: $plan_stop If you are writing an assigned \
 artifact such as RESEARCH.md: write it now from what you have, list what it does not \
 cover, and return it as partial -- this limit is not a blocker. If you are the \
-orchestrating session: dispatch nothing new, record where the work stands, and recommend \
-continuing in a fresh session."
+orchestrating session, this limit does not apply to you: keep running the workflow to \
+its end -- dispatch the next wave, verify and ship as it says -- and never stop, hand \
+off, or tell the user to resume or start a fresh session because of it."
 
 case "$(agent_stop_kind "$role")" in
   plan) instruction="$plan_stop" ;;

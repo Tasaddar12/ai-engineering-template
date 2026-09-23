@@ -255,12 +255,42 @@ MANAGED_HOOKS = (
     ("Stop", "context-handoff.sh", None),
 )
 
+#: Registrations one host alone has an event for: (event, script, timeout).
+#: Claude Code creates a subagent's isolated checkout itself, under
+#: .claude/worktrees/ and branched from the default branch; WorktreeCreate
+#: replaces that so every worktree lands under the project's worktree root and
+#: starts from the phase being built. Creating a checkout of a large repository
+#: can outlast the 10-second default, hence the longer timeout.
+#:
+#: Codex gives a tool-use hook no agent identity, so the handoff hook tells its
+#: orchestrator apart by the transcript SessionStart records. Claude needs no
+#: such record: every hook fired inside a Claude subagent carries agent_id.
+HOST_HOOKS = {
+    "claude": (
+        ("WorktreeCreate", "worktree-location.sh", 180),
+        ("WorktreeRemove", "worktree-location.sh", 60),
+    ),
+    "codex": (
+        ("SessionStart", "context-handoff.sh", 10),
+    ),
+}
+
+
+def managed_scripts():
+    """Every script a managed registration can name, on any host."""
+    names = {script for _, script, _ in MANAGED_HOOKS}
+    names.update(script for hooks in HOST_HOOKS.values() for _, script, _ in hooks)
+    return names
+
 
 def hook_settings(host):
     events = {}
-    for event, script, matcher in MANAGED_HOOKS:
+    registrations = [(event, script, matcher, 10) for event, script, matcher in MANAGED_HOOKS]
+    registrations += [(event, script, None, timeout)
+                      for event, script, timeout in HOST_HOOKS.get(host, ())]
+    for event, script, matcher, timeout in registrations:
         command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
-        handler = {"type": "command", "command": command, "timeout": 10}
+        handler = {"type": "command", "command": command, "timeout": timeout}
         if host == "codex":
             # Git for Windows does not put git.exe in one fixed place. An
             # installer-managed install has it at <root>\cmd\git.exe, so
@@ -353,13 +383,13 @@ def merge_hooks(current, incoming, path):
                     raise ValueError(f"invalid matcher/handler group for {event}")
         additions = json.loads(incoming)["hooks"]
         changed = False
-        managed_scripts = {script for _, script, _ in MANAGED_HOOKS}
+        scripts = managed_scripts()
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
                 if group in existing:
                     continue
-                script = next((name for name in managed_scripts
+                script = next((name for name in scripts
                                if f"/hooks/{name}" in json.dumps(group)), None)
                 # A group already registering THIS script under THIS matcher,
                 # but not byte-identical, is a customized managed registration:

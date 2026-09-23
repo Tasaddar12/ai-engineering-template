@@ -62,7 +62,7 @@ the one above; planning and readiness do not grant it.
 
 Draft progress pushes and verified publication are different steps.
 [ship](../commands/ship.md) is gated on verification passing for the current
-revision, and it never merges.
+revision, and it merges only on the user's instruction.
 
 ## Repair a defect
 

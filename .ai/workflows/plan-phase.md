@@ -247,11 +247,8 @@ proceed on the claim. Then route on the header the researcher returned:
 | no recognised header | A failure: report it, as for a missing file. |
 
 **Continuing partial research.** Re-dispatch the same `Agent(...)` call with the
-`<continuation>` block, against the same file, and with the researcher's handoff
-in a `<handoff>` block — the four steps in
-[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-The handoff carries what the previous researcher already read and found, so the
-continuation does not re-read the phase's sources to rebuild it:
+`<continuation>` block, against the same file, and the researcher's handoff in a
+`<handoff>` block, per [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation):
 
 ```
 ◆ Research partial — continuing {N} open question(s) in a fresh researcher
@@ -260,15 +257,16 @@ continuation does not re-read the phase's sources to rebuild it:
 Allow at most two continuations, and continue only while each pass shortens the
 `## Not Yet Researched` list. When the list is empty, continue to planning. When
 it stops shrinking, or the second continuation returns partial, continue to
-planning anyway: the phase-preparer plans the covered scope and carries each
-remaining question to the tasks that depend on it. Tell the user which questions
-went unresearched; do not ask them to resume anything.
+planning anyway; the phase-preparer plans the covered scope and carries each
+remaining question to the tasks that depend on it. List the unresearched
+questions in the report. Do not ask the user to resume anything.
 
-A researcher that crossed the context limit left a handoff record. Read it
-into the continuation before dispatching, and `handoff.consume` it in the same
-turn. When research ends without a continuation — complete, or the passes
-stopped shrinking — consume every remaining record whose `agent` is
-`researcher`, so a stale record never sends a second researcher after it.
+When research ends without another continuation, consume every remaining record
+whose `agent` is `researcher`:
+
+```bash
+phase_run query handoff.consume <id>
+```
 </step>
 
 <step name="check_existing_plans">
@@ -428,13 +426,10 @@ and stop. Do not write plans yourself to cover for a failed agent.
 
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
 the rest is unplanned. Re-dispatch the same `Agent(...)` call with the
-`<continuation>` block naming the scope it listed — once, without asking the
-user — and with the preparer's handoff in a `<handoff>` block, following
-[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation):
-read the record whose `agent` is `phase-preparer`, pass its `continuation`
-verbatim, and consume it in the same turn. Then re-read the plan index. If the
-continuation also returns partial, continue to the checker with what exists: its
-coverage findings name the remainder, and the revision loop closes it.
+`<continuation>` block naming the scope it listed, and the `phase-preparer`
+handoff in a `<handoff>` block, per [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
+Do it once, without asking the user. Then re-read the plan index. If the
+continuation also returns partial, continue to the checker with what exists.
 
 If the preparer recommended splitting the phase, surface that to the user and
 stop: splitting is a roadmap change (`/phase --insert`), not something to absorb
@@ -487,19 +482,17 @@ Findings: <numbered; each names the plan and task it affects>
 )
 ```
 
-A checker that reached the context limit reports what it reviewed and names
-the plans it did not reach. Continue that remainder in a fresh phase-checker
-with its handoff in a `<handoff>` block, per
-[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation),
-and merge the two reviews' findings before routing on the verdict.
+If the checker reports plans it did not reach, dispatch a fresh phase-checker
+for them with its handoff in a `<handoff>` block, per
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
+Merge both reviews' findings before routing on the verdict.
 </step>
 
 <step name="revision_loop">
 On `needs-revision`, hand the findings back to the phase-preparer to revise.
-**Maximum 3 iterations.** A revising preparer that returns `## PLANNING
-PARTIAL` is continued exactly as in `handle_preparer_return`: its handoff goes
-into the continuation's `<handoff>` block, so the continuation builds on the
-revision already committed instead of re-reading every plan to find it.
+**Maximum 3 iterations.** Continue a revising preparer that returns
+`## PLANNING PARTIAL` exactly as in `handle_preparer_return`, with its handoff
+in the `<handoff>` block.
 
 After the third, stop and present the outstanding findings to the user with a
 choice: proceed as-is, revise a specific finding together, or cancel. Do not loop

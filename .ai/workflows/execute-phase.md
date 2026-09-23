@@ -11,6 +11,16 @@ plan in its own isolated checkout, integrate the wave, review the resulting
 code, confirm the phase goal was achieved, then tick the roadmap.
 
 The orchestrator routes and integrates. It does not write the implementation.
+
+**Carry the phase through to publication in this session.** When execution
+finishes, invoke the `verify-work` skill for this phase (`/verify-work {N}`); it
+invokes the `ship` skill on a pass.
+
+- Never tell the user to resume, `/clear`, start a fresh session, or run
+  `/verify-work` or `/ship`.
+- Never stop because a `CONTEXT HANDOFF` advisory fired; it applies to subagents.
+- Route issues per [issues found while working](../RULES.md#issues-found-while-working).
+  Ask the user only the `/ship` merge question.
 </purpose>
 
 <required_reading>
@@ -143,19 +153,14 @@ project does not allow — the dispatch guard would block the write anyway.
 </step>
 
 <step name="safe_resume_gate">
-If `summary_count` is greater than 0 and `--resume` was not passed, execution
-already ran at least partly:
+If `summary_count` is greater than 0, do not ask. Run only the plans in
+`plan_index` whose `summary` is null, and print:
 
 ```
-Phase {N} has {summary_count} of {plan_count} plans already executed.
-
-Re-running from the start would re-execute completed work.
+Phase {N}: {summary_count} of {plan_count} plans already executed — continuing with the rest.
 ```
 
-Use AskUserQuestion (header: "Partial execution"; options: "Resume the remaining
-plans" / "Re-run everything" / "Cancel"). Default to resuming.
-
-On resume, the plans to run are those in `plan_index` whose `summary` is null.
+`--resume` means the same. If every plan has a SUMMARY, go to `aggregate_results`.
 </step>
 
 <step name="check_blocking_antipatterns">
@@ -172,7 +177,9 @@ rows. For each, answer inline before continuing:
 2. How did it manifest?
 3. What structural mechanism — not acknowledgment — prevents it recurring?
 
-If a blocking row cannot be answered from the file, stop and ask the user.
+If a row cannot be answered from the file, answer it from the codebase and the
+phase's history. If it still cannot be answered, apply the most direct
+preventive mechanism, name the row in the closing report, and continue.
 </step>
 
 <step name="preflight">
@@ -209,7 +216,7 @@ ISOLATION=$(phase_run query dispatch-isolation --raw --phase "${phase_number}")
 
 | `ISOLATION` | Fan-out | What this workflow does |
 |---|---|---|
-| `harness-worktree` | host-driven | Pass `isolation="worktree"` on each `Agent(...)` call and let the host create and bind the checkout. This workflow runs no git for setup. |
+| `harness-worktree` | host-driven | Pass `isolation="worktree"` on each `Agent(...)` call and let the host create and bind the checkout. This workflow runs no git for setup. On Claude, the project's `WorktreeCreate` hook creates it at `.worktrees/<name>` from this session's `HEAD`. Never create or accept a worktree anywhere else. |
 | `orchestrator-worktree` | runtime-driven | Call `worktree.create` per plan and give the executor its path as a root pin. The runtime performs every git operation. |
 
 **There is no third value, and no way to opt out.** Every executor in this
@@ -410,13 +417,10 @@ from each, and for every record:
    as `checkpoint_handling` does, with the record's brief in the `<handoff>`
    block — the four steps in
    [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-   The brief carries what the stopped coder already read and established, so
-   the continuation does not re-read the plan's whole `read_first` list.
 3. `handoff.consume` the record in the same turn.
 
-Continue each plan at most twice. A continuation that returns blocked for the
-same remaining tasks is a real blocker: report it rather than dispatching a
-third.
+Continue each plan at most twice. If a continuation returns blocked on the same
+remaining tasks, report it as a blocker.
 </step>
 
 <step name="integrate_wave">
@@ -438,7 +442,7 @@ Read the result rather than assuming it worked:
 
 | `status` | Means | What to do |
 |---|---|---|
-| `blocked` | deleted a path the plan never declared | Show `undeclared_deletions` and ask the user. Do not re-run the merge to get past it. A rename counts: its source path is a removal |
+| `blocked` | deleted a path the plan never declared | Do not merge the branch or re-run the merge. Mark the plan blocked, list it with its `undeclared_deletions` in the closing report, and continue the wave. A rename's source path counts as a removal |
 | `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
 | `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
 | `empty` | the branch has no commits | Same: nothing was produced |
@@ -461,20 +465,25 @@ preserved and let the user choose.
 </step>
 
 <step name="checkpoint_handling">
-A plan may return `blocked` with a checkpoint — a decision it cannot make alone.
+A plan may return `blocked` with a checkpoint. Do not stop the run. Route it:
 
-For each checkpoint:
-1. Present what the coder found and the options it identified
-2. Ask the user to decide (AskUserQuestion, or plain text in text mode)
-3. Record the decision: `phase_run query state.add-decision "{decision}"`
-4. Re-dispatch that plan with the decision added to its execution context
+- **Every option stays inside the locked decisions, acceptance and declared
+  scope, and none is destructive:** take the coder's recommended option (or the
+  one CONTEXT.md points to), record it, and re-dispatch the plan with the
+  decision in its execution context:
 
-Re-dispatch into a **fresh** isolated checkout, not the main one. A plan the
-user configured to run isolated stays isolated through recovery; continuing it
-in the primary checkout needs explicit confirmation and is never the default.
+  ```bash
+  phase_run query state.add-decision "{decision} (decided within delegated discretion)"
+  ```
 
-A checkpoint is not a failure. Do not resolve one by guessing so the wave can
-finish.
+- **Otherwise** — it changes a locked decision or acceptance, is destructive or
+  irreversible, installs an unverified package, needs credentials, access or
+  spending, or has a precondition only a person can meet: leave the plan
+  blocked, skip only the plans that depend on it, continue all other waves, and
+  list the options and the coder's recommendation in the closing report.
+
+Re-dispatch into a fresh isolated checkout, never the primary checkout. Never
+resolve a checkpoint by guessing.
 </step>
 
 <step name="run_checks">
@@ -502,6 +511,10 @@ Read each SUMMARY.md and build the phase picture:
 
 Report any phase requirement id that no summary claims. That is a gap, whether or
 not every plan reported complete.
+
+List what is still open in the closing report: each SUMMARY's Deferred and
+Remaining entries, minus anything a later plan in this phase completed, plus
+out-of-scope code-review findings. Do not create todos.
 </step>
 
 <step name="code_review_gate">
@@ -533,20 +546,6 @@ Findings: <numbered, each with file:line, severity (critical|warning), and why i
 **Critical findings block completion.** Dispatch a coder to fix them, then
 re-review. Warnings are recorded in the phase summary for the verifier to weigh;
 they do not block.
-</step>
-
-<step name="verify_phase_goal">
-Execution completing is not the same as the phase delivering its goal. Hand
-verification to `/verify-work`:
-
-```
-Phase {N} executed: {completed}/{plan_count} plans.
-
-`/verify-work {N}`
-```
-
-When the user asked for the phase to be carried through, read `workflows/verify-work.md`
-and execute it now rather than only printing the command.
 </step>
 
 <step name="update_roadmap">
@@ -586,21 +585,12 @@ phase_run query commit "chore(${padded_phase}): record phase execution" \
 </step>
 
 <step name="session_handoff">
-**Do not deliver this session here.** A phase session is opened by
-`/discuss-phase` and reused by `/plan-phase`, `/execute-phase` and
-`/verify-work`, so that the whole phase accumulates onto one branch and arrives
-as one pull request. Delivering it from this workflow would cut the phase into
-separate pull requests and strand whatever comes after.
-
-The session stays open, with its commits on its branch. `/ship` is the phase's
-delivery step: it opens the pull request, judges its checks, merges and closes
-the session. See @~/.ai/references/worktree-sessions.md.
-
-Carry the session into the output below so the user knows where the work is and
-what closes it:
+Do not deliver the session here and do not close it. Leave it open on its
+branch; `/ship` delivers it, and `/verify-work` runs `/ship` on a pass. See
+@~/.ai/references/worktree-sessions.md.
 
 ```
-Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
+Session: {branch} at {worktree} — open; verification and delivery follow in this session
 ```
 </step>
 
@@ -616,17 +606,17 @@ Requirements covered: {ids}
 Checks: {passed | failed with detail | not configured}
 Code review: {clean | N warnings recorded | N critical fixed}
 {deferred ? "Deferred: {items}" : ""}
+Still open (out of scope): {items} | none
+Blocked for a person: {plans, their options and the recommendation} | none
 
----
-
-## ▶ Next Up
-
-`/clear` then:
-
-`/verify-work {phase_number}`
-
----
+Verifying phase {phase_number} now.
 ```
+</step>
+
+<step name="run_verify_work">
+Invoke the `verify-work` skill for phase {phase_number}
+(`/verify-work {phase_number}`) in this session. If plans are still blocked,
+report them as the blocker instead.
 </step>
 
 </process>
@@ -653,6 +643,12 @@ Code review: {clean | N warnings recorded | N critical fixed}
 - Don't open a pull request or merge from here — a phase session is
   delivered once, by `/ship`
 - Don't close the phase session; the workflows after this one reuse it
+- Don't tell the user to resume, `/clear`, start a fresh session, or run
+  `/verify-work` or `/ship`
+- Don't stop because a context advisory fired
+- Don't ask whether to resume a partial execution
+- Don't stop to ask about an issue; route it per [issues found while working](../RULES.md#issues-found-while-working)
+- Don't create todos
 </anti_patterns>
 
 <success_criteria>
@@ -668,12 +664,15 @@ Code review: {clean | N warnings recorded | N critical fixed}
 - [ ] Every wave integrated through `worktree.merge-wave` before checks or review
 - [ ] Undeclared deletions and merge conflicts escalated, never merged past
 - [ ] Cleanup ran without `--force`, and anything preserved was reported
-- [ ] Checkpoints escalated to the user, not guessed
+- [ ] Checkpoints decided within delegated discretion or left blocked for a
+      person, never guessed, and never a reason to stop the run
+- [ ] What is still open listed in the closing report, with no todos created
 - [ ] Configured checks run per wave, against the integrated tree, and passing
 - [ ] Requirement coverage aggregated, with gaps reported
 - [ ] Code review run; critical findings fixed and re-reviewed
 - [ ] Roadmap plans ticked only for complete summaries
 - [ ] Folded todos closed, STATE.md updated, work committed
-- [ ] Phase session left open and reported, with `/ship` named as what
-      delivers it
+- [ ] Phase session left open for the workflows that follow
+- [ ] `/verify-work` run in this same session once execution finished, without
+      asking the user to run it
 </success_criteria>

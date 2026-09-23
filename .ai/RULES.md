@@ -212,6 +212,35 @@ Give agents their assignment, the applicable constraints, the files their plan
 names in `read_first`, and the dependency summaries they need — not every
 transcript. Follow [worker handoff](references/worker-handoff.md).
 
+## Issues found while working
+
+Never stop an authorized run to ask about an issue. Never create todos. Route
+each issue:
+
+1. **In scope** — a defect, failing check or test, wrong plan assumption, or
+   verification gap that blocks the phase goal or acceptance, inside the phase's
+   files and decisions: fix it now. Dispatch the responsible `coder` or a
+   `debugger` with `isolation="worktree"`, or plan gap closure. Record the
+   deviation in the SUMMARY.
+2. **Out of scope** — improvements, refactors, unrelated pre-existing bugs, new
+   capability, flaky tests outside the phase, documentation debt: leave it in the
+   plan SUMMARY's Deferred section (what, where, likely fix). List what is still
+   open in the closing report.
+3. **Needs a human** — changing a locked decision or acceptance; destructive or
+   irreversible actions; unverified packages; credentials, access or spending:
+   never guess. Mark only the dependent plan or step blocked, continue all
+   independent work, and list each item with its options and a recommendation
+   in the closing report.
+
+For a choice inside the phase's locked decisions, acceptance and declared scope,
+take the recommended option and record it:
+
+```bash
+phase_run query state.add-decision "<decision> (decided within delegated discretion)"
+```
+
+Do not call `todo.add`. Ask the user only the `/ship` merge question.
+
 ## Worktrees, integration and cleanup
 
 **Every executor runs in its own worktree. This is not configurable.** Without
@@ -309,8 +338,8 @@ than optional. Publication readiness needs applicable authorization, current
 verification and configured non-empty project checks. Observe required remote
 checks after creating or updating the PR; pending or failed checks prevent
 declaring it ready. Published, verified and merged are distinct facts. Never claim
-delivery from an open PR. Follow [ship](commands/ship.md); it publishes and does
-not merge. Missing credentials, unavailable remotes, failed checks and required
+delivery from an open PR. Follow [ship](commands/ship.md); it publishes and merges
+only on the user's instruction. Missing credentials, unavailable remotes, failed checks and required
 human reviews are concrete blockers: preserve the branch and report them without
 bypassing repository protections or claiming delivery.
 

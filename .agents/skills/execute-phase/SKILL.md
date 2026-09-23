@@ -24,8 +24,11 @@ Run the plans a phase has, then confirm what they actually produced.
 4. Escalate checkpoints to the user instead of guessing
 5. Run configured checks, aggregate requirement coverage, review the code
 6. Tick the roadmap only for plans with a complete SUMMARY.md
+7. Carry on into `/verify-work`, and on a pass into `/ship`, in the same session —
+   never hand the user the next command, and never stop at a context advisory
 
-**Output:** commits, `{phase}-{NN}-SUMMARY.md` per plan, and an updated roadmap.
+**Output:** commits, `{phase}-{NN}-SUMMARY.md` per plan, an updated roadmap, a
+verification report and the phase's pull request.
 
 **Authority:** executing a phase changes the codebase. Do not start unless the user
 has explicitly asked for this phase to be implemented.

@@ -29,6 +29,7 @@ jobs:
       - run: bash .ai/hooks/ai-tier-notice.test.sh
       - run: bash .ai/hooks/worktree-guard.test.sh
       - run: bash .ai/hooks/context-handoff.test.sh
+      - run: bash .ai/hooks/worktree-location.test.sh
 
   # Keep the existing branch-protection context while checking both platforms.
   validate:

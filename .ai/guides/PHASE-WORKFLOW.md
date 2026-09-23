@@ -118,7 +118,8 @@ agreement. The roadmap is only ticked on a pass or an explicit acceptance.
 
 Publishes verified work as a pull request. It is gated on `status: passed` for
 the current revision, a clean tree, a non-protected branch and passing checks.
-There is no bypass. Shipping publishes; it does not merge.
+There is no bypass. Shipping publishes, then merges only on the user's
+instruction.
 
 ## 4. Close the milestone
 

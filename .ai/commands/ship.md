@@ -22,11 +22,14 @@ Publish work that verification actually passed.
 3. Run the project's configured checks
 4. Compose the PR body from the phase's summaries and verification report
 5. Push and open or update the pull request
+6. Wait for its checks with `pr.checks --wait`; fix failing checks
+7. Ask the merge question; merge, sync the base branch and close the session only
+   on the user's instruction
 
-**Output:** a pushed branch and a pull request, recorded in STATE.md.
+**Output:** a pushed branch and a pull request, recorded in STATE.md, merged only
+on the user's instruction.
 
-Shipping publishes. It does not merge, it does not move the base branch, and it
-has no bypass for unverified work.
+No bypass for unverified work.
 </objective>
 
 <execution_context>
@@ -57,5 +60,6 @@ improvise from the summary.
 - PR body composed from the phase's own records
 - Branch pushed, PR opened or updated
 - Check state reported as observed, never assumed
+- Merge question asked; merged only on the user's instruction
 - Publication recorded in STATE.md and committed
 </success_criteria>
