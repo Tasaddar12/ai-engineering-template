@@ -209,8 +209,7 @@ def plan_migration(source, target, host, hooks, installer):
     current_ignore = relocate_paths(current_ignore, host)
     current_ignore = re.sub(rb"(?m)^(!?/?)[.]ai(?=\r?$)",
                             lambda match: match[1] + namespace.encode(), current_ignore)
-    block = installer.IGNORE_BLOCK.replace(".ai-venv", namespace + "-venv").encode()
-    desired[".gitignore"] = current_ignore if block in current_ignore.replace(b"\r\n", b"\n") else current_ignore + block
+    desired[".gitignore"] = current_ignore + installer.ignore_addition(current_ignore, namespace)
     writes = []
     for name, content in sorted(desired.items()):
         destination = target / name

@@ -187,11 +187,11 @@ def plan_update(source, target, host, hooks, installer, prune=False, previous=No
         raise ValueError(f"Not a file: {ignore}")
     current_ignore = ignore.read_bytes() if ignore.exists() else b""
     installer.require_utf8(current_ignore, ignore)
-    block = installer.IGNORE_BLOCK.replace(".ai-venv", namespace + "-venv").encode()
-    if block not in current_ignore.replace(b"\r\n", b"\n"):
+    addition = installer.ignore_addition(current_ignore, namespace)
+    if addition:
         if ignore.exists():
             backups.add(ignore)
-        desired[".gitignore"] = current_ignore + block
+        desired[".gitignore"] = current_ignore + addition
 
     # Files under the workflow's own roots that this revision does not ship.
     retained = {target / name for name in incoming}
