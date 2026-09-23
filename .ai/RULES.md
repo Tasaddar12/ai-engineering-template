@@ -338,8 +338,8 @@ than optional. Publication readiness needs applicable authorization, current
 verification and configured non-empty project checks. Observe required remote
 checks after creating or updating the PR; pending or failed checks prevent
 declaring it ready. Published, verified and merged are distinct facts. Never claim
-delivery from an open PR. Follow [ship](commands/ship.md); it publishes and does
-not merge. Missing credentials, unavailable remotes, failed checks and required
+delivery from an open PR. Follow [ship](commands/ship.md); it publishes and merges
+only on the user's instruction. Missing credentials, unavailable remotes, failed checks and required
 human reviews are concrete blockers: preserve the branch and report them without
 bypassing repository protections or claiming delivery.
 

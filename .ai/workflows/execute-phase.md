@@ -13,8 +13,8 @@ code, confirm the phase goal was achieved, then tick the roadmap.
 The orchestrator routes and integrates. It does not write the implementation.
 
 **Carry the phase through to publication in this session.** When execution
-finishes, read `workflows/verify-work.md` and execute it; it runs
-`workflows/ship.md` on a pass.
+finishes, invoke the `verify-work` skill for this phase (`/verify-work {N}`); it
+invokes the `ship` skill on a pass.
 
 - Never tell the user to resume, `/clear`, start a fresh session, or run
   `/verify-work` or `/ship`.
@@ -617,9 +617,9 @@ Blocked for a person: {plans, their options and the recommendation} | none
 Verifying phase {phase_number} now.
 ```
 
-Then read `workflows/verify-work.md` and execute it for phase {phase_number}
-immediately, in this session. If plans are still blocked, report them as the
-blocker instead.
+Then invoke the `verify-work` skill for phase {phase_number}
+(`/verify-work {phase_number}`) immediately, in this session. If plans are still
+blocked, report them as the blocker instead.
 </step>
 
 </process>

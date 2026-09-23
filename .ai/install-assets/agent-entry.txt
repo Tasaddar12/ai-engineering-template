@@ -83,8 +83,8 @@ including agent summaries. Push when delivery is authorized, and open a draft PR
 on the first push for tracking. Keep that draft current after every slice rather
 than waiting until the work is finished.
 
-[ship](.ai/commands/ship.md) publishes verified work; it does not merge, and it
-has no bypass for a phase whose verification is not `passed`. Explicit user limits
+[ship](.ai/commands/ship.md) publishes verified work and merges only on the
+user's instruction. It has no bypass for a phase whose verification is not `passed`. Explicit user limits
 override these defaults; read-only work needs no commit or publication. Follow
 [delivery rules](.ai/RULES.md#session-and-authorization).
 

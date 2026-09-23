@@ -38,9 +38,10 @@ class UnattendedFlow(unittest.TestCase):
     def test_execute_phase_continues_into_verification(self):
         text = read(WORKFLOWS / "execute-phase.md")
         completion = step(text, "completion")
-        self.assertIn("workflows/verify-work.md", completion)
+        self.assertIn("`verify-work` skill", completion)
         self.assertIn("immediately", completion)
         self.assertNotIn("Next Up", completion)
+        self.assertNotIn("workflows/verify-work.md", text)
 
     def test_a_partial_execution_continues_without_asking(self):
         gate = step(read(WORKFLOWS / "execute-phase.md"), "safe_resume_gate")
@@ -48,9 +49,20 @@ class UnattendedFlow(unittest.TestCase):
         self.assertIn("do not ask", gate)
 
     def test_verification_continues_into_shipping(self):
-        ready = step(read(WORKFLOWS / "verify-work.md"), "present_ready")
-        self.assertIn("workflows/ship.md", ready)
+        text = read(WORKFLOWS / "verify-work.md")
+        ready = step(text, "present_ready")
+        self.assertIn("`ship` skill", ready)
         self.assertNotIn("Next Up", ready)
+        self.assertNotIn("workflows/ship.md", text)
+
+    def test_ship_is_described_as_merging_on_instruction(self):
+        for path in (ROOT / ".ai" / "commands" / "ship.md", ROOT / ".agents" / "skills" / "ship" / "SKILL.md",
+                     ROOT / "AGENTS.md", ROOT / ".ai" / "install-assets" / "agent-entry.txt"):
+            with self.subTest(file=str(path.relative_to(ROOT))):
+                text = read(path)
+                self.assertNotIn("It does not merge", text)
+                self.assertNotIn("it does not merge", text)
+                self.assertIn("merge", text)
 
     def test_shipping_waits_for_checks_itself(self):
         checks = step(read(WORKFLOWS / "ship.md"), "judge_checks")

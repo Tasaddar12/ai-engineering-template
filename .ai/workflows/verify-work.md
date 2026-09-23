@@ -12,8 +12,8 @@ closed or recorded honestly.
 
 Task completion is a claim. Verification is evidence.
 
-**Carry the phase through to publication in this session.** On `passed`, read
-`workflows/ship.md` and execute it.
+**Carry the phase through to publication in this session.** On `passed`,
+invoke the `ship` skill for this phase (`/ship {N}`).
 
 - Never tell the user to resume, `/clear`, start a fresh session, or run `/ship`.
 - Never stop because a `CONTEXT HANDOFF` advisory fired; it applies to subagents.
@@ -406,8 +406,8 @@ Checks: {passed | failed | not configured}
 Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 ```
 
-**On `passed`:** read `workflows/ship.md` and execute it for phase
-{phase_number} in this session. Do not print `/ship` for the user.
+**On `passed`:** invoke the `ship` skill for phase {phase_number}
+(`/ship {phase_number}`) in this session. Do not print `/ship` for the user.
 
 **On any other status:** report what blocks shipping — open gaps, undecided
 `human_needed` criteria. Do not tell the user to run a command.
