@@ -290,7 +290,7 @@ phase_run query state.add-blocker "Phase {N}: {the undecided choice} — needs a
 
 **SCOPE BOUNDARY:**
 Only auto-fix issues DIRECTLY caused by the current task's changes. Pre-existing warnings, linting errors, or failures in unrelated files are out of scope.
-- Log out-of-scope discoveries in assigned SUMMARY Remaining/Deferred — what, where, and the likely fix — for the coordinator's closing report
+- Log out-of-scope discoveries in assigned SUMMARY Remaining/Deferred for the coordinator to record in phase CONTEXT
 - Do NOT fix them
 - Do NOT re-run builds hoping they resolve themselves
 

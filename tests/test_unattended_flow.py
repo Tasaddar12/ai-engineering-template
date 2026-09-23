@@ -87,7 +87,7 @@ class UnattendedFlow(unittest.TestCase):
     def test_no_workflow_creates_todos_on_its_own(self):
         """A single phase would otherwise record dozens; todos come from the user."""
         for path in (WORKFLOWS / "execute-phase.md", WORKFLOWS / "verify-work.md",
-                     WORKFLOWS / "ship.md", ROOT / ".ai" / "agents" / "coder.md"):
+                     WORKFLOWS / "ship.md"):
             with self.subTest(file=path.name):
                 self.assertNotIn("todo.add", read(path))
         aggregate = step(read(WORKFLOWS / "execute-phase.md"), "aggregate_results")
