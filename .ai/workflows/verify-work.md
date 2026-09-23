@@ -11,6 +11,14 @@ verifier reads the codebase and judges what is actually true, then gaps are eith
 closed or recorded honestly.
 
 Task completion is a claim. Verification is evidence.
+
+**This workflow carries the phase through to publication.** Whether it was
+started by `/execute-phase` or directly, verification is followed by delivery:
+when it passes, run `/ship` in this same session. Never stop to tell the user to
+resume, start a fresh session, or run the next command, and never stop because a
+context advisory fired — the handoff limit applies to subagents, not to the
+orchestrating session. Stop only for a real decision the workflows ask the user
+for, or a blocker you report as one.
 </purpose>
 
 <required_reading>
@@ -397,23 +405,16 @@ Checks: {passed | failed | not configured}
 {gaps ? "Recorded gaps: {list}" : ""}
 
 Report: {phase_dir}/{padded_phase}-VERIFICATION.md
-
----
-
-## ▶ Next Up
-
-{If more phases remain:}
-**Phase {next}: {name}** — {goal}
-
-`/clear` then:
-
-`/discuss-phase {next}`
-
-{If this was the milestone's last phase:}
-`/complete-milestone`
-
----
 ```
+
+**On `passed`, ship now.** Read `workflows/ship.md` and execute it for phase
+{phase_number} in this same session — do not print `/ship` for the user to run.
+Shipping opens or updates the pull request, waits for its checks, and asks the
+user only the merge question.
+
+On any other status the phase cannot ship: report what blocks it — the gaps the
+user chose to record, or the `human_needed` criteria still undecided — as the
+blocker. Never report it as a command for the user to run.
 </step>
 
 </process>
@@ -429,6 +430,8 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - Don't open a pull request or merge from here — a phase session is
   delivered once, by `/ship`
 - Don't close the phase session; the workflows after this one reuse it
+- Don't tell the user to `/clear`, resume, or run `/ship` — on `passed`, ship
+  yourself
 </anti_patterns>
 
 <success_criteria>
@@ -442,4 +445,5 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 - [ ] Gaps either closed and re-verified, or recorded as todos with the user's agreement
 - [ ] Roadmap and STATE.md updated only on a pass or an explicit acceptance
 - [ ] Phase session joined before any write, and left open for `/ship`
+- [ ] On `passed`, `/ship` run in this same session without asking the user to run it
 </success_criteria>

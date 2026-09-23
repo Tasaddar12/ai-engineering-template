@@ -11,6 +11,15 @@ plan in its own isolated checkout, integrate the wave, review the resulting
 code, confirm the phase goal was achieved, then tick the roadmap.
 
 The orchestrator routes and integrates. It does not write the implementation.
+
+**This workflow carries the phase through to publication.** `/execute-phase {N}`
+is an implementation instruction, and its ordinary steps are verification and
+delivery: when execution finishes, run `/verify-work` in this same session, and
+when verification passes, run `/ship`. Never stop to tell the user to resume,
+start a fresh session, or run the next command, and never stop because a context
+advisory fired — the handoff limit applies to subagents, not to the
+orchestrating session. Stop only for a real decision the workflows ask the user
+for, or a blocker you report as one.
 </purpose>
 
 <required_reading>
@@ -143,19 +152,17 @@ project does not allow — the dispatch guard would block the write anyway.
 </step>
 
 <step name="safe_resume_gate">
-If `summary_count` is greater than 0 and `--resume` was not passed, execution
-already ran at least partly:
+If `summary_count` is greater than 0, execution already ran at least partly.
+Continue it — do not ask. The plans to run are those in `plan_index` whose
+`summary` is null; re-running a plan that already has a complete SUMMARY would
+re-execute finished work. Report it in one line and carry on:
 
 ```
-Phase {N} has {summary_count} of {plan_count} plans already executed.
-
-Re-running from the start would re-execute completed work.
+Phase {N}: {summary_count} of {plan_count} plans already executed — continuing with the rest.
 ```
 
-Use AskUserQuestion (header: "Partial execution"; options: "Resume the remaining
-plans" / "Re-run everything" / "Cancel"). Default to resuming.
-
-On resume, the plans to run are those in `plan_index` whose `summary` is null.
+`--resume` is accepted and means the same thing. When every plan already has a
+SUMMARY, skip straight to `aggregate_results`.
 </step>
 
 <step name="check_blocking_antipatterns">
@@ -536,17 +543,10 @@ they do not block.
 </step>
 
 <step name="verify_phase_goal">
-Execution completing is not the same as the phase delivering its goal. Hand
-verification to `/verify-work`:
-
-```
-Phase {N} executed: {completed}/{plan_count} plans.
-
-`/verify-work {N}`
-```
-
-When the user asked for the phase to be carried through, read `workflows/verify-work.md`
-and execute it now rather than only printing the command.
+Execution completing is not the same as the phase delivering its goal.
+`/verify-work` judges that, and it runs in this same session as soon as this
+workflow's remaining steps are done — see `completion`. Do not print it as a
+command for the user to run.
 </step>
 
 <step name="update_roadmap">
@@ -593,14 +593,12 @@ as one pull request. Delivering it from this workflow would cut the phase into
 separate pull requests and strand whatever comes after.
 
 The session stays open, with its commits on its branch. `/ship` is the phase's
-delivery step: it opens the pull request, judges its checks, merges and closes
-the session. See @~/.ai/references/worktree-sessions.md.
-
-Carry the session into the output below so the user knows where the work is and
-what closes it:
+delivery step: it opens the pull request, judges its checks and — on the user's
+merge instruction — merges and closes the session. `/verify-work` runs it as soon
+as verification passes. See @~/.ai/references/worktree-sessions.md.
 
 ```
-Session: {branch} at {worktree} — open, delivered by `/ship {phase_number}`
+Session: {branch} at {worktree} — open; verification and delivery follow in this session
 ```
 </step>
 
@@ -617,16 +615,13 @@ Checks: {passed | failed with detail | not configured}
 Code review: {clean | N warnings recorded | N critical fixed}
 {deferred ? "Deferred: {items}" : ""}
 
----
-
-## ▶ Next Up
-
-`/clear` then:
-
-`/verify-work {phase_number}`
-
----
+Verifying phase {phase_number} now.
 ```
+
+This is a progress line, not a stopping point. Read `workflows/verify-work.md`
+and execute it for phase {phase_number} immediately, in this same session —
+`/verify-work` continues into `/ship` when verification passes. The only reason
+not to is plans still blocked: report those as the blocker instead.
 </step>
 
 </process>
@@ -653,6 +648,11 @@ Code review: {clean | N warnings recorded | N critical fixed}
 - Don't open a pull request or merge from here — a phase session is
   delivered once, by `/ship`
 - Don't close the phase session; the workflows after this one reuse it
+- Don't tell the user to resume, `/clear`, start a fresh session, or run
+  `/verify-work` or `/ship` — continue into them yourself
+- Don't stop because a context advisory fired; the handoff limit is for subagents
+- Don't ask whether to resume a partial execution; continue the plans without a
+  SUMMARY
 </anti_patterns>
 
 <success_criteria>
@@ -674,6 +674,7 @@ Code review: {clean | N warnings recorded | N critical fixed}
 - [ ] Code review run; critical findings fixed and re-reviewed
 - [ ] Roadmap plans ticked only for complete summaries
 - [ ] Folded todos closed, STATE.md updated, work committed
-- [ ] Phase session left open and reported, with `/ship` named as what
-      delivers it
+- [ ] Phase session left open for the workflows that follow
+- [ ] `/verify-work` run in this same session once execution finished, without
+      asking the user to run it
 </success_criteria>
