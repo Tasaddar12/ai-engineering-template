@@ -209,7 +209,7 @@ ISOLATION=$(phase_run query dispatch-isolation --raw --phase "${phase_number}")
 
 | `ISOLATION` | Fan-out | What this workflow does |
 |---|---|---|
-| `harness-worktree` | host-driven | Pass `isolation="worktree"` on each `Agent(...)` call and let the host create and bind the checkout. This workflow runs no git for setup. |
+| `harness-worktree` | host-driven | Pass `isolation="worktree"` on each `Agent(...)` call and let the host create and bind the checkout. This workflow runs no git for setup. On Claude, the project's `WorktreeCreate` hook creates that checkout under the worktree root (`.worktrees/`), branched from this session's `HEAD`, so a coder starts on the phase branch. Never create or accept a worktree anywhere else. |
 | `orchestrator-worktree` | runtime-driven | Call `worktree.create` per plan and give the executor its path as a root pin. The runtime performs every git operation. |
 
 **There is no third value, and no way to opt out.** Every executor in this

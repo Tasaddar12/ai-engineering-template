@@ -516,6 +516,31 @@ class InstallerTests(unittest.TestCase):
                                           capture_output=True)
                 self.assertEqual(0, observed.returncode, observed.stderr)
 
+    def test_claude_worktrees_are_placed_by_the_project_hook(self):
+        """Claude Code would put a subagent's checkout under .claude/worktrees/;
+        the project's WorktreeCreate hook puts it under the worktree root."""
+        for host, name in (("claude", ".claude/settings.json"), ("codex", ".codex/config.toml")):
+            with self.subTest(host=host):
+                self.target = self.base / (host + " worktree hooks")
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                hooks = read_settings(self.target / name)["hooks"]
+                self.assertTrue((self.target / ("." + host) / "hooks/worktree-location.sh").is_file())
+                if host == "codex":
+                    # Codex has no such event; its worktrees come from the runtime.
+                    self.assertNotIn("WorktreeCreate", hooks)
+                    self.assertNotIn("WorktreeRemove", hooks)
+                    continue
+                for event, timeout in (("WorktreeCreate", 180), ("WorktreeRemove", 60)):
+                    self.assertEqual(1, len(hooks[event]), event)
+                    handler = hooks[event][0]["hooks"][0]
+                    self.assertNotIn("matcher", hooks[event][0])
+                    self.assertIn("/.claude/hooks/worktree-location.sh", handler["command"])
+                    self.assertEqual(timeout, handler["timeout"])
+                before = self.snapshot()
+                self.assertEqual(0, self.install("--host", host).returncode)
+                self.assertEqual(before, self.snapshot(), "a rerun must not register it twice")
+
     def test_dry_run_leaves_nonexistent_target_absent(self):
         result = self.install("--dry-run")
         self.assertEqual(0, result.returncode, result.stderr)
