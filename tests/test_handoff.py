@@ -179,6 +179,38 @@ class Reading(HandoffCase):
         brief = self.run_verb("handoff.read", "sess--05-01")["continuation"]
         self.assertIn("Remaining: Task 3: wire the retry", brief)
 
+    def test_the_brief_carries_the_digest_and_forbids_rereading_it(self):
+        """The continuation ingests the handoff instead of the assignment's
+        whole required reading -- the waste the record exists to prevent."""
+        self.put("sess--agent-r3", agent="researcher", head="def5678",
+                 artifact=".planning/phases/04-a/04-RESEARCH.md",
+                 findings=["OIDC callback is api/auth.py:120"],
+                 files_read=["api/auth.py", ".planning/phases/04-a/04-CONTEXT.md"],
+                 completed=["Standard stack"], remaining=["SAML elevation"],
+                 next_action="read the SAML library docs")
+        brief = self.run_verb("handoff.read", "sess--agent-r3")["continuation"]
+        self.assertIn("sess--agent-r3.json", brief)
+        self.assertIn("Artifact in progress: .planning/phases/04-a/04-RESEARCH.md", brief)
+        self.assertIn("- OIDC callback is api/auth.py:120", brief)
+        self.assertIn("Already read (do not re-read):\n- api/auth.py", brief)
+        self.assertIn("- Standard stack", brief)
+        self.assertIn("Remaining: SAML elevation", brief)
+        self.assertIn("Next action: read the SAML library docs", brief)
+        self.assertIn("ingest it instead of rebuilding context", brief)
+        self.assertIn("git diff def5678", brief)
+
+    def test_a_brief_without_a_digest_still_limits_rereading(self):
+        self.put("sess--agent-p2", agent="phase-preparer")
+        brief = self.run_verb("handoff.read", "sess--agent-p2")["continuation"]
+        self.assertIn("left no digest", brief)
+        self.assertIn("do not re-read the whole assignment", brief)
+
+    def test_an_executor_brief_limits_read_first(self):
+        self.put("sess--03-02", agent="coder", plan=".planning/phases/03-x/03-02-PLAN.md",
+                 files_read=["src/a.py"])
+        brief = self.run_verb("handoff.read", "sess--03-02")["continuation"]
+        self.assertIn("read only those a remaining task edits", brief)
+
     def test_role_lists_match_the_hook(self):
         """The hook's advisory and this brief must classify roles the same way."""
         # Read as source, not imported: the runtime's `lib` package name is
@@ -284,6 +316,39 @@ class Writing(HandoffCase):
         brief = self.run_verb("handoff.read", "sess--04-04")["continuation"]
         self.assertIn("blocked on review", brief)
         self.assertIn("04-04-PLAN.md", brief)
+
+    def test_a_digest_merges_into_the_hooks_record(self):
+        """The agent adds what it learned to the record the hook already wrote.
+        The hook's revision and occupancy must survive; replacing them would
+        leave the continuation unable to tell what changed since."""
+        self.put("sess--agent-p9", agent="phase-preparer", head="abc1234",
+                 used_tokens=260000, created_at="2026-01-01T00:00:00Z")
+        payload = self.run_verb(
+            "handoff.write", "sess--agent-p9",
+            "--artifact", ".planning/phases/04-a/04-03-PLAN.md",
+            "--completed", "04-01 and 04-02 revised",
+            "--findings", "compose() lives at bin/tcp-lib/common.sh:44", "seed writes no workspaceId",
+            "--files-read", ".planning/phases/04-a/04-CONTEXT.md", "bin/tcp-lib/common.sh",
+            "--remaining", "finding 9", "finding 13",
+            "--next-action", "add the browser test to 04-15")
+        self.assertEqual("context-threshold", payload["reason"])
+        self.assertEqual("abc1234", payload["head"])
+        self.assertEqual(260000, payload["used_tokens"])
+        self.assertEqual("2026-01-01T00:00:00Z", payload["created_at"])
+        self.assertEqual("phase-preparer", payload["agent"])
+        self.assertEqual(["compose() lives at bin/tcp-lib/common.sh:44",
+                          "seed writes no workspaceId"], payload["findings"])
+        self.assertEqual([".planning/phases/04-a/04-CONTEXT.md", "bin/tcp-lib/common.sh"],
+                         payload["files_read"])
+        self.assertEqual(1, self.run_verb("handoff.list")["count"])
+
+    def test_a_later_write_changes_only_what_it_names(self):
+        self.run_verb("handoff.write", "sess--04-05", "--reason", "context",
+                      "--findings", "fact one", "--files-read", "a.py")
+        again = self.run_verb("handoff.write", "sess--04-05", "--remaining", "task-4")
+        self.assertEqual(["fact one"], again["findings"])
+        self.assertEqual(["a.py"], again["files_read"])
+        self.assertEqual(["task-4"], again["remaining"])
 
     def test_a_traversing_id_is_refused(self):
         payload = self.run_verb("handoff.write", "../escape", "--reason", "x",

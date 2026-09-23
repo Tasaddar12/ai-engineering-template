@@ -27,7 +27,8 @@ from lib.state import planning_lock  # noqa: E402
 from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
-LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining"}
+LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
+                "findings", "files_read"}
 
 
 def parse(argv):
@@ -279,7 +280,12 @@ def verb_handoff_write(workspace, positionals, options):
         agent=option_text(options, "agent"),
         summary=option_text(options, "summary"),
         remaining=options.get("remaining"),
-        notes=option_text(options, "notes")))
+        notes=option_text(options, "notes"),
+        artifact=option_text(options, "artifact"),
+        completed=options.get("completed"),
+        findings=options.get("findings"),
+        files_read=options.get("files_read"),
+        next_action=option_text(options, "next_action")))
 
 
 # --- phases ---------------------------------------------------------------
