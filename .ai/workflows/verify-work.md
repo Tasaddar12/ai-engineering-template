@@ -163,6 +163,14 @@ Agent(
 **Success criteria:** {from ROADMAP.md}
 **Requirements:** {requirements}
 **Revision under review:** {git HEAD}
+${handoff ? `
+<handoff>
+{the continuation field of phase_run query handoff.read <id>, verbatim}
+</handoff>
+This is a continuation. The handoff replaces the reading listed below: ingest it
+first, examine only the scope it names as not reached, and open a listed file
+only as its reading rule allows.
+` : ''}
 
 <required_reading>
 - {paths.roadmap} (the phase's goal and success criteria)
@@ -206,6 +214,15 @@ Return: ## VERIFICATION COMPLETE with the status and a one-line reason
 > **ORCHESTRATOR RULE**: wait for the subagent. Do not inspect the code in
 > parallel — a verifier that finds you already edited the tree is verifying
 > something else.
+
+A verifier that reached the context limit writes the report on what it examined
+and names the scope it did not reach. Continue that scope in a fresh verifier
+with the same `Agent(...)` call and its handoff in the `<handoff>` block — the
+four steps in
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation)
+— so the continuation adds to the existing report instead of re-reading every
+plan, summary and changed file to rebuild it. The integration and
+documentation checks below are continued the same way.
 </step>
 
 <step name="check_integration">

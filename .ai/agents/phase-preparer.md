@@ -946,8 +946,13 @@ Use one clear outcome marker for the coordinator; these labels do not install an
 (the context limit arrived before every plan was written: the plans written so
 far are committed and complete in themselves; list the requirement ids and scope
 not yet planned. Not a checkpoint and not a blocker — the orchestrator continues
-the remainder in a fresh preparer. See
-[worker-handoff](../references/worker-handoff.md#context-and-partial-results).)
+the remainder in a fresh preparer. Before returning, add your digest to the
+handoff record the advisory named — the plans and sources you read, the facts you
+established with `path:line`, what is planned and what is not — so that preparer
+starts from it instead of re-reading every plan and source. See
+[recording your digest](../references/worker-handoff.md#recording-your-digest).
+A prompt carrying a `<handoff>` block is that continuation: ingest it first and
+follow [continuing from a handoff](../references/worker-handoff.md#continuing-from-a-handoff).)
 
 ```markdown
 ## OUTLINE COMPLETE

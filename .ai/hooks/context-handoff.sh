@@ -197,8 +197,16 @@ case "$event" in
         drop_active "$agent_type" "$plan"
         summary="$(summary_for "$plan")"
         plan_finished "$summary" && exit 0
-        write_handoff "$dir/$slug--$(handoff_identifier "$plan").json" \
-          "incomplete-exit" "$agent_type" "$plan" "$summary" "" "" "" ""
+        # An agent that crossed the limit already has a record, carrying the
+        # digest it wrote. Its exit is folded into that record rather than a
+        # second one, so the orchestrator reads one handoff per stopped agent
+        # and the continuation it dispatches is handed the digest.
+        target="$dir/$slug--$(handoff_identifier "$plan").json"
+        if [[ -n "${agent_id:-}" ]] && handoff_slug "$agent_id" >/dev/null \
+           && [[ -f "$dir/$slug--agent-$agent_id.json" ]]; then
+          target="$dir/$slug--agent-$agent_id.json"
+        fi
+        write_handoff "$target" "incomplete-exit" "$agent_type" "$plan" "$summary" "" "" "" ""
         exit 0
       fi
     fi
@@ -324,9 +332,19 @@ case "$(agent_stop_kind "$role")" in
   *) instruction="$unknown_stop" ;;
 esac
 
+# The hook records where the attempt stopped; only the agent knows what it
+# learned. Without that digest the continuation re-reads the whole assignment,
+# so the advisory asks for it by the exact id of the record already on disk.
+digest="Before you return, add what you learned to that record so the next agent \
+ingests it instead of re-reading your assignment: phase_run query handoff.write $key \
+--artifact <the file you are writing> --completed <item>... --findings <fact, with its \
+path:line>... --files-read <path>... --remaining <item>... --next-action \"<the first \
+thing to do next>\". A finding is anything the next agent would otherwise open a file to \
+learn. Record it with what is already in your context: do not read anything to write it."
+
 message="CONTEXT HANDOFF  $used tokens in use, at or over the $limit-token limit \
 (${percent}% of a ${window}-token window, capped at ${ceiling}). A handoff record is on \
-disk at .planning/handoffs/$key.json. $instruction"
+disk at .planning/handoffs/$key.json. $instruction $digest"
 
 if [[ -n "$HANDOFF_PY" ]]; then
   "$HANDOFF_PY" -c '

@@ -306,17 +306,10 @@ pairs = sys.argv[2:]
 # Fields the orchestrator does arithmetic or comparisons on. An empty value
 # becomes null rather than "" so a consumer can test it numerically.
 NUMERIC = {"used_tokens", "threshold_tokens", "context_window", "context_percent"}
-
-record = {}
-for index in range(0, len(pairs) - 1, 2):
-    key, value = pairs[index], pairs[index + 1]
-    if key in NUMERIC:
-        try:
-            record[key] = int(value) if value != "" else None
-        except ValueError:
-            record[key] = None
-    else:
-        record[key] = value if value != "" else None
+# Fields an empty value must not erase. An exit record knows no occupancy and
+# a threshold record knows no plan; whichever is written second keeps what the
+# first one learned. Git state is always the current reading, so it is not here.
+KEEP_WHEN_EMPTY = NUMERIC | {"agent", "plan", "summary"}
 
 previous = {}
 try:
@@ -326,6 +319,23 @@ try:
         previous = loaded
 except Exception:
     previous = {}
+
+# Start from the previous record, not from nothing. The agent adds its digest
+# -- findings, files read, remaining work -- with `handoff.write` into this same
+# file, and the hook refreshes it on every later tool use; rebuilding it from
+# the hook fields alone would erase the digest one tool call after it was written.
+record = dict(previous)
+for index in range(0, len(pairs) - 1, 2):
+    key, value = pairs[index], pairs[index + 1]
+    if value == "" and key in KEEP_WHEN_EMPTY and previous.get(key) is not None:
+        continue
+    if key in NUMERIC:
+        try:
+            record[key] = int(value) if value != "" else None
+        except ValueError:
+            record[key] = None
+    else:
+        record[key] = value if value != "" else None
 
 now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 record["schema"] = 1

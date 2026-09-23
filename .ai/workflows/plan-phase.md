@@ -183,6 +183,13 @@ Agent(
 <research_context>
 **Phase:** {phase_number} — {phase_name}
 **Goal:** {goal}
+${handoff ? `
+<handoff>
+{the continuation field of phase_run query handoff.read <id>, verbatim}
+</handoff>
+This handoff replaces the reading this assignment lists below: ingest it first,
+and open a listed file only as its reading rule allows.
+` : ''}
 
 <required_reading>
 - {paths.project} (Project)
@@ -240,7 +247,11 @@ proceed on the claim. Then route on the header the researcher returned:
 | no recognised header | A failure: report it, as for a missing file. |
 
 **Continuing partial research.** Re-dispatch the same `Agent(...)` call with the
-`<continuation>` block, against the same file:
+`<continuation>` block, against the same file, and with the researcher's handoff
+in a `<handoff>` block — the four steps in
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
+The handoff carries what the previous researcher already read and found, so the
+continuation does not re-read the phase's sources to rebuild it:
 
 ```
 ◆ Research partial — continuing {N} open question(s) in a fresh researcher
@@ -253,10 +264,11 @@ planning anyway: the phase-preparer plans the covered scope and carries each
 remaining question to the tasks that depend on it. Tell the user which questions
 went unresearched; do not ask them to resume anything.
 
-A researcher that crossed the context limit also left a handoff record. After
-routing, `phase_run query handoff.list` and `handoff.consume` every record whose
-`agent` is `researcher` — in the same turn as the continuation dispatch, when
-there is one — so a stale record never sends a second researcher after it.
+A researcher that crossed the context limit left a handoff record. Read it
+into the continuation before dispatching, and `handoff.consume` it in the same
+turn. When research ends without a continuation — complete, or the passes
+stopped shrinking — consume every remaining record whose `agent` is
+`researcher`, so a stale record never sends a second researcher after it.
 </step>
 
 <step name="check_existing_plans">
@@ -284,6 +296,13 @@ Agent(
 **Goal:** {goal}
 **Mode:** {standard | gap_closure}
 **Depends on:** {depends_on}
+${handoff ? `
+<handoff>
+{the continuation field of phase_run query handoff.read <id>, verbatim}
+</handoff>
+This handoff replaces the reading this assignment lists below: ingest it first,
+and open a listed file only as its reading rule allows.
+` : ''}
 
 <required_reading>
 - {paths.state} (Project State)
@@ -410,10 +429,12 @@ and stop. Do not write plans yourself to cover for a failed agent.
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
 the rest is unplanned. Re-dispatch the same `Agent(...)` call with the
 `<continuation>` block naming the scope it listed — once, without asking the
-user — then re-read the plan index. If the continuation also returns partial,
-continue to the checker with what exists: its coverage findings name the
-remainder, and the revision loop closes it. Consume any handoff record whose
-`agent` is `phase-preparer` in the same turn, as for the researcher.
+user — and with the preparer's handoff in a `<handoff>` block, following
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation):
+read the record whose `agent` is `phase-preparer`, pass its `continuation`
+verbatim, and consume it in the same turn. Then re-read the plan index. If the
+continuation also returns partial, continue to the checker with what exists: its
+coverage findings name the remainder, and the revision loop closes it.
 
 If the preparer recommended splitting the phase, surface that to the user and
 stop: splitting is a roadmap change (`/phase --insert`), not something to absorb
@@ -431,6 +452,13 @@ silently into plans.
 Agent(
   prompt="
 Review the plans for Phase {phase_number} goal-backward.
+${handoff ? `
+<handoff>
+{the continuation field of phase_run query handoff.read <id>, verbatim}
+</handoff>
+This handoff replaces the reading this assignment lists below: ingest it first,
+and open a listed file only as its reading rule allows.
+` : ''}
 
 **Goal:** {goal}
 **Plans:** {each plan path from the plan index}
@@ -458,11 +486,20 @@ Findings: <numbered; each names the plan and task it affects>
   description="Check plans for phase {phase_number}"
 )
 ```
+
+A checker that reached the context limit reports what it reviewed and names
+the plans it did not reach. Continue that remainder in a fresh phase-checker
+with its handoff in a `<handoff>` block, per
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation),
+and merge the two reviews' findings before routing on the verdict.
 </step>
 
 <step name="revision_loop">
 On `needs-revision`, hand the findings back to the phase-preparer to revise.
-**Maximum 3 iterations.**
+**Maximum 3 iterations.** A revising preparer that returns `## PLANNING
+PARTIAL` is continued exactly as in `handle_preparer_return`: its handoff goes
+into the continuation's `<handoff>` block, so the continuation builds on the
+revision already committed instead of re-reading every plan to find it.
 
 After the third, stop and present the outstanding findings to the user with a
 choice: proceed as-is, revise a specific finding together, or cancel. Do not loop
