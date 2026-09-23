@@ -223,6 +223,57 @@ class CheckClassification(unittest.TestCase):
         self.assertEqual(verdict["failing"][0]["reason"], "unrecognised conclusion")
 
 
+class WaitingForChecks(unittest.TestCase):
+    """Shipping waits for CI itself instead of stopping for the user to re-run it."""
+
+    def setUp(self):
+        self.now = 0.0
+        self.slept = []
+        self.rollups = []
+        originals = (delivery.require_gh, delivery.view)
+        self.addCleanup(lambda: (setattr(delivery, "require_gh", originals[0]),
+                                 setattr(delivery, "view", originals[1])))
+        delivery.require_gh = lambda workspace: None
+        delivery.view = lambda workspace, branch, cwd=None: {
+            "number": 7, "url": "u", "state": "OPEN",
+            "statusCheckRollup": self.rollups.pop(0) if len(self.rollups) > 1
+            else self.rollups[0]}
+
+    def sleep(self, seconds):
+        self.slept.append(seconds)
+        self.now += seconds
+
+    def verdict(self, **options):
+        return delivery.checks(None, "phase-01", sleep=self.sleep,
+                               clock=lambda: self.now, **options)
+
+    RUNNING = [{"name": "unit", "status": "IN_PROGRESS"}]
+    GREEN = [{"name": "unit", "status": "COMPLETED", "conclusion": "SUCCESS"}]
+
+    def test_without_wait_a_pending_verdict_returns_at_once(self):
+        self.rollups = [self.RUNNING]
+        self.assertEqual("pending", self.verdict()["state"])
+        self.assertEqual([], self.slept)
+
+    def test_a_wait_rereads_until_the_checks_settle(self):
+        self.rollups = [self.RUNNING, self.RUNNING, self.GREEN]
+        result = self.verdict(wait=300, interval=30)
+        self.assertEqual("passing", result["state"])
+        self.assertEqual([30, 30], self.slept)
+        self.assertEqual(60, result["waited"])
+
+    def test_the_wait_is_bounded_and_still_reports_pending(self):
+        self.rollups = [self.RUNNING]
+        result = self.verdict(wait=90, interval=30)
+        self.assertEqual("pending", result["state"])
+        self.assertLessEqual(sum(self.slept), 90)
+
+    def test_a_settled_verdict_never_waits(self):
+        self.rollups = [self.GREEN]
+        self.assertEqual("passing", self.verdict(wait=300)["state"])
+        self.assertEqual([], self.slept)
+
+
 class MergeGate(SessionCase):
     """A merge needs evidence; absence of a pull request is not evidence."""
 

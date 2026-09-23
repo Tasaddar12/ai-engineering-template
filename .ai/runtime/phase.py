@@ -212,7 +212,11 @@ def verb_pr_open(workspace, positionals, options):
 
 def verb_pr_checks(workspace, positionals, options):
     branch = argument(positionals, 0, "branch")
-    return delivery.checks(workspace, branch)
+    try:
+        wait = int(options.get("wait") or 0)
+    except (TypeError, ValueError):
+        raise VerbError("--wait takes a number of seconds", "bad-wait")
+    return delivery.checks(workspace, branch, wait=max(wait, 0))
 
 
 def verb_pr_merge(workspace, positionals, options):
