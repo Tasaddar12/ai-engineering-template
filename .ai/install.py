@@ -211,17 +211,69 @@ def hooks_toml(events):
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
-def merge_codex_config(current, incoming, path):
+TOML_HEADER = re.compile(r"\s*\[\[?\s*([^\]]+?)\s*\]\]?\s*(#.*)?$")
+
+
+def remove_toml_groups(text, removed):
+    """Drop the `[[hooks.EVENT]]` blocks whose parsed group is in `removed`.
+
+    Every other line -- comments, user tables, formatting -- is kept verbatim.
+    A comment or blank run that ends a dropped block is kept too, because it
+    usually introduces the table after it.
+    """
+    lines = text.splitlines(keepends=True)
+    blocks, start = [], 0
+    for index, line in enumerate(lines):
+        header = TOML_HEADER.match(line)
+        if not header or index == start:
+            continue
+        name, owner = header.group(1), TOML_HEADER.match(lines[start])
+        if owner and name.startswith(owner.group(1) + "."):
+            continue  # A sub-table such as [[hooks.EVENT.hooks]] stays in its group.
+        blocks.append(lines[start:index])
+        start = index
+    blocks.append(lines[start:])
+    pending = {event: list(groups) for event, groups in removed.items()}
+    kept = []
+    for block in blocks:
+        header = TOML_HEADER.match(block[0]) if block else None
+        event = header.group(1)[len("hooks."):] if header and \
+            header.group(1).startswith("hooks.") else None
+        if event and block[0].lstrip().startswith("[[") and pending.get(event):
+            parsed = tomllib.loads("".join(block)).get("hooks", {}).get(event, [])
+            if len(parsed) == 1 and parsed[0] in pending[event]:
+                pending[event].remove(parsed[0])
+                tail = len(block)
+                while tail > 1 and (not block[tail - 1].strip()
+                                    or block[tail - 1].lstrip().startswith("#")):
+                    tail -= 1
+                kept.extend(block[tail:])
+                continue
+        kept.extend(block)
+    if any(pending.values()):
+        raise ValueError("could not locate a stale hook table to replace")
+    return "".join(kept)
+
+
+def merge_codex_config(current, incoming, path, replace=False):
     """Append missing hooks while preserving existing TOML text and settings."""
     try:
         settings = tomllib.loads(current.decode("utf-8-sig"))
         additions = tomllib.loads(incoming.decode("utf-8"))
-        merged = json.loads(merge_hooks(json_bytes(settings), json_bytes(additions), path))
+        merged = json.loads(merge_hooks(json_bytes(settings), json_bytes(additions), path,
+                                        replace))
         missing = {event: [group for group in groups
                            if group not in settings.get("hooks", {}).get(event, [])]
                    for event, groups in merged["hooks"].items()}
         if not any(missing.values()):
             return current
+        removed = {event: [group for group in groups
+                           if group not in merged["hooks"].get(event, [])]
+                   for event, groups in settings.get("hooks", {}).items()}
+        if any(removed.values()):
+            bom = b"\xef\xbb\xbf" if current.startswith(b"\xef\xbb\xbf") else b""
+            current = bom + remove_toml_groups(current.decode("utf-8-sig"),
+                                               removed).encode("utf-8")
         result = current + b"\n" + hooks_toml(missing)
         # Inline arrays/tables cannot always be extended with array-of-tables.
         # Refuse incompatible existing syntax rather than rewrite user settings.
@@ -360,8 +412,12 @@ def invalid_json_constant(value):
     raise ValueError(f"Non-JSON numeric constant: {value}")
 
 
-def merge_hooks(current, incoming, path):
-    """Append managed groups, retaining user settings and refusing ambiguous edits."""
+def merge_hooks(current, incoming, path, replace=False):
+    """Append managed groups, retaining user settings and refusing ambiguous edits.
+
+    With `replace`, a managed group an older revision wrote is swapped for the
+    current one instead of refused.
+    """
     try:
         settings = json.loads(current.decode("utf-8-sig"), object_pairs_hook=unique_json_object,
                               parse_constant=invalid_json_constant)
@@ -392,15 +448,22 @@ def merge_hooks(current, incoming, path):
                 script = next((name for name in scripts
                                if f"/hooks/{name}" in json.dumps(group)), None)
                 # A group already registering THIS script under THIS matcher,
-                # but not byte-identical, is a customized managed registration:
-                # refuse rather than install a second, conflicting copy. A user
-                # hook on the same event that names a different script is
-                # theirs, and is left alone.
-                if script and any(f"/hooks/{script}" in json.dumps(other)
-                                  and other.get("matcher") == group.get("matcher")
-                                  for other in existing):
+                # but not byte-identical, is a customized or older managed
+                # registration. A user hook on the same event that names a
+                # different script is theirs, and is left alone.
+                stale = [other for other in existing
+                         if script and f"/hooks/{script}" in json.dumps(other)
+                         and other.get("matcher") == group.get("matcher")]
+                # An update replaces a stale registration, as it replaces any
+                # other shipped file, once the caller has backed the settings
+                # up. A group that also carries a user handler is not wholly
+                # ours to replace, and an install never replaces at all.
+                if stale and not (replace and all(
+                        all(f"/hooks/{script}" in json.dumps(handler)
+                            for handler in other["hooks"]) for other in stale)):
                     raise ValueError(f"managed {event} registration for {script} "
                                      "differs; reconcile it manually")
+                existing[:] = [other for other in existing if other not in stale]
                 existing.append(group)
                 changed = True
         return json_bytes(settings) if changed else current

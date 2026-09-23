@@ -180,6 +180,60 @@ class UpdateTests(unittest.TestCase):
         self.assertIn(b"my-own-hook", merged)
         self.assertIn(b"worktree-guard.sh", merged)
 
+    def settings_name(self):
+        return ".codex/config.toml" if self.host == "codex" else ".claude/settings.json"
+
+    def aged_settings(self, user_hook):
+        """Host settings as an older revision wrote them, beside a user hook."""
+        events = installer.hook_settings(self.host)["hooks"]
+        for groups in events.values():
+            for group in groups:
+                handler = group["hooks"][0]
+                if "commandWindows" in handler:
+                    handler["commandWindows"] = handler["commandWindows"].replace(
+                        "; exit $LASTEXITCODE", "")
+                else:
+                    handler["timeout"] = 5
+        events.setdefault("PreToolUse", []).insert(0, user_hook)
+        if self.host == "codex":
+            return (b"# project settings\nmodel = \"x\"\n\n"
+                    + installer.hooks_toml(events))
+        return installer.json_bytes({"model": "x", "hooks": events})
+
+    def test_an_aged_managed_hook_registration_is_replaced(self):
+        user_hook = {"matcher": "MyTool",
+                     "hooks": [{"type": "command", "command": "my-own-hook"}]}
+        settings = self.settings_name()
+        self.write(settings, self.aged_settings(user_hook))
+        changes, backups, _ = self.plan()
+        self.assertIn(self.target / settings, backups)
+        self.apply(changes)
+        merged = self.read(settings)
+        parsed = (installer.tomllib.loads(merged.decode()) if self.host == "codex"
+                  else installer.json.loads(merged))
+        self.assertEqual("x", parsed["model"])
+        expected = installer.hook_settings(self.host)["hooks"]
+        for event, groups in expected.items():
+            present = [group for group in parsed["hooks"][event] if group != user_hook]
+            self.assertEqual(groups, present, event)
+        self.assertIn(user_hook, parsed["hooks"]["PreToolUse"])
+        if self.host == "codex":
+            self.assertTrue(merged.startswith(b"# project settings\n"))
+        self.assertNotIn(self.target / settings,
+                         [path for path, _ in self.plan()[0]])
+
+    def test_a_managed_registration_sharing_a_group_with_a_user_hook_stops(self):
+        events = installer.hook_settings(self.host)["hooks"]
+        group = events["PostToolUse"][0]
+        group["hooks"][0]["timeout"] = 5
+        group["hooks"].append({"type": "command", "command": "my-own-hook"})
+        content = (installer.hooks_toml(events) if self.host == "codex"
+                   else installer.json_bytes({"hooks": events}))
+        self.write(self.settings_name(), content)
+        with self.assertRaises(ValueError) as caught:
+            self.plan()
+        self.assertIn("differs", str(caught.exception))
+
     # --- files this revision no longer ships ---------------------------------
 
     def test_an_unshipped_file_is_reported_and_kept(self):
