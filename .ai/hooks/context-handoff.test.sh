@@ -510,5 +510,55 @@ run_hook "$(subagent_payload SubagentStop sess-cres r2 researcher)" >/dev/null
 check "claude stop: a researcher stop writes no exit record" \
   "$(ls "$handoffs"/sess-cres*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
 
+# --- the agent's digest ------------------------------------------------------
+#
+# The hook records where an attempt stopped; the agent adds what it learned
+# with `handoff.write` into the same record. Without that digest the
+# continuation re-reads the whole assignment.
+
+claude_transcript "$workspace/parent/subagents/agent-g1.jsonl" 130000
+out="$(run_hook "$(subagent_payload PostToolUse sess-dig g1 researcher)")"
+contains "digest: the advisory asks for the digest by the record's own id" \
+  "$out" "handoff.write sess-dig--agent-g1"
+contains "digest: the advisory names the files already read" "$out" "--files-read"
+contains "digest: the advisory names the findings" "$out" "--findings"
+contains "digest: the advisory forbids reading to write it" "$out" "do not read anything to write it"
+
+# Stand in for `handoff.write`: add digest fields to the hook's record, then let
+# the hook refresh it on a later tool use. The digest must survive the refresh.
+add_digest() { # <record>
+  "$HANDOFF_PY" -c '
+import json, sys
+path = sys.argv[1]
+record = json.load(open(path, encoding="utf-8"))
+record.update({"findings": ["auth lives in api/auth.py:12"], "files_read": ["api/auth.py"],
+               "remaining": ["SAML"]})
+open(path, "w", encoding="utf-8").write(json.dumps(record))
+' "$(handoff_native_path "$1")"
+}
+add_digest "$handoffs/sess-dig--agent-g1.json"
+claude_transcript "$workspace/parent/subagents/agent-g1.jsonl" 140000
+run_hook "$(subagent_payload PostToolUse sess-dig g1 researcher)" >/dev/null
+record="$(cat "$handoffs/sess-dig--agent-g1.json" 2>/dev/null || true)"
+contains "digest: a later refresh keeps the agent's findings" "$record" "api/auth.py:12"
+contains "digest: a later refresh keeps the files already read" "$record" '"files_read"'
+contains "digest: a later refresh still updates occupancy" "$record" '"used_tokens": 140000'
+
+# A coder that crossed the limit and then stopped unfinished has one record,
+# not two: its exit folds into the threshold record that carries its digest.
+claude_transcript "$workspace/parent/subagents/agent-k1.jsonl" 130000
+run_hook "$(subagent_payload PostToolUse sess-fold k1 coder)" >/dev/null
+add_digest "$handoffs/sess-fold--agent-k1.json"
+printf '{"type":"user","message":{"role":"user","content":"Execute .planning/phases/06-claude/06-04-PLAN.md"}}\n' \
+  > "$workspace/parent/subagents/agent-k1.jsonl"
+run_hook "$(subagent_payload SubagentStop sess-fold k1 coder)" >/dev/null
+record="$(cat "$handoffs/sess-fold--agent-k1.json" 2>/dev/null || true)"
+check "fold: an exit after the limit writes no second record" \
+  "$(ls "$handoffs"/sess-fold*.json 2>/dev/null | wc -l | tr -d ' ')" "1"
+contains "fold: the record now says the agent exited unfinished" "$record" '"reason": "incomplete-exit"'
+contains "fold: the record gains the plan from the exit" "$record" "06-04-PLAN.md"
+contains "fold: the digest survives the exit" "$record" "api/auth.py:12"
+contains "fold: the occupancy survives the exit" "$record" '"used_tokens": 130000'
+
 printf '%s passed, %s failed\n' "$passed" "$failed"
 [[ "$failed" -eq 0 ]]
