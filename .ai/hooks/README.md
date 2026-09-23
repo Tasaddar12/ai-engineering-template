@@ -118,6 +118,16 @@ Its two triggers write to `.planning/handoffs/`, which is gitignored:
   refreshed, not duplicated, on later tool uses, and the advisory debounces to
   one every five.
 
+  The hook can record only where the attempt stopped. The advisory therefore
+  asks the agent, by the record's exact id, to add its digest with
+  `handoff.write` — the files it read, the findings it established, what is done
+  and what is left — from what is already in its context. A refresh starts from
+  the previous record, so that digest survives every later tool use: git state
+  is re-read, and an empty agent, plan, summary or occupancy never erases a known
+  one. The digest is what the continuation ingests in place of re-reading the
+  assignment; see
+  [recording your digest](../references/worker-handoff.md#recording-your-digest).
+
   The agent measured is the one calling. Claude Code gives a hook fired inside
   a subagent the *parent's* `transcript_path`, with `agent_id` and `agent_type`
   beside it, so the hook reads the subagent's own transcript at
@@ -135,7 +145,9 @@ Its two triggers write to `.planning/handoffs/`, which is gitignored:
   gets guidance that holds for any of them.
 - **A subagent stopping early** writes a record naming the plan and the SUMMARY
   to read first. Missing or `blocked` is unfinished; only `status: complete`
-  clears without a handoff.
+  clears without a handoff. An agent that already crossed the limit has a record
+  carrying its digest, and its exit is folded into that record rather than a
+  second one, so there is one handoff per stopped agent.
 
   The two hosts reach that event from opposite directions, so the hook resolves
   the agent's identity from whichever side actually carries it:

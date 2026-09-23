@@ -158,11 +158,14 @@ def _items(value):
 
 def _digest(record):
     """The previous attempt's working knowledge, rendered for the next agent."""
-    lines = [f"Handoff record: {record.get('file') or record.get('id')}"]
+    # The id, not the path: the file is consumed in the dispatch turn, and this
+    # brief carries everything in it, so there is nothing left to open.
+    lines = [f"Handoff: {record.get('id')} (this brief carries the whole record)"]
     if record.get("artifact"):
         lines.append(f"Artifact in progress: {record['artifact']}")
     for key, heading in (("completed", "Already done"),
-                         ("findings", "Established findings (rely on these; do not re-derive them)"),
+                         ("findings",
+                          "Established findings (rely on these; do not re-derive them)"),
                          ("files_read", "Already read (do not re-read)")):
         items = _items(record.get(key))
         if items:

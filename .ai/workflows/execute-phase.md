@@ -314,6 +314,14 @@ Agent(
 <execution_context>
 **Phase:** {phase_number} — {phase_name}
 **Plan:** {phase_dir}/{plan_file}
+${handoff ? `
+<handoff>
+{the continuation field of phase_run query handoff.read <id>, verbatim}
+</handoff>
+This is a continuation. The handoff replaces the reading listed below: ingest it
+first, work only its remaining items, and open a listed file only as its
+reading rule allows.
+` : ''}
 
 <required_reading>
 - {phase_dir}/{plan_file} (your plan — the authority on what to change)
@@ -333,7 +341,8 @@ files and follow their rules.
 - Execute ONLY the tasks in your plan. New capability is out of scope: record it
   in your summary as a deferred item rather than building it
 - Read every `read_first` file before editing; do not act on assumptions about
-  current state
+  current state. A continuation reads only the files its handoff's reading rule
+  allows, and always the file it is about to edit
 - Touch only the paths your plan declares in `files_modified`
 - Commit each completed task atomically with a descriptive message
 - Run each task's `<verify>` command and record its actual output. A task whose
@@ -389,6 +398,25 @@ git log --oneline -n 20
 
 A plan whose agent reported "complete" with no SUMMARY.md, or with no commits, did
 not complete. Treat it as blocked and say so.
+
+**Continue an interrupted plan from its handoff.** A coder that crossed the
+context limit, or exited without a `complete` SUMMARY, left a handoff record in
+the checkout it worked in — this session worktree, or under
+`harness-worktree` the plan's own worktree. Run `phase_run query handoff.list`
+from each, and for every record:
+
+1. Inspect the plan's commits and SUMMARY, as for any blocked plan.
+2. Re-dispatch the plan's same `Agent(...)` call into a fresh isolated checkout,
+   as `checkpoint_handling` does, with the record's brief in the `<handoff>`
+   block — the four steps in
+   [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
+   The brief carries what the stopped coder already read and established, so
+   the continuation does not re-read the plan's whole `read_first` list.
+3. `handoff.consume` the record in the same turn.
+
+Continue each plan at most twice. A continuation that returns blocked for the
+same remaining tasks is a real blocker: report it rather than dispatching a
+third.
 </step>
 
 <step name="integrate_wave">

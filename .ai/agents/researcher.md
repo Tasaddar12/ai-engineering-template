@@ -170,12 +170,26 @@ questions will not fit — means:
    would have looked next. That list is the brief for the researcher who
    continues, so make it specific enough to start from.
 4. Set `**Coverage:** partial (context limit)` in the Metadata section, commit
-   as Step 7 allows, and return `## RESEARCH PARTIAL`.
+   as Step 7 allows.
+5. Add your digest to the handoff record the advisory named, with
+   `phase_run query handoff.write <id>`: the sources you already read
+   (`--files-read`), what you established from them that RESEARCH.md does not
+   already say (`--findings`, with `path:line` or URL), and where you would look
+   next for the open questions (`--next-action`). Write it from what is in your
+   context; do not read anything to write it. See
+   [recording your digest](../references/worker-handoff.md#recording-your-digest).
+6. Return `## RESEARCH PARTIAL`.
 
-The limit is not a blocker. Do not return `RESEARCH BLOCKED` for it, do not
-describe the work as waiting for a human, and do not write a handoff note in
-place of the research: the orchestrator continues the open questions in a
-fresh researcher without asking anyone.
+The limit is not a blocker. Do not return `RESEARCH BLOCKED` for it, and do not
+describe the work as waiting for a human. The digest is recorded in addition to
+RESEARCH.md, never in place of it: the orchestrator continues the open questions
+in a fresh researcher without asking anyone, and hands that researcher your
+digest so it does not re-read your sources.
+
+A prompt carrying a `<handoff>` block is such a continuation. Ingest the block
+first, then read RESEARCH.md; do not re-read a source the block lists as already
+read, and follow
+[continuing from a handoff](../references/worker-handoff.md#continuing-from-a-handoff).
 
 Write early so there is always something to converge on: open RESEARCH.md at
 Step 2.9 and record findings into it as Step D describes, rather than holding

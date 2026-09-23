@@ -189,7 +189,10 @@ class Reading(HandoffCase):
                  completed=["Standard stack"], remaining=["SAML elevation"],
                  next_action="read the SAML library docs")
         brief = self.run_verb("handoff.read", "sess--agent-r3")["continuation"]
-        self.assertIn("sess--agent-r3.json", brief)
+        self.assertIn("Handoff: sess--agent-r3", brief)
+        # The record is consumed on dispatch; the brief must not send the agent
+        # to open a file that is already gone.
+        self.assertNotIn("sess--agent-r3.json", brief)
         self.assertIn("Artifact in progress: .planning/phases/04-a/04-RESEARCH.md", brief)
         self.assertIn("- OIDC callback is api/auth.py:120", brief)
         self.assertIn("Already read (do not re-read):\n- api/auth.py", brief)

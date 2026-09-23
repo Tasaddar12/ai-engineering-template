@@ -445,6 +445,18 @@ Record base/head, completed/remaining tasks, dirty files, command results and mi
 Honor a lower user limit; record `Context usage: unavailable` when the host provides no metric.
 Set SUMMARY frontmatter `status: blocked` when handing off unfinished work;
 never invent a passing check or set `status: complete` to avoid a handoff.
+Before returning, add your digest to the record the advisory named with
+`phase_run query handoff.write <id>` — the files you read, what you established
+from them with `path:line`, completed and remaining tasks, and the next action —
+from what is already in context, per
+[recording your digest](../references/worker-handoff.md#recording-your-digest).
+It is what lets the next coder skip the reading you already did.
+
+A prompt carrying a `<handoff>` block is a continuation: ingest the block first
+and follow
+[continuing from a handoff](../references/worker-handoff.md#continuing-from-a-handoff)
+— read only the files a remaining task edits or depends on, not the plan's
+whole `read_first` list again.
 </role_and_context_boundary>
 
 <task_commit_protocol>
