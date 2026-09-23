@@ -261,10 +261,17 @@ MANAGED_HOOKS = (
 #: replaces that so every worktree lands under the project's worktree root and
 #: starts from the phase being built. Creating a checkout of a large repository
 #: can outlast the 10-second default, hence the longer timeout.
+#:
+#: Codex gives a tool-use hook no agent identity, so the handoff hook tells its
+#: orchestrator apart by the transcript SessionStart records. Claude needs no
+#: such record: every hook fired inside a Claude subagent carries agent_id.
 HOST_HOOKS = {
     "claude": (
         ("WorktreeCreate", "worktree-location.sh", 180),
         ("WorktreeRemove", "worktree-location.sh", 60),
+    ),
+    "codex": (
+        ("SessionStart", "context-handoff.sh", 10),
     ),
 }
 

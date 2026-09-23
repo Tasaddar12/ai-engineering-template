@@ -16,6 +16,7 @@ title: Advisory host hooks
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
 | [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY. Works on both hosts, from different inputs — see below |
 | [context-handoff.sh](context-handoff.sh) | `Stop` | Nothing; clears the session's debounce state |
+| [context-handoff.sh](context-handoff.sh) | `SessionStart` (Codex only) | Nothing on stdout; records the orchestrating session's transcript so its tool uses are recognised and never measured |
 | [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Creates a subagent's isolated checkout under the project's worktree root (`.worktrees/`), branched from the dispatching checkout's `HEAD`, and prints its path |
 | [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Removes that checkout when git agrees it is clean; never its branch, never a dirty checkout |
 
@@ -91,11 +92,21 @@ direct Bash launchers. They do not establish trusted live host execution.
 ## The handoff hook
 
 `context-handoff.sh` is the one managed hook that measures rather than inspects.
-It measures subagents only. The orchestrating session is never told to stop: on
-Claude, where every hook fired inside a subagent names it with `agent_id`, a tool
-use with no agent identity is the orchestrator and is not measured at all; where
-the host cannot be told apart, the advisory tells an orchestrator the limit does
-not apply to it and to keep running the workflow.
+It measures subagents only. The orchestrating session is never told to stop, and
+where it can be recognised it is not measured at all:
+
+- **Claude Code** names the calling agent with `agent_id` on every hook fired
+  inside a subagent, so a tool use with no agent identity is the orchestrator.
+- **Codex** gives a tool-use hook no agent identity — a subagent's call carries
+  the parent's session id and nothing naming the agent — so `SessionStart`
+  records the orchestrator's own transcript in `.planning/handoffs/.root-<session>.json`.
+  A tool use reporting that transcript is the orchestrator. Any other transcript
+  is a subagent's own: it is measured on that transcript and its record is keyed
+  by it, so parallel subagents sharing the parent's session id do not share one
+  record. The root record survives `Stop`, which ends a turn, not the session.
+
+Where neither applies — no `SessionStart` record, say — the advisory tells an
+orchestrator the limit does not apply to it and to keep running the workflow.
 It reads the session's own transcript -- `transcript_path` in the hook payload,
 which both hosts supply -- and takes the latest token reading from it. The
 advisory envelope is identical on both: `hookSpecificOutput.additionalContext`

@@ -567,6 +567,40 @@ contains "fold: the record gains the plan from the exit" "$record" "06-04-PLAN.m
 contains "fold: the digest survives the exit" "$record" "api/auth.py:12"
 contains "fold: the occupancy survives the exit" "$record" '"used_tokens": 130000'
 
+# --- on Codex the orchestrator is recognised by its transcript ---------------
+#
+# Codex gives a tool-use hook no agent identity: a subagent's call carries the
+# parent's session id and nothing naming the agent. SessionStart records the
+# orchestrator's own transcript, and a tool use reporting that transcript is
+# the orchestrator -- silent. Any other transcript is a subagent's own.
+
+codex_transcript "$workspace/cx-root.jsonl" 150000
+out="$(run_hook "$(payload_for SessionStart cx-orch "$workspace/cx-root.jsonl")")"
+check "codex: SessionStart prints nothing into the model's context" "$out" ""
+check "codex: SessionStart records the orchestrator's transcript" \
+  "$(cat "$handoffs/.root-cx-orch.json" 2>/dev/null | tr -d '\r')" "$workspace/cx-root.jsonl"
+
+out="$(run_hook "$(payload_for PostToolUse cx-orch "$workspace/cx-root.jsonl")")"
+check "codex: the orchestrator over the limit gets no advisory" "$out" ""
+check "codex: the orchestrator over the limit gets no record" \
+  "$([[ -f "$handoffs/cx-orch.json" ]] && echo present || echo absent)" "absent"
+
+codex_transcript "$workspace/rollout-sub-1.jsonl" 150000
+out="$(run_hook "$(payload_for PostToolUse cx-orch "$workspace/rollout-sub-1.jsonl")")"
+contains "codex: a subagent over the limit is still advised" "$out" "CONTEXT HANDOFF"
+contains "codex: a subagent's record is keyed to its own transcript" \
+  "$out" ".planning/handoffs/cx-orch--agent-rollout-sub-1.json"
+check "codex: the subagent's record exists under its own key" \
+  "$([[ -f "$handoffs/cx-orch--agent-rollout-sub-1.json" ]] && echo yes || echo no)" "yes"
+
+codex_transcript "$workspace/rollout-sub-2.jsonl" 30000
+out="$(run_hook "$(payload_for PostToolUse cx-orch "$workspace/rollout-sub-2.jsonl")")"
+check "codex: a subagent under the limit is measured on its own transcript" "$out" ""
+
+run_hook "$(payload_for Stop cx-orch "$workspace/cx-root.jsonl")" >/dev/null
+check "codex: Stop ends a turn and keeps the orchestrator's record" \
+  "$([[ -f "$handoffs/.root-cx-orch.json" ]] && echo kept || echo gone)" "kept"
+
 # --- on Claude the orchestrator is never measured ----------------------------
 #
 # Claude Code names the calling agent on every hook fired inside a subagent, so

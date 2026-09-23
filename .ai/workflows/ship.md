@@ -312,13 +312,14 @@ never means the PR is ready to merge.
 **Skip when `--no-push` was passed.**
 
 ```bash
-phase_run query pr.checks "${SESSION_BRANCH}" --wait 540
+phase_run query pr.checks "${SESSION_BRANCH}" --wait 240
 ```
 
-`--wait` re-reads a `pending` verdict until it settles, for up to nine minutes a
-call — under any host's shell-call limit. While the verdict is still `pending`,
-call it again, up to six calls in all. Waiting is this step's job; it is never
-handed to the user.
+`--wait` re-reads a `pending` verdict until it settles, for up to four minutes a
+call — well inside the command limits of both Claude Code (ten minutes) and
+Codex's background polling (five). While the verdict is still `pending`, call it
+again, up to twelve calls in all. Waiting is this step's job; it is never handed
+to the user.
 
 The verdict decides; you do not. Report the state and the check names behind it
 exactly as observed:
@@ -326,7 +327,7 @@ exactly as observed:
 | `state` | What to do |
 |---|---|
 | `passing` | Continue to the merge gate |
-| `pending` | Still pending after six waiting calls: report the checks that never settled as the blocker, with their links. Do not tell the user to re-run `/ship` |
+| `pending` | Still pending after twelve waiting calls: report the checks that never settled as the blocker, with their links. Do not tell the user to re-run `/ship` |
 | `failing` | Fix it and judge again — see below. The pull request stays open and keeps its history; do not open a second one |
 | `none` | The pull request has no checks. The `verification.run-checks` run in preflight is the project's own evidence — carry `--local-checks-passed` into the merge only because it passed there. If no checks are configured either, there is no evidence and `pr.merge` refuses; report that refusal as correct |
 

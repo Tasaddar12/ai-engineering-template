@@ -530,7 +530,16 @@ class InstallerTests(unittest.TestCase):
                     # Codex has no such event; its worktrees come from the runtime.
                     self.assertNotIn("WorktreeCreate", hooks)
                     self.assertNotIn("WorktreeRemove", hooks)
+                    # It does record the orchestrator's transcript, which is how
+                    # the handoff hook recognises it without an agent id.
+                    self.assertEqual(1, len(hooks["SessionStart"]))
+                    self.assertIn("/.codex/hooks/context-handoff.sh",
+                                  hooks["SessionStart"][0]["hooks"][0]["command"])
+                    before = self.snapshot()
+                    self.assertEqual(0, self.install("--host", host).returncode)
+                    self.assertEqual(before, self.snapshot(), "a rerun must not register it twice")
                     continue
+                self.assertNotIn("SessionStart", hooks)
                 for event, timeout in (("WorktreeCreate", 180), ("WorktreeRemove", 60)):
                     self.assertEqual(1, len(hooks[event]), event)
                     handler = hooks[event][0]["hooks"][0]
