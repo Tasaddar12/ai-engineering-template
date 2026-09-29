@@ -530,20 +530,31 @@ Return: ## MAP COMPLETE with what changed since the previous revision.
 </step>
 
 <step name="update_roadmap">
-Make the roadmap's plan checklist match the plans that now exist. For each plan
-the preparer wrote that has no roadmap entry, the phase entry's `Plans:` list
-needs the id and a one-line description.
+Register the complete planned list for this phase from the preparer's canonical
+`NN-NN: description` entries. Keep completed IDs in the submitted list if the
+preparer is filling a gap; the runtime preserves their ticks and rejects removal
+of completed plans. Do not edit ROADMAP.md or STATE.md by hand.
 
 ```bash
+phase_run query roadmap.set-plans "${phase_number}" --plans \
+  "${padded_phase}-01: First plan description" \
+  "${padded_phase}-02: Second plan description"
 phase_run query roadmap.get-phase "${phase_number}"
 ```
 
-Compare its `plans` array to the plan index. Report any mismatch; the roadmap is
-what `/progress` and `/next` route from, so a plan missing there is invisible.
+Pass exactly one `--plans` option followed by every quoted entry in plan order;
+the list option consumes all following non-option arguments. `--summary "..."`
+is optional and must follow the entries. The runtime replaces this phase's full
+checklist, updates its plan count and progress table, and synchronizes progress
+in STATE.md. Confirm the returned `plans` and then compare `roadmap.get-phase`
+with the plan index. If registration fails or the result differs, stop this
+dependent workflow and report the runtime error or mismatch; do not repair either
+record manually. Only after successful registration, advance STATE.md:
 </step>
 
 <step name="update_state">
 ```bash
+# Run only after roadmap.set-plans succeeds and its result is confirmed.
 phase_run query state.begin-phase "${phase_number}" --status "Ready to execute"
 phase_run query state.record-session \
   --stopped-at "Phase ${phase_number} planned (${plan_count} plans)" \

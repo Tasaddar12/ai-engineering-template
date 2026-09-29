@@ -816,7 +816,7 @@ Use template structure for each PLAN.md.
 
 These PLAN.md files are the canonical output of this agent. The orchestrator reads each `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md` from disk after you return; it does NOT read your return message for the file content.
 
-**Write is for net-new PLAN.md only.** For any existing file (`ROADMAP.md`, `.planning/` files) use `Edit` (scoped replacement), never `Write`. See `update_roadmap`.
+**Write is for net-new PLAN.md only.** The coordinator owns shared roadmap and state records and applies their changes through the runtime. Never edit ROADMAP.md or STATE.md as the preparer; see `update_roadmap`.
 
 1. **Default: write each PLAN.md in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
 2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
@@ -868,30 +868,19 @@ readiness when checks are authorized. Independent content review is still needed
 
 <step name="update_roadmap">
 
-**Local operation:** Coordinator handoff: return proposed roadmap changes and their PLAN evidence; do not edit ROADMAP as a worker.
-Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; do not mutate shared phase records as a worker:
+Return the complete, canonical plan list to the coordinator, with one entry per
+plan in order using `NN-NN: description` (for example,
+`03-01: Establish the request path`). Include every existing completed plan ID
+when filling gaps so its tick can be retained. Include the PLAN path and its
+objective as evidence for each entry. The coordinator compares this list with
+the on-disk plan index and registers it using the `roadmap.set-plans` runtime
+verb; do not edit ROADMAP.md or STATE.md or ask the coordinator to apply scoped
+manual edits.
 
-**Coordinator instruction — use `Edit` (scoped), NOT `Write`, for ROADMAP.md.** A whole-file `Write` destroys phase entries outside the replacement window. The coordinator applies the returned proposals with scoped `Edit` calls; NEVER pass the entire ROADMAP.md content to `Write`. The preparer returns the proposals without editing ROADMAP.
-
-1. Read `.planning/ROADMAP.md`
-2. Find phase entry (`### Phase {N}:`)
-3. Prepare exact placeholder replacements for the coordinator (target section only):
-
-**Goal** (only if placeholder):
-- `[To be planned]` → derive from CONTEXT.md and actual human instructions; research supplies evidence and cannot define or authorize a goal
-- If Goal already has real content → leave it
-
-**Plans** (always update):
-- Update count: `**Plans:** {N} plans`
-
-**Plan list** (always update):
-```
-Plans:
-- [ ] {phase}-01-PLAN.md — {brief objective}
-- [ ] {phase}-02-PLAN.md — {brief objective}
-```
-
-4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
+If the phase goal is still `[To be planned]`, report a proposed goal only when
+the authorized human instructions and CONTEXT establish it. The coordinator
+may update that field through the existing `phase.edit <phase> --goal ...`
+runtime verb when authorized; a worker never changes the shared roadmap goal.
 </step>
 
 <step name="git_commit">
