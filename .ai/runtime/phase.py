@@ -387,6 +387,13 @@ def verb_roadmap_analyze(workspace, positionals, options):
     }
 
 
+def verb_roadmap_set_plans(workspace, positionals, options):
+    number = argument(positionals, 0, "phase")
+    with planning_lock(workspace):
+        return state.register_plans(workspace, number, as_list(options.get("plans")),
+                                    options.get("summary"))
+
+
 def depends_list(text):
     import re
     return re.findall(r"Phase\s+(\d+(?:\.\d+)?)", text or "")
@@ -714,6 +721,7 @@ VERBS = {
 
     "roadmap.get-phase": verb_roadmap_get_phase,
     "roadmap.analyze": verb_roadmap_analyze,
+    "roadmap.set-plans": verb_roadmap_set_plans,
     "roadmap.update-plan-progress": verb_update_plan_progress,
 
     "state.get": verb_state_get,
