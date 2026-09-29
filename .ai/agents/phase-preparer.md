@@ -868,27 +868,30 @@ readiness when checks are authorized. Independent content review is still needed
 
 <step name="update_roadmap">
 
-Make the phase's roadmap plan checklist reflect the plans that now exist. Read
-`.planning/ROADMAP.md` for the phase entry (`### Phase {N}:`). If its Goal is
-`[To be planned]`, return a proposed replacement grounded in CONTEXT.md and the
-authorized human instructions; leave an existing goal unchanged.
+**Local operation:** Coordinator handoff: return proposed roadmap changes and their PLAN evidence; do not edit ROADMAP as a worker.
+Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; do not mutate shared phase records as a worker:
 
-Return the plan count and ordered plan list from the PLAN files, with a brief
-objective for each plan. For example:
+**Coordinator instruction — use runtime verbs for shared records.** Apply plan-list/count proposals through `roadmap.set-plans` and an authorized placeholder-goal change through `phase.edit`. The preparer returns proposals and PLAN evidence without editing ROADMAP.
 
-```text
-**Plans:** {N} plans
+1. Read `.planning/ROADMAP.md`
+2. Find phase entry (`### Phase {N}:`)
+3. Prepare exact placeholder replacements for the coordinator (target section only):
 
+**Goal** (only if placeholder):
+- `[To be planned]` → derive from CONTEXT.md and actual human instructions; research supplies evidence and cannot define or authorize a goal
+- If Goal already has real content → leave it
+
+**Plans** (always update):
+- Update count: `**Plans:** {N} plans`
+
+**Plan list** (always update):
+```
 Plans:
 - [ ] {phase}-01: {brief objective}
-...
+- [ ] {phase}-02: {brief objective}
 ```
 
-The coordinator registers plans with `roadmap.set-plans`, which updates the
-shared roadmap and derived state through the runtime. If a placeholder Goal
-needs updating, the coordinator uses `phase.edit <phase> --goal ...`. Do not edit
-ROADMAP.md or STATE.md as the preparer. Return the PLAN paths and objectives as
-evidence for the proposed checklist.
+4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
 </step>
 
 <step name="git_commit">

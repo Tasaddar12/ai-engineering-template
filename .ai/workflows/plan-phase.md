@@ -538,9 +538,9 @@ phase_run query roadmap.get-phase "${phase_number}"
 ```
 
 Use the index for plan IDs and PLAN paths; read each indexed PLAN's objective
-for its brief roadmap description. Include earlier indexed plans on a gap run.
-Register the plans through the runtime, which preserves existing completion
-ticks and refreshes derived progress:
+and build the ordered `plan_entries` list as `NN-NN: description` entries,
+including earlier indexed plans on a gap run. Register the plans through the
+runtime, which preserves existing completion ticks and refreshes derived progress:
 
 ```bash
 # Pass one --plans option followed by every plan entry as a separate argument.
@@ -548,8 +548,8 @@ phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}"
 phase_run query roadmap.get-phase "${phase_number}"
 ```
 
-Re-read result with the plan index and report any mismatch. Do not edit
-ROADMAP.md or STATE.md by hand.
+Compare its `plans` array to the plan index. Report any mismatch; the roadmap is
+what `/progress` and `/next` route from, so a plan missing there is invisible.
 </step>
 
 <step name="update_state">
