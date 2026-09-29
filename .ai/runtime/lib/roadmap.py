@@ -298,9 +298,29 @@ class Roadmap:
             requested[identifier] = description
 
         lines = phase.body.splitlines(keepends=True)
+        anchors = [index for index, line in enumerate(lines) if line.strip() == "Plans:"]
+        require(len(anchors) <= 1, "duplicate Plans checklist", "bad-existing-plan")
+        anchor = anchors[0] if anchors else None
+        checklist_end = anchor + 1 if anchor is not None else 0
+        if anchor is not None:
+            # Blank lines may separate plan rows; prose ends this list. Other
+            # phase lists (for example Acceptance) are not plan checklists.
+            while checklist_end < len(lines):
+                line = lines[checklist_end]
+                if line.strip() and not re.match(r"[ \t]*[-+*](?:[ \t]|\[)", line):
+                    break
+                checklist_end += 1
         existing, row_indices = {}, []
         for index, line in enumerate(lines):
-            if not re.match(r"[ \t]*[-+*][ \t]*(?:\[|\d+(?:\.\d+)?-\d+)", line):
+            in_checklist = anchor is not None and anchor < index < checklist_end
+            if not in_checklist:
+                # An orphan plan row would still affect parsed progress. Reject
+                # it rather than hiding it or silently absorbing a second list.
+                require(not re.match(r"[ \t]*(?:[-+*][ \t]*)?(?:\[[^\]\r\n]*\][ \t]*)?"
+                                     r"\d+(?:\.\d+)?-\d+", line),
+                        "plan row outside Plans checklist: " + line.strip(), "bad-existing-plan")
+                continue
+            if not line.strip():
                 continue
             match = re.fullmatch(r"[ \t]*-[ \t]*\[([ xX])\][ \t]*(.*)", line.rstrip("\r\n"))
             require(match is not None, "malformed existing plan row: " + line.strip(),
@@ -322,8 +342,6 @@ class Roadmap:
             for index in row_indices[1:]:
                 lines[index] = ""
         else:
-            anchor = next((index for index, line in enumerate(lines)
-                           if line.strip() == "Plans:"), None)
             if anchor is None:
                 lines.append(NEWLINE + "Plans:" + NEWLINE + checklist + NEWLINE)
             else:

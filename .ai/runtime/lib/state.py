@@ -254,7 +254,9 @@ def prepare_progress(workspace, roadmap, registration_phase=None):
             old_status = state.field(POSITION, "Status").lower()
             reopened = (phase.status != "Complete"
                         and old_status in ("complete", "phase complete", "shipped"))
-            if registration_phase is None or reopened:
+            if phase.status == "Complete":
+                state.set_field(POSITION, "Status", "Shipped" if old_status == "shipped" else "Complete")
+            elif registration_phase is None or reopened:
                 state.set_field(POSITION, "Status", phase.status)
             if reopened:
                 state.frontmatter["status"] = (
