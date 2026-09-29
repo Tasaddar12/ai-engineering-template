@@ -112,14 +112,20 @@ python .ai/runtime/phase.py query roadmap.set-plans 3 --plans \
 
 The verb validates that the phase exists, the list is nonempty, every entry is
 one line with a unique ID belonging to that phase and a nonempty description,
-and the existing checklist is well formed. It replaces that phase's whole plan
+and the existing checklist is well formed. Only the list under the phase's
+single `Plans:` anchor is replaced; unrelated prose and checkboxes before or
+after that list are preserved. Duplicate anchors or plan rows outside that
+list are rejected as ambiguous. A missing anchor is created only when no
+existing plan rows would be stranded. It replaces that phase's whole plan
 list; it does not append. Completed IDs cannot be dropped, and their ticks are
 retained when those IDs remain in the replacement list. It also updates the
 phase checklist, progress table, plan count, and derived STATE.md progress.
 Completion dates are retained for phases that remain complete, and a prior
 `Shipped` status is retained while the phase remains complete; other status
 follows the current plan-derived status. For the current
-phase, its plan position is recalculated while a meaningful status is preserved;
+phase, its plan position is recalculated and its position status becomes
+`Complete` when all remaining plans are done, preserving an existing `Shipped`.
+While the phase is open, a meaningful planning or execution status is preserved;
 a stale `Complete`, `Phase complete` or `Shipped` position is reset if the
 replacement reopens the phase. For another phase, the current position is left
 alone. Invalid entries, malformed existing rows, a missing phase or roadmap,
