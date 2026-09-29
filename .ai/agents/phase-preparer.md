@@ -816,7 +816,7 @@ Use template structure for each PLAN.md.
 
 These PLAN.md files are the canonical output of this agent. The orchestrator reads each `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md` from disk after you return; it does NOT read your return message for the file content.
 
-**Write is for net-new PLAN.md only.** The coordinator owns shared roadmap and state records and applies their changes through the runtime. Never edit ROADMAP.md or STATE.md as the preparer; see `update_roadmap`.
+**Write is for net-new PLAN.md only.** For any existing file you own, use `Edit` with a scoped replacement, never `Write`. The coordinator owns shared ROADMAP.md and STATE.md records and applies their changes through the runtime; do not edit those records as the preparer. See `update_roadmap`.
 
 1. **Default: write each PLAN.md in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
 2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
@@ -868,19 +868,27 @@ readiness when checks are authorized. Independent content review is still needed
 
 <step name="update_roadmap">
 
-Return the complete, canonical plan list to the coordinator, with one entry per
-plan in order using `NN-NN: description` (for example,
-`03-01: Establish the request path`). Include every existing completed plan ID
-when filling gaps so its tick can be retained. Include the PLAN path and its
-objective as evidence for each entry. The coordinator compares this list with
-the on-disk plan index and registers it using the `roadmap.set-plans` runtime
-verb; do not edit ROADMAP.md or STATE.md or ask the coordinator to apply scoped
-manual edits.
+Make the phase's roadmap plan checklist reflect the plans that now exist. Read
+`.planning/ROADMAP.md` for the phase entry (`### Phase {N}:`). If its Goal is
+`[To be planned]`, return a proposed replacement grounded in CONTEXT.md and the
+authorized human instructions; leave an existing goal unchanged.
 
-If the phase goal is still `[To be planned]`, report a proposed goal only when
-the authorized human instructions and CONTEXT establish it. The coordinator
-may update that field through the existing `phase.edit <phase> --goal ...`
-runtime verb when authorized; a worker never changes the shared roadmap goal.
+Return the plan count and ordered plan list from the PLAN files, with a brief
+objective for each plan. For example:
+
+```text
+**Plans:** {N} plans
+
+Plans:
+- [ ] {phase}-01: {brief objective}
+...
+```
+
+The coordinator registers plans with `roadmap.set-plans`, which updates the
+shared roadmap and derived state through the runtime. If a placeholder Goal
+needs updating, the coordinator uses `phase.edit <phase> --goal ...`. Do not edit
+ROADMAP.md or STATE.md as the preparer. Return the PLAN paths and objectives as
+evidence for the proposed checklist.
 </step>
 
 <step name="git_commit">

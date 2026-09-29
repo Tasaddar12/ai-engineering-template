@@ -530,51 +530,30 @@ Return: ## MAP COMPLETE with what changed since the previous revision.
 </step>
 
 <step name="update_roadmap">
-Read the actual plan index and existing roadmap checklist before making any
-registration or state write:
+Read the plan index and current roadmap entry:
 
 ```bash
 phase_run query phase-plan-index "${phase_number}"
 phase_run query roadmap.get-phase "${phase_number}"
 ```
 
-Assemble the full ordered `NN-NN: description` list from the actual preparer
-handoff, using its descriptions for the corresponding plan files. On a gap run,
-include the existing completed IDs and their roadmap descriptions unless the
-handoff supplies updated descriptions. Account for every indexed plan, including
-earlier plans outside the new gap work. Do not invent placeholder entries or
-descriptions, and do not edit ROADMAP.md or STATE.md by hand.
-
-Before any mutating call, validate that every entry has a unique ID for this
-phase and a nonempty description, that the submitted IDs exactly equal the
-index's `plans[].id`, and that their count equals the index's nonzero `count`.
-Every existing completed roadmap ID must also be present. Missing, extra,
-duplicate or otherwise unaccounted IDs stop this dependent workflow before
-either record is written; report the mismatch for preparer correction.
-
-Populate the Bash array `validated_plan_entries` with those actual entries only
-after this preflight succeeds, then register the complete list:
+Use the index for plan IDs and PLAN paths; read each indexed PLAN's objective
+for its brief roadmap description. Include earlier indexed plans on a gap run.
+Register the plans through the runtime, which preserves existing completion
+ticks and refreshes derived progress:
 
 ```bash
-canonical_plan_entries=("${validated_plan_entries[@]}")
-phase_run query roadmap.set-plans "${phase_number}" --plans "${canonical_plan_entries[@]}"
+# Pass one --plans option followed by every plan entry as a separate argument.
+phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}"
 phase_run query roadmap.get-phase "${phase_number}"
 ```
 
-Pass exactly one `--plans` option followed by every quoted entry in plan order;
-the list option consumes all following non-option arguments. `--summary "..."`
-is optional and must follow the entries. The runtime replaces this phase's full
-checklist, updates its plan count and progress table, and synchronizes progress
-in STATE.md. Confirm the returned `plans` against the validated entries, then
-compare `roadmap.get-phase` IDs and count with the plan index and confirm retained
-completion ticks. If registration fails or the result differs, stop this
-dependent workflow and report the runtime error or mismatch; do not repair either
-record manually. Only after successful registration, advance STATE.md:
+Re-read result with the plan index and report any mismatch. Do not edit
+ROADMAP.md or STATE.md by hand.
 </step>
 
 <step name="update_state">
 ```bash
-# Run only after roadmap.set-plans succeeds and its result is confirmed.
 phase_run query state.begin-phase "${phase_number}" --status "Ready to execute"
 phase_run query state.record-session \
   --stopped-at "Phase ${phase_number} planned (${plan_count} plans)" \
