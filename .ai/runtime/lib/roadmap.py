@@ -268,11 +268,96 @@ class Roadmap:
         require(count, "plan " + plan_id + " not found in roadmap", "plan-not-found")
         return updated
 
+    def set_plan_list(self, number, entries, summary=None):
+        """Prepare a canonical checklist without losing completed work or prose."""
+        require(self.exists, "no .planning/ROADMAP.md", "no-roadmap")
+        phase = self.require_phase(number)
+        require(entries, "at least one plan is required", "missing-plans")
+        label = summary if summary is not None else str(len(entries)) + " plans"
+        require(isinstance(label, str) and label.strip()
+                and len(label.splitlines()) == 1 and "\r" not in label and "\n" not in label,
+                "plan summary must be a nonempty single line", "bad-plan-summary")
+
+        def parse_entry(entry, code):
+            require(isinstance(entry, str) and len(entry.splitlines()) == 1
+                    and "\r" not in entry and "\n" not in entry,
+                    "plan entry must be one line", code)
+            match = re.fullmatch(r"[ \t]*(\d+(?:\.\d+)?-\d+)[ \t]*:[ \t]*(.*?)[ \t]*", entry)
+            require(match is not None and match.group(2),
+                    "plan must be 'NN-NN: description': " + entry, code)
+            identifier, description = match.groups()
+            require(identifier.startswith(phase.padded + "-"),
+                    "plan belongs to another phase: " + identifier, code)
+            return identifier, description
+
+        requested = {}
+        for entry in entries:
+            identifier, description = parse_entry(entry, "bad-plan")
+            require(identifier not in requested,
+                    "duplicate plan: " + identifier, "duplicate-plan")
+            requested[identifier] = description
+
+        lines = phase.body.splitlines(keepends=True)
+        existing, row_indices = {}, []
+        for index, line in enumerate(lines):
+            if not re.match(r"[ \t]*[-+*][ \t]*(?:\[|\d+(?:\.\d+)?-\d+)", line):
+                continue
+            match = re.fullmatch(r"[ \t]*-[ \t]*\[([ xX])\][ \t]*(.*)", line.rstrip("\r\n"))
+            require(match is not None, "malformed existing plan row: " + line.strip(),
+                    "bad-existing-plan")
+            identifier, _ = parse_entry(match.group(2), "bad-existing-plan")
+            require(identifier not in existing, "duplicate existing plan: " + identifier,
+                    "duplicate-existing-plan")
+            existing[identifier] = match.group(1).lower() == "x"
+            row_indices.append(index)
+        require(not any(done and identifier not in requested
+                        for identifier, done in existing.items()),
+                "cannot remove a completed plan", "completed-plan")
+        checklist = NEWLINE.join(
+            "- [" + ("x" if existing.get(identifier) else " ") + "] "
+            + identifier + ": " + description
+            for identifier, description in requested.items()) + NEWLINE
+        if row_indices:
+            lines[row_indices[0]] = checklist
+            for index in row_indices[1:]:
+                lines[index] = ""
+        else:
+            anchor = next((index for index, line in enumerate(lines)
+                           if line.strip() == "Plans:"), None)
+            if anchor is None:
+                lines.append(NEWLINE + "Plans:" + NEWLINE + checklist + NEWLINE)
+            else:
+                lines.insert(anchor + 1, checklist)
+        body = "".join(lines)
+        labels = list(re.finditer(r"^\*\*Plans\*\*[ \t]*:[^\n]*$", body, re.MULTILINE))
+        require(len(labels) <= 1, "duplicate Plans field", "bad-existing-plan")
+        field = "**Plans**: " + label.strip()
+        if labels:
+            match = labels[0]
+            body = body[:match.start()] + field + body[match.end():]
+        else:
+            body = NEWLINE + field + NEWLINE + body
+        body_start = phase.end - len(phase.body)
+        return self.content[:body_start] + body + self.content[phase.end:]
+
     def update_progress_table(self):
         """Rewrite the `## Progress` rows from parsed phase state."""
         anchor = PROGRESS_HEADING.search(self.content)
         if not anchor:
             return self.content
+        body_start = anchor.end()
+        following = SECTION_HEADING.search(self.content, body_start)
+        end = following.start() if following else len(self.content)
+        existing = self.content[body_start:end]
+        table_match = re.search(
+            r"^[ \t]*\|[ \t]*Phase[ \t]*\|[^\n]*(?:\n[ \t]*\|[^\n]*)*",
+            existing, re.MULTILINE)
+        prior = {}
+        for line in (table_match.group(0).splitlines() if table_match else []):
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            identifier = re.match(r"^(\d+(?:\.\d+)?)\.[ \t]+", cells[0])
+            if identifier and len(cells) in (4, 5):
+                prior[as_number(identifier.group(1))] = (cells[-2], cells[-1])
         phases = self.phases()
         grouped = any(phase.milestone for phase in phases)
         if grouped:
@@ -289,16 +374,17 @@ class Roadmap:
             cells = [display_number(phase.number) + ". " + phase.name]
             if grouped:
                 cells.append(phase.milestone or "-")
-            cells += [done, phase.status, today if phase.status == "Complete" else "-"]
+            previous_status, previous_date = prior.get(as_number(phase.number), ("", "-"))
+            status, completed = phase.status, "-"
+            if status == "Complete":
+                if previous_status == "Shipped":
+                    status = "Shipped"
+                completed = previous_date if previous_date not in ("", "-") else today
+            cells += [done, status, completed]
             rows.append("| " + " | ".join(cells) + " |")
-        body_start = anchor.end()
-        following = SECTION_HEADING.search(self.content, body_start)
-        end = following.start() if following else len(self.content)
-        existing = self.content[body_start:end].strip(NEWLINE)
-        preserved = ""
-        order = re.match(r"\*\*Execution Order:\*\*[^\n]*\n[^\n]*", existing)
-        if order:
-            preserved = NEWLINE * 2 + order.group(0).strip()
         table = NEWLINE.join(header + rows)
-        return (self.content[:body_start] + preserved + NEWLINE * 2 + table
-                + NEWLINE * 2 + self.content[end:].lstrip(NEWLINE))
+        if table_match:
+            body = existing[:table_match.start()] + table + existing[table_match.end():]
+        else:
+            body = existing.rstrip(NEWLINE) + NEWLINE * 2 + table + NEWLINE * 2
+        return self.content[:body_start] + body + self.content[end:]

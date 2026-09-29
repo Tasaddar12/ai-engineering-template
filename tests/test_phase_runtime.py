@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -280,6 +281,201 @@ class PlanProgress(RuntimeCase):
         self.assertEqual(state["progress"]["total_plans"], 3)
 
 
+class PlanRegistration(RuntimeCase):
+    def write_record(self, name, content):
+        (self.directory / ".planning" / name).write_text(
+            content, encoding="utf-8", newline="\n")
+
+    def assert_rejected_unchanged(self, *args, code=None):
+        paths = [self.directory / ".planning" / name for name in ("ROADMAP.md", "STATE.md")]
+        before = [path.read_bytes() if path.exists() else None for path in paths]
+        result = self.run_verb("roadmap.set-plans", *args, expect_ok=False)
+        if code:
+            self.assertEqual(result["code"], code)
+        self.assertEqual(before, [path.read_bytes() if path.exists() else None for path in paths])
+        self.assertFalse((self.directory / ".planning/.lock").exists())
+
+    def test_register_reorder_and_rename_preserve_work_and_surrounding_prose(self):
+        self.run_verb("state.begin-phase", "1", "--status", "Ready to execute")
+        self.run_verb("roadmap.update-plan-progress", "01-01")
+        self.run_verb("state.record-session", "--status", "Ready to execute")
+        original = self.read(".planning/ROADMAP.md").replace(
+            "Plans:\n- [x] 01-01", "Planning notes remain here.\n\nPlans:\n- [x] 01-01", 1)
+        original = original.replace("- [ ] 01-02: Wire it up\n",
+                                    "- [ ] 01-02: Wire it up\n\nAcceptance notes remain here.\n")
+        self.write_record("ROADMAP.md", original)
+        result = self.run_verb("roadmap.set-plans", "01", "--plans",
+                               "01-03: New first task", "01-01: Renamed scaffold",
+                               "01-02: Wire it up", "--summary", "3 plans across two waves")
+        roadmap = self.read(".planning/ROADMAP.md")
+        self.assertIn("**Plans**: 3 plans across two waves", roadmap)
+        self.assertIn("- [ ] 01-03: New first task\n- [x] 01-01: Renamed scaffold\n"
+                      "- [ ] 01-02: Wire it up", roadmap)
+        self.assertIn("Planning notes remain here.", roadmap)
+        self.assertIn("Acceptance notes remain here.", roadmap)
+        self.assertEqual(original.split("### Phase 2:")[1].split("## Progress")[0],
+                         roadmap.split("### Phase 2:")[1].split("## Progress")[0])
+        self.assertEqual(result["progress"]["total_plans"], 4)
+        self.assertEqual(result["progress"]["completed_plans"], 1)
+        state = self.run_verb("state.get")
+        self.assertEqual(state["position"]["Plan"], "1 of 3 in current phase")
+        self.assertEqual(state["position"]["Status"], "Ready to execute")
+        self.assertIn("Progress: [██░░░░░░░░] 25%", self.read(".planning/STATE.md"))
+
+    def test_spaced_entries_normalize_and_are_idempotent(self):
+        self.write_record("ROADMAP.md", ROADMAP.replace("01-01: Scaffold", "01-01 :  Scaffold  "))
+        args = ("roadmap.set-plans", "1", "--plans", " 01-01 :  Scaffold  ",
+                "01-02\t:\tWire it up")
+        result = self.run_verb(*args)
+        self.assertEqual(result["plans"], ["01-01: Scaffold", "01-02: Wire it up"])
+        before = [self.read(".planning/" + name) for name in ("ROADMAP.md", "STATE.md")]
+        self.run_verb(*args)
+        self.assertEqual(before, [self.read(".planning/" + name)
+                                  for name in ("ROADMAP.md", "STATE.md")])
+
+    def test_cannot_remove_a_completed_plan(self):
+        self.run_verb("roadmap.update-plan-progress", "01-01")
+        self.assert_rejected_unchanged("1", "--plans", "01-02: Replacement", code="completed-plan")
+
+    def test_invalid_requests_never_change_either_record(self):
+        cases = [(), ("--plans",), ("--plans", ""), ("--plans", "01-01:"),
+                 ("--plans", "01-01:   "), ("--plans", "01-01 Missing colon"),
+                 ("--plans", "02-01: Wrong phase"), ("--plans", "1-01: Unpadded phase"),
+                 ("--plans", "01-01: First", "01-01 : Duplicate"),
+                 ("--plans", "01-01: First\nInjected"),
+                 ("--plans", "01-01: First\rInjected"),
+                 ("--plans", "01-01: First", "--summary"),
+                 ("--plans", "01-01: First", "--summary", ""),
+                 ("--plans", "01-01: First", "--summary", "first\nsecond")]
+        for args in cases:
+            with self.subTest(args=args):
+                self.assert_rejected_unchanged("1", *args)
+
+    def test_malformed_existing_checklists_are_not_silently_overwritten(self):
+        for row in ("- [!] 01-01: Scaffold", "- [ ] 01-01:", "* [ ] 01-01: Scaffold",
+                    "- [ ] 02-01: Wrong phase", "- 01-01: No checkbox",
+                    "- [ ] 01-01: Scaffold\n- [x] 01-01 : Duplicate"):
+            with self.subTest(row=row):
+                self.write_record("ROADMAP.md", ROADMAP.replace("- [ ] 01-01: Scaffold", row))
+                self.assert_rejected_unchanged("1", "--plans", "01-01: Scaffold", "01-02: Wiring")
+
+    def test_missing_phase_roadmap_or_state_return_json_without_partial_updates(self):
+        self.assert_rejected_unchanged("9", "--plans", "09-01: Missing", code="phase-not-found")
+        (self.directory / ".planning/STATE.md").unlink()
+        self.assert_rejected_unchanged("1", "--plans", "01-01: Changed", code="missing-state")
+        self.write_record("STATE.md", STATE)
+        (self.directory / ".planning/ROADMAP.md").unlink()
+        self.assert_rejected_unchanged("1", "--plans", "01-01: Changed", code="no-roadmap")
+
+    def test_invalid_state_is_preflighted_before_roadmap_changes(self):
+        for content in ("", "# Unusable state\n", "---\n- wrong shape\n---\n" + STATE,
+                        "---\ninvalid: [\n---\n" + STATE,
+                        STATE.replace("Plan: [A] of [B] in current phase", "")):
+            with self.subTest(content=content):
+                self.write_record("STATE.md", content)
+                self.assert_rejected_unchanged("1", "--plans", "01-01: Changed")
+
+    def test_noncurrent_registration_updates_totals_without_changing_position(self):
+        self.run_verb("state.begin-phase", "1", "--status", "Ready to execute")
+        before = self.run_verb("state.get")
+        self.run_verb("roadmap.set-plans", "2", "--plans", "02-01: Existing", "02-02: New")
+        after = self.run_verb("state.get")
+        self.assertEqual(before["position"], after["position"])
+        self.assertEqual(before["status"], after["status"])
+        self.assertEqual(after["progress"]["total_plans"], 4)
+
+    def test_reopening_another_phase_leaves_current_phase_status_untouched(self):
+        self.run_verb("phase.complete", "2")
+        self.run_verb("state.begin-phase", "1", "--status", "Shipped")
+        before = self.run_verb("state.get")
+        self.run_verb("roadmap.set-plans", "2", "--plans", "02-01: Existing", "02-02: Follow-up")
+        after = self.run_verb("state.get")
+        self.assertEqual(before["position"], after["position"])
+        self.assertEqual(before["status"], after["status"])
+        self.assertIn("- [ ] **Phase 2: Features**", self.read(".planning/ROADMAP.md"))
+
+    def test_registration_creates_a_missing_checklist_and_count(self):
+        self.write_record("ROADMAP.md", ROADMAP.replace("**Plans**: 2 plans\n", "").replace(
+            "Plans:\n- [ ] 01-01: Scaffold\n- [ ] 01-02: Wire it up\n", "Notes remain.\n"))
+        self.run_verb("roadmap.set-plans", "1", "--plans", "01-01: New plan")
+        roadmap = self.read(".planning/ROADMAP.md")
+        self.assertIn("**Plans**: 1 plans", roadmap)
+        self.assertIn("Plans:\n- [ ] 01-01: New plan", roadmap)
+        self.assertIn("Notes remain.", roadmap)
+
+    def test_reopening_current_phase_clears_terminal_status_and_overview_tick(self):
+        for status in ("Complete", "Shipped", "Phase complete"):
+            with self.subTest(status=status):
+                self.write_record("ROADMAP.md", ROADMAP)
+                self.write_record("STATE.md", STATE)
+                self.run_verb("state.begin-phase", "1")
+                self.run_verb("phase.complete", "1")
+                self.run_verb("state.record-session", "--status", status)
+                self.run_verb("roadmap.set-plans", "1", "--plans", "01-01: Scaffold",
+                              "01-02: Wire it up", "01-03: Follow-up")
+                roadmap = self.read(".planning/ROADMAP.md")
+                self.assertIn("- [ ] **Phase 1: Foundation**", roadmap)
+                self.assertIn("| 1. Foundation | 2/3 | In progress | - |", roadmap)
+                state = self.run_verb("state.get")
+                self.assertEqual(state["position"]["Status"], "In progress")
+                self.assertEqual(state["position"]["Plan"], "3 of 3 in current phase")
+                self.assertEqual(state["progress"]["completed_phases"], 0)
+                self.assertEqual(state["status"], "executing")
+
+    def test_registering_completed_subset_ticks_overview(self):
+        self.run_verb("roadmap.update-plan-progress", "01-01")
+        self.run_verb("roadmap.set-plans", "1", "--plans", "01-01: Scaffold")
+        self.assertIn("- [x] **Phase 1: Foundation**", self.read(".planning/ROADMAP.md"))
+
+
+class ProgressHistory(RuntimeCase):
+    def test_refresh_preserves_dates_shipped_status_and_surrounding_sections(self):
+        roadmap = ROADMAP.replace("- [ ] 01-", "- [x] 01-").replace(
+            "| 1. Foundation | 0/2 | Not started | - |",
+            "| 01. Foundation | 2/2 | Shipped | 2020-01-02 |")
+        order = "**Execution Order:**\n1 → 2\n\nAdditional ordering notes.\n\n"
+        roadmap = roadmap.replace("## Progress\n\n", "## Progress\n\n" + order)
+        tail = "\n### Progress notes\nKeep this explanation.\n\n## Following\nKeep this section.\n"
+        (self.directory / ".planning/ROADMAP.md").write_text(roadmap + tail, encoding="utf-8")
+        self.run_verb("roadmap.update-plan-progress", "02-01")
+        after = self.read(".planning/ROADMAP.md")
+        self.assertIn("| 1. Foundation | 2/2 | Shipped | 2020-01-02 |", after)
+        self.assertIn("| 2. Features | 1/1 | Complete | " + date.today().isoformat() + " |", after)
+        self.assertIn(order, after)
+        self.assertTrue(after.endswith(tail))
+        self.run_verb("roadmap.update-plan-progress", "01-02", "--undo")
+        self.assertIn("| 1. Foundation | 1/2 | In progress | - |", self.read(".planning/ROADMAP.md"))
+
+    def test_decimal_history_survives_flat_and_grouped_table_shapes(self):
+        for old_grouped, new_grouped in ((False, False), (True, True), (False, True), (True, False)):
+            with self.subTest(old_grouped=old_grouped, new_grouped=new_grouped):
+                heading = "### v1.0 Release\n\n#### Phase 01.1: Fix" if new_grouped else "### Phase 01.1: Fix"
+                header = ("| Phase | Milestone | Plans Complete | Status | Completed |\n"
+                          "|-------|-----------|----------------|--------|-----------|" if old_grouped else
+                          "| Phase | Plans Complete | Status | Completed |\n"
+                          "|-------|----------------|--------|-----------|")
+                old_row = "| 1.1. Fix | " + ("v1.0 Release | " if old_grouped else "")
+                roadmap = ("# Roadmap\n\n" + heading + "\n**Plans**: 1 plan\n\nPlans:\n"
+                           "- [x] 01.1-01: Fix\n\n## Progress\n\n" + header + "\n" + old_row
+                           + "1/1 | Shipped | 2021-02-03 |\n")
+                (self.directory / ".planning/ROADMAP.md").write_text(roadmap, encoding="utf-8")
+                self.run_verb("roadmap.set-plans", "1.1", "--plans", "01.1-01 : Renamed fix")
+                expected = "| 01.1. Fix | " + ("v1.0 Release | " if new_grouped else "")
+                self.assertIn(expected + "1/1 | Shipped | 2021-02-03 |", self.read(".planning/ROADMAP.md"))
+
+    def test_complete_history_keeps_date_and_missing_date_is_filled(self):
+        roadmap = ROADMAP.replace("- [ ] 01-", "- [x] 01-").replace(
+            "| 1. Foundation | 0/2 | Not started | - |",
+            "| 1. Foundation | 2/2 | Complete | 2019-06-07 |")
+        path = self.directory / ".planning/ROADMAP.md"
+        path.write_text(roadmap, encoding="utf-8")
+        self.run_verb("roadmap.update-plan-progress", "01-01")
+        self.assertIn("| Complete | 2019-06-07 |", self.read(".planning/ROADMAP.md"))
+        path.write_text(roadmap.replace("2019-06-07", "-"), encoding="utf-8")
+        self.run_verb("roadmap.update-plan-progress", "01-01")
+        self.assertIn("| Complete | " + date.today().isoformat() + " |", self.read(".planning/ROADMAP.md"))
+
+
 class StateWrites(RuntimeCase):
     def test_record_session_updates_continuity_without_losing_the_file(self):
         self.run_verb("state.record-session", "--stopped-at", "Phase 1 discussed",
@@ -295,6 +491,21 @@ class StateWrites(RuntimeCase):
         state = self.read(".planning/STATE.md")
         self.assertIn("Phase: 2 of 2 (Features)", state)
         self.assertIn("Status: In progress", state)
+
+    def test_begin_phase_updates_existing_focus_with_literal_phase_name(self):
+        state_path = self.directory / ".planning/STATE.md"
+        state_path.write_text(STATE.replace("# Project State", "# Project State\n\n"
+                                            "**Current focus:** Old focus"), encoding="utf-8")
+        roadmap_path = self.directory / ".planning/ROADMAP.md"
+        name = r"Literal \1 and \g<name> paths"
+        roadmap_path.write_text(ROADMAP.replace("Foundation", name), encoding="utf-8")
+        self.run_verb("state.begin-phase", "1")
+        self.assertIn("**Current focus:** " + name, self.read(".planning/STATE.md"))
+        self.assertIn("Phase: 1 of 2 (" + name + ")", self.read(".planning/STATE.md"))
+
+    def test_begin_phase_does_not_add_optional_focus_when_absent(self):
+        self.run_verb("state.begin-phase", "1")
+        self.assertNotIn("**Current focus:**", self.read(".planning/STATE.md"))
 
     def test_decisions_and_blockers_replace_placeholder_text(self):
         self.run_verb("state.add-decision", "Use the IDP for session issuance")
