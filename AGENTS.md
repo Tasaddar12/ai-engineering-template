@@ -71,13 +71,20 @@ is active conflicts with that agent's edits.
 
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
-`integration-checker`, `codebase-mapper`, `debugger`). Resolve the model with
+`integration-checker`, `codebase-mapper`, `debugger`, `luna_scout`). Resolve the model with
 `phase_run query resolve-model <agent>` and the effort with
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
-call — agent files carry neither as frontmatter, and a resolved `inherit` means
+call — worker files carry neither as frontmatter (`luna_scout` alone fixes Claude
+`model: haiku` with no effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-An agent that returns "complete" with no SUMMARY.md, or with no commits, did not
+Read and follow [required scout dispatch](.ai/references/scout-dispatch.md) for
+every substantive repository evidence task, including coordinator work. Non-scout
+workers may dispatch only `luna_scout` children. The coordinator retains worker
+lifecycle, integration, shared records and publication. `luna_scout` returns a
+read-only evidence result without commits or SUMMARY and never dispatches children.
+
+A worker that returns "complete" with no SUMMARY.md, or with no commits, did not
 complete. Treat it as blocked.
 
 ## Skills

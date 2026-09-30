@@ -26,6 +26,32 @@ migration = load("install_migration", ROOT / ".ai/install_migration.py")
 
 
 class MigrationTests(unittest.TestCase):
+    def test_no_hooks_migration_canonicalizes_existing_codex_settings(self):
+        original = (b'\xef\xbb\xbf# custom\r\n"agents"."max_threads" = 3 # legacy\r\n'
+                    b'model = "keep"\r\n[hooks]\r\nStop = []\r\n')
+        self.write(".codex/config.toml", original)
+        changes, backups, _ = self.plan("codex", hooks=False)
+        path = self.target / ".codex/config.toml"
+        self.assertIn(path, backups)
+        self.apply(changes)
+        content = path.read_bytes()
+        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\n# legacy\r\n'))
+        self.assertIn(b'model = "keep"\r\n', content)
+        self.assertIn(b'[hooks]\r\nStop = []\r\n', content)
+        parsed = tomllib.loads(content.decode("utf-8-sig"))
+        self.assertEqual(12, parsed["agents"]["max_concurrent_threads_per_session"])
+        self.assertNotIn("max_threads", parsed["agents"])
+        self.assertEqual([], installer.plan_install(self.source, self.target, "codex", hooks=False))
+
+    def test_no_hooks_migration_invalid_settings_do_not_write_or_delete(self):
+        for content in (b'agents = {max_threads = 3}\n', b'[agents\n'):
+            with self.subTest(content=content):
+                self.write(".codex/config.toml", content)
+                before = self.snapshot()
+                with self.assertRaisesRegex(ValueError, "nothing was installed"):
+                    self.plan("codex", hooks=False)
+                self.assertEqual(before, self.snapshot())
+
     def test_custom_skill_links_preserve_angle_brackets_and_titles(self):
         content = (b'[Rules](<../../../.ai/RULES.md> "Project rules")\n'
                    b'[Local](<notes with spaces.md>)\n')

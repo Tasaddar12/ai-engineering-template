@@ -1,13 +1,46 @@
 """Required local inputs for agent methods resolve in the checkout."""
 from pathlib import Path
 import re
+import tomllib
 import unittest
+
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentSourceTests(unittest.TestCase):
+    def test_native_models_and_scout_only_frontmatter_exception(self):
+        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "luna_scout"}
+        for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
+            native = tomllib.loads(definition.read_text(encoding="utf-8"))
+            role = ROOT / ".ai/agents" / (definition.stem + ".md")
+            frontmatter = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
+            self.assertEqual(definition.stem, native["name"])
+            self.assertEqual(frontmatter["description"], native["description"])
+            self.assertEqual("gpt-6-luna" if definition.stem in luna else "gpt-6.1-sol", native["model"])
+            self.assertEqual("medium" if definition.stem in {"doc-verifier", "integration-checker"} else "high",
+                             native["model_reasoning_effort"])
+            self.assertNotIn("effort", frontmatter)
+            if definition.stem == "luna_scout":
+                self.assertEqual("haiku", frontmatter["model"])
+                self.assertEqual("read-only", native["sandbox_mode"])
+                self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
+                self.assertTrue({"Agent", "Task", "Write", "Edit", "Bash"} <= set(frontmatter["disallowedTools"].split(", ")))
+            else:
+                self.assertNotIn("model", frontmatter)
+                self.assertIn("Agent", frontmatter["tools"].split(", "))
+                self.assertNotIn("Agent", frontmatter.get("disallowedTools", "").split(", "))
+                self.assertNotIn("Task", frontmatter.get("disallowedTools", "").split(", "))
+
+    def test_every_role_reads_the_shared_scout_procedure(self):
+        for role in (ROOT / ".ai/agents").glob("*.md"):
+            if role.name == "README.md":
+                continue
+            with self.subTest(role=role.name):
+                self.assertIn("../references/scout-dispatch.md", role.read_text(encoding="utf-8"))
+
     def test_agent_required_local_reads_resolve(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
             body = path.read_text(encoding="utf-8")

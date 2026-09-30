@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by phase-preparer. Spawned by plan-phase orchestrator.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*, mcp__perplexity__*
+tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*, mcp__perplexity__*
 color: cyan
 # hooks:
 #   PostToolUse:
@@ -12,6 +12,10 @@ color: cyan
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `luna_scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.

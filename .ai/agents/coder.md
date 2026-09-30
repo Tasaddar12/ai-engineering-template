@@ -1,8 +1,7 @@
 ---
 name: coder
-disallowedTools: Agent, Task
 description: Executes one assigned phase plan with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, mcp__context7__*, mcp__plugin_context7_context7__*
+tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill, mcp__context7__*, mcp__plugin_context7_context7__*
 color: yellow
 # hooks:
 #   PostToolUse:
@@ -13,13 +12,17 @@ color: yellow
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `luna_scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
 Use only the paths, revision and result destination your plan names. Read the
 repository AGENTS.md and only the applicable skills. Only the orchestrator
-dispatches agents, ticks the roadmap, changes shared phase decisions or status,
+dispatches workers, ticks the roadmap, changes shared phase decisions or status,
 or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Methods linked below are bundled locally. Use the supported runtime and Git

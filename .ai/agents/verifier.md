@@ -1,8 +1,7 @@
 ---
 name: verifier
-disallowedTools: Agent, Task
 description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.
-tools: Read, Write, Bash, Grep, Glob, Skill
+tools: Agent, Read, Write, Bash, Grep, Glob, Skill
 color: green
 # hooks:
 #   PostToolUse:
@@ -13,6 +12,10 @@ color: green
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `luna_scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.

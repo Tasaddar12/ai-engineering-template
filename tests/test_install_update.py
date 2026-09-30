@@ -39,6 +39,34 @@ def seed_source(directory):
 class UpdateTests(unittest.TestCase):
     host = "codex"
 
+    def test_no_hooks_update_canonicalizes_codex_settings_and_preserves_hooks(self):
+        if self.host != "codex":
+            self.skipTest("Codex project setting")
+        original = (b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n[agents]\r\n'
+                    b'max_threads = 4 # retained comment\r\n'
+                    b'max_concurrent_threads_per_session = 5\r\n[hooks]\r\nStop = []\r\n')
+        path = self.write(".codex/config.toml", original)
+        changes, backups, _ = update.plan_update(self.source, self.target, "codex", False, installer)
+        self.assertIn(path, backups)
+        self.apply(changes)
+        content = path.read_bytes()
+        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n'))
+        self.assertIn(b'[hooks]\r\nStop = []\r\n', content)
+        settings = installer.tomllib.loads(content.decode("utf-8-sig"))
+        self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
+        self.assertNotIn("max_threads", settings["agents"])
+        self.assertEqual([], update.plan_update(self.source, self.target, "codex", False, installer)[0])
+
+    def test_no_hooks_update_invalid_codex_settings_are_preflight_only(self):
+        if self.host != "codex":
+            self.skipTest("Codex project setting")
+        self.write(".codex/config.toml", b'agents = {max_threads = 4}\n')
+        before = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
+        with self.assertRaisesRegex(ValueError, "inline agents.*nothing was installed"):
+            update.plan_update(self.source, self.target, "codex", False, installer)
+        after = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
+
     @classmethod
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="update-source-")

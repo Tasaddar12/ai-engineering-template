@@ -1,11 +1,12 @@
 """Agent, model, effort and skill resolution for orchestrator dispatch.
 
 The orchestrator asks the runtime which model an agent runs on, how hard that
-model should think, which tools it may use and which skills it should load,
-rather than deciding inline. Project config is the only dial; whatever it leaves
-unset resolves to `inherit` and the host chooses.
+model should think, which tools it may use and which skills it should load.
+Codex resolves its native TOML settings; Claude resolves project YAML overrides.
+The leaf scout's model and effort remain fixed for each host.
 """
 from pathlib import Path
+import tomllib
 
 from .config import get as config_get
 from .paths import read_text
@@ -53,16 +54,38 @@ def split_list(value):
     return [item.strip() for item in str(value or "").split(",") if item.strip()]
 
 
-def resolve_model(workspace, name):
-    """Model for an agent: a project config override, otherwise `inherit`.
+def resolve_host(host=None):
+    inferred = "codex" if NAMESPACE.name == ".codex" else "claude"
+    require(host is None or host in ("codex", "claude"),
+            "unknown host: " + str(host) + " (expected codex or claude)", "bad-host")
+    require(host is None or NAMESPACE.name == ".ai" or host == inferred,
+            "--host must match the installed namespace " + NAMESPACE.name, "bad-host")
+    return host or inferred
 
-    Agent definitions deliberately carry no `model:` frontmatter — the model is
-    injected inline at spawn time instead, so one file decides it for every
-    host. Configured values are the host's model aliases (`opus`, `sonnet`),
-    never full API ids: the Agent SDK's dispatch call accepts only an alias.
 
-    `inherit` means the caller omits the model argument and lets the host choose.
-    """
+def native_codex(name):
+    root = NAMESPACE / ("install-assets/codex-agents" if NAMESPACE.name == ".ai" else "agents")
+    path = root / (name + ".toml")
+    require(path.is_file(), "no native Codex agent definition: " + str(path), "agent-not-found")
+    try:
+        definition = tomllib.loads(read_text(path, ""))
+    except ValueError as error:
+        require(False, "invalid native Codex agent definition " + str(path) + ": " + str(error),
+                "bad-agent-definition")
+    return path, definition
+
+
+def resolve_model(workspace, name, host=None):
+    """Fixed scout model, native Codex TOML, or Claude YAML override/inherit."""
+    host = resolve_host(host)
+    if name == "luna_scout":
+        return {"agent": name, "model": "gpt-6-luna" if host == "codex" else "haiku",
+                "source": "scout", "inherit": False}
+    if host == "codex":
+        _, definition = native_codex(name)
+        model = definition.get("model", "inherit")
+        return {"agent": name, "model": model, "source": "native-codex",
+                "inherit": model == "inherit"}
     override = config_get(workspace, "agents." + name + ".model")
     if override:
         return {"agent": name, "model": str(override), "source": "config",
@@ -70,7 +93,7 @@ def resolve_model(workspace, name):
     return {"agent": name, "model": "inherit", "source": "default", "inherit": True}
 
 
-def resolve_effort(workspace, name):
+def resolve_effort(workspace, name, host=None):
     """Reasoning effort for an agent: a config override, otherwise `inherit`.
 
     Effort buys thinking depth on a model that is already chosen, which makes it
@@ -79,7 +102,18 @@ def resolve_effort(workspace, name):
     spend without changing what that role can do. `inherit` means the caller
     omits the effort argument and lets the host choose.
     """
-    override = config_get(workspace, "agents." + name + ".effort")
+    host = resolve_host(host)
+    if name == "luna_scout":
+        effort = "high" if host == "codex" else "inherit"
+        return {"agent": name, "effort": effort, "source": "scout",
+                "inherit": effort == "inherit"}
+    if host == "codex":
+        _, definition = native_codex(name)
+        override = definition.get("model_reasoning_effort", "inherit")
+        source = "native-codex"
+    else:
+        override = config_get(workspace, "agents." + name + ".effort")
+        source = "config"
     if not override:
         return {"agent": name, "effort": "inherit", "source": "default",
                 "inherit": True}
@@ -88,17 +122,20 @@ def resolve_effort(workspace, name):
             "unknown effort for " + name + ": " + str(override)
             + " (expected one of " + ", ".join(EFFORTS) + ")",
             "bad-effort")
-    return {"agent": name, "effort": effort, "source": "config",
+    return {"agent": name, "effort": effort, "source": source,
             "inherit": effort == "inherit"}
 
 
-def resolve_agent(workspace, name):
+def resolve_agent(workspace, name, host=None):
     """Everything the orchestrator needs to spawn one subagent."""
     path, frontmatter, _ = load_agent(name)
-    model = resolve_model(workspace, name)
-    effort = resolve_effort(workspace, name)
+    host = resolve_host(host)
+    model = resolve_model(workspace, name, host)
+    effort = resolve_effort(workspace, name, host)
     return {
         "agent": name,
+        "host": host,
+        "native_file": str(native_codex(name)[0]) if host == "codex" else None,
         "file": str(path),
         "description": frontmatter.get("description", ""),
         "model": model["model"],

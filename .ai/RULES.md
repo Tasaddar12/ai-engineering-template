@@ -191,16 +191,23 @@ conflicts with the agent it dispatched.
 
 Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,
-`doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`. Never
+`doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`, `luna_scout`. Never
 substitute a generic agent type; the project's own definitions carry the prompts
 and tool permissions that make the result trustworthy. Resolve the model through
 `phase_run query resolve-model <agent>` and the reasoning effort through
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
-call; agent definitions carry neither as frontmatter. A resolved `inherit` means
+call; worker definitions carry neither as frontmatter. `luna_scout` alone
+carries Claude `model: haiku` and no effort. A resolved `inherit` means
 omit that argument and let the host choose.
 
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
-not spawn agents, switch branches, merge, publish or edit shared status.
+not spawn workers, switch branches, merge, publish or edit shared status.
+
+Every non-scout agent, including the coordinator, must read and follow
+[required scout dispatch](references/scout-dispatch.md) for every substantive
+repository evidence task. Workers dispatch only `luna_scout` children; the
+coordinator retains worker lifecycle, integration, shared records and publication.
+`luna_scout` is a read-only leaf and does not dispatch children or write a SUMMARY.
 
 Plan ownership uses exact repository-relative paths or directory prefixes ending
 in `/`, without traversal, globs or whole-repository scope. Plans that declare

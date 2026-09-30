@@ -1,8 +1,7 @@
 ---
 name: doc-writer
-disallowedTools: Agent, Task
 description: Writes and updates project documentation. Spawned with a doc_assignment block specifying doc type, mode (create/update/supplement), and project context.
-tools: Read, Bash, Grep, Glob, Write, Edit, Skill
+tools: Agent, Read, Bash, Grep, Glob, Write, Edit, Skill
 color: purple
 # hooks:
 #   PostToolUse:
@@ -13,6 +12,10 @@ color: purple
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `luna_scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.

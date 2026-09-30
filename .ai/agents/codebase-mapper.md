@@ -1,7 +1,7 @@
 ---
 name: codebase-mapper
 description: Explores a codebase and writes structured analysis documents. Assigned during onboarding or research with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
-tools: Read, Bash, Grep, Glob, Write, Skill
+tools: Agent, Read, Bash, Grep, Glob, Write, Skill
 color: cyan
 # hooks:
 #   PostToolUse:
@@ -12,6 +12,10 @@ color: cyan
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `luna_scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.

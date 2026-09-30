@@ -855,6 +855,40 @@ class CommitAndConfig(RuntimeCase):
 
 
 class Dispatch(RuntimeCase):
+    def test_source_codex_resolution_reads_native_settings_instead_of_claude_yaml(self):
+        self.run_verb("config-set", "agents.coder.model", "opus")
+        self.run_verb("config-set", "agents.coder.effort", "max")
+        codex = self.run_verb("resolve-agent", "coder", "--host", "codex")
+        self.assertEqual("gpt-6.1-sol", codex["model"])
+        self.assertEqual("high", codex["effort"])
+        self.assertEqual("native-codex", codex["model_source"])
+        self.assertIn("install-assets", codex["native_file"])
+        self.assertEqual("gpt-6.1-sol", self.run_verb("resolve-model", "coder", "--host", "codex")["model"])
+        self.assertEqual("high", self.run_verb("resolve-effort", "coder", "--host", "codex")["effort"])
+        claude = self.run_verb("resolve-agent", "coder", "--host", "claude")
+        self.assertEqual("opus", claude["model"])
+        self.assertEqual("max", claude["effort"])
+        self.assertEqual(claude["model"], self.run_verb("resolve-model", "coder")["model"])
+
+    def test_scout_resolution_is_fixed_for_both_hosts_despite_yaml_overrides(self):
+        self.run_verb("config-set", "agents.luna_scout.model", "wrong")
+        self.run_verb("config-set", "agents.luna_scout.effort", "max")
+        for host, model, effort in (("codex", "gpt-6-luna", "high"),
+                                   ("claude", "haiku", "inherit")):
+            with self.subTest(host=host):
+                result = self.run_verb("resolve-agent", "luna_scout", "--host", host)
+                self.assertEqual(model, result["model"])
+                self.assertEqual(effort, result["effort"])
+                self.assertEqual(effort == "inherit", result["effort_inherit"])
+                self.assertFalse(result["inherit"])
+        self.assertEqual("haiku", self.run_verb("resolve-model", "luna_scout")["model"])
+        self.assertEqual("inherit", self.run_verb("resolve-effort", "luna_scout")["effort"])
+
+    def test_invalid_host_is_a_handled_resolution_failure(self):
+        for verb in ("resolve-model", "resolve-effort", "resolve-agent"):
+            self.assertEqual("bad-host", self.run_verb(verb, "coder", "--host", "other",
+                                                      expect_ok=False)["code"])
+
     def test_identity_names_the_runtime(self):
         result = self.run_verb("runtime-identity")
         self.assertEqual(result["packageName"], "ai-phase-runtime")
