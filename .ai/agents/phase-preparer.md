@@ -905,7 +905,7 @@ Plans:
 - [ ] {phase}-02-PLAN.md — {brief objective}
 ```
 
-Keep these full filenames in the proposal and evidence. For runtime registration, derive the ID by removing only the terminal `-PLAN.md`: `03-01-PLAN.md` becomes `03-01`. The ID uses the phase prefix and exactly two ASCII digits for the plan ordinal; the runtime stores `ID: description`, not the filename.
+For runtime registration, derive the ID by removing only the terminal `-PLAN.md`: `03-01-PLAN.md` becomes `03-01`.
 
 4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
 </step>
