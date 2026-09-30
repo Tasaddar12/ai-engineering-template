@@ -274,3 +274,17 @@ live scout execution.
 - Authored source, fresh export, update-idempotence and migration/custom-body
   regressions. This implementation and SUMMARY are committed before tests;
   focused validation remains deferred until that commit.
+
+Implementation commit: `1098052`. Focused checks run after the commit passed:
+
+| Command | Result |
+|---|---|
+| `python -m unittest discover -s tests -p test_agent_sources.py` | 12 tests, 0.058 seconds |
+| `python -m unittest discover -s tests -p test_install.py -k native_agent_models_and_direct_roles` | 1 test, 14.669 seconds |
+| `python -m unittest discover -s tests -p test_install_update.py -k scout_metadata` | 2 tests, 9.474 seconds |
+| `python -m unittest discover -s tests -p test_install_migration.py -k scout_metadata` | 1 test, 3.450 seconds |
+| `python -m unittest discover -s tests -p test_phase_runtime.py -k scout_resolution` | 1 test, 1.383 seconds |
+| `python -m unittest discover -s tests -p test_workflow_links.py` | 3 tests, 0.572 seconds |
+
+No full suite, push or merge was performed by this worker. Root owns publication,
+independent review and final CI checks.
