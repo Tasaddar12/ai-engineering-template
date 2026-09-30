@@ -15,18 +15,17 @@ attempt rather than warning about it.
 
 ## Scope
 
-Only two workflows carry this contract, because only two write source:
+The session contract covers quick work and the shared phase lifecycle:
 
 | Workflow | Session | Delivered by |
 |---|---|---|
 | `/quick` | `quick` | itself — one task, one branch, one pull request |
-| `/execute-phase` | `phase` | `/ship` |
+| `/discuss-phase`, `/plan-phase`, `/execute-phase`, `/verify-work` | `phase` | `/ship` |
+| `/ship` | `phase` | itself |
 
-The phase session is shared. `/discuss-phase`, `/plan-phase` and `/verify-work`
-join the same one so a phase's records travel with the code they describe and
-the whole phase arrives as one pull request. They carry a short join step rather
-than this contract, and none of them delivers — `/ship` does that once the phase
-is verified.
+The phase session is shared. `/discuss-phase`, `/plan-phase`, `/execute-phase` and `/verify-work`
+run `phase.locate` before their init bundle, then use its validated session.
+`/ship` selects and validates the same phase session before loading ship data.
 
 **The planning workflows are deliberately outside this.** `/capture`,
 `/check-todos`, `/phase` and its roadmap edits, `/new-milestone`,
@@ -39,7 +38,26 @@ request, a merge and a session close costs more than the record is worth.
 Work a planning record *leads to* is a different matter. `/check-todos` hands
 implementation to `/quick` or `/phase`, and those open sessions of their own.
 
-## Opening
+## Phase session routing
+
+Run these steps in `/discuss-phase`, `/plan-phase`, `/execute-phase`, `/verify-work` and `/ship`:
+
+1. Resolve `PHASE_RUNTIME` to an absolute path and define `phase_run`.
+2. Run `LOCATE=$(phase_run query phase.locate "${PHASE}")`. Stop on a nonzero exit and report the runtime error.
+3. Parse `phase_found`, `worktree`, `session`, `padded_phase`, `branch` and `source`.
+4. If `phase_found` is false, report the missing phase and exit.
+5. If `session` is present, require a non-null absolute `worktree`, retain the session identity, run the explicit quoted `cd -- "${worktree}"`, then run the workflow's init bundle.
+6. If `session` is absent in `/discuss-phase`, `/plan-phase`, `/execute-phase` or `/verify-work`, run the init bundle only after step 4. For a primary checkout, call `session.open phase "${padded_phase}"`. For a linked worktree, call `session.adopt phase "${padded_phase}"`. `/ship` stops when no validated session is returned.
+7. After `session.open` or `session.adopt`, parse its returned paths, run the explicit quoted `cd` into its absolute worktree, reload the full init bundle and replace every previously derived value.
+8. Stop on an unsupported session route or failed verb. Preserve selected worktree content and report the error.
+
+For `/ship` without an explicit phase, run `session.status` and select a phase only
+when exactly one open `kind=phase` entry exists. Use its `label` as `PHASE`, then
+validate it with `phase.locate`. With zero or multiple entries, stop and require
+`/ship <phase>`. Never pass an empty phase to `phase.locate` or ship the current
+branch by inference.
+
+## Opening non-phase sessions
 
 Run this before the workflow's first write, after the runtime launcher.
 
@@ -59,11 +77,10 @@ id for a quick task, the milestone slug for milestone work.
 | `reused` | `true` when a session for this unit was already open |
 | `synced` | What `pr.sync` did to the base branch before forking |
 
-**Reuse is the mechanism, not an optimisation.** `/discuss-phase 01` opens the
-session; `/plan-phase 01`, `/execute-phase 01` and `/verify-work 01` call the
-same verb with the same kind and label and get the same worktree back. That is
-what makes a phase accumulate onto one branch and arrive as one pull request
-instead of four.
+For phase work, `phase.locate` returns the existing registered session when it
+matches the phase. Call `session.open` only from the primary checkout after the
+phase is confirmed. Call `session.adopt` only from the selected linked worktree
+when no session is registered; it preserves that checkout's branch and records.
 
 Report it in one line before doing anything else:
 
@@ -171,8 +188,8 @@ Delivered: {url} — merged by {method}, evidence {evidence}; session {closed | 
 ## Anti-patterns
 
 - Don't write anything from the checkout the command was invoked in
-- Don't open a second session for a unit that already has one — call
-  `session.open` and take the one it returns
+- Don't open a second session for a unit that already has one — use the
+  `session` returned by `phase.locate`
 - Don't open a new pull request because the first one's checks failed
 - Don't merge on `pending`; an unfinished check is not a passing one
 - Don't treat `none` as `passing`; silence is not evidence
