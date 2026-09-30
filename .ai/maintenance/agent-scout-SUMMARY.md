@@ -145,6 +145,15 @@ the corrected migration suite then passed. No full suite was run by this worker.
 Root owns push, independent review and final full checks. No adopting planning
 records changed in this slice.
 
+## Windows dry-run assertion correction
+
+Normalized dry-run stdout path separators in
+`test_no_hooks_skips_registration_without_removing_existing_hooks` before both
+host assertions. Installer output and native path formatting are unchanged.
+On Windows, `python -m unittest discover -s tests -p test_install.py -k
+test_no_hooks_skips_registration_without_removing_existing_hooks` passed:
+1 test in 22.773 seconds. No other tests or scope were added in this slice.
+
 ## Independent-review blocker corrections
 
 Assigned input revision: `d600ed83c787bca288d47cf5563b9d5893f29edd`.

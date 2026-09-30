@@ -603,10 +603,11 @@ class InstallerTests(unittest.TestCase):
                 result = self.install("--host", host, "--no-hooks", "--dry-run")
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertFalse(self.target.exists())
+                output = result.stdout.replace("\\", "/")
                 if host == "codex":
-                    self.assertIn("write " + name, result.stdout)
+                    self.assertIn("write " + name, output)
                 else:
-                    self.assertNotIn("write " + name, result.stdout)
+                    self.assertNotIn("write " + name, output)
                 result = self.install("--host", host, "--no-hooks")
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertTrue((self.target / ("." + host) / "runtime/phase.py").exists())
