@@ -1,0 +1,27 @@
+# Phase worktree routing maintenance
+
+- status: complete
+- repository: D:/Codex Projects/ai-engineering-template/.worktrees/phase-worktree-routing-154756304
+- branch: phase-phase-worktree-routing-154756304
+- base: 5b3858ebd3201718ca03e55279a33f4a3a18a2e2
+- files:
+  - .ai/runtime/phase.py
+  - .ai/runtime/lib/worktrees.py
+  - tests/test_session_delivery.py
+  - .ai/maintenance/phase-worktree-routing-SUMMARY.md
+- commands:
+  - `python -m unittest discover -s tests -p test_session_delivery.py -v`
+  - `PYTHONPATH=tests python -m unittest test_session_delivery.PhaseLocate -v` (PowerShell: `$env:PYTHONPATH = 'tests'`)
+  - `git diff --check`
+- results:
+  - Session suite: 39 tests passed in 59.314s.
+  - Final locator cases: 14 tests passed in 39.860s.
+  - Whitespace check: passed.
+  - Initial fixture failure: corrected by creating the copied phase in both checkouts; rerun passed.
+  - API: phase_found, padded_phase, worktree, branch, session, source.
+  - Sources: session, current-checkout, registered-worktree, none.
+  - Read-only snapshots: manifest, refs, worktrees, planning files and checkout status preserved.
+  - Broken sessions and ambiguous candidates: rejected without fallback or repair.
+- deferred:
+  - Workflow documentation, fresh review and broader checks: coordinator after draft PR creation.
+  - Publication: coordinator-owned; no push, branch switch or merge performed.

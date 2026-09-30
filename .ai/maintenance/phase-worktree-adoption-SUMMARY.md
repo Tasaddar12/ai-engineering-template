@@ -1,0 +1,31 @@
+# Phase worktree adoption maintenance
+
+- status: complete
+- repository: D:/Codex Projects/ai-engineering-template/.worktrees/phase-worktree-adoption-162045206
+- branch: phase-phase-worktree-adoption-162045206
+- base: 8512fcd7df57ff6c9e1e37df70f9c061b766ffe9
+- files:
+  - .ai/runtime/phase.py
+  - .ai/runtime/lib/worktrees.py
+  - tests/test_session_delivery.py
+  - tests/test_install.py
+  - .ai/maintenance/phase-worktree-adoption-SUMMARY.md
+  - .ai/maintenance/phase-worktree-instructions-SUMMARY.md
+- commands:
+  - `python -m unittest discover -s tests -p test_session_delivery.py -v`
+  - `python -m unittest discover -s tests -p test_install.py -v`
+  - `PYTHONPATH=tests python -m unittest test_install.InstallerTests.test_installed_runtime_answers_its_verb_contract -v` (PowerShell: `$env:PYTHONPATH = 'tests'`)
+  - `git diff --check`
+- results:
+  - Session suite: 50 tests passed in 89.866s.
+  - Installer reproduction: 37 tests in 245.777s; OK, 1 host symlink-permission skip; reported E not reproduced.
+  - Final installed-runtime contract: 1 test passed in 11.983s; Codex and Claude namespaces both checked.
+  - Whitespace check: passed.
+  - API: `session.adopt phase <phase>`; canonical label, merge-base-derived base, adopted=true, reused flag, synced=null.
+  - Adoption writes only the shared session manifest; linked checkout, branch, staged work and dirty phase records preserved.
+  - Existing validated sessions reused without manifest changes; primary, detached, protected, conflicting, missing, disagreeing and duplicate selections refused.
+  - Locator and init.plan-phase see the original dirty context and plans after adoption; close preserves committed work absent merge ancestry.
+  - Instruction summary dependency: resolved after API checks passed.
+- deferred:
+  - Fresh review, publication and broader verification: coordinator-owned.
+  - No push, merge, branch switch or adoption-skeleton changes performed.

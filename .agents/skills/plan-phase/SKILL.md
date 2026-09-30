@@ -1,6 +1,6 @@
 ---
 name: plan-phase
-description: "Turn a phase's captured decisions into executable plans, with optional research and a goal-backward plan review."
+description: "Plan a phase from plan-phase <phase>, plan phase <phase>, or /plan-phase <phase>."
 argument-hint: "<phase> [--skip-research] [--research] [--gaps]"
 allowed-tools:
   - Read
@@ -35,8 +35,10 @@ Workflow files are loaded on demand in the <process> section below - not upfront
 Arguments: $ARGUMENTS
 Phase number: $ARGUMENTS (required).
 
-Phase context, models and agent availability are resolved in-workflow through
-`phase_run query init.plan-phase`.
+Run this skill for `plan-phase <phase>`, `plan phase <phase>`, or
+`/plan-phase <phase>`.
+The phase is located with `phase_run query phase.locate` before
+`phase_run query init.plan-phase` loads its context.
 </context>
 
 <process>

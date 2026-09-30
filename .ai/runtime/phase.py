@@ -183,6 +183,11 @@ def verb_session_open(workspace, positionals, options):
                                   sync=not options.get("no_sync"))
 
 
+def verb_session_adopt(workspace, positionals, options):
+    return worktrees.adopt_session(workspace, argument(positionals, 0, "kind"),
+                                  argument(positionals, 1, "phase"))
+
+
 def verb_session_status(workspace, positionals, options):
     return worktrees.session_status(workspace)
 
@@ -344,6 +349,10 @@ def verb_phase_next_decimal(workspace, positionals, options):
 
 def verb_phases_list(workspace, positionals, options):
     return phases.listing(workspace)
+
+
+def verb_phase_locate(workspace, positionals, options):
+    return worktrees.locate_phase(workspace, argument(positionals, 0, "phase"))
 
 
 def verb_find_phase(workspace, positionals, options):
@@ -688,6 +697,7 @@ VERBS = {
 
     "dispatch-isolation": verb_dispatch_isolation,
     "session.open": verb_session_open,
+    "session.adopt": verb_session_adopt,
     "session.status": verb_session_status,
     "session.close": verb_session_close,
     "pr.open": verb_pr_open,
@@ -709,6 +719,7 @@ VERBS = {
     "handoff.consume": verb_handoff_consume,
     "handoff.write": verb_handoff_write,
 
+    "phase.locate": verb_phase_locate,
     "phase.add": verb_phase_add,
     "phase.insert": verb_phase_insert,
     "phase.remove": verb_phase_remove,

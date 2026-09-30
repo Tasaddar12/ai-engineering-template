@@ -40,8 +40,9 @@ Workflow files are loaded on demand in the <process> section below - not upfront
 Arguments: $ARGUMENTS
 Phase number: $ARGUMENTS (optional; defaults to the current phase).
 
-Verification status, check configuration and git state are resolved in-workflow
-through `phase_run query init.ship`.
+An omitted phase is inferred only from exactly one open phase session. The phase
+is validated with `phase_run query phase.locate` before `phase_run query init.ship`
+loads the selected worktree.
 </context>
 
 <process>

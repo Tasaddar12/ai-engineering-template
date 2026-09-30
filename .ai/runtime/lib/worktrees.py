@@ -32,11 +32,12 @@ merged is preserved for inspection.
 import json
 import re
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 
 from . import gitops
 from .config import get as config_get
-from .paths import write_text
+from .paths import Workspace, write_text
 from .results import VerbError, require
 
 #: The only isolation values the workflows may branch on. `none` is absent on
@@ -649,6 +650,100 @@ def put_session(workspace, entry):
     return entry
 
 
+def _phase_label(number):
+    """One spelling for equivalent integer, padded and decimal labels."""
+    text = str(number).strip()
+    require(bool(re.fullmatch(r"\d+(?:\.\d+)?", text)),
+            "not a phase number: " + text, "bad-phase")
+    normalized = format(Decimal(text), "f")
+    whole, _, fraction = normalized.partition(".")
+    fraction = fraction.rstrip("0")
+    return str(int(whole)).zfill(2) + ("." + fraction if fraction else "")
+
+
+def locate_phase(workspace, number):
+    """Find the authoritative checkout for a phase without changing anything.
+
+    Open session records take precedence over copied roadmaps. A broken record
+    is an error, never permission to silently plan against a different checkout.
+    With no session, prefer the caller's checkout, then a unique registered one.
+    """
+    from . import phases
+
+    label = _phase_label(number)
+    sessions = []
+    for entry in load_sessions(workspace)["sessions"]:
+        if (entry.get("kind") != "phase" or entry.get("status") != "open"):
+            continue
+        try:
+            matching = _phase_label(entry.get("label")) == label
+        except VerbError:
+            matching = False
+        if matching:
+            sessions.append(entry)
+    require(len(sessions) <= 1,
+            "multiple open sessions for phase " + label + ": "
+            + "; ".join(str(item.get("worktree")) + " ("
+                        + str(item.get("branch")) + ")" for item in sessions),
+            "ambiguous-phase-session")
+
+    def found(root, branch, session, source):
+        return {"phase_found": True, "padded_phase": label,
+                "worktree": str(root), "branch": branch,
+                "session": session, "source": source}
+
+    if sessions:
+        session = sessions[0]
+        raw_path = session.get("worktree")
+        require(isinstance(raw_path, str) and bool(raw_path) and Path(raw_path).is_absolute(),
+                "phase session has no absolute worktree: " + str(raw_path),
+                "invalid-phase-session")
+        target = Path(raw_path).resolve()
+        require(target.is_dir(), "phase session checkout is missing: " + str(target),
+                "missing-session-worktree")
+        registered = listing(workspace)["worktrees"]
+        actual = next((item for item in registered
+                       if Path(item["path"]) == target), None)
+        require(actual is not None,
+                "phase session checkout is not registered: " + str(target),
+                "unregistered-session-worktree")
+        branch = session.get("branch")
+        live_branch = gitops.output(workspace, "symbolic-ref", "--short", "HEAD",
+                                    cwd=target)
+        live_root = gitops.output(workspace, "rev-parse", "--show-toplevel", cwd=target)
+        require(bool(live_root) and Path(live_root).resolve() == target,
+                "phase session checkout disagrees with git: " + str(target),
+                "invalid-phase-session")
+        require(bool(branch) and actual.get("branch") == branch and live_branch == branch,
+                "phase session branch mismatch at " + str(target) + ": manifest="
+                + str(branch) + ", registered=" + str(actual.get("branch"))
+                + ", checkout=" + str(live_branch or None),
+                "session-branch-mismatch")
+        require(phases.resolve(Workspace(target), label)["phase_found"],
+                "phase " + label + " is missing from session checkout: " + str(target),
+                "session-phase-missing")
+        return found(target, branch, session, "session")
+
+    if phases.resolve(workspace, label)["phase_found"]:
+        return found(workspace.root, gitops.current_branch(workspace) or None,
+                     None, "current-checkout")
+    registered = listing(workspace)["worktrees"] if gitops.is_repository(workspace) else []
+    candidates = [item for item in registered
+                  if item["exists"] and not item.get("bare")
+                  and Path(item["path"]) != workspace.root
+                  and phases.resolve(Workspace(item["path"]), label)["phase_found"]]
+    require(len(candidates) <= 1,
+            "phase " + label + " exists in multiple registered worktrees: "
+            + "; ".join(item["path"] + " (" + str(item.get("branch")) + ")"
+                        for item in candidates), "ambiguous-phase-worktree")
+    if candidates:
+        candidate = candidates[0]
+        return found(Path(candidate["path"]), candidate.get("branch"),
+                     None, "registered-worktree")
+    return {"phase_found": False, "padded_phase": label, "worktree": None,
+            "branch": None, "session": None, "source": "none"}
+
+
 def session_for(workspace, kind, label):
     """The open session for this unit of work, or None.
 
@@ -735,6 +830,67 @@ def open_session(workspace, kind, label, base=None, sync=True):
     put_session(workspace, entry)
     return dict(entry, reused=False, synced=synced,
                 worktree_relative=workspace.relative(path))
+
+
+def adopt_session(workspace, kind, number):
+    """Register the selected current phase checkout; preserve all working files."""
+    require(kind == "phase", "session.adopt supports only phase sessions",
+            "bad-session-kind")
+    require(gitops.is_repository(workspace), "not a git repository", "not-a-repo")
+    located = locate_phase(workspace, number)
+    require(located["phase_found"], "phase not found: " + str(number), "phase-not-found")
+    require(Path(located["worktree"]) == workspace.root,
+            "change to the selected phase checkout before adopting: " + located["worktree"],
+            "session-adopt-wrong-checkout")
+    registered = listing(workspace)["worktrees"]
+    current = next((item for item in registered
+                    if Path(item["path"]) == workspace.root), None)
+    require(current is not None and not current.get("is_primary")
+            and not current.get("bare") and (workspace.root / ".git").is_file(),
+            "session.adopt requires a registered linked checkout: " + str(workspace.root),
+            "session-adopt-not-linked")
+    branch = gitops.output(workspace, "symbolic-ref", "--short", "HEAD")
+    require(bool(branch) and not current.get("detached"),
+            "session.adopt requires a named branch", "session-adopt-detached")
+    require(current.get("branch") == branch and located["branch"] == branch,
+            "selected checkout branch disagrees with git at " + str(workspace.root),
+            "session-branch-mismatch")
+    require(not PROTECTED_BRANCH.match(branch),
+            "refusing to adopt the protected branch " + branch, "protected-branch")
+
+    existing = located["session"]
+    for entry in load_sessions(workspace)["sessions"]:
+        if entry.get("status") != "open" or entry == existing:
+            continue
+        path = entry.get("worktree")
+        owns_path = isinstance(path, str) and Path(path).resolve() == workspace.root
+        require(entry.get("branch") != branch and not owns_path,
+                "open session already owns this branch or checkout: "
+                + str(entry.get("kind")) + " " + str(entry.get("label")) + " at "
+                + str(path) + " (" + str(entry.get("branch")) + ")",
+                "session-adopt-conflict")
+    label = located["padded_phase"]
+    if existing:
+        return dict(existing, label=label, reused=True, synced=None, adopted=True,
+                    worktree_relative=workspace.relative(workspace.root))
+
+    primary = Workspace(primary_checkout(workspace))
+    base_branch_name = gitops.base_branch(primary)
+    reference = (gitops.rev_parse(primary, "origin/" + base_branch_name)
+                 or gitops.rev_parse(primary, base_branch_name))
+    require(bool(reference), "no repository base branch to adopt against", "bad-base")
+    base = gitops.merge_base(workspace, "HEAD", reference)
+    require(bool(base), "checkout has no merge base with " + base_branch_name, "bad-base")
+    entry = {
+        "kind": "phase", "label": label, "branch": branch,
+        "base_branch": base_branch_name, "base": base,
+        "worktree": str(workspace.root), "status": "open", "pr": None,
+        "created_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "adopted": True,
+    }
+    put_session(workspace, entry)
+    return dict(entry, reused=False, synced=None,
+                worktree_relative=workspace.relative(workspace.root))
 
 
 def record_session_pr(workspace, branch, url, number=None):

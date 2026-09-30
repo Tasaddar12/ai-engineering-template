@@ -45,8 +45,9 @@ Copilot implementation of the same interactive question API.
 Arguments: $ARGUMENTS
 Phase number (required).
 
-Phase context, prior decisions and todo matches are resolved in-workflow through
-`phase_run query init.phase-op` and `phase_run query todo.match-phase`.
+Phase number: $ARGUMENTS (required).
+The phase is located with `phase_run query phase.locate` before
+`phase_run query init.phase-op`; todo matches use `phase_run query todo.match-phase`.
 </context>
 
 <process>

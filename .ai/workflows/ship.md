@@ -61,18 +61,48 @@ same phase is what finishes it.
 
 ```bash
 _root="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+case "$_root" in /*) ;; *) _root="$(cd -- "$_root" && pwd -P)" ;; esac
 for _c in "$_root"/.{ai,claude,codex}/runtime/phase.py "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/runtime/phase.py "${CODEX_HOME:-$HOME/.codex}"/runtime/phase.py; do
-  [ -f "$_c" ] && PHASE_RUNTIME="$_c" && break
+  [ -f "$_c" ] && PHASE_RUNTIME="$(cd -- "$(dirname -- "$_c")" && pwd -P)/$(basename -- "$_c")" && break
 done
 [ -n "${PHASE_RUNTIME:-}" ] || { echo "ERROR: phase runtime not found; run the installer." >&2; exit 1; }
 phase_run() { "$(command -v python3 || command -v python)" "$PHASE_RUNTIME" "$@"; }
+if [ -z "${PHASE:-}" ]; then
+  SESSIONS=$(phase_run query session.status) || { echo "ERROR: session lookup failed; stop and report the runtime error." >&2; exit 1; }
+fi
+```
+
+If `PHASE` was omitted, parse `SESSIONS` and count entries where `kind` is
+`phase` and `status` is `open`. Set `PHASE` to the sole entry's `label` only when
+exactly one matches. With zero or multiple matches, stop with `Supply /ship <phase>
+to select the phase session.` Do not infer a phase from a blank argument or
+project state. For an explicit argument, skip `session.status` and use it for
+the locator. Run the locator only after `PHASE` is set:
+
+```bash
+LOCATE=$(phase_run query phase.locate "${PHASE}") || { echo "ERROR: phase lookup failed; stop and report the runtime error." >&2; exit 1; }
+```
+
+Parse `phase_found`, `padded_phase`, `worktree`, `session`, `branch` and `source`
+from `LOCATE`. If `phase_found` is false, report `Phase {PHASE} not found in
+the roadmap.` and exit. If `session` is null, report `No validated open phase
+session for Phase {PHASE}; /ship requires its existing session worktree.` and exit.
+If `worktree` is null, stop and report the locator result as inconsistent.
+
+The locator-selected session must be used before loading phase data. Run the
+explicit quoted `cd` to its absolute `worktree`; keep `PHASE_RUNTIME` absolute
+so the launcher remains available after the directory change. Stop if `cd` fails.
+
+```bash
+cd -- "${worktree}"
 INIT=$(phase_run query init.ship "${PHASE}")
 ```
 
-Extract: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_dir`,
-`goal`, `artifacts`, `verification`, `checks`, `checks_configured`, `git`
-(`base_branch`, `current_branch`, `is_protected`, `has_remote`), `commit_docs`,
-`response_language`.
+Parse `phase_number`, `phase_name`, `phase_dir`, `goal`, `artifacts`,
+`verification`, `checks`, `checks_configured`, `git`, `commit_docs` and
+`response_language` from `INIT`. Confirm `padded_phase`, `branch` and
+`worktree` still match `LOCATE` before any ship check. A mismatch stops shipping.
+
 
 **If `response_language` is set:** all user-facing output MUST be presented in
 `{response_language}`; technical terms, code, file paths and commit/PR text stay
@@ -82,31 +112,10 @@ Display: `► SHIP PHASE {phase_number}: {phase_name}`
 </step>
 
 <step name="resolve_session">
-The phase's work is on its session branch, not in the checkout you were invoked
-from. Find it before checking anything, because every check below has to run
-against the tree being shipped:
-
-```bash
-phase_run query session.status
-```
-
-Take the open session whose `kind` is `phase` and whose `label` is
-`${padded_phase}`. **Run every subsequent command in this workflow from its
-`worktree`**, and use its `branch` wherever a branch is named.
-
-If there is no such open session, the phase was never worked in one. Stop:
-
-```
-No open session for Phase {N}.
-
-Its work was either never started, or already delivered. Run `/progress` to see
-where the phase stands; `/discuss-phase {N}` opens a session for new work.
-```
-
-Do not fall back to the current branch. Shipping whatever happens to be checked
-out is how unrelated work reaches the base branch.
-
-Report it in one line before continuing:
+Use the validated `session` already selected by `phase.locate` before `init.ship`.
+Keep its `worktree`, `branch`, `base`, `reused` and `synced` fields. Do not query
+`session.status` again, call `session.open`, or fall back to the current branch.
+Report the selection before any ship check:
 
 ```
 Session: {branch} at {worktree}

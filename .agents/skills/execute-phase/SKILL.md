@@ -42,8 +42,9 @@ Workflow files are loaded on demand in the <process> section below - not upfront
 Arguments: $ARGUMENTS
 Phase number: $ARGUMENTS (required).
 
-Plan index, models and check configuration are resolved in-workflow through
-`phase_run query init.execute-phase`.
+Phase number: $ARGUMENTS (required).
+The phase is located with `phase_run query phase.locate` before the workflow loads
+`phase_run query init.execute-phase` for the selected worktree.
 </context>
 
 <process>
