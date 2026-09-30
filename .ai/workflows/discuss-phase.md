@@ -137,13 +137,39 @@ Phase number from the argument (required).
 
 ```bash
 _root="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+case "$_root" in /*) ;; *) _root="$(cd -- "$_root" && pwd -P)" ;; esac
 for _c in "$_root"/.{ai,claude,codex}/runtime/phase.py "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/runtime/phase.py "${CODEX_HOME:-$HOME/.codex}"/runtime/phase.py; do
-  [ -f "$_c" ] && PHASE_RUNTIME="$_c" && break
+  [ -f "$_c" ] && PHASE_RUNTIME="$(cd -- "$(dirname -- "$_c")" && pwd -P)/$(basename -- "$_c")" && break
 done
 [ -n "${PHASE_RUNTIME:-}" ] || { echo "ERROR: phase runtime not found; run the installer." >&2; exit 1; }
 phase_run() { "$(command -v python3 || command -v python)" "$PHASE_RUNTIME" "$@"; }
+LOCATE=$(phase_run query phase.locate "${PHASE}") || { echo "ERROR: phase lookup failed; stop and report the runtime error." >&2; exit 1; }
+```
+
+Parse `phase_found`, `padded_phase`, `worktree`, `session`, `branch` and `source`
+from `LOCATE`. If `phase_found` is false, report:
+
+```
+Phase [X] not found in roadmap.
+Use /progress to see available phases.
+```
+
+Exit the workflow.
+
+When `worktree` is set, it is the locator-validated phase checkout. Run the
+explicit quoted `cd` to that absolute path before loading phase data. Keep
+`PHASE_RUNTIME` absolute so the launcher still resolves after the directory
+change. Stop if `cd` fails.
+
+```bash
+if [ -n "${worktree:-}" ]; then cd -- "${worktree}" || exit 1; fi
 INIT=$(phase_run query init.phase-op "${PHASE}")
 ```
+
+Parse the workflow's existing fields from `INIT`. Keep the locator's
+`padded_phase`, `worktree`, `session`, `branch` and `source` as the selected
+checkout identity.
+
 
 Parse the JSON for: `commit_docs`, `phase_found`, `phase_dir`,
 `expected_phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`,
@@ -155,15 +181,6 @@ Parse the JSON for: `commit_docs`, `phase_found`, `phase_dir`,
 narration between tool calls, status updates, progress notes, findings, questions,
 prompts and explanations — MUST be presented in `{response_language}`. Technical
 terms, code, file paths and subagent prompts stay in English.
-
-**If `phase_found` is false:**
-
-```
-Phase [X] not found in roadmap.
-Use /progress to see available phases.
-```
-
-Exit the workflow.
 
 **Mode dispatch — read mode files lazily based on flags in $ARGUMENTS:**
 
@@ -205,23 +222,48 @@ answered from the context in `.continue-here.md`, stop and ask the user.
 </step>
 
 <step name="open_session">
-This phase's work lives in one session worktree, shared by `/discuss-phase`,
-`/plan-phase`, `/execute-phase` and `/verify-work` so the whole phase arrives as
-one pull request. Join it before writing anything:
+`phase.locate` has already confirmed the phase and selected any existing session.
+If `session` from `LOCATE` is present, require its absolute `worktree`, then use
+its `worktree`, `branch`, `base`, `reused` and `synced` fields. Do not call
+`session.open` or replace that session.
+
+If `session` is null, confirm `phase_found` is true before opening or adopting:
 
 ```bash
-SESSION=$(phase_run query session.open phase "${padded_phase}")
+GIT_DIR=$(git rev-parse --git-dir)
+case "${source}:${GIT_DIR}" in
+  registered-worktree:*/worktrees/*|current-checkout:*/worktrees/*)
+    SESSION=$(phase_run query session.adopt phase "${padded_phase}") ;;
+  current-checkout:*)
+    SESSION=$(phase_run query session.open phase "${padded_phase}") ;;
+  *) echo "ERROR: no supported phase session route for source=${source}; stop and report this routing gap." >&2; exit 1 ;;
+esac
 ```
 
-An open session for this phase is reused, not replaced. **Run every subsequent
-command from its `worktree`**, and report it in one line:
+`session.open` is permitted only when `source` is `current-checkout` and
+`GIT_DIR` identifies the primary checkout. `session.adopt` registers the
+selected linked worktree and preserves its existing branch and dirty phase
+records. If either verb fails, stop and report its error; never create a
+replacement worktree or continue in the invoking checkout.
+
+Parse `worktree`, `branch`, `base`, `reused` and `synced` from `SESSION`. Run
+these commands with the absolute `PHASE_RUNTIME`:
+
+```bash
+cd -- "${worktree}"
+INIT=$(phase_run query init.phase-op "${PHASE}")
+```
+
+Parse every field listed in this workflow's initialize step again. Replace all
+previously derived paths, artifact flags, models, efforts, checks, language and
+configuration values. Confirm the reloaded `padded_phase` and `phase_number`
+match `LOCATE`.
+
+Report the selected session in one line:
 
 ```
 Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
 ```
-
-If the verb fails, stop and report its message rather than continuing in the
-checkout you were invoked from.
 
 **Do not deliver it here.** `/ship` opens the pull request, judges its checks and
 closes the session once the phase is verified.

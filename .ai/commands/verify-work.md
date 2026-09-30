@@ -37,8 +37,9 @@ Workflow files are loaded on demand in the <process> section below - not upfront
 Arguments: $ARGUMENTS
 Phase number: $ARGUMENTS (required).
 
-Verification status, checks and models are resolved in-workflow through
-`phase_run query init.verify-work`.
+Phase number: $ARGUMENTS (required).
+The phase is located with `phase_run query phase.locate` before the workflow loads
+`phase_run query init.verify-work` for the selected worktree.
 </context>
 
 <process>

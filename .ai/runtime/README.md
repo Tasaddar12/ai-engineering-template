@@ -36,8 +36,10 @@ config directory, then call `phase_run query ...`.
 
 ### Context bundles
 
-A workflow makes one `init.<name>` call and parses the result rather than issuing
-a dozen reads of its own. Bundles never mutate anything.
+A phase workflow runs `phase.locate <phase>` before its `init.<name>` bundle. It
+parses the locator result, selects the returned worktree, then loads one init
+bundle there. Other workflows load their applicable bundle directly. Bundles
+never mutate anything.
 
 | Verb | Returns |
 |---|---|
@@ -58,6 +60,7 @@ Every bundle also carries `commit_docs`, `response_language`, `text_mode`,
 
 | Verb | Effect |
 |---|---|
+| `phase.locate <phase>` | Read-only phase lookup; returns `phase_found`, `padded_phase`, absolute `worktree` or null, `branch`, `session` and `source` |
 | `phase.add <description> [--goal G] [--requirements IDS]` | Append the next integer phase; create its directory; update the roadmap and checklist |
 | `phase.insert <after> <description> [--goal G]` | Insert a decimal phase after `<after>`, marked `(INSERTED)` |
 | `phase.remove <phase> [--force] [--no-renumber]` | Remove a future phase, renumber later phases, rename their directories and files |
@@ -70,6 +73,14 @@ Every bundle also carries `commit_docs`, `response_language`, `text_mode`,
 
 `phase.remove` refuses a phase with completed plans or a non-empty directory
 unless `--force` is passed.
+
+### Sessions
+
+| Verb | Effect |
+|---|---|
+| `session.status` | Open session entries with kind, label, status, worktree and branch |
+| `session.open <kind> <label>` | Reuse or open a session worktree from the primary checkout |
+| `session.adopt phase <phase>` | Register the selected linked worktree and existing branch without switching, copying or changing files; reject unsupported or conflicting checkouts |
 
 ### Roadmap and state
 
