@@ -110,9 +110,11 @@ class InstallerTests(unittest.TestCase):
                 self.assertFalse(any("maintenance/" in name for name in installer.payload(self.source, host)))
 
     def test_migration_output_requires_update_pinned_to_same_source_revision_and_host(self):
+        alias = self.base / "target-path-alias"
+        alias.mkdir()
         for host in ("codex", "claude"):
             with self.subTest(host=host):
-                self.target = self.base / host
+                self.target = alias / ".." / host
                 legacy = self.target / ".ai"
                 legacy.mkdir(parents=True)
                 (legacy / "RULES.md").write_text("Custom legacy rules\n")
@@ -120,7 +122,8 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertIn("scout activation pending required --update", result.stdout)
                 followup = next(line for line in result.stdout.splitlines() if line.startswith("Required next command"))
-                self.assertIn(str(self.target / ("." + host) / "install.py"), followup)
+                self.assertNotEqual(self.target, self.target.resolve())
+                self.assertIn(str(self.target.resolve() / ("." + host) / "install.py"), followup)
                 self.assertIn(str(self.source), followup)
                 self.assertIn("--ref " + self.revision, followup)
                 self.assertIn("--host " + host, followup)

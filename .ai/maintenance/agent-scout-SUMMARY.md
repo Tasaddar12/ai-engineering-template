@@ -198,3 +198,13 @@ Focused checks passed:
 
 Root owns push, independent review and final CI/full checks. No adopting planning
 records changed in this slice.
+
+## Windows target-alias assertion correction
+
+Changed the pinned-update command regression to compare the resolved installer
+target path. The test now supplies an existing directory followed by `..` for
+both hosts and verifies that the raw target differs from its resolved path.
+Source, revision and host assertions remain unchanged; installer behavior was
+not changed. On Windows, `python -m unittest discover -s tests -p test_install.py
+-k test_migration_output_requires_update_pinned_to_same_source_revision_and_host`
+passed: 1 test in 7.133 seconds. No full suite was run in this slice.
