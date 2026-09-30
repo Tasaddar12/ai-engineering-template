@@ -346,6 +346,10 @@ def verb_phases_list(workspace, positionals, options):
     return phases.listing(workspace)
 
 
+def verb_phase_locate(workspace, positionals, options):
+    return worktrees.locate_phase(workspace, argument(positionals, 0, "phase"))
+
+
 def verb_find_phase(workspace, positionals, options):
     return phases.find(workspace, argument(positionals, 0, "phase-or-slug"))
 
@@ -709,6 +713,7 @@ VERBS = {
     "handoff.consume": verb_handoff_consume,
     "handoff.write": verb_handoff_write,
 
+    "phase.locate": verb_phase_locate,
     "phase.add": verb_phase_add,
     "phase.insert": verb_phase_insert,
     "phase.remove": verb_phase_remove,
