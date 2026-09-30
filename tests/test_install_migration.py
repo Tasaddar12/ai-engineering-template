@@ -41,7 +41,16 @@ class MigrationTests(unittest.TestCase):
         parsed = tomllib.loads(content.decode("utf-8-sig"))
         self.assertEqual(12, parsed["agents"]["max_concurrent_threads_per_session"])
         self.assertNotIn("max_threads", parsed["agents"])
-        self.assertEqual([], installer.plan_install(self.source, self.target, "codex", hooks=False))
+        incoming = installer.host_payload({}, "codex", False)[".codex/config.toml"]
+        self.assertEqual(content, installer.merge_codex_config(content, incoming, path))
+        rules = self.target / ".codex/RULES.md"
+        self.assertEqual(b"# Rules\nCustom approval rule. Read .codex/commands/worktree.md\n",
+                         rules.read_bytes())
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, r"Existing files conflict;.*") as caught:
+            installer.plan_install(self.source, self.target, "codex", hooks=False)
+        self.assertIn(".codex/RULES.md", str(caught.exception).replace("\\", "/"))
+        self.assertEqual(before, self.snapshot())
 
     def test_no_hooks_migration_invalid_settings_do_not_write_or_delete(self):
         for content in (b'agents = {max_threads = 3}\n', b'[agents\n'):

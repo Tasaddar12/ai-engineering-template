@@ -16,7 +16,7 @@ operation notes adapt execution authority; all method sections and examples rema
 
 Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
-agents, integrates commits, changes shared phase decisions/status, or publishes.
+workers, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Supporting methods are bundled under `../references/methods/`. Read them locally.
 Use the Python runtime contract for executable fields and commands; method review

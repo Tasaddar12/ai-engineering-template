@@ -22,7 +22,7 @@ operation notes adapt execution authority; all method sections and examples rema
 
 Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
-agents, integrates commits, changes shared phase decisions/status, or publishes.
+workers, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Methods linked below are bundled locally. Use the supported runtime and Git
 operations in this role; no external workflow SDK is required. Bash examples

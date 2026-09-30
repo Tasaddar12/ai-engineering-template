@@ -145,7 +145,7 @@ def plan_migration(source, target, host, hooks, installer):
             if current != incoming[destination]:
                 refreshed.append(name)
         else:
-            # Markdown roles carry no model frontmatter; models reach Claude on the
+            # Markdown worker roles carry no model frontmatter; models reach Claude on the
             # dispatch call and Codex through its own TOML, so nothing is seeded here.
             desired[destination] = render_existing(name, current, host, installer)
     if refreshed:

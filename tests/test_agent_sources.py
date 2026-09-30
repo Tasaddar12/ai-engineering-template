@@ -11,6 +11,29 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentSourceTests(unittest.TestCase):
+    def test_worker_local_adapters_allow_scout_dispatch_without_worker_dispatch(self):
+        for role in (ROOT / ".ai/agents").glob("*.md"):
+            if role.stem in {"README", "luna_scout", "coordinator"}:
+                continue
+            with self.subTest(role=role.name):
+                text = role.read_text(encoding="utf-8")
+                adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+                self.assertIn("Dispatch only `luna_scout` children", adapter)
+                self.assertRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+workers")
+                self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
+
+    def test_scout_host_adapter_supports_codex_shell_reads_and_claude_restrictions(self):
+        text = (ROOT / ".ai/agents/luna_scout.md").read_text(encoding="utf-8")
+        metadata = yaml.safe_load(text.split("---", 2)[1])
+        self.assertEqual({"Read", "Grep", "Glob"}, set(metadata["tools"].split(", ")))
+        self.assertIn("Bash", metadata["disallowedTools"].split(", "))
+        adapter = text.split("<host_adapter>", 1)[1].split("</host_adapter>", 1)[0]
+        self.assertIn("On Claude, use Read, Grep and Glob. Do not use Bash", adapter)
+        for instruction in ("On Codex", "exec_command", "bounded read-only shell", "assigned search_scope",
+                            'sandbox_mode = "read-only"', "do not execute project code or tests",
+                            "dispatch children or mutate shared records"):
+            self.assertIn(instruction, adapter)
+
     def test_native_models_and_scout_only_frontmatter_exception(self):
         luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "luna_scout"}
         for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):

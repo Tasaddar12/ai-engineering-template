@@ -105,3 +105,42 @@ progress, decisions, roadmap, requirements, blockers or session mutation applies
 - Documentation check: `python -m unittest discover -s tests -p
   test_workflow_links.py` passed (3 tests). No broader suite was run by the
   documentation author; root owns final validation.
+
+## Post-PR correction slice
+
+Assigned input revision: `5b0979b`. PR #54 existed before this slice's checks.
+The coordinator supplied exact evidence and authorized the bootstrap exception:
+no nested scout was dispatched because the live host has four occupied thread
+slots and no release tool. No scout result is claimed.
+
+- Changed only `agents` to `workers` in the coordinator-dispatch sentence of ten
+  worker local adapters. Coder already used `workers`. Added a semantic regression
+  requiring scout-only child dispatch and rejecting coordinator-only agent dispatch.
+- Added a dedicated scout host adapter: Claude retains Read/Grep/Glob and no Bash;
+  Codex permits host-native reads/searches or bounded `exec_command` shell searches
+  within assigned scope and its native read-only sandbox. Project code/tests,
+  services, edits, commits, children and shared-record mutation remain prohibited.
+- Corrected the migration regression's whole-install idempotence assumption. It
+  now repeats the shared settings merge, checks the exact preserved custom RULES
+  content, and requires a plain reinstall to report that authored-file conflict
+  without changing any files. Normalized the reported separator in the assertion
+  so it accepts both Windows and Linux path formatting.
+- Corrected installer-input guidance to Claude worker YAML/inline models, native
+  Codex TOML and the sole fixed scout frontmatter exception. Narrowed the migration
+  source comment to worker roles; preservation behavior was not changed.
+
+Focused checks on this correction slice:
+
+```text
+python -m unittest discover -s tests -p test_install_migration.py
+14 tests passed (9.303 seconds; final run).
+python -m unittest discover -s tests -p test_agent_sources.py
+10 tests passed (0.136 seconds).
+python -m unittest discover -s tests -p test_workflow_links.py
+3 tests passed (0.507 seconds).
+```
+
+The first migration run exposed one platform-specific assertion separator;
+the corrected migration suite then passed. No full suite was run by this worker.
+Root owns push, independent review and final full checks. No adopting planning
+records changed in this slice.
