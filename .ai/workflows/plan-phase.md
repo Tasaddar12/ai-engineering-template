@@ -530,88 +530,16 @@ Return: ## MAP COMPLETE with what changed since the previous revision.
 </step>
 
 <step name="update_roadmap">
-Reconcile the entire on-disk plan set with the phase's existing roadmap checklist.
-The plan index is the file inventory; the roadmap query is the pre-update record.
-On a gap-closure run the index includes plans prepared earlier, so register the
-complete ordered set rather than only the new plans. `roadmap.set-plans` replaces
-the phase's complete checklist; it is not an append operation.
+Make the roadmap's plan checklist match the plans that now exist. For each plan
+the preparer wrote that has no roadmap entry, the phase entry's `Plans:` list
+needs the id and a one-line description.
 
 ```bash
-phase_run query phase-plan-index "${phase_number}"   # PLAN_INDEX
-phase_run query roadmap.get-phase "${phase_number}"  # ROADMAP_BEFORE
+phase_run query roadmap.get-phase "${phase_number}"
 ```
 
-Before calling the write verb, check all of the following and stop on any
-discrepancy:
-
-1. `PLAN_INDEX.phase` and `ROADMAP_BEFORE.number` identify `${phase_number}`;
-   the phase entry's padded number and slug match `${padded_phase}` and
-   `${phase_slug}`. `PLAN_INDEX.count` equals the number of entries in
-   `PLAN_INDEX.plans`, and the count is nonzero.
-2. Every indexed `file` exists under `${phase_dir}` and is readable. Read each
-   indexed PLAN in full. Its filename must be exactly
-   `${padded_phase}-${NN}-PLAN.md`, where `NN` is a unique two-digit ordinal;
-   the phase prefix must match this phase. Its frontmatter `phase` must equal
-   `${padded_phase}-${phase_slug}`, and its `plan` value must equal the
-   filename's two-digit ordinal. These checks catch a file that the runtime
-   indexes by filename while its frontmatter names a different phase or plan.
-3. Each PLAN has a nonempty `<objective>`. Use that objective to write a concise
-   one-line description for its roadmap entry. Keep the index order and check
-   that all derived runtime IDs are unique and belong to `${padded_phase}`.
-   Derive each ID from the filename by removing **only** the terminal
-   `-PLAN.md`: `03-01-PLAN.md` is roadmap ID `03-01`. Do not pass the filename,
-   frontmatter value, or `NN-NN-PLAN` as the runtime ID.
-4. Compare the current `ROADMAP_BEFORE.plans` with the full index. Any completed
-   roadmap ID (`done: true`) must still exist in the index and remain in the
-   replacement list. If an existing roadmap plan ID has no corresponding PLAN
-   file, stop and report it; do not silently drop it. Keep every indexed earlier
-   plan on a gap run. Confirm that the resulting list covers the full phase plan
-   index exactly once.
-
-Build `plan_entries` from the actual filenames and objectives you just read.
-For example, the evidence files `03-01-PLAN.md` and `03-02-PLAN.md` with
-objectives “Establish the request path” and “Add response handling” become the
-runtime arguments below. The example is a mapping illustration; use the actual
-phase index and objective text:
-
-```bash
-plan_entries=(
-  "03-01: Establish the request path"
-  "03-02: Add response handling"
-)
-phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}"
-phase_run query roadmap.get-phase "${phase_number}"  # ROADMAP_AFTER
-```
-
-Pass exactly one `--plans` option followed by each quoted `NN-NN: description`
-entry as its own argument. This is a complete replacement list. The runtime
-validates the phase, nonempty descriptions, unique same-phase IDs, and existing
-checklist shape; it rejects removal of completed IDs. On success it preserves
-completion ticks for IDs that remain, updates the phase checklist and progress
-table, and re-derives STATE.md progress from ROADMAP.md. The runtime prepares
-both records before writing ROADMAP.md and then STATE.md, but the pair is not
-crash-atomic. A handled validation error returns a structured error and exit 1
-before either record is written. After an interruption or I/O error, re-read
-both records and report their actual contents before deciding on a retry; never
-blindly rerun the replacement.
-
-After registration, compare `ROADMAP_AFTER.plans` to the constructed entries:
-IDs, descriptions, order, and count must match exactly, and every ID that was
-completed in `ROADMAP_BEFORE` must still have `done: true`. Inspect
-`git diff -- .planning/ROADMAP.md .planning/STATE.md`; only the target phase's
-plan list and runtime-derived progress may change. Other phase entries and
-unrelated roadmap prose must remain intact.
-
-If the runtime returns an error or any pre/post check disagrees, stop before
-`update_state`, `git_commit`, or `completion`. Report the exact filename, metadata,
-ID, description, count, completed tick, or runtime error that disagreed. For a
-PLAN defect, return a scoped correction to the phase-preparer for its assigned
-PLAN path, then rerun the index and the full reconciliation. Never repair
-ROADMAP.md or STATE.md by hand, and do not claim the phase is ready to execute
-until reconciliation succeeds. A successful registration establishes
-`plan_count` from `PLAN_INDEX.count` and `first_plan_path` from the first
-`PLAN_INDEX.plans[].file`; the following state verbs record readiness and the
-resume path.
+Compare its `plans` array to the plan index. Report any mismatch; the roadmap is
+what `/progress` and `/next` route from, so a plan missing there is invisible.
 </step>
 
 <step name="update_state">
