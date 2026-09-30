@@ -247,3 +247,30 @@ Rename implementation commit: `883c24b`. Focused checks run after that commit:
 The tracked content and filename searches report no remaining retired role
 identifier. No full suite, push or merge was performed by this worker. Root owns
 publication and final CI checks.
+
+## Shared scout instruction and host metadata separation
+
+Assigned base: `beae736ec8224c5c77be14fd8497338086c95301`. PR #54 remains
+open. The user authorized one shared host-agnostic scout instruction set with
+host metadata selected separately. The live host still rejects new threads and
+has no release tool; this slice uses supplied bootstrap evidence and claims no
+live scout execution.
+
+- Removed model frontmatter from the shared `.ai/agents/scout.md` and replaced
+  only its host-specific adapter with permission-aware native read/search and
+  bounded read-only shell instructions. Scope, allowed evidence, result structure,
+  citations, uncertainty, missing test cases and read-only leaf restrictions remain.
+  The body contains no named host, model, execution tool or sandbox setting.
+- Added Claude scout metadata export to the installer's existing asset renderer.
+  Fresh installation, update and legacy migration use that renderer. Only the
+  exported Claude scout receives `model: haiku`, with no effort; shared source
+  and Codex Markdown receive no model/effort metadata. Claude tool restrictions
+  and custom migrated scout body content are preserved.
+- Kept native Codex `gpt-6-luna`/`high`/read-only sandbox and fixed runtime
+  selection unchanged. Native developer instructions reference the single shared
+  role and assignment/result contract instead of duplicating its behavior.
+- Corrected only documentation claims made false by shared/host metadata
+  separation. Other roles, project defaults, thread caps and permissions remain.
+- Authored source, fresh export, update-idempotence and migration/custom-body
+  regressions. This implementation and SUMMARY are committed before tests;
+  focused validation remains deferred until that commit.

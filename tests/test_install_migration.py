@@ -29,6 +29,24 @@ update = load("migration_followup_update", ROOT / ".ai/install_update.py")
 
 
 class MigrationTests(unittest.TestCase):
+    def test_scout_metadata_export_preserves_custom_body_during_claude_migration(self):
+        shared = (self.source / ".ai/agents/scout.md").read_text(encoding="utf-8")
+        self.assertNotIn("model:", shared.split("---", 2)[1])
+        custom = shared + "\nCustom scout evidence instruction sentinel.\n"
+        self.write(".ai/agents/scout.md", custom.encode())
+        changes, originals, _ = self.plan("claude", hooks=False)
+        backup = installer.backup_migration(self.target, originals)
+        self.apply(changes)
+        exported = (self.target / ".claude/agents/scout.md").read_text(encoding="utf-8")
+        metadata = yaml.safe_load(exported.split("---", 2)[1])
+        self.assertEqual("haiku", metadata["model"])
+        self.assertNotIn("effort", metadata)
+        self.assertIn("Bash", metadata["disallowedTools"].split(", "))
+        expected = installer.render_asset(".ai/agents/scout.md", custom.encode(), "claude").decode()
+        self.assertEqual(expected, exported)
+        self.assertIn("Custom scout evidence instruction sentinel.", exported)
+        self.assertEqual(custom.encode(), (backup / "files/.ai/agents/scout.md").read_bytes())
+
     def test_migration_payload_excludes_source_only_maintenance_history(self):
         self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
         for host in ("codex", "claude"):

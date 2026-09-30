@@ -224,9 +224,9 @@ a caller that explicitly wants drift to fail.
 ## Model, effort and dispatch metadata
 
 Worker definitions under `.ai/agents/` carry `name`, `description`, `tools` and
-optionally `disallowedTools`, `skills` and `color`. Worker Markdown roles carry
-no `model:` or `effort:` field. The `scout` role is the exception and sets
-`model: haiku` for Claude. Codex worker model and effort are read from native
+optionally `disallowedTools`, `skills` and `color`. Shared Markdown roles carry
+no `model:` or `effort:` field. The installer adds `model: haiku` only to the
+exported Claude scout metadata, with no effort. Codex worker model and effort are read from native
 role TOML; Claude worker overrides are read from `.planning/config.yaml`.
 
 They also carry **no `maxTurns:`**. A turn ceiling stops an agent mid-slice with

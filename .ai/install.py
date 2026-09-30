@@ -141,6 +141,8 @@ def render_asset(name, content, host):
     if name.endswith((".py", ".json")) or not content:
         return content  # Executable code and structured data are copied unchanged.
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
+    if name == ".ai/agents/scout.md" and host == "claude":
+        text = claude_scout_metadata(text)
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -181,6 +183,15 @@ def render_asset(name, content, host):
     # Source download and attribution URLs must keep the authoring paths.
     text = "".join(local_paths(part) for part in re.split(r"(https?://[^\s<>\"')\]]+)", text))
     return text.encode("utf-8")
+
+
+def claude_scout_metadata(text):
+    """Export fixed Claude metadata without adding host settings to the role body."""
+    frontmatter, separator, body = text.partition("\n---\n")
+    if not text.startswith("---\n") or not separator:
+        raise ValueError("Claude scout export requires complete Markdown frontmatter")
+    frontmatter = re.sub(r"(?m)^(?:model|effort|model_reasoning_effort):[^\n]*\n?", "", frontmatter)
+    return frontmatter + "\nmodel: haiku" + separator + body
 
 
 def skill_root(host):

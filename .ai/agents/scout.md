@@ -1,7 +1,6 @@
 ---
 name: scout
 description: Answers narrow repository code, documentation, log, error and output questions with concise cited evidence as a read-only leaf scout.
-model: haiku
 tools: Read, Grep, Glob
 disallowedTools: Agent, Task, Write, Edit, MultiEdit, NotebookEdit, Bash
 color: gray
@@ -33,14 +32,12 @@ answer concise; do not substitute an unsupported inference for an observed fact.
 </role>
 
 <host_adapter>
-On Claude, use Read, Grep and Glob. Do not use Bash; the Markdown frontmatter
-retains Claude's read-only tool restrictions.
+Tool names in frontmatter describe capabilities. Use the available native
+read/search tools within the assigned search_scope and allowed_evidence.
 
-On Codex, the Markdown tool names describe capabilities. Use the available
-host-native read/search tools, or use `exec_command` for bounded read-only shell
-searches such as `rg --files <assigned-directory>`, `rg -n <term> <assigned-path>`
-and file reads within the assigned search_scope. The native Codex definition sets
-`sandbox_mode = "read-only"`. Shell access permits these reads/searches only:
+Use bounded read-only shell searches and file reads only when the host's tool
+permissions allow them. Keep every command within the assigned search_scope.
+Never bypass tool restrictions. Permitted shell access covers reads/searches only;
 do not execute project code or tests, start services, edit files, commit,
 dispatch children or mutate shared records. Return the same `scout_result`.
 </host_adapter>

@@ -348,7 +348,7 @@ class InstallerTests(unittest.TestCase):
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    if name == "scout":
+                    if name == "scout" and host == "claude":
                         self.assertEqual("haiku", metadata["model"])
                     else:
                         self.assertNotIn("model", metadata, name)

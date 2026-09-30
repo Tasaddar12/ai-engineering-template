@@ -12,6 +12,8 @@ import subprocess
 import tempfile
 import unittest
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,6 +40,24 @@ def seed_source(directory):
 
 class UpdateTests(unittest.TestCase):
     host = "codex"
+
+    def test_scout_metadata_export_is_host_specific_and_update_is_idempotent(self):
+        path = self.namespace + "/agents/scout.md"
+        self.write(path, b'---\nname: scout\nmodel: wrong\neffort: max\n---\nOld adapter.\n')
+        changes, backups, _ = self.plan()
+        self.assertIn(self.target / path, backups)
+        self.apply(changes)
+        exported = self.read(path).decode("utf-8")
+        metadata = yaml.safe_load(exported.split("---", 2)[1])
+        if self.host == "claude":
+            self.assertEqual("haiku", metadata["model"])
+        else:
+            self.assertNotIn("model", metadata)
+        self.assertNotIn("effort", metadata)
+        shared = (self.source / ".ai/agents/scout.md").read_bytes()
+        expected = installer.render_asset(".ai/agents/scout.md", shared, self.host)
+        self.assertEqual(expected, self.read(path))
+        self.assertEqual([], self.plan()[0])
 
     def test_update_payload_excludes_source_only_maintenance_history(self):
         self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())

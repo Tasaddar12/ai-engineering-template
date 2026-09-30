@@ -37,7 +37,8 @@ References in installed instructions, skills, procedures and runtime routes poin
 to the selected host layout. Agents stay under `agents` and commands
 stay under `commands`. Codex TOML definitions explicitly select a model and direct
 the agent to read its full Markdown role. Claude worker roles carry no model
-frontmatter; `scout` sets `model: haiku`. Claude worker model and effort are
+frontmatter; the installer adds `model: haiku` only to exported Claude scout
+metadata and keeps the shared role body host agnostic. Claude worker model and effort are
 resolved from `.planning/config.yaml` and passed on the dispatch call; the scout
 model and effort are fixed by host. See [native host models](../agents/README.md#native-host-models)
 for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.

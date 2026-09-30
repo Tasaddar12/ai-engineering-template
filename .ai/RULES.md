@@ -196,8 +196,8 @@ substitute a generic agent type; the project's own definitions carry the prompts
 and tool permissions that make the result trustworthy. Resolve the model through
 `phase_run query resolve-model <agent>` and the reasoning effort through
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
-call; worker definitions carry neither as frontmatter. `scout` alone
-carries Claude `model: haiku` and no effort. A resolved `inherit` means
+call; shared role definitions carry neither as frontmatter. The installer adds
+Claude `model: haiku` only to exported `scout` metadata, with no effort. A resolved `inherit` means
 omit that argument and let the host choose.
 
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do

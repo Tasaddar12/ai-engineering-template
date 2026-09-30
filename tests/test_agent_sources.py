@@ -21,7 +21,8 @@ class AgentSourceTests(unittest.TestCase):
         self.assertEqual("scout", metadata["name"])
         self.assertEqual("scout", native["name"])
         self.assertIn(".ai/agents/scout.md", native["developer_instructions"])
-        self.assertEqual("haiku", metadata["model"])
+        self.assertNotIn("model", metadata)
+        self.assertNotIn("effort", metadata)
         self.assertEqual("gpt-6-luna", native["model"])
         self.assertEqual("high", native["model_reasoning_effort"])
         self.assertEqual("read-only", native["sandbox_mode"])
@@ -45,19 +46,22 @@ class AgentSourceTests(unittest.TestCase):
                 self.assertRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+workers")
                 self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
 
-    def test_scout_host_adapter_supports_codex_shell_reads_and_claude_restrictions(self):
+    def test_scout_shared_adapter_is_host_agnostic_and_respects_permissions(self):
         text = (ROOT / ".ai/agents/scout.md").read_text(encoding="utf-8")
         metadata = yaml.safe_load(text.split("---", 2)[1])
         self.assertEqual({"Read", "Grep", "Glob"}, set(metadata["tools"].split(", ")))
         self.assertIn("Bash", metadata["disallowedTools"].split(", "))
         adapter = text.split("<host_adapter>", 1)[1].split("</host_adapter>", 1)[0]
-        self.assertIn("On Claude, use Read, Grep and Glob. Do not use Bash", adapter)
-        for instruction in ("On Codex", "exec_command", "bounded read-only shell", "assigned search_scope",
-                            'sandbox_mode = "read-only"', "do not execute project code or tests",
+        for instruction in ("available native", "bounded read-only shell", "assigned search_scope",
+                            "host's tool", "permissions allow them", "Never bypass tool restrictions",
+                            "do not execute project code or tests",
                             "dispatch children or mutate shared records"):
             self.assertIn(instruction, adapter)
+        body = text.split("---", 2)[2]
+        for host_setting in ("Claude", "Codex", "Haiku", "Luna", "exec_command", "sandbox_mode"):
+            self.assertNotIn(host_setting, body)
 
-    def test_native_models_and_scout_only_frontmatter_exception(self):
+    def test_native_models_and_shared_roles_without_model_frontmatter(self):
         luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout"}
         for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
             native = tomllib.loads(definition.read_text(encoding="utf-8"))
@@ -69,8 +73,8 @@ class AgentSourceTests(unittest.TestCase):
             self.assertEqual("medium" if definition.stem in {"doc-verifier", "integration-checker"} else "high",
                              native["model_reasoning_effort"])
             self.assertNotIn("effort", frontmatter)
+            self.assertNotIn("model", frontmatter)
             if definition.stem == "scout":
-                self.assertEqual("haiku", frontmatter["model"])
                 self.assertEqual("read-only", native["sandbox_mode"])
                 self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
                 self.assertTrue({"Agent", "Task", "Write", "Edit", "Bash"} <= set(frontmatter["disallowedTools"].split(", ")))

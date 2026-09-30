@@ -65,9 +65,9 @@ that argument and let the host choose. The two resolve independently, so a role 
 carry an effort and no model, or the reverse. `resolve-agent` returns both
 alongside the role's declared tools, disallowed tools and skills.
 
-Worker Markdown definitions carry no `model:` or `effort:` frontmatter; the
-`scout` role is the exception and declares `model: haiku` for direct Claude
-dispatch. Codex worker model and effort come from native TOML definitions.
+Shared Markdown definitions carry no `model:` or `effort:` frontmatter. The
+installer adds `model: haiku` only to exported `.claude/agents/scout.md` metadata
+for direct Claude dispatch; the shared role body remains host agnostic. Codex worker model and effort come from native TOML definitions.
 Claude worker overrides come from `.planning/config.yaml`; set one there:
 
 ```yaml
