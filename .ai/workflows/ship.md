@@ -70,7 +70,6 @@ phase_run() { "$(command -v python3 || command -v python)" "$PHASE_RUNTIME" "$@"
 if [ -z "${PHASE:-}" ]; then
   SESSIONS=$(phase_run query session.status) || { echo "ERROR: session lookup failed; stop and report the runtime error." >&2; exit 1; }
 fi
-LOCATE=$(phase_run query phase.locate "${PHASE}") || { echo "ERROR: phase lookup failed; stop and report the runtime error." >&2; exit 1; }
 ```
 
 If `PHASE` was omitted, parse `SESSIONS` and count entries where `kind` is
@@ -78,7 +77,11 @@ If `PHASE` was omitted, parse `SESSIONS` and count entries where `kind` is
 exactly one matches. With zero or multiple matches, stop with `Supply /ship <phase>
 to select the phase session.` Do not infer a phase from a blank argument or
 project state. For an explicit argument, skip `session.status` and use it for
-the locator.
+the locator. Run the locator only after `PHASE` is set:
+
+```bash
+LOCATE=$(phase_run query phase.locate "${PHASE}") || { echo "ERROR: phase lookup failed; stop and report the runtime error." >&2; exit 1; }
+```
 
 Parse `phase_found`, `padded_phase`, `worktree`, `session`, `branch` and `source`
 from `LOCATE`. If `phase_found` is false, report `Phase {PHASE} not found in
