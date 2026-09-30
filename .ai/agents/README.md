@@ -19,6 +19,7 @@ source examples and result contracts.
 | [Integration checker](integration-checker.md) | verify-work | Expected cross-phase connections → read-only wiring and flow evidence → verifier |
 | [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
+| [Scout](scout.md) | Every non-scout role | Narrow read-only question and revision → cited evidence → assigning role |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
 
 The orchestrator selects the useful responsibilities; a small change need not run
@@ -28,8 +29,9 @@ connections.
 
 A fresh code-reviewer separately assesses the changed source before a phase
 closes; the verifier cannot substitute for that dispatch, and a coder's
-self-check is not a review. Agents never spawn each other — the orchestrator owns
-every handoff.
+self-check is not a review. Worker roles may spawn only `scout` children for
+the assigned evidence task. Scouts never spawn children; the orchestrator owns
+worker lifecycle, integration, shared records and publication.
 
 Reviewers return complete results to the orchestrator, which routes false
 documentation claims to the writer's fix mode and code defects to an owned coder
@@ -43,19 +45,30 @@ Spawn by the exact role name above. Resolve the model and the effort from the
 runtime and pass both inline:
 
 ```bash
-phase_run query resolve-model <agent> --raw
-phase_run query resolve-effort <agent> --raw
+python .ai/runtime/phase.py query resolve-model <role> --host codex
+python .ai/runtime/phase.py query resolve-effort <role> --host codex
+python .ai/runtime/phase.py query resolve-agent <role> --host codex
+python .ai/runtime/phase.py query resolve-model <role> --host claude
+python .ai/runtime/phase.py query resolve-effort <role> --host claude
+python .ai/runtime/phase.py query resolve-agent <role> --host claude
 ```
 
-A resolved `inherit` means the project configured no override — omit that
-argument and let the host choose. The two resolve independently, so a role can
-carry an effort and no model, or the reverse. `phase_run query resolve-agent
-<agent>` returns both alongside the role's declared tools, disallowed tools and
-skills.
+Use these explicit `--host` forms while working from the source `.ai` tree.
+An installed `.codex` runtime infers Codex from its namespace; an installed
+`.claude` runtime infers Claude. For example, run
+`python .codex/runtime/phase.py query resolve-model <role>` or
+`python .claude/runtime/phase.py query resolve-model <role>` from the project
+root. The installed runtime accepts `--host` only when it matches its namespace.
 
-**Markdown agent definitions carry no `model:` or `effort:` frontmatter.** Both
-are supplied on the dispatch call instead, which keeps one file answering for
-every role on every host. Set a per-agent override in `.planning/config.yaml`:
+A resolved `inherit` means the selected host supplies no explicit value — omit
+that argument and let the host choose. The two resolve independently, so a role can
+carry an effort and no model, or the reverse. `resolve-agent` returns both
+alongside the role's declared tools, disallowed tools and skills.
+
+Shared Markdown definitions carry no `model:` or `effort:` frontmatter. The
+installer adds `model: haiku` only to exported `.claude/agents/scout.md` metadata
+for direct Claude dispatch; the shared role body remains host agnostic. Codex worker model and effort come from native TOML definitions.
+Claude worker overrides come from `.planning/config.yaml`; set one there:
 
 ```yaml
 agents:
@@ -64,13 +77,10 @@ agents:
     effort: xhigh
 ```
 
-Models are the host's aliases (`opus`, `sonnet`, `haiku`, `fable`), never full
-API ids: the Agent SDK's dispatch call accepts only an alias.
-Effort is `low`, `medium`, `high`, `xhigh` or `max` — the scale is closed, and
-an unrecognised value fails resolution rather than reaching the host. It is the
-cheaper of the two dials: raising a reviewer's effort costs far less than moving
-that review to a larger model. Not every model has the scale (Haiku 4.5 does
-not), so leave effort unset for a role whose model does not take one.
+Claude worker model values are host aliases (`opus`, `sonnet`, `haiku`,
+`fable`), not full API ids. Codex worker values are read from each role's native
+TOML. Effort accepts `low`, `medium`, `high`, `xhigh`, `max` or `inherit`;
+unsupported values fail resolution.
 
 **No role caps its turns.** `maxTurns` is deliberately absent: the agents that
 used to carry it are the long ones — execution, review, documentation,
@@ -93,10 +103,17 @@ Claude installation copies the full Markdown agents to `.claude/agents/`.
 
 | Roles | Codex model | Codex effort |
 |---|---|---|
-| coordinator, researcher, phase-preparer, coder | `gpt-6-astra` | `high` |
-| debugger, code-reviewer, verifier, phase-checker | `gpt-6-sol` | `high` |
+| coordinator, researcher, phase-preparer, coder | `gpt-6.1-sol` | `high` |
+| debugger, code-reviewer, verifier, phase-checker | `gpt-6.1-sol` | `high` |
 | codebase-mapper, doc-writer | `gpt-6-luna` | `high` |
 | doc-verifier, integration-checker | `gpt-6-luna` | `medium` |
+| scout | `gpt-6-luna` | `high` |
+
+`scout` is the read-only evidence role. Codex resolves it to
+`gpt-6-luna`/`high`; Claude resolves it to `haiku` with effort `inherit` (omit
+the effort argument). These values are fixed and ignore `.planning/config.yaml`.
+Read [scout dispatch](../references/scout-dispatch.md) for its assignment,
+result, waiting and fallback procedure.
 
 Edit the installed TOML `model` or `model_reasoning_effort` to customise a Codex
 role; the host must support the chosen model and effort. These files do not

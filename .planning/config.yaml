@@ -66,10 +66,10 @@ codebase:
     stack: 1
     architecture: 15
 
-# Per-agent model and effort overrides, and the only place a Claude subagent's
-# model is set. Agent definitions under .ai/agents/ deliberately carry no
-# `model:` or `effort:` frontmatter, so a role omitted here resolves to
-# `inherit` and runs on whatever the orchestrator's own session is using.
+# Per-agent model and effort overrides for Claude workers. Installed Codex reads
+# native role TOML; source-tree resolution selects a host with `--host codex`
+# or `--host claude`. The `scout` model and effort are fixed per host and
+# ignore this YAML block.
 #
 # Models are the host's aliases -- `opus`, `sonnet`, `haiku` or `fable` -- not
 # full API ids. The Agent SDK's dispatch call accepts only an alias, so a full
@@ -87,16 +87,16 @@ codebase:
 # `effort` is the second dial: how hard the chosen model thinks, on the scale
 # low / medium / high / xhigh / max. It is the cheaper dial of the two -- a role
 # gains more from `high` than from a larger model, at a fraction of the cost of
-# moving it up a tier. Every role that produces something runs at `high`; the
-# two that only check what already exists run at `medium`, because reading an
+# moving it up a tier. Every configured worker that produces something runs at
+# `high`; the two that only check what already exists run at `medium`, because reading an
 # artifact against a stated claim is bounded work and more thinking does not
 # find more of it.
 #
 # `coordinator` is deliberately absent: it is the orchestrating conversation,
 # not a worker the runtime spawns, so it keeps the session's own model.
 #
-# This block is Claude's. Codex reads its own `model` and `model_reasoning_effort`
-# from each role's TOML in .codex/agents/ and ignores everything here.
+# This block configures Claude workers. Codex reads `model` and
+# `model_reasoning_effort` from each role's TOML in `.codex/agents/`.
 agents:
   coder:
     model: opus

@@ -10,6 +10,7 @@ import os
 import posixpath
 import re
 import runpy
+import shlex
 from pathlib import Path
 import shutil
 import stat
@@ -85,7 +86,7 @@ def payload(source, host="codex", hooks=True):
             continue
         metadata, name = entry.split("\t", 1)
         modes[name] = metadata.split()[0]
-        if name.startswith(ASSETS):
+        if name.startswith((ASSETS, ".ai/maintenance/")):
             continue
         if not (name.startswith((".ai/", ".agents/skills/"))
                 or name in PLANNING_RESOURCES):
@@ -140,6 +141,8 @@ def render_asset(name, content, host):
     if name.endswith((".py", ".json")) or not content:
         return content  # Executable code and structured data are copied unchanged.
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
+    if name == ".ai/agents/scout.md" and host == "claude":
+        text = claude_scout_metadata(text)
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -182,16 +185,28 @@ def render_asset(name, content, host):
     return text.encode("utf-8")
 
 
+def claude_scout_metadata(text):
+    """Export fixed Claude metadata without adding host settings to the role body."""
+    frontmatter, separator, body = text.partition("\n---\n")
+    if not text.startswith("---\n") or not separator:
+        raise ValueError("Claude scout export requires complete Markdown frontmatter")
+    frontmatter = re.sub(r"(?m)^(?:model|effort|model_reasoning_effort):[^\n]*\n?", "", frontmatter)
+    return frontmatter + "\nmodel: haiku" + separator + body
+
+
 def skill_root(host):
     return ".agents/skills" if host == "codex" else ".claude/skills"
 
 
 def host_payload(rendered, host, hooks):
     """Register hooks; skills are installed in full at their discovery location."""
+    if host == "codex":
+        settings = b"[agents]\nmax_concurrent_threads_per_session = 12\n"
+        if hooks:
+            settings += b"\n" + hooks_toml(hook_settings(host)["hooks"])
+        return {".codex/config.toml": settings}
     if not hooks:
         return {}
-    if host == "codex":
-        return {".codex/config.toml": hooks_toml(hook_settings(host)["hooks"])}
     return {".claude/settings.json": json_bytes(hook_settings(host))}
 
 
@@ -214,6 +229,41 @@ def hooks_toml(events):
 TOML_HEADER = re.compile(r"\s*\[\[?\s*([^\]]+?)\s*\]\]?\s*(#.*)?$")
 
 
+def toml_structural_lines(lines):
+    """Yield lines starting outside strings, ignoring quotes in TOML comments.
+
+    TOML parsing still validates the document. This lexical scan only prevents
+    text inside multiline basic/literal strings from becoming table/key edits.
+    """
+    string = None
+    for index, line in enumerate(lines):
+        if string is None:
+            yield index, line
+        cursor = 0
+        while cursor < len(line):
+            char = line[cursor]
+            if string is None:
+                if char == "#":
+                    break
+                if char in ("\"", "'"):
+                    string = char * 3 if line.startswith(char * 3, cursor) else char
+                    cursor += len(string)
+                else:
+                    cursor += 1
+            elif string[0] == "\"" and char == "\\":
+                cursor += 2  # Escaped quotes cannot terminate a basic string.
+            elif line.startswith(string, cursor):
+                width = len(string)
+                if width == 3:
+                    # A four/five-quote closing run includes one/two value quotes.
+                    while cursor + width < len(line) and line[cursor + width] == string[0]:
+                        width += 1
+                cursor += width
+                string = None
+            else:
+                cursor += 1
+
+
 def remove_toml_groups(text, removed):
     """Drop the `[[hooks.EVENT]]` blocks whose parsed group is in `removed`.
 
@@ -223,7 +273,7 @@ def remove_toml_groups(text, removed):
     """
     lines = text.splitlines(keepends=True)
     blocks, start = [], 0
-    for index, line in enumerate(lines):
+    for index, line in toml_structural_lines(lines):
         header = TOML_HEADER.match(line)
         if not header or index == start:
             continue
@@ -255,12 +305,101 @@ def remove_toml_groups(text, removed):
     return "".join(kept)
 
 
+def toml_key_parts(key):
+    """Read a bare/quoted/dotted key using the TOML parser's own grammar."""
+    value = tomllib.loads(key + " = 0")
+    parts = []
+    while isinstance(value, dict) and len(value) == 1:
+        name, value = next(iter(value.items()))
+        parts.append(name)
+    if value != 0:
+        raise ValueError("unsupported TOML key")
+    return parts
+
+
+def canonicalize_codex_agents(current):
+    """Change only the project concurrency key, retaining all other TOML text."""
+    bom = b"\xef\xbb\xbf" if current.startswith(b"\xef\xbb\xbf") else b""
+    text = current.decode("utf-8-sig")
+    settings = tomllib.loads(text)
+    agents = settings.get("agents", {})
+    if not isinstance(agents, dict):
+        raise ValueError("agents must be a table; use [agents]")
+    canonical = "max_concurrent_threads_per_session"
+    managed = (canonical, "max_threads")
+    for key in managed:
+        if key in agents and type(agents[key]) is not int:
+            raise ValueError("agents." + key + " must be an integer")
+    newline = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines(keepends=True)
+    table, agent_header, first_header = [], None, len(lines)
+    found, root_dotted = {}, False
+    for index, line in toml_structural_lines(lines):
+        header = TOML_HEADER.fullmatch(line.rstrip("\r\n"))
+        if header:
+            table = toml_key_parts(header[1])
+            first_header = min(first_header, index)
+            if table == ["agents"]:
+                if line.lstrip().startswith("[["):
+                    raise ValueError("agents must use [agents], not an array of tables")
+                agent_header = index
+            continue
+        assignment = re.match(r"^(\s*)(.+?)(\s*=\s*)(.*?)(\r?\n)?$", line)
+        if not assignment or line.lstrip().startswith("#"):
+            continue
+        try:
+            parts = table + toml_key_parts(assignment[2].strip())
+        except ValueError:
+            continue  # Multiline values are preserved; semantic equality is checked below.
+        if parts == ["agents"]:
+            raise ValueError("inline agents tables are unsupported; expand to [agents]")
+        if not table and parts[:1] == ["agents"]:
+            root_dotted = True
+        if len(parts) == 2 and parts[0] == "agents" and parts[1] in managed:
+            value = re.fullmatch(r"([+-]?[0-9][0-9_]*)(\s*(?:#.*)?)", assignment[4])
+            if value is None:
+                raise ValueError("use a single-line integer for agents." + parts[1])
+            found[parts[1]] = index
+            if parts[1] == canonical:
+                lines[index] = (assignment[1] + assignment[2] + assignment[3]
+                                + "12" + value[2] + (assignment[5] or ""))
+            else:
+                comment = value[2].lstrip()
+                lines[index] = (assignment[1] + comment + (assignment[5] or newline)
+                                if comment.startswith("#") else "")
+    if any(key in agents and key not in found for key in managed):
+        raise ValueError("could not locate agents concurrency keys; expand to [agents] with single-line integer keys")
+    if canonical not in found:
+        if agent_header is not None:
+            if not lines[agent_header].endswith(("\n", "\r")):
+                lines[agent_header] += newline
+            lines.insert(agent_header + 1, canonical + " = 12" + newline)
+        elif root_dotted:
+            if first_header and not lines[first_header - 1].endswith(("\n", "\r")):
+                lines[first_header - 1] += newline
+            lines.insert(first_header, "agents." + canonical + " = 12" + newline)
+        else:
+            lines.append(newline + "[agents]" + newline + canonical + " = 12" + newline)
+    result = "".join(lines)
+    expected = dict(settings)
+    expected["agents"] = dict(agents)
+    expected["agents"].pop("max_threads", None)
+    expected["agents"][canonical] = 12
+    if tomllib.loads(result) != expected:
+        raise ValueError("unsupported agents structure; expand to [agents] with single-line integer keys")
+    return bom + result.encode("utf-8")
+
+
 def merge_codex_config(current, incoming, path, replace=False):
     """Append missing hooks while preserving existing TOML text and settings."""
     try:
+        current = canonicalize_codex_agents(current)
         settings = tomllib.loads(current.decode("utf-8-sig"))
         additions = tomllib.loads(incoming.decode("utf-8"))
-        merged = json.loads(merge_hooks(json_bytes(settings), json_bytes(additions), path,
+        if "hooks" not in additions:
+            return current
+        hook_additions = {"hooks": additions["hooks"]}
+        merged = json.loads(merge_hooks(json_bytes(settings), json_bytes(hook_additions), path,
                                         replace))
         missing = {event: [group for group in groups
                            if group not in settings.get("hooks", {}).get(event, [])]
@@ -274,7 +413,8 @@ def merge_codex_config(current, incoming, path, replace=False):
             bom = b"\xef\xbb\xbf" if current.startswith(b"\xef\xbb\xbf") else b""
             current = bom + remove_toml_groups(current.decode("utf-8-sig"),
                                                removed).encode("utf-8")
-        result = current + b"\n" + hooks_toml(missing)
+        newline = b"\r\n" if b"\r\n" in current else b"\n"
+        result = current + newline + hooks_toml(missing).replace(b"\n", newline)
         # Inline arrays/tables cannot always be extended with array-of-tables.
         # Refuse incompatible existing syntax rather than rewrite user settings.
         parsed = tomllib.loads(result.decode("utf-8-sig"))
@@ -283,7 +423,7 @@ def merge_codex_config(current, incoming, path, replace=False):
         return result
     except (ValueError, UnicodeError) as error:
         raise ValueError(f"Invalid or conflicting host settings {path}: {error}; "
-                         "reconcile the TOML hook tables before installation.") from error
+                         "reconcile the TOML agents/hook tables before installation; nothing was installed.") from error
 
 
 #: Managed hook registrations: (event, script, matcher). The worktree guard is
@@ -630,6 +770,13 @@ def install(args):
             migration = runpy.run_path(str(source / ".ai/install_migration.py"))
             changes, backup_files, notes = migration["plan_migration"](
                 source, target, args.host, not args.no_hooks, SimpleNamespace(**globals()))
+            followup = [sys.executable, str(target / namespace / "install.py"),
+                        "--target", str(target), "--host", args.host, "--update",
+                        "--source", args.source, "--ref", revision, "--skip-deps"]
+            if args.no_hooks:
+                followup.append("--no-hooks")
+            command = subprocess.list2cmdline(followup) if os.name == "nt" else shlex.join(followup)
+            notes.append("Required next command (same source, template revision and host): " + command)
         elif args.update:
             update = runpy.run_path(str(source / ".ai/install_update.py"))
             changes, backup_files, notes = update["plan_update"](
@@ -686,11 +833,16 @@ def install(args):
                 str(target / namespace / "runtime/requirements.txt"))
             run(str(interpreter), str(target / namespace / "runtime/phase.py"),
                 "query", "runtime-identity", cwd=target)
-        print("Installed. No project files were committed and no remote was changed.\n"
+        completion = ("Migration layout installed; scout activation pending required --update. "
+                      if args.migrate_existing else "Installed. ")
+        next_action = ("Next: run the printed Required next command before dispatching the migrated workflow."
+                       if args.migrate_existing else
+                       f"Next: follow {namespace}/commands/onboard.md to fill project intent, configure "
+                       "the project's real verification commands, and commit setup.")
+        print(completion + "No project files were committed and no remote was changed.\n"
               "A human must review and commit the bootstrap before handing off to an "
               f"agent (see {namespace}/commands/install.md).\n"
-              f"Next: follow {namespace}/commands/onboard.md to fill project intent, configure "
-              "the project's real verification commands, and commit setup.")
+              + next_action)
         if not args.no_hooks:
             print("Review project hook registrations in /hooks in each selected host. "
                   "Codex requires project and hook trust before running them; existing "

@@ -1,7 +1,7 @@
 ---
 name: phase-preparer
 description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by plan-phase orchestrator.
-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*
+tools: Agent, Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*
 color: green
 # hooks:
 #   PostToolUse:
@@ -12,6 +12,10 @@ color: green
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Preparation never grants implementation permission. Do not start implementation
 or instruct the coordinator to auto-start: require the user's explicit instruction
 to implement this phase under [phase authority](../RULES.md#phase-authority).
@@ -21,7 +25,7 @@ operation notes adapt execution authority; all method sections and examples rema
 
 Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
-agents, integrates commits, changes shared phase decisions/status, or publishes.
+workers, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Supporting methods are bundled under `../references/methods/`. Load a linked
 method only when its named task or mode applies; a link is not an instruction to

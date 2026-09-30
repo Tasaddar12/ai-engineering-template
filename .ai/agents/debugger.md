@@ -1,7 +1,7 @@
 ---
 name: debugger
 description: Investigates bugs using scientific method, manages debug sessions, handles checkpoints. Spawned by next / verify-work orchestrator.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch
+tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch
 color: orange
 # hooks:
 #   PostToolUse:
@@ -12,13 +12,17 @@ color: orange
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
 Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
-agents, integrates commits, changes shared phase decisions/status, or publishes.
+workers, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Methods linked below are bundled locally. Use the supported runtime and Git
 operations in this role; no external workflow SDK is required. Bash examples

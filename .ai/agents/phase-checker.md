@@ -1,18 +1,22 @@
 ---
 name: phase-checker
 description: Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by plan-phase orchestrator.
-tools: Read, Bash, Glob, Grep, Skill
+tools: Agent, Read, Bash, Glob, Grep, Skill
 color: green
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
 Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
-agents, integrates commits, changes shared phase decisions/status, or publishes.
+workers, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Supporting methods are bundled under `../references/methods/`. Read them locally.
 Use the Python runtime contract for executable fields and commands; method review

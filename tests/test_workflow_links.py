@@ -27,6 +27,18 @@ def without_fences(text):
 
 
 class WorkflowNavigationTests(unittest.TestCase):
+    def test_scout_contract_has_numbered_procedure_and_complete_structures(self):
+        body = (ROOT / ".ai/references/scout-dispatch.md").read_text(encoding="utf-8")
+        procedure = body.split("## Strict dispatch procedure", 1)[1].split("## Direct nested", 1)[0]
+        self.assertEqual([str(n) for n in range(1, 8)], re.findall(r"^(\d+)\. ", procedure, re.M))
+        for field in ("scout_assignment:", "scout_result:", "scout_request:", "search_scope:",
+                      "revision:", "uncertainty:", "unresolved_questions:", "missing_test_cases:",
+                      "parent_assignment_id:", "resume_with:"):
+            self.assertIn(field, body)
+        for instruction in ("at least two specialized", "concurrently", "release", "not hard runtime enforcement",
+                            "does not waive discovery", "one bounded retry", "no overlapping"):
+            self.assertIn(instruction, body)
+
     def test_literal_link_examples_do_not_hide_real_navigation(self):
         body = without_fences("`[example](missing.md)` and [actual](required.md)\n"
                               "```markdown\n[example](also-missing.md)\n```\n")

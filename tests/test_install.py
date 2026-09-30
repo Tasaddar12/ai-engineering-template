@@ -31,7 +31,106 @@ def read_settings(path):
     return tomllib.loads(content) if path.suffix == ".toml" else json.loads(content)
 
 
+class CodexConcurrencySettings(unittest.TestCase):
+    def test_multiline_string_examples_are_preserved_byte_for_byte(self):
+        incoming = b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+        for delimiter in (b'"""', b"'''"):
+            for closing_width in (3, 4, 5):
+                for managed_first in (False, True):
+                    for cap in (5, 12):
+                        with self.subTest(delimiter=delimiter, closing_width=closing_width,
+                                          managed_first=managed_first, cap=cap):
+                            escaped = (b'escaped quote run: ' + bytes([92]) + delimiter + b'\r\n'
+                                       if delimiter == b'"""' else b'')
+                            example = (b'developer_instructions = ' + delimiter + b'\r\n'
+                                       b'[agents]\r\nmax_threads = 3\r\n'
+                                       b'[[hooks.Stop]]\r\n' + escaped
+                                       + delimiter[:1] * closing_width + b'\r\n')
+                            actual = (b'[agents]\r\nmax_concurrent_threads_per_session = '
+                                      + str(cap).encode() + b' # actual cap\r\n')
+                            original = b'\xef\xbb\xbf# triple quotes in comments: """ \'\'\'\r\n'
+                            original += (actual + b'[profiles.demo]\r\n' + example if managed_first
+                                         else example + actual)
+                            merged = installer.merge_codex_config(original, incoming, "project config")
+                            expected = original.replace(str(cap).encode() + b' # actual cap',
+                                                        b'12 # actual cap')
+                            self.assertEqual(expected, merged)
+                            self.assertEqual(merged, installer.merge_codex_config(merged, incoming, "project config"))
+
+    def test_hook_removal_ignores_embedded_multiline_table_examples(self):
+        for delimiter in (b'"""', b"'''"):
+            with self.subTest(delimiter=delimiter):
+                example = (b'developer_instructions = ' + delimiter + b'\n'
+                           b'[[hooks.Stop]]\n[[hooks.Stop.hooks]]\n'
+                           + delimiter + b'\n')
+                stale = {"matcher": "Old", "hooks": [{"type": "command", "command": "old"}]}
+                actual = installer.hooks_toml({"Stop": [stale]})
+                text = (example + actual + b'[agents]\nmax_concurrent_threads_per_session = 12\n').decode()
+                result = installer.remove_toml_groups(text, {"Stop": [stale]})
+                self.assertTrue(result.startswith(example.decode()))
+                parsed = tomllib.loads(result)
+                self.assertNotIn("hooks", parsed)
+                self.assertEqual(tomllib.loads(example.decode())["developer_instructions"],
+                                 parsed["developer_instructions"])
+
+    def test_supported_key_forms_canonicalize_and_are_idempotent(self):
+        cases = (
+            b'#[agents] comment\nmodel = "keep"\n',
+            b'[agents]\nmax_threads = 2\nother = 9\n',
+            b'["agents"] # quoted\n"max_concurrent_threads_per_session" = 2 # keep\nmax_threads = 5\n',
+            b"['agents']\n'max_threads' = 2\n",
+            b'agents.max_threads = 2\nmodel = "keep"\n[features]\nflag = true\n',
+            b'"agents"."max_concurrent_threads_per_session" = 5\n"agents"."max_threads" = 7\n',
+            b'agents.other = 3',
+            b'[agents]',
+            b'[agents.coder]\nconfig_file = "coder.toml"\n',
+        )
+        incoming = b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+        for original in cases:
+            with self.subTest(original=original):
+                before = tomllib.loads(original.decode())
+                merged = installer.merge_codex_config(original, incoming, "project/.codex/config.toml")
+                expected = dict(before)
+                expected["agents"] = dict(before.get("agents", {}))
+                expected["agents"].pop("max_threads", None)
+                expected["agents"]["max_concurrent_threads_per_session"] = 12
+                self.assertEqual(expected, tomllib.loads(merged.decode()))
+                self.assertEqual(merged, installer.merge_codex_config(merged, incoming, "project/.codex/config.toml"))
+
+
 class InstallerTests(unittest.TestCase):
+    def test_fresh_payload_excludes_source_only_maintenance_history_for_both_hosts(self):
+        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertFalse((self.target / ("." + host) / "maintenance").exists())
+                self.assertFalse(any("maintenance/" in name for name in installer.payload(self.source, host)))
+
+    def test_migration_output_requires_update_pinned_to_same_source_revision_and_host(self):
+        alias = self.base / "target-path-alias"
+        alias.mkdir()
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = alias / ".." / host
+                legacy = self.target / ".ai"
+                legacy.mkdir(parents=True)
+                (legacy / "RULES.md").write_text("Custom legacy rules\n")
+                result = self.install("--host", host, "--migrate-existing", "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("scout activation pending required --update", result.stdout)
+                followup = next(line for line in result.stdout.splitlines() if line.startswith("Required next command"))
+                self.assertNotEqual(self.target, self.target.resolve())
+                self.assertIn(str(self.target.resolve() / ("." + host) / "install.py"), followup)
+                self.assertIn(str(self.source), followup)
+                self.assertIn("--ref " + self.revision, followup)
+                self.assertIn("--host " + host, followup)
+                self.assertIn("--update", followup)
+                self.assertIn("--no-hooks", followup)
+                self.assertNotIn("--ref main", followup)
+
     @classmethod
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="installer-source-")
@@ -234,7 +333,7 @@ class InstallerTests(unittest.TestCase):
         sol = {"debugger", "code-reviewer", "verifier", "phase-checker"}
         roles = {"coordinator", "codebase-mapper", "researcher", "phase-preparer",
                  "phase-checker", "coder", "doc-writer", "doc-verifier",
-                 "integration-checker", "code-reviewer", "debugger", "verifier"}
+                 "integration-checker", "code-reviewer", "debugger", "verifier", "scout"}
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
@@ -249,7 +348,11 @@ class InstallerTests(unittest.TestCase):
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    self.assertNotIn("model", metadata, name)
+                    if name == "scout" and host == "claude":
+                        self.assertEqual("haiku", metadata["model"])
+                    else:
+                        self.assertNotIn("model", metadata, name)
+                    self.assertNotIn("effort", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
                         (self.source / ".ai/agents" / role.name).read_bytes(), host),
@@ -261,8 +364,7 @@ class InstallerTests(unittest.TestCase):
                         name = config["name"]
                         self.assertEqual(definition.stem, name)
                         self.assertEqual(methods[name][1]["description"], config["description"])
-                        expected = ("gpt-6-astra" if name in astra else
-                                    "gpt-6-sol" if name in sol else "gpt-6-luna")
+                        expected = "gpt-6.1-sol" if name in astra | sol else "gpt-6-luna"
                         self.assertEqual(expected, config["model"])
                         checkers = {"doc-verifier", "integration-checker"}
                         effort = "medium" if name in checkers else "high"
@@ -271,11 +373,72 @@ class InstallerTests(unittest.TestCase):
                         self.assertIn(role_path, config["developer_instructions"])
                         self.assertNotIn(".ai/", config["developer_instructions"])
                         self.assertTrue((self.target / role_path).is_file())
+                        if name == "scout":
+                            self.assertEqual("read-only", config["sandbox_mode"])
                 else:
                     self.assertEqual([], list(agents.glob("*.toml")))
                 before = self.snapshot()
                 repeated = self.install("--host", host, "--no-hooks")
                 self.assertEqual(0, repeated.returncode, repeated.stderr)
+                self.assertEqual(before, self.snapshot())
+
+    def test_installed_resolver_uses_native_codex_and_preserves_claude_overrides(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
+                config = self.target / ".planning/config.yaml"
+                config.write_text("agents:\n  coder:\n    model: opus\n    effort: max\n"
+                                  "  scout:\n    model: wrong\n    effort: max\n")
+                if host == "codex":
+                    native = self.target / ".codex/agents/coder.toml"
+                    native.write_text(native.read_text().replace('"gpt-6.1-sol"', '"custom-codex"')
+                                      .replace('"high"', '"xhigh"'))
+                runtime = "." + host + "/runtime/phase.py"
+                resolved = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
+                                              "coder", cwd=self.target))
+                self.assertEqual("custom-codex" if host == "codex" else "opus", resolved["model"])
+                self.assertEqual("xhigh" if host == "codex" else "max", resolved["effort"])
+                scout = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
+                                           "scout", cwd=self.target))
+                self.assertEqual("gpt-6-luna" if host == "codex" else "haiku", scout["model"])
+                self.assertEqual("high" if host == "codex" else "inherit", scout["effort"])
+
+    def test_settings_only_preserves_bom_crlf_unrelated_text_and_hooks(self):
+        self.target.mkdir()
+        path = self.target / ".codex/config.toml"
+        path.parent.mkdir()
+        original = (b'\xef\xbb\xbf# mine\r\nmodel = "custom"\r\n["agents"] # table\r\n'
+                    b'"max_threads" = 3 # legacy note\r\nother = "keep"\r\n'
+                    b'[hooks]\r\nStop = []\r\n')
+        path.write_bytes(original)
+        result = self.install("--no-hooks")
+        self.assertEqual(0, result.returncode, result.stderr)
+        content = path.read_bytes()
+        self.assertTrue(content.startswith(b'\xef\xbb\xbf# mine\r\nmodel = "custom"\r\n'))
+        self.assertIn(b'# legacy note\r\nother = "keep"\r\n[hooks]\r\nStop = []\r\n', content)
+        self.assertNotIn(b"\n", content.replace(b"\r\n", b""))
+        parsed = tomllib.loads(content.decode("utf-8-sig"))
+        self.assertEqual(12, parsed["agents"]["max_concurrent_threads_per_session"])
+        self.assertNotIn("max_threads", parsed["agents"])
+        self.assertEqual({"Stop": []}, parsed["hooks"])
+        before = self.snapshot()
+        self.assertEqual(0, self.install("--no-hooks").returncode)
+        self.assertEqual(before, self.snapshot())
+
+    def test_unsupported_codex_settings_fail_preflight_without_writes(self):
+        for content in (b'agents = {max_threads = 3}\n', b'agents = 3\n',
+                        b'[agents]\nmax_threads = 3\nmax_threads = 4\n',
+                        b'[agents]\nmax_concurrent_threads_per_session = "3"\n'):
+            with self.subTest(content=content):
+                self.target.mkdir(exist_ok=True)
+                path = self.target / ".codex/config.toml"
+                path.parent.mkdir(exist_ok=True)
+                path.write_bytes(content)
+                before = self.snapshot()
+                result = self.install("--no-hooks")
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("nothing was installed", result.stderr)
                 self.assertEqual(before, self.snapshot())
 
     def test_custom_native_agent_is_not_overwritten(self):
@@ -443,11 +606,20 @@ class InstallerTests(unittest.TestCase):
                 result = self.install("--host", host, "--no-hooks", "--dry-run")
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertFalse(self.target.exists())
-                self.assertNotIn("write " + name, result.stdout)
+                output = result.stdout.replace("\\", "/")
+                if host == "codex":
+                    self.assertIn("write " + name, output)
+                else:
+                    self.assertNotIn("write " + name, output)
                 result = self.install("--host", host, "--no-hooks")
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertTrue((self.target / ("." + host) / "runtime/phase.py").exists())
-                self.assertFalse((self.target / name).exists())
+                if host == "codex":
+                    settings = read_settings(self.target / name)
+                    self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
+                    self.assertNotIn("hooks", settings)
+                else:
+                    self.assertFalse((self.target / name).exists())
                 self.assertEqual(0, self.install("--host", host).returncode)
                 before = self.snapshot()
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)

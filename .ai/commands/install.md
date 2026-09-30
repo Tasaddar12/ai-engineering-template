@@ -36,9 +36,11 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 References in installed instructions, skills, procedures and runtime routes point
 to the selected host layout. Agents stay under `agents` and commands
 stay under `commands`. Codex TOML definitions explicitly select a model and direct
-the agent to read its full Markdown role. Claude roles carry no model
-frontmatter: the model is resolved from `.planning/config.yaml` and passed on
-the dispatch call. See [native host models](../agents/README.md#native-host-models)
+the agent to read its full Markdown role. Claude worker roles carry no model
+frontmatter; the installer adds `model: haiku` only to exported Claude scout
+metadata and keeps the shared role body host agnostic. Claude worker model and effort are
+resolved from `.planning/config.yaml` and passed on the dispatch call; the scout
+model and effort are fixed by host. See [native host models](../agents/README.md#native-host-models)
 for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are
@@ -60,6 +62,22 @@ Incompatible inline hook arrays stop preflight instead of rewriting user setting
 Use `--no-hooks` to skip adding registrations. This preserves any existing hooks;
 it does not disable or uninstall them. Existing disabled-hook settings, personal
 overrides and managed policies still apply. Codex uses inline hook tables in `.codex/config.toml`. Existing TOML settings and hooks are retained. Codex configuration uses TOML. See [inline hooks](https://learn.chatgpt.com/docs/config-file/config-advanced#hooks).
+
+Every Codex fresh install, update and migration writes the project thread limit
+to `.codex/config.toml`, including installs run with `--no-hooks`:
+
+```toml
+[agents]
+max_concurrent_threads_per_session = 12
+```
+
+This caps spawned threads per session and excludes the primary thread. The
+installer writes the canonical `max_concurrent_threads_per_session` key and
+removes legacy `agents.max_threads`. Existing unrelated TOML text, comments,
+UTF-8 BOM, line endings, agent settings and hooks are retained. An inline
+`agents = { ... }` table is unsupported; expand it to a `[agents]` table before
+running the installer. Preflight reports this correction before project files
+are written.
 
 Codex needs a version supporting project lifecycle hooks, a trusted project, and
 review of each new or changed hook in `/hooks`. The installer does not grant
@@ -146,6 +164,30 @@ own slice.
 combined: migration rebuilds a legacy `.ai` tree into a host layout, and update
 refreshes a host layout that already exists. A project still on `.ai` migrates
 first, then updates from there.
+
+Migration preserves legacy worker definitions and shared rules. Scout activation
+remains pending until a subsequent `--update` installs the current worker tools,
+scout procedure references and shared dispatch rules. Do not dispatch the migrated
+workflow before completing that update.
+
+After migration, run the exact `Required next command` printed by the installer.
+That command uses the installed host's `install.py`, the same `--source`, the
+resolved template commit in `--ref`, the selected `--host`, and `--no-hooks` when
+used for migration. Preview it with `--dry-run`, then run it without `--dry-run`.
+Do not substitute `main` for the printed commit.
+
+```text
+python .codex/install.py --target . --host codex --update --source <same-template-source> --ref <printed-template-commit> --skip-deps --dry-run
+python .codex/install.py --target . --host codex --update --source <same-template-source> --ref <printed-template-commit> --skip-deps
+python .claude/install.py --target . --host claude --update --source <same-template-source> --ref <printed-template-commit> --skip-deps --dry-run
+python .claude/install.py --target . --host claude --update --source <same-template-source> --ref <printed-template-commit> --skip-deps
+```
+
+Run only the pair for the selected host and replace the source/commit fields with
+the values printed by the migration. The update backs up replaced legacy guidance
+under `.workflow-backups/`; review those originals and restore applicable custom
+instructions without restoring obsolete worker tool restrictions or no-scout
+dispatch rules. Commit the migration and update as separate slices.
 
 ## Migrate an existing `.ai` and `.planning` project
 

@@ -127,7 +127,11 @@ def plan_migration(source, target, host, hooks, installer):
     backups = set(old_files + planning_files + skill_files)
     notes = ["Project history in .planning is preserved; only config runtime paths may change.",
              "Existing Git history and branches are not modified or copied.",
-             "The old .ai-venv is preserved without traversal; the selected host uses a separate environment."]
+             "The old .ai-venv is preserved without traversal; the selected host uses a separate environment.",
+             "Scout activation is pending until the required subsequent --update refreshes "
+             "legacy worker tools, adapters and shared rules. Do not dispatch the migrated "
+             "workflow before that update. Review preserved custom guidance and reconcile "
+             "it from the verified backup after updating."]
     desired = dict(incoming)
     refreshed = []
     relocated = {}
@@ -145,7 +149,7 @@ def plan_migration(source, target, host, hooks, installer):
             if current != incoming[destination]:
                 refreshed.append(name)
         else:
-            # Markdown roles carry no model frontmatter; models reach Claude on the
+            # Markdown worker roles carry no model frontmatter; models reach Claude on the
             # dispatch call and Codex through its own TOML, so nothing is seeded here.
             desired[destination] = render_existing(name, current, host, installer)
     if refreshed:

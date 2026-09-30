@@ -1,13 +1,96 @@
 """Required local inputs for agent methods resolve in the checkout."""
 from pathlib import Path
 import re
+import tomllib
 import unittest
+
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentSourceTests(unittest.TestCase):
+    def test_scout_role_uses_the_exported_scout_filenames_and_names(self):
+        role = ROOT / ".ai/agents/scout.md"
+        definition = ROOT / ".ai/install-assets/codex-agents/scout.toml"
+        self.assertTrue(role.is_file())
+        self.assertTrue(definition.is_file())
+        metadata = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
+        native = tomllib.loads(definition.read_text(encoding="utf-8"))
+        self.assertEqual("scout", metadata["name"])
+        self.assertEqual("scout", native["name"])
+        self.assertIn(".ai/agents/scout.md", native["developer_instructions"])
+        self.assertNotIn("model", metadata)
+        self.assertNotIn("effort", metadata)
+        self.assertEqual("gpt-6-luna", native["model"])
+        self.assertEqual("high", native["model_reasoning_effort"])
+        self.assertEqual("read-only", native["sandbox_mode"])
+
+    def test_coordinator_scout_procedure_does_not_forbid_worker_dispatch(self):
+        text = (ROOT / ".ai/agents/coordinator.md").read_text(encoding="utf-8")
+        adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+        self.assertIn("For repository evidence assignments", adapter)
+        self.assertIn("dispatch `scout` children under that procedure", adapter)
+        self.assertIn("Dispatch normal workers", adapter)
+        self.assertNotIn("Dispatch only `scout` children", adapter)
+
+    def test_worker_local_adapters_allow_scout_dispatch_without_worker_dispatch(self):
+        for role in (ROOT / ".ai/agents").glob("*.md"):
+            if role.stem in {"README", "scout", "coordinator"}:
+                continue
+            with self.subTest(role=role.name):
+                text = role.read_text(encoding="utf-8")
+                adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+                self.assertIn("Dispatch only `scout` children", adapter)
+                self.assertRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+workers")
+                self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
+
+    def test_scout_shared_adapter_is_host_agnostic_and_respects_permissions(self):
+        text = (ROOT / ".ai/agents/scout.md").read_text(encoding="utf-8")
+        metadata = yaml.safe_load(text.split("---", 2)[1])
+        self.assertEqual({"Read", "Grep", "Glob"}, set(metadata["tools"].split(", ")))
+        self.assertIn("Bash", metadata["disallowedTools"].split(", "))
+        adapter = text.split("<host_adapter>", 1)[1].split("</host_adapter>", 1)[0]
+        for instruction in ("available native", "bounded read-only shell", "assigned search_scope",
+                            "host's tool", "permissions allow them", "Never bypass tool restrictions",
+                            "do not execute project code or tests",
+                            "dispatch children or mutate shared records"):
+            self.assertIn(instruction, adapter)
+        body = text.split("---", 2)[2]
+        for host_setting in ("Claude", "Codex", "Haiku", "Luna", "exec_command", "sandbox_mode"):
+            self.assertNotIn(host_setting, body)
+
+    def test_native_models_and_shared_roles_without_model_frontmatter(self):
+        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout"}
+        for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
+            native = tomllib.loads(definition.read_text(encoding="utf-8"))
+            role = ROOT / ".ai/agents" / (definition.stem + ".md")
+            frontmatter = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
+            self.assertEqual(definition.stem, native["name"])
+            self.assertEqual(frontmatter["description"], native["description"])
+            self.assertEqual("gpt-6-luna" if definition.stem in luna else "gpt-6.1-sol", native["model"])
+            self.assertEqual("medium" if definition.stem in {"doc-verifier", "integration-checker"} else "high",
+                             native["model_reasoning_effort"])
+            self.assertNotIn("effort", frontmatter)
+            self.assertNotIn("model", frontmatter)
+            if definition.stem == "scout":
+                self.assertEqual("read-only", native["sandbox_mode"])
+                self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
+                self.assertTrue({"Agent", "Task", "Write", "Edit", "Bash"} <= set(frontmatter["disallowedTools"].split(", ")))
+            else:
+                self.assertNotIn("model", frontmatter)
+                self.assertIn("Agent", frontmatter["tools"].split(", "))
+                self.assertNotIn("Agent", frontmatter.get("disallowedTools", "").split(", "))
+                self.assertNotIn("Task", frontmatter.get("disallowedTools", "").split(", "))
+
+    def test_every_role_reads_the_shared_scout_procedure(self):
+        for role in (ROOT / ".ai/agents").glob("*.md"):
+            if role.name == "README.md":
+                continue
+            with self.subTest(role=role.name):
+                self.assertIn("../references/scout-dispatch.md", role.read_text(encoding="utf-8"))
+
     def test_agent_required_local_reads_resolve(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
             body = path.read_text(encoding="utf-8")

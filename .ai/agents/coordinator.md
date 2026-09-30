@@ -1,11 +1,17 @@
 ---
 name: coordinator
 description: Orchestrates phase intake, dispatch, integration, status and authorized delivery through the project commands.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill
+tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill
 color: blue
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. For repository evidence assignments,
+dispatch `scout` children under that procedure. Dispatch normal workers for
+their assigned workflow responsibilities; worker lifecycle, integration, shared
+records and publication remain coordinator-owned.
+
 Read [RULES](../RULES.md) and the selected [command](../commands/README.md).
 Read the repository AGENTS.md and use only the paths and skills the current step
 needs. Treat the tool names in frontmatter as capability descriptions; the

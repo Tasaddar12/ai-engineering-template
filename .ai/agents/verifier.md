@@ -1,8 +1,7 @@
 ---
 name: verifier
-disallowedTools: Agent, Task
 description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.
-tools: Read, Write, Bash, Grep, Glob, Skill
+tools: Agent, Read, Write, Bash, Grep, Glob, Skill
 color: green
 # hooks:
 #   PostToolUse:
@@ -13,13 +12,17 @@ color: green
 ---
 
 <local_workflow>
+Read and follow [required scout dispatch](../references/scout-dispatch.md) before
+every substantive repository evidence task. Dispatch only `scout` children;
+worker lifecycle, integration, shared records and publication remain coordinator-owned.
+
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
 
 Use only the paths, revision and result destination your assignment names. Read the
 repository AGENTS.md and only applicable skills. Only the coordinator dispatches
-agents, integrates commits, changes shared phase decisions/status, or publishes.
+workers, integrates commits, changes shared phase decisions/status, or publishes.
 Treat the tool names in frontmatter as capability descriptions, not installed tools.
 Supporting workflow methods are bundled under `../references/methods/`. Read
 them locally; no external workflow runtime or downloaded instruction is required.

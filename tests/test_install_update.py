@@ -12,6 +12,8 @@ import subprocess
 import tempfile
 import unittest
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,6 +40,59 @@ def seed_source(directory):
 
 class UpdateTests(unittest.TestCase):
     host = "codex"
+
+    def test_scout_metadata_export_is_host_specific_and_update_is_idempotent(self):
+        path = self.namespace + "/agents/scout.md"
+        self.write(path, b'---\nname: scout\nmodel: wrong\neffort: max\n---\nOld adapter.\n')
+        changes, backups, _ = self.plan()
+        self.assertIn(self.target / path, backups)
+        self.apply(changes)
+        exported = self.read(path).decode("utf-8")
+        metadata = yaml.safe_load(exported.split("---", 2)[1])
+        if self.host == "claude":
+            self.assertEqual("haiku", metadata["model"])
+        else:
+            self.assertNotIn("model", metadata)
+        self.assertNotIn("effort", metadata)
+        shared = (self.source / ".ai/agents/scout.md").read_bytes()
+        expected = installer.render_asset(".ai/agents/scout.md", shared, self.host)
+        self.assertEqual(expected, self.read(path))
+        self.assertEqual([], self.plan()[0])
+
+    def test_update_payload_excludes_source_only_maintenance_history(self):
+        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
+        self.assertFalse(any(name.startswith(self.namespace + "/maintenance/") for name in self.installed))
+        changes, _, _ = self.plan()
+        self.assertFalse(any(path.relative_to(self.target).as_posix().startswith(self.namespace + "/maintenance/")
+                             for path, _ in changes))
+
+    def test_no_hooks_update_canonicalizes_codex_settings_and_preserves_hooks(self):
+        if self.host != "codex":
+            self.skipTest("Codex project setting")
+        original = (b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n[agents]\r\n'
+                    b'max_threads = 4 # retained comment\r\n'
+                    b'max_concurrent_threads_per_session = 5\r\n[hooks]\r\nStop = []\r\n')
+        path = self.write(".codex/config.toml", original)
+        changes, backups, _ = update.plan_update(self.source, self.target, "codex", False, installer)
+        self.assertIn(path, backups)
+        self.apply(changes)
+        content = path.read_bytes()
+        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n'))
+        self.assertIn(b'[hooks]\r\nStop = []\r\n', content)
+        settings = installer.tomllib.loads(content.decode("utf-8-sig"))
+        self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
+        self.assertNotIn("max_threads", settings["agents"])
+        self.assertEqual([], update.plan_update(self.source, self.target, "codex", False, installer)[0])
+
+    def test_no_hooks_update_invalid_codex_settings_are_preflight_only(self):
+        if self.host != "codex":
+            self.skipTest("Codex project setting")
+        self.write(".codex/config.toml", b'agents = {max_threads = 4}\n')
+        before = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
+        with self.assertRaisesRegex(ValueError, "inline agents.*nothing was installed"):
+            update.plan_update(self.source, self.target, "codex", False, installer)
+        after = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
 
     @classmethod
     def setUpClass(cls):

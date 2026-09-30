@@ -223,10 +223,11 @@ a caller that explicitly wants drift to fail.
 
 ## Model, effort and dispatch metadata
 
-Agent definitions under `.ai/agents/` carry `name`, `description`, `tools` and
-optionally `disallowedTools`, `skills` and `color`. They deliberately carry
-**no `model:` and no `effort:` field**: both are injected inline on the dispatch
-call, so one config file answers for every role on every host.
+Worker definitions under `.ai/agents/` carry `name`, `description`, `tools` and
+optionally `disallowedTools`, `skills` and `color`. Shared Markdown roles carry
+no `model:` or `effort:` field. The installer adds `model: haiku` only to the
+exported Claude scout metadata, with no effort. Codex worker model and effort are read from native
+role TOML; Claude worker overrides are read from `.planning/config.yaml`.
 
 They also carry **no `maxTurns:`**. A turn ceiling stops an agent mid-slice with
 work committed and no SUMMARY.md written, which the orchestrator is required to
@@ -234,16 +235,26 @@ read as blocked — the cap manufactures the failure it was meant to contain. Th
 context handoff under `handoff` bounds a long agent instead, and hands the work
 on rather than dropping it.
 
-`phase_run query resolve-model <agent>` returns a project override from
-`agents.<name>.model`, or `inherit`. `phase_run query resolve-effort <agent>`
-does the same for `agents.<name>.effort`. On `inherit` the caller omits that
-argument and lets the host choose; the two resolve independently.
+Run `python .ai/runtime/phase.py query resolve-model <role> --host codex`,
+`python .ai/runtime/phase.py query resolve-effort <role> --host codex` or
+`python .ai/runtime/phase.py query resolve-agent <role> --host codex` to resolve
+source-tree Codex settings. Use `--host claude` for source-tree Claude settings.
+An installed `.codex` runtime infers Codex; an installed `.claude` runtime
+infers Claude. Installed runtimes accept an explicit `--host` only when it
+matches their namespace. On `inherit`, the caller omits that argument; model and
+effort resolve independently.
 
-Configured models are the host's aliases (`opus`, `sonnet`, `haiku`, `fable`),
-not full API ids — the Agent SDK's dispatch call accepts only an alias — and
-are not validated against a list. Effort is validated: `low`, `medium`, `high`,
-`xhigh`, `max` or `inherit`, and anything else fails with `bad-effort`.
+Claude worker model values are host aliases (`opus`, `sonnet`, `haiku`,
+`fable`). Codex worker model values come from native TOML definitions.
+Effort accepts `low`, `medium`, `high`, `xhigh`, `max` or `inherit`; another
+value fails with `bad-effort`.
 
 Codex's `install-assets/codex-agents/*.toml` keep native `model` and
 `model_reasoning_effort` fields. Those are Codex's own agent configuration surface
 and are unrelated to this contract.
+
+The `scout` role is fixed per host and ignores project YAML overrides:
+Codex uses `gpt-6-luna` and `high`; Claude uses `haiku` and `inherit` effort.
+The source and installed Codex TOML paths are `.ai/install-assets/codex-agents/`
+and `.codex/agents/`. See [scout dispatch](../references/scout-dispatch.md) for
+the assignment, result, wait and unsupported-host fallback procedure.
