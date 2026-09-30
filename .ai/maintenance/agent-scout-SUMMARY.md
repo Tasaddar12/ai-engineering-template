@@ -233,3 +233,17 @@ execution.
 
 The rename and this SUMMARY are committed before tests. Focused validation is
 deferred until that commit; the existing PR was already open before this slice.
+
+Rename implementation commit: `883c24b`. Focused checks run after that commit:
+
+| Command | Result |
+|---|---|
+| `python -m unittest discover -s tests -p test_agent_sources.py` | 12 tests passed, 0.171 seconds |
+| `python -m unittest discover -s tests -p test_phase_runtime.py -k scout_resolution` | 1 test passed, 1.437 seconds |
+| `python -m unittest discover -s tests -p test_install.py -k native_agent_models_and_direct_roles` | 1 test passed, 15.208 seconds |
+| `python -m unittest discover -s tests -p test_install.py -k installed_resolver` | 1 test passed, 9.289 seconds |
+| `python -m unittest discover -s tests -p test_workflow_links.py` | 3 tests passed, 0.620 seconds |
+
+The tracked content and filename searches report no remaining retired role
+identifier. No full suite, push or merge was performed by this worker. Root owns
+publication and final CI checks.
