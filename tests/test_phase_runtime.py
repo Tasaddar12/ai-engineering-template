@@ -401,6 +401,49 @@ class PlanRegistration(RuntimeCase):
                 self.write_record("ROADMAP.md", ROADMAP.replace("- [ ] 01-01: Scaffold", row))
                 self.assert_rejected_unchanged("1", "--plans", "01-01: Scaffold", "01-02: Wiring")
 
+    def test_incoming_ordinals_require_two_ascii_digits_without_writes(self):
+        for phase, prefix in (("1", "01"), ("1.1", "01.1")):
+            roadmap = ROADMAP.replace("Phase 1:", "Phase " + phase + ":").replace("01-", prefix + "-")
+            for ordinal in ("1", "001", "", "ab", "\u0660\u0661", "0\u0661"):
+                with self.subTest(phase=phase, ordinal=ordinal):
+                    self.write_record("ROADMAP.md", roadmap)
+                    self.assert_rejected_unchanged(
+                        phase, "--plans", prefix + "-" + ordinal + ": Invalid ordinal", code="bad-plan")
+
+    def test_existing_ordinals_require_two_ascii_digits_without_writes(self):
+        for phase, prefix in (("1", "01"), ("1.1", "01.1")):
+            roadmap = ROADMAP.replace("Phase 1:", "Phase " + phase + ":").replace("01-", prefix + "-")
+            for ordinal in ("1", "001", "", "ab", "\u0660\u0661", "0\u0661"):
+                with self.subTest(phase=phase, ordinal=ordinal):
+                    self.write_record("ROADMAP.md", roadmap.replace(
+                        prefix + "-01: Scaffold", prefix + "-" + ordinal + ": Invalid ordinal"))
+                    self.assert_rejected_unchanged(
+                        phase, "--plans", prefix + "-01: Scaffold", prefix + "-02: Wiring",
+                        code="bad-existing-plan")
+
+    def test_malformed_numeric_orphan_ordinals_are_not_hidden(self):
+        for ordinal in ("1", "001", "\u0660\u0661", "0\u0661"):
+            row = "- [ ] 01-" + ordinal + ": Orphan\n"
+            variants = (ROADMAP.replace("Plans:\n", row + "\nPlans:\n", 1),
+                        ROADMAP.replace("- [ ] 01-02: Wire it up\n", "Notes:\n" + row))
+            for roadmap in variants:
+                with self.subTest(ordinal=ordinal, roadmap=roadmap):
+                    self.write_record("ROADMAP.md", roadmap)
+                    self.assert_rejected_unchanged(
+                        "1", "--plans", "01-01: Scaffold", "01-02: Wiring", code="bad-existing-plan")
+
+    def test_padded_ordinals_register_for_integer_and_decimal_phases(self):
+        inserted = self.run_verb("phase.insert", "1", "Follow-up")
+        for phase, prefix in (("1", "01"), (inserted["phase_number"], inserted["padded"])):
+            with self.subTest(phase=phase):
+                entries = [prefix + "-01: First", prefix + "-99: Last"]
+                result = self.run_verb("roadmap.set-plans", phase, "--plans", *entries)
+                self.assertEqual(result["plans"], entries)
+                self.run_verb("roadmap.update-plan-progress", prefix + "-01")
+                self.run_verb("roadmap.set-plans", phase, "--plans", *reversed(entries))
+                self.assertIn("Plans:\n- [ ] " + entries[1] + "\n- [x] " + entries[0],
+                              self.read(".planning/ROADMAP.md"))
+
     def test_missing_phase_roadmap_or_state_return_json_without_partial_updates(self):
         self.assert_rejected_unchanged("9", "--plans", "09-01: Missing", code="phase-not-found")
         (self.directory / ".planning/STATE.md").unlink()
