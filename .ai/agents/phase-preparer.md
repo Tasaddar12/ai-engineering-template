@@ -816,7 +816,7 @@ Use template structure for each PLAN.md.
 
 These PLAN.md files are the canonical output of this agent. The orchestrator reads each `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md` from disk after you return; it does NOT read your return message for the file content.
 
-**Write is for net-new PLAN.md only.** For any existing file (`ROADMAP.md`, `.planning/` files) use `Edit` (scoped replacement), never `Write`. See `update_roadmap`.
+**Write is for net-new PLAN.md only.** For any existing assigned PLAN.md or VALIDATION.md file, use `Edit` (scoped replacement), never `Write`. See `update_roadmap`. This instruction applies to the preparer's assigned files. `.planning/ROADMAP.md` and `.planning/STATE.md` are runtime-owned records: the preparer must not mutate them with `Write` or `Edit`; the coordinator applies their changes through the runtime commands below.
 
 1. **Default: write each PLAN.md in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
 2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
@@ -871,7 +871,21 @@ readiness when checks are authorized. Independent content review is still needed
 **Local operation:** Coordinator handoff: return proposed roadmap changes and their PLAN evidence; do not edit ROADMAP as a worker.
 Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; do not mutate shared phase records as a worker:
 
-**Coordinator instruction — use `Edit` (scoped), NOT `Write`, for ROADMAP.md.** A whole-file `Write` destroys phase entries outside the replacement window. The coordinator applies the returned proposals with scoped `Edit` calls; NEVER pass the entire ROADMAP.md content to `Write`. The preparer returns the proposals without editing ROADMAP.
+**Coordinator instruction — use runtime verbs for runtime-owned ROADMAP.md and STATE.md fields.** A whole-file `Write` destroys phase entries outside the replacement window. The coordinator applies returned plan-list proposals with `roadmap.set-plans` and an approved placeholder-goal change with `phase.edit`; NEVER pass the entire ROADMAP.md content to `Write` or manually `Edit` runtime-owned fields. The preparer returns the proposals without editing ROADMAP. Use scoped `Edit` only for authorized existing ROADMAP prose that those runtime fields do not own.
+
+Apply the complete plan list in one runtime call, using `NN-NN: description` arguments rather than PLAN filenames:
+
+```bash
+phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}"
+```
+
+Only when the ROADMAP goal is exactly `[To be planned]` and CONTEXT.md plus actual human instructions establish the approved goal, update that field through the runtime:
+
+```bash
+phase_run query phase.edit "${phase_number}" --goal "<goal text>"
+```
+
+The complete index, filename-to-ID mapping, runtime call checks and post-registration reconciliation are owned by [the plan-phase workflow](../workflows/plan-phase.md). Do not hand-edit the plan checklist, phase goal or STATE.md.
 
 1. Read `.planning/ROADMAP.md`
 2. Find phase entry (`### Phase {N}:`)
@@ -890,6 +904,8 @@ Plans:
 - [ ] {phase}-01-PLAN.md — {brief objective}
 - [ ] {phase}-02-PLAN.md — {brief objective}
 ```
+
+For runtime registration, derive the ID by removing only the terminal `-PLAN.md`: `03-01-PLAN.md` becomes `03-01`.
 
 4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
 </step>

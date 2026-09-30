@@ -77,10 +77,11 @@ unless `--force` is passed.
 |---|---|
 | `roadmap.get-phase <phase>` | One phase's parsed entry |
 | `roadmap.analyze` | Counts, the next open phase, and phases blocked on dependencies |
+| `roadmap.set-plans <phase> --plans <entry> ... [--summary TEXT]` | Replace a phase's complete plan checklist and refresh roadmap and state progress |
 | `roadmap.update-plan-progress <plan-id> [--undo]` | Tick or untick one plan and re-derive state |
 | `state.get [key]` | The parsed STATE.md view |
 | `state.record-session [--stopped-at] [--resume-file] [--status]` | Update Session Continuity |
-| `state.begin-phase <phase> [--status]` | Point Current Position at a phase |
+| `state.begin-phase <phase> [--status]` | Point Current Position and Current focus at a phase |
 | `state.update-progress` | Re-derive counters and the progress bar from the roadmap |
 | `state.advance-plan <plan-id>` | Tick a plan and update state in one call |
 | `state.add-decision <text> [--rationale] [--outcome]` | Digest it and record it in PROJECT.md Key Decisions |
@@ -96,6 +97,46 @@ unless `--force` is passed.
 STATE.md's Markdown body is authoritative; its frontmatter counters are
 re-derived from ROADMAP.md on every write, so the two cannot disagree. Writers
 serialize on `.planning/.lock`.
+
+`roadmap.set-plans` takes one phase number and a complete replacement list of
+quoted `NN-NN: description` entries. The `plans` option consumes all following
+non-option arguments, so pass one `--plans` followed by every entry; do not
+repeat the option. An optional single-line `--summary` sets the phase's Plans
+label (the default is the number of plans). For example:
+
+```bash
+python .ai/runtime/phase.py query roadmap.set-plans 3 --plans \
+  "03-01: Establish the request path" \
+  "03-02: Add the response handling"
+```
+
+The verb validates that the phase exists, the list is nonempty, every entry is
+one line with a unique ID belonging to that phase and a nonempty description,
+and the existing checklist is well formed. Only the list under the phase's
+single `Plans:` anchor is replaced; unrelated prose and checkboxes before or
+after that list are preserved. Duplicate anchors or plan rows outside that
+list are rejected as ambiguous. A missing anchor is created only when no
+existing plan rows would be stranded. It replaces that phase's whole plan
+list; it does not append. Completed IDs cannot be dropped, and their ticks are
+retained when those IDs remain in the replacement list. It also updates the
+phase checklist, progress table, plan count, and derived STATE.md progress.
+Completion dates are retained for phases that remain complete, and a prior
+`Shipped` status is retained while the phase remains complete; other status
+follows the current plan-derived status. For the current
+phase, its plan position is recalculated and its position status becomes
+`Complete` when all remaining plans are done, preserving an existing `Shipped`.
+While the phase is open, a meaningful planning or execution status is preserved;
+a stale `Complete`, `Phase complete` or `Shipped` position is reset if the
+replacement reopens the phase. For another phase, the current position is left
+alone. Invalid entries, malformed existing rows, a missing phase or roadmap,
+attempted removal of completed work, or STATE.md missing its required position
+fields return a handled error and leave both records unwritten. The runtime
+prepares both records before writing them, then writes ROADMAP.md followed by
+STATE.md; the pair is not a crash-atomic transaction.
+
+`state.begin-phase` sets the Current Position phase and status, updates Current
+focus to the phase name when that field exists, records the activity date, and
+sets STATE.md's planning/executing frontmatter status.
 
 STATE.md is a digest, so its sections are capped: Decisions and Roadmap
 Evolution keep 5 entries, Blockers/Concerns and Deferred Items keep 10. Only the

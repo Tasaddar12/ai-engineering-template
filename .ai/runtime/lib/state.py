@@ -160,9 +160,9 @@ class State:
         self.set_section(name, NEWLINE.join(kept), level)
         return rotated
 
-    def derive_frontmatter(self):
+    def derive_frontmatter(self, roadmap=None):
         """Recompute counters from ROADMAP.md so frontmatter cannot drift."""
-        roadmap = Roadmap(self.workspace)
+        roadmap = roadmap if roadmap is not None else Roadmap(self.workspace)
         phases = roadmap.phases() if roadmap.exists else []
         total_plans = sum(len(phase.plans) for phase in phases)
         done_plans = sum(1 for phase in phases for plan in phase.plans if plan["done"])
@@ -218,6 +218,9 @@ def begin_phase(workspace, number, name, status="Planning"):
     total = len(roadmap.phases()) if roadmap.exists else 0
     state.set_field(POSITION, "Phase",
                     display_number(number) + " of " + str(total) + " (" + name + ")")
+    state.body = re.sub(r"^\*\*Current focus:\*\*[^\n]*$",
+                        lambda match: "**Current focus:** " + name,
+                        state.body, flags=re.MULTILINE)
     state.set_field(POSITION, "Status", status)
     state.set_field(POSITION, "Last activity", today() + " — entered phase " + display_number(number))
     state.frontmatter["status"] = "executing" if status.lower() == "in progress" else "planning"
@@ -226,30 +229,72 @@ def begin_phase(workspace, number, name, status="Planning"):
             "progress": progress}
 
 
-def update_progress(workspace):
-    """Re-derive counters and the Current Position plan line from the roadmap."""
+def prepare_progress(workspace, roadmap, registration_phase=None):
+    """Prepare state in memory; registration changes position only for its phase."""
     state = State(workspace)
     require(state.exists, "no .planning/STATE.md to update", "missing-state")
-    roadmap = Roadmap(workspace)
+    if registration_phase is not None:
+        # Registration writes two records. Reject unusable state before either write.
+        for key in ("Phase", "Plan", "Status", "Last activity"):
+            values = [match.group("value") for match in POSITION.finditer(state.body)
+                      if match.group("key") == key]
+            require(len(values) == 1 and values[0].strip(),
+                    "STATE.md needs one nonempty " + key + " field", "bad-state")
     current = state.phase_number
-    if current and roadmap.exists:
+    if current and roadmap.exists and (registration_phase is None
+                                      or as_number(current) == as_number(registration_phase)):
         phase = roadmap.find(current)
         if phase:
             plans = phase.plans
-            done = sum(1 for plan in plans if plan["done"])
+            next_plan = next((index for index, plan in enumerate(plans, 1)
+                              if not plan["done"]), len(plans))
             state.set_field(POSITION, "Plan",
-                            str(min(done + 1, len(plans)) if plans else 0) + " of "
+                            str(next_plan) + " of "
                             + str(len(plans)) + " in current phase")
-            state.set_field(POSITION, "Status", phase.status)
-    progress = state.save()
+            old_status = state.field(POSITION, "Status").lower()
+            reopened = (phase.status != "Complete"
+                        and old_status in ("complete", "phase complete", "shipped"))
+            if phase.status == "Complete":
+                state.set_field(POSITION, "Status", "Shipped" if old_status == "shipped" else "Complete")
+            elif registration_phase is None or reopened:
+                state.set_field(POSITION, "Status", phase.status)
+            if reopened:
+                state.frontmatter["status"] = (
+                    "executing" if phase.status == "In progress" else "planning")
+    progress = state.derive_frontmatter(roadmap)
     bar = progress_bar(progress.get("percent", 0))
     # `\s*$` would swallow the blank line before the next heading, closing the
     # gap a little further on every write.
     state.body = re.sub(r"^Progress:\s*\[.*?\]\s*\d+%[ 	]*$",
                         "Progress: " + bar + " " + str(progress.get("percent", 0)) + "%",
                         state.body, flags=re.MULTILINE)
+    return state, progress
+
+
+def update_progress(workspace):
+    """Re-derive counters and the Current Position plan line from the roadmap."""
+    state, progress = prepare_progress(workspace, Roadmap(workspace))
     write_text(state.path, join_frontmatter(state.frontmatter, state.body))
     return progress
+
+
+def register_plans(workspace, number, entries, summary=None):
+    """Validate and prepare both records before persisting a plan registration.
+
+    The caller holds planning_lock across this complete read-modify-write.
+    """
+    roadmap = Roadmap(workspace)
+    roadmap.content = roadmap.set_plan_list(number, entries, summary)
+    phase = roadmap.require_phase(number)
+    roadmap.content = roadmap.set_checklist(number, phase.status == "Complete")
+    roadmap.content = roadmap.update_progress_table()
+    state, progress = prepare_progress(workspace, roadmap, registration_phase=number)
+    content = join_frontmatter(state.frontmatter, state.body)
+    roadmap.save(roadmap.content)
+    write_text(state.path, content)
+    return {"phase": str(number), "plans": [plan["id"] + ": " + plan["description"]
+                                          for plan in phase.plans],
+            "progress": progress}
 
 
 def progress_bar(percent, width=10):
