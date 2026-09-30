@@ -1,6 +1,6 @@
 ---
 name: plan-phase
-description: "Plan a phase when the user says plan phase 01 or /plan-phase 01; a slash command is not required."
+description: "Plan a phase from plan-phase 01, plan phase 01, or /plan-phase 01."
 argument-hint: "<phase> [--skip-research] [--research] [--gaps]"
 allowed-tools:
   - Read
