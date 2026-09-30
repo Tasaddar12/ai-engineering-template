@@ -572,8 +572,8 @@ stop on any mismatch:
    existing roadmap ID has no indexed PLAN file, stop and report it; do not
    silently drop it. This also keeps earlier plans present during gap closure.
 
-Keep full filenames in the evidence and remove only the terminal `-PLAN.md`
-when deriving runtime IDs: `03-01-PLAN.md` maps to `03-01`. Never pass a PLAN
+Remove only the terminal `-PLAN.md` when deriving runtime IDs:
+`03-01-PLAN.md` maps to `03-01`. Never pass a PLAN
 filename as a roadmap ID. For example, after reading `03-01-PLAN.md` and
 `03-02-PLAN.md`, with the objectives shown, construct the Bash array as follows:
 
@@ -592,13 +592,9 @@ phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}"
 phase_run query roadmap.get-phase "${phase_number}" || exit $?
 ```
 
-`roadmap.set-plans` consumes one `--plans` option followed by every entry as a
-separate argument. It replaces the phase's complete plan checklist. The runtime
-rejects empty descriptions, duplicate or other-phase IDs, malformed existing
-checklists, and removal of completed plans. On success it retains ticks for
-completed IDs that remain, updates the phase checklist and progress table, and
-derives STATE.md progress from ROADMAP.md. When the phase remains complete, the
-runtime preserves its completion date and `Shipped` status.
+Pass exactly one `--plans` option followed by every `ID: description` entry as a
+separate quoted argument. Include the complete ordered phase plan list;
+registration replaces the checklist.
 
 After registration, compare the returned `plans` to `plan_entries`: exact IDs,
 descriptions, order and count must match. Confirm each previously completed ID
@@ -621,8 +617,8 @@ writes ROADMAP.md and then STATE.md after preparing both, but the pair is not
 crash-atomic; after interruption or an I/O error, read both records and report
 their actual contents before retrying.
 
-Compare its `plans` array to the plan index. Report any mismatch; the roadmap is
-what `/progress` and `/next` route from, so a plan missing there is invisible.
+The roadmap is what `/progress` and `/next` route from; a plan missing there is
+invisible.
 </step>
 
 <step name="update_state">
