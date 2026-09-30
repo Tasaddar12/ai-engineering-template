@@ -183,6 +183,11 @@ def verb_session_open(workspace, positionals, options):
                                   sync=not options.get("no_sync"))
 
 
+def verb_session_adopt(workspace, positionals, options):
+    return worktrees.adopt_session(workspace, argument(positionals, 0, "kind"),
+                                  argument(positionals, 1, "phase"))
+
+
 def verb_session_status(workspace, positionals, options):
     return worktrees.session_status(workspace)
 
@@ -692,6 +697,7 @@ VERBS = {
 
     "dispatch-isolation": verb_dispatch_isolation,
     "session.open": verb_session_open,
+    "session.adopt": verb_session_adopt,
     "session.status": verb_session_status,
     "session.close": verb_session_close,
     "pr.open": verb_pr_open,

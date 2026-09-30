@@ -327,6 +327,157 @@ class PhaseLocate(SessionCase):
         self.assertFalse(self.locate("01")["phase_found"])
 
 
+class SessionAdoption(SessionCase):
+    manifest = PhaseLocate.manifest
+    add_phase = PhaseLocate.add_phase
+    snapshot = PhaseLocate.snapshot
+    locate = PhaseLocate.locate
+
+    def linked(self, branch="feature-existing", detached=False, phase=True):
+        target = self.directory / ".worktrees" / branch
+        arguments = (["--detach"] if detached else ["-b", branch])
+        result = self.git("worktree", "add", *arguments, str(target), "HEAD")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        if phase:
+            self.add_phase(target)
+        return target.resolve()
+
+    def write_sessions(self, entries):
+        self.manifest.parent.mkdir(parents=True, exist_ok=True)
+        self.manifest.write_text(json.dumps({"sessions": entries}), encoding="utf-8")
+
+    def refused(self, target, code, label="01", kind="phase"):
+        before = self.snapshot()
+        failed = self.run_verb("session.adopt", kind, label, cwd=target, expect_ok=False)
+        self.assertEqual(failed["code"], code, failed)
+        self.assertEqual(before, self.snapshot(), "refused adoption changed repository state")
+        return failed
+
+    def test_adopts_existing_dirty_phase_and_reroutes_bundle_without_changing_checkout(self):
+        common_base = self.git("rev-parse", "HEAD").stdout.strip()
+        target = self.linked()
+        (target / "branch-only.txt").write_text("committed branch work\n", encoding="utf-8")
+        self.git("add", "branch-only.txt", cwd=target)
+        self.git("commit", "-qm", "branch work", cwd=target)
+        (self.directory / "base-only.txt").write_text("base advances\n", encoding="utf-8")
+        self.git("add", "base-only.txt")
+        self.git("commit", "-qm", "base work")
+        phase_dir = target / ".planning" / "phases" / "01-located-phase"
+        (phase_dir / "01-CONTEXT.md").write_text("# Dirty context\n", encoding="utf-8")
+        (phase_dir / "01-01-PLAN.md").write_text("# Dirty plan\n", encoding="utf-8")
+        (target / "README.md").write_text("# Dirty staged file\n", encoding="utf-8")
+        self.git("add", "README.md", cwd=target)
+        self.assertEqual(self.locate("1")["source"], "registered-worktree")
+        before = self.snapshot()
+        adopted = self.run_verb("session.adopt", "phase", "1", cwd=target)
+        after = self.snapshot()
+        self.assertIsNone(before.pop("manifest"))
+        self.assertIsNotNone(after.pop("manifest"))
+        self.assertEqual(before, after)
+        self.assertFalse(adopted["reused"])
+        self.assertTrue(adopted["adopted"])
+        self.assertIsNone(adopted["synced"])
+        self.assertEqual(adopted["label"], "01")
+        self.assertEqual(adopted["base"], common_base)
+        self.assertEqual(adopted["base_branch"], self.base)
+        self.assertEqual(adopted["branch"], "feature-existing")
+        self.assertEqual(adopted["worktree"], str(target))
+        self.assertEqual(adopted["status"], "open")
+        self.assertIsNone(adopted["pr"])
+        self.assertTrue(adopted["created_at"])
+        located = self.locate("01")
+        self.assertEqual(located["source"], "session")
+        self.assertEqual(located["worktree"], str(target))
+        bundle = self.run_verb("init.plan-phase", located["padded_phase"], cwd=target)
+        self.assertTrue(bundle["has_context"])
+        self.assertEqual(bundle["artifacts"]["plans"], ["01-01-PLAN.md"])
+        self.assertEqual((target / bundle["phase_dir"] / bundle["artifacts"]["context"])
+                         .read_text(), "# Dirty context\n")
+        self.assertEqual((target / bundle["phase_dir"] / bundle["artifacts"]["plans"][0])
+                         .read_text(), "# Dirty plan\n")
+        closed = self.run_verb("session.close", adopted["branch"])
+        self.assertFalse(closed["closed"])
+        self.assertTrue(closed["preserved"])
+        self.assertEqual(closed["evidence"]["evidence"], "ancestry")
+        self.assertFalse(closed["evidence"]["merged"])
+        self.assertEqual(after, {k: v for k, v in self.snapshot().items() if k != "manifest"})
+
+    def test_adoption_is_idempotent_across_equivalent_decimal_labels(self):
+        target = self.linked()
+        self.run_verb("phase.insert", "1", "Inserted phase", cwd=target)
+        first = self.run_verb("session.adopt", "phase", "1.10", cwd=target)
+        before = self.snapshot()
+        second = self.run_verb("session.adopt", "phase", "01.1", cwd=target)
+        self.assertEqual(before, self.snapshot())
+        self.assertTrue(second["reused"])
+        self.assertTrue(second["adopted"])
+        self.assertIsNone(second["synced"])
+        self.assertEqual(second["label"], "01.1")
+        self.assertEqual(first["base"], second["base"])
+        self.assertEqual(len(json.loads(self.manifest.read_text())["sessions"]), 1)
+
+    def test_reuses_valid_existing_phase_session_without_rewriting_manifest(self):
+        session = self.run_verb("session.open", "phase", "1")
+        self.add_phase(session["worktree"])
+        before = self.snapshot()
+        result = self.run_verb("session.adopt", "phase", "01", cwd=session["worktree"])
+        self.assertTrue(result["reused"])
+        self.assertEqual(result["label"], "01")
+        self.assertEqual(before, self.snapshot())
+
+    def test_primary_checkout_is_refused(self):
+        self.add_phase(self.directory)
+        self.refused(self.directory, "session-adopt-not-linked")
+
+    def test_detached_checkout_is_refused(self):
+        target = self.linked(detached=True)
+        self.refused(target, "session-adopt-detached")
+
+    def test_protected_branch_is_refused(self):
+        target = self.linked(branch="develop")
+        self.refused(target, "protected-branch")
+
+    def test_missing_phase_is_refused_without_creating_manifest(self):
+        target = self.linked(phase=False)
+        self.refused(target, "phase-not-found")
+        self.assertFalse(self.manifest.exists())
+
+    def test_another_selected_checkout_is_refused(self):
+        target = self.linked()
+        session = self.run_verb("session.open", "phase", "01")
+        self.add_phase(session["worktree"])
+        self.refused(target, "session-adopt-wrong-checkout")
+
+    def test_conflicting_open_session_on_branch_or_path_is_refused(self):
+        target = self.linked()
+        cases = [
+            {"kind": "quick", "label": "fix", "branch": "other-branch", "worktree": str(target)},
+            {"kind": "phase", "label": "02", "branch": "feature-existing", "worktree": str(self.directory)},
+        ]
+        for entry in cases:
+            with self.subTest(entry=entry):
+                self.write_sessions([dict(entry, status="open")])
+                self.refused(target, "session-adopt-conflict")
+
+    def test_valid_matching_session_does_not_hide_a_conflicting_owner(self):
+        target = self.linked()
+        self.run_verb("session.adopt", "phase", "01", cwd=target)
+        existing = json.loads(self.manifest.read_text())["sessions"]
+        conflict = {"kind": "quick", "label": "fix", "branch": "other-branch",
+                    "worktree": str(target), "status": "open"}
+        self.write_sessions(existing + [conflict])
+        self.refused(target, "session-adopt-conflict")
+
+    def test_duplicate_or_disagreeing_phase_sessions_are_refused(self):
+        target = self.linked()
+        self.run_verb("session.adopt", "phase", "01", cwd=target)
+        entry = json.loads(self.manifest.read_text())["sessions"][0]
+        self.write_sessions([entry, dict(entry, label="1")])
+        self.refused(target, "ambiguous-phase-session")
+        self.write_sessions([dict(entry, branch="wrong-branch")])
+        self.refused(target, "session-branch-mismatch")
+
+
 class SessionClose(SessionCase):
     def open_and_commit(self, kind="phase", label="01"):
         """Open a session and put one real commit on its branch."""

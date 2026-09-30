@@ -1,7 +1,7 @@
 # Phase Worktree Instruction Routing — SUMMARY
 
 ```yaml
-status: blocked
+status: complete
 source_revision: db8662568e75f28c44a17b5aa4f3a9ed99e952bb
 scope: phase locator-first documentation routing
 ```
@@ -18,9 +18,17 @@ scope: phase locator-first documentation routing
 | Check | Result |
 |---|---|
 | `python -m unittest tests.test_agent_sources` | Passed, 12 tests |
-| `python -m unittest tests.test_install` | Interrupted after approximately two minutes; emitted one `E`; no final result captured |
+| `python -m unittest discover -s tests -p test_install.py -v` | Passed, 37 tests; 1 host symlink-permission skip; reported error not reproduced |
+| `python -m unittest discover -s tests -p test_session_delivery.py -v` | Passed, 50 tests |
+| `PYTHONPATH=tests python -m unittest test_install.InstallerTests.test_installed_runtime_answers_its_verb_contract -v` | Passed, 1 test; both host namespaces checked |
 | `git diff --check` | Passed |
 
-## Blocker
+## Dependency status
 
-`session.adopt phase <phase>` is documented to preserve the selected linked worktree, branch and dirty phase records. The runtime implementation and its regression checks are a separate pending slice; this documentation contract is not complete until that API is implemented and verified.
+```yaml
+status: resolved
+api: session.adopt phase <phase>
+implementation: phase-worktree-adoption-SUMMARY.md
+checks: passed
+preserved: linked checkout, branch, staged work, dirty phase records
+```
