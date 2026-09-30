@@ -871,18 +871,18 @@ class Dispatch(RuntimeCase):
         self.assertEqual(claude["model"], self.run_verb("resolve-model", "coder")["model"])
 
     def test_scout_resolution_is_fixed_for_both_hosts_despite_yaml_overrides(self):
-        self.run_verb("config-set", "agents.luna_scout.model", "wrong")
-        self.run_verb("config-set", "agents.luna_scout.effort", "max")
+        self.run_verb("config-set", "agents.scout.model", "wrong")
+        self.run_verb("config-set", "agents.scout.effort", "max")
         for host, model, effort in (("codex", "gpt-6-luna", "high"),
                                    ("claude", "haiku", "inherit")):
             with self.subTest(host=host):
-                result = self.run_verb("resolve-agent", "luna_scout", "--host", host)
+                result = self.run_verb("resolve-agent", "scout", "--host", host)
                 self.assertEqual(model, result["model"])
                 self.assertEqual(effort, result["effort"])
                 self.assertEqual(effort == "inherit", result["effort_inherit"])
                 self.assertFalse(result["inherit"])
-        self.assertEqual("haiku", self.run_verb("resolve-model", "luna_scout")["model"])
-        self.assertEqual("inherit", self.run_verb("resolve-effort", "luna_scout")["effort"])
+        self.assertEqual("haiku", self.run_verb("resolve-model", "scout")["model"])
+        self.assertEqual("inherit", self.run_verb("resolve-effort", "scout")["effort"])
 
     def test_invalid_host_is_a_handled_resolution_failure(self):
         for verb in ("resolve-model", "resolve-effort", "resolve-agent"):

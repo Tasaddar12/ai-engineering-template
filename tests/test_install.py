@@ -333,7 +333,7 @@ class InstallerTests(unittest.TestCase):
         sol = {"debugger", "code-reviewer", "verifier", "phase-checker"}
         roles = {"coordinator", "codebase-mapper", "researcher", "phase-preparer",
                  "phase-checker", "coder", "doc-writer", "doc-verifier",
-                 "integration-checker", "code-reviewer", "debugger", "verifier", "luna_scout"}
+                 "integration-checker", "code-reviewer", "debugger", "verifier", "scout"}
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
@@ -348,7 +348,7 @@ class InstallerTests(unittest.TestCase):
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    if name == "luna_scout":
+                    if name == "scout":
                         self.assertEqual("haiku", metadata["model"])
                     else:
                         self.assertNotIn("model", metadata, name)
@@ -373,7 +373,7 @@ class InstallerTests(unittest.TestCase):
                         self.assertIn(role_path, config["developer_instructions"])
                         self.assertNotIn(".ai/", config["developer_instructions"])
                         self.assertTrue((self.target / role_path).is_file())
-                        if name == "luna_scout":
+                        if name == "scout":
                             self.assertEqual("read-only", config["sandbox_mode"])
                 else:
                     self.assertEqual([], list(agents.glob("*.toml")))
@@ -389,7 +389,7 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 config = self.target / ".planning/config.yaml"
                 config.write_text("agents:\n  coder:\n    model: opus\n    effort: max\n"
-                                  "  luna_scout:\n    model: wrong\n    effort: max\n")
+                                  "  scout:\n    model: wrong\n    effort: max\n")
                 if host == "codex":
                     native = self.target / ".codex/agents/coder.toml"
                     native.write_text(native.read_text().replace('"gpt-6.1-sol"', '"custom-codex"')
@@ -400,7 +400,7 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual("custom-codex" if host == "codex" else "opus", resolved["model"])
                 self.assertEqual("xhigh" if host == "codex" else "max", resolved["effort"])
                 scout = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
-                                           "luna_scout", cwd=self.target))
+                                           "scout", cwd=self.target))
                 self.assertEqual("gpt-6-luna" if host == "codex" else "haiku", scout["model"])
                 self.assertEqual("high" if host == "codex" else "inherit", scout["effort"])
 

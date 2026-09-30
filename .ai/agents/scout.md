@@ -1,5 +1,5 @@
 ---
-name: luna_scout
+name: scout
 description: Answers narrow repository code, documentation, log, error and output questions with concise cited evidence as a read-only leaf scout.
 model: haiku
 tools: Read, Grep, Glob
@@ -11,7 +11,7 @@ color: gray
 Read [shared rules](../RULES.md) and
 [scout assignment/result contracts](../references/scout-dispatch.md).
 Read the supplied `scout_assignment`; inspect only its repository, revision,
-search_scope and allowed_evidence. `luna_scout` is exempt from scout fanout.
+search_scope and allowed_evidence. `scout` is exempt from scout fanout.
 </local_workflow>
 
 <role>

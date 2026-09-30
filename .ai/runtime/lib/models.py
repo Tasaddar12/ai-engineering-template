@@ -78,7 +78,7 @@ def native_codex(name):
 def resolve_model(workspace, name, host=None):
     """Fixed scout model, native Codex TOML, or Claude YAML override/inherit."""
     host = resolve_host(host)
-    if name == "luna_scout":
+    if name == "scout":
         return {"agent": name, "model": "gpt-6-luna" if host == "codex" else "haiku",
                 "source": "scout", "inherit": False}
     if host == "codex":
@@ -103,7 +103,7 @@ def resolve_effort(workspace, name, host=None):
     omits the effort argument and lets the host choose.
     """
     host = resolve_host(host)
-    if name == "luna_scout":
+    if name == "scout":
         effort = "high" if host == "codex" else "inherit"
         return {"agent": name, "effort": effort, "source": "scout",
                 "inherit": effort == "inherit"}

@@ -2,13 +2,13 @@
 
 Every non-scout agent, including `coordinator`, follows this procedure for every
 substantive repository evidence task: implementation, planning, research, review,
-verification, debugging, documentation, and codebase mapping. `luna_scout` is the
+verification, debugging, documentation, and codebase mapping. `scout` is the
 read-only leaf exception: it never dispatches children. These are prompt and tool
 permission instructions, not hard runtime enforcement of search behavior.
 
 ## Assignment and result structures
 
-Send each `luna_scout` assignment with every field below. Use exact paths or a
+Send each `scout` assignment with every field below. Use exact paths or a
 bounded directory; describe distinct actual areas or complementary questions in
 one area. Do not invent backend/frontend areas that the repository does not have.
 
@@ -50,15 +50,15 @@ scout_result:
 1. Read the assignment and supplied context. Identify the substantive evidence
    question, assigned revision, actual repository areas and available shared slots.
    Do not search the repository to answer that question before scout dispatch.
-2. If an area is unknown, dispatch exactly one discovery `luna_scout` to locate
+2. If an area is unknown, dispatch exactly one discovery `scout` to locate
    relevant files, terms and boundaries. Wait for its result, validate the result
    fields and revision, then release/close the completed scout with the host's
    available lifecycle tool before assigning specialized work. Discovery does not
    satisfy the specialized-assignment minimum.
-3. Create at least two specialized `luna_scout` assignments for this evidence
+3. Create at least two specialized `scout` assignments for this evidence
    task. Assign distinct actual areas; for a single area, assign complementary
    implementation/caller and test/error questions. Resolve each through
-   `phase_run query resolve-agent luna_scout --host codex` or `--host claude` in
+   `phase_run query resolve-agent scout --host codex` or `--host claude` in
    the source namespace; installed namespaces infer their host. Pass the returned
    model and effort inline; omit an `inherit` effort.
 4. Dispatch independent specialized assignments concurrently within the shared
@@ -86,7 +86,7 @@ scout_result:
 ## Direct nested dispatch and unsupported-host fallback
 
 On a host that supports nested agents, every non-scout worker has `Agent` access
-and dispatches only `luna_scout` children. Claude Code supports nested subagents
+and dispatches only `scout` children. Claude Code supports nested subagents
 from v2.1.172; its default nesting depth is three from v2.1.219. Do not add a host
 configuration key to enable a capability that the current host already supports.
 The coordinator retains worker dispatch, integration, shared records and publication.
@@ -109,5 +109,5 @@ The coordinator dispatches the requested scouts, follows the same waiting and
 result-validation steps, and resumes the requesting worker with all results.
 The worker then verifies consequential citations and resumes the named step.
 Fallback changes who dispatches; it does not waive discovery or the minimum two
-specialized assignments. `Agent(luna_scout)` parenthetical tool restrictions are
+specialized assignments. `Agent(scout)` parenthetical tool restrictions are
 not relied upon for nested workers; the explicit scout-only role instruction applies.

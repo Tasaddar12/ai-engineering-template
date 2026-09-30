@@ -8,11 +8,11 @@ Standard rules for keeping orchestrator context lean. Reference this in workflow
    the host auto-loaded them, and do not load every unrelated role.
 2. Pass focused paths and revision-specific context to workers rather than copying
    entire repositories into prompts. Worker roles may dispatch only read-only
-   `luna_scout` children; the coordinator dispatches workers.
+   `scout` children; the coordinator dispatches workers.
 3. Select evidence using metadata and headings, then read the complete relevant
    record. Never omit evidence needed to assess an acceptance claim to save tokens.
 4. Use bounded assignments and dependency handoffs to keep work coherent. Workers
-   return committed results to the coordinator; only `luna_scout` may be nested.
+   return committed results to the coordinator; only `scout` may be nested.
    Scouts are read-only leaves and do not dispatch descendants.
 5. When context pressure threatens reliable work, preserve decisions, current
    revision, evidence and remaining actions in the assigned handoff. Do not claim

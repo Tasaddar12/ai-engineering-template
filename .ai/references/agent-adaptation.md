@@ -35,7 +35,7 @@ documentor loads doc-writer; the independent verifier applies doc-verifier and
 integration-checker. Dispatch an independent code-reviewer before each code component
 integrates; assign additional specialists for unresolved documentation claims,
 cross-phase flows or source-defect findings, with the exact revision and result destination. Workers dispatch
-only `luna_scout` children; changing a role name does not create a new CLI subcommand.
+only `scout` children; changing a role name does not create a new CLI subcommand.
 
 Every non-scout agent follows [required scout dispatch](scout-dispatch.md) for
 every substantive repository evidence task. The read-only leaf scout returns

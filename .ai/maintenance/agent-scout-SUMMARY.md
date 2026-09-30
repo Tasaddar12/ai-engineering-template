@@ -16,7 +16,7 @@ write the project concurrency setting with or without hook registration.
 
 - Replaced native `gpt-6-astra` and `gpt-6-sol` model values with `gpt-6.1-sol`;
   retained existing Luna models and reasoning efforts.
-- Added `luna_scout` Markdown and Codex TOML definitions with matching name and
+- Added `scout` Markdown and Codex TOML definitions with matching name and
   description, Codex `gpt-6-luna`/`high`/read-only sandbox, Claude `haiku` and no
   effort frontmatter, and read-only tools excluding editing, execution and children.
 - Added `.ai/references/scout-dispatch.md` with exact assignment/result/request
@@ -80,7 +80,7 @@ progress, decisions, roadmap, requirements, blockers or session mutation applies
 
 ## Documentation update
 
-- Updated `.ai/agents/README.md` with the `luna_scout` catalog row, worker-to-scout
+- Updated `.ai/agents/README.md` with the `scout` catalog row, worker-to-scout
   dispatch boundary, explicit source host-resolution commands, installed host
   inference, Codex `gpt-6.1-sol` role tiers, retained Luna tiers and fixed scout
   model/effort by host.
@@ -208,3 +208,28 @@ Source, revision and host assertions remain unchanged; installer behavior was
 not changed. On Windows, `python -m unittest discover -s tests -p test_install.py
 -k test_migration_output_requires_update_pinned_to_same_source_revision_and_host`
 passed: 1 test in 7.133 seconds. No full suite was run in this slice.
+
+## Scout role naming correction
+
+Assigned base: `adf05e208a78cb2ac0897637e12b49ce08819507`. The user authorized
+renaming the role identifier and exported filenames to `scout` in the existing
+maintenance PR #54. Updated frontmatter/native names, runtime fixed-role handling,
+worker/coordinator instructions, examples, links, catalog, tests and this SUMMARY.
+Renamed the complete Markdown role to `.ai/agents/scout.md` and the native Codex
+definition to `.ai/install-assets/codex-agents/scout.toml`. No compatibility alias
+was added. Only comments changed in `.planning/config.yaml`.
+
+The rename preserves Codex `gpt-6-luna`/`high`/read-only sandbox and Claude
+`haiku` with omitted effort and unchanged tool restrictions. Full existing
+paragraphs and methods remain. Added explicit source filename/name/model
+regression evidence; existing installed role/model and runtime tests now target
+`scout`.
+
+The tracked-file search found 32 files containing the retired identifier, all
+within assigned ownership. No extra paths required scope expansion. The current
+host cannot spawn new threads after the reported thread-limit failure and has no
+release tool; this slice uses supplied bootstrap evidence and claims no scout
+execution.
+
+The rename and this SUMMARY are committed before tests. Focused validation is
+deferred until that commit; the existing PR was already open before this slice.

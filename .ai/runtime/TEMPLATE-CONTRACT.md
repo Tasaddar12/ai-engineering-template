@@ -225,7 +225,7 @@ a caller that explicitly wants drift to fail.
 
 Worker definitions under `.ai/agents/` carry `name`, `description`, `tools` and
 optionally `disallowedTools`, `skills` and `color`. Worker Markdown roles carry
-no `model:` or `effort:` field. The `luna_scout` role is the exception and sets
+no `model:` or `effort:` field. The `scout` role is the exception and sets
 `model: haiku` for Claude. Codex worker model and effort are read from native
 role TOML; Claude worker overrides are read from `.planning/config.yaml`.
 
@@ -253,7 +253,7 @@ Codex's `install-assets/codex-agents/*.toml` keep native `model` and
 `model_reasoning_effort` fields. Those are Codex's own agent configuration surface
 and are unrelated to this contract.
 
-The `luna_scout` role is fixed per host and ignores project YAML overrides:
+The `scout` role is fixed per host and ignores project YAML overrides:
 Codex uses `gpt-6-luna` and `high`; Claude uses `haiku` and `inherit` effort.
 The source and installed Codex TOML paths are `.ai/install-assets/codex-agents/`
 and `.codex/agents/`. See [scout dispatch](../references/scout-dispatch.md) for

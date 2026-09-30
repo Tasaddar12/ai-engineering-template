@@ -19,7 +19,7 @@ source examples and result contracts.
 | [Integration checker](integration-checker.md) | verify-work | Expected cross-phase connections → read-only wiring and flow evidence → verifier |
 | [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
-| [Luna scout](luna_scout.md) | Every non-scout role | Narrow read-only question and revision → cited evidence → assigning role |
+| [Scout](scout.md) | Every non-scout role | Narrow read-only question and revision → cited evidence → assigning role |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
 
 The orchestrator selects the useful responsibilities; a small change need not run
@@ -29,7 +29,7 @@ connections.
 
 A fresh code-reviewer separately assesses the changed source before a phase
 closes; the verifier cannot substitute for that dispatch, and a coder's
-self-check is not a review. Worker roles may spawn only `luna_scout` children for
+self-check is not a review. Worker roles may spawn only `scout` children for
 the assigned evidence task. Scouts never spawn children; the orchestrator owns
 worker lifecycle, integration, shared records and publication.
 
@@ -66,7 +66,7 @@ carry an effort and no model, or the reverse. `resolve-agent` returns both
 alongside the role's declared tools, disallowed tools and skills.
 
 Worker Markdown definitions carry no `model:` or `effort:` frontmatter; the
-`luna_scout` role is the exception and declares `model: haiku` for direct Claude
+`scout` role is the exception and declares `model: haiku` for direct Claude
 dispatch. Codex worker model and effort come from native TOML definitions.
 Claude worker overrides come from `.planning/config.yaml`; set one there:
 
@@ -107,9 +107,9 @@ Claude installation copies the full Markdown agents to `.claude/agents/`.
 | debugger, code-reviewer, verifier, phase-checker | `gpt-6.1-sol` | `high` |
 | codebase-mapper, doc-writer | `gpt-6-luna` | `high` |
 | doc-verifier, integration-checker | `gpt-6-luna` | `medium` |
-| luna_scout | `gpt-6-luna` | `high` |
+| scout | `gpt-6-luna` | `high` |
 
-`luna_scout` is the read-only evidence role. Codex resolves it to
+`scout` is the read-only evidence role. Codex resolves it to
 `gpt-6-luna`/`high`; Claude resolves it to `haiku` with effort `inherit` (omit
 the effort argument). These values are fixed and ignore `.planning/config.yaml`.
 Read [scout dispatch](../references/scout-dispatch.md) for its assignment,

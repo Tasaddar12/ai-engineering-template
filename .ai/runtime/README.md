@@ -209,7 +209,7 @@ installed namespace supplies the host. Claude worker model values are aliases
 Effort accepts `low`, `medium`, `high`, `xhigh`, `max` or `inherit`; another
 value fails with `bad-effort`.
 
-The `luna_scout` role has fixed settings. It resolves to `gpt-6-luna`/`high` on
+The `scout` role has fixed settings. It resolves to `gpt-6-luna`/`high` on
 Codex and `haiku`/`inherit` on Claude, independent of project YAML. Its procedure
 and assignment/result fields are in [scout dispatch](../references/scout-dispatch.md).
 

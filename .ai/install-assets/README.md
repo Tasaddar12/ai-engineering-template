@@ -13,7 +13,7 @@ does not copy this directory into adopting projects.
   The installer copies these beside the installed `.codex/agents/*.md` methods
   and rewrites the direct role-file instructions. Claude does not receive TOML
   definitions; Claude worker models resolve from `.planning/config.yaml` and
-  are passed inline at dispatch. Only `luna_scout` carries `model: haiku` in
+  are passed inline at dispatch. Only `scout` carries `model: haiku` in
   Markdown frontmatter, with no effort.
   Codex model and effort resolution uses the native agent TOML definitions.
   An existing destination config is preserved for every profile. Native hook
@@ -34,6 +34,6 @@ fields: those are Codex's own agent configuration surface, separate from the Mar
 Markdown worker agents carry no `model:` frontmatter — their Claude model is
 injected inline at dispatch, resolved from `.planning/config.yaml`.
 
-The runtime fixes `luna_scout` to Claude `haiku` with omitted effort or Codex
+The runtime fixes `scout` to Claude `haiku` with omitted effort or Codex
 `gpt-6-luna` with `high` effort, regardless of project YAML overrides. Its Claude
 Markdown frontmatter is the sole `model:` exception.

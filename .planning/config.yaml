@@ -68,7 +68,7 @@ codebase:
 
 # Per-agent model and effort overrides for Claude workers. Installed Codex reads
 # native role TOML; source-tree resolution selects a host with `--host codex`
-# or `--host claude`. The `luna_scout` model and effort are fixed per host and
+# or `--host claude`. The `scout` model and effort are fixed per host and
 # ignore this YAML block.
 #
 # Models are the host's aliases -- `opus`, `sonnet`, `haiku` or `fable` -- not

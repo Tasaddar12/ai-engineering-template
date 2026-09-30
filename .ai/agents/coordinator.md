@@ -8,7 +8,7 @@ color: blue
 <local_workflow>
 Read and follow [required scout dispatch](../references/scout-dispatch.md) before
 every substantive repository evidence task. For repository evidence assignments,
-dispatch `luna_scout` children under that procedure. Dispatch normal workers for
+dispatch `scout` children under that procedure. Dispatch normal workers for
 their assigned workflow responsibilities; worker lifecycle, integration, shared
 records and publication remain coordinator-owned.
 

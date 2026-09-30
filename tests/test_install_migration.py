@@ -78,7 +78,7 @@ class MigrationTests(unittest.TestCase):
                 self.assertEqual(migrated_rules, (update_backup / "files" / namespace / "RULES.md").read_bytes())
                 for role in (self.target / namespace / "agents").glob("*.md"):
                     text = role.read_text(encoding="utf-8")
-                    if not text.startswith("---\n") or role.stem == "luna_scout":
+                    if not text.startswith("---\n") or role.stem == "scout":
                         continue
                     metadata = yaml.safe_load(text.split("---", 2)[1])
                     self.assertIn("Agent", metadata["tools"].split(", "))

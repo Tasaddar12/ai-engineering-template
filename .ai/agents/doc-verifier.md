@@ -13,7 +13,7 @@ color: orange
 
 <local_workflow>
 Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. Dispatch only `luna_scout` children;
+every substantive repository evidence task. Dispatch only `scout` children;
 worker lifecycle, integration, shared records and publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)

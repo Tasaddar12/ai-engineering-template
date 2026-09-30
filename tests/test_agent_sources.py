@@ -11,27 +11,42 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentSourceTests(unittest.TestCase):
+    def test_scout_role_uses_the_exported_scout_filenames_and_names(self):
+        role = ROOT / ".ai/agents/scout.md"
+        definition = ROOT / ".ai/install-assets/codex-agents/scout.toml"
+        self.assertTrue(role.is_file())
+        self.assertTrue(definition.is_file())
+        metadata = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
+        native = tomllib.loads(definition.read_text(encoding="utf-8"))
+        self.assertEqual("scout", metadata["name"])
+        self.assertEqual("scout", native["name"])
+        self.assertIn(".ai/agents/scout.md", native["developer_instructions"])
+        self.assertEqual("haiku", metadata["model"])
+        self.assertEqual("gpt-6-luna", native["model"])
+        self.assertEqual("high", native["model_reasoning_effort"])
+        self.assertEqual("read-only", native["sandbox_mode"])
+
     def test_coordinator_scout_procedure_does_not_forbid_worker_dispatch(self):
         text = (ROOT / ".ai/agents/coordinator.md").read_text(encoding="utf-8")
         adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
         self.assertIn("For repository evidence assignments", adapter)
-        self.assertIn("dispatch `luna_scout` children under that procedure", adapter)
+        self.assertIn("dispatch `scout` children under that procedure", adapter)
         self.assertIn("Dispatch normal workers", adapter)
-        self.assertNotIn("Dispatch only `luna_scout` children", adapter)
+        self.assertNotIn("Dispatch only `scout` children", adapter)
 
     def test_worker_local_adapters_allow_scout_dispatch_without_worker_dispatch(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
-            if role.stem in {"README", "luna_scout", "coordinator"}:
+            if role.stem in {"README", "scout", "coordinator"}:
                 continue
             with self.subTest(role=role.name):
                 text = role.read_text(encoding="utf-8")
                 adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                self.assertIn("Dispatch only `luna_scout` children", adapter)
+                self.assertIn("Dispatch only `scout` children", adapter)
                 self.assertRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+workers")
                 self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
 
     def test_scout_host_adapter_supports_codex_shell_reads_and_claude_restrictions(self):
-        text = (ROOT / ".ai/agents/luna_scout.md").read_text(encoding="utf-8")
+        text = (ROOT / ".ai/agents/scout.md").read_text(encoding="utf-8")
         metadata = yaml.safe_load(text.split("---", 2)[1])
         self.assertEqual({"Read", "Grep", "Glob"}, set(metadata["tools"].split(", ")))
         self.assertIn("Bash", metadata["disallowedTools"].split(", "))
@@ -43,7 +58,7 @@ class AgentSourceTests(unittest.TestCase):
             self.assertIn(instruction, adapter)
 
     def test_native_models_and_scout_only_frontmatter_exception(self):
-        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "luna_scout"}
+        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout"}
         for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
             native = tomllib.loads(definition.read_text(encoding="utf-8"))
             role = ROOT / ".ai/agents" / (definition.stem + ".md")
@@ -54,7 +69,7 @@ class AgentSourceTests(unittest.TestCase):
             self.assertEqual("medium" if definition.stem in {"doc-verifier", "integration-checker"} else "high",
                              native["model_reasoning_effort"])
             self.assertNotIn("effort", frontmatter)
-            if definition.stem == "luna_scout":
+            if definition.stem == "scout":
                 self.assertEqual("haiku", frontmatter["model"])
                 self.assertEqual("read-only", native["sandbox_mode"])
                 self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
