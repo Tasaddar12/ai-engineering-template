@@ -1,6 +1,6 @@
 ---
 name: plan-phase
-description: "Plan a phase from plan-phase 01, plan phase 01, or /plan-phase 01."
+description: "Plan a phase from plan-phase <phase>, plan phase <phase>, or /plan-phase <phase>."
 argument-hint: "<phase> [--skip-research] [--research] [--gaps]"
 allowed-tools:
   - Read
@@ -35,8 +35,8 @@ Workflow files are loaded on demand in the <process> section below - not upfront
 Arguments: $ARGUMENTS
 Phase number: $ARGUMENTS (required).
 
-Phase number: $ARGUMENTS (required). Run this skill for the ordinary-language
-request “plan phase 01” or `/plan-phase 01`; the slash command is not required.
+Run this skill for `plan-phase <phase>`, `plan phase <phase>`, or
+`/plan-phase <phase>`.
 The phase is located with `phase_run query phase.locate` before
 `phase_run query init.plan-phase` loads its context.
 </context>
