@@ -36,9 +36,10 @@ installation has no separate `.ai` directory. Project records remain under `.pla
 References in installed instructions, skills, procedures and runtime routes point
 to the selected host layout. Agents stay under `agents` and commands
 stay under `commands`. Codex TOML definitions explicitly select a model and direct
-the agent to read its full Markdown role. Claude roles carry no model
-frontmatter: the model is resolved from `.planning/config.yaml` and passed on
-the dispatch call. See [native host models](../agents/README.md#native-host-models)
+the agent to read its full Markdown role. Claude worker roles carry no model
+frontmatter; `luna_scout` sets `model: haiku`. Claude worker model and effort are
+resolved from `.planning/config.yaml` and passed on the dispatch call; the scout
+model and effort are fixed by host. See [native host models](../agents/README.md#native-host-models)
 for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are
@@ -60,6 +61,22 @@ Incompatible inline hook arrays stop preflight instead of rewriting user setting
 Use `--no-hooks` to skip adding registrations. This preserves any existing hooks;
 it does not disable or uninstall them. Existing disabled-hook settings, personal
 overrides and managed policies still apply. Codex uses inline hook tables in `.codex/config.toml`. Existing TOML settings and hooks are retained. Codex configuration uses TOML. See [inline hooks](https://learn.chatgpt.com/docs/config-file/config-advanced#hooks).
+
+Every Codex fresh install, update and migration writes the project thread limit
+to `.codex/config.toml`, including installs run with `--no-hooks`:
+
+```toml
+[agents]
+max_concurrent_threads_per_session = 12
+```
+
+This caps spawned threads per session and excludes the primary thread. The
+installer writes the canonical `max_concurrent_threads_per_session` key and
+removes legacy `agents.max_threads`. Existing unrelated TOML text, comments,
+UTF-8 BOM, line endings, agent settings and hooks are retained. An inline
+`agents = { ... }` table is unsupported; expand it to a `[agents]` table before
+running the installer. Preflight reports this correction before project files
+are written.
 
 Codex needs a version supporting project lifecycle hooks, a trusted project, and
 review of each new or changed hook in `/hooks`. The installer does not grant

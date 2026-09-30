@@ -77,3 +77,31 @@ perform the repository-required checks on the resulting committed revision.
 Integrate the committed maintenance branch, open its draft PR, then validate and
 route any failures to bounded correction work. No adopting-project position,
 progress, decisions, roadmap, requirements, blockers or session mutation applies.
+
+## Documentation update
+
+- Updated `.ai/agents/README.md` with the `luna_scout` catalog row, worker-to-scout
+  dispatch boundary, explicit source host-resolution commands, installed host
+  inference, Codex `gpt-6.1-sol` role tiers, retained Luna tiers and fixed scout
+  model/effort by host.
+- Updated `.ai/commands/install.md` and `.ai/runtime/README.md` with the Codex
+  concurrency setting, `--no-hooks` behavior, legacy key handling, TOML
+  preservation and inline-table preflight instruction; documented native
+  host-aware model resolution and exact source/installed command forms.
+- Updated `.ai/runtime/TEMPLATE-CONTRACT.md`, `.ai/references/methods/context-budget.md`
+  and comments only in `.planning/config.yaml` to describe the scout exception,
+  native Codex definitions and Claude worker overrides without changing config
+  values or structure.
+- Confirmed implementation details against `.ai/install.py`,
+  `.ai/runtime/lib/models.py`, `.ai/runtime/phase.py`, native role TOMLs and the
+  two supplied independent source reports. Nested scouts did not run: the host
+  rejected dispatch with `agent thread limit reached`, and it exposes no
+  completed-agent release tool. The coordinator authorized this bootstrap
+  maintenance exception; no scout result is claimed.
+- Remaining implementation follow-up for the coder: Codex scout file searching
+  must be usable through the native read-only sandbox even though the Markdown
+  role lists Claude tool names `Read`, `Grep`, and `Glob` and disallows `Bash`.
+  This documentation assignment did not edit the scout role.
+- Documentation check: `python -m unittest discover -s tests -p
+  test_workflow_links.py` passed (3 tests). No broader suite was run by the
+  documentation author; root owns final validation.

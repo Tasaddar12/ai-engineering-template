@@ -183,21 +183,35 @@ claiming phases shipped when they did not is the record this exists to keep hone
 
 | Verb | Effect |
 |---|---|
-| `resolve-model <agent>` | Model for an agent: a project config override, otherwise `inherit` |
-| `resolve-effort <agent>` | Reasoning effort for an agent, on the same terms |
-| `resolve-agent <agent>` | Model, effort, tools, disallowed tools and declared skills |
+| `resolve-model <agent> [--host codex|claude]` | Model for an agent using the selected or inferred host |
+| `resolve-effort <agent> [--host codex|claude]` | Reasoning effort for an agent using the selected or inferred host |
+| `resolve-agent <agent> [--host codex|claude]` | Model, effort, tools, disallowed tools and declared skills |
 
-Agent definitions carry no `model:` and no `effort:` frontmatter — both are
-injected inline on the `Agent(...)` call, so one config file answers for every
-role on every host. A resolved value of `inherit` means the project set no
-override, and the caller omits that argument entirely. The two resolve
-independently: a role can carry an effort and no model, or the reverse.
+From source `.ai`, pass `--host codex` or `--host claude` explicitly. An installed
+`.codex` runtime infers Codex and reads role model and effort from its native
+`.toml` definitions; an installed `.claude` runtime infers Claude and reads
+worker overrides from `.planning/config.yaml`. An installed runtime rejects a
+`--host` value that does not match its namespace. A resolved value of `inherit`
+means the caller omits that argument; model and effort resolve independently.
 
-Configured models are the host's aliases (`opus`, `sonnet`, `haiku`, `fable`),
-not full API ids — the Agent SDK's dispatch call accepts only an alias — and
-are not checked against a list. Effort is checked: `low`, `medium`, `high`, `xhigh`, `max` or
-`inherit`, and anything else fails with `bad-effort` rather than reaching the
-host as an unrecognised argument.
+Use these source-tree commands when dispatching a Codex role:
+
+```bash
+python .ai/runtime/phase.py query resolve-model <role> --host codex
+python .ai/runtime/phase.py query resolve-effort <role> --host codex
+python .ai/runtime/phase.py query resolve-agent <role> --host codex
+```
+
+For installed projects, use `python .codex/runtime/phase.py query resolve-model
+<role>` or `python .claude/runtime/phase.py query resolve-model <role>`; the
+installed namespace supplies the host. Claude worker model values are aliases
+(`opus`, `sonnet`, `haiku`, `fable`). Codex worker values come from native TOML.
+Effort accepts `low`, `medium`, `high`, `xhigh`, `max` or `inherit`; another
+value fails with `bad-effort`.
+
+The `luna_scout` role has fixed settings. It resolves to `gpt-6-luna`/`high` on
+Codex and `haiku`/`inherit` on Claude, independent of project YAML. Its procedure
+and assignment/result fields are in [scout dispatch](../references/scout-dispatch.md).
 
 | `agent-skills <agent>` | The agent's declared skills resolved against the installed skills root |
 | `agents.list` / `skills.list` | What is installed |
@@ -309,7 +323,7 @@ worktree:
   root: .worktrees         # must be gitignored, or execution stops
 agents:
   coder:
-    model: sonnet          # host alias, never a full API id
+    model: sonnet          # Claude worker model alias
     effort: high           # low | medium | high | xhigh | max
 verification:
   commands: []             # argv lists; run by verification.run-checks
@@ -318,6 +332,23 @@ verification:
 `verification.commands` is empty in the template. An adopting project configures
 its real checks during onboarding; until then, verification rests on reading
 alone and the verification report must say so.
+
+## Codex project concurrency
+
+Codex installation writes this setting to `.codex/config.toml` on fresh install,
+update and migration, including when installation uses `--no-hooks`:
+
+```toml
+[agents]
+max_concurrent_threads_per_session = 12
+```
+
+The setting caps spawned threads per session and excludes the primary thread.
+The installer writes the canonical `max_concurrent_threads_per_session` key and
+removes the legacy `agents.max_threads` key. It preserves unrelated TOML text,
+comments, a UTF-8 BOM, line endings, agent settings and hooks. An inline table
+such as `agents = { ... }` is unsupported; expand it to `[agents]` before running
+the installer. Preflight reports that correction before it writes project files.
 
 ## Validation
 
