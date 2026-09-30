@@ -164,6 +164,30 @@ combined: migration rebuilds a legacy `.ai` tree into a host layout, and update
 refreshes a host layout that already exists. A project still on `.ai` migrates
 first, then updates from there.
 
+Migration preserves legacy worker definitions and shared rules. Scout activation
+remains pending until a subsequent `--update` installs the current worker tools,
+scout procedure references and shared dispatch rules. Do not dispatch the migrated
+workflow before completing that update.
+
+After migration, run the exact `Required next command` printed by the installer.
+That command uses the installed host's `install.py`, the same `--source`, the
+resolved template commit in `--ref`, the selected `--host`, and `--no-hooks` when
+used for migration. Preview it with `--dry-run`, then run it without `--dry-run`.
+Do not substitute `main` for the printed commit.
+
+```text
+python .codex/install.py --target . --host codex --update --source <same-template-source> --ref <printed-template-commit> --skip-deps --dry-run
+python .codex/install.py --target . --host codex --update --source <same-template-source> --ref <printed-template-commit> --skip-deps
+python .claude/install.py --target . --host claude --update --source <same-template-source> --ref <printed-template-commit> --skip-deps --dry-run
+python .claude/install.py --target . --host claude --update --source <same-template-source> --ref <printed-template-commit> --skip-deps
+```
+
+Run only the pair for the selected host and replace the source/commit fields with
+the values printed by the migration. The update backs up replaced legacy guidance
+under `.workflow-backups/`; review those originals and restore applicable custom
+instructions without restoring obsolete worker tool restrictions or no-scout
+dispatch rules. Commit the migration and update as separate slices.
+
 ## Migrate an existing `.ai` and `.planning` project
 
 Work on a review branch with the existing setup committed. Download the current

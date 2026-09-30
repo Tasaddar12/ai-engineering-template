@@ -32,6 +32,47 @@ def read_settings(path):
 
 
 class CodexConcurrencySettings(unittest.TestCase):
+    def test_multiline_string_examples_are_preserved_byte_for_byte(self):
+        incoming = b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+        for delimiter in (b'"""', b"'''"):
+            for closing_width in (3, 4, 5):
+                for managed_first in (False, True):
+                    for cap in (5, 12):
+                        with self.subTest(delimiter=delimiter, closing_width=closing_width,
+                                          managed_first=managed_first, cap=cap):
+                            escaped = (b'escaped quote run: ' + bytes([92]) + delimiter + b'\r\n'
+                                       if delimiter == b'"""' else b'')
+                            example = (b'developer_instructions = ' + delimiter + b'\r\n'
+                                       b'[agents]\r\nmax_threads = 3\r\n'
+                                       b'[[hooks.Stop]]\r\n' + escaped
+                                       + delimiter[:1] * closing_width + b'\r\n')
+                            actual = (b'[agents]\r\nmax_concurrent_threads_per_session = '
+                                      + str(cap).encode() + b' # actual cap\r\n')
+                            original = b'\xef\xbb\xbf# triple quotes in comments: """ \'\'\'\r\n'
+                            original += (actual + b'[profiles.demo]\r\n' + example if managed_first
+                                         else example + actual)
+                            merged = installer.merge_codex_config(original, incoming, "project config")
+                            expected = original.replace(str(cap).encode() + b' # actual cap',
+                                                        b'12 # actual cap')
+                            self.assertEqual(expected, merged)
+                            self.assertEqual(merged, installer.merge_codex_config(merged, incoming, "project config"))
+
+    def test_hook_removal_ignores_embedded_multiline_table_examples(self):
+        for delimiter in (b'"""', b"'''"):
+            with self.subTest(delimiter=delimiter):
+                example = (b'developer_instructions = ' + delimiter + b'\n'
+                           b'[[hooks.Stop]]\n[[hooks.Stop.hooks]]\n'
+                           + delimiter + b'\n')
+                stale = {"matcher": "Old", "hooks": [{"type": "command", "command": "old"}]}
+                actual = installer.hooks_toml({"Stop": [stale]})
+                text = (example + actual + b'[agents]\nmax_concurrent_threads_per_session = 12\n').decode()
+                result = installer.remove_toml_groups(text, {"Stop": [stale]})
+                self.assertTrue(result.startswith(example.decode()))
+                parsed = tomllib.loads(result)
+                self.assertNotIn("hooks", parsed)
+                self.assertEqual(tomllib.loads(example.decode())["developer_instructions"],
+                                 parsed["developer_instructions"])
+
     def test_supported_key_forms_canonicalize_and_are_idempotent(self):
         cases = (
             b'#[agents] comment\nmodel = "keep"\n',
@@ -58,6 +99,35 @@ class CodexConcurrencySettings(unittest.TestCase):
 
 
 class InstallerTests(unittest.TestCase):
+    def test_fresh_payload_excludes_source_only_maintenance_history_for_both_hosts(self):
+        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertFalse((self.target / ("." + host) / "maintenance").exists())
+                self.assertFalse(any("maintenance/" in name for name in installer.payload(self.source, host)))
+
+    def test_migration_output_requires_update_pinned_to_same_source_revision_and_host(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                legacy = self.target / ".ai"
+                legacy.mkdir(parents=True)
+                (legacy / "RULES.md").write_text("Custom legacy rules\n")
+                result = self.install("--host", host, "--migrate-existing", "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("scout activation pending required --update", result.stdout)
+                followup = next(line for line in result.stdout.splitlines() if line.startswith("Required next command"))
+                self.assertIn(str(self.target / ("." + host) / "install.py"), followup)
+                self.assertIn(str(self.source), followup)
+                self.assertIn("--ref " + self.revision, followup)
+                self.assertIn("--host " + host, followup)
+                self.assertIn("--update", followup)
+                self.assertIn("--no-hooks", followup)
+                self.assertNotIn("--ref main", followup)
+
     @classmethod
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="installer-source-")

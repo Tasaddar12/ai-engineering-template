@@ -144,3 +144,48 @@ The first migration run exposed one platform-specific assertion separator;
 the corrected migration suite then passed. No full suite was run by this worker.
 Root owns push, independent review and final full checks. No adopting planning
 records changed in this slice.
+
+## Independent-review blocker corrections
+
+Assigned input revision: `d600ed83c787bca288d47cf5563b9d5893f29edd`.
+PR #54 was open before this slice's checks. The coordinator supplied four exact
+review findings and authorized the same host-thread bootstrap exception. No
+nested scout or full-suite result is claimed by this worker.
+
+- Scoped the coordinator's scout dispatch instruction to repository evidence
+  assignments and explicitly retained normal worker dispatch. Added a semantic
+  regression rejecting the coordinator's unconditional scout-only restriction.
+- Added a TOML lexical string-state helper shared by concurrency canonicalization
+  and hook-group removal. Header/key scans ignore multiline basic/literal string
+  contents, escaped basic-string quotes, quote runs at closing delimiters and
+  comments. TOML parsing and final semantic equality remain the validation gates.
+  Regression cases cover actual managed tables before/after strings, caps already
+  12 or requiring change, BOM/CRLF byte identity, 3/4/5-quote closing delimiters,
+  embedded table examples and hook removal without modifying those examples.
+- Excluded source `.ai/maintenance/` from the common installer payload. Fresh,
+  update and migration tests cover both host destinations and keep the committed
+  maintenance SUMMARY in the source repository.
+- Preserved legacy guidance during migration and marked scout activation pending
+  the required follow-up `--update`. Installer output supplies the exact installed
+  installer path, source, fetched template commit, host and applicable no-hooks
+  flag; it no longer directs migrated existing projects into onboarding. Added
+  dedicated installation instructions for preview/update and backup reconciliation.
+- Added inline legacy base excerpts with custom instruction sentinels for CI's
+  shallow checkout. The migration/update regression verifies original and
+  relocated custom guidance in both verified backups, then confirms current
+  worker Agent access, scout references and absence of conflicting dispatch
+  prohibitions. The earlier custom-RULES preservation regression still passes.
+
+Focused checks passed:
+
+| Command | Result |
+|---|---|
+| `python -m unittest discover -s tests -p test_install.py -k CodexConcurrencySettings` | 3 tests, 0.010 seconds |
+| `python -m unittest discover -s tests -p test_install.py -k fresh_payload` | 1 test, 8.870 seconds |
+| `python -m unittest discover -s tests -p test_install.py -k migration_output` | 1 test, 7.393 seconds |
+| `python -m unittest discover -s tests -p test_install_migration.py` | 16 tests, 15.823 seconds |
+| `python -m unittest discover -s tests -p test_install_update.py -k maintenance_history` | 2 tests, 7.722 seconds |
+| `python -m unittest discover -s tests -p test_agent_sources.py` | 11 tests, 0.037 seconds |
+
+Root owns push, independent review and final CI/full checks. No adopting planning
+records changed in this slice.

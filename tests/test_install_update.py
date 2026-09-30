@@ -39,6 +39,13 @@ def seed_source(directory):
 class UpdateTests(unittest.TestCase):
     host = "codex"
 
+    def test_update_payload_excludes_source_only_maintenance_history(self):
+        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
+        self.assertFalse(any(name.startswith(self.namespace + "/maintenance/") for name in self.installed))
+        changes, _, _ = self.plan()
+        self.assertFalse(any(path.relative_to(self.target).as_posix().startswith(self.namespace + "/maintenance/")
+                             for path, _ in changes))
+
     def test_no_hooks_update_canonicalizes_codex_settings_and_preserves_hooks(self):
         if self.host != "codex":
             self.skipTest("Codex project setting")

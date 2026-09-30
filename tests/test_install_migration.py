@@ -10,6 +10,8 @@ import tempfile
 import tomllib
 import unittest
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,9 +25,72 @@ def load(name, path):
 
 installer = load("migration_installer", ROOT / ".ai/install.py")
 migration = load("install_migration", ROOT / ".ai/install_migration.py")
+update = load("migration_followup_update", ROOT / ".ai/install_update.py")
 
 
 class MigrationTests(unittest.TestCase):
+    def test_migration_payload_excludes_source_only_maintenance_history(self):
+        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                changes, _, _ = self.plan(host, hooks=False)
+                self.assertFalse(any(path.relative_to(self.target).as_posix().startswith("." + host + "/maintenance/")
+                                     for path, _ in changes))
+
+    def test_legacy_migration_requires_update_and_preserves_custom_guidance_in_backups(self):
+        # Inline excerpts from the assigned base; no historical Git object is
+        # required in the shallow CI checkout. Custom additions must survive
+        # migration and remain recoverable when the explicit update replaces them.
+        legacy = (b'---\nname: coder\ndisallowedTools: Agent, Task\n'
+                  b'description: Executes one assigned phase plan with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries.\n'
+                  b'tools: Read, Write, Edit, Bash, Grep, Glob, Skill, mcp__context7__*, mcp__plugin_context7_context7__*\n'
+                  b'color: yellow\n---\n\n<local_workflow>\n'
+                  b'Use only the paths, revision and result destination your plan names. Read the\n'
+                  b'repository AGENTS.md and only the applicable skills. Only the orchestrator\n'
+                  b'dispatches agents, ticks the roadmap, changes shared phase decisions or status,\n'
+                  b'or publishes.\n</local_workflow>\n\nCustom worker instruction sentinel.\n')
+        rules = (b'Agents edit only the paths their plan declares, plus their own SUMMARY. They do\n'
+                 b'not spawn agents, switch branches, merge, publish or edit shared status.\n\n'
+                 b'Custom approval instruction sentinel. Read .ai/RULES.md\n')
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.setUp()
+                self.write(".ai/agents/coder.md", legacy)
+                self.write(".ai/RULES.md", rules)
+                changes, originals, notes = self.plan(host, hooks=False)
+                self.assertIn("Scout activation is pending", " ".join(notes))
+                migration_backup = installer.backup_migration(self.target, originals)
+                self.apply(changes)
+                namespace = "." + host
+                coder = self.target / namespace / "agents/coder.md"
+                migrated = coder.read_bytes()
+                self.assertIn(b"disallowedTools: Agent, Task", migrated)
+                self.assertIn(b"Custom worker instruction sentinel.", migrated)
+                self.assertEqual(legacy, (migration_backup / "files/.ai/agents/coder.md").read_bytes())
+                self.assertEqual(rules, (migration_backup / "files/.ai/RULES.md").read_bytes())
+                migrated_rules = (self.target / namespace / "RULES.md").read_bytes()
+                self.assertIn(b"Custom approval instruction sentinel.", migrated_rules)
+
+                changes, originals, _ = update.plan_update(self.source, self.target, host, False, installer)
+                update_backup = installer.backup_migration(self.target, originals)
+                self.apply(changes)
+                self.assertEqual(migrated, (update_backup / "files" / namespace / "agents/coder.md").read_bytes())
+                self.assertEqual(migrated_rules, (update_backup / "files" / namespace / "RULES.md").read_bytes())
+                for role in (self.target / namespace / "agents").glob("*.md"):
+                    text = role.read_text(encoding="utf-8")
+                    if not text.startswith("---\n") or role.stem == "luna_scout":
+                        continue
+                    metadata = yaml.safe_load(text.split("---", 2)[1])
+                    self.assertIn("Agent", metadata["tools"].split(", "))
+                    self.assertNotIn("Agent", metadata.get("disallowedTools", "").split(", "))
+                    self.assertNotIn("Task", metadata.get("disallowedTools", "").split(", "))
+                    self.assertIn("scout-dispatch.md", text)
+                    adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+                    self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
+                current_rules = (self.target / namespace / "RULES.md").read_text(encoding="utf-8")
+                self.assertIn("scout-dispatch.md", current_rules)
+                self.assertNotIn("not spawn agents", current_rules)
+
     def test_no_hooks_migration_canonicalizes_existing_codex_settings(self):
         original = (b'\xef\xbb\xbf# custom\r\n"agents"."max_threads" = 3 # legacy\r\n'
                     b'model = "keep"\r\n[hooks]\r\nStop = []\r\n')

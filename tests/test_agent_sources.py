@@ -11,6 +11,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentSourceTests(unittest.TestCase):
+    def test_coordinator_scout_procedure_does_not_forbid_worker_dispatch(self):
+        text = (ROOT / ".ai/agents/coordinator.md").read_text(encoding="utf-8")
+        adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+        self.assertIn("For repository evidence assignments", adapter)
+        self.assertIn("dispatch `luna_scout` children under that procedure", adapter)
+        self.assertIn("Dispatch normal workers", adapter)
+        self.assertNotIn("Dispatch only `luna_scout` children", adapter)
+
     def test_worker_local_adapters_allow_scout_dispatch_without_worker_dispatch(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
             if role.stem in {"README", "luna_scout", "coordinator"}:
