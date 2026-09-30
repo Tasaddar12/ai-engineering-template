@@ -282,7 +282,7 @@ class Roadmap:
             require(isinstance(entry, str) and len(entry.splitlines()) == 1
                     and "\r" not in entry and "\n" not in entry,
                     "plan entry must be one line", code)
-            match = re.fullmatch(r"[ \t]*(\d+(?:\.\d+)?-\d+)[ \t]*:[ \t]*(.*?)[ \t]*", entry)
+            match = re.fullmatch(r"[ \t]*(\d+(?:\.\d+)?-[0-9]{2})[ \t]*:[ \t]*(.*?)[ \t]*", entry)
             require(match is not None and match.group(2),
                     "plan must be 'NN-NN: description': " + entry, code)
             identifier, description = match.groups()
