@@ -187,6 +187,21 @@ class InstallerTests(unittest.TestCase):
                                             cwd=self.target))
                 self.assertTrue(listed["ok"])
                 self.assertEqual([], listed["phases"])
+                verbs = json.loads(command(sys.executable, runtime, "query", "help",
+                                           cwd=self.target))["verbs"]
+                self.assertIn("phase.locate", verbs)
+                self.assertIn("session.adopt", verbs)
+                before = self.snapshot()
+                located = json.loads(command(sys.executable, runtime, "query", "phase.locate", "01",
+                                             cwd=self.target))
+                self.assertFalse(located["phase_found"])
+                adoption = subprocess.run([sys.executable, runtime, "query", "session.adopt", "phase", "01"],
+                                          cwd=self.target, text=True, encoding="utf-8", capture_output=True)
+                self.assertEqual(adoption.returncode, 1)
+                self.assertNotIn("Traceback", adoption.stderr)
+                self.assertEqual(json.loads(adoption.stdout)["code"], "phase-not-found")
+                self.assertFalse((self.target / ".git" / "ai-phase" / "sessions.json").exists())
+                self.assertEqual(before, self.snapshot())
                 # An expected failure is a result, not a traceback.
                 failed = subprocess.run([sys.executable, runtime, "query", "roadmap.get-phase", "9"],
                                         cwd=self.target, text=True, encoding="utf-8",
