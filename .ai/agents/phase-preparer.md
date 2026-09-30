@@ -816,7 +816,9 @@ Use template structure for each PLAN.md.
 
 These PLAN.md files are the canonical output of this agent. The orchestrator reads each `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md` from disk after you return; it does NOT read your return message for the file content.
 
-**Write is for net-new PLAN.md only.** For any existing file you own, use `Edit` with a scoped replacement, never `Write`. The coordinator owns shared ROADMAP.md and STATE.md records and applies their changes through the runtime; do not edit those records as the preparer. See `update_roadmap`.
+**Use `Write` only to create a net-new PLAN.md.** If checker feedback or a revision assignment changes an existing assigned PLAN.md or VALIDATION.md, use `Edit` with a narrowly scoped replacement in the relevant section; never replace the whole file with `Write`. Name the exact assigned path in each edit and preserve accurate material outside the correction. `Write` on an existing file can erase approved tasks, frontmatter, or verification evidence that the assignment did not ask you to change.
+
+The preparer owns only the PLAN.md and VALIDATION.md paths named in its assignment. It does not own `.planning/ROADMAP.md` or `.planning/STATE.md`: those are shared phase records. Return proposed roadmap changes with the evidence and exact plan paths; the coordinator applies them through the runtime verbs described in `update_roadmap`. Never use `Write` or `Edit` on ROADMAP.md or STATE.md, and never hand-edit either record.
 
 1. **Default: write each PLAN.md in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
 2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
@@ -868,10 +870,7 @@ readiness when checks are authorized. Independent content review is still needed
 
 <step name="update_roadmap">
 
-**Local operation:** Coordinator handoff: return proposed roadmap changes and their PLAN evidence; do not edit ROADMAP as a worker.
-Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; do not mutate shared phase records as a worker:
-
-**Coordinator instruction — use runtime verbs for shared records.** Apply plan-list/count proposals through `roadmap.set-plans` and an authorized placeholder-goal change through `phase.edit`. The preparer returns proposals and PLAN evidence without editing ROADMAP.
+**Local operation:** The coordinator owns `.planning/ROADMAP.md` and `.planning/STATE.md`. The preparer returns a proposed phase-entry change and the PLAN evidence; it never edits either shared record. The coordinator registers the complete plan list with `roadmap.set-plans`. If the existing goal is the literal placeholder `[To be planned]`, the coordinator may replace that field only through `phase.edit`, using CONTEXT.md and actual human instructions for the text. Research is evidence; it does not define or authorize the goal. Do not use `Write` or `Edit` to update shared records: a whole-file ROADMAP write can erase other phases, and manual checklist edits can desynchronize roadmap and derived STATE progress.
 
 1. Read `.planning/ROADMAP.md`
 2. Find phase entry (`### Phase {N}:`)
@@ -884,14 +883,20 @@ Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; d
 **Plans** (always update):
 - Update count: `**Plans:** {N} plans`
 
-**Plan list** (always update):
+**Plan list proposal** (include every plan file in the phase, including plans that already existed before a gap-closure assignment):
 ```
 Plans:
-- [ ] {phase}-01: {brief objective}
-- [ ] {phase}-02: {brief objective}
+- [ ] {phase}-01-PLAN.md — {brief objective}
+- [ ] {phase}-02-PLAN.md — {brief objective}
 ```
 
-4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
+These are proposed ROADMAP checklist rows and evidence filenames. The runtime
+does not accept filenames as plan IDs: when the coordinator registers them, it
+removes only the `-PLAN.md` suffix, so `03-01-PLAN.md` becomes the runtime ID
+`03-01`. The coordinator must read the actual plan objectives and translate all
+indexed plans to runtime IDs before calling `roadmap.set-plans`.
+
+4. Return the proposed phase-scoped change, every full PLAN filename and its one-line objective, and any existing checked plan rows that must be retained. Workers do not apply shared ROADMAP changes.
 </step>
 
 <step name="git_commit">
