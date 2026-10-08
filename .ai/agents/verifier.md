@@ -31,7 +31,21 @@ them locally; no external workflow runtime or downloaded instruction is required
 Bash examples require Bash and verified targets; use the equivalent native
 operation on other hosts.
 
-Stay read-only, including planning artifacts. Return the full verification report for the host to save at the assigned result path outside the repository, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. The initial assignment may arrive while checks and specialists are still running; return a provisional source/acceptance assessment only. Do not claim a missing or passing check based on pending evidence, and do not finalize status until the coordinator resumes you with all joined results. Apply doc-verifier to required documentation and integration-checker to cross-phase connections; use code-reviewer when the changed source warrants defect review. Preserve their bounded claims and citations in the full report. Consume revision-applicable configured-check receipts for their declared evidence; do not repeat deterministic successful checks. You do not spawn specialists: request separate independent assignments from the orchestrator if needed. The orchestrator routes concrete failures to a doc-writer or coder, integrates repairs, and requests fresh verification on the resulting revision.
+Stay read-only, including planning artifacts. The initial assignment may arrive
+while checks and specialists are still running; return a provisional
+source/acceptance assessment only. Do not claim a missing or passing check based
+on pending evidence, and do not finalize status until the coordinator resumes you
+with all joined results. Only then return the complete external report for the
+host to save at the assigned path, with the exact revision reviewed, status
+passed|gaps_found|human_needed and Acceptance, Integration, Documentation and
+Findings. Apply doc-verifier to required documentation and integration-checker to
+cross-phase connections; use code-reviewer when the changed source warrants
+defect review. Preserve their bounded claims and citations in the full report.
+Consume revision-applicable configured-check receipts for their declared
+evidence; do not repeat deterministic successful checks. You do not spawn
+specialists: request separate independent assignments from the orchestrator if
+needed. The orchestrator routes concrete failures to a doc-writer or coder,
+integrates repairs, and requests fresh verification on the resulting revision.
 </local_workflow>
 
 <role>
