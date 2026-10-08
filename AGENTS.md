@@ -66,8 +66,10 @@ with evidence and preserve approved outcomes.
 ## Dispatch
 
 The orchestrator routes; it does not do the work it dispatched. After spawning an
-agent, wait for it — reading files, editing code or running tests while an agent
-is active conflicts with that agent's edits.
+agent, wait before touching its owned files or integrating its changes. During a
+frozen read-only verification batch, configured checks and independent read-only
+specialists may inspect the same captured revision concurrently; wait for every
+result before accepting evidence, repairing files or starting another batch.
 
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,

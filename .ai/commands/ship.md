@@ -20,16 +20,19 @@ Publish work that verification actually passed.
 1. Confirm the phase's verification is `passed` and current under the documented
    exact-revision/report-only publication rule
 2. Check the tree is clean, the branch is not the base, and gh is available
-3. Consume valid passing receipts for the current inputs; rerun checks with
-   missing or invalid receipts
-4. Compose the PR body from the phase's summaries and verification report
-5. Push and open or update the pull request
-6. Wait for its checks with `pr.checks --wait`; fix failing checks
-7. Ask the merge question; merge, sync the base branch and close the session only
+3. Commit the truthful pre-publication session status
+4. Reconcile verification and check evidence on that resulting revision, and
+   persist the final report as the last local write
+5. Compose the PR body from the phase's summaries and current verification report
+6. Push and open or update the pull request
+7. Wait for its checks with `pr.checks --wait`; fix failing checks and re-verify
+   source repairs before another push
+8. Ask the merge question; merge, sync the base branch and close the session only
    on the user's instruction
 
-**Output:** a pushed branch and a pull request, recorded in STATE.md, merged only
-on the user's instruction.
+**Output:** a pushed branch and pull request; the preparation status is committed
+in STATE.md and the actual PR URL is recorded in session metadata. Merge only on
+the user's instruction.
 
 No bypass for unverified work.
 </objective>
@@ -64,5 +67,6 @@ improvise from the summary.
 - Branch pushed, PR opened or updated
 - Check state reported as observed, never assumed
 - Merge question asked; merged only on the user's instruction
-- Publication recorded in STATE.md and committed
+- Truthful pre-publication status committed before final verification
+- Actual PR URL recorded by `pr.open` in session metadata; no stale post-push commit
 </success_criteria>

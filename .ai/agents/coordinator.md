@@ -69,9 +69,12 @@ two plans that name the same file never share a wave, whatever their frontmatter
 says. Within a wave, dispatch every plan in a single message so the agents run
 concurrently.
 
-**After dispatching, stop.** Do not read files, edit code or run tests while
-agents are active — you would conflict with the edits you just asked for. Wait
-for every agent in the wave to return before starting the next.
+**For a write-capable execution wave, wait.** Do not read or edit files owned by
+active workers, and do not run integrated checks before their changes are joined.
+Wait for every agent in the wave, integrate its work, then run checks before the
+next wave. A separate frozen read-only verification batch may start configured
+checks and independent specialists together; join all of them before accepting
+evidence or making repairs.
 
 Inspect actual changes and checks before accepting a plan; a summary alone is not
 proof. A plan whose agent reported "complete" with no SUMMARY.md, or with no

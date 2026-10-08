@@ -52,3 +52,30 @@ The equality case preserves the exact-revision fast path. The sole exception is
 the coordinator's tracked report publication after a read-only verifier has
 finished; that publication cannot change the already tested product/source. The
 exception is narrow to the exact phase report path, checked commit by commit.
+
+## Final-report lifecycle
+
+The verifier is read-only and returns an external report; the coordinator alone
+writes and commits the tracked phase report. On the initial pass, start the
+provisional verifier, configured checks and applicable independent specialists
+together against one frozen revision. The provisional verifier receives no
+future results and cannot finalize status. Join the whole batch, then resume the
+verifier with check receipts/results and bounded specialist findings so it can
+reconcile shared evidence and inspect only gaps or conflicts.
+
+If that joined result provisionally passes, perform and commit phase-completion,
+requirement-closure and session/roadmap bookkeeping before final reconciliation.
+Capture the resulting HEAD, run the configured checks there (reusing only receipts
+valid for that invocation), and have the read-only verifier review the actual
+bookkeeping diff plus source/acceptance coverage at that exact new revision. Wait
+for these results before persisting the report. The coordinator writes the report
+with the revision the verifier actually reviewed and commits that report alone as
+the last workflow write. Never retag the report to the following report-only
+commit.
+
+The report-only exception above permits subsequent ship preflight to consume the
+report for the preceding tested revision. It is a coordinator procedure, not an
+enforcement performed by `verification.status`, which only exposes metadata. A
+refresh-only verification does not repeat completion/requirement/session writes
+and does not invoke `/ship` again. A source repair invalidates evidence and starts
+a new verification batch; it is not a report-only publication.
