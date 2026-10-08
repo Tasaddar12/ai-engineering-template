@@ -47,14 +47,23 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("block only the dependent", scout)
         self.assertIn("question, revision, search scope and supplied", scout)
 
-    def test_execute_keeps_dependency_waves_and_uses_receipts(self):
+    def test_execute_distinguishes_registered_chunks_from_legacy_waves_and_uses_receipts(self):
         workflow = self.read(".ai/workflows/execute-phase.md")
         adaptation = self.read(".ai/references/agent-adaptation.md")
         self.assertIn("phase-plan-index", workflow)
         self.assertIn("Plans that declare overlapping `files_modified`", workflow)
+        self.assertIn("completed unregistered whole-plan assignments", workflow)
+        self.assertIn("pipeline.route --spec", workflow)
+        self.assertIn("Path/resource conflicts delay only the affected task", workflow)
+        self.assertIn("Do not wait for all phase tasks or an entire proposed wave", workflow)
+        self.assertIn("pipeline.run-checks", workflow)
         self.assertIn("successful receipts", workflow)
         self.assertIn("dependency and file-overlap waves", adaptation)
-        self.assertNotIn("displayed waves do not impose a global barrier", adaptation)
+        # The adaptation must describe both scheduling modes, rather than
+        # treating legacy plan-index waves as barriers for registered chunks.
+        self.assertIn("pipeline.route", adaptation)
+        self.assertIn("registered chunks", adaptation)
+        self.assertIn("completed unregistered whole-plan assignments", adaptation)
         for path in (".ai/agents/phase-checker.md",
                      ".ai/references/methods/planner-chunked.md",
                      ".ai/references/template-adaptation.md",

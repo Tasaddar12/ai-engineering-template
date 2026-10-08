@@ -11,7 +11,7 @@ not edit, run tests, execute project code, or dispatch children.
 
 | Trigger or task | Owner and required output | Next action |
 |---|---|---|
-| A file, symbol, term, or source boundary is unknown | One discovery scout returns locations, search terms and citations | Join its result, then assign only uncovered questions |
+| A file, symbol, term, or source boundary is unknown | Assign one discovery scout to return locations, search terms and citations | Join its result, then assign only uncovered questions |
 | A known source or supplied log/error/output needs fact extraction, classification, or a structured summary | Scout returns the requested fields with path:line or input-line evidence | Consume the packet; verify cited source only for conflict or a missing acceptance fact |
 | A documentation claim needs comparison with source | Scout returns claim-to-source citations and mismatches; `doc-verifier` owns the required per-document claim verdict | Doc-verifier reports each required claim; writer fixes false prose |
 | A review needs changed-file, diff, or test inventory | Scout returns the inventory and cited evidence; `code-reviewer` owns correctness and security findings | Reviewer uses the packet and inspects changed source for the review decision |
@@ -36,9 +36,8 @@ Dispatch `scout` for every uncovered requested repeatable extraction, classifica
 structured-summary or transformation output in the routing table, even when
 the source locations are known. For other specialist roles, dispatch only when
 a named unresolved claim, acceptance criterion, or risk decision requires
-evidence from that specialist's domain. Do not dispatch a second scout when one
-result answers the assigned question. Dispatch multiple
-scouts only for separately named questions with different source areas or
+evidence from that specialist's domain. Do not dispatch a second scout when one result answers
+the assigned question. Dispatch multiple scouts only for separately named questions with different source areas or
 evidence types; start independent assignments against the same frozen revision
 and join every result before repair or acceptance. Do not perform duplicate
 searches for the scout's assigned fields. Independent read-only checks or

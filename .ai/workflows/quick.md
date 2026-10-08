@@ -216,8 +216,8 @@ Return: ## PLANNING COMPLETE with the plan path
 > chatter. Detached review/check snapshots may run while a worker continues on
 > independent assigned paths.
 
-> Independent read-only checks and evidence collection may run against the same
-> frozen revision; join required results before planning decisions or repairs.
+> Independent read-only checks and evidence collection may run against the
+> same frozen revision; join required results before planning decisions or repairs.
 
 After the preparer returns:
 1. Verify the plan exists at `${QUICK_DIR}/${QUICK_ID}-PLAN.md`

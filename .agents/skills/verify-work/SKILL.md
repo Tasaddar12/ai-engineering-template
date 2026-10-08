@@ -51,7 +51,7 @@ The phase is located with `phase_run query phase.locate` before the workflow loa
 Read and execute `~/.ai/workflows/verify-work.md` end to end.
 
 **MANDATORY:** Read the workflow file BEFORE taking any action. The objective and
-success criteria here are a summary â€” the workflow holds the complete step-by-step
+success criteria here are a summary — the workflow holds the complete step-by-step
 process with all required behaviors, runtime calls and interaction patterns. Do not
 improvise from the summary.
 </process>

@@ -311,6 +311,12 @@ Isolation: {ISOLATION} ({reason})
 </step>
 
 <step name="discover_and_group_plans">
+For completed unregistered whole-plan assignments, retain dependency and
+file-overlap waves from the plan index. Plans that declare overlapping `files_modified`
+must not share a legacy ownership wave; wait for that wave to join and integrate
+before checking it or starting dependent waves. Registered chunks follow the
+readiness route below, without using those displayed waves as a global barrier.
+
 ```bash
 phase_run query phase-plan-index "${phase_number}"
 ```
@@ -598,8 +604,9 @@ resolve a checkpoint by guessing.
 Chunk checks run through `pipeline.run-checks` against the immutable registered
 test snapshot in `integrate_chunk`. Do not wait for every independent task to
 finish before that gate, and do not describe a chunk receipt as an aggregate
-phase check. The unchanged `verification.run-checks` command runs once on the
-fully integrated phase during `/verify-work` and remains a final gate.
+phase check. The unchanged `verification.run-checks` command checks the fully
+integrated phase at the final review gate and during `/verify-work`; matching successful
+receipts avoid duplicate execution and final verification remains mandatory.
 
 Consume successful receipts when their tested revision, declared sources,
 environment and configuration match the relevant snapshot. Receipts are
@@ -630,10 +637,11 @@ The final independent correctness/security review of the integrated phase is
 mandatory even when all chunk reviews passed. There is no review waiver; reject
 the retired `--no-review` option.
 
-After all waves are integrated, freeze the session revision. Start the required
-fresh code-reviewer and call `verification.run-checks` together against that
-revision; valid receipts from the final wave can be reused. The reviewer owns
-source correctness and security findings. Wait for both results before accepting
+After all required chunks (or completed legacy whole-plan waves) are integrated,
+freeze the session revision. Independent read-only checks and fresh review run
+together against the same frozen revision: start the required fresh code-reviewer
+and call `verification.run-checks`; valid successful receipts can be reused.
+The reviewer owns source correctness and security findings. Wait for both results before accepting
 the phase or repairing it. If a repair changes source, rerun affected checks and
 obtain a fresh review of the repaired revision.
 
