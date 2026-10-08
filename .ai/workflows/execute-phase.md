@@ -454,8 +454,9 @@ phase_run query phase-plan-index "${phase_number}"
 git log --oneline -n 20
 ```
 
-A plan whose agent reported "complete" with no SUMMARY.md, or with no commits, did
-not complete. Treat it as blocked and say so.
+A coder assigned source-changing plan work who reports `complete` without the
+required SUMMARY.md and owned commits is blocked. Read-only specialists complete
+with their assigned cited report fields and do not create commits or SUMMARY.md.
 
 **Continue an interrupted plan from its handoff.** A coder that crossed the
 context limit, or exited without a `complete` SUMMARY, left a handoff record in
@@ -686,8 +687,11 @@ report them as the blocker instead.
 
 <anti_patterns>
 - Don't implement anything yourself — dispatch coders and integrate their work
-- Don't work while a wave is running; you will conflict with the agents' edits
-- Don't accept "complete" without a SUMMARY.md and real commits
+- Don't edit files owned by an active wave or integrate its commits before the
+  wave joins. Independent read-only checks or evidence collection may run
+  concurrently against the same frozen revision; do not inspect or check a
+  partially integrated source tree.
+- Don't accept a source-changing coder's "complete" without its required SUMMARY.md and real commits
 - Don't resolve a checkpoint by guessing so the wave can finish
 - Don't put plans with overlapping `files_modified` in the same wave
 - Don't tick a roadmap plan that has no complete summary

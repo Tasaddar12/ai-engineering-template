@@ -6,11 +6,12 @@ color: green
 ---
 
 <local_workflow>
-Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
-specialist can resolve an evidence gap. Known, bounded sources need no scout;
-discover unknown scope once and add complementary evidence only for material
-risk or uncertainty. Worker lifecycle, integration, shared records and
-publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) to route repeatable
+repository-fact extraction and classification to a read-only scout. Dispatch
+one discovery scout when source location is unknown. Phase-checker owns the
+plan-readiness verdict; assign a scout only for a named source packet the plan
+review lacks. Worker lifecycle, integration, shared records and publication
+remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
@@ -43,7 +44,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 - Tasks exist but don't actually achieve the requirement
 - Dependencies are broken or circular
 - Artifacts are planned but wiring between them isn't
-- Scope exceeds context budget (quality will degrade)
+- Plan exceeds the configured task cap or combines separate outcomes/prerequisite components
 - **Plans contradict user decisions from CONTEXT.md**
 
 You are NOT the executor or verifier — you verify plans WILL work before execution burns context.
@@ -312,7 +313,7 @@ issue:
 
 ## Dimension 5: Scope Sanity
 
-**Question:** Will plans complete within context budget?
+**Question:** Do the plans satisfy the configured task cap and split separate component outcomes or prerequisite components?
 
 **Process:**
 1. Count tasks per plan
@@ -339,7 +340,6 @@ issue:
 - Plan exceeds the configured task cap or combines separate component outcomes
 - Files implement separate outcomes or require different prerequisite components
 - Ownership omits a required path, regardless of the total file count
-- Complex work (auth, payments) crammed into one plan
 
 **Example issue:**
 ```yaml
@@ -831,7 +831,10 @@ for plan in "$PHASE_DIR"/*-PLAN.md; do
 done
 ```
 
-Validate: all referenced plans exist, no cycles, descriptive waves consistent, and every prerequisite identified. If A -> B -> C -> A, report cycle.
+Validate: all referenced plans exist, no cycles, wave labels match the derived
+`phase-plan-index`, and every prerequisite is identified. The index recomputes
+dependency and file-overlap waves; `execute-phase` runs them in order. If
+A -> B -> C -> A, report the cycle.
 
 ## Step 7: Check Key Links
 

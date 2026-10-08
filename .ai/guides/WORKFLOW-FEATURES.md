@@ -16,7 +16,7 @@ owners and their operational limits. For the end-to-end procedure, read
 | Milestone cycles | Group phases, then close with an honest record of what shipped | [new-milestone](../commands/new-milestone.md), [complete-milestone](../commands/complete-milestone.md) | Closing refuses while any phase is open — deliberately no force path |
 | Discuss and specify | Falsifiable scope, locked decisions, canonical refs and explicit deferred ideas | [discuss-phase](../commands/discuss-phase.md) | Recorded decisions do not prove implementation |
 | Todo capture | Park an idea mid-session without derailing the work, and fold it into the phase it belongs to | [capture](../commands/capture.md) | Severity is confirmed with the user, never silently assigned |
-| Quick tasks | One small change with a plan, atomic commits and tracked state, outside the roadmap | [quick](../commands/quick.md) | Work needing more than three tasks is a phase |
+| Quick tasks | One single-outcome change with a plan, atomic commits and tracked state, outside the roadmap | [quick](../commands/quick.md) | Work needing more than three tasks is a phase |
 | Bounded research | Resolve technical uncertainty with source evidence before planning | [researcher](../agents/researcher.md) | Research cannot authorize a new product direction |
 | Detailed phase plans | Concrete tasks with read-first inputs, acceptance, ownership, dependencies and must-haves | [plan-phase](../commands/plan-phase.md); [template contract](../runtime/TEMPLATE-CONTRACT.md) | Every runnable verify command must state its failure signal |
 | Independent plan check | Goal-backward examination of coverage, interfaces and task quality | [phase-checker](../agents/phase-checker.md) | Capped at three revision rounds, then escalated rather than approved |
@@ -120,7 +120,7 @@ installed, so a workflow file is portable between hosts unchanged.
 | Two agents edit the same tracked file | Declared file overlap separates plans into different waves | Plans must declare all the files they touch |
 | The orchestrator works while agents run | Workflows stop after dispatch and wait for returns | An orchestrator that edits during a wave conflicts with its own agents |
 | Concurrent writers corrupt a planning record | `.planning/.lock` serializes the read-modify-write; frontmatter is re-derived | One orchestrator at a time; agents do not write shared records |
-| An agent claims success without committing | A plan with no SUMMARY.md or no commits is treated as blocked | Verification still must establish actual behavior |
+| A source-changing plan executor claims success without committing | A plan with no SUMMARY.md or owned commits is treated as blocked | Read-only specialists return their assigned cited evidence/report fields |
 | A phase is ticked without executing | The plans-without-summaries invariant is checked before routing | An advanced STATE.md position never overrides the artifacts on disk |
 | Required documentation is missing | Explicit obligations and summary coverage are checked | doc-verifier checks truth, not just file presence |
 | Verification becomes stale | The report's recorded revision is compared to HEAD | Materially changed behavior needs current independent evidence |

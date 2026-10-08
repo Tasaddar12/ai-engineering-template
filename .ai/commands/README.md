@@ -22,7 +22,7 @@ workflow performs every record mutation through the
 | [complete-milestone](complete-milestone.md) | Close a milestone and record what shipped | complete-milestone |
 | [milestone-summary](milestone-summary.md) | Explain a milestone to someone who was not there | milestone-summary |
 | [capture](capture.md) | Capture a todo, or review pending todos with `--list` | add-todo, check-todos |
-| [quick](quick.md) | Make one small change with a plan, commits and tracked state | quick |
+| [quick](quick.md) | Make one single-outcome change with a plan, commits and tracked state | quick |
 | [progress](progress.md) | Report where the project stands and recommend the next step | progress |
 | [next](next.md) | Detect state and advance to the next step | next |
 | [ship](ship.md) | Publish verified phase work as a pull request | ship |

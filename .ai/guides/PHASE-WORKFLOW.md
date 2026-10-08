@@ -95,12 +95,14 @@ the user rather than being approved to end the loop.
 ### Execute — `/execute-phase {N}`
 
 Groups plans into waves by dependency *and* by declared file overlap, then spawns a
-`coder` per plan — concurrently within a wave. The orchestrator waits: reading
-files or editing code while agents run conflicts with their edits.
+`coder` per plan - concurrently within a wave. The orchestrator keeps source
+writes with the plan owners; independent read-only checks may run against the
+same frozen revision and join before integration or acceptance.
 
-Checkpoints go to the user. A plan whose agent returned "complete" with no
-SUMMARY.md, or with no commits, did not complete. A `code-reviewer` reviews the
-result before the phase can close, and critical findings block.
+Checkpoints go to the user. A coder assigned to a plan who returns `complete`
+without a SUMMARY.md and owned commits did not complete. Read-only specialists
+return their assigned cited report without commits. A `code-reviewer` reviews
+the result before the phase can close, and critical findings block.
 
 **Execution requires explicit authorization.** Creating, discussing and planning a
 phase do not grant it.

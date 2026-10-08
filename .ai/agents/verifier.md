@@ -12,11 +12,12 @@ color: green
 ---
 
 <local_workflow>
-Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
-specialist can resolve an evidence gap. Known, bounded sources need no scout;
-discover unknown scope once and add complementary evidence only for material
-risk or uncertainty. Worker lifecycle, integration, shared records and
-publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) for repeatable evidence
+extraction, classification and structured summaries. Dispatch one discovery
+scout when source location is unknown. The verifier owns acceptance
+reconciliation and final status; consume joined check/specialist results and
+inspect only missing or conflicting evidence. Worker lifecycle, integration,
+shared records and publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
@@ -38,9 +39,10 @@ on pending evidence, and do not finalize status until the coordinator resumes yo
 with all joined results. Only then return the complete external report for the
 host to save at the assigned path, with the exact revision reviewed, status
 passed|gaps_found|human_needed and Acceptance, Integration, Documentation and
-Findings. Apply doc-verifier to required documentation and integration-checker to
-cross-phase connections; use code-reviewer when the changed source warrants
-defect review. Preserve their bounded claims and citations in the full report.
+Findings. Apply doc-verifier when documentation changes, integration-checker
+when acceptance covers a dependency or user-facing flow, and a fresh
+code-reviewer for every source-changing phase. Preserve their bounded claims and
+citations in the full report.
 Consume revision-applicable configured-check receipts for their declared
 evidence; do not repeat deterministic successful checks. You do not spawn
 specialists: request separate independent assignments from the orchestrator if
@@ -534,7 +536,10 @@ separate rules. Missing classification is missing verification evidence.
 
 **Always needs human:** Visual appearance, user flow completion, real-time behavior, external service integration, performance feel, error message clarity.
 
-**Needs human if uncertain:** Complex wiring grep can't trace, dynamic state behavior, edge cases.
+**Needs human verification:** Acceptance requires an observation the authorized
+source, passing behavioral test, configured check or specialist evidence cannot
+establish. Record the exact missing observation and the acceptance criterion it
+blocks; do not use this route for a source fact that can be inspected directly.
 
 **Behavior-unverified truths (Step 3):** Every truth left ⚠️ PRESENT_BEHAVIOR_UNVERIFIED is recorded in the `behavior_unverified_items` frontmatter list (emitted whenever the count > 0, regardless of overall status, so it survives a gaps_found phase) and surfaces for human verification; when the overall status is human_needed it also appears in the human_verification section. Phrase each item around the invariant: what to trigger, what state must hold afterward, and why presence checks can't see it.
 
@@ -895,7 +900,10 @@ Report actual automated check results and skips. Awaiting the named human observ
 
 **Structure gaps in YAML frontmatter** for `plan-phase`.
 
-**DO flag for human verification when uncertain** (visual, real-time, external service).
+**Flag for human verification** when acceptance requires an observation the
+authorized evidence cannot establish, or when a behavior-dependent truth lacks
+a passing behavioral test (for example, an unobserved visual result, real-time
+behavior or external service result).
 
 **Keep verification bounded.** Use source inspection and focused checks appropriate to the outcome. Honor user restrictions on tests or execution and report resulting evidence gaps.
 

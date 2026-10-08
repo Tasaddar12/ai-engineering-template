@@ -12,11 +12,12 @@ color: green
 ---
 
 <local_workflow>
-Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
-specialist can resolve an evidence gap. Known, bounded sources need no scout;
-discover unknown scope once and add complementary evidence only for material
-risk or uncertainty. Worker lifecycle, integration, shared records and
-publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) to route repeatable
+repository-fact extraction, classification and structured summaries to a
+read-only scout. Dispatch one discovery scout when source location is unknown.
+Phase-preparer owns plan decisions and plan authoring; use a scout for a named
+fact packet required by those decisions. Worker lifecycle, integration, shared
+records and publication remain coordinator-owned.
 
 Preparation never grants implementation permission. Do not start implementation
 or instruct the coordinator to auto-start: require the user's explicit instruction

@@ -1,6 +1,6 @@
 <!-- workflow
 step: verify
-agent-roles: orchestrator, verifier, integration-checker, doc-verifier
+agent-roles: orchestrator, verifier, integration-checker, doc-verifier, code-reviewer
 produces: {NN}-VERIFICATION.md
 consumes: PLAN.md, SUMMARY.md, CONTEXT.md, ROADMAP.md
 -->
@@ -215,9 +215,10 @@ read-only dispatch batch. Start the provisional verifier, each applicable
 specialist and configured checks together against the `frozen_revision` captured
 in `run_checks`; then wait for all results before reconciling evidence, accepting
 criteria or starting repairs.
-Verifier always runs. Add integration-checker only for dependencies or a
-user-facing flow, doc-verifier only when docs changed, and code-reviewer where
-the source-review gate requires it. Each specialist owns its bounded claims. The
+Verifier always runs. Add integration-checker when acceptance covers a
+dependency or user-facing flow, doc-verifier when documentation changed, and a
+fresh code-reviewer for every source-changing phase. Each specialist owns its
+bounded claims. The
 first verifier pass examines phase acceptance and source evidence provisionally;
 it cannot issue a final status until the coordinator resumes it with completed
 check and specialist results. Resolve conflicts or gaps with selective

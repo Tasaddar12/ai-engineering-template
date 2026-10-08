@@ -210,13 +210,16 @@ omit that argument and let the host choose.
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
 not spawn workers, switch branches, merge, publish or edit shared status.
 
-Use [scout dispatch](references/scout-dispatch.md) when an assignment has an
-evidence gap a bounded read-only specialist can resolve. Known, bounded work with
-clear sources needs no scout. Discover an unknown source area with one scout;
-dispatch complementary independent evidence only when risk or uncertainty calls
-for it. Workers may dispatch only `scout` children; the coordinator retains worker
-lifecycle, integration, shared records and publication. `scout` is a read-only
-leaf and does not dispatch children or write a SUMMARY.
+Source-changing workers commit their assigned changes and required SUMMARY.
+Read-only scouts and reviewers complete with their assigned cited evidence or
+report; they do not create commits or SUMMARY files.
+
+Use [scout dispatch](references/scout-dispatch.md) for the authoritative
+task/output routing table. Send one discovery scout when source location is
+unknown; send additional scouts only for separately named questions with distinct
+evidence outputs. Workers may dispatch only `scout` children; the coordinator
+retains worker lifecycle, integration, shared records and publication. `scout`
+is a read-only leaf and does not dispatch children or write a SUMMARY.
 
 Plan ownership uses exact repository-relative paths or directory prefixes ending
 in `/`, without traversal, globs or whole-repository scope. Plans that declare
@@ -369,8 +372,10 @@ Inspect what it committed, what it left dirty and what it reported, then assign
 only the remaining work to a fresh bounded agent. Preserve incomplete work, reuse
 valid completed results, and keep independent ready plans moving.
 
-A plan whose agent reported "complete" with no SUMMARY.md, or with no commits,
-did not complete. Treat it as blocked and say so rather than ticking it.
+A source-changing plan assignment whose agent reports `complete` without its
+required SUMMARY.md and owned commits is blocked. A read-only assignment reports
+`complete` with its assigned evidence packet or report and creates no commit or
+SUMMARY.md; judge it by those required fields.
 
 The lowest-numbered phase whose plan files outnumber its summary files has
 unfinished execution. [progress](commands/progress.md) and [next](commands/next.md)
