@@ -83,3 +83,32 @@ Assigned root/branch/base verified; source module, tests and summary exist;
 focused test evidence and diff checks recorded above. Only the three owned files
 are staged for the slice commit; the coordinator receives its actual SHA in the
 worker completion report.
+
+## Linux fixture repair
+
+The coordinator supplied Linux CI `c9b92fe` failure evidence: the combined
+scope/cache symlink test attempted to create `.git/ai-phase` as a symlink after
+its earlier rejected scope capture had already created that directory to acquire
+the cache lock. This was a test-fixture collision (`FileExistsError`), not evidence
+of failed production symlink rejection.
+
+Split the two scenarios into separate unittest methods, each initialized in a
+fresh real temporary Git repository. The scope test asserts its specific
+`unsafe-evidence-path` failure and the expected bookkeeping directory created by
+the rejected capture. The cache-link test asserts its destination is absent
+before link creation, then asserts `unsafe-evidence-path` and an untouched link
+target. No fixture deletion, production changes or Linux coverage skip was added.
+
+Validation: `python -m unittest discover -s tests -p test_evidence_cache.py -v`
+ran 15 tests in 22.192s: OK, two native symlink scenarios skipped on this Windows
+host with WinError 1314; the other 13 passed. The fresh-cache destination assertion
+runs before the Windows privilege skip. Linux CI must rerun both enabled native
+symlink scenarios. The initial test command dispatch hit an automatic permission
+review deadline; the permitted retry succeeded and ran the suite above.
+
+Repair ownership: only `tests/test_evidence_cache.py` and this summary, on the
+same `phase-parallel-artifacts` branch starting from `e415dabfadc4c855449e37ac5aada31c18a8b354`.
+No push, merge or shared planning-record changes. Coordinator next action:
+integrate this fixture repair and rerun Linux CI with the separately assigned
+pipeline fixes. Self-check: both owned files exist, focused results recorded,
+assigned root/branch verified, and only these two files staged for this repair.

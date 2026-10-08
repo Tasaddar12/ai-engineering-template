@@ -243,21 +243,35 @@ class EvidenceCase(unittest.TestCase):
             with self.assertRaises(VerbError):
                 evidence.invalidate(self.repo, {"artifact_id": artifact_id, "reason": "unsafe"})
 
-    def test_symlinks_in_scope_and_cache_reject(self):
+    def test_symlinks_in_scope_reject(self):
         source = self.repo / "src" / "link.txt"
         try:
             source.symlink_to(self.repo / "config.json")
         except OSError as exc:
             self.skipTest("host cannot create symlinks: " + str(exc))
-        with self.assertRaises(VerbError):
+        with self.assertRaises(VerbError) as rejected:
             self.store()
+        self.assertEqual(rejected.exception.code, "unsafe-evidence-path")
+        # Capture acquires the cache lock before inspecting scope. The rejected
+        # input therefore leaves bookkeeping, which must not be used as a fresh
+        # symlink destination by a subsequent cache-path scenario.
+        self.assertTrue((self.repo / ".git" / "ai-phase").is_dir())
         source.unlink()
+
+    def test_symlinked_cache_reject(self):
+        # unittest setUp supplies a fresh real repository for this independent
+        # scenario; no preceding scope-capture attempt has created ai-phase.
         cache = self.repo / ".git" / "ai-phase"
+        self.assertFalse(cache.exists(), "cache-link scenario needs a fresh repository")
         outside = self.temp / "outside"
         outside.mkdir()
-        cache.symlink_to(outside, target_is_directory=True)
-        with self.assertRaises(VerbError):
+        try:
+            cache.symlink_to(outside, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest("host cannot create symlinks: " + str(exc))
+        with self.assertRaises(VerbError) as rejected:
             self.store()
+        self.assertEqual(rejected.exception.code, "unsafe-evidence-path")
         self.assertEqual(list(outside.iterdir()), [])
 
     def test_concurrent_process_writers_preserve_every_packet_and_invalidation(self):
