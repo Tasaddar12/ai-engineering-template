@@ -133,7 +133,8 @@ agents:
     effort: medium
 
 verification:
-  # The project's real checks, as argv lists without a shell. Run by
+  # The project's real checks, as argv lists/legacy strings without a shell, or
+  # mappings documented in .ai/runtime/README.md. Run by
   # `phase_run query verification.run-checks` during execute, verify and ship.
   #
   # CHANGEME: this is empty until onboarding configures actual commands. While it
@@ -142,3 +143,16 @@ verification:
   commands: []
     # - [python, -m, unittest, discover, -s, tests, -v]
     # - [npm, test, --, --run]
+    # - command: [python, -m, unittest, discover, -s, tests, -v]
+    #   independent: true    # only checks explicitly known to be independent
+    #   resources: [test-db]  # shared names serialize checks within one run
+    #   sources: [src, tests, requirements.txt]  # literal files/directories
+    #   environment: [PATH, PYTHONPATH]  # omit to fingerprint all inherited vars
+    #   timeout: 600
+    #   revision: true       # optional exact-HEAD key in addition to sources
+    #   reuse: false         # optional for volatile/external-state checks
+  # Passing, intact receipts are reused only when their inputs match. Logs and
+  # receipts live in .planning/verification-receipts/, never planning reports.
+  reuse: true
+  # Caps consecutive independent mappings; legacy/default checks are serial.
+  max_parallel: 4

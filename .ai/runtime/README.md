@@ -228,7 +228,7 @@ and assignment/result fields are in [scout dispatch](../references/scout-dispatc
 | `agents.list` / `skills.list` | What is installed |
 | `verification.status <phase>` | Whether a verification report exists, and what it concluded |
 | `verification.resolve-file <phase>` | The path a verifier should write |
-| `verification.run-checks` | Run `verification.commands` from config and report each result |
+| `verification.run-checks` | Run configured checks or reuse matching passing receipts, retaining full logs |
 | `config-get <dotted>` / `config-set <dotted> <value>` | Read or write `.planning/config.yaml` |
 | `commit <message> --files ...` | Stage the named paths and commit, honouring `commit_docs` |
 | `git.base-branch` | The repository's default branch |
@@ -290,6 +290,7 @@ runtime/
     todos.py        captured todos and phase matching
     quick.py        quick tasks outside the roadmap
     verification.py verification reports and configured project checks
+    verification_checks.py reusable check receipts and bounded independent checks
     models.py       agent, model and skill resolution for dispatch
     worktrees.py    isolation resolution, wave integration and cleanup
     bundles.py      the init.* context bundles
@@ -337,12 +338,98 @@ agents:
     model: sonnet          # Claude worker model alias
     effort: high           # low | medium | high | xhigh | max
 verification:
-  commands: []             # argv lists; run by verification.run-checks
+  commands: []             # argv lists/strings or mappings; verification.run-checks
+  reuse: true              # false forces every check to execute
+  max_parallel: 4          # only explicitly independent checks can overlap
 ```
 
 `verification.commands` is empty in the template. An adopting project configures
 its real checks during onboarding; until then, verification rests on reading
 alone and the verification report must say so.
+
+### Check receipts and independent checks
+
+Legacy strings retain whitespace splitting; argv lists preserve arguments exactly.
+Commands run without a shell, from the repository root. Legacy entries and mappings
+without `independent: true` execute serially and form barriers between independent
+blocks. Results always follow configuration order. Each independent block joins
+before the next barrier, and all checks join before the aggregate result is returned.
+
+Mappings add optional precision and scheduling declarations:
+
+```yaml
+verification:
+  reuse: true
+  max_parallel: 4
+  commands:
+    - command: [python, -m, unittest, discover, -s, tests, -v]
+      sources: [src, tests, requirements.txt]  # literal relative files/directories
+      environment: [PATH, PYTHONPATH]         # relevant inherited variable names
+      independent: true
+      resources: [test-db]                    # common names prevent overlap
+      timeout: 600                           # positive seconds; default 600
+      revision: true                         # additionally require exact Git HEAD
+      reuse: false                           # optional; rerun this volatile check
+```
+
+Omitting `sources` fingerprints the content, mode, names and deletion state of
+all Git-tracked and nonignored untracked files, including tracked planning reports.
+Explicit source directories include ignored files and new files beneath them.
+Source declarations must cover every input the command consumes, including imported
+code, configuration, lockfiles and any ignored dependency trees used by the check.
+They are literal repository-relative paths; traversal, absolute paths, Git metadata
+and receipt storage are rejected. Source symlinks must point to files inside the
+repository; unsupported special files, directory symlinks and Git submodules prevent
+a conclusive snapshot result.
+
+Omitting `environment` fingerprints every inherited environment variable; an
+explicit list declares the variables relevant to that check, including missing
+values. Values are hashed rather than copied into receipt inputs. Every child
+receives the same captured environment. Receipt keys also include the entire
+verification configuration, exact argv and timeout, repository location, runtime
+implementation/platform/Python identity and the resolved executable's content.
+An executable whose identity cannot be read is never eligible for reuse.
+Commands dependent on undeclared external state, such as network services, should
+use `reuse: false` on their mapping, or disable reuse for the entire verification
+configuration. A stamp file in `sources` or a stamp variable in `environment` can
+bind a check to a project-managed dependency/environment identity. Ignore rules
+exclude generated data and dependencies from the default source key; checks that
+consume those inputs must declare them explicitly or disable reuse. Precision
+declarations are a project-owned input contract.
+
+The runtime captures the integrated source fingerprint before scheduling and checks
+it before/after executions and after the join. Explicit source inputs are checked
+too, including ignored dependencies. Execution guards also compare file timestamps
+and identities, so rewriting a source back to its original content invalidates
+that run without preventing later content-based reuse. Any observed source mutation or unavailable
+fingerprint invalidates the batch: `snapshot_valid: false` and `passed: false`.
+This guards a checkout that remains frozen throughout checking; it does not lock
+out other processes or detect changes whose content and filesystem metadata are
+restored entirely between snapshots.
+Resource names prevent conflicts within this invocation; independent runtime
+invocations need their own external isolation. Checks should write generated output
+to ignored paths and avoid changing their source inputs.
+
+Local `.planning/verification-receipts/` stores JSON receipts and unique full
+stdout/stderr logs. It is gitignored by the template; runtime initialization also
+creates a local `*` ignore file inside the store for installed projects. It is
+excluded from source fingerprints independently of those ignore rules. Receipts record the
+original `tested_revision`, hashed inputs, result and full log hashes. Matching
+passing evidence can be reused across revisions with identical relevant content;
+`revision: true` also binds the key to HEAD. Missing, malformed, corrupt or
+hash-mismatched receipts/logs are cache misses. Failures and timeouts retain their
+logs and receipts, and execute again on the next invocation. Log filenames are never
+reused by the runtime. Receipts are local evidence, not a replacement for phase
+verification reports, human judgments or publication gates.
+
+The existing `command`, `exit_code`, `passed`, `stdout_tail` and `stderr_tail`
+result fields remain; tails are at most 2,000 characters. Each check also returns
+`reused`, `receipt`, `stdout_log`, `stderr_log`, `tested_revision` and
+`snapshot_valid`. Errors add `error`. The batch returns its current `tested_revision`
+and `snapshot_valid`; reused checks retain their original tested revision. Full
+output is read from log paths only when needed. `configured: false` remains the
+empty-command result. JSON `ok` still reports successful runtime invocation;
+callers must inspect aggregate/check `passed` to judge command outcomes.
 
 ## Codex project concurrency
 

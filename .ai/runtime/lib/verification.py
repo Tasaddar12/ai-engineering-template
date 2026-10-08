@@ -1,5 +1,4 @@
 """Phase verification records and configured project checks."""
-import subprocess
 
 from .config import get as config_get
 from .paths import read_text
@@ -7,6 +6,7 @@ from .phases import find_directory
 from .results import VerbError, require
 from .roadmap import display_number, pad
 from .text import split_frontmatter
+from .verification_checks import normalise, run
 
 STATUSES = ("passed", "gaps_found", "human_needed")
 CHECK_TIMEOUT = 600
@@ -51,38 +51,13 @@ def resolve_file(workspace, number):
 
 def configured_checks(workspace):
     commands = config_get(workspace, "verification.commands", []) or []
-    normalised = []
-    for command in commands:
-        if isinstance(command, str):
-            normalised.append(command.split())
-        elif isinstance(command, (list, tuple)):
-            normalised.append([str(part) for part in command])
-        else:
-            raise VerbError("verification.commands entries must be strings or lists",
-                            "bad-config")
-    return normalised
+    return normalise(commands, CHECK_TIMEOUT)
 
 
 def run_checks(workspace):
-    """Run the project's configured verification commands."""
+    """Run configured checks, reusing only matching, intact passing evidence."""
     commands = configured_checks(workspace)
     if not commands:
         return {"configured": False, "checks": [],
                 "note": "verification.commands is empty in .planning/config.yaml"}
-    results = []
-    for command in commands:
-        try:
-            completed = subprocess.run(command, cwd=str(workspace.root), capture_output=True,
-                                       text=True, timeout=CHECK_TIMEOUT)
-            results.append({
-                "command": command,
-                "exit_code": completed.returncode,
-                "passed": completed.returncode == 0,
-                "stdout_tail": completed.stdout[-2000:],
-                "stderr_tail": completed.stderr[-2000:],
-            })
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            results.append({"command": command, "exit_code": None, "passed": False,
-                            "error": str(exc)})
-    return {"configured": True, "checks": results,
-            "passed": all(item["passed"] for item in results)}
+    return run(workspace, commands, config_get(workspace, "verification", {}), CHECK_TIMEOUT)
