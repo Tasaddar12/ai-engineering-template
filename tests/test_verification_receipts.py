@@ -21,11 +21,15 @@ counter = out / (name + ".count")
 counter.write_text(str(int(counter.read_text()) + 1 if counter.exists() else 1))
 start = time.time()
 if mode == "parallel":
+    peer = sys.argv[3]
     (out / (name + ".started")).write_text("yes")
-    deadline = time.time() + 5
-    while not (out / (sys.argv[3] + ".started")).exists():
-        if time.time() > deadline: sys.exit(3)
-        time.sleep(0.02)
+    deadline = time.monotonic() + (float(sys.argv[4]) if len(sys.argv) > 4 else 5)
+    for signal in ("started", "observed-peer"):
+        while not (out / (peer + "." + signal)).exists():
+            if time.monotonic() > deadline: sys.exit(3)
+            time.sleep(0.02)
+        if signal == "started":
+            (out / (name + ".observed-peer")).write_text(peer)
 if mode == "resource":
     lock = out / "resource.lock"
     with lock.open("x") as handle: handle.write(name)
@@ -304,8 +308,18 @@ class ReceiptTests(unittest.TestCase):
         result = self.run_checks()
         self.assertTrue(result["passed"], result)
         self.assertEqual([c["command"][2] for c in result["checks"]], ["a", "b"])
-        a, b = [json.loads((self.root / ".generated" / (name + ".interval")).read_text()) for name in ("a", "b")]
-        self.assertLess(max(a[0], b[0]), min(a[1], b[1]))
+        # Both commands must observe the peer's start and acknowledgement before
+        # either may exit; proof does not depend on wall-clock timestamp precision.
+        for name, peer in (("a", "b"), ("b", "a")):
+            self.assertEqual((self.root / ".generated" / (name + ".observed-peer")).read_text(), peer)
+
+    def test_parallel_handshake_rejects_serial_execution(self):
+        self.configure([{"command": self.command("a", "parallel", "b", "0.25"), "independent": True},
+                        {"command": self.command("b", "parallel", "a", "0.25"), "independent": True}],
+                       max_parallel=1)
+        result = self.run_checks()
+        self.assertFalse(result["passed"])
+        self.assertEqual([check["exit_code"] for check in result["checks"]], [3, 3])
 
     def test_shared_resources_prevent_overlap(self):
         self.configure([{"command": self.command(name, "resource"), "independent": True,

@@ -224,3 +224,27 @@ not this subsequent review repair. Final root/branch guard, exact owned staging,
 commit/deletion check and clean status check precede the repair handoff. No repair
 blocker remains; broader integrated validation and independent acceptance remain
 the coordinator's responsibility.
+
+## Windows CI Synchronization Test Repair
+
+The coordinator supplied the Windows CI failure from run `37792629390` at
+integrated revision `ea9d3c14`: the overlap test compared two equal wall-clock
+timestamps, while the other 410 tests passed. This test-only repair started from
+clean worker revision `35694a62cc664ff533679c10dddb142ad3d6b337` on the pinned
+`codex/workflow-efficiency-runtime-fixes` branch. Runtime sources were unchanged.
+
+The existing subprocess fixture now performs a two-stage file handshake. Each
+check announces its start, observes its peer's start, writes an acknowledgement
+and waits for the peer's acknowledgement before exiting. The overlap assertion
+checks both acknowledgements rather than comparing wall-clock intervals. A new
+negative test sets `max_parallel: 1` and confirms both checks time out with exit
+code 3; serial execution therefore cannot satisfy the concurrency proof. Bounded
+monotonic deadlines limit fixture waiting, but timestamps do not prove overlap.
+
+Validation: `python -m unittest discover -s tests -p test_verification_receipts.py -k independent -k resource -k barrier -k joined_failure -k parallel_handshake -v`
+passed all six selected scheduling/resource/barrier/join tests in 9.503s on
+Windows. `git diff --check` was clean. Only the owned test and this appended
+SUMMARY changed; no runtime, CI or additional harness infrastructure was altered.
+Root/branch guard, exact owned staging, commit, deletion check and clean status
+are performed before handoff. No implementation blocker remains; the coordinator
+will integrate the actual returned repair commit and rerun CI.
