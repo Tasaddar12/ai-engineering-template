@@ -21,3 +21,24 @@ PR56 check receipts will be inspected for compatibility rather than copied whole
 
 Validation: focused subprocess tests, the repository unittest aggregate and four
 hook suites; GitHub Linux/Windows validation. No engine, Docker or model benchmark runs.
+
+Concrete implementation contract (independent planning-review amendments):
+- Register full resolved base/head SHAs, plan/chunk IDs, declared owned paths and
+  deletions, dependency IDs, acceptance IDs and checks; reject unsafe paths,
+  unsupported ancestry and out-of-scope changes.
+- Prepare separate detached reviewer/test snapshots at the registered SHA; validate
+  Git/common-directory identity and reject dirty or revision-mismatched results.
+- Require assignment/chunk IDs, SHA, complete acceptance/scope coverage, explicit
+  status, findings/evidence/provenance. Imported reports never claim runtime execution.
+- Dependent work requires integrated prerequisite and passing applicable gates;
+  summary existence alone cannot satisfy it. Path and named resource conflicts block
+  linked work only. Status returns ready/wait/blocked with explicit reasons.
+- Common-repository runtime state uses serialized atomic persistence. Preserve failed
+  attempts. Corrupt, partial, missing and stale evidence cannot pass.
+- Content-address reusable packets by schema, question/task class, exact scope,
+  acceptance, relevant byte hashes and provenance; revalidate bytes before reuse.
+- Passing check receipts bind argv, working directory, exact SHA by default,
+  configured inputs and explicit environment identity; cross-revision reuse requires
+  a complete declared input contract. Empty, skipped, failed and timeout checks never pass.
+- Chunk review/test evidence is provisional; final integrated verification independently
+  checks correctness, security, docs/integration and configured aggregate gates.
