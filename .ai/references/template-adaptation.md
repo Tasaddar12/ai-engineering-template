@@ -33,7 +33,7 @@ preserve full instructions; they are not a license to shorten a template.
 | PLAN | `NN-CC-PLAN.md` is the bounded component prompt within a phase | Keep each assignment attached to its phase |
 | Execution metadata | Add the documented [runtime extensions](../runtime/TEMPLATE-CONTRACT.md) to the full artifact | Preserve recorded authorization, exact ownership, command arguments, documentation coverage and revision evidence |
 | Configuration | `.planning/config.yaml` configures the Python runtime; no JSON configuration template is supplied | Upstream settings cannot silently configure a different runtime |
-| Waves | Keep wave metadata and dependency planning guidance; the Python scheduler releases each component after its own integrated and checked prerequisites | Unrelated components need no global wave barrier |
+| Waves | Keep dependency and file-overlap wave metadata; the coordinator integrates and checks each eligible wave before dispatching the next, with independent work concurrent within a wave | `phase-plan-index` and execute-phase preserve ordered waves, ownership and resource conflicts |
 | Source versus current behavior | Phase `NN-SPEC.md` uses upstream `spec.md`; `.planning/specs/SPEC-*.md` uses `CURRENT-SPEC.md` | Proposed requirements must not masquerade as verified current behavior |
 | Checkpoints | Preserve checkpoint tasks and human observations; ask when a real decision or human-only check is needed | Existing authorization persists; repeated approval prompts are not progress |
 | Verification | Tests, source inspection and observed outcomes support claims; text checks only prove textual conditions | A matching string does not establish connected behavior |

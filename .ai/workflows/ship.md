@@ -244,6 +244,38 @@ Critical findings block the PR. Fix them, re-verify, and start again — do not
 publish with a known critical finding and a note about it.
 </step>
 
+<step name="prepare_shipping_record">
+Before final reconciliation, commit the truthful pre-publication session status.
+The PR URL does not exist yet; do not claim the phase shipped or add an invented
+URL. The session's `pr.open` metadata records the actual PR after push.
+
+If STATE already records `Preparing publication` for this same session branch,
+skip the redundant record/commit and proceed to final reconciliation. A repeated
+ship run must not create a no-op lifecycle commit merely to refresh verification.
+
+```bash
+phase_run query state.record-session \
+  --stopped-at "Preparing publication for phase ${phase_number} on ${SESSION_BRANCH}" \
+  --status "Preparing publication"
+phase_run query commit "docs(state): prepare phase ${phase_number} publication" \
+  --files .planning/STATE.md
+```
+</step>
+
+<step name="final_reconciliation">
+The bookkeeping commit changes HEAD, so capture its new revision and reconcile
+again before pushing. Start `verification.run-checks` and the read-only verifier
+together on that exact revision. Reuse only valid receipts; rerun checks whose
+declared inputs, environment, configuration or revision binding no longer
+matches. The verifier reviews the actual STATE record diff, the phase goal and
+source evidence. Join all check and verifier results before accepting. The
+coordinator preserves the revision the verifier actually reviewed, writes the
+tracked phase report, and commits only that report as the last local write.
+Apply the shared [verification evidence lifecycle](../references/verification-evidence.md).
+If this reconciliation is not `passed`, stop before push. A source repair
+requires a fresh `/verify-work` cycle before another push attempt.
+</step>
+
 <step name="push_branch">
 **Skip when `--no-push` was passed.**
 
@@ -354,9 +386,13 @@ exactly as observed:
 1. Read each failing run's log: `gh run view <run-id> --log-failed`
 2. Dispatch one `debugger` with `isolation="worktree"`, giving it the failing
    check names, the log excerpts and the session branch.
-3. From the session worktree: `git merge --ff-only <debugger-branch>`, then
-   `git push`.
-4. Run `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240` again.
+3. From the session worktree, integrate the fix. Do not push yet: the source
+   change invalidates verification for this branch.
+4. Invoke `/verify-work {phase_number}` in ship-repair/return-to-caller mode.
+   Re-run local checks and final reconciliation on the repaired revision; do not
+   repeat success bookkeeping or auto-start another `/ship`.
+5. Only after it returns `passed`, push the repaired branch and judge the exact
+   new tip with `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240`.
 
 Still failing after round 2: report it with its logs as the blocker.
 </step>
@@ -393,20 +429,10 @@ reason it was kept is the reason not to delete it.
 </step>
 
 <step name="track_shipping">
-Record the publication against the phase:
-
-```bash
-phase_run query state.record-session \
-  --stopped-at "Phase ${phase_number} shipped: ${pr_url}" \
-  --status "Shipped"
-phase_run query state.add-decision "Phase ${phase_number} published as ${pr_url}"
-phase_run query commit "docs(state): record phase ${phase_number} publication" \
-  --files .planning/STATE.md
-```
-
-**Run this from the session worktree, before the merge gate**, so the record
-travels in the pull request it describes. Once the session is merged and closed
-its worktree is gone, and a commit made after that has nowhere to land.
+The pre-publication session status was committed before final reconciliation.
+After `pr.open`, use its returned URL/session metadata in the user-facing report;
+do not add a tracked post-push bookkeeping commit, which would make verification
+stale. Report the observed publication outcome accurately.
 </step>
 
 <step name="report">

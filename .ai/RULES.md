@@ -185,9 +185,12 @@ approved specifications or actual user instructions. Use the
 ## Orchestration and handoffs
 
 The orchestrator owns routing, phase records and integration. It spawns agents
-with fresh context for bounded work, and it does not do that work itself: a
-workflow that reads files, edits code or runs tests while an agent is active
-conflicts with the agent it dispatched.
+with fresh context for bounded work, and it does not do that work itself. Do not
+edit or integrate files owned by an active write-capable worker. A frozen
+read-only verification batch is different: configured checks and independent
+read-only specialists may inspect the same captured revision concurrently, and
+the coordinator waits for every result before accepting evidence, editing files
+or starting repairs.
 
 Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,

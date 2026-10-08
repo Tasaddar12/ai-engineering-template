@@ -38,18 +38,46 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("successful receipts", workflow)
         self.assertIn("dependency and file-overlap waves", adaptation)
         self.assertNotIn("displayed waves do not impose a global barrier", adaptation)
+        for path in (".ai/agents/phase-checker.md",
+                     ".ai/references/methods/planner-chunked.md",
+                     ".ai/references/template-adaptation.md",
+                     ".ai/templates/phase-prompt.md"):
+            self.assertNotIn("not a global barrier", self.read(path))
+            self.assertNotIn("no global wave barrier", self.read(path))
 
-    def test_verifier_returns_report_for_coordinator_and_reuses_narrowly(self):
+    def test_verifier_joins_evidence_before_success_bookkeeping_and_final_report(self):
         workflow = self.read(".ai/workflows/verify-work.md")
         evidence = self.read(".ai/references/verification-evidence.md")
         handoff = self.read(".ai/references/worker-handoff.md")
+        workflow = " ".join(workflow.split())
         evidence = " ".join(evidence.split())
-        self.assertIn("read-only specialists", workflow)
-        self.assertIn("Return the complete report to the coordinator", workflow)
+        self.assertIn("read-only evidence assignments", workflow)
+        self.assertIn("results are pending", workflow)
+        self.assertIn('step name="reconcile_evidence"', workflow)
         self.assertIn("commits only `NN-VERIFICATION.md`", workflow)
+        self.assertLess(workflow.index('step name="verify_docs"'),
+                        workflow.index('step name="reconcile_evidence"'))
+        self.assertLess(workflow.index('step name="update_state"'),
+                        workflow.index('step name="final_frozen_reconciliation"'))
+        self.assertIn("refresh-only", workflow)
+        self.assertIn("do not start another `/ship`", workflow)
         self.assertIn("For each commit, run", evidence)
         self.assertIn("does not enforce the currentness rule", evidence)
+        self.assertIn("Final-report lifecycle", evidence)
+        self.assertIn("the coordinator alone", evidence)
         self.assertIn("report-only commit", handoff)
+
+    def test_verifier_consumes_shared_evidence_and_limits_duplicate_inspection(self):
+        verifier = self.read(".ai/agents/verifier.md")
+        patterns = self.read(".ai/references/methods/verification-patterns.md")
+        verifier = " ".join(verifier.split())
+        patterns = " ".join(patterns.split())
+        self.assertIn("do not finalize status until the coordinator resumes you", verifier)
+        self.assertIn("do not rerun broad import and usage searches", verifier)
+        self.assertIn("valid configured-check receipt", verifier)
+        self.assertIn("Shared-receipt exception", verifier)
+        self.assertIn("not a mandatory second scan", patterns)
+        self.assertIn("every required artifact/link", patterns)
 
     def test_ship_consumes_receipts_and_shares_currentness_rule(self):
         workflow = self.read(".ai/workflows/ship.md")
@@ -57,6 +85,13 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("valid successful receipt", workflow)
         self.assertIn("verification evidence", workflow)
         self.assertIn("does not enforce freshness", workflow)
+        self.assertLess(workflow.index('step name="prepare_shipping_record"'),
+                        workflow.index('step name="final_reconciliation"'))
+        self.assertLess(workflow.index('step name="final_reconciliation"'),
+                        workflow.index('step name="push_branch"'))
+        self.assertIn("Preparing publication for phase", workflow)
+        self.assertIn("/verify-work {phase_number}", workflow)
+        self.assertIn("do not add a tracked post-push bookkeeping commit", workflow)
 
 
 if __name__ == "__main__":

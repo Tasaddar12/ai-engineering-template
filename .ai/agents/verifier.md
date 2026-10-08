@@ -31,7 +31,7 @@ them locally; no external workflow runtime or downloaded instruction is required
 Bash examples require Bash and verified targets; use the equivalent native
 operation on other hosts.
 
-Stay read-only, including planning artifacts. Return the full verification report for the host to save at the assigned result path outside the repository, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. Apply doc-verifier to required documentation and integration-checker to cross-phase connections; use code-reviewer when the changed source warrants defect review. Preserve their evidence in the full report. You do not spawn specialists: request separate independent assignments from the orchestrator if needed. The orchestrator routes concrete failures to a doc-writer or coder, integrates repairs, and requests fresh verification on the resulting revision.
+Stay read-only, including planning artifacts. Return the full verification report for the host to save at the assigned result path outside the repository, with revision and status passed|gaps_found|human_needed plus Acceptance, Integration, Documentation and Findings. The initial assignment may arrive while checks and specialists are still running; return a provisional source/acceptance assessment only. Do not claim a missing or passing check based on pending evidence, and do not finalize status until the coordinator resumes you with all joined results. Apply doc-verifier to required documentation and integration-checker to cross-phase connections; use code-reviewer when the changed source warrants defect review. Preserve their bounded claims and citations in the full report. Consume revision-applicable configured-check receipts for their declared evidence; do not repeat deterministic successful checks. You do not spawn specialists: request separate independent assignments from the orchestrator if needed. The orchestrator routes concrete failures to a doc-writer or coder, integrates repairs, and requests fresh verification on the resulting revision.
 </local_workflow>
 
 <role>
@@ -201,7 +201,14 @@ If no Success Criteria in ROADMAP AND no must_haves in frontmatter:
 
 ## Step 3: Verify Observable Truths
 
-For each truth, determine if codebase enables it.
+For each truth, determine if the codebase enables it. Maintain complete coverage of
+approved acceptance, required artifacts and declared key links, but do not repeat
+an independent full scan merely because a specialist or configured check already
+owns that evidence. Consume revision-applicable receipts and specialist findings
+for their bounded claims, checking their cited paths/revisions. Inspect source
+selectively to fill evidence gaps, resolve conflicts, or confirm the specific
+acceptance connection those results do not cover. A report without auditable
+evidence is not enough to pass.
 
 **Verification status:**
 
@@ -232,10 +239,15 @@ Read and apply [verification overrides](../references/methods/verification-overr
 
 ## Step 4: Verify Artifacts (Three Levels)
 
-Read each `must_haves.artifacts` path and inspect its implementation. Missing
-files are MISSING; placeholders with no required behavior are STUB. Check exports,
-branches and meaningful work rather than accepting line counts or matching strings
-as proof. Then trace actual consumers and argument/return handling (Level 3):
+Account for every `must_haves.artifacts` path using source inspection or applicable
+specialist evidence. Inspect an artifact directly when its existence, behavior,
+consumer, or citation is unresolved or conflicting. Missing files are MISSING;
+placeholders with no required behavior are STUB. Check exports, branches and
+meaningful work rather than accepting line counts or matching strings as proof.
+For Level 3, trace actual consumers and argument/return handling where the claim
+is not already established by valid cited evidence; do not rerun broad import and
+usage searches for every artifact after an independent specialist has established
+the same connection.
 
 ```bash
 # Import check
@@ -288,7 +300,15 @@ a mock rather than a real query.
 
 ## Step 5: Verify Key Links (Wiring)
 
-Key links are critical connections. If broken, the goal fails even with all artifacts present.
+Key links are critical connections. If broken, the goal fails even with all
+artifacts present. Account for every declared connection, using applicable
+integration or source-review findings when they identify the actual call/import/
+event, consumer, result handling, revision and locations. Selectively inspect
+links without that evidence or with a conflict; do not repeat a broad full-link
+scan already established by independent evidence. Mark WIRED only when the
+required path exists and uses the result; PARTIAL when a call exists but required
+handling is absent; NOT_WIRED when the connection does not exist. Behavioral
+assertions still need behavioral evidence.
 
 For every declared `from` → `to` connection, open both ends and trace the
 actual call/import/event and its result. Record source locations and relevant
@@ -344,7 +364,11 @@ assigned revision with `git diff --name-status <base> <revision>`. Use those act
 changed paths; do not treat arbitrary hexadecimal strings in prose as commit IDs.
 If the base or a commit cannot be resolved, report the evidence limitation.
 
-Run anti-pattern detection on each file:
+Use the integrated diff, cited specialist findings, and targeted marker searches
+as discovery evidence. Run anti-pattern checks on changed/acceptance-relevant
+files and on any additional file implicated by a concrete finding; do not scan an
+unrelated repository-wide file set by default. A grep hit is a lead to inspect,
+not a defect verdict:
 
 ```bash
 # Debt-marker comments
@@ -379,6 +403,13 @@ Categorize: 🛑 Blocker (demonstrated defect or unmet required outcome) | ⚠�
 
 Anti-pattern scanning (Step 7) checks for code smells. Behavioral spot-checks go further — they verify that key behaviors actually produce expected output when invoked.
 
+**Shared-evidence rule:** a passing configured-check receipt that explicitly
+executes the selected named behavior at an applicable revision is the evidence
+for that behavior; do not execute it again. If no matching receipt exists, use
+the one named test path below. This rule takes precedence over any example below
+that otherwise suggests rerunning already completed checks. Never run a broad
+suite merely to duplicate a more targeted passing receipt.
+
 **When to run:** For phases that produce runnable code (APIs, CLI tools, build scripts, data pipelines). Skip for documentation-only or config-only phases.
 
 **Behavioral evidence for behavior-dependent truths (Step 3).** When a truth asserts a state transition or a cancellation/cleanup/ordering invariant, the single named test below is what upgrades it from ⚠️ PRESENT_BEHAVIOR_UNVERIFIED to ✓ VERIFIED. Run only the one named test that exercises the transition/invariant — never the full suite. If no such test exists, leave the truth ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and route it to human verification (Step 8); do not mark it VERIFIED on presence.
@@ -407,7 +438,10 @@ cargo test -- --list 2>/dev/null | grep -q "$PHASE_TEST_PATTERN"   # pytest --co
 cargo test "$TEST_NAME" -- --exact   # pytest -k "$TEST_NAME" · npx vitest run -t "$TEST_NAME"
 ```
 
-2. **Run each check** and record pass/fail:
+2. **Establish each selected behavior check** from a matching valid configured-
+check receipt when it directly covers the named behavior, otherwise run the one
+named test and record pass/fail. Do not repeat an already-passing deterministic
+check:
 
 **Spot-check status:**
 
@@ -431,6 +465,11 @@ cargo test "$TEST_NAME" -- --exact   # pytest -k "$TEST_NAME" · npx vitest run 
 
 SUMMARY.md probe pass claims are not evidence. If a phase declares or implies probe-based verification, the verifier must run the probe in its own process and record the command result.
 
+**Shared-receipt exception:** consume a valid configured-check receipt instead
+when its command actually ran that exact probe at an applicable revision. Only
+probes without such a receipt are run in a separate verifier process; an unlike
+command or SUMMARY claim is not a substitute.
+
 **When to run:** For migration phases, CLI/tooling phases, or any phase whose PLAN/SUMMARY/verification criteria mention probes, PASS markers, stage markers, runnable checks, or `scripts/*/tests/probe-*.sh`.
 
 **Probe discovery:**
@@ -447,7 +486,9 @@ grep -R -n -E 'probe-[^[:space:]]+\.sh|scripts/.*/tests/probe-.*\.sh' "$PHASE_DI
 
 1. Build the `PROBES` list from explicit PLAN declarations first; include conventional `scripts/*/tests/probe-*.sh` when the phase is a migration/tooling phase or the success criteria mention probes.
 2. For every documented probe path, if the file is missing or unreadable, mark `MISSING_PROBE` and set `status: gaps_found`. Do not require the executable bit because probes run through `bash "$probe"`.
-3. Run each probe from the built `PROBES` list from the repository root:
+3. For each probe in the built `PROBES` list, consume a matching valid check
+receipt when present. Run only probes without an applicable receipt from the
+repository root:
 
 Use the host's process tool with a bounded timeout, or Python's standard
 `subprocess.run(["bash", probe], timeout=30, capture_output=True, text=True)`.

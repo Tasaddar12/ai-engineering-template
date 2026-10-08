@@ -227,7 +227,9 @@ issue:
 **Dependency rules:**
 - `depends_on: []` = no prerequisite components; ownership/resources still constrain concurrency
 - `depends_on: ["03-01"]` waits for component 03-01 to integrate and pass checks
-- Wave number is a descriptive dependency layer, not a scheduling barrier
+- `phase-plan-index` defines ordered dependency/file-overlap waves. The
+  coordinator integrates and checks one eligible wave before dispatching the
+  next; independent plans may run concurrently within their eligible wave.
 
 **Example issue:**
 ```yaml
@@ -244,7 +246,9 @@ issue:
 
 **Question:** Can plans race on shared mutable state or consume an output before
 its producer integrates? Review all potentially concurrent plan pairs, including
-plans with different displayed waves: waves do not enforce runtime ordering.
+plans that share a wave. The index's ordered waves enforce cross-wave
+dependencies and file ownership; they do not imply that unrelated tasks should
+be serialized inside an eligible wave.
 
 Compare task files/actions, `depends_on` and `resources`. Flag a concrete config
 key, table/row, migration, environment variable, singleton or cache with at least
