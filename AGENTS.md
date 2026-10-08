@@ -82,12 +82,24 @@ call — shared role files carry neither as frontmatter (the installer adds Clau
 `model: haiku` only to exported `scout` metadata, with no effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
+Route planned chunks through the runtime by exact owned paths, dependencies and
+named resources. Integrate only committed chunks whose independent review and
+runtime check evidence pass on the registered revision. Continue unrelated ready
+tasks while those frozen reviewer/test snapshots run; only dependent tasks wait
+for prerequisite integration and gates. The coordinator owns native dispatch and
+lifecycle, while the runtime enforces persisted readiness, snapshots and results.
+Chunk evidence does not replace final integrated verification.
+
 Use [scout dispatch](.ai/references/scout-dispatch.md) for the authoritative
 task/output routing table. Send one discovery scout when source location is
 unknown; send additional scouts only for separately named questions and distinct
 evidence outputs. The coordinator owns worker lifecycle, integration, shared
 records and publication. Scouts return cited read-only evidence and never
 dispatch children.
+
+Reuse valid source-evidence packets before assigning missing extraction. Luna
+scouts never implement, execute checks or make correctness/security verdicts;
+the coordinator owns the reusable evidence cache.
 
 A source-changing worker returns `complete` only after committing its owned
 changes and required SUMMARY.md. A read-only scout, reviewer, verifier,

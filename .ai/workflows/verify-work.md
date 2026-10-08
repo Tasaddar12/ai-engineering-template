@@ -191,6 +191,18 @@ Report mismatches you can see without an agent:
 </step>
 
 <step name="run_checks">
+Read the runtime's current chunk pipeline status before final verification:
+
+```bash
+phase_run query pipeline.status
+```
+
+For every changed registered chunk, confirm its prerequisite integration, review
+and check evidence applies to the recorded immutable SHA and its integrated
+revision. Chunk results are provisional; a missing, stale, failed, partial,
+skipped or blocked result remains a gap. Do not use chunk receipts as the final
+integrated check or as the verifier's conclusion.
+
 Capture the integrated `HEAD` once as `frozen_revision`, whether or not project
 checks are configured. When `checks_configured` is true, run:
 
@@ -256,6 +268,9 @@ only as its reading rule allows.
 
 **Configured check results:** pending. This is the initial provisional pass; do not
 infer check outcomes or finalize status.
+
+**Chunk pipeline status (provisional evidence only):**
+{current pipeline.status for registered phase chunks, or "no registered chunks"}
 </verification_context>
 
 <constraints>
@@ -264,6 +279,8 @@ infer check outcomes or finalize status.
 - The summaries are claims, not evidence. Confirm them against the code
 - A `must_have` you cannot confirm with explicit evidence is NOT a pass. Report
   it as a gap, or as human_needed where the criterion itself is unverifiable
+- Use chunk reviews and check receipts only as revision-bound provisional evidence;
+  independently verify the integrated goal, security and cross-component behavior
 - Do not fix anything. Report what is true
 - Name file:line for every finding so it can be checked
 </constraints>
@@ -605,6 +622,7 @@ print `/ship` for the user.
 <success_criteria>
 - [ ] Existing verification checked for staleness against the current revision
 - [ ] Phase artifacts scanned and visible mismatches reported before spawning agents
+- [ ] Registered chunk dependencies, snapshot revisions and gate states read from `pipeline.status`
 - [ ] Configured checks run, with results passed to the verifier as evidence
 - [ ] A fresh verifier judged the codebase goal-backward
 - [ ] Integration and documentation checked where applicable

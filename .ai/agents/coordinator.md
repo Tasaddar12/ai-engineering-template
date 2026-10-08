@@ -63,26 +63,34 @@ cover it. Record interface agreements before dispatching plans in parallel.
 A phase dependency means delivered prerequisite behavior; a plan dependency means
 integrated and checked code within this phase.
 
-Group plans into waves by declared dependency **and** by declared file overlap:
-two plans that name the same file never share a wave, whatever their frontmatter
-says. Within a wave, dispatch every plan in a single message so the agents run
-concurrently.
+Before coding, route all planned work through `pipeline.route` with exact owned
+paths, dependencies and named shared resources. Path overlap or a resource
+collision delays only the linked task; dependency readiness requires a registered
+prerequisite to integrate and pass its applicable gates. The route declaration,
+not the preparer's proposed `wave`, controls deterministic readiness. See the
+[parallel pipeline contract](../references/parallel-pipeline.md).
 
-**For a write-capable execution wave, wait.** Do not read or edit files owned by
-active workers, and do not run integrated checks before their changes are joined.
-Wait for every agent in the wave, integrate its work, then run checks before the
-next wave. A separate frozen read-only verification batch may start configured
-checks and independent specialists together; join all of them before accepting
-evidence or making repairs.
+Dispatch all currently ready coders concurrently. Once a coder commits and
+returns its chunk handoff, register that exact head, prepare detached reviewer
+and test snapshots, and start the fresh code-reviewer and runtime checks
+concurrently. The coordinator can dispatch more independent ready work while
+those gates run; do not make a whole wave wait for every unrelated worker. Wait
+on a completion event once. Do not poll, relaunch or send handoff chatter. Do not
+read or write overlapping paths while their coder is active.
 
-Inspect actual changes and checks before accepting a source-changing plan; a
-summary alone is not proof. A coder or doc-writer plan reporting `complete`
-without its required SUMMARY.md and owned commits is blocked. Read-only
-specialists complete with their assigned cited report fields and do not commit
-or write SUMMARY.md files.
+Inspect changes, the summary and runtime status before accepting or integrating a
+chunk. A plan whose agent reported "complete" with no SUMMARY.md, or with no
+commits, did not complete - treat it as blocked and say so rather than ticking it.
+
+For completed unregistered whole-plan assignments, retain the legacy ownership
+wave: wait for every agent in that wave, integrate its work, then run checks
+before dependent waves. Independent read-only checks and specialists may start
+together on one frozen revision; join their required results before acceptance
+or repair. Source-changing plans require owned commits and their SUMMARY;
+read-only specialists return their assigned reports without commits or SUMMARY.
 
 Own the active execution loop, including the transition after each result. Keep
-ready work moving when idle; otherwise name the concrete blocker. A completed wave
+ready work moving when idle; otherwise name the concrete blocker. A completed chunk
 or a progress message is not a handoff back to the user. Preserve explicit user
 stop boundaries and reconcile interruptions before restarting anything.
 
@@ -101,7 +109,8 @@ is a defect, not progress.
 After integrating each result, reconcile the records the coder's state-update
 checklist names: position, progress, decisions, session continuity, roadmap plan
 ticks, requirement coverage and blockers. Do this before dispatching the next
-dependent agent. Tick a roadmap plan only when its SUMMARY.md says `complete`.
+dependent agent. Tick a roadmap plan only when its SUMMARY.md says `complete`, its
+chunk is integrated and applicable chunk gates pass.
 
 Only you update shared phase context, ROADMAP and STATE, or publish. Keep Git
 operations serialized. Commit each completed meaningful slice immediately and push

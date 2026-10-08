@@ -46,6 +46,13 @@ class WorkflowNavigationTests(unittest.TestCase):
                             "A source-changing phase always gets a separate fresh code-reviewer"):
             self.assertIn(instruction, body)
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
+        for instruction in ("smallest number", "One scout is sufficient", "distinct named evidence questions",
+                            "Concurrently", "Release/close", "not runtime enforcement",
+                            "one bounded follow-up", "do not make overlapping",
+                            "satisfy a fixed count"):
+            self.assertIn(instruction, body)
+        self.assertIn("active or cached question", body)
+        self.assertIn("does not waive the cache, discovery", body)
 
     def test_literal_link_examples_do_not_hide_real_navigation(self):
         body = without_fences("`[example](missing.md)` and [actual](required.md)\n"

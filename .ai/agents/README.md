@@ -13,11 +13,11 @@ source examples and result contracts.
 | [Researcher](researcher.md) | plan-phase, new-milestone, onboard | Bounded technical questions → committed evidence and unresolved choices → orchestrator/preparer |
 | [Phase preparer](phase-preparer.md) | plan-phase, quick, verify-work | CONTEXT, research and source → committed bounded PLANs → independent checker |
 | [Phase checker](phase-checker.md) | plan-phase, quick | Prepared plans and source → read-only readiness findings → orchestrator/preparer |
-| [Coder](coder.md) | execute-phase, quick | One implementation PLAN → committed changes, checks and SUMMARY → orchestrator integration |
+| [Coder](coder.md) | execute-phase, quick | One implementation PLAN → committed chunk handoff and SUMMARY → coordinator registration and independent gates |
 | [Doc writer](doc-writer.md) | execute-phase | Owned docs and integrated implementation, or claim failures in fix mode → committed docs/SUMMARY → independent verification |
 | [Doc verifier](doc-verifier.md) | verify-work | Exact doc paths and integrated revision → read-only claim results → verifier → writer or coder correction |
 | [Integration checker](integration-checker.md) | verify-work | Expected cross-phase connections → read-only wiring and flow evidence → verifier |
-| [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
+| [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Frozen registered chunk SHA, exact scope and acceptance → independent findings → coordinator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
 | [Scout](scout.md) | Any role, for every requested repeatable task class in scout-dispatch.md | Requested fields and revision → cited evidence packet → assigned decision owner |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
@@ -32,12 +32,16 @@ domain. Deterministic configured checks establish their result through runtime
 receipts; AI diagnosis is reserved for failed or ambiguous results that need
 interpretation.
 
-A fresh code-reviewer separately assesses changed source before every
-source-changing phase closes; the verifier cannot substitute for that dispatch,
-and a coder's self-check is not a review. Worker roles may spawn only `scout`
-children for evidence packets routed by the shared contract. Scouts never spawn
-children; the orchestrator owns worker lifecycle, integration, shared records
-and publication.
+A fresh code-reviewer separately assesses each registered chunk on its detached
+snapshot; the verifier cannot substitute for that dispatch, and a coder's
+self-check is not a review. Runtime checks execute declared argv and are not a
+model agent. Worker roles may spawn only `scout` children for distinct assigned
+evidence questions. Scouts never spawn children or write shared cache state; the
+coordinator owns worker lifecycle, integration, shared records and publication.
+
+Final integrated independent review remains mandatory before a source-changing
+phase closes; chunk reviews cannot replace it. Read-only specialists return cited
+reports without commits or SUMMARY files.
 
 Reviewers return complete results to the orchestrator, which routes false
 documentation claims to the writer's fix mode and code defects to an owned coder
@@ -118,8 +122,8 @@ Claude installation copies the full Markdown agents to `.claude/agents/`.
 `scout` is the read-only evidence role. Codex resolves it to
 `gpt-6-luna`/`high`; Claude resolves it to `haiku` with effort `inherit` (omit
 the effort argument). These values are fixed and ignore `.planning/config.yaml`.
-Read [scout dispatch](../references/scout-dispatch.md) for its assignment,
-result, waiting and fallback procedure.
+Read [scout dispatch](../references/scout-dispatch.md) for its bounded question,
+cache-aware result and completion procedure; the scout is not a reviewer or tester.
 
 Edit the installed TOML `model` or `model_reasoning_effort` to customise a Codex
 role; the host must support the chosen model and effort. These files do not

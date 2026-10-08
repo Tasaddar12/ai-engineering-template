@@ -1,7 +1,7 @@
 ---
 name: execute-phase
-description: "Execute a phase's plans in dependency waves, review correctness and security, consume valid check receipts, then verify the phase goal."
-argument-hint: "<phase> [--plan <id>] [--wave <n>] [--sequential] [--resume] [--no-review]"
+description: "Route phase plans into ready committed chunks, review and check immutable snapshots, then verify the integrated phase goal."
+argument-hint: "<phase> [--plan <id>] [--sequential] [--resume] [--no-review]"
 allowed-tools:
   - Read
   - Write
@@ -19,11 +19,10 @@ Run the plans a phase has, then confirm what they actually produced.
 **How it works:**
 
 1. Confirm implementation authority and resolve blocking anti-patterns
-2. Group plans into waves by dependency and by file overlap
-3. Dispatch a coder subagent per plan, waves in order, parallel within a wave
+2. Route plans by registered dependencies, exact owned paths and shared resources
+3. Dispatch currently ready coders; review and check each committed chunk on separate immutable snapshots
 4. Escalate checkpoints to the user instead of guessing
-5. Run configured checks against each integrated wave, reuse valid receipts,
-   aggregate requirement coverage, and review the final integrated revision
+5. Aggregate chunk gates and requirement coverage; retain final integrated checks, review and verification
 6. Tick the roadmap only for plans with a complete SUMMARY.md
 7. Carry on into `/verify-work`, and on a pass into `/ship`, in the same session —
    never hand the user the next command, and never stop at a context advisory
@@ -59,10 +58,10 @@ improvise from the summary.
 
 <success_criteria>
 - Implementation authority confirmed before any execution
-- Plans grouped into waves respecting dependencies and file overlap
-- Each plan executed by a coder subagent and verified on disk
+- Plans routed respecting registered dependencies, exact paths and named resources
+- Each committed chunk has independent review and runtime checks on its registered SHA
 - Checkpoints escalated, not guessed
-- Configured checks run per wave
+- Final configured checks run against the integrated phase
 - Code review run; critical findings fixed and re-reviewed
 - Roadmap ticked only for complete summaries
 - STATE.md updated and work committed

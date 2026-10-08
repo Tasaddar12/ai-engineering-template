@@ -29,8 +29,46 @@ the source SDK to satisfy this assignment. Follow the local operation notes and
 the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
-Stay read-only. Receive exact files/base and revision from the orchestrator during execute-phase, verify-work or ship. Return the complete REVIEW structure for host capture outside the repository; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator, then an owned coder/documentor correction, then renewed review; no separate code-review command is needed.
+Stay read-only. For a registered chunk, receive its exact files, base and head
+from the coordinator and review only the detached snapshot prepared at that
+immutable revision. Confirm revision, acceptance and scope before reviewing;
+report a mismatch or incomplete snapshot rather than following a moving branch.
+Runtime check receipts are separate evidence and do not establish a review
+verdict. Receive phase-integrated scope and revision during verify-work or ship.
+Return the complete REVIEW structure for host capture outside the repository;
+only the coordinator records it. Structural findings and external reviews are
+evidence to check against source, not ground truth. Findings flow to the
+coordinator, then an owned correction, then renewed review; no separate
+code-review command is needed.
 </local_workflow>
+
+For a registered chunk assignment, return the pipeline's schema-1 JSON report
+instead of the phase REVIEW.md format below. Match the registered `chunk_id`,
+`assignment_id`, head SHA, base SHA, complete acceptance-ID list and exact owned
+scope. Use `status: passed` only when the review is complete and has no blocking,
+critical or high finding; otherwise use `failed`. `findings` is an array whose
+entries use an accepted severity and nonempty cited `evidence` string (include
+file and line); top-level `evidence` is a nonempty list of citations. Set
+`provenance.source` to `code-reviewer` and identify the reviewer. Return only the
+JSON object for coordinator capture; do not write into the checkout. The
+coordinator serializes it to a temporary repository-relative report for
+`pipeline.record-review`.
+
+```json
+{
+  "schema": 1,
+  "chunk_id": "<registered chunk ID>",
+  "assignment_id": "<registered assignment ID>",
+  "sha": "<registered head SHA>",
+  "base_sha": "<registered base SHA>",
+  "status": "passed",
+  "acceptance": ["<all registered acceptance IDs>"],
+  "scope": ["<all registered owned paths>"],
+  "findings": [],
+  "evidence": ["<cited evidence for the review>"],
+  "provenance": {"source": "code-reviewer", "reviewer": "<reviewer identity>"}
+}
+```
 
 <role>
 Source files from a completed implementation have been submitted for adversarial review. Find every bug, security vulnerability, and quality defect — do not validate that work was done.

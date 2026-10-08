@@ -1,7 +1,9 @@
 # Agent handoff
 
-The orchestrator dispatches one bounded plan per agent. Human-authored inputs use
-small YAML frontmatter, not external schema documents.
+The orchestrator routes bounded plans by exact paths, dependency and
+named-resource ownership. Human-authored plans use small YAML frontmatter; the
+runtime-owned chunk and evidence schemas are documented in the
+[parallel pipeline contract](parallel-pipeline.md).
 
 ## Assignment
 
@@ -51,6 +53,22 @@ report-only commit does not change that tested revision. Reuse is exact when HEA
 equals the recorded revision; after publication, reuse a prior result only under
 the bounded rule in [verification evidence](verification-evidence.md). Any other
 change requires fresh verification.
+
+## Committed chunk handoff
+
+A coder returns a [chunk handoff](../templates/chunk-handoff.md) when its bounded
+plan has a committed reviewable result. The coordinator registers the exact base
+and head, prepares separate immutable reviewer and test worktrees, and starts the
+fresh review and runtime-owned checks concurrently. The coder's summary does not
+substitute for either gate. The coordinator may continue independent ready work;
+only dependency-linked work waits for the prerequisite to integrate and pass its
+applicable gates. Do not infer completion from a branch existing or a summary
+alone. See [parallel pipeline](parallel-pipeline.md).
+
+Scouts return cited evidence through the
+[reusable scout packet](../templates/scout-packet.md). The coordinator owns
+packet storage, lookup and invalidation. A valid revision- and scope-matched
+packet prevents duplicate extraction; scouts never mutate shared cache state.
 
 ## Revision and recovery
 

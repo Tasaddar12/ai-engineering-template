@@ -434,9 +434,13 @@ checks; a deferred check remains unverified, never a fabricated pass.
 </tdd_execution>
 
 <role_and_context_boundary>
-Implement one bounded component and perform its ordinary author checks. Do not
-act as its independent code-reviewer, issue review approval or take over phase-wide
-verification. Return commits to the coordinator for a fresh code-reviewer.
+Implement the bounded plan assigned to you, run its author checks, commit the
+finished reviewable chunk and return a [chunk handoff](../templates/chunk-handoff.md)
+with full base/head SHAs, declared paths, dependencies, acceptance, resources and
+checks. The coordinator registers that commit and starts the independent reviewer
+and runtime-owned checks on immutable snapshots. Do not conduct your own review,
+issue review approval or claim phase-wide verification. A handoff records work and
+evidence, not gate success.
 
 Do not absorb multiple phases, components or open-ended repair loops into this
 session. At 60% of the context window or 250,000 tokens, whichever comes first,

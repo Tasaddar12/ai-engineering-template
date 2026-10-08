@@ -221,15 +221,24 @@ evidence outputs. Workers may dispatch only `scout` children; the coordinator
 retains worker lifecycle, integration, shared records and publication. `scout`
 is a read-only leaf and does not dispatch children or write a SUMMARY.
 
-Plan ownership uses exact repository-relative paths or directory prefixes ending
-in `/`, without traversal, globs or whole-repository scope. Plans that declare
-overlapping paths must not share an execution wave, whatever their declared wave
-says. Genuine prerequisites define dependency edges; agree shared interfaces
-before dispatch.
+Use valid source-evidence packets before assigning extraction; match question/task
+class, revision, hashed inputs, exact scope, acceptance and provenance. The
+coordinator owns the reusable evidence cache. Luna scouts may extract, summarize,
+classify or propose transformations, but never implement, execute checks or make
+independent correctness/security verdicts.
 
-Give agents their assignment, the applicable constraints, the files their plan
-names in `read_first`, and the dependency summaries they need — not every
-transcript. Follow [worker handoff](references/worker-handoff.md).
+Plan ownership uses exact repository-relative paths or directory prefixes ending
+in `/`, without traversal, globs or whole-repository scope. Shared paths and
+named resources serialize only the tasks that conflict. Route planned work with
+`pipeline.route`; readiness, reviewer/test snapshots and gate results are
+runtime-enforced, while native host dispatch and lifecycle remain coordinator
+instructions. A prerequisite blocks only dependent work until its chunk is
+integrated and applicable gates pass. Chunk evidence is provisional; final
+integrated checks and independent review remain. See the
+[parallel pipeline contract](references/parallel-pipeline.md).
+
+Give agents their assignment, applicable constraints, `read_first` files and
+only the dependency summaries they need. Follow [worker handoff](references/worker-handoff.md).
 
 ## Issues found while working
 
@@ -303,13 +312,16 @@ pinned to its root instead — see
 [worktree-recovery-policy](references/worktree-recovery-policy.md) when a run
 does not go cleanly.
 
-Integrate every isolated wave through `worktree.merge-wave` before running
-checks or review — both judge the merged tree, not one the work has not landed
-in. A merge into a protected branch is refused. A branch that deletes a path its
-plan did not declare in `files_deleted` is blocked, because a deletion
-authorization is never inferred from a general scope declaration. A rename
-counts: moving a file away removes its old path, so the source needs the same
-authority as any other removal. Conflicts abort with the worktree preserved.
+For routed chunks, run the fresh review and declared checks on separate detached
+snapshots at the registered SHA. Only after their gates pass, merge that immutable
+head into the clean, unprotected session branch and call `pipeline.integrate` to
+record the resulting revision; the runtime records and validates the Git merge,
+it does not perform it. Never merge a moving coder branch. On conflict, abort the
+merge and preserve the worktree for reconciliation. A chunk may delete only paths
+explicitly listed in its registered `deletions`; ownership alone grants no removal
+authority. A rename counts as removal of its source path. The legacy
+`worktree.merge-wave` remains available for completed unregistered whole-plan
+assignments; never use it on an active coder or as a barrier for routed chunks.
 
 Cleanup requires merge evidence from the repository, not a manifest's claim:
 `worktree.cleanup-wave` removes a checkout only when git agrees its branch is an

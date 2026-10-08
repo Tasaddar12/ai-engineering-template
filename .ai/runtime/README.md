@@ -273,6 +273,42 @@ The dispatch itself is enforced outside the runtime, in
 [hooks/worktree-guard.sh](../hooks/worktree-guard.sh) — a verb cannot see an
 `Agent(...)` call that never mentioned it.
 
+### Parallel chunk pipeline and source evidence
+
+| Verb | Effect |
+|---|---|
+| `pipeline.route --spec <repo-relative-json>` | Persist declared task paths, dependencies, shared resources and state; report deterministic `ready`, `wait` or `blocked` reasons |
+| `pipeline.register --spec <repo-relative-json>` | Register one committed chunk's full base/head, scope, acceptance, dependencies, resources and check inputs |
+| `pipeline.prepare <chunk-id>` | Prepare separate detached reviewer and test worktrees at the registered SHA |
+| `pipeline.run-checks <chunk-id> --environment <id>` | Execute only declared checks on the registered test snapshot and bind results to its SHA and explicit environment |
+| `pipeline.record-review <chunk-id> --report <repo-relative-json>` | Record a structured independent review report for the same immutable scope and SHA |
+| `pipeline.integrate <chunk-id> --revision <ref>` | Validate and record an already merged revision after applicable dependencies and review/check gates pass; it does not perform Git merge |
+| `pipeline.status [<chunk-id>]` | Read persisted per-chunk or aggregate readiness, snapshot and gate state |
+| `evidence.store --spec <repo-relative-json>` | Store a source/context evidence packet with exact input and scope provenance |
+| `evidence.lookup --spec <repo-relative-json>` | Reuse a matching packet; optionally return its complete payload |
+| `evidence.invalidate --spec <repo-relative-json>` | Invalidate a packet by id and reason |
+
+See [the canonical pipeline contract](../references/parallel-pipeline.md) for
+schema 1 inputs and handoff sequencing. The coordinator owns native model-agent
+dispatch; the runtime owns persisted readiness, immutable snapshots and gate
+evidence. The checks verb executes declared argv itself; it is not a tester agent
+or a new permission role. Chunk evidence is provisional and never substitutes for
+final integrated verification. The existing `verification.run-checks` interface
+and result shape remain unchanged for legacy and final aggregate checks.
+
+Evidence packet schema `source-evidence/v1` records task class/question, full
+source revision, exact file inputs, exact scope, acceptance, provenance, explicit
+configuration, outputs and cited evidence. Revision-bound reuse is the default.
+Cross-revision reuse is permitted only with an explicit complete-scope opt-in and
+runtime confirmation that both file inventory and bytes match. The runtime makes
+no claim about provider prompt caching. Scouts are read-only; the coordinator
+stores, looks up and invalidates shared packets.
+
+At chunk integration the runtime fingerprints the exact owned scope, declared
+check inputs and `.planning/config.yaml` against the tested head and integrated
+revision. Dependency status revalidates those file inventories and bytes, so a
+changed prerequisite boundary blocks dependent work until fresh evidence exists.
+
 ## Layout
 
 ```
@@ -291,13 +327,19 @@ runtime/
     quick.py        quick tasks outside the roadmap
     verification.py verification reports and configured project checks
     verification_checks.py reusable check receipts and bounded independent checks
+    pipeline.py    chunk routing, immutable review/test snapshots and gates
+    evidence.py    reusable source/context evidence packets
     models.py       agent, model and skill resolution for dispatch
-    worktrees.py    isolation resolution, wave integration and cleanup
+    worktrees.py    isolation resolution, legacy whole-plan wave integration and cleanup
     bundles.py      the init.* context bundles
 ```
 
 Installation places this runtime under `.codex/runtime` or `.claude/runtime`, and
-the launcher resolves either. Project records stay under `.planning/`.
+the launcher resolves either. Planning records stay tracked under `.planning/`.
+Pipeline declarations, snapshots, gate evidence and source-evidence packets are
+operational state in the Git common directory's `ai-phase` data area, shared by
+linked worktrees without dirtying project checkouts. They are not phase summaries,
+verification reports or a provider cache.
 
 ## Project records
 

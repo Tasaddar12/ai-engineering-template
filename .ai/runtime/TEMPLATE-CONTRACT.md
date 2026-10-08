@@ -94,11 +94,14 @@ checks assert that a file exists when the acceptance concerns access control.
 
 ### Scheduling
 
-`depends_on` drives readiness: a plan becomes eligible once every id it names has
-a SUMMARY.md. `wave` is the preparer's proposal, not an authority — the
-orchestrator separates plans whose `files_modified` overlap into different waves
-regardless of their declared wave, because two agents editing one file is the
-failure this ordering exists to prevent.
+`wave` is a preparer proposal; it does not control readiness. Before coding,
+`pipeline.route` persists each task's exact `owned_paths`, registered-chunk
+`depends_on` IDs, named `resources` and `pending|active|complete` state. Overlapping
+paths and resource collisions make only those tasks wait. A dependency is ready
+only after its registered prerequisite is integrated, its applicable review/check
+gates pass, and the prerequisite revision is an ancestor of the dependent chunk's
+base. Cycles are blocked and unresolved dependencies wait. Read
+[the route and chunk contract](../references/parallel-pipeline.md).
 
 `must_haves` (truths and artifacts) carries the plan's own success criteria
 forward to the verifier for goal-backward checking.

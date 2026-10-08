@@ -6,9 +6,9 @@ consumes: {NN}-{MM}-PLAN.md, CONTEXT.md, STATE.md
 -->
 
 <purpose>
-Execute a phase's plans. Group them into dependency waves, dispatch a coder per
-plan in its own isolated checkout, integrate the wave, review the resulting
-code, confirm the phase goal was achieved, then tick the roadmap.
+Execute a phase's plans through readiness-routed committed chunks. Dispatch
+isolated coders for ready assignments, gate each immutable chunk, integrate it,
+confirm the phase goal was achieved, then tick the roadmap.
 
 The orchestrator routes and integrates. It does not write the implementation.
 
@@ -80,10 +80,9 @@ discussion, planning and readiness do not grant implementation permission.
 
 <step name="parse_args">
 Recognised flags:
-- `--plan {id}` — execute only this plan
-- `--wave {n}` — execute only this wave
-- `--sequential` — run one plan at a time even when a wave allows parallelism.
-  Each plan is still isolated; only the concurrency changes
+- `--plan {id}` - route only this plan and its registered prerequisites
+- `--sequential` - dispatch one currently ready plan at a time. Each plan is
+  still isolated; only coder dispatch concurrency changes
 - `--resume` — continue a phase whose execution stopped partway
 - `--no-review` — skip the code review gate (requires the user to say so)
 </step>
@@ -204,14 +203,18 @@ closes the session once the phase is verified.
 </step>
 
 <step name="safe_resume_gate">
-If `summary_count` is greater than 0, do not ask. Run only the plans in
-`plan_index` whose `summary` is null, and print:
+If `summary_count` is greater than 0, do not ask. Consult `pipeline.status` for
+registered chunks as well as plan summaries. Resume any missing chunk gates or
+integration, and run plans with no summary only when their route status is ready.
+Print:
 
 ```
 Phase {N}: {summary_count} of {plan_count} plans already executed — continuing with the rest.
 ```
 
-`--resume` means the same. If every plan has a SUMMARY, go to `aggregate_results`.
+`--resume` means the same. A SUMMARY alone does not make a chunk complete. Go to
+`aggregate_results` only when every implemented chunk is integrated and its
+applicable gates pass.
 </step>
 
 <step name="check_blocking_antipatterns">
@@ -246,16 +249,16 @@ whether to continue. Executing over dirty state makes the phase's commits
 ambiguous.
 
 You are inside the phase's session worktree by now, so the branch that reports
-is the session branch and cannot be the default branch — `session.open` refuses
-to create one on a protected name. Check it anyway, because a wave is integrated
-by merging into the current branch and that must never be `main`.
+is the session branch and cannot be the default branch - `session.open` refuses
+to create one on a protected name. Check it anyway, because a chunk is integrated
+into the current session branch and that must never be `main`.
 
 If it reports the default branch, the session was not opened and the earlier
 step was skipped. Stop and open it rather than executing here.
 </step>
 
 <step name="resolve_isolation">
-Decide how this wave's executors are isolated. **This is the only step that
+Decide how each coder executor is isolated. **This is the only step that
 decides**, and resolving it records it, so the value you branch on and the value
 on disk can never disagree.
 
@@ -308,32 +311,37 @@ Isolation: {ISOLATION} ({reason})
 phase_run query phase-plan-index "${phase_number}"
 ```
 
-For each plan, read its frontmatter `wave` and `depends_on`. Group into waves:
+Read each plan's `files_modified`, `files_deleted`, `depends_on`, acceptance IDs,
+check commands and any declared shared resources. The plan's `wave` is
+informational only. Write a temporary repository-relative route spec with task
+IDs for coding tasks, exact owned paths, registered prerequisite chunk IDs, named
+resources and `state: pending`, then call:
 
-- Plans with no unmet dependencies form wave 1
-- A plan enters a wave only once every id in its `depends_on` has a SUMMARY.md
-- Plans that declare overlapping `files_modified` must NOT share a wave — put the
-  later one in a following wave, whatever its declared wave says
-
-Report the grouping before executing:
-
-```
-Execution plan for Phase {N}:
-  Wave 1 (parallel): {01-01}, {01-02}
-  Wave 2: {01-03} (depends on 01-01)
+```bash
+phase_run query pipeline.route --spec <route-spec.json>
 ```
 
-A dependency cycle is a planning defect: report it and stop rather than picking
-an order.
+Include every planned task on each route call. Dispatch only tasks returned
+`ready`; preserve each `wait` or `blocked` reason.
+An unknown, unregistered or unintegrated prerequisite is never assumed complete.
+Path/resource conflicts delay only the affected task, and a prerequisite blocks
+only its dependents. Re-route after task registration, gate or integration state
+changes. Follow the [route contract](../references/parallel-pipeline.md#routing-planned-work).
 </step>
 
-<step name="execute_waves">
-Execute waves in order. Within a wave, dispatch every plan **in a single message
-with multiple Agent calls** so they run concurrently, unless `--sequential` was
-passed or the wave has one plan.
+<step name="execute_chunks">
+For currently ready route tasks, dispatch coders concurrently unless `--sequential`
+was passed. Do not wait for all phase tasks or an entire proposed wave before
+processing a completed chunk. Reserve the selected route task as `active` before
+dispatch so overlapping paths and named resources remain unavailable to new
+assignments. Keep each task active through chunk review, checks and integration.
+Map each route task ID to unique `assignment_id` and committed `chunk_id` values;
+`plan_id` identifies the source plan. These identifiers can match for a one-chunk
+plan. Set `owned_paths` to the exact independently reviewable paths in the plan's
+declared boundary, and list only acceptance IDs demonstrated by that chunk.
 
-Before dispatching, capture the base every executor in this wave must fork from,
-and record each plan's declared scope so the wave can be integrated:
+Before dispatching, capture the base each executor must fork from and record its
+declared scope for isolation:
 
 ```bash
 EXPECTED_BASE=$(git rev-parse HEAD)
@@ -364,7 +372,14 @@ and it is the **only** thing that authorizes a removal at merge time: a
 declaration of general scope never implies permission to delete. A plan that
 declares no deletions and deletes something is blocked, by design.
 
-For each plan:
+For each ready plan, use the existing isolated coder dispatch and branch/root
+guard below. Include the [chunk handoff](../templates/chunk-handoff.md) in the
+required reading and require its full base/head, scope, acceptance, dependencies,
+resources, check definitions and SUMMARY path in the return. After its commit,
+register the committed revision and use runtime-prepared reviewer/test snapshots
+as described in `integrate_chunk`.
+
+For each ready plan:
 
 ```
 Agent(
@@ -387,7 +402,7 @@ reading rule allows.
 - every file named in your plan's `read_first` fields
 </required_reading>
 ${context_window >= 500000 ? `
-**Prior wave summaries:** {paths of SUMMARY.md files from earlier waves in this phase}
+**Integrated prerequisite summaries:** {paths of summaries for registered prerequisites}
 ` : ''}
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if either exists.
@@ -402,7 +417,7 @@ files and follow their rules.
   current state. A continuation reads only the files its handoff's reading rule
   allows, and always the file it is about to edit
 - Touch only the paths your plan declares in `files_modified`
-- Commit each completed task atomically with a descriptive message
+- Commit the finished reviewable chunk with a descriptive message
 - Run each task's `<verify>` command and record its actual output. A task whose
   verify command was not run is not complete
 - If the plan is wrong, stop and report it. Do not improvise a different change
@@ -426,7 +441,8 @@ Write: {phase_dir}/{plan_id}-SUMMARY.md with:
 - what was built, and the evidence each acceptance criterion was met
 - anything deferred, and why
 Return: ## EXECUTION COMPLETE with status and the summary path
-Also return the branch you committed on, so the wave can be integrated.
+Also return the committed branch, full head SHA and chunk handoff, so the
+coordinator can register and gate the exact revision.
 </output>
 ",
   subagent_type="coder",
@@ -440,14 +456,15 @@ Also return the branch you committed on, so the wave can be integrated.
 Under `harness-worktree`, an executor that prints `FATAL:` or exits 42 halted at
 its branch check and committed nothing. Follow
 [worktree-recovery-policy](../references/worktree-recovery-policy.md): mark that
-plan blocked, preserve its worktree, and do not count the wave as successful.
+plan blocked, preserve its worktree and continue unrelated ready tasks.
 
-> **ORCHESTRATOR RULE**: after dispatching a wave, stop working on this task. Do
-> not read files, edit code or run tests while coders are active — you would
-> conflict with their edits. Wait for every agent in the wave to return before
-> starting the next one.
+> **ORCHESTRATOR RULE**: do not read or write paths an active coder owns. Accept
+> each completion event once, then register its exact committed revision. Continue
+> dispatching ready tasks whose paths and named resources do not conflict; do not
+> poll, relaunch or send handoff chatter.
 
-After each wave, verify on disk rather than trusting the returns:
+After each coder completion, verify the summary and commit on disk rather than
+trusting the return:
 
 ```bash
 phase_run query phase-plan-index "${phase_number}"
@@ -475,45 +492,65 @@ Continue each plan at most twice. If a continuation returns blocked on the same
 remaining tasks, report it as a blocker.
 </step>
 
-<step name="integrate_wave">
-The wave's work is on branches, not in your tree — it always is, because every
-plan ran isolated. Integrate it into the **session branch** before running
-checks, reviewing, or starting the next wave. `merge-wave` merges into whatever
-branch is current, which inside the session worktree is the session branch, so
-the wave lands in the phase's own pull request and never touches the base:
+<step name="integrate_chunk">
+For each returned coder chunk, require its SUMMARY, commit and
+[chunk-handoff](../templates/chunk-handoff.md). Confirm the reported full base/head
+and declared chunk scope against the assigned plan, then register the exact
+revision:
 
 ```bash
-git status --porcelain     # must be clean; commit planning records first
-phase_run query worktree.merge-wave --phase "${phase_number}"
+phase_run query pipeline.register --spec <chunk-registration.json>
+phase_run query pipeline.prepare <chunk-id>
 ```
 
-Read the result rather than assuming it worked:
-
-- `wave_clean: true` — every branch merged. Continue.
-- `blocked` non-empty — **stop the wave here.** Each entry says why:
-
-| `status` | Means | What to do |
-|---|---|---|
-| `blocked` | deleted a path the plan never declared | Do not merge the branch or re-run the merge. Mark the plan blocked, list it with its `undeclared_deletions` in the closing report, and continue the wave. A rename's source path counts as a removal |
-| `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
-| `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
-| `empty` | the branch has no commits | Same: nothing was produced |
-
-A merged entry may also carry `out_of_scope` — paths the plan changed outside
-what it declared. That is **advisory**: record it in the phase summary and let
-the reviewer weigh it. It never blocks a merge.
-
-Once the wave is clean, release its checkouts:
+The runtime prepares separate detached reviewer/test snapshots at the registered
+SHA. Dispatch a fresh `code-reviewer` against the prepared reviewer snapshot with
+the exact registered SHA/base, chunk acceptance IDs, owned paths, plan and relevant
+instructions. Require the schema-1 report described in the pipeline reference.
+In the same routing turn, run the runtime-owned checks against the test snapshot:
 
 ```bash
-phase_run query worktree.cleanup-wave --phase "${phase_number}"
+phase_run query pipeline.run-checks <chunk-id> --environment <explicit-environment-id>
 ```
 
-Cleanup is conservative on purpose. It removes a worktree only when git agrees
-its branch is an ancestor of HEAD, and reports everything it kept in
-`preserved`, with the reason. **Never pass `--force` to get past a preserved
-entry** — that discards work whose fate has not been decided. Report what was
-preserved and let the user choose.
+The check verb executes the declared argv itself; it is not another model agent.
+Do not use `verification.run-checks` as a chunk substitute. The code-reviewer
+returns the schema-1 JSON report required by
+[the pipeline contract](../references/parallel-pipeline.md#register-and-gate-one-committed-chunk),
+including matching base/head, complete acceptance and scope, explicit status,
+findings, cited evidence and provenance. Capture that output as a temporary
+repository-relative JSON file, then record it:
+
+```bash
+phase_run query pipeline.record-review <chunk-id> --report <review-report.json>
+```
+
+Check `pipeline.status <chunk-id>`. Preserve failed attempts and treat missing,
+partial, corrupt, stale, skipped or failed evidence as a blocker. Do not accept a
+review of one SHA or environment as evidence for another. Only after all declared
+prerequisites are integrated and all applicable gates pass, merge the registered
+full head SHA into the clean, unprotected session branch and record the resulting
+revision:
+
+```bash
+git merge --no-ff <registered-head-SHA>
+phase_run query pipeline.integrate <chunk-id> --revision HEAD
+phase_run query pipeline.status <chunk-id>
+```
+
+`pipeline.integrate` records and validates an existing Git integration; it does
+not merge for you. If the merge conflicts, abort it, preserve the coder checkout
+and block the chunk for reconciliation. The legacy `worktree.merge-wave` remains a
+fallback only for completed unregistered whole-plan assignments; never merge an
+active coder branch or use that fallback as a whole-wave barrier for routed chunks.
+
+Continue independent ready tasks while review and checks run on their frozen
+snapshots. Re-route after registration, gate and integration changes; after a
+chunk integrates, set its task state to `complete` in the full route spec to
+release its path/resource reservation. Wait only for a prerequisite of the task
+currently blocked. An unresolved dependency or a scope/runtime rejection remains
+explicit `wait`/`blocked` work, never a guessed pass. Keep unmerged or dirty coder
+worktrees for recovery; never force cleanup.
 </step>
 
 <step name="checkpoint_handling">
@@ -531,7 +568,7 @@ A plan may return `blocked` with a checkpoint. Do not stop the run. Route it:
 - **Otherwise** — it changes a locked decision or acceptance, is destructive or
   irreversible, installs an unverified package, needs credentials, access or
   spending, or has a precondition only a person can meet: leave the plan
-  blocked, skip only the plans that depend on it, continue all other waves, and
+  blocked, skip only the plans that depend on it, continue all other ready tasks, and
   list the options and the coder's recommendation in the closing report.
 
 Re-dispatch into a fresh isolated checkout, never the primary checkout. Never
@@ -539,23 +576,18 @@ resolve a checkpoint by guessing.
 </step>
 
 <step name="run_checks">
-If `checks_configured` is true, run the project's configured checks once per
-wave, after the wave's agents have all returned **and the wave has been
-integrated** — checks run against the merged tree, not against a tree the
-wave's work has not landed in yet:
-
-```bash
-phase_run query verification.run-checks
-```
+Chunk checks run through `pipeline.run-checks` against the immutable registered
+test snapshot in `integrate_chunk`. Do not wait for every independent task to
+finish before that gate, and do not describe a chunk receipt as an aggregate
+phase check. The unchanged `verification.run-checks` command runs once on the
+fully integrated phase during `/verify-work` and remains a final gate.
 
 Consume successful receipts when their tested revision, declared sources,
-environment and configuration still match this integrated wave. A matching
-receipt is deterministic evidence; report its tested revision and receipt
-reference without asking an AI agent to repeat or explain a pass. Use the bounded
-output tails for failures or ambiguous results. A failing check blocks dependent
-waves: hand it to the responsible coder, or to the debugger when the cause is
-unclear. Repairs invalidate affected receipts; rerun those checks on the repaired
-revision before accepting the wave.
+environment and configuration match the relevant snapshot. Receipts are
+deterministic evidence; a failed or ambiguous check needs diagnosis and blocks
+only dependent work. Repairs invalidate affected receipts. For completed
+unregistered whole-plan assignments, checks still run after the legacy ownership
+wave has joined and integrated, before dependent waves start.
 </step>
 
 <step name="aggregate_results">
@@ -591,7 +623,7 @@ Review the source changes made by Phase {phase_number}.
 
 **Changed files:** {aggregate files_modified across summaries}
 **Plans:** {plan paths}
-**Diff base:** {commit before the first wave}
+**Diff base:** {phase session base captured before any chunk integration}
 
 Review the changed source for correctness bugs, security issues and code quality
 problems. Judge the code as it now stands, not the summaries' claims about it.
@@ -620,8 +652,10 @@ and STATE.md counters all move together:
 phase_run query roadmap.update-plan-progress "${plan_id}"
 ```
 
-Only tick a plan that has a SUMMARY.md with `status: complete`. When every plan
-in the phase is ticked, the runtime marks the phase complete in the overview
+Only tick a plan after its SUMMARY.md says `status: complete`, its registered
+chunk is integrated and its applicable chunk gates pass. Aggregate integrated
+verification and final review remain separate phase gates. When every plan in
+the phase is ticked, the runtime marks the phase complete in the overview
 checklist automatically.
 </step>
 
@@ -664,7 +698,7 @@ Phase {phase_number} executed.
 
 Plans: {completed}/{plan_count} complete{blocked ? ", {blocked} blocked" : ""}
 Isolation: {ISOLATION}
-Integration: {waves merged clean | N entries blocked with reasons | not isolated}
+Integration: {N chunks integrated | blocked chunks with reasons | not isolated}
 Worktrees preserved: {paths and reasons, or none}
 Requirements covered: {ids}
 Checks: {passed | failed with detail | not configured}
@@ -687,13 +721,10 @@ report them as the blocker instead.
 
 <anti_patterns>
 - Don't implement anything yourself — dispatch coders and integrate their work
-- Don't edit files owned by an active wave or integrate its commits before the
-  wave joins. Independent read-only checks or evidence collection may run
-  concurrently against the same frozen revision; do not inspect or check a
-  partially integrated source tree.
-- Don't accept a source-changing coder's "complete" without its required SUMMARY.md and real commits
-- Don't resolve a checkpoint by guessing so the wave can finish
-- Don't put plans with overlapping `files_modified` in the same wave
+- Don't read or write paths an active coder owns; continue only independent ready tasks
+- Don't accept "complete" without a SUMMARY.md and real commits
+- Don't resolve a checkpoint by guessing so a dependent task can run
+- Don't dispatch route tasks with overlapping paths or named resources concurrently
 - Don't tick a roadmap plan that has no complete summary
 - Don't skip the code review gate on your own initiative
 - Don't treat execution completing as the phase being verified
@@ -701,8 +732,7 @@ report them as the blocker instead.
 - Don't continue when isolation could not be established; report and stop
 - Don't look for a way to run a plan unisolated — there isn't one, and the
   dispatch hook will block it
-- Don't run checks or review before the wave is integrated; you would be
-  judging a tree the work has not landed in
+- Don't integrate before the chunk's applicable gates pass on its registered SHA
 - Don't pass `--force` to cleanup to get past a preserved worktree
 - Don't propose continuing in the primary checkout as the recovery path for a
   run the user configured to be isolated
@@ -722,22 +752,22 @@ report them as the blocker instead.
 - [ ] Implementation authority confirmed before execution started
 - [ ] Blocking anti-patterns answered before any work
 - [ ] Isolation resolved and reported before dispatch, and every plan isolated
-- [ ] Plans grouped into waves respecting dependencies and file overlap
-- [ ] Each plan executed by a coder subagent, verified on disk
+- [ ] Plans routed by registered prerequisites, path scope and shared resources
+- [ ] Each committed chunk registered with an exact revision and handoff
 - [ ] Every executor carried the guard its isolation model calls for — the
       branch check under `harness-worktree`, the root pin under
       `orchestrator-worktree` — and any exit-42 halt was treated as blocked
       with its worktree preserved
-- [ ] Every wave integrated through `worktree.merge-wave` before checks or review
-- [ ] Undeclared deletions and merge conflicts escalated, never merged past
-- [ ] Cleanup ran without `--force`, and anything preserved was reported
+- [ ] Review and runtime checks used separate immutable snapshots at the registered SHA
+- [ ] Chunks integrated only after all applicable gates and prerequisite gates passed
 - [ ] Checkpoints decided within delegated discretion or left blocked for a
       person, never guessed, and never a reason to stop the run
 - [ ] What is still open listed in the closing report, with no todos created
-- [ ] Configured checks run per wave, against the integrated tree, and passing
+- [ ] Chunk checks passed on their registered test snapshots
+- [ ] Final configured aggregate checks run on the integrated tree during verify-work
 - [ ] Requirement coverage aggregated, with gaps reported
 - [ ] Code review run; critical findings fixed and re-reviewed
-- [ ] Roadmap plans ticked only for complete summaries
+- [ ] Roadmap plans ticked only for complete, integrated chunks with passing gates
 - [ ] Folded todos closed, STATE.md updated, work committed
 - [ ] Phase session left open for the workflows that follow
 - [ ] `/verify-work` run in this same session once execution finished, without

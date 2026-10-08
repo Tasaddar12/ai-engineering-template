@@ -1,6 +1,6 @@
 ---
 name: verify-work
-description: "Verify a phase delivered its goal through goal-backward analysis of the codebase, then close or record gaps."
+description: "Verify the integrated phase goal using current chunk gates and final goal-backward evidence, then close or record gaps."
 argument-hint: "<phase>"
 allowed-tools:
   - Read
@@ -18,7 +18,7 @@ Establish what is actually true after a phase executed.
 **How it works:**
 
 1. Scan the phase's plans and summaries, reporting visible mismatches first
-2. Start configured checks, applicable read-only specialists and a provisional
+2. Confirm registered chunk gates, then start configured checks, applicable read-only specialists and a provisional
    verifier together against one frozen revision, using valid receipts
 3. Join the results and resume the verifier to reconcile bounded shared evidence
 4. On a provisional pass, commit success bookkeeping, then reconcile checks and
@@ -51,7 +51,7 @@ The phase is located with `phase_run query phase.locate` before the workflow loa
 Read and execute `~/.ai/workflows/verify-work.md` end to end.
 
 **MANDATORY:** Read the workflow file BEFORE taking any action. The objective and
-success criteria here are a summary — the workflow holds the complete step-by-step
+success criteria here are a summary â€” the workflow holds the complete step-by-step
 process with all required behaviors, runtime calls and interaction patterns. Do not
 improvise from the summary.
 </process>
@@ -64,6 +64,7 @@ improvise from the summary.
   reconciled; the verifier judges the codebase, not the summaries
 - On a provisional pass, final reconciliation reviews the success-record commit
   before the report is persisted
+- Registered chunk evidence is current and complete but treated as provisional
 - Unconfirmable criteria abstained rather than passed
 - Gaps closed and re-verified, or recorded as todos with the user's agreement
 - Roadmap and STATE.md updated only on a pass or an explicit acceptance

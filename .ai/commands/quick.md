@@ -1,6 +1,6 @@
 ---
 name: quick
-description: "Execute one single-outcome ad-hoc change with a recorded plan, atomic commits and tracked state, without opening a phase."
+description: "Execute a small ad-hoc change with a committed chunk, immutable review/check gates and tracked state, without opening a phase."
 argument-hint: "<description> [--validate]"
 allowed-tools:
   - Read
@@ -21,8 +21,9 @@ Complete one outcome in a single plan of one to three tasks, without phase overh
 1. Open a task directory under `.planning/quick/` through the runtime
 2. Spawn the phase-preparer to write a single plan of 1-3 tasks
 3. Spawn a coder to execute it with atomic commits and a summary
-4. Run the project's configured checks
-5. With `--validate`, add plan checking before and verification after
+4. Register the committed task chunk, run its independent review and declared runtime checks, then integrate it
+5. Run the project's configured integrated checks
+6. With `--validate`, add plan checking before and verification after
 
 **Output:** `.planning/quick/{id}/QUICK.md` plus the plan, summary and commits.
 
@@ -54,7 +55,7 @@ improvise from the summary.
 <success_criteria>
 - Task directory and record created by the runtime
 - Plan written by the phase-preparer subagent
-- Coder executed only the planned tasks, with commits and a summary
-- Configured checks run and passing
+- Coder committed a chunk handoff and SUMMARY; the coordinator registered and integrated it after independent gates passed
+- Configured aggregate checks run on the integrated tree and pass
 - Record marked complete with files and verification, and committed
 </success_criteria>

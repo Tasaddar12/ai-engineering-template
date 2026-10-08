@@ -31,7 +31,8 @@ not edit, run tests, execute project code, or dispatch children.
 | Integration checking | Have integration-checker repeat producer/consumer location extraction while tracing flow | Scout maps the named producer, consumer and entry point; integration-checker uses the map and receipts to trace the flow and owns the verdict. |
 | Test running | Ask an agent to execute tests or inspect outputs by rerunning commands | `verification.run-checks` executes configured checks and records receipts; scout summarizes supplied receipt/log fields but never executes tests or project code. |
 
-Dispatch `scout` for every requested repeatable extraction, classification,
+Use a validated source-evidence packet when it already answers the exact request.
+Dispatch `scout` for every uncovered requested repeatable extraction, classification,
 structured-summary or transformation output in the routing table, even when
 the source locations are known. For other specialist roles, dispatch only when
 a named unresolved claim, acceptance criterion, or risk decision requires
@@ -99,34 +100,52 @@ scout_result:
 
 ## Dispatch procedure
 
-1. Read the assignment and supplied context. Name the claim, acceptance criterion
-   or risk decision and list the evidence it needs. Follow the routing table; if
-   the table assigns the work directly to an owner, do not add a scout.
-2. If a source area is unknown, assign one discovery scout. Join and validate its
-   revision and citations before assigning the distinct questions it revealed.
-3. Write each scout question as a separate requested output. Reuse a result only
-   when question, revision, scope and inputs all match; otherwise assign a new
-   question with the exact uncovered scope. Resolve each scout through
-   `phase_run query resolve-agent scout --host codex` or `--host claude` in the
-   source namespace. Pass the returned model and effort inline; omit `inherit`.
-4. Start independent specialist assignments concurrently when shared host capacity
-   allows; respect the host's actual open-worker limit and count queued/open
-   workers, not just currently running ones. Wait for all assignments in a batch
-   before integrating their evidence. Do not duplicate the assigned extraction.
-   Independent read-only checks and specialist assignments may run concurrently
-   against the frozen revision. Keep writes and source-changing work with the
-   assigned owner; start repairs only after the results join. Use the host's
-   available lifecycle tools; do not invent one.
-5. Validate each result's id, `task_class`, revision, status, answer,
+1. Read the assignment, supplied context and any reusable evidence packet first.
+   Use a valid packet only when its question/task class, full source revision (or
+   explicit complete-scope cross-revision rule), exact input hashes, scope,
+   acceptance and provenance match. A stale, partial or out-of-scope packet is a
+   cache miss. The coordinator records and retrieves packets through the runtime;
+   scouts never mutate the shared cache. See
+   [parallel pipeline and source evidence](parallel-pipeline.md).
+2. Dispatch a scout only for an evidence question not already answered by valid
+   evidence. If the relevant source area is unknown, dispatch exactly one
+   `discovery` scout to locate files and boundaries, then validate its revision
+   and result before any specialized extraction. Discovery is not repeated when
+   the question and source inventory are already covered by a valid packet.
+3. For known source, dispatch the smallest number of `specialized` scouts that
+   answer distinct named evidence questions. One scout is sufficient for one
+   bounded question. Use additional scouts only for separately named, necessary
+   questions or complementary source and caller/test facets; never duplicate an
+   active or cached question to satisfy a fixed count. Resolve every dispatched
+   scout through `phase_run query resolve-agent scout --host codex` or `--host
+   claude` in the source namespace; installed namespaces infer their host. Pass
+   the returned model and effort inline; omit an `inherit` effort.
+4. Concurrently dispatch independent questions within available host slots.
+   Count open workers and scouts, not only running ones. Queue only assignments
+   blocked by capacity. Launch each assignment once and await its completion
+   event; do not poll, repeat a launch or send progress chatter. Release/close a
+   completed scout when the host exposes that lifecycle action.
+5. Wait only for results required by the current dependency. While a scout is
+   active, do not make overlapping repository searches, edits, tests or project
+   execution. Unrelated assigned work may continue when it does not overlap the
+   scout's paths or evidence. A dependent task waits for its prerequisite result
+   and validation, not for unrelated scouts.
+6. Validate each result's id, `task_class`, revision, status, answer,
    `field_results` for every `requested_fields` entry, evidence, search_scope,
-   uncertainty and unresolved_questions. Check `missing_test_cases` when it was
-   requested. A partial or unsupported answer does not satisfy its question;
-   send a bounded follow-up for the missing evidence or report the remaining gap.
-6. If required output fields are missing, make one bounded follow-up naming each
-   missing field. If the follow-up remains incomplete, block the dependent
-   decision. For conflicting citations, target the exact conflicting paths or
-   inputs and have the stronger domain owner resolve the conflict. Preserve
-   paths, line numbers and excerpts; do not claim more than cited evidence proves.
+   uncertainty and unresolved_questions. Check `missing_test_cases` when requested. For one
+   incomplete result, send one bounded follow-up naming only missing fields or
+   evidence. If that remains incomplete, preserve the gap and block only work
+   that depends on it; do not answer it through an unassigned parent search.
+7. Re-open consequential citations at the assigned revision before acting on
+   them. Resolve conflicting citations with one bounded follow-up; state what
+   remains uncertain. Do not repeatedly poll or send handoff chatter while
+   awaiting an assigned completion.
+
+Luna scouts may extract, summarize, classify or propose a transformation from
+cited source material. They do not implement, execute project code or tests, or
+make independent correctness, security or test-pass verdicts. Their proposals
+remain evidence for the owning role to validate. A scout result is never a code
+review, test receipt or final integrated verification.
 
 ## Direct nested dispatch and unsupported-host fallback
 
@@ -150,9 +169,5 @@ scout_request:
   resume_with: <exact dependent question/step to resume after results arrive>
 ```
 
-The coordinator dispatches the requested scouts, follows the applicable waiting
-and result-validation steps, and resumes the requesting worker with the results.
-The worker then verifies consequential citations and resumes the named step.
-Fallback changes who dispatches; it does not waive evidence quality or needed
-complementary questions. `Agent(scout)` parenthetical tool restrictions are
+The coordinator dispatches only the requested missing evidence questions, follows the same completion and result-validation steps, and resumes the requesting worker with those results. The worker then verifies consequential citations and resumes the named step. Fallback changes who dispatches; it does not waive the cache, discovery and distinct-question rules above. `Agent(scout)` parenthetical tool restrictions are
 not relied upon for nested workers; the explicit scout-only role instruction applies.

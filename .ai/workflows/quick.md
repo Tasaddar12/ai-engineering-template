@@ -257,6 +257,17 @@ Mark the task in progress, then dispatch the coder:
 phase_run query quick.update "${QUICK_ID}" --status in_progress
 ```
 
+Read the plan's exact owned paths, acceptance IDs, dependencies, named resources
+and checks. Route the quick task as a pending chunk using the quick task id as its
+route/chunk id:
+
+```bash
+phase_run query pipeline.route --spec <quick-route.json>
+```
+
+Dispatch only if its route result is `ready`; report explicit blockers otherwise.
+Set it `active` in the route spec before dispatch. Use the isolation process below.
+
 The coder is a write-capable agent, so it gets its own checkout forked from the
 session branch — the session worktree is where *you* work, not where the
 executor does. Resolve the model and record the base first:
@@ -282,6 +293,7 @@ Agent(
 
 **Plan:** ${QUICK_DIR}/${QUICK_ID}-PLAN.md
 **Task directory:** ${QUICK_DIR}
+**Chunk handoff contract:** .ai/templates/chunk-handoff.md
 
 <required_reading>
 - ${QUICK_DIR}/${QUICK_ID}-PLAN.md
@@ -295,6 +307,8 @@ Agent(
 - Commit each completed task atomically with a descriptive message
 - Write ${QUICK_DIR}/${QUICK_ID}-SUMMARY.md with status, files changed and how
   the change was confirmed to work
+- Return the committed base/head, exact scope, acceptance, dependencies, resources,
+  check definitions, summary path and status in the chunk handoff
 - If the plan turns out to be wrong, stop and report — do not improvise a
   different change
 </constraints>
@@ -319,21 +333,44 @@ A coder assigned source-changing work who returns `complete` without the require
 summary file and owned commits is blocked. Read-only specialists complete with
 their assigned cited report fields and do not create commits or summaries.
 
-Integrate the executor's branch into the session branch before checking
-anything, for the same reason a wave is integrated before its checks run — the
-work is not in your tree until it is merged:
+Register the committed chunk, prepare independent immutable reviewer/test
+snapshots, run the fresh review and runtime checks, and integrate only after
+applicable gates pass:
 
 ```bash
-phase_run query worktree.merge-wave --phase "quick-${QUICK_ID}"
-phase_run query worktree.cleanup-wave --phase "quick-${QUICK_ID}"
+phase_run query pipeline.register --spec <quick-chunk-registration.json>
+phase_run query pipeline.prepare "${QUICK_ID}"
+phase_run query pipeline.run-checks "${QUICK_ID}" --environment <explicit-environment-id>
+phase_run query pipeline.record-review "${QUICK_ID}" --report <quick-review.json>
+phase_run query pipeline.status "${QUICK_ID}"
+phase_run query pipeline.integrate "${QUICK_ID}" --revision <committed-ref>
 ```
 
-Read the result. `blocked` non-empty means an undeclared deletion or a conflict;
-escalate it rather than re-running the merge to get past it.
+Dispatch a fresh `code-reviewer` to the prepared reviewer snapshot with the exact
+SHA/base, chunk acceptance IDs, owned paths, plan and relevant instructions. Require the
+schema-1 JSON report described in the pipeline reference, and run it concurrently
+with `pipeline.run-checks`. Capture its output as a temporary repository-relative
+JSON file for `pipeline.record-review`. Check status before integrating. Preserve failed or stale
+evidence and worktrees; do not treat the coder's SUMMARY as gate evidence. After
+its gates pass, merge the registered full head SHA into the clean, unprotected
+session branch, then record the resulting revision:
+
+```bash
+git merge --no-ff <registered-head-SHA>
+phase_run query pipeline.integrate "${QUICK_ID}" --revision HEAD
+```
+
+`pipeline.integrate` validates and records that existing Git integration; it does
+not perform the merge. On conflict, abort, preserve the coder checkout and leave
+the chunk blocked for reconciliation. After successful integration, set the route
+task to `complete` and reroute to release its path/resource reservation.
+See the [parallel pipeline contract](../references/parallel-pipeline.md).
 </step>
 
 <step name="run_checks">
-If `checks_configured` is true, run the project's configured checks:
+If `checks_configured` is true, run the project's configured checks against the
+fully integrated quick-task tree. This final aggregate call preserves the legacy
+`verification.run-checks` contract; it does not replace registered chunk checks:
 
 ```bash
 phase_run query verification.run-checks
