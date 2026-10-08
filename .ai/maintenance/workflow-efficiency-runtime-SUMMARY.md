@@ -180,3 +180,47 @@ implementation hash is a commit; the assigned-base comparison contains exactly
 one implementation commit before the separate SUMMARY commit. No tracked file
 deletions were reported. Final branch/root guard and metadata commit are performed
 before returning the exact commits to the coordinator.
+
+## Independent Review Repairs
+
+Repair assignment: only malformed nested receipt handling and Windows scoped
+environment case semantics. The coordinator provided the clean integrated base
+`0152e42281b05f6c3860564a2dd98292f6bfcadb` on
+`codex/workflow-efficiency-runtime-fixes`, in the same pinned worker root. Root,
+branch, HEAD and clean status were verified before writes. This repair does not
+edit the coordinator's checkout, switch branches or publish.
+
+- `load_receipt` now treats decoder/serializer `RecursionError` as a cache miss,
+  alongside existing corruption exceptions. The regression writes a receipt with
+  100,000 nested arrays and confirms the native decoder raises `RecursionError`;
+  the runtime then runs the real command again and records passing new evidence.
+- Windows environment declarations and captured fingerprint lookup keys normalize
+  to uppercase. A lowercase declared variable now tracks changes to its uppercase
+  inherited alias. POSIX retains exact case for both names and lookups. The child
+  process still receives the original frozen environment dictionary.
+- Two subprocess regressions were added to the existing owned receipt test file.
+  The platform-case test verifies Windows reruns after alias-value changes; its
+  POSIX branch separately verifies case-distinct variables remain independent.
+
+Repair evidence:
+
+- Before the fix, `python -m unittest discover -s tests -p test_verification_receipts.py -k platform_case_semantics -v`
+  failed with an unexpected reused result after the uppercase environment value
+  changed on Windows.
+- After both fixes, `python -m unittest discover -s tests -p test_verification_receipts.py -v`
+  passed all 33 tests in 57.839s. The receipt fixture was then strengthened from
+  nesting depth 2,000 (accepted by this Python 3.13 decoder) to 100,000.
+- `python -m unittest discover -s tests -p test_verification_receipts.py -k deeply_nested -v`
+  passed the strengthened case. Its explicit `assertRaises(RecursionError)` verifies
+  the intended malformed-receipt failure path is exercised.
+- `git diff --check`: clean. Only the owned helper, owned receipt tests and this
+  appended worker SUMMARY changed. No further hardening or new dependencies.
+
+Repair status: complete. Both fixes and this evidence are committed as one slice;
+the actual repair hash is returned to the coordinator and available in Git history.
+The frozen base above remains the repair comparison base. The existing metrics
+and task commits earlier in this file describe the original implementation slice,
+not this subsequent review repair. Final root/branch guard, exact owned staging,
+commit/deletion check and clean status check precede the repair handoff. No repair
+blocker remains; broader integrated validation and independent acceptance remain
+the coordinator's responsibility.

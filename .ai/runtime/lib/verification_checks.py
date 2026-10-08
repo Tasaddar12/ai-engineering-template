@@ -41,6 +41,8 @@ def names(value, field, nonempty=False):
         bad("verification " + field + " must be a list of nonempty strings")
     if nonempty and not value:
         bad("verification " + field + " must not be empty")
+    if field == "environment" and os.name == "nt":
+        value = [name.upper() for name in value]
     return sorted(set(value))
 
 
@@ -196,7 +198,7 @@ def load_receipt(store, key, inputs):
             result[stream + "_tail"] = tail(log)
             result[stream + "_log"] = STORE + "/" + name
         return dict(result, reused=True, receipt=STORE + "/" + path.name)
-    except (OSError, ValueError, KeyError, TypeError):
+    except (OSError, ValueError, KeyError, TypeError, RecursionError):
         return None
 
 
@@ -263,6 +265,8 @@ def run(workspace, commands, configuration, timeout):
     if not isinstance(reuse, bool):
         bad("verification.reuse must be boolean")
     environment = os.environ.copy()  # Each process receives the same frozen environment.
+    environment_inputs = ({name.upper(): value for name, value in environment.items()}
+                          if os.name == "nt" else environment)
     frozen = safe_snapshot(root, guarded=True)
     try:
         revision = git(root, "rev-parse", "HEAD").decode().strip()
@@ -281,8 +285,8 @@ def run(workspace, commands, configuration, timeout):
     plans = []
     source_guards = {}
     for item in specifications:
-        relevant_env = environment if "environment" not in item else {
-            name: environment.get(name) for name in item["environment"]}
+        relevant_env = environment_inputs if "environment" not in item else {
+            name: environment_inputs.get(name) for name in item["environment"]}
         inputs = {"command": item["command"], "configuration": digest(configuration),
                   "specification": item, "source": safe_snapshot(root, item.get("sources")),
                   "environment": digest(relevant_env), "runtime": runtime,

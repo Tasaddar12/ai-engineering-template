@@ -177,6 +177,23 @@ class ReceiptTests(unittest.TestCase):
         self.write("input.txt", "relevant")
         self.assertFalse(self.run_checks({"CHECK_ENV": "changed"})["checks"][0]["reused"])
 
+    def test_scoped_environment_uses_platform_case_semantics(self):
+        command = [sys.executable, "-c", "import os; print(os.environ.get('receipt_case_env'))"]
+        self.configure([{"command": command, "sources": ["input.txt"],
+                         "environment": ["receipt_case_env"]}])
+        if os.name == "nt":
+            first = self.run_checks({"RECEIPT_CASE_ENV": "first"})
+            second = self.run_checks({"RECEIPT_CASE_ENV": "second"})
+        else:
+            first = self.run_checks({"receipt_case_env": "first", "RECEIPT_CASE_ENV": "ignored"})
+            alias_only = self.run_checks({"receipt_case_env": "first", "RECEIPT_CASE_ENV": "changed"})
+            self.assertTrue(alias_only["checks"][0]["reused"])
+            second = self.run_checks({"receipt_case_env": "second", "RECEIPT_CASE_ENV": "changed"})
+        self.assertIn("first", first["checks"][0]["stdout_tail"])
+        self.assertTrue(second["passed"])
+        self.assertFalse(second["checks"][0]["reused"])
+        self.assertIn("second", second["checks"][0]["stdout_tail"])
+
     def test_explicit_directory_includes_ignored_dependencies_and_additions(self):
         self.configure([{"command": self.command(), "sources": [".generated/deps"]}])
         self.write(".generated/deps/package", "v1")
@@ -223,6 +240,17 @@ class ReceiptTests(unittest.TestCase):
         self.assertFalse(third["checks"][0]["reused"])
         self.assertEqual(self.count(), 3)
         self.assertTrue((self.root / first["checks"][0]["stderr_log"]).exists())
+
+    def test_deeply_nested_malformed_receipt_is_cache_miss(self):
+        first = self.run_checks()
+        malformed = "[" * 100000 + "0" + "]" * 100000
+        with self.assertRaises(RecursionError):
+            json.loads(malformed)
+        self.receipt(first).write_text(malformed, encoding="utf-8")
+        second = self.run_checks()
+        self.assertTrue(second["passed"])
+        self.assertFalse(second["checks"][0]["reused"])
+        self.assertEqual(self.count(), 2)
 
     def test_missing_log_and_receipt_checksum_mismatch_are_cache_misses(self):
         first = self.run_checks()
