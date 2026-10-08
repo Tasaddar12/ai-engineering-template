@@ -17,9 +17,7 @@ evidence. Unresolved questions block dependent work, not unrelated ready work.
 The orchestrator alone dispatches workers, ticks the roadmap, updates shared
 CONTEXT/ROADMAP/STATE/REQUIREMENTS and publishes. Verify the repository root and
 branch before committing. Source examples involving scratch branches, stash or
-reset, subrepositories or ledger writes are not local agent operations — agents
-in a wave share one checkout, so a blanket working-tree operation reaches work
-they did not author. Return recovery needs and shared-record proposals in the
+reset, subrepositories or ledger writes are not local agent operations — each executor uses an isolated worktree, where a blanket working-tree operation can still damage its own in-progress work. Return recovery needs and shared-record proposals in the
 assigned result. Authors commit each completed meaningful slice of owned files
 immediately and commit their SUMMARY; the orchestrator handles push, the draft PR
 and publication under [ship](../commands/ship.md). Read-only reviewers neither
@@ -44,9 +42,11 @@ claim or risk decision in that specialist's domain, with exact revision and
 result destination. Workers dispatch `scout` children only for the repeatable
 evidence packets in [scout dispatch](scout-dispatch.md).
 
-Configured deterministic checks run through `verification.run-checks`; legacy
-entries stay serial, while a mapping opts into parallel execution only when it
-declares independence. Resource locks serialize commands that share a resource.
+Registered chunk checks use `pipeline.run-checks` against the immutable test\nsnapshot;
+they do not replace `verification.run-checks`, which remains the configured final
+phase check on the fully integrated tree. Legacy verification entries stay serial,
+while a mapping opts into parallel execution only when it declares independence.
+Resource locks serialize commands that share a resource.
 Use successful receipts as evidence. Declare generated dependency/build inputs
 and stable environment stamps that affect a command. Volatile external state
 needs reuse disabled for that check or for verification globally. AI diagnosis
@@ -73,9 +73,15 @@ The role and method files describe the following actual local operations:
 | Configure execution | `.planning/config.yaml` owns commit behavior, model and effort overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
 | Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
-| Schedule work | `phase-plan-index` groups plans into dependency and file-overlap waves; execute waves in order and run each wave's work concurrently only within that wave |
+| Schedule work | Legacy, unregistered whole-plan assignments use `phase-plan-index` dependency and file-overlap waves: execute those waves in order and run work concurrently only within each wave. Registered chunk assignments use `pipeline.route` to admit ready tasks, then register each committed SHA and run review and checks on immutable snapshots while the coder continues disjoint owned work. |
 | Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
 | Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
+
+For registered chunks, the host coordinator owns dispatch and lifecycle events;
+the runtime enforces route, evidence and readiness state. Wait only for actual
+prerequisites, overlapping paths or shared resources. A host does not automatically
+launch agents because routed concurrency is documented. Chunk gates remain
+provisional: final integrated verification and independent review are mandatory.
 
 The runtime owns its verification attestation. Do not hand-compute or invent
 foreign schema fields, package verdicts or provenance digests. Record exact
