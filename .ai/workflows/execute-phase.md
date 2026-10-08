@@ -547,9 +547,14 @@ wave's work has not landed in yet:
 phase_run query verification.run-checks
 ```
 
-Report any failing check with its command and output tail. A failing check blocks
-the next wave: hand it to the responsible coder, or to the debugger when the
-cause is unclear.
+Consume successful receipts when their tested revision, declared sources,
+environment and configuration still match this integrated wave. A matching
+receipt is deterministic evidence; report its tested revision and receipt
+reference without asking an AI agent to repeat or explain a pass. Use the bounded
+output tails for failures or ambiguous results. A failing check blocks dependent
+waves: hand it to the responsible coder, or to the debugger when the cause is
+unclear. Repairs invalidate affected receipts; rerun those checks on the repaired
+revision before accepting the wave.
 </step>
 
 <step name="aggregate_results">
@@ -570,6 +575,13 @@ out-of-scope code-review findings. Do not create todos.
 
 <step name="code_review_gate">
 **Skip only when `--no-review` was passed and the user asked for it.**
+
+After all waves are integrated, freeze the session revision. Start the required
+fresh code-reviewer and call `verification.run-checks` together against that
+revision; valid receipts from the final wave can be reused. The reviewer owns
+source correctness and security findings. Wait for both results before accepting
+the phase or repairing it. If a repair changes source, rerun affected checks and
+obtain a fresh review of the repaired revision.
 
 ```
 Agent(

@@ -19,18 +19,20 @@ source examples and result contracts.
 | [Integration checker](integration-checker.md) | verify-work | Expected cross-phase connections → read-only wiring and flow evidence → verifier |
 | [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
-| [Scout](scout.md) | Every non-scout role | Narrow read-only question and revision → cited evidence → assigning role |
+| [Scout](scout.md) | Any role, when evidence gaps warrant it | Bounded read-only question and revision → cited evidence → assigning role |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
 
-The orchestrator selects the useful responsibilities; a small change need not run
-every specialist. The documentation route reads doc-writer directly. The verifier
-loads doc-verifier for documentation obligations and integration-checker for
-connections.
+The orchestrator selects responsibilities to match scope and uncertainty; a small
+change need not run every specialist. The documentation route reads doc-writer
+directly. Verification adds doc-verifier for documentation claims and
+integration-checker for relevant cross-component connections. Deterministic
+configured checks establish their result through runtime receipts; AI diagnosis
+is reserved for failures or ambiguous results that need interpretation.
 
 A fresh code-reviewer separately assesses the changed source before a phase
 closes; the verifier cannot substitute for that dispatch, and a coder's
-self-check is not a review. Worker roles may spawn only `scout` children for
-the assigned evidence task. Scouts never spawn children; the orchestrator owns
+self-check is not a review. Worker roles may spawn only `scout` children when an
+assigned evidence gap warrants it. Scouts never spawn children; the orchestrator owns
 worker lifecycle, integration, shared records and publication.
 
 Reviewers return complete results to the orchestrator, which routes false

@@ -1,6 +1,6 @@
 ---
 name: execute-phase
-description: "Execute a phase's plans in dependency waves, review the resulting code, then verify the phase goal."
+description: "Execute a phase's plans in dependency waves, review correctness and security, consume valid check receipts, then verify the phase goal."
 argument-hint: "<phase> [--plan <id>] [--wave <n>] [--sequential] [--resume] [--no-review]"
 allowed-tools:
   - Read
@@ -22,7 +22,8 @@ Run the plans a phase has, then confirm what they actually produced.
 2. Group plans into waves by dependency and by file overlap
 3. Dispatch a coder subagent per plan, waves in order, parallel within a wave
 4. Escalate checkpoints to the user instead of guessing
-5. Run configured checks, aggregate requirement coverage, review the code
+5. Run configured checks against each integrated wave, reuse valid receipts,
+   aggregate requirement coverage, and review the final integrated revision
 6. Tick the roadmap only for plans with a complete SUMMARY.md
 7. Carry on into `/verify-work`, and on a pass into `/ship`, in the same session —
    never hand the user the next command, and never stop at a context advisory

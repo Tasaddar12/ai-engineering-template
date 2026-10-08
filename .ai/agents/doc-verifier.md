@@ -12,9 +12,11 @@ color: orange
 ---
 
 <local_workflow>
-Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. Dispatch only `scout` children;
-worker lifecycle, integration, shared records and publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
+specialist can resolve an evidence gap. Known, bounded sources need no scout;
+discover unknown scope once and add complementary evidence only for material
+risk or uncertainty. Worker lifecycle, integration, shared records and
+publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local

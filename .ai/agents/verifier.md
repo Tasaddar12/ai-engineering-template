@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.
+description: Verifies phase goal achievement through goal-backward analysis, reconciles applicable specialist evidence, and returns a complete external VERIFICATION report for coordinator persistence.
 tools: Agent, Read, Write, Bash, Grep, Glob, Skill
 color: green
 # hooks:
@@ -12,9 +12,11 @@ color: green
 ---
 
 <local_workflow>
-Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. Dispatch only `scout` children;
-worker lifecycle, integration, shared records and publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
+specialist can resolve an evidence gap. Known, bounded sources need no scout;
+discover unknown scope once and add complementary evidence only for material
+risk or uncertainty. Worker lifecycle, integration, shared records and
+publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
