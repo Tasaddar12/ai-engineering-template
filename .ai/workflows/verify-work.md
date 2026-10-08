@@ -456,6 +456,19 @@ This is success bookkeeping, not the final verdict. A refresh-only invocation
 whose existing report is already current skips this and the following record
 mutations.
 
+For a new success-bookkeeping attempt, require a clean worktree and capture
+`pre_bookkeeping_revision=$(git rev-parse HEAD)` immediately before these runtime
+verbs:
+
+```bash
+git status --porcelain --untracked-files=all
+pre_bookkeeping_revision=$(git rev-parse HEAD)
+```
+
+The status command must be empty. The exact direct-child commit created in
+`update_state` is the only commit the compensation procedure may reverse if final
+reconciliation is nonpass.
+
 ```bash
 phase_run query phase.complete "${phase_number}"
 ```
@@ -490,7 +503,16 @@ phase_run query state.record-session \
   --resume-file "${phase_dir}/${padded_phase}-VERIFICATION.md"
 phase_run query commit "docs(${padded_phase}): verify phase" \
   --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
+bookkeeping_commit=$(git rev-parse HEAD)
 ```
+
+If `bookkeeping_commit` differs from `pre_bookkeeping_revision`, guard it before
+continuing: require its first parent to equal the captured pre-bookkeeping
+revision and require `git diff-tree --no-commit-id --name-only --no-renames -r
+"${bookkeeping_commit}"` to list only `.planning/ROADMAP.md`,
+`.planning/STATE.md` and `.planning/REQUIREMENTS.md`.
+If no commit was created, leave `bookkeeping_commit` empty. These captured values
+are inputs to the bounded compensation procedure below.
 
 ```bash
 phase_run query planning.validate
@@ -501,14 +523,36 @@ Present any warnings with the result; do not fix them here.
 
 <step name="final_frozen_reconciliation">
 After one-time success bookkeeping, capture its resulting `HEAD` as a new
-`frozen_revision`. Start `verification.run-checks` and a final read-only verifier
-together against that revision. Reuse only receipts valid for this invocation;
-rerun checks whose declared inputs, environment, configuration or revision
-binding no longer match. Resume the verifier after results join, passing the
-provisional report, every check result/receipt, applicable specialist findings,
-and the actual bookkeeping diff. It must inspect the changed planning records and
-confirm source acceptance coverage at the new HEAD; only that examined revision
-may be written into the final report.
+`frozen_revision`. Start `verification.run-checks` and a provisional read-only
+verifier together against that revision. Reuse only receipts valid for this
+invocation; rerun checks whose declared inputs, environment, configuration or
+revision binding no longer matches. The initial verifier receives pending check
+results, inspects the actual bookkeeping diff and source acceptance coverage,
+and does not finalize. After all results join, resume it with every check
+result/receipt, applicable specialist findings and the actual bookkeeping diff.
+Only the revision the resumed verifier reviewed may appear in a final report.
+
+If the joined final result is `passed`, the coordinator writes the final report
+and commits only `NN-VERIFICATION.md` as the last local write.
+
+If the joined final result is `gaps_found` or `human_needed`, do not persist it
+yet or leave this attempt's success records in place. Apply the bounded
+[bookkeeping compensation procedure](../references/verification-evidence.md#compensating-a-failed-final-verification)
+to the exact captured commit. After a successful revert, use
+`state.record-session` to record the nonpass outcome and commit that STATE-only
+change. If a guard fails or revert conflicts, do not reset or edit records:
+abort only the revert attempted by this coordinator, preserve the records, and
+record a blocked outcome through the runtime. If it cannot be returned to a
+clean tree, preserve the work and stop without writing a report. A completed
+roadmap/requirement record with unsafe compensation is a blocker, never a pass.
+
+After a clean compensation/status commit, capture a new frozen revision; run
+configured checks and a fresh read-only verifier together, with no success
+bookkeeping. Resume the verifier only after results join, providing the prior
+nonpass findings and all current receipts/results. Retain this attempt's nonpass
+outcome; do not restart the success path. Commit the final nonpass report alone
+after this reconciliation. For refresh-only runs, reconcile at the current
+revision without repeating bookkeeping or starting another `/ship`.
 
 For a refresh-only invocation, reconcile at the current revision without
 repeating phase completion, requirement closure or session writes. If this

@@ -72,6 +72,8 @@ class EfficiencyContractTests(unittest.TestCase):
         patterns = self.read(".ai/references/methods/verification-patterns.md")
         verifier = " ".join(verifier.split())
         patterns = " ".join(patterns.split())
+        self.assertIn("For each declared connection without applicable cited evidence", verifier)
+        self.assertNotIn("For every declared `from`", verifier)
         self.assertIn("do not finalize status until the coordinator resumes you", verifier)
         self.assertIn("do not rerun broad import and usage searches", verifier)
         self.assertIn("valid configured-check receipt", verifier)

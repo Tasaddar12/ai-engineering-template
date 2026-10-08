@@ -14,11 +14,13 @@ Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
 
 A command names a workflow. The workflow is the procedure: it decides what to
 load, which agents to spawn with what context, and which runtime verbs to call.
-The [runtime](.ai/runtime/README.md) performs every planning-record change — phase
+The [runtime](.ai/runtime/README.md) performs every planning-record change - phase
 numbering, the roadmap, STATE.md, PROJECT.md's Key Decisions, REQUIREMENTS.md's
 Traceability, todos, quick tasks, milestones. Do not edit those structures by
 hand; `python .ai/runtime/phase.py query <verb>` owns them, and hand edits drift
-from them.
+from them. The only exception is the exact, guarded Git compensation of a
+coordinator-created bookkeeping-only commit described in
+[verification evidence](.ai/references/verification-evidence.md#compensating-a-failed-final-verification).
 
 Prose the runtime does not own — a project's narrative sections, a requirement's
 wording, an ADR's argument — is written by hand, and `planning.validate` reports
