@@ -65,7 +65,8 @@ class PipelineTests(unittest.TestCase):
 
     def complete(self, spec):
         pipeline.prepare(self.ws, spec["chunk_id"])
-        self.assertTrue(pipeline.run_checks(self.ws, spec["chunk_id"], "test-host")["passed"])
+        checks = pipeline.run_checks(self.ws, spec["chunk_id"], "test-host")
+        self.assertTrue(checks["passed"], checks)
         pipeline.record_review(self.ws, spec["chunk_id"], self.review(spec))
         pipeline.integrate(self.ws, spec["chunk_id"], spec["head"])
 
@@ -78,7 +79,8 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(self.git("rev-parse", "HEAD", cwd=root), spec["head"])
             self.assertEqual(self.git("branch", "--show-current", cwd=root), "")
         self.next_spec("two")
-        self.assertTrue(pipeline.run_checks(self.ws, "one", "test-host")["passed"])
+        checks = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertTrue(checks["passed"], checks)
         result = pipeline.record_review(self.ws, "one", self.review(spec))
         self.assertIn("did not observe", result["provenance"])
         pipeline.integrate(self.ws, "one", self.git("rev-parse", "HEAD"))
@@ -152,7 +154,7 @@ class PipelineTests(unittest.TestCase):
         pipeline.prepare(self.ws, "one")
         result = pipeline.run_checks(self.ws, "one", "test-host")
         self.assertFalse(result["passed"])
-        self.assertEqual(result["checks"][0]["exit_code"], 7)
+        self.assertEqual(result["checks"][0]["exit_code"], 7, result)
         self.assertIn("failure log", result["checks"][0]["stdout_tail"])
         self.assertTrue((pipeline.store_root(self.ws) / result["checks"][0]["stdout_log"]).is_file())
         with self.assertRaises(VerbError):
@@ -218,7 +220,7 @@ class PipelineTests(unittest.TestCase):
         first = pipeline.run_checks(self.ws, "one", "test-host")
         self.assertFalse(first["reused"])
         reused = pipeline.run_checks(self.ws, "one", "test-host")
-        self.assertTrue(reused["reused"])
+        self.assertTrue(reused["reused"], reused)
         self.assertEqual(reused["attempt"], first["attempt"])
         self.assertEqual(reused["tested_revision"], spec["head"])
         forced = pipeline.run_checks(self.ws, "one", "test-host", reuse=False)
@@ -281,9 +283,10 @@ class PipelineTests(unittest.TestCase):
                 if running:
                     break
                 time.sleep(0.02)
-            self.assertTrue(running)
+            self.assertTrue(running, future.result(timeout=20) if future.done() else "check did not enter running state")
             self.assertTrue(pipeline.record_review(self.ws, "one", self.review(spec))["passed"])
-            self.assertTrue(future.result(timeout=20)["passed"])
+            checks = future.result(timeout=20)
+            self.assertTrue(checks["passed"], checks)
 
     def test_dependency_chunk_must_be_in_registered_base(self):
         first = self.spec()
@@ -296,6 +299,89 @@ class PipelineTests(unittest.TestCase):
         result = pipeline.status(self.ws, "two")
         self.assertEqual(result["status"], "blocked")
         self.assertTrue(any("registered base" in x for x in result["reasons"]))
+
+    def test_changed_prerequisite_scope_blocks_only_linked_work(self):
+        first = self.spec()
+        pipeline.register(self.ws, first)
+        self.complete(first)
+        second = self.next_spec("two", deps=["one"])
+        pipeline.register(self.ws, second)
+        third = self.next_spec("three")
+        pipeline.register(self.ws, third)
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "ready")
+        # An unrelated committed chunk above leaves prerequisite evidence valid.
+        (self.root / "one.txt").write_text("corrected prerequisite\n")
+        self.git("add", "one.txt")
+        self.git("commit", "-m", "affected correction")
+        dependent = pipeline.status(self.ws, "two")
+        self.assertEqual(dependent["status"], "blocked")
+        self.assertTrue(any("scope/inputs/config" in x for x in dependent["reasons"]))
+        self.assertEqual(pipeline.status(self.ws, "three")["status"], "ready")
+        tasks = [{"id": "linked", "depends_on": ["one"], "owned_paths": ["next.py"],
+                  "resources": [], "state": "pending"},
+                 {"id": "independent", "depends_on": [], "owned_paths": ["else.py"],
+                  "resources": [], "state": "pending"}]
+        self.assertEqual([x["status"] for x in pipeline.route(self.ws, {"schema": 1, "tasks": tasks})["tasks"]],
+                         ["blocked", "ready"])
+        with self.assertRaises(VerbError):
+            pipeline.prepare(self.ws, "two")
+
+    def test_changed_check_input_and_configuration_invalidate_dependency(self):
+        first = self.spec()
+        first["checks"][0]["inputs"].append("seed.txt")
+        pipeline.register(self.ws, first)
+        self.complete(first)
+        second = self.next_spec("two", deps=["one"])
+        pipeline.register(self.ws, second)
+        (self.root / "seed.txt").write_text("changed input\n")
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "blocked")
+        (self.root / "seed.txt").write_text("seed\n")
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "ready")
+        planning = self.root / ".planning"
+        planning.mkdir()
+        (planning / "config.yaml").write_text("verification: changed\n")
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "blocked")
+
+    def test_affected_correction_cannot_be_attested_by_old_chunk_gates(self):
+        first = self.spec()
+        pipeline.register(self.ws, first)
+        pipeline.prepare(self.ws, "one")
+        pipeline.run_checks(self.ws, "one", "test-host")
+        pipeline.record_review(self.ws, "one", self.review(first))
+        (self.root / "one.txt").write_text("correction after frozen test\n")
+        self.git("add", "one.txt")
+        self.git("commit", "-m", "correction")
+        with self.assertRaises(VerbError):
+            pipeline.integrate(self.ws, "one", self.git("rev-parse", "HEAD"))
+        with pipeline.transaction(self.ws) as state:
+            self.assertIsNone(state["chunks"]["one"]["integrated"])
+
+    def test_absolute_executable_with_forward_slashes_is_external_not_source_scope(self):
+        # This exercises the Linux absolute-interpreter branch on Windows too.
+        executable = Path(sys.executable).as_posix()
+        spec = self.spec(command=[executable, "-c", "print('portable interpreter')"])
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        checks = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertTrue(checks["passed"], checks)
+        identity = checks["checks"][0]["execution_identity"]
+        self.assertTrue(Path(identity["executable"]).is_absolute(), identity)
+        self.assertEqual(len(identity["executable_sha256"]), 64, identity)
+        self.assertTrue(pipeline.run_checks(self.ws, "one", "test-host")["reused"])
+
+    def test_external_executable_symlink_is_canonicalized_without_relaxing_source_paths(self):
+        if os.name == "nt":
+            self.skipTest("external executable symlink fixture runs on Linux CI")
+        executable = Path(self.temp.name) / "python-alias"
+        executable.symlink_to(Path(sys.executable).resolve())
+        spec = self.spec(command=[str(executable), "-c", "print('canonical interpreter')"])
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        checks = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertTrue(checks["passed"], checks)
+        self.assertEqual(checks["checks"][0]["execution_identity"]["executable"], str(Path(sys.executable).resolve()))
+        with self.assertRaises(VerbError):
+            pipeline.safe(executable.parent, executable.name)
 
     def test_symlink_and_path_escape_rejected(self):
         spec = self.spec()

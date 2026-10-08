@@ -13,9 +13,9 @@ provides:
   - serialized atomic common-repository chunk state
 affects: [execute-phase, verify-work, coordinator-dispatch]
 actuals:
-  tokens: 13343
-  tasks: 3
-  commits: 1
+  tokens: 15738
+  tasks: 5
+  commits: 2
 tech-stack:
   added: []
   patterns: [detached Git snapshots, OS file locks, atomic JSON replacement]
@@ -62,10 +62,11 @@ work. Independent coding can continue while checks and review use frozen trees.
 
 ## Performance
 
-Three tasks completed in four owned files: runtime enforcement, CLI wiring, and
-real Git/subprocess regression coverage with this maintenance record. Startup
+Five tasks completed in four owned files: runtime enforcement, CLI wiring,
+real Git/subprocess regression coverage, prerequisite invalidation and portable
+executable provenance, with this maintenance record. Startup
 time was not captured, so duration is an evidence gap rather than an estimate.
-The implementation measurement is 53,371 characters / 4, rounded to 13,343,
+The cumulative implementation measurement is 62,954 characters / 4, rounded to 15,738,
 from the assigned base's phase.py diff plus new pipeline/test source bytes;
 this SUMMARY and binary/generated files are excluded. There was no plan estimate.
 
@@ -82,7 +83,12 @@ this SUMMARY and binary/generated files are excluded. There was no plan estimate
   and uses the result before dispatch; the runtime never launches agents.
 - Dependency release requires integration ancestry, prerequisite passing current
   check/review gates, and a dependent registered base containing the prerequisite
-  chunk. A SUMMARY is never consulted as completion evidence.
+  chunk. Integration records content/mode inventory for owned source scopes,
+  explicit check inputs and `.planning/config.yaml`. Current relevant working
+  and committed bytes are revalidated before dependency release. Corrections,
+  added/deleted input files or configuration changes block only linked work;
+  unrelated changes proceed. Relevant integrated bytes must match the tested
+  frozen chunk. A SUMMARY is never consulted as completion evidence.
 - Tests execute explicit argv with a timeout in the test snapshot. Receipts retain
   attempts, full logs, hashed inputs/stat identity, environment hash and explicit
   identity, executable bytes/path, runtime/OS identity and the exact tested SHA.
@@ -101,24 +107,29 @@ this SUMMARY and binary/generated files are excluded. There was no plan estimate
 
 ## Task Commits
 
-The runtime implementation, tests, CLI wiring and this SUMMARY form one completed
-slice, committed together with `feat(runtime): enforce immutable parallel chunk gates`.
-The exact resulting hash is recorded in Git and supplied in the worker return.
+1. `e8512bf0249ecdee58721321a71e34c2e0f61c06`:
+   `feat(runtime): enforce immutable parallel chunk gates`.
+2. Follow-up slice: `fix(runtime): invalidate changed prerequisites and resolve external executables`.
+   The resulting hash is recorded in Git and supplied in the worker return.
 
 ## Checks
 
 - **Tested input:** assigned base aa0b044 plus the owned final implementation diff.
 - **Command:** `python -m unittest discover -s tests -p test_parallel_pipeline.py -v`.
-- **Result:** 18 tests passed in 93.288 seconds; one native filesystem symlink test
-  skipped because this Windows host lacks symlink privilege. Committed Git symlink
-  refusal is tested independently without requiring native privilege.
+- **Final result:** 23 tests run in 135.221 seconds; 21 passed and two skipped.
+  The native filesystem symlink test skipped because this Windows host lacks
+  symlink privilege; the external executable symlink fixture is Linux-only.
+  Committed Git symlink refusal is tested independently without native privilege,
+  and the absolute executable with forward slashes is tested on Windows too.
 - **Scenarios:** paired snapshots and author advancement; same-chunk overlapping
   checks/review; dependent integration and current gates; registered-base ancestry;
   named resources and ownership routing; future/cyclic task prerequisites;
   malformed/stale/failed reviews; failed/timeout/empty checks; exact receipt reuse
   and forced execution; environment identity changes; mutation, log/state
   corruption, partial receipts, missing state, concurrent subprocess registrations,
-  and path escape/committed symlink rejection.
+  path escape/committed symlink rejection, affected prerequisite corrections,
+  current check-input/configuration changes, rejection of untested integrated
+  corrections, and portable absolute executable provenance.
 - **Command:** `python -m unittest discover -s tests -p test_phase_runtime.py`.
 - **Result:** 158 tests passed in 177.662 seconds. Existing verification.py is
   unchanged and its legacy API remains covered.
@@ -129,6 +140,12 @@ source while checks were active. Runtime identity invalidation worked as intende
 the final passing run held runtime source unchanged. Initial Windows Store Python
 alias hashing failed because an execution alias cannot be read as executable bytes;
 the runtime now binds that alias to the current interpreter's installed binary.
+Supplied Linux CI job output subsequently showed interpreter execution failures
+in the initial slice. Source diagnosis identified absolute `/opt/...` argv paths
+being sent through repository-input containment. The follow-up accepts declared
+absolute external executables and canonicalizes/hashes their resolved binary;
+source/snapshot containment and symlink refusal remain strict. Test failure
+assertions now include receipt details. Native Linux results await coordinator CI.
 
 ## Files Created/Modified
 
@@ -145,7 +162,9 @@ the approved scope. Windows Python aliases retain both launcher and binary ident
 
 ## Deviations from Plan
 
-No scope deviation. The maintenance PLAN has prose acceptance outcomes but no bare
+No scope deviation. The coordinator requested a correction for stale integrated
+prerequisite evidence and supplied the Linux CI failure; both were handled in a
+new tested slice without amending the initial commit. The maintenance PLAN has prose acceptance outcomes but no bare
 acceptance or requirement IDs; metadata lists remain empty rather than invent IDs.
 The evidence cache module is owned by the sibling worker; phase.py imports it
 lazily and calls its agreed store/lookup/invalidate APIs through `--spec` JSON.
@@ -160,7 +179,9 @@ filesystem symlink privilege is absent; that one regression is skipped explicitl
 
 Coordinator integration must validate evidence CLI wiring with sibling commit
 e415dab, run the repository aggregate and hooks on the final integrated revision,
-and obtain fresh independent review/verification. Linux/Windows CI and final
+and obtain fresh independent review/verification. Linux CI must execute the native
+external executable symlink fixture and confirm the supplied failed job is repaired.
+Linux/Windows CI and final
 correctness, security, documentation/integration and aggregate gates remain
 separate. No publication or merge was performed by this worker.
 
@@ -168,6 +189,11 @@ Runtime snapshots and failed attempts intentionally have no automatic destructiv
 cleanup. A process killed during checks leaves a running attempt for coordinator
 inspection instead of silently claiming success. Duration measurement is missing
 because startup was not captured. No heavy engine, Docker or model benchmark ran.
+Pre-upgrade integration records without a content fingerprint fail closed and need
+fresh runtime check evidence and a validated integration record. Owned directory
+inventories use tracked/nonignored Git source files; explicit input directories
+also include ignored files, keeping generated runtime caches outside undeclared
+input contracts from blocking unrelated work.
 
 ## Known Stubs
 

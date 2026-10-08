@@ -263,6 +263,7 @@ def register(workspace, spec):
                 "pipeline-spec")
         state["chunks"][key] = {"spec": spec, "spec_digest": digest(spec),
                                 "attempts": [], "snapshots": None, "integrated": None,
+                                "integration_fingerprint": None,
                                 "order": len(state["chunks"])}
         return {"chunk": key, "sha": spec["head"], "base_sha": spec["base"]}
 
@@ -307,9 +308,12 @@ def hashed_inputs(root, check):
 
 def execution_identity(check, cwd):
     command = check["argv"][0]
-    executable = str(safe(cwd, command)) if "/" in command else shutil.which(command)
-    if executable is None and Path(command).is_absolute():
+    if Path(command).is_absolute():
         executable = command
+    elif "/" in command or "\\" in command:
+        executable = str(safe(cwd, command))
+    else:
+        executable = shutil.which(command)
     require(executable and Path(executable).is_file(), "check executable unavailable", "pipeline-input")
     path = Path(executable)
     # Windows Store's Python app execution alias launches correctly but its
@@ -326,6 +330,95 @@ def execution_identity(check, cwd):
 
 def latest(item, kind):
     return next((a for a in reversed(item["attempts"]) if a["kind"] == kind), None)
+
+
+def tree_inventory(workspace, revision):
+    result = {}
+    for entry in git(workspace.root, "ls-tree", "-r", "-z", revision).split("\0"):
+        if not entry:
+            continue
+        metadata, path = entry.split("\t", 1)
+        mode, kind, oid = metadata.split()
+        result[path] = {"mode": mode, "oid": oid}
+    return result
+
+
+def integration_boundaries(item, inventory):
+    paths = list(item["spec"]["owned_paths"]) + [".planning/config.yaml"]
+    for check in item["spec"]["checks"]:
+        for path in check["inputs"]:
+            # Check inputs may spell a directory without its trailing slash.
+            if any(name.startswith(path.rstrip("/") + "/") for name in inventory):
+                path = path.rstrip("/") + "/"
+            paths.append(path)
+    return sorted(set(paths))
+
+
+def relevant_inventory(inventory, boundaries):
+    return {name: value for name, value in inventory.items() if owned(name, boundaries)}
+
+
+def working_inventory(workspace, boundaries, tracked, explicit_inputs=()):
+    """Git-normalized bytes, modes, additions and deletions in exact boundaries."""
+    candidates = set(git(workspace.root, "ls-files", "--cached", "--others",
+                         "--exclude-standard", "-z").split("\0"))
+    # Explicit check directories and files include ignored inputs. Owned scopes
+    # use Git's source inventory so unrelated ignored runtime output is harmless.
+    for boundary in boundaries:
+        path = safe(workspace.root, boundary)
+        if not boundary.endswith("/") and path.exists():
+            candidates.add(boundary)
+    for name in explicit_inputs:
+        path = safe(workspace.root, name)
+        if path.is_dir():
+            for child in path.rglob("*"):
+                relative_name = child.relative_to(workspace.root).as_posix()
+                safe(workspace.root, relative_name)
+                if child.is_file():
+                    candidates.add(relative_name)
+    result = {}
+    for name in sorted(candidates):
+        if not name or not owned(name, boundaries):
+            continue
+        path = safe(workspace.root, name)
+        if not path.exists():
+            continue
+        require(path.is_file(), "non-file integration input: " + name, "pipeline-input")
+        mode = tracked.get(name, {}).get("mode", "100644") if os.name == "nt" else (
+            "100755" if path.stat().st_mode & 0o111 else "100644")
+        result[name] = {"mode": mode,
+                        "oid": git(workspace.root, "hash-object", "--path=" + name,
+                                   "--", str(path))}
+    return result
+
+
+def integration_fingerprint(workspace, item, revision):
+    tested = tree_inventory(workspace, item["spec"]["head"])
+    boundaries = integration_boundaries(item, tested)
+    expected = relevant_inventory(tested, boundaries)
+    integrated = relevant_inventory(tree_inventory(workspace, revision), boundaries)
+    require(integrated == expected,
+            "integrated prerequisite scope/inputs/config differ from tested chunk", "pipeline-stale")
+    current = working_inventory(workspace, boundaries, tree_inventory(workspace, "HEAD"),
+                                [name for check in item["spec"]["checks"] for name in check["inputs"]])
+    require(current == integrated,
+            "current prerequisite scope/inputs/config differ from integrated revision", "pipeline-stale")
+    require(working_inventory(workspace, boundaries, tree_inventory(workspace, "HEAD"),
+                              [name for check in item["spec"]["checks"] for name in check["inputs"]]) == current,
+            "prerequisite scope/inputs/config changed during validation", "pipeline-stale")
+    return {"revision": revision, "boundaries": boundaries, "inventory": integrated,
+            "digest": digest(integrated), "spec_digest": item["spec_digest"]}
+
+
+def integration_reasons(workspace, item):
+    try:
+        recorded = item.get("integration_fingerprint")
+        require(isinstance(recorded, dict), "integration fingerprint missing", "pipeline-stale")
+        current = integration_fingerprint(workspace, item, item["integrated"])
+        require(current == recorded, "integration fingerprint stale/corrupt", "pipeline-stale")
+        return []
+    except (VerbError, OSError, KeyError, TypeError) as exc:
+        return [str(exc)]
 
 
 def gates(workspace, item, kinds=("checks", "review")):
@@ -366,12 +459,14 @@ def gates(workspace, item, kinds=("checks", "review")):
 def readiness(workspace, state, key, retry=False, ignore_running=False):
     item = chunk(state, key)
     blocked, waiting = [], []
+    if item["integrated"]:
+        blocked.extend(integration_reasons(workspace, item))
     for dep in item["spec"]["depends_on"]:
         prerequisite = chunk(state, dep)
         if not prerequisite["integrated"]:
             waiting.append("dependency " + dep + " not integrated")
         else:
-            failures = gates(workspace, prerequisite)
+            failures = gates(workspace, prerequisite) + integration_reasons(workspace, prerequisite)
             integrated = prerequisite["integrated"]
             if failures:
                 blocked.extend("dependency " + dep + ": " + reason for reason in failures)
@@ -457,7 +552,8 @@ def route(workspace, spec):
                 if not prior["integrated"]:
                     waiting.append("dependency " + dep + " not integrated")
                 else:
-                    blocked.extend("dependency " + dep + ": " + reason for reason in gates(workspace, prior))
+                    blocked.extend("dependency " + dep + ": " + reason for reason in
+                                   gates(workspace, prior) + integration_reasons(workspace, prior))
                     if not ancestor(workspace.root, prior["integrated"], git(workspace.root, "rev-parse", "HEAD")):
                         waiting.append("dependency " + dep + " integrated revision absent from current HEAD")
             if task["state"] != "complete":
@@ -651,4 +747,5 @@ def integrate(workspace, key, revision):
                 and not git(workspace.root, "status", "--porcelain", "--untracked-files=all"),
                 "integrated revision absent or checkout dirty", "pipeline-dirty")
         item["integrated"] = revision
+        item["integration_fingerprint"] = integration_fingerprint(workspace, item, revision)
     return {"chunk": key, "integrated": revision, "final_verification": "required-separately"}
