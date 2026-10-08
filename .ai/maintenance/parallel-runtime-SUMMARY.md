@@ -13,9 +13,9 @@ provides:
   - serialized atomic common-repository chunk state
 affects: [execute-phase, verify-work, coordinator-dispatch]
 actuals:
-  tokens: 15738
-  tasks: 5
-  commits: 2
+  tokens: 17608
+  tasks: 7
+  commits: 3
 tech-stack:
   added: []
   patterns: [detached Git snapshots, OS file locks, atomic JSON replacement]
@@ -62,11 +62,12 @@ work. Independent coding can continue while checks and review use frozen trees.
 
 ## Performance
 
-Five tasks completed in four owned files: runtime enforcement, CLI wiring,
+Seven tasks completed in four owned files: runtime enforcement, CLI wiring,
 real Git/subprocess regression coverage, prerequisite invalidation and portable
-executable provenance, with this maintenance record. Startup
+executable provenance, directory-topology/nonregular input guards, and check-cwd
+executable binding, with this maintenance record. Startup
 time was not captured, so duration is an evidence gap rather than an estimate.
-The cumulative implementation measurement is 62,954 characters / 4, rounded to 15,738,
+The cumulative implementation measurement is 70,432 characters / 4, rounded to 17,608,
 from the assigned base's phase.py diff plus new pipeline/test source bytes;
 this SUMMARY and binary/generated files are excluded. There was no plan estimate.
 
@@ -109,16 +110,19 @@ this SUMMARY and binary/generated files are excluded. There was no plan estimate
 
 1. `e8512bf0249ecdee58721321a71e34c2e0f61c06`:
    `feat(runtime): enforce immutable parallel chunk gates`.
-2. Follow-up slice: `fix(runtime): invalidate changed prerequisites and resolve external executables`.
-   The resulting hash is recorded in Git and supplied in the worker return.
+2. `2495d79fefc7f16a0ad82ebc85e64b2e993f26bc`:
+   `fix(runtime): invalidate changed prerequisites and resolve external executables`.
+3. Reviewer correction slice:
+   `fix(runtime): bind directory topology and actual check executable`.
+   Its resulting hash is recorded in Git and supplied in the worker return.
 
 ## Checks
 
 - **Tested input:** assigned base aa0b044 plus the owned final implementation diff.
 - **Command:** `python -m unittest discover -s tests -p test_parallel_pipeline.py -v`.
-- **Final result:** 23 tests run in 135.221 seconds; 21 passed and two skipped.
+- **Final result:** 27 tests run in 158.556 seconds; 24 passed and three skipped.
   The native filesystem symlink test skipped because this Windows host lacks
-  symlink privilege; the external executable symlink fixture is Linux-only.
+  symlink privilege; the external executable symlink and native FIFO fixtures are Linux-only.
   Committed Git symlink refusal is tested independently without native privilege,
   and the absolute executable with forward slashes is tested on Windows too.
 - **Scenarios:** paired snapshots and author advancement; same-chunk overlapping
@@ -129,7 +133,9 @@ this SUMMARY and binary/generated files are excluded. There was no plan estimate
   corruption, partial receipts, missing state, concurrent subprocess registrations,
   path escape/committed symlink rejection, affected prerequisite corrections,
   current check-input/configuration changes, rejection of untested integrated
-  corrections, and portable absolute executable provenance.
+  corrections, portable absolute executable provenance, directory topology
+  receipt invalidation, nonregular-input rejection before reading, and executable
+  identity/launch consistency with a cwd-relative PATH directory.
 - **Command:** `python -m unittest discover -s tests -p test_phase_runtime.py`.
 - **Result:** 158 tests passed in 177.662 seconds. Existing verification.py is
   unchanged and its legacy API remains covered.
@@ -207,6 +213,26 @@ the documented CLI, then run final verification and review before delivery. No
 adoption STATE/ROADMAP/REQUIREMENTS updates are proposed for template maintenance.
 
 ## Self-Check: PASSED
+
+Fresh review on the coordinator's df3331f revision found two evidence defects
+(CR-01/CR-02): descendant empty directories were absent from input fingerprints,
+and relative PATH directories were resolved from coordinator cwd while launch
+used test cwd. The correction fingerprints every input directory entry and
+checks regular/directory type with lstat before reading; FIFOs, sockets and other
+special files fail closed. Integration also compares explicit input directory
+topology. Bare executable lookup now resolves each relative/empty PATH component
+against check cwd, and launch uses the same canonical absolute executable that
+was hashed. Receipts retain both the declared `command` and actual `executed_argv`.
+
+The first correction-suite run had one fixture-ordering error: an already
+integrated chunk correctly blocked a changed snapshot before the test could
+exercise cache execution. The fixture now tests snapshot cache invalidation
+before integration, then current-author topology invalidation afterward. That
+case passed separately, followed by the full passing 27-test final run above.
+
+Linux's native executable-symlink and FIFO regressions still need CI execution.
+Portable absolute-executable, cwd-relative PATH, and nonregular-metadata fixtures
+passed on Windows. No benchmark or engine process was run.
 
 All four assigned output paths exist; source/test verification passed as above.
 The slice commit is restricted to the assigned worktree and branch, and its exact

@@ -2,6 +2,8 @@
 import concurrent.futures
 import json
 import os
+import shutil
+import stat
 from pathlib import Path
 import subprocess
 import sys
@@ -382,6 +384,101 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(checks["checks"][0]["execution_identity"]["executable"], str(Path(sys.executable).resolve()))
         with self.assertRaises(VerbError):
             pipeline.safe(executable.parent, executable.name)
+
+    def directory_spec(self):
+        spec = self.spec(command=[sys.executable, "-c", "from pathlib import Path; assert not Path('src/new-empty').exists()"])
+        source = self.root / "src"
+        source.mkdir()
+        (source / "tracked.txt").write_text("tracked source\n")
+        self.git("add", "src/tracked.txt")
+        self.git("commit", "-m", "directory input")
+        spec["head"] = self.git("rev-parse", "HEAD")
+        spec["owned_paths"].append("src/")
+        spec["checks"][0]["inputs"] = ["src/"]
+        return spec
+
+    def test_empty_directory_invalidates_receipt_and_dependency_integration(self):
+        spec = self.directory_spec()
+        pipeline.register(self.ws, spec)
+        prepared = pipeline.prepare(self.ws, "one")
+        first = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertTrue(first["passed"], first)
+        # Snapshot-only directory additions are cache misses before integration.
+        empty = Path(prepared["snapshots"]["test"]) / "src" / "new-empty"
+        empty.mkdir()
+        second = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertFalse(second["reused"], second)
+        self.assertFalse(second["passed"], second)
+        self.assertNotEqual(first["attempt"], second["attempt"])
+        with pipeline.transaction(self.ws) as state:
+            inputs = pipeline.latest(state["chunks"]["one"], "checks")["checks"][0]["inputs"]
+        self.assertEqual(inputs["src/new-empty"]["kind"], "directory")
+        empty.rmdir()
+        restored = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertTrue(restored["passed"], restored)
+        pipeline.record_review(self.ws, "one", self.review(spec))
+        pipeline.integrate(self.ws, "one", spec["head"])
+        dependent = self.next_spec("two", deps=["one"])
+        pipeline.register(self.ws, dependent)
+        (self.root / "src" / "new-empty").mkdir()
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        blocked = pipeline.status(self.ws, "two")
+        self.assertEqual(blocked["status"], "blocked", blocked)
+        self.assertTrue(any("directory topology" in reason for reason in blocked["reasons"]), blocked)
+
+    def test_nonregular_input_metadata_is_rejected_before_reading(self):
+        path = self.root / "seed.txt"
+        special = os.stat_result((stat.S_IFIFO | 0o600, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+        original = Path.lstat
+        def metadata(candidate):
+            return special if candidate == path else original(candidate)
+        with mock.patch.object(Path, "lstat", metadata), mock.patch.object(Path, "read_bytes") as read:
+            with self.assertRaisesRegex(VerbError, "nonregular"):
+                pipeline.hashed_inputs(self.root, {"inputs": ["seed.txt"]})
+            read.assert_not_called()
+
+    def test_native_fifo_in_directory_input_is_rejected_without_opening(self):
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("native FIFO fixture runs on Linux CI")
+        source = self.root / "src"
+        source.mkdir()
+        os.mkfifo(source / "pipe")
+        with self.assertRaisesRegex(VerbError, "nonregular"):
+            pipeline.hashed_inputs(self.root, {"inputs": ["src/"]})
+
+    def test_relative_path_resolves_and_executes_tool_in_snapshot_cwd(self):
+        spec = self.spec()
+        name = "pipeline-checker.exe" if os.name == "nt" else "pipeline-checker"
+        system_tool = Path(os.environ["SystemRoot"]) / "System32" / "hostname.exe" if os.name == "nt" else Path("/bin/echo")
+        spec["checks"][0]["argv"] = [name] if os.name == "nt" else [name, "snapshot-tool"]
+        pipeline.register(self.ws, spec)
+        prepared = pipeline.prepare(self.ws, "one")
+        # Executable identity is an explicit receipt input even when executable
+        # setup is ignored by Git; its canonical path and bytes must match launch.
+        exclude = self.root / ".git" / "info" / "exclude"
+        with exclude.open("a") as handle:
+            handle.write("\ntools/\n")
+        author_tools = self.root / "tools"
+        snapshot_tools = Path(prepared["snapshots"]["test"]) / "tools"
+        author_tools.mkdir()
+        snapshot_tools.mkdir()
+        (author_tools / name).write_bytes(b"wrong executable from coordinator cwd")
+        (author_tools / name).chmod(0o755)
+        shutil.copy2(system_tool, snapshot_tools / name)
+        (snapshot_tools / name).chmod(0o755)
+        previous = Path.cwd()
+        try:
+            os.chdir(self.root)
+            with mock.patch.dict(os.environ, {"PATH": "tools" + os.pathsep + os.environ.get("PATH", "")}):
+                checks = pipeline.run_checks(self.ws, "one", "test-host")
+                self.assertTrue(checks["passed"], checks)
+                observed = checks["checks"][0]
+                self.assertEqual(observed["execution_identity"]["executable"], str((snapshot_tools / name).resolve()))
+                self.assertEqual(observed["executed_argv"][0], observed["execution_identity"]["executable"])
+                self.assertEqual(observed["command"], spec["checks"][0]["argv"])
+                self.assertTrue(pipeline.run_checks(self.ws, "one", "test-host")["reused"])
+        finally:
+            os.chdir(previous)
 
     def test_symlink_and_path_escape_rejected(self):
         spec = self.spec()

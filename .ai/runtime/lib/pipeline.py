@@ -8,7 +8,7 @@ import hashlib
 import json
 import os
 import re
-import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -289,21 +289,54 @@ def snapshot(workspace, item, role):
     return expected
 
 
-def hashed_inputs(root, check):
-    result = {}
-    for name in check["inputs"]:
+def input_entries(root, names):
+    """Walk all declared entries, including empty dirs; never open special files."""
+    entries = {}
+    def visit(path):
+        name = path.relative_to(root).as_posix()
+        safe(root, name)
+        info = path.lstat()
+        require(stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode),
+                "nonregular check input: " + name, "pipeline-input")
+        kind = "directory" if stat.S_ISDIR(info.st_mode) else "file"
+        entries[name] = (path, kind, info)
+        if kind == "directory":
+            for child in sorted(path.iterdir()):
+                visit(child)
+    for name in names:
         target = safe(root, name)
         require(target.exists(), "missing check input: " + name, "pipeline-input")
-        files = sorted(target.rglob("*")) if target.is_dir() else [target]
-        result[name] = {"kind": "directory" if target.is_dir() else "file"}
-        for path in files:
-            safe(root, path.relative_to(root).as_posix())
-            if path.is_file():
-                result[path.relative_to(root).as_posix()] = {
-                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-                    "mode": path.stat().st_mode, "mtime_ns": path.stat().st_mtime_ns,
-                    "ctime_ns": path.stat().st_ctime_ns, "inode": path.stat().st_ino}
+        visit(target)
+    return entries
+
+
+def hashed_inputs(root, check):
+    result = {}
+    for name, (path, kind, info) in input_entries(root, check["inputs"]).items():
+        result[name] = {"kind": kind, "mode": info.st_mode,
+                        "mtime_ns": info.st_mtime_ns, "ctime_ns": info.st_ctime_ns,
+                        "inode": info.st_ino}
+        if kind == "file":
+            result[name]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
     return result
+
+
+def path_executable(command, cwd):
+    """Resolve PATH entries against the subprocess cwd, without ambient cwd lookup."""
+    extensions = [""]
+    if os.name == "nt":
+        configured = os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD").split(os.pathsep)
+        if not any(command.lower().endswith(ext.lower()) for ext in configured if ext):
+            extensions = [ext for ext in configured if ext]
+    for entry in os.environ.get("PATH", os.defpath).split(os.pathsep):
+        directory = Path(entry or ".")
+        if not directory.is_absolute():
+            directory = Path(cwd) / directory
+        for extension in extensions:
+            candidate = directory / (command + extension)
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                return str(candidate.absolute())
+    return None
 
 
 def execution_identity(check, cwd):
@@ -313,7 +346,7 @@ def execution_identity(check, cwd):
     elif "/" in command or "\\" in command:
         executable = str(safe(cwd, command))
     else:
-        executable = shutil.which(command)
+        executable = path_executable(command, cwd)
     require(executable and Path(executable).is_file(), "check executable unavailable", "pipeline-input")
     path = Path(executable)
     # Windows Store's Python app execution alias launches correctly but its
@@ -368,14 +401,9 @@ def working_inventory(workspace, boundaries, tracked, explicit_inputs=()):
         path = safe(workspace.root, boundary)
         if not boundary.endswith("/") and path.exists():
             candidates.add(boundary)
-    for name in explicit_inputs:
-        path = safe(workspace.root, name)
-        if path.is_dir():
-            for child in path.rglob("*"):
-                relative_name = child.relative_to(workspace.root).as_posix()
-                safe(workspace.root, relative_name)
-                if child.is_file():
-                    candidates.add(relative_name)
+    for name, (_, kind, _) in input_entries(workspace.root, explicit_inputs).items():
+        if kind == "file":
+            candidates.add(name)
     result = {}
     for name in sorted(candidates):
         if not name or not owned(name, boundaries):
@@ -383,7 +411,7 @@ def working_inventory(workspace, boundaries, tracked, explicit_inputs=()):
         path = safe(workspace.root, name)
         if not path.exists():
             continue
-        require(path.is_file(), "non-file integration input: " + name, "pipeline-input")
+        require(stat.S_ISREG(path.lstat().st_mode), "non-file integration input: " + name, "pipeline-input")
         mode = tracked.get(name, {}).get("mode", "100644") if os.name == "nt" else (
             "100755" if path.stat().st_mode & 0o111 else "100644")
         result[name] = {"mode": mode,
@@ -399,6 +427,13 @@ def integration_fingerprint(workspace, item, revision):
     integrated = relevant_inventory(tree_inventory(workspace, revision), boundaries)
     require(integrated == expected,
             "integrated prerequisite scope/inputs/config differ from tested chunk", "pipeline-stale")
+    inputs = [name for check in item["spec"]["checks"] for name in check["inputs"]]
+    def directories(root):
+        return sorted(name for name, (_, kind, _) in input_entries(root, inputs).items()
+                      if kind == "directory")
+    tested_directories = directories(snapshot(workspace, item, "test"))
+    require(directories(workspace.root) == tested_directories,
+            "current prerequisite input directory topology differs from tested chunk", "pipeline-stale")
     current = working_inventory(workspace, boundaries, tree_inventory(workspace, "HEAD"),
                                 [name for check in item["spec"]["checks"] for name in check["inputs"]])
     require(current == integrated,
@@ -406,7 +441,10 @@ def integration_fingerprint(workspace, item, revision):
     require(working_inventory(workspace, boundaries, tree_inventory(workspace, "HEAD"),
                               [name for check in item["spec"]["checks"] for name in check["inputs"]]) == current,
             "prerequisite scope/inputs/config changed during validation", "pipeline-stale")
+    require(directories(workspace.root) == tested_directories,
+            "prerequisite input directories changed during validation", "pipeline-stale")
     return {"revision": revision, "boundaries": boundaries, "inventory": integrated,
+            "input_directories": tested_directories,
             "digest": digest(integrated), "spec_digest": item["spec_digest"]}
 
 
@@ -444,6 +482,9 @@ def gates(workspace, item, kinds=("checks", "review")):
                             and observed["cwd"] == str(safe(root, expected["cwd"]))
                             and observed["inputs"] == hashed_inputs(root, expected)
                             and observed["execution_identity"] == execution_identity(expected, safe(root, expected["cwd"]))
+                            and observed["command"] == expected["argv"]
+                            and observed["executed_argv"] == [observed["execution_identity"]["executable"],
+                                                             *expected["argv"][1:]]
                             and bool(attempt["environment"]), "stale check contract", "pipeline-evidence")
                     for name in ("stdout", "stderr"):
                         path = safe(store_root(workspace), observed[name + "_log"])
@@ -699,7 +740,9 @@ def run_checks(workspace, key, environment, reuse=True):
             snapshot(workspace, item, "test")
             result["inputs"] = hashed_inputs(root, check)
             result["execution_identity"] = execution_identity(check, safe(root, check["cwd"]))
-            completed = subprocess.run(check["argv"], cwd=result["cwd"], capture_output=True,
+            result["command"] = list(check["argv"])
+            result["executed_argv"] = [result["execution_identity"]["executable"], *check["argv"][1:]]
+            completed = subprocess.run(result["executed_argv"], cwd=result["cwd"], capture_output=True,
                                        timeout=check["timeout"], shell=False)
             stdout, stderr = completed.stdout, completed.stderr
             result["exit_code"] = completed.returncode
