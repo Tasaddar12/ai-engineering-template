@@ -116,25 +116,6 @@ Exit.
 Display: `► VERIFY PHASE {phase_number}: {phase_name}`
 </step>
 
-<step name="check_existing_verification">
-If `verification.exists` is true:
-
-```
-Phase {N} already has a verification report ({verification.status}),
-written for revision {verification.revision}.
-```
-
-Compare the recorded revision to the current HEAD:
-
-```bash
-git rev-parse HEAD
-```
-
-If the code changed since, the report is stale — say so and re-verify. If nothing
-changed, reuse the report without asking: continue at `handle_result` with its
-recorded status.
-</step>
-
 <step name="open_session">
 `phase.locate` has already confirmed the phase and selected any existing session.
 If `session` from `LOCATE` is present, require its absolute `worktree`, then use
@@ -183,6 +164,17 @@ Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
 closes the session once the phase is verified.
 </step>
 
+<step name="check_existing_verification">
+Run this from the selected session worktree, after `open_session`. If
+`verification.exists` is true, report its status and revision, then apply the
+coordinator currentness check in
+[verification evidence](../references/verification-evidence.md). Reuse the exact
+revision immediately when it equals HEAD; otherwise accept only the documented
+phase-report-only publication commits on a clean tree. Any other change requires
+re-verification. The runtime's `verification.status` result exposes report
+metadata; it does not enforce currentness.
+</step>
+
 <step name="scan_phase_artifacts">
 Establish what the phase claims before asking what is true:
 
@@ -199,18 +191,34 @@ Report mismatches you can see without an agent:
 </step>
 
 <step name="run_checks">
-If `checks_configured` is true:
+Capture the integrated `HEAD` once as `frozen_revision`, whether or not project
+checks are configured. When `checks_configured` is true, run:
 
 ```bash
 phase_run query verification.run-checks
 ```
 
-Record each command, its exit code and output tail. These are evidence for the
-verifier, and their absence is itself a finding: a phase with no runnable checks
-is verified by reading alone, and the report must say so.
+Start `verification.run-checks` and the applicable read-only evidence
+assignments against `frozen_revision`. Use valid successful receipts as check
+evidence, including their tested revision, source/config identity and receipt
+reference; reuse matching receipts when available. Preserve bounded output tails
+for failures and ambiguity. Do not ask AI agents to diagnose a deterministic
+pass. If checks are not configured, tell the verifier that the phase is judged
+by source evidence alone.
 </step>
 
 <step name="spawn_verifier">
+This step, `check_integration`, and `verify_docs` are one read-only dispatch
+batch. Start the verifier, each applicable specialist and configured checks
+together against the `frozen_revision` captured in `run_checks`; then wait for all
+results before reconciling evidence, accepting criteria or starting repairs.
+Verifier always runs. Add integration-checker only for dependencies or a
+user-facing flow, doc-verifier only when docs changed, and code-reviewer where
+the source-review gate requires it. Each specialist owns its bounded claims;
+the verifier reconciles those results with phase acceptance and source evidence.
+Resolve conflicts or gaps with selective inspection or a targeted specialist
+follow-up, not a duplicate full inspection.
+
 ```
 ◆ Spawning verifier... (runs in a subagent — no output until it returns, ~2–10 min; expected, not a freeze)
 ```
@@ -223,7 +231,7 @@ Agent(
 **Goal:** {goal}
 **Success criteria:** {from ROADMAP.md}
 **Requirements:** {requirements}
-**Revision under review:** {git HEAD}
+**Revision under review:** {frozen_revision}
 ${handoff ? `
 <handoff>
 {the continuation field of phase_run query handoff.read <id>, verbatim}
@@ -242,7 +250,7 @@ only as its reading rule allows.
 </required_reading>
 
 **Configured check results:**
-{each command, exit code and output tail from run_checks, or \"none configured\"}
+{each command's result, tested revision, valid receipt reference, and bounded failure output, or \"none configured\"}
 </verification_context>
 
 <constraints>
@@ -256,7 +264,8 @@ only as its reading rule allows.
 </constraints>
 
 <output>
-Write: {phase_dir}/{padded_phase}-VERIFICATION.md with frontmatter:
+Return the complete report to the coordinator for persistence at
+{phase_dir}/{padded_phase}-VERIFICATION.md with frontmatter:
   status: passed | gaps_found | human_needed
   revision: {the revision you reviewed}
   verified_at: {timestamp}
@@ -272,17 +281,18 @@ Return: ## VERIFICATION COMPLETE with the status and a one-line reason
 )
 ```
 
-> **ORCHESTRATOR RULE**: wait for the subagent. Do not inspect the code in
-> parallel — a verifier that finds you already edited the tree is verifying
-> something else.
+> **ORCHESTRATOR RULE**: wait for every assignment in the frozen revision batch
+> before accepting evidence or editing the tree. Read-only specialists may inspect
+> in parallel; the coordinator does not change source while they are active.
 
-A verifier that reached the context limit writes the report on what it examined
+A verifier that reached the context limit returns the report on what it examined
 and names the scope it did not reach. Continue that scope in a fresh verifier
 with the same `Agent(...)` call and its handoff in the `<handoff>` block — the
 four steps in
 [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-The continuation adds its findings to the existing report. Continue the
-integration and documentation checks below the same way.
+The coordinator adds the continuation's findings to the external report. Continue
+the integration and documentation checks below the same way on the frozen
+revision.
 </step>
 
 <step name="check_integration">
@@ -295,6 +305,7 @@ Verify that Phase {phase_number} integrates with what came before.
 
 **Phase goal:** {goal}
 **Depends on:** {depends_on}
+**Revision under review:** {frozen_revision}
 
 Check that the end-to-end flows this phase participates in actually complete —
 that the seams between this phase and its dependencies hold in the code, not just
@@ -312,7 +323,7 @@ Findings: <numbered, with file:line>
 )
 ```
 
-Fold its findings into the verification report.
+Return its findings for the coordinator to fold into the verification report.
 </step>
 
 <step name="verify_docs">
@@ -325,6 +336,7 @@ Check the factual claims in the documentation this phase changed against the
 live codebase.
 
 **Docs:** {doc paths from the summaries}
+**Revision under review:** {frozen_revision}
 
 Return per doc: claims checked, claims that are wrong, claims you could not confirm.
 ",
@@ -336,7 +348,19 @@ Return per doc: claims checked, claims that are wrong, claims you could not conf
 ```
 </step>
 
+<step name="persist_report">
+After all configured checks and applicable read-only specialists have returned,
+reconcile their evidence into the verifier's complete report. The verifier does
+not write into the checkout. The coordinator writes the report to the exact path
+returned by `phase_run query verification.resolve-file`, preserves the
+verifier's tested revision, and commits only `NN-VERIFICATION.md` with a
+descriptive message. Apply [verification evidence](../references/verification-evidence.md)
+when reusing or shipping it; `verification.status` exposes metadata but does not
+enforce freshness.
+</step>
+
 <step name="handle_result">
+Run this after `persist_report`.
 Read the verification report from disk — the return message is a summary, the
 file is the record.
 

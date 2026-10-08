@@ -40,10 +40,14 @@ successful integration. Only the orchestrator ticks the roadmap.
 **A returned "complete" with no SUMMARY.md, or with no commits, is not a
 completion.** The orchestrator treats it as blocked.
 
-The verifier writes its report to the phase's `NN-VERIFICATION.md` with
-frontmatter carrying `status`, the reviewed `revision`, `verified_at` and finding
-counts. The revision it names is what makes the report falsifiable later: once
-HEAD moves past it, the report is stale and re-verification is required.
+The verifier is read-only on product and source files and returns the complete
+report to the coordinator. The coordinator persists and commits the phase's
+tracked `NN-VERIFICATION.md`. Its `revision` names the exact source revision
+actually reviewed, with `status`, `verified_at` and finding counts. The
+report-only commit does not change that tested revision. Reuse is exact when HEAD
+equals the recorded revision; after publication, reuse a prior result only under
+the bounded rule in [verification evidence](verification-evidence.md). Any other
+change requires fresh verification.
 
 ## Revision and recovery
 

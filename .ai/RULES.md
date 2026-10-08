@@ -203,11 +203,13 @@ omit that argument and let the host choose.
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
 not spawn workers, switch branches, merge, publish or edit shared status.
 
-Every non-scout agent, including the coordinator, must read and follow
-[required scout dispatch](references/scout-dispatch.md) for every substantive
-repository evidence task. Workers dispatch only `scout` children; the
-coordinator retains worker lifecycle, integration, shared records and publication.
-`scout` is a read-only leaf and does not dispatch children or write a SUMMARY.
+Use [scout dispatch](references/scout-dispatch.md) when an assignment has an
+evidence gap a bounded read-only specialist can resolve. Known, bounded work with
+clear sources needs no scout. Discover an unknown source area with one scout;
+dispatch complementary independent evidence only when risk or uncertainty calls
+for it. Workers may dispatch only `scout` children; the coordinator retains worker
+lifecycle, integration, shared records and publication. `scout` is a read-only
+leaf and does not dispatch children or write a SUMMARY.
 
 Plan ownership uses exact repository-relative paths or directory prefixes ending
 in `/`, without traversal, globs or whole-repository scope. Plans that declare
@@ -339,9 +341,11 @@ A process exit, a summary assertion, a ticked checkbox or an existing file is no
 proof. Bug repairs need reproduction and regression evidence.
 
 Evidence names the tested revision and the actual commands and results. Material
-content changes invalidate prior verification: a verification report whose
-recorded revision is behind HEAD is stale, and re-verification is required rather
-than optional. Publication readiness needs applicable authorization, current
+content changes invalidate prior verification. A tracked report commit made by
+the coordinator after a read-only verifier finishes is allowed by the narrow
+currentness rule in
+[verification evidence](references/verification-evidence.md); all other changes
+since the tested revision require fresh verification. Publication readiness needs applicable authorization, current
 verification and configured non-empty project checks. Observe required remote
 checks after creating or updating the PR; pending or failed checks prevent
 declaring it ready. Published, verified and merged are distinct facts. Never claim

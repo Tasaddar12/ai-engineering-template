@@ -18,9 +18,11 @@ Establish what is actually true after a phase executed.
 **How it works:**
 
 1. Scan the phase's plans and summaries, reporting visible mismatches first
-2. Run the project's configured checks as evidence
-3. Spawn a fresh verifier to judge the codebase against the phase goal
-4. Check integration and documentation where they apply
+2. Start configured checks and applicable read-only specialists together against
+   one frozen revision, using valid receipts as evidence
+3. Have a fresh verifier judge the codebase against the phase goal and reconcile
+   bounded specialist reports
+4. Persist the verifier's external report through the coordinator
 5. Close gaps and re-verify, or record them with the user's agreement
 6. Close the phase's requirements in REQUIREMENTS.md when the status is a pass
 
@@ -52,7 +54,8 @@ improvise from the summary.
 </process>
 
 <success_criteria>
-- Existing verification checked for staleness against the current revision
+- Existing verification currentness checked using the exact revision or the
+  bounded report-only publication rule
 - Configured checks run and passed to the verifier as evidence
 - A fresh verifier judged the codebase, not the summaries
 - Unconfirmable criteria abstained rather than passed

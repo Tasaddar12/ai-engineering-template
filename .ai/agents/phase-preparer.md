@@ -12,9 +12,11 @@ color: green
 ---
 
 <local_workflow>
-Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. Dispatch only `scout` children;
-worker lifecycle, integration, shared records and publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
+specialist can resolve an evidence gap. Known, bounded sources need no scout;
+discover unknown scope once and add complementary evidence only for material
+risk or uncertainty. Worker lifecycle, integration, shared records and
+publication remain coordinator-owned.
 
 Preparation never grants implementation permission. Do not start implementation
 or instruct the coordinator to auto-start: require the user's explicit instruction
@@ -446,8 +448,11 @@ Create `.planning/phases/XX-name/{padded_phase}-{plan}-SUMMARY.md` when done
 | `must_haves` | Yes | Goal-backward verification criteria |
 
 Add all local fields from [the runtime contract](../runtime/TEMPLATE-CONTRACT.md).
-Wave numbers are descriptive. Dependencies, integrated checks, ownership and
-resources determine dispatch readiness; changing a wave does not enforce ordering.
+`phase-plan-index` and `execute-phase` use ordered dependency and file-overlap
+waves. Waves run in order; plans run concurrently only inside their eligible
+wave, with path conflicts kept in separate waves. A declared wave label cannot
+make an unmet dependency or file conflict ready. Command resource locks govern
+check-command concurrency separately.
 
 ## Interface Context for Executors
 

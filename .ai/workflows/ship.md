@@ -143,8 +143,13 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    Exit. Do not offer a bypass: an unverified PR is exactly what this gate exists
    to prevent.
 
-   Also compare the report's `revision` to the current HEAD. If the code moved
-   since verification, the report is stale — say so and require re-verification.
+   Apply the coordinator currentness check in
+   [verification evidence](../references/verification-evidence.md). Exact HEAD
+   equality is the fast path; otherwise accept only the documented commits that
+   publish this phase's exact verification report, after checking every
+   intervening commit and requiring a clean worktree. Any other change requires
+   re-verification. `verification.status` exposes report metadata and does not
+   enforce freshness.
 
 2. **Clean session worktree.**
 
@@ -200,7 +205,12 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    phase_run query verification.run-checks
    ```
 
-   A failing check blocks. Report the command and its output tail.
+   Reuse each valid successful receipt whose revision, declared inputs,
+   environment and configuration still match this ship revision. A matching
+   receipt is deterministic evidence; include its tested revision and receipt
+   reference. Rerun checks with missing or invalid receipts. A pass needs no AI
+   diagnosis. A failing or ambiguous check blocks; report its command and bounded
+   output tail and route diagnosis to the responsible coder or debugger.
 </step>
 
 <step name="optional_review">
@@ -212,6 +222,8 @@ Agent(
 Review everything Phase {phase_number} is about to publish.
 
 **Diff:** {SESSION_BASE}...{SESSION_BRANCH}, in {SESSION_WORKTREE}
+**Frozen revision:** {session HEAD}; use it with the configured check receipts
+from preflight.
 **Phase goal:** {goal}
 
 Review the changed source for correctness bugs, security issues and anything a

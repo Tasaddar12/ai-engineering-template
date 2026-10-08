@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Publish verified phase work as a pull request - gated on passing verification, a clean tree and passing checks."
+description: "Publish verified phase work as a pull request - gated on current verification, a clean tree and valid passing check evidence."
 argument-hint: "[phase] [--draft] [--review] [--no-push]"
 allowed-tools:
   - Read
@@ -17,9 +17,11 @@ Publish work that verification actually passed.
 
 **How it works:**
 
-1. Confirm the phase's verification is `passed` and current for this revision
+1. Confirm the phase's verification is `passed` and current under the documented
+   exact-revision/report-only publication rule
 2. Check the tree is clean, the branch is not the base, and gh is available
-3. Run the project's configured checks
+3. Consume valid passing receipts for the current inputs; rerun checks with
+   missing or invalid receipts
 4. Compose the PR body from the phase's summaries and verification report
 5. Push and open or update the pull request
 6. Wait for its checks with `pr.checks --wait`; fix failing checks
@@ -57,7 +59,7 @@ improvise from the summary.
 <success_criteria>
 - Verification confirmed passed and current for the shipped revision
 - Working tree clean, branch not the base, remote and gh available
-- Configured checks run and passing
+- Configured checks have valid passing evidence for the shipped inputs
 - PR body composed from the phase's own records
 - Branch pushed, PR opened or updated
 - Check state reported as observed, never assumed

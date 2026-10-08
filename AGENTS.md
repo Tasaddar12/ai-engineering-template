@@ -78,11 +78,13 @@ call — shared role files carry neither as frontmatter (the installer adds Clau
 `model: haiku` only to exported `scout` metadata, with no effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-Read and follow [required scout dispatch](.ai/references/scout-dispatch.md) for
-every substantive repository evidence task, including coordinator work. Non-scout
-workers may dispatch only `scout` children. The coordinator retains worker
-lifecycle, integration, shared records and publication. `scout` returns a
-read-only evidence result without commits or SUMMARY and never dispatches children.
+Use [scout dispatch](.ai/references/scout-dispatch.md) when the assignment has an
+evidence gap that a bounded read-only specialist can resolve. Known, bounded work
+with clear sources needs no scout. Dispatch one discovery scout when the source
+area is unknown; add complementary specialists only when risk or uncertainty
+calls for independent evidence. The coordinator owns worker lifecycle,
+integration, shared records and publication. Scouts return cited read-only
+evidence and never dispatch children.
 
 A worker that returns "complete" with no SUMMARY.md, or with no commits, did not
 complete. Treat it as blocked.

@@ -1,10 +1,20 @@
-# Required repository evidence dispatch
+# Conditional repository evidence dispatch
 
-Every non-scout agent, including `coordinator`, follows this procedure for every
-substantive repository evidence task: implementation, planning, research, review,
-verification, debugging, documentation, and codebase mapping. `scout` is the
-read-only leaf exception: it never dispatches children. These are prompt and tool
-permission instructions, not hard runtime enforcement of search behavior.
+Use a `scout` when an assignment has an evidence gap that a bounded read-only
+specialist can resolve. Dispatch is conditional on uncertainty, risk and scope;
+it is not a required prelude to substantive work. If the question, relevant
+sources and acceptance are already known and bounded, inspect those sources
+directly and proceed without a scout. Do not fan out scouts to repeat a shared
+inspection or to meet a fixed count.
+
+When the source area or boundary is unknown, start with one discovery scout to
+locate relevant files and terms. After discovery, dispatch only the complementary
+specialist questions needed to resolve material uncertainty or risk. Specialists
+may examine one area from complementary angles, such as implementation/callers and
+tests/failure behavior, when useful. For known areas, skip discovery and assign
+only the unresolved evidence question. Scouts remain read-only leaves and never
+dispatch children. These are prompt and tool permission instructions, not hard
+runtime enforcement of search behavior.
 
 ## Assignment and result structures
 
@@ -45,43 +55,34 @@ scout_result:
   missing_test_cases: [<requested uncovered cases; [] when none or not requested>]
 ```
 
-## Strict dispatch procedure
+## Dispatch procedure
 
-1. Read the assignment and supplied context. Identify the substantive evidence
-   question, assigned revision, actual repository areas and available shared slots.
-   Do not search the repository to answer that question before scout dispatch.
-2. If an area is unknown, dispatch exactly one discovery `scout` to locate
-   relevant files, terms and boundaries. Wait for its result, validate the result
-   fields and revision, then release/close the completed scout with the host's
-   available lifecycle tool before assigning specialized work. Discovery does not
-   satisfy the specialized-assignment minimum.
-3. Create at least two specialized `scout` assignments for this evidence
-   task. Assign distinct actual areas; for a single area, assign complementary
-   implementation/caller and test/error questions. Resolve each through
-   `phase_run query resolve-agent scout --host codex` or `--host claude` in
-   the source namespace; installed namespaces infer their host. Pass the returned
-   model and effort inline; omit an `inherit` effort.
-4. Dispatch independent specialized assignments concurrently within the shared
-   available host slots. The installed Codex project setting is 12 open spawned
-   threads per session, excluding the primary; it is not 12 per parent and does
-   not change a running host's existing cap. Count open workers and scouts, not
-   only running ones. Queue assignments when slots are unavailable and dispatch
-   the next batch after completed threads are released. If the host has no close
-   tool, report remaining slot availability; do not invent a lifecycle command.
-5. While scouts are active, the parent waits for every assigned scout. The parent
-   performs no overlapping repository searches, edits, tests or project execution.
-   Do not proceed after only the first scout returns. Release/close all completed
-   scouts with the available host lifecycle tool before starting the next batch.
-6. Validate every result's id, revision, status, answer, evidence, search_scope,
-   uncertainty, unresolved_questions and missing_test_cases fields. An incomplete
-   or unsupported answer does not satisfy the assignment. Send one bounded retry
-   containing only the missing question or missing evidence; report an unresolved
-   gap to the coordinator if that retry remains incomplete. Do not silently answer
-   the missing question through a parent search.
-7. After all results return, inspect the consequential cited files/lines yourself
-   at the assigned revision. Resolve conflicting citations with a bounded scout
-   follow-up, then make the decision or perform the assigned work. Cite the
-   verified evidence and retain uncertainty and unresolved questions in the result.
+1. Read the assignment and supplied context. Identify the behavior or decision
+   needing evidence, its revision and scope. If its sources and acceptance are
+   clear and bounded, answer directly from those sources.
+2. For an unknown source area, assign one discovery scout to find relevant files,
+   terms and boundaries. Wait for its result and validate its revision and
+   citations before using it to scope the next question.
+3. For material residual uncertainty or risk, assign the smallest useful set of
+   complementary specialist questions. Separate work by actual area or evidence
+   type; do not duplicate checks already supplied by another role. Resolve each
+   scout through `phase_run query resolve-agent scout --host codex` or `--host
+   claude` in the source namespace. Pass the returned model and effort inline;
+   omit an `inherit` value.
+4. Run independent specialist assignments concurrently when shared host capacity
+   allows; respect the host's actual open-worker limit and count queued/open
+   workers, not just currently running ones. Wait for all assignments in a batch
+   before integrating their evidence. Do not overlap their owned work with your
+   own searches, edits, tests or project execution. Use the host's available
+   lifecycle tools; do not invent one.
+5. Validate each result's id, revision, status, answer, evidence, search_scope,
+   uncertainty and unresolved_questions. Check `missing_test_cases` when it was
+   requested. A partial or unsupported answer does not satisfy its question;
+   send a bounded follow-up for the missing evidence or report the remaining gap.
+6. Confirm consequential citations against the assigned revision when needed to
+   resolve conflict, ambiguity or a material gap. Preserve paths, line numbers
+   and short excerpts in the handoff. Carry uncertainty and unresolved questions
+   forward; do not claim more than the cited evidence supports.
 
 ## Direct nested dispatch and unsupported-host fallback
 
@@ -105,9 +106,9 @@ scout_request:
   resume_with: <exact dependent question/step to resume after results arrive>
 ```
 
-The coordinator dispatches the requested scouts, follows the same waiting and
-result-validation steps, and resumes the requesting worker with all results.
+The coordinator dispatches the requested scouts, follows the applicable waiting
+and result-validation steps, and resumes the requesting worker with the results.
 The worker then verifies consequential citations and resumes the named step.
-Fallback changes who dispatches; it does not waive discovery or the minimum two
-specialized assignments. `Agent(scout)` parenthetical tool restrictions are
+Fallback changes who dispatches; it does not waive evidence quality or needed
+complementary questions. `Agent(scout)` parenthetical tool restrictions are
 not relied upon for nested workers; the explicit scout-only role instruction applies.
