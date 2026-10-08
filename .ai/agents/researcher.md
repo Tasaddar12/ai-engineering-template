@@ -12,10 +12,11 @@ color: cyan
 ---
 
 <local_workflow>
-Use [scout dispatch](../references/scout-dispatch.md) when a bounded read-only
-specialist can resolve an evidence gap. Known, bounded sources need no scout;
-discover unknown scope once and add complementary evidence only for material
-risk or uncertainty. Worker lifecycle, integration, shared records and
+Use [scout dispatch](../references/scout-dispatch.md) to route repeatable
+repository-fact extraction, classification and structured summaries to a
+read-only scout. Dispatch one discovery scout when source location is unknown.
+Researcher owns technical decisions; use scouts for the exact evidence packets
+those decisions require. Worker lifecycle, integration, shared records and
 publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)

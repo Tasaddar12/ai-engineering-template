@@ -32,16 +32,17 @@ capabilities. The installer supplies native agent definitions as described in th
 host tools or slash commands.
 The runtime dispatches code, documentation, independent code review and phase
 verification. Code review uses `reviewer_command`, falling back to the read-only
-verifier route when omitted. The documentor loads doc-writer; the verifier uses
-doc-verifier for relevant documentation claims and integration-checker for
-relevant cross-phase flows. Correctness and security review stays with
-code-reviewer; domain specialists own their bounded claims. The verifier
+verifier route when omitted. The documentor loads doc-writer. Verification
+always dispatches verifier; dispatch doc-verifier when documentation changes,
+integration-checker when acceptance covers a dependency or user-facing flow,
+and code-reviewer for every source-changing phase. Code-reviewer owns correctness
+and security; domain specialists own their listed claims. The verifier
 reconciles specialist reports with acceptance and source evidence, then inspects
-selectively to close conflicts and gaps rather than repeating complete reviews.
-Dispatch only the roles needed by the scope and uncertainty, with the exact
-revision and result destination. Workers may dispatch only `scout` children when
-a bounded read-only investigation can resolve an evidence gap; see
-[scout dispatch](scout-dispatch.md).
+only to close named conflicts and missing claims rather than repeating complete
+reviews. Dispatch another specialist only for a named unresolved acceptance
+claim or risk decision in that specialist's domain, with exact revision and
+result destination. Workers dispatch `scout` children only for the repeatable
+evidence packets in [scout dispatch](scout-dispatch.md).
 
 Configured deterministic checks run through `verification.run-checks`; legacy
 entries stay serial, while a mapping opts into parallel execution only when it

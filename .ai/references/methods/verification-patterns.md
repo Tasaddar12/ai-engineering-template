@@ -601,12 +601,16 @@ Some things can't be verified programmatically. Flag these for human testing:
 - Error message clarity (is the message helpful?)
 - Performance feel (does it feel fast?)
 
-**Human if uncertain:**
-- Complex wiring that grep can't trace
-- Dynamic behavior depending on state
-- Edge cases and error states
-- Mobile responsiveness
-- Accessibility
+**Route to human verification when:**
+- Acceptance requires a visual, accessibility, usability, external-service or
+  real-time observation and no assigned evidence establishes that observation.
+- A behavior-dependent acceptance truth has no passing behavioral test.
+- State, error or edge-case acceptance cannot be established by the assigned
+  source evidence, passing test, configured check or specialist result.
+
+State the exact acceptance criterion and missing observation. Inspect source or
+reuse a valid assigned result when that evidence does establish the criterion;
+do not request human verification for an inspectable source fact.
 
 **Format for human verification request:**
 ```markdown

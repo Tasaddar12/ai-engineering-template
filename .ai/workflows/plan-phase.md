@@ -274,9 +274,10 @@ Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks, or
 )
 ```
 
-> **ORCHESTRATOR RULE**: after calling Agent(), stop working on this task. Do not
-> read more files, write plans or investigate in parallel while the subagent runs.
-> Wait for its result. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE**: after dispatch, do not write the plan or duplicate the
+> researcher's assigned searches. Independent read-only checks or evidence
+> collection may run against the same frozen revision. Join the research result
+> before making planning decisions or writing the plan.
 
 **Handle the return.** First verify `{phase_dir}/{padded_phase}-RESEARCH.md`
 exists; a return of any kind with no file is a failure — report it and do not

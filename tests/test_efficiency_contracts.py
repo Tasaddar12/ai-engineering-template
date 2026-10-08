@@ -12,23 +12,40 @@ class EfficiencyContractTests(unittest.TestCase):
 
     def test_scout_dispatch_is_conditional_and_keeps_cited_evidence(self):
         dispatch = self.read(".ai/references/scout-dispatch.md")
-        self.assertIn("known and bounded", dispatch)
         self.assertIn("one discovery scout", dispatch)
-        self.assertIn("smallest useful set", dispatch)
+        self.assertIn("named unresolved claim", dispatch)
+        self.assertIn("task_class:", dispatch)
+        self.assertIn("field_results:", dispatch)
+        self.assertIn("Do not dispatch a second scout when one result answers", " ".join(dispatch.split()))
         self.assertNotIn("at least two specialized", dispatch)
         self.assertIn("citation: <path:line", dispatch)
         self.assertIn("revision: <inspected revision>", dispatch)
 
-    def test_role_adapters_do_not_require_scouts_for_known_work(self):
+    def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
             if path.stem in {"README", "scout"}:
                 continue
             body = path.read_text(encoding="utf-8")
             adapter = body.split("</local_workflow>", 1)[0]
-            self.assertNotIn("every substantive repository evidence task", adapter, path.name)
-            self.assertIn("evidence gap", adapter, path.name)
+            self.assertIn("scout dispatch", adapter, path.name)
         rules = self.read(".ai/RULES.md")
-        self.assertIn("clear sources needs no scout", rules)
+        self.assertIn("separately named questions", rules)
+
+    def test_review_triggers_and_parallel_readonly_work_are_explicit(self):
+        readme = self.read(".ai/agents/README.md")
+        verifier = self.read(".ai/workflows/verify-work.md")
+        self.assertIn("fresh code-reviewer for every source-changing phase", readme)
+        self.assertIn("when documentation changed", verifier)
+        self.assertIn("when acceptance covers a", verifier)
+        for path in (".ai/workflows/execute-phase.md", ".ai/workflows/plan-phase.md",
+                     ".ai/workflows/quick.md"):
+            workflow = self.read(path)
+            self.assertIn("Independent read-only", workflow, path)
+            self.assertIn("same frozen revision", workflow, path)
+        scout = self.read(".ai/references/scout-dispatch.md")
+        self.assertIn("one bounded follow-up", scout)
+        self.assertIn("block only the dependent", scout)
+        self.assertIn("question, revision, search scope and supplied", scout)
 
     def test_execute_keeps_dependency_waves_and_uses_receipts(self):
         workflow = self.read(".ai/workflows/execute-phase.md")
