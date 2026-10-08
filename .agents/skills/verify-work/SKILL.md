@@ -18,13 +18,18 @@ Establish what is actually true after a phase executed.
 **How it works:**
 
 1. Scan the phase's plans and summaries, reporting visible mismatches first
-2. Run the project's configured checks as evidence
-3. Spawn a fresh verifier to judge the codebase against the phase goal
-4. Check integration and documentation where they apply
-5. Close gaps and re-verify, or record them with the user's agreement
-6. Close the phase's requirements in REQUIREMENTS.md when the status is a pass
+2. Start configured checks, applicable read-only specialists and a provisional
+   verifier together against one frozen revision, using valid receipts
+3. Join the results and resume the verifier to reconcile bounded shared evidence
+4. On a provisional pass, commit success bookkeeping, then reconcile checks and
+   source acceptance on the resulting frozen revision
+5. Persist the final external verifier report through the coordinator as the
+   final local write; close gaps and re-verify when needed
+6. Close the phase's requirements in REQUIREMENTS.md only in the one-time
+   success-bookkeeping step for a pass
 
-**Output:** `{phase}-VERIFICATION.md` with status, revision and findings.
+**Output:** `{phase}-VERIFICATION.md` with status, the exact revision examined
+by the final verifier, and findings.
 
 Task completion is a claim. Verification is evidence.
 </objective>
@@ -52,9 +57,13 @@ improvise from the summary.
 </process>
 
 <success_criteria>
-- Existing verification checked for staleness against the current revision
+- Existing verification currentness checked using the exact revision or the
+  bounded report-only publication rule
 - Configured checks run and passed to the verifier as evidence
-- A fresh verifier judged the codebase, not the summaries
+- Initial checks and independent specialists join before their evidence is
+  reconciled; the verifier judges the codebase, not the summaries
+- On a provisional pass, final reconciliation reviews the success-record commit
+  before the report is persisted
 - Unconfirmable criteria abstained rather than passed
 - Gaps closed and re-verified, or recorded as todos with the user's agreement
 - Roadmap and STATE.md updated only on a pass or an explicit acceptance

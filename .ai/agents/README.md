@@ -19,19 +19,25 @@ source examples and result contracts.
 | [Integration checker](integration-checker.md) | verify-work | Expected cross-phase connections → read-only wiring and flow evidence → verifier |
 | [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
-| [Scout](scout.md) | Every non-scout role | Narrow read-only question and revision → cited evidence → assigning role |
+| [Scout](scout.md) | Any role, for every requested repeatable task class in scout-dispatch.md | Requested fields and revision → cited evidence packet → assigned decision owner |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
 
-The orchestrator selects the useful responsibilities; a small change need not run
-every specialist. The documentation route reads doc-writer directly. The verifier
-loads doc-verifier for documentation obligations and integration-checker for
-connections.
+Follow [scout dispatch](../references/scout-dispatch.md) for the task/output
+route. The documentation route reads doc-writer directly. Verification always
+uses verifier; it adds doc-verifier when documentation changes,
+integration-checker when acceptance covers dependencies or user-facing flows,
+and a fresh code-reviewer for every source-changing phase. Add another specialist
+only for a named unresolved acceptance claim or risk decision in that role's
+domain. Deterministic configured checks establish their result through runtime
+receipts; AI diagnosis is reserved for failed or ambiguous results that need
+interpretation.
 
-A fresh code-reviewer separately assesses the changed source before a phase
-closes; the verifier cannot substitute for that dispatch, and a coder's
-self-check is not a review. Worker roles may spawn only `scout` children for
-the assigned evidence task. Scouts never spawn children; the orchestrator owns
-worker lifecycle, integration, shared records and publication.
+A fresh code-reviewer separately assesses changed source before every
+source-changing phase closes; the verifier cannot substitute for that dispatch,
+and a coder's self-check is not a review. Worker roles may spawn only `scout`
+children for evidence packets routed by the shared contract. Scouts never spawn
+children; the orchestrator owns worker lifecycle, integration, shared records
+and publication.
 
 Reviewers return complete results to the orchestrator, which routes false
 documentation claims to the writer's fix mode and code defects to an owned coder

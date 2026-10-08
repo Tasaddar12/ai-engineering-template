@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Publish verified phase work as a pull request - gated on passing verification, a clean tree and passing checks."
+description: "Publish verified phase work as a pull request - gated on current verification, a clean tree and valid passing check evidence."
 argument-hint: "[phase] [--draft] [--review] [--no-push]"
 allowed-tools:
   - Read
@@ -17,17 +17,22 @@ Publish work that verification actually passed.
 
 **How it works:**
 
-1. Confirm the phase's verification is `passed` and current for this revision
+1. Confirm the phase's verification is `passed` and current under the documented
+   exact-revision/report-only publication rule
 2. Check the tree is clean, the branch is not the base, and gh is available
-3. Run the project's configured checks
-4. Compose the PR body from the phase's summaries and verification report
-5. Push and open or update the pull request
-6. Wait for its checks with `pr.checks --wait`; fix failing checks
-7. Ask the merge question; merge, sync the base branch and close the session only
+3. Commit the truthful pre-publication session status
+4. Reconcile verification and check evidence on that resulting revision, and
+   persist the final report as the last local write
+5. Compose the PR body from the phase's summaries and current verification report
+6. Push and open or update the pull request
+7. Wait for its checks with `pr.checks --wait`; fix failing checks and re-verify
+   source repairs before another push
+8. Ask the merge question; merge, sync the base branch and close the session only
    on the user's instruction
 
-**Output:** a pushed branch and a pull request, recorded in STATE.md, merged only
-on the user's instruction.
+**Output:** a pushed branch and pull request; the preparation status is committed
+in STATE.md and the actual PR URL is recorded in session metadata. Merge only on
+the user's instruction.
 
 No bypass for unverified work.
 </objective>
@@ -57,10 +62,11 @@ improvise from the summary.
 <success_criteria>
 - Verification confirmed passed and current for the shipped revision
 - Working tree clean, branch not the base, remote and gh available
-- Configured checks run and passing
+- Configured checks have valid passing evidence for the shipped inputs
 - PR body composed from the phase's own records
 - Branch pushed, PR opened or updated
 - Check state reported as observed, never assumed
 - Merge question asked; merged only on the user's instruction
-- Publication recorded in STATE.md and committed
+- Truthful pre-publication status committed before final verification
+- Actual PR URL recorded by `pr.open` in session metadata; no stale post-push commit
 </success_criteria>

@@ -24,8 +24,10 @@ Return:
 ```
 
 The coordinator reviews the outline and assigns one bounded plan per worker when
-useful. Dependencies, ownership and available capacity govern assignment order;
-wave numbers are a descriptive view, not a global barrier.
+useful. `phase-plan-index` groups plans into dependency/file-overlap waves. The
+coordinator completes integration and checks for one eligible wave before
+releasing the next; independent assignments may run in parallel within a wave,
+subject to ownership, resource conflicts and available capacity.
 
 #### single-plan
 

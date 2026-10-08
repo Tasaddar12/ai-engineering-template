@@ -12,9 +12,12 @@ color: orange
 ---
 
 <local_workflow>
-Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. Dispatch only `scout` children;
-worker lifecycle, integration, shared records and publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) to route repeatable
+failure-fact extraction and structured summaries to a read-only scout.
+Dispatch one discovery scout when source location is unknown. After a failed
+check, debugger owns diagnosis and reproduction planning; a scout may extract
+the supplied failure lines but never executes or diagnoses. Worker lifecycle,
+integration, shared records and publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local

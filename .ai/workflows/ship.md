@@ -143,8 +143,13 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    Exit. Do not offer a bypass: an unverified PR is exactly what this gate exists
    to prevent.
 
-   Also compare the report's `revision` to the current HEAD. If the code moved
-   since verification, the report is stale — say so and require re-verification.
+   Apply the coordinator currentness check in
+   [verification evidence](../references/verification-evidence.md). Exact HEAD
+   equality is the fast path; otherwise accept only the documented commits that
+   publish this phase's exact verification report, after checking every
+   intervening commit and requiring a clean worktree. Any other change requires
+   re-verification. `verification.status` exposes report metadata and does not
+   enforce freshness.
 
 2. **Clean session worktree.**
 
@@ -200,7 +205,12 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    phase_run query verification.run-checks
    ```
 
-   A failing check blocks. Report the command and its output tail.
+   Reuse each valid successful receipt whose revision, declared inputs,
+   environment and configuration still match this ship revision. A matching
+   receipt is deterministic evidence; include its tested revision and receipt
+   reference. Rerun checks with missing or invalid receipts. A pass needs no AI
+   diagnosis. A failing or ambiguous check blocks; report its command and bounded
+   output tail and route diagnosis to the responsible coder or debugger.
 </step>
 
 <step name="optional_review">
@@ -212,6 +222,8 @@ Agent(
 Review everything Phase {phase_number} is about to publish.
 
 **Diff:** {SESSION_BASE}...{SESSION_BRANCH}, in {SESSION_WORKTREE}
+**Frozen revision:** {session HEAD}; use it with the configured check receipts
+from preflight.
 **Phase goal:** {goal}
 
 Review the changed source for correctness bugs, security issues and anything a
@@ -230,6 +242,43 @@ Findings: <numbered, each with file:line and severity (critical|warning)>
 
 Critical findings block the PR. Fix them, re-verify, and start again — do not
 publish with a known critical finding and a note about it.
+</step>
+
+<step name="prepare_shipping_record">
+Before final reconciliation, commit the truthful pre-publication session status.
+The PR URL does not exist yet; do not claim the phase shipped or add an invented
+URL. The session's `pr.open` metadata records the actual PR after push.
+
+If STATE already records `Preparing publication` for this same session branch,
+set `preparation_record_changed=false` and skip the redundant record/commit. A
+repeated ship run must not create a no-op lifecycle commit merely to refresh
+verification. Otherwise set it true before writing and committing the record.
+
+```bash
+phase_run query state.record-session \
+  --stopped-at "Preparing publication for phase ${phase_number} on ${SESSION_BRANCH}" \
+  --status "Preparing publication"
+phase_run query commit "docs(state): prepare phase ${phase_number} publication" \
+  --files .planning/STATE.md
+```
+</step>
+
+<step name="final_reconciliation">
+If `preparation_record_changed=false`, reuse the already-passed report only when
+the existing report is still current under the shared exact-revision/report-only
+rule and the preflight receipts remain valid for this revision. In that case,
+skip another verifier dispatch and report commit.
+
+If the status record changed or currentness/evidence no longer holds, capture
+the new revision and start configured checks plus a provisional read-only
+verifier together. The verifier receives pending check results and reviews the
+actual STATE record diff, the phase goal and source evidence. After every check
+joins, resume the verifier with the complete results/receipts. On a pass, the
+coordinator preserves the revision actually examined, writes the tracked phase
+report, and commits only that report as the last local write.
+Apply the shared [verification evidence lifecycle](../references/verification-evidence.md).
+If this reconciliation is not `passed`, stop before push. A source repair
+requires a fresh `/verify-work` cycle before another push attempt.
 </step>
 
 <step name="push_branch">
@@ -342,9 +391,13 @@ exactly as observed:
 1. Read each failing run's log: `gh run view <run-id> --log-failed`
 2. Dispatch one `debugger` with `isolation="worktree"`, giving it the failing
    check names, the log excerpts and the session branch.
-3. From the session worktree: `git merge --ff-only <debugger-branch>`, then
-   `git push`.
-4. Run `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240` again.
+3. From the session worktree, integrate the fix. Do not push yet: the source
+   change invalidates verification for this branch.
+4. Invoke `/verify-work {phase_number}` in ship-repair/return-to-caller mode.
+   Re-run local checks and final reconciliation on the repaired revision; do not
+   repeat success bookkeeping or auto-start another `/ship`.
+5. Only after it returns `passed`, push the repaired branch and judge the exact
+   new tip with `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240`.
 
 Still failing after round 2: report it with its logs as the blocker.
 </step>
@@ -381,20 +434,10 @@ reason it was kept is the reason not to delete it.
 </step>
 
 <step name="track_shipping">
-Record the publication against the phase:
-
-```bash
-phase_run query state.record-session \
-  --stopped-at "Phase ${phase_number} shipped: ${pr_url}" \
-  --status "Shipped"
-phase_run query state.add-decision "Phase ${phase_number} published as ${pr_url}"
-phase_run query commit "docs(state): record phase ${phase_number} publication" \
-  --files .planning/STATE.md
-```
-
-**Run this from the session worktree, before the merge gate**, so the record
-travels in the pull request it describes. Once the session is merged and closed
-its worktree is gone, and a commit made after that has nowhere to land.
+The pre-publication session status was committed before final reconciliation.
+After `pr.open`, use its returned URL/session metadata in the user-facing report;
+do not add a tracked post-push bookkeeping commit, which would make verification
+stale. Report the observed publication outcome accurately.
 </step>
 
 <step name="report">

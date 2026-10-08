@@ -1,6 +1,6 @@
 ---
 name: quick
-description: "Execute a small ad-hoc change with a recorded plan, atomic commits and tracked state, without opening a phase."
+description: "Execute one single-outcome ad-hoc change with a recorded plan, atomic commits and tracked state, without opening a phase."
 argument-hint: "<description> [--validate]"
 allowed-tools:
   - Read
@@ -14,7 +14,7 @@ allowed-tools:
 ---
 
 <objective>
-Do one focused change properly, without phase overhead.
+Complete one outcome in a single plan of one to three tasks, without phase overhead.
 
 **How it works:**
 

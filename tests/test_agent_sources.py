@@ -27,22 +27,22 @@ class AgentSourceTests(unittest.TestCase):
         self.assertEqual("high", native["model_reasoning_effort"])
         self.assertEqual("read-only", native["sandbox_mode"])
 
-    def test_coordinator_scout_procedure_does_not_forbid_worker_dispatch(self):
+    def test_coordinator_uses_explicit_scout_route_and_workers_remain_routed(self):
         text = (ROOT / ".ai/agents/coordinator.md").read_text(encoding="utf-8")
         adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-        self.assertIn("For repository evidence assignments", adapter)
-        self.assertIn("dispatch `scout` children under that procedure", adapter)
+        self.assertIn("task/output", adapter)
+        self.assertIn("source location is unknown", adapter)
         self.assertIn("Dispatch normal workers", adapter)
-        self.assertNotIn("Dispatch only `scout` children", adapter)
 
-    def test_worker_local_adapters_allow_scout_dispatch_without_worker_dispatch(self):
+    def test_worker_local_adapters_reference_scout_contract_without_worker_dispatch(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
             if role.stem in {"README", "scout", "coordinator"}:
                 continue
             with self.subTest(role=role.name):
                 text = role.read_text(encoding="utf-8")
                 adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                self.assertIn("Dispatch only `scout` children", adapter)
+                self.assertIn("Use [scout dispatch]", adapter)
+                self.assertIn("scout", adapter)
                 self.assertRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+workers")
                 self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
 

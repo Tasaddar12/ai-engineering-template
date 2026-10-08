@@ -30,16 +30,29 @@ rules. Agent names and tool lists describe responsibilities and
 capabilities. The installer supplies native agent definitions as described in the
 [agent catalog](../agents/README.md#native-host-models); role names do not register
 host tools or slash commands.
-The runtime dispatches code, documentation, independent code review and phase verification. Code review uses `reviewer_command`, falling back to the read-only verifier route when omitted. The
-documentor loads doc-writer; the independent verifier applies doc-verifier and
-integration-checker. Dispatch an independent code-reviewer before each code component
-integrates; assign additional specialists for unresolved documentation claims,
-cross-phase flows or source-defect findings, with the exact revision and result destination. Workers dispatch
-only `scout` children; changing a role name does not create a new CLI subcommand.
+The runtime dispatches code, documentation, independent code review and phase
+verification. Code review uses `reviewer_command`, falling back to the read-only
+verifier route when omitted. The documentor loads doc-writer. Verification
+always dispatches verifier; dispatch doc-verifier when documentation changes,
+integration-checker when acceptance covers a dependency or user-facing flow,
+and code-reviewer for every source-changing phase. Code-reviewer owns correctness
+and security; domain specialists own their listed claims. The verifier
+reconciles specialist reports with acceptance and source evidence, then inspects
+only to close named conflicts and missing claims rather than repeating complete
+reviews. Dispatch another specialist only for a named unresolved acceptance
+claim or risk decision in that specialist's domain, with exact revision and
+result destination. Workers dispatch `scout` children only for the repeatable
+evidence packets in [scout dispatch](scout-dispatch.md).
 
-Every non-scout agent follows [required scout dispatch](scout-dispatch.md) for
-every substantive repository evidence task. The read-only leaf scout returns
-the prescribed evidence result; worker integration and publication stay with the coordinator.
+Configured deterministic checks run through `verification.run-checks`; legacy
+entries stay serial, while a mapping opts into parallel execution only when it
+declares independence. Resource locks serialize commands that share a resource.
+Use successful receipts as evidence. Declare generated dependency/build inputs
+and stable environment stamps that affect a command. Volatile external state
+needs reuse disabled for that check or for verification globally. AI diagnosis
+is for failures or ambiguous results that need interpretation. Do not ask a
+specialist to rerun a check whose valid receipt covers the exact tested revision
+and declared inputs.
 
 ## Local methods and operations
 
@@ -60,7 +73,7 @@ The role and method files describe the following actual local operations:
 | Configure execution | `.planning/config.yaml` owns commit behavior, model and effort overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
 | Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
-| Schedule work | Coordinator releases each component after its own checked integrated prerequisites; displayed waves do not impose a global barrier |
+| Schedule work | `phase-plan-index` groups plans into dependency and file-overlap waves; execute waves in order and run each wave's work concurrently only within that wave |
 | Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
 | Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
 

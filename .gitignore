@@ -4,6 +4,8 @@
 # moment they are consumed, and never evidence of what a plan did -- that stays
 # in the plan's committed SUMMARY.md.
 .planning/handoffs/
+# Local reusable check evidence and full subprocess logs.
+.planning/verification-receipts/
 # Local agent settings and operating-system/editor noise.
 .codex/settings.local.*
 .DS_Store

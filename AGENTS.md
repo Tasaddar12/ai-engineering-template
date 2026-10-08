@@ -14,11 +14,13 @@ Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
 
 A command names a workflow. The workflow is the procedure: it decides what to
 load, which agents to spawn with what context, and which runtime verbs to call.
-The [runtime](.ai/runtime/README.md) performs every planning-record change — phase
+The [runtime](.ai/runtime/README.md) performs every planning-record change - phase
 numbering, the roadmap, STATE.md, PROJECT.md's Key Decisions, REQUIREMENTS.md's
 Traceability, todos, quick tasks, milestones. Do not edit those structures by
 hand; `python .ai/runtime/phase.py query <verb>` owns them, and hand edits drift
-from them.
+from them. The only exception is the exact, guarded Git compensation of a
+coordinator-created bookkeeping-only commit described in
+[verification evidence](.ai/references/verification-evidence.md#compensating-a-failed-final-verification).
 
 Prose the runtime does not own — a project's narrative sections, a requirement's
 wording, an ADR's argument — is written by hand, and `planning.validate` reports
@@ -66,8 +68,10 @@ with evidence and preserve approved outcomes.
 ## Dispatch
 
 The orchestrator routes; it does not do the work it dispatched. After spawning an
-agent, wait for it — reading files, editing code or running tests while an agent
-is active conflicts with that agent's edits.
+agent, wait before touching its owned files or integrating its changes. During a
+frozen read-only verification batch, configured checks and independent read-only
+specialists may inspect the same captured revision concurrently; wait for every
+result before accepting evidence, repairing files or starting another batch.
 
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
@@ -78,14 +82,17 @@ call — shared role files carry neither as frontmatter (the installer adds Clau
 `model: haiku` only to exported `scout` metadata, with no effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-Read and follow [required scout dispatch](.ai/references/scout-dispatch.md) for
-every substantive repository evidence task, including coordinator work. Non-scout
-workers may dispatch only `scout` children. The coordinator retains worker
-lifecycle, integration, shared records and publication. `scout` returns a
-read-only evidence result without commits or SUMMARY and never dispatches children.
+Use [scout dispatch](.ai/references/scout-dispatch.md) for the authoritative
+task/output routing table. Send one discovery scout when source location is
+unknown; send additional scouts only for separately named questions and distinct
+evidence outputs. The coordinator owns worker lifecycle, integration, shared
+records and publication. Scouts return cited read-only evidence and never
+dispatch children.
 
-A worker that returns "complete" with no SUMMARY.md, or with no commits, did not
-complete. Treat it as blocked.
+A source-changing worker returns `complete` only after committing its owned
+changes and required SUMMARY.md. A read-only scout, reviewer, verifier,
+doc-verifier or integration-checker returns `complete` with its assigned cited
+packet or report; it does not create a commit or SUMMARY.md.
 
 ## Skills
 

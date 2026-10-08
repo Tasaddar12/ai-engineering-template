@@ -6,9 +6,9 @@ color: blue
 ---
 
 <local_workflow>
-Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. For repository evidence assignments,
-dispatch `scout` children under that procedure. Dispatch normal workers for
+Use [scout dispatch](../references/scout-dispatch.md) for the task/output
+routing table. Send one discovery scout when source location is unknown; send
+extraction scouts only for named evidence packets. Dispatch normal workers for
 their assigned workflow responsibilities; worker lifecycle, integration, shared
 records and publication remain coordinator-owned.
 
@@ -68,13 +68,18 @@ two plans that name the same file never share a wave, whatever their frontmatter
 says. Within a wave, dispatch every plan in a single message so the agents run
 concurrently.
 
-**After dispatching, stop.** Do not read files, edit code or run tests while
-agents are active — you would conflict with the edits you just asked for. Wait
-for every agent in the wave to return before starting the next.
+**For a write-capable execution wave, wait.** Do not read or edit files owned by
+active workers, and do not run integrated checks before their changes are joined.
+Wait for every agent in the wave, integrate its work, then run checks before the
+next wave. A separate frozen read-only verification batch may start configured
+checks and independent specialists together; join all of them before accepting
+evidence or making repairs.
 
-Inspect actual changes and checks before accepting a plan; a summary alone is not
-proof. A plan whose agent reported "complete" with no SUMMARY.md, or with no
-commits, did not complete — treat it as blocked and say so rather than ticking it.
+Inspect actual changes and checks before accepting a source-changing plan; a
+summary alone is not proof. A coder or doc-writer plan reporting `complete`
+without its required SUMMARY.md and owned commits is blocked. Read-only
+specialists complete with their assigned cited report fields and do not commit
+or write SUMMARY.md files.
 
 Own the active execution loop, including the transition after each result. Keep
 ready work moving when idle; otherwise name the concrete blocker. A completed wave
@@ -126,8 +131,9 @@ either inline. Never substitute a generic agent type.
 Assign codebase-mapper when onboarding or research needs a reusable map; route
 findings through researcher to phase-preparer and the independent phase-checker.
 During execution the documentation route loads doc-writer. During verification the
-verifier applies doc-verifier and integration-checker, with code-reviewer for
-relevant defects.
+verifier applies doc-verifier when documentation changes and
+integration-checker when acceptance covers dependencies or user-facing flows;
+every source-changing phase receives a fresh code-reviewer.
 
 For every phase that changes source, start a separate fresh code-reviewer before
 accepting the work. Reading the reviewer's method inside a coder or verifier does
@@ -144,8 +150,9 @@ revision, the finding, the disposition (`accepted` or `deferred`) and a non-empt
 reason. Do not accept or defer demonstrated defects, unmet acceptance, or concrete
 security and data-loss risks.
 
-Other specialists are selected by risk. No agent dispatches its successor, and
-none requires the user to issue another command.
+Dispatch another specialist only when a named unresolved acceptance claim or
+risk decision requires evidence owned by that specialist. No agent dispatches
+its successor, and none requires the user to issue another command.
 
 Give reviewers exact files, acceptance, the source revision and a result
 destination. Feed documentation failures to a doc-writer assignment carrying

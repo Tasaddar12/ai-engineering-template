@@ -12,9 +12,12 @@ color: orange
 ---
 
 <local_workflow>
-Read and follow [required scout dispatch](../references/scout-dispatch.md) before
-every substantive repository evidence task. Dispatch only `scout` children;
-worker lifecycle, integration, shared records and publication remain coordinator-owned.
+Use [scout dispatch](../references/scout-dispatch.md) to route repeatable
+claim-to-source extraction and structured summaries to a read-only scout.
+Dispatch one discovery scout when source location is unknown. Doc-verifier owns
+the per-document claim verdict; use a scout only to supply named citations or
+classification fields. Worker lifecycle, integration, shared records and
+publication remain coordinator-owned.
 
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local

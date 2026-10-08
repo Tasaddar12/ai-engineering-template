@@ -1,10 +1,57 @@
-# Required repository evidence dispatch
+# Conditional repository evidence dispatch
 
-Every non-scout agent, including `coordinator`, follows this procedure for every
-substantive repository evidence task: implementation, planning, research, review,
-verification, debugging, documentation, and codebase mapping. `scout` is the
-read-only leaf exception: it never dispatches children. These are prompt and tool
-permission instructions, not hard runtime enforcement of search behavior.
+Use this routing contract to assign repeatable evidence work to the `scout`
+role (`gpt-6-luna`/high on Codex; `haiku` on Claude). The scout extracts facts,
+classifies supplied evidence, builds structured summaries and proposes
+documentation transformations. It does not decide implementation correctness,
+security, acceptance, or whether a phase passes. It is a read-only leaf: it does
+not edit, run tests, execute project code, or dispatch children.
+
+## Task and output routing
+
+| Trigger or task | Owner and required output | Next action |
+|---|---|---|
+| A file, symbol, term, or source boundary is unknown | One discovery scout returns locations, search terms and citations | Join its result, then assign only uncovered questions |
+| A known source or supplied log/error/output needs fact extraction, classification, or a structured summary | Scout returns the requested fields with path:line or input-line evidence | Consume the packet; verify cited source only for conflict or a missing acceptance fact |
+| A documentation claim needs comparison with source | Scout returns claim-to-source citations and mismatches; `doc-verifier` owns the required per-document claim verdict | Doc-verifier reports each required claim; writer fixes false prose |
+| A review needs changed-file, diff, or test inventory | Scout returns the inventory and cited evidence; `code-reviewer` owns correctness and security findings | Reviewer uses the packet and inspects changed source for the review decision |
+| Integration acceptance needs producer-to-consumer locations | Scout maps producer, consumer and entry point with citations; `integration-checker` owns the end-to-end flow verdict | Integration-checker follows the flow and reports observed evidence |
+| Existing check output needs summarizing | Scout extracts command, exit/result, revision and failure lines from supplied logs or receipts | Coordinator routes failures; a passing receipt remains deterministic check evidence |
+| A configured check must run | `verification.run-checks` executes it and returns a receipt | Do not ask a scout to run or repeat it |
+| A check failed or returned ambiguous output | Scout may extract exact failure facts from the existing result; `debugger` owns diagnosis, reproduction plan and fix proposal | Send the fact packet to debugger; only an authorized coder repairs source |
+| Source locations, acceptance and the requested result are already specified | Assigned implementation or decision owner reads those sources and proceeds | Do not dispatch a scout for duplicate extraction |
+| A mechanical documentation or code transformation is requested | Scout returns proposed text or a patch as `DOC_TRANSFORM_PROPOSAL` or `CODE_TRANSFORM_PROPOSAL`; doc-writer or coder owns edits and commits | Owner validates the proposal against source, acceptance and assigned paths |
+
+| Common assignment | Previous routing tendency | Required route now |
+|---|---|---|
+| One bug fix with named source paths and acceptance | Skip scouts whenever source paths are known | Coder implements. Route each requested repeatable extraction, classification, summary or transformation output to scout. A source-changing phase always gets a separate fresh code-reviewer. |
+| Code change plus documentation review | Let code review stand in for factual documentation comparison | Coder implements; code-reviewer reviews changed source; doc-verifier checks changed documentation claims; verifier reconciles both reports. Route requested claim-to-source extraction to scout. |
+| Coding from a prepared plan | Have coder perform implementation and bulk evidence extraction | Route each requested repository-fact extraction or structured summary to scout; coder implements one plan with owned paths, acceptance IDs and checks. |
+| Feature planning | Ask researcher to perform repetitive repository inventory along with technical decisions | Researcher owns technical decisions; phase-preparer writes plans; phase-checker reviews plans; scout returns requested repository-pattern, constraint and evidence fields. |
+| Integration checking | Have integration-checker repeat producer/consumer location extraction while tracing flow | Scout maps the named producer, consumer and entry point; integration-checker uses the map and receipts to trace the flow and owns the verdict. |
+| Test running | Ask an agent to execute tests or inspect outputs by rerunning commands | `verification.run-checks` executes configured checks and records receipts; scout summarizes supplied receipt/log fields but never executes tests or project code. |
+
+Dispatch `scout` for every requested repeatable extraction, classification,
+structured-summary or transformation output in the routing table, even when
+the source locations are known. For other specialist roles, dispatch only when
+a named unresolved claim, acceptance criterion, or risk decision requires
+evidence from that specialist's domain. Do not dispatch a second scout when one
+result answers the assigned question. Dispatch multiple
+scouts only for separately named questions with different source areas or
+evidence types; start independent assignments against the same frozen revision
+and join every result before repair or acceptance. Do not perform duplicate
+searches for the scout's assigned fields. Independent read-only checks or
+specialist evidence collection may run concurrently against the same frozen
+revision; keep every write and source-changing operation within its declared
+owner and do not start repairs before the batch joins.
+
+Reuse a scout result only when the question, revision, search scope and supplied
+inputs match. For missing required fields, send one bounded follow-up naming the
+fields. If the result remains incomplete or blocked, block only the dependent
+decision and report the missing evidence. When citations conflict, assign a
+targeted extraction of the exact conflicting paths or inputs; the stronger
+decision owner resolves the conflict and records its basis. These are prompt and
+tool-permission instructions, not runtime enforcement of search behavior.
 
 ## Assignment and result structures
 
@@ -16,11 +63,14 @@ one area. Do not invent backend/frontend areas that the repository does not have
 scout_assignment:
   id: <unique assignment id>
   kind: discovery|specialized
+  task_class: DISCOVERY|FACT_EXTRACTION|REVIEW_INVENTORY|DOC_CLAIM_COMPARE|INTEGRATION_MAP|TEST_RESULT_SUMMARY|FAILURE_FACTS|DOC_TRANSFORM_PROPOSAL|CODE_TRANSFORM_PROPOSAL
   repository: <absolute checkout path>
   revision: <commit SHA; state whether owned uncommitted changes are relevant>
   question: <one narrow question>
+  inputs: [<source paths, receipt ids, or supplied input ids>]
+  requested_fields: [<exact fields to return>]
   search_scope: [<exact files or bounded directories>]
-  allowed_evidence: [code, docs, existing logs, supplied error, supplied output]
+  allowed_evidence: [code, docs, diff, receipt, existing logs, supplied error, supplied output]
   missing_test_cases_requested: true|false
   constraints: <scope exclusions and supplied context>
 ```
@@ -32,9 +82,11 @@ identifier and line or excerpt. Absence claims include the inspected search scop
 ```yaml
 scout_result:
   id: <assignment id>
+  task_class: <same enum value as assignment>
   revision: <inspected revision>
   status: complete|incomplete|blocked
   answer: <concise answer to the question>
+  field_results: {<requested field>: <extracted value and citations>}
   evidence:
     - claim: <observed fact>
       citation: <path:line or supplied input identifier:line>
@@ -45,43 +97,36 @@ scout_result:
   missing_test_cases: [<requested uncovered cases; [] when none or not requested>]
 ```
 
-## Strict dispatch procedure
+## Dispatch procedure
 
-1. Read the assignment and supplied context. Identify the substantive evidence
-   question, assigned revision, actual repository areas and available shared slots.
-   Do not search the repository to answer that question before scout dispatch.
-2. If an area is unknown, dispatch exactly one discovery `scout` to locate
-   relevant files, terms and boundaries. Wait for its result, validate the result
-   fields and revision, then release/close the completed scout with the host's
-   available lifecycle tool before assigning specialized work. Discovery does not
-   satisfy the specialized-assignment minimum.
-3. Create at least two specialized `scout` assignments for this evidence
-   task. Assign distinct actual areas; for a single area, assign complementary
-   implementation/caller and test/error questions. Resolve each through
-   `phase_run query resolve-agent scout --host codex` or `--host claude` in
-   the source namespace; installed namespaces infer their host. Pass the returned
-   model and effort inline; omit an `inherit` effort.
-4. Dispatch independent specialized assignments concurrently within the shared
-   available host slots. The installed Codex project setting is 12 open spawned
-   threads per session, excluding the primary; it is not 12 per parent and does
-   not change a running host's existing cap. Count open workers and scouts, not
-   only running ones. Queue assignments when slots are unavailable and dispatch
-   the next batch after completed threads are released. If the host has no close
-   tool, report remaining slot availability; do not invent a lifecycle command.
-5. While scouts are active, the parent waits for every assigned scout. The parent
-   performs no overlapping repository searches, edits, tests or project execution.
-   Do not proceed after only the first scout returns. Release/close all completed
-   scouts with the available host lifecycle tool before starting the next batch.
-6. Validate every result's id, revision, status, answer, evidence, search_scope,
-   uncertainty, unresolved_questions and missing_test_cases fields. An incomplete
-   or unsupported answer does not satisfy the assignment. Send one bounded retry
-   containing only the missing question or missing evidence; report an unresolved
-   gap to the coordinator if that retry remains incomplete. Do not silently answer
-   the missing question through a parent search.
-7. After all results return, inspect the consequential cited files/lines yourself
-   at the assigned revision. Resolve conflicting citations with a bounded scout
-   follow-up, then make the decision or perform the assigned work. Cite the
-   verified evidence and retain uncertainty and unresolved questions in the result.
+1. Read the assignment and supplied context. Name the claim, acceptance criterion
+   or risk decision and list the evidence it needs. Follow the routing table; if
+   the table assigns the work directly to an owner, do not add a scout.
+2. If a source area is unknown, assign one discovery scout. Join and validate its
+   revision and citations before assigning the distinct questions it revealed.
+3. Write each scout question as a separate requested output. Reuse a result only
+   when question, revision, scope and inputs all match; otherwise assign a new
+   question with the exact uncovered scope. Resolve each scout through
+   `phase_run query resolve-agent scout --host codex` or `--host claude` in the
+   source namespace. Pass the returned model and effort inline; omit `inherit`.
+4. Start independent specialist assignments concurrently when shared host capacity
+   allows; respect the host's actual open-worker limit and count queued/open
+   workers, not just currently running ones. Wait for all assignments in a batch
+   before integrating their evidence. Do not duplicate the assigned extraction.
+   Independent read-only checks and specialist assignments may run concurrently
+   against the frozen revision. Keep writes and source-changing work with the
+   assigned owner; start repairs only after the results join. Use the host's
+   available lifecycle tools; do not invent one.
+5. Validate each result's id, `task_class`, revision, status, answer,
+   `field_results` for every `requested_fields` entry, evidence, search_scope,
+   uncertainty and unresolved_questions. Check `missing_test_cases` when it was
+   requested. A partial or unsupported answer does not satisfy its question;
+   send a bounded follow-up for the missing evidence or report the remaining gap.
+6. If required output fields are missing, make one bounded follow-up naming each
+   missing field. If the follow-up remains incomplete, block the dependent
+   decision. For conflicting citations, target the exact conflicting paths or
+   inputs and have the stronger domain owner resolve the conflict. Preserve
+   paths, line numbers and excerpts; do not claim more than cited evidence proves.
 
 ## Direct nested dispatch and unsupported-host fallback
 
@@ -105,9 +150,9 @@ scout_request:
   resume_with: <exact dependent question/step to resume after results arrive>
 ```
 
-The coordinator dispatches the requested scouts, follows the same waiting and
-result-validation steps, and resumes the requesting worker with all results.
+The coordinator dispatches the requested scouts, follows the applicable waiting
+and result-validation steps, and resumes the requesting worker with the results.
 The worker then verifies consequential citations and resumes the named step.
-Fallback changes who dispatches; it does not waive discovery or the minimum two
-specialized assignments. `Agent(scout)` parenthetical tool restrictions are
+Fallback changes who dispatches; it does not waive evidence quality or needed
+complementary questions. `Agent(scout)` parenthetical tool restrictions are
 not relied upon for nested workers; the explicit scout-only role instruction applies.

@@ -13,7 +13,7 @@ An agent receives its assignment in the spawn prompt. The prompt identifies:
 | Plan | The exact `NN-MM-PLAN.md` path — the authority on what to change |
 | Required reading | CONTEXT.md, the plan, and every file the plan's `read_first` names |
 | Constraints | Scope, commit expectations, and what is explicitly out of bounds |
-| Output | The SUMMARY.md path to write and what its return must state |
+| Output | The assigned artifact and result format: a SUMMARY.md for source-changing plan work, or the required evidence/report fields for read-only work |
 
 The plan identifies the input revision, the relevant decisions, the task
 instructions, owned paths, checks and dependency results. Read the mandatory core
@@ -37,13 +37,20 @@ documentation can be verified unchanged with a reason; listing a path alone is n
 proof. A blocked result preserves findings and safe partial work without claiming
 successful integration. Only the orchestrator ticks the roadmap.
 
-**A returned "complete" with no SUMMARY.md, or with no commits, is not a
-completion.** The orchestrator treats it as blocked.
+**For source-changing plan work,** a returned `complete` without its required
+SUMMARY.md and owned commits is not completion; the orchestrator treats it as
+blocked. **For read-only assignments,** `complete` requires the assigned cited
+evidence/report fields and requires no commit or SUMMARY.md. Apply the output
+contract named in that role's assignment.
 
-The verifier writes its report to the phase's `NN-VERIFICATION.md` with
-frontmatter carrying `status`, the reviewed `revision`, `verified_at` and finding
-counts. The revision it names is what makes the report falsifiable later: once
-HEAD moves past it, the report is stale and re-verification is required.
+The verifier is read-only on product and source files and returns the complete
+report to the coordinator. The coordinator persists and commits the phase's
+tracked `NN-VERIFICATION.md`. Its `revision` names the exact source revision
+actually reviewed, with `status`, `verified_at` and finding counts. The
+report-only commit does not change that tested revision. Reuse is exact when HEAD
+equals the recorded revision; after publication, reuse a prior result only under
+the bounded rule in [verification evidence](verification-evidence.md). Any other
+change requires fresh verification.
 
 ## Revision and recovery
 

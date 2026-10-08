@@ -25,7 +25,11 @@ command (.ai/commands/) ── the entry point; names a workflow, changes nothin
 A workflow orchestrates and a runtime verb mutates. A workflow that edits
 ROADMAP.md, STATE.md or a phase directory by hand will drift from the runtime
 that owns their structure: go through a verb. First-time creation of a record
-from its template is the one exception.
+from its template is the one exception. The sole later exception is a coordinator
+reverting its exact guarded bookkeeping-only commit after final verification
+fails, as specified in
+[verification evidence](references/verification-evidence.md#compensating-a-failed-final-verification).
+Do not use this allowance for arbitrary hand edits or worker/source commits.
 
 Skills under `.agents/skills/` mirror the commands one-for-one, so a host that
 discovers skills and a host that registers slash commands behave identically.
@@ -185,9 +189,12 @@ approved specifications or actual user instructions. Use the
 ## Orchestration and handoffs
 
 The orchestrator owns routing, phase records and integration. It spawns agents
-with fresh context for bounded work, and it does not do that work itself: a
-workflow that reads files, edits code or runs tests while an agent is active
-conflicts with the agent it dispatched.
+with fresh context for bounded work, and it does not do that work itself. Do not
+edit or integrate files owned by an active write-capable worker. A frozen
+read-only verification batch is different: configured checks and independent
+read-only specialists may inspect the same captured revision concurrently, and
+the coordinator waits for every result before accepting evidence, editing files
+or starting repairs.
 
 Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,
@@ -203,11 +210,16 @@ omit that argument and let the host choose.
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
 not spawn workers, switch branches, merge, publish or edit shared status.
 
-Every non-scout agent, including the coordinator, must read and follow
-[required scout dispatch](references/scout-dispatch.md) for every substantive
-repository evidence task. Workers dispatch only `scout` children; the
-coordinator retains worker lifecycle, integration, shared records and publication.
-`scout` is a read-only leaf and does not dispatch children or write a SUMMARY.
+Source-changing workers commit their assigned changes and required SUMMARY.
+Read-only scouts and reviewers complete with their assigned cited evidence or
+report; they do not create commits or SUMMARY files.
+
+Use [scout dispatch](references/scout-dispatch.md) for the authoritative
+task/output routing table. Send one discovery scout when source location is
+unknown; send additional scouts only for separately named questions with distinct
+evidence outputs. Workers may dispatch only `scout` children; the coordinator
+retains worker lifecycle, integration, shared records and publication. `scout`
+is a read-only leaf and does not dispatch children or write a SUMMARY.
 
 Plan ownership uses exact repository-relative paths or directory prefixes ending
 in `/`, without traversal, globs or whole-repository scope. Plans that declare
@@ -339,9 +351,11 @@ A process exit, a summary assertion, a ticked checkbox or an existing file is no
 proof. Bug repairs need reproduction and regression evidence.
 
 Evidence names the tested revision and the actual commands and results. Material
-content changes invalidate prior verification: a verification report whose
-recorded revision is behind HEAD is stale, and re-verification is required rather
-than optional. Publication readiness needs applicable authorization, current
+content changes invalidate prior verification. A tracked report commit made by
+the coordinator after a read-only verifier finishes is allowed by the narrow
+currentness rule in
+[verification evidence](references/verification-evidence.md); all other changes
+since the tested revision require fresh verification. Publication readiness needs applicable authorization, current
 verification and configured non-empty project checks. Observe required remote
 checks after creating or updating the PR; pending or failed checks prevent
 declaring it ready. Published, verified and merged are distinct facts. Never claim
@@ -358,8 +372,10 @@ Inspect what it committed, what it left dirty and what it reported, then assign
 only the remaining work to a fresh bounded agent. Preserve incomplete work, reuse
 valid completed results, and keep independent ready plans moving.
 
-A plan whose agent reported "complete" with no SUMMARY.md, or with no commits,
-did not complete. Treat it as blocked and say so rather than ticking it.
+A source-changing plan assignment whose agent reports `complete` without its
+required SUMMARY.md and owned commits is blocked. A read-only assignment reports
+`complete` with its assigned evidence packet or report and creates no commit or
+SUMMARY.md; judge it by those required fields.
 
 The lowest-numbered phase whose plan files outnumber its summary files has
 unfinished execution. [progress](commands/progress.md) and [next](commands/next.md)

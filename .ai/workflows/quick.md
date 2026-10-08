@@ -6,7 +6,7 @@ consumes: STATE.md, config.yaml
 -->
 
 <purpose>
-Execute a small, ad-hoc task with the same guarantees as phase work — atomic
+Execute a single-outcome, ad-hoc task with the same guarantees as phase work - atomic
 commits, a recorded plan, and tracked state — without the overhead of a phase.
 Quick mode spawns the phase-preparer (quick mode) and a coder, tracks the task
 under `.planning/quick/`, and records the outcome in STATE.md.
@@ -210,9 +210,10 @@ Return: ## PLANNING COMPLETE with the plan path
 )
 ```
 
-> **ORCHESTRATOR RULE**: after calling Agent(), stop working on this task. Do not
-> read more files, edit code or run tests while the subagent is active. Wait for
-> its result. This prevents duplicate work, conflicting edits and wasted context.
+> **ORCHESTRATOR RULE**: after dispatch, do not edit the plan owned by the
+> preparer or duplicate the preparer's assigned searches. Independent read-only
+> checks or evidence collection may run against the same frozen revision. Join
+> the result before making planning decisions or executing the plan.
 
 After the preparer returns:
 1. Verify the plan exists at `${QUICK_DIR}/${QUICK_ID}-PLAN.md`
@@ -314,8 +315,9 @@ and the verification you actually ran
 > **ORCHESTRATOR RULE**: wait for the subagent. Do not edit code while it runs.
 
 After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`. A returned
-"complete" with no summary file, or with no commits, is not a completion —
-report it as blocked.
+A coder assigned source-changing work who returns `complete` without the required
+summary file and owned commits is blocked. Read-only specialists complete with
+their assigned cited report fields and do not create commits or summaries.
 
 Integrate the executor's branch into the session branch before checking
 anything, for the same reason a wave is integrated before its checks run — the
@@ -431,9 +433,9 @@ Record: {QUICK_DIR}/QUICK.md
 </process>
 
 <anti_patterns>
-- Don't let a quick task grow into a phase mid-flight — stop and recommend `/phase`
-- Don't skip the plan; "it's small" is how unreviewed changes ship
-- Don't accept a coder's "complete" without a SUMMARY.md and real commits
+- Don't let a quick task add a second outcome or more than three plan tasks; stop and recommend `/phase`
+- Don't skip the plan or configured review/check gates
+- Don't accept a source-changing coder's "complete" without a SUMMARY.md and real commits
 - Don't hand-write the QUICK.md record — `quick.create` and `quick.update` own it
 - Don't add quick tasks to ROADMAP.md; they deliberately live outside it
 - Don't finish with the session still open — an undelivered session is

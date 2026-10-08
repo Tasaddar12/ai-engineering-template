@@ -490,7 +490,10 @@ return <div>{otherData.map(...)}</div>  // Uses different data
 
 ## Quick Verification Checklist
 
-For each artifact type, run through this checklist:
+Use applicable checklist items to account for each acceptance-relevant artifact.
+Reuse valid receipts and cited specialist evidence for their bounded claims, then
+inspect only unresolved or conflicting facts; this list is not a directive to
+repeat a full scan already completed independently.
 
 ### Component Checklist
 - [ ] File exists at expected path
@@ -539,7 +542,13 @@ For each artifact type, run through this checklist:
 
 ## Automated Verification Approach
 
-For the verification subagent, use this pattern:
+For the verification subagent, use these as targeted candidate-discovery probes,
+not a mandatory second scan. Consume valid configured-check receipts and cited
+specialist findings for their declared claims. Apply a probe only to the
+acceptance-relevant artifact or connection it can establish; directly inspect
+the candidate when evidence is missing, conflicting or inconclusive. Account for
+every required artifact/link, but avoid rerunning a full artifact/link scan after
+another independent source has already established the same bounded fact.
 
 ```bash
 # 1. Check existence
@@ -572,7 +581,9 @@ check_substantive() {
 }
 ```
 
-Run these checks against each must-have artifact. Aggregate results into VERIFICATION.md.
+Run only the checks needed to resolve an evidence gap for a must-have artifact.
+Aggregate the cited source, specialist or valid receipt evidence into
+VERIFICATION.md; a grep hit alone is not proof of behavior or a defect.
 
 </automated_verification_script>
 
@@ -590,12 +601,16 @@ Some things can't be verified programmatically. Flag these for human testing:
 - Error message clarity (is the message helpful?)
 - Performance feel (does it feel fast?)
 
-**Human if uncertain:**
-- Complex wiring that grep can't trace
-- Dynamic behavior depending on state
-- Edge cases and error states
-- Mobile responsiveness
-- Accessibility
+**Route to human verification when:**
+- Acceptance requires a visual, accessibility, usability, external-service or
+  real-time observation and no assigned evidence establishes that observation.
+- A behavior-dependent acceptance truth has no passing behavioral test.
+- State, error or edge-case acceptance cannot be established by the assigned
+  source evidence, passing test, configured check or specialist result.
+
+State the exact acceptance criterion and missing observation. Inspect source or
+reuse a valid assigned result when that evidence does establish the criterion;
+do not request human verification for an inspectable source fact.
 
 **Format for human verification request:**
 ```markdown

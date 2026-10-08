@@ -1,6 +1,6 @@
 <!-- workflow
 step: verify
-agent-roles: orchestrator, verifier, integration-checker, doc-verifier
+agent-roles: orchestrator, verifier, integration-checker, doc-verifier, code-reviewer
 produces: {NN}-VERIFICATION.md
 consumes: PLAN.md, SUMMARY.md, CONTEXT.md, ROADMAP.md
 -->
@@ -116,25 +116,6 @@ Exit.
 Display: `► VERIFY PHASE {phase_number}: {phase_name}`
 </step>
 
-<step name="check_existing_verification">
-If `verification.exists` is true:
-
-```
-Phase {N} already has a verification report ({verification.status}),
-written for revision {verification.revision}.
-```
-
-Compare the recorded revision to the current HEAD:
-
-```bash
-git rev-parse HEAD
-```
-
-If the code changed since, the report is stale — say so and re-verify. If nothing
-changed, reuse the report without asking: continue at `handle_result` with its
-recorded status.
-</step>
-
 <step name="open_session">
 `phase.locate` has already confirmed the phase and selected any existing session.
 If `session` from `LOCATE` is present, require its absolute `worktree`, then use
@@ -183,6 +164,17 @@ Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
 closes the session once the phase is verified.
 </step>
 
+<step name="check_existing_verification">
+Run this from the selected session worktree, after `open_session`. If
+`verification.exists` is true, report its status and revision, then apply the
+coordinator currentness check in
+[verification evidence](../references/verification-evidence.md). Reuse the exact
+revision immediately when it equals HEAD; otherwise accept only the documented
+phase-report-only publication commits on a clean tree. Any other change requires
+re-verification. The runtime's `verification.status` result exposes report
+metadata; it does not enforce currentness.
+</step>
+
 <step name="scan_phase_artifacts">
 Establish what the phase claims before asking what is true:
 
@@ -199,18 +191,39 @@ Report mismatches you can see without an agent:
 </step>
 
 <step name="run_checks">
-If `checks_configured` is true:
+Capture the integrated `HEAD` once as `frozen_revision`, whether or not project
+checks are configured. When `checks_configured` is true, run:
 
 ```bash
 phase_run query verification.run-checks
 ```
 
-Record each command, its exit code and output tail. These are evidence for the
-verifier, and their absence is itself a finding: a phase with no runnable checks
-is verified by reading alone, and the report must say so.
+Start `verification.run-checks`, the provisional verifier, and applicable
+read-only evidence assignments against `frozen_revision`. Use valid successful
+receipts as check evidence, including tested revision, declared input/config
+identity and receipt reference; reuse matching receipts when available. Preserve
+bounded output tails for failures and ambiguity. Do not ask AI agents to diagnose
+a deterministic pass. If checks are not configured, tell the verifier that the
+phase is judged by source evidence alone. The first verifier assignment must say
+that check and specialist results are pending; do not put future results in its
+initial prompt.
 </step>
 
 <step name="spawn_verifier">
+This step, `check_integration`, `verify_docs`, and configured checks are one
+read-only dispatch batch. Start the provisional verifier, each applicable
+specialist and configured checks together against the `frozen_revision` captured
+in `run_checks`; then wait for all results before reconciling evidence, accepting
+criteria or starting repairs.
+Verifier always runs. Add integration-checker when acceptance covers a
+dependency or user-facing flow, doc-verifier when documentation changed, and a
+fresh code-reviewer for every source-changing phase. Each specialist owns its
+bounded claims. The
+first verifier pass examines phase acceptance and source evidence provisionally;
+it cannot issue a final status until the coordinator resumes it with completed
+check and specialist results. Resolve conflicts or gaps with selective
+inspection or a targeted specialist follow-up, not a duplicate full inspection.
+
 ```
 ◆ Spawning verifier... (runs in a subagent — no output until it returns, ~2–10 min; expected, not a freeze)
 ```
@@ -223,7 +236,7 @@ Agent(
 **Goal:** {goal}
 **Success criteria:** {from ROADMAP.md}
 **Requirements:** {requirements}
-**Revision under review:** {git HEAD}
+**Revision under review:** {frozen_revision}
 ${handoff ? `
 <handoff>
 {the continuation field of phase_run query handoff.read <id>, verbatim}
@@ -241,8 +254,8 @@ only as its reading rule allows.
 - the changed files those summaries name
 </required_reading>
 
-**Configured check results:**
-{each command, exit code and output tail from run_checks, or \"none configured\"}
+**Configured check results:** pending. This is the initial provisional pass; do not
+infer check outcomes or finalize status.
 </verification_context>
 
 <constraints>
@@ -256,13 +269,9 @@ only as its reading rule allows.
 </constraints>
 
 <output>
-Write: {phase_dir}/{padded_phase}-VERIFICATION.md with frontmatter:
-  status: passed | gaps_found | human_needed
-  revision: {the revision you reviewed}
-  verified_at: {timestamp}
-  findings: {counts by severity}
-and sections: Acceptance, Integration, Documentation, Findings.
-Return: ## VERIFICATION COMPLETE with the status and a one-line reason
+Return a provisional report to the coordinator with current acceptance/source
+evidence, open questions and any provisional gaps. Do not emit final status or
+claim configured checks or specialists passed.
 </output>
 ",
   subagent_type="verifier",
@@ -272,17 +281,18 @@ Return: ## VERIFICATION COMPLETE with the status and a one-line reason
 )
 ```
 
-> **ORCHESTRATOR RULE**: wait for the subagent. Do not inspect the code in
-> parallel — a verifier that finds you already edited the tree is verifying
-> something else.
+> **ORCHESTRATOR RULE**: wait for every assignment in the frozen revision batch
+> before accepting evidence or editing the tree. Read-only specialists may inspect
+> in parallel; the coordinator does not change source while they are active.
 
-A verifier that reached the context limit writes the report on what it examined
+A verifier that reached the context limit returns the report on what it examined
 and names the scope it did not reach. Continue that scope in a fresh verifier
 with the same `Agent(...)` call and its handoff in the `<handoff>` block — the
 four steps in
 [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-The continuation adds its findings to the existing report. Continue the
-integration and documentation checks below the same way.
+The coordinator adds the continuation's findings to the external report. Continue
+the integration and documentation checks below the same way on the frozen
+revision.
 </step>
 
 <step name="check_integration">
@@ -295,6 +305,7 @@ Verify that Phase {phase_number} integrates with what came before.
 
 **Phase goal:** {goal}
 **Depends on:** {depends_on}
+**Revision under review:** {frozen_revision}
 
 Check that the end-to-end flows this phase participates in actually complete —
 that the seams between this phase and its dependencies hold in the code, not just
@@ -312,7 +323,7 @@ Findings: <numbered, with file:line>
 )
 ```
 
-Fold its findings into the verification report.
+Return its findings for the coordinator to fold into the verification report.
 </step>
 
 <step name="verify_docs">
@@ -325,6 +336,7 @@ Check the factual claims in the documentation this phase changed against the
 live codebase.
 
 **Docs:** {doc paths from the summaries}
+**Revision under review:** {frozen_revision}
 
 Return per doc: claims checked, claims that are wrong, claims you could not confirm.
 ",
@@ -336,12 +348,43 @@ Return per doc: claims checked, claims that are wrong, claims you could not conf
 ```
 </step>
 
+<step name="reconcile_evidence">
+Wait until `verification.run-checks` and every applicable read-only specialist
+has returned for `frozen_revision`. Resume the provisional verifier with the
+complete results: each check's status, tested revision, receipt reference and
+bounded failure output; integration/doc/code-review findings; and any
+coordinator observations. The verifier reconciles that shared evidence with its
+source review, selectively inspecting only evidence gaps or conflicts. It
+returns the final Acceptance, Integration, Documentation and Findings report,
+with `status` and `revision` set to the exact revision it actually reviewed.
+The verifier remains read-only and never writes the tracked report.
+
+If a relevant source edit or repair happens, discard the provisional decision and
+start a fresh verification batch on the integrated revision. Do not combine
+evidence from different frozen revisions as if it described one tree.
+</step>
+
+<step name="persist_nonpass_report">
+Do not persist the provisional report. For an initial `gaps_found` or
+`human_needed`, the coordinator writes the final joined report after
+`reconcile_evidence`, preserving the verifier's tested revision, then commits
+only `NN-VERIFICATION.md`. For a provisional pass, defer report persistence until
+the final frozen reconciliation after success bookkeeping. The verifier never
+writes into the checkout. Apply the shared
+[verification evidence lifecycle](../references/verification-evidence.md) when
+reusing or shipping; `verification.status` exposes metadata but does not enforce
+freshness.
+</step>
+
 <step name="handle_result">
-Read the verification report from disk — the return message is a summary, the
-file is the record.
+For an initial `gaps_found` or `human_needed`, run this after persisting the
+joined report and read that report from disk. For a provisional pass, use the
+joined verifier result and proceed through one-time success bookkeeping before
+the final report exists. Do not query `verification.status` to decide whether to
+write success records: it may still describe the prior report.
 
 ```bash
-phase_run query verification.status "${phase_number}"
+phase_run query verification.status "${phase_number}"  # non-pass report only
 ```
 
 **status: passed** → continue to `update_roadmap`.
@@ -409,6 +452,24 @@ blocks shipping. Do not loop further, ask, or mark the phase verified.
 **Only when the verification status is `passed`**, or the user explicitly accepted
 the recorded gaps:
 
+Run once after the joined provisional pass and before final frozen reconciliation.
+This is success bookkeeping, not the final verdict. A refresh-only invocation
+whose existing report is already current skips this and the following record
+mutations.
+
+For a new success-bookkeeping attempt, require a clean worktree and capture
+`pre_bookkeeping_revision=$(git rev-parse HEAD)` immediately before these runtime
+verbs:
+
+```bash
+git status --porcelain --untracked-files=all
+pre_bookkeeping_revision=$(git rev-parse HEAD)
+```
+
+The status command must be empty. The exact direct-child commit created in
+`update_state` is the only commit the compensation procedure may reverse if final
+reconciliation is nonpass.
+
 ```bash
 phase_run query phase.complete "${phase_number}"
 ```
@@ -420,6 +481,9 @@ the progress table and re-derives STATE.md's counters.
 <step name="close_requirements">
 **Only when the status is `passed`:**
 
+Run once after the joined provisional pass, with the other success bookkeeping,
+before final frozen reconciliation.
+
 ```bash
 phase_run query requirements.close-phase "${phase_number}"
 ```
@@ -430,20 +494,75 @@ ids the result lists under `unknown`; do not add rows for them.
 </step>
 
 <step name="update_state">
+Run once with the success bookkeeping, before final frozen reconciliation. The
+final verifier reviews this exact record commit; report-only persistence follows
+it as the last workflow write.
+
 ```bash
 phase_run query state.record-session \
   --stopped-at "Phase ${phase_number} verified (${status})" \
   --resume-file "${phase_dir}/${padded_phase}-VERIFICATION.md"
 phase_run query commit "docs(${padded_phase}): verify phase" \
-  --files "${phase_dir}" .planning/ROADMAP.md .planning/STATE.md \
-  .planning/REQUIREMENTS.md
+  --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
+bookkeeping_commit=$(git rev-parse HEAD)
 ```
+
+If `bookkeeping_commit` differs from `pre_bookkeeping_revision`, guard it before
+continuing: require its first parent to equal the captured pre-bookkeeping
+revision and require `git diff-tree --no-commit-id --name-only --no-renames -r
+"${bookkeeping_commit}"` to list only `.planning/ROADMAP.md`,
+`.planning/STATE.md` and `.planning/REQUIREMENTS.md`.
+If no commit was created, leave `bookkeeping_commit` empty. These captured values
+are inputs to the bounded compensation procedure below.
 
 ```bash
 phase_run query planning.validate
 ```
 
 Present any warnings with the result; do not fix them here.
+</step>
+
+<step name="final_frozen_reconciliation">
+After one-time success bookkeeping, capture its resulting `HEAD` as a new
+`frozen_revision`. Start `verification.run-checks` and a provisional read-only
+verifier together against that revision. Reuse only receipts valid for this
+invocation; rerun checks whose declared inputs, environment, configuration or
+revision binding no longer matches. The initial verifier receives pending check
+results, inspects the actual bookkeeping diff and source acceptance coverage,
+and does not finalize. After all results join, resume it with every check
+result/receipt, applicable specialist findings and the actual bookkeeping diff.
+Only the revision the resumed verifier reviewed may appear in a final report.
+
+If the joined final result is `passed`, the coordinator writes the final report
+and commits only `NN-VERIFICATION.md` as the last local write.
+
+If the joined final result is `gaps_found` or `human_needed`, do not persist it
+yet or leave this attempt's success records in place. Apply the bounded
+[bookkeeping compensation procedure](../references/verification-evidence.md#compensating-a-failed-final-verification)
+to the exact captured commit. After a successful revert, use
+`state.record-session` to record the nonpass outcome and commit that STATE-only
+change. If a guard fails or revert conflicts, do not reset or edit records:
+abort only the revert attempted by this coordinator, preserve the records, and
+record a blocked outcome through the runtime. If it cannot be returned to a
+clean tree, preserve the work and stop without writing a report. A completed
+roadmap/requirement record with unsafe compensation is a blocker, never a pass.
+
+After a clean compensation/status commit, capture a new frozen revision; run
+configured checks and a fresh read-only verifier together, with no success
+bookkeeping. Resume the verifier only after results join, providing the prior
+nonpass findings and all current receipts/results. Retain this attempt's nonpass
+outcome; do not restart the success path. Commit the final nonpass report alone
+after this reconciliation. For refresh-only runs, reconcile at the current
+revision without repeating bookkeeping or starting another `/ship`.
+
+For a refresh-only invocation, reconcile at the current revision without
+repeating phase completion, requirement closure or session writes. If this
+verification was invoked by `/ship` after a CI repair, return the final report to
+that active ship run; do not start another `/ship`. The coordinator writes the
+report to the exact `verification.resolve-file` path and commits only
+`NN-VERIFICATION.md` after reconciliation. This report commit is the final local
+write and is the only commit permitted by the shared report-only currentness
+rule.
 </step>
 
 <step name="present_ready">
@@ -459,7 +578,9 @@ Report: {phase_dir}/{padded_phase}-VERIFICATION.md
 ```
 
 **On `passed`:** invoke the `ship` skill for phase {phase_number}
-(`/ship {phase_number}`) in this session. Do not print `/ship` for the user.
+(`/ship {phase_number}`) in this session unless this is a refresh returned to an
+already active `/ship` after its publication-record or CI-repair commit. Do not
+print `/ship` for the user.
 
 **On any other status:** report what blocks shipping — open gaps, undecided
 `human_needed` criteria. Do not tell the user to run a command.
