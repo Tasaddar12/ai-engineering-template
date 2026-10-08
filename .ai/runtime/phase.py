@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
                  models, phases, project_record, quick, requirements, state,
-                 todos, validate, verification, worktrees)
+                 todos, validate, verification, worktrees, pipeline)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -686,7 +686,32 @@ def verb_help(workspace, positionals, options):
     return {"verbs": sorted(VERBS), "init_bundles": sorted(bundles.BUNDLES)}
 
 
+def verb_pipeline_spec(workspace, positionals, options, operation):
+    filename = options.get("spec")
+    require(isinstance(filename, str), "--spec JSON file required", "missing-argument")
+    return operation(workspace, pipeline.read_json(workspace, filename))
+
+
+def verb_evidence(workspace, positionals, options, operation):
+    from lib import evidence
+    filename = options.get("spec")
+    require(isinstance(filename, str), "--spec JSON file required", "missing-argument")
+    return getattr(evidence, operation)(str(workspace.root), pipeline.read_json(workspace, filename))
+
+
 VERBS = {
+    "pipeline.register": lambda w, p, o: verb_pipeline_spec(w, p, o, pipeline.register),
+    "pipeline.route": lambda w, p, o: verb_pipeline_spec(w, p, o, pipeline.route),
+    "pipeline.prepare": lambda w, p, o: pipeline.prepare(w, argument(p, 0, "chunk")),
+    "pipeline.status": lambda w, p, o: pipeline.status(w, p[0] if p else None),
+    "pipeline.run-checks": lambda w, p, o: pipeline.run_checks(w, argument(p, 0, "chunk"),
+        o.get("environment"), reuse=not o.get("no_reuse", False)),
+    "pipeline.record-review": lambda w, p, o: pipeline.record_review(w, argument(p, 0, "chunk"),
+        pipeline.read_json(w, o.get("report")) if isinstance(o.get("report"), str) else None),
+    "pipeline.integrate": lambda w, p, o: pipeline.integrate(w, argument(p, 0, "chunk"), o.get("revision")),
+    "evidence.store": lambda w, p, o: verb_evidence(w, p, o, "store"),
+    "evidence.lookup": lambda w, p, o: verb_evidence(w, p, o, "lookup"),
+    "evidence.invalidate": lambda w, p, o: verb_evidence(w, p, o, "invalidate"),
     "runtime-identity": verb_identity,
     "help": verb_help,
     "generate-slug": verb_slug,

@@ -1,0 +1,343 @@
+"""Real Git and subprocess regressions for provisional parallel chunk gates."""
+import concurrent.futures
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import mock
+
+RUNTIME = Path(__file__).resolve().parents[1] / ".ai" / "runtime"
+sys.path.insert(0, str(RUNTIME))
+from lib import pipeline
+from lib.paths import Workspace
+from lib.results import VerbError
+
+
+class PipelineTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "repo"
+        self.root.mkdir()
+        self.git("init", "-b", "phase-test")
+        self.git("config", "user.name", "Pipeline Test")
+        self.git("config", "user.email", "pipeline@example.invalid")
+        self.git("config", "core.hooksPath", str(self.root / "absent-hooks"))
+        (self.root / ".gitignore").write_text("requests/\n__pycache__/\n")
+        (self.root / "seed.txt").write_text("seed\n")
+        self.git("add", ".gitignore", "seed.txt")
+        self.git("commit", "-m", "base")
+        self.base = self.git("rev-parse", "HEAD")
+        self.ws = Workspace(self.root)
+
+    def git(self, *args, cwd=None):
+        result = subprocess.run(["git", *args], cwd=cwd or self.root,
+                                text=True, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result.stdout.strip()
+
+    def spec(self, name="one", deps=None, resources=None, command=None):
+        path = name + ".txt"
+        (self.root / path).write_text(name + "\n")
+        self.git("add", path)
+        self.git("commit", "-m", name)
+        return {"schema": 1, "chunk_id": name, "assignment_id": "assignment-" + name,
+                "plan_id": "plan-" + name, "base": self.base,
+                "head": self.git("rev-parse", "HEAD"), "owned_paths": [path],
+                "deletions": [], "depends_on": deps or [], "acceptance": ["AC-1"],
+                "resources": resources or [], "checks": [{"id": "check", "argv": command or
+                [sys.executable, "-c", "print('observed check')"], "cwd": ".", "inputs": [path], "timeout": 10}]}
+
+    def next_spec(self, name, **kwargs):
+        self.base = self.git("rev-parse", "HEAD")
+        return self.spec(name, **kwargs)
+
+    def review(self, spec, **changes):
+        report = {"schema": 1, "chunk_id": spec["chunk_id"], "assignment_id": spec["assignment_id"],
+                  "sha": spec["head"], "base_sha": spec["base"], "status": "passed",
+                  "acceptance": spec["acceptance"], "scope": spec["owned_paths"], "findings": [],
+                  "evidence": ["checked chunk diff"], "provenance": {"source": "host", "reviewer": "independent"}}
+        report.update(changes)
+        return report
+
+    def complete(self, spec):
+        pipeline.prepare(self.ws, spec["chunk_id"])
+        self.assertTrue(pipeline.run_checks(self.ws, spec["chunk_id"], "test-host")["passed"])
+        pipeline.record_review(self.ws, spec["chunk_id"], self.review(spec))
+        pipeline.integrate(self.ws, spec["chunk_id"], spec["head"])
+
+    def test_paired_snapshots_are_immutable_as_author_advances(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        prepared = pipeline.prepare(self.ws, "one")
+        self.assertNotEqual(prepared["snapshots"]["test"], prepared["snapshots"]["reviewer"])
+        for root in prepared["snapshots"].values():
+            self.assertEqual(self.git("rev-parse", "HEAD", cwd=root), spec["head"])
+            self.assertEqual(self.git("branch", "--show-current", cwd=root), "")
+        self.next_spec("two")
+        self.assertTrue(pipeline.run_checks(self.ws, "one", "test-host")["passed"])
+        result = pipeline.record_review(self.ws, "one", self.review(spec))
+        self.assertIn("did not observe", result["provenance"])
+        pipeline.integrate(self.ws, "one", self.git("rev-parse", "HEAD"))
+
+    def test_dependency_requires_integration_and_passing_current_gates(self):
+        first = self.spec()
+        pipeline.register(self.ws, first)
+        second = self.next_spec("two", deps=["one"])
+        pipeline.register(self.ws, second)
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "wait")
+        with self.assertRaises(VerbError):
+            pipeline.prepare(self.ws, "two")
+        pipeline.prepare(self.ws, "one")
+        pipeline.run_checks(self.ws, "one", "test-host")
+        pipeline.record_review(self.ws, "one", self.review(first))
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "wait")
+        pipeline.integrate(self.ws, "one", first["head"])
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "ready")
+        pipeline.record_review(self.ws, "one", self.review(first, status="failed"))
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "blocked")
+
+    def test_resource_conflict_only_blocks_linked_chunks(self):
+        first = self.spec(resources=["database"])
+        pipeline.register(self.ws, first)
+        second = self.next_spec("two", resources=["database"])
+        pipeline.register(self.ws, second)
+        third = self.next_spec("three")
+        pipeline.register(self.ws, third)
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "wait")
+        self.assertEqual(pipeline.status(self.ws, "three")["status"], "ready")
+        self.complete(first)
+        self.assertEqual(pipeline.status(self.ws, "two")["status"], "ready")
+
+    def test_route_gates_coding_and_persisted_reservations(self):
+        first = self.spec()
+        pipeline.register(self.ws, first)
+        def task(name, paths, deps=None, state="pending", resources=None):
+            return {"id": name, "owned_paths": paths, "depends_on": deps or [],
+                    "resources": resources or [], "state": state}
+        tasks = [task("coder", ["source/"], state="active", resources=["db"]),
+                 task("linked", ["source/child.py"]), task("dependent", ["next.py"], ["one"]),
+                 task("independent", ["else.py"]), task("resource", ["other.py"], resources=["db"])]
+        result = pipeline.route(self.ws, {"schema": 1, "tasks": tasks})
+        self.assertEqual([x["status"] for x in result["tasks"]], ["ready", "wait", "wait", "ready", "wait"])
+        with pipeline.transaction(self.ws) as state:
+            self.assertEqual(state["tasks"], tasks)
+        missing = pipeline.route(self.ws, {"schema": 1, "tasks": [task("bad", ["a"], ["unknown"]),
+                                                                  task("unrelated", ["b"])]})
+        self.assertEqual([x["status"] for x in missing["tasks"]], ["wait", "ready"])
+        cycles = pipeline.route(self.ws, {"schema": 1, "tasks": [task("a", ["a"], ["b"]),
+            task("b", ["b"], ["a"]), task("unrelated", ["c"])]})
+        self.assertEqual([x["status"] for x in cycles["tasks"]], ["blocked", "blocked", "ready"])
+
+    def test_invalid_and_stale_reviews_are_preserved_and_fail_closed(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        invalid = [self.review(spec, sha=self.base), self.review(spec, acceptance=[]),
+                   self.review(spec, scope=["else.txt"]), self.review(spec, evidence=[]),
+                   self.review(spec, findings=[{"severity": "high", "evidence": "security bug"}])]
+        for report in invalid:
+            with self.assertRaises(VerbError):
+                pipeline.record_review(self.ws, "one", report)
+        with pipeline.transaction(self.ws) as state:
+            self.assertEqual(len([a for a in state["chunks"]["one"]["attempts"] if a["kind"] == "review"]), 5)
+        self.assertEqual(pipeline.status(self.ws, "one")["status"], "blocked")
+
+    def test_failed_and_timeout_checks_preserve_full_logs(self):
+        spec = self.spec(command=[sys.executable, "-c", "print('failure log'); raise SystemExit(7)"])
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        result = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertFalse(result["passed"])
+        self.assertEqual(result["checks"][0]["exit_code"], 7)
+        self.assertIn("failure log", result["checks"][0]["stdout_tail"])
+        self.assertTrue((pipeline.store_root(self.ws) / result["checks"][0]["stdout_log"]).is_file())
+        with self.assertRaises(VerbError):
+            pipeline.integrate(self.ws, "one", spec["head"])
+        again = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertNotEqual(result["attempt"], again["attempt"])
+        two = self.next_spec("two", command=[sys.executable, "-c", "import time; time.sleep(2)"])
+        two["checks"][0]["timeout"] = 0.05
+        pipeline.register(self.ws, two)
+        pipeline.prepare(self.ws, "two")
+        self.assertFalse(pipeline.run_checks(self.ws, "two", "test-host")["passed"])
+
+    def test_empty_checks_ownership_and_deletion_rejected(self):
+        spec = self.spec()
+        for changes in ({"checks": []}, {"owned_paths": ["other.txt"]}, {"deletions": ["one.txt"]},
+                        {"base": spec["head"]}, {"owned_paths": ["../escape"]}):
+            with self.assertRaises(VerbError):
+                pipeline.register(self.ws, dict(spec, **changes))
+        self.git("rm", "seed.txt")
+        self.git("commit", "-m", "delete")
+        spec["head"] = self.git("rev-parse", "HEAD")
+        spec["owned_paths"].append("seed.txt")
+        with self.assertRaises(VerbError):
+            pipeline.register(self.ws, spec)
+        spec["deletions"] = ["seed.txt"]
+        pipeline.register(self.ws, spec)
+
+    def test_snapshot_dirty_revision_and_foreign_identity_rejected(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        prepared = pipeline.prepare(self.ws, "one")
+        test = Path(prepared["snapshots"]["test"])
+        (test / "one.txt").write_text("dirty")
+        with self.assertRaises(VerbError):
+            pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertEqual(pipeline.status(self.ws, "one")["status"], "blocked")
+
+    def test_check_mutation_cannot_pass(self):
+        spec = self.spec(command=[sys.executable, "-c", "from pathlib import Path; Path('one.txt').write_text('mutated')"])
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        result = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertFalse(result["passed"])
+        self.assertFalse(result["checks"][0]["snapshot_valid"])
+
+    def test_log_and_state_corruption_fail_closed(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        self.complete(spec)
+        with pipeline.transaction(self.ws) as state:
+            receipt = pipeline.latest(state["chunks"]["one"], "checks")
+        log = pipeline.store_root(self.ws) / receipt["checks"][0]["stdout_log"]
+        log.write_text("tampered")
+        self.assertEqual(pipeline.status(self.ws, "one")["status"], "blocked")
+        (pipeline.store_root(self.ws) / "state.json").write_text('{"state":')
+        with self.assertRaises(VerbError):
+            pipeline.status(self.ws)
+
+    def test_exact_revision_receipt_reuse_and_invalidation(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        first = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertFalse(first["reused"])
+        reused = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertTrue(reused["reused"])
+        self.assertEqual(reused["attempt"], first["attempt"])
+        self.assertEqual(reused["tested_revision"], spec["head"])
+        forced = pipeline.run_checks(self.ws, "one", "test-host", reuse=False)
+        self.assertFalse(forced["reused"])
+        self.assertNotEqual(forced["attempt"], first["attempt"])
+        log = pipeline.store_root(self.ws) / forced["checks"][0]["stdout_log"]
+        log.write_text("corrupt")
+        fresh = pipeline.run_checks(self.ws, "one", "test-host")
+        self.assertFalse(fresh["reused"])
+        self.assertNotEqual(fresh["attempt"], forced["attempt"])
+        with mock.patch.dict(os.environ, {"PIPELINE_TEST_ENVIRONMENT": "changed"}):
+            changed = pipeline.run_checks(self.ws, "one", "test-host")
+            self.assertFalse(changed["reused"])
+        identity = pipeline.run_checks(self.ws, "one", "new-explicit-host")
+        self.assertFalse(identity["reused"])
+
+    def test_committed_symlink_scope_rejected_without_host_privilege(self):
+        spec = self.spec()
+        result = subprocess.run(["git", "hash-object", "-w", "--stdin"], input="../outside\n",
+                                cwd=self.root, text=True, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.git("update-index", "--add", "--cacheinfo", "120000," + result.stdout.strip() + ",linked.txt")
+        self.git("commit", "-m", "tracked link")
+        spec["head"] = self.git("rev-parse", "HEAD")
+        spec["owned_paths"].append("linked.txt")
+        with self.assertRaises(VerbError):
+            pipeline.validate_spec(self.ws, spec)
+
+    def test_mismatched_snapshot_revision_and_partial_receipt_fail_closed(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        prepared = pipeline.prepare(self.ws, "one")
+        pipeline.run_checks(self.ws, "one", "test-host")
+        with pipeline.transaction(self.ws) as state:
+            pipeline.latest(state["chunks"]["one"], "checks")["checks"] = []
+        self.assertEqual(pipeline.status(self.ws, "one")["status"], "blocked")
+        self.git("checkout", "--detach", self.base, cwd=prepared["snapshots"]["reviewer"])
+        with self.assertRaises(VerbError):
+            pipeline.record_review(self.ws, "one", self.review(spec))
+
+    def test_missing_state_does_not_reset_existing_evidence(self):
+        spec = self.spec()
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        (pipeline.store_root(self.ws) / "state.json").unlink()
+        with self.assertRaises(VerbError):
+            pipeline.status(self.ws)
+
+    def test_review_import_can_overlap_same_chunk_checks(self):
+        spec = self.spec(command=[sys.executable, "-c", "import time; time.sleep(1); print('checked')"])
+        pipeline.register(self.ws, spec)
+        pipeline.prepare(self.ws, "one")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(pipeline.run_checks, self.ws, "one", "test-host")
+            import time
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                with pipeline.transaction(self.ws) as state:
+                    running = (pipeline.latest(state["chunks"]["one"], "checks") or {}).get("running")
+                if running:
+                    break
+                time.sleep(0.02)
+            self.assertTrue(running)
+            self.assertTrue(pipeline.record_review(self.ws, "one", self.review(spec))["passed"])
+            self.assertTrue(future.result(timeout=20)["passed"])
+
+    def test_dependency_chunk_must_be_in_registered_base(self):
+        first = self.spec()
+        pipeline.register(self.ws, first)
+        second = self.next_spec("two", deps=["one"])
+        second["base"] = first["base"]
+        second["owned_paths"].append("one.txt")
+        pipeline.register(self.ws, second)
+        self.complete(first)
+        result = pipeline.status(self.ws, "two")
+        self.assertEqual(result["status"], "blocked")
+        self.assertTrue(any("registered base" in x for x in result["reasons"]))
+
+    def test_symlink_and_path_escape_rejected(self):
+        spec = self.spec()
+        for path in ("a/../outside", "/absolute", "C:/outside", "a\\b", ".git/state", "./one.txt"):
+            with self.assertRaises(VerbError, msg=path):
+                pipeline.register(self.ws, dict(spec, owned_paths=[path]))
+        outside = Path(self.temp.name) / "outside.txt"
+        outside.write_text("outside")
+        try:
+            (self.root / "linked.txt").symlink_to(outside)
+        except OSError:
+            self.skipTest("host does not grant symlink privilege")
+        with self.assertRaises(VerbError):
+            pipeline.safe(self.root, "linked.txt")
+
+    def test_concurrent_process_registration_has_no_lost_writes(self):
+        specs = [self.spec("z-first")]
+        specs += [self.next_spec("a-second"), self.next_spec("m-third")]
+        requests = self.root / "requests"
+        requests.mkdir()
+        files = []
+        for spec in specs:
+            path = requests / (spec["chunk_id"] + ".json")
+            path.write_text(json.dumps(spec))
+            files.append(path)
+        def invoke(path):
+            result = subprocess.run([sys.executable, str(RUNTIME / "phase.py"), "query",
+                "pipeline.register", "--spec", "requests/" + path.name], cwd=self.root,
+                text=True, capture_output=True, timeout=30)
+            return result
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+            results = list(pool.map(invoke, files))
+        for result in results:
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        with pipeline.transaction(self.ws) as state:
+            self.assertEqual(len(state["chunks"]), 3)
+            self.assertEqual({x["order"] for x in state["chunks"].values()}, {0, 1, 2})
+        result = subprocess.run([sys.executable, str(RUNTIME / "phase.py"), "query", "pipeline.status"],
+                                cwd=self.root, text=True, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(len(json.loads(result.stdout)["chunks"]), 3)
+
+
+if __name__ == "__main__":
+    unittest.main()
