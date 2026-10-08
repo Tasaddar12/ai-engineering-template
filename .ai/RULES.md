@@ -25,7 +25,11 @@ command (.ai/commands/) ── the entry point; names a workflow, changes nothin
 A workflow orchestrates and a runtime verb mutates. A workflow that edits
 ROADMAP.md, STATE.md or a phase directory by hand will drift from the runtime
 that owns their structure: go through a verb. First-time creation of a record
-from its template is the one exception.
+from its template is the one exception. The sole later exception is a coordinator
+reverting its exact guarded bookkeeping-only commit after final verification
+fails, as specified in
+[verification evidence](references/verification-evidence.md#compensating-a-failed-final-verification).
+Do not use this allowance for arbitrary hand edits or worker/source commits.
 
 Skills under `.agents/skills/` mirror the commands one-for-one, so a host that
 discovers skills and a host that registers slash commands behave identically.

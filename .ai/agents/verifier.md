@@ -324,11 +324,12 @@ required path exists and uses the result; PARTIAL when a call exists but require
 handling is absent; NOT_WIRED when the connection does not exist. Behavioral
 assertions still need behavioral evidence.
 
-For every declared `from` → `to` connection, open both ends and trace the
-actual call/import/event and its result. Record source locations and relevant
-arguments. Mark WIRED only when the required path exists and uses the result;
-PARTIAL when a call exists but required handling is absent; NOT_WIRED when the
-connection does not exist. Behavioral assertions still need behavioral evidence.
+For each declared connection without applicable cited evidence, or when that
+evidence conflicts, open both ends and trace the actual call/import/event and
+its result. Record source locations and relevant arguments. Mark WIRED only when
+the required path exists and uses the result; PARTIAL when a call exists but
+required handling is absent; NOT_WIRED when the connection does not exist.
+Behavioral assertions still need behavioral evidence.
 
 **Fallback patterns** (if must_haves.key_links not defined in PLAN):
 

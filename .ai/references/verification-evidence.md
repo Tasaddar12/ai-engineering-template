@@ -79,3 +79,55 @@ enforcement performed by `verification.status`, which only exposes metadata. A
 refresh-only verification does not repeat completion/requirement/session writes
 and does not invoke `/ship` again. A source repair invalidates evidence and starts
 a new verification batch; it is not a report-only publication.
+
+## Compensating a failed final verification
+
+Success bookkeeping is provisional until the final verifier reviews the new
+revision. Before changing any success records, require a clean worktree confirmed
+with `git status --porcelain --untracked-files=all` and save
+`pre_bookkeeping_revision=$(git rev-parse HEAD)`. Save the exact new commit from
+the coordinator's bookkeeping commit as `bookkeeping_commit`.
+
+If final reconciliation returns `gaps_found` or `human_needed`, and only when
+that coordinator-created bookkeeping is the direct child of the saved revision,
+the coordinator may compensate it with a narrow Git revert. Require all of these
+guards before reverting:
+
+1. `git status --porcelain --untracked-files=all` is empty.
+2. `git rev-parse HEAD` equals the saved `bookkeeping_commit`.
+3. `git rev-parse "${bookkeeping_commit}^"` equals
+   `pre_bookkeeping_revision`.
+4. `git diff-tree --no-commit-id --name-only --no-renames -r
+   "${bookkeeping_commit}"` lists only `.planning/ROADMAP.md`,
+   `.planning/STATE.md`, and `.planning/REQUIREMENTS.md`.
+
+When every guard passes, run `git revert --no-edit "${bookkeeping_commit}"`.
+This removes only the isolated success-record commit and preserves implementation
+history and source changes. Never reset, force-move a branch, or hand-edit
+planning structures. If a guard fails, preserve the current work and do not
+claim completion. If the revert conflicts, abort only that attempted revert and
+preserve the bookkeeping commit; record the blocked/nonpass verification state
+through `state.record-session` and its explicit STATE-only commit when the tree is
+clean. If the attempt cannot be returned cleanly, stop without overwriting it.
+
+After successful compensation, record the nonpass session status through the
+runtime and commit that STATE-only update, for example:
+
+```bash
+phase_run query state.record-session \
+  --stopped-at "Phase ${phase_number} final verification ${final_status}; bookkeeping compensated" \
+  --status "Verification blocked"
+phase_run query commit "docs(state): record phase ${phase_number} verification block" \
+  --files .planning/STATE.md
+```
+
+Then capture this compensated-status revision and run a fresh read-only
+verifier/check batch there. The final report
+must use that last revision and status; persist it alone only after the batch
+joins. Do not repeat `phase.complete`, requirement closure, or success bookkeeping
+during this nonpass path.
+
+This `git revert` is the sole narrow exception to runtime-only structural
+authoring: it may reverse only the exact, guarded, coordinator-created
+bookkeeping-only commit from this attempt. It is not permission to edit planning
+records manually or revert a worker/source commit.

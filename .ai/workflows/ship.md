@@ -250,8 +250,9 @@ The PR URL does not exist yet; do not claim the phase shipped or add an invented
 URL. The session's `pr.open` metadata records the actual PR after push.
 
 If STATE already records `Preparing publication` for this same session branch,
-skip the redundant record/commit and proceed to final reconciliation. A repeated
-ship run must not create a no-op lifecycle commit merely to refresh verification.
+set `preparation_record_changed=false` and skip the redundant record/commit. A
+repeated ship run must not create a no-op lifecycle commit merely to refresh
+verification. Otherwise set it true before writing and committing the record.
 
 ```bash
 phase_run query state.record-session \
@@ -263,14 +264,18 @@ phase_run query commit "docs(state): prepare phase ${phase_number} publication" 
 </step>
 
 <step name="final_reconciliation">
-The bookkeeping commit changes HEAD, so capture its new revision and reconcile
-again before pushing. Start `verification.run-checks` and the read-only verifier
-together on that exact revision. Reuse only valid receipts; rerun checks whose
-declared inputs, environment, configuration or revision binding no longer
-matches. The verifier reviews the actual STATE record diff, the phase goal and
-source evidence. Join all check and verifier results before accepting. The
-coordinator preserves the revision the verifier actually reviewed, writes the
-tracked phase report, and commits only that report as the last local write.
+If `preparation_record_changed=false`, reuse the already-passed report only when
+the existing report is still current under the shared exact-revision/report-only
+rule and the preflight receipts remain valid for this revision. In that case,
+skip another verifier dispatch and report commit.
+
+If the status record changed or currentness/evidence no longer holds, capture
+the new revision and start configured checks plus a provisional read-only
+verifier together. The verifier receives pending check results and reviews the
+actual STATE record diff, the phase goal and source evidence. After every check
+joins, resume the verifier with the complete results/receipts. On a pass, the
+coordinator preserves the revision actually examined, writes the tracked phase
+report, and commits only that report as the last local write.
 Apply the shared [verification evidence lifecycle](../references/verification-evidence.md).
 If this reconciliation is not `passed`, stop before push. A source repair
 requires a fresh `/verify-work` cycle before another push attempt.
