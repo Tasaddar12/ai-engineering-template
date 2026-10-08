@@ -427,15 +427,24 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(any("directory topology" in reason for reason in blocked["reasons"]), blocked)
 
     def test_nonregular_input_metadata_is_rejected_before_reading(self):
-        path = self.root / "seed.txt"
+        path = (self.root / "seed.txt").resolve()
         special = os.stat_result((stat.S_IFIFO | 0o600, 0, 0, 1, 0, 0, 0, 0, 0, 0))
         original = Path.lstat
         def metadata(candidate):
             return special if candidate == path else original(candidate)
         with mock.patch.object(Path, "lstat", metadata), mock.patch.object(Path, "read_bytes") as read:
-            with self.assertRaisesRegex(VerbError, "nonregular"):
-                pipeline.hashed_inputs(self.root, {"inputs": ["seed.txt"]})
+            for root in (self.root, self.root / ".." / self.root.name):
+                with self.subTest(root=str(root)), self.assertRaisesRegex(VerbError, "nonregular"):
+                    pipeline.hashed_inputs(root, {"inputs": ["seed.txt"]})
             read.assert_not_called()
+
+    def test_input_root_alias_has_identical_canonical_fingerprint(self):
+        root_alias = self.root / ".." / self.root.name
+        self.assertNotEqual(str(root_alias), str(self.root.resolve()))
+        original = pipeline.hashed_inputs(self.root, {"inputs": ["seed.txt"]})
+        aliased = pipeline.hashed_inputs(root_alias, {"inputs": ["seed.txt"]})
+        self.assertEqual(aliased, original)
+        self.assertEqual(set(aliased), {"seed.txt"})
 
     def test_native_fifo_in_directory_input_is_rejected_without_opening(self):
         if not hasattr(os, "mkfifo"):

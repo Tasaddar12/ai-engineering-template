@@ -291,6 +291,9 @@ def snapshot(workspace, item, role):
 
 def input_entries(root, names):
     """Walk all declared entries, including empty dirs; never open special files."""
+    # safe() returns paths beneath a resolved root. Keep the traversal anchor
+    # identical, including Windows short-name and other lexical root aliases.
+    root = Path(root).resolve()
     entries = {}
     def visit(path):
         name = path.relative_to(root).as_posix()
