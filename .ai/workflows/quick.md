@@ -210,10 +210,14 @@ Return: ## PLANNING COMPLETE with the plan path
 )
 ```
 
-> **ORCHESTRATOR RULE**: after dispatch, do not edit the plan owned by the
-> preparer or duplicate the preparer's assigned searches. Independent read-only
-> checks or evidence collection may run against the same frozen revision. Join
-> the result before making planning decisions or executing the plan.
+> **ORCHESTRATOR RULE**: do not read or write paths owned by an active worker or
+> integrate a moving worker branch. Accept each completion event once, process its
+> fixed handoff, and continue unrelated ready work; do not poll or send handoff
+> chatter. Detached review/check snapshots may run while a worker continues on
+> independent assigned paths.
+
+> Independent read-only checks and evidence collection may run against the same
+> frozen revision; join required results before planning decisions or repairs.
 
 After the preparer returns:
 1. Verify the plan exists at `${QUICK_DIR}/${QUICK_ID}-PLAN.md`
@@ -262,7 +266,8 @@ and checks. Route the quick task as a pending chunk using the quick task id as i
 route/chunk id:
 
 ```bash
-phase_run query pipeline.route --spec <quick-route.json>
+mkdir -p .worktrees/pipeline-inputs
+phase_run query pipeline.route --spec .worktrees/pipeline-inputs/quick-route.json
 ```
 
 Dispatch only if its route result is `ready`; report explicit blockers otherwise.
@@ -305,10 +310,15 @@ Agent(
 <constraints>
 - Execute ONLY the tasks in the plan; new capability is out of scope
 - Commit each completed task atomically with a descriptive message
-- Write ${QUICK_DIR}/${QUICK_ID}-SUMMARY.md with status, files changed and how
-  the change was confirmed to work
-- Return the committed base/head, exact scope, acceptance, dependencies, resources,
-  check definitions, summary path and status in the chunk handoff
+- Emit each committed bounded chunk handoff as an interim host lifecycle/message
+  event, then continue only on independent assigned paths in the same coder session
+- Write ${QUICK_DIR}/${QUICK_ID}-SUMMARY.md and report plan complete only after
+  every assigned task finishes; an interim chunk is not plan completion
+- Return committed base/head, exact scope, acceptance, dependencies, resources and
+  check definitions in each chunk handoff; include the summary path only on final
+  completion
+- If the host cannot surface interim events, return the chunk as incomplete and
+  continue in a fresh coder session only after integration and applicable gates pass
 - If the plan turns out to be wrong, stop and report — do not improvise a
   different change
 </constraints>
@@ -326,7 +336,11 @@ and the verification you actually ran
 )
 ```
 
-> **ORCHESTRATOR RULE**: wait for the subagent. Do not edit code while it runs.
+> **ORCHESTRATOR RULE**: do not read or write paths owned by an active worker or
+> integrate a moving worker branch. Accept each completion event once, process its
+> fixed handoff, and continue unrelated ready work; do not poll or send handoff
+> chatter. Detached review/check snapshots may run while the coder continues on
+> independent assigned paths.
 
 After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`. A returned
 A coder assigned source-changing work who returns `complete` without the required
@@ -338,10 +352,11 @@ snapshots, run the fresh review and runtime checks, and integrate only after
 applicable gates pass:
 
 ```bash
-phase_run query pipeline.register --spec <quick-chunk-registration.json>
+mkdir -p .worktrees/pipeline-inputs
+phase_run query pipeline.register --spec .worktrees/pipeline-inputs/quick-chunk-registration.json
 phase_run query pipeline.prepare "${QUICK_ID}"
 phase_run query pipeline.run-checks "${QUICK_ID}" --environment <explicit-environment-id>
-phase_run query pipeline.record-review "${QUICK_ID}" --report <quick-review.json>
+phase_run query pipeline.record-review "${QUICK_ID}" --report .worktrees/pipeline-inputs/quick-review.json
 phase_run query pipeline.status "${QUICK_ID}"
 phase_run query pipeline.integrate "${QUICK_ID}" --revision <committed-ref>
 ```
@@ -349,8 +364,9 @@ phase_run query pipeline.integrate "${QUICK_ID}" --revision <committed-ref>
 Dispatch a fresh `code-reviewer` to the prepared reviewer snapshot with the exact
 SHA/base, chunk acceptance IDs, owned paths, plan and relevant instructions. Require the
 schema-1 JSON report described in the pipeline reference, and run it concurrently
-with `pipeline.run-checks`. Capture its output as a temporary repository-relative
-JSON file for `pipeline.record-review`. Check status before integrating. Preserve failed or stale
+with `pipeline.run-checks`. Capture its output under `.worktrees/pipeline-inputs/`,
+never under `.planning/` or in a source snapshot, for `pipeline.record-review`.
+Check status before integrating. Preserve failed or stale
 evidence and worktrees; do not treat the coder's SUMMARY as gate evidence. After
 its gates pass, merge the registered full head SHA into the clean, unprotected
 session branch, then record the resulting revision:

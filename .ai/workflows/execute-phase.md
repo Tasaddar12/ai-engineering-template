@@ -84,7 +84,11 @@ Recognised flags:
 - `--sequential` - dispatch one currently ready plan at a time. Each plan is
   still isolated; only coder dispatch concurrency changes
 - `--resume` — continue a phase whose execution stopped partway
-- `--no-review` — skip the code review gate (requires the user to say so)
+- `--no-review` is unsupported and must be rejected; chunk and final integrated
+  independent reviews are mandatory
+
+Reject unknown options before creating records, worktrees or dispatching agents;
+do not silently ignore retired flags.
 </step>
 
 
@@ -313,12 +317,14 @@ phase_run query phase-plan-index "${phase_number}"
 
 Read each plan's `files_modified`, `files_deleted`, `depends_on`, acceptance IDs,
 check commands and any declared shared resources. The plan's `wave` is
-informational only. Write a temporary repository-relative route spec with task
-IDs for coding tasks, exact owned paths, registered prerequisite chunk IDs, named
-resources and `state: pending`, then call:
+informational only. Create `.worktrees/pipeline-inputs/` (gitignored) and write a
+temporary repository-relative route spec there, never under `.planning/`, with
+task IDs for coding tasks, exact owned paths, registered prerequisite chunk IDs,
+named resources and `state: pending`, then call:
 
 ```bash
-phase_run query pipeline.route --spec <route-spec.json>
+mkdir -p .worktrees/pipeline-inputs
+phase_run query pipeline.route --spec .worktrees/pipeline-inputs/route.json
 ```
 
 Include every planned task on each route call. Dispatch only tasks returned
@@ -374,10 +380,15 @@ declares no deletions and deletes something is blocked, by design.
 
 For each ready plan, use the existing isolated coder dispatch and branch/root
 guard below. Include the [chunk handoff](../templates/chunk-handoff.md) in the
-required reading and require its full base/head, scope, acceptance, dependencies,
-resources, check definitions and SUMMARY path in the return. After its commit,
-register the committed revision and use runtime-prepared reviewer/test snapshots
-as described in `integrate_chunk`.
+required reading. Require each event's full base/head, exact scope, acceptance,
+dependencies, resources and check definitions. A committed bounded chunk may be
+emitted as an interim host lifecycle/message event while the coder continues on
+independent assigned paths; the coordinator registers that immutable revision and
+starts detached review/test snapshots concurrently. Only the final plan event
+requires a SUMMARY and may report completion. If the host has no interim events,
+the coder turn ends incomplete at the chunk boundary, and a fresh continuation is
+dispatched after integration and applicable gates pass. Do not create a SUMMARY
+or mark the plan complete while assigned tasks remain.
 
 For each ready plan:
 
@@ -463,8 +474,13 @@ plan blocked, preserve its worktree and continue unrelated ready tasks.
 > dispatching ready tasks whose paths and named resources do not conflict; do not
 > poll, relaunch or send handoff chatter.
 
-After each coder completion, verify the summary and commit on disk rather than
-trusting the return:
+For each interim chunk event, verify its exact commit and handoff, then register
+that fixed SHA and launch review/checks on detached snapshots while the coder
+continues only on other assigned paths. Never read or integrate its moving branch.
+Interim events do not require a SUMMARY and do not complete the plan. A coder
+writes its SUMMARY and reports `complete` only after every assigned task finishes;
+only then verify the SUMMARY and final commit on disk rather than trusting the
+return:
 
 ```bash
 phase_run query phase-plan-index "${phase_number}"
@@ -493,13 +509,15 @@ remaining tasks, report it as a blocker.
 </step>
 
 <step name="integrate_chunk">
-For each returned coder chunk, require its SUMMARY, commit and
-[chunk-handoff](../templates/chunk-handoff.md). Confirm the reported full base/head
+For each returned coder chunk, require its commit and
+[chunk-handoff](../templates/chunk-handoff.md), requiring a SUMMARY only for a
+final plan result. Confirm the reported full base/head
 and declared chunk scope against the assigned plan, then register the exact
 revision:
 
 ```bash
-phase_run query pipeline.register --spec <chunk-registration.json>
+mkdir -p .worktrees/pipeline-inputs
+phase_run query pipeline.register --spec .worktrees/pipeline-inputs/chunk-registration.json
 phase_run query pipeline.prepare <chunk-id>
 ```
 
@@ -518,11 +536,12 @@ Do not use `verification.run-checks` as a chunk substitute. The code-reviewer
 returns the schema-1 JSON report required by
 [the pipeline contract](../references/parallel-pipeline.md#register-and-gate-one-committed-chunk),
 including matching base/head, complete acceptance and scope, explicit status,
-findings, cited evidence and provenance. Capture that output as a temporary
-repository-relative JSON file, then record it:
+findings, cited evidence and provenance. Capture that output under the ignored
+`.worktrees/pipeline-inputs/` directory, never under `.planning/` or in a source
+snapshot, then record it:
 
 ```bash
-phase_run query pipeline.record-review <chunk-id> --report <review-report.json>
+phase_run query pipeline.record-review <chunk-id> --report .worktrees/pipeline-inputs/review-report.json
 ```
 
 Check `pipeline.status <chunk-id>`. Preserve failed attempts and treat missing,
@@ -607,7 +626,9 @@ out-of-scope code-review findings. Do not create todos.
 </step>
 
 <step name="code_review_gate">
-**Skip only when `--no-review` was passed and the user asked for it.**
+The final independent correctness/security review of the integrated phase is
+mandatory even when all chunk reviews passed. There is no review waiver; reject
+the retired `--no-review` option.
 
 After all waves are integrated, freeze the session revision. Start the required
 fresh code-reviewer and call `verification.run-checks` together against that

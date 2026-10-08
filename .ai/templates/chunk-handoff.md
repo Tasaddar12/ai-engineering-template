@@ -11,6 +11,8 @@ chunk_handoff:
   assignment_id: <assignment id>
   plan_id: <plan id>
   chunk_id: <unique committed chunk id>
+  chunk_event: interim|final
+  plan_status: continuing|complete|blocked
   base: <full base SHA>
   head: <full committed head SHA>
   branch: <executor branch>
@@ -25,8 +27,8 @@ chunk_handoff:
       cwd: <. or repository-relative working directory>
       inputs: [<repository-relative files whose bytes affect the result>]
       timeout: <finite seconds>
-  summary: <committed SUMMARY path>
-  status: complete|blocked
+  summary: <committed SUMMARY path; required only when plan_status is complete or blocked>
+  remaining_assignments: [<independent task IDs remaining; empty when finished>]
   blockers: [<explicit reason; [] when none>]
 ```
 

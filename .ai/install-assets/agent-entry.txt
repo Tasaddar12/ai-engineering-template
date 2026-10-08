@@ -55,9 +55,13 @@ with evidence and preserve approved outcomes.
 
 ## Dispatch
 
-The orchestrator routes; it does not do the work it dispatched. After spawning an
-agent, wait for it — reading files, editing code or running tests while an agent
-is active conflicts with that agent's edits.
+The orchestrator routes; it does not do the work it dispatched. Do not read or
+write paths owned by an active coder, or integrate a branch while that coder is
+still changing it. Handle each committed chunk event once: register its immutable
+head and let the runtime prepare detached review/test snapshots. Those reviewer
+and test agents may run while the coder continues on disjoint assigned paths, and
+the coordinator may route unrelated ready tasks. Wait only for required lifecycle
+events; do not poll, relaunch or send progress chatter.
 
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,

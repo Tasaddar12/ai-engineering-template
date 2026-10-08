@@ -70,17 +70,20 @@ prerequisite to integrate and pass its applicable gates. The route declaration,
 not the preparer's proposed `wave`, controls deterministic readiness. See the
 [parallel pipeline contract](../references/parallel-pipeline.md).
 
-Dispatch all currently ready coders concurrently. Once a coder commits and
-returns its chunk handoff, register that exact head, prepare detached reviewer
-and test snapshots, and start the fresh code-reviewer and runtime checks
-concurrently. The coordinator can dispatch more independent ready work while
-those gates run; do not make a whole wave wait for every unrelated worker. Wait
-on a completion event once. Do not poll, relaunch or send handoff chatter. Do not
-read or write overlapping paths while their coder is active.
+Dispatch all currently ready coders concurrently. A coder may emit a committed
+chunk-handoff lifecycle/message event and continue on independent assigned paths.
+On each event, register that exact head, prepare detached reviewer and test
+snapshots, and start the fresh code-reviewer and runtime checks while the coder
+continues. Do not inspect or integrate its moving branch, and do not read or write
+paths it still owns. Keep other nonconflicting ready work moving. Wait once for the
+next host completion event; do not poll, relaunch or send handoff chatter. If the
+host cannot surface interim events, accept the bounded coder turn as incomplete and
+dispatch a fresh continuation only after the chunk integrates and its gates pass.
 
-Inspect changes, the summary and runtime status before accepting or integrating a
-chunk. A plan whose agent reported "complete" with no SUMMARY.md, or with no
-commits, did not complete - treat it as blocked and say so rather than ticking it.
+Inspect the immutable chunk changes and runtime status before accepting or
+integrating it. Interim chunk events do not require a SUMMARY and do not complete
+the plan. Require the committed SUMMARY only on final plan completion; a final
+"complete" without a SUMMARY or commits is blocked.
 
 For completed unregistered whole-plan assignments, retain the legacy ownership
 wave: wait for every agent in that wave, integrate its work, then run checks

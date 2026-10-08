@@ -8,10 +8,13 @@ verification.
 
 ## Routing planned work
 
-Before dispatching coders, write a repository-relative JSON file and call:
+Before dispatching coders, create the ignored input directory and write the route
+spec there. These operational specs and reports belong under `.worktrees/`, never
+under tracked `.planning/` or in a reviewer/test snapshot:
 
 ```bash
-phase_run query pipeline.route --spec .planning/tmp/route.json
+mkdir -p .worktrees/pipeline-inputs
+phase_run query pipeline.route --spec .worktrees/pipeline-inputs/route.json
 ```
 
 The file has this schema:
@@ -58,10 +61,10 @@ A coder commits its bounded chunk and returns its handoff before the coordinator
 registers the exact revision:
 
 ```bash
-phase_run query pipeline.register --spec .planning/tmp/chunk.json
+phase_run query pipeline.register --spec .worktrees/pipeline-inputs/chunk.json
 phase_run query pipeline.prepare <chunk-id>
 phase_run query pipeline.run-checks <chunk-id> --environment <explicit-environment-id>
-phase_run query pipeline.record-review <chunk-id> --report .planning/tmp/review.json
+phase_run query pipeline.record-review <chunk-id> --report .worktrees/pipeline-inputs/review.json
 phase_run query pipeline.integrate <chunk-id> --revision <ref>
 phase_run query pipeline.status [<chunk-id>]
 ```
@@ -130,8 +133,14 @@ critical or high findings.
 }
 ```
 
-Do not synthesize an empty passing report or turn skipped, failed, corrupt,
-partial, stale or absent evidence into success. A passed report cannot contain
+Do not synthesize an empty passing report or turn a missing or unexecuted
+configured command into passing evidence; preserve failed, corrupt, partial or
+stale attempts. A configured check that is not executed produces no receipt. The
+runtime executes declared argv and records its result; it does not interpret
+test-runner logs to infer that an exit-zero suite ran zero tests or skipped them
+all. Mandatory test commands/adapters must fail
+on zero or insufficient tests and on unexpected skips, and the reviewer/verifier
+must confirm the required cases from evidence. A passed report cannot contain
 blocking findings. Preserve failed attempts. The report may be recorded while the
 tester is running; integrate only after the runtime reports every applicable
 prerequisite and gate passing, then check status again against the integrated
@@ -171,9 +180,10 @@ The coordinator alone stores, looks up and invalidates packets. Scouts return ci
 evidence and never write shared cache state. Use a repository-relative spec file:
 
 ```bash
-phase_run query evidence.store --spec .planning/tmp/evidence.json
-phase_run query evidence.lookup --spec .planning/tmp/evidence.json
-phase_run query evidence.invalidate --spec .planning/tmp/invalidate.json
+mkdir -p .worktrees/pipeline-inputs
+phase_run query evidence.store --spec .worktrees/pipeline-inputs/evidence.json
+phase_run query evidence.lookup --spec .worktrees/pipeline-inputs/evidence.json
+phase_run query evidence.invalidate --spec .worktrees/pipeline-inputs/invalidate.json
 ```
 
 Store/lookup schema `source-evidence/v1` requires nonempty `task_class`, `question`,

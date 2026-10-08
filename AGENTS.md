@@ -67,11 +67,16 @@ with evidence and preserve approved outcomes.
 
 ## Dispatch
 
-The orchestrator routes; it does not do the work it dispatched. After spawning an
-agent, wait before touching its owned files or integrating its changes. During a
-frozen read-only verification batch, configured checks and independent read-only
-specialists may inspect the same captured revision concurrently; wait for every
-result before accepting evidence, repairing files or starting another batch.
+The orchestrator routes; it does not do the work it dispatched. Do not read or
+write paths owned by an active coder, or integrate a branch while that coder is
+still changing it. Handle each committed chunk event once: register its immutable
+head and let the runtime prepare detached review/test snapshots. Those reviewer
+and test agents may run while the coder continues on disjoint assigned paths, and
+the coordinator may route unrelated ready tasks. Wait only for required lifecycle
+events; do not poll, relaunch or send progress chatter.
+
+Independent read-only checks and specialists may inspect the same frozen revision
+concurrently; join the required evidence batch before acceptance or repairs.
 
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,

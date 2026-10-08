@@ -189,12 +189,16 @@ approved specifications or actual user instructions. Use the
 ## Orchestration and handoffs
 
 The orchestrator owns routing, phase records and integration. It spawns agents
-with fresh context for bounded work, and it does not do that work itself. Do not
-edit or integrate files owned by an active write-capable worker. A frozen
-read-only verification batch is different: configured checks and independent
-read-only specialists may inspect the same captured revision concurrently, and
-the coordinator waits for every result before accepting evidence, editing files
-or starting repairs.
+with fresh context for bounded work, and it does not do the work it dispatched.
+Do not read or write paths owned by an active coder, or integrate a branch while
+that coder is still changing it. For a committed chunk event, register its exact
+immutable head and start detached review and runtime checks. Those frozen gates
+can run while the coder continues on disjoint assigned paths; unrelated ready
+tasks can also proceed. Wait only for the required event, once; do not poll,
+relaunch or send progress chatter.
+
+Independent read-only checks and specialists may inspect the same frozen revision
+concurrently; join the required evidence batch before acceptance or repairs.
 
 Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,

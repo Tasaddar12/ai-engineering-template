@@ -1,7 +1,7 @@
 ---
 name: execute-phase
 description: "Route phase plans into ready committed chunks, review and check immutable snapshots, then verify the integrated phase goal."
-argument-hint: "<phase> [--plan <id>] [--sequential] [--resume] [--no-review]"
+argument-hint: "<phase> [--plan <id>] [--sequential] [--resume]"
 allowed-tools:
   - Read
   - Write
@@ -32,6 +32,9 @@ verification report and the phase's pull request.
 
 **Authority:** executing a phase changes the codebase. Do not start unless the user
 has explicitly asked for this phase to be implemented.
+
+`--no-review` is retired and rejected as an unsupported option. Chunk reviews and
+the final independent review of the integrated phase are mandatory.
 </objective>
 
 <execution_context>

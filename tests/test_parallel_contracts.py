@@ -58,6 +58,50 @@ class ParallelContractTests(unittest.TestCase):
         self.assertContains(workflow, "Wait only for a prerequisite")
         self.assertContains(workflow, "applicable chunk gates pass")
 
+    def test_frozen_gates_can_overlap_coder_and_unrelated_work(self):
+        for path in ("AGENTS.md", ".ai/install-assets/agent-entry.txt", ".ai/RULES.md"):
+            text = self.read(path)
+            self.assertContains(text, "active coder")
+            self.assertContains(text, "detached")
+            self.assertContains(text, "unrelated")
+            self.assertNotIn("stop working on this task", text.lower())
+            self.assertNotIn("while any agent is active", text.lower())
+        coder = self.read(".ai/agents/coder.md")
+        coordinator = self.read(".ai/agents/coordinator.md")
+        workflow = self.read(".ai/workflows/execute-phase.md")
+        for text in (coder, coordinator, workflow):
+            self.assertContains(text, "interim")
+            self.assertContains(text, "fresh continuation")
+        self.assertContains(coder, "only then write/return SUMMARY.md")
+        self.assertContains(workflow, "Only the final plan event")
+
+    def test_review_cannot_be_waived_and_ephemeral_specs_are_ignored(self):
+        command = self.read(".ai/commands/execute-phase.md")
+        workflow = self.read(".ai/workflows/execute-phase.md")
+        reference = self.read(".ai/references/parallel-pipeline.md")
+        quick = self.read(".ai/workflows/quick.md")
+        self.assertNotIn("--no-review]", command)
+        for text in (command, workflow):
+            self.assertContains(text, "--no-review")
+            self.assertContains(text, "unsupported")
+            self.assertContains(text, "mandatory")
+        self.assertNotIn("Skip only when `--no-review`", workflow)
+        for text in (workflow, quick, reference):
+            self.assertNotIn(".planning/tmp/", text)
+            self.assertContains(text, ".worktrees/pipeline-inputs/")
+            self.assertContains(text, "mkdir -p .worktrees/pipeline-inputs")
+
+    def test_check_receipts_do_not_claim_test_runner_skip_detection(self):
+        reference = self.read(".ai/references/parallel-pipeline.md")
+        coder = self.read(".ai/agents/coder.md")
+        self.assertContains(reference, "test-runner logs to infer")
+        self.assertContains(coder, "interpret arbitrary runner output")
+        for text in (reference, coder):
+            self.assertContains(text, "zero")
+            self.assertContains(text, "unexpected skips")
+        self.assertContains(reference, "A configured check that is not executed")
+        self.assertContains(reference, "produces no receipt")
+
     def test_scout_packet_and_luna_authority_are_limited(self):
         dispatch = self.read(".ai/references/scout-dispatch.md")
         packet = self.read(".ai/templates/scout-packet.md")

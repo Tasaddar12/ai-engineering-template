@@ -29,6 +29,15 @@ slice: workflow/agent/handoff contracts for the parallel chunk pipeline
 - Updated install entry points, runtime overview, template contract, rules and
   command/skill mirrors. Added tests for the cross-file pipeline, scout and mirror
   contracts; kept `.planning/` untouched.
+- Narrowed dispatch guidance to active path ownership and immutable snapshots;
+  documented interim chunk events, coder continuation and the host-without-events
+  fallback. A plan SUMMARY is required only at final completion.
+- Retired and explicitly rejected `--no-review`, retaining the mandatory final
+  integrated independent review. Moved operational route/chunk/review/evidence
+  inputs to the ignored `.worktrees/pipeline-inputs/` directory.
+- Clarified that the runtime records argv results but does not interpret test logs
+  for zero-run/all-skipped suites. Mandatory test adapters must assert expected
+  counts and unexpected-skip policy; the shared scout role stays host-agnostic.
 
 ## Files
 
@@ -47,7 +56,7 @@ were left unchanged. No checkout switch, Git merge or push was performed.
 
 ## Validation
 
-- `python -m unittest tests.test_parallel_contracts tests.test_workflow_links tests.test_unattended_flow -v` — 17 passed.
+- `python -m unittest tests.test_agent_sources tests.test_workflow_links tests.test_parallel_contracts -v` - 22 passed.
 - `git diff --check` — passed.
 - Execute-phase, quick and verify-work command/skill mirror comparisons — all equal.
 - `git diff -- .planning` — empty.
