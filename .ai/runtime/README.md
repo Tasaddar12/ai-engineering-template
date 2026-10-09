@@ -431,6 +431,67 @@ output is read from log paths only when needed. `configured: false` remains the
 empty-command result. JSON `ok` still reports successful runtime invocation;
 callers must inspect aggregate/check `passed` to judge command outcomes.
 
+### Specialist evidence and acceptance currentness
+
+The evidence verbs persist validated review, scout and acceptance packets, and
+prove whether a passed phase report is still current after narrowly allowed
+completion bookkeeping:
+
+```bash
+python .ai/runtime/phase.py query evidence.record request.json --result result.json
+python .ai/runtime/phase.py query evidence.lookup request.json
+python .ai/runtime/phase.py query verification.currentness <phase>
+python .ai/runtime/phase.py query verification.validate-bookkeeping --before <full-SHA> --after <full-SHA>
+```
+
+Requests are strict JSON schema 1 objects. All kinds require `kind`, the full
+inspected `revision`, literal tracked `scope` paths, `inputs` (which may be
+empty), a `configuration` object and a nonempty `question`. Review requests add
+`requirements`; scout requests add exact `requested_fields`; acceptance requests
+add the tracked phase `report_path`. Unknown or duplicate keys, non-finite JSON
+numbers, path traversal, missing inputs, symlinks and gitlinks are rejected.
+Scope and input manifests expand from the immutable commit and bind path names,
+modes and blob IDs. The key also binds the request, configuration and validator
+implementation. Review and scout keys omit the revision, so a packet can be
+reused on a later clean HEAD only if all declared and expanded committed inputs,
+question, output fields/requirements, configuration and validator identity still
+match. Acceptance keys bind the exact revision and report blob. The runtime
+cannot infer undeclared dependencies: callers must declare actual relevant
+source, tests, dependencies and configuration in `scope`/`inputs` and
+`configuration` to get precise reuse. A broad scope is conservative and reduces
+reuse; narrowing scope without accounting for real inputs is unsafe.
+
+Results use strict, kind-specific objects. Every result carries its exact
+`inspected_revision`, structured `findings`, and nonempty `provenance`; review and
+acceptance also report exact `covered_paths`. Scout results cover precisely the
+requested fields, with each field `found`, `absent` or `incomplete` and cited
+evidence. Absence claims require citations and the complete expanded scope
+manifest. Incomplete fields, unresolved questions, failed results or unresolved
+findings are not reusable. The host, not JSON integrity alone, authenticates
+reviewer identity and independence. `evidence.record` requires a clean stable
+worktree and snapshots the requested immutable revision; it may record a review
+of an earlier commit after HEAD has advanced. `evidence.lookup` requires a clean
+HEAD equal to the request revision. Missing/corrupt packets are reported as
+`never_run`/nonreusable rather than passing silently.
+
+Acceptance reports have schema `1`, exact phase-directory `phase`, status,
+full inspected `revision`, timezone-bearing ISO `verified_at`, a structured
+`findings` list and a nonempty Markdown body. A report is a passing source
+acceptance only when every finding is resolved and `behavior_unverified` is zero.
+Bookkeeping additionally needs nonempty `acceptance` and `requirements_completed`
+ID lists. Persist and commit this report unchanged at its source revision before
+success bookkeeping; never retag it to a later HEAD. The validator accepts only
+a clean, single direct-child commit changing `.planning/STATE.md`,
+`.planning/ROADMAP.md` and/or `.planning/REQUIREMENTS.md`, after replaying the
+limited completion transition and validating the committed structured SUMMARYs.
+It writes a receipt tied to the exact before/after trees, unchanged source report
+blob/revision and validator. `verification.currentness` accepts report-only
+commits and bookkeeping commits carrying valid receipts. Source/configuration
+edits, report edits, merges, unsupported record changes or a dirty worktree fail
+closed. If the bounded schema does not fit (for example, human-only or legacy
+prose coverage), obtain fresh specialist review; do not reshape the records to
+pass the validator.
+
 ## Codex project concurrency
 
 Codex installation writes this setting to `.codex/config.toml` on fresh install,

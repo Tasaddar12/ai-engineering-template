@@ -33,8 +33,8 @@ class WorkflowNavigationTests(unittest.TestCase):
         self.assertEqual([str(n) for n in range(1, 7)], re.findall(r"^(\d+)\. ", procedure, re.M))
         for field in ("scout_assignment:", "scout_result:", "scout_request:", "search_scope:",
                       "revision:", "task_class:", "requested_fields:", "field_results:",
-                      "uncertainty:", "unresolved_questions:", "missing_test_cases:",
-                      "parent_assignment_id:", "resume_with:", "input_hashes:",
+                      "unresolved_questions:", "missing_test_cases_requested:",
+                      "parent_assignment_id:", "resume_with:", "hashes of\nactual committed inputs",
                       "absence_claims:", "provenance:"):
             self.assertIn(field, body)
         for task_class in ("FACT_EXTRACTION", "REVIEW_INVENTORY", "DOC_CLAIM_COMPARE",

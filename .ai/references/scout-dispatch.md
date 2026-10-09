@@ -75,42 +75,47 @@ scout_assignment:
   inputs: [<source paths, receipt ids, or supplied input ids>]
   requested_fields: [<exact fields to return>]
   configuration: {<relevant extraction/schema settings>}
-  input_hashes: {<actual committed inputs; supplied by evidence runtime>}
   search_scope: [<exact files or bounded directories>]
   allowed_evidence: [code, docs, diff, receipt, existing logs, supplied error, supplied output]
   missing_test_cases_requested: true|false
   constraints: <scope exclusions and supplied context>
 ```
 
-Require every field below in the result. Findings cite repository-relative paths
-and one-based lines at the inspected revision; supplied logs/output cite the input
+Map the host assignment to a schema-1 runtime request: `kind: scout`, full
+`revision`, literal tracked `scope`, `inputs`, `configuration`, `question`, and
+the exact `requested_fields`. The runtime receipt stores the request, hashes of
+actual committed inputs, configuration identity, and validation provenance.
+Require the strict result below. Findings cite repository-relative paths and
+one-based lines at the inspected revision; supplied logs/output cite the input
 identifier and line or excerpt. Absence claims list only requested absence fields
 and include the complete declared search-scope manifest; a partial or omitted
-manifest cannot establish absence. Preserve input hashes and validation provenance
-with the packet. A reused packet keeps its original inspected revision.
+manifest cannot establish absence. A reused packet keeps its original inspected
+revision.
 
 ```yaml
 scout_result:
-  id: <assignment id>
-  task_class: <same enum value as assignment>
-  schema: 1
-  revision: <inspected revision>
-  status: complete|incomplete|blocked
-  answer: <concise answer to the question>
-  field_results: {<requested field>: <extracted value and citations>}
-  evidence:
-    - claim: <observed fact>
-      citation: <path:line or supplied input identifier:line>
-      excerpt: <short supporting excerpt>
-  search_scope: [<paths inspected and search terms used>]
-  input_hashes: {<actual committed input hashes>}
-  configuration: {<relevant extraction/schema settings>}
+  status: complete|incomplete
+  inspected_revision: <full immutable commit SHA>
+  findings: [{severity: info, message: <observation>, resolved: true}]
+  provenance: <nonempty host-supplied identity/role/source record; host authenticates it>
+  covered_paths: [<complete expanded committed scope manifest>]
+  field_results:
+    <requested field>:
+      status: found|absent|incomplete
+      evidence: [<nonempty path:line/input citation strings>]
+      value: <JSON value; required and non-null when status is found>
+  evidence: [<citation or supplied-input line strings>]
+  search_scope: [<complete expanded committed scope manifest>]
   absence_claims: [<requested fields claimed absent; [] when none>]
-  provenance: {<runtime-validated reviewer/role/report source and packet identity>}
-  uncertainty: [<limits or inference; [] when none>]
-  unresolved_questions: [<unanswered questions; [] when none>]
-  missing_test_cases: [<requested uncovered cases; [] when none or not requested>]
+  unresolved_questions: [<unanswered questions; omit when none>]
 ```
+
+Request `schema`, actual input hashes and configuration identity are stored in the
+runtime receipt; do not add those keys to the strict result object. The host
+supplies and authenticates reviewer provenance; the runtime requires the
+nonempty provenance object and preserves it in the receipt. Preserve hashes and
+configuration by retaining the lookup receipt with the original inspected
+revision.
 
 ## Dispatch procedure
 
@@ -133,11 +138,16 @@ scout_result:
    against the frozen revision. Keep writes and source-changing work with the
    assigned owner; start repairs only after the results join. Use the host's
    available lifecycle tools; do not invent one.
-5. Validate each result's id, `task_class`, revision, status, answer,
-   `field_results` for every `requested_fields` entry, evidence, search_scope,
-   uncertainty and unresolved_questions. Check `missing_test_cases` when it was
-   requested. A partial or unsupported answer does not satisfy its question;
-   send a bounded follow-up for the missing evidence or report the remaining gap.
+5. Validate the host assignment identity and task class separately from the strict
+   result object. Confirm host-authenticated provenance, exact inspected revision,
+   status and one `field_results` entry for every requested field. A field is
+   `found`, `absent` or `incomplete`; found/absent results require citations and a
+   found value must be non-null. Every absent field appears in `absence_claims`,
+   which requires the complete expanded `search_scope` manifest. Any incomplete
+   field or unresolved question makes the whole packet incomplete and
+   nonreusable. When test cases are requested, include them among the requested
+   fields. A partial answer does not satisfy its question; send a bounded
+   follow-up or report the remaining gap.
 6. If required output fields are missing, make one bounded follow-up naming each
    missing field. If the follow-up remains incomplete, block the dependent
    decision. For conflicting citations, target the exact conflicting paths or

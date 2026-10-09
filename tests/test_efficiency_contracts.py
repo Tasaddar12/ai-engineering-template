@@ -18,8 +18,8 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("field_results:", dispatch)
         self.assertIn("Do not dispatch a second scout when one result answers", " ".join(dispatch.split()))
         self.assertNotIn("at least two specialized", dispatch)
-        self.assertIn("citation: <path:line", dispatch)
-        self.assertIn("revision: <inspected revision>", dispatch)
+        self.assertIn("path:line/input citation strings", dispatch)
+        self.assertIn("inspected_revision: <full immutable commit SHA>", dispatch)
 
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
