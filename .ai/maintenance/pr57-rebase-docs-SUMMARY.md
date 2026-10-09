@@ -20,6 +20,8 @@
 - Focused link check: the relative `parallel-pipeline.md` link resolves to the frozen PR57 reference at `backup/pr57-before-pr56-rebase-15b8223`.
 - No broad tests or runtime checks were run; this slice changes documentation only, and the registered pipeline checks remain for the future integrated PR57 tree.
 
+- Editorial correction: replaced the literal backslash-n between “test” and “snapshot” with a space; confirmed the literal escape is absent.
+
 ## Remaining
 
 - The linked PR57 pipeline reference is supplied by the parallel pipeline slice and must be integrated with this guide for the link to resolve on the combined tree.

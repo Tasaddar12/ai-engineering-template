@@ -42,7 +42,7 @@ claim or risk decision in that specialist's domain, with exact revision and
 result destination. Workers dispatch `scout` children only for the repeatable
 evidence packets in [scout dispatch](scout-dispatch.md).
 
-Registered chunk checks use `pipeline.run-checks` against the immutable test\nsnapshot;
+Registered chunk checks use `pipeline.run-checks` against the immutable test snapshot;
 they do not replace `verification.run-checks`, which remains the configured final
 phase check on the fully integrated tree. Legacy verification entries stay serial,
 while a mapping opts into parallel execution only when it declares independence.
