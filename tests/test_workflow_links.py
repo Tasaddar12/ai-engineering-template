@@ -34,7 +34,8 @@ class WorkflowNavigationTests(unittest.TestCase):
         for field in ("scout_assignment:", "scout_result:", "scout_request:", "search_scope:",
                       "revision:", "task_class:", "requested_fields:", "field_results:",
                       "uncertainty:", "unresolved_questions:", "missing_test_cases:",
-                      "parent_assignment_id:", "resume_with:"):
+                      "parent_assignment_id:", "resume_with:", "input_hashes:",
+                      "absence_claims:", "provenance:"):
             self.assertIn(field, body)
         for task_class in ("FACT_EXTRACTION", "REVIEW_INVENTORY", "DOC_CLAIM_COMPARE",
                            "INTEGRATION_MAP", "TEST_RESULT_SUMMARY", "FAILURE_FACTS",
@@ -43,7 +44,7 @@ class WorkflowNavigationTests(unittest.TestCase):
         for instruction in ("one discovery scout", "same frozen revision", "concurrently",
                             "not runtime enforcement", "bounded follow-up",
                             "verification.run-checks",
-                            "A source-changing phase always gets a separate fresh code-reviewer"):
+                            "One independent reviewer covers the final changed source"):
             self.assertIn(instruction, body)
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
 

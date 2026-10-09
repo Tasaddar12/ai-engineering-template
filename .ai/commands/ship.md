@@ -18,11 +18,11 @@ Publish work that verification actually passed.
 **How it works:**
 
 1. Confirm the phase's verification is `passed` and current under the documented
-   exact-revision/report-only publication rule
+   exact-revision or validated bounded-transition currentness rule
 2. Check the tree is clean, the branch is not the base, and gh is available
 3. Commit the truthful pre-publication session status
-4. Reconcile verification and check evidence on that resulting revision, and
-   persist the final report as the last local write
+4. Validate the bounded publication-record transition and revalidate only
+   evidence whose inputs changed
 5. Compose the PR body from the phase's summaries and current verification report
 6. Push and open or update the pull request
 7. Wait for its checks with `pr.checks --wait`; fix failing checks and re-verify
@@ -67,6 +67,6 @@ improvise from the summary.
 - Branch pushed, PR opened or updated
 - Check state reported as observed, never assumed
 - Merge question asked; merged only on the user's instruction
-- Truthful pre-publication status committed before final verification
+- Truthful pre-publication status committed and its bounded transition validated
 - Actual PR URL recorded by `pr.open` in session metadata; no stale post-push commit
 </success_criteria>

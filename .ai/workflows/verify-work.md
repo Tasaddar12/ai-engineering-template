@@ -198,27 +198,38 @@ checks are configured. When `checks_configured` is true, run:
 phase_run query verification.run-checks
 ```
 
-Start `verification.run-checks`, the provisional verifier, and applicable
-read-only evidence assignments against `frozen_revision`. Use valid successful
-receipts as check evidence, including tested revision, declared input/config
-identity and receipt reference; reuse matching receipts when available. Preserve
-bounded output tails for failures and ambiguity. Do not ask AI agents to diagnose
-a deterministic pass. If checks are not configured, tell the verifier that the
-phase is judged by source evidence alone. The first verifier assignment must say
+Start `verification.run-checks`, `evidence.lookup` for the phase's review request,
+the provisional verifier, and applicable read-only evidence assignments against
+`frozen_revision`. Use valid successful receipts as check evidence, including
+tested revision, declared input/config identity and receipt reference; reuse
+matching receipts when available. Preserve bounded output tails for failures and
+ambiguity. Do not ask AI agents to diagnose a deterministic pass. If checks are
+not configured, tell the verifier that the phase is judged by source evidence
+alone. The first verifier assignment must say
 that check and specialist results are pending; do not put future results in its
 initial prompt.
 </step>
 
 <step name="spawn_verifier">
-This step, `check_integration`, `verify_docs`, and configured checks are one
-read-only dispatch batch. Start the provisional verifier, each applicable
+This step, `check_integration`, `verify_docs`, any needed bounded code-review
+delta, evidence lookup and configured checks are one read-only dispatch batch.
+Start the provisional verifier, each applicable
 specialist and configured checks together against the `frozen_revision` captured
 in `run_checks`; then wait for all results before reconciling evidence, accepting
 criteria or starting repairs.
 Verifier always runs. Add integration-checker when acceptance covers a
-dependency or user-facing flow, doc-verifier when documentation changed, and a
-fresh code-reviewer for every source-changing phase. Each specialist owns its
-bounded claims. The
+dependency or user-facing flow and doc-verifier when documentation changed.
+Consume the validated code-review packet from execute-phase when its committed
+input manifest, requirements and configuration match. If no reusable packet
+exists, a required field is uncovered, or a finding remains unresolved, dispatch
+one independent code-reviewer only for the missing or changed scope and record
+the result. Do not repeat covered review merely because verify-work started.
+Route every requested repeatable source extraction, classification,
+transformation proposal or structured summary through `scout`, including when
+locations are already known; batch compatible questions. Key reuse to question,
+scope, requested schema/fields, actual input hashes and configuration. Absence
+claims require the complete declared scope manifest. Preserve revision, hashes,
+citations and validation provenance. Each specialist owns its bounded claims. The
 first verifier pass examines phase acceptance and source evidence provisionally;
 it cannot issue a final status until the coordinator resumes it with completed
 check and specialist results. Resolve conflicts or gaps with selective
@@ -356,7 +367,9 @@ bounded failure output; integration/doc/code-review findings; and any
 coordinator observations. The verifier reconciles that shared evidence with its
 source review, selectively inspecting only evidence gaps or conflicts. It
 returns the final Acceptance, Integration, Documentation and Findings report,
-with `status` and `revision` set to the exact revision it actually reviewed.
+with `status` and `revision` set to the exact revision it actually reviewed. The
+accepted report must include nonempty `acceptance` and `requirements_completed`
+ID lists; list only criteria and requirements supported by the reviewed evidence.
 The verifier remains read-only and never writes the tracked report.
 
 If a relevant source edit or repair happens, discard the provisional decision and
@@ -404,7 +417,16 @@ Do not ask how to proceed. Route each gap per
 - Outside the phase's scope: leave it in the report.
 - Its fix changes a locked decision or acceptance: report it as a blocker.
 
-**Close the in-scope gaps now:** dispatch the phase-preparer in gap-closure mode:
+**Close the in-scope gaps now.** When the verifier or doc-verifier identifies only
+confirmed factual documentation errors, dispatch one bounded doc-writer fix
+assignment with the exact document paths, reviewed revision and failure records.
+Do not create a new phase plan for a documentation-only correction. Run the
+affected documentation checks, then re-verify the corrected claims on the
+integrated revision. Reuse current source review and check evidence; re-review or
+rerun only when the correction changes their declared inputs.
+
+For remaining implementation or acceptance gaps, dispatch the phase-preparer in
+gap-closure mode:
 
 ```
 Agent(
@@ -524,19 +546,30 @@ Present any warnings with the result; do not fix them here.
 
 <step name="final_frozen_reconciliation">
 After one-time success bookkeeping, capture its resulting `HEAD` as a new
-`frozen_revision`. Start `verification.run-checks` and a provisional read-only
-verifier together against that revision. Reuse only receipts valid for this
-invocation; rerun checks whose declared inputs, environment, configuration or
-revision binding no longer matches. The initial verifier receives pending check
-results, inspects the actual bookkeeping diff and source acceptance coverage,
-and does not finalize. After all results join, resume it with every check
-result/receipt, applicable specialist findings and the actual bookkeeping diff.
-Only the revision the resumed verifier reviewed may appear in a final report.
+`bookkeeping_revision`. Run `verification.validate-bookkeeping --before
+${pre_bookkeeping_revision} --after ${bookkeeping_revision}` to check the exact
+success-record transition. This deterministic schema and transition check must
+confirm that the allowed completion fields advanced while phase goals,
+requirements and narrative content were preserved. Check currentness with
+`verification.currentness ${phase_number}`; keep the original verifier's exact
+inspected revision and provenance. Do not dispatch another broad verifier just
+because bookkeeping produced a new commit.
 
-If the joined final result is `passed`, the coordinator writes the final report
-and commits only `NN-VERIFICATION.md` as the last local write.
+Reconcile only evidence whose declared inputs changed. Rerun checks only when
+their source, environment, configuration or revision binding is invalid. Reuse
+the independent code-review packet because success bookkeeping does not alter its
+source manifest; request a bounded review only if a changed source input or an
+unresolved finding leaves uncovered review scope. If the transition validator
+reports a concrete semantic discrepancy, send that exact delta to its decision
+owner for a bounded inspection. Never retag an earlier report or packet to claim
+the owner inspected `bookkeeping_revision`.
 
-If the joined final result is `gaps_found` or `human_needed`, do not persist it
+On a validated transition with no newly uncovered acceptance, retain the report's
+original inspected revision and findings; its verified currentness comes from the
+bounded validation chain, not a fabricated review SHA. The coordinator writes the
+final report and commits only `NN-VERIFICATION.md` as the last local write.
+
+If bounded reconciliation yields `gaps_found` or `human_needed`, do not persist it
 yet or leave this attempt's success records in place. Apply the bounded
 [bookkeeping compensation procedure](../references/verification-evidence.md#compensating-a-failed-final-verification)
 to the exact captured commit. After a successful revert, use
@@ -547,13 +580,15 @@ record a blocked outcome through the runtime. If it cannot be returned to a
 clean tree, preserve the work and stop without writing a report. A completed
 roadmap/requirement record with unsafe compensation is a blocker, never a pass.
 
-After a clean compensation/status commit, capture a new frozen revision; run
-configured checks and a fresh read-only verifier together, with no success
-bookkeeping. Resume the verifier only after results join, providing the prior
-nonpass findings and all current receipts/results. Retain this attempt's nonpass
-outcome; do not restart the success path. Commit the final nonpass report alone
-after this reconciliation. For refresh-only runs, reconcile at the current
-revision without repeating bookkeeping or starting another `/ship`.
+After a clean compensation/status commit, capture the resulting revision and
+validate the exact compensation/status transition. Revalidate only checks and
+evidence whose declared inputs changed. Carry forward this attempt's nonpass
+findings and request a bounded decision-owner inspection only for an uncovered
+delta; do not repeat a broad source review. Retain this attempt's nonpass outcome;
+do not restart the success path. Commit the final nonpass report alone after this
+reconciliation, preserving the actual inspected revision and its validation
+chain. For refresh-only runs, reconcile at the current revision without repeating
+bookkeeping or starting another `/ship`.
 
 For a refresh-only invocation, reconcile at the current revision without
 repeating phase completion, requirement closure or session writes. If this

@@ -75,7 +75,7 @@ Before executing, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Read [the project rule catalog](../rules/README.md) and load applicable rule files during implementation.
-- Load applicable repository skills from that directory; rules and skills are separate inputs.
+- Load only repository skills whose descriptions apply to the assigned plan or an unresolved failure; rules and skills are separate inputs.
 - Follow skill rules relevant to the task you are about to commit.
 
 **agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`

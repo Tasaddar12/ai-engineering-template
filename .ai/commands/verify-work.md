@@ -21,8 +21,8 @@ Establish what is actually true after a phase executed.
 2. Start configured checks, applicable read-only specialists and a provisional
    verifier together against one frozen revision, using valid receipts
 3. Join the results and resume the verifier to reconcile bounded shared evidence
-4. On a provisional pass, commit success bookkeeping, then reconcile checks and
-   source acceptance on the resulting frozen revision
+4. On a provisional pass, validate the bounded success-record transition and
+   revalidate only evidence whose inputs changed
 5. Persist the final external verifier report through the coordinator as the
    final local write; close gaps and re-verify when needed
 6. Close the phase's requirements in REQUIREMENTS.md only in the one-time
@@ -62,8 +62,8 @@ improvise from the summary.
 - Configured checks run and passed to the verifier as evidence
 - Initial checks and independent specialists join before their evidence is
   reconciled; the verifier judges the codebase, not the summaries
-- On a provisional pass, final reconciliation reviews the success-record commit
-  before the report is persisted
+- On a provisional pass, bookkeeping passes deterministic schema/transition
+  validation before the report is persisted; any semantic delta gets bounded review
 - Unconfirmable criteria abstained rather than passed
 - Gaps closed and re-verified, or recorded as todos with the user's agreement
 - Roadmap and STATE.md updated only on a pass or an explicit acceptance

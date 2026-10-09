@@ -34,7 +34,11 @@ class EfficiencyContractTests(unittest.TestCase):
     def test_review_triggers_and_parallel_readonly_work_are_explicit(self):
         readme = self.read(".ai/agents/README.md")
         verifier = self.read(".ai/workflows/verify-work.md")
-        self.assertIn("fresh code-reviewer for every source-changing phase", readme)
+        self.assertIn("validated code-review evidence", readme)
+        execute = self.read(".ai/workflows/execute-phase.md")
+        self.assertIn("one independent code-reviewer", execute)
+        self.assertIn("evidence.record", execute)
+        self.assertIn("only for the missing or changed scope", verifier)
         self.assertIn("when documentation changed", verifier)
         self.assertIn("when acceptance covers a", verifier)
         for path in (".ai/workflows/execute-phase.md", ".ai/workflows/plan-phase.md",
@@ -45,7 +49,9 @@ class EfficiencyContractTests(unittest.TestCase):
         scout = self.read(".ai/references/scout-dispatch.md")
         self.assertIn("one bounded follow-up", scout)
         self.assertIn("block only the dependent", scout)
-        self.assertIn("question, revision, search scope and supplied", scout)
+        self.assertIn("question, scope, requested output schema/fields", scout)
+        self.assertIn("hashes of actual committed inputs", scout)
+        self.assertIn("complete declared search-scope manifest", scout)
 
     def test_execute_keeps_dependency_waves_and_uses_receipts(self):
         workflow = self.read(".ai/workflows/execute-phase.md")
@@ -78,8 +84,12 @@ class EfficiencyContractTests(unittest.TestCase):
                         workflow.index('step name="final_frozen_reconciliation"'))
         self.assertIn("refresh-only", workflow)
         self.assertIn("do not start another `/ship`", workflow)
-        self.assertIn("For each commit, run", evidence)
-        self.assertIn("does not enforce the currentness rule", evidence)
+        self.assertIn("verification.validate-bookkeeping", workflow)
+        self.assertIn("verification.currentness", workflow)
+        self.assertNotIn("Start `verification.run-checks` and a provisional read-only verifier together", workflow)
+        self.assertIn("verification.currentness", evidence)
+        self.assertIn("source edits", evidence)
+        self.assertIn("does not enforce currentness", evidence)
         self.assertIn("Final-report lifecycle", evidence)
         self.assertIn("the coordinator alone", evidence)
         self.assertIn("report-only commit", handoff)
@@ -103,6 +113,9 @@ class EfficiencyContractTests(unittest.TestCase):
         workflow = " ".join(workflow.split())
         self.assertIn("valid successful receipt", workflow)
         self.assertIn("verification evidence", workflow)
+        self.assertIn("evidence.lookup", workflow)
+        self.assertIn("never schedules a duplicate full review", workflow)
+        self.assertIn("verification.validate-bookkeeping", workflow)
         self.assertIn("does not enforce freshness", workflow)
         self.assertLess(workflow.index('step name="prepare_shipping_record"'),
                         workflow.index('step name="final_reconciliation"'))

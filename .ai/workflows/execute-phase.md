@@ -332,6 +332,13 @@ Execute waves in order. Within a wave, dispatch every plan **in a single message
 with multiple Agent calls** so they run concurrently, unless `--sequential` was
 passed or the wave has one plan.
 
+Independent test preparation may overlap coder work only when each task uses an
+isolated worktree or otherwise isolated inputs and outputs. Do not let test
+preparation read or mutate a coder's active uncommitted tree. Any reviewer inspects
+the exact immutable committed snapshot in its request while independent coding
+continues. After integration, revalidate only receipts or evidence whose declared
+inputs changed.
+
 Before dispatching, capture the base every executor in this wave must fork from,
 and record each plan's declared scope so the wave can be integrated:
 
@@ -391,8 +398,9 @@ ${context_window >= 500000 ? `
 ` : ''}
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if either exists.
-**Project skills:** check `.agents/skills/` or `.claude/skills/` — read the SKILL.md
-files and follow their rules.
+**Project skills:** check `.agents/skills/` or `.claude/skills/`; read only SKILL.md
+files whose descriptions apply to this plan or an unresolved failure, and follow
+their relevant rules.
 </execution_context>
 
 <constraints>
@@ -577,24 +585,41 @@ out-of-scope code-review findings. Do not create todos.
 <step name="code_review_gate">
 **Skip only when `--no-review` was passed and the user asked for it.**
 
-After all waves are integrated, freeze the session revision. Start the required
-fresh code-reviewer and call `verification.run-checks` together against that
-revision; valid receipts from the final wave can be reused. The reviewer owns
-source correctness and security findings. Wait for both results before accepting
-the phase or repairing it. If a repair changes source, rerun affected checks and
-obtain a fresh review of the repaired revision.
+After all waves are integrated, freeze the final committed source revision. Start
+one independent code-reviewer for that revision and run
+`verification.run-checks` alongside it; valid receipts from the final wave can be
+reused. The review request covers the actual changed-source manifest, phase
+requirements, review question and configuration. The reviewer owns source
+correctness and security findings. Record the complete request and result through
+`evidence.record`; later verify-work and ship use `evidence.lookup` for the same
+content-addressed inputs. Wait for both results before accepting the phase or
+repairing it. If a repair changes relevant review inputs or leaves an unresolved
+finding, re-review only the uncovered delta and retain prior findings. Reviewers
+must inspect the immutable committed snapshot named by the request; any concurrent
+coding uses an isolated worktree and cannot mutate that snapshot.
+
+Dispatch a `scout` for each requested repeatable extraction, classification,
+transformation proposal or structured summary, even when the relevant source paths
+are known. Batch compatible questions when their requested fields and evidence
+scope match. Key reuse to question, scope, requested schema/fields, actual input
+hashes and configuration. Absence claims require the complete declared search
+scope and manifest. Preserve inspected revision, input hashes, citations and
+validation provenance in accepted packets. Do not repeat extraction already
+covered by a matching validated packet.
 
 ```
 Agent(
   prompt="
-Review the source changes made by Phase {phase_number}.
+Independently review the final integrated source changes made by Phase {phase_number}.
 
 **Changed files:** {aggregate files_modified across summaries}
 **Plans:** {plan paths}
 **Diff base:** {commit before the first wave}
 
-Review the changed source for correctness bugs, security issues and code quality
-problems. Judge the code as it now stands, not the summaries' claims about it.
+Review the changed source for correctness bugs and security issues. Judge the
+immutable committed revision named above, not summaries' claims or a mutable
+working tree. Return every finding with its status so unresolved findings can be
+carried forward and only affected deltas re-reviewed.
 
 Return:
 ## CODE REVIEW
@@ -607,9 +632,13 @@ Findings: <numbered, each with file:line, severity (critical|warning), and why i
 )
 ```
 
-**Critical findings block completion.** Dispatch a coder to fix them, then
-re-review. Warnings are recorded in the phase summary for the verifier to weigh;
-they do not block.
+Record the request and complete result with schema 1 via
+`phase_run query evidence.record <request.json> --result <result.json>`. Keep
+`never_run`, `failed` and `incomplete` distinct; only a validated `passed` packet
+establishes review completion. Critical findings block completion. After an
+authorized repair, revalidate affected check receipts and request a bounded review
+only for changed review inputs or unresolved findings; preserve prior findings.
+Warnings are recorded for the verifier to weigh.
 </step>
 
 <step name="update_roadmap">
