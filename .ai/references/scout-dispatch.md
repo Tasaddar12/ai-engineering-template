@@ -7,8 +7,6 @@ documentation transformations. It does not decide implementation correctness,
 security, acceptance, or whether a phase passes. It is a read-only leaf: it does
 not edit, run tests, execute project code, or dispatch children.
 
-## Required use across workflows
-
 - Dispatch `scout` before unknown-location searches for files, symbols, history or matching skills.
 - Dispatch `scout` for requested inventories, fact extraction, classification, structured summaries or transformation proposals.
 - Route those requested outputs to scout even when input paths are known.
