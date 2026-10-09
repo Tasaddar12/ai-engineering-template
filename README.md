@@ -14,6 +14,7 @@ are not an adopting project's roadmap or delivery history.
 |---|---|
 | Understand the complete workflow | [Project and phase workflow](.ai/guides/PHASE-WORKFLOW.md) |
 | See features, safeguards and limitations | [Workflow features](.ai/guides/WORKFLOW-FEATURES.md) |
+| Draft prompts for common workflows | [Workflow prompt cookbook](docs/prompts.md) |
 | Select and fill a template correctly | [Template guide](.ai/guides/ARTIFACT-GUIDE.md) |
 | Initialize a project from actual intent | [Onboarding](.ai/commands/onboard.md) |
 | Turn a goal into a milestone and phases | [New milestone](.ai/commands/new-milestone.md) |
