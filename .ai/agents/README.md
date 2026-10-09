@@ -25,16 +25,19 @@ source examples and result contracts.
 Follow [scout dispatch](../references/scout-dispatch.md) for the task/output
 route. The documentation route reads doc-writer directly. Verification always
 uses verifier; it adds doc-verifier when documentation changes,
-integration-checker when acceptance covers dependencies or user-facing flows,
-and a fresh code-reviewer for every source-changing phase. Add another specialist
+integration-checker when acceptance covers dependencies or user-facing flows, and
+consumes the phase's validated code-review evidence. Request a bounded review only
+for changed review inputs or an unresolved finding. Add another specialist
 only for a named unresolved acceptance claim or risk decision in that role's
 domain. Deterministic configured checks establish their result through runtime
 receipts; AI diagnosis is reserved for failed or ambiguous results that need
 interpretation.
 
-A fresh code-reviewer separately assesses changed source before every
-source-changing phase closes; the verifier cannot substitute for that dispatch,
-and a coder's self-check is not a review. Worker roles may spawn only `scout`
+A fresh code-reviewer assesses the final integrated changed source once before a
+source-changing phase closes. Verify-work and ship reuse the validated packet;
+only changed inputs or unresolved findings need a bounded additional review. The
+verifier cannot substitute for the independent review, and a coder's self-check is
+not a review. Worker roles may spawn only `scout`
 children for evidence packets routed by the shared contract. Scouts never spawn
 children; the orchestrator owns worker lifecycle, integration, shared records
 and publication.

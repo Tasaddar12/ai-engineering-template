@@ -23,7 +23,8 @@ Run the plans a phase has, then confirm what they actually produced.
 3. Dispatch a coder subagent per plan, waves in order, parallel within a wave
 4. Escalate checkpoints to the user instead of guessing
 5. Run configured checks against each integrated wave, reuse valid receipts,
-   aggregate requirement coverage, and review the final integrated revision
+   aggregate requirement coverage, and record one independent review of the final
+   integrated source for verify-work and ship to reuse
 6. Tick the roadmap only for plans with a complete SUMMARY.md
 7. Carry on into `/verify-work`, and on a pass into `/ship`, in the same session —
    never hand the user the next command, and never stop at a context advisory
@@ -63,7 +64,8 @@ improvise from the summary.
 - Each plan executed by a coder subagent and verified on disk
 - Checkpoints escalated, not guessed
 - Configured checks run per wave
-- Code review run; critical findings fixed and re-reviewed
+- One independent code review recorded; only changed or unresolved review scope is
+  re-reviewed
 - Roadmap ticked only for complete summaries
 - STATE.md updated and work committed
 </success_criteria>

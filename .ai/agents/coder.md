@@ -75,7 +75,7 @@ Before executing, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Read [the project rule catalog](../rules/README.md) and load applicable rule files during implementation.
-- Load applicable repository skills from that directory; rules and skills are separate inputs.
+- Load only repository skills whose descriptions apply to the assigned plan or an unresolved failure; rules and skills are separate inputs.
 - Follow skill rules relevant to the task you are about to commit.
 
 **agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
@@ -620,7 +620,16 @@ This file is the canonical output of this step. The orchestrator reads `.plannin
 **Frontmatter:** Complete the full [SUMMARY template](../templates/summary.md)
 and [runtime contract](../runtime/TEMPLATE-CONTRACT.md), including assigned
 acceptance IDs, exact documentation paths, status and a nonempty Checks section.
-Only claim outcomes supported by actual evidence.
+Only claim outcomes supported by actual evidence. Keep `phase` equal to the phase
+directory, `plan` as its zero-padded plan number, and write a substantive body.
+For bounded bookkeeping reuse, the SUMMARY must also have nonempty unique
+`acceptance` IDs, unique `requirements-completed` IDs supported by the current
+ROADMAP and source acceptance report, a unique `documentation` path list, and
+nonempty `coverage` with unique deliverable IDs/descriptions. Every coverage item
+must set `human_judgment: false` and cite passing `unit`, `integration`, `e2e`,
+`automated_ui`, or `other` evidence. Every completed requirement must have a
+coverage entry. Human-only or incomplete evidence remains a gap and requires
+fresh specialist review; do not reshape evidence to fit the bookkeeping path.
 
 **Actuals (required when the PLAN carries an estimate):** Preserve the estimate's
 measurement scale. Record `actuals.tokens` as chars/4 over the realized diff,

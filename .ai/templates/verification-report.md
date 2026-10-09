@@ -8,9 +8,15 @@ Template for `.planning/phases/XX-name/{phase_num}-VERIFICATION.md` — phase go
 
 ```markdown
 ---
+schema: 1
 phase: XX-name
 verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
+revision: "<full commit SHA actually inspected>"
+verified_at: "YYYY-MM-DDTHH:MM:SSZ"
+findings: [] # [{severity: critical|high|medium|low|info, message: <nonempty>, resolved: true|false, evidence: <optional nonempty string>}]
+acceptance: [] # Exact current phase acceptance IDs and outcomes; required for bounded bookkeeping.
+requirements_completed: [] # Only requirement IDs the inspected evidence establishes as complete.
 score: N/M must-haves verified
 covered_files: # See .ai/agents/verifier.md's "Create VERIFICATION.md" step for what belongs here and how to compute it
   - .planning/phases/XX-name/{phase_num}-{plan}-PLAN.md
@@ -226,9 +232,19 @@ None — all verifiable items checked programmatically.
 
 ```markdown
 ---
+schema: 1
 phase: 03-chat
 verified: 2025-01-15T14:30:00Z
 status: gaps_found
+revision: "0123456789abcdef0123456789abcdef01234567"
+verified_at: "2025-01-15T14:30:00Z"
+findings:
+  - severity: high
+    message: "Chat component is a placeholder"
+    resolved: false
+    evidence: "src/components/Chat.tsx:8"
+acceptance: [CHAT-01, CHAT-02, CHAT-03]
+requirements_completed: []
 score: 2/5 must-haves verified
 ---
 

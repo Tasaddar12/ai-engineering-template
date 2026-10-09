@@ -143,11 +143,10 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    Exit. Do not offer a bypass: an unverified PR is exactly what this gate exists
    to prevent.
 
-   Apply the coordinator currentness check in
-   [verification evidence](../references/verification-evidence.md). Exact HEAD
-   equality is the fast path; otherwise accept only the documented commits that
-   publish this phase's exact verification report, after checking every
-   intervening commit and requiring a clean worktree. Any other change requires
+   Run `phase_run query verification.currentness ${phase_number}`. Exact source
+   revision equality is the fast path. Otherwise the runtime must validate the
+   recorded bounded transition chain against the tracked report and current clean
+   tree; any source or other unapproved input change requires targeted
    re-verification. `verification.status` exposes report metadata and does not
    enforce freshness.
 
@@ -213,17 +212,24 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    output tail and route diagnosis to the responsible coder or debugger.
 </step>
 
-<step name="optional_review">
-**Only when `--review` was passed.**
+<step name="review_evidence">
+Look up the phase's schema-1 code-review request with
+`phase_run query evidence.lookup <request.json>`. Ship consumes the same
+independent review packet that execute-phase and verify-work use. When it is
+missing, incomplete, failed, or does not cover the actual source being published,
+dispatch an independent reviewer only for the uncovered scope and record the
+result. If `--review` was passed, require this lookup and delta review before
+continuing; the option never schedules a duplicate full review.
 
 ```
 Agent(
   prompt="
-Review everything Phase {phase_number} is about to publish.
+Review only the source paths not already covered by valid review evidence for
+Phase {phase_number}.
 
-**Diff:** {SESSION_BASE}...{SESSION_BRANCH}, in {SESSION_WORKTREE}
-**Frozen revision:** {session HEAD}; use it with the configured check receipts
-from preflight.
+**Diff:** {uncovered changed source paths between valid packet and publish HEAD}
+**Frozen revision:** {session HEAD}; inspect this immutable committed snapshot.
+**Prior review findings:** {unresolved findings from the reusable packet}
 **Phase goal:** {goal}
 
 Review the changed source for correctness bugs, security issues and anything a
@@ -240,8 +246,10 @@ Findings: <numbered, each with file:line and severity (critical|warning)>
 )
 ```
 
-Critical findings block the PR. Fix them, re-verify, and start again — do not
-publish with a known critical finding and a note about it.
+Record this bounded result through `evidence.record`. Critical findings block the
+PR. Fix them and revalidate only affected checks and review scope before another
+publish attempt. Preserve unresolved findings; do not publish with a known
+critical finding and a note about it.
 </step>
 
 <step name="prepare_shipping_record">
@@ -249,6 +257,7 @@ Before final reconciliation, commit the truthful pre-publication session status.
 The PR URL does not exist yet; do not claim the phase shipped or add an invented
 URL. The session's `pr.open` metadata records the actual PR after push.
 
+Capture `pre_shipping_record_revision=$(git rev-parse HEAD)` before changing STATE.
 If STATE already records `Preparing publication` for this same session branch,
 set `preparation_record_changed=false` and skip the redundant record/commit. A
 repeated ship run must not create a no-op lifecycle commit merely to refresh
@@ -265,20 +274,20 @@ phase_run query commit "docs(state): prepare phase ${phase_number} publication" 
 
 <step name="final_reconciliation">
 If `preparation_record_changed=false`, reuse the already-passed report only when
-the existing report is still current under the shared exact-revision/report-only
-rule and the preflight receipts remain valid for this revision. In that case,
-skip another verifier dispatch and report commit.
+`verification.currentness ${phase_number}` confirms it and preflight receipts
+remain valid. In that case, skip another verifier dispatch and report commit.
 
-If the status record changed or currentness/evidence no longer holds, capture
-the new revision and start configured checks plus a provisional read-only
-verifier together. The verifier receives pending check results and reviews the
-actual STATE record diff, the phase goal and source evidence. After every check
-joins, resume the verifier with the complete results/receipts. On a pass, the
-coordinator preserves the revision actually examined, writes the tracked phase
-report, and commits only that report as the last local write.
-Apply the shared [verification evidence lifecycle](../references/verification-evidence.md).
-If this reconciliation is not `passed`, stop before push. A source repair
-requires a fresh `/verify-work` cycle before another push attempt.
+If the status record changed, capture the new `HEAD` and run
+`verification.validate-bookkeeping --before ${pre_shipping_record_revision}
+--after ${session HEAD}`. This checks the bounded STATE transition; it does not
+start another broad verifier. Reconcile only checks, review or acceptance evidence
+whose declared inputs changed. A STATE-only record preserves source-review
+evidence. If validation finds a concrete semantic delta, send only that delta to
+its decision owner for bounded inspection. Preserve every packet's true inspected
+revision. If the transition or required evidence cannot be validated, stop before
+push. A source repair requires fresh `/verify-work` for the affected acceptance
+and only uncovered review scope before another push attempt. Apply the shared
+[verification evidence lifecycle](../references/verification-evidence.md).
 </step>
 
 <step name="push_branch">
