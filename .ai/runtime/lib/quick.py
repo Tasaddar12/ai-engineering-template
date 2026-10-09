@@ -13,18 +13,17 @@ from .text import slugify, split_frontmatter
 
 NEWLINE = "\n"
 DIRECTORY = re.compile(r"^(\d{6})-(\d{3})-(.+)$")
-STATUSES = ("open", "in_progress", "complete", "abandoned")
+STATUSES = ("open", "in_progress", "complete", "abandoned", "obsolete")
 
 
 def next_sequence(workspace, stamp):
     """Per-day counter so same-day tasks sort in creation order."""
-    if not workspace.quick_dir.is_dir():
-        return 1
     used = []
-    for entry in workspace.quick_dir.iterdir():
-        match = DIRECTORY.match(entry.name)
-        if match and match.group(1) == stamp:
-            used.append(int(match.group(2)))
+    for root in (workspace.quick_dir, workspace.archive_dir / "quick"):
+        for entry in root.iterdir() if root.is_dir() else []:
+            match = DIRECTORY.match(entry.name)
+            if match and match.group(1) == stamp:
+                used.append(int(match.group(2)))
     return max(used, default=0) + 1
 
 
@@ -88,18 +87,20 @@ def create(workspace, description, verify=None):
 
 
 def listing(workspace, status=None):
-    if not workspace.quick_dir.is_dir():
-        return {"count": 0, "tasks": [], "directory": workspace.relative(workspace.quick_dir)}
     tasks = []
-    for entry in sorted(workspace.quick_dir.iterdir(), reverse=True):
-        if not entry.is_dir() or not DIRECTORY.match(entry.name):
-            continue
-        task = load(workspace, entry)
-        task.pop("body", None)
-        if status and task["status"] != status:
-            continue
-        tasks.append(task)
-    return {"count": len(tasks), "tasks": tasks,
+    archived_tasks = []
+    for root, archived in ((workspace.quick_dir, False), (workspace.archive_dir / "quick", True)):
+        for entry in sorted(root.iterdir(), reverse=True) if root.is_dir() else []:
+            if not entry.is_dir() or not DIRECTORY.match(entry.name):
+                continue
+            task = load(workspace, entry)
+            task.pop("body", None)
+            task["archived"] = archived
+            if status and task["status"] != status:
+                continue
+            (archived_tasks if archived else tasks).append(task)
+    return {"count": len(tasks), "tasks": tasks, "archived_tasks": archived_tasks,
+            "archived_count": len(archived_tasks), "total_count": len(tasks) + len(archived_tasks),
             "directory": workspace.relative(workspace.quick_dir)}
 
 

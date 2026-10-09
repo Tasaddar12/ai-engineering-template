@@ -49,7 +49,7 @@ def phases_in(workspace, name):
     if not roadmap.exists:
         return []
     lowered = (name or "").lower()
-    return [phase for phase in roadmap.phases()
+    return [phase for phase in roadmap.phases(include_archived=True)
             if phase.milestone and lowered in phase.milestone.lower()]
 
 
