@@ -119,6 +119,19 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(first["checks"][0]["tested_revision"], self.git("rev-parse", "HEAD"))
         self.assertEqual(first["checks"][0]["stdout_log"], second["checks"][0]["stdout_log"])
 
+    def test_purpose_is_required_when_present_and_part_of_receipt_identity(self):
+        self.configure([{"command": self.command(), "sources": ["input.txt"], "purpose": "source-security"}])
+        first = self.run_checks()
+        self.assertEqual(first["checks"][0]["purpose"], "source-security")
+        self.assertTrue(self.run_checks()["checks"][0]["reused"])
+        self.configure([{"command": self.command(), "sources": ["input.txt"], "purpose": "phase-acceptance"}])
+        second = self.run_checks()
+        self.assertFalse(second["checks"][0]["reused"])
+        self.assertNotEqual(first["checks"][0]["receipt"], second["checks"][0]["receipt"])
+        for purpose in ("", "   ", None, False):
+            self.configure([{"command": self.command(), "purpose": purpose}])
+            self.assertEqual(self.run_checks(ok=False)["code"], "bad-config")
+
     def test_empty_configuration_preserved(self):
         self.configure([])
         result = self.run_checks()
