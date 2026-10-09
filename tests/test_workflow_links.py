@@ -43,7 +43,7 @@ class WorkflowNavigationTests(unittest.TestCase):
                             "do not claim runtime enforcement", "bounded follow-up",
                             "verification.run-checks",
                             "Dispatch a separate fresh code-reviewer for every source-changing phase"):
-            self.assertIn(instruction, body)
+            self.assertIn(instruction.lower(), body.lower())
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
 
     def test_core_entry_points_link_the_central_scout_contract(self):

@@ -2,7 +2,13 @@
 
 ## Purpose and required use
 
-- Use the configured cheap `scout` role: `gpt-6-luna`/high on Codex; `haiku` on Claude.
+- Use the configured cheap `scout` role:
+
+```text
+Codex:  model=gpt-6-luna  effort=high
+Claude: model=haiku      effort=inherit
+```
+
 - Apply this contract to every agent, including the coordinator, across all workflows.
 - Dispatch `scout` before unknown-location discovery of files, symbols, terms, history, matching skills or source boundaries.
 - Dispatch `scout` for requested repository inventories, including maps, skills and capability relationships.
@@ -222,6 +228,7 @@ python .ai/runtime/phase.py query resolve-agent scout --host codex
 # Claude
 python .ai/runtime/phase.py query resolve-agent scout --host claude
 ```
+
 - Pass the returned model and effort inline.
 - Omit each resolved `inherit` argument.
 
