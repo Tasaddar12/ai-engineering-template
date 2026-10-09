@@ -144,11 +144,13 @@ Offline fixtures.
 class PlanningReviewTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        # Windows TEMP may use an 8.3 alias. Workspace canonicalizes the same
+        # directory, so fixture paths and containment checks must share its spelling.
+        self.root = Path(self.temp.name).resolve()
         self.workspace = Workspace(self.root)
         # Workspace uses Git root only when one exists; this isolated fixture
         # has none and therefore cannot resolve to the template checkout.
-        self.assertEqual(self.root.resolve(), self.workspace.root)
+        self.assertEqual(self.root, self.workspace.root)
         self.planning = self.workspace.planning
         write_text(self.planning / "PROJECT.md", PROJECT)
         write_text(self.planning / "REQUIREMENTS.md", REQUIREMENTS)

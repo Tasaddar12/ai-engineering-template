@@ -158,6 +158,40 @@ Only the helper, focused fixtures and this summary changed. No broader checks or
 scope expansion accompanied this correction; its commit hash is returned in the
 final handoff for immediate integration and independent re-review.
 
+## Actual Windows CI fixture correction
+
+The Windows job at `b2f2cde` failed only the two junction test subcases at the
+fixture's cleanup containment assertion; the runtime rejection/no-external-I/O
+checks had succeeded. The fixture retained the raw TEMP spelling in `self.root`,
+while `Workspace.root` resolves Windows 8.3 aliases to their long spelling.
+Junction paths built from Workspace therefore failed a lexical containment check
+against the short fixture root despite naming the same directory.
+
+Continuation from `9168c98` changes only fixture setup and this summary:
+`self.root = Path(self.temp.name).resolve()` canonicalizes the identity once,
+before Workspace/path construction. The root equality assertion now compares
+those canonical identities directly. Junction containment and external-content,
+lock and writer assertions remain intact; no runtime code or CI configuration
+changed.
+
+Reproduction used Python/ctypes `GetShortPathNameW` on a real directory with a
+long name, set `TEMP`/`TMP` to the returned `.../PLANNI~1` path, reset
+`tempfile.tempdir`, and selected tests through `unittest.TestSuite`:
+
+- Before correction, `test_windows_junction_root_and_nested_directory_on_python311`
+  reproduced both `nested=True` and `nested=False` failures at the exact CI
+  containment assertion.
+- After correction, four selected tests passed under the genuine 8.3 TEMP:
+  `test_windows_junction_root_and_nested_directory_on_python311`,
+  `test_template_namespace_junction_is_rejected_before_any_content_io`,
+  `test_apply_requires_review_and_rejects_changed_evidence`, and
+  `test_windows_physical_uppercase_state_edit_cannot_evade_fingerprint`.
+  The run completed in 0.629 seconds with no skips.
+
+No broader suite ran for this narrow correction. Its commit hash is supplied in
+the handoff; integration and monitoring the final automatic CI remain with the
+coordinator.
+
 ## Self-check
 
 PASSED: all six owned deliverable paths exist; first source commit was verified
