@@ -215,6 +215,8 @@ class Reading(HandoffCase):
         self.assertIn("read only those a remaining task edits", brief)
 
     def test_role_lists_match_the_hook(self):
+        shell = (ROOT / ".ai/hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
+        self.assertIn("targeted-fixer", re.search(r'^WRITE_CAPABLE_AGENTS="([^"]*)"', shell, re.MULTILINE)[1].split())
         """The hook's advisory and this brief must classify roles the same way."""
         # Read as source, not imported: the runtime's `lib` package name is
         # generic enough to collide with another on the test path.
@@ -229,6 +231,22 @@ class Reading(HandoffCase):
                 match = re.search(r'^%s="([^"]*)"' % name, shell, re.MULTILINE)
                 self.assertIsNotNone(match, name + " is missing from agent-roles.sh")
                 self.assertEqual(sorted(python[name]), sorted(match.group(1).split()))
+
+    def test_targeted_fixer_continuation_preserves_bounded_executor_work(self):
+        for role in ("targeted-fixer", "plugin:workflow:targeted-fixer"):
+            with self.subTest(role=role):
+                self.put("repair", reason="incomplete-exit", agent=role,
+                         plan=".planning/phases/03-x/03-01-PLAN.md",
+                         summary=".planning/phases/03-x/03-01-SUMMARY.md",
+                         head="abc1234", files_read=["src/a.py"],
+                         remaining=["Repair diagnosed branch in src/a.py"],
+                         next_action="Resume only assigned repair")
+                brief = self.run_verb("handoff.read", "repair")["continuation"]
+                self.assertIn("Do not restart the plan", brief)
+                self.assertIn("03-01-SUMMARY.md", brief)
+                self.assertIn("read only those a remaining task edits", brief)
+                self.assertIn("Repair diagnosed branch in src/a.py", brief)
+                self.assertIn("Resume only assigned repair", brief)
 
     def test_reading_does_not_consume(self):
         """Inspection is not dispatch. A read that deleted the record would lose

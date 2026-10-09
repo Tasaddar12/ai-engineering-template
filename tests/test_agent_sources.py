@@ -101,6 +101,16 @@ class AgentSourceTests(unittest.TestCase):
                          "safe exact-owned staging/commits", "worker-handoff.md"):
             self.assertIn(boundary, text)
 
+    def test_targeted_fixer_catalogs_link_the_authoritative_role(self):
+        for name in ("AGENTS.md", ".ai/RULES.md", ".ai/install-assets/agent-entry.txt", ".ai/agents/README.md"):
+            with self.subTest(source=name):
+                text = (ROOT / name).read_text(encoding="utf-8")
+                self.assertIn("targeted-fixer", text)
+                self.assertIn("targeted-fixer.md)", text)
+        roles = (ROOT / ".ai/hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
+        write_roles = re.search(r'^WRITE_CAPABLE_AGENTS="([^"]*)"', roles, re.MULTILINE)[1].split()
+        self.assertEqual({"coder", "doc-writer", "debugger", "targeted-fixer"}, set(write_roles))
+
     def test_every_role_reads_the_shared_scout_procedure(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
             if role.name == "README.md":

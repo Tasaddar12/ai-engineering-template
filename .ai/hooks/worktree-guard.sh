@@ -43,7 +43,7 @@ if [[ -f "$_guard_lib" ]]; then
   # shellcheck source=lib/agent-roles.sh
   . "$_guard_lib"
 else
-  WRITE_CAPABLE_AGENTS="coder doc-writer debugger"
+  WRITE_CAPABLE_AGENTS="coder doc-writer debugger targeted-fixer"
 fi
 
 # --- extract a top-level or tool_input string field ---------------------------
@@ -120,6 +120,7 @@ tool="$(field tool_name)"
 
 if [[ "$tool" == "Agent" || "$tool" == "Task" ]]; then
   subagent="$(field subagent_type)"
+  role="${subagent##*:}"
   isolation="$(field isolation)"
   # Built before the heredoc on purpose: ${var:+word} applies quote removal to
   # `word`, so an inline ${isolation:+isolation="$isolation"} would print
@@ -130,7 +131,7 @@ if [[ "$tool" == "Agent" || "$tool" == "Task" ]]; then
     carried="no isolation argument"
   fi
   for candidate in $WRITE_CAPABLE_AGENTS; do
-    if [[ "$subagent" == "$candidate" && "$isolation" != "worktree" ]]; then
+    if [[ "$role" == "$candidate" && "$isolation" != "worktree" ]]; then
       cat >&2 <<REASON
 BLOCKED  worktree isolation is required for subagent_type="$subagent".
 

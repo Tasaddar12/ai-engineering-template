@@ -75,15 +75,19 @@ result before accepting evidence, repairing files or starting another batch.
 
 Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
-`integration-checker`, `codebase-mapper`, `debugger`, `scout`). Resolve the model with
+`integration-checker`, `codebase-mapper`, `debugger`, `scout`, `targeted-fixer`). Resolve the model with
 `phase_run query resolve-model <agent>` and the effort with
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
 call — shared role files carry neither as frontmatter (the installer adds Claude
-`model: haiku` only to exported `scout` metadata, with no effort), and a resolved `inherit` means
+`model: haiku` only to exported `scout` and `targeted-fixer` metadata, with no effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
 Follow the [scout usage contract](.ai/references/scout-dispatch.md) for evidence
 work in every workflow and role method.
+
+- Dispatch [targeted-fixer](.ai/agents/targeted-fixer.md) only for its complete diagnosed repair assignment.
+- Keep targeted-fixer a leaf; return discovery needs through the coordinator.
+- Let the fixer commit exact owned repairs and SUMMARY; retain coordinator Git integration and publication.
 
 A source-changing worker returns `complete` only after committing its owned
 changes and required SUMMARY.md. A read-only scout, reviewer, verifier,
