@@ -219,7 +219,12 @@ independent review packet that execute-phase and verify-work use. When it is
 missing, incomplete, failed, or does not cover the actual source being published,
 dispatch an independent reviewer only for the uncovered scope and record the
 result. If `--review` was passed, require this lookup and delta review before
-continuing; the option never schedules a duplicate full review.
+continuing; the option never schedules a duplicate full review. Keep the
+request's immutable ancestor `base_revision` while setting `revision` to publish
+HEAD. For a new uncovered diff, declare its committed base explicitly; include
+deleted source and both rename paths and inspect old blobs at that base. Consume
+the latest attempt and its `unresolved_findings`; do not fall back to an earlier
+pass after a newer failed/incomplete attempt.
 
 ```
 Agent(
@@ -229,7 +234,7 @@ Phase {phase_number}.
 
 **Diff:** {uncovered changed source paths between valid packet and publish HEAD}
 **Frozen revision:** {session HEAD}; inspect this immutable committed snapshot.
-**Prior review findings:** {unresolved findings from the reusable packet}
+**Prior review findings:** {unresolved_findings from latest lookup and retained attempt receipts}
 **Phase goal:** {goal}
 
 Review the changed source for correctness bugs, security issues and anything a
@@ -246,7 +251,11 @@ Findings: <numbered, each with file:line and severity (critical|warning)>
 )
 ```
 
-Record this bounded result through `evidence.record`. Critical findings block the
+Record this bounded result through `evidence.record` and keep its unique immutable
+`receipt` path; the separate `index` selects the latest attempt. Resolve carried
+same-input findings explicitly with unchanged severity/message, `resolved: true`,
+and supporting `evidence` citations. An empty later result cannot erase them.
+Critical findings block the
 PR. Fix them and revalidate only affected checks and review scope before another
 publish attempt. Preserve unresolved findings; do not publish with a known
 critical finding and a note about it.
