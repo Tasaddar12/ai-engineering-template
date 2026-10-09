@@ -24,7 +24,8 @@ verdict that is anything other than genuinely green.
 <available_agent_types>
 Valid subagent types (use these exact names — never fall back to a generic agent):
 - code-reviewer — reviews the changes being published
-- debugger — fixes a failing check on the session branch
+- debugger - diagnoses a failing check with unknown cause
+- targeted-fixer - repairs a diagnosed bounded CI defect through the coordinator
 </available_agent_types>
 
 <model_selection>
@@ -42,8 +43,8 @@ entirely** and let the host choose. Pass `model` only when resolution returned a
 model alias, and `effort` only when it returned one of `low`, `medium`,
 `high`, `xhigh` or `max`. The two resolve independently: a role can carry an
 effort and no model, or the reverse. The `models` and `efforts` maps in each
-init bundle carry the same resolved values for every agent that workflow
-dispatches.
+init bundle carry the same resolved values for ordinary workflow assignments.
+Resolve conditional fixer dispatch through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
 </model_selection>
 
 <process>
@@ -389,14 +390,15 @@ exactly as observed:
 **Fixing a failing check** — at most 2 rounds:
 
 1. Read each failing run's log: `gh run view <run-id> --log-failed`
-2. Dispatch one `debugger` with `isolation="worktree"`, giving it the failing
-   check names, the log excerpts and the session branch.
-3. From the session worktree, integrate the fix. Do not push yet: the source
+2. Send unknown causes to an isolated `debugger` with check names, log excerpts and current revision.
+3. Route complete diagnosed bounded findings/proposals through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+4. Return incomplete or contradictory inputs to the originating debugger/reviewer via the coordinator; send broader authorized repairs to preparer/coder.
+5. From the session worktree, integrate committed owned repairs. Do not push yet: the source
    change invalidates verification for this branch.
-4. Invoke `/verify-work {phase_number}` in ship-repair/return-to-caller mode.
+6. Invoke `/verify-work {phase_number}` in ship-repair/return-to-caller mode.
    Re-run local checks and final reconciliation on the repaired revision; do not
    repeat success bookkeeping or auto-start another `/ship`.
-5. Only after it returns `passed`, push the repaired branch and judge the exact
+7. Only after it returns `passed`, push the repaired branch and judge the exact
    new tip with `phase_run query pr.checks "${SESSION_BRANCH}" --wait 240`.
 
 Still failing after round 2: report it with its logs as the blocker.

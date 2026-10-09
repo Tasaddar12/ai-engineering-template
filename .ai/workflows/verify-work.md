@@ -34,6 +34,7 @@ Valid subagent types (use these exact names — never fall back to a generic age
 - doc-verifier — checks factual claims in generated docs against the codebase
 - phase-preparer — plans gap closure when verification finds gaps
 - coder — executes gap-closure plans
+- targeted-fixer - repairs a diagnosed bounded gap through the coordinator
 </available_agent_types>
 
 <model_selection>
@@ -51,8 +52,8 @@ entirely** and let the host choose. Pass `model` only when resolution returned a
 model alias, and `effort` only when it returned one of `low`, `medium`,
 `high`, `xhigh` or `max`. The two resolve independently: a role can carry an
 effort and no model, or the reverse. The `models` and `efforts` maps in each
-init bundle carry the same resolved values for every agent that workflow
-dispatches.
+init bundle carry the same resolved values for ordinary workflow assignments.
+Resolve conditional fixer dispatch through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
 </model_selection>
 
 <process>
@@ -404,7 +405,15 @@ Do not ask how to proceed. Route each gap per
 - Outside the phase's scope: leave it in the report.
 - Its fix changes a locked decision or acceptance: report it as a blocker.
 
-**Close the in-scope gaps now:** dispatch the phase-preparer in gap-closure mode:
+**Close the in-scope gaps now:**
+
+1. Route a diagnosed bounded gap with complete inputs through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+2. Integrate its owned repair; rerun affected checks and obtain fresh independent review and verification.
+3. Return missing, stale or contradictory inputs to the originating debugger/reviewer via the coordinator.
+4. Route unknown causes to debugger; send broader or undiagnosed gap closure to the existing preparer/coder route below.
+5. Retain `revision_loop`'s 3-round limit and return-to-caller behavior.
+
+Dispatch the phase-preparer in gap-closure mode for remaining broader gaps:
 
 ```
 Agent(

@@ -19,8 +19,8 @@ Require every field before editing:
 ```yaml
 origin: debugger | independently-validated-reviewer
 diagnosis_or_finding: <reproduction, cause and cited evidence>
-checkout: <assigned isolated absolute root>
-branch: <assigned worker branch>
+checkout: <isolated absolute root supplied by coordinator/runtime or bound by harness>
+branch: <worker branch supplied by coordinator/runtime or bound by harness>
 revision: <current input commit>
 owned_paths: [<exact relevant repository paths>]
 symbols: [<relevant symbols or document sections>]
@@ -33,7 +33,7 @@ result_destination: <coordinator and originating debugger/reviewer>
 </assignment>
 
 <repair>
-1. Verify root, branch, HEAD and clean assignment inputs.
+1. Verify the supplied or harness-bound root and branch; compare HEAD to the assigned revision.
 2. Match the diagnosis to the named source and required behavior.
 3. Return missing, stale or contradictory input to the originating debugger/reviewer via the coordinator.
 4. Return broader design, API, schema, security-policy or out-of-scope changes via the coordinator.
@@ -54,6 +54,8 @@ Return the committed SUMMARY and this structured result:
 
 ```yaml
 status: complete | blocked
+checkout: <actual isolated root>
+branch: <actual worker branch>
 base: <assigned revision>
 head: <result revision>
 commits: [<owned commit hashes>]

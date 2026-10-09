@@ -111,6 +111,55 @@ class AgentSourceTests(unittest.TestCase):
         write_roles = re.search(r'^WRITE_CAPABLE_AGENTS="([^"]*)"', roles, re.MULTILINE)[1].split()
         self.assertEqual({"coder", "doc-writer", "debugger", "targeted-fixer"}, set(write_roles))
 
+    def test_bounded_correction_dispatch_has_supported_routing_and_retained_gates(self):
+        shared = (ROOT / ".ai/references/agent-adaptation.md").read_text(encoding="utf-8")
+        dispatch = shared.split("## Bounded correction dispatch", 1)[1].split("## Review and repair handoffs", 1)[0]
+        self.assertIn("../agents/targeted-fixer.md", dispatch)
+        self.assertIn("phase_run query resolve-model targeted-fixer --raw", dispatch)
+        self.assertIn("phase_run query resolve-effort targeted-fixer --raw", dispatch)
+        self.assertIn('subagent_type="targeted-fixer"', dispatch)
+        self.assertIn('model="${FIXER_MODEL}"', dispatch)
+        self.assertIn("FIXER_EFFORT === 'inherit' ? ''", dispatch)
+        self.assertIn("dispatch-isolation", dispatch)
+        self.assertIn("worktree.create", dispatch)
+        self.assertIn("worktree-branch-check.md", dispatch)
+        self.assertIn("worktree-path-safety.md", dispatch)
+        self.assertIn("originating debugger/reviewer", dispatch)
+        self.assertIn("fresh independent review and verification", dispatch)
+        for name in ("execute-phase", "verify-work", "ship"):
+            with self.subTest(workflow=name):
+                text = (ROOT / ".ai/workflows" / (name + ".md")).read_text(encoding="utf-8")
+                self.assertIn("targeted-fixer", text)
+                self.assertIn("../references/agent-adaptation.md#bounded-correction-dispatch", text)
+                self.assertNotRegex(text, r"(?:models|efforts)\[['\"]targeted-fixer['\"]\]")
+        execute = (ROOT / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8")
+        critical = execute.split("**Critical findings block completion.**", 1)[1].split("</step>", 1)[0]
+        self.assertIn("bounded-correction-dispatch", critical)
+        self.assertIn("fresh independent review", critical)
+        self.assertIn("rerun affected checks", critical)
+        verify = (ROOT / ".ai/workflows/verify-work.md").read_text(encoding="utf-8")
+        gaps = verify.split('<step name="plan_gap_closure">', 1)[1].split("</step>", 1)[0]
+        self.assertIn("bounded-correction-dispatch", gaps)
+        self.assertIn('subagent_type="phase-preparer"', gaps)
+        self.assertIn("workflows/execute-phase.md", gaps)
+        self.assertIn("at most **3** rounds", verify)
+        ship = (ROOT / ".ai/workflows/ship.md").read_text(encoding="utf-8")
+        ci = ship.split("**Fixing a failing check**", 1)[1].split("</step>", 1)[0]
+        self.assertIn("at most 2 rounds", ci)
+        self.assertIn("bounded-correction-dispatch", ci)
+        self.assertIn("debugger", ci)
+        self.assertIn("ship-repair/return-to-caller", ci)
+        self.assertIn("returns `passed`", ci)
+        self.assertIn("pr.checks", ci)
+
+    def test_repair_origin_adapters_reference_the_shared_dispatch(self):
+        for name in ("debugger", "code-reviewer", "coordinator"):
+            with self.subTest(role=name):
+                text = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+                adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+                self.assertIn("../references/agent-adaptation.md#bounded-correction-dispatch", adapter)
+                self.assertNotIn('subagent_type="targeted-fixer"', adapter)
+
     def test_every_role_reads_the_shared_scout_procedure(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
             if role.name == "README.md":

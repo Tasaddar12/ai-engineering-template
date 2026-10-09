@@ -16,6 +16,9 @@ Read [RULES](../RULES.md) and the selected [command](../commands/README.md).
 Read the repository AGENTS.md and use only the paths and skills the current step
 needs. Treat the tool names in frontmatter as capability descriptions; the
 runtime and the available host tools provide execution.
+
+- Apply [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch) for diagnosed repairs.
+- Validate current revision and disjoint ownership before dispatching the leaf fixer.
 </local_workflow>
 
 <role>
