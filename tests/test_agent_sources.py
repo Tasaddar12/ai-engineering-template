@@ -124,6 +124,8 @@ class AgentSourceTests(unittest.TestCase):
         self.assertIn("worktree.create", dispatch)
         self.assertIn("worktree-branch-check.md", dispatch)
         self.assertIn("worktree-path-safety.md", dispatch)
+        self.assertIn("${ISOLATION === 'harness-worktree' ? 'isolation=\"worktree\",' : ''}", dispatch)
+        self.assertNotIn('  isolation="worktree",', dispatch)
         self.assertIn("originating debugger/reviewer", dispatch)
         self.assertIn("fresh independent review and verification", dispatch)
         for name in ("execute-phase", "verify-work", "ship"):

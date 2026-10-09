@@ -169,7 +169,7 @@ Agent(
   subagent_type="targeted-fixer",
   model="${FIXER_MODEL}",
   ${FIXER_EFFORT === 'inherit' ? '' : `effort="${FIXER_EFFORT}",`}
-  isolation="worktree",
+  ${ISOLATION === 'harness-worktree' ? 'isolation="worktree",' : ''}
   description="Repair ${diagnosed_defect}"
 )
 ```

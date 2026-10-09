@@ -98,7 +98,7 @@ field() {
 # entry is still recorded with an empty plan: an unattributed handoff the
 # orchestrator must inspect beats no handoff at all.
 record_dispatch() {
-  local guard_dir slug dir prompt plan
+  local guard_dir slug dir prompt plan summary
   guard_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   [[ -f "$guard_dir/lib/handoff-io.sh" ]] || return 0
   # shellcheck source=lib/handoff-io.sh
@@ -110,7 +110,12 @@ record_dispatch() {
   plan="$(printf '%s' "$prompt" \
     | grep -oE '[A-Za-z0-9_./-]*[0-9]{2}(\.[0-9]+)?-[0-9]{2}-PLAN\.md' \
     | head -n 1)"
-  handoff_append_active "$dir/.active-$slug.jsonl" "$1" "$plan"
+  summary="$(printf '%s\n' "$prompt" \
+    | sed -nE 's/.*summary_path:[[:space:]]*([A-Za-z0-9_:./\\-]+-SUMMARY\.md).*/\1/p' \
+    | head -n 1)"
+  plan="$(handoff_safe_repo_path "$plan" "$(handoff_root)")"
+  summary="$(handoff_safe_repo_path "$summary" "$(handoff_root)")"
+  handoff_append_active "$dir/.active-$slug.jsonl" "$1" "$plan" "$summary"
   return 0
 }
 

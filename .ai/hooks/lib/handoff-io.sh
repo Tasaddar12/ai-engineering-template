@@ -79,6 +79,42 @@ handoff_slug() {
   printf '%s' "$1"
 }
 
+_HANDOFF_SAFE_PATH_PY='
+import sys, os, ntpath
+value, root = sys.argv[1:3]
+value = value.replace(chr(92), "/")
+root = os.path.realpath(root)
+try:
+    if ntpath.splitdrive(value)[0]:
+        base = ntpath.normpath(root.replace("/", "\\\\"))
+        path = ntpath.normpath(value.replace("/", "\\\\"))
+        if ntpath.commonpath([ntpath.normcase(path), ntpath.normcase(base)]) != ntpath.normcase(base):
+            raise ValueError()
+        result = ntpath.relpath(path, base).replace("\\\\", "/")
+    elif value.startswith("/"):
+        path = os.path.realpath(value)
+        if os.path.commonpath([os.path.normcase(path), os.path.normcase(root)]) != os.path.normcase(root):
+            raise ValueError()
+        result = os.path.relpath(path, root).replace(os.sep, "/")
+    else:
+        if any(part == ".." for part in value.split("/")):
+            raise ValueError()
+        path = os.path.realpath(os.path.join(root, value))
+        if os.path.commonpath([os.path.normcase(path), os.path.normcase(root)]) != os.path.normcase(root):
+            raise ValueError()
+        result = os.path.relpath(path, root).replace(os.sep, "/")
+    if result in (".", "..") or result.startswith("../") or ":" in result:
+        raise ValueError()
+    sys.stdout.write(result)
+except Exception:
+    pass
+'
+
+handoff_safe_repo_path() {
+  [[ -n "$HANDOFF_PY" && -n "${1:-}" && -n "${2:-}" ]] || return 0
+  "$HANDOFF_PY" -c "$_HANDOFF_SAFE_PATH_PY" "$1" "$(handoff_native_path "$2")" 2>/dev/null || true
+}
+
 _HANDOFF_CONFIG_PY='
 import sys, re
 
@@ -216,7 +252,7 @@ handoff_used_tokens() {
 
 
 _HANDOFF_PLAN_PY='
-import sys, io, json, re
+import sys, io, json, re, os, ntpath
 
 # The plan a subagent was working on, recovered from its own transcript.
 #
@@ -232,8 +268,39 @@ import sys, io, json, re
 # regex run over that undecoded text captures the escapes as literal
 # backslashes and yields a path that matches no file on disk.
 
-PATTERN = re.compile("[A-Za-z0-9_." + chr(92) * 2 + "/-]*"
+PATTERN = re.compile("[A-Za-z0-9_.:" + chr(92) * 2 + "/-]*"
                      "[0-9]{2}(?:[.][0-9]+)?-[0-9]{2}-PLAN[.]md")
+SUMMARY = re.compile(r"(?im)\bsummary_path\s*:\s*([A-Za-z0-9_.:" + chr(92) * 2 + "/-]+-SUMMARY[.]md)")
+
+root = os.path.realpath(sys.argv[2])
+def safe_path(value):
+    value = value.replace(chr(92), "/")
+    try:
+        if ntpath.splitdrive(value)[0]:
+            root_win = ntpath.normpath(root.replace("/", "\\\\"))
+            path_win = ntpath.normpath(value.replace("/", "\\\\"))
+            if ntpath.commonpath([ntpath.normcase(path_win), ntpath.normcase(root_win)]) != ntpath.normcase(root_win):
+                return ""
+            result = ntpath.relpath(path_win, root_win).replace("\\\\", "/")
+        elif value.startswith("/"):
+            real = os.path.realpath(value)
+            if os.path.commonpath([os.path.normcase(real), os.path.normcase(root)]) != os.path.normcase(root):
+                return ""
+            result = os.path.relpath(real, root).replace(os.sep, "/")
+        else:
+            if any(part == ".." for part in value.split("/")):
+                return ""
+            if not (value.startswith(".planning/") or value.startswith(".ai/")):
+                return ""
+            real = os.path.realpath(os.path.join(root, value))
+            if os.path.commonpath([os.path.normcase(real), os.path.normcase(root)]) != os.path.normcase(root):
+                return ""
+            result = os.path.relpath(real, root).replace(os.sep, "/")
+        if result in (".", "..") or result.startswith("../") or ":" in result:
+            return ""
+        return result
+    except Exception:
+        return ""
 
 
 def strings(node):
@@ -249,7 +316,8 @@ def strings(node):
                 yield item
 
 
-found = ""
+found_plan = ""
+found_summary = ""
 try:
     with io.open(sys.argv[1], "r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
@@ -261,32 +329,38 @@ try:
             except Exception:
                 continue
             for text in strings(record):
-                match = PATTERN.search(text)
-                if match:
-                    # The dispatch prompt is the earliest thing in the
-                    # transcript, so the first match is the assigned plan and
-                    # not one mentioned later in passing.
-                    found = match.group(0).replace(chr(92), "/")
-                    # Codex reports an absolute checkout path; the SUMMARY
-                    # lookup downstream joins against cwd, so anything above
-                    # .planning/ is cut rather than joined twice.
-                    marker = ".planning/"
-                    cut = found.find(marker)
-                    if cut > 0:
-                        found = found[cut:]
-                    break
-            if found:
+                if not found_plan:
+                    match = PATTERN.search(text)
+                    if match:
+                        found_plan = safe_path(match.group(0))
+                if not found_summary:
+                    match = SUMMARY.search(text)
+                    if match:
+                        found_summary = safe_path(match.group(1))
+            if found_plan or found_summary:
                 break
 except Exception:
-    found = ""
+    found_plan = found_summary = ""
 
-sys.stdout.buffer.write(found.encode("utf-8") + chr(10).encode("utf-8"))
+sys.stdout.write(found_plan + "\n" + found_summary + "\n")
 '
 
-# Echoes the plan path named in a subagent transcript, or nothing.
-handoff_plan_in_transcript() {
+# Echoes the assigned plan and explicit SUMMARY paths from a subagent transcript.
+handoff_assignment_in_transcript() {
   [[ -n "$HANDOFF_PY" && -n "${1:-}" && -f "$1" ]] || return 0
-  "$HANDOFF_PY" -c "$_HANDOFF_PLAN_PY" "$(handoff_native_path "$1")" 2>/dev/null || true
+  "$HANDOFF_PY" -c "$_HANDOFF_PLAN_PY" "$(handoff_native_path "$1")" "$(handoff_native_path "$2")" 2>/dev/null || true
+}
+
+handoff_plan_in_transcript() {
+  local assignment
+  assignment="$(handoff_assignment_in_transcript "$1" "${2:-$PWD}")"
+  printf '%s\n' "${assignment%%$'\n'*}"
+}
+
+handoff_summary_in_transcript() {
+  local assignment
+  assignment="$(handoff_assignment_in_transcript "$1" "${2:-$PWD}")"
+  [[ "$assignment" == *$'\n'* ]] && printf '%s\n' "${assignment#*$'\n'}" | head -n 1
 }
 
 # --- record writing -----------------------------------------------------------
@@ -372,8 +446,9 @@ handoff_record() {
 _HANDOFF_ACTIVE_PY='
 import sys, json
 
-path, agent, plan, at = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-line = json.dumps({"agent": agent or None, "plan": plan or None, "at": at},
+path, agent, plan, summary, at = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+line = json.dumps({"agent": agent or None, "plan": plan or None,
+                   "summary": summary or None, "at": at},
                   ensure_ascii=False)
 try:
     with open(path, "a", encoding="utf-8", newline="\n") as handle:
@@ -382,11 +457,11 @@ except Exception:
     pass
 '
 
-# handoff_append_active <file> <agent> <plan>
+# handoff_append_active <file> <agent> <plan> <summary>
 handoff_append_active() {
   [[ -n "$HANDOFF_PY" ]] || return 0
   mkdir -p "${1%/*}" 2>/dev/null || return 0
-  "$HANDOFF_PY" -c "$_HANDOFF_ACTIVE_PY" "$(handoff_native_path "$1")" "${2-}" "${3-}" \
+  "$HANDOFF_PY" -c "$_HANDOFF_ACTIVE_PY" "$(handoff_native_path "$1")" "${2-}" "${3-}" "${4-}" \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || printf 'unknown')" 2>/dev/null
   return 0
 }
