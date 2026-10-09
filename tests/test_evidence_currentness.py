@@ -536,6 +536,55 @@ Resume file: .planning/STATE.md
         self.record(request, ok=False)
         self.assertTrue((self.root / failed['receipt']).is_file())
 
+    def test_reordered_checksum_valid_index_cannot_revive_older_pass(self):
+        request = self.request()
+        passed = self.record(request)
+        failed = self.record(request, self.packet(request, status='failed'))
+        old_bytes = (self.root / passed['receipt']).read_bytes()
+        failed_bytes = (self.root / failed['receipt']).read_bytes()
+        first = json.loads(old_bytes)['receipt']
+        second = json.loads(failed_bytes)['receipt']
+        self.assertEqual(first['sequence'], 1)
+        self.assertIsNone(first['predecessor'])
+        self.assertEqual(second['sequence'], 2)
+        self.assertEqual(second['predecessor']['file'], Path(passed['receipt']).name)
+        self.assertEqual(second['predecessor']['sha256'], json.loads(old_bytes)['sha256'])
+        index = self.root / failed['index']
+        envelope = json.loads(index.read_text())
+        envelope['receipt']['attempts'].reverse()
+        import hashlib
+        envelope['sha256'] = hashlib.sha256(json.dumps(envelope['receipt'], sort_keys=True,
+            separators=(',', ':'), ensure_ascii=True).encode()).hexdigest()
+        index.write_text(json.dumps(envelope))
+        result = self.lookup(request)
+        self.assertFalse(result['reusable'])
+        self.assertEqual(result['status'], 'never_run')
+        self.record(request, ok=False)
+        self.assertEqual((self.root / passed['receipt']).read_bytes(), old_bytes)
+        self.assertEqual((self.root / failed['receipt']).read_bytes(), failed_bytes)
+
+    def test_review_base_inputs_include_deleted_dependency_directory_files(self):
+        self.write('deps/retained.lock', 'retained v1')
+        self.write('deps/removed.lock', 'old dependency v1')
+        first_base = self.commit('base dependencies')
+        # An unrelated base commit with identical declared content reuses evidence.
+        self.git('commit', '--allow-empty', '-qm', 'unrelated base revision')
+        equivalent_base = self.git('rev-parse', 'HEAD')
+        (self.root / 'deps/removed.lock').unlink()
+        newer_base = self.commit('removed old dependency')
+        request = self.request(base_revision=first_base, inputs=['deps'])
+        receipt = self.record(request)
+        self.assertTrue(receipt['reusable'])
+        packet = json.loads((self.root / receipt['receipt']).read_text())['receipt']
+        self.assertIn('deps/removed.lock', packet['inputs']['base_input_manifest'])
+        self.assertNotIn('deps/removed.lock', packet['inputs']['input_manifest'])
+        self.assertTrue(self.lookup(self.request(base_revision=equivalent_base, inputs=['deps']))['reusable'])
+        # Same final dependencies and source cannot hide different actual old inputs.
+        changed = self.lookup(self.request(base_revision=newer_base, inputs=['deps']))
+        self.assertFalse(changed['reusable'])
+        self.assertEqual(changed['status'], 'never_run')
+        self.record(self.request(base_revision=first_base, inputs=['missing']), ok=False)
+
     def copied_runtime(self, name, changed=None):
         import shutil
         runtime = Path(self.temp.name) / name
