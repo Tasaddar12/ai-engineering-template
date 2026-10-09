@@ -266,9 +266,9 @@ done
 
 # Claude captures the dispatch prompt in the active stack. A fixer that names
 # only its assigned SUMMARY completes or hands off against that exact path.
-mkdir -p "$repo/.ai/maintenance"
+mkdir -p "$repo/reports"
 for state in complete blocked; do
-  summary_path=".ai/maintenance/claude-fixer-$state-SUMMARY.md"
+  summary_path="reports/fixer-SUMMARY.md"
   printf -- '---\nstatus: %s\n---\n' "$state" > "$repo/$summary_path"
   dispatch='{"hook_event_name":"PreToolUse","session_id":"claude-fixer-'"$state"'","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"targeted-fixer","isolation":"worktree","prompt":"Follow targeted-fixer.md. summary_path: '"$summary_path"'"}}'
   set +e
@@ -285,7 +285,7 @@ for state in complete blocked; do
     "$(ls "$handoffs"/claude-fixer-$state*.json 2>/dev/null | wc -l | tr -d ' ')" "$expected"
   if [[ "$state" == blocked ]]; then
     record="$(cat "$handoffs"/claude-fixer-blocked*.json 2>/dev/null || true)"
-    contains "claude: blocked fixer preserves its summary destination" "$record" '"summary": ".ai/maintenance/claude-fixer-blocked-SUMMARY.md"'
+    contains "claude: blocked fixer preserves its summary destination" "$record" '"summary": "reports/fixer-SUMMARY.md"'
     contains "claude: summary-only fixer has no invented PLAN" "$record" '"plan": null'
   fi
 done
@@ -403,20 +403,20 @@ check "codex: a blocked SUMMARY produces a handoff" \
 # A fixer assignment carries its own summary destination and does not need a
 # repair PLAN. Complete summaries suppress recovery; blocked summaries preserve
 # their exact destination in the handoff record.
-mkdir -p "$repo/.ai/maintenance"
+mkdir -p "$repo/reports"
 fixer_summary_transcript() { # <transcript> <summary>
   printf '{"type":"message","role":"user","content":"Follow targeted-fixer.md.\\nsummary_path: %s"}\n' "$2" > "$1"
 }
-printf -- '---\nstatus: complete\n---\n' > "$repo/.ai/maintenance/codex-fixer-complete-SUMMARY.md"
-fixer_summary_transcript "$workspace/cx-fixer-summary-complete.jsonl" ".ai/maintenance/codex-fixer-complete-SUMMARY.md"
+printf -- '---\nstatus: complete\n---\n' > "$repo/reports/fixer-SUMMARY.md"
+fixer_summary_transcript "$workspace/cx-fixer-summary-complete.jsonl" "reports/fixer-SUMMARY.md"
 run_hook "$(codex_stop_payload cx-fixer-summary-complete targeted-fixer "$workspace/cx-fixer-summary-complete.jsonl")" >/dev/null
 check "codex: summary-only complete fixer produces no handoff" \
   "$(ls "$handoffs"/cx-fixer-summary-complete*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
-printf -- '---\nstatus: blocked\n---\n' > "$repo/.ai/maintenance/codex-fixer-blocked-SUMMARY.md"
-fixer_summary_transcript "$workspace/cx-fixer-summary-blocked.jsonl" ".ai/maintenance/codex-fixer-blocked-SUMMARY.md"
+printf -- '---\nstatus: blocked\n---\n' > "$repo/reports/fixer-SUMMARY.md"
+fixer_summary_transcript "$workspace/cx-fixer-summary-blocked.jsonl" "reports/fixer-SUMMARY.md"
 run_hook "$(codex_stop_payload cx-fixer-summary-blocked targeted-fixer "$workspace/cx-fixer-summary-blocked.jsonl")" >/dev/null
 record="$(cat "$handoffs"/cx-fixer-summary-blocked*.json 2>/dev/null || true)"
-contains "codex: blocked summary-only fixer keeps its destination" "$record" '"summary": ".ai/maintenance/codex-fixer-blocked-SUMMARY.md"'
+contains "codex: blocked summary-only fixer keeps its destination" "$record" '"summary": "reports/fixer-SUMMARY.md"'
 contains "codex: summary-only fixer does not invent a PLAN" "$record" '"plan": null'
 
 # Every write-capable role is covered, and read-only roles are not.

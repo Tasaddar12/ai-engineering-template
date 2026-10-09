@@ -290,8 +290,6 @@ def safe_path(value):
         else:
             if any(part == ".." for part in value.split("/")):
                 return ""
-            if not (value.startswith(".planning/") or value.startswith(".ai/")):
-                return ""
             real = os.path.realpath(os.path.join(root, value))
             if os.path.commonpath([os.path.normcase(real), os.path.normcase(root)]) != os.path.normcase(root):
                 return ""
