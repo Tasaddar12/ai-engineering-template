@@ -83,6 +83,27 @@ tool-permission instructions, not runtime enforcement of search behavior.
 
 ## Assignment and result structures
 
+Capture identity before every scout dispatch, including bounded follow-ups and
+coordinator fallback: the actual absolute checkout from `git rev-parse
+--show-toplevel`, observed HEAD from `git rev-parse HEAD`, and relevant dirty
+inputs from `git status --porcelain=v1 -- <owned/input scope>`. These are native
+metadata operations, not repository discovery. Record stable content identifiers
+for relevant supplied files, logs and dirty inputs using available native hashing
+(for example `git hash-object --no-filters -- <known path>`); retain index identity
+when relevant and explicit deletion/absence markers. Pair paths with those
+identifiers in `inputs` and describe relevant owned uncommitted state in
+`constraints`; a path or a statement that changes are relevant is not an input
+identity. This is assignment/result context, not a runtime metadata schema or API.
+
+Retain the complete assignment and captured input tuple before dispatch. Freeze
+relevant inputs through scout join: their owners do not edit or commit them while
+the scout inspects them. On join, recheck HEAD and relevant content identifiers
+with native metadata/hashing. A changed tuple invalidates currentness; preserve
+the original packet and obtain only the required uncovered/stale fields for the
+new tuple with bounded scouts and compatible batching. Never relabel a stale
+packet as current. Unchanged matching packets remain reusable; no blanket
+discovery is required.
+
 Send each `scout` assignment with every field below. Use exact paths or a
 bounded directory; describe distinct actual areas or complementary questions in
 one area. Do not invent backend/frontend areas that the repository does not have.
@@ -93,9 +114,9 @@ scout_assignment:
   kind: discovery|specialized
   task_class: DISCOVERY|FACT_EXTRACTION|REVIEW_INVENTORY|DOC_CLAIM_COMPARE|INTEGRATION_MAP|TEST_RESULT_SUMMARY|FAILURE_FACTS|DOC_TRANSFORM_PROPOSAL|CODE_TRANSFORM_PROPOSAL
   repository: <absolute checkout path>
-  revision: <commit SHA; state whether owned uncommitted changes are relevant>
+  revision: <actual observed HEAD commit SHA>
   question: <one narrow question>
-  inputs: [<source paths, receipt ids, or supplied input ids>]
+  inputs: [<source paths paired with stable content identifiers, receipt ids, or captured supplied input ids>]
   requested_fields: [<exact fields to return>]
   search_scope: [<exact files or bounded directories>]
   allowed_evidence: [code, docs, diff, receipt, existing logs, supplied error, supplied output]
@@ -112,6 +133,7 @@ scout_result:
   id: <assignment id>
   task_class: <same enum value as assignment>
   revision: <inspected revision>
+  inputs: [<inspected input identifiers matching the retained assignment>]
   status: complete|incomplete|blocked
   answer: <concise answer to the question>
   field_results: {<requested field>: <extracted value and citations>}
@@ -146,7 +168,8 @@ scout_result:
    against the frozen revision. Keep writes and source-changing work with the
    assigned owner; start repairs only after the results join. Use the host's
    available lifecycle tools; do not invent one.
-5. Validate each result's id, `task_class`, revision, status, answer,
+5. Validate each result's id, `task_class`, revision, inspected input identifiers,
+   status, answer,
    `field_results` for every `requested_fields` entry, evidence, search_scope,
    uncertainty and unresolved_questions. Check `missing_test_cases` when it was
    requested. A partial or unsupported answer does not satisfy its question;
@@ -175,14 +198,17 @@ merely to return a request before authoring starts.
 ```yaml
 scout_request:
   parent_assignment_id: <worker assignment id>
+  parent_role: <exact requesting role>
+  dispatch_lineage: <retained dispatch/continuation identity>
   repository: <absolute checkout path>
-  revision: <assigned revision>
+  revision: <actual observed HEAD after any owned committed progress>
   reason: <nested dispatch unavailable or depth/slot limitation>
   stage: discovery|specialized
   assignments: [<complete scout_assignment objects>]
   saved_progress:
     paths: [<owned output or progress paths; [] if none yet>]
     commits: [<preserved commit SHAs; [] if none yet>]
+    inputs: [<relevant owned/input paths paired with captured content identifiers and dirty state>]
     completed: [<completed steps>]
     remaining: [<dependent steps and missing fields>]
   resume_with: <exact dependent question/step to resume after results arrive>
@@ -191,7 +217,14 @@ scout_request:
 The coordinator handles `scout_request` BEFORE output-file existence or completion
 checks, on initial, revision and continuation returns from any requesting role:
 
-1. Validate parent assignment ID, repository, revision, bounded allowed scope,
+1. Validate parent assignment ID, exact role and dispatch lineage against the
+   retained parent context. Check actual checkout, reported HEAD, commits and
+   dirty input identities with native metadata against allowed owned progress
+   from the original assignment. A worker that commits or dirties owned inputs
+   before nested evidence dispatch/request must recapture and report the actual
+   new snapshot and saved owned commits/inputs. Permit verified owned committed
+   progress rather than requiring the stale initial HEAD; do not accept unrelated
+   drift. Validate the request's evidence at its reported snapshot, bounded scope,
    all assignment fields, saved progress and the exact resume step. Reject an
    invalid request as an explicit missing-evidence gap, never as completion.
 2. Reuse matching evidence first. For uncovered fields, count queued/open workers
@@ -200,10 +233,16 @@ checks, on initial, revision and continuation returns from any requesting role:
    When full, the requester must return and release its occupied slot before the
    coordinator dispatches its scout. Do not invent lifecycle tools or runtime
    commands; if capacity cannot be released, report it as unavailable.
-3. Dispatch the configured exact scouts, join every result and validate the
+3. Recapture actual checkout/HEAD/input identities before each evidence dispatch;
+   reconcile the request's captured inputs with that snapshot. Preserve changes
+   and obtain only needed uncovered/stale fields, never relabel stale evidence.
+   Dispatch the configured exact scouts, join every result and validate the
    required fields/citations with the procedure above. One bounded follow-up may
    close missing fields; an incomplete result cannot cover dependent work.
-4. Resume the original role at `resume_with` using actual host continuation when
+4. Refresh the actual snapshot and reconcile every needed packet's
+   question/revision/scope/inputs, including dirty content identity, BEFORE resume.
+   Supply concrete current identity, dispatch lineage and matching packet IDs/paths
+   to the original role at `resume_with` using actual host continuation when
    supported, or a fresh assignment with saved progress, owned paths, commits and
    validated packet IDs/paths. Preserve edits and numbering. Ensure the earlier
    writer has returned/retired before starting a fresh writer; never leave a live

@@ -95,6 +95,51 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("Do not wait inside a worker while holding capacity", dispatch)
         self.assertIn("Do not invent lifecycle tools or runtime commands", dispatch)
 
+    def test_planning_dispatch_binds_current_identity_and_reconciles_owned_progress(self):
+        workflow = self.read(".ai/workflows/plan-phase.md")
+        procedure = " ".join(workflow.split("<dispatch_identity_and_currentness>", 1)[1]
+                             .split("</dispatch_identity_and_currentness>", 1)[0].split())
+        for required in ("BEFORE EVERY evidence or worker dispatch", "git rev-parse --show-toplevel",
+                         "git rev-parse HEAD", "git status --porcelain=v1", "git hash-object --no-filters",
+                         "unique logical worker assignment ID and its exact role",
+                         "Retain that logical ID across its continuations and scout resumes",
+                         "distinct dispatch identity for each call", "original ownership, starting snapshot",
+                         "Bind `{worker assignment id}`, `{checkout}` and `{revision}`",
+                         "Never send unresolved placeholders", "relevant dirty input content identity",
+                         "Never relabel stale packets as current", "not blanket discovery",
+                         "at EVERY boundary", "Freeze relevant inputs through each scout join",
+                         "after researcher/preparer/mapper commits", "BEFORE resume, checker or any other dispatch",
+                         "retained original parent assignment", "permits verified owned commits"):
+            self.assertIn(required, procedure)
+        steps = dict(re.findall(r'<step name="([^"]+)"[^>]*>(.*?)</step>', workflow, re.S))
+        for role, step in (("researcher", "handle_research"), ("phase-preparer", "spawn_preparer"),
+                           ("phase-checker", "spawn_checker"), ("codebase-mapper", "refresh_codebase_maps")):
+            body = steps[step]
+            with self.subTest(role=role):
+                self.assertLess(body.index("dispatch_identity_and_currentness"), body.index("Agent("))
+                contract = body.split("<scout_evidence_contract>", 1)[1].split("</scout_evidence_contract>", 1)[0]
+                self.assertIn("exact role: " + role, contract)
+                self.assertIn("lineage: {dispatch lineage}", contract)
+                self.assertIn("captured inputs: {input snapshot}", contract)
+                self.assertIn("current question/revision/scope/input tuple", contract)
+        self.assertIn("before EACH evidence dispatch", steps["planning_evidence_gate"])
+        research_continuation = steps["handle_research"].split("**Continuing partial research.**", 1)[1]
+        self.assertIn("dispatch_identity_and_currentness", research_continuation)
+        preparer_continuation = steps["handle_preparer_return"].split("If the preparer returned", 1)[1]
+        self.assertIn("dispatch_identity_and_currentness", preparer_continuation)
+        self.assertIn("before EVERY revision/continuation call", steps["revision_loop"])
+        protocol = " ".join(workflow.split("<scout_return_protocol>", 1)[1]
+                            .split("</scout_return_protocol>", 1)[0].split())
+        self.assertIn("refresh the input/evidence tuple BEFORE resuming", protocol)
+        dispatch = " ".join(self.read(".ai/references/scout-dispatch.md").split())
+        for required in ("revision: <actual observed HEAD commit SHA>", "stable content identifiers",
+                         "inputs: [<inspected input identifiers matching the retained assignment>]",
+                         "recheck HEAD and relevant content identifiers", "parent_role:", "dispatch_lineage:",
+                         "actual observed HEAD after any owned committed progress",
+                         "Permit verified owned committed progress rather than requiring the stale initial HEAD",
+                         "evidence at its reported snapshot", "BEFORE resume", "never relabel stale evidence"):
+            self.assertIn(required, dispatch)
+
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
             if path.stem in {"README", "scout"}:

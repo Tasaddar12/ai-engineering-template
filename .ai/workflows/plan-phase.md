@@ -49,6 +49,54 @@ init bundle carry the same resolved values for every agent that workflow
 dispatches.
 </model_selection>
 
+<dispatch_identity_and_currentness>
+The coordinator performs this procedure BEFORE EVERY evidence or worker dispatch:
+initial scout/researcher/preparer/checker/mapper calls, bounded scout follow-ups,
+revisions, context continuations and scout-request resumes. Rebuild dispatch values
+each time; the session's base or an earlier INIT is not the current revision.
+
+1. Capture actual absolute checkout with `git rev-parse --show-toplevel`, current
+   branch with `git branch --show-current` and observed HEAD with `git rev-parse
+   HEAD`; verify the selected session checkout/branch. Capture relevant owned
+   dirty inputs with `git status --porcelain=v1 -- <owned/input scope>` and stable
+   content identifiers via available native hashing, such as `git hash-object
+   --no-filters -- <known path>`. Include index identity if relevant and explicit
+   deletion/absence markers. Record supplied logs/receipts by captured input ID.
+   These existing metadata operations do not perform repository discovery or run
+   project code; use host equivalents only when actually available.
+2. Allocate and retain a unique logical worker assignment ID and its exact role
+   for a new bounded assignment. Retain that logical ID across its continuations
+   and scout resumes; allocate a distinct dispatch identity for each call, recording
+   its predecessor/continuation lineage. A separately assigned revision has a new
+   logical ID linked to the prior assignment. Preserve original ownership,
+   starting snapshot, allowed progress, result paths and these concrete identities
+   in coordinator assignment/result context for validating all later returns.
+3. Bind `{worker assignment id}`, `{checkout}` and `{revision}` to the retained
+   logical ID, observed absolute checkout and HEAD. Bind `{dispatch lineage}` and
+   `{input snapshot}` to the actual call lineage and relevant captured input
+   paths/content identifiers/dirty state. Never send unresolved placeholders or
+   silently reuse values from the previous Agent prompt. These are prompt values,
+   not new runtime APIs, metadata fields or settings.
+4. Reconcile each needed evidence packet against its question, revision, scope and
+   inputs, including relevant dirty input content identity. Preserve valid matching
+   evidence. Never relabel stale packets as current; obtain only required
+   uncovered/stale fields through bounded configured scouts and compatible batching,
+   not blanket discovery. Supply refreshed packet IDs/paths and their captured
+   current tuple in `planning_evidence` at EVERY boundary. Freeze relevant inputs
+   through each scout join and recheck their snapshot as in scout-dispatch.
+
+Refresh the snapshot after researcher/preparer/mapper commits or owned dirty
+progress and BEFORE resume, checker or any other dispatch. A worker making such
+progress before nested evidence dispatch/request must capture and report its
+actual new checkout/HEAD/input tuple plus saved owned commits/inputs. The
+coordinator validates that progress against the retained original parent
+assignment, permits verified owned commits rather than requiring stale initial
+HEAD, and checks existing request evidence at the reported snapshot. Preserve
+owned changes; reconcile again against the actual current tuple before dispatch
+or resume. Unexpected drift or missing input identities blocks dependent evidence
+until reconciled; it does not authorize resetting progress or accepting stale facts.
+</dispatch_identity_and_currentness>
+
 <scout_return_protocol>
 Apply this protocol to EVERY researcher, phase-preparer, codebase-mapper and
 phase-checker return, including revisions and all continuations, BEFORE required
@@ -58,6 +106,11 @@ On `scout_request`, validate the request against the worker's assignment, then
 follow [scout dispatch](../references/scout-dispatch.md): reuse evidence matching
 question/revision/scope/inputs or dispatch the configured exact scouts, join and
 validate their fields/citations, then resume the original role at `resume_with`.
+Use `dispatch_identity_and_currentness` to validate reported owned progress and
+request evidence at its actual snapshot, recapture before each scout dispatch,
+and refresh the input/evidence tuple BEFORE resuming the worker. Parent validation
+uses retained logical ID, exact role, lineage and ownership, allowing verified
+owned commits rather than insisting on its initial HEAD.
 Use actual host continuation or a fresh assignment with saved progress, owned
 paths, commits and bounded packet IDs/paths. Never restart completed writing or
 leave a live duplicate writer. A worker returning before authoring need not have
@@ -236,6 +289,8 @@ Before research or planning, identify the repository evidence needed from the
 assigned CONTEXT, canonical refs and runtime metadata. The coordinator may read
 specified records for reasoning and run known runtime metadata queries; it does
 not perform unknown-location searches or repository inventory itself.
+Apply `dispatch_identity_and_currentness` before EACH evidence dispatch here,
+including a missing-field follow-up; retain the concrete scout assignment and tuple.
 
 Consume valid existing scout packets for the same question, revision, scope and
 inputs. For uncovered discovery (files, symbols, history or matching skills),
@@ -276,6 +331,9 @@ here?" — it is not a formality:
 
 When research is warranted:
 
+Apply `dispatch_identity_and_currentness` before this researcher Agent call,
+including continuation calls; bind concrete identities and refreshed evidence.
+
 ```
 ### ► RESEARCHING PHASE {phase_number}
 
@@ -305,8 +363,10 @@ and open a listed file only as its reading rule allows.
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if present.
 <scout_evidence_contract>
-Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Assignment: {worker assignment id}; exact role: researcher; lineage: {dispatch lineage}.
+Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
 Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Supply each packet's current question/revision/scope/input tuple.
 Use the required scout-dispatch reference before unknown-location search,
 inventory, skill matching or requested repeated field extraction. Reuse valid
 packets and batch compatible fields. Read named files for technical reasoning.
@@ -364,7 +424,8 @@ proceed on the claim. Then route on the header the researcher returned:
 | `## RESEARCH BLOCKED` | Present the blocker and its options to the user; this is the only return that waits for them. |
 | no recognised header | A failure: report it, as for a missing file. |
 
-**Continuing partial research.** Re-dispatch the same `Agent(...)` call with the
+**Continuing partial research.** Apply `dispatch_identity_and_currentness` after
+the researcher's progress/commit and rebuild the same role's `Agent(...)` call with the
 `<continuation>` block, against the same file, and the researcher's handoff in a
 `<handoff>` block, per [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation):
 
@@ -402,6 +463,8 @@ explicitly before continuing.
 </step>
 
 <step name="spawn_preparer">
+Apply `dispatch_identity_and_currentness` before this preparer Agent call;
+refresh after preceding research commits and bind current evidence and identities.
 ```
 ### ► PLANNING PHASE {phase_number}
 
@@ -450,8 +513,10 @@ ${context_window >= 500000 ? `
 **Project skills:** use supplied matching skill paths; scout locates missing
 matches before inventory/search. Read only applicable SKILL.md files.
 <scout_evidence_contract>
-Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Assignment: {worker assignment id}; exact role: phase-preparer; lineage: {dispatch lineage}.
+Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
 Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Supply each packet's current question/revision/scope/input tuple.
 Follow scout-dispatch before unknown-location searches (including SUMMARY
 metadata and source symbols), inventories, skill matching or requested repeated
 field extraction. Reuse packets; batch compatible fields. Retain plan design and
@@ -564,7 +629,8 @@ Extract `plans` and `count`. If the count is 0, the preparer failed — report i
 and stop. Do not write plans yourself to cover for a failed agent.
 
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
-the rest is unplanned. Re-dispatch the same `Agent(...)` call with the
+the rest is unplanned. Apply `dispatch_identity_and_currentness` after its owned
+progress/commit and rebuild the same role's `Agent(...)` call with the
 `<continuation>` block naming the scope it listed, and the `phase-preparer`
 handoff in a `<handoff>` block, per [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
 Do it once, without asking the user. Then re-read the plan index. If the
@@ -576,6 +642,8 @@ silently into plans.
 </step>
 
 <step name="spawn_checker">
+Apply `dispatch_identity_and_currentness` after preparer progress/commits and
+before EACH checker Agent call or continuation; supply refreshed evidence.
 ```
 ### ► VERIFYING PLANS
 
@@ -599,8 +667,10 @@ and open a listed file only as its reading rule allows.
 **Context:** {phase_dir}/{padded_phase}-CONTEXT.md
 **Requirements:** {requirements}
 <scout_evidence_contract>
-Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Assignment: {worker assignment id}; exact role: phase-checker; lineage: {dispatch lineage}.
+Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
 Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Supply each packet's current question/revision/scope/input tuple.
 Read the named plans for the review decision. Follow scout-dispatch for unknown
 source/skill/history locations, inventories and requested repeated extraction;
 reuse matching packets and batch compatible fields. Dispatch only configured
@@ -642,6 +712,8 @@ findings before routing on the verdict.
 
 <step name="revision_loop">
 On `needs-revision`, hand the findings back to the phase-preparer to revise.
+Apply `dispatch_identity_and_currentness` before EVERY revision/continuation call,
+retaining the linked logical assignment and binding the observed current snapshot.
 Include current bounded evidence packet IDs/paths and the same
 `scout_evidence_contract`; apply `scout_return_protocol` to every revision and
 its continuations before checking files or counting the revision as finished.
@@ -664,14 +736,19 @@ phase_run query codebase.status
 Every map `fresh` → continue. Any `missing` or `stale` → dispatch one
 codebase-mapper per focus area named in `focus_areas`:
 
+Apply `dispatch_identity_and_currentness` before EACH mapper Agent call or
+continuation and refresh after mapper commits before any later dispatch.
+
 ```
 Agent(
   prompt="
 Refresh the codebase map for focus area: {focus}.
 
 <scout_evidence_contract>
-Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Assignment: {worker assignment id}; exact role: codebase-mapper; lineage: {dispatch lineage}.
+Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
 Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Supply each packet's current question/revision/scope/input tuple.
 Follow scout-dispatch: all unknown-location searches, repository inventories
 and requested repeated extraction use configured exact scouts before own search
 tools. Reuse packets; batch compatible fields for this bounded focus. You own map
