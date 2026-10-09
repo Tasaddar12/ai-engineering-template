@@ -6,6 +6,8 @@ once it exists -- resolve the limit, list what is pending, read a continuation
 brief, and consume a record so no second agent picks up the same work.
 """
 import ast
+import ctypes
+from ctypes import wintypes
 import json
 import os
 import re
@@ -67,6 +69,118 @@ class HandoffCase(unittest.TestCase):
     def set_config(self, text):
         (self.directory / ".planning" / "config.yaml").write_text(
             text, encoding="utf-8", newline="\n")
+
+
+def _embedded_hook_python(variable):
+    source = (ROOT / ".ai" / "hooks" / "lib" / "handoff-io.sh").read_text(
+        encoding="utf-8")
+    match = re.search(rf"(?ms)^{re.escape(variable)}='\n(.*?)^'\n", source)
+    if not match:
+        raise AssertionError(f"could not find embedded Python variable {variable}")
+    return match.group(1)
+
+
+@unittest.skipUnless(os.name == "nt", "native Windows path semantics required")
+class NativeWindowsPathResolution(unittest.TestCase):
+    """Exercise the actual embedded parsers against Windows path aliases."""
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="handoff-short-")
+        self.addCleanup(self.temporary.cleanup)
+        self.parent = Path(self.temporary.name)
+        self.root = self.parent / "checkout with spaces"
+        (self.root / "reports").mkdir(parents=True)
+        (self.root / ".planning" / "phases" / "03-x").mkdir(parents=True)
+        (self.root / "reports" / "fixer-SUMMARY.md").write_text("complete\n", encoding="utf-8")
+        (self.root / ".planning" / "phases" / "03-x" / "03-09-PLAN.md").write_text(
+            "fixture\n", encoding="utf-8")
+
+    def short_root(self):
+        get_short = ctypes.windll.kernel32.GetShortPathNameW
+        get_short.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+        get_short.restype = wintypes.DWORD
+        buffer = ctypes.create_unicode_buffer(32768)
+        length = get_short(str(self.root), buffer, len(buffer))
+        if not length:
+            self.skipTest("GetShortPathNameW is unavailable for the fixture")
+        short = Path(buffer.value)
+        if os.path.normcase(str(short)) == os.path.normcase(str(self.root)):
+            self.skipTest("the fixture volume does not provide a distinct 8.3 alias")
+        return short
+
+    def run_embedded(self, variable, *args):
+        completed = subprocess.run(
+            [sys.executable, "-c", _embedded_hook_python(variable), *map(str, args)],
+            capture_output=True, text=True, encoding="utf-8", check=False)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        return completed.stdout
+
+    def make_junction(self):
+        outside = self.parent / "outside target"
+        (outside / "reports").mkdir(parents=True, exist_ok=True)
+        (outside / ".planning" / "phases" / "03-x").mkdir(parents=True, exist_ok=True)
+        (outside / "reports" / "fixer-SUMMARY.md").write_text("blocked\n", encoding="utf-8")
+        (outside / ".planning" / "phases" / "03-x" / "03-09-PLAN.md").write_text(
+            "outside\n", encoding="utf-8")
+        junction = self.root / "junction escape"
+        helper = self.parent / "make-junction.ps1"
+        helper.write_text(
+            'New-Item -ItemType Junction -Path $args[0] -Target $args[1] '
+            '-ErrorAction Stop | Out-Null\n', encoding="utf-8")
+        powershell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+        if not powershell:
+            self.skipTest("PowerShell is unavailable for directory junction creation")
+        completed = subprocess.run(
+            [powershell, "-NoProfile", "-File", str(helper), str(junction), str(outside)],
+            capture_output=True, text=True, encoding="utf-8", check=False)
+        if completed.returncode:
+            self.skipTest("Windows directory junction creation unavailable: " + completed.stderr)
+        self.addCleanup(lambda: junction.rmdir() if junction.exists() else None)
+        return junction
+
+    def transcript_paths(self, plan, summary):
+        transcript = self.parent / "transcript.jsonl"
+        record = {"type": "message", "role": "user",
+                  "content": f"Execute plan at {plan}\nsummary_path: {summary}"}
+        transcript.write_text(json.dumps(record) + "\n", encoding="utf-8")
+        return self.run_embedded("_HANDOFF_PLAN_PY", transcript, self.root)
+
+    def test_safe_repo_path_accepts_a_contained_short_spelling(self):
+        short = self.short_root()
+        candidate = short / "reports" / "fixer-SUMMARY.md"
+        self.assertEqual("reports/fixer-SUMMARY.md",
+                         self.run_embedded("_HANDOFF_SAFE_PATH_PY", candidate, self.root))
+
+    def test_safe_repo_path_rejects_outside_and_junction_targets(self):
+        outside = self.parent / "outside target" / "reports" / "fixer-SUMMARY.md"
+        outside.parent.mkdir(parents=True)
+        outside.write_text("outside\n", encoding="utf-8")
+        self.assertEqual("", self.run_embedded("_HANDOFF_SAFE_PATH_PY", outside, self.root))
+        junction = self.make_junction()
+        escaped = junction / "reports" / "fixer-SUMMARY.md"
+        self.assertEqual("", self.run_embedded("_HANDOFF_SAFE_PATH_PY", escaped, self.root))
+
+    def test_transcript_parser_accepts_contained_short_plan_and_summary(self):
+        short = self.short_root()
+        plan = short / ".planning" / "phases" / "03-x" / "03-09-PLAN.md"
+        summary = short / "reports" / "fixer-SUMMARY.md"
+        self.assertEqual(
+            ".planning/phases/03-x/03-09-PLAN.md\nreports/fixer-SUMMARY.md\n",
+            self.transcript_paths(plan, summary))
+
+    def test_transcript_parser_rejects_outside_and_junction_targets(self):
+        outside = self.parent / "outside target"
+        (outside / "reports").mkdir(parents=True)
+        (outside / ".planning" / "phases" / "03-x").mkdir(parents=True)
+        outside_plan = outside / ".planning" / "phases" / "03-x" / "03-09-PLAN.md"
+        outside_summary = outside / "reports" / "fixer-SUMMARY.md"
+        outside_plan.write_text("outside\n", encoding="utf-8")
+        outside_summary.write_text("outside\n", encoding="utf-8")
+        self.assertEqual("\n\n", self.transcript_paths(outside_plan, outside_summary))
+        junction = self.make_junction()
+        escaped_plan = junction / ".planning" / "phases" / "03-x" / "03-09-PLAN.md"
+        escaped_summary = junction / "reports" / "fixer-SUMMARY.md"
+        self.assertEqual("\n\n", self.transcript_paths(escaped_plan, escaped_summary))
 
 
 class Limits(HandoffCase):
