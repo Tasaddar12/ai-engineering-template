@@ -138,8 +138,9 @@ Success bookkeeping is provisional until `verification.validate-bookkeeping`
 validates the allowed transition and `verification.currentness` accepts its
 receipt. Before changing any success records, require a clean worktree confirmed
 with `git status --porcelain --untracked-files=all` and save
-`pre_bookkeeping_revision=$(git rev-parse HEAD)`. Save the exact new commit from
-the coordinator's bookkeeping commit as `bookkeeping_commit`.
+`pre_bookkeeping_revision=$(git rev-parse HEAD)` after the passed source report is
+committed. Save the exact new commit from the coordinator's bookkeeping commit as
+`bookkeeping_commit`.
 
 If final reconciliation returns `gaps_found` or `human_needed`, and only when
 that coordinator-created bookkeeping is the direct child of the saved revision,
@@ -163,8 +164,9 @@ preserve the bookkeeping commit; record the blocked/nonpass verification state
 through `state.record-session` and its explicit STATE-only commit when the tree is
 clean. If the attempt cannot be returned cleanly, stop without overwriting it.
 
-After successful compensation, record the nonpass session status through the
-runtime and commit that STATE-only update, for example:
+After successful compensation, preserve the passed source report as historical
+evidence, mark the current session blocked through the runtime, and commit that
+STATE-only update, for example:
 
 ```bash
 phase_run query state.record-session \
@@ -174,11 +176,12 @@ phase_run query commit "docs(state): record phase ${phase_number} verification b
   --files .planning/STATE.md
 ```
 
-Then capture this compensated-status revision and run a fresh read-only
-verifier/check batch there. The final report
-must use that last revision and status; persist it alone only after the batch
-joins. Do not repeat `phase.complete`, requirement closure, or success bookkeeping
-during this nonpass path.
+The compensated tree has no valid bookkeeping receipt chain, so
+`verification.currentness` rejects the historical passed report and ship remains
+blocked. Carry forward the validator/check failure and obtain only the bounded
+decision-owner review needed to understand the delta. Do not rewrite the passed
+report with a different revision, repeat `phase.complete`, close requirements, or
+restart success bookkeeping during this nonpass path.
 
 This `git revert` is the sole narrow exception to runtime-only structural
 authoring: it may reverse only the exact, guarded, coordinator-created

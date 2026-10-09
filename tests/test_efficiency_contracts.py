@@ -82,6 +82,9 @@ class EfficiencyContractTests(unittest.TestCase):
                         workflow.index('step name="reconcile_evidence"'))
         self.assertLess(workflow.index('step name="update_state"'),
                         workflow.index('step name="final_frozen_reconciliation"'))
+        self.assertLess(workflow.index('step name="persist_source_report"'),
+                        workflow.index('step name="update_roadmap"'))
+        self.assertIn("Do not rewrite or recommit the report after bookkeeping", workflow)
         self.assertIn("refresh-only", workflow)
         self.assertIn("do not start another `/ship`", workflow)
         self.assertIn("verification.validate-bookkeeping", workflow)

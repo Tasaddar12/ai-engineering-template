@@ -377,13 +377,17 @@ start a fresh verification batch on the integrated revision. Do not combine
 evidence from different frozen revisions as if it described one tree.
 </step>
 
-<step name="persist_nonpass_report">
+<step name="persist_source_report">
 Do not persist the provisional report. For an initial `gaps_found` or
 `human_needed`, the coordinator writes the final joined report after
-`reconcile_evidence`, preserving the verifier's tested revision, then commits
-only `NN-VERIFICATION.md`. For a provisional pass, defer report persistence until
-the final frozen reconciliation after success bookkeeping. The verifier never
-writes into the checkout. Apply the shared
+`reconcile_evidence`, preserving the verifier's inspected revision, then commits
+only `NN-VERIFICATION.md`. For a provisional pass, first write the genuinely
+passed source-acceptance report at the exact revision the verifier inspected,
+including its `acceptance` and `requirements_completed` IDs, then commit only
+`NN-VERIFICATION.md` before success bookkeeping. This committed report is the
+source acceptance input to the deterministic bookkeeping validator; keep its blob
+and inspected revision unchanged. The verifier never writes into the checkout.
+Apply the shared
 [verification evidence lifecycle](../references/verification-evidence.md) when
 reusing or shipping; `verification.status` exposes metadata but does not enforce
 freshness.
@@ -391,10 +395,11 @@ freshness.
 
 <step name="handle_result">
 For an initial `gaps_found` or `human_needed`, run this after persisting the
-joined report and read that report from disk. For a provisional pass, use the
-joined verifier result and proceed through one-time success bookkeeping before
-the final report exists. Do not query `verification.status` to decide whether to
-write success records: it may still describe the prior report.
+joined report and read that report from disk. For a provisional pass, persist the
+source-acceptance report before one-time success bookkeeping, then continue only
+when the joined result and committed report both say `passed`. Do not query
+`verification.status` to decide whether to write success records: it may still
+describe the prior report.
 
 ```bash
 phase_run query verification.status "${phase_number}"  # non-pass report only
@@ -545,10 +550,11 @@ Present any warnings with the result; do not fix them here.
 </step>
 
 <step name="final_frozen_reconciliation">
-After one-time success bookkeeping, capture its resulting `HEAD` as a new
-`bookkeeping_revision`. Run `verification.validate-bookkeeping --before
-${pre_bookkeeping_revision} --after ${bookkeeping_revision}` to check the exact
-success-record transition. This deterministic schema and transition check must
+After one-time success bookkeeping, capture its resulting `HEAD` as
+`bookkeeping_revision`. `pre_bookkeeping_revision` is the report-only commit that
+contains the unchanged passed source-acceptance report. Run
+`verification.validate-bookkeeping --before ${pre_bookkeeping_revision} --after
+${bookkeeping_revision}` to check the exact success-record transition. This deterministic schema and transition check must
 confirm that the allowed completion fields advanced while phase goals,
 requirements and narrative content were preserved. Check currentness with
 `verification.currentness ${phase_number}`; keep the original verifier's exact
@@ -565,39 +571,40 @@ owner for a bounded inspection. Never retag an earlier report or packet to claim
 the owner inspected `bookkeeping_revision`.
 
 On a validated transition with no newly uncovered acceptance, retain the report's
-original inspected revision and findings; its verified currentness comes from the
-bounded validation chain, not a fabricated review SHA. The coordinator writes the
-final report and commits only `NN-VERIFICATION.md` as the last local write.
+original inspected revision, findings and exact committed blob; its currentness
+comes from the bounded validation chain, not a fabricated review SHA. Reuse the
+review packet and rerun only checks whose declared inputs changed. Do not rewrite
+or recommit the report after bookkeeping.
 
-If bounded reconciliation yields `gaps_found` or `human_needed`, do not persist it
-yet or leave this attempt's success records in place. Apply the bounded
+If the validator, a changed-input check, or bounded reconciliation yields a
+nonpass result, do not treat the prior passed report as current or leave this
+attempt's success records in place. Apply the bounded
 [bookkeeping compensation procedure](../references/verification-evidence.md#compensating-a-failed-final-verification)
 to the exact captured commit. After a successful revert, use
-`state.record-session` to record the nonpass outcome and commit that STATE-only
-change. If a guard fails or revert conflicts, do not reset or edit records:
+`state.record-session` to mark the session blocked and commit that STATE-only
+change. Preserve the passed source report as historical evidence; because the
+bookkeeping receipt chain was compensated, currentness fails closed and ship
+cannot treat that report as ready. If a guard fails or revert conflicts, do not reset or edit records:
 abort only the revert attempted by this coordinator, preserve the records, and
 record a blocked outcome through the runtime. If it cannot be returned to a
 clean tree, preserve the work and stop without writing a report. A completed
 roadmap/requirement record with unsafe compensation is a blocker, never a pass.
 
-After a clean compensation/status commit, capture the resulting revision and
-validate the exact compensation/status transition. Revalidate only checks and
-evidence whose declared inputs changed. Carry forward this attempt's nonpass
-findings and request a bounded decision-owner inspection only for an uncovered
-delta; do not repeat a broad source review. Retain this attempt's nonpass outcome;
-do not restart the success path. Commit the final nonpass report alone after this
-reconciliation, preserving the actual inspected revision and its validation
-chain. For refresh-only runs, reconcile at the current revision without repeating
+After a clean compensation/status commit, retain the prior report only as history
+and record the blocked outcome in STATE. Revalidate only checks and evidence whose
+declared inputs changed. Carry forward this attempt's nonpass findings and request
+a bounded decision-owner inspection only for an uncovered delta; do not repeat a
+broad source review. Do not restart the success path or retag the source report.
+For refresh-only runs, reconcile at the current revision without repeating
 bookkeeping or starting another `/ship`.
 
 For a refresh-only invocation, reconcile at the current revision without
 repeating phase completion, requirement closure or session writes. If this
 verification was invoked by `/ship` after a CI repair, return the final report to
-that active ship run; do not start another `/ship`. The coordinator writes the
-report to the exact `verification.resolve-file` path and commits only
-`NN-VERIFICATION.md` after reconciliation. This report commit is the final local
-write and is the only commit permitted by the shared report-only currentness
-rule.
+that active ship run; do not start another `/ship`. Any report commit goes to the
+exact `verification.resolve-file` path and contains only `NN-VERIFICATION.md`.
+The report's revision always names the inspected source snapshot; after success
+bookkeeping, its currentness relies on the runtime-validated transition receipt.
 </step>
 
 <step name="present_ready">
