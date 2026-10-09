@@ -30,7 +30,7 @@ class Workspace:
 
     def path(self, *parts):
         target = self.planning.joinpath(*parts).resolve()
-        require(str(target).startswith(str(self.planning.resolve())),
+        require(target.is_relative_to(self.planning.resolve()),
                 f"path escapes {PLANNING}: {'/'.join(str(p) for p in parts)}", "path-escape")
         return target
 

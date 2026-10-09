@@ -161,6 +161,25 @@ per-agent model overrides and `verification.commands`.
 The runtime holds no separate operational store. Everything it records is a
 tracked project record, so a fresh clone inherits the full picture.
 
+## Archive evidence and recovery
+
+`planning.archive` defaults to a preview and accepts one explicit phase, ADR or
+quick selector. Only `--apply` moves records. Preserve the complete historical
+artifacts and their IDs under `.planning/archive/{phases,decisions,quick}/`.
+Do not create completion evidence during archival: phase plan SUMMARYs need
+`status: complete` and authored Accomplishments, phase VERIFICATION needs
+`status: passed`, superseded ADRs need an accepted replacement, and terminal quick
+records need authored verification or retirement evidence. Explicit legacy
+`--evidence` names `archive_kind`, `archive_id`, `archive_status` and an authored
+`archive_reason`; it never overrides active/in-progress guards.
+
+The runtime owns archive catalog/index updates and planning-link rebasing.
+Tracked recovery journals preserve exact original, proposed and intermediate
+bytes. `planning.archive-recover` previews a rollback, and `--apply` restores it
+only when no subsequently authored record or directory would be overwritten.
+Journals remain discoverable after recovery. See the runtime README for the full
+selection, discovery, idempotence and conflict contract.
+
 ## Phase numbering
 
 Integer phases (1, 2, 3) are planned milestone work. Decimal phases (2.1, 2.2)
@@ -170,6 +189,8 @@ work never renumbers the phases around it.
 Numbering is continuous across milestones and never restarts. The runtime
 allocates every number — `phase.add` takes the next integer, `phase.insert` takes
 the next decimal after a given phase, and `phase.remove` renumbers what follows.
+Archived phase IDs are reserved; removing an earlier phase requires
+`--no-renumber` when renumbering would collide with historical successors.
 Do not choose a number by hand.
 
 `padded_phase` is the display spelling used in filenames: `2` becomes `02`, and
@@ -179,7 +200,9 @@ Do not choose a number by hand.
 
 The Markdown body is authoritative. The frontmatter counters — total and completed
 phases and plans, and percent — are **re-derived from ROADMAP.md on every write**,
-so the two cannot disagree. A wrong counter is not corrected by editing STATE.md;
+so the two cannot disagree. Archived historical phase blocks are excluded from
+active counters while remaining available to direct phase and dependency queries.
+A wrong counter is not corrected by editing STATE.md;
 correct the roadmap and the next write follows.
 
 Concurrent writers serialize on `.planning/.lock`. Section updates replace a

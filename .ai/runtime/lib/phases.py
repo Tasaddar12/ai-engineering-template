@@ -45,17 +45,19 @@ def phase_directory(workspace, number, slug):
     return workspace.phases_dir / (pad(number) + "-" + slug)
 
 
-def find_directory(workspace, number):
+def find_directory(workspace, number, include_archived=True):
     """Locate an existing phase directory by number, whatever its slug."""
-    if not workspace.phases_dir.is_dir():
-        return None
     wanted = as_number(number)
-    for entry in sorted(workspace.phases_dir.iterdir()):
-        if not entry.is_dir():
-            continue
-        match = DIRECTORY.match(entry.name)
-        if match and as_number(match.group(1)) == wanted:
-            return entry
+    roots = [workspace.phases_dir]
+    if include_archived:
+        roots.append(workspace.archive_dir / "phases")
+    for root in roots:
+        for entry in sorted(root.iterdir()) if root.is_dir() else []:
+            if not entry.is_dir():
+                continue
+            match = DIRECTORY.match(entry.name)
+            if match and as_number(match.group(1)) == wanted:
+                return entry
     return None
 
 
@@ -87,7 +89,7 @@ def resolve(workspace, number):
     roadmap = Roadmap(workspace)
     phase = roadmap.find(number) if roadmap.exists else None
     directory = find_directory(workspace, number)
-    found = phase is not None
+    found = phase is not None or bool(directory and workspace.archive_dir in directory.parents)
     slug = phase.slug if phase else (DIRECTORY.match(directory.name).group(2)
                                      if directory else slugify(str(number)))
     expected = phase_directory(workspace, number, slug)
@@ -100,7 +102,14 @@ def resolve(workspace, number):
         "phase_dir": workspace.relative(directory) if directory else None,
         "expected_phase_dir": workspace.relative(expected),
         "roadmap_exists": roadmap.exists,
+        "archived": bool(directory and workspace.archive_dir in directory.parents),
     }
+    if directory and workspace.archive_dir in directory.parents and phase is None:
+        from .archive import catalog
+        historical = next((entry for entry in catalog(workspace)["entries"]
+                           if entry.get("kind") == "phase" and entry.get("destination") == workspace.relative(directory)), None)
+        payload["status"] = "Complete" if historical and historical.get("status") == "complete" else "Unknown"
+        payload["phase_name"] = slug
     if phase:
         payload.update(phase.summary())
         payload["phase_number"] = display_number(phase.number)
@@ -186,6 +195,10 @@ def remove(workspace, number, renumber=True, force=False):
     roadmap = Roadmap(workspace)
     require(roadmap.exists, "No roadmap found (.planning/ROADMAP.md)", "no-roadmap")
     phase = roadmap.require_phase(number)
+    require(not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
+    require(not renumber or not any(as_number(item["number"]) > as_number(phase.number)
+                                   for item in listing(workspace)["phases"] if item["archived"]),
+            "renumbering would change archived identifiers; pass --no-renumber", "archive-numbering")
     started = any(plan["done"] for plan in phase.plans)
     require(force or not started,
             "Phase " + display_number(phase.number) + " has completed plans; pass --force to remove anyway",
@@ -258,6 +271,7 @@ def edit(workspace, number, name=None, goal=None, depends_on=None, requirements=
     roadmap = Roadmap(workspace)
     require(roadmap.exists, "No roadmap found (.planning/ROADMAP.md)", "no-roadmap")
     phase = roadmap.require_phase(number)
+    require(not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
     content = roadmap.content
     changed = {}
     if name:
@@ -313,6 +327,7 @@ def complete(workspace, number):
     roadmap = Roadmap(workspace)
     require(roadmap.exists, "No roadmap found (.planning/ROADMAP.md)", "no-roadmap")
     phase = roadmap.require_phase(number)
+    require(not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
     for plan in phase.plans:
         roadmap.save(roadmap.set_plan(plan["id"], True))
     roadmap.save(roadmap.set_checklist(phase.number, True))
@@ -323,10 +338,8 @@ def complete(workspace, number):
 
 def listing(workspace):
     roadmap = Roadmap(workspace)
-    if not roadmap.exists:
-        return {"roadmap_exists": False, "phases": []}
     found = []
-    for phase in roadmap.phases():
+    for phase in roadmap.phases(include_archived=True):
         entry = phase.summary()
         directory = find_directory(workspace, phase.number)
         files = artifacts(directory, phase.number)
@@ -338,7 +351,22 @@ def listing(workspace):
         entry["execution_incomplete"] = len(files["plans"]) > len(files["summaries"])
         entry.pop("plans", None)
         found.append(entry)
-    return {"roadmap_exists": True, "phases": found, "count": len(found)}
+    represented = {as_number(entry["number"]) for entry in found}
+    archive_root = workspace.archive_dir / "phases"
+    for directory in sorted(archive_root.iterdir()) if archive_root.is_dir() else []:
+        match = DIRECTORY.match(directory.name)
+        if not directory.is_dir() or not match or as_number(match.group(1)) in represented:
+            continue
+        files = artifacts(directory, match.group(1))
+        found.append({"number": display_number(match.group(1)), "name": match.group(2),
+                      "directory": workspace.relative(directory), "archived": True,
+                      "status": resolve(workspace, match.group(1)).get("status", "Unknown"), "plan_files": len(files["plans"]),
+                      "summary_count": len(files["summaries"]), "has_context": bool(files["context"]),
+                      "has_verification": bool(files["verification"]), "execution_incomplete": False})
+    found.sort(key=lambda entry: as_number(entry["number"]))
+    return {"roadmap_exists": roadmap.exists, "phases": found,
+            "count": sum(not entry["archived"] for entry in found),
+            "archived_count": sum(entry["archived"] for entry in found), "total_count": len(found)}
 
 
 def plan_index(workspace, number):
@@ -369,7 +397,12 @@ def find(workspace, needle):
         return resolve(workspace, text)
     if roadmap.exists:
         lowered = text.lower()
-        for phase in roadmap.phases():
+        for phase in roadmap.phases(include_archived=True):
             if lowered in phase.name.lower() or lowered in phase.slug:
                 return resolve(workspace, phase.number)
+    archive_root = workspace.archive_dir / "phases"
+    for directory in sorted(archive_root.iterdir()) if archive_root.is_dir() else []:
+        match = DIRECTORY.match(directory.name)
+        if directory.is_dir() and match and text.lower() in match.group(2).lower():
+            return resolve(workspace, match.group(1))
     raise VerbError("no phase matches: " + text, "phase-not-found")

@@ -61,6 +61,18 @@ hand. Skills under `.agents/skills/` mirror the commands one-for-one.
 a change too small for a phase. `/capture` parks an idea without derailing the
 current work.
 
+[`/update-workflows`](.ai/commands/update-workflows.md) compares the actual installed
+files and configuration with a pinned upstream revision before applying a reviewed
+update. [`/clean-planning`](.ai/commands/clean-planning.md) audits planning records,
+repairs safe structural drift and archives selected retired records. Each skill
+dispatches its workflow and named roles.
+
+Planning archives retain IDs, history and reference access under
+`.planning/archive/`. Completed phases, superseded ADRs and completed or explicitly
+obsolete quick items have dry-run moves and guarded recovery. Active work is never
+retired based on age. See the [runtime interface](.ai/runtime/README.md) for archive
+discovery and active-versus-history queries.
+
 Plans execute in dependency waves. Plans in the same wave run concurrently in
 fresh agent contexts; plans that declare overlapping files are separated into
 later waves regardless of their declared wave.
@@ -95,7 +107,8 @@ project's agent session; both authorize workflow changes only.
 
 ```text
 Update this project's installed workflow from the latest main revision of
-https://github.com/Tasaddar12/ai-engineering-template. Follow its install guide;
+https://github.com/Tasaddar12/ai-engineering-template. Use update-workflows and its
+guarded updater, following the install guide;
 compare and reconcile upstream changes with our installed host layout. Preserve
 project identity, planning/history, settings, checks and custom instructions. Do
 not re-onboard or reset project records. Validate the updated workflow and project

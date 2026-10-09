@@ -107,6 +107,10 @@ class Phase:
             return "In progress"
         return "Not started"
 
+    @property
+    def archived(self):
+        return bool(self.fields.get("archived"))
+
     def summary(self):
         plans = self.plans
         return {
@@ -122,6 +126,7 @@ class Phase:
             "plan_count": len(plans),
             "plans_complete": sum(1 for item in plans if item["done"]),
             "plans": plans,
+            "archived": self.archived,
             "inserted": self.marked_inserted or not is_integer_phase(self.number),
         }
 
@@ -147,7 +152,7 @@ class Roadmap:
             current = match.group(1).strip()
         return current
 
-    def phases(self):
+    def phases(self, include_archived=False):
         found = []
         matches = list(PHASE_HEADING.finditer(self.content))
         for index, match in enumerate(matches):
@@ -160,11 +165,11 @@ class Roadmap:
                                body=self.content[match.end():end],
                                milestone=self.milestone_at(match.start())))
         found.sort(key=lambda phase: as_number(phase.number))
-        return found
+        return found if include_archived else [phase for phase in found if not phase.archived]
 
     def find(self, number):
         wanted = as_number(number)
-        for phase in self.phases():
+        for phase in self.phases(include_archived=True):
             if as_number(phase.number) == wanted:
                 return phase
         return None
@@ -176,14 +181,24 @@ class Roadmap:
         return phase
 
     def next_integer(self):
-        numbers = [as_number(item.number) for item in self.phases()]
+        numbers = [as_number(item.number) for item in self.phases(include_archived=True)]
+        archive_root = self.workspace.archive_dir / "phases"
+        for path in archive_root.iterdir() if archive_root.is_dir() else []:
+            match = re.match(r"^(\d+(?:\.\d+)?)-", path.name)
+            if path.is_dir() and match:
+                numbers.append(as_number(match.group(1)))
         return int(max(numbers)) + 1 if numbers else 1
 
     def next_decimal(self, after):
         base = int(as_number(after))
-        siblings = [as_number(item.number) for item in self.phases()
+        siblings = [as_number(item.number) for item in self.phases(include_archived=True)
                     if int(as_number(item.number)) == base
                     and not is_integer_phase(item.number)]
+        archive_root = self.workspace.archive_dir / "phases"
+        for path in archive_root.iterdir() if archive_root.is_dir() else []:
+            match = re.match(r"^(\d+\.\d+)-", path.name)
+            if path.is_dir() and match and int(as_number(match.group(1))) == base:
+                siblings.append(as_number(match.group(1)))
         minor = max((round((value - base) * 10) for value in siblings), default=0) + 1
         return str(base) + "." + str(minor)
 
@@ -260,6 +275,9 @@ class Roadmap:
 
     def set_plan(self, plan_id, done):
         """Tick or untick one `- [ ] NN-NN:` plan item."""
+        match = re.match(r"^(\d+(?:\.\d+)?)-", str(plan_id))
+        phase = self.find(match.group(1)) if match else None
+        require(phase is None or not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
         pattern = re.compile(r"^(\s*-\s*\[)([ xX])(\]\s*" + re.escape(plan_id) + r"\s*:.*)$",
                              re.MULTILINE)
         updated, count = pattern.subn(
@@ -272,6 +290,7 @@ class Roadmap:
         """Prepare a canonical checklist without losing completed work or prose."""
         require(self.exists, "no .planning/ROADMAP.md", "no-roadmap")
         phase = self.require_phase(number)
+        require(not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
         require(entries, "at least one plan is required", "missing-plans")
         label = summary if summary is not None else str(len(entries)) + " plans"
         require(isinstance(label, str) and label.strip()

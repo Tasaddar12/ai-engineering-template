@@ -67,7 +67,7 @@ Every bundle also carries `commit_docs`, `response_language`, `text_mode`,
 | `phase.edit <phase> [--name] [--goal] [--depends-on] [--requirements]` | Edit fields in place; number, position and plan checklist preserved |
 | `phase.complete <phase>` | Tick every plan and the checklist entry; refresh progress |
 | `phase.next-decimal <after>` | The decimal number an insert would allocate |
-| `phases.list` | Every phase with status, plan counts, directory and execution completeness |
+| `phases.list` | Active and archived phases with status, counts, directory and execution completeness; `count` is active, with separate `archived_count` and `total_count` |
 | `find-phase <number-or-slug>` | Resolve a phase by number or name fragment |
 | `phase-plan-index <phase>` | Plan files on disk with their declared dependencies and summaries |
 
@@ -171,6 +171,81 @@ so an open blocker is never dropped to make room for a newer one.
 stalls a session. `--strict` turns the same findings into a failure, for a caller
 that asks for it.
 
+### Planning archives
+
+| Verb | Effect |
+|---|---|
+| `planning.archive <phase\|adr\|quick> <id-or-path> [--apply] [--evidence PATH] [--replacement PATH]` | Preview one explicit archive selection; `--apply` moves it and updates references with a recovery journal |
+| `planning.archives [--kind phase\|adr\|quick]` | Discover catalog entries, evidence, replacement paths and recovery journal states |
+| `planning.archive-recover <recovery-id> [--apply]` | Preview or apply a guarded rollback of an applied or interrupted archive |
+
+Archive and recovery default to read-only previews. Preview returns `dry_run`,
+`state`, `entry`, `moves`, `rewritten_files` and a deterministic `recovery_id`.
+`--apply` is the explicit mutation boundary. Select one record by phase number,
+exact directory ID, ADR number/stem, or an exact direct-child path such as
+`.planning/phases/01-foundation`. Quick tasks use their full directory IDs.
+Traversal, ambiguous selection, symlinks, Windows junctions and pre-existing
+destinations are refused. Records never qualify because of their age.
+
+Phases move to `.planning/archive/phases/<original-directory>` without renumbering
+any artifact. On-disk PLAN IDs must exactly match the registered roadmap plans,
+and every PLAN file needs its SUMMARY. Explicit legacy evidence cannot bypass
+missing, unregistered, unsummarized or affirmatively incomplete plan work. Without
+valid legacy evidence, every roadmap plan needs a `status: complete` SUMMARY with
+authored Accomplishments, and the phase needs a `status: passed` VERIFICATION. An incomplete
+roadmap checklist, blocked/in-progress summary, or current active phase is refused.
+The historical phase block remains in ROADMAP.md with an `Archived` destination;
+its overview checklist and active progress row are removed. Active counts and
+STATE progress exclude it. `find-phase`, `phase-plan-index`, phase bundles,
+verification lookup, prior context and dependency completion still find it.
+Archived phase mutation requires recovery first. Integer and decimal allocation
+reserve archived IDs; removal cannot renumber across archived successors.
+
+ADRs move from `.planning/decisions/` to `.planning/archive/decisions/`. A selected
+ADR needs superseded evidence and one existing accepted replacement ADR, supplied
+by `superseded_by` or `--replacement`. The old `superseded_by` and the replacement's
+`supersedes` preserve both directions; the original argument remains intact.
+An accepted/proposed ADR cannot become superseded through a replacement option
+alone.
+
+Quick tasks move to `.planning/archive/quick/<original-directory>`. `complete`
+needs a completion value plus authored Verification. `abandoned` or `obsolete`
+needs `archive_reason` frontmatter or authored `## Retirement` prose. `open` and
+`in_progress` are always refused. `quick.update` accepts `obsolete` as an explicit
+status, and sequence allocation reserves archived task IDs.
+
+For legacy records missing the modern evidence format, `--evidence` may select a
+planning Markdown record with these explicit fields:
+
+```yaml
+archive_kind: phase            # phase, adr or quick
+archive_id: 01-foundation       # original directory ID, or ADR stem
+archive_status: complete       # phase: complete; adr: superseded; quick: its terminal status
+archive_reason: Recorded release evidence confirms this historical work completed.
+```
+
+The evidence option records the supplied claim and its source; it cannot bypass
+an active/in-progress guard. It does not mark plans complete or invent verification.
+
+Apply rebases local Markdown destinations and reference definitions in moved and
+unmoved planning documents, plus repository-relative `.planning/...` references.
+Internal links remain local, and moved documents' links to repository source are
+rebased. `.planning/archive/catalog.json` and `INDEX.md` retain IDs, source,
+destination, evidence, replacement and recovery ID. Later archives update catalog
+links to records moved again.
+
+Before moving, apply writes `.planning/archive/recovery/<recovery-id>.json` with
+exact before/after bytes, intermediate moved bytes, directory shape and an integrity
+checksum. Writes use flushed temporary files followed by replacement. The overall
+operation is journaled, rather than a crash-atomic transaction; `archive-interrupted`
+returns the ID to recover. Pending journals block further archive operations.
+Recovery restores the original records and index bytes, retaining the journal.
+It refuses edited records, added files/directories, changed path types or a damaged
+journal before writing. Recover later operations first when shared indexes changed.
+Repeated apply is a no-op; repeated recovery is a no-op. Reapplying the same restored
+selection reuses its guarded journal and retains its recovery lifecycle history.
+Recovery does not discard subsequently authored work or permanently delete history.
+
 ### Milestones, todos and quick tasks
 
 | Verb | Effect |
@@ -183,7 +258,7 @@ that asks for it.
 | `todo.complete <name>` | Move a todo to `completed/` |
 | `todo.match-phase <phase>` | Score pending todos against a phase's name and goal |
 | `quick.create <description>` | Open `.planning/quick/YYMMDD-NNN-slug/` with its QUICK.md |
-| `quick.list [--status]` | Quick tasks, newest first |
+| `quick.list [--status]` | Active quick tasks, newest first; separate `archived_tasks`, `archived_count` and `total_count` preserve discovery |
 | `quick.update <id> [--status] [--files] [--verification]` | Record progress or completion |
 
 `milestone.complete` refuses without `--confirm`, and refuses while any phase in

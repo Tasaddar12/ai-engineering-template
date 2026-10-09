@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
+from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
                  models, phases, project_record, quick, requirements, state,
                  todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
@@ -28,7 +28,7 @@ from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
 LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
-                "findings", "files_read"}
+                "findings", "files_read", "only"}
 
 
 def parse(argv):
@@ -86,6 +86,35 @@ def run_verb(workspace, verb, positionals, options):
     handler = VERBS.get(verb)
     require(handler is not None, "unknown verb: " + verb, "unknown-verb")
     return handler(workspace, positionals, options)
+
+
+def verb_planning_review(workspace, positionals, options):
+    from lib import planning_review
+    return planning_review.review(workspace)
+
+
+def verb_planning_repair(workspace, positionals, options):
+    from lib import planning_review
+    return planning_review.repair(workspace, apply=bool(options.get("apply")),
+                                 expected=options.get("expect"),
+                                 only=as_list(options.get("only")))
+
+
+def verb_planning_archive(workspace, positionals, options):
+    return archive.archive(workspace, argument(positionals, 0, "archive kind"),
+                           argument(positionals, 1, "archive selector"),
+                           apply=bool(options.get("apply")),
+                           evidence=option_text(options, "evidence"),
+                           replacement=option_text(options, "replacement"))
+
+
+def verb_planning_archives(workspace, positionals, options):
+    return archive.listing(workspace, kind=option_text(options, "kind"))
+
+
+def verb_archive_recover(workspace, positionals, options):
+    return archive.recover(workspace, argument(positionals, 0, "recovery id"),
+                           apply=bool(options.get("apply")))
 
 
 # --- project basics -------------------------------------------------------
@@ -378,8 +407,10 @@ def verb_roadmap_analyze(workspace, positionals, options):
     total = sum(len(phase.plans) for phase in all_phases)
     done = sum(1 for phase in all_phases for plan in phase.plans if plan["done"])
     blocked = []
-    complete = {display_number(phase.number) for phase in all_phases
+    complete = {display_number(phase.number) for phase in roadmap.phases(include_archived=True)
                 if phase.status == "Complete"}
+    complete.update(entry["number"] for entry in phases.listing(workspace)["phases"]
+                    if entry.get("archived") and entry.get("status") == "Complete")
     for phase in all_phases:
         unmet = [item for item in depends_list(phase.depends_on) if item not in complete]
         if unmet and phase.status != "Complete":
@@ -439,6 +470,7 @@ def verb_state_begin_phase(workspace, positionals, options):
     number = argument(positionals, 0, "phase")
     roadmap = Roadmap(workspace)
     phase = roadmap.require_phase(number)
+    require(not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
     with planning_lock(workspace):
         return state.begin_phase(workspace, phase.number, phase.name,
                                  options.get("status", "Planning"))
@@ -757,6 +789,11 @@ VERBS = {
     "requirements.close-phase": verb_requirements_close_phase,
 
     "planning.validate": verb_planning_validate,
+    "planning.review": verb_planning_review,
+    "planning.repair": verb_planning_repair,
+    "planning.archive": verb_planning_archive,
+    "planning.archives": verb_planning_archives,
+    "planning.archive-recover": verb_archive_recover,
     "codebase.status": verb_codebase_status,
 
     "milestone.list": verb_milestone_list,

@@ -186,7 +186,7 @@ def check_requirements(workspace, findings):
     roadmap = Roadmap(workspace)
     complete = set()
     if roadmap.exists:
-        for phase in roadmap.phases():
+        for phase in roadmap.phases(include_archived=True):
             if phase.status == "Complete":
                 complete.add(str(phase.number))
                 complete.add(phase.name.strip().lower())

@@ -390,10 +390,11 @@ def canonicalize_codex_agents(current):
     return bom + result.encode("utf-8")
 
 
-def merge_codex_config(current, incoming, path, replace=False):
+def merge_codex_config(current, incoming, path, replace=False, preserve_agents=False):
     """Append missing hooks while preserving existing TOML text and settings."""
     try:
-        current = canonicalize_codex_agents(current)
+        if not preserve_agents:
+            current = canonicalize_codex_agents(current)
         settings = tomllib.loads(current.decode("utf-8-sig"))
         additions = tomllib.loads(incoming.decode("utf-8"))
         if "hooks" not in additions:
@@ -687,6 +688,33 @@ def plan_install(source, target, host="codex", hooks=True):
     return sorted(changes, key=lambda item: item[1] is None)
 
 
+OWNERSHIP_NAME = "workflow-ownership.json"
+
+
+def ownership_manifest(source, target, host, hooks, source_url, revision, owned_paths=()):
+    """Record rendered upstream hashes separately from actual installed bytes.
+
+    Project records and mixed generated files are never whole-file ownership.
+    The migration backup MANIFEST.json remains a different data contract.
+    """
+    files = {}
+    for name, content in payload(source, host, hooks).items():
+        path = target / name
+        safe_path(path)
+        if not path.is_file():
+            continue
+        category = ("project" if name in PROJECT_RECORDS else
+                    "generated" if name in ("AGENTS.md", "CLAUDE.md",
+                                             ".codex/config.toml", ".claude/settings.json") else
+                    "upstream-managed" if name in owned_paths else "customized")
+        files[name] = {"classification": category,
+                       "upstream_sha256": hashlib.sha256(content).hexdigest(),
+                       "installed_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    return {"schema": 1, "host": host, "hooks": hooks,
+            "current": {"source": source_url, "revision": revision},
+            "previous": None, "files": files}
+
+
 def backup_migration(target, files):
     """Preserve and verify every original before any migration mutation."""
     backup_root = target / ".workflow-backups"
@@ -784,6 +812,8 @@ def install(args):
                 prune=args.prune, previous=previous)
         else:
             changes = plan_install(source, target, args.host, not args.no_hooks)
+        owned_paths = {path.relative_to(target).as_posix() for path, content in changes
+                       if content is not None and not path.exists()}
         originals = {destination_path(name, args.host): source / name
                      for name in run("git", "ls-files", "-z", cwd=source, capture=True).split("\0")
                      if name}
@@ -824,6 +854,13 @@ def install(args):
             original = originals.get(destination.relative_to(target).as_posix())
             if not existed and original is not None and original.is_file():
                 shutil.copymode(original, destination)
+        if not args.update and not args.migrate_existing:
+            manifest = target / namespace / OWNERSHIP_NAME
+            safe_path(manifest)
+            # Reinstalling must not silently adopt previously customized bytes.
+            if not manifest.exists():
+                manifest.write_bytes(json_bytes(ownership_manifest(
+                    source, target, args.host, not args.no_hooks, args.source, revision, owned_paths)))
         if not in_git:
             run("git", "init", "--quiet", str(target))
         if not args.skip_deps:

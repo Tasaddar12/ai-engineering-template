@@ -51,6 +51,7 @@ def common(workspace):
             "phases_dir": workspace.relative(workspace.phases_dir),
             "todos_dir": workspace.relative(workspace.todos_dir),
             "quick_dir": workspace.relative(workspace.quick_dir),
+            "archive_dir": workspace.relative(workspace.archive_dir),
         },
     }
 
@@ -170,7 +171,7 @@ def progress(workspace):
         payload["next_phase"] = next((item.summary() for item in all_phases
                                       if item.status != "Complete"), None)
         payload["incomplete_phase"] = next(
-            (item["number"] for item in payload["phases"] if item["execution_incomplete"]),
+            (item["number"] for item in payload["phases"] if item["execution_incomplete"] and not item.get("archived")),
             None)
     payload["pending_todos"] = todos.listing(workspace)["count"]
     payload["open_quick"] = quick.listing(workspace, "open")["count"]
@@ -252,7 +253,7 @@ def prior_context(workspace, number):
     if not roadmap.exists:
         return []
     wanted = as_number(number)
-    earlier = [item for item in roadmap.phases() if as_number(item.number) < wanted]
+    earlier = [item for item in roadmap.phases(include_archived=True) if as_number(item.number) < wanted]
     found = []
     for phase in reversed(earlier[-3:]):
         directory = phases.find_directory(workspace, phase.number)
