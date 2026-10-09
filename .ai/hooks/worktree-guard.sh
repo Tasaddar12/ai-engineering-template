@@ -111,7 +111,7 @@ record_dispatch() {
     | grep -oE '[A-Za-z0-9_./-]*[0-9]{2}(\.[0-9]+)?-[0-9]{2}-PLAN\.md' \
     | head -n 1)"
   summary="$(printf '%s\n' "$prompt" \
-    | sed -nE 's/.*summary_path:[[:space:]]*([A-Za-z0-9_:./\\-]+-SUMMARY\.md).*/\1/p' \
+    | sed -nE 's/.*summary_path:[[:space:]]*(.*-SUMMARY\.md).*/\1/p' \
     | head -n 1)"
   plan="$(handoff_safe_repo_path "$plan" "$(handoff_root)")"
   summary="$(handoff_safe_repo_path "$summary" "$(handoff_root)")"

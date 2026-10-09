@@ -82,6 +82,9 @@ handoff_slug() {
 _HANDOFF_SAFE_PATH_PY='
 import sys, os, ntpath
 value, root = sys.argv[1:3]
+value = value.strip()
+if len(value) > 1 and value[0] == value[-1] and value[0] in (chr(34), chr(39), chr(96)):
+    value = value[1:-1]
 value = value.replace(chr(92), "/")
 root = os.path.realpath(root)
 try:
@@ -90,7 +93,7 @@ try:
         path = ntpath.normpath(value.replace("/", "\\\\"))
         if ntpath.commonpath([ntpath.normcase(path), ntpath.normcase(base)]) != ntpath.normcase(base):
             raise ValueError()
-        result = ntpath.relpath(path, base).replace("\\\\", "/")
+        result = ntpath.relpath(path, base).replace(chr(92), "/")
     elif value.startswith("/"):
         path = os.path.realpath(value)
         if os.path.commonpath([os.path.normcase(path), os.path.normcase(root)]) != os.path.normcase(root):
@@ -268,12 +271,16 @@ import sys, io, json, re, os, ntpath
 # regex run over that undecoded text captures the escapes as literal
 # backslashes and yields a path that matches no file on disk.
 
-PATTERN = re.compile("[A-Za-z0-9_.:" + chr(92) * 2 + "/-]*"
-                     "[0-9]{2}(?:[.][0-9]+)?-[0-9]{2}-PLAN[.]md")
-SUMMARY = re.compile(r"(?im)\bsummary_path\s*:\s*([A-Za-z0-9_.:" + chr(92) * 2 + "/-]+-SUMMARY[.]md)")
+PLAN_SUFFIX = r"[0-9]{2}(?:[.][0-9]+)?-[0-9]{2}-PLAN[.]md"
+PATTERN = re.compile("[A-Za-z0-9_.:" + chr(92) * 2 + "/-]*" + PLAN_SUFFIX)
+ABS_PATTERN = re.compile(r"(?:[A-Za-z]:[\\/]|/)[^\r\n\"]*?" + PLAN_SUFFIX)
+SUMMARY = re.compile(r"(?im)^\s*summary_path\s*:\s*(.*?)\s*$")
 
 root = os.path.realpath(sys.argv[2])
 def safe_path(value):
+    value = value.strip()
+    if len(value) > 1 and value[0] == value[-1] and value[0] in (chr(34), chr(39), chr(96)):
+        value = value[1:-1]
     value = value.replace(chr(92), "/")
     try:
         if ntpath.splitdrive(value)[0]:
@@ -281,7 +288,7 @@ def safe_path(value):
             path_win = ntpath.normpath(value.replace("/", "\\\\"))
             if ntpath.commonpath([ntpath.normcase(path_win), ntpath.normcase(root_win)]) != ntpath.normcase(root_win):
                 return ""
-            result = ntpath.relpath(path_win, root_win).replace("\\\\", "/")
+            result = ntpath.relpath(path_win, root_win).replace(chr(92), "/")
         elif value.startswith("/"):
             real = os.path.realpath(value)
             if os.path.commonpath([os.path.normcase(real), os.path.normcase(root)]) != os.path.normcase(root):
@@ -328,7 +335,7 @@ try:
                 continue
             for text in strings(record):
                 if not found_plan:
-                    match = PATTERN.search(text)
+                    match = ABS_PATTERN.search(text) or PATTERN.search(text)
                     if match:
                         found_plan = safe_path(match.group(0))
                 if not found_summary:
