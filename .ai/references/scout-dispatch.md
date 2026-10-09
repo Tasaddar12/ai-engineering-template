@@ -16,7 +16,8 @@
 - Do not dispatch a fresh scout for every read.
 - Keep scouts read-only: no edits, tests, project execution, commits, SUMMARY files or child dispatch.
 - Keep correctness, security, acceptance and phase verdicts with the assigned decision owner.
-- Treat these as prompt and tool-permission instructions; do not claim runtime enforcement of future search behavior.
+- Treat these as prompt and tool-permission instructions.
+- Do not claim runtime enforcement of future search behavior.
 
 ## Task and output routing
 
@@ -32,7 +33,8 @@
 
 - Assign requested fields from known source, logs, errors or supplied output to scout.
 - Require path:line or input-line evidence for each field.
-- Consume the packet before inspecting cited source for conflicts or missing acceptance facts.
+- Consume the packet.
+- Inspect cited source only for conflicts or missing acceptance facts.
 
 ### Documentation comparison
 
@@ -45,17 +47,20 @@
 
 - Assign requested changed-file, diff or test inventories to scout.
 - Require inventory entries and cited evidence.
-- Have `code-reviewer` use the packet and inspect changed source for correctness and security findings.
+- Have `code-reviewer` use the packet.
+- Have it inspect changed source for correctness and security findings.
 
 ### Integration mapping
 
 - Assign requested producer, consumer and entry-point locations to scout.
-- Have `integration-checker` follow the mapped flow and report observed evidence.
+- Have `integration-checker` follow the mapped flow.
+- Have it report observed evidence.
 - Keep the end-to-end flow verdict with integration-checker.
 
 ### Check execution and summaries
 
-- Run configured checks through `verification.run-checks` and retain its receipt.
+- Run configured checks through `verification.run-checks`.
+- Retain its receipt.
 - Do not ask scout to execute or repeat checks.
 - Assign requested command, exit/result, revision and failure-line extraction from existing logs or receipts to scout.
 - Have the coordinator route failures.
@@ -69,7 +74,8 @@
 
 ### Known implementation inputs
 
-- Have the assigned owner read specified source locations and proceed from the supplied acceptance and requested result.
+- Have the assigned owner read specified source locations.
+- Have it proceed from the supplied acceptance and requested result.
 - Do not dispatch scout for duplicate extraction.
 
 ### Mechanical transformations
@@ -109,11 +115,13 @@
 ### Integration checking
 
 - Have scout map the named producer, consumer and entry point.
-- Have integration-checker use the map and receipts to trace the flow and decide its verdict.
+- Have integration-checker use the map and receipts to trace the flow.
+- Have it decide the flow verdict.
 
 ### Test running
 
-- Execute configured checks through `verification.run-checks` and record receipts.
+- Execute configured checks through `verification.run-checks`.
+- Record receipts.
 - Have scout summarize requested fields from supplied receipts or logs.
 - Never have scout execute tests or project code.
 
@@ -134,7 +142,8 @@
 - Block only the dependent decision if the follow-up remains incomplete or blocked.
 - Report the missing evidence.
 - Target exact conflicting paths or inputs when citations disagree.
-- Have the stronger decision owner resolve the conflict and record its basis.
+- Have the stronger decision owner resolve the conflict.
+- Have it record the basis for its resolution.
 - Pass packet IDs/paths and bounded cited fields to consumers.
 
 ## Assignment and result structures
@@ -236,7 +245,8 @@ python .ai/runtime/phase.py query resolve-agent scout --host claude
 - Validate evidence, search_scope, uncertainty and unresolved_questions.
 - Check `missing_test_cases` when requested.
 - Reject partial or unsupported answers as evidence for the dependent question.
-- Send a bounded follow-up for missing evidence or report the remaining gap.
+- Send a bounded follow-up for missing evidence.
+- Report the remaining gap if the follow-up cannot close it.
 
 ### 6. Close evidence gaps
 
@@ -250,7 +260,8 @@ python .ai/runtime/phase.py query resolve-agent scout --host claude
 ## Direct nested dispatch and unsupported-host fallback
 
 - Permit non-scout workers to dispatch only `scout` children on hosts with nested-agent support.
-- Use Claude Code nested subagents from v2.1.172; respect its default depth of three from v2.1.219.
+- Use Claude Code nested subagents from v2.1.172.
+- Respect its default depth of three from v2.1.219.
 - Do not add a host configuration key to enable a capability the host already supports.
 - Keep worker dispatch, integration, shared records and publication with the coordinator.
 - Return `scout_request` to the coordinator when nested dispatch is unavailable, including depth or capacity limits.
@@ -270,10 +281,12 @@ scout_request:
 - Have the coordinator dispatch the requested scouts.
 - Have it follow the waiting and result-validation steps above.
 - Have it resume the requesting worker with the results.
-- Have the worker verify consequential citations and resume the named step.
+- Have the worker verify consequential citations.
+- Have it resume the named step.
 - Preserve evidence quality and needed complementary questions through fallback.
 - Apply the explicit scout-only child instruction without relying on `Agent(scout)` parenthetical tool restrictions.
 - Report missing evidence if the coordinator cannot dispatch either.
 - Block only dependent work.
 - Preserve owned progress and the resume point.
-- Do not silently perform required scout work yourself or report unsupported completion.
+- Do not silently perform required scout work yourself.
+- Do not report unsupported completion.

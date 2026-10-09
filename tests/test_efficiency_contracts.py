@@ -43,6 +43,8 @@ class EfficiencyContractTests(unittest.TestCase):
                 in_code = not in_code
             elif not in_code and line.strip():
                 self.assertTrue(line.startswith(("#", "- ")), f"line {number}: {line}")
+                self.assertNotIn(";", line, f"compound instruction at line {number}")
+                self.assertNotRegex(line, r"\b(?:and|or) (?:inspect|proceed|decide|record|resume|report|respect)\b")
         self.assertFalse(in_code)
         self.assertIn("python .ai/runtime/phase.py query resolve-agent scout --host codex", contract)
         self.assertIn("python .ai/runtime/phase.py query resolve-agent scout --host claude", contract)
