@@ -1,4 +1,4 @@
-# Conditional repository evidence dispatch
+# Required repository evidence dispatch
 
 Use this routing contract to assign repeatable evidence work to the `scout`
 role (`gpt-6-luna`/high on Codex; `haiku` on Claude). The scout extracts facts,
@@ -7,11 +7,39 @@ documentation transformations. It does not decide implementation correctness,
 security, acceptance, or whether a phase passes. It is a read-only leaf: it does
 not edit, run tests, execute project code, or dispatch children.
 
+## Mandatory boundary before discovery
+
+Apply this gate before the owner uses search tools (`Grep`, `Glob`, `rg`,
+`Select-String`, file listings or equivalent host tools). Every unknown-location
+search for files, symbols, history or matching skills, every repository inventory,
+and every requested repeatable fact extraction, classification or structured
+summary MUST go to the configured exact `scout` role. This includes locating
+SUMMARY metadata, finding capability entry points/callers/config/tests, selecting
+applicable skills and enumerating codebase maps. Naming a search tool in a role's
+method does not waive this boundary.
+
+This is not one scout per file read. A decision owner may read already specified
+files to reason, confirm conflicts, inspect a named interface or perform necessary
+verification. Known runtime metadata queries (for example `phase.locate`,
+`phase-plan-index`, `codebase.status`, model resolution and Git identity/status)
+remain with their owner. Do not add a scout for a trivial named-file read or
+re-extract a valid packet. A requested inventory or field extraction remains
+scout work even when its input paths are known. Researcher and phase-preparer
+retain technical/design decisions and authoring; evidence is not a verdict.
+
+First consume valid existing evidence for the same question, revision, search
+scope and supplied inputs. Batch compatible field requests for the same bounded
+scope into one assignment; for example one capability packet can include its
+entry point, callers, configuration and tests. Split only separately named
+questions with distinct scope or evidence outputs. Pass packet IDs/paths and
+bounded cited fields to consumers, rather than copying large source contexts.
+
 ## Task and output routing
 
 | Trigger or task | Owner and required output | Next action |
 |---|---|---|
-| A file, symbol, term, or source boundary is unknown | One discovery scout returns locations, search terms and citations | Join its result, then assign only uncovered questions |
+| A file, symbol, term, history record, matching skill, or source boundary is unknown | One discovery scout returns locations, search terms and citations | Join its result before owner search tools, then assign only uncovered questions |
+| Repository inventory is required, including maps, skills or capability/source relationships | Scout returns a bounded inventory with citations and inspected scope | Owner consumes it for decisions; do not repeat the inventory |
 | A known source or supplied log/error/output needs fact extraction, classification, or a structured summary | Scout returns the requested fields with path:line or input-line evidence | Consume the packet; verify cited source only for conflict or a missing acceptance fact |
 | A documentation claim needs comparison with source | Scout returns claim-to-source citations and mismatches; `doc-verifier` owns the required per-document claim verdict | Doc-verifier reports each required claim; writer fixes false prose |
 | A review needs changed-file, diff, or test inventory | Scout returns the inventory and cited evidence; `code-reviewer` owns correctness and security findings | Reviewer uses the packet and inspects changed source for the review decision |
@@ -104,7 +132,8 @@ scout_result:
    the table assigns the work directly to an owner, do not add a scout.
 2. If a source area is unknown, assign one discovery scout. Join and validate its
    revision and citations before assigning the distinct questions it revealed.
-3. Write each scout question as a separate requested output. Reuse a result only
+3. Batch compatible fields for one bounded question as a single requested output.
+   Write distinct questions as separate requested outputs. Reuse a result only
    when question, revision, scope and inputs all match; otherwise assign a new
    question with the exact uncovered scope. Resolve each scout through
    `phase_run query resolve-agent scout --host codex` or `--host claude` in the
@@ -136,8 +165,12 @@ from v2.1.172; its default nesting depth is three from v2.1.219. Do not add a ho
 configuration key to enable a capability that the current host already supports.
 The coordinator retains worker dispatch, integration, shared records and publication.
 
-If the current host cannot dispatch nested agents, return this structured request
-to the coordinator before searching the requested evidence yourself:
+If nested dispatch is unavailable, nesting depth is exhausted, or queued/open
+workers occupy the available slots, RETURN this structured request to the
+coordinator before searching the requested evidence yourself. Do not wait inside
+a worker while holding capacity needed for its scout. Save owned edits, commits
+and progress in the assigned paths; no research or PLAN output file is required
+merely to return a request before authoring starts.
 
 ```yaml
 scout_request:
@@ -147,12 +180,56 @@ scout_request:
   reason: <nested dispatch unavailable or depth/slot limitation>
   stage: discovery|specialized
   assignments: [<complete scout_assignment objects>]
+  saved_progress:
+    paths: [<owned output or progress paths; [] if none yet>]
+    commits: [<preserved commit SHAs; [] if none yet>]
+    completed: [<completed steps>]
+    remaining: [<dependent steps and missing fields>]
   resume_with: <exact dependent question/step to resume after results arrive>
 ```
 
-The coordinator dispatches the requested scouts, follows the applicable waiting
-and result-validation steps, and resumes the requesting worker with the results.
-The worker then verifies consequential citations and resumes the named step.
-Fallback changes who dispatches; it does not waive evidence quality or needed
-complementary questions. `Agent(scout)` parenthetical tool restrictions are
-not relied upon for nested workers; the explicit scout-only role instruction applies.
+The coordinator handles `scout_request` BEFORE output-file existence or completion
+checks, on initial, revision and continuation returns from any requesting role:
+
+1. Validate parent assignment ID, repository, revision, bounded allowed scope,
+   all assignment fields, saved progress and the exact resume step. Reject an
+   invalid request as an explicit missing-evidence gap, never as completion.
+2. Reuse matching evidence first. For uncovered fields, count queued/open workers
+   against the actual host limit; stop scheduling additional workers while full.
+   Join and retire completed roles using available host lifecycle operations.
+   When full, the requester must return and release its occupied slot before the
+   coordinator dispatches its scout. Do not invent lifecycle tools or runtime
+   commands; if capacity cannot be released, report it as unavailable.
+3. Dispatch the configured exact scouts, join every result and validate the
+   required fields/citations with the procedure above. One bounded follow-up may
+   close missing fields; an incomplete result cannot cover dependent work.
+4. Resume the original role at `resume_with` using actual host continuation when
+   supported, or a fresh assignment with saved progress, owned paths, commits and
+   validated packet IDs/paths. Preserve edits and numbering. Ensure the earlier
+   writer has returned/retired before starting a fresh writer; never leave a live
+   duplicate writer. The owner checks consequential citations as needed and
+   continues from the saved step, without repeating covered discovery.
+
+This evidence return/resume loop is separate from context-limit partials and
+research-incomplete continuation counters. A `scout_request` neither consumes
+those counters nor asserts `RESEARCH PARTIAL` or `PLANNING COMPLETE`.
+
+If dispatch cannot occur even through the coordinator, return explicitly:
+
+```yaml
+scout_unavailable:
+  status: SCOUT UNAVAILABLE
+  parent_assignment_id: <requesting assignment id>
+  reason: <actual missing nested/depth/capacity/host capability>
+  missing_fields: [<assignment id and each required field without evidence>]
+  dependent_steps: [<blocked research, plan or review steps>]
+  saved_progress: <preserved paths, commits and completed/remaining steps>
+  resume_with: <step to resume when evidence can be obtained>
+```
+
+Report `SCOUT UNAVAILABLE` and the missing fields; independent covered work may
+continue. Do not silently self-discover, declare dependent research/planning
+complete, or wash required missing repository evidence into an `[ASSUMED]`
+precondition through ordinary `RESEARCH PARTIAL` continuation. Fallback changes
+who dispatches, not the evidence obligation. `Agent(scout)` parenthetical tool
+restrictions are not relied upon; the explicit scout-only instruction applies.

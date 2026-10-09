@@ -1,5 +1,6 @@
 """Guard the shared evidence and verification workflow contracts."""
 from pathlib import Path
+import re
 import unittest
 
 
@@ -10,7 +11,7 @@ class EfficiencyContractTests(unittest.TestCase):
     def read(self, path):
         return (ROOT / path).read_text(encoding="utf-8")
 
-    def test_scout_dispatch_is_conditional_and_keeps_cited_evidence(self):
+    def test_scout_dispatch_routes_triggered_work_and_keeps_cited_evidence(self):
         dispatch = self.read(".ai/references/scout-dispatch.md")
         self.assertIn("one discovery scout", dispatch)
         self.assertIn("named unresolved claim", dispatch)
@@ -20,6 +21,79 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertNotIn("at least two specialized", dispatch)
         self.assertIn("citation: <path:line", dispatch)
         self.assertIn("revision: <inspected revision>", dispatch)
+
+    def test_planning_discovery_requires_scout_but_preserves_named_reads_and_batching(self):
+        dispatch = " ".join(self.read(".ai/references/scout-dispatch.md").split())
+        for boundary in ("files, symbols, history or matching skills",
+                         "every repository inventory", "MUST go to the configured exact `scout` role",
+                         "before the owner uses search tools", "SUMMARY metadata",
+                         "entry points/callers/config/tests"):
+            self.assertIn(boundary, dispatch)
+        self.assertIn("A decision owner may read already specified files", dispatch)
+        self.assertIn("Known runtime metadata queries", dispatch)
+        self.assertIn("Do not add a scout for a trivial named-file read", dispatch)
+        self.assertIn("Batch compatible field requests for the same bounded scope", dispatch)
+        self.assertIn("same question, revision, search scope and supplied inputs", dispatch)
+        self.assertIn("Researcher and phase-preparer retain technical/design decisions and authoring", dispatch)
+
+    def test_planning_evidence_gate_precedes_research_and_preparer(self):
+        workflow = self.read(".ai/workflows/plan-phase.md")
+        self.assertIn("orchestrator, scout, researcher", workflow)
+        self.assertIn("@~/.ai/references/scout-dispatch.md", workflow)
+        self.assertIn("- scout -", workflow)
+        gate_start = workflow.index('<step name="planning_evidence_gate">')
+        self.assertLess(gate_start, workflow.index('<step name="handle_research">'))
+        self.assertLess(gate_start, workflow.index('<step name="spawn_preparer">'))
+        gate = " ".join(workflow[gate_start:workflow.index("</step>", gate_start)].split())
+        for instruction in ("dispatch configured exact `scout` BEFORE owner search tools",
+                            "resolve-agent scout --host codex", "`--host claude`",
+                            "same question, revision, scope and inputs", "Batch compatible fields",
+                            "Do not launch a scout solely for a trivial read",
+                            "`--skip-research`", "do not skip this gate"):
+            self.assertIn(instruction, gate)
+
+    def test_every_planning_worker_handles_requests_before_output_or_verdict_checks(self):
+        workflow = self.read(".ai/workflows/plan-phase.md")
+        steps = dict(re.findall(r'<step name="([^"]+)"[^>]*>(.*?)</step>', workflow, re.S))
+        research = steps["handle_research"]
+        handling = research[research.index("**Handle the return.**"):]
+        self.assertLess(handling.index("scout_return_protocol"), handling.index("exists;"))
+        preparer = steps["handle_preparer_return"]
+        self.assertLess(preparer.index("scout_return_protocol"), preparer.index("phase-plan-index"))
+        for role, step in (("researcher", "handle_research"), ("phase-preparer", "spawn_preparer"),
+                           ("phase-checker", "spawn_checker"), ("codebase-mapper", "refresh_codebase_maps")):
+            with self.subTest(role=role):
+                self.assertIn("<scout_evidence_contract>", steps[step])
+                self.assertIn("packet IDs/paths and bounded cited fields", steps[step])
+                self.assertIn("scout_request", steps[step])
+        self.assertIn("BEFORE interpreting", steps["spawn_checker"])
+        self.assertIn("protocol again on the continuation return", steps["spawn_checker"])
+        self.assertIn("BEFORE map", steps["refresh_codebase_maps"])
+        self.assertIn("every revision and", steps["revision_loop"])
+        self.assertIn("its continuations before checking files", steps["revision_loop"])
+
+    def test_scout_fallback_releases_capacity_and_resumes_without_partial_counter_reuse(self):
+        dispatch = " ".join(self.read(".ai/references/scout-dispatch.md").split())
+        workflow = self.read(".ai/workflows/plan-phase.md")
+        protocol = " ".join(workflow.split("<scout_return_protocol>", 1)[1]
+                            .split("</scout_return_protocol>", 1)[0].split())
+        for required in ("assignments: [<complete scout_assignment objects>]", "saved_progress:",
+                         "resume_with:", "count queued/open workers", "stop scheduling additional workers",
+                         "return and release its occupied slot before", "actual host continuation",
+                         "fresh assignment with saved progress", "live duplicate writer",
+                         "SCOUT UNAVAILABLE", "missing_fields:", "dependent_steps:"):
+            self.assertIn(required, dispatch)
+        for required in ("BEFORE required output-file existence", "EVERY researcher, phase-preparer",
+                         "codebase-mapper and phase-checker return", "Count queued/open workers",
+                         "releases its occupied slot before", "join/retire", "actual host continuation",
+                         "fresh assignment with saved progress", "live duplicate writer",
+                         "does not consume context PARTIAL, research-incomplete or plan-revision counters",
+                         "SCOUT UNAVAILABLE", "missing fields, dependent steps and saved progress",
+                         "required missing repository evidence into an `[ASSUMED]` precondition"):
+            self.assertIn(required, protocol)
+        self.assertIn("no research or PLAN output file is required", dispatch)
+        self.assertIn("Do not wait inside a worker while holding capacity", dispatch)
+        self.assertIn("Do not invent lifecycle tools or runtime commands", dispatch)
 
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):

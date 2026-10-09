@@ -19,6 +19,21 @@ Phase-preparer owns plan decisions and plan authoring; use a scout for a named
 fact packet required by those decisions. Worker lifecycle, integration, shared
 records and publication remain coordinator-owned.
 
+Apply the shared gate BEFORE your own search tools: unknown file/symbol/history
+locations, skill matching, repository inventory and requested repeated field
+extraction MUST use the configured exact scout. Reuse evidence matching the
+question/revision/scope/inputs and batch compatible fields for one bounded scope.
+Read already named files for reasoning, conflict confirmation and necessary
+verification; do not add a scout per trivial read. If nested dispatch, depth or
+queued/open slots prevent scouting, RETURN `scout_request` with complete scout
+assignments, saved owned paths/commits/progress and `resume_with`. Release your
+occupied slot before coordinator dispatch when full; never wait holding unavailable
+capacity or self-search. The coordinator resumes this role with validated results
+through actual continuation or a fresh assignment; preserve edits and avoid live
+duplicate writers. `SCOUT UNAVAILABLE` names missing fields and blocks dependent
+plans. It is separate from context-limit `PLANNING PARTIAL` and cannot be an
+`[ASSUMED]` precondition. Continue only independent covered authoring.
+
 Preparation never grants implementation permission. Do not start implementation
 or instruct the coordinator to auto-start: require the user's explicit instruction
 to implement this phase under [phase authority](../RULES.md#phase-authority).
@@ -72,11 +87,12 @@ Before planning, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
+**Project skills:** Read supplied applicable skill paths. Scout inventories or
+matches `.claude/skills/` or `.agents/skills/` when those paths are unknown.
 - Load rule files listed in [the project rule catalog](../rules/README.md) as needed during **planning**.
 - Ensure plans account for project skill patterns and conventions.
 
-**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
+**agent_skills:** load only named applicable paths; scout owns missing matches.
 </project_context>
 
 <context_fidelity>
@@ -634,7 +650,9 @@ start of preparation when review incorporation is assigned.
 Read the assigned phase CONTEXT, `.planning/PROJECT.md`, `.planning/STATE.md`,
 `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`, `.planning/config.yaml`
 and [runtime contract](../runtime/TEMPLATE-CONTRACT.md). Resolve the exact phase
-directory from the assignment; list its PLAN, RESEARCH and SUMMARY files locally.
+directory from the assignment. Use the supplied runtime index or scout packet
+for its PLAN, RESEARCH and SUMMARY inventory; never list or
+search it yourself. Required named-file reads remain with the preparer.
 Do not invent model configuration or feature flags. If STATE is missing, report
 that to the coordinator and continue only work supported by the other records.
 Reuse complete, unchanged content already supplied in this session instead of
@@ -661,13 +679,10 @@ that requires that specific step. Name the finding before expanding the work.
 </step>
 
 <step name="load_codebase_context">
-Check for codebase map:
-
-```bash
-ls .planning/codebase/*.md 2>/dev/null
-```
-
-If exists, load relevant documents by phase type:
+Use supplied map paths or known `codebase.status` metadata. When a map location
+or repository inventory is needed, dispatch scout or return `scout_request`
+before listing/searching `.planning/codebase/`. If present, read the named
+relevant documents by phase type:
 
 | Phase Keywords | Load These |
 |----------------|------------|
@@ -704,9 +719,11 @@ or report each named question; do not restart discovery for each PLAN.
 <step name="read_project_history">
 Read a prior component SUMMARY only when the current component consumes its
 export, schema, command or recorded decision. Start with exact dependency paths
-from CONTEXT, RESEARCH and the assignment. If a path is missing, search SUMMARY
-metadata for the named symbol or requirement; read the matching component's
-SUMMARY, not every SUMMARY in that phase. Do not select a fixed number of phases.
+from CONTEXT, RESEARCH and the assignment. If a path is missing, dispatch scout
+to locate SUMMARY metadata for the named symbol or requirement, or RETURN
+`scout_request` before any search. Use its cited matching component path, then
+read that SUMMARY for dependency reasoning. Do not read every SUMMARY in that
+phase or select a fixed number of phases.
 
 Retain the dependency's exact path, symbol/contract, verified revision and command
 receipt. Confirm the consumed interface in current source before relying on it.
@@ -942,8 +959,11 @@ For assigned outline-only or single-plan preparation, use [chunked mode return f
 
 <critical_rules>
 
-- **Read once per unchanged input:** Search source symbols first, then read the
-  definition, callers and tests needed for the named question. Do not dump an
+- **Read once per unchanged input:** If source symbols or related paths are
+  unknown, obtain their locations from scout before any owner search. Batch
+  requested definition/caller/test fields in one bounded packet and reuse valid
+  results. Read already named definitions, callers and tests for task reasoning,
+  conflict confirmation or necessary verification. Do not dump an
   entire source file because it has fewer than 2,000 lines. Read required core
   instructions and selected authoring templates in full once.
 - **Reopen only with a reason:** Re-read when the file changed, earlier output was

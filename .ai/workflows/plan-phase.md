@@ -1,6 +1,6 @@
 <!-- workflow
 step: plan
-agent-roles: orchestrator, researcher, phase-preparer, phase-checker
+agent-roles: orchestrator, scout, researcher, phase-preparer, phase-checker, codebase-mapper
 produces: RESEARCH.md, {NN}-{MM}-PLAN.md
 consumes: CONTEXT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md
 -->
@@ -16,12 +16,14 @@ The orchestrator routes. It does not write the plans itself.
 
 <required_reading>
 @~/.ai/references/universal-anti-patterns.md
+@~/.ai/references/scout-dispatch.md
 @~/.ai/references/methods/planner-guidance.md
 @~/.ai/references/methods/failing-direction.md
 </required_reading>
 
 <available_agent_types>
 Valid subagent types (use these exact names — never fall back to a generic agent):
+- scout - returns bounded cited discovery and fact packets; no decisions or writes
 - researcher — researches how to implement a phase, produces RESEARCH.md
 - phase-preparer — writes executable plans with task breakdown and dependencies
 - phase-checker — verifies plans will achieve the phase goal before execution
@@ -46,6 +48,35 @@ effort and no model, or the reverse. The `models` and `efforts` maps in each
 init bundle carry the same resolved values for every agent that workflow
 dispatches.
 </model_selection>
+
+<scout_return_protocol>
+Apply this protocol to EVERY researcher, phase-preparer, codebase-mapper and
+phase-checker return, including revisions and all continuations, BEFORE required
+output-file existence, plan-count, coverage or completion checks.
+
+On `scout_request`, validate the request against the worker's assignment, then
+follow [scout dispatch](../references/scout-dispatch.md): reuse evidence matching
+question/revision/scope/inputs or dispatch the configured exact scouts, join and
+validate their fields/citations, then resume the original role at `resume_with`.
+Use actual host continuation or a fresh assignment with saved progress, owned
+paths, commits and bounded packet IDs/paths. Never restart completed writing or
+leave a live duplicate writer. A worker returning before authoring need not have
+created RESEARCH.md, PLANs or maps yet.
+
+Count queued/open workers, stop scheduling when capacity is full, and join/retire
+completed roles using available host lifecycle operations. The requester RETURNS
+and releases its occupied slot before coordinator scout dispatch when full;
+it must not wait while holding unavailable capacity or search for itself. No
+invented lifecycle tools or runtime commands are permitted.
+
+This return/resume loop does not consume context PARTIAL, research-incomplete or
+plan-revision counters. Route new evidence requests through the same protocol.
+If coordinator dispatch is also unavailable, report `SCOUT UNAVAILABLE` with
+missing fields, dependent steps and saved progress. Continue only independently
+covered work; do not treat dependent research/planning/review as complete or move
+required missing repository evidence into an `[ASSUMED]` precondition. Only after
+the resumed role returns a normal outcome apply its ordinary file/verdict checks.
+</scout_return_protocol>
 
 <process>
 
@@ -191,12 +222,43 @@ Use AskUserQuestion (header: "No context"; options: "Discuss first
 (recommended)" / "Plan anyway" / "Cancel"). On the first, stop and point at
 `/discuss-phase {N}`.
 
-Extract from CONTEXT.md: `<decisions>` (locked — never re-litigated),
+Read CONTEXT.md for decisions. Route any requested structured extraction of
+these fields to scout under `planning_evidence_gate`: `<decisions>` (locked - never re-litigated),
 `<canonical_refs>` (MUST be passed to every downstream agent),
 `<code_context>` (reusable assets), `<deferred>` (explicitly out of scope).
 
 If `has_spec` is true, read the SPEC.md too: its requirements are locked and are
 not re-derived by the preparer.
+</step>
+
+<step name="planning_evidence_gate">
+Before research or planning, identify the repository evidence needed from the
+assigned CONTEXT, canonical refs and runtime metadata. The coordinator may read
+specified records for reasoning and run known runtime metadata queries; it does
+not perform unknown-location searches or repository inventory itself.
+
+Consume valid existing scout packets for the same question, revision, scope and
+inputs. For uncovered discovery (files, symbols, history or matching skills),
+repository inventories, or requested repeated fact extraction/classification/
+structured summaries, dispatch configured exact `scout` BEFORE owner search tools.
+Use complete `scout_assignment` objects from the shared reference and resolve
+`phase_run query resolve-agent scout --host codex` or `--host claude` for the
+actual host; pass returned model/effort inline and omit `inherit`.
+
+Batch compatible fields in one bounded scope, such as capability locations,
+callers/config/tests, dependency SUMMARY paths or applicable skill paths. Join
+and validate results, preserve uncovered fields, and retain bounded packet
+IDs/paths as `planning_evidence` for downstream assignments. Do not launch a
+scout solely for a trivial read of an already specified file. Decision owners
+read those sources for reasoning, conflict confirmation and necessary verification.
+Researchers decide the technical approach; phase-preparers design and author plans.
+
+Apply `scout_return_protocol` when a downstream role discovers another evidence
+need. `--skip-research`, existing research, gap closure and continuations do not
+skip this gate. Required missing repository evidence blocks dependent work even
+after ordinary `RESEARCH PARTIAL` continuation limits; it cannot become an
+`[ASSUMED]` task precondition. Do not advance dependent shared readiness records
+until the evidence and normal plan review cover them.
 </step>
 
 <step name="handle_research">
@@ -242,6 +304,16 @@ and open a listed file only as its reading rule allows.
 </required_reading>
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if present.
+<scout_evidence_contract>
+Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Use the required scout-dispatch reference before unknown-location search,
+inventory, skill matching or requested repeated field extraction. Reuse valid
+packets and batch compatible fields. Read named files for technical reasoning.
+Dispatch only configured exact scout children; if nested/depth/slots prevent it,
+RETURN scout_request with complete assignments, saved paths/commits/progress and
+resume_with. Preserve evidence gaps; never self-search or claim them complete.
+</scout_evidence_contract>
 </research_context>
 ${continuing ? `
 <continuation>
@@ -279,8 +351,10 @@ Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks, or
 > collection may run against the same frozen revision. Join the research result
 > before making planning decisions or writing the plan.
 
-**Handle the return.** First verify `{phase_dir}/{padded_phase}-RESEARCH.md`
-exists; a return of any kind with no file is a failure — report it and do not
+**Handle the return.** First apply `scout_return_protocol` to `scout_request` or
+`SCOUT UNAVAILABLE`, including after every research continuation. Once resumed
+research returns a normal outcome, verify `{phase_dir}/{padded_phase}-RESEARCH.md`
+exists; a normal research outcome with no file is a failure - report it and do not
 proceed on the claim. Then route on the header the researcher returned:
 
 | Return | Route |
@@ -304,6 +378,10 @@ it stops shrinking, or the second continuation returns partial, continue to
 planning anyway; the phase-preparer plans the covered scope and carries each
 remaining question to the tasks that depend on it. List the unresearched
 questions in the report. Do not ask the user to resume anything.
+
+This ordinary partial fallback excludes required missing repository evidence:
+keep its dependent scope blocked through the scout protocol, never as an assumed
+precondition. A scout request does not increment either continuation counter.
 
 When research ends without another continuation, consume every remaining record
 whose `agent` is `researcher`:
@@ -369,8 +447,19 @@ ${context_window >= 500000 ? `
 **Phase requirement IDs (every id MUST appear in some plan's `requirements` field):** {requirements}
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if either exists.
-**Project skills:** check `.agents/skills/` or `.claude/skills/` — read the SKILL.md
-files and account for their rules.
+**Project skills:** use supplied matching skill paths; scout locates missing
+matches before inventory/search. Read only applicable SKILL.md files.
+<scout_evidence_contract>
+Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Follow scout-dispatch before unknown-location searches (including SUMMARY
+metadata and source symbols), inventories, skill matching or requested repeated
+field extraction. Reuse packets; batch compatible fields. Retain plan design and
+authoring and named-source confirmation. Dispatch only configured exact scouts,
+or RETURN scout_request with complete assignments, saved paths/commits/progress
+and resume_with for unavailable nested/depth/slots. Do not self-search or turn
+required missing repository evidence into an assumed precondition.
+</scout_evidence_contract>
 </planning_context>
 
 <downstream_consumer>
@@ -431,7 +520,9 @@ Every task MUST include:
   than producing a plan you do not believe in
 - If RESEARCH.md still lists questions under ## Not Yet Researched, plan the
   covered scope; a task that depends on one carries it as an [ASSUMED]
-  precondition to confirm, never an invented answer
+  precondition to confirm, never an invented answer. This excludes required
+  missing repository evidence: return scout_request or SCOUT UNAVAILABLE and
+  block dependent scope until its evidence arrives.
 - The context limit is not a blocker: at the limit, commit the plans you have
   and return PLANNING PARTIAL with the scope not yet planned
 </constraints>
@@ -459,6 +550,10 @@ Return: ## PLANNING COMPLETE with each plan path and its wave, or
 </step>
 
 <step name="handle_preparer_return">
+First apply `scout_return_protocol` to `scout_request` or `SCOUT UNAVAILABLE`,
+including after every preparer continuation or revision. Only a normal resumed
+outcome reaches the plan-count/completion checks below.
+
 Verify the plans exist on disk rather than trusting the return message:
 
 ```bash
@@ -503,6 +598,16 @@ and open a listed file only as its reading rule allows.
 **Plans:** {each plan path from the plan index}
 **Context:** {phase_dir}/{padded_phase}-CONTEXT.md
 **Requirements:** {requirements}
+<scout_evidence_contract>
+Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Read the named plans for the review decision. Follow scout-dispatch for unknown
+source/skill/history locations, inventories and requested repeated extraction;
+reuse matching packets and batch compatible fields. Dispatch only configured
+exact scouts or RETURN scout_request with complete assignments, saved progress
+and resume_with when nested/depth/slots are unavailable. No self-discovery or
+approved verdict dependent on missing evidence.
+</scout_evidence_contract>
 
 Ask: if a competent executor did exactly what these plans say and nothing more,
 would the phase goal be achieved? Report what is missing or wrong, not style.
@@ -526,14 +631,20 @@ Findings: <numbered; each names the plan and task it affects>
 )
 ```
 
-If the checker reports plans it did not reach, dispatch a fresh phase-checker
+First apply `scout_return_protocol` to each checker return, BEFORE interpreting
+its verdict or dispatching a continuation. If the checker reports plans it did
+not reach, dispatch a fresh phase-checker
 for them with its handoff in a `<handoff>` block, per
 [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-Merge both reviews' findings before routing on the verdict.
+Apply the protocol again on the continuation return. Merge both reviews'
+findings before routing on the verdict.
 </step>
 
 <step name="revision_loop">
 On `needs-revision`, hand the findings back to the phase-preparer to revise.
+Include current bounded evidence packet IDs/paths and the same
+`scout_evidence_contract`; apply `scout_return_protocol` to every revision and
+its continuations before checking files or counting the revision as finished.
 **Maximum 3 iterations.** Continue a revising preparer that returns
 `## PLANNING PARTIAL` exactly as in `handle_preparer_return`, with its handoff
 in the `<handoff>` block.
@@ -558,6 +669,17 @@ Agent(
   prompt="
 Refresh the codebase map for focus area: {focus}.
 
+<scout_evidence_contract>
+Assignment: {worker assignment id}; repository/revision: {checkout}/{revision}.
+Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
+Follow scout-dispatch: all unknown-location searches, repository inventories
+and requested repeated extraction use configured exact scouts before own search
+tools. Reuse packets; batch compatible fields for this bounded focus. You own map
+reasoning/authoring. If nested/depth/slots prevent dispatch, RETURN scout_request
+with complete assignments, saved paths/commits/progress and resume_with; no
+self-search or MAP COMPLETE dependent on missing evidence.
+</scout_evidence_contract>
+
 Rewrite it against the current revision. Do not patch the old text.
 
 Write to: .planning/codebase/{MAP}.md
@@ -571,6 +693,8 @@ Return: ## MAP COMPLETE with what changed since the previous revision.
 ```
 
 > **ORCHESTRATOR RULE**: wait for the subagent before continuing.
+Apply `scout_return_protocol` to each mapper return and continuation BEFORE map
+existence or MAP COMPLETE checks; then verify the normal output at its exact path.
 </step>
 
 <step name="update_roadmap">
@@ -726,6 +850,7 @@ Plan review: {approved | approved with noted findings}
 - [ ] Phase validated against the roadmap and not already complete
 - [ ] Codebase maps fresh, or regenerated before planning against them
 - [ ] CONTEXT.md loaded, with canonical refs passed to every downstream agent
+- [ ] Required scout evidence joined before dependent discovery, research or planning; all worker requests handled before output checks
 - [ ] Research run only where warranted, and its file verified on disk
 - [ ] Plans written by the phase-preparer, verified on disk via the plan index
 - [ ] Every phase requirement id appears in some plan
