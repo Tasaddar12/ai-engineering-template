@@ -190,8 +190,9 @@ destinations are refused. Records never qualify because of their age.
 Phases move to `.planning/archive/phases/<original-directory>` without renumbering
 any artifact. On-disk PLAN IDs must exactly match the registered roadmap plans,
 and every PLAN file needs its SUMMARY. Explicit legacy evidence cannot bypass
-missing, unregistered, unsummarized or affirmatively incomplete plan work. Every
-roadmap plan needs a `status: complete` SUMMARY with authored Accomplishments, and the phase needs a `status: passed` VERIFICATION. An incomplete
+missing, unregistered, unsummarized or affirmatively incomplete plan work. Without
+valid legacy evidence, every roadmap plan needs a `status: complete` SUMMARY with
+authored Accomplishments, and the phase needs a `status: passed` VERIFICATION. An incomplete
 roadmap checklist, blocked/in-progress summary, or current active phase is refused.
 The historical phase block remains in ROADMAP.md with an `Archived` destination;
 its overview checklist and active progress row are removed. Active counts and

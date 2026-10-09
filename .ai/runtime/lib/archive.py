@@ -165,7 +165,7 @@ def eligibility(workspace, kind, source, evidence=None, replacement=None):
         files = phases.artifacts(source, number)
         statuses = []
         outcomes = []
-        plan_paths = [path for path in tree_files(workspace, source) if path.name.endswith("-PLAN.md")]
+        plan_paths = [path for path in tree_files(workspace, source) if path.name.lower().endswith("-plan.md")]
         require(all(phases.PLAN_FILE.fullmatch(path.name) and path.parent == source for path in plan_paths),
                 "phase contains unregistered or noncanonical plan files", "archive-evidence-required")
         disk_plans = {path.name[:-8] for path in plan_paths}

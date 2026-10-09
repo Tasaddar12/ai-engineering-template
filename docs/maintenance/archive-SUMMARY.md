@@ -52,6 +52,11 @@ plan_head_before: 6e3280a06b680547972fe9def3240f872fb842dd
 work_branch: feat/maintenance-archive-slice
 review_repair_head_before: b00a0c5116d93dd2f447fcb3acb19c2500bde181
 review_repair_branch: feat/maintenance-archive-fixes
+review_followup_head_before: 764d6e56d1935ae6f13d449bbfffa908cc2fb9fd
+review_followup_actuals:
+  tokens: 810
+  tasks: 1
+  commits: 1
 review_repair_actuals:
   tokens: 4390
   tasks: 3
@@ -225,3 +230,37 @@ unfinished implementation; the adoption skeleton remains untouched.
 No repair implementation blocker remains. Independent re-review and combined
 verification remain coordinator-owned. Repair duration was not separately
 measured; the test elapsed times above are actual command results.
+
+
+## Re-review follow-up: PLAN suffix case variants
+
+Continued the same owned repair checkout from immutable input
+`764d6e56d1935ae6f13d449bbfffa908cc2fb9fd` on
+`feat/maintenance-archive-fixes`. Physical PLAN discovery now checks
+`name.lower().endswith('-plan.md')`, after which the existing canonical filename
+matcher rejects noncanonical casing. This prevents unfinished
+`01-02-PLAN.MD` work from disappearing into an archived directory.
+
+Added a platform-independent fixture for that exact extra filename. Its matrix
+checks preview and apply, each with and without valid legacy evidence; every
+rejection preserves all bytes, the PLAN file and active discovery counts. No
+Windows-specific API is required by this fixture.
+
+README now qualifies the modern SUMMARY/Accomplishments/passed-VERIFICATION proof
+with “Without valid legacy evidence”. The unconditional missing/unregistered/
+unsummarized/affirmatively-incomplete work guards remain documented immediately
+before that qualification and are unchanged.
+
+- `python -m unittest discover -s tests -p test_planning_archive.py -v`:
+  **41 tests passed**, 39.869 seconds, no skips, against the final follow-up source.
+- `git diff --check`: passed.
+- Follow-up estimate-scale actuals: 3,240 text-diff characters / 4 = 810 tokens
+  across archive source, focused test and runtime README, excluding this SUMMARY;
+  no binary/generated files changed. These are separate from the first repair's
+  recorded actuals.
+- All four owned paths exist; assigned root/branch/input guard passed before
+  writes. The commit/root/base ancestry is guarded again at delivery.
+- No new blocker or unfinished implementation remains. Coordinator owns
+  integration and independent re-review. This continuation adds one meaningful
+  source/test/docs/SUMMARY commit, bringing the repair branch to two commits from
+  its original assigned repair base.

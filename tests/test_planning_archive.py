@@ -453,6 +453,14 @@ class PlanningArchive(unittest.TestCase):
             self.assertIn(result["code"], {"archive-active", "archive-evidence-required"})
             self.assertEqual(before, self.snapshot())
 
+    def test_noncanonical_plan_case_blocks_archive_with_and_without_legacy_evidence(self):
+        self.write(".planning/phases/01-foundation/01-02-PLAN.MD", "# Unfinished extra plan\n")
+        evidence = self.phase_legacy_evidence()
+        self.assert_archive_denied_without_writes("phase", "1")
+        self.assert_archive_denied_without_writes("phase", "1", "--evidence", evidence)
+        self.assertEqual(self.cli("phases.list")["count"], 2)
+        self.assertTrue((self.root / ".planning/phases/01-foundation/01-02-PLAN.MD").is_file())
+
     def test_unregistered_plan_file_blocks_archive_even_with_legacy_evidence(self):
         self.write(".planning/phases/01-foundation/01-02-PLAN.md", "# Pending extra work\n")
         evidence = self.phase_legacy_evidence()
