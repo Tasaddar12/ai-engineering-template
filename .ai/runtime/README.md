@@ -457,7 +457,8 @@ the base and inspected trees: each path binds its before/after mode and blob, wi
 a null after value for a deletion. `covered_paths` includes deleted paths and both
 sides of a rename; reviewers inspect removed contents at the declared base. Paths
 absent from both trees remain errors. Inputs still require actual committed paths
-at the inspected revision. Old dependency blobs are also bound where present.
+at the inspected revision. Complete declared base input directories are also
+hashed, including files removed before the inspected revision.
 Base and inspected SHAs remain provenance; keys bind their actual manifests, so
 unrelated commits with identical declared old/new inputs can reuse the review. The key also binds the request, configuration and validator
 implementation. Review and scout keys omit the revision, so a packet can be
@@ -484,7 +485,9 @@ HEAD equal to the request revision. Missing/corrupt packets are reported as
 
 Every recording writes an immutable per-attempt JSON receipt and returns its
 unique `receipt` path. A separate content-key `index` selects the latest attempt;
-lookup returns that receipt and the retained `attempts` paths. A newer failed or
+lookup returns that receipt and the retained `attempts` paths. Immutable receipts
+store a monotonic `sequence` and predecessor receipt filename/hash; the index must
+match that append chain. Reordering even a checksum-valid index fails closed. A newer failed or
 incomplete attempt never falls back to an older pass. All attempts preserve their
 full request, result and provenance. Lookup also returns `unresolved_findings`
 carried across same-key attempts. Omitting a prior unresolved finding cannot make

@@ -190,8 +190,9 @@ def request_inputs(root, request):
     selected = {k: v for k, v in request.items() if k not in {'revision', 'base_revision'}}
     if base_entries is not None:
         selected['review_diff'] = True
-        selected['base_input_manifest'] = {path: manifest(base_entries, [path])[path]
-                                          for path in additional if path in base_entries}
+        base_paths = [name for name in request['inputs']
+                      if any(path == name or path.startswith(name + '/') for path in base_entries)]
+        selected['base_input_manifest'] = manifest(base_entries, base_paths)
     if 'report_path' in selected:
         name = literal(selected['report_path'])
         check(re.fullmatch(r'\.planning/phases/[^/]+/[0-9]+(?:\.[0-9]+)?-VERIFICATION\.md', name),
@@ -305,7 +306,8 @@ def load(root, key):
 
 
 def validate_attempt(root, key, inputs, receipt):
-    check(set(receipt) == {'schema', 'key', 'inputs', 'request', 'result', 'validated_at'}, 'receipt schema')
+    check(set(receipt) == {'schema', 'key', 'inputs', 'request', 'result', 'validated_at',
+                           'sequence', 'predecessor'}, 'receipt schema')
     check(receipt['schema'] == SCHEMA and receipt['key'] == key and receipt['inputs'] == inputs,
           'receipt inputs mismatch')
     check(request_inputs(root, receipt['request']) == inputs, 'original committed inputs mismatch')
@@ -349,6 +351,9 @@ def attempt_history(root, key, inputs):
         receipt = load(root, entry['file'].removesuffix('.json'))
         check(isinstance(receipt, dict) and digest(receipt) == entry['sha256'], 'attempt integrity mismatch')
         validate_attempt(root, key, inputs, receipt)
+        check(type(receipt['sequence']) is int and receipt['sequence'] == len(attempts) + 1
+              and receipt['predecessor'] == (attempts[-1][0] if attempts else None),
+              'attempt index order does not match immutable append chain')
         pending = pending_findings(pending, receipt['result'])
         attempts.append((entry, receipt))
     check(files == indexed, 'attempt index does not cover retained history')
@@ -365,6 +370,8 @@ def save_attempt(root, key, inputs, receipt):
     try:
         attempts, pending = attempt_history(root, key, inputs)
         pending = pending_findings(pending, receipt['result'])
+        receipt['sequence'] = len(attempts) + 1
+        receipt['predecessor'] = dict(attempts[-1][0]) if attempts else None
         name = key + '.' + uuid.uuid4().hex + '.json'
         # An attempt is written once. Only the separate lookup index advances.
         with (store / name).open('x', encoding='utf-8') as stream:

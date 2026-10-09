@@ -43,7 +43,9 @@ tombstones; both rename paths require coverage. Removed source is inspected at
 the declared base. A path absent from both trees is rejected, and dependency
 `inputs` must still exist at the inspected revision. Keys bind actual old/new
 contents rather than either SHA; original inspected/base revisions remain in the
-immutable receipt provenance. Successful review
+immutable receipt provenance. Declared dependency directories bind their full
+base manifest too, including base-only deleted files, while inspected inputs
+remain mandatory. Successful review
 packets must account for every path in the expanded scope and carry validated
 reviewer provenance.
 
@@ -59,7 +61,10 @@ or shipping started.
 Recording appends an immutable attempt receipt and returns a stable unique
 `receipt` path; the separate content-key `index` selects the latest attempt.
 Retain every earlier receipt, including failed and incomplete packets and their
-full provenance. Lookup never selects an older pass after a newer failure. Its
+full provenance. Each immutable attempt stores its sequence and predecessor
+filename/hash; lookup validates this append chain independently of index claims,
+so reordering a checksum-valid index cannot revive an older pass. Lookup never
+selects an older pass after a newer failure. Its
 `attempts` list names the retained history and `unresolved_findings` carries prior
 unresolved severity/message identities across intermediate empty results. A later
 pass omitting those findings remains effectively incomplete/nonreusable. Resolve
