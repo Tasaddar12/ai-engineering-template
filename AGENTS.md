@@ -82,8 +82,12 @@ call — shared role files carry neither as frontmatter (the installer adds Clau
 `model: haiku` only to exported `scout` metadata, with no effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-Follow the [scout usage contract](.ai/references/scout-dispatch.md) for evidence
-work in every workflow and role method.
+Use [scout dispatch](.ai/references/scout-dispatch.md) for the authoritative
+task/output routing table. Send one discovery scout when source location is
+unknown; send additional scouts only for separately named questions and distinct
+evidence outputs. The coordinator owns worker lifecycle, integration, shared
+records and publication. Scouts return cited read-only evidence and never
+dispatch children.
 
 A source-changing worker returns `complete` only after committing its owned
 changes and required SUMMARY.md. A read-only scout, reviewer, verifier,

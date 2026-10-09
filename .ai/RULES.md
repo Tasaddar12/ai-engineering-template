@@ -214,9 +214,12 @@ Source-changing workers commit their assigned changes and required SUMMARY.
 Read-only scouts and reviewers complete with their assigned cited evidence or
 report; they do not create commits or SUMMARY files.
 
-Follow the [scout usage contract](references/scout-dispatch.md) across all
-workflows and role methods, including their search examples. Workers may dispatch
-only `scout` children; the coordinator owns worker lifecycle and publication.
+Use [scout dispatch](references/scout-dispatch.md) for the authoritative
+task/output routing table. Send one discovery scout when source location is
+unknown; send additional scouts only for separately named questions with distinct
+evidence outputs. Workers may dispatch only `scout` children; the coordinator
+retains worker lifecycle, integration, shared records and publication. `scout`
+is a read-only leaf and does not dispatch children or write a SUMMARY.
 
 Plan ownership uses exact repository-relative paths or directory prefixes ending
 in `/`, without traversal, globs or whole-repository scope. Plans that declare

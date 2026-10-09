@@ -72,12 +72,11 @@ Before planning, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** Use [scout dispatch](../references/scout-dispatch.md) to
-locate applicable `.claude/skills/` or `.agents/skills/` entries.
+**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Load rule files listed in [the project rule catalog](../rules/README.md) as needed during **planning**.
 - Ensure plans account for project skill patterns and conventions.
 
-**agent_skills:** load the identified applicable skill paths.
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 </project_context>
 
 <context_fidelity>
@@ -635,8 +634,7 @@ start of preparation when review incorporation is assigned.
 Read the assigned phase CONTEXT, `.planning/PROJECT.md`, `.planning/STATE.md`,
 `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`, `.planning/config.yaml`
 and [runtime contract](../runtime/TEMPLATE-CONTRACT.md). Resolve the exact phase
-directory from the assignment; obtain its record inventory through runtime
-metadata or [scout dispatch](../references/scout-dispatch.md).
+directory from the assignment; list its PLAN, RESEARCH and SUMMARY files locally.
 Do not invent model configuration or feature flags. If STATE is missing, report
 that to the coordinator and continue only work supported by the other records.
 Reuse complete, unchanged content already supplied in this session instead of
@@ -663,8 +661,13 @@ that requires that specific step. Name the finding before expanding the work.
 </step>
 
 <step name="load_codebase_context">
-Use supplied map paths or [scout dispatch](../references/scout-dispatch.md)
-to locate maps. Read relevant documents by phase type:
+Check for codebase map:
+
+```bash
+ls .planning/codebase/*.md 2>/dev/null
+```
+
+If exists, load relevant documents by phase type:
 
 | Phase Keywords | Load These |
 |----------------|------------|
@@ -701,8 +704,8 @@ or report each named question; do not restart discovery for each PLAN.
 <step name="read_project_history">
 Read a prior component SUMMARY only when the current component consumes its
 export, schema, command or recorded decision. Start with exact dependency paths
-from CONTEXT, RESEARCH and the assignment. Locate missing SUMMARY paths through
-[scout dispatch](../references/scout-dispatch.md); read the matching component's
+from CONTEXT, RESEARCH and the assignment. If a path is missing, search SUMMARY
+metadata for the named symbol or requirement; read the matching component's
 SUMMARY, not every SUMMARY in that phase. Do not select a fixed number of phases.
 
 Retain the dependency's exact path, symbol/contract, verified revision and command
@@ -939,8 +942,7 @@ For assigned outline-only or single-plan preparation, use [chunked mode return f
 
 <critical_rules>
 
-- **Read once per unchanged input:** Locate unknown symbols through
-  [scout dispatch](../references/scout-dispatch.md), then read the known
+- **Read once per unchanged input:** Search source symbols first, then read the
   definition, callers and tests needed for the named question. Do not dump an
   entire source file because it has fewer than 2,000 lines. Read required core
   instructions and selected authoring templates in full once.
