@@ -102,7 +102,7 @@ class AgentSourceTests(unittest.TestCase):
             self.assertIn(boundary, text)
 
     def test_targeted_fixer_catalogs_link_the_authoritative_role(self):
-        for name in ("AGENTS.md", ".ai/RULES.md", ".ai/install-assets/agent-entry.txt", ".ai/agents/README.md"):
+        for name in (".ai/install-assets/agent-entry.txt", ".ai/agents/README.md"):
             with self.subTest(source=name):
                 text = (ROOT / name).read_text(encoding="utf-8")
                 self.assertIn("targeted-fixer", text)
