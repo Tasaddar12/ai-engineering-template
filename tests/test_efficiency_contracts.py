@@ -10,43 +10,44 @@ class EfficiencyContractTests(unittest.TestCase):
     def read(self, path):
         return (ROOT / path).read_text(encoding="utf-8")
 
-    def test_scout_routes_discovery_and_requested_mechanical_outputs(self):
-        contract = " ".join(self.read(".ai/references/scout-dispatch.md").split())
-        self.assertIn("MUST dispatch `scout`", contract)
-        for task in ("discovery", "file/symbol", "inventories", "extraction",
-                     "classification", "transformations", "structured summaries"):
-            self.assertIn(task, contract)
-        self.assertIn("even at known paths", contract)
-        self.assertIn("configured cheap scout model", contract)
-        self.assertIn("resolve-agent", contract)
-        self.assertIn("model and effort inline", contract)
+    def test_scout_dispatch_routes_required_work_and_keeps_cited_evidence(self):
+        dispatch = self.read(".ai/references/scout-dispatch.md")
+        self.assertIn("one discovery scout", dispatch)
+        self.assertIn("named unresolved claim", dispatch)
+        self.assertIn("task_class:", dispatch)
+        self.assertIn("field_results:", dispatch)
+        self.assertIn("Do not dispatch a second scout when one result answers", " ".join(dispatch.split()))
+        self.assertNotIn("at least two specialized", dispatch)
+        self.assertIn("citation: <path:line", dispatch)
+        self.assertIn("revision: <inspected revision>", dispatch)
 
-    def test_scout_request_and_evidence_are_bounded_and_reusable(self):
+    def test_broad_scout_boundary_preserves_owner_reads_and_evidence_reuse(self):
         contract = " ".join(self.read(".ai/references/scout-dispatch.md").split())
-        for context in ("bounded question", "checkout/revision", "dirty content",
-                        "search scope", "requested output", "citations",
-                        "uncertainty", "missing evidence"):
-            self.assertIn(context, contract)
-        self.assertIn("question, revision, scope and inputs match", contract)
-        self.assertIn("batch compatible requests", contract)
-        self.assertIn("Join results before using them", contract)
-        self.assertIn("verify consequential citations", contract)
-        self.assertIn("uncovered or stale evidence", contract)
-        self.assertIn("Do not repeat covered searches", contract)
-        self.assertIn("for every read", contract)
+        for instruction in ("configured cheap `scout`", "every agent, including the coordinator",
+                            "Dispatch `scout` before unknown-location discovery",
+                            "requested repository inventories", "fact extraction", "classification",
+                            "structured summaries", "transformation proposals",
+                            "even when the input paths are known", "search examples in every role method",
+                            "Batch compatible fields", "technical/design decisions and authoring",
+                            "Directly inspect already-known source", "for every read",
+                            "known runtime and Git metadata", "coordinator cannot dispatch either",
+                            "Block only dependent work", "Preserve owned progress",
+                            "Do not silently perform required scout work yourself"):
+            self.assertIn(instruction, contract)
 
-    def test_scout_keeps_owner_decisions_and_coordinator_fallback(self):
-        contract = " ".join(self.read(".ai/references/scout-dispatch.md").split())
-        self.assertIn("owning agent keeps reasoning, design, authoring and correctness", contract)
-        self.assertIn("directly inspect already-known source", contract)
-        self.assertIn("read-only leaves", contract)
-        self.assertIn("never edit, run tests or project code", contract)
-        self.assertIn("decide acceptance or spawn children", contract)
-        self.assertIn("nested spawning is unavailable", contract)
-        self.assertIn("bounded request and resume point", contract)
-        self.assertIn("coordinator for dispatch", contract)
-        self.assertIn("block only dependent work", contract)
-        self.assertIn("do not silently perform required scout work yourself", contract)
+    def test_scout_operations_use_short_direct_items_and_structured_examples(self):
+        contract = self.read(".ai/references/scout-dispatch.md")
+        in_code = False
+        for number, line in enumerate(contract.splitlines(), 1):
+            if line.startswith("```"):
+                in_code = not in_code
+            elif not in_code and line.strip():
+                self.assertTrue(line.startswith(("#", "- ")), f"line {number}: {line}")
+        self.assertFalse(in_code)
+        self.assertIn("python .ai/runtime/phase.py query resolve-agent scout --host codex", contract)
+        self.assertIn("python .ai/runtime/phase.py query resolve-agent scout --host claude", contract)
+        for status in ("complete", "incomplete", "blocked"):
+            self.assertIn(status, contract)
 
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
@@ -69,6 +70,10 @@ class EfficiencyContractTests(unittest.TestCase):
             workflow = self.read(path)
             self.assertIn("Independent read-only", workflow, path)
             self.assertIn("same frozen revision", workflow, path)
+        scout = self.read(".ai/references/scout-dispatch.md")
+        self.assertIn("one bounded follow-up", scout)
+        self.assertIn("block only the dependent", scout.lower())
+        self.assertIn("question, revision, search scope and supplied", scout)
 
     def test_execute_keeps_dependency_waves_and_uses_receipts(self):
         workflow = self.read(".ai/workflows/execute-phase.md")

@@ -1,16 +1,15 @@
-# Scout usage redesign
+# Scout dispatch clarification
 
-PR62 replaces repeated planning gates, schemas and return protocols with one
-short authoritative contract in `references/scout-dispatch.md`. It routes
-discovery and requested mechanical evidence to the configured cheap scout,
-preserves owner decisions and known-source inspection, reuses valid evidence,
-and gives a brief coordinator fallback. Role search examples point to that rule.
-
-The plan-phase command, skill and workflow return to the baseline procedure.
-Static checks cover the intended routing and evidence contract, links and host
-adapter parity rather than the removed wording or state machine.
-
-Validation: 12 agent-source, 9 efficiency-contract and 3 workflow-link tests
-passed, plus Codex/Claude installed role parity and guidance links (2 checks).
-Independent review and automatic CI are recorded in the PR description. No
-benchmarks, product changes or mechanical enforcement claims are added.
+- Preserve merged main's scout purpose and configured model routing.
+- Preserve task/output routes and common assignment responsibilities.
+- Preserve structured assignment, result and coordinator-request examples.
+- Preserve evidence reuse, result validation, safety and nested dispatch guidance.
+- Format operational instructions as direct items, one instruction per item.
+- Add mandatory broad routing, compatible batching and owner inspection of known source.
+- Report missing evidence when neither worker nor coordinator can dispatch.
+- Keep conflicting direct-discovery instructions in other agents to brief references.
+- Keep the plan-phase workflow, command and skill on the main procedure.
+- Remove PR62's duplicated gates, dispatch lineage and return state machine.
+- Correct the rejected compact reference through a new commit.
+- Record affected checks, adapter parity, independent review and automatic CI in the PR.
+- Run no benchmarks and add no product features or future-enforcement claims.
