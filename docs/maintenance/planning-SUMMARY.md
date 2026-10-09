@@ -65,7 +65,7 @@ guarded recovery; active age-only retirement is excluded.
 - Hardening and this updated SUMMARY are committed in the following slice; its
   exact hash is supplied in the final handoff. Git owns commit identity.
 
-## Integration contract and remaining work
+## Initial integration contract
 
 Coordinator owns CLI registry and runtime README integration. Import
 `planning_review` in `phase.py`; register `planning.review` calling
@@ -81,6 +81,61 @@ CLI registration must be integrated before executing those workflow verbs.
 Independent code-reviewer/doc-verifier dispatch and integrated CLI tests remain
 coordinator-owned. No benchmarks, model campaign, product changes, publishing,
 merging, or unrelated PR work was performed.
+
+## Independent review repair: CR-03 and workflow entrypoint
+
+Follow-up root: `D:/Codex/2026-10-09/task-36/planning-fixes`, branch
+`feat/maintenance-planning-fixes`, base
+`b00a0c5116d93dd2f447fcb3acb19c2500bde181`. Root, branch and base were checked
+before edits; root and branch are checked again before commit. This slice owns
+only the audit helper/tests, mirrored entrypoint pair and this summary.
+
+CR-03 identified that containment relative to a resolved `.planning` directory
+could permit a linked planning root to read/write outside the repository. The
+audit and repair now preflight planning roots, descendant entries and every path
+ancestor with `lstat` before content reads or lock creation. They reject ordinary
+symlinks and Windows reparse points using `st_file_attributes` (including real
+junctions on Python 3.11, without `Path.is_junction`). Planning paths must remain
+lexically and physically beneath the actual repository root; repair rechecks its
+target immediately before writing. Inventory and repair identifiers stay lexical
+repository-relative paths instead of following linked targets.
+
+Canonical template fingerprint inputs receive the same link/ancestor guard within
+the runtime's source/installed namespace. This preserves support for a global
+host runtime whose templates legitimately live outside the project checkout.
+The source namespace is retained lexically so resolving it cannot hide a junction
+before its templates are checked. This is a preflight and pre-write guard; it
+does not claim protection against an attacker concurrently replacing filesystem
+entries between checks and access.
+
+The command/skill pair now loads `.ai/workflows/clean-planning.md` from the project.
+Focused installer rendering confirms the Codex and Claude namespace substitutions
+and correct skill discovery destinations; the tilde path previously bypassed that
+project lookup. The source pair remains byte-identical.
+
+Follow-up checks:
+
+- `python -m unittest discover -s tests -p test_planning_review.py -v`: 28 run,
+  24 passed, 4 skipped. The original 18 fixtures still pass. Real Windows root and
+  nested planning junctions and a canonical-template namespace junction were
+  rejected before any content read, lock or write. Mocked OS symlink metadata
+  covers root/file/directory rejection; lexical identifiers and a forged external
+  repair candidate are also checked.
+- Four actual symlink fixtures (planning root, STATE file, nested directory,
+  template file) are present but skipped on this Windows host because symlink
+  creation returns `WinError 1314`. They run on a host with symlink privilege.
+- `python -m unittest discover -s tests -p test_agent_sources.py -v`: 12 passed.
+- `python -m unittest discover -s tests -p test_workflow_links.py -v`: 3 passed.
+- `python C:/Users/killi/.codex/skills/.system/skill-creator/scripts/quick_validate.py .agents/skills/clean-planning`:
+  `Skill is valid!`.
+- `python .ai/runtime/phase.py query planning.review`: `ok: true`, `unfilled`,
+  lexical planning inventory, no findings/repairs. CLI integration is present in
+  this follow-up base; the adoption skeleton was inspected without edits.
+- `git diff --check`: passed.
+
+The correction commit hash is returned with the final handoff. Independent
+re-review of the integrated source remains coordinator-owned. No shared registry,
+archive implementation, workflow, project records or other agents' files changed.
 
 ## Self-check
 

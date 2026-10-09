@@ -19,6 +19,6 @@ unresolved semantic conflicts with their evidence.
 <process>
 Arguments: `review`, `repair`, or `archive <phase|adr|quick> <selector>`.
 
-Read and execute `~/.ai/workflows/clean-planning.md` end to end before acting.
+Read and execute `.ai/workflows/clean-planning.md` end to end before acting.
 The workflow owns dispatch, runtime operations, repair and archive safeguards.
 </process>

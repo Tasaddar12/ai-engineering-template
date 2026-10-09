@@ -1,9 +1,14 @@
 """Offline evidence/repair fixtures; never mutate the adoption skeleton."""
 import sys
+import importlib.util
+import os
+import stat
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".ai/runtime"))
@@ -335,6 +340,174 @@ class PlanningReviewTests(unittest.TestCase):
         report = planning_review.review(self.workspace)
         self.assertIn("completion-evidence", self.checks(report))
         self.assertEqual([], report["repairs"])
+
+    def _symlink(self, source, destination, directory=False):
+        try:
+            destination.symlink_to(source, target_is_directory=directory)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest("host cannot create symlink fixture: " + str(exc))
+
+    def _assert_rejected_before_io(self):
+        with patch.object(planning_review, "read_text", side_effect=AssertionError("content was read before link rejection")), \
+                patch.object(planning_review, "write_text") as writer, \
+                patch.object(planning_review.state, "planning_lock") as locker:
+            for action in (lambda: planning_review.review(self.workspace),
+                           lambda: planning_review.repair(self.workspace),
+                           lambda: planning_review.repair(self.workspace, apply=True, expected="old-review")):
+                with self.assertRaises(VerbError) as caught:
+                    action()
+                self.assertEqual("linked-path", caught.exception.code)
+            writer.assert_not_called()
+            locker.assert_not_called()
+
+    def test_symlink_planning_root_is_rejected_before_any_content_or_lock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory)
+            write_text(external / "STATE.md", "External state must remain untouched.\n")
+            self.planning.rename(self.root / "original-planning")
+            self._symlink(external, self.planning, directory=True)
+            try:
+                self._assert_rejected_before_io()
+                self.assertEqual("External state must remain untouched.\n", (external / "STATE.md").read_text())
+                self.assertFalse((external / ".lock").exists())
+            finally:
+                self.planning.unlink()
+
+    def test_symlink_state_file_is_rejected_before_snapshot_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory) / "STATE.md"
+            write_text(external, "Private external prose.\n")
+            self.workspace.state.unlink()
+            self._symlink(external, self.workspace.state)
+            try:
+                self._assert_rejected_before_io()
+                self.assertEqual("Private external prose.\n", external.read_text())
+            finally:
+                self.workspace.state.unlink()
+
+    def test_symlink_nested_directory_is_rejected_before_external_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory)
+            write_text(external / "PLAN.md", "Sensitive external plan.\n")
+            link = self.planning / "phases"
+            self._symlink(external, link, directory=True)
+            try:
+                self._assert_rejected_before_io()
+                self.assertEqual(["PLAN.md"], sorted(path.name for path in external.iterdir()))
+            finally:
+                link.unlink()
+
+    @unittest.skipUnless(os.name == "nt", "Windows reparse-point fixture")
+    def test_windows_junction_root_and_nested_directory_on_python311(self):
+        # mklink /J requires no symlink privilege; lstat attributes detect it
+        # even on Python 3.11, which has no Path.is_junction method.
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory)
+            write_text(external / "STATE.md", "External junction state.\n")
+            for nested in (True, False):
+                with self.subTest(nested=nested):
+                    if not nested:
+                        self.planning.rename(self.root / "original-planning")
+                    link = self.planning / "phases" if nested else self.planning
+                    result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(external)],
+                                            capture_output=True, text=True)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    try:
+                        self._assert_rejected_before_io()
+                        self.assertEqual("External junction state.\n", (external / "STATE.md").read_text())
+                        self.assertFalse((external / ".lock").exists())
+                    finally:
+                        # rmdir removes only the junction entry, never its target.
+                        self.assertTrue(link.absolute().is_relative_to(self.root))
+                        link.rmdir()
+
+    def test_linked_canonical_template_is_rejected_before_fingerprint_reads(self):
+        namespace = self.root / ".ai"
+        templates = namespace / "templates"
+        templates.mkdir(parents=True)
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory) / "state.md"
+            write_text(external, "External canonical-looking content.\n")
+            link = templates / "state.md"
+            self._symlink(external, link)
+            try:
+                with patch.object(planning_review, "TEMPLATE_NAMESPACE", namespace), \
+                        patch.object(planning_review, "TEMPLATES", templates):
+                    self._assert_rejected_before_io()
+                self.assertEqual("External canonical-looking content.\n", external.read_text())
+            finally:
+                link.unlink()
+
+    def test_symlink_lstat_root_file_and_directory_stop_all_content_io(self):
+        # Windows without symlink privilege still exercises the OS symlink
+        # metadata path; actual symlink fixtures above run on supporting hosts.
+        directory = self.planning / "phases"
+        directory.mkdir()
+        original_lstat = Path.lstat
+        for target in (self.planning, self.workspace.state, directory):
+            with self.subTest(target=target.name):
+                def observed_lstat(path, *args, **kwargs):
+                    if path.absolute() == target.absolute():
+                        return SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_file_attributes=0)
+                    return original_lstat(path, *args, **kwargs)
+                with patch.object(Path, "lstat", observed_lstat):
+                    self._assert_rejected_before_io()
+
+    @unittest.skipUnless(os.name == "nt", "Windows canonical-template junction fixture")
+    def test_template_namespace_junction_is_rejected_before_any_content_io(self):
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory)
+            write_text(external / "state.md", "External template must not be read.\n")
+            namespace = self.root / ".ai"
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(namespace), str(external)],
+                                    capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+            try:
+                with patch.object(planning_review, "TEMPLATE_NAMESPACE", namespace), \
+                        patch.object(planning_review, "TEMPLATES", namespace / "templates"):
+                    self._assert_rejected_before_io()
+                self.assertEqual(["state.md"], sorted(path.name for path in external.iterdir()))
+            finally:
+                self.assertTrue(namespace.absolute().is_relative_to(self.root))
+                namespace.rmdir()
+
+    def test_guarded_inventory_identifiers_stay_lexically_repository_relative(self):
+        report = planning_review.review(self.workspace)
+        self.assertIn(".planning/STATE.md", {item["record"] for item in report["inventory"]})
+        self.assertTrue(all(not Path(item["record"]).is_absolute() for item in report["inventory"]))
+        self.assertTrue(all(not Path(item["record"]).is_absolute() for item in report["repairs"]))
+
+    def test_guard_rejects_external_repair_record_even_if_candidate_is_forged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            external = Path(directory) / "STATE.md"
+            write_text(external, "Untouched external target.\n")
+            candidate = {"id": "state-structure", "record": str(external), "content": "bad overwrite"}
+            report = {"fingerprint": "frozen", "findings": [], "status": "findings"}
+            with patch.object(planning_review, "_audit", return_value=(report, [candidate])), \
+                    patch.object(planning_review, "write_text") as writer:
+                with self.assertRaises(VerbError) as caught:
+                    planning_review._repair(self.workspace, True, "frozen", ())
+                self.assertEqual("path-escape", caught.exception.code)
+                writer.assert_not_called()
+            self.assertEqual("Untouched external target.\n", external.read_text())
+
+    def test_clean_entrypoint_renders_to_project_host_workflow_and_discovery_path(self):
+        spec = importlib.util.spec_from_file_location("planning_installer", ROOT / ".ai/install.py")
+        installer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(installer)
+        source = ".ai/commands/clean-planning.md"
+        body = (ROOT / source).read_bytes()
+        mirror = (ROOT / ".agents/skills/clean-planning/SKILL.md").read_bytes()
+        self.assertEqual(body, mirror)
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                rendered = installer.render_asset(source, body, host).decode("utf-8")
+                path = "." + host + "/workflows/clean-planning.md"
+                self.assertIn("`" + path + "`", rendered)
+                self.assertNotIn("~/", rendered)
+                self.assertEqual(".agents/skills/clean-planning/SKILL.md" if host == "codex"
+                                 else ".claude/skills/clean-planning/SKILL.md",
+                                 installer.destination_path(".agents/skills/clean-planning/SKILL.md", host))
 
 
 if __name__ == "__main__":
