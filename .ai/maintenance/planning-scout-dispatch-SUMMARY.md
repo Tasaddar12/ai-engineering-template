@@ -1,15 +1,12 @@
-# Scout dispatch clarification
+# Targeted scout usage update
 
-- Preserve merged main's scout purpose and configured model routing.
-- Preserve task/output routes and common assignment responsibilities.
-- Preserve structured assignment, result and coordinator-request examples.
-- Preserve evidence reuse, result validation, safety and nested dispatch guidance.
-- Format operational instructions as direct items, one instruction per item.
-- Add mandatory broad routing, compatible batching and owner inspection of known source.
-- Report missing evidence when neither worker nor coordinator can dispatch.
-- Keep conflicting direct-discovery instructions in other agents to brief references.
-- Keep the plan-phase workflow, command and skill on the main procedure.
-- Remove PR62's duplicated gates, dispatch lineage and return state machine.
-- Correct the rejected compact reference through a new commit.
-- Record affected checks, adapter parity, independent review and automatic CI in the PR.
-- Run no benchmarks and add no product features or future-enforcement claims.
+- Preserve merged main's routing tables, model guidance, YAML examples and procedures.
+- Add firm broad scout dispatch directions in the central reference.
+- Preserve owner reasoning and necessary direct inspection of known source.
+- Batch compatible fields and reuse matching evidence.
+- Clarify depth/capacity fallback and missing-evidence reporting.
+- Keep other-agent contradiction fixes to brief references.
+- Remove checks tied to the rejected central reformatting.
+- Record the main-to-head line counts, affected checks and review in the PR description.
+- Keep PR62 draft and unmerged; remaining changes await user review.
+- Run no benchmarks.

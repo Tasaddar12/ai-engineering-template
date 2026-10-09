@@ -21,35 +21,17 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("citation: <path:line", dispatch)
         self.assertIn("revision: <inspected revision>", dispatch)
 
-    def test_broad_scout_boundary_preserves_owner_reads_and_evidence_reuse(self):
+    def test_required_scout_scope_keeps_owner_reads_and_evidence_reuse(self):
         contract = " ".join(self.read(".ai/references/scout-dispatch.md").split())
-        for instruction in ("configured cheap `scout`", "every agent, including the coordinator",
-                            "Dispatch `scout` before unknown-location discovery",
-                            "requested repository inventories", "fact extraction", "classification",
+        for instruction in ("Dispatch `scout` before unknown-location searches",
+                            "requested inventories", "fact extraction", "classification",
                             "structured summaries", "transformation proposals",
-                            "even when the input paths are known", "search examples in every role method",
-                            "Batch compatible fields", "technical/design decisions and authoring",
-                            "Directly inspect already-known source", "for every read",
-                            "known runtime and Git metadata", "coordinator cannot dispatch either",
-                            "Block only dependent work", "Preserve owned progress",
-                            "Do not silently perform required scout work yourself"):
+                            "even when input paths are known", "including coordinator work",
+                            "Directly inspect already-known source", "runtime and Git metadata",
+                            "Reuse matching evidence before dispatching another scout",
+                            "Batch compatible fields", "for every read",
+                            "coordinator cannot dispatch either", "Block only dependent work"):
             self.assertIn(instruction, contract)
-
-    def test_scout_operations_use_short_direct_items_and_structured_examples(self):
-        contract = self.read(".ai/references/scout-dispatch.md")
-        in_code = False
-        for number, line in enumerate(contract.splitlines(), 1):
-            if line.startswith("```"):
-                in_code = not in_code
-            elif not in_code and line.strip():
-                self.assertTrue(line.startswith(("#", "- ")), f"line {number}: {line}")
-                self.assertNotIn(";", line, f"compound instruction at line {number}")
-                self.assertNotRegex(line, r"\b(?:and|or) (?:inspect|proceed|decide|record|resume|report|respect)\b")
-        self.assertFalse(in_code)
-        self.assertIn("python .ai/runtime/phase.py query resolve-agent scout --host codex", contract)
-        self.assertIn("python .ai/runtime/phase.py query resolve-agent scout --host claude", contract)
-        for status in ("complete", "incomplete", "blocked"):
-            self.assertIn(status, contract)
 
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
@@ -59,7 +41,7 @@ class EfficiencyContractTests(unittest.TestCase):
             adapter = body.split("</local_workflow>", 1)[0]
             self.assertIn("scout dispatch", adapter, path.name)
         rules = self.read(".ai/RULES.md")
-        self.assertIn("scout usage contract", rules)
+        self.assertIn("references/scout-dispatch.md", rules)
 
     def test_review_triggers_and_parallel_readonly_work_are_explicit(self):
         readme = self.read(".ai/agents/README.md")
@@ -74,7 +56,7 @@ class EfficiencyContractTests(unittest.TestCase):
             self.assertIn("same frozen revision", workflow, path)
         scout = self.read(".ai/references/scout-dispatch.md")
         self.assertIn("one bounded follow-up", scout)
-        self.assertIn("block only the dependent", scout.lower())
+        self.assertIn("block only the dependent", scout)
         self.assertIn("question, revision, search scope and supplied", scout)
 
     def test_execute_keeps_dependency_waves_and_uses_receipts(self):
