@@ -12,7 +12,7 @@
 # dispatch before it runs, context-handoff.sh sees a subagent after it stops. A
 # role added to one copy and not the other is a silent hole in whichever half
 # was missed.
-WRITE_CAPABLE_AGENTS="coder doc-writer debugger"
+WRITE_CAPABLE_AGENTS="coder doc-writer debugger targeted-fixer"
 
 # Roles whose whole output is one assigned artifact -- RESEARCH.md, a codebase
 # map, a phase's plans -- rather than a plan executed to a SUMMARY. They are

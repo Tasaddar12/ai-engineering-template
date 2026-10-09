@@ -253,6 +253,17 @@ check "a complete SUMMARY produces no handoff" \
 check "a complete dispatch still leaves the stack" \
   "$([[ -f "$handoffs/.active-sess-done.jsonl" ]] && echo present || echo gone)" "gone"
 
+for state in complete blocked; do
+  printf -- '---\nstatus: %s\n---\n' "$state" > "$repo/.planning/phases/03-thing/03-09-SUMMARY.md"
+  printf '{"agent": "targeted-fixer", "plan": ".planning/phases/03-thing/03-09-PLAN.md", "at": "now"}\n' \
+    > "$handoffs/.active-fixer-$state.jsonl"
+  run_hook "$(payload_for SubagentStop "fixer-$state" "$workspace/high.jsonl")" >/dev/null
+  expected=0
+  [[ "$state" == blocked ]] && expected=1
+  check "claude: fixer $state summary has expected recovery count" \
+    "$(ls "$handoffs"/fixer-$state*.json 2>/dev/null | wc -l | tr -d ' ')" "$expected"
+done
+
 # --- a blocked SUMMARY is still unfinished work ------------------------------
 
 printf -- '---\nstatus: blocked\n---\n' > "$repo/.planning/phases/03-thing/03-03-SUMMARY.md"
@@ -364,13 +375,17 @@ check "codex: a blocked SUMMARY produces a handoff" \
   "$([[ -f "$handoffs/cx-blocked--05-03.json" ]] && echo yes)" "yes"
 
 # Every write-capable role is covered, and read-only roles are not.
-for role in coder doc-writer debugger; do
+for role in coder doc-writer debugger targeted-fixer; do
   codex_agent_transcript "$workspace/cx-$role.jsonl" ".planning/phases/05-codex/05-04-PLAN.md"
   rm -f "$handoffs"/cx-role-$role*.json
   run_hook "$(codex_stop_payload "cx-role-$role" "$role" "$workspace/cx-$role.jsonl")" >/dev/null
   check "codex: write-capable $role is handed off" \
     "$([[ -f "$handoffs/cx-role-$role--05-04.json" ]] && echo yes)" "yes"
 done
+codex_agent_transcript "$workspace/cx-fixer-done.jsonl" ".planning/phases/05-codex/05-02-PLAN.md"
+run_hook "$(codex_stop_payload cx-fixer-done targeted-fixer "$workspace/cx-fixer-done.jsonl")" >/dev/null
+check "codex: complete fixer produces no handoff" \
+  "$(ls "$handoffs"/cx-fixer-done*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
 for role in researcher verifier code-reviewer doc-verifier codebase-mapper phase-checker integration-checker; do
   codex_agent_transcript "$workspace/cx-$role.jsonl" ".planning/phases/05-codex/05-05-PLAN.md"
   run_hook "$(codex_stop_payload "cx-role-$role" "$role" "$workspace/cx-$role.jsonl")" >/dev/null
@@ -469,7 +484,7 @@ claude_transcript "$workspace/parent/subagents/agent-d1.jsonl" 130000
 out="$(run_hook "$(subagent_payload PostToolUse sess-deb d1 researcher)")"
 contains "subagent: the root's debounce does not silence a subagent" "$out" "CONTEXT HANDOFF"
 
-for pair in coder:"status: blocked" codebase-mapper:"marked partial" \
+for pair in coder:"status: blocked" targeted-fixer:"status: blocked" codebase-mapper:"marked partial" \
             phase-preparer:"marked partial" verifier:"name the scope you did not reach" \
             plugin:x:researcher:"RESEARCH PARTIAL"; do
   role="${pair%:*}"
