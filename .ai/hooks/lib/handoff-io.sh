@@ -273,7 +273,7 @@ import sys, io, json, re, os, ntpath
 
 PLAN_SUFFIX = r"[0-9]{2}(?:[.][0-9]+)?-[0-9]{2}-PLAN[.]md"
 PATTERN = re.compile("[A-Za-z0-9_.:" + chr(92) * 2 + "/-]*" + PLAN_SUFFIX)
-ABS_PATTERN = re.compile(r"(?:[A-Za-z]:[\\/]|/)[^\r\n\"]*?" + PLAN_SUFFIX)
+ABS_PATTERN = re.compile(r"(?<![A-Za-z0-9_.-])(?:[A-Za-z]:[\\/]|/)[^\r\n\"]*?" + PLAN_SUFFIX)
 SUMMARY = re.compile(r"(?im)^\s*summary_path\s*:\s*(.*?)\s*$")
 
 root = os.path.realpath(sys.argv[2])
