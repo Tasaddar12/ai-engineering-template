@@ -432,20 +432,56 @@ Resume file: .planning/STATE.md
         self.record(scout, absent)
         self.assertTrue(self.lookup(scout)['reusable'])
 
+    def copied_runtime(self, name, changed=None):
+        import shutil
+        runtime = Path(self.temp.name) / name
+        shutil.copytree(RUNTIME.parent, runtime)
+        if changed:
+            dependency = runtime / changed
+            dependency.write_bytes(dependency.read_bytes() + b'\n# changed validation dependency\n')
+        return runtime
+
+    def copied_query(self, runtime, verb, *args):
+        process = subprocess.run([sys.executable, str(runtime / 'phase.py'), 'query', verb, *map(str, args)],
+                                 cwd=self.root, capture_output=True, text=True, encoding='utf-8', timeout=30)
+        self.assertNotIn('Traceback', process.stderr, process.stderr)
+        result = json.loads(process.stdout)
+        self.assertEqual(process.returncode, 0, result)
+        self.assertTrue(result['ok'], result)
+        return result
+
     def test_validator_dependency_changes_invalidate_specialist_packets(self):
         self.record()
-        import shutil
-        runtime = Path(self.temp.name) / 'runtime'
-        shutil.copytree(RUNTIME.parent, runtime)
-        validator = runtime / 'lib/verification.py'
-        validator.write_text(validator.read_text() + '\n# changed report validator\n', encoding='utf-8')
         request = self.external('lookup.json', self.request())
-        process = subprocess.run([sys.executable, str(runtime / 'phase.py'), 'query', 'evidence.lookup', str(request)],
-                                 cwd=self.root, capture_output=True, text=True, encoding='utf-8', timeout=30)
-        result = json.loads(process.stdout)
-        self.assertTrue(result['ok'], result)
-        self.assertFalse(result['reusable'])
-        self.assertEqual(result['status'], 'never_run')
+        baseline = self.copied_runtime('runtime-baseline')
+        self.assertTrue(self.copied_query(baseline, 'evidence.lookup', request)['reusable'])
+        dependencies = ('verification.py', 'verification_evidence.py', 'verification_checks.py', 'roadmap.py',
+                        'text.py', 'phases.py', 'paths.py', 'config.py', 'results.py')
+        for name in dependencies:
+            with self.subTest(dependency=name):
+                runtime = self.copied_runtime('packet-' + name, 'lib/' + name)
+                result = self.copied_query(runtime, 'evidence.lookup', request)
+                self.assertFalse(result['reusable'])
+                self.assertEqual(result['status'], 'never_run')
+        entry = self.copied_runtime('packet-entry', 'phase.py')
+        self.assertFalse(self.copied_query(entry, 'evidence.lookup', request)['reusable'])
+
+    def test_validator_dependency_changes_invalidate_bookkeeping_receipts(self):
+        self.report()
+        before, after = self.bookkeeping()
+        self.query('verification.validate-bookkeeping', '--before', before, '--after', after)
+        baseline = self.copied_runtime('currentness-baseline')
+        self.assertTrue(self.copied_query(baseline, 'verification.currentness', '1')['current'])
+        dependencies = ('verification.py', 'verification_evidence.py', 'verification_checks.py', 'roadmap.py',
+                        'text.py', 'phases.py', 'paths.py', 'config.py', 'results.py')
+        for name in dependencies:
+            with self.subTest(dependency=name):
+                runtime = self.copied_runtime('bookkeeping-' + name, 'lib/' + name)
+                result = self.copied_query(runtime, 'verification.currentness', '1')
+                self.assertFalse(result['current'])
+                self.assertIn('bookkeeping provenance mismatch', result['reason'])
+        entry = self.copied_runtime('bookkeeping-entry', 'phase.py')
+        self.assertFalse(self.copied_query(entry, 'verification.currentness', '1')['current'])
 
     def test_acceptance_record_is_exact_revision_and_checks_report(self):
         self.report()
