@@ -38,7 +38,7 @@ own specific anti-patterns.
    the like) — always use the project's own agents by name: `researcher`,
    `phase-preparer`, `phase-checker`, `coder`, `verifier`, `code-reviewer`,
    `doc-writer`, `doc-verifier`, `integration-checker`, `codebase-mapper`,
-   `debugger`. Those definitions carry project-aware prompts and workflow
+   `debugger`, `scout`. Those definitions carry project-aware prompts and workflow
    context; generic agents bypass all of it.
 10. **Do not** re-litigate decisions already locked in CONTEXT.md (or the
     PROJECT.md context section) — locked decisions are respected unconditionally.

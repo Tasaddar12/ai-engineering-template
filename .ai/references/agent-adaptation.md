@@ -42,7 +42,8 @@ only to close named conflicts and missing claims rather than repeating complete
 reviews. Dispatch another specialist only for a named unresolved acceptance
 claim or risk decision in that specialist's domain, with exact revision and
 result destination. Workers dispatch `scout` children only for the repeatable
-evidence packets in [scout dispatch](scout-dispatch.md).
+evidence work in the [scout dispatch](scout-dispatch.md); its routing
+requirements govern discovery and search examples in every role method.
 
 Configured deterministic checks run through `verification.run-checks`; legacy
 entries stay serial, while a mapping opts into parallel execution only when it
