@@ -91,6 +91,8 @@ try:
     if ntpath.splitdrive(value)[0]:
         base = ntpath.normpath(root.replace("/", "\\\\"))
         path = ntpath.normpath(value.replace("/", "\\\\"))
+        if os.name == "nt":
+            path = ntpath.normpath(os.path.realpath(path).replace("/", "\\\\"))
         if ntpath.commonpath([ntpath.normcase(path), ntpath.normcase(base)]) != ntpath.normcase(base):
             raise ValueError()
         result = ntpath.relpath(path, base).replace(chr(92), "/")
@@ -286,6 +288,8 @@ def safe_path(value):
         if ntpath.splitdrive(value)[0]:
             root_win = ntpath.normpath(root.replace("/", "\\\\"))
             path_win = ntpath.normpath(value.replace("/", "\\\\"))
+            if os.name == "nt":
+                path_win = ntpath.normpath(os.path.realpath(path_win).replace("/", "\\\\"))
             if ntpath.commonpath([ntpath.normcase(path_win), ntpath.normcase(root_win)]) != ntpath.normcase(root_win):
                 return ""
             result = ntpath.relpath(path_win, root_win).replace(chr(92), "/")
