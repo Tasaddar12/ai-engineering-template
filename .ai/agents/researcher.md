@@ -76,14 +76,13 @@ Before researching, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** Use [scout dispatch](../references/scout-dispatch.md) to
-locate applicable `.claude/skills/` or `.agents/skills/` entries.
+**Project skills:** Check `.claude/skills/` or `.agents/skills/` if either exists.
 - Load rule files listed in [the project rule catalog](../rules/README.md) as needed during **research**.
 - Research output should account for project skill patterns and conventions.
 
-**agent_skills:** load the identified applicable skill paths.
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 
-**AGENTS.md enforcement:** Read `./AGENTS.md` when present; obtain its directive inventory through [scout dispatch](../references/scout-dispatch.md) (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from AGENTS.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat AGENTS.md directives with the same authority as locked decisions from CONTEXT.md — research should not recommend approaches that contradict them.
+**AGENTS.md enforcement:** If `./AGENTS.md` exists, extract all actionable directives (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from AGENTS.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat AGENTS.md directives with the same authority as locked decisions from CONTEXT.md — research should not recommend approaches that contradict them.
 </project_context>
 
 <upstream_input>
@@ -586,8 +585,11 @@ helps the assigned phase; this runtime has no `nyquist_validation` toggle.
 
 Set shell variables such as `phase_dir` only from these verified assigned paths.
 
-Read the assigned CONTEXT.md path; locate missing paths through
-[scout dispatch](../references/scout-dispatch.md).
+Then read CONTEXT.md if exists:
+```bash
+_CTX=( "$phase_dir"/*-CONTEXT.md )
+if [ -e "${_CTX[0]}" ]; then cat "${_CTX[@]}"; fi
+```
 
 **If CONTEXT.md exists**, it constrains research:
 
@@ -605,8 +607,8 @@ Read the assigned CONTEXT.md path; locate missing paths through
 ## Step 1.3: Trace Repository Context
 
 Use existing codebase maps when present, then confirm relationships in current
-source. Locate capabilities through [scout dispatch](../references/scout-dispatch.md);
-read known entry points, callers, configuration and tests for technical decisions.
+source. Search for major capabilities with `rg` (for example authentication,
+session, payment or build); read entry points, callers, configuration and tests.
 Trace cross-document and cross-module relationships rather than trusting stale
 maps. Record revision-sensitive dependencies and architectural boundaries. The
 local workflow does not require a generated knowledge graph.
@@ -748,7 +750,7 @@ For each domain, follow the bounded questions, source selection, cross-checking 
 Scope this work to the assignment. When the user prohibits running tests, inspect available test infrastructure and propose checks without executing them.
 
 ### Detect Test Infrastructure
-Use [scout dispatch](../references/scout-dispatch.md) to inventory test config files (pytest.ini, jest.config.*, vitest.config.*), test directories (test/, tests/, __tests__/), test files (*.test.*, *.spec.*), package.json test scripts.
+Scan for: test config files (pytest.ini, jest.config.*, vitest.config.*), test directories (test/, tests/, __tests__/), test files (*.test.*, *.spec.*), package.json test scripts.
 
 ### Map Requirements to Tests
 For each phase requirement: identify behavior, determine test type (unit/integration/smoke/e2e/manual-only), specify automated command runnable in < 30 seconds, flag manual-only with justification.

@@ -198,13 +198,13 @@ or starting repairs.
 
 Spawn agents by their exact name — `researcher`, `phase-preparer`,
 `phase-checker`, `coder`, `verifier`, `code-reviewer`, `doc-writer`,
-`doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`, `scout`, `targeted-fixer`. Never
+`doc-verifier`, `integration-checker`, `codebase-mapper`, `debugger`, `scout`. Never
 substitute a generic agent type; the project's own definitions carry the prompts
 and tool permissions that make the result trustworthy. Resolve the model through
 `phase_run query resolve-model <agent>` and the reasoning effort through
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
 call; shared role definitions carry neither as frontmatter. The installer adds
-Claude `model: haiku` only to exported `scout` and `targeted-fixer` metadata, with no effort. A resolved `inherit` means
+Claude `model: haiku` only to exported `scout` metadata, with no effort. A resolved `inherit` means
 omit that argument and let the host choose.
 
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
@@ -214,13 +214,12 @@ Source-changing workers commit their assigned changes and required SUMMARY.
 Read-only scouts and reviewers complete with their assigned cited evidence or
 report; they do not create commits or SUMMARY files.
 
-Follow the [scout usage contract](references/scout-dispatch.md) across all
-workflows and role methods, including their search examples. Workers may dispatch
-only `scout` children; the coordinator owns worker lifecycle and publication.
-
-- Apply the leaf exception in [targeted-fixer](agents/targeted-fixer.md): never dispatch children.
-- Return missing named source scope or needed discovery through the coordinator.
-- Permit only exact-owned repair commits and SUMMARY; retain coordinator Git integration and publication.
+Use [scout dispatch](references/scout-dispatch.md) for the authoritative
+task/output routing table. Send one discovery scout when source location is
+unknown; send additional scouts only for separately named questions with distinct
+evidence outputs. Workers may dispatch only `scout` children; the coordinator
+retains worker lifecycle, integration, shared records and publication. `scout`
+is a read-only leaf and does not dispatch children or write a SUMMARY.
 
 Plan ownership uses exact repository-relative paths or directory prefixes ending
 in `/`, without traversal, globs or whole-repository scope. Plans that declare
@@ -284,7 +283,7 @@ degrades to a shared checkout.
 
 **Enforcement is not prose.** [worktree-guard.sh](hooks/worktree-guard.sh)
 refuses (exit 2) an `Agent`/`Task` dispatch of a write-capable subagent —
-`coder`, `doc-writer`, `debugger`, `targeted-fixer` - that arrives without `isolation="worktree"`,
+`coder`, `doc-writer`, `debugger` — that arrives without `isolation="worktree"`,
 and warns on any edit or write from a checkout that is not a linked worktree.
 The instruction in the workflow tells you to isolate; the hook is what makes
 skipping it fail. A read-only agent has nothing to isolate and is not gated.
