@@ -211,6 +211,9 @@ def inventory(target, roots):
 
 def build_plan(source, target, host, hooks, source_url, revision, baseline=None, baseline_source=None):
     """Pure comparison: ownership is evidence, never a version-stamp shortcut."""
+    # Apply uses a canonical root; review must use the same identity for aliases.
+    installer.safe_path(target)
+    target = target.resolve()
     manifest = load_manifest(target, host)
     incoming = installer.payload(source, host, hooks)
     prior = installer.payload(baseline, host, hooks) if baseline else {}

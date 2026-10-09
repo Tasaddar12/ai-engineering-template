@@ -636,6 +636,32 @@ class ReviewedUpdates(unittest.TestCase):
         update.apply_plan(plan, self.source, self.baseline)
         self.assertIn(b"Pinned upstream fixture addition", (self.target / ".codex/RULES.md").read_bytes())
 
+    def test_target_path_aliases_have_identical_review_plan_identity(self):
+        aliases = [self.target / ".." / self.target.name]
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            get_short_path = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+            get_short_path.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+            get_short_path.restype = wintypes.DWORD
+            buffer = ctypes.create_unicode_buffer(32768)
+            length = get_short_path(str(self.target), buffer, len(buffer))
+            self.assertGreater(length, 0, ctypes.get_last_error())
+            aliases.append(Path(buffer.value))
+        for alias in aliases:
+            with self.subTest(alias=str(alias)):
+                plan = update.build_plan(self.source, alias, "codex", False,
+                                         str(self.source), self.second, self.baseline)
+                self.assertEqual(plan["target"], str(self.target.resolve()))
+                update.apply_plan(plan, self.source, self.baseline)
+                self.assertIn(b"Pinned upstream fixture addition",
+                              (self.target / ".codex/RULES.md").read_bytes())
+                # Alias normalization must not weaken the actual content guard.
+                forged = copy.deepcopy(plan)
+                self.entry(forged, ".codex/RULES.md")["candidate_base64"] = "dGFtcGVyZWQ="
+                with self.assertRaisesRegex(ValueError, "stale"):
+                    update.apply_plan(forged, self.source, self.baseline)
+
     def test_stale_plan_candidate_tampering_and_changed_manifest_fail_before_writes(self):
         plan = self.plan()
         forged = copy.deepcopy(plan)

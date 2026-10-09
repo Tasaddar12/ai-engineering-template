@@ -123,3 +123,41 @@ the CLI fetches the recorded pinned baseline. This repair does not claim a broad
 merge policy. Independent re-review of the integrated repair remains outstanding.
 The repair commit includes these exact three files; its resulting SHA is returned
 in the worker handoff because a commit cannot contain its own SHA.
+
+
+## PR59 Windows CI repair: canonical review target identity
+
+Repository/branch remain update-fixes / feat/maintenance-update-fixes above.
+CI repair base: bfca8cb41de44c035ae16e7c7f0de7b948a02072 (completed CR-01 repair).
+Authorization: fix PR59's failed CI in the owned updater/test paths; no CI workflow
+edits, assertion weakening, unrelated source changes, publication or merge.
+
+The Windows failure signature was four errors plus one failure at exact plan
+recomputation. A genuine Windows GetShortPathNameW reproduction showed that the
+only differing plan field was target: direct build_plan retained UPDATE~2 while
+apply's check_target resolved update-target-p8j3ii_h. Candidate bytes/hashes did
+not change. CLI comparison already canonicalizes the root, explaining why its
+apply fixture passed while direct API fixtures failed. The new regression also
+reproduced this identity mismatch with a portable project/../project path.
+
+build_plan now checks links/junctions before resolving the target and records the
+same canonical root identity used by apply. Exact plan comparison, manifest hashes,
+file fingerprints and candidate hashes remain unchanged. The fix requires no new
+CLI options, dependencies, configuration or CI workflow changes.
+
+Evidence:
+- New alias regression before repair: two subtest failures (portable parent alias
+  and actual Windows short path), 12.078s.
+- `python C:/Users/killi/AppData/Local/Temp/update-ci-path-alias-check.py D:/Codex/2026-10-09/task-36/update-fixes`:
+  seven tests passed in 80.812s under genuine aliased tempfile.tempdir GITHUB~1.
+  The temporary reproduction script ran exactly the five previously failing CI
+  fixtures plus the new target-alias regression and existing stale/tampering guard
+  regression. The script is temporary supporting evidence, not a repository artifact.
+- `python -m py_compile .ai/update.py` and `git diff --check`: passed.
+- Local environment: Windows, Python 3.13.14, PyYAML 6.0.3, Git core.autocrlf=true.
+  CI log specifies Windows CPython 3.11.9/PyYAML 6.0.3. No Python 3.11 interpreter
+  is available locally; the reproduced root-identity mismatch is version independent.
+
+The actual remote CI rerun and independent review remain coordinator-owned and
+outstanding. This separate repair commit includes only update.py, updater tests and
+this SUMMARY. Its SHA is returned in the worker handoff.
