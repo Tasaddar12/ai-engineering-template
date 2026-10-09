@@ -442,6 +442,115 @@ class PlanningArchive(unittest.TestCase):
         self.cli("planning.archive", "phase", "8", "--evidence", ".planning/legacy.md", "--apply")
         self.assertEqual(self.cli("roadmap.analyze")["blocked"], [])
 
+    def phase_legacy_evidence(self):
+        self.write(".planning/legacy.md", "---\narchive_kind: phase\narchive_id: 01-foundation\narchive_status: complete\narchive_reason: User confirmed completed work from recorded release.\n---\n")
+        return ".planning/legacy.md"
+
+    def assert_archive_denied_without_writes(self, *args):
+        before = self.snapshot()
+        for flag in ((), ("--apply",)):
+            result = self.cli("planning.archive", *args, *flag, ok=False)
+            self.assertIn(result["code"], {"archive-active", "archive-evidence-required"})
+            self.assertEqual(before, self.snapshot())
+
+    def test_unregistered_plan_file_blocks_archive_even_with_legacy_evidence(self):
+        self.write(".planning/phases/01-foundation/01-02-PLAN.md", "# Pending extra work\n")
+        evidence = self.phase_legacy_evidence()
+        self.assert_archive_denied_without_writes("phase", "1")
+        self.assert_archive_denied_without_writes("phase", "1", "--evidence", evidence)
+        self.assertEqual(self.cli("phases.list")["count"], 2)
+        self.assertTrue((self.root / ".planning/phases/01-foundation/01-02-PLAN.md").is_file())
+
+    def test_even_completed_unregistered_plan_requires_roadmap_reconciliation(self):
+        self.write(".planning/phases/01-foundation/01-02-PLAN.md", "# Extra work\n")
+        self.write(".planning/phases/01-foundation/01-02-SUMMARY.md", "---\nstatus: complete\n---\n## Accomplishments\n\nDelivered the extra work.\n")
+        self.assert_archive_denied_without_writes("phase", "1", "--evidence", self.phase_legacy_evidence())
+
+    def test_registered_missing_plan_file_blocks_archive_even_with_legacy_evidence(self):
+        (self.root / ".planning/phases/01-foundation/01-01-PLAN.md").unlink()
+        self.assert_archive_denied_without_writes("phase", "1", "--evidence", self.phase_legacy_evidence())
+
+    def test_unsummarized_plan_blocks_legacy_archive(self):
+        (self.root / ".planning/phases/01-foundation/01-01-SUMMARY.md").unlink()
+        self.assert_archive_denied_without_writes("phase", "1", "--evidence", self.phase_legacy_evidence())
+
+    def test_affirmatively_incomplete_plan_and_summary_block_legacy_archive(self):
+        evidence = self.phase_legacy_evidence()
+        plan = ".planning/phases/01-foundation/01-01-PLAN.md"
+        summary = ".planning/phases/01-foundation/01-01-SUMMARY.md"
+        for status in ("in_progress", "blocked", "halted", "open"):
+            with self.subTest(artifact="plan", status=status):
+                self.write(plan, "---\nstatus: " + status + "\n---\n# Unfinished plan\n")
+                self.assert_archive_denied_without_writes("phase", "1", "--evidence", evidence)
+            self.write(plan, "# Plan\n")
+            with self.subTest(artifact="summary", status=status):
+                self.write(summary, "---\nstatus: " + status + "\n---\n## Accomplishments\n\nPartial implementation.\n")
+                self.assert_archive_denied_without_writes("phase", "1", "--evidence", evidence)
+            self.write(summary, "---\nstatus: complete\n---\n## Accomplishments\n\nBuilt foundation.\n")
+
+    def test_nested_plan_cannot_escape_phase_inventory(self):
+        self.write(".planning/phases/01-foundation/nested/01-02-PLAN.md", "# Unfinished nested work\n")
+        self.assert_archive_denied_without_writes("phase", "1", "--evidence", self.phase_legacy_evidence())
+
+    def test_repeated_adr_alias_preview_and_apply_are_noops(self):
+        self.adr()
+        first = self.cli("planning.archive", "adr", "ADR-001", "--apply")
+        before = self.snapshot()
+        for selector in ("1", "001", "ADR-001", "adr-1", "ADR-001-old", "ADR-001-old.md", ".planning/decisions/ADR-001-old.md"):
+            for flag in ((), ("--apply",)):
+                with self.subTest(selector=selector, apply=bool(flag)):
+                    result = self.cli("planning.archive", "adr", selector, *flag)
+                    self.assertEqual(result["state"], "already_archived")
+                    self.assertEqual(result["recovery_id"], first["recovery_id"])
+                    self.assertEqual(before, self.snapshot())
+
+    def test_archived_adr_alias_collision_with_active_record_is_denied(self):
+        self.adr()
+        self.cli("planning.archive", "adr", "1", "--apply")
+        self.write(".planning/decisions/ADR-001-another.md", "---\nstatus: accepted\n---\n# New record reusing identity\n")
+        before = self.snapshot()
+        for selector in ("1", "ADR-001"):
+            self.assertEqual(self.cli("planning.archive", "adr", selector, "--apply", ok=False)["code"], "archive-collision")
+            self.assertEqual(before, self.snapshot())
+
+    def test_ambiguous_archived_adr_number_is_denied(self):
+        self.adr()
+        self.cli("planning.archive", "adr", "ADR-001-old", "--apply")
+        self.write(".planning/decisions/ADR-001-another.md", "---\nstatus: superseded\nsuperseded_by: [ADR-002-new]\n---\n# Separate historic record\n")
+        self.cli("planning.archive", "adr", "ADR-001-another", "--apply")
+        before = self.snapshot()
+        self.assertEqual(self.cli("planning.archive", "adr", "ADR-001", "--apply", ok=False)["code"], "archive-ambiguous")
+        self.assertEqual(before, self.snapshot())
+        self.assertEqual(self.cli("planning.archive", "adr", "ADR-001-old")["state"], "already_archived")
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction compatibility scenario")
+    def test_internal_junction_denied_without_path_is_junction_api(self):
+        self.write(".planning/shared/protected.md", "Keep internal target.\n")
+        target = self.root / ".planning/shared"
+        link = self.root / ".planning/phases/01-foundation/junction"
+        result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        before = self.snapshot()
+        def unavailable(_):
+            raise AttributeError("Path.is_junction is unavailable in Python 3.11")
+        with patch.object(type(link), "is_junction", property(unavailable), create=True):
+            for path in (link, link / "protected.md"):
+                with self.assertRaises(VerbError) as error:
+                    archive.guarded(Workspace(self.root), path)
+                self.assertEqual(error.exception.code, "path-escape")
+            for apply in (False, True):
+                with self.assertRaises(VerbError) as error:
+                    archive.archive(Workspace(self.root), "phase", "1", apply=apply)
+                self.assertEqual(error.exception.code, "path-escape")
+        self.assertEqual(before, self.snapshot())
+        self.assertEqual((target / "protected.md").read_text(encoding="utf-8"), "Keep internal target.\n")
+
+    def test_completion_value_does_not_require_timestamp_format(self):
+        name = self.quick()
+        path = ".planning/quick/" + name + "/QUICK.md"
+        self.write(path, self.read(path).replace("completed: '2026-01-02'", "completed: recorded release confirmation"))
+        self.assertEqual(self.cli("planning.archive", "quick", name, "--apply")["state"], "archived")
+
     def test_archived_phase_mutation_requires_recovery(self):
         self.cli("planning.archive", "phase", "1", "--apply")
         before = self.snapshot()

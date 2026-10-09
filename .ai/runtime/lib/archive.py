@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -42,7 +43,14 @@ def guarded(workspace, path):
     current = root
     for part in relative.parts:
         current = current / part
-        require(not current.is_symlink() and not getattr(current, "is_junction", lambda: False)(),
+        try:
+            attributes = getattr(current.lstat(), "st_file_attributes", 0)
+        except FileNotFoundError:
+            attributes = 0
+        # Python 3.11 has no Path.is_junction; lstat still exposes Windows
+        # reparse attributes without resolving their target.
+        reparse = attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+        require(not current.is_symlink() and not reparse,
                 "archive path contains a symlink or junction: " + str(current), "path-escape")
     try:
         path.resolve().relative_to(workspace.planning.resolve())
@@ -112,6 +120,19 @@ def legacy_evidence(workspace, evidence, kind, identifier, statuses):
     return workspace.relative(path)
 
 
+def matches_selector(kind, selector, name):
+    """Use the same identifier aliases for live records and catalog history."""
+    if name == selector or (kind == "adr" and Path(name).stem == selector):
+        return True
+    if kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", selector):
+        match = phases.DIRECTORY.match(name)
+        return bool(match and as_number(match.group(1)) == as_number(selector))
+    if kind == "adr" and re.fullmatch(r"(?:ADR-)?\d+", selector, re.I):
+        match = re.match(r"ADR-(\d+)(?:-|\.)", name, re.I)
+        return bool(match and int(match.group(1)) == int(selector.upper().removeprefix("ADR-")))
+    return False
+
+
 def selected(workspace, kind, selector):
     require(kind in KINDS, "archive kind must be phase, adr or quick", "bad-archive-kind")
     base = guarded(workspace, workspace.planning / KINDS[kind])
@@ -125,16 +146,8 @@ def selected(workspace, kind, selector):
     candidates = []
     for item in sorted(base.iterdir()) if base.is_dir() else []:
         guarded(workspace, item)
-        if item.name == text or (kind == "adr" and item.stem == text):
+        if matches_selector(kind, text, item.name):
             candidates.append(item)
-        elif kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", text):
-            match = phases.DIRECTORY.match(item.name)
-            if match and as_number(match.group(1)) == as_number(text):
-                candidates.append(item)
-        elif kind == "adr" and re.fullmatch(r"(?:ADR-)?\d+", text, re.I):
-            match = re.match(r"ADR-(\d+)(?:-|\.)", item.name, re.I)
-            if match and int(match.group(1)) == int(text.upper().removeprefix("ADR-")):
-                candidates.append(item)
     require(len(candidates) <= 1, "ambiguous archive selector", "archive-ambiguous")
     return candidates[0] if candidates else base / text
 
@@ -147,16 +160,31 @@ def eligibility(workspace, kind, source, evidence=None, replacement=None):
         require(source.is_dir() and match is not None, "invalid phase directory", "bad-archive-selector")
         number = match.group(1)
         phase = Roadmap(workspace).find(number)
+        require(phase is None or phase.status == "Complete",
+                "active or incomplete phase cannot be archived", "archive-active")
         files = phases.artifacts(source, number)
         statuses = []
         outcomes = []
+        plan_paths = [path for path in tree_files(workspace, source) if path.name.endswith("-PLAN.md")]
+        require(all(phases.PLAN_FILE.fullmatch(path.name) and path.parent == source for path in plan_paths),
+                "phase contains unregistered or noncanonical plan files", "archive-evidence-required")
+        disk_plans = {path.name[:-8] for path in plan_paths}
+        registered = {plan["id"] for plan in phase.plans} if phase else disk_plans
+        require(disk_plans == registered,
+                "phase plan files must match the registered roadmap plans", "archive-evidence-required")
+        summaries = {name[:-11] for name in files["summaries"]}
+        require(disk_plans <= summaries, "every plan file needs its completed summary", "archive-evidence-required")
+        for path in plan_paths:
+            front, _ = split_frontmatter(read_text(path))
+            require(not front.get("status") or str(front["status"]).lower() == "complete",
+                    "phase contains affirmatively incomplete plan work", "archive-active")
         for name in files["summaries"]:
             front, body = split_frontmatter(read_text(source / name))
             statuses.append(front.get("status"))
             outcomes.append(substantive(section_body(body, "Accomplishments")))
         verification, _ = split_frontmatter(read_text(source / files["verification"])) if files["verification"] else ({}, "")
-        active = (phase is not None and phase.status != "Complete") or any(
-            str(status).lower() in {"in_progress", "in progress", "blocked"} for status in statuses)
+        active = any(
+            status is not None and str(status).lower() != "complete" for status in statuses)
         require(not active, "active or incomplete phase cannot be archived", "archive-active")
         state = State(workspace)
         require(not (state.phase_number and as_number(state.phase_number) == as_number(number)
@@ -164,8 +192,7 @@ def eligibility(workspace, kind, source, evidence=None, replacement=None):
                      in {"in progress", "executing", "planning", "ready to execute", "ready to plan"}),
                 "current active phase cannot be archived", "archive-active")
         legacy = legacy_evidence(workspace, evidence, kind, identifier, {"complete"})
-        expected = {plan["id"] for plan in phase.plans} if phase else {name[:-8] for name in files["plans"]}
-        summaries = {name[:-11] for name in files["summaries"]}
+        expected = registered
         proven = bool(expected) and expected <= summaries and all(status == "complete" for status in statuses) and all(outcomes)
         proven = proven and verification.get("status") == "passed"
         require(proven or legacy, "phase needs complete plan summaries and passed verification, or explicit legacy evidence", "archive-evidence-required")
@@ -286,9 +313,13 @@ def _archive(workspace, kind, selector, apply, evidence, replacement):
             require(isinstance(previous, dict), "invalid recovery journal", "bad-recovery-journal")
             require(previous.get("state") != "pending",
                     "recover interrupted operation first: " + path.stem, "archive-pending")
-    existing = next((entry for entry in data["entries"] if entry["kind"] == kind and (
-        entry["source"] == workspace.relative(source) or entry["id"] == str(selector) or
-        (kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", str(selector)) and entry.get("phase") == display_number(selector)))), None)
+    text = str(selector).strip()
+    path_selector = "/" in text or "\\" in text or Path(text).is_absolute()
+    matches = [entry for entry in data["entries"] if entry["kind"] == kind and (
+        entry["source"] == workspace.relative(source) if path_selector else
+        matches_selector(kind, text, Path(entry["source"]).name))]
+    require(len(matches) <= 1, "ambiguous archive selector", "archive-ambiguous")
+    existing = matches[0] if matches else None
     if existing:
         require(not source.exists(), "active record collides with an archived identity", "archive-collision")
         destination = guarded(workspace, workspace.root / existing["destination"])

@@ -50,6 +50,12 @@ completed: 2026-10-09
 status: complete
 plan_head_before: 6e3280a06b680547972fe9def3240f872fb842dd
 work_branch: feat/maintenance-archive-slice
+review_repair_head_before: b00a0c5116d93dd2f447fcb3acb19c2500bde181
+review_repair_branch: feat/maintenance-archive-fixes
+review_repair_actuals:
+  tokens: 4390
+  tasks: 3
+  commits: 1
 ---
 
 # Phase Maintenance Plan Archive Runtime: Summary
@@ -158,3 +164,64 @@ None.
 ## Self-Check: PASSED
 
 All 12 owned implementation/test/documentation files exist; source commit `9f9cc55a0ea2d259a307b378040b6b6dd0e77f2e` resolves in Git. Assigned root/branch/base guard passed before the implementation commit. Final SUMMARY/root/branch/commit-count verification is recorded in the returned worker result.
+
+
+## Independent review repairs: CR-02, CR-04 and CR-05
+
+This repair packet applies to `feat/maintenance-archive-fixes`, assigned immutable
+base `b00a0c5116d93dd2f447fcb3acb19c2500bde181`. The original implementation packet
+above is historical evidence; this section records the current bounded repairs.
+Only `.ai/runtime/lib/archive.py`, `tests/test_planning_archive.py`,
+`.ai/runtime/README.md` and this SUMMARY changed.
+
+- **CR-02:** Compare the complete directory tree's PLAN inventory with registered
+  roadmap IDs before archival. Reject missing/unregistered/noncanonical/nested
+  plans and every unsummarized PLAN. Affirmatively incomplete PLAN or SUMMARY
+  status rejects archival even when explicit legacy completion evidence is
+  supplied. Checked roadmap completion and the original `archive-active` error
+  precedence remain required. Fixtures assert both preview and apply leave all
+  records unchanged, including active-count discovery of unregistered work.
+- **CR-04:** Every guarded ancestor/scanned item checks `lstat` Windows reparse
+  attributes, independent of `Path.is_junction`, which is unavailable on Python
+  3.11. The Windows regression creates an internal junction, makes
+  `Path.is_junction` unavailable, and verifies rejection of the junction and its
+  descendants as well as archive preview/apply; its protected target is unchanged.
+  Existing external symlink/junction rejection continues to pass.
+- **CR-05:** Live selection and catalog matching share one alias matcher. Repeated
+  ADR numeric, prefixed-number, stem, filename and original-path selectors return
+  `already_archived` with the same recovery ID and no writes for preview/apply.
+  Ambiguous historical numbers and active/archive identity collisions still fail.
+- Corrected README wording to “completion value plus authored Verification”; no
+  unrelated timestamp-format validation was added. A fixture accepts a substantive
+  non-timestamp completion value with authored verification.
+
+### Repair checks
+
+- `python -m unittest discover -s tests -p test_planning_archive.py -v`:
+  **40 tests passed**, 39.211 seconds, no skips, against the final repair source.
+  Eleven new regressions cover the reviewed gaps and documentation boundary.
+- Bounded existing `test_phase_runtime` classes `PlanProgress` and `QuickTasks`:
+  **8 tests passed**, 6.069 seconds; runtime phase completion and quick creation/update behavior
+  remains intact. The full 158-test suite was not repeated for this bounded repair.
+- `git diff --check`: passed.
+- The initial repair fixture run found one `archive-active` precedence regression;
+  it was corrected before the final all-pass run. No failure remains.
+- Python 3.11 was not separately installed/executed. Its missing junction API is
+  simulated against a real Windows junction, as assigned; the implementation uses
+  the existing `lstat` reparse attribute available without that API.
+
+### Repair self-check and remaining
+
+All four owned repair paths exist. Assigned root, branch and base guards passed
+before writes; root/branch/base ancestry is checked again before the repair commit.
+Repair estimate-scale actuals are 17,562 text-diff characters / 4 = 4,390 tokens
+from the assigned repair base across the three source/test/documentation paths,
+excluding this SUMMARY; no binary/generated files changed.
+One meaningful source/docs/tests/SUMMARY repair commit is returned to the
+coordinator, who owns integration and independent re-review. No new network,
+authentication or operational-store surface was added. Stub scanning found no
+unfinished implementation; the adoption skeleton remains untouched.
+
+No repair implementation blocker remains. Independent re-review and combined
+verification remain coordinator-owned. Repair duration was not separately
+measured; the test elapsed times above are actual command results.

@@ -188,8 +188,10 @@ Traversal, ambiguous selection, symlinks, Windows junctions and pre-existing
 destinations are refused. Records never qualify because of their age.
 
 Phases move to `.planning/archive/phases/<original-directory>` without renumbering
-any artifact. Every roadmap plan needs a `status: complete` SUMMARY with authored
-Accomplishments, and the phase needs a `status: passed` VERIFICATION. An incomplete
+any artifact. On-disk PLAN IDs must exactly match the registered roadmap plans,
+and every PLAN file needs its SUMMARY. Explicit legacy evidence cannot bypass
+missing, unregistered, unsummarized or affirmatively incomplete plan work. Every
+roadmap plan needs a `status: complete` SUMMARY with authored Accomplishments, and the phase needs a `status: passed` VERIFICATION. An incomplete
 roadmap checklist, blocked/in-progress summary, or current active phase is refused.
 The historical phase block remains in ROADMAP.md with an `Archived` destination;
 its overview checklist and active progress row are removed. Active counts and
@@ -206,7 +208,7 @@ An accepted/proposed ADR cannot become superseded through a replacement option
 alone.
 
 Quick tasks move to `.planning/archive/quick/<original-directory>`. `complete`
-needs a completion timestamp and authored Verification. `abandoned` or `obsolete`
+needs a completion value plus authored Verification. `abandoned` or `obsolete`
 needs `archive_reason` frontmatter or authored `## Retirement` prose. `open` and
 `in_progress` are always refused. `quick.update` accepts `obsolete` as an explicit
 status, and sequence allocation reserves archived task IDs.
