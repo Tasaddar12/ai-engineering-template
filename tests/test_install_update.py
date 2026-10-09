@@ -26,7 +26,7 @@ def load(name, path):
 
 
 installer = load("update_installer", ROOT / ".ai/install.py")
-update = load("install_update", ROOT / ".ai/install_update.py")
+legacy_update = load("install_update", ROOT / ".ai/install_update.py")
 
 
 def seed_source(directory):
@@ -73,7 +73,7 @@ class UpdateTests(unittest.TestCase):
                     b'max_threads = 4 # retained comment\r\n'
                     b'max_concurrent_threads_per_session = 5\r\n[hooks]\r\nStop = []\r\n')
         path = self.write(".codex/config.toml", original)
-        changes, backups, _ = update.plan_update(self.source, self.target, "codex", False, installer)
+        changes, backups, _ = legacy_update.plan_update(self.source, self.target, "codex", False, installer)
         self.assertIn(path, backups)
         self.apply(changes)
         content = path.read_bytes()
@@ -82,7 +82,7 @@ class UpdateTests(unittest.TestCase):
         settings = installer.tomllib.loads(content.decode("utf-8-sig"))
         self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
         self.assertNotIn("max_threads", settings["agents"])
-        self.assertEqual([], update.plan_update(self.source, self.target, "codex", False, installer)[0])
+        self.assertEqual([], legacy_update.plan_update(self.source, self.target, "codex", False, installer)[0])
 
     def test_no_hooks_update_invalid_codex_settings_are_preflight_only(self):
         if self.host != "codex":
@@ -90,7 +90,7 @@ class UpdateTests(unittest.TestCase):
         self.write(".codex/config.toml", b'agents = {max_threads = 4}\n')
         before = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
         with self.assertRaisesRegex(ValueError, "inline agents.*nothing was installed"):
-            update.plan_update(self.source, self.target, "codex", False, installer)
+            legacy_update.plan_update(self.source, self.target, "codex", False, installer)
         after = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
         self.assertEqual(before, after)
 
@@ -127,7 +127,7 @@ class UpdateTests(unittest.TestCase):
         return "CLAUDE.md" if self.host == "claude" else "AGENTS.md"
 
     def plan(self, prune=False, previous=None):
-        return update.plan_update(self.source, self.target, self.host, True,
+        return legacy_update.plan_update(self.source, self.target, self.host, True,
                                   installer, prune=prune, previous=previous)
 
     def apply(self, changes):
@@ -387,6 +387,248 @@ class UpdateTests(unittest.TestCase):
 class ClaudeUpdateTests(UpdateTests):
     """The same contract, on the host whose entry file and skill root differ."""
     host = "claude"
+
+
+
+
+"""Offline Git fixtures for reviewed workflow updates and ownership provenance."""
+from pathlib import Path
+import copy
+import importlib.util
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import tomllib
+import unittest
+from unittest.mock import patch
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+_spec = importlib.util.spec_from_file_location("workflow_update", ROOT / ".ai/update.py")
+update = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(update)
+installer = update.installer
+
+
+def git(*args, cwd):
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True,
+                          text=True, encoding="utf-8").stdout.strip()
+
+
+class ReviewedUpdates(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.TemporaryDirectory(prefix="update-fixture-")
+        cls.source = Path(cls.temp.name) / "source"
+        cls.source.mkdir()
+        for folder in (".ai", ".agents", ".planning"):
+            shutil.copytree(ROOT / folder, cls.source / folder,
+                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        git("init", "--quiet", cwd=cls.source)
+        git("add", ".", cwd=cls.source)
+        git("-c", "user.name=Fixture", "-c", "user.email=test@example.invalid", "commit", "--quiet", "-m", "baseline", cwd=cls.source)
+        cls.first = git("rev-parse", "HEAD", cwd=cls.source)
+        cls.baseline = Path(cls.temp.name) / "baseline"
+        update.fetch(str(cls.source), cls.first, cls.baseline)
+        rules = cls.source / ".ai/RULES.md"
+        rules.write_bytes(rules.read_bytes() + b"\nPinned upstream fixture addition.\n")
+        optional = cls.source / ".planning/config.yaml"
+        optional.write_bytes(optional.read_bytes() + b"\nnew_optional: example\n")
+        git("add", ".", cwd=cls.source)
+        git("-c", "user.name=Fixture", "-c", "user.email=test@example.invalid", "commit", "--quiet", "-m", "upstream change", cwd=cls.source)
+        cls.second = git("rev-parse", "HEAD", cwd=cls.source)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temp.cleanup()
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="update-target-")
+        self.addCleanup(self.temp.cleanup)
+        self.target = Path(self.temp.name) / "project"
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"), "--source", str(self.source),
+                                 "--ref", self.first, "--target", str(self.target), "--skip-deps", "--no-hooks"],
+                                capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def plan(self, host="codex", hooks=False):
+        return update.build_plan(self.source, self.target, host, hooks, str(self.source), self.second, self.baseline)
+
+    def entry(self, plan, name):
+        return next(e for e in plan["entries"] if e["path"] == name)
+
+    def snapshot(self):
+        return {p.relative_to(self.target).as_posix(): p.read_bytes() for p in self.target.rglob("*")
+                if p.is_file() and ".git" not in p.parts}
+
+    def test_manifest_ownership_and_content_diff_not_version_stamp(self):
+        manifest = update.load_manifest(self.target, "codex")
+        self.assertEqual(manifest["current"]["revision"], self.first)
+        self.assertEqual(manifest["files"][".codex/RULES.md"]["classification"], "upstream-managed")
+        manifest["current"]["revision"] = self.second  # A false stamp cannot hide changed bytes.
+        (self.target / ".codex/workflow-ownership.json").write_bytes(installer.json_bytes(manifest))
+        plan = self.plan()
+        entry = self.entry(plan, ".codex/RULES.md")
+        self.assertEqual(entry["action"], "write")
+        self.assertIn("Pinned upstream fixture addition", entry["diff"])
+
+    def test_dry_run_preserves_every_byte_and_reports_optional(self):
+        before = self.snapshot()
+        plan = self.plan()
+        self.assertEqual(self.snapshot(), before)
+        config = self.entry(plan, ".planning/config.yaml")
+        self.assertIn("new_optional", config["optional_defaults"])
+        self.assertNotIn("new_optional", yaml.safe_load(__import__('base64').b64decode(config["candidate_base64"])))
+
+    def test_apply_preserves_project_history_hooks_and_models_and_provenance(self):
+        (self.target / "code.py").write_text("user code\n")
+        (self.target / ".planning/phases").mkdir(exist_ok=True)
+        (self.target / ".planning/phases/plan.md").write_text("user plan\n")
+        settings = self.target / ".codex/config.toml"
+        settings.write_text('model = "project-model"\n[agents]\nmax_concurrent_threads_per_session = 4\n')
+        plan = self.plan(hooks=True)
+        changed = update.apply_plan(plan, self.source, self.baseline)
+        self.assertIn(".codex/RULES.md", changed)
+        parsed = tomllib.loads(settings.read_text())
+        self.assertEqual(parsed["model"], "project-model")
+        self.assertEqual(parsed["agents"]["max_concurrent_threads_per_session"], 4)
+        self.assertTrue(parsed["hooks"])
+        self.assertEqual((self.target / "code.py").read_text(), "user code\n")
+        self.assertEqual((self.target / ".planning/phases/plan.md").read_text(), "user plan\n")
+        manifest = update.load_manifest(self.target, "codex")
+        self.assertEqual(manifest["current"]["revision"], self.second)
+        self.assertEqual(manifest["previous"]["revision"], self.first)
+        self.assertEqual(manifest["files"][".codex/RULES.md"]["installed_sha256"], update.digest((self.target / ".codex/RULES.md").read_bytes()))
+        # Repeat is a byte no-op and does not overwrite previous provenance.
+        again = update.build_plan(self.source, self.target, "codex", True, str(self.source), self.second, self.source)
+        self.assertEqual(update.apply_plan(again, self.source, self.source), [])
+
+    def test_customization_requires_review_and_keep_remains_customized(self):
+        path = self.target / ".codex/RULES.md"
+        path.write_bytes(path.read_bytes() + b"\nUser rule.\n")
+        plan = self.plan()
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
+            update.apply_plan(plan, self.source, self.baseline)
+        self.assertEqual(before, self.snapshot())
+        plan["resolutions"][".codex/RULES.md"] = {"action": "keep", "classification": "customized"}
+        update.apply_plan(plan, self.source, self.baseline)
+        self.assertIn(b"User rule", path.read_bytes())
+        self.assertEqual(update.load_manifest(self.target, "codex")["files"][".codex/RULES.md"]["classification"], "customized")
+
+    def test_nested_missing_required_config_preserves_existing_values(self):
+        config = self.target / ".planning/config.yaml"
+        old = {"workflow": {"auto_advance": True}, "agents": {"coder": {"model": "custom"}},
+               "handoff": {"context_tokens": 30000}, "verification": {"commands": [["python", "check.py"]]}}
+        config.write_text(yaml.safe_dump(old))
+        plan = self.plan()
+        row = self.entry(plan, ".planning/config.yaml")
+        self.assertIn("workflow.isolation", row["required_config"])
+        update.apply_plan(plan, self.source, self.baseline)
+        result = yaml.safe_load(config.read_text())
+        self.assertTrue(result["workflow"]["auto_advance"])
+        self.assertEqual(result["workflow"]["isolation"], "auto")
+        self.assertEqual(result["agents"], old["agents"])
+        self.assertEqual(result["verification"]["commands"], old["verification"]["commands"])
+        self.assertEqual(result["handoff"]["context_tokens"], 30000)
+
+    def test_config_wrong_types_enums_are_conflicts_and_never_reset(self):
+        for value in ({"workflow": "custom"}, {"workflow": {"isolation": "none"}},
+                      {"handoff": {"context_tokens": "oops"}}, {"commit_docs": "yes"},
+                      {"delivery": {"merge_method": "force"}}):
+            with self.subTest(value=value):
+                config = self.target / ".planning/config.yaml"
+                config.write_text(yaml.safe_dump(value))
+                plan = self.plan()
+                self.assertTrue(self.entry(plan, ".planning/config.yaml")["conflict"])
+                before = self.snapshot()
+                with self.assertRaises(ValueError):
+                    update.apply_plan(plan, self.source, self.baseline)
+                self.assertEqual(before, self.snapshot())
+
+    def test_legacy_can_upgrade_after_reviewed_classification(self):
+        (self.target / ".codex/workflow-ownership.json").unlink()
+        plan = self.plan()
+        row = self.entry(plan, ".codex/RULES.md")
+        self.assertEqual(row["classification"], "unproven")
+        self.assertTrue(row["conflict"])
+        with self.assertRaises(ValueError):
+            update.apply_plan(plan, self.source, self.baseline)
+        for entry in plan["entries"]:
+            if entry["classification"] == "unproven":
+                plan["resolutions"][entry["path"]] = {"action": entry["action"], "classification": "upstream-managed"}
+        update.apply_plan(plan, self.source, self.baseline)
+        self.assertIn(b"Pinned upstream fixture addition", (self.target / ".codex/RULES.md").read_bytes())
+
+    def test_stale_plan_candidate_tampering_and_changed_manifest_fail_before_writes(self):
+        plan = self.plan()
+        forged = copy.deepcopy(plan)
+        self.entry(forged, ".codex/RULES.md")["candidate_base64"] = "dGFtcGVyZWQ="
+        with self.assertRaisesRegex(ValueError, "stale"):
+            update.apply_plan(forged, self.source, self.baseline)
+        path = self.target / ".codex/RULES.md"
+        path.write_bytes(path.read_bytes() + b"concurrent edit")
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "stale"):
+            update.apply_plan(plan, self.source, self.baseline)
+        self.assertEqual(before, self.snapshot())
+
+    def test_project_additions_are_preserved_and_not_pruned(self):
+        path = self.target / ".codex/local-command.md"
+        path.write_text("project addition")
+        plan = self.plan()
+        self.assertEqual(self.entry(plan, ".codex/local-command.md")["classification"], "project")
+        update.apply_plan(plan, self.source, self.baseline)
+        self.assertEqual(path.read_text(), "project addition")
+
+    def test_portable_traversal_and_project_code_ownership_rejected(self):
+        for name in ("../escape", "C:/escape", ".git/config", "/absolute", "x\\y", "a/../../b"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                update.destination(self.target, name)
+        manifest = update.load_manifest(self.target, "codex")
+        manifest["files"]["code.py"] = {"classification": "upstream-managed", "installed_sha256": None, "upstream_sha256": None}
+        (self.target / ".codex/workflow-ownership.json").write_bytes(installer.json_bytes(manifest))
+        with self.assertRaisesRegex(ValueError, "project code"):
+            self.plan()
+
+    def test_link_destination_rejected(self):
+        with patch.object(installer, "safe_path", side_effect=ValueError("Refusing linked path")):
+            with self.assertRaisesRegex(ValueError, "linked"):
+                self.plan()
+
+    def test_cli_default_dry_run_and_reviewed_hash_required(self):
+        before = self.snapshot()
+        plan_path = Path(self.temp.name) / "review.json"
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/update.py"), "--target", str(self.target),
+                                 "--source", str(self.source), "--ref", self.second, "--no-hooks", "--plan", str(plan_path)],
+                                text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Pinned upstream fixture addition", result.stdout)
+        self.assertEqual(before, self.snapshot())
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/update.py"), "--apply", str(plan_path)],
+                                text=True, encoding="utf-8", capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(before, self.snapshot())
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/update.py"), "--apply", str(plan_path),
+                                 "--reviewed-plan-sha256", update.digest(plan_path.read_bytes())],
+                                text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_preexisting_equal_workflow_file_not_claimed_on_fresh_install(self):
+        target = Path(self.temp.name) / "existing"
+        target.mkdir()
+        incoming = installer.payload(self.baseline, "codex", False)
+        path = target / ".codex/RULES.md"
+        path.parent.mkdir()
+        path.write_bytes(incoming[".codex/RULES.md"])
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"), "--source", str(self.source),
+                                 "--ref", self.first, "--target", str(target), "--skip-deps", "--no-hooks"], capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(update.load_manifest(target, "codex")["files"][".codex/RULES.md"]["classification"], "customized")
 
 
 if __name__ == "__main__":
