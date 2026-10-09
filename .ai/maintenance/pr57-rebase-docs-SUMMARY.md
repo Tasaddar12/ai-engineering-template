@@ -11,7 +11,7 @@
 
 - The frozen PR57 `.ai/references/parallel-pipeline.md` defines ready/wait/blocked routing, registers immutable chunk revisions, prepares detached reviewer and test snapshots, and allows independent ready coding to continue during gates.
 - The frozen PR57 `.ai/workflows/execute-phase.md` directs the coordinator to continue disjoint ready work and wait only on dependent tasks. Its pipeline guidance retains final aggregate verification and integrated independent review.
-- The legacy ordered-wave wording remains scoped to unregistered whole-plan assignments; `worktree.merge-wave` remains a fallback for completed unregistered plans. Registered `pipeline.run-checks` receipts cover immutable chunks, while `verification.run-checks` remains the final integrated phase gate.
+- The legacy ordered-wave wording remains scoped to unregistered whole-plan assignments. Integration at those wave boundaries is limited to completed unregistered whole-plan assignments, matching the `worktree.merge-wave` fallback constraint. Registered `pipeline.run-checks` receipts cover immutable chunks, while `verification.run-checks` remains the final integrated phase gate.
 - Dispatch and lifecycle events remain coordinator/host-owned; runtime state and evidence enforcement remain runtime-owned. No automatic host dispatch or provider prompt-cache/speed behavior is asserted.
 
 ## Checks
