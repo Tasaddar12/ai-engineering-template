@@ -3,7 +3,7 @@
 The orchestrator asks the runtime which model an agent runs on, how hard that
 model should think, which tools it may use and which skills it should load.
 Codex resolves its native TOML settings; Claude resolves project YAML overrides.
-The leaf scout's model and effort remain fixed for each host.
+The leaf scout and targeted-fixer model and effort remain fixed for each host.
 """
 from pathlib import Path
 import tomllib
@@ -76,11 +76,11 @@ def native_codex(name):
 
 
 def resolve_model(workspace, name, host=None):
-    """Fixed scout model, native Codex TOML, or Claude YAML override/inherit."""
+    """Fixed leaf model, native Codex TOML, or Claude YAML override/inherit."""
     host = resolve_host(host)
-    if name == "scout":
+    if name in ("scout", "targeted-fixer"):
         return {"agent": name, "model": "gpt-6-luna" if host == "codex" else "haiku",
-                "source": "scout", "inherit": False}
+                "source": name, "inherit": False}
     if host == "codex":
         _, definition = native_codex(name)
         model = definition.get("model", "inherit")
@@ -103,9 +103,9 @@ def resolve_effort(workspace, name, host=None):
     omits the effort argument and lets the host choose.
     """
     host = resolve_host(host)
-    if name == "scout":
+    if name in ("scout", "targeted-fixer"):
         effort = "high" if host == "codex" else "inherit"
-        return {"agent": name, "effort": effort, "source": "scout",
+        return {"agent": name, "effort": effort, "source": name,
                 "inherit": effort == "inherit"}
     if host == "codex":
         _, definition = native_codex(name)

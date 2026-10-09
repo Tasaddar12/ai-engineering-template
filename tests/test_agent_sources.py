@@ -36,7 +36,7 @@ class AgentSourceTests(unittest.TestCase):
 
     def test_worker_local_adapters_reference_scout_contract_without_worker_dispatch(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
-            if role.stem in {"README", "scout", "coordinator"}:
+            if role.stem in {"README", "scout", "coordinator", "targeted-fixer"}:
                 continue
             with self.subTest(role=role.name):
                 text = role.read_text(encoding="utf-8")
@@ -62,7 +62,7 @@ class AgentSourceTests(unittest.TestCase):
             self.assertNotIn(host_setting, body)
 
     def test_native_models_and_shared_roles_without_model_frontmatter(self):
-        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout"}
+        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout", "targeted-fixer"}
         for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
             native = tomllib.loads(definition.read_text(encoding="utf-8"))
             role = ROOT / ".ai/agents" / (definition.stem + ".md")
@@ -78,11 +78,28 @@ class AgentSourceTests(unittest.TestCase):
                 self.assertEqual("read-only", native["sandbox_mode"])
                 self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
                 self.assertTrue({"Agent", "Task", "Write", "Edit", "Bash"} <= set(frontmatter["disallowedTools"].split(", ")))
+            elif definition.stem == "targeted-fixer":
+                self.assertEqual("workspace-write", native["sandbox_mode"])
+                self.assertTrue({"Write", "Edit", "Bash"} <= set(frontmatter["tools"].split(", ")))
+                self.assertTrue({"Agent", "Task"} <= set(frontmatter["disallowedTools"].split(", ")))
+                self.assertNotIn("Agent", frontmatter["tools"].split(", "))
             else:
                 self.assertNotIn("model", frontmatter)
                 self.assertIn("Agent", frontmatter["tools"].split(", "))
                 self.assertNotIn("Agent", frontmatter.get("disallowedTools", "").split(", "))
                 self.assertNotIn("Task", frontmatter.get("disallowedTools", "").split(", "))
+
+    def test_targeted_fixer_is_a_bounded_leaf_with_structured_inputs_and_evidence(self):
+        text = (ROOT / ".ai/agents/targeted-fixer.md").read_text(encoding="utf-8")
+        for field in ("origin:", "diagnosis_or_finding:", "checkout:", "branch:", "revision:",
+                      "owned_paths:", "symbols:", "required_behavior:", "constraints:",
+                      "checks:", "summary_path:", "result_destination:"):
+            self.assertIn(field, text)
+        for boundary in ("never dispatch children", "needed discovery", "stale or contradictory",
+                         "via the coordinator", "security-policy", "assigned security bugs",
+                         "Never discover scope", "Git integration", "independent review",
+                         "safe exact-owned staging/commits", "worker-handoff.md"):
+            self.assertIn(boundary, text)
 
     def test_every_role_reads_the_shared_scout_procedure(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
