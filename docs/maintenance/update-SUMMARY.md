@@ -39,8 +39,13 @@ merge, benchmark or AI evaluation campaign.
   initial new fixture batch: 13 tests passed (137.172s).
 - `python -m unittest discover -s tests -p test_install_update.py -k UpdateTests -v`:
   44 retained legacy tests passed (85.642s), four expected platform/host skips.
-- Existing installer compatibility suite is running; final result will follow in
-  the handoff or a follow-up evidence commit.
+- `python -m unittest discover -s tests -p test_install.py -v`: 37 tests passed
+  (320.537s), one expected symlink creation skip. Windows junction/short-path tests pass.
+- Temporary offline guarded Claude apply: passed; custom model/user hook preserved
+  and current/previous provenance verified (three changed files).
+- Focused invalid-config fixture rerun: one test passed (33.677s).
+- Documented runtime config-get/resolve-agent/runtime-identity commands executed
+  successfully at the frozen implementation revision.
 - `python -m py_compile .ai/install.py .ai/update.py`: passed.
 - `python C:/Users/killi/.codex/skills/.system/skill-creator/scripts/quick_validate.py .agents/skills/update-workflows`:
   Skill is valid. Command and skill bytes match.
@@ -77,5 +82,9 @@ was performed by this worker.
 
 ## Commits
 
-The implementation and this required SUMMARY are committed together; the worker
-handoff records the resulting SHA (self-reference cannot be embedded in that commit).
+Initial implementation: cab7a8bde9de12416354d0949ad49c6a090edad4.
+Follow-up: coordinator-owned deterministic comparison captures plan/log, then scout
+classifies supplied evidence as FACT_EXTRACTION without executing project code.
+This repairs the scout permission/task_class mismatch found during integration.
+The follow-up documentation and this SUMMARY are committed together; the handoff
+records its SHA (self-reference cannot be embedded in that commit).

@@ -30,18 +30,22 @@ and use its runtime, never a sibling checkout or personal configuration.
    outside the deterministic updater use `query config-set <dotted-key> <value>`
    only for an explicitly authorized decision. Upstream examples cannot supply one.
 
-2. **Spawn scout for extraction/classification.** Give exact root/revision and
-   read-only task_class `extraction`, separately requested fields: installed
-   ownership/provenance, candidate diffs, config-required/defaults/conflicts,
-   generated hook/entry conflicts, project preservation and unresolved ownership.
-   Assign this comparison command (paths use the selected host root):
+2. **Coordinator: capture comparison, then spawn scout.** Run the deterministic
+   installed updater on the pinned scope and capture its output and saved plan:
    `python .codex/update.py --target . --source <repository> --ref <ref> --plan <outside-workflow-plan.json>`.
    It fetches to a temporary directory and resolves the ref to a commit. No target
    mutation occurs. `--no-hooks` preserves existing hooks and skips new registration;
    `--from-ref <commit>` can provide a legacy content baseline but cannot prove
-   ownership. The scout returns cited structured evidence under the scout contract;
-   the coordinator joins and validates it before assigning implementation. Do not
-   repeat discovery when source locations are already known.
+   ownership. Give scout the captured plan/log input ids, exact root/revision and
+   a complete specialized `scout_assignment` with task_class `FACT_EXTRACTION`,
+   question "Which supplied update candidates and classifications require review?",
+   requested_fields: ownership/provenance, candidate diffs, config required/optional
+   defaults/conflicts, generated hook/entry conflicts, project preservation and
+   unresolved ownership. Bound search_scope and allowed_evidence to the supplied
+   plan/log and named ownership/config files; require cited `field_results` for each
+   field. Scout reads and classifies this supplied evidence; it never executes the
+   updater, project code or tests. Coordinator joins and validates its structured
+   packet before assigning implementation. Do not repeat known-source discovery.
 
 3. **Spawn coder only for authorized implementation.** Give the pinned candidate
    revision, root/branch guards, exact allowed files, saved plan and scout packet.
