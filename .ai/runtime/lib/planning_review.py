@@ -79,7 +79,7 @@ def _checked_files(directory, boundary, recursive=True):
             if entry.is_dir(follow_symlinks=False):
                 if recursive:
                     pending.append(path)
-            elif path.suffix == ".md" and entry.is_file(follow_symlinks=False):
+            elif path.suffix.casefold() == ".md" and entry.is_file(follow_symlinks=False):
                 files.append(path)
     return sorted(files)
 

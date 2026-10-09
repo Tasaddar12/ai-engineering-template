@@ -477,6 +477,42 @@ class PlanningReviewTests(unittest.TestCase):
         self.assertTrue(all(not Path(item["record"]).is_absolute() for item in report["inventory"]))
         self.assertTrue(all(not Path(item["record"]).is_absolute() for item in report["repairs"]))
 
+    def test_uppercase_markdown_is_fingerprinted_and_changes_reject_old_preview(self):
+        record = self.planning / "notes/DECISION.MD"
+        write_text(record, "The original recorded instruction.\n")
+        preview = planning_review.repair(self.workspace)
+        self.assertIn(".planning/notes/DECISION.MD", {
+            item["record"] for item in planning_review.review(self.workspace)["inventory"]})
+        write_text(record, "A later recorded instruction changes the evidence.\n")
+        before = self.workspace.state.read_bytes()
+        with patch.object(planning_review, "write_text") as writer:
+            with self.assertRaises(VerbError) as caught:
+                planning_review.repair(self.workspace, apply=True, expected=preview["fingerprint"])
+            self.assertEqual("stale-review", caught.exception.code)
+            writer.assert_not_called()
+        self.assertEqual(before, self.workspace.state.read_bytes())
+        self.assertFalse((self.planning / ".lock").exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows case-insensitive physical STATE.MD lookup")
+    def test_windows_physical_uppercase_state_edit_cannot_evade_fingerprint(self):
+        uppercase = self.planning / "STATE.MD"
+        self.workspace.state.rename(uppercase)
+        self.assertIn("STATE.MD", {path.name for path in self.planning.iterdir()})
+        self.assertTrue(self.workspace.state.is_file())
+        preview = planning_review.repair(self.workspace)
+        self.assertTrue(preview["repairs"])
+        self.assertIn(".planning/STATE.MD", {
+            item["record"] for item in planning_review.review(self.workspace)["inventory"]})
+        write_text(uppercase, uppercase.read_text(encoding="utf-8") + "\nLater authored evidence.\n")
+        before = uppercase.read_bytes()
+        with patch.object(planning_review, "write_text") as writer:
+            with self.assertRaises(VerbError) as caught:
+                planning_review.repair(self.workspace, apply=True, expected=preview["fingerprint"])
+            self.assertEqual("stale-review", caught.exception.code)
+            writer.assert_not_called()
+        self.assertEqual(before, uppercase.read_bytes())
+        self.assertFalse((self.planning / ".lock").exists())
+
     def test_guard_rejects_external_repair_record_even_if_candidate_is_forged(self):
         with tempfile.TemporaryDirectory() as directory:
             external = Path(directory) / "STATE.md"

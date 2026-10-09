@@ -137,6 +137,27 @@ The correction commit hash is returned with the final handoff. Independent
 re-review of the integrated source remains coordinator-owned. No shared registry,
 archive implementation, workflow, project records or other agents' files changed.
 
+## Case-insensitive Markdown fingerprint correction
+
+The next narrow review found that the inventory accepted only lowercase `.md`,
+while Windows readers also access a physical `STATE.MD` through `STATE.md`.
+Continuation in the same root/branch started from committed `b32dce6`. Inventory
+now compares the extension with `casefold()`, preserving physical lexical names,
+existing link/reparse guards and containment checks. Uppercase Markdown evidence
+therefore participates in the source fingerprint.
+
+- `python -m unittest discover -s tests -p test_planning_review.py -k uppercase -v`:
+  2 passed, including the genuine Windows physical `STATE.MD` rename, review and
+  post-review mutation. Both regressions reject the old fingerprint with
+  `stale-review`, invoke no record writer, preserve existing STATE bytes and leave
+  no lock file behind.
+- `python -m unittest discover -s tests -p test_planning_review.py`: 30 run,
+  26 passed, the same 4 actual-symlink fixtures skipped for Windows privilege.
+
+Only the helper, focused fixtures and this summary changed. No broader checks or
+scope expansion accompanied this correction; its commit hash is returned in the
+final handoff for immediate integration and independent re-review.
+
 ## Self-check
 
 PASSED: all six owned deliverable paths exist; first source commit was verified
