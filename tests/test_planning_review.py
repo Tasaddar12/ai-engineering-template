@@ -1,5 +1,6 @@
 """Offline evidence/repair fixtures; never mutate the adoption skeleton."""
 import sys
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -272,6 +273,68 @@ class PlanningReviewTests(unittest.TestCase):
         with self.assertRaises(VerbError) as caught:
             planning_review.repair(self.workspace, only=["complete-everything"])
         self.assertEqual("unknown-repair", caught.exception.code)
+
+    def test_malformed_verification_is_a_finding_and_never_a_repair(self):
+        write_text(self.workspace.roadmap, ROADMAP.replace("- [ ] 01-01", "- [x] 01-01"))
+        directory = self.planning / "phases/01-foundation"
+        write_text(directory / "01-VERIFICATION.md", "---\nstatus: [malformed\n---\nA partial report.\n")
+        report = planning_review.review(self.workspace)
+        self.assertIn("frontmatter", self.checks(report))
+        self.assertIn("completion-evidence", self.checks(report))
+        self.assertEqual([], report["repairs"])
+
+    def test_missing_authored_status_is_not_inferred(self):
+        metadata = {key: value for key, value in self.metadata.items() if key != "status"}
+        write_text(self.workspace.state, join_frontmatter(metadata, STATE))
+        preview = planning_review.repair(self.workspace)
+        planning_review.repair(self.workspace, apply=True, expected=preview["fingerprint"])
+        actual, body = split_frontmatter(self.workspace.state.read_text(encoding="utf-8"))
+        self.assertNotIn("status", actual)
+        self.assertEqual(STATE, body)
+
+    def test_wrong_level_heading_and_fenced_anchors_are_not_guessed(self):
+        altered = STATE.replace("## Current Position", "### Current Position")
+        write_text(self.workspace.state, join_frontmatter(self.metadata, altered))
+        self.assertNotIn("restore-state-heading", str(planning_review.repair(self.workspace)["repairs"]))
+        altered = STATE.replace("## Current Position\n\n", "```text\n").replace("## Accumulated Context", "```\n\n## Accumulated Context")
+        write_text(self.workspace.state, join_frontmatter(self.metadata, altered))
+        self.assertNotIn("restore-state-heading", str(planning_review.repair(self.workspace)["repairs"]))
+
+    def test_dependency_cycle_is_reported_even_when_wave_metadata_is_missing(self):
+        directory = self.planning / "phases/01-foundation"
+        for identifier, dependency in (("01-01", "01-02"), ("01-02", "01-01")):
+            write_text(directory / (identifier + "-PLAN.md"), "---\nphase: 01-foundation\nplan: '" + identifier[-2:] + "'\ndepends_on: ['" + dependency + "']\n---\n<tasks></tasks>\n")
+        report = planning_review.review(self.workspace)
+        self.assertTrue(any("dependency cycle" in finding["message"] for finding in report["findings"]))
+
+    def test_canonical_checkpoint_does_not_need_automatic_task_fields(self):
+        path = self.planning / "phases/01-foundation/01-01-PLAN.md"
+        write_text(path, "---\nphase: 01-foundation\nplan: '01'\nwave: 1\ndepends_on: []\nfiles_modified: []\nrequirements: [REQ-01]\nacceptance: [REQ-01]\nmust_haves: {}\n---\n" +
+                   "<objective>Decide it.</objective><context>Phase context.</context>\n" +
+                   '<tasks><task type="checkpoint:decision"><decision>The open choice</decision><resume-signal>Select an option.</resume-signal></task></tasks>\n' +
+                   "<verification>Check recorded decision.</verification><success_criteria>Decision recorded.</success_criteria><output>Record.</output>\n")
+        report = planning_review.review(self.workspace)
+        self.assertFalse(any(item["check"] == "plan-contract" for item in report["findings"]), report["findings"])
+
+    def test_canonical_task_commit_hash_is_resolved_instead_of_metric_count(self):
+        def git(*args):
+            result = subprocess.run(["git", *args], cwd=self.root, capture_output=True, text=True, check=True)
+            return result.stdout.strip()
+        git("init", "-q")
+        git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--allow-empty", "-qm", "Existing implementation evidence")
+        revision = git("rev-parse", "HEAD")
+        write_text(self.workspace.roadmap, ROADMAP.replace("- [ ] 01-01", "- [x] 01-01"))
+        directory = self.planning / "phases/01-foundation"
+        write_text(directory / "01-01-PLAN.md", "---\nphase: 01-foundation\nplan: '01'\n---\n<tasks></tasks>\n")
+        write_text(directory / "01-01-SUMMARY.md", "---\nstatus: complete\nactuals:\n  commits: 1\n---\n## Task Commits\n1. Implementation: `" + revision + "`\n")
+        write_text(directory / "01-VERIFICATION.md", "---\nstatus: passed\nrevision: " + revision + "\nverified_at: 2026-10-09T11:00:00Z\n---\nChecks actually passed.\n")
+        report = planning_review.review(self.workspace)
+        self.assertNotIn("completion-evidence", self.checks(report))
+        self.assertIn("derive-state-progress", str(report["repairs"]))
+        write_text(directory / "01-01-SUMMARY.md", "---\nstatus: complete\nactuals:\n  commits: 1\n---\n## Task Commits\nNone recorded.\n")
+        report = planning_review.review(self.workspace)
+        self.assertIn("completion-evidence", self.checks(report))
+        self.assertEqual([], report["repairs"])
 
 
 if __name__ == "__main__":

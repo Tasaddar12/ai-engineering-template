@@ -19,6 +19,11 @@ frontmatter/section/table parsers, phase filename identities, requirement status
 values, quick status values and verification status readers. It audits templates,
 IDs, references, dependency ordering and contradictory completion evidence.
 Findings distinguish structure, semantics and existing conformance warnings.
+The hardening slice reports dependency cycles and malformed verification YAML,
+keeps human checkpoints distinct from automatic task fields, and resolves actual
+SUMMARY commit hashes (canonical `## Task Commits` or an explicit hash list) with
+Git rather than mistaking `actuals.commits` for commit evidence. Missing STATE
+status, wrong-level headings and fenced example field anchors are not guessed.
 
 `planning_review.repair` previews exact diffs. Only unique intact STATE field
 blocks can restore a heading; progress metadata copies roadmap checkboxes when
@@ -36,15 +41,29 @@ guarded recovery; active age-only retirement is excluded.
 
 ## Checks
 
-- `python -m unittest discover -s tests -p test_planning_review.py -v`: 12 passed.
+- `python -m unittest discover -s tests -p test_planning_review.py -v`: 18 passed.
   Fixtures cover missing headings, ambiguous anchors, identities/dependencies,
   local references, conflicting completion, unfilled adoption exemption,
   review fingerprint rejection, dry-run, idempotence and exact prose preservation.
+  Final cases additionally cover malformed verification, dependency cycles,
+  canonical human checkpoints, actual Git evidence versus commit counts, wrong
+  heading levels, fenced field examples and preservation of an absent status.
 - `python -m unittest discover -s tests -p test_agent_sources.py -v`: 12 passed.
 - `python -m unittest discover -s tests -p test_workflow_links.py -v`: 3 passed.
 - `python .ai/runtime/phase.py query planning.validate`: clean, zero warnings.
 - Skill quick validation initially rejected the command-only `argument-hint`
   metadata; moved usage into the body and kept mirror parity.
+- `python .../skill-creator/scripts/quick_validate.py .agents/skills/clean-planning`:
+  `Skill is valid!` after that correction.
+- `python .ai/runtime/phase.py query resolve-agent scout --host codex`: confirmed
+  `gpt-6-luna`, `high`, read-only role. Source `.ai` defaults to Claude unless
+  `--host codex` is explicit; workflow dispatch examples now name the actual host.
+
+## Commits
+
+- `5aaff9a`: first tested source/workflow/skill slice, including this SUMMARY.
+- Hardening and this updated SUMMARY are committed in the following slice; its
+  exact hash is supplied in the final handoff. Git owns commit identity.
 
 ## Integration contract and remaining work
 
@@ -65,5 +84,6 @@ merging, or unrelated PR work was performed.
 
 ## Self-check
 
-All owned deliverable paths exist. Source commit identity is returned in the
-worker's handoff and recorded by Git; this summary is included in that commit.
+PASSED: all six owned deliverable paths exist; first source commit was verified
+in Git. Final source commit identity is returned in the worker's handoff and
+recorded by Git; this updated summary is included in that commit.

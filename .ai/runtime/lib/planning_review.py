@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from urllib.parse import unquote
 
-from . import phases, quick, requirements, state, validate, verification
+from . import gitops, phases, quick, requirements, state, validate, verification
 from .paths import read_text, write_text
 from .results import VerbError, require
 from .roadmap import Roadmap, as_number, pad
@@ -59,6 +59,15 @@ def _metadata(path, workspace, findings):
         return {}, read_text(path)
 
 
+def _summary_commits(data, body):
+    """Canonical SUMMARY records hash evidence in Task Commits, not a count."""
+    declared = data.get("commits", [])
+    hashes = [item for item in declared if isinstance(item, str)
+              and re.fullmatch(r"[0-9a-fA-F]{7,64}", item)] if isinstance(declared, list) else []
+    hashes += re.findall(r"\b[0-9a-fA-F]{7,64}\b", section_body(body, "Task Commits", 2))
+    return sorted(set(hashes))
+
+
 def _check_headings(path, body, template, workspace, findings, optional=()):
     present = HEADING.findall(_visible(body))
     for level, title in _headings(template):
@@ -78,6 +87,8 @@ def _state_headings(body):
             ("Session Continuity", state.CONTINUITY, ("Last session", "Stopped at", "Resume file"))):
         if find_section(body, title, 2):
             continue
+        if any(name == title for _, name in HEADING.findall(_visible(body))):
+            continue  # Wrong heading level needs an explicit, separate proposal.
         matches = list(pattern.finditer(body))
         if [item.group("key") for item in matches] != list(keys):
             continue
@@ -122,6 +133,8 @@ def _repair_candidate(workspace, findings, roadmap):
     before = dict(parsed.frontmatter)
     if roadmap.exists and not blocked:
         parsed.derive_frontmatter(roadmap)
+        if "status" not in before:
+            parsed.frontmatter.pop("status", None)  # Never infer authored status.
         if parsed.frontmatter != before:
             operations.append({"operation": "derive-state-progress", "source": ".planning/ROADMAP.md"})
     if not operations:
@@ -146,8 +159,11 @@ def _audit(workspace):
                  for path in sorted(TEMPLATES.glob("*.md"))]
     fingerprint = _hash(repr(snapshot))
     if validate.unfilled(workspace):
-        return {"status": "unfilled", "fingerprint": fingerprint, "inventory": snapshot,
-                "findings": [], "repairs": [], "note": "adoption skeleton is instructional; run onboarding"}, []
+        return {"status": "unfilled", "fingerprint": fingerprint,
+                "inventory": [{"record": name, "sha256": digest} for name, digest in snapshot
+                              if not name.startswith("templates/")],
+                "findings": [], "finding_count": 0, "checks": [], "repairs": [],
+                "note": "adoption skeleton is instructional; run onboarding"}, []
     base = validate.run(workspace)
     findings = [dict(item, kind="conformance") for item in base["warnings"]]
     roadmap = Roadmap(workspace)
@@ -177,8 +193,18 @@ def _audit(workspace):
     for identifier in authored:
         if identifier not in requirement_ids:
             _finding(findings, "requirement-id", ".planning/REQUIREMENTS.md", "no traceability row: " + identifier)
+    for identifier in requirement_ids:
+        if identifier not in authored:
+            _finding(findings, "requirement-id", ".planning/REQUIREMENTS.md", "traceability id has no authored requirement: " + identifier)
     phase_list = roadmap.phases()
     numbers = [as_number(item.number) for item in phase_list]
+    parsed_state = None
+    try:
+        parsed_state = state.State(workspace) if workspace.state.is_file() else None
+    except VerbError:
+        pass  # Already reported by _metadata above; no repair is proposed.
+    if parsed_state and parsed_state.phase_number and roadmap.find(parsed_state.phase_number) is None:
+        _finding(findings, "state-position", ".planning/STATE.md", "current phase has no roadmap entry")
     for row in rows:
         status = row.get("Status", "")
         if status not in requirements.STATUSES:
@@ -226,9 +252,14 @@ def _audit(workspace):
                 if summary_path is None or not summary_path.is_file():
                     _finding(findings, "completion-evidence", ".planning/ROADMAP.md", "checked plan lacks summary: " + item["id"])
                 else:
-                    data, _ = _metadata(summary_path, workspace, findings)
-                    if data.get("status") != "complete" or not data.get("commits"):
+                    data, summary_body = _metadata(summary_path, workspace, findings)
+                    hashes = _summary_commits(data, summary_body)
+                    if data.get("status") != "complete" or not hashes:
                         _finding(findings, "completion-evidence", workspace.relative(summary_path), "checked plan lacks complete status and commits")
+                    else:
+                        for revision in hashes:
+                            if not gitops.rev_parse(workspace, revision + "^{commit}"):
+                                _finding(findings, "completion-evidence", workspace.relative(summary_path), "summary commit cannot be resolved: " + revision)
         if not directory:
             continue
         context = directory / (pad(phase.number) + "-CONTEXT.md")
@@ -236,6 +267,8 @@ def _audit(workspace):
             _finding(findings, "missing-context", workspace.relative(directory), "executable plans lack phase CONTEXT")
         elif context.is_file():
             _, body = _metadata(context, workspace, findings)
+            _check_headings(context, body, "context.md", workspace, findings,
+                            ("Claude's Discretion", "Reusable Assets", "Established Patterns", "Integration Points"))
             if "<canonical_refs>" not in body:
                 _finding(findings, "canonical-refs", workspace.relative(context), "mandatory canonical_refs is missing")
         for path in sorted(directory.glob("*-PLAN.md")):
@@ -257,6 +290,8 @@ def _audit(workspace):
             for key in ("depends_on", "files_modified", "requirements", "acceptance"):
                 if key in data and not isinstance(data[key], list):
                     _finding(findings, "plan-contract", workspace.relative(path), key + " must be a list")
+            if not isinstance(data.get("wave"), int) or isinstance(data.get("wave"), bool) or data.get("wave", 0) < 1:
+                _finding(findings, "plan-contract", workspace.relative(path), "wave must be a positive integer")
             for key in ("requirements", "acceptance"):
                 if not data.get(key):
                     _finding(findings, "plan-contract", workspace.relative(path), "empty " + key)
@@ -267,10 +302,14 @@ def _audit(workspace):
             for tag in ("objective", "context", "tasks", "verification", "success_criteria", "output"):
                 if not re.search(r"<" + tag + r">.*?</" + tag + r">", body, re.S):
                     _finding(findings, "plan-contract", workspace.relative(path), "missing block: " + tag, "structure")
-            tasks = re.findall(r"<task\b[^>]*>(.*?)</task>", body, re.S)
+            tasks = re.findall(r"<task\b([^>]*)>(.*?)</task>", body, re.S)
             if not tasks:
                 _finding(findings, "plan-contract", workspace.relative(path), "no tasks")
-            for index, task in enumerate(tasks, 1):
+            for index, (attributes, task) in enumerate(tasks, 1):
+                if re.search(r"\btype=[\"']checkpoint:", attributes):
+                    if "<resume-signal>" not in task:
+                        _finding(findings, "plan-contract", workspace.relative(path), "checkpoint " + str(index) + " lacks resume-signal")
+                    continue  # Canonical human checkpoints have their own fields.
                 for tag in ("read_first", "action", "acceptance_criteria", "verify"):
                     if not re.search(r"<" + tag + r">\s*\S.*?</" + tag + r">", task, re.S):
                         _finding(findings, "plan-contract", workspace.relative(path), "task " + str(index) + " lacks " + tag, "structure")
@@ -283,7 +322,11 @@ def _audit(workspace):
             if data.get("status") not in ("complete", "blocked"):
                 _finding(findings, "summary-status", workspace.relative(path), "status must be complete or blocked")
         if phase.status == "Complete":
-            report = verification.status(workspace, phase.number)
+            try:
+                report = verification.status(workspace, phase.number)
+            except VerbError as exc:
+                _finding(findings, "frontmatter", workspace.relative(directory), str(exc))
+                report = {}
             if report.get("status") != "passed" or not report.get("revision") or not report.get("verified_at"):
                 _finding(findings, "completion-evidence", workspace.relative(directory), "complete phase lacks dated passed verification with revision")
     for identifier, (path, data) in plan_paths.items():
@@ -295,17 +338,51 @@ def _audit(workspace):
             elif isinstance(data.get("wave"), int) and isinstance(target[1].get("wave"), int) and target[1]["wave"] >= data["wave"]:
                 _finding(findings, "plan-dependency", workspace.relative(path), "dependency is not in an earlier wave: " + str(dependency))
 
+    graph = {identifier: [str(item) for item in data.get("depends_on", [])]
+             if isinstance(data.get("depends_on"), list) else []
+             for identifier, (_, data) in plan_paths.items()}
+    visited, visiting, cycles = set(), set(), set()
+
+    def visit(identifier):
+        if identifier in visiting:
+            cycles.add(identifier)
+            return
+        if identifier in visited or identifier not in graph:
+            return
+        visiting.add(identifier)
+        for dependency in graph[identifier]:
+            visit(dependency)
+        visiting.remove(identifier)
+        visited.add(identifier)
+
+    for identifier in sorted(graph):
+        visit(identifier)
+    for identifier in sorted(cycles):
+        _finding(findings, "plan-dependency", workspace.relative(plan_paths[identifier][0]),
+                 "dependency cycle includes: " + identifier)
+
     active_files = [path for path in files if not any(part in {"archive", "archives", "milestones"}
                                                     for part in path.relative_to(workspace.planning).parts)]
+    adr_ids = {}
     for path in active_files:
         data, body = _metadata(path, workspace, findings)
         if path.name.startswith("ADR-") and path.parent.name == "decisions":
+            identifier = re.match(r"^ADR-(\d+)-.+\.md$", path.name)
+            declared = re.search(r"^# ADR-(\d+)\b", body, re.M)
+            if not identifier or not declared or int(identifier.group(1)) != int(declared.group(1)):
+                _finding(findings, "adr-id", workspace.relative(path), "ADR heading identity differs from filename")
+            elif int(identifier.group(1)) in adr_ids:
+                _finding(findings, "adr-id", workspace.relative(path), "duplicate ADR id: " + identifier.group(1))
+            else:
+                adr_ids[int(identifier.group(1))] = path
             _check_headings(path, body, "ADR.md", workspace, findings)
             if data.get("status") not in ADR_STATUSES:
                 _finding(findings, "adr-status", workspace.relative(path), "unknown ADR status")
             if data.get("status") == "superseded" and not data.get("superseded_by"):
                 _finding(findings, "adr-replacement", workspace.relative(path), "superseded ADR lacks replacement reference")
         if path.name == "QUICK.md":
+            if not quick.DIRECTORY.fullmatch(path.parent.name):
+                _finding(findings, "quick-id", workspace.relative(path), "noncanonical quick directory identity")
             if data.get("status") not in quick.STATUSES:
                 _finding(findings, "quick-status", workspace.relative(path), "unknown quick status")
             for title in ("Task", "Verification", "Changes"):
@@ -324,6 +401,11 @@ def _audit(workspace):
     candidate = _repair_candidate(workspace, findings, roadmap)
     if candidate:
         candidates.append(candidate)
+        for operation in candidate["operations"]:
+            if operation["operation"] == "derive-state-progress":
+                _finding(findings, "state-progress", ".planning/STATE.md",
+                         "derived progress metadata differs from roadmap checkboxes",
+                         "structure", "planning.repair --only state-structure")
     result = {"status": "findings" if findings else "clean", "fingerprint": fingerprint,
               "inventory": [{"record": name, "sha256": digest} for name, digest in snapshot
                             if not name.startswith("templates/")],
