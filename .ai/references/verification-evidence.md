@@ -105,8 +105,10 @@ future results and cannot finalize status. Join the whole batch, then resume the
 verifier with check receipts/results and bounded specialist findings so it can
 reconcile shared evidence and inspect only gaps or conflicts.
 
-If that joined result provisionally passes, perform and commit phase-completion,
-requirement-closure and session/roadmap bookkeeping before final reconciliation.
+If that joined result provisionally passes, persist the source-acceptance report
+with the verifier's inspected revision and required acceptance/requirements IDs,
+then commit only the report. Perform and commit phase-completion,
+requirement-closure and session/roadmap bookkeeping after this report-only commit.
 Validate the bounded success-record transition deterministically against the
 captured before/after revisions. Only the direct child, clean tree and nonempty
 delta limited to STATE, ROADMAP and REQUIREMENTS can be accepted. Existing phase
