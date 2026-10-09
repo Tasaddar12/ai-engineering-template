@@ -35,18 +35,38 @@ requirements, configuration and runtime validator; it excludes the commit SHA so
 identical review inputs may be reused across revisions with identical inputs. The
 review request still names a full committed revision. Recording requires a clean,
 stable worktree and hashes that immutable commit; lookup requires the requested
-revision to equal clean `HEAD`. Scope expands to a manifest of literal tracked
-paths; additions and deletions are part of that manifest. Successful review
+revision to equal clean `HEAD`. Changed-source review requests include
+`base_revision`, the full immutable ancestor SHA used for the assigned diff. Scope
+expands to the union of literal committed paths at that base and the inspected
+revision. Before/after blobs bind modifications, additions and deleted-path
+tombstones; both rename paths require coverage. Removed source is inspected at
+the declared base. A path absent from both trees is rejected, and dependency
+`inputs` must still exist at the inspected revision. Keys bind actual old/new
+contents rather than either SHA; original inspected/base revisions remain in the
+immutable receipt provenance. Successful review
 packets must account for every path in the expanded scope and carry validated
 reviewer provenance.
 
 Keep these states separate: `never_run` means no packet exists, `failed` means an
 attempt failed, and `incomplete` means the packet does not establish its contract.
-Only validated `passed` review evidence is reusable as a completed review. A
+Only validated `passed` review evidence with `reusable: true` establishes a
+completed review. A
 changed source/requirement/configuration input or unresolved finding invalidates
 the affected portion; request a bounded review of the uncovered delta and retain
 prior findings. Do not dispatch a fresh full code review merely because verification
 or shipping started.
+
+Recording appends an immutable attempt receipt and returns a stable unique
+`receipt` path; the separate content-key `index` selects the latest attempt.
+Retain every earlier receipt, including failed and incomplete packets and their
+full provenance. Lookup never selects an older pass after a newer failure. Its
+`attempts` list names the retained history and `unresolved_findings` carries prior
+unresolved severity/message identities across intermediate empty results. A later
+pass omitting those findings remains effectively incomplete/nonreusable. Resolve
+each one explicitly using the same severity/message, `resolved: true`, and a
+supporting nonempty `evidence` citation validated by the independent reviewer.
+Missing/corrupt indexes or altered/dropped attempt history are cache misses;
+recording refuses inconsistent history instead of erasing it.
 
 Scouts use the same schema-1 evidence store. Their content-addressed request keys
 include the question, scope, requested output schema/fields, declared inputs and

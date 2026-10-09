@@ -447,11 +447,19 @@ python .ai/runtime/phase.py query verification.validate-bookkeeping --before <fu
 Requests are strict JSON schema 1 objects. All kinds require `kind`, the full
 inspected `revision`, literal tracked `scope` paths, `inputs` (which may be
 empty), a `configuration` object and a nonempty `question`. Review requests add
-`requirements`; scout requests add exact `requested_fields`; acceptance requests
+`requirements` and may add `base_revision`, a full committed ancestor SHA for
+changed-source review; scout requests add exact `requested_fields`; acceptance requests
 add the tracked phase `report_path`. Unknown or duplicate keys, non-finite JSON
 numbers, path traversal, missing inputs, symlinks and gitlinks are rejected.
 Scope and input manifests expand from the immutable commit and bind path names,
-modes and blob IDs. The key also binds the request, configuration and validator
+modes and blob IDs. With review `base_revision`, scope expands over the union of
+the base and inspected trees: each path binds its before/after mode and blob, with
+a null after value for a deletion. `covered_paths` includes deleted paths and both
+sides of a rename; reviewers inspect removed contents at the declared base. Paths
+absent from both trees remain errors. Inputs still require actual committed paths
+at the inspected revision. Old dependency blobs are also bound where present.
+Base and inspected SHAs remain provenance; keys bind their actual manifests, so
+unrelated commits with identical declared old/new inputs can reuse the review. The key also binds the request, configuration and validator
 implementation. Review and scout keys omit the revision, so a packet can be
 reused on a later clean HEAD only if all declared and expanded committed inputs,
 question, output fields/requirements, configuration and validator identity still
@@ -473,6 +481,18 @@ worktree and snapshots the requested immutable revision; it may record a review
 of an earlier commit after HEAD has advanced. `evidence.lookup` requires a clean
 HEAD equal to the request revision. Missing/corrupt packets are reported as
 `never_run`/nonreusable rather than passing silently.
+
+Every recording writes an immutable per-attempt JSON receipt and returns its
+unique `receipt` path. A separate content-key `index` selects the latest attempt;
+lookup returns that receipt and the retained `attempts` paths. A newer failed or
+incomplete attempt never falls back to an older pass. All attempts preserve their
+full request, result and provenance. Lookup also returns `unresolved_findings`
+carried across same-key attempts. Omitting a prior unresolved finding cannot make
+a later pass reusable: it has effective status `incomplete`. To dispose of a prior
+finding, report the exact same severity and message with `resolved: true` and a
+nonempty supporting `evidence` citation. The host validates that resolution. A
+corrupt/missing index, altered attempt or dropped history is a cache miss; recording
+into inconsistent retained history fails closed rather than replacing it.
 
 Acceptance reports have schema `1`, exact phase-directory `phase`, status,
 full inspected `revision`, timezone-bearing ISO `verified_at`, a structured

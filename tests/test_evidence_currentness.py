@@ -432,6 +432,110 @@ Resume file: .planning/STATE.md
         self.record(scout, absent)
         self.assertTrue(self.lookup(scout)['reusable'])
 
+    def test_review_diff_base_covers_deletion_rename_and_new_files(self):
+        base = self.git('rev-parse', 'HEAD')
+        self.write('src/remaining.py', 'remaining = 1')
+        self.git('mv', 'src/a.py', 'src/renamed.py')
+        self.write('src/new.py', 'new = 2')
+        inspected = self.commit('rename and add source')
+        request = self.request(base_revision=base)
+        covered = ['src/a.py', 'src/remaining.py', 'src/renamed.py', 'src/new.py']
+        recorded = self.record(request, self.packet(request, covered_paths=covered))
+        self.assertTrue(recorded['reusable'])
+        packet = json.loads((self.root / recorded['receipt']).read_text())['receipt']
+        manifest = packet['inputs']['scope_manifest']
+        self.assertIsNone(manifest['src/a.py']['after'])
+        self.assertEqual(manifest['src/a.py']['before'][1], self.git('rev-parse', base + ':src/a.py'))
+        self.assertIsNone(manifest['src/renamed.py']['before'])
+        self.assertTrue(self.lookup(request)['reusable'])
+        self.write('unrelated.txt', 'unrelated')
+        self.commit('unrelated source-independent work')
+        reuse = self.lookup(self.request(base_revision=base))
+        self.assertTrue(reuse['reusable'])
+        self.assertEqual(reuse['inspected_revision'], inspected)
+        self.write('src/later.py', 'later = 3')
+        self.commit('new covered source')
+        self.assertFalse(self.lookup(self.request(base_revision=base))['reusable'])
+
+    def test_review_diff_base_rejects_typos_nonancestors_and_incomplete_deletion_coverage(self):
+        base = self.git('rev-parse', 'HEAD')
+        (self.root / 'src/a.py').unlink()
+        self.write('src/survivor.py', 'survivor = 1')
+        self.commit('delete source')
+        request = self.request(base_revision=base, scope=['src/a.py', 'src/survivor.py'])
+        self.record(request, self.packet(request, covered_paths=['src/survivor.py']), ok=False)
+        self.record(self.request(base_revision=base, scope=['src/typo.py']), ok=False)
+        self.record(self.request('scout', base_revision=base), ok=False)
+        self.record(self.request(base_revision='not-a-commit'), ok=False)
+        orphan = self.git('commit-tree', self.git('rev-parse', 'HEAD^{tree}'), '-m', 'unrelated root')
+        self.record(self.request(base_revision=orphan), ok=False)
+        result = self.record(request, self.packet(request, covered_paths=['src/a.py', 'src/survivor.py']))
+        self.assertTrue(result['reusable'])
+        # Dependencies remain mandatory final-tree inputs, even for a base review.
+        self.record(self.request(base_revision=base, inputs=['missing.lock']), ok=False)
+
+    def test_evidence_attempts_preserve_failures_and_require_explicit_finding_resolution(self):
+        request = self.request()
+        finding = dict(severity='high', message='must retain this defect', resolved=False, evidence='src/a.py:1')
+        failed = self.record(request, self.packet(request, status='failed', findings=[finding]))
+        original = (self.root / failed['receipt']).read_bytes()
+        missing = self.record(request, self.packet(request))
+        self.assertNotEqual(failed['receipt'], missing['receipt'])
+        self.assertFalse(missing['reusable'])
+        self.assertEqual(missing['status'], 'incomplete')
+        latest = self.lookup(request)
+        self.assertFalse(latest['reusable'])
+        self.assertEqual(latest['unresolved_findings'], [finding])
+        self.assertEqual((self.root / failed['receipt']).read_bytes(), original)
+        # An intermediate empty failed result cannot discard the active defect.
+        self.record(request, self.packet(request, status='failed'))
+        self.record(request, self.packet(request))
+        self.assertFalse(self.lookup(request)['reusable'])
+        self.record(request, self.packet(request, findings=[dict(severity='high', message=finding['message'],
+                                                               resolved=True)]), ok=False)
+        disposition = dict(finding, resolved=True, evidence='review-followup.md: resolution independently confirmed')
+        passed = self.record(request, self.packet(request, findings=[disposition]))
+        self.assertTrue(passed['reusable'])
+        self.assertTrue(self.lookup(request)['reusable'])
+        self.assertEqual((self.root / failed['receipt']).read_bytes(), original)
+        self.assertEqual(json.loads((self.root / failed['receipt']).read_text())['receipt']['result']['status'], 'failed')
+
+    def test_latest_failed_attempt_never_falls_back_and_incomplete_history_is_readable(self):
+        request = self.request()
+        first = self.record(request, self.packet(request, status='incomplete', covered_paths=[]))
+        content = (self.root / first['receipt']).read_bytes()
+        completed = self.record(request)
+        self.assertTrue(completed['reusable'])
+        failed = self.record(request, self.packet(request, status='failed'))
+        result = self.lookup(request)
+        self.assertEqual(result['receipt'], failed['receipt'])
+        self.assertEqual(result['status'], 'failed')
+        self.assertFalse(result['reusable'])
+        self.assertEqual(result['attempts'], [first['receipt'], completed['receipt'], failed['receipt']])
+        self.assertEqual((self.root / first['receipt']).read_bytes(), content)
+        self.assertEqual(json.loads((self.root / first['receipt']).read_text())['receipt']['result']['provenance'],
+                         self.packet(request)['provenance'])
+
+    def test_attempt_index_corruption_or_dropped_history_is_a_cache_miss(self):
+        request = self.request()
+        failed = self.record(request, self.packet(request, status='failed', findings=[
+            dict(severity='high', message='retained failure', resolved=False)]))
+        self.record(request, self.packet(request))
+        index = self.root / failed['index']
+        packet = json.loads(index.read_text())
+        packet['receipt']['attempts'] = packet['receipt']['attempts'][1:]
+        # Recomputing a checksum cannot hide the prior immutable attempt file.
+        import hashlib
+        packet['sha256'] = hashlib.sha256(json.dumps(packet['receipt'], sort_keys=True,
+            separators=(',', ':'), ensure_ascii=True).encode()).hexdigest()
+        index.write_text(json.dumps(packet))
+        self.assertEqual(self.lookup(request)['status'], 'never_run')
+        self.record(request, ok=False)
+        index.write_text('{corrupt')
+        self.assertFalse(self.lookup(request)['reusable'])
+        self.record(request, ok=False)
+        self.assertTrue((self.root / failed['receipt']).is_file())
+
     def copied_runtime(self, name, changed=None):
         import shutil
         runtime = Path(self.temp.name) / name

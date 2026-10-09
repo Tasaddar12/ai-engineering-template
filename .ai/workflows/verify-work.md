@@ -223,7 +223,15 @@ Consume the validated code-review packet from execute-phase when its committed
 input manifest, requirements and configuration match. If no reusable packet
 exists, a required field is uncovered, or a finding remains unresolved, dispatch
 one independent code-reviewer only for the missing or changed scope and record
-the result. Do not repeat covered review merely because verify-work started.
+the result. Preserve the review request's full committed `base_revision` and use
+`frozen_revision` as its current `revision`; if a new bounded diff is needed,
+declare that immutable ancestor base explicitly. Deleted source and both rename
+paths remain in scope/coverage and are inspected at the base. Read the latest
+lookup's `unresolved_findings` and retained `attempts`, not only its raw result.
+Record follow-ups at new immutable receipt paths; a same-key pass must retain and
+explicitly resolve prior findings by exact severity/message, `resolved: true`, and
+supporting `evidence`. A newer failure never permits an older-pass fallback.
+Do not repeat covered review merely because verify-work started.
 Route every requested repeatable source extraction, classification,
 transformation proposal or structured summary through `scout`, including when
 locations are already known; batch compatible questions. Key reuse to question,

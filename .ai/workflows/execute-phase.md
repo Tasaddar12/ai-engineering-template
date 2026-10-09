@@ -589,7 +589,11 @@ After all waves are integrated, freeze the final committed source revision. Star
 one independent code-reviewer for that revision and run
 `verification.run-checks` alongside it; valid receipts from the final wave can be
 reused. The review request covers the actual changed-source manifest, phase
-requirements, review question and configuration. The reviewer owns source
+requirements, review question and configuration. Set `base_revision` to the full
+committed diff base captured before the first wave; `revision` is the frozen
+inspected commit. Include deleted paths and both rename sides in `scope` and
+`covered_paths`, inspecting removed blobs at that base. Directory scope is the
+complete old/new union, and nonexistent typos are rejected. The reviewer owns source
 correctness and security findings. Record the complete request and result through
 `evidence.record`; later verify-work and ship use `evidence.lookup` for the same
 content-addressed inputs. Wait for both results before accepting the phase or
@@ -637,7 +641,12 @@ Record the request and complete result with schema 1 via
 `never_run`, `failed` and `incomplete` distinct; only a validated `passed` packet
 establishes review completion. Critical findings block completion. After an
 authorized repair, revalidate affected check receipts and request a bounded review
-only for changed review inputs or unresolved findings; preserve prior findings.
+only for changed review inputs or unresolved findings. Keep each unique returned
+`receipt` and the separate lookup `index`; earlier attempts are immutable. Use the
+latest lookup's `unresolved_findings` even when its latest result omits them. A
+same-input pass requires each carried finding's exact severity/message with
+`resolved: true` and supporting `evidence`; the independent reviewer validates
+that disposition. Never fall back to an old pass after a newer failure.
 Warnings are recorded for the verifier to weigh.
 </step>
 

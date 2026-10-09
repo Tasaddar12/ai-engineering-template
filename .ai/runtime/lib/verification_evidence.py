@@ -26,7 +26,7 @@ KINDS = {'review', 'scout', 'acceptance'}
 STATUSES = {'passed', 'complete', 'failed', 'incomplete'}
 SEVERITIES = {'critical', 'high', 'medium', 'low', 'info'}
 REQUEST_FIELDS = {'schema', 'kind', 'revision', 'scope', 'inputs', 'configuration',
-                  'question', 'requirements', 'requested_fields', 'report_path'}
+                  'question', 'requirements', 'requested_fields', 'report_path', 'base_revision'}
 RESULT_FIELDS = {'status', 'inspected_revision', 'findings', 'provenance',
                  'covered_paths', 'field_results', 'evidence', 'search_scope', 'absence_claims', 'unresolved_questions'}
 
@@ -135,6 +135,18 @@ def manifest(entries, paths):
     return dict(sorted(result.items()))
 
 
+def review_manifest(before, after, paths):
+    """Union scope retains removed committed contents and explicit tombstones."""
+    selected = manifest(dict(before, **after), paths)
+    result = {}
+    for path in selected:
+        states = {}
+        for label, entries in (('before', before), ('after', after)):
+            states[label] = manifest(entries, [path])[path] if path in entries else None
+        result[path] = states
+    return result
+
+
 def validator_digest():
     directory = Path(__file__).parent
     # These modules are the local import closure for immutable input parsing,
@@ -164,9 +176,22 @@ def request_inputs(root, request):
     if kind == 'acceptance':
         check('report_path' in request, 'acceptance requires report_path')
     entries = tree(root, commit)
-    scope = manifest(entries, request['scope'])
+    base_entries = None
+    if 'base_revision' in request:
+        check(kind == 'review', 'base_revision is only supported for changed-source reviews')
+        base = revision(root, request['base_revision'])
+        ancestor = subprocess.run(['git', 'merge-base', '--is-ancestor', base, commit],
+                                  cwd=root, capture_output=True, timeout=30)
+        check(ancestor.returncode == 0, 'review base_revision must be an ancestor of inspected revision')
+        base_entries = tree(root, base)
+    scope = (review_manifest(base_entries, entries, request['scope']) if base_entries is not None
+             else manifest(entries, request['scope']))
     additional = manifest(entries, request['inputs'])
-    selected = {k: v for k, v in request.items() if k != 'revision'}
+    selected = {k: v for k, v in request.items() if k not in {'revision', 'base_revision'}}
+    if base_entries is not None:
+        selected['review_diff'] = True
+        selected['base_input_manifest'] = {path: manifest(base_entries, [path])[path]
+                                          for path in additional if path in base_entries}
     if 'report_path' in selected:
         name = literal(selected['report_path'])
         check(re.fullmatch(r'\.planning/phases/[^/]+/[0-9]+(?:\.[0-9]+)?-VERIFICATION\.md', name),
@@ -182,12 +207,16 @@ def request_inputs(root, request):
 
 def findings(value):
     check(isinstance(value, list), 'findings must be an array')
+    identities = set()
     for item in value:
         check(isinstance(item, dict) and not set(item) - {'severity', 'message', 'resolved', 'evidence'},
               'invalid finding schema')
         check(isinstance(item.get('severity'), str) and item['severity'] in SEVERITIES and isinstance(item.get('message'), str)
               and item['message'].strip() and type(item.get('resolved')) is bool,
               'finding requires severity, message and resolved boolean')
+        identity = (item['severity'], item['message'])
+        check(identity not in identities, 'duplicate finding identity')
+        identities.add(identity)
         if 'evidence' in item:
             check(isinstance(item['evidence'], str) and item['evidence'].strip(), 'invalid finding evidence')
     return not any(not item['resolved'] for item in value)
@@ -275,6 +304,79 @@ def load(root, key):
         return None
 
 
+def validate_attempt(root, key, inputs, receipt):
+    check(set(receipt) == {'schema', 'key', 'inputs', 'request', 'result', 'validated_at'}, 'receipt schema')
+    check(receipt['schema'] == SCHEMA and receipt['key'] == key and receipt['inputs'] == inputs,
+          'receipt inputs mismatch')
+    check(request_inputs(root, receipt['request']) == inputs, 'original committed inputs mismatch')
+    result_valid(receipt['request'], receipt['result'], inputs)
+    check(isinstance(receipt['validated_at'], str) and
+          datetime.fromisoformat(receipt['validated_at']).tzinfo is not None, 'invalid validation timestamp')
+
+
+def pending_findings(pending, result):
+    active = {(item['severity'], item['message']): item for item in pending}
+    for item in result['findings']:
+        identity = (item['severity'], item['message'])
+        if item['resolved']:
+            if identity in active:
+                check(isinstance(item.get('evidence'), str) and item['evidence'].strip(),
+                      'prior finding resolution requires supporting evidence citation')
+                del active[identity]
+        else:
+            active[identity] = item
+    return list(active.values())
+
+
+def attempt_history(root, key, inputs):
+    store = root / STORE
+    files = {path.name for path in store.glob(key + '.*.json')}
+    index_path = store / (key + '.json')
+    if not index_path.exists():
+        check(not files, 'missing attempt index with retained history')
+        return [], []
+    index = load(root, key)
+    check(isinstance(index, dict) and set(index) == {'schema', 'kind', 'key', 'attempts'} and
+          type(index['schema']) is int and index['schema'] == SCHEMA and index['kind'] == 'attempt-index'
+          and index['key'] == key and isinstance(index['attempts'], list) and index['attempts'],
+          'missing or malformed attempt index')
+    attempts, pending, indexed = [], [], set()
+    for entry in index['attempts']:
+        check(isinstance(entry, dict) and set(entry) == {'file', 'sha256'} and
+              isinstance(entry['file'], str) and re.fullmatch(re.escape(key) + r'\.[0-9a-f]{32}\.json', entry['file'])
+              and entry['file'] not in indexed, 'invalid attempt reference')
+        indexed.add(entry['file'])
+        receipt = load(root, entry['file'].removesuffix('.json'))
+        check(isinstance(receipt, dict) and digest(receipt) == entry['sha256'], 'attempt integrity mismatch')
+        validate_attempt(root, key, inputs, receipt)
+        pending = pending_findings(pending, receipt['result'])
+        attempts.append((entry, receipt))
+    check(files == indexed, 'attempt index does not cover retained history')
+    return attempts, pending
+
+
+def save_attempt(root, key, inputs, receipt):
+    store = storage(root)
+    lock = store / (key + '.lock')
+    try:
+        handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        raise VerbError('same-input evidence recording is busy', 'evidence-busy')
+    try:
+        attempts, pending = attempt_history(root, key, inputs)
+        pending = pending_findings(pending, receipt['result'])
+        name = key + '.' + uuid.uuid4().hex + '.json'
+        # An attempt is written once. Only the separate lookup index advances.
+        with (store / name).open('x', encoding='utf-8') as stream:
+            json.dump({'receipt': receipt, 'sha256': digest(receipt)}, stream, sort_keys=True)
+        entries = [entry for entry, _ in attempts] + [{'file': name, 'sha256': digest(receipt)}]
+        save(root, key, dict(schema=SCHEMA, kind='attempt-index', key=key, attempts=entries))
+        return STORE + '/' + name, pending
+    finally:
+        os.close(handle)
+        lock.unlink(missing_ok=True)
+
+
 def record(workspace, request_path, result_path):
     root = workspace.root
     request = strict_json(request_path)
@@ -291,9 +393,13 @@ def record(workspace, request_path, result_path):
                'result': result, 'validated_at': datetime.now(timezone.utc).isoformat()}
     check(clean(root) and head(root) == recorded_head and request_inputs(root, request) == inputs,
           'snapshot changed while validating')
-    path = save(root, key, receipt)
-    return dict(key=key, receipt=path, reusable=reusable, status=effective_status(request, result),
-                inspected_revision=request['revision'], validated_at=receipt['validated_at'])
+    path, pending = save_attempt(root, key, inputs, receipt)
+    status = effective_status(request, result)
+    if pending and status in {'passed', 'complete'}:
+        status = 'incomplete'
+    return dict(key=key, receipt=path, index=STORE + '/' + key + '.json', reusable=reusable and not pending,
+                status=status, unresolved_findings=pending, inspected_revision=request['revision'],
+                validated_at=receipt['validated_at'])
 
 
 def lookup(workspace, request_path):
@@ -301,26 +407,24 @@ def lookup(workspace, request_path):
     request = strict_json(request_path)
     inputs = request_inputs(root, request)
     key = digest(inputs)
-    output = dict(key=key, receipt=STORE + '/' + key + '.json', reusable=False,
+    output = dict(key=key, receipt=None, index=STORE + '/' + key + '.json', reusable=False,
                   status='never_run', reason='missing_or_invalid')
     if not clean(root) or head(root) != request['revision']:
         return dict(output, reason='dirty_or_wrong_head')
-    receipt = load(root, key)
-    if receipt is None:
-        return output
     try:
-        check(set(receipt) == {'schema', 'key', 'inputs', 'request', 'result', 'validated_at'}, 'receipt schema')
-        check(receipt['schema'] == SCHEMA and receipt['key'] == key and receipt['inputs'] == inputs,
-              'receipt inputs mismatch')
+        attempts, pending = attempt_history(root, key, inputs)
+        if not attempts:
+            return output
+        entry, receipt = attempts[-1]  # A later failure never falls back to an earlier pass.
         original = receipt['request']
-        check(request_inputs(root, original) == inputs, 'original committed inputs mismatch')
-        reusable = result_valid(original, receipt['result'], inputs)
-        check(isinstance(receipt['validated_at'], str) and
-              datetime.fromisoformat(receipt['validated_at']).tzinfo is not None, 'invalid validation timestamp')
+        reusable = result_valid(original, receipt['result'], inputs) and not pending
         check(clean(root) and head(root) == request['revision'], 'lookup snapshot changed')
-        return dict(output, reusable=reusable, status=effective_status(original, receipt['result']),
+        status = effective_status(original, receipt['result'])
+        if pending and status in {'passed', 'complete'}:
+            status = 'incomplete'
+        return dict(output, receipt=STORE + '/' + entry['file'], reusable=reusable, status=status,
                     reason='matching_inputs' if reusable else 'failed_incomplete_or_unresolved',
-                    inspected_revision=original['revision'], validated_at=receipt['validated_at'],
-                    result=receipt['result'])
-    except (VerbError, KeyError, TypeError, ValueError, RecursionError):
+                    unresolved_findings=pending, attempts=[STORE + '/' + item['file'] for item, _ in attempts],
+                    inspected_revision=original['revision'], validated_at=receipt['validated_at'], result=receipt['result'])
+    except (VerbError, OSError, KeyError, TypeError, ValueError, RecursionError, subprocess.SubprocessError):
         return output
