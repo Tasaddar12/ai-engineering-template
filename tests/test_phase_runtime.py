@@ -884,6 +884,22 @@ class Dispatch(RuntimeCase):
         self.assertEqual("haiku", self.run_verb("resolve-model", "scout")["model"])
         self.assertEqual("inherit", self.run_verb("resolve-effort", "scout")["effort"])
 
+    def test_targeted_fixer_resolution_is_fixed_despite_yaml_overrides(self):
+        self.run_verb("config-set", "agents.targeted-fixer.model", "wrong")
+        self.run_verb("config-set", "agents.targeted-fixer.effort", "max")
+        for host, model, effort in (("codex", "gpt-6-luna", "high"),
+                                   ("claude", "haiku", "inherit")):
+            with self.subTest(host=host):
+                result = self.run_verb("resolve-agent", "targeted-fixer", "--host", host)
+                self.assertEqual(model, result["model"])
+                self.assertEqual(effort, result["effort"])
+                self.assertEqual("targeted-fixer", result["model_source"])
+                self.assertEqual("targeted-fixer", result["effort_source"])
+                self.assertEqual(effort == "inherit", result["effort_inherit"])
+                self.assertFalse(result["inherit"])
+                self.assertEqual(model, self.run_verb("resolve-model", "targeted-fixer", "--host", host)["model"])
+                self.assertEqual(effort, self.run_verb("resolve-effort", "targeted-fixer", "--host", host)["effort"])
+
     def test_invalid_host_is_a_handled_resolution_failure(self):
         for verb in ("resolve-model", "resolve-effort", "resolve-agent"):
             self.assertEqual("bad-host", self.run_verb(verb, "coder", "--host", "other",

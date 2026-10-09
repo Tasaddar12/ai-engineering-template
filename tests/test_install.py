@@ -348,7 +348,7 @@ class InstallerTests(unittest.TestCase):
         sol = {"debugger", "code-reviewer", "verifier", "phase-checker"}
         roles = {"coordinator", "codebase-mapper", "researcher", "phase-preparer",
                  "phase-checker", "coder", "doc-writer", "doc-verifier",
-                 "integration-checker", "code-reviewer", "debugger", "verifier", "scout"}
+                 "integration-checker", "code-reviewer", "debugger", "verifier", "scout", "targeted-fixer"}
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
@@ -363,7 +363,7 @@ class InstallerTests(unittest.TestCase):
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    if name == "scout" and host == "claude":
+                    if name in {"scout", "targeted-fixer"} and host == "claude":
                         self.assertEqual("haiku", metadata["model"])
                     else:
                         self.assertNotIn("model", metadata, name)
@@ -404,20 +404,27 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 config = self.target / ".planning/config.yaml"
                 config.write_text("agents:\n  coder:\n    model: opus\n    effort: max\n"
-                                  "  scout:\n    model: wrong\n    effort: max\n")
+                                  "  scout:\n    model: wrong\n    effort: max\n"
+                                  "  targeted-fixer:\n    model: wrong\n    effort: max\n")
                 if host == "codex":
                     native = self.target / ".codex/agents/coder.toml"
                     native.write_text(native.read_text().replace('"gpt-6.1-sol"', '"custom-codex"')
                                       .replace('"high"', '"xhigh"'))
+                    for name in ("scout", "targeted-fixer"):
+                        fixed = self.target / ".codex/agents" / (name + ".toml")
+                        fixed.write_text(fixed.read_text().replace('"gpt-6-luna"', '"wrong"')
+                                         .replace('"high"', '"max"'))
                 runtime = "." + host + "/runtime/phase.py"
                 resolved = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
                                               "coder", cwd=self.target))
                 self.assertEqual("custom-codex" if host == "codex" else "opus", resolved["model"])
                 self.assertEqual("xhigh" if host == "codex" else "max", resolved["effort"])
-                scout = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
-                                           "scout", cwd=self.target))
-                self.assertEqual("gpt-6-luna" if host == "codex" else "haiku", scout["model"])
-                self.assertEqual("high" if host == "codex" else "inherit", scout["effort"])
+                for name in ("scout", "targeted-fixer"):
+                    fixed = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
+                                               name, cwd=self.target))
+                    self.assertEqual("gpt-6-luna" if host == "codex" else "haiku", fixed["model"])
+                    self.assertEqual("high" if host == "codex" else "inherit", fixed["effort"])
+                    self.assertEqual(name, fixed["model_source"])
 
     def test_settings_only_preserves_bom_crlf_unrelated_text_and_hooks(self):
         self.target.mkdir()

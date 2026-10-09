@@ -33,7 +33,7 @@ check() { # check <description> <expected-exit> <expect-substring|-> <payload> [
 
 # --- dispatch enforcement (no repository needed) -----------------------------
 
-for agent in coder doc-writer debugger; do
+for agent in coder doc-writer debugger targeted-fixer plugin:workflow:targeted-fixer; do
   check "unisolated $agent is blocked" 2 'BLOCKED' \
     "{\"tool_name\":\"Agent\",\"tool_input\":{\"subagent_type\":\"$agent\"}}"
   check "isolated $agent is allowed" 0 '-' \
@@ -61,6 +61,20 @@ check 'a malformed payload is ignored' 0 '-' 'not json at all'
 
 work="$(mktemp -d 2>/dev/null || mktemp -d -t wtguard)"
 trap 'rm -rf "$work" 2>/dev/null || true' EXIT
+
+# A relocated hook without its library retains fixed-role isolation.
+cp "$hook" "$work/fallback.sh"
+saved_hook="$hook"
+hook="$work/fallback.sh"
+for tool in Agent Task; do
+  for agent in targeted-fixer plugin:workflow:targeted-fixer; do
+    check "fallback blocks $tool $agent" 2 'BLOCKED' \
+      "{\"tool_name\":\"$tool\",\"tool_input\":{\"subagent_type\":\"$agent\"}}"
+    check "fallback permits isolated $tool $agent" 0 '-' \
+      "{\"tool_name\":\"$tool\",\"tool_input\":{\"subagent_type\":\"$agent\",\"isolation\":\"worktree\"}}"
+  done
+done
+hook="$saved_hook"
 cd "$work"
 git init -q .
 git config user.email guard@example.test

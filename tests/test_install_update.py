@@ -59,6 +59,25 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(expected, self.read(path))
         self.assertEqual([], self.plan()[0])
 
+    def test_targeted_fixer_export_and_native_update_are_idempotent(self):
+        path = self.namespace + "/agents/targeted-fixer.md"
+        old = b'---\nname: targeted-fixer\nmodel: wrong\neffort: max\n---\nOld adapter.\n'
+        self.write(path, old)
+        changes, backups, _ = self.plan()
+        self.assertIn(self.target / path, backups)
+        self.apply(changes)
+        shared = (self.source / ".ai/agents/targeted-fixer.md").read_bytes()
+        self.assertEqual(installer.render_asset(".ai/agents/targeted-fixer.md", shared, self.host), self.read(path))
+        metadata = yaml.safe_load(self.read(path).decode().split("---", 2)[1])
+        self.assertTrue({"Agent", "Task"} <= set(metadata["disallowedTools"].split(", ")))
+        self.assertEqual("haiku" if self.host == "claude" else None, metadata.get("model"))
+        self.assertNotIn("effort", metadata)
+        if self.host == "codex":
+            native_path = ".codex/agents/targeted-fixer.toml"
+            native = (self.source / ".ai/install-assets/codex-agents/targeted-fixer.toml").read_bytes()
+            self.assertEqual(installer.render_asset(".ai/install-assets/codex-agents/targeted-fixer.toml", native, self.host), self.read(native_path))
+        self.assertEqual([], self.plan()[0])
+
     def test_update_payload_excludes_source_only_maintenance_history(self):
         self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
         self.assertFalse(any(name.startswith(self.namespace + "/maintenance/") for name in self.installed))

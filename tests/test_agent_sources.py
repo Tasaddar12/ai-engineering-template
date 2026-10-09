@@ -36,7 +36,7 @@ class AgentSourceTests(unittest.TestCase):
 
     def test_worker_local_adapters_reference_scout_contract_without_worker_dispatch(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):
-            if role.stem in {"README", "scout", "coordinator"}:
+            if role.stem in {"README", "scout", "coordinator", "targeted-fixer"}:
                 continue
             with self.subTest(role=role.name):
                 text = role.read_text(encoding="utf-8")
@@ -62,7 +62,7 @@ class AgentSourceTests(unittest.TestCase):
             self.assertNotIn(host_setting, body)
 
     def test_native_models_and_shared_roles_without_model_frontmatter(self):
-        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout"}
+        luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout", "targeted-fixer"}
         for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
             native = tomllib.loads(definition.read_text(encoding="utf-8"))
             role = ROOT / ".ai/agents" / (definition.stem + ".md")
@@ -78,11 +78,89 @@ class AgentSourceTests(unittest.TestCase):
                 self.assertEqual("read-only", native["sandbox_mode"])
                 self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
                 self.assertTrue({"Agent", "Task", "Write", "Edit", "Bash"} <= set(frontmatter["disallowedTools"].split(", ")))
+            elif definition.stem == "targeted-fixer":
+                self.assertEqual("workspace-write", native["sandbox_mode"])
+                self.assertTrue({"Write", "Edit", "Bash"} <= set(frontmatter["tools"].split(", ")))
+                self.assertTrue({"Agent", "Task"} <= set(frontmatter["disallowedTools"].split(", ")))
+                self.assertNotIn("Agent", frontmatter["tools"].split(", "))
             else:
                 self.assertNotIn("model", frontmatter)
                 self.assertIn("Agent", frontmatter["tools"].split(", "))
                 self.assertNotIn("Agent", frontmatter.get("disallowedTools", "").split(", "))
                 self.assertNotIn("Task", frontmatter.get("disallowedTools", "").split(", "))
+
+    def test_targeted_fixer_is_a_bounded_leaf_with_structured_inputs_and_evidence(self):
+        text = (ROOT / ".ai/agents/targeted-fixer.md").read_text(encoding="utf-8")
+        for field in ("origin:", "diagnosis_or_finding:", "checkout:", "branch:", "revision:",
+                      "owned_paths:", "symbols:", "required_behavior:", "constraints:",
+                      "checks:", "summary_path:", "result_destination:"):
+            self.assertIn(field, text)
+        for boundary in ("never dispatch children", "needed discovery", "stale or contradictory",
+                         "via the coordinator", "security-policy", "assigned security bugs",
+                         "Never discover scope", "Git integration", "independent review",
+                         "safe exact-owned staging/commits", "worker-handoff.md"):
+            self.assertIn(boundary, text)
+
+    def test_targeted_fixer_catalogs_link_the_authoritative_role(self):
+        for name in (".ai/install-assets/agent-entry.txt", ".ai/agents/README.md"):
+            with self.subTest(source=name):
+                text = (ROOT / name).read_text(encoding="utf-8")
+                self.assertIn("targeted-fixer", text)
+                self.assertIn("targeted-fixer.md)", text)
+        roles = (ROOT / ".ai/hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
+        write_roles = re.search(r'^WRITE_CAPABLE_AGENTS="([^"]*)"', roles, re.MULTILINE)[1].split()
+        self.assertEqual({"coder", "doc-writer", "debugger", "targeted-fixer"}, set(write_roles))
+
+    def test_bounded_correction_dispatch_has_supported_routing_and_retained_gates(self):
+        shared = (ROOT / ".ai/references/bounded-correction-dispatch.md").read_text(encoding="utf-8")
+        dispatch = shared.split("## Bounded correction dispatch", 1)[1].split("## Review and repair handoffs", 1)[0]
+        self.assertIn("../agents/targeted-fixer.md", dispatch)
+        self.assertIn("phase_run query resolve-model targeted-fixer --raw", dispatch)
+        self.assertIn("phase_run query resolve-effort targeted-fixer --raw", dispatch)
+        self.assertIn('subagent_type="targeted-fixer"', dispatch)
+        self.assertIn('model="${FIXER_MODEL}"', dispatch)
+        self.assertIn("FIXER_EFFORT === 'inherit' ? ''", dispatch)
+        self.assertIn("dispatch-isolation", dispatch)
+        self.assertIn("worktree.create", dispatch)
+        self.assertIn("worktree-branch-check.md", dispatch)
+        self.assertIn("worktree-path-safety.md", dispatch)
+        self.assertIn("${ISOLATION === 'harness-worktree' ? 'isolation=\"worktree\",' : ''}", dispatch)
+        self.assertNotIn('  isolation="worktree",', dispatch)
+        self.assertIn("originating debugger/reviewer", dispatch)
+        self.assertIn("fresh independent review and verification", dispatch)
+        for name in ("execute-phase", "verify-work", "ship"):
+            with self.subTest(workflow=name):
+                text = (ROOT / ".ai/workflows" / (name + ".md")).read_text(encoding="utf-8")
+                self.assertIn("targeted-fixer", text)
+                self.assertIn("../references/bounded-correction-dispatch.md", text)
+                self.assertNotRegex(text, r"(?:models|efforts)\[['\"]targeted-fixer['\"]\]")
+        execute = (ROOT / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8")
+        critical = execute.split("**Critical findings block completion.**", 1)[1].split("</step>", 1)[0]
+        self.assertIn("bounded-correction-dispatch", critical)
+        self.assertIn("fresh independent review", critical)
+        self.assertIn("rerun affected checks", critical)
+        verify = (ROOT / ".ai/workflows/verify-work.md").read_text(encoding="utf-8")
+        gaps = verify.split('<step name="plan_gap_closure">', 1)[1].split("</step>", 1)[0]
+        self.assertIn("bounded-correction-dispatch", gaps)
+        self.assertIn('subagent_type="phase-preparer"', gaps)
+        self.assertIn("workflows/execute-phase.md", gaps)
+        self.assertIn("at most **3** rounds", verify)
+        ship = (ROOT / ".ai/workflows/ship.md").read_text(encoding="utf-8")
+        ci = ship.split("**Fixing a failing check**", 1)[1].split("</step>", 1)[0]
+        self.assertIn("at most 2 rounds", ci)
+        self.assertIn("bounded-correction-dispatch", ci)
+        self.assertIn("debugger", ci)
+        self.assertIn("ship-repair/return-to-caller", ci)
+        self.assertIn("returns `passed`", ci)
+        self.assertIn("pr.checks", ci)
+
+    def test_repair_origin_adapters_reference_the_shared_dispatch(self):
+        for name in ("debugger", "code-reviewer", "coordinator"):
+            with self.subTest(role=name):
+                text = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+                adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
+                self.assertIn("../references/bounded-correction-dispatch.md", adapter)
+                self.assertNotIn('subagent_type="targeted-fixer"', adapter)
 
     def test_every_role_reads_the_shared_scout_procedure(self):
         for role in (ROOT / ".ai/agents").glob("*.md"):

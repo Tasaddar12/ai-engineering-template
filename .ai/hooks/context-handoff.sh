@@ -152,13 +152,16 @@ handoff_identifier() {
 # behind would be handed off by some later, unrelated stop.
 drop_active() {
   [[ -f "$active_file" ]] || return 0
-  local want_agent="$1" want_plan="$2" kept="" dropped=0 line entry_agent entry_plan
+  local want_agent="$1" want_plan="$2" want_summary="$3" kept="" dropped=0 line entry_agent entry_plan entry_summary
   while IFS= read -r line; do
     [[ -n "$line" ]] || continue
     if [[ "$dropped" -eq 0 ]]; then
       entry_agent="$(printf '%s' "$line" | sed -n 's/.*"agent"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       entry_plan="$(printf '%s' "$line" | sed -n 's/.*"plan"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
-      if [[ "$entry_agent" == "$want_agent" && ( -z "$want_plan" || "$entry_plan" == "$want_plan" ) ]]; then
+      entry_summary="$(printf '%s' "$line" | sed -n 's/.*"summary"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+      if [[ "$entry_agent" == "$want_agent" \
+            && ( -z "$want_plan" || "$entry_plan" == "$want_plan" ) \
+            && ( -z "$want_summary" || -z "$entry_summary" || "$entry_summary" == "$want_summary" ) ]]; then
         dropped=1
         continue
       fi
@@ -217,12 +220,13 @@ case "$event" in
     if [[ -n "${agent_type:-}" ]]; then
       # A read-only role leaves no half-written plan behind.
       agent_writes_files "$agent_type" || exit 0
-      plan="$(handoff_plan_in_transcript "$(subagent_transcript)")"
+      plan="$(handoff_plan_in_transcript "$(subagent_transcript)" "$cwd")"
+      summary="$(handoff_summary_in_transcript "$(subagent_transcript)" "$cwd")"
+      [[ -n "$summary" ]] || summary="$(summary_for "$plan")"
       # A plan that could not be recovered, on a host that also recorded the
       # dispatch, is attributed from the stack below instead.
-      if [[ -n "$plan" || ! -f "$active_file" ]]; then
-        drop_active "$agent_type" "$plan"
-        summary="$(summary_for "$plan")"
+      if [[ -n "$plan" || -n "$summary" || ! -f "$active_file" ]]; then
+        drop_active "$agent_type" "$plan" "$summary"
         plan_finished "$summary" && exit 0
         # An agent that crossed the limit already has a record, carrying the
         # digest it wrote. Its exit is folded into that record rather than a
@@ -248,7 +252,10 @@ case "$event" in
       [[ -n "$line" ]] || continue
       agent="$(printf '%s' "$line" | sed -n 's/.*"agent"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       plan="$(printf '%s' "$line" | sed -n 's/.*"plan"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
-      summary="$(summary_for "$plan")"
+      summary="$(printf '%s' "$line" | sed -n 's/.*"summary"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+      plan="$(handoff_safe_repo_path "$plan" "$cwd")"
+      if [[ -z "$summary" ]]; then summary="$(summary_for "$plan")"; fi
+      summary="$(handoff_safe_repo_path "$summary" "$cwd")"
       # A finished plan leaves the stack without a handoff.
       if plan_finished "$summary"; then
         continue

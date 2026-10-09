@@ -141,8 +141,8 @@ def render_asset(name, content, host):
     if name.endswith((".py", ".json")) or not content:
         return content  # Executable code and structured data are copied unchanged.
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
-    if name == ".ai/agents/scout.md" and host == "claude":
-        text = claude_scout_metadata(text)
+    if name in (".ai/agents/scout.md", ".ai/agents/targeted-fixer.md") and host == "claude":
+        text = claude_fixed_role_metadata(text)
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -185,11 +185,11 @@ def render_asset(name, content, host):
     return text.encode("utf-8")
 
 
-def claude_scout_metadata(text):
+def claude_fixed_role_metadata(text):
     """Export fixed Claude metadata without adding host settings to the role body."""
     frontmatter, separator, body = text.partition("\n---\n")
     if not text.startswith("---\n") or not separator:
-        raise ValueError("Claude scout export requires complete Markdown frontmatter")
+        raise ValueError("Claude fixed-role export requires complete Markdown frontmatter")
     frontmatter = re.sub(r"(?m)^(?:model|effort|model_reasoning_effort):[^\n]*\n?", "", frontmatter)
     return frontmatter + "\nmodel: haiku" + separator + body
 
