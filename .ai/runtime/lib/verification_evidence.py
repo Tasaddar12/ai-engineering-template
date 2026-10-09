@@ -10,6 +10,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+import sys
 import uuid
 
 import yaml
@@ -136,8 +137,14 @@ def manifest(entries, paths):
 
 def validator_digest():
     directory = Path(__file__).parent
-    names = ('verification_evidence.py', 'verification.py', 'verification_checks.py', 'text.py', 'results.py')
-    return digest({name: hashlib.sha256((directory / name).read_bytes()).hexdigest() for name in names})
+    # These modules are the local import closure for immutable input parsing,
+    # report/phase resolution and deterministic completion replay. Keep one
+    # identity for both specialist packets and bookkeeping receipts.
+    names = ('verification_evidence.py', 'verification.py', 'verification_checks.py',
+             'roadmap.py', 'phases.py', 'text.py', 'paths.py', 'config.py', 'results.py')
+    modules = {name: hashlib.sha256((directory / name).read_bytes()).hexdigest() for name in names}
+    modules['phase.py'] = hashlib.sha256((directory.parent / 'phase.py').read_bytes()).hexdigest()
+    return digest({'modules': modules, 'python': sys.version, 'yaml': yaml.__version__})
 
 
 def request_inputs(root, request):

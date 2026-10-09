@@ -158,9 +158,7 @@ def currentness(workspace, number):
 
 
 def validator_digest():
-    from pathlib import Path
-    from .verification_checks import file_digest
-    return evidence.digest([file_digest(Path(__file__)), file_digest(Path(evidence.__file__))])
+    return evidence.validator_digest()
 
 
 def roadmap_at(root, commit):
