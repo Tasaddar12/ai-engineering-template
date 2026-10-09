@@ -270,7 +270,7 @@ mkdir -p "$repo/reports"
 for state in complete blocked; do
   summary_path="reports/fixer-SUMMARY.md"
   printf -- '---\nstatus: %s\n---\n' "$state" > "$repo/$summary_path"
-  dispatch='{"hook_event_name":"PreToolUse","session_id":"claude-fixer-'"$state"'","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"targeted-fixer","isolation":"worktree","prompt":"Follow targeted-fixer.md. summary_path: '"$summary_path"'"}}'
+  dispatch='{"hook_event_name":"PreToolUse","session_id":"claude-fixer-'"$state"'","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"targeted-fixer","isolation":"worktree","prompt":"Follow targeted-fixer.md.\nsummary_path: '"$summary_path"'"}}'
   set +e
   ( cd "$repo" && printf '%s' "$dispatch" | bash "$guard" >/dev/null 2>&1 )
   status=$?
@@ -365,7 +365,7 @@ check "a read-only dispatch records nothing" \
 # transcript. These cases run with NO .active-* file on purpose.
 
 codex_agent_transcript() { # <path> <plan-mention>
-  printf '{"type":"message","role":"user","content":"Execute the plan at %s and report."}\n' "$2" > "$1"
+  printf '{"type":"message","role":"user","content":"Execute the plan at %s and report."}\n' "$(handoff_native_path "$2")" > "$1"
 }
 
 codex_stop_payload() { # <session> <agent_type> <agent_transcript_path>
@@ -405,7 +405,7 @@ check "codex: a blocked SUMMARY produces a handoff" \
 # their exact destination in the handoff record.
 mkdir -p "$repo/reports"
 fixer_summary_transcript() { # <transcript> <summary>
-  printf '{"type":"message","role":"user","content":"Follow targeted-fixer.md.\\nsummary_path: %s"}\n' "$2" > "$1"
+  printf '{"type":"message","role":"user","content":"Follow targeted-fixer.md.\\nsummary_path: %s"}\n' "$(handoff_native_path "$2")" > "$1"
 }
 printf -- '---\nstatus: complete\n---\n' > "$repo/reports/fixer-SUMMARY.md"
 fixer_summary_transcript "$workspace/cx-fixer-summary-complete.jsonl" "reports/fixer-SUMMARY.md"
@@ -446,7 +446,7 @@ for state in complete blocked; do
     contains "spaced root: Codex summary-only fixer has no PLAN" "$record" '"plan": null'
   fi
 
-  dispatch="$("$HANDOFF_PY" -c 'import json,sys; print(json.dumps({"hook_event_name":"PreToolUse","session_id":sys.argv[1],"cwd":sys.argv[2],"tool_name":"Agent","tool_input":{"subagent_type":"targeted-fixer","isolation":"worktree","prompt":"summary_path: \""+sys.argv[3]+"\""}}))' "space-claude-$state" "$repo" "$summary_path")"
+  dispatch="$("$HANDOFF_PY" -c 'import json,sys; print(json.dumps({"hook_event_name":"PreToolUse","session_id":sys.argv[1],"cwd":sys.argv[2],"tool_name":"Agent","tool_input":{"subagent_type":"targeted-fixer","isolation":"worktree","prompt":"summary_path: \""+sys.argv[3]+"\""}}))' "space-claude-$state" "$repo" "$(handoff_native_path "$summary_path")")"
   set +e
   ( cd "$repo" && printf '%s' "$dispatch" | bash "$guard" >/dev/null 2>&1 )
   status=$?
