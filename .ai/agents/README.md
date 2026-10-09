@@ -19,11 +19,11 @@ source examples and result contracts.
 | [Integration checker](integration-checker.md) | verify-work | Expected cross-phase connections → read-only wiring and flow evidence → verifier |
 | [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
-| [Scout](scout.md) | Any role, for every requested repeatable task class in scout-dispatch.md | Requested fields and revision → cited evidence packet → assigned decision owner |
+| [Scout](scout.md) | Any role, under the shared scout usage contract | Requested fields and revision → cited evidence packet → assigned decision owner |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
 
-Follow [scout dispatch](../references/scout-dispatch.md) for the task/output
-route. The documentation route reads doc-writer directly. Verification always
+Follow [scout dispatch](../references/scout-dispatch.md) for the shared usage
+contract. The documentation route reads doc-writer directly. Verification always
 uses verifier; it adds doc-verifier when documentation changes,
 integration-checker when acceptance covers dependencies or user-facing flows,
 and a fresh code-reviewer for every source-changing phase. Add another specialist
@@ -118,8 +118,8 @@ Claude installation copies the full Markdown agents to `.claude/agents/`.
 `scout` is the read-only evidence role. Codex resolves it to
 `gpt-6-luna`/`high`; Claude resolves it to `haiku` with effort `inherit` (omit
 the effort argument). These values are fixed and ignore `.planning/config.yaml`.
-Read [scout dispatch](../references/scout-dispatch.md) for its assignment,
-result, waiting and fallback procedure.
+Read [scout dispatch](../references/scout-dispatch.md) for bounded requests,
+cited results and coordinator fallback.
 
 Edit the installed TOML `model` or `model_reasoning_effort` to customise a Codex
 role; the host must support the chosen model and effort. These files do not

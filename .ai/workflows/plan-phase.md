@@ -1,6 +1,6 @@
 <!-- workflow
 step: plan
-agent-roles: orchestrator, scout, researcher, phase-preparer, phase-checker, codebase-mapper
+agent-roles: orchestrator, researcher, phase-preparer, phase-checker
 produces: RESEARCH.md, {NN}-{MM}-PLAN.md
 consumes: CONTEXT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md
 -->
@@ -16,14 +16,12 @@ The orchestrator routes. It does not write the plans itself.
 
 <required_reading>
 @~/.ai/references/universal-anti-patterns.md
-@~/.ai/references/scout-dispatch.md
 @~/.ai/references/methods/planner-guidance.md
 @~/.ai/references/methods/failing-direction.md
 </required_reading>
 
 <available_agent_types>
 Valid subagent types (use these exact names — never fall back to a generic agent):
-- scout - returns bounded cited discovery and fact packets; no decisions or writes
 - researcher — researches how to implement a phase, produces RESEARCH.md
 - phase-preparer — writes executable plans with task breakdown and dependencies
 - phase-checker — verifies plans will achieve the phase goal before execution
@@ -48,88 +46,6 @@ effort and no model, or the reverse. The `models` and `efforts` maps in each
 init bundle carry the same resolved values for every agent that workflow
 dispatches.
 </model_selection>
-
-<dispatch_identity_and_currentness>
-The coordinator performs this procedure BEFORE EVERY evidence or worker dispatch:
-initial scout/researcher/preparer/checker/mapper calls, bounded scout follow-ups,
-revisions, context continuations and scout-request resumes. Rebuild dispatch values
-each time; the session's base or an earlier INIT is not the current revision.
-
-1. Capture actual absolute checkout with `git rev-parse --show-toplevel`, current
-   branch with `git branch --show-current` and observed HEAD with `git rev-parse
-   HEAD`; verify the selected session checkout/branch. Capture relevant owned
-   dirty inputs with `git status --porcelain=v1 -- <owned/input scope>` and stable
-   content identifiers via available native hashing, such as `git hash-object
-   --no-filters -- <known path>`. Include index identity if relevant and explicit
-   deletion/absence markers. Record supplied logs/receipts by captured input ID.
-   These existing metadata operations do not perform repository discovery or run
-   project code; use host equivalents only when actually available.
-2. Allocate and retain a unique logical worker assignment ID and its exact role
-   for a new bounded assignment. Retain that logical ID across its continuations
-   and scout resumes; allocate a distinct dispatch identity for each call, recording
-   its predecessor/continuation lineage. A separately assigned revision has a new
-   logical ID linked to the prior assignment. Preserve original ownership,
-   starting snapshot, allowed progress, result paths and these concrete identities
-   in coordinator assignment/result context for validating all later returns.
-3. Bind `{worker assignment id}`, `{checkout}` and `{revision}` to the retained
-   logical ID, observed absolute checkout and HEAD. Bind `{dispatch lineage}` and
-   `{input snapshot}` to the actual call lineage and relevant captured input
-   paths/content identifiers/dirty state. Never send unresolved placeholders or
-   silently reuse values from the previous Agent prompt. These are prompt values,
-   not new runtime APIs, metadata fields or settings.
-4. Reconcile each needed evidence packet against its question, revision, scope and
-   inputs, including relevant dirty input content identity. Preserve valid matching
-   evidence. Never relabel stale packets as current; obtain only required
-   uncovered/stale fields through bounded configured scouts and compatible batching,
-   not blanket discovery. Supply refreshed packet IDs/paths and their captured
-   current tuple in `planning_evidence` at EVERY boundary. Freeze relevant inputs
-   through each scout join and recheck their snapshot as in scout-dispatch.
-
-Refresh the snapshot after researcher/preparer/mapper commits or owned dirty
-progress and BEFORE resume, checker or any other dispatch. A worker making such
-progress before nested evidence dispatch/request must capture and report its
-actual new checkout/HEAD/input tuple plus saved owned commits/inputs. The
-coordinator validates that progress against the retained original parent
-assignment, permits verified owned commits rather than requiring stale initial
-HEAD, and checks existing request evidence at the reported snapshot. Preserve
-owned changes; reconcile again against the actual current tuple before dispatch
-or resume. Unexpected drift or missing input identities blocks dependent evidence
-until reconciled; it does not authorize resetting progress or accepting stale facts.
-</dispatch_identity_and_currentness>
-
-<scout_return_protocol>
-Apply this protocol to EVERY researcher, phase-preparer, codebase-mapper and
-phase-checker return, including revisions and all continuations, BEFORE required
-output-file existence, plan-count, coverage or completion checks.
-
-On `scout_request`, validate the request against the worker's assignment, then
-follow [scout dispatch](../references/scout-dispatch.md): reuse evidence matching
-question/revision/scope/inputs or dispatch the configured exact scouts, join and
-validate their fields/citations, then resume the original role at `resume_with`.
-Use `dispatch_identity_and_currentness` to validate reported owned progress and
-request evidence at its actual snapshot, recapture before each scout dispatch,
-and refresh the input/evidence tuple BEFORE resuming the worker. Parent validation
-uses retained logical ID, exact role, lineage and ownership, allowing verified
-owned commits rather than insisting on its initial HEAD.
-Use actual host continuation or a fresh assignment with saved progress, owned
-paths, commits and bounded packet IDs/paths. Never restart completed writing or
-leave a live duplicate writer. A worker returning before authoring need not have
-created RESEARCH.md, PLANs or maps yet.
-
-Count queued/open workers, stop scheduling when capacity is full, and join/retire
-completed roles using available host lifecycle operations. The requester RETURNS
-and releases its occupied slot before coordinator scout dispatch when full;
-it must not wait while holding unavailable capacity or search for itself. No
-invented lifecycle tools or runtime commands are permitted.
-
-This return/resume loop does not consume context PARTIAL, research-incomplete or
-plan-revision counters. Route new evidence requests through the same protocol.
-If coordinator dispatch is also unavailable, report `SCOUT UNAVAILABLE` with
-missing fields, dependent steps and saved progress. Continue only independently
-covered work; do not treat dependent research/planning/review as complete or move
-required missing repository evidence into an `[ASSUMED]` precondition. Only after
-the resumed role returns a normal outcome apply its ordinary file/verdict checks.
-</scout_return_protocol>
 
 <process>
 
@@ -275,45 +191,12 @@ Use AskUserQuestion (header: "No context"; options: "Discuss first
 (recommended)" / "Plan anyway" / "Cancel"). On the first, stop and point at
 `/discuss-phase {N}`.
 
-Read CONTEXT.md for decisions. Route any requested structured extraction of
-these fields to scout under `planning_evidence_gate`: `<decisions>` (locked - never re-litigated),
+Extract from CONTEXT.md: `<decisions>` (locked — never re-litigated),
 `<canonical_refs>` (MUST be passed to every downstream agent),
 `<code_context>` (reusable assets), `<deferred>` (explicitly out of scope).
 
 If `has_spec` is true, read the SPEC.md too: its requirements are locked and are
 not re-derived by the preparer.
-</step>
-
-<step name="planning_evidence_gate">
-Before research or planning, identify the repository evidence needed from the
-assigned CONTEXT, canonical refs and runtime metadata. The coordinator may read
-specified records for reasoning and run known runtime metadata queries; it does
-not perform unknown-location searches or repository inventory itself.
-Apply `dispatch_identity_and_currentness` before EACH evidence dispatch here,
-including a missing-field follow-up; retain the concrete scout assignment and tuple.
-
-Consume valid existing scout packets for the same question, revision, scope and
-inputs. For uncovered discovery (files, symbols, history or matching skills),
-repository inventories, or requested repeated fact extraction/classification/
-structured summaries, dispatch configured exact `scout` BEFORE owner search tools.
-Use complete `scout_assignment` objects from the shared reference and resolve
-`phase_run query resolve-agent scout --host codex` or `--host claude` for the
-actual host; pass returned model/effort inline and omit `inherit`.
-
-Batch compatible fields in one bounded scope, such as capability locations,
-callers/config/tests, dependency SUMMARY paths or applicable skill paths. Join
-and validate results, preserve uncovered fields, and retain bounded packet
-IDs/paths as `planning_evidence` for downstream assignments. Do not launch a
-scout solely for a trivial read of an already specified file. Decision owners
-read those sources for reasoning, conflict confirmation and necessary verification.
-Researchers decide the technical approach; phase-preparers design and author plans.
-
-Apply `scout_return_protocol` when a downstream role discovers another evidence
-need. `--skip-research`, existing research, gap closure and continuations do not
-skip this gate. Required missing repository evidence blocks dependent work even
-after ordinary `RESEARCH PARTIAL` continuation limits; it cannot become an
-`[ASSUMED]` task precondition. Do not advance dependent shared readiness records
-until the evidence and normal plan review cover them.
 </step>
 
 <step name="handle_research">
@@ -330,9 +213,6 @@ here?" — it is not a formality:
 - Pure refactor or config work → skip
 
 When research is warranted:
-
-Apply `dispatch_identity_and_currentness` before this researcher Agent call,
-including continuation calls; bind concrete identities and refreshed evidence.
 
 ```
 ### ► RESEARCHING PHASE {phase_number}
@@ -362,18 +242,6 @@ and open a listed file only as its reading rule allows.
 </required_reading>
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if present.
-<scout_evidence_contract>
-Assignment: {worker assignment id}; exact role: researcher; lineage: {dispatch lineage}.
-Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
-Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
-Supply each packet's current question/revision/scope/input tuple.
-Use the required scout-dispatch reference before unknown-location search,
-inventory, skill matching or requested repeated field extraction. Reuse valid
-packets and batch compatible fields. Read named files for technical reasoning.
-Dispatch only configured exact scout children; if nested/depth/slots prevent it,
-RETURN scout_request with complete assignments, saved paths/commits/progress and
-resume_with. Preserve evidence gaps; never self-search or claim them complete.
-</scout_evidence_contract>
 </research_context>
 ${continuing ? `
 <continuation>
@@ -411,10 +279,8 @@ Return: ## RESEARCH COMPLETE with the path and the decisions it unblocks, or
 > collection may run against the same frozen revision. Join the research result
 > before making planning decisions or writing the plan.
 
-**Handle the return.** First apply `scout_return_protocol` to `scout_request` or
-`SCOUT UNAVAILABLE`, including after every research continuation. Once resumed
-research returns a normal outcome, verify `{phase_dir}/{padded_phase}-RESEARCH.md`
-exists; a normal research outcome with no file is a failure - report it and do not
+**Handle the return.** First verify `{phase_dir}/{padded_phase}-RESEARCH.md`
+exists; a return of any kind with no file is a failure — report it and do not
 proceed on the claim. Then route on the header the researcher returned:
 
 | Return | Route |
@@ -424,8 +290,7 @@ proceed on the claim. Then route on the header the researcher returned:
 | `## RESEARCH BLOCKED` | Present the blocker and its options to the user; this is the only return that waits for them. |
 | no recognised header | A failure: report it, as for a missing file. |
 
-**Continuing partial research.** Apply `dispatch_identity_and_currentness` after
-the researcher's progress/commit and rebuild the same role's `Agent(...)` call with the
+**Continuing partial research.** Re-dispatch the same `Agent(...)` call with the
 `<continuation>` block, against the same file, and the researcher's handoff in a
 `<handoff>` block, per [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation):
 
@@ -439,10 +304,6 @@ it stops shrinking, or the second continuation returns partial, continue to
 planning anyway; the phase-preparer plans the covered scope and carries each
 remaining question to the tasks that depend on it. List the unresearched
 questions in the report. Do not ask the user to resume anything.
-
-This ordinary partial fallback excludes required missing repository evidence:
-keep its dependent scope blocked through the scout protocol, never as an assumed
-precondition. A scout request does not increment either continuation counter.
 
 When research ends without another continuation, consume every remaining record
 whose `agent` is `researcher`:
@@ -463,8 +324,6 @@ explicitly before continuing.
 </step>
 
 <step name="spawn_preparer">
-Apply `dispatch_identity_and_currentness` before this preparer Agent call;
-refresh after preceding research commits and bind current evidence and identities.
 ```
 ### ► PLANNING PHASE {phase_number}
 
@@ -510,21 +369,8 @@ ${context_window >= 500000 ? `
 **Phase requirement IDs (every id MUST appear in some plan's `requirements` field):** {requirements}
 
 **Project instructions:** read ./CLAUDE.md or ./AGENTS.md if either exists.
-**Project skills:** use supplied matching skill paths; scout locates missing
-matches before inventory/search. Read only applicable SKILL.md files.
-<scout_evidence_contract>
-Assignment: {worker assignment id}; exact role: phase-preparer; lineage: {dispatch lineage}.
-Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
-Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
-Supply each packet's current question/revision/scope/input tuple.
-Follow scout-dispatch before unknown-location searches (including SUMMARY
-metadata and source symbols), inventories, skill matching or requested repeated
-field extraction. Reuse packets; batch compatible fields. Retain plan design and
-authoring and named-source confirmation. Dispatch only configured exact scouts,
-or RETURN scout_request with complete assignments, saved paths/commits/progress
-and resume_with for unavailable nested/depth/slots. Do not self-search or turn
-required missing repository evidence into an assumed precondition.
-</scout_evidence_contract>
+**Project skills:** check `.agents/skills/` or `.claude/skills/` — read the SKILL.md
+files and account for their rules.
 </planning_context>
 
 <downstream_consumer>
@@ -585,9 +431,7 @@ Every task MUST include:
   than producing a plan you do not believe in
 - If RESEARCH.md still lists questions under ## Not Yet Researched, plan the
   covered scope; a task that depends on one carries it as an [ASSUMED]
-  precondition to confirm, never an invented answer. This excludes required
-  missing repository evidence: return scout_request or SCOUT UNAVAILABLE and
-  block dependent scope until its evidence arrives.
+  precondition to confirm, never an invented answer
 - The context limit is not a blocker: at the limit, commit the plans you have
   and return PLANNING PARTIAL with the scope not yet planned
 </constraints>
@@ -615,10 +459,6 @@ Return: ## PLANNING COMPLETE with each plan path and its wave, or
 </step>
 
 <step name="handle_preparer_return">
-First apply `scout_return_protocol` to `scout_request` or `SCOUT UNAVAILABLE`,
-including after every preparer continuation or revision. Only a normal resumed
-outcome reaches the plan-count/completion checks below.
-
 Verify the plans exist on disk rather than trusting the return message:
 
 ```bash
@@ -629,8 +469,7 @@ Extract `plans` and `count`. If the count is 0, the preparer failed — report i
 and stop. Do not write plans yourself to cover for a failed agent.
 
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
-the rest is unplanned. Apply `dispatch_identity_and_currentness` after its owned
-progress/commit and rebuild the same role's `Agent(...)` call with the
+the rest is unplanned. Re-dispatch the same `Agent(...)` call with the
 `<continuation>` block naming the scope it listed, and the `phase-preparer`
 handoff in a `<handoff>` block, per [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
 Do it once, without asking the user. Then re-read the plan index. If the
@@ -642,8 +481,6 @@ silently into plans.
 </step>
 
 <step name="spawn_checker">
-Apply `dispatch_identity_and_currentness` after preparer progress/commits and
-before EACH checker Agent call or continuation; supply refreshed evidence.
 ```
 ### ► VERIFYING PLANS
 
@@ -666,18 +503,6 @@ and open a listed file only as its reading rule allows.
 **Plans:** {each plan path from the plan index}
 **Context:** {phase_dir}/{padded_phase}-CONTEXT.md
 **Requirements:** {requirements}
-<scout_evidence_contract>
-Assignment: {worker assignment id}; exact role: phase-checker; lineage: {dispatch lineage}.
-Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
-Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
-Supply each packet's current question/revision/scope/input tuple.
-Read the named plans for the review decision. Follow scout-dispatch for unknown
-source/skill/history locations, inventories and requested repeated extraction;
-reuse matching packets and batch compatible fields. Dispatch only configured
-exact scouts or RETURN scout_request with complete assignments, saved progress
-and resume_with when nested/depth/slots are unavailable. No self-discovery or
-approved verdict dependent on missing evidence.
-</scout_evidence_contract>
 
 Ask: if a competent executor did exactly what these plans say and nothing more,
 would the phase goal be achieved? Report what is missing or wrong, not style.
@@ -701,22 +526,14 @@ Findings: <numbered; each names the plan and task it affects>
 )
 ```
 
-First apply `scout_return_protocol` to each checker return, BEFORE interpreting
-its verdict or dispatching a continuation. If the checker reports plans it did
-not reach, dispatch a fresh phase-checker
+If the checker reports plans it did not reach, dispatch a fresh phase-checker
 for them with its handoff in a `<handoff>` block, per
 [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-Apply the protocol again on the continuation return. Merge both reviews'
-findings before routing on the verdict.
+Merge both reviews' findings before routing on the verdict.
 </step>
 
 <step name="revision_loop">
 On `needs-revision`, hand the findings back to the phase-preparer to revise.
-Apply `dispatch_identity_and_currentness` before EVERY revision/continuation call,
-retaining the linked logical assignment and binding the observed current snapshot.
-Include current bounded evidence packet IDs/paths and the same
-`scout_evidence_contract`; apply `scout_return_protocol` to every revision and
-its continuations before checking files or counting the revision as finished.
 **Maximum 3 iterations.** Continue a revising preparer that returns
 `## PLANNING PARTIAL` exactly as in `handle_preparer_return`, with its handoff
 in the `<handoff>` block.
@@ -736,26 +553,10 @@ phase_run query codebase.status
 Every map `fresh` → continue. Any `missing` or `stale` → dispatch one
 codebase-mapper per focus area named in `focus_areas`:
 
-Apply `dispatch_identity_and_currentness` before EACH mapper Agent call or
-continuation and refresh after mapper commits before any later dispatch.
-
 ```
 Agent(
   prompt="
 Refresh the codebase map for focus area: {focus}.
-
-<scout_evidence_contract>
-Assignment: {worker assignment id}; exact role: codebase-mapper; lineage: {dispatch lineage}.
-Repository/revision: {checkout}/{revision}; captured inputs: {input snapshot}.
-Evidence: {planning_evidence packet IDs/paths and bounded cited fields}.
-Supply each packet's current question/revision/scope/input tuple.
-Follow scout-dispatch: all unknown-location searches, repository inventories
-and requested repeated extraction use configured exact scouts before own search
-tools. Reuse packets; batch compatible fields for this bounded focus. You own map
-reasoning/authoring. If nested/depth/slots prevent dispatch, RETURN scout_request
-with complete assignments, saved paths/commits/progress and resume_with; no
-self-search or MAP COMPLETE dependent on missing evidence.
-</scout_evidence_contract>
 
 Rewrite it against the current revision. Do not patch the old text.
 
@@ -770,8 +571,6 @@ Return: ## MAP COMPLETE with what changed since the previous revision.
 ```
 
 > **ORCHESTRATOR RULE**: wait for the subagent before continuing.
-Apply `scout_return_protocol` to each mapper return and continuation BEFORE map
-existence or MAP COMPLETE checks; then verify the normal output at its exact path.
 </step>
 
 <step name="update_roadmap">
@@ -927,7 +726,6 @@ Plan review: {approved | approved with noted findings}
 - [ ] Phase validated against the roadmap and not already complete
 - [ ] Codebase maps fresh, or regenerated before planning against them
 - [ ] CONTEXT.md loaded, with canonical refs passed to every downstream agent
-- [ ] Required scout evidence joined before dependent discovery, research or planning; all worker requests handled before output checks
 - [ ] Research run only where warranted, and its file verified on disk
 - [ ] Plans written by the phase-preparer, verified on disk via the plan index
 - [ ] Every phase requirement id appears in some plan

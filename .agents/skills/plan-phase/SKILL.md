@@ -19,14 +19,10 @@ Produce the plans that /execute-phase will run.
 
 1. Load the phase, its CONTEXT.md decisions and its canonical refs
 2. Refresh any codebase map that has gone stale since it was written
-3. Join required scout evidence before discovery, inventory or repeated fact extraction;
-   reuse valid packets, batch compatible fields and keep named-file reads with owners
-4. Research the approach when it is genuinely unknown (researcher subagent)
-5. Spawn the phase-preparer to write plans with tasks, dependencies and verification
-6. Spawn the phase-checker to confirm goal-backward that the plans deliver the phase
-7. Handle scout_request before output checks on every worker return or continuation;
-   release unavailable capacity, validate evidence and resume saved progress
-8. Revise up to three times, then escalate rather than looping
+3. Research the approach when it is genuinely unknown (researcher subagent)
+4. Spawn the phase-preparer to write plans with tasks, dependencies and verification
+5. Spawn the phase-checker to confirm goal-backward that the plans deliver the phase
+6. Revise up to three times, then escalate rather than looping
 
 **Output:** `{phase}-{NN}-PLAN.md` files the executor can run without inventing scope.
 </objective>
@@ -56,7 +52,6 @@ improvise from the summary.
 
 <success_criteria>
 - CONTEXT.md decisions loaded and treated as locked
-- Required scout evidence joined; SCOUT UNAVAILABLE names missing fields and blocks dependent work
 - Research run only where warranted, and verified on disk
 - Plans written by the phase-preparer subagent, not by the orchestrator
 - Every phase requirement id covered by some plan

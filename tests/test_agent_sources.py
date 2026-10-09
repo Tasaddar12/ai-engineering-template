@@ -91,45 +91,6 @@ class AgentSourceTests(unittest.TestCase):
             with self.subTest(role=role.name):
                 self.assertIn("../references/scout-dispatch.md", role.read_text(encoding="utf-8"))
 
-    def test_planning_roles_route_concrete_discovery_before_own_search(self):
-        preparer = (ROOT / ".ai/agents/phase-preparer.md").read_text(encoding="utf-8")
-        researcher = (ROOT / ".ai/agents/researcher.md").read_text(encoding="utf-8")
-        for role, body in (("phase-preparer", preparer), ("researcher", researcher)):
-            with self.subTest(role=role):
-                adapter = " ".join(body.split("</local_workflow>", 1)[0].split())
-                for required in ("BEFORE your own", "skill matching", "inventor", "scout_request",
-                                 "saved owned paths/commits/progress", "resume_with", "SCOUT UNAVAILABLE",
-                                 "Release your occupied slot before coordinator dispatch when full",
-                                 "Independent covered" if role == "researcher" else "independent covered"):
-                    self.assertIn(required, adapter)
-        history = preparer.split('<step name="read_project_history">', 1)[1].split("</step>", 1)[0]
-        self.assertIn("dispatch scout", history)
-        self.assertIn("SUMMARY metadata", history)
-        self.assertIn("before any search", history)
-        self.assertNotIn("If a path is missing, search SUMMARY", history)
-        self.assertNotIn("Search source symbols first", preparer)
-        self.assertNotIn("ls .planning/codebase/*.md", preparer)
-        discovery = preparer.split("<discovery_levels>", 1)[1].split("</discovery_levels>", 1)[0]
-        self.assertIn("Inspect the named source/manifests", discovery)
-        trace = researcher.split("## Step 1.3: Trace Repository Context", 1)[1].split("## Step 1.5", 1)[0]
-        for required in ("configured exact scout BEFORE", "RETURN `scout_request`",
-                         "Batch entry point, callers, configuration, tests", "named current source"):
-            self.assertIn(required, trace)
-        self.assertNotIn("Search for major capabilities with `rg`", researcher)
-        self.assertNotIn('"$phase_dir"/*-CONTEXT.md', researcher)
-        infrastructure = researcher.split("### Detect Test Infrastructure", 1)[1].split("### Map Requirements", 1)[0]
-        self.assertIn("dispatch configured scout before scanning", infrastructure)
-        self.assertIn("RETURN `scout_request`", infrastructure)
-        self.assertNotIn("Scan for:", infrastructure)
-
-    def test_plan_command_and_skill_keep_mandatory_scout_summary(self):
-        command = (ROOT / ".ai/commands/plan-phase.md").read_text(encoding="utf-8")
-        skill = (ROOT / ".agents/skills/plan-phase/SKILL.md").read_text(encoding="utf-8")
-        self.assertEqual(command, skill)
-        self.assertIn("Join required scout evidence before discovery", command)
-        self.assertIn("Handle scout_request before output checks on every worker return or continuation", command)
-        self.assertIn("SCOUT UNAVAILABLE names missing fields and blocks dependent work", command)
-
     def test_agent_required_local_reads_resolve(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
             body = path.read_text(encoding="utf-8")

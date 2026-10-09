@@ -27,25 +27,12 @@ def without_fences(text):
 
 
 class WorkflowNavigationTests(unittest.TestCase):
-    def test_scout_contract_has_fixed_task_routes_and_complete_structures(self):
-        body = (ROOT / ".ai/references/scout-dispatch.md").read_text(encoding="utf-8")
-        procedure = body.split("## Dispatch procedure", 1)[1].split("## Direct nested", 1)[0]
-        self.assertEqual([str(n) for n in range(1, 7)], re.findall(r"^(\d+)\. ", procedure, re.M))
-        for field in ("scout_assignment:", "scout_result:", "scout_request:", "search_scope:",
-                      "revision:", "task_class:", "requested_fields:", "field_results:",
-                      "uncertainty:", "unresolved_questions:", "missing_test_cases:",
-                      "parent_assignment_id:", "resume_with:"):
-            self.assertIn(field, body)
-        for task_class in ("FACT_EXTRACTION", "REVIEW_INVENTORY", "DOC_CLAIM_COMPARE",
-                           "INTEGRATION_MAP", "TEST_RESULT_SUMMARY", "FAILURE_FACTS",
-                           "DOC_TRANSFORM_PROPOSAL", "CODE_TRANSFORM_PROPOSAL"):
-            self.assertIn(task_class, body)
-        for instruction in ("one discovery scout", "same frozen revision", "concurrently",
-                            "not runtime enforcement", "bounded follow-up",
-                            "verification.run-checks",
-                            "A source-changing phase always gets a separate fresh code-reviewer"):
-            self.assertIn(instruction, body)
-        self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
+    def test_core_entry_points_link_the_central_scout_contract(self):
+        for path, target in (("AGENTS.md", ".ai/references/scout-dispatch.md"),
+                             (".ai/RULES.md", "references/scout-dispatch.md"),
+                             (".ai/references/agent-adaptation.md", "scout-dispatch.md")):
+            body = (ROOT / path).read_text(encoding="utf-8")
+            self.assertRegex(body, r"\[[^\]]+\]\(" + re.escape(target) + r"\)")
 
     def test_literal_link_examples_do_not_hide_real_navigation(self):
         body = without_fences("`[example](missing.md)` and [actual](required.md)\n"

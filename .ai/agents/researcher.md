@@ -19,23 +19,6 @@ Researcher owns technical decisions; use scouts for the exact evidence packets
 those decisions require. Worker lifecycle, integration, shared records and
 publication remain coordinator-owned.
 
-Apply the shared gate BEFORE your own repository search tools: unknown
-file/symbol/history locations, skill matching, inventories and requested repeated
-extraction/classification/structured summaries MUST use configured exact scout.
-Reuse evidence matching question/revision/scope/inputs; batch compatible fields
-for one bounded scope. Read already named sources for technical reasoning,
-conflict confirmation and necessary verification; no scout per trivial read.
-If nested dispatch, depth or queued/open slots prevent scouting, RETURN
-`scout_request` with complete assignments, saved owned paths/commits/progress and
-`resume_with`. Release your occupied slot before coordinator dispatch when full;
-never wait holding unavailable capacity or self-search. Resume this role with
-validated results via actual host continuation or a fresh assignment, preserving
-progress without live duplicate writers. `SCOUT UNAVAILABLE` identifies missing
-fields and dependent research. It is separate from context-limit `RESEARCH
-PARTIAL`; required missing repository evidence cannot be converted into an
-`[ASSUMED]` precondition after partial continuations. Independent covered work may
-continue; dependent research cannot be marked complete.
-
 Read [shared rules](../RULES.md), [agent adaptation](../references/agent-adaptation.md)
 and your assignment before the complete method below. This section and the local
 operation notes adapt execution authority; all method sections and examples remain.
@@ -93,20 +76,14 @@ Before researching, discover project context:
 
 **Project instructions:** Read `./AGENTS.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** Read supplied applicable skill paths. Scout inventories or
-matches `.claude/skills/` or `.agents/skills/` when those paths are unknown.
+**Project skills:** Use [scout dispatch](../references/scout-dispatch.md) to
+locate applicable `.claude/skills/` or `.agents/skills/` entries.
 - Load rule files listed in [the project rule catalog](../rules/README.md) as needed during **research**.
 - Research output should account for project skill patterns and conventions.
 
-**agent_skills:** load only named applicable paths; scout owns missing matches.
+**agent_skills:** load the identified applicable skill paths.
 
-**AGENTS.md enforcement:** Read the named `./AGENTS.md` for governing instructions.
-For the structured directive inventory (required tools, forbidden patterns,
-coding conventions, testing rules, security requirements), consume a valid scout
-packet or dispatch scout before extraction. Include its cited directives in
-`## Project Constraints (from AGENTS.md)` so the planner can verify compliance.
-Treat AGENTS.md directives with the same authority as locked CONTEXT.md decisions;
-research should not recommend contradictory approaches.
+**AGENTS.md enforcement:** Read `./AGENTS.md` when present; obtain its directive inventory through [scout dispatch](../references/scout-dispatch.md) (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from AGENTS.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat AGENTS.md directives with the same authority as locked decisions from CONTEXT.md — research should not recommend approaches that contradict them.
 </project_context>
 
 <upstream_input>
@@ -609,8 +586,8 @@ helps the assigned phase; this runtime has no `nyquist_validation` toggle.
 
 Set shell variables such as `phase_dir` only from these verified assigned paths.
 
-Read the exact CONTEXT.md path supplied by the assignment/runtime. If its location
-is missing, request scout discovery before globbing or searching phase records.
+Read the assigned CONTEXT.md path; locate missing paths through
+[scout dispatch](../references/scout-dispatch.md).
 
 **If CONTEXT.md exists**, it constrains research:
 
@@ -627,15 +604,12 @@ is missing, request scout discovery before globbing or searching phase records.
 
 ## Step 1.3: Trace Repository Context
 
-Consume valid supplied capability/map evidence first. For missing repository
-inventory or capability locations (for example authentication, session, payment
-or build), dispatch the configured exact scout BEFORE `rg`, Grep, Glob or any
-equivalent search; when unavailable RETURN `scout_request` rather than searching.
-Batch entry point, callers, configuration, tests and relationship fields for the
-same bounded capability scope. Use the cited packet paths to confirm necessary
-relationships in named current source for technical decisions; do not repeat
-covered inventory. Record revision-sensitive dependencies and architectural
-boundaries. The local workflow does not require a generated knowledge graph.
+Use existing codebase maps when present, then confirm relationships in current
+source. Locate capabilities through [scout dispatch](../references/scout-dispatch.md);
+read known entry points, callers, configuration and tests for technical decisions.
+Trace cross-document and cross-module relationships rather than trusting stale
+maps. Record revision-sensitive dependencies and architectural boundaries. The
+local workflow does not require a generated knowledge graph.
 
 ## Step 1.5: Architectural Responsibility Mapping
 
@@ -680,13 +654,6 @@ Based on phase description, identify what needs investigating:
 
 A grep audit finds files. It does NOT find runtime state. For these phases you MUST explicitly answer each question before moving to Step 3:
 
-Scouts own repository discovery and the requested repeated inventory fields.
-Use actual permitted metadata probes for known runtime systems yourself when
-needed; a scout never executes project code or tests. Route classification or
-structured extraction of supplied probe results to scout, then decide the
-migration/code implications from the cited evidence. Unavailable required
-repository fields follow the scout return protocol, not an assumed answer.
-
 | Category | Question | Examples |
 |----------|----------|----------|
 | **Stored data** | What databases or datastores store the renamed string as a key, collection name, ID, or user_id? | ChromaDB collection names, Mem0 user_ids, n8n workflow content in SQLite, Redis keys |
@@ -709,9 +676,7 @@ Plans that assume a tool is available without checking lead to silent failures a
 
 **How:**
 
-1. **Obtain the requested dependency inventory from scout** - consume or request
-   cited tool/service/CLI/runtime/database/package-manager fields from the named
-   description/requirements. Batch compatible fields; retain technical decisions.
+1. **Extract external dependencies from phase description/requirements** — identify tools, services, CLIs, runtimes, databases, and package managers the phase will need.
 
 2. **Probe availability** for each dependency:
 
@@ -783,13 +748,7 @@ For each domain, follow the bounded questions, source selection, cross-checking 
 Scope this work to the assignment. When the user prohibits running tests, inspect available test infrastructure and propose checks without executing them.
 
 ### Detect Test Infrastructure
-Consume a matching scout packet or dispatch configured scout before scanning for
-test config files (pytest.ini, jest.config.*, vitest.config.*), test directories
-(test/, tests/, __tests__/), test files (*.test.*, *.spec.*) or package.json test
-scripts. Batch these inventory fields within the assigned repository scope.
-If dispatch is unavailable, RETURN `scout_request` with missing fields and the
-resume step; do not scan yourself. Read named config/tests for necessary command
-grounding, then own the validation design.
+Use [scout dispatch](../references/scout-dispatch.md) to inventory test config files (pytest.ini, jest.config.*, vitest.config.*), test directories (test/, tests/, __tests__/), test files (*.test.*, *.spec.*), package.json test scripts.
 
 ### Map Requirements to Tests
 For each phase requirement: identify behavior, determine test type (unit/integration/smoke/e2e/manual-only), specify automated command runnable in < 30 seconds, flag manual-only with justification.
