@@ -104,7 +104,7 @@ python .claude/install.py --target . --host claude --skip-deps --ref COMMIT
 
 Replace COMMIT with the revision that installed the workflow. Repeating the same
 revision is a no-op. To move an installed project onto a *newer* revision, use
-`--update` below; a plain reinstall reports the differences as conflicts rather
+the guarded updater below; a plain reinstall reports the differences as conflicts rather
 than replacing them. Existing project context, settings and runtime config remain
 authoritative; choosing a host does not rewrite an existing project's configuration.
 
@@ -115,79 +115,64 @@ and custom material. Changing `--host` alone is not a migration command.
 
 ## Update an installed workflow
 
-This is how an installed project moves onto a newer template revision. It works
-for `.codex` and `.claude` alike and needs no `.ai` directory; it is the mode to
-use when the workflow is already installed and you want the current version of
-it. Work on a review branch with the existing setup committed:
+Use [update-workflows](update-workflows.md) for an existing `.codex` or `.claude`
+installation. Its workflow dispatches scouts for supplied evidence, a coder for
+bounded reconciliation, and an independent reviewer. Work on the authorized review
+branch with the existing setup committed. The updater compares actual contents;
+a copied version stamp does not establish ownership or a correct installation.
+
+Python 3.11+, Git and PyYAML must already be available. Preview is the default:
 
 ```text
-python .claude/install.py --target . --host claude --update --skip-deps --dry-run
-python .claude/install.py --target . --host claude --update --skip-deps
+python .codex/update.py --target . --host codex --source https://github.com/Tasaddar12/ai-engineering-template --ref main --plan workflow-update.json
 ```
 
-Use `--host codex` and `.codex/install.py` for Codex. Omit `--skip-deps` to also
-recreate the host virtual environment and reinstall its requirements, which a
-revision that added a dependency needs.
+Use `.claude/update.py --host claude` for Claude. The comparison resolves `main`
+to a commit and records that pin in the plan; apply fetches the recorded commit.
+For an older installation without `update.py`, inspect a pinned upstream checkout
+and invoke its `.ai/update.py` outside the target, with `--target /path/to/project`.
+Keep its sibling `install.py`; the updater reuses that file's packaging helpers.
+Do not overwrite an installed helper just to bootstrap the update.
 
-What an update does:
+Review every diff, required configuration addition, optional default and conflict.
+New installations record hashes and classifications in the selected host's
+`workflow-ownership.json`; migration backup `MANIFEST.json` has a different purpose.
+Legacy ownership remains unproven even for equal bytes. `--from-ref COMMIT` supplies
+a content baseline, never ownership proof. Resolve uncertain or customized files
+in the plan's `resolutions` mapping, preserving project-specific code, routing,
+hooks and records. Reconcile real content conflicts and regenerate the plan rather
+than claiming a generated or project file is upstream-owned. Retired upstream files
+need explicit per-file removal review; unrelated project additions are preserved.
 
-- **Replaces shipped workflow material** — runtime, hooks, commands, agents,
-  guides, references, templates, skills and rules — with this revision's copies.
-- **Never touches project data.** PROJECT, REQUIREMENTS, ROADMAP, STATE and
-  `config.yaml` stay exactly as they are, as do phases, specs, decisions and
-  todos. An update has no authority over intent or execution history.
-- **Merges rather than overwrites** the host settings file and the root entry
-  file. Existing hooks and unrelated settings are retained, and only the
-  delimited managed block in AGENTS.md/CLAUDE.md is swapped, so guidance you
-  wrote around it survives.
-- **Backs up and verifies every original it replaces or removes** under
-  `.workflow-backups/`, exactly as a migration does, before writing anything.
-- **Deletes nothing by default.** A file this revision no longer ships is
-  reported and left in place, because the installer cannot tell a retired
-  template file from one your project added.
-
-Two flags refine that last point:
-
-| Flag | Effect |
-|---|---|
-| `--from-ref COMMIT` | The revision this project was installed from. The report then names the files that already differed from it, so a local customization about to be replaced is a decision rather than a discovery weeks later. |
-| `--prune` | Also removes installed workflow files this revision no longer ships, after backing them up. It removes **any** unshipped file under the host directory, including ones your project added, so read the dry run first. |
-
-Without `--from-ref` the update cannot distinguish a local edit from an upstream
-change, so it says so and lists everything it refreshed; the backup holds the
-originals either way. Review the reported refresh list and the Git diff,
-reconcile any local runtime customizations from the backup, run the host's
-`runtime/phase.py status` and your project checks, then commit the update as its
-own slice.
-
-`--update` and `--migrate-existing` are different operations and cannot be
-combined: migration rebuilds a legacy `.ai` tree into a host layout, and update
-refreshes a host layout that already exists. A project still on `.ai` migrates
-first, then updates from there.
-
-Migration preserves legacy worker definitions and shared rules. Scout activation
-remains pending until a subsequent `--update` installs the current worker tools,
-scout procedure references and shared dispatch rules. Do not dispatch the migrated
-workflow before completing that update.
-
-After migration, run the exact `Required next command` printed by the installer.
-That command uses the installed host's `install.py`, the same `--source`, the
-resolved template commit in `--ref`, the selected `--host`, and `--no-hooks` when
-used for migration. Preview it with `--dry-run`, then run it without `--dry-run`.
-Do not substitute `main` for the printed commit.
+After independent review, hash the complete plan bytes, including resolutions:
 
 ```text
-python .codex/install.py --target . --host codex --update --source <same-template-source> --ref <printed-template-commit> --skip-deps --dry-run
-python .codex/install.py --target . --host codex --update --source <same-template-source> --ref <printed-template-commit> --skip-deps
-python .claude/install.py --target . --host claude --update --source <same-template-source> --ref <printed-template-commit> --skip-deps --dry-run
-python .claude/install.py --target . --host claude --update --source <same-template-source> --ref <printed-template-commit> --skip-deps
+python .codex/update.py --apply workflow-update.json --reviewed-plan-sha256 <SHA256>
 ```
 
-Run only the pair for the selected host and replace the source/commit fields with
-the values printed by the migration. The update backs up replaced legacy guidance
-under `.workflow-backups/`; review those originals and restore applicable custom
-instructions without restoring obsolete worker tool restrictions or no-scout
-dispatch rules. Commit the migration and update as separate slices.
+On PowerShell, obtain the digest with
+`(Get-FileHash -LiteralPath workflow-update.json -Algorithm SHA256).Hash.ToLower()`.
+The updater rejects stale target fingerprints and altered candidates before writes,
+backs up originals under `.workflow-backups/`, records current/previous provenance,
+and validates installed hashes and configuration syntax. Missing required nested
+settings are added while valid project values remain authoritative; other defaults
+are optional. YAML insertion may reformat comments, so review the real diff.
+`--no-hooks` on the preview preserves existing hooks and skips new registrations.
+The updater does not install dependencies or establish trusted live hook execution.
+Run the selected host runtime's `status`, applicable project checks and needed
+independent verification before committing and publishing under existing authorization.
+
+Legacy installer `--update`, `--from-ref` and `--prune` remain for compatibility.
+They are not the guarded workflow: `--update` replaces shipped workflow files and
+`--prune` can remove project additions under the host root. Use them only when
+that exact replacement/removal has been explicitly selected and reviewed.
+
+A legacy separate `.ai` layout must migrate first. Migration preserves customized
+worker guidance and prints a pinned `Required next command` to activate current
+worker contracts. Keep that source/commit pin; reconcile preserved customizations
+through the guarded updater before dispatching the migrated workflow. If the
+printed legacy activation command is selected, review its dry-run and backup diff
+as an explicit replacement operation, preserving applicable custom guidance.
 
 ## Migrate an existing `.ai` and `.planning` project
 

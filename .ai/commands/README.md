@@ -12,6 +12,8 @@ workflow performs every record mutation through the
 | Command | Purpose | Workflow |
 |---|---|---|
 | [install](install.md) | Install into a new or existing project and bootstrap Git | Standalone `.ai/install.py` |
+| [update-workflows](update-workflows.md) | Compare a pinned upstream revision and apply a reviewed update preserving project customizations | update-workflows |
+| [clean-planning](clean-planning.md) | Audit planning consistency, repair safe structure and archive selected retired records | clean-planning |
 | [onboard](onboard.md) | Initialize PROJECT.md, REQUIREMENTS.md and a phased ROADMAP.md | onboard |
 | [phase](phase.md) | Add, insert, remove or edit phases in the roadmap | add-phase, insert-phase, remove-phase, edit-phase |
 | [discuss-phase](discuss-phase.md) | Capture the decisions a phase needs before planning | discuss-phase |
