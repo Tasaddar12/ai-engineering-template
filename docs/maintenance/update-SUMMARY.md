@@ -88,3 +88,38 @@ classifies supplied evidence as FACT_EXTRACTION without executing project code.
 This repairs the scout permission/task_class mismatch found during integration.
 The follow-up documentation and this SUMMARY are committed together; the handoff
 records its SHA (self-reference cannot be embedded in that commit).
+
+
+## CR-01 repair: kept managed instruction blocks
+
+Repair repository: D:/Codex/2026-10-09/task-36/update-fixes
+Repair branch: feat/maintenance-update-fixes
+Repair base: b00a0c5116d93dd2f447fcb3acb19c2500bde181
+Authorization: confirmed independent CR-01 only; updater, regression tests and this
+SUMMARY owned by coder. Publication/integration/re-review remain coordinator-owned.
+
+The installed whole-file digest records deliberately kept bytes, including local
+instructions. It cannot prove that the root managed block matches upstream. The
+updater now compares AGENTS.md/CLAUDE.md managed blocks with the actual pinned
+baseline regardless of an installed digest match. A kept customization remains a
+review conflict on repeated updates and after upstream provenance advances. Normal
+upstream blocks still upgrade while surrounding project guidance stays unchanged.
+No API, manifest schema, installer, workflow or unrelated source changes.
+
+Regression evidence:
+- Before repair: `python -m unittest discover -s tests -p test_install_update.py -k test_kept_managed_block -v`
+  reproduced CR-01: both Codex and Claude failed when a repeated plan lost its conflict
+  after keep/generated recorded customized installed bytes (33.879s).
+- After repair: `python -m unittest discover -s tests -p test_install_update.py -k managed_block -v`
+  six tests passed (118.978s), including both-host keep/repeat/succeeding revision,
+  provenance advancement and clean-block upgrade with surrounding guidance preserved.
+- `python -m unittest discover -s tests -p test_install_update.py -k ReviewedUpdates -v`
+  all 15 guarded fixtures passed (242.879s): the relevant 13 existing fixtures plus
+  two new regressions, each testing both Codex and Claude.
+- `python -m py_compile .ai/update.py` and `git diff --check`: passed.
+
+Root blocks without a supplied proven baseline remain conservatively conflicted;
+the CLI fetches the recorded pinned baseline. This repair does not claim a broader
+merge policy. Independent re-review of the integrated repair remains outstanding.
+The repair commit includes these exact three files; its resulting SHA is returned
+in the worker handoff because a commit cannot contain its own SHA.

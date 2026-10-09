@@ -247,9 +247,11 @@ def build_plan(source, target, host, hooks, source_url, revision, baseline=None,
                 elif name in ("AGENTS.md", "CLAUDE.md"):
                     block = managed_block(current)
                     old = managed_block(prior.get(name)) if prior.get(name) else None
-                    # A whole-file manifest match proves this block; a fetched baseline
-                    # proves only its content, not ownership for a legacy installation.
-                    if not known and (old is None or block[2] != old[2]):
+                    # Installed hashes also record deliberately kept customizations;
+                    # they cannot prove that this managed block belongs to upstream.
+                    # Compare the block with the actual pinned baseline independently
+                    # of surrounding project guidance and whole-file manifest matches.
+                    if old is None or block[2] != old[2]:
                         conflict = "Customized or unproven managed instruction block"
                     candidate = current[:block[0]] + managed_block(candidate)[2] + current[block[1]:]
                     action = "write" if candidate != current else "keep"

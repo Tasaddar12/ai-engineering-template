@@ -520,6 +520,78 @@ class ReviewedUpdates(unittest.TestCase):
         self.assertIn(b"User rule", path.read_bytes())
         self.assertEqual(update.load_manifest(self.target, "codex")["files"][".codex/RULES.md"]["classification"], "customized")
 
+    def managed_block_upgrade_fixture(self, host):
+        target = Path(self.temp.name) / ("managed-block-" + host)
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"),
+                                 "--source", str(self.source), "--ref", self.first,
+                                 "--target", str(target), "--host", host,
+                                 "--skip-deps", "--no-hooks"], capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        later = Path(self.temp.name) / ("later-source-" + host)
+        update.fetch(str(self.source), self.second, later)
+        asset = later / ".ai/install-assets/agent-entry.txt"
+        asset.write_bytes(asset.read_bytes() + b"\nNew upstream instruction.\n")
+        git("add", ".", cwd=later)
+        git("-c", "user.name=Fixture", "-c", "user.email=test@example.invalid",
+            "commit", "--quiet", "-m", "later managed block", cwd=later)
+        return target, later, git("rev-parse", "HEAD", cwd=later)
+
+    def test_kept_managed_block_customization_remains_conflicted_for_both_hosts(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                target, later, third = self.managed_block_upgrade_fixture(host)
+                entry_name = "AGENTS.md" if host == "codex" else "CLAUDE.md"
+                entry_path = target / entry_name
+                original = entry_path.read_bytes()
+                customized = original.replace(installer.AGENT_END.encode(),
+                                              b"Keep this local instruction.\n" + installer.AGENT_END.encode())
+                preserved = b"Project guidance before.\n" + customized + b"Project guidance after.\n"
+                entry_path.write_bytes(preserved)
+                plan = update.build_plan(self.source, target, host, False, str(self.source),
+                                         self.second, self.baseline)
+                self.assertTrue(self.entry(plan, entry_name)["conflict"])
+                plan["resolutions"][entry_name] = {"action": "keep", "classification": "generated"}
+                update.apply_plan(plan, self.source, self.baseline)
+                self.assertEqual(entry_path.read_bytes(), preserved)
+                record = update.load_manifest(target, host)["files"][entry_name]
+                self.assertEqual(record["installed_sha256"], update.digest(preserved))
+                for candidate, revision, baseline in ((self.source, self.second, self.source),
+                                                      (later, third, self.source)):
+                    repeated = update.build_plan(candidate, target, host, False, str(candidate),
+                                                 revision, baseline, str(self.source))
+                    # Recording kept installed bytes must not prove upstream ownership.
+                    self.assertTrue(self.entry(repeated, entry_name)["conflict"])
+                    before = entry_path.read_bytes()
+                    with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
+                        update.apply_plan(repeated, candidate, baseline)
+                    self.assertEqual(entry_path.read_bytes(), before)
+                    repeated["resolutions"][entry_name] = {"action": "keep", "classification": "generated"}
+                    update.apply_plan(repeated, candidate, baseline)
+                    self.assertEqual(entry_path.read_bytes(), preserved)
+                # Even after provenance advances, another update still requires review.
+                final = update.build_plan(later, target, host, False, str(later), third, later)
+                self.assertTrue(self.entry(final, entry_name)["conflict"])
+
+    def test_unchanged_managed_block_upgrades_preserving_surrounding_guidance_for_both_hosts(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                target, later, third = self.managed_block_upgrade_fixture(host)
+                entry_name = "AGENTS.md" if host == "codex" else "CLAUDE.md"
+                entry_path = target / entry_name
+                prefix, suffix = b"Project guidance before.\n", b"Project guidance after.\n"
+                entry_path.write_bytes(prefix + entry_path.read_bytes() + suffix)
+                plan = update.build_plan(later, target, host, False, str(later), third,
+                                         self.baseline, str(self.source))
+                self.assertIsNone(self.entry(plan, entry_name)["conflict"])
+                update.apply_plan(plan, later, self.baseline)
+                content = entry_path.read_bytes()
+                self.assertTrue(content.startswith(prefix))
+                self.assertTrue(content.endswith(suffix))
+                self.assertIn(b"New upstream instruction.", content)
+                repeat = update.build_plan(later, target, host, False, str(later), third, later)
+                self.assertIsNone(self.entry(repeat, entry_name)["conflict"])
+                self.assertEqual(update.apply_plan(repeat, later, later), [])
+
     def test_nested_missing_required_config_preserves_existing_values(self):
         config = self.target / ".planning/config.yaml"
         old = {"workflow": {"auto_advance": True}, "agents": {"coder": {"model": "custom"}},
