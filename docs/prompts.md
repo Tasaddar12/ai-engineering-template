@@ -124,21 +124,31 @@ PROJECT, ROADMAP, STATE, requirements, or phase context records. Do not let
 agents make concurrent changes to those shared records or settle conflicts.
 
 Wait for every agent before reconciling. Check each proposal against governing
-requirements and locked decisions. Keep downstream assumptions provisional
-until prerequisites are confirmed. Auto-decide only when approved requirements,
-locked decisions, templates, or established conventions determine a compatible
-choice, or for a reversible local implementation detail that does not change
-product behavior, public interfaces or data contracts, architecture boundaries,
-security, privacy, access, persistent data, paid services, or scope. Never
-overwrite a locked decision, manufacture approval, or auto-resolve a contradiction.
-Consolidate unresolved or conflicting decisions and cross-phase contracts into
-one deduplicated human question list; include affected phase IDs, concrete
-options, a recommendation, and consequences. Group the questions instead of
+requirements and locked decisions; reconcile factual mismatches against those
+sources before presentation. If suggestions still contradict, leave the choice
+to the human. Keep downstream assumptions provisional until prerequisites are
+confirmed. Routine compatible choices allowed by this auto-decision rule need
+no approval gate. Auto-decide only when approved requirements, locked decisions,
+templates, or established conventions determine a compatible choice, or for a
+reversible local implementation detail that does not change product behavior,
+public interfaces or data contracts, architecture boundaries, security, privacy,
+access, persistent data, paid services, or scope. Consolidate matters affecting
+those boundaries, missing requirements, tradeoffs without an established
+governing rule, and conflicting phase contracts as human decisions. Never
+overwrite a locked decision, manufacture approval, bypass required action
+confirmation, or mark unresolved context approved or locked. Consolidate human
+decisions into one deduplicated question list with affected phase IDs, concrete
+options, a recommendation, and consequences. Group questions rather than
 interrupting one at a time. Return one report with (1) auto-decisions and their
-phase IDs, rationale, and sources, (2) the deduplicated human decision list, and
-(3) unresolved dependency assumptions and blocked scope. Discuss only; do not
-plan or execute. Use the runtime for any later authorized record changes.
+phase IDs, rationale, and sources, (2) the human decision list, and (3) unresolved
+dependency assumptions and blocked scope. Discuss only; do not plan or execute.
+Use the runtime for any later authorized record changes.
 ```
+
+`/discuss-phase` accepts one phase; this is coordinator prose for separate
+phase-specific assignments, not a batch command. The coordinator alone reconciles
+records after all read-only workers finish. If later record writes are authorized,
+use exclusive ownership in an isolated worktree.
 
 **Expected result:** One consolidated report of supported local decisions,
 questions needing human resolution, and provisional dependencies. The report is
