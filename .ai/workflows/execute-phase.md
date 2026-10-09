@@ -68,7 +68,7 @@ model alias, and `effort` only when it returned one of `low`, `medium`,
 `high`, `xhigh` or `max`. The two resolve independently: a role can carry an
 effort and no model, or the reverse. The `models` and `efforts` maps in each
 init bundle carry the same resolved values for ordinary workflow assignments.
-Resolve conditional fixer dispatch through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+Resolve conditional fixer dispatch through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 </model_selection>
 
 <authority>
@@ -555,7 +555,7 @@ receipt is deterministic evidence; report its tested revision and receipt
 reference without asking an AI agent to repeat or explain a pass. Use the bounded
 output tails for failures or ambiguous results. A failing check blocks dependent
 waves: route a diagnosed bounded correction through
-[bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch);
+[bounded correction dispatch](../references/bounded-correction-dispatch.md);
 use the debugger for unknown causes and coder/preparer for broader work.
 Repairs invalidate affected receipts; rerun those checks on the repaired
 revision before accepting the wave.
@@ -612,7 +612,7 @@ Findings: <numbered, each with file:line, severity (critical|warning), and why i
 
 **Critical findings block completion.**
 
-1. Route validated bounded findings through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+1. Route validated bounded findings through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 2. Return incomplete or contradictory findings to the originating reviewer via the coordinator.
 3. Route unknown causes to debugger and broader work to coder/preparer.
 4. Integrate owned repairs, rerun affected checks and obtain fresh independent review.

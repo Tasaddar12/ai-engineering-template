@@ -112,7 +112,7 @@ class AgentSourceTests(unittest.TestCase):
         self.assertEqual({"coder", "doc-writer", "debugger", "targeted-fixer"}, set(write_roles))
 
     def test_bounded_correction_dispatch_has_supported_routing_and_retained_gates(self):
-        shared = (ROOT / ".ai/references/agent-adaptation.md").read_text(encoding="utf-8")
+        shared = (ROOT / ".ai/references/bounded-correction-dispatch.md").read_text(encoding="utf-8")
         dispatch = shared.split("## Bounded correction dispatch", 1)[1].split("## Review and repair handoffs", 1)[0]
         self.assertIn("../agents/targeted-fixer.md", dispatch)
         self.assertIn("phase_run query resolve-model targeted-fixer --raw", dispatch)
@@ -132,7 +132,7 @@ class AgentSourceTests(unittest.TestCase):
             with self.subTest(workflow=name):
                 text = (ROOT / ".ai/workflows" / (name + ".md")).read_text(encoding="utf-8")
                 self.assertIn("targeted-fixer", text)
-                self.assertIn("../references/agent-adaptation.md#bounded-correction-dispatch", text)
+                self.assertIn("../references/bounded-correction-dispatch.md", text)
                 self.assertNotRegex(text, r"(?:models|efforts)\[['\"]targeted-fixer['\"]\]")
         execute = (ROOT / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8")
         critical = execute.split("**Critical findings block completion.**", 1)[1].split("</step>", 1)[0]
@@ -159,7 +159,7 @@ class AgentSourceTests(unittest.TestCase):
             with self.subTest(role=name):
                 text = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
                 adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                self.assertIn("../references/agent-adaptation.md#bounded-correction-dispatch", adapter)
+                self.assertIn("../references/bounded-correction-dispatch.md", adapter)
                 self.assertNotIn('subagent_type="targeted-fixer"', adapter)
 
     def test_every_role_reads_the_shared_scout_procedure(self):

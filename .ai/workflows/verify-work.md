@@ -53,7 +53,7 @@ model alias, and `effort` only when it returned one of `low`, `medium`,
 `high`, `xhigh` or `max`. The two resolve independently: a role can carry an
 effort and no model, or the reverse. The `models` and `efforts` maps in each
 init bundle carry the same resolved values for ordinary workflow assignments.
-Resolve conditional fixer dispatch through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+Resolve conditional fixer dispatch through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 </model_selection>
 
 <process>
@@ -407,7 +407,7 @@ Do not ask how to proceed. Route each gap per
 
 **Close the in-scope gaps now:**
 
-1. Route a diagnosed bounded gap with complete inputs through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+1. Route a diagnosed bounded gap with complete inputs through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 2. Integrate its owned repair; rerun affected checks and obtain fresh independent review and verification.
 3. Return missing, stale or contradictory inputs to the originating debugger/reviewer via the coordinator.
 4. Route unknown causes to debugger; send broader or undiagnosed gap closure to the existing preparer/coder route below.
