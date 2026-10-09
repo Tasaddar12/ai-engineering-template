@@ -44,7 +44,7 @@ model alias, and `effort` only when it returned one of `low`, `medium`,
 `high`, `xhigh` or `max`. The two resolve independently: a role can carry an
 effort and no model, or the reverse. The `models` and `efforts` maps in each
 init bundle carry the same resolved values for ordinary workflow assignments.
-Resolve conditional fixer dispatch through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+Resolve conditional fixer dispatch through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 </model_selection>
 
 <process>
@@ -391,7 +391,7 @@ exactly as observed:
 
 1. Read each failing run's log: `gh run view <run-id> --log-failed`
 2. Send unknown causes to an isolated `debugger` with check names, log excerpts and current revision.
-3. Route complete diagnosed bounded findings/proposals through [bounded correction dispatch](../references/agent-adaptation.md#bounded-correction-dispatch).
+3. Route complete diagnosed bounded findings/proposals through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 4. Return incomplete or contradictory inputs to the originating debugger/reviewer via the coordinator; send broader authorized repairs to preparer/coder.
 5. From the session worktree, integrate committed owned repairs. Do not push yet: the source
    change invalidates verification for this branch.
