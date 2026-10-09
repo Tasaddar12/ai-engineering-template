@@ -264,6 +264,32 @@ for state in complete blocked; do
     "$(ls "$handoffs"/fixer-$state*.json 2>/dev/null | wc -l | tr -d ' ')" "$expected"
 done
 
+# Claude captures the dispatch prompt in the active stack. A fixer that names
+# only its assigned SUMMARY completes or hands off against that exact path.
+mkdir -p "$repo/.ai/maintenance"
+for state in complete blocked; do
+  summary_path=".ai/maintenance/claude-fixer-$state-SUMMARY.md"
+  printf -- '---\nstatus: %s\n---\n' "$state" > "$repo/$summary_path"
+  dispatch='{"hook_event_name":"PreToolUse","session_id":"claude-fixer-'"$state"'","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"targeted-fixer","isolation":"worktree","prompt":"Follow targeted-fixer.md. summary_path: '"$summary_path"'"}}'
+  set +e
+  ( cd "$repo" && printf '%s' "$dispatch" | bash "$guard" >/dev/null 2>&1 )
+  status=$?
+  set -e
+  check "claude: summary-only fixer dispatch is allowed" "$status" "0"
+  contains "claude: the active entry carries summary_path" \
+    "$(cat "$handoffs/.active-claude-fixer-$state.jsonl" 2>/dev/null || true)" "$summary_path"
+  run_hook "$(payload_for SubagentStop "claude-fixer-$state" "$workspace/high.jsonl")" >/dev/null
+  expected=0
+  [[ "$state" == blocked ]] && expected=1
+  check "claude: summary-only fixer $state has expected recovery count" \
+    "$(ls "$handoffs"/claude-fixer-$state*.json 2>/dev/null | wc -l | tr -d ' ')" "$expected"
+  if [[ "$state" == blocked ]]; then
+    record="$(cat "$handoffs"/claude-fixer-blocked*.json 2>/dev/null || true)"
+    contains "claude: blocked fixer preserves its summary destination" "$record" '"summary": ".ai/maintenance/claude-fixer-blocked-SUMMARY.md"'
+    contains "claude: summary-only fixer has no invented PLAN" "$record" '"plan": null'
+  fi
+done
+
 # --- a blocked SUMMARY is still unfinished work ------------------------------
 
 printf -- '---\nstatus: blocked\n---\n' > "$repo/.planning/phases/03-thing/03-03-SUMMARY.md"
@@ -374,6 +400,25 @@ run_hook "$(codex_stop_payload cx-blocked coder "$workspace/cx-blocked.jsonl")" 
 check "codex: a blocked SUMMARY produces a handoff" \
   "$([[ -f "$handoffs/cx-blocked--05-03.json" ]] && echo yes)" "yes"
 
+# A fixer assignment carries its own summary destination and does not need a
+# repair PLAN. Complete summaries suppress recovery; blocked summaries preserve
+# their exact destination in the handoff record.
+mkdir -p "$repo/.ai/maintenance"
+fixer_summary_transcript() { # <transcript> <summary>
+  printf '{"type":"message","role":"user","content":"Follow targeted-fixer.md.\\nsummary_path: %s"}\n' "$2" > "$1"
+}
+printf -- '---\nstatus: complete\n---\n' > "$repo/.ai/maintenance/codex-fixer-complete-SUMMARY.md"
+fixer_summary_transcript "$workspace/cx-fixer-summary-complete.jsonl" ".ai/maintenance/codex-fixer-complete-SUMMARY.md"
+run_hook "$(codex_stop_payload cx-fixer-summary-complete targeted-fixer "$workspace/cx-fixer-summary-complete.jsonl")" >/dev/null
+check "codex: summary-only complete fixer produces no handoff" \
+  "$(ls "$handoffs"/cx-fixer-summary-complete*.json 2>/dev/null | wc -l | tr -d ' ')" "0"
+printf -- '---\nstatus: blocked\n---\n' > "$repo/.ai/maintenance/codex-fixer-blocked-SUMMARY.md"
+fixer_summary_transcript "$workspace/cx-fixer-summary-blocked.jsonl" ".ai/maintenance/codex-fixer-blocked-SUMMARY.md"
+run_hook "$(codex_stop_payload cx-fixer-summary-blocked targeted-fixer "$workspace/cx-fixer-summary-blocked.jsonl")" >/dev/null
+record="$(cat "$handoffs"/cx-fixer-summary-blocked*.json 2>/dev/null || true)"
+contains "codex: blocked summary-only fixer keeps its destination" "$record" '"summary": ".ai/maintenance/codex-fixer-blocked-SUMMARY.md"'
+contains "codex: summary-only fixer does not invent a PLAN" "$record" '"plan": null'
+
 # Every write-capable role is covered, and read-only roles are not.
 for role in coder doc-writer debugger targeted-fixer; do
   codex_agent_transcript "$workspace/cx-$role.jsonl" ".planning/phases/05-codex/05-04-PLAN.md"
@@ -401,12 +446,12 @@ check "codex: a missing agent transcript still produces a handoff" \
 contains "codex: the unattributed handoff still names the agent" \
   "$(cat "$handoffs"/cx-noplan*.json)" '"agent": "coder"'
 
-# A Windows checkout path in the transcript resolves to the repo-relative plan.
+# Escaped Windows separators decode before the repository-relative plan is recovered.
 BS=$(awk 'BEGIN{printf "%c", 92}')
 ESC="$BS$BS"
-printf '{"content":"run C:%swork%srepo%s.planning%sphases%s05-codex%s05-07-PLAN.md"}\n' "$ESC" "$ESC" "$ESC" "$ESC" "$ESC" "$ESC" > "$workspace/cx-win.jsonl"
+printf '{"content":"run .planning%sphases%s05-codex%s05-07-PLAN.md"}\n' "$ESC" "$ESC" "$ESC" > "$workspace/cx-win.jsonl"
 run_hook "$(codex_stop_payload cx-win coder "$workspace/cx-win.jsonl")" >/dev/null
-contains "codex: a Windows transcript path resolves repo-relative" \
+contains "codex: decoded Windows separators resolve repo-relative" \
   "$(cat "$handoffs/cx-win--05-07.json" 2>/dev/null || true)" \
   '".planning/phases/05-codex/05-07-PLAN.md"'
 
