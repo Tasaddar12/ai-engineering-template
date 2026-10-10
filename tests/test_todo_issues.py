@@ -114,7 +114,7 @@ active = False
 if fault:
     saved_open, saved_fdopen, saved_replace = builtins.open, os.fdopen, os.replace
     saved_record = todos.save_record
-    todo = Path(os.environ["TODO_FAULT_PATH"])
+    todo = Path(os.environ["TODO_FAULT_PATH"]).resolve()
     def record_fault():
         Path(os.environ["TODO_FAULT_FIRED"]).write_text(
             os.environ["TODO_FAULT_STATE"] + ":" + fault, encoding="utf-8")
@@ -134,14 +134,14 @@ if fault:
             raise OSError("PRIVATE FILESYSTEM DETAIL")
     def failing_open(path, mode="r", *args, **options):
         handle = saved_open(path, mode, *args, **options)
-        if active and fault == "write" and Path(path) == todo and "w" in mode:
+        if active and fault == "write" and Path(path).resolve() == todo and "w" in mode:
             return FailingWrite(handle)
         return handle
     def failing_fdopen(*args, **options):
         handle = saved_fdopen(*args, **options)
         return FailingWrite(handle) if active and fault == "write" else handle
     def failing_replace(source, target, *args, **options):
-        if active and fault == "replace" and Path(target) == todo:
+        if active and fault == "replace" and Path(target).resolve() == todo:
             record_fault()
             raise OSError("PRIVATE FILESYSTEM DETAIL")
         return saved_replace(source, target, *args, **options)
