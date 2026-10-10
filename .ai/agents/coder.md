@@ -498,6 +498,8 @@ commits; fresh shell variables alone are not a durable commit ledger.
 **1. Check modified files:** `git status --short`
 
 **2. Stage task-related files individually** (NEVER `git add .` or `git add -A`):
+See the [canonical Git workflow](../references/git-workflow.md) for exact-path staging,
+worker/coordinator boundaries and the required commit message body. Preserve unrelated staged or dirty files.
 ```bash
 git add src/api/auth.ts
 git add src/types/user.ts

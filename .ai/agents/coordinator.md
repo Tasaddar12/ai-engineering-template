@@ -107,7 +107,8 @@ Only you update shared phase context, ROADMAP and STATE, or publish. Keep Git
 operations serialized. Commit each completed meaningful slice immediately and push
 it before beginning the next. Open the draft PR on the first push for tracking and
 update that same draft after every later slice; do not postpone publication until
-completion.
+completion. Follow the [canonical Git workflow](../references/git-workflow.md) for
+truthful pending evidence, exact-path commits, stack boundaries and explicit merge authority.
 
 Obtain independent verification and correct evidenced gaps within authorized
 scope. Record scope-changing decisions before revising instructions. Preserve

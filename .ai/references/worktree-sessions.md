@@ -35,6 +35,11 @@ never the editing tools. The guard intercepts the editing tools, so it does not
 fire on them; and putting a one-line todo or a roadmap tweak through a pull
 request, a merge and a session close costs more than the record is worth.
 
+This exception covers only the named runtime-owned planning records. Reusable
+`.ai` instructions, templates and tooling, or changes mixed with source, use the
+source session and PR path. Template maintenance does not broaden the exception.
+See the [canonical Git workflow](git-workflow.md).
+
 Work a planning record *leads to* is a different matter. `/check-todos` hands
 implementation to `/quick` or `/phase`, and those open sessions of their own.
 
@@ -95,10 +100,11 @@ you were invoked from; that is the one outcome this project has ruled out.
 
 ## Working
 
-Every command in the workflow runs from `SESSION.worktree`. Commit each
-completed slice there with a descriptive message, exactly as before — the
-commits are local to the session branch and nobody sees them until the pull
-request opens.
+Run every workflow command from `SESSION.worktree`. Commit each completed
+slice there with a descriptive message. After integration and applicable checks,
+the coordinator pushes the session branch and updates the same tracking PR as
+slices land. Follow the [canonical Git workflow](git-workflow.md) for the exact
+commit boundary and truthful PR evidence.
 
 A phase's per-plan dispatch worktrees are created **from the session branch**
 and merged back **into it**, never into the base branch. They live beside the
@@ -129,13 +135,13 @@ Otherwise push and open the pull request:
 
 ```bash
 git -C "${SESSION_WORKTREE}" push -u origin "${SESSION_BRANCH}"
-phase_run query pr.open "${SESSION_BRANCH}" --title "${TITLE}" --body-file "${BODY}"
+phase_run query pr.open "${SESSION_BRANCH}" --title "${TITLE}" --body-file "${BODY}" --draft
 ```
 
-`pr.open` is idempotent: on a resumed session it edits the pull request already
-open rather than failing, because a workflow that resumes must not be blocked by
-its own earlier success. Pass `--draft` to open it as a draft; `pr.merge` marks a
-draft ready before merging it.
+Create every first PR as a draft for tracking. `pr.open` is idempotent: a resumed
+session updates the PR already open for that branch. The runtime preserves an
+existing PR's draft state during edits. `pr.merge` marks a draft ready only as
+part of an explicitly authorized merge; do not mark a PR ready automatically.
 
 Then judge the checks. `pr.checks` returns one of four states, and only one of
 them permits a merge:
@@ -147,12 +153,12 @@ them permits a merge:
 | `failing` | A check failed, or was cancelled without reporting | **Fix it on this same branch, in this same worktree, and push again.** The pull request stays open and keeps its history. Do not open a second pull request, and do not close this one |
 | `none` | The pull request has no checks at all | Supply the project's own evidence: run `verification.run-checks` and pass `--local-checks-passed` only if it passed. With neither, the merge is refused |
 
-**Confirm before merging.** Unless `workflow.auto_advance` is true, show the pull
-request URL, the check verdict and the merge method, and ask. Merging moves the
-base branch, and that is the one step here a user may reasonably want to take
-themselves. Use AskUserQuestion (header: `Merge`; options: `Merge now` — land it
-and close the session / `Leave it open` — stop and leave the pull request for
-review), or a numbered list in text mode.
+Merge only with the user's explicit authorization. If the current instruction
+already authorizes this merge, do not ask again. Otherwise show the PR URL, check
+verdict and merge method, then ask. `workflow.auto_advance` never authorizes a
+merge. Use AskUserQuestion (header: `Merge`; options: `Merge now` — land it and
+close the session / `Leave it open` — stop and leave the PR for review), or a
+numbered list in text mode.
 
 On `Leave it open`, report the URL and stop. The session stays open and the next
 run of this workflow resumes it.

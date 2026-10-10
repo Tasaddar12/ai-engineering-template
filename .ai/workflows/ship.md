@@ -8,9 +8,9 @@ consumes: VERIFICATION.md, SUMMARY.md, ROADMAP.md, STATE.md
 <purpose>
 Deliver a phase's session worktree. A phase is discussed, planned, executed and
 verified onto one session branch; this is the workflow that takes that branch to
-the base branch. It confirms the phase actually passed verification, opens the
-pull request, judges its checks, and -- once the user confirms -- merges, syncs
-the base branch and closes the session.
+the base branch. Confirm current verification, open or update the PR, judge its
+checks, then merge only with explicit user authorization; sync the base branch
+and close the session after merge.
 
 Shipping is the only route a phase's work has to the base branch. It does not
 decide that unverified work is good enough, and it does not merge on a check
@@ -50,7 +50,7 @@ dispatches.
 
 <step name="initialize">
 Parse `$ARGUMENTS`: an optional phase number, plus:
-- `--draft` — open the PR as a draft
+- `--draft` — keep a newly created PR as draft; first PRs are always drafts
 - `--review` — run a code review over the full diff before opening the PR
 - `--no-push` — compose and show the PR body without pushing or opening anything
 - `--no-merge` — open or update the PR and stop; the session stays open
@@ -140,8 +140,9 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    Run `/verify-work {N}` and resolve its findings first.
    ```
 
-   Exit. Do not offer a bypass: an unverified PR is exactly what this gate exists
-   to prevent.
+   Exit. A tracking draft may already exist under the
+   [canonical Git workflow](../references/git-workflow.md), but draft status never
+   bypasses this verified-readiness gate.
 
    Apply the coordinator currentness check in
    [verification evidence](../references/verification-evidence.md). Exact HEAD
@@ -293,46 +294,23 @@ force-push: the remote branch may hold work you cannot see.
 </step>
 
 <step name="generate_pr_body">
-Compose the PR body from the phase's own records — its summaries and verification
-report — rather than from the diff. A reader wants to know what shipped and what
-was confirmed, not a file list.
+Use the [pull request template](../templates/pull-request.md) for the body.
+Populate it from the phase records:
 
-```markdown
-## Phase {N}: {phase_name}
+- Goal: phase goal.
+- Changes: concise outcomes from each summary.
+- Requirements or Issues: inspect recorded requirement status and list relevant issues:
 
-{goal}
+  ```bash
+  phase_run query requirements.list
+  ```
 
-### What shipped
-
-{For each {padded_phase}-{MM}-SUMMARY.md: one line naming the plan and what it
-delivered.}
-
-### Requirements covered
-
-{Each REQ id claimed by the phase, and where it is satisfied.}
-
-{Read each one's recorded status:}
-
-```bash
-phase_run query requirements.list
-```
-
-{Say so in the PR body when one the phase claims still reads `Pending`.}
-
-### Verification
-
-Status: {verification.status} (revision {verification.revision})
-
-{The Acceptance section from VERIFICATION.md: what was confirmed, and how.}
-
-{If checks are configured:}
-Checks: {each command and its result}
-
-{If the report recorded accepted gaps:}
-### Known gaps
-
-{Each one, with why it was accepted rather than closed.}
-```
+  State when a claimed requirement remains `Pending`.
+- Verification: exact revision, actual commands and results, and the Acceptance
+  definition from `VERIFICATION.md`.
+- Known gaps: accepted gaps and their reasons.
+- Risks or rollback: material risks and a practical rollback path.
+- Stack fields: include only for a dependent PR; use the recorded own-change boundary.
 
 ```bash
 phase_run query planning.validate
@@ -350,20 +328,17 @@ Show the composed body to the user before opening the PR.
 ```bash
 phase_run query pr.open "${SESSION_BRANCH}" \
   --title "Phase ${phase_number}: ${phase_name}" \
-  --body-file "${body_path}" \
-  ${draft:+--draft}
+  --body-file "${body_path}" --draft
 ```
 
-Use the verb, not `gh` directly: it records the pull request against the session,
-which is what `session.close` later reads to prove the work merged.
+Use the verb, not `gh` directly: it records the PR against the session, which
+`session.close` later reads to prove the work merged. Always create a first PR as
+a draft for tracking, even when `/ship` was called without `--draft`.
 
-`pr.open` is idempotent. On a re-run it edits the pull request already open for
-this branch rather than failing, so a second `/ship` of the same phase updates
-that pull request instead of creating a rival one. The result's `created` and
-`updated` fields say which happened — report it.
-
-Opening a PR can start CI. It does not mean the checks have finished, and it
-never means the PR is ready to merge.
+`pr.open` updates the existing PR on reruns. The runtime preserves its draft
+state when editing; it does not mark the PR ready automatically. Report the
+`created`, `updated` and `isDraft` fields. Opening a PR can start CI; it does not
+mean checks have finished or that the PR is ready to merge.
 </step>
 
 <step name="judge_checks">
@@ -406,8 +381,10 @@ Still failing after round 2: report it with its logs as the blocker.
 **Skip when `--no-push` or `--no-merge` was passed.** On `--no-merge`, report the
 pull request URL and that the session stays open, then go to the report step.
 
-Merging moves the base branch. Unless `workflow.auto_advance` is true, confirm
-first, showing the pull request URL, the check verdict and the merge method.
+Merging moves the base branch. Merge only with the user's explicit
+authorization. If the current instruction already authorizes this merge, do not
+ask again. Otherwise show the PR URL, check verdict and merge method, then ask.
+`workflow.auto_advance` never authorizes a merge.
 
 Use AskUserQuestion (header: "Merge"; options: "Merge now" — land Phase {N} and
 close its session / "Leave it open" — stop here and leave the PR for review). In
@@ -444,7 +421,7 @@ stale. Report the observed publication outcome accurately.
 ```
 Phase {phase_number} shipped.
 
-PR: {url} ({created ? "opened" : "updated"}{draft ? ", draft" : ""})
+PR: {url} ({created ? "opened" : "updated"}{isDraft ? ", draft" : ""})
 Base: {base_branch}
 Session: {branch} — {closed | preserved: {reason} | open}
 Verification: passed (revision {revision})
@@ -481,7 +458,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
   without the project's own passing checks
 - Don't open a second pull request because the first one's checks failed — fix
   them on the same branch and push again
-- Don't merge without confirming, unless `workflow.auto_advance` says otherwise
+- Don't merge without the user's explicit instruction; `workflow.auto_advance` never authorizes merge
 - Don't hand waiting on `pending` checks to the user
 - Don't tell the user to re-run `/ship`
 - Don't `--force` a preserved session away to make the report look clean
@@ -500,7 +477,8 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - [ ] PR body composed from the phase's summaries and verification report
 - [ ] Publication recorded in STATE.md and committed before the merge gate
 - [ ] Check verdict judged, reported as observed, and never merged past
-- [ ] Merge confirmed with the user unless `workflow.auto_advance` is set
+- [ ] Merge explicitly authorized by the user; do not ask again when current authorization already covers it
+- [ ] `workflow.auto_advance` does not authorize merge
 - [ ] Base branch synced and the session closed, or its preservation reported
       with the reason, unforced
 </success_criteria>
