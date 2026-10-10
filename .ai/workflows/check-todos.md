@@ -6,9 +6,8 @@ consumes: .planning/todos/pending/, ROADMAP.md, STATE.md
 -->
 
 <purpose>
-List pending todos, let the user select one, load its full context and route to
-the appropriate action — work it now, fold it into a phase, turn it into its own
-phase, or put it back.
+List pending todos, let the user select one, load its full context, publish or link that
+selected TODO through reviewed issue context, then route it to an appropriate action.
 </purpose>
 
 <required_reading>
@@ -76,8 +75,9 @@ Format age as relative time from the `created` timestamp.
 <step name="handle_selection">
 Wait for the user to reply with a number.
 
-If valid: load the selected todo and proceed.
-If invalid: "Invalid selection. Reply with a number (1–[N]) or `q` to exit."
+If valid: keep the selected entry's exact relative `file` path as `todo_file`;
+set `todo_name` to its basename for TODO runtime verbs, then load it and proceed.
+If invalid: reply that the selection must be a number in the displayed range or `q`.
 </step>
 
 <step name="load_context">
@@ -115,6 +115,68 @@ for this todo in the `matches` array. Each match carries `score` and `reasons`
 (the shared keywords). Note any match for the action options below.
 </step>
 
+<step name="publish_selected_issue">
+Listing is read-only. Selection through `/capture --list` authorizes publication
+of this one TODO in the current repository; do not ask for another publication
+permission or publish any other pending record.
+
+After loading the complete TODO and referenced files, preview only the selected
+pending basename:
+
+```bash
+PREVIEW=$(phase_run query todo.issue-preview "${todo_name}")
+```
+
+Read `previewToken`, `privateLocal`, `candidates` and `relatedPRs` from the JSON;
+use `previewToken` as `preview_token`.
+
+Compare its private local input with all open and closed issue candidates and
+related PR context. Runtime supplies candidates but does not semantically dedupe.
+Use the existing issue template to prepare a separately reviewed public title
+and body; keep private metadata and sensitive context out. Reuse the local title
+only if safe after review. If no safe, actionable public text is available, stop
+with publication blocked and leave the TODO pending. Choose one of
+`--existing-issue "${issue_url}"` or `--no-match`; reuse only an
+actionable issue and never edit or close it as part of linking. For a closed
+match, compare closure evidence with the full TODO scope; closed status alone
+never proves resolution. Keep mismatches pending, and reopen only with separate
+authorization or choose the appropriate issue/scope. If safe context must be
+added, add only reviewed details explicitly, then preview again or stop with
+publication blocked.
+
+```bash
+PUBLISH=$(phase_run query todo.issue-publish "${todo_name}" \
+  --preview-token "${preview_token}" \
+  --title "${public_title}" \
+  --body-file "${public_body_file}" \
+  --existing-issue "${issue_url}")
+```
+
+For an explicit no-match, use `--no-match` instead of the final
+`--existing-issue` option.
+
+The body file must be separate from the private TODO. A successful result must
+include `linked: true` and a verified `issueURL`; extract it for reporting.
+Linking leaves the TODO pending.
+On any auth, lookup, create, readback or recovery failure, stop before offering
+actions. Preserve the complete TODO and report no issue URL. If `issue-publish`
+recorded an attempted create, only a fresh preview and the identical reviewed
+intent may recover one exact marker; never issue a second create. Block on
+uncertain, zero, multiple, unreadable or mismatched results. If publication
+changed local metadata before failing, sync STATE and commit only the selected
+TODO file and `.planning/STATE.md` before stopping; do not commit when neither
+path changed.
+
+After a successful link, sync STATE. Commit the exact selected TODO path and
+`.planning/STATE.md` whenever either changed; do not skip the commit just because
+the TODO remains pending:
+
+```bash
+phase_run query state.sync-todos
+phase_run query commit "docs: link todo issue - ${title}" --files "${todo_file}" .planning/STATE.md
+```
+</step>
+
 <step name="offer_actions">
 **Text mode** (`text_mode` true, or `--text` in the arguments): replace every
 AskUserQuestion with a plain-text numbered list and ask the user to type a
@@ -126,7 +188,7 @@ Use AskUserQuestion:
 - header: "Action"
 - question: "This todo relates to Phase [N]: [name]. What would you like to do?"
 - options:
-  - "Work on it now" — move to completed, start working
+  - "Work on it now" - start work; keep the TODO pending
   - "Fold into that phase" — leave pending; `/discuss-phase [N]` will offer it
   - "Brainstorm approach" — think it through before deciding
   - "Put it back" — return to the list
@@ -137,21 +199,27 @@ Use AskUserQuestion:
 - header: "Action"
 - question: "What would you like to do with this todo?"
 - options:
-  - "Work on it now" — move to completed, start working
+  - "Work on it now" - start work; keep the TODO pending
   - "Make it a quick task" — `/quick` for a small, self-contained change
   - "Make it a phase" — `/phase` with this scope
   - "Put it back" — return to the list
 </step>
 
 <step name="execute_action">
-**Work on it now:**
+**Work on it now:** keep the TODO pending. Present its full context and begin
+only within the existing phase and implementation authorization rules.
+
+After the work is demonstrated resolved, explicitly call:
 
 ```bash
-phase_run query todo.complete "${filename}"
+COMPLETE=$(phase_run query todo.complete "${todo_name}")
+# Read `completed` from the result into `completed_file`.
 ```
 
-Present the problem and solution context, then begin the work or ask how to
-proceed.
+The runtime refuses completion while publication is attempted or unresolved. A
+linked TODO can move only after the same-repository issue is verified `CLOSED`.
+If status is open, unavailable or uncertain, preserve the TODO as pending. Capture
+does not close issues; issue closure still requires its own authorization.
 
 **Fold into that phase:** keep it pending. `/discuss-phase [N]` cross-references
 pending todos and will offer this one at that point. Return to the list or exit.
@@ -165,11 +233,11 @@ Keep it pending; the user runs the command in a fresh context.
 **Brainstorm approach:** keep it pending and start a discussion about the problem
 and the candidate approaches.
 
-**Put it back:** return to `list_todos`.
+**Put it back:** return to `list_todos`; the linked TODO stays pending.
 </step>
 
 <step name="update_state">
-Whenever a todo moved (completed), refresh the STATE.md section from disk:
+After a TODO is explicitly completed, refresh the STATE.md section from disk:
 
 ```bash
 phase_run query state.sync-todos
@@ -177,11 +245,16 @@ phase_run query state.sync-todos
 </step>
 
 <step name="git_commit">
+For completion, commit only the selected source path, returned completed path,
+and STATE:
+
 ```bash
-phase_run query commit "docs: resolve todo - ${title}" --files .planning/todos .planning/STATE.md
+phase_run query commit "docs: resolve todo - ${title}" --files "${todo_file}" "${completed_file}" .planning/STATE.md
 ```
 
-Skip this step when nothing moved.
+The earlier issue-link commit includes only the selected TODO and STATE. Do not
+stage the whole pending directory. Commit metadata changes even when no TODO
+moved; skip a later completion commit when no additional paths changed.
 </step>
 
 </process>
@@ -194,10 +267,9 @@ Skip this step when nothing moved.
 </anti_patterns>
 
 <success_criteria>
-- [ ] Pending todos listed with area, severity and age
-- [ ] Selected todo's full context loaded, including its referenced files
-- [ ] Roadmap relationship checked where a roadmap exists
-- [ ] Action chosen by the user and executed
-- [ ] STATE.md refreshed when a todo moved
-- [ ] Movement committed
+- [ ] Pending todos listed with area, severity and age; listing alone is read-only
+- [ ] Selected TODO's full context and referenced files loaded
+- [ ] Selected TODO linked to a verified issue before action routing, or failure stops routing with full pending context preserved
+- [ ] Work, planning and discussion leave the TODO pending; completion follows demonstrated resolution and linked-status guard
+- [ ] STATE.md refreshed and exact changed TODO paths committed
 </success_criteria>

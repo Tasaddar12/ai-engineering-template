@@ -49,9 +49,12 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 ## Follow-up issues
 
-- Use [the issue template](../templates/issue.md). Publish only when the user authorized the action.
-- Before creating, search open and closed issues, linked PRs and the current PR for duplicates.
-- Keep in-scope defects in the current change. Record other discoveries in the owned summary until issue creation is authorized.
+- Use [the issue template](../templates/issue.md). Publish only when the user authorized it.
+- Invoking `/capture` authorizes reviewed publication for its new TODO or the single TODO selected by `/capture --list`, in the current repository. It does not authorize unrelated follow-ups, issue closure or implementation.
+- For a captured TODO, inspect `todo.issue-preview` candidates across open and closed issues and the related PR context. Runtime provides evidence; it does not perform semantic deduplication.
+- Reuse only an actionable matching issue. Linking does not edit or close it. For closed matches, compare closure evidence with the full TODO scope; closed status alone does not prove resolution. Keep mismatches pending and report them. Reopen only with separate authorization or choose an appropriate distinct scope.
+- Add only separately reviewed safe context when needed, then preview again or block publication.
+- Before other issue creation, search open and closed issues, linked PRs and the current PR for duplicates. Keep in-scope defects in the current change; record other discoveries in the owned summary until issue creation is authorized.
 - Remove secrets, private logs and sensitive data from publishable text. Close an issue only after acceptance is demonstrated and closure is authorized. Do not use premature auto-closing references for tracking or deferred work.
 
 ## Stacks

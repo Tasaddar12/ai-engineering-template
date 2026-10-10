@@ -273,8 +273,10 @@ Recovery does not discard subsequently authored work or permanently delete histo
 | `milestone.complete <version> [--name N] --confirm` | Mark shipped and write the MILESTONES.md entry |
 | `todo.add <title> [--problem] [--solution] [--area] [--severity] [--files]` | Write a pending todo |
 | `todo.list [--state pending\|completed]` | Todos sorted by severity then age |
-| `todo.complete <name>` | Move a todo to `completed/` |
+| `todo.complete <name>` | Move a pending TODO only when publication is resolved and any linked issue is verified closed; returns `completed` path |
 | `todo.match-phase <phase>` | Score pending todos against a phase's name and goal |
+| `todo.issue-preview <name> [--related-pr URL]` | Private selected-TODO input, current issue candidates, related PRs and review token |
+| `todo.issue-publish <name> --preview-token TOKEN --title PUBLIC_TITLE --body-file PATH (--existing-issue URL \| --no-match)` | Link a reviewed issue or create one after explicit no-match; TODO stays pending |
 | `quick.create <description>` | Open `.planning/quick/YYMMDD-NNN-slug/` with its QUICK.md |
 | `quick.list [--status]` | Active quick tasks, newest first; separate `archived_tasks`, `archived_count` and `total_count` preserve discovery |
 | `quick.update <id> [--status] [--files] [--verification]` | Record progress or completion |
@@ -282,6 +284,57 @@ Recovery does not discard subsequently authored work or permanently delete histo
 `milestone.complete` refuses without `--confirm`, and refuses while any phase in
 the milestone is open. There is deliberately no force path: a milestone entry
 claiming phases shipped when they did not is the record this exists to keep honest.
+
+#### Reviewed TODO issue linkage
+
+- `todo.add` assigns a stable UUID `todoId`. `todo.issue-preview` and
+  `todo.issue-publish` accept one pending basename or safe unique partial name.
+- Preview returns `file`, `todoId`, `repository`, `previewToken`, `privateLocal`,
+  `candidates` and `relatedPRs`. `privateLocal` contains the complete local
+  title/body/metadata and is private review input. Candidates are all open and
+  closed issues; related PRs include the current branch and an optional
+  same-repository `--related-pr` URL. Pull requests are not issue candidates.
+  Candidate records include title, body, URL, number and state. A closed match
+  must still be checked against the TODO's full scope; closed status alone is not
+  proof the TODO is resolved.
+- Compare candidate issue content and related PR context for semantic duplicates;
+  the runtime returns evidence but does not deduplicate semantically. Reuse an
+  actionable issue with `--existing-issue URL`; `--no-match` explicitly selects
+  creation. An exact existing TODO marker is reused. Linking does not edit or
+  close an issue.
+- `--title` is a required, separately reviewed public title; it never defaults
+  from the private local title. `--body-file` must be a separate, non-empty
+  reviewed file, not the TODO. The runtime appends the stable
+  `<!-- todo-id: UUID -->` marker. It does not redact or publish arbitrary local
+  context for you.
+- The preview token binds the TODO snapshot, repository, issue candidates and PR
+  context. Re-preview and review again when any input changes. Provider access
+  requires a supported GitHub HTTPS, SSH or scp-style `origin`, GitHub CLI auth,
+  the origin repository's issues enabled, and complete readable issue and PR
+  pagination. Provider, auth, malformed response, repository or lookup failures
+  block publication; `GH_REPO` cannot redirect the target.
+- `issueRepo` records the verified `github.com/owner/repo`. `issuePublication`
+  moves through `prepared`, `attempted` and `linked`; `prepared` stores the
+  preview token and related PR, while `attempted` adds the reviewed public title
+  and intent/snapshot digests before create.
+- Before create, the runtime stores `issuePublication.state: attempted`, the
+  reviewed public title and intent/snapshot digests. A potentially lost create
+  response cannot be retried as a second create. Re-preview and submit the
+  identical reviewed title/body to recover only one verified marker match;
+  zero, multiple, unreadable or mismatched results remain unresolved.
+- Linked metadata stores `issueRepo`, `issueURL`, `issueNumber` and
+  `issuePublication.state: linked`. `todo.issue-publish` returns a verified
+  `issueURL` only after issue readback; the result includes `file`, `todoId`,
+  `repository`, `issueURL`, `issueNumber`, `linked`, `created` and `recovered`.
+  Reuse leaves the remote issue unchanged. Publication never completes the TODO.
+- `todo.complete` refuses attempted or unresolved publication, including an
+  attempt without an `issueURL`. A linked TODO moves only after the runtime
+  verifies the same-repository issue is `CLOSED`. Lookup errors, open or unknown
+  status preserve the pending TODO. The guard verifies status, not TODO acceptance;
+  complete only after resolution is demonstrated. Status is checked at explicit
+  completion; the runtime does not continuously synchronize or close/reopen
+  issues. A legacy TODO without a link or attempted publication retains its
+  local completion path.
 
 ### Dispatch, verification and project basics
 

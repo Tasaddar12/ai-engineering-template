@@ -12,7 +12,10 @@ allowed-tools:
 ---
 
 <objective>
-Keep a thought without losing the thread of the current work.
+Keep a thought without losing the thread of the current work. A `/capture`
+invocation authorizes reviewed GitHub issue publication for the newly captured
+TODO or the single TODO selected with `--list`, in the current repository. It
+does not authorize issue closure or implementation.
 
 Mode routing:
 - **default**: capture a new todo -> add-todo workflow
@@ -27,7 +30,9 @@ Mode routing:
 
 </routing>
 
-**Output:** `.planning/todos/pending/{date}-{slug}.md`, and a refreshed STATE.md section.
+**Output:** a pending `.planning/todos/pending/{date}-{slug}.md`, a verified
+issue URL or truthful blocked-publication report, and refreshed STATE.md.
+Selection listing alone remains read-only; capture never removes a TODO.
 </objective>
 
 <execution_context>
@@ -57,6 +62,8 @@ improvise from the summary.
 
 <success_criteria>
 - Todo written by the runtime with valid frontmatter
+- Verified `issueURL` recorded, or blocked publication truthfully reported with the full TODO preserved
+- TODO remains pending until explicitly completed after demonstrated resolution and runtime status checks
 - Severity confirmed with the user, never silently assigned
 - Duplicates checked and resolved
 - STATE.md pending todos refreshed from disk
