@@ -24,4 +24,5 @@
 
 ## Related links
 
-<!-- Relevant PRs, issues, requirements or evidence. -->
+<!-- Relevant PRs, open or closed issues, requirements or evidence.
+Search these for duplicates before publishing. -->
