@@ -111,22 +111,24 @@ def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
     be blocked by its own earlier success.
     """
     require_gh(workspace)
-    base = base or gitops.base_branch(workspace)
     existing = view(workspace, branch, cwd=cwd)
     if existing:
         arguments = ["pr", "edit", branch]
+        if base is not None:
+            arguments += ["--base", base]
         if title:
             arguments += ["--title", title]
         if body_file:
             arguments += ["--body-file", str(body_file)]
         elif body is not None:
             arguments += ["--body", body]
-        changed = bool(title or body is not None or body_file)
+        changed = bool(base is not None or title or body is not None or body_file)
         if changed:
             gh(workspace, *arguments, check=True, cwd=cwd)
         refreshed = view(workspace, branch, cwd=cwd) or existing
         return dict(refreshed, created=False, updated=changed)
 
+    base = base or gitops.base_branch(workspace)
     arguments = ["pr", "create", "--base", base, "--head", branch,
                  "--title", title or branch]
     if body_file:
