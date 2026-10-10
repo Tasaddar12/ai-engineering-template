@@ -82,6 +82,24 @@ unless `--force` is passed.
 | `session.open <kind> <label>` | Reuse or open a session worktree from the primary checkout |
 | `session.adopt phase <phase>` | Register the selected linked worktree and existing branch without switching, copying or changing files; reject unsupported or conflicting checkouts |
 
+### Pull requests
+
+| Verb | Effect |
+|---|---|
+| `pr.open <branch> [--base BASE] [--title TITLE] [--body BODY] [--body-file PATH] [--draft]` | Create the branch's PR or update that same PR |
+
+For an existing PR, an explicit `--base` retargets it; omitting `--base`
+preserves its current target, including a nondefault parent branch. A base-only
+edit returns `created: false`, `updated: true` and the refreshed PR fields.
+With no base, title or body requested, no edit runs and `updated` is false.
+`--body-file` takes precedence over `--body`.
+
+For a new PR, `--base` selects its target; omission uses the repository's
+existing default-base fallback. `--draft` creates a draft, and omission creates
+a ready PR. The draft option applies only to creation: updating an existing
+draft or ready PR preserves its draft state. A failed edit returns the existing
+handled `gh-failed` error rather than a successful update.
+
 ### Roadmap and state
 
 | Verb | Effect |
