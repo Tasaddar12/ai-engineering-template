@@ -1,6 +1,8 @@
 """Captured todos under .planning/todos/."""
+import os
 import re
 import stat
+import tempfile
 import uuid
 from datetime import datetime
 
@@ -91,7 +93,31 @@ def read_record(path):
 
 
 def save_record(path, metadata, body):
-    write_text(path, join_frontmatter(metadata, body))
+    """Replace a selected record only after its complete replacement is durable."""
+    content = join_frontmatter(metadata, body)
+    temporary = None
+    descriptor = None
+    try:
+        descriptor, temporary = tempfile.mkstemp(
+            dir=path.parent, prefix="." + path.name + ".", suffix=".tmp")
+        handle = os.fdopen(descriptor, "w", encoding="utf-8", newline="\n")
+        descriptor = None  # The file object now owns the descriptor.
+        with handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    except OSError:
+        raise VerbError("Selected TODO could not be saved safely", "todo-write") from None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if temporary is not None:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+
 
 
 def identity(existing=None):

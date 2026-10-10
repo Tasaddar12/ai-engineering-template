@@ -311,9 +311,13 @@ def publish(workspace, name, preview_token, title, body_file,
         require(not existing_issue or not matches
                 or existing_issue.lower() == selected.lower(),
                 "Exact marker must be reused; conflicting selection", "issue-unresolved")
-        require(any(candidate["url"].lower() == selected.lower() for candidate in candidates),
+        reviewed = next((candidate for candidate in candidates
+                         if candidate["url"].lower() == selected.lower()), None)
+        require(reviewed is not None,
                 "Selected issue was not in the reviewed candidate set", "issue-review")
         issue = issue_view(workspace, repository, selected)
+        require(issue == reviewed,
+                "Selected issue changed after review; renew review", "stale-preview")
         path, metadata, body = unchanged(workspace, name, local_snapshot)
         return linked_result(workspace, path, metadata, body, issue)
     path, metadata, body = unchanged(workspace, name, local_snapshot)
