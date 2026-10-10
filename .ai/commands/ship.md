@@ -34,8 +34,7 @@ Publish work that verification actually passed.
 in STATE.md and the actual PR URL is recorded in session metadata. Merge only on
 the user's instruction.
 
-No bypass for unverified work. A tracking draft may exist before final verification; it never satisfies this route's readiness gates. See the
-[canonical Git workflow](../../../.ai/references/git-workflow.md).
+No bypass for unverified work. A tracking draft may exist before final verification; it never satisfies this route's readiness gates. Read `~/.ai/references/git-workflow.md` for its evidence boundaries.
 </objective>
 
 <execution_context>
