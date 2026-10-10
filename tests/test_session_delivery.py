@@ -558,10 +558,13 @@ class OpeningPullRequests(unittest.TestCase):
                 code, stderr = 1, "authentication required"
         elif args[:2] == ["pr", "view"]:
             self.assertEqual(args[2], self.BRANCH)
+            self.assertEqual(args[3:], ["--json", delivery.PR_FIELDS])
+            selected_fields = args[4].split(",")
             if self.pull is None:
                 code, stderr = 1, "no pull request"
             else:
-                stdout = json.dumps(self.pull)
+                stdout = json.dumps({key: value for key, value in self.pull.items()
+                                     if key in selected_fields})
         elif args[:2] == ["pr", "edit"]:
             self.assertEqual(args[2], self.BRANCH)
             if self.edit_error:
@@ -614,8 +617,8 @@ class OpeningPullRequests(unittest.TestCase):
         result = delivery.open_pr(self.workspace, self.BRANCH, title="Updated",
                                   body="Ignored body", body_file=body_file)
         self.assertEqual(result["baseRefName"], "stack-parent")
-        self.assertEqual(result["title"], "Updated")
-        self.assertEqual(result["body"], "File body")
+        self.assertEqual(self.pull["title"], "Updated")
+        self.assertEqual(self.pull["body"], "File body")
         self.assertTrue(result["updated"])
         self.assertNotIn("--base", self.mutations()[0])
         self.assertNotIn("--body", self.mutations()[0])
@@ -624,8 +627,8 @@ class OpeningPullRequests(unittest.TestCase):
         result = delivery.open_pr(self.workspace, self.BRANCH, base="new-parent",
                                   title="Retargeted", body="")
         self.assertEqual(result["baseRefName"], "new-parent")
-        self.assertEqual(result["title"], "Retargeted")
-        self.assertEqual(result["body"], "")
+        self.assertEqual(self.pull["title"], "Retargeted")
+        self.assertEqual(self.pull["body"], "")
         self.assertEqual(result["number"], 7)
         self.assertEqual(len(self.mutations()), 1)
 
@@ -645,8 +648,8 @@ class OpeningPullRequests(unittest.TestCase):
         self.pull = None
         result = delivery.open_pr(self.workspace, self.BRANCH)
         self.assertEqual(result["baseRefName"], "main")
-        self.assertEqual(result["title"], self.BRANCH)
-        self.assertEqual(result["body"], "")
+        self.assertEqual(self.pull["title"], self.BRANCH)
+        self.assertEqual(self.pull["body"], "")
         self.assertTrue(result["isDraft"])
         self.assertTrue(result["created"])
         self.assertFalse(result["updated"])
@@ -663,8 +666,8 @@ class OpeningPullRequests(unittest.TestCase):
                 result = delivery.open_pr(self.workspace, self.BRANCH, base="stack-parent",
                                           title="Child work", draft=False, **body_options)
                 self.assertEqual(result["baseRefName"], "stack-parent")
-                self.assertEqual(result["title"], "Child work")
-                self.assertEqual(result["body"], expected_body)
+                self.assertEqual(self.pull["title"], "Child work")
+                self.assertEqual(self.pull["body"], expected_body)
                 self.assertFalse(result["isDraft"])
                 self.assertTrue(result["created"])
                 self.assertFalse(result["updated"])
