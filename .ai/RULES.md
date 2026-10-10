@@ -58,6 +58,8 @@ CONTEXT.
 
 ### Commit and push workflow
 
+The [canonical Git workflow](references/git-workflow.md) owns commit, tracking, PR, issue, stack and branch-history details.
+
 1. **Finish one slice.** Run its applicable checks — preparation, code, tests,
    documentation or corrections.
 2. **Commit immediately,** with a descriptive message. Agents include their SUMMARY.

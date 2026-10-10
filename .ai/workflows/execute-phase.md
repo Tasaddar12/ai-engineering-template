@@ -516,6 +516,23 @@ entry** — that discards work whose fate has not been decided. Report what was
 preserved and let the user choose.
 </step>
 
+<step name="track_integrated_slice">
+After a wave is integrated and its applicable checks pass, push the session
+branch and open or update the tracking draft before dispatching the next wave or
+final verification. Use the stable phase title and `--body-file` composed from
+integrated summaries and the current report. Mark final verification pending and
+list unfinished plans or runtime behavior under Known gaps. On the first push, run:
+
+```bash
+git -C "${SESSION_WORKTREE}" push -u origin "${SESSION_BRANCH}"
+phase_run query pr.open "${SESSION_BRANCH}" \
+  --title "Phase ${phase_number}: ${phase_name}" --body-file "${body_path}" --draft
+```
+
+Update the same PR after later waves. Tracking does not mark the phase ready or
+satisfy `/ship`; follow the [canonical Git workflow](../references/git-workflow.md).
+</step>
+
 <step name="checkpoint_handling">
 A plan may return `blocked` with a checkpoint. Do not stop the run. Route it:
 

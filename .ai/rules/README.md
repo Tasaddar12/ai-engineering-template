@@ -5,6 +5,8 @@ still owns workflow authority; skills explain methods, while these files state
 project conventions that apply across assignments. Installation places this
 folder under the selected host root alongside its agents and templates.
 
+Shared Git commit and publication policy lives in the [canonical Git workflow](../references/git-workflow.md); it is shared authority, not an adopting-project rule.
+
 Start with [the rule template](../templates/rule.md). Copy it to a descriptive
 file here only when an actual project convention is established; do not fill
 this reusable template with an invented adopting project's rules.
