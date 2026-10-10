@@ -140,8 +140,9 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    Run `/verify-work {N}` and resolve its findings first.
    ```
 
-   Exit. Do not offer a bypass: an unverified PR is exactly what this gate exists
-   to prevent.
+   Exit. A tracking draft may already exist under the
+   [canonical Git workflow](../references/git-workflow.md), but draft status never
+   bypasses this verified-readiness gate.
 
    Apply the coordinator currentness check in
    [verification evidence](../references/verification-evidence.md). Exact HEAD
@@ -298,40 +299,31 @@ report — rather than from the diff. A reader wants to know what shipped and wh
 was confirmed, not a file list.
 
 ```markdown
-## Phase {N}: {phase_name}
+## Goal
 
 {goal}
 
-### What shipped
+## Changes
 
-{For each {padded_phase}-{MM}-SUMMARY.md: one line naming the plan and what it
-delivered.}
+{For each summary: concise delivered outcome and why, grounded in the phase records.}
 
-### Requirements covered
+## Requirements or Issues
 
-{Each REQ id claimed by the phase, and where it is satisfied.}
+{Requirement IDs and their recorded status, or relevant issue references. Say when a claimed requirement remains Pending.}
 
-{Read each one's recorded status:}
+## Verification
 
-```bash
-phase_run query requirements.list
-```
+Revision: {verification.revision}
+Commands and results: {configured checks and results}
+Evidence: {Acceptance section from VERIFICATION.md}
 
-{Say so in the PR body when one the phase claims still reads `Pending`.}
+## Known gaps
 
-### Verification
+{Accepted gaps, with why they remain open; omit when none.}
 
-Status: {verification.status} (revision {verification.revision})
+## Risks or rollback
 
-{The Acceptance section from VERIFICATION.md: what was confirmed, and how.}
-
-{If checks are configured:}
-Checks: {each command and its result}
-
-{If the report recorded accepted gaps:}
-### Known gaps
-
-{Each one, with why it was accepted rather than closed.}
+{Material risks and practical rollback path, or None identified.}
 ```
 
 ```bash
@@ -406,8 +398,9 @@ Still failing after round 2: report it with its logs as the blocker.
 **Skip when `--no-push` or `--no-merge` was passed.** On `--no-merge`, report the
 pull request URL and that the session stays open, then go to the report step.
 
-Merging moves the base branch. Unless `workflow.auto_advance` is true, confirm
-first, showing the pull request URL, the check verdict and the merge method.
+Merging moves the base branch. Always get the user's explicit merge instruction,
+showing the pull request URL, check verdict and merge method. `workflow.auto_advance`
+never authorizes a merge.
 
 Use AskUserQuestion (header: "Merge"; options: "Merge now" — land Phase {N} and
 close its session / "Leave it open" — stop here and leave the PR for review). In
@@ -481,7 +474,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
   without the project's own passing checks
 - Don't open a second pull request because the first one's checks failed — fix
   them on the same branch and push again
-- Don't merge without confirming, unless `workflow.auto_advance` says otherwise
+- Don't merge without the user's explicit instruction; `workflow.auto_advance` never authorizes merge
 - Don't hand waiting on `pending` checks to the user
 - Don't tell the user to re-run `/ship`
 - Don't `--force` a preserved session away to make the report look clean
@@ -500,7 +493,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - [ ] PR body composed from the phase's summaries and verification report
 - [ ] Publication recorded in STATE.md and committed before the merge gate
 - [ ] Check verdict judged, reported as observed, and never merged past
-- [ ] Merge confirmed with the user unless `workflow.auto_advance` is set
+- [ ] Merge explicitly authorized by the user; `workflow.auto_advance` does not bypass confirmation
 - [ ] Base branch synced and the session closed, or its preservation reported
       with the reason, unforced
 </success_criteria>
