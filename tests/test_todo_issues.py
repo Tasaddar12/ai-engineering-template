@@ -115,6 +115,9 @@ if fault:
     saved_open, saved_fdopen, saved_replace = builtins.open, os.fdopen, os.replace
     saved_record = todos.save_record
     todo = Path(os.environ["TODO_FAULT_PATH"])
+    def record_fault():
+        Path(os.environ["TODO_FAULT_FIRED"]).write_text(
+            os.environ["TODO_FAULT_STATE"] + ":" + fault, encoding="utf-8")
     class FailingWrite:
         def __init__(self, handle):
             self.handle = handle
@@ -127,6 +130,7 @@ if fault:
             return getattr(self.handle, name)
         def write(self, value):
             self.handle.write(value[:20])
+            record_fault()
             raise OSError("PRIVATE FILESYSTEM DETAIL")
     def failing_open(path, mode="r", *args, **options):
         handle = saved_open(path, mode, *args, **options)
@@ -138,6 +142,7 @@ if fault:
         return FailingWrite(handle) if active and fault == "write" else handle
     def failing_replace(source, target, *args, **options):
         if active and fault == "replace" and Path(target) == todo:
+            record_fault()
             raise OSError("PRIVATE FILESYSTEM DETAIL")
         return saved_replace(source, target, *args, **options)
     def failing_record(path, metadata, body):
@@ -214,6 +219,12 @@ class TodoIssues(unittest.TestCase):
                                 cwd=self.directory, env=self.environment,
                                 capture_output=True, text=True, encoding="utf-8")
         self.assertNotIn("Traceback", result.stderr, result.stderr)
+        if self.environment.get("TODO_SAVE_FAULT"):
+            fired = Path(self.environment["TODO_FAULT_FIRED"])
+            self.assertTrue(fired.is_file(), "selected save fault never fired")
+            self.assertEqual(fired.read_text(encoding="utf-8"),
+                             self.environment["TODO_FAULT_STATE"] + ":" +
+                             self.environment["TODO_SAVE_FAULT"])
         payload = json.loads(result.stdout)
         self.assertEqual(bool(payload.get("ok")), ok, payload)
         self.assertEqual(result.returncode, 0 if ok else 1)
@@ -245,14 +256,22 @@ class TodoIssues(unittest.TestCase):
 
     def inject_save_failure(self, state, fault):
         before = self.directory / "before-failed-save.md"
+        fired = self.directory / "save-fault-fired.txt"
+        fired.unlink(missing_ok=True)
+        # A portable alias reproduces the lexical/canonical mismatch also seen
+        # with Windows DOS 8.3 temporary roots, without filesystem privileges.
+        alias = self.todo.parent / ".." / "pending" / self.todo.name
+        self.assertNotEqual(alias, self.todo)
+        self.assertEqual(alias.resolve(), self.todo.resolve())
         self.environment.update(TODO_SAVE_FAULT=fault, TODO_FAULT_STATE=state,
-                                TODO_FAULT_PATH=str(self.todo),
-                                TODO_FAULT_BEFORE=str(before))
+                                TODO_FAULT_PATH=str(alias),
+                                TODO_FAULT_BEFORE=str(before),
+                                TODO_FAULT_FIRED=str(fired))
         return before
 
     def clear_save_failure(self):
         for key in ("TODO_SAVE_FAULT", "TODO_FAULT_STATE", "TODO_FAULT_PATH",
-                    "TODO_FAULT_BEFORE"):
+                    "TODO_FAULT_BEFORE", "TODO_FAULT_FIRED"):
             self.environment.pop(key, None)
 
     def assert_pending_context(self):
