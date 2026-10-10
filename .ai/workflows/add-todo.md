@@ -180,8 +180,8 @@ perform semantic deduplication for you. Reuse a matching issue only when its
 current context is actionable. For a closed match, compare its closure evidence
 with this TODO's full scope; closed status alone never proves the TODO resolved.
 Keep a mismatch pending. Reopen only with separate authorization or choose the
-appropriate issue/scope. Reuse links the issue without editing or closing it. If reviewed safe details are needed, add them explicitly with `gh edit` or
-`gh comment`, then preview again; block if the issue still cannot carry the
+appropriate issue/scope. Reuse links the issue without editing or closing it. If reviewed safe details are needed, add them explicitly with `gh issue edit` or
+`gh issue comment`, then preview again; block if the issue still cannot carry the
 needed context.
 
 Use the existing issue template to prepare a separately reviewed public title
