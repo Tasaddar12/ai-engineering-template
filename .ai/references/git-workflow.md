@@ -58,14 +58,14 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Create a stacked PR only for a real dependency. Record `stackParent`, `Target`, `DependsOn` and `OwnChangeBoundary`. Target the parent branch while it is open and show only the child's delta. Give independent changes independent PRs.
 - Merge bottom-up only after each PR's gates pass and the user authorizes each merge.
-- After a parent lands, record `OLD_PARENT` (the saved old-parent tip) and `NEW_PARENT` (the new target tip). Rebase only the child's own commits:
+- After a parent lands, record the commit tips and target branch separately: `OLD_PARENT_TIP` is the saved old-parent commit, `NEW_PARENT_TIP` is the commit at the new target, and `NEW_PARENT_BRANCH` is that target's branch name. Set `CHILD` to the child branch.
+- Only the coordinator may restack an explicitly authorized child on a clean owned worktree after checking upstream movement. Rebase only its own commits:
 
   ```bash
-  git rebase --onto "$NEW_PARENT" "$OLD_PARENT" "$CHILD"
+  git rebase --onto "$NEW_PARENT_TIP" "$OLD_PARENT_TIP" "$CHILD"
   ```
 
-  Here the child's own-change boundary is `OLD_PARENT..CHILD`. Then explicitly retarget the existing PR with `pr.open --base NEW_PARENT`, inspect the resulting diff, rerun affected checks and review, and update stack and evidence fields. Do not replay parent commits already included by a squash or rebase merge.
-- `pr.open --base` now retargets an existing PR when `--base` is explicit. Omit it to preserve the current target. This API edits PR metadata; it does not rebase a branch or add a runtime rebase verb.
+  The child's own-change boundary is `OLD_PARENT_TIP..CHILD`. Retarget its existing PR with `pr.open --base "$NEW_PARENT_BRANCH"`; this option takes the branch name, not the commit tip. Then inspect the diff, rerun affected checks and review, and update stack and evidence fields. Publish rewritten history only with the exact expected-tip lease below. Do not replay parent commits already included by a squash or rebase merge.
 
 ## Branch rewrites
 
