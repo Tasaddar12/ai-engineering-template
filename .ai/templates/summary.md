@@ -209,6 +209,23 @@ None - no external service configuration required.
 - **Everything else is presented to a human** — `human_judgment: true`, empty `verification`, any non-`pass`/`unknown` status, missing evidence, or any schema error. Record the exact failed condition and retain the deliverable as pending or failed. A human response does not waive a required automated check or turn its failure into success.
 - **Fail-safe default:** if coverage cannot be determined, set `human_judgment: true` and `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never omit `human_judgment` or set it `false` to skip a prompt. Auto-pass additionally requires a nonempty `verification` list whose entries all have passing evidence; the flag alone never bypasses the human.
 - `coverage: []` means **"no deliverables to classify"**: ask for one confirmation that no deliverables require classification. If Accomplishments or the implemented work lists a deliverable, report the empty list as a coverage defect and require its entry before completion. OMITTING `coverage` means **legacy**: the coordinator/verifier extracts each deliverable from `## Accomplishments`, matches actual Checks evidence, and applies the same classification. Neither path waives phase acceptance or required UAT.
+
+**Bounded bookkeeping validator compatibility:** A SUMMARY used to carry an already
+accepted phase through deterministic bookkeeping must have a nonempty body;
+`phase` must match its containing phase directory; `plan` must be the zero-padded
+plan number; and `status` must be `complete`. Its `acceptance` list must be
+nonempty, unique, and contained in the source verification report's acceptance
+IDs. `requirements-completed` must be unique and contained in both the phase's
+ROADMAP requirements and the source report's `requirements_completed` list;
+`documentation` is a unique list of exact paths and may be empty. `coverage` must
+be nonempty with unique IDs and descriptions. Every entry must set
+`human_judgment: false` and cite at least one passing automated verification
+whose kind is `unit`, `integration`, `e2e`, `automated_ui`, or `other`. Each
+completed requirement must be named by a coverage entry. The bounded validator
+rejects legacy/prose-only summaries, human-judgment entries, manual-only or
+failed evidence, and empty coverage; those cases need fresh specialist review
+instead of deterministic bookkeeping. This constrained transition check does
+not classify deliverables, waive UAT, or prove application behavior by itself.
 </coverage_guidance>
 
 <one_liner_rules>

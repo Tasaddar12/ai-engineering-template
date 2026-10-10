@@ -68,8 +68,12 @@ with evidence and preserve approved outcomes.
 ## Dispatch
 
 The orchestrator routes; it does not do the work it dispatched. After spawning an
-agent, wait before touching its owned files or integrating its changes. During a
-frozen read-only verification batch, configured checks and independent read-only
+agent, wait before touching its owned files or integrating its changes.
+Independent test preparation may overlap coding only in an isolated worktree or
+otherwise isolated inputs. Reviewers inspect immutable committed snapshots while
+independent coding proceeds; after integration, revalidate only evidence whose
+inputs changed. During a frozen read-only verification batch, configured checks
+and independent read-only
 specialists may inspect the same captured revision concurrently; wait for every
 result before accepting evidence, repairing files or starting another batch.
 

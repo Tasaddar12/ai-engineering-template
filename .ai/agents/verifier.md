@@ -694,16 +694,21 @@ passed. Do not invent a `covered_digest`: the local runner appends and attests i
 own source fingerprint and check receipts after capturing this report. Include
 the exact assigned `revision` and all required local report sections.
 
-Return the full report for host capture at the assigned result path outside the repository. The orchestrator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections:
+Return the full report for host capture at the assigned result path outside the repository. The orchestrator records `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md` after auditing the unchanged tree. Include the exact assigned revision and local report sections. The frontmatter is parsed by the evidence runtime: keep the required schema-1 keys and types exact, do not duplicate keys, and include the acceptance and completed-requirement IDs supported by this report. `findings` is the structured finding list; keep its entries synchronized with the detailed `## Findings` body. An unresolved finding or any `PRESENT_BEHAVIOR_UNVERIFIED` truth prevents `passed`.
 
 ```markdown
 ---
+schema: 1
 phase: XX-name
 verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
 score: N/M must-haves verified
 covered_files: [...]
 revision: "<exact assigned Git revision>"
+verified_at: "YYYY-MM-DDTHH:MM:SSZ"
+findings: [] # [{severity: critical|high|medium|low|info, message: <nonempty>, resolved: true|false, evidence: <optional nonempty string>}]
+acceptance: [] # Exact phase acceptance IDs actually verified/reported; required to carry bounded bookkeeping.
+requirements_completed: [] # Unique requirement IDs the report proves complete.
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised); each is detailed in behavior_unverified_items below (and in human_verification when status is human_needed)
 overrides_applied: 0 # Recorded scope decisions whose revised outcomes were actually verified
 overrides: # Only if overrides exist — carried forward or newly added

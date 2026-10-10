@@ -327,13 +327,22 @@ Before dispatching implementation, obtain an independent phase-checker assessmen
 when the phase has multiple plans, changes a shared interface, migrates persisted
 data, or changes authentication, authorization or another security boundary.
 Correct blocking findings before dispatch. Obtain independent verification for
-implemented outcomes through [verify-work](commands/verify-work.md). Every phase
-that changes source requires a separate fresh code-reviewer before completion;
-a coder's self-check and a verifier reading a review method do not replace that
-assignment. Additional review follows actual risk; there is no fixed count.
-Correct findings within authorized scope and repeat the affected checks. Broaden
-review when changed behavior invalidates prior evidence. Keep findings visible and
-distinguish editorial details from defects.
+implemented outcomes through [verify-work](commands/verify-work.md). Each
+source-changing phase gets one independent code-reviewer for the final integrated
+source snapshot. Record its bounded request and full result as reusable evidence;
+verification and shipping consume that same packet while its actual source inputs,
+requirements, configuration and unresolved findings remain current. The verifier
+still independently judges acceptance and does not replace code review. A coder's
+self-check is not a review. Re-review only changed review inputs or an unresolved
+finding, and request only the uncovered delta. Correct findings within authorized
+scope and repeat affected checks. Keep findings visible and distinguish editorial
+details from defects.
+
+Independent test preparation may overlap coding when its inputs and outputs are
+isolated from the coder's active tree. Reviewers inspect immutable committed
+snapshots while independent coding proceeds. Once work is integrated, revalidate
+only the evidence whose declared inputs changed; do not repeat unaffected checks,
+reviews or extraction.
 
 Coders may update tests, comments and nearby explanations while their
 understanding is fresh. For required documentation, assign a doc-writer when
@@ -350,8 +359,9 @@ checks, accurate required documentation and conclusive independent verification.
 A process exit, a summary assertion, a ticked checkbox or an existing file is not
 proof. Bug repairs need reproduction and regression evidence.
 
-Evidence names the tested revision and the actual commands and results. Material
-content changes invalidate prior verification. A tracked report commit made by
+Evidence names the tested revision and the actual commands and results. Relevant
+content changes invalidate only evidence keyed to those inputs; source acceptance
+still binds to its exact revision. A tracked report commit made by
 the coordinator after a read-only verifier finishes is allowed by the narrow
 currentness rule in
 [verification evidence](references/verification-evidence.md); all other changes

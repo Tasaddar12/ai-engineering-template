@@ -109,7 +109,8 @@ class BookkeepingCompensationTests(unittest.TestCase):
         ship = " ".join(ship.split())
         self.assertIn("preparation_record_changed=false", ship)
         self.assertIn("skip another verifier dispatch and report commit", ship)
-        self.assertIn("After every check joins, resume the verifier", ship)
+        self.assertIn("verification.currentness ${phase_number}", ship)
+        self.assertIn("does not start another broad verifier", ship)
 
 
 if __name__ == "__main__":

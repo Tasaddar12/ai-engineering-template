@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
                  models, phases, project_record, quick, requirements, state,
-                 todos, validate, verification, worktrees)
+                 todos, validate, verification, verification_evidence, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -669,6 +669,25 @@ def verb_quick_update(workspace, positionals, options):
 
 # --- verification and dispatch -------------------------------------------
 
+def verb_evidence_record(workspace, positionals, options):
+    require(isinstance(options.get("result"), str), "missing --result file", "missing-argument")
+    return verification_evidence.record(workspace, argument(positionals, 0, "request file"), options["result"])
+
+
+def verb_evidence_lookup(workspace, positionals, options):
+    return verification_evidence.lookup(workspace, argument(positionals, 0, "request file"))
+
+
+def verb_verification_currentness(workspace, positionals, options):
+    return verification.currentness(workspace, argument(positionals, 0, "phase"))
+
+
+def verb_validate_bookkeeping(workspace, positionals, options):
+    require(isinstance(options.get("before"), str) and isinstance(options.get("after"), str),
+            "--before and --after committed revisions required", "missing-argument")
+    return verification.validate_bookkeeping(workspace, options["before"], options["after"])
+
+
 def verb_verification_status(workspace, positionals, options):
     return verification.status(workspace, argument(positionals, 0, "phase"))
 
@@ -809,6 +828,10 @@ VERBS = {
     "quick.list": verb_quick_list,
     "quick.update": verb_quick_update,
 
+    "evidence.record": verb_evidence_record,
+    "evidence.lookup": verb_evidence_lookup,
+    "verification.currentness": verb_verification_currentness,
+    "verification.validate-bookkeeping": verb_validate_bookkeeping,
     "verification.status": verb_verification_status,
     "verification.resolve-file": verb_verification_file,
     "verification.run-checks": verb_run_checks,

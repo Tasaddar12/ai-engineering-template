@@ -17,7 +17,7 @@ from .results import VerbError
 
 STORE = ".planning/verification-receipts"
 SCHEMA = 1
-FIELDS = {"command", "sources", "environment", "independent", "resources", "timeout", "revision", "reuse"}
+FIELDS = {"command", "sources", "environment", "independent", "resources", "timeout", "revision", "reuse", "purpose"}
 
 
 def bad(message):
@@ -57,6 +57,8 @@ def normalise(commands, timeout):
         if set(entry) - FIELDS or "command" not in entry:
             bad("verification check mapping has unknown keys or no command")
         item = dict(entry, command=argv(entry["command"]))
+        if "purpose" in item and (not isinstance(item["purpose"], str) or not item["purpose"].strip()):
+            bad("verification purpose must be a nonempty string")
         for field in ("independent", "revision", "reuse"):
             if field in item and not isinstance(item[field], bool):
                 bad("verification " + field + " must be boolean")
@@ -313,6 +315,7 @@ def run(workspace, commands, configuration, timeout):
         logs = {stream: store / (identity + "." + stream + ".log") for stream in ("stdout", "stderr")}
         result = {"command": item["command"], "exit_code": None, "passed": False,
                   "reused": False, "tested_revision": revision,
+                  "purpose": item.get("purpose"),
                   "receipt": STORE + "/" + key + ".json"}
         with logs["stdout"].open("xb") as stdout, logs["stderr"].open("xb") as stderr:
             try:

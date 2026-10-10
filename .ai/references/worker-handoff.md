@@ -10,13 +10,15 @@ An agent receives its assignment in the spawn prompt. The prompt identifies:
 | Element | Meaning |
 |---|---|
 | Phase | The phase number, name and goal |
-| Plan | The exact `NN-MM-PLAN.md` path — the authority on what to change |
-| Required reading | CONTEXT.md, the plan, and every file the plan's `read_first` names |
-| Constraints | Scope, commit expectations, and what is explicitly out of bounds |
+| Task paths | Exact owned paths from the plan; these bound what the worker may read for its decision and change |
+| Acceptance evidence | The named acceptance IDs, expected observations, applicable committed inputs and the exact revision to inspect |
+| Relevant skills | Only skill paths named by `read_first` or whose descriptions apply to the task or an unresolved failure |
+| Constraints | Scope, commit expectations, isolation needs and what is explicitly out of bounds |
 | Output | The assigned artifact and result format: a SUMMARY.md for source-changing plan work, or the required evidence/report fields for read-only work |
 
 The plan identifies the input revision, the relevant decisions, the task
-instructions, owned paths, checks and dependency results. Read the mandatory core
+instructions, owned paths, acceptance evidence, checks and dependency results.
+Read the mandatory core
 plus the relevant sources. Ask the orchestrator for missing scope; do not
 reconstruct instructions from unrelated history.
 
@@ -59,9 +61,10 @@ before retrying. A committed result may be usable without another agent.
 Uncommitted or out-of-scope output requires reconciliation, not automatic
 acceptance.
 
-For a review that failed before the work was accepted, inspect what the reviewer
-produced, then dispatch a fresh reviewer against the same base and head. Preserve
-the failed attempt rather than overwriting it.
+For a review that failed before the work was accepted, preserve that failed packet.
+After a repair, revalidate only the review inputs changed or findings unresolved;
+dispatch an independent reviewer for that uncovered delta against an immutable
+committed revision. Do not overwrite an earlier attempt or repeat covered review.
 
 The orchestrator detects unfinished execution structurally: the lowest-numbered
 phase whose plan files outnumber its summary files has work left, and
@@ -71,8 +74,9 @@ ahead of new work.
 ## Context and partial results
 
 Hand off one plan, not a whole phase or a review-and-repair loop. An author runs
-its own implementation checks; independent review belongs to a separate fresh
-reviewer. Do not reuse the same growing author session for another plan.
+its own implementation checks; the final source snapshot receives one independent
+code review. Subsequent workflows reuse that evidence and request only an uncovered
+delta. Do not reuse the same growing author session for another plan.
 
 The limit is the same for every agent: 60% of the window or 250,000 tokens,
 whichever comes first, or a lower user-specified limit. Both numbers are

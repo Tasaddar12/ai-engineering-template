@@ -32,17 +32,20 @@ capabilities. The installer supplies native agent definitions as described in th
 host tools or slash commands.
 The runtime dispatches code, documentation, independent code review and phase
 verification. Code review uses `reviewer_command`, falling back to the read-only
-verifier route when omitted. The documentor loads doc-writer. Verification
-always dispatches verifier; dispatch doc-verifier when documentation changes,
-integration-checker when acceptance covers a dependency or user-facing flow,
-and code-reviewer for every source-changing phase. Code-reviewer owns correctness
-and security; domain specialists own their listed claims. The verifier
-reconciles specialist reports with acceptance and source evidence, then inspects
-only to close named conflicts and missing claims rather than repeating complete
-reviews. Dispatch another specialist only for a named unresolved acceptance
-claim or risk decision in that specialist's domain, with exact revision and
-result destination. Workers dispatch `scout` children only for the repeatable
-evidence packets in [scout dispatch](scout-dispatch.md).
+verifier route when omitted. The documentor loads doc-writer. A source-changing
+phase receives one independent code review of the final integrated source. The
+review result is recorded as a validated evidence packet; verification always
+dispatches verifier and consumes that packet, dispatching doc-verifier when
+documentation changes and integration-checker when acceptance covers a dependency
+or user-facing flow. Code-reviewer owns correctness and security; domain
+specialists own their listed claims. The verifier reconciles specialist reports
+with acceptance and source evidence, then inspects only to close named conflicts
+and missing claims rather than repeating complete reviews. Request another bounded
+code review only when changed review inputs or unresolved findings leave uncovered
+scope. Dispatch another specialist only for a named unresolved acceptance claim or
+risk decision in that specialist's domain, with exact revision and result
+destination. Workers dispatch `scout` children only for the repeatable evidence
+packets in [scout dispatch](scout-dispatch.md).
 
 Configured deterministic checks run through `verification.run-checks`; legacy
 entries stay serial, while a mapping opts into parallel execution only when it
@@ -70,12 +73,24 @@ The role and method files describe the following actual local operations:
 | Update shared project records | Agents propose changes in their SUMMARY; the orchestrator applies them through `phase_run query state.*` and `roadmap.*` verbs |
 | Commit authored work | Native Git staging of exact owned paths and descriptive commits; include the assigned SUMMARY and preserve other agents' files |
 | Verify artifacts, wiring or behavior | Trace source and callers, inspect actual results and run the authorized project checks; return a report with the exact revision |
+| Record or reuse review, scout or acceptance evidence | `evidence.record <request.json> --result <result.json>` records a validated packet; `evidence.lookup <request.json>` returns its current status and packet when reusable |
+| Validate source acceptance currentness | `verification.currentness <phase>` checks report currentness using the exact revision or the documented report-only publication rule |
+| Validate success bookkeeping | `verification.validate-bookkeeping --before <full SHA> --after <full SHA>` checks the bounded bookkeeping transition before accepting its delta |
 | Configure execution | `.planning/config.yaml` owns commit behavior, model and effort overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
 | Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
 | Schedule work | `phase-plan-index` groups plans into dependency and file-overlap waves; execute waves in order and run each wave's work concurrently only within that wave |
 | Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
 | Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
+
+Evidence request and result JSON use schema 1, literal tracked path scope and
+actual committed input manifests. Review and scout keys are content-addressed and
+exclude revision; acceptance evidence includes the exact revision and tracked
+phase report. The runtime validates provenance, manifest coverage and packet
+shape. Missing, failed and incomplete evidence stays distinct from a never-run
+request. Bookkeeping validation checks the allowed deterministic transition; it
+does not trigger a broad replacement verifier. A changed relevant input calls for
+the bounded delta only.
 
 The runtime owns its verification attestation. Do not hand-compute or invent
 foreign schema fields, package verdicts or provenance digests. Record exact

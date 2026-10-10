@@ -116,6 +116,18 @@ Preserve `requirements-completed` and the other upstream metadata. Add
 `acceptance`, `documentation` and a `## Checks` section naming the actual
 commands, their results, any failures or skips, and the tested revision.
 
+For the deterministic bookkeeping path, the committed SUMMARY must also have a
+nonempty body, exact containing-directory `phase`, zero-padded plan number,
+`status: complete`, nonempty unique `acceptance` IDs, unique completed requirement
+IDs within both phase requirements and the source report's
+`requirements_completed`, a unique `documentation` path list, and nonempty
+structured `coverage`. Coverage IDs/descriptions must be unique/nonempty; every
+entry uses `human_judgment: false` and at least one passing automated evidence
+reference (`unit`, `integration`, `e2e`, `automated_ui` or `other`). Every
+completed requirement must appear in coverage. Legacy prose, human-only evidence,
+or an incomplete entry cannot be carried by this deterministic validator; keep
+the honest SUMMARY and request fresh specialist review for those cases.
+
 `status: complete` or `blocked`; use `blocked` when incomplete and explain why.
 A blocked result preserves findings and safe partial work without claiming
 integration.
@@ -133,19 +145,33 @@ Good evidence names the scenario, the command, the observed result and the
 revision. Bad evidence repeats "all requirements satisfied" without demonstrating
 behavior.
 
-Use `.ai/templates/verification-report.md` in full, with frontmatter carrying:
+Use `.ai/templates/verification-report.md` in full. Reports captured by the
+evidence runtime require schema `1`, the containing phase directory, status,
+the exact full inspected revision, an ISO `verified_at` timestamp, and structured
+`findings` entries (`severity`, nonempty `message`, boolean `resolved`, optional
+nonempty `evidence`). Preserve the template's additional frontmatter and body
+sections. Include the phase's acceptance IDs and `requirements_completed` IDs
+supported by evidence; the bookkeeping validator requires both lists when it
+checks completion records. Duplicate YAML keys are rejected.
 
 ```yaml
+schema: 1
+phase: 01-name
 status: passed | gaps_found | human_needed
-revision: <the revision reviewed>
-verified_at: <timestamp>
-findings: {critical: 0, warning: 0}
+revision: <full SHA actually inspected>
+verified_at: "<ISO timestamp with timezone>"
+findings: []
+acceptance: [AUTH-01]
+requirements_completed: [REQ-01]
 ```
 
-The recorded `revision` is what makes the report falsifiable later: once HEAD
-moves past it, the report is stale and re-verification is required rather than
-optional. `phase_run query verification.status <phase>` reads exactly these
-fields, and [ship](../commands/ship.md) gates on `passed`.
+The recorded `revision` is what makes the report falsifiable later. The source
+acceptance report is persisted unchanged at the revision the verifier inspected;
+completion bookkeeping must preserve that report blob. A bounded receipt can
+then establish currentness for an allowed deterministic records-only transition.
+Edits to source, report contents, merges, or unrecognized record changes fail
+closed and require fresh review. `phase_run query verification.status <phase>`
+reads the report status; [ship](../commands/ship.md) also checks currentness.
 
 A `must_have` the verifier cannot confirm with explicit evidence is not a pass.
 It reports the gap, or `human_needed` where the criterion itself is unverifiable.
