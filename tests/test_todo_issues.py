@@ -68,7 +68,7 @@ elif args[0] == "api":
         if not matches or mode == "view" or (mode == "readback" and data["creates"]):
             code = 1
         else:
-            out = json.dumps(matches[0])
+            out = json.dumps(dict(matches[0], **data.get("direct_changes", {})))
 elif args[:2] == ["issue", "create"]:
     assert args[args.index("--repo")+1] == repo
     todo = Path(data["todo"])
@@ -104,7 +104,54 @@ sys.exit(code)
 DRIVER = r'''
 import os, runpy, subprocess, sys
 sys.path.insert(0, os.environ["FAKE_RUNTIME_LIB"])
-from lib import delivery
+from lib import delivery, todos
+# Inject filesystem failures at actual write/replace boundaries, scoped to one
+# selected save state. The real serializer and persistence helper still run.
+import builtins, json
+from pathlib import Path
+fault = os.environ.get("TODO_SAVE_FAULT")
+active = False
+if fault:
+    saved_open, saved_fdopen, saved_replace = builtins.open, os.fdopen, os.replace
+    saved_record = todos.save_record
+    todo = Path(os.environ["TODO_FAULT_PATH"])
+    class FailingWrite:
+        def __init__(self, handle):
+            self.handle = handle
+        def __enter__(self):
+            self.handle.__enter__()
+            return self
+        def __exit__(self, *args):
+            return self.handle.__exit__(*args)
+        def __getattr__(self, name):
+            return getattr(self.handle, name)
+        def write(self, value):
+            self.handle.write(value[:20])
+            raise OSError("PRIVATE FILESYSTEM DETAIL")
+    def failing_open(path, mode="r", *args, **options):
+        handle = saved_open(path, mode, *args, **options)
+        if active and fault == "write" and Path(path) == todo and "w" in mode:
+            return FailingWrite(handle)
+        return handle
+    def failing_fdopen(*args, **options):
+        handle = saved_fdopen(*args, **options)
+        return FailingWrite(handle) if active and fault == "write" else handle
+    def failing_replace(source, target, *args, **options):
+        if active and fault == "replace" and Path(target) == todo:
+            raise OSError("PRIVATE FILESYSTEM DETAIL")
+        return saved_replace(source, target, *args, **options)
+    def failing_record(path, metadata, body):
+        global active
+        state = (metadata.get("issuePublication") or {}).get("state", "identity")
+        active = state == os.environ["TODO_FAULT_STATE"]
+        if active:
+            Path(os.environ["TODO_FAULT_BEFORE"]).write_bytes(todo.read_bytes())
+        try:
+            return saved_record(path, metadata, body)
+        finally:
+            active = False
+    builtins.open, os.fdopen, os.replace = failing_open, failing_fdopen, failing_replace
+    todos.save_record = failing_record
 original = subprocess.run
 def redirect(command, **options):
     if command and command[0] == "gh":
@@ -195,6 +242,95 @@ class TodoIssues(unittest.TestCase):
     def issue(self, number=1, state="open", title="Existing semantic duplicate", body="Relevant evidence"):
         return {"number": number, "html_url": "https://github.com/acme/project/issues/" + str(number),
                 "title": title, "body": body, "state": state}
+
+    def inject_save_failure(self, state, fault):
+        before = self.directory / "before-failed-save.md"
+        self.environment.update(TODO_SAVE_FAULT=fault, TODO_FAULT_STATE=state,
+                                TODO_FAULT_PATH=str(self.todo),
+                                TODO_FAULT_BEFORE=str(before))
+        return before
+
+    def clear_save_failure(self):
+        for key in ("TODO_SAVE_FAULT", "TODO_FAULT_STATE", "TODO_FAULT_PATH",
+                    "TODO_FAULT_BEFORE"):
+            self.environment.pop(key, None)
+
+    def assert_pending_context(self):
+        self.assertEqual(self.metadata()["custom"], "retain me")
+        self.assertTrue(self.todo.read_text(encoding="utf-8").endswith(self.body))
+        self.assertFalse(self.metadata().get("issueURL"))
+
+    def test_failed_link_write_preserves_attempt_and_recovers_once(self):
+        original = self.todo.read_bytes()
+        for fault in ("write", "replace"):
+            with self.subTest(fault=fault):
+                self.clear_save_failure()
+                self.todo.write_bytes(original)
+                self.remote(issues=[], creates=0)
+                self.patch_metadata(issuePublication={}, issueURL=None, issueNumber=None)
+                preview = self.preview()
+                before = self.inject_save_failure("linked", fault)
+                failure = self.publish(preview, ok=False)
+                self.assertEqual(failure["code"], "todo-write")
+                self.assertNotIn("PRIVATE FILESYSTEM DETAIL", json.dumps(failure))
+                self.assertEqual(self.todo.read_bytes(), before.read_bytes())
+                self.assert_pending_context()
+                metadata = self.metadata()
+                self.assertEqual(metadata["todoId"], preview["todoId"])
+                self.assertEqual(metadata["issuePublication"]["state"], "attempted")
+                self.assertTrue(metadata["issuePublication"]["intentDigest"])
+                self.assertEqual(self.remote()["creates"], 1)
+                self.assertEqual(list(self.todo.parent.iterdir()), [self.todo])
+                self.clear_save_failure()
+                self.run_verb("todo.complete", self.todo.name, ok=False)
+                recovered = self.publish()
+                self.assertTrue(recovered["recovered"])
+                self.assertEqual(recovered["todoId"], preview["todoId"])
+                self.assertEqual(self.remote()["creates"], 1)
+                self.assertEqual(len(self.remote()["issues"]), 1)
+
+    def test_failed_prepared_or_attempted_save_prevents_create(self):
+        original = self.todo.read_bytes()
+        for state in ("prepared", "attempted"):
+            for fault in ("write", "replace"):
+                with self.subTest(state=state, fault=fault):
+                    self.clear_save_failure()
+                    self.todo.write_bytes(original)
+                    self.patch_metadata(issuePublication={}, issueURL=None, issueNumber=None)
+                    preview = self.preview() if state == "attempted" else None
+                    before = self.inject_save_failure(state, fault)
+                    failure = (self.publish(preview, ok=False) if preview
+                               else self.preview(ok=False))
+                    self.assertEqual(failure["code"], "todo-write")
+                    self.assertEqual(self.todo.read_bytes(), before.read_bytes())
+                    self.assertTrue(self.todo.read_text(encoding="utf-8").endswith(self.body))
+                    self.assertEqual(self.remote()["creates"], 0)
+                    self.assertEqual(list(self.todo.parent.iterdir()), [self.todo])
+                    self.clear_save_failure()
+
+    def test_direct_duplicate_changes_refuse_stale_review(self):
+        original = self.todo.read_bytes()
+        for selection in ("semantic", "marker"):
+            for changes in ({"title": "Changed after lookup"},
+                            {"body": "Different scope"}, {"state": "closed"}):
+                with self.subTest(selection=selection, changes=changes):
+                    self.todo.write_bytes(original)
+                    self.remote(issues=[], direct_changes={})
+                    preview = self.preview()
+                    body = ("<!-- todo-id: " + preview["todoId"] + " -->"
+                            if selection == "marker" else "Relevant evidence")
+                    self.remote(issues=[self.issue(body=body)], direct_changes={})
+                    preview = self.preview()
+                    before = self.todo.read_bytes()
+                    self.remote(direct_changes=changes)
+                    decision = (("--existing-issue", self.issue()["html_url"])
+                                if selection == "semantic" else ("--no-match",))
+                    failure = self.publish(preview, *decision, ok=False)
+                    self.assertEqual(failure["code"], "stale-preview")
+                    self.assertEqual(self.todo.read_bytes(), before)
+                    self.assert_pending_context()
+                    self.assertEqual(self.remote()["creates"], 0)
+                    self.remote(direct_changes={})
 
     def test_attempted_without_url_cannot_complete_or_lose_context(self):
         self.patch_metadata(issuePublication={"state": "attempted", "intentDigest": "unknown"})
