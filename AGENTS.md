@@ -106,7 +106,7 @@ identically. Load the skills that match the work, plus those named in the plan's
 Commit each completed meaningful slice immediately with a descriptive message,
 including agent summaries. Push when delivery is authorized, and open a draft PR
 on the first push for tracking. Keep that draft current after every slice rather
-than waiting until the work is finished.
+than waiting until the work is finished. Follow the [canonical Git workflow](.ai/references/git-workflow.md) for exact-path commits, truthful tracking drafts and verified delivery.
 
 [ship](.ai/commands/ship.md) publishes verified work and merges only on the
 user's instruction. It has no bypass for a phase whose verification is not `passed`. Explicit user limits

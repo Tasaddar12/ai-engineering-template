@@ -343,6 +343,24 @@ Report any failing check with its command and output tail. A failed check blocks
 completion; hand the failure back to the coder or stop for the user.
 </step>
 
+<step name="track_integrated_slice">
+After the integrated slice's applicable checks pass, push the session branch and
+open or update its tracking draft before final verification. Use the stable title
+`Quick: ${DESCRIPTION}` and a `--body-file` built from the QUICK record and coder
+summary. State whether final verification is pending or was not requested, and list
+unfinished work under Known gaps. On the first push, run:
+
+```bash
+git -C "${SESSION_WORKTREE}" push -u origin "${SESSION_BRANCH}"
+phase_run query pr.open "${SESSION_BRANCH}" --title "Quick: ${DESCRIPTION}" \
+  --body-file "${body_path}" --draft
+```
+
+Update the same PR and body after later slices. This is tracking only. Follow the
+[canonical Git workflow](../references/git-workflow.md); final delivery still uses
+its verified checks and explicit merge instruction.
+</step>
+
 <step name="verify">
 **Only when `VALIDATE_MODE` is true.** Otherwise skip to `complete_task`.
 
