@@ -169,7 +169,11 @@ If the conversation names a related PR in this repository, include
 TODO:
 
 ```bash
-PREVIEW=$(phase_run query todo.issue-preview "${todo_name}")
+if [[ -n "${related_pr:-}" ]]; then
+  PREVIEW=$(phase_run query todo.issue-preview "${todo_name}" --related-pr "${related_pr}")
+else
+  PREVIEW=$(phase_run query todo.issue-preview "${todo_name}")
+fi
 ```
 
 Read `previewToken`, `privateLocal`, `candidates` and `relatedPRs` from the JSON;

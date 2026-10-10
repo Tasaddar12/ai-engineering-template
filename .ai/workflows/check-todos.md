@@ -120,11 +120,18 @@ Listing is read-only. Selection through `/capture --list` authorizes publication
 of this one TODO in the current repository; do not ask for another publication
 permission or publish any other pending record.
 
+Set `related_pr` to the same-repository PR URL when provided; otherwise leave it
+unset.
+
 After loading the complete TODO and referenced files, preview only the selected
 pending basename:
 
 ```bash
-PREVIEW=$(phase_run query todo.issue-preview "${todo_name}")
+if [[ -n "${related_pr:-}" ]]; then
+  PREVIEW=$(phase_run query todo.issue-preview "${todo_name}" --related-pr "${related_pr}")
+else
+  PREVIEW=$(phase_run query todo.issue-preview "${todo_name}")
+fi
 ```
 
 Read `previewToken`, `privateLocal`, `candidates` and `relatedPRs` from the JSON;
