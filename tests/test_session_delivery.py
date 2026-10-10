@@ -19,6 +19,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / ".ai" / "runtime" / "phase.py"
@@ -517,6 +519,171 @@ class SessionClose(SessionCase):
         result = self.run_verb("session.close", session["branch"], "--force")
         self.assertTrue(result["closed"])
         self.assertTrue(result["forced"])
+
+
+class OpeningPullRequests(unittest.TestCase):
+    """A stateful gh seam exercises delivery without credentials or a network."""
+
+    BRANCH = "phase-child"
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="phase-pr-")
+        self.addCleanup(temporary.cleanup)
+        self.directory = Path(temporary.name)
+        self.workspace = SimpleNamespace(root=self.directory)
+        self.pull = {
+            "number": 7, "url": "https://example.test/pull/7", "state": "OPEN",
+            "isDraft": True, "baseRefName": "stack-parent",
+            "headRefName": self.BRANCH, "title": "Original", "body": "Original body",
+        }
+        self.calls = []
+        self.edit_error = None
+        self.authenticated = True
+        self.provider = patch.object(delivery.subprocess, "run", side_effect=self.fake_gh)
+        self.provider.start()
+        self.addCleanup(self.provider.stop)
+        self.default_base = patch.object(delivery.gitops, "base_branch", return_value="main")
+        self.default_base.start()
+        self.addCleanup(self.default_base.stop)
+
+    def fake_gh(self, command, **options):
+        self.assertEqual(command[0], "gh")
+        self.calls.append(command[1:])
+        args = command[1:]
+        stdout, stderr, code = "", "", 0
+        if args == ["--version"]:
+            stdout = "gh version test\n"
+        elif args == ["auth", "status"]:
+            if not self.authenticated:
+                code, stderr = 1, "authentication required"
+        elif args[:2] == ["pr", "view"]:
+            self.assertEqual(args[2], self.BRANCH)
+            if self.pull is None:
+                code, stderr = 1, "no pull request"
+            else:
+                stdout = json.dumps(self.pull)
+        elif args[:2] == ["pr", "edit"]:
+            self.assertEqual(args[2], self.BRANCH)
+            if self.edit_error:
+                code, stderr = 1, self.edit_error
+            else:
+                self.apply_fields(args)
+        elif args[:2] == ["pr", "create"]:
+            self.assertIsNone(self.pull, "must update the existing PR")
+            self.assertEqual(args[args.index("--head") + 1], self.BRANCH)
+            self.pull = {
+                "number": 8, "url": "https://example.test/pull/8", "state": "OPEN",
+                "headRefName": self.BRANCH, "isDraft": "--draft" in args,
+            }
+            self.apply_fields(args)
+        else:
+            self.fail("unexpected gh command: " + repr(args))
+        return subprocess.CompletedProcess(command, code, stdout, stderr)
+
+    def apply_fields(self, args):
+        for option, field in (("--base", "baseRefName"), ("--title", "title"),
+                              ("--body", "body")):
+            if option in args:
+                self.pull[field] = args[args.index(option) + 1]
+        if "--body-file" in args:
+            self.pull["body"] = Path(args[args.index("--body-file") + 1]).read_text(
+                encoding="utf-8")
+
+    def mutations(self):
+        return [args for args in self.calls
+                if args[:2] in (["pr", "edit"], ["pr", "create"], ["pr", "ready"])]
+
+    def test_explicit_base_only_retargets_and_returns_refreshed_pr(self):
+        result = delivery.open_pr(self.workspace, self.BRANCH, base="main")
+        self.assertEqual(result["baseRefName"], "main")
+        self.assertFalse(result["created"])
+        self.assertTrue(result["updated"])
+        self.assertEqual(result["number"], 7)
+        self.assertEqual(self.mutations(), [["pr", "edit", self.BRANCH, "--base", "main"]])
+
+    def test_omitted_base_with_no_fields_preserves_nondefault_target(self):
+        result = delivery.open_pr(self.workspace, self.BRANCH)
+        self.assertEqual(result["baseRefName"], "stack-parent")
+        self.assertFalse(result["created"])
+        self.assertFalse(result["updated"])
+        self.assertEqual(self.mutations(), [])
+
+    def test_metadata_edits_preserve_target_and_body_file_precedence(self):
+        body_file = self.directory / "pull body.md"
+        body_file.write_text("File body", encoding="utf-8")
+        result = delivery.open_pr(self.workspace, self.BRANCH, title="Updated",
+                                  body="Ignored body", body_file=body_file)
+        self.assertEqual(result["baseRefName"], "stack-parent")
+        self.assertEqual(result["title"], "Updated")
+        self.assertEqual(result["body"], "File body")
+        self.assertTrue(result["updated"])
+        self.assertNotIn("--base", self.mutations()[0])
+        self.assertNotIn("--body", self.mutations()[0])
+
+    def test_explicit_base_and_metadata_update_the_same_pr(self):
+        result = delivery.open_pr(self.workspace, self.BRANCH, base="new-parent",
+                                  title="Retargeted", body="")
+        self.assertEqual(result["baseRefName"], "new-parent")
+        self.assertEqual(result["title"], "Retargeted")
+        self.assertEqual(result["body"], "")
+        self.assertEqual(result["number"], 7)
+        self.assertEqual(len(self.mutations()), 1)
+
+    def test_existing_draft_and_ready_state_ignore_creation_draft_argument(self):
+        for is_draft in (True, False):
+            for requested_draft in (True, False):
+                with self.subTest(is_draft=is_draft, draft=requested_draft):
+                    self.pull["isDraft"] = is_draft
+                    self.calls.clear()
+                    result = delivery.open_pr(self.workspace, self.BRANCH, base="main",
+                                              draft=requested_draft)
+                    self.assertEqual(result["isDraft"], is_draft)
+                    self.assertEqual(self.mutations(),
+                                     [["pr", "edit", self.BRANCH, "--base", "main"]])
+
+    def test_new_pr_uses_default_base_title_and_draft(self):
+        self.pull = None
+        result = delivery.open_pr(self.workspace, self.BRANCH)
+        self.assertEqual(result["baseRefName"], "main")
+        self.assertEqual(result["title"], self.BRANCH)
+        self.assertEqual(result["body"], "")
+        self.assertTrue(result["isDraft"])
+        self.assertTrue(result["created"])
+        self.assertFalse(result["updated"])
+
+    def test_new_pr_uses_explicit_base_metadata_and_ready_state(self):
+        body_file = self.directory / "pull body.md"
+        body_file.write_text("Creation body", encoding="utf-8")
+        for body_options, expected_body in (
+                ({"body": "Inline body"}, "Inline body"),
+                ({"body": "Ignored body", "body_file": body_file}, "Creation body")):
+            with self.subTest(body_options=body_options):
+                self.pull = None
+                self.calls.clear()
+                result = delivery.open_pr(self.workspace, self.BRANCH, base="stack-parent",
+                                          title="Child work", draft=False, **body_options)
+                self.assertEqual(result["baseRefName"], "stack-parent")
+                self.assertEqual(result["title"], "Child work")
+                self.assertEqual(result["body"], expected_body)
+                self.assertFalse(result["isDraft"])
+                self.assertTrue(result["created"])
+                self.assertFalse(result["updated"])
+
+    def test_failed_retarget_propagates_gh_error_without_success(self):
+        self.edit_error = "target branch does not exist"
+        with self.assertRaises(delivery.VerbError) as raised:
+            delivery.open_pr(self.workspace, self.BRANCH, base="missing-parent")
+        self.assertEqual(raised.exception.code, "gh-failed")
+        self.assertIn(self.edit_error, str(raised.exception))
+        self.assertEqual(self.pull["baseRefName"], "stack-parent")
+        self.assertEqual(sum(args[:2] == ["pr", "view"] for args in self.calls), 1)
+
+    def test_unauthenticated_open_is_refused_without_mutation(self):
+        self.authenticated = False
+        with self.assertRaises(delivery.VerbError) as raised:
+            delivery.open_pr(self.workspace, self.BRANCH, base="main")
+        self.assertEqual(raised.exception.code, "gh-unauthenticated")
+        self.assertEqual(self.mutations(), [])
 
 
 class CheckClassification(unittest.TestCase):
