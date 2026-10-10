@@ -1,11 +1,13 @@
 """Captured todos under .planning/todos/."""
 import re
+import stat
+import uuid
 from datetime import datetime
 
 from .paths import read_text, write_text
-from .results import require
+from .results import VerbError, require
 from .roadmap import Roadmap, display_number
-from .text import slugify, split_frontmatter
+from .text import join_frontmatter, slugify, split_frontmatter
 
 NEWLINE = "\n"
 SEVERITIES = ("blocker", "major", "minor", "cosmetic")
@@ -34,6 +36,73 @@ def infer_area(files):
     return "general"
 
 
+def linked_path(path):
+    if path.is_symlink():
+        return True
+    if path.exists():
+        return bool(getattr(path.lstat(), "st_file_attributes", 0)
+                    & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+    return False
+
+
+def safe_directory(workspace, directory):
+    """Refuse redirected planning directories before reads, writes or movement."""
+    require(directory.is_relative_to(workspace.root),
+            "TODO directory escapes workspace", "path-escape")
+    current = directory
+    while current != workspace.root:
+        require(not linked_path(current),
+                "Linked TODO directories are not supported", "path-escape")
+        current = current.parent
+    require(directory.resolve().is_relative_to(workspace.root.resolve()),
+            "TODO directory escapes workspace", "path-escape")
+    return directory
+
+
+def resolve_pending(workspace, name):
+    require(isinstance(name, str) and bool(name.strip())
+            and name not in (".", "..") and "/" not in name and "\\" not in name
+            and ":" not in name,
+            "Select one pending TODO basename", "path-escape")
+    directory = safe_directory(workspace, workspace.pending_todos)
+    exact = directory / name
+    if exact.exists() or exact.is_symlink():
+        source = exact
+    else:
+        matches = [path for path in sorted(directory.glob("*.md"))
+                   if name in path.name] if directory.is_dir() else []
+        require(len(matches) == 1, "Expected exactly one pending TODO match",
+                "todo-not-found")
+        source = matches[0]
+    require(not linked_path(source)
+            and source.resolve().parent == directory.resolve(),
+            "Selected TODO escapes pending directory", "path-escape")
+    require(source.is_file() and source.suffix == ".md",
+            "Selected pending TODO is not a Markdown file", "todo-not-found")
+    return source
+
+
+def read_record(path):
+    try:
+        return split_frontmatter(read_text(path))
+    except (VerbError, OSError, UnicodeError):
+        raise VerbError("Selected TODO cannot be read as a valid record",
+                        "bad-todo-record")
+
+
+def save_record(path, metadata, body):
+    write_text(path, join_frontmatter(metadata, body))
+
+
+def identity(existing=None):
+    if existing:
+        try:
+            return str(uuid.UUID(str(existing)))
+        except ValueError:
+            require(False, "Invalid stable TODO identity", "bad-todo-id")
+    return str(uuid.uuid4())
+
+
 def load(path):
     frontmatter, body = split_frontmatter(read_text(path, ""))
     return {
@@ -44,6 +113,9 @@ def load(path):
         "created": str(frontmatter.get("created") or ""),
         "files": frontmatter.get("files") or [],
         "body": body.strip(),
+        **{key: frontmatter[key] for key in ("todoId", "issueRepo", "issueURL",
+                                             "issueNumber", "issuePublication")
+           if key in frontmatter},
     }
 
 
@@ -83,6 +155,8 @@ def add(workspace, title, problem=None, solution=None, area=None, severity="majo
     require(severity in SEVERITIES, "severity must be one of " + ", ".join(SEVERITIES),
             "bad-severity")
     files = list(files or [])
+    safe_directory(workspace, workspace.pending_todos)
+    todo_id = identity()
     stamp = datetime.now()
     slug = slugify(title, limit=6)
     path = workspace.pending_todos / (stamp.strftime("%Y-%m-%d") + "-" + slug + ".md")
@@ -92,6 +166,7 @@ def add(workspace, title, problem=None, solution=None, area=None, severity="majo
         index += 1
     resolved_area = area or infer_area(files)
     lines = ["---",
+             "todoId: " + todo_id,
              "created: " + stamp.strftime("%Y-%m-%dT%H:%M:%S"),
              "title: " + title.strip(),
              "area: " + resolved_area,
@@ -106,22 +181,25 @@ def add(workspace, title, problem=None, solution=None, area=None, severity="majo
     write_text(path, NEWLINE.join(lines))
     return {"file": workspace.relative(path), "title": title.strip(),
             "area": resolved_area, "severity": severity,
-            "files": files, "file_count": len(files)}
+            "files": files, "file_count": len(files), "todoId": todo_id}
 
 
 def complete(workspace, name):
-    """Move one pending todo into completed/."""
-    source = workspace.pending_todos / name
-    if not source.is_file():
-        available = sorted(workspace.pending_todos.glob("*.md")) \
-            if workspace.pending_todos.is_dir() else []
-        matches = [item for item in available if name in item.name]
-        require(len(matches) == 1,
-                "expected exactly one pending todo matching " + name
-                + " (found " + str(len(matches)) + ")", "todo-not-found")
-        source = matches[0]
-    workspace.completed_todos.mkdir(parents=True, exist_ok=True)
-    target = workspace.completed_todos / source.name
+    """Explicit retirement after resolving any publication and linked issue."""
+    from .todo_issues import require_closed
+
+    source = resolve_pending(workspace, name)
+    metadata, body = read_record(source)
+    require_closed(workspace, metadata)
+    # The caller holds the planning lock. Revalidate after provider reads.
+    require(resolve_pending(workspace, source.name) == source
+            and read_record(source) == (metadata, body),
+            "Selected TODO changed before completion", "stale-todo")
+    directory = safe_directory(workspace, workspace.completed_todos)
+    target = directory / source.name
+    require(not target.exists() and not target.is_symlink(),
+            "Completed TODO destination already exists", "todo-collision")
+    directory.mkdir(parents=True, exist_ok=True)
     source.rename(target)
     return {"completed": workspace.relative(target)}
 
