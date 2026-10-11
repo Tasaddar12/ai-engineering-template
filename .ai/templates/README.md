@@ -17,11 +17,12 @@ connect those artifacts through the existing [procedures](../commands/README.md)
 | Research and preparation | [research](research.md), [phase prompt](phase-prompt.md), [planner prompt](planner-subagent-prompt.md), [validation](VALIDATION.md) |
 | Results, acceptance and continuation | [summary](summary.md), [verification](verification-report.md), [UAT](UAT.md), [continue here](continue-here.md), [user setup](user-setup.md) |
 | Shipped delivery history | [milestone entry](milestone.md) |
+| Pull requests and issues | [pull request](pull-request.md), [issue](issue.md) |
 | Current contracts and rationale | [current SPEC](CURRENT-SPEC.md), [ADR](ADR.md) |
 | Inspected codebase maps | [architecture](codebase/architecture.md), [stack](codebase/stack.md) |
 | Project research | [architecture](research-project/ARCHITECTURE.md), [features](research-project/FEATURES.md), [pitfalls](research-project/PITFALLS.md), [stack](research-project/STACK.md), [summary](research-project/SUMMARY.md) |
 
-These 26 artifact templates are the available sources. Configuration belongs in
+These 28 artifact templates are the available sources. Configuration belongs in
 [config.yaml](../../.planning/config.yaml). Removed variants and specialty templates
 are not required dependencies, and a template does not create records or register
 a command. Keep adopting-project identity unfilled until actual onboarding.

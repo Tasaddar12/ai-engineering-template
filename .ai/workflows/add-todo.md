@@ -154,9 +154,76 @@ files:
 [approach hints or "TBD"]
 ```
 
-Extract from the result: `file`, `title`, `area`, `severity`, `file_count`.
+Extract `file`, `title`, `area`, `severity`, `file_count` and `todoId` from the result. Keep the exact returned relative path as `todo_file`; set `todo_name` to its basename for TODO runtime verbs.
 
 Pass `--area` only when overriding the inferred value.
+</step>
+
+<step name="publish_issue">
+This `/capture` invocation authorizes publishing this newly captured TODO in the
+current repository. Do not ask for another publication permission. Publish only
+this TODO; duplicate `Skip` ends capture without publishing another record.
+
+If the conversation names a related PR in this repository, include
+`--related-pr "${related_pr}"` in the preview call. Preview the selected pending
+TODO:
+
+```bash
+if [[ -n "${related_pr:-}" ]]; then
+  PREVIEW=$(phase_run query todo.issue-preview "${todo_name}" --related-pr "${related_pr}")
+else
+  PREVIEW=$(phase_run query todo.issue-preview "${todo_name}")
+fi
+```
+
+Read `previewToken`, `privateLocal`, `candidates` and `relatedPRs` from the JSON;
+use `previewToken` as `preview_token`. Treat `privateLocal` as private review input.
+Compare `candidates` (open and closed issues) and `relatedPRs` with the TODO's
+scope, including linked PR context. Runtime returns candidates; it does not
+perform semantic deduplication for you. Reuse a matching issue only when its
+current context is actionable. For a closed match, compare its closure evidence
+with this TODO's full scope; closed status alone never proves the TODO resolved.
+Keep a mismatch pending. Reopen only with separate authorization or choose the
+appropriate issue/scope. Reuse links the issue without editing or closing it. If reviewed safe details are needed, add them explicitly with `gh issue edit` or
+`gh issue comment`, then preview again; block if the issue still cannot carry the
+needed context.
+
+Use the existing issue template to prepare a separately reviewed public title
+and body. Reuse the local title only after checking that it is safe to publish.
+Never copy private TODO metadata or sensitive context into the public body. If no
+safe, actionable public text is available, block publication and keep the local
+TODO pending. Put the body in a separate non-empty file, never the TODO file.
+Choose exactly one reviewed decision:
+
+```bash
+--existing-issue "${issue_url}"
+--no-match
+```
+
+Pass that decision with the current preview token, public title and body file:
+
+```bash
+PUBLISH=$(phase_run query todo.issue-publish "${todo_name}" \
+  --preview-token "${preview_token}" \
+  --title "${public_title}" \
+  --body-file "${public_body_file}" \
+  --existing-issue "${issue_url}")
+```
+
+For an explicit no-match, use `--no-match` instead of the final
+`--existing-issue` option.
+
+Use `--no-match` instead of `--existing-issue` only after reviewing every
+candidate. An exact existing TODO marker is reused. A successful result must
+return `linked: true` and a verified `issueURL`; extract it for reporting. The
+TODO stays pending.
+
+On authentication, lookup, create, readback or recovery failure, report that
+publication is blocked, preserve and commit the full pending TODO, and do not
+claim an issue URL. If a create may have succeeded, never create again: preview
+again and retry only with the identical reviewed title/body so the runtime can
+recover one verified exact marker. Zero, multiple, unreadable or mismatched
+matches require human resolution; changed intent cannot be retried.
 </step>
 
 <step name="update_state">
@@ -178,17 +245,23 @@ is absent — a partial read never overwrites a good existing section.
 phase_run query commit "docs: capture todo - ${title}" --files "${todo_file}" .planning/STATE.md
 ```
 
-The runtime respects `commit_docs` and skips gitignored paths automatically.
+Use the exact `file` returned by `todo.add`, including publication metadata or
+verified linkage. Commit the local TODO and STATE even when remote publication is
+blocked. The runtime respects `commit_docs` and skips gitignored paths.
 </step>
 
 <step name="confirm">
 ```
-Todo saved: {file}
+Todo saved and still pending: {file}
+Verified GitHub issue: {issueURL}
 
   {title}
   Area: {area}
   Severity: {severity}
   Files: {file_count} referenced
+
+If publication was blocked, say so, give no issue URL, and confirm that the full
+TODO remains pending and committed.
 
 ---
 
@@ -206,15 +279,17 @@ Would you like to:
 - Don't write the todo file by hand — `todo.add` owns the filename, frontmatter and collision handling
 - Don't auto-assign severity without confirming it
 - Don't hand-edit the STATE.md Pending Todos section — use `state.sync-todos`
-- Don't act on the todo now; capture it and return to the current work
+- Don't act on the todo now; capture it, publish its reviewed issue link, and return to the current work
+- Don't publish the private TODO body or claim linkage without a verified `issueURL`
 </anti_patterns>
 
 <success_criteria>
-- [ ] Todo file created with valid frontmatter
+- [ ] Todo file created with valid frontmatter and a stable `todoId`
 - [ ] Problem section has enough context to be actionable weeks later
 - [ ] Severity confirmed by the user, not silently assigned
 - [ ] Duplicates checked and resolved
 - [ ] Area consistent with existing todos
 - [ ] STATE.md Pending Todos refreshed from disk
-- [ ] Todo and state committed
+- [ ] Verified issue linkage recorded, or blocked publication truthfully reported with full TODO preserved
+- [ ] TODO remains pending after capture and exact TODO path plus STATE committed
 </success_criteria>
