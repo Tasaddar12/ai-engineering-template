@@ -47,6 +47,22 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("Custom scout evidence instruction sentinel.", exported)
         self.assertEqual(custom.encode(), (backup / "files/.ai/agents/scout.md").read_bytes())
 
+    def test_targeted_fixer_migration_preserves_body_and_leaf_permissions(self):
+        shared = (self.source / ".ai/agents/targeted-fixer.md").read_text(encoding="utf-8")
+        custom = shared + "\nCustom repair instruction sentinel.\n"
+        self.write(".ai/agents/targeted-fixer.md", custom.encode())
+        changes, originals, _ = self.plan("claude", hooks=False)
+        backup = installer.backup_migration(self.target, originals)
+        self.apply(changes)
+        exported = (self.target / ".claude/agents/targeted-fixer.md").read_bytes()
+        self.assertEqual(installer.render_asset(".ai/agents/targeted-fixer.md", custom.encode(), "claude"), exported)
+        metadata = yaml.safe_load(exported.decode().split("---", 2)[1])
+        self.assertEqual("haiku", metadata["model"])
+        self.assertNotIn("effort", metadata)
+        self.assertTrue({"Agent", "Task"} <= set(metadata["disallowedTools"].split(", ")))
+        self.assertIn("Bash", metadata["tools"].split(", "))
+        self.assertEqual(custom.encode(), (backup / "files/.ai/agents/targeted-fixer.md").read_bytes())
+
     def test_migration_payload_excludes_source_only_maintenance_history(self):
         self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
         for host in ("codex", "claude"):
@@ -96,7 +112,7 @@ class MigrationTests(unittest.TestCase):
                 self.assertEqual(migrated_rules, (update_backup / "files" / namespace / "RULES.md").read_bytes())
                 for role in (self.target / namespace / "agents").glob("*.md"):
                     text = role.read_text(encoding="utf-8")
-                    if not text.startswith("---\n") or role.stem == "scout":
+                    if not text.startswith("---\n") or role.stem in {"scout", "targeted-fixer"}:
                         continue
                     metadata = yaml.safe_load(text.split("---", 2)[1])
                     self.assertIn("Agent", metadata["tools"].split(", "))
