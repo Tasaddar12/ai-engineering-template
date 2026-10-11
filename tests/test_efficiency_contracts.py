@@ -10,7 +10,7 @@ class EfficiencyContractTests(unittest.TestCase):
     def read(self, path):
         return (ROOT / path).read_text(encoding="utf-8")
 
-    def test_scout_dispatch_is_conditional_and_keeps_cited_evidence(self):
+    def test_scout_dispatch_routes_required_work_and_keeps_cited_evidence(self):
         dispatch = self.read(".ai/references/scout-dispatch.md")
         self.assertIn("one discovery scout", dispatch)
         self.assertIn("named unresolved claim", dispatch)
@@ -21,6 +21,18 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("citation: <path:line", dispatch)
         self.assertIn("revision: <inspected revision>", dispatch)
 
+    def test_required_scout_scope_keeps_owner_reads_and_evidence_reuse(self):
+        contract = " ".join(self.read(".ai/references/scout-dispatch.md").split())
+        for instruction in ("Dispatch `scout` before unknown-location searches",
+                            "requested inventories", "fact extraction", "classification",
+                            "structured summaries", "transformation proposals",
+                            "even when input paths are known", "including coordinator work",
+                            "Directly inspect already-known source", "runtime and Git metadata",
+                            "Reuse matching evidence before dispatching another scout",
+                            "Batch compatible fields", "for every read",
+                            "coordinator cannot dispatch either", "Block only dependent work"):
+            self.assertIn(instruction, contract)
+
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
         for path in (ROOT / ".ai/agents").glob("*.md"):
             if path.stem in {"README", "scout"}:
@@ -29,7 +41,7 @@ class EfficiencyContractTests(unittest.TestCase):
             adapter = body.split("</local_workflow>", 1)[0]
             self.assertIn("scout dispatch", adapter, path.name)
         rules = self.read(".ai/RULES.md")
-        self.assertIn("separately named questions", rules)
+        self.assertIn("references/scout-dispatch.md", rules)
 
     def test_review_triggers_and_parallel_readonly_work_are_explicit(self):
         readme = self.read(".ai/agents/README.md")

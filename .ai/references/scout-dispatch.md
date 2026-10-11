@@ -1,4 +1,4 @@
-# Conditional repository evidence dispatch
+# Required repository evidence dispatch
 
 Use this routing contract to assign repeatable evidence work to the `scout`
 role (`gpt-6-luna`/high on Codex; `haiku` on Claude). The scout extracts facts,
@@ -6,6 +6,17 @@ classifies supplied evidence, builds structured summaries and proposes
 documentation transformations. It does not decide implementation correctness,
 security, acceptance, or whether a phase passes. It is a read-only leaf: it does
 not edit, run tests, execute project code, or dispatch children.
+
+- Dispatch `scout` before unknown-location searches for files, symbols, history or matching skills.
+- Dispatch `scout` for requested inventories, fact extraction, classification, structured summaries or transformation proposals.
+- Route those requested outputs to scout even when input paths are known.
+- Apply this routing in every workflow and role, including coordinator work and search examples.
+- Keep reasoning, technical/design decisions and authoring with the owning agent.
+- Directly inspect already-known source needed for those decisions or necessary verification.
+- Keep known runtime and Git metadata queries with their owner.
+- Reuse matching evidence before dispatching another scout.
+- Batch compatible fields for one bounded question.
+- Do not dispatch a fresh scout for every read.
 
 ## Task and output routing
 
@@ -104,7 +115,8 @@ scout_result:
    the table assigns the work directly to an owner, do not add a scout.
 2. If a source area is unknown, assign one discovery scout. Join and validate its
    revision and citations before assigning the distinct questions it revealed.
-3. Write each scout question as a separate requested output. Reuse a result only
+3. Batch compatible fields for one bounded question as a single requested output.
+   Keep distinct questions as separate outputs. Reuse a result only
    when question, revision, scope and inputs all match; otherwise assign a new
    question with the exact uncovered scope. Resolve each scout through
    `phase_run query resolve-agent scout --host codex` or `--host claude` in the
@@ -136,8 +148,8 @@ from v2.1.172; its default nesting depth is three from v2.1.219. Do not add a ho
 configuration key to enable a capability that the current host already supports.
 The coordinator retains worker dispatch, integration, shared records and publication.
 
-If the current host cannot dispatch nested agents, return this structured request
-to the coordinator before searching the requested evidence yourself:
+If nested dispatch is unavailable, including depth or capacity limits, return this
+structured request to the coordinator before searching the requested evidence yourself:
 
 ```yaml
 scout_request:
@@ -156,3 +168,9 @@ The worker then verifies consequential citations and resumes the named step.
 Fallback changes who dispatches; it does not waive evidence quality or needed
 complementary questions. `Agent(scout)` parenthetical tool restrictions are
 not relied upon for nested workers; the explicit scout-only role instruction applies.
+
+- Report the missing evidence if the coordinator cannot dispatch either.
+- Block only dependent work.
+- Preserve owned progress and the resume point.
+- Do not silently perform required scout work yourself.
+- Do not claim unsupported completion.
