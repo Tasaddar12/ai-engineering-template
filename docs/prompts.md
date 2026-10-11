@@ -1,9 +1,11 @@
 # Workflow prompt cookbook
 
-These prompts are source-checked against repository revision
-`6e3280a06b680547972fe9def3240f872fb842dd`; they have not been runtime-tested.
-Replace every `<placeholder>` with a real value. The prompts describe the
-artifacts to request, not a guarantee that a workflow will pass its checks.
+Existing prompts are source-checked against repository revision
+`6e3280a06b680547972fe9def3240f872fb842dd`; the milestone discussion recipe
+below is source-checked against `4822dcfad8fa1fe80ec28e74bdb5cb6381b17561`.
+None have been runtime-tested. Replace every `<placeholder>` with a real value.
+The prompts describe the artifacts to request, not a guarantee that a workflow
+will pass its checks.
 
 ## Plan several phases
 
@@ -95,6 +97,69 @@ questions; durable decisions may also update `PROJECT.md`.
 **Sources:** [discuss-phase command](../.ai/commands/discuss-phase.md),
 [discussion skill](../.agents/skills/discuss-phase/SKILL.md),
 [phase discussion rules](../.ai/RULES.md#phase-authority).
+
+## Discuss unfinished phases in a milestone
+
+**Purpose:** Gather phase-specific discussion proposals concurrently, then
+surface cross-phase conflicts and decisions together for human resolution.
+
+**Prerequisites:** The milestone, its unfinished phases, project requirements,
+locked decisions, and relevant phase contexts are available at one source
+revision. The host can run concurrent phase-specific agents. If isolated phase
+sessions are needed, create or adopt them sequentially before dispatch; the
+shared session registry uses an unlocked read-modify-write.
+
+**Prompt:**
+
+```text
+Use one coordinator to discuss every unfinished phase in milestone <milestone
+ID or name>. First enumerate all unfinished phase IDs and inspect the approved
+requirements, locked decisions, phase contexts, and dependencies at source
+revision <revision>. For each phase, give one discussion agent a bounded,
+phase-specific assignment with that revision and only its relevant requirements,
+locked decisions, and dependency context. Run agents concurrently within the
+available slots. Agents must return read-only proposals: likely decisions,
+supporting sources, unresolved questions, and assumptions; they must not write
+PROJECT, ROADMAP, STATE, requirements, or phase context records. Do not let
+agents make concurrent changes to those shared records or settle conflicts.
+
+Wait for every agent before reconciling. Check each proposal against governing
+requirements and locked decisions; reconcile factual mismatches against those
+sources before presentation. If suggestions still contradict, leave the choice
+to the human. Keep downstream assumptions provisional until prerequisites are
+confirmed. Routine compatible choices allowed by this auto-decision rule need
+no approval gate. Auto-decide only when approved requirements, locked decisions,
+templates, or established conventions determine a compatible choice, or for a
+reversible local implementation detail that does not change product behavior,
+public interfaces or data contracts, architecture boundaries, security, privacy,
+access, persistent data, paid services, or scope. Consolidate matters affecting
+those boundaries, missing requirements, tradeoffs without an established
+governing rule, and conflicting phase contracts as human decisions. Never
+overwrite a locked decision, manufacture approval, bypass required action
+confirmation, or mark unresolved context approved or locked. Consolidate human
+decisions into one deduplicated question list with affected phase IDs, concrete
+options, a recommendation, and consequences. Group questions rather than
+interrupting one at a time. Return one report with (1) auto-decisions and their
+phase IDs, rationale, and sources, (2) the human decision list, and (3) unresolved
+dependency assumptions and blocked scope. Discuss only; do not plan or execute.
+Use the runtime for any later authorized record changes.
+```
+
+`/discuss-phase` accepts one phase; this is coordinator prose for separate
+phase-specific assignments, not a batch command. The coordinator alone reconciles
+records after all read-only workers finish. If later record writes are authorized,
+use exclusive ownership in an isolated worktree.
+
+**Expected result:** One consolidated report of supported local decisions,
+questions needing human resolution, and provisional dependencies. The report is
+discussion output, not a planning or execution authorization.
+
+**Sources:** [discuss-phase command](../.ai/commands/discuss-phase.md),
+[discussion skill](../.agents/skills/discuss-phase/SKILL.md),
+[discussion workflow](../.ai/workflows/discuss-phase.md),
+[phase authority and decision rules](../.ai/RULES.md#phase-authority),
+[worktree session guidance](../.ai/references/worktree-sessions.md),
+[session registry implementation](../.ai/runtime/lib/worktrees.py).
 
 ## Read-only progress check
 
