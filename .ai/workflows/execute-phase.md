@@ -731,8 +731,9 @@ report them as the blocker instead.
 - Don't propose continuing in the primary checkout as the recovery path for a
   run the user configured to be isolated
 - Don't merge a branch whose executor halted at its branch check
-- Don't open a pull request or merge from here — a phase session is
-  delivered once, by `/ship`
+- Don't merge from execute-phase. Open or update only the tracking draft after
+  integrated slices and applicable checks; `/ship` owns verified delivery and
+  merging.
 - Don't close the phase session; the workflows after this one reuse it
 - Don't tell the user to resume, `/clear`, start a fresh session, or run
   `/verify-work` or `/ship`
