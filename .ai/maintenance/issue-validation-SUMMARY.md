@@ -65,6 +65,9 @@ but no executable root-pin block; repository identity was checked directly.
 
 ## Checks
 
+Initial-slice evidence for `3a6bf5af227853073109798256094f313022eb82`;
+the later review correction and its fresh checks are recorded below.
+
 Python 3.13.14; evidence is the assigned base plus owned working-tree changes.
 Final observed check results are recorded below before the commit.
 
@@ -82,7 +85,7 @@ Final observed check results are recorded below before the commit.
 - `python -m unittest discover -s tests -p test_todo_issues.py -k structural
   -k schema -v`: PASS, 2 final regressions asserting no new provider calls or
   TODO/attempt persistence on structural/schema failures. Together these runs
-  cover all 33 TODO tests in the final source (the two focused tests repeat).
+  cover all 33 TODO tests in the initial-slice source (the two focused tests repeat).
 - `python -m unittest discover -s tests -p test_workflow_links.py -v`: PASS,
   3 tests on the completed navigation tree.
 - `python C:/Users/killi/AppData/Local/Temp/issue-validation-export-check.py
@@ -105,6 +108,48 @@ the final navigation run verifies the completed tree.
 The first transient installer comparison encountered Git checkout CRLF
 normalization of Python files; the corrected check compares LF-normalized
 content and executes both installed CLIs, without claiming byte identity.
+
+## Review correction: literal HTML and mixed indentation
+
+Independent review of integrated `21cbe48` found a structural bypass: canonical
+Bug/UAT bodies inside `<pre>` and UAT table lines prefixed by space-plus-tab
+were accepted even though the rendered headings/table were literal code.
+The correction started from worker commit
+`3a6bf5af227853073109798256094f313022eb82`; `git diff --stat 21cbe48 HEAD`
+was empty before the correction, confirming identical source trees.
+
+`visible_lines` now tracks `pre`, `script`, `style` and `textarea` raw HTML
+blocks case-insensitively through their closing tag and computes leading
+indentation using four-column tab stops. Literal-only headings/tables cannot
+supply the required shape. Fenced examples do not activate raw-block tracking;
+canonical content, ordinary lists/tables and one-to-three-space table indentation
+remain accepted. This is a bounded structural parser correction, with no new
+dependency, competing schema, publication-state changes or universal enforcement
+claim. Direct writes and author/UI/content verification retain their stated
+limitations.
+
+Fresh correction evidence on that worker commit plus the four owned changes:
+
+- RED: `python -m unittest discover -s tests -p test_issue_format.py -k
+  html_literal -k mixed_indent -v` exited 1 before the repair: 2 tests with
+  12 failure reports reproduced accepted literal shapes.
+- `python -m compileall -q .ai/runtime`: PASS.
+- `python -m unittest discover -s tests -p test_issue_format.py -v`: PASS,
+  11 tests, including direct Bug/UAT raw-block rejection, mixed-indentation
+  rejection and preserved actual structure/code/list/table examples.
+- `python -m unittest discover -s tests -p test_todo_issues.py -k literal
+  -k structural -k schema -v`: PASS, 3 focused tests. The new publication test
+  verifies 11 literal drafts (Bug/UAT across four raw tags and UAT across three
+  mixed-indent prefixes); every draft returns `issue-format` with exit status 1,
+  leaves the TODO and prepared attempt metadata byte-identical, adds no provider
+  calls and creates no issue.
+- `git diff --check`: PASS. Only `issue_format.py`, the two assigned test files
+  and this summary changed. The full TODO safety suite was not repeated because
+  no publication-state/safety logic changed; the coordinator owns its integrated
+  frozen-revision suite and fresh independent review.
+
+This correction is committed separately from the initial slice. Its exact hash
+is returned in the worker handoff; no push, publication, merge or branch switch.
 
 ## Remaining and handoff
 

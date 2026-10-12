@@ -1,6 +1,7 @@
 """Offline subprocess proofs for selected-TODO issue publication and retirement."""
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -262,11 +263,11 @@ https://example.test/requirements/search
     def preview(self, *args, ok=True):
         return self.run_verb("todo.issue-preview", self.todo.name, *args, ok=ok)
 
-    def publish(self, preview=None, *decision, ok=True, title="Public reviewed title"):
+    def publish(self, preview=None, *decision, ok=True, title="Public reviewed title", variant="Bug"):
         preview = preview or self.preview()
         return self.run_verb("todo.issue-publish", self.todo.name,
                         "--preview-token", preview["previewToken"], "--title", title,
-                        "--body-file", str(self.public), "--variant", "Bug",
+                        "--body-file", str(self.public), "--variant", variant,
                         *(decision or ("--no-match",)), ok=ok)
 
     def issue(self, number=1, state="open", title="Existing semantic duplicate", body="Relevant evidence"):
@@ -452,6 +453,27 @@ https://example.test/requirements/search
             with self.subTest(extra=extra):
                 self.run_verb("todo.issue-publish", self.todo.name, *options, *extra, ok=False)
         self.assertEqual(self.remote()["creates"], 0)
+
+    def test_html_literal_and_mixed_indent_precede_provider_and_attempt(self):
+        preview = self.preview()
+        before = self.todo.read_bytes()
+        before_calls = self.remote()["calls"]
+        templates = dict(re.findall(r"^### ([^\n]+)\n\n```markdown\n(.*?)\n```",
+                                   (ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8"),
+                                   re.M | re.S))
+        cases = [(variant, "<" + tag + ">\n" + templates[variant] + "\n</" + tag + ">")
+                 for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")]
+        cases += [("UAT", re.sub(r"^(\|.*)$", lambda match: prefix + match[1],
+                                templates["UAT"], flags=re.M)) for prefix in (" \t", "  \t", "   \t")]
+        for variant, draft in cases:
+            with self.subTest(variant=variant, prefix=draft[:30]):
+                self.public.write_text(draft, encoding="utf-8")
+                failure = self.publish(preview, variant=variant, ok=False)
+                self.assertEqual(failure["code"], "issue-format")
+                self.assertEqual(self.todo.read_bytes(), before)
+                self.assertEqual(self.metadata()["issuePublication"]["state"], "prepared")
+                self.assertEqual(self.remote()["calls"], before_calls)
+                self.assertEqual(self.remote()["creates"], 0)
 
     def test_missing_or_malformed_schema_precedes_remote_mutation(self):
         import shutil

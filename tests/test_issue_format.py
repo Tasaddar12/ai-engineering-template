@@ -70,6 +70,34 @@ class IssueFormat(unittest.TestCase):
             with self.subTest(changed=changed[:80]):
                 self.assert_invalid(changed)
 
+    def test_html_literal_blocks_do_not_supply_headings_or_tables(self):
+        for variant in ("Bug", "UAT"):
+            body = bodies()[variant]
+            for tag in ("pre", "script", "style", "textarea"):
+                for opening in ("<" + tag + ">", "<" + tag.upper() + " class=\"literal\">"):
+                    with self.subTest(variant=variant, opening=opening):
+                        self.assert_invalid(opening + "\n" + body + "\n</" + tag + ">", variant)
+            with self.subTest(variant=variant, unclosed=True):
+                self.assert_invalid("<pre>\n" + body, variant)
+
+    def test_mixed_indent_does_not_supply_uat_table(self):
+        body = bodies()["UAT"]
+        for prefix in (" \t", "  \t", "   \t", "\t "):
+            with self.subTest(prefix=repr(prefix)):
+                self.assert_invalid(re.sub(r"^(\|.*)$", lambda match: prefix + match[1], body, flags=re.M))
+
+    def test_literal_examples_and_shallow_tables_preserve_real_structure(self):
+        for variant, body in bodies().items():
+            extra = "\n<pre class=\"literal\">\n## Problem\n| Fake | Table |\n</PRE>\n"
+            extra += "\n```html\n<pre>\n## Problem\n</pre>\n```\n"
+            extra += "\n    ## Problem\n \t## Problem\n"
+            extra += "\n- Example with `<pre>` and inline code.\n| Example | `<pre>` |\n"
+            with self.subTest(variant=variant):
+                self.assertTrue(issue_format.validate(body + extra, variant)["valid"])
+        for spaces in (1, 2, 3):
+            padded = re.sub(r"^(\|.*)$", lambda match: " " * spaces + match[1], bodies()["UAT"], flags=re.M)
+            self.assertTrue(issue_format.validate(padded, "UAT")["valid"])
+
     def test_literal_tables_and_acceptance_fields_do_not_satisfy_shape(self):
         body = bodies()["UAT"]
         table = re.search(r"^\| Step .*?(?=\n\n)", body, re.M | re.S).group()

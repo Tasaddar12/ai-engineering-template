@@ -16,11 +16,28 @@ def template_path():
 
 
 def visible_lines(content):
-    """Ignore literal fenced/indented code, comments and block quotes."""
+    """Ignore literal code/raw HTML blocks, comments and block quotes."""
     content = re.sub(r"<!--.*?(?:-->|\Z)", "", content, flags=re.S)
     fence = None
+    raw_tag = None
     lines = []
     for line in content.splitlines():
+        if raw_tag:
+            if re.search(r"</" + raw_tag + r"\s*>", line, re.I):
+                raw_tag = None
+            lines.append("")
+            continue
+        indentation = re.match(r"^[ \t]*", line).group()
+        if not fence and (len(indentation.expandtabs(4)) >= 4
+                          or line.lstrip().startswith(">")):
+            lines.append("")
+            continue
+        raw_start = re.match(r"^ {0,3}<(pre|script|style|textarea)(?=[\s>])", line, re.I)
+        if not fence and raw_start:
+            tag = raw_start.group(1).lower()
+            raw_tag = None if re.search(r"</" + tag + r"\s*>", line, re.I) else tag
+            lines.append("")
+            continue
         match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
         if match:
             mark, tail = match.groups()
@@ -29,7 +46,7 @@ def visible_lines(content):
             elif mark[0] == fence[0] and len(mark) >= len(fence) and not tail.strip():
                 fence = None
             lines.append("")
-        elif fence or line.startswith(("    ", "\t")) or line.lstrip().startswith(">"):
+        elif fence:
             lines.append("")
         else:
             lines.append(line)
