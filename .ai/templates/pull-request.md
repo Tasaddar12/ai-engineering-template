@@ -27,7 +27,7 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## Verification
 
-- Revision: [full tested commit SHA or Pending]
+- Revision: [full current candidate SHA; verification Pending until tested]
 - Commands and results: [exact command and observed result]
 - Evidence: [accessible link to evidence matching this revision]
 
@@ -81,7 +81,7 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   | Goal | One sentence naming the authorized result for users or the system. |
   | Changes | The implemented behavior, why it changed, and the owned work. |
   | Requirements or Issues | Exact applicable requirement IDs and issue references; omit the section only when none apply. |
-  | Revision | Full commit SHA actually tested. For an unverified tracking draft, write Pending. |
+  | Revision | Record the full current candidate SHA for a tracking draft and mark verification Pending; after checks, record the full SHA actually tested. |
   | Commands and results | Exact commands and observed outcomes, each tied to the recorded revision; list unrun checks as Pending. |
   | Evidence | Accessible review, CI or artifact links that match the recorded revision; redact private data. |
   | Known gaps | Unfinished work, unverified behavior, pending checks or dependencies; state none only after checking. |
@@ -97,7 +97,7 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   | Field | Exact value |
   |---|---|
   | stackParent | Parent PR number or URL. |
-  | Target | Parent branch this PR targets. |
+  | Target | Exact branch this PR currently targets (parent branch while stacked; for example, `main` after an authorized restack). |
   | DependsOn | PR numbers/URLs that must land first. |
   | OwnChangeBoundary | Base commit SHA..head commit SHA for this PR's own diff. |
 
@@ -106,10 +106,11 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   `OwnChangeBoundary: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0..b8e20c5d7a1f9346e2b0c8d5f9a3176c4e8d2a10`.
   Replace them with actual dependency and commit values; remove all examples
   from the public body.
-- Example verification format only: `Revision: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0 (illustrative)`;
-  `Commands and results: [exact project test command] — Pending (not run)`;
-  `Evidence: add an accessible matching CI link when one exists`. This is
-  not a claim that a check ran or passed.
+- Illustrative verification values only; the SHA is a fictional candidate and
+  the URL is a fictional format, not a claim of an existing run or passing check:
+  `Revision: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0 (candidate; verification Pending)`;
+  `Commands and results: python -m unittest discover -s tests -p test_workflow_links.py -v — Pending (not run)`;
+  `Evidence: https://github.com/example/project/actions/runs/12345 (fictional; replace only with an accessible run matching the tested SHA)`.
 
 ## Good and bad examples
 

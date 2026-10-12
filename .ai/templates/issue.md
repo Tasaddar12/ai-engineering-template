@@ -235,18 +235,16 @@ decision and evidence reference; AI must not mark this complete.
   | Decision: Options, Recommendation, Blocking dependency | Give distinct options and consequences; recommend one using evidence; name the blocked work and the decision that lets it resume. Acceptance records the selected option and observable unblocking condition. |
   | Security: Requested remediation | State the safe outcome, affected surface and current versus expected behavior. Use the private-reporting instruction above before composing a public body. |
   | UAT: checklist, Build and environment, Steps, Actual results, Human acceptance | Put unchecked acceptance items first. Record exact build/version, full commit, environment and setup; list each action and expected observation; after execution record actual results and matching evidence. Keep the human decision pending until a human records it. |
-- Illustrative evidence format only; replace values with evidence from the reviewed
-  issue and do not treat this example as an observed result:
+- Illustrative values only; these are examples, not observed evidence. Replace
+  them with verified facts and actual accessible links before publishing:
 
-  ```text
-  Build/version: storefront 2.4.1
-  Commit: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0 (illustrative)
-  Environment: staging
-  Setup: test account
-  Command: [exact project test command]
-  Result: Pending (not run)
-  Evidence: add an accessible link only after finding the matching run
-  ```
+  | Field | Example value |
+  |---|---|
+  | Scope | In: blank-query handling; Out: search ranking. |
+  | Acceptance | Blank query returns HTTP 200 with `[]`; the blank-query regression check passes. |
+  | UAT setup | Staging; Chrome 129; test customer with one refundable order. |
+  | Command / result | `python -m unittest discover -s tests -p test_workflow_links.py -v` — Pending (not run). |
+  | Evidence link | `https://github.com/example/project/actions/runs/12345` — fictional format only; replace with a verified, accessible run matching the recorded commit. |
 - Review open and closed issues plus related and current PR context for duplicates.
   Keep defects within the current change's scope in that change.
 - Review the public title and separate body file before authorized publication;

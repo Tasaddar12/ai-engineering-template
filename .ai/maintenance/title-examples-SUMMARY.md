@@ -104,3 +104,14 @@ post-open validation; this summary does not claim those actions are complete.
   remain intact. The issue template has five variant fences; the PR has one.
 - `git diff --check` passed. Test scripts remain unrun per assignment; coordinator
   validation on the new head is pending.
+
+## Illustrative field-value clarification
+
+- Added compact, clearly illustrative scope, measurable acceptance, UAT setup,
+  pending command/result and fictional evidence-link examples outside body fences.
+- Clarified that tracking PRs retain the full current candidate SHA while
+  verification is Pending, then identify the exact tested SHA after checks.
+- Defined Stack Target as the actual target branch, including parent branch while
+  stacked or `main` after an authorized restack.
+- Manual review and `git diff --check` passed. Test scripts remain unrun; parent
+  validation for this slice is pending.
