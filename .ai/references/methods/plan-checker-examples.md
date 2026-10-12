@@ -4,7 +4,7 @@
 > inlines this file from its `<examples>` block via `@`; the calibrated few-shot
 > set lives separately in [few-shot-examples/plan-checker.md](few-shot-examples/plan-checker.md).
 
-## Scope Exceeded (most common miss)
+## Scope Boundary (separate outcome or configured cap)
 
 **Plan 01 analysis:**
 ```
@@ -24,18 +24,29 @@ Files modified: 12
   - src/types/auth.ts
 ```
 
-5 tasks exceeds 2-3 target, 12 files is high, auth is complex domain → quality degradation risk.
+**Plan 01 tasks:** Tasks 1-4 implement account creation; Task 5 adds a billing
+checkout and purchase receipt.
+
+**Locked decision D-07:** This phase delivers account creation; billing is
+deferred to a later phase.
+
+Task 5 adds billing purchase, a separately deferred outcome from account creation. The 5-task and 12-file counts and uncalibrated context estimate alone prove no mandatory violation.
 
 ```yaml
 issue:
-  dimension: scope_sanity
-  severity: blocker
-  required_property: "Each plan stays within the per-plan context budget"
-  description: "Plan 01 has 5 tasks with 12 files - exceeds context budget"
+  id: "PC-01-01-scope_sanity-01"
   plan: "01"
-  metrics:
-    tasks: 5
-    files: 12
-    estimated_context: "~80%"
-  fix_hint: "Split into: 01 (schema + API), 02 (middleware + lib), 03 (UI components)"
+  dimension: scope_sanity
+  severity: warning
+  required_property: "The plan stays within the phase outcome fixed by D-07"
+  authority: ".planning/phases/01/01-CONTEXT.md#Decisions/D-07"
+  description: "Task 5 adds billing purchase, while D-07 scopes this phase to account creation and defers billing."
+  task: 5
+  fix_hint: "Remove the billing outcome from this plan or place it in an authorized phase."
 ```
+
+The task/file counts and unmeasured context estimate are not grounds for this
+warning. They do not establish a violated mandatory property; the warning is
+grounded only in the separate outcome and cited phase decision. If that same
+plan satisfies its governing outcomes and no configured positive task cap is
+exceeded, any sizing preference is `info`.

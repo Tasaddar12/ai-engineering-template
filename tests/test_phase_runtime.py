@@ -821,6 +821,50 @@ class Bundles(RuntimeCase):
         self.assertEqual(bundle["project_requirements"],
                          ["REQ-01", "REQ-02", "REQ-03"])
 
+    def test_plan_phase_bundle_resolves_configured_mapper_dispatch(self):
+        self.run_verb("config-set", "agents.codebase-mapper.model", "sonnet")
+        self.run_verb("config-set", "agents.codebase-mapper.effort", "xhigh")
+        bundle = self.run_verb("init.plan-phase", "1")
+        self.assertIn("codebase-mapper", bundle["models"])
+        self.assertIn("codebase-mapper", bundle["efforts"])
+        self.assertEqual(bundle["models"]["codebase-mapper"], "sonnet")
+        self.assertEqual(bundle["efforts"]["codebase-mapper"], "xhigh")
+        self.assertEqual(bundle["models"]["codebase-mapper"],
+                         self.run_verb("resolve-model", "codebase-mapper")["model"])
+        self.assertEqual(bundle["efforts"]["codebase-mapper"],
+                         self.run_verb("resolve-effort", "codebase-mapper")["effort"])
+        self.assertIn("codebase-mapper", bundle["agents"])
+        self.assertTrue(bundle["agents_installed"])
+        self.assertEqual(bundle["missing_agents"], [])
+
+    def test_plan_phase_bundle_inherits_mapper_dispatch_without_overrides(self):
+        bundle = self.run_verb("init.plan-phase", "1")
+        self.assertIn("codebase-mapper", bundle["models"])
+        self.assertIn("codebase-mapper", bundle["efforts"])
+        self.assertEqual(bundle["models"]["codebase-mapper"], "inherit")
+        self.assertEqual(bundle["efforts"]["codebase-mapper"], "inherit")
+        self.assertEqual(bundle["models"]["codebase-mapper"],
+                         self.run_verb("resolve-model", "codebase-mapper")["model"])
+        self.assertEqual(bundle["efforts"]["codebase-mapper"],
+                         self.run_verb("resolve-effort", "codebase-mapper")["effort"])
+
+    def test_onboard_bundle_preserves_mapper_dispatch_and_metadata(self):
+        self.run_verb("config-set", "agents.codebase-mapper.model", "sonnet")
+        self.run_verb("config-set", "agents.codebase-mapper.effort", "high")
+        bundle = self.run_verb("init.onboard")
+        self.assertEqual(bundle["models"]["codebase-mapper"], "sonnet")
+        self.assertEqual(bundle["efforts"]["codebase-mapper"], "high")
+        self.assertIn("codebase-mapper", bundle["agents"])
+        self.assertTrue(bundle["agents_installed"])
+        self.assertEqual(bundle["missing_agents"], [])
+        self.assertEqual(bundle["records"], {
+            "project": "filled", "requirements": "filled",
+            "roadmap": "filled", "state": "filled"})
+        self.assertEqual(bundle["phase_count"], 2)
+        self.assertTrue(bundle["initialized"])
+        self.assertFalse(bundle["checks_configured"])
+        self.assertEqual(Path(bundle["templates_dir"]), ROOT / ".ai/templates")
+
     def test_unknown_bundle_reports_a_handled_failure(self):
         failure = self.run_verb("init.nonsense", expect_ok=False)
         self.assertEqual(failure["code"], "unknown-verb")

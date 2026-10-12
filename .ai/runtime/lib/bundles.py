@@ -15,7 +15,7 @@ from .roadmap import Roadmap, as_number, display_number
 from .state import State, progress_bar
 from .text import section_body
 
-PLANNING_AGENTS = ("researcher", "phase-preparer", "phase-checker")
+PLANNING_AGENTS = ("researcher", "phase-preparer", "phase-checker", "codebase-mapper")
 EXECUTION_AGENTS = ("coder", "doc-writer", "code-reviewer")
 VERIFY_AGENTS = ("verifier", "integration-checker", "doc-verifier")
 QUICK_AGENTS = ("phase-preparer", "coder", "verifier")
@@ -200,9 +200,8 @@ def onboard(workspace):
     payload["phase_count"] = len(roadmap.phases()) if roadmap.exists else 0
     payload["initialized"] = (payload["phase_count"] > 0
                               and unfilled["project"] == "filled")
-    payload["models"] = models_for(workspace, PLANNING_AGENTS + ("codebase-mapper",))
-    payload["efforts"] = efforts_for(
-        workspace, PLANNING_AGENTS + ("codebase-mapper",))
+    payload["models"] = models_for(workspace, PLANNING_AGENTS)
+    payload["efforts"] = efforts_for(workspace, PLANNING_AGENTS)
     payload.update(installed_agents(workspace, PLANNING_AGENTS))
     payload["checks_configured"] = bool(verification.configured_checks(workspace))
     payload["templates_dir"] = str(TEMPLATES)
