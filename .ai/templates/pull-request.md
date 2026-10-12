@@ -7,6 +7,7 @@
 **Destination:** A separately composed public PR body file passed to publication.
 
 Read this source, then copy only the fenced **File Template** body into that file.
+Remove prompts, comments, placeholders and guidance examples from the final public body.
 The [Git workflow](../references/git-workflow.md) owns publication authority and procedure.
 
 ## File Template
@@ -14,52 +15,92 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 ```markdown
 ## Goal
 
-<!-- Stable statement of the authorized outcome. -->
+[One sentence: authorized user/system outcome.]
 
 ## Changes
 
-<!-- What changed and why, based on the owned summaries. -->
+- [Change 1 of 2-4: implemented behavior and why]
+- [Change 2 of 2-4: implemented behavior and why]
+- [Change 3: if needed]
+- [Change 4: if needed]
 
 ## Requirements or Issues
 
-<!-- Requirement IDs or issue references, when applicable. -->
+[1-3 exact requirement IDs and issue URLs; omit this section if none apply.]
 
 ## Verification
 
-- Revision:
-- Commands and results:
-- Evidence:
+| Revision status | SHA |
+|---|---|
+| Candidate | [one full current head SHA] |
+| Tested | [one full tested SHA, or Pending until verified] |
 
-<!-- For a tracking draft, say that final verification is pending and identify the exact checks still outstanding. -->
+| Exact command (one row per check) | Result (one sentence or Pending) | Evidence URL matching tested SHA |
+|---|---|---|
+| [one exact command] | [one sentence with actual result, or Pending (not run)] | [one accessible matching URL, or Pending] |
 
 ## Known gaps
 
-<!-- Unfinished plans, runtime behavior, accepted gaps, or pending checks. -->
+- [Gap 1 of 1-3: unfinished work, unverified behavior, pending check or dependency; or None after checking]
+- [Gap 2: if applicable]
+- [Gap 3: if applicable]
 
 ## Risks or rollback
 
-<!-- Material risks and a practical rollback path. -->
+- Risks: [one sentence: material risks or none identified]
+- Rollback: [one sentence: practical rollback for this change]
 
-<!-- Include these fields for stacked PRs; omit them for independent PRs. -->
 ## Stack
 
-- stackParent:
-- Target:
-- DependsOn:
-- OwnChangeBoundary: <!-- Base and commit boundary for this PR's own diff. -->
+- stackParent: [parent PR number or URL]
+- Target: [current target branch]
+- DependsOn: [prerequisite PR URLs, or None if none]
+- OwnChangeBoundary: [full base SHA..full head SHA]
 ```
+
+## Title format and examples
+
+- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
+  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
+  following the project's existing Git subject convention.
+- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
+- Describe the implemented outcome in the PR title; choose a matching type and
+  affected-area scope. Examples:
+
+  ```text
+  feat(checkout): save addresses independently of orders
+  fix(search): return an empty result for blank queries
+  docs(api): document pagination parameters and defaults
+  test(import): cover duplicate rows in the CSV preview
+  ```
 
 ## How to fill it
 
-- Replace prompts with facts from the owned summaries and verification records.
-  Keep evidence safe; remove secrets, private logs and sensitive data.
-- A tracking draft states final verification is pending, names the exact outstanding
-  checks and lists unfinished work under Known gaps. Verified work records the tested
-  revision, actual commands/results and evidence; a draft alone proves none of these.
+- Replace every bracketed value with facts from the authorized scope, owned
+  summaries and verification records. Remove all remaining prompts, examples
+  and instructional text before publishing.
+- Keep evidence truthful: record the full current candidate SHA; record the
+  tested SHA only after checks ran. For each check give the exact command, actual
+  result and accessible evidence URL matching that tested SHA. Leave unrun checks
+  Pending and never invent observations or links.
+- Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
+  or `Pending` with the missing evidence/dependency when unavailable. State risks
+  or that none were identified, and always give a practical rollback unless it
+  truly does not apply.
+- Keep evidence safe: redact secrets, private logs and sensitive data before
+  adding evidence to the public body.
+- In Known gaps, write `None` only after checking. For a PR with no stacked
+  dependency, omit the entire Stack section.
+- Example excerpt (fictional values; not evidence; replace before publishing):
+
+  | Field | Example value |
+  |---|---|
+  | Goal / Changes | Goal: Checkout can save addresses before order submission. Changes: Save the address independently; validate its required fields. |
+  | Revision status | Candidate: `a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0` (fictional); Tested: Pending. |
+  | Check | `python -m unittest discover -s tests -p test_workflow_links.py -v` — Pending (not run). |
+  | Evidence URL | `https://github.com/example/project/actions/runs/12345` (fictional format only; replace with accessible evidence matching tested SHA). |
 - Review open and closed issues plus related and current PR context before adding
   issue references or proposing follow-ups. Keep in-scope defects in this change.
-- Include Stack only for a real dependency. For an independent PR, omit the Stack
-  heading and its fields from the composed body.
 
 ## Good and bad examples
 

@@ -6,46 +6,266 @@
 **Consumers:** Issue reviewers and implementers; capture publication reads the separately reviewed body file.
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
-Read this source, then copy only the fenced **File Template** body into that file.
-The [Git workflow](../references/git-workflow.md) owns publication authority and procedure.
+- For a security-risk variant, use the repository's private reporting channel if
+  known. If unavailable or unknown, ask the owner privately before publishing.
+  Never put secrets or exploit-sensitive details in a public issue.
+
+Select the appropriate variant below, then copy only its fenced **File Template**
+block into the public body file. Never copy the whole source or all variants.
+Remove prompts, comments, placeholders and examples from the final public body;
+for UAT, retain `PENDING HUMAN acceptance` until a human records the decision.
+The [Git workflow](../references/git-workflow.md) owns publication authority
+and procedure.
 
 ## File Template
 
+| Variant | Use when | Type-first title example |
+|---|---|---|
+| Bug | Existing behavior is wrong or broken. | `fix(search): return an empty result for a blank query` |
+| Enhancement | A user needs a new or improved capability. | `feat(checkout): allow saving an address before placing an order` |
+| Decision required | Work is blocked on choosing among options. | `chore(auth): choose an admin MFA policy` |
+| Security risk | A security concern needs assessment or remediation. | `fix(auth): restrict session reset tokens` |
+| UAT | A human needs to validate a specific build in an environment. | `test(checkout): validate the refund flow in staging` |
+
+Choose exactly one variant. Copy only its fenced block; do not include this
+table, other variants or surrounding authoring guidance in the public body.
+
+### Bug
+
 ```markdown
 ## Problem
+[One sentence: affected user/system + failing action or current state.]
 
-<!-- What is wrong and who is affected? -->
+## Expected behavior
+[One sentence: observable result the affected user should get.]
 
-## Evidence or repro
+## Actual behavior
+[One sentence: observed result, build/version and environment; Unknown if unverified.]
 
-<!-- Minimal reproducible steps and safe evidence; remove secrets and private data. -->
+## Reproduction
 
-## ExpectedBehavior
+- Build/version: [exact version or artifact]
+- Environment: [name/configuration]
+- Setup: [roles, data and prerequisites]
 
-<!-- What should happen instead? -->
+1. [One action with input]
+2. [Next action that reproduces the failure]
+
+## Safe evidence
+[1-3 accessible redacted evidence URLs; include the observed revision. No secrets.]
+
+## Impact
+[One sentence: affected users/systems and practical impact or severity.]
+
+## Acceptance
+- [Outcome 1: observable pass/fail result]
+- [Outcome 2: observable pass/fail result]
+- [Outcome 3: if needed]
+- [Outcome 4: if needed]
+
+## Scope
+- In: [bounded behavior]
+- Out: [adjacent behavior excluded]
+
+## Related links
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
+```
+
+### Enhancement
+
+```markdown
+## User need
+
+[One sentence: user + goal + current limitation.]
+
+## Proposed outcome
+
+[One sentence: requested observable user-facing change.]
+
+## Current limitation and evidence
+
+[1-2 sentences: limitation. Add build/version, environment, observed commit and 1-3 actual safe evidence URLs.]
 
 ## Impact
 
-<!-- User or system impact and severity. -->
-
-## Acceptance
-
-<!-- Observable conditions that demonstrate resolution. -->
+[One sentence: affected users/systems and practical impact.]
 
 ## Scope
 
-<!-- Boundaries of the follow-up; keep current in-scope defects in the current change. -->
+- In: [bounded capability]
+- Out: [adjacent behavior excluded]
+
+## Acceptance
+
+- [Outcome 1: observable user result]
+- [Outcome 2: observable user result]
+- [Outcome 3: if needed]
+- [Outcome 4: if needed]
 
 ## Related links
 
-<!-- Relevant PRs, open or closed issues, requirements or evidence.
-Search these for duplicates before publishing. -->
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
 ```
+
+### Decision required
+
+```markdown
+## Decision question
+[One answerable sentence: decision and boundary.]
+
+## Context
+[2-3 sentences: current state, affected users/systems and impact.]
+
+## Options
+
+| Option | Choice | Consequence / tradeoff |
+|---|---|---|
+| A | [one-line choice] | [one-line consequence/tradeoff] |
+| B | [one-line choice] | [one-line consequence/tradeoff] |
+| C | [optional; one-line choice] | [optional; one-line consequence/tradeoff] |
+| D | [optional; one-line choice] | [optional; one-line consequence/tradeoff] |
+
+## Evidence
+[1-3 actual safe evidence URLs/references; identify matching build/commit when applicable; no secrets.]
+
+## Recommendation
+[One sentence: preferred option and evidence-based reason.]
+
+## Blocking dependency
+| Blocked work | Decision needed | Observable unblock condition |
+|---|---|---|
+| [blocked work and actual issue/PR ref] | [choice required] | [one-sentence observable condition that allows work to resume] |
+
+## Scope
+- In: [bounded decision]
+- Out: [related choices excluded]
+
+## Acceptance
+- [Outcome 1: record selected option and observable unblock condition]
+- [Outcome 2: measurable decision outcome, if needed]
+- [Outcome 3: if needed]
+
+## Related links
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
+```
+
+### Security risk
+
+```markdown
+## Security concern
+
+[One public-safe sentence: security concern without secrets/exploit details.]
+
+## Affected surface and behavior
+
+- Surface: [component or data]
+- Current: [one sentence: current behavior]
+- Expected: [one sentence: secure behavior]
+
+## Impact
+
+[One sentence: affected users/data/systems and plausible impact.]
+
+## Safe evidence
+
+[1-3 actual accessible, redacted, non-sensitive evidence URLs; identify affected build/commit when known. Omit exploit details.]
+
+## Requested remediation
+
+- [Safe remediation outcome]
+- [Observable secure check]
+- [Additional safe criterion, if needed]
+- [Additional safe criterion, if needed]
+
+## Scope and acceptance
+
+- In: [bounded remediation]
+- Out: [related work excluded]
+- [Observable safe resolution criterion]
+- [Safe regression criterion]
+
+## Related links
+
+[1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
+```
+
+### UAT
+
+```markdown
+## Acceptance checklist
+
+- [ ] [Observable pass/fail condition a human can verify]
+- [ ] [Observable pass/fail condition a human can verify]
+
+## Context
+[2-3 sentences: user flow, problem under review and affected users.]
+
+## Impact and scope
+Impact: [One sentence: affected users/systems and practical effect]
+- In: [flow/behavior being validated]
+- Out: [adjacent flow/behavior excluded]
+
+## Build and environment
+
+- Build/version: [exact release or artifact identifier]
+- Commit: [full SHA]
+- Environment: [name and relevant configuration]
+- Setup: [roles, data and prerequisites]
+
+## Steps and expected outcomes
+
+| Step | Action | Expected outcome | Actual outcome / evidence |
+|---|---|---|---|
+| 1 | [one-line action] | [one-line observable result] | [Pending until human runs; then one-line actual result + safe evidence URL] |
+| 2 | [one-line action] | [one-line observable result] | [Pending until human runs; then one-line actual result + safe evidence URL] |
+
+## Related links
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
+
+## Human acceptance
+Status: PENDING HUMAN acceptance
+Reviewer: [Pending until human review; actual reviewer name]
+Date: [Pending until human review; YYYY-MM-DD]
+Decision: [Pending until human review; one sentence stating the actual human decision]
+Evidence: [Pending until human review; actual decision evidence URL/reference]
+```
+
+## Title format and examples
+
+- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
+  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
+  following the project's existing Git subject convention.
+- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
+- Describe the resolution requested in the issue title; choose a matching type
+  and affected-area scope. Examples:
+
+  ```text
+  feat(checkout): allow saving an address before placing an order
+  fix(search): return an empty result for a blank query
+  docs(api): document the supported pagination parameters
+  test(import): cover duplicate rows in the CSV preview
+  ```
 
 ## How to fill it
 
-- Replace prompts with facts: name the problem, safe repro, expected behavior,
-  impact, observable acceptance and scope. Remove secrets and private data.
+- Use the visible field shape and answer size in the selected block. Replace
+  every bracketed value with actual information; remove remaining prompts,
+  examples and instructional text before publishing.
+- Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
+  or `Pending` with the missing evidence/dependency when facts or checks are
+  unavailable. Never invent observations, results or links.
+- For UAT, AI may replace Pending only with the actual human decision, reviewer,
+  date and evidence reference after the human review.
+- For security risks, follow the private-reporting instruction above before
+  selecting or publishing a public body. Redact private data and secrets.
+- Example excerpt (fictional values, not evidence; replace before publishing):
+
+  | Field | Example value |
+  |---|---|
+  | Build/version and setup | `storefront 2.4.1+build.142`; staging; Chrome 129. |
+  | Scope and acceptance | In: blank-query handling; Out: search ranking. Blank query returns HTTP 200 with `[]`. |
+  | Command / result | `python -m unittest discover -s tests -p test_workflow_links.py -v` — Pending (not run). |
+  | Evidence URL | `https://github.com/example/project/actions/runs/12345` (fictional URL format only; replace with a verified, accessible run matching the commit). |
 - Review open and closed issues plus related and current PR context for duplicates.
   Keep defects within the current change's scope in that change.
 - Review the public title and separate body file before authorized publication;
@@ -61,6 +281,7 @@ test instance. Expected: HTTP 200 with no results. Acceptance: that repro return
 
 ## Completion and downstream handoff
 
-- The copied body contains concrete facts, safe evidence and bounded acceptance.
+- The copied block comes from the selected variant and contains concrete facts,
+  safe evidence and bounded acceptance as applicable.
 - Duplicate review and publication authority follow the Git workflow.
 - Hand off the reviewed body file; report the verified issue URL or the publication blocker.

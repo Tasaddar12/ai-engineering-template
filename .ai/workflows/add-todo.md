@@ -188,8 +188,11 @@ appropriate issue/scope. Reuse links the issue without editing or closing it. If
 `gh issue comment`, then preview again; block if the issue still cannot carry the
 needed context.
 
-Use the existing issue template to prepare a separately reviewed public title
-and body. Reuse the local title only after checking that it is safe to publish.
+Use the existing issue template to select the appropriate body variant, then
+copy only that variant's fenced **File Template** block into a separately
+reviewed public body file. Never copy the whole source or all variants. Prepare
+a separately reviewed public title. Reuse the local title only after checking
+that it is safe to publish.
 Never copy private TODO metadata or sensitive context into the public body. If no
 safe, actionable public text is available, block publication and keep the local
 TODO pending. Put the body in a separate non-empty file, never the TODO file.
