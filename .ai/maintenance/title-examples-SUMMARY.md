@@ -52,14 +52,10 @@ post-open validation; this summary does not claim those actions are complete.
 - Polished the PR title guidance into imperative authoring instructions. The
   existing PR public body remains unchanged.
 - Preserved duplicate and closure safeguards, publication authority and private
-  TODO separation. Security guidance directs sensitive reports to the repository's
-  private reporting channel; if unavailable or unknown, ask the owner before
-  publication. It does not assume a channel exists.
+  TODO separation; no issue-closing automation or policy changed.
 - UAT keeps acceptance items unchecked, records build/commit/environment/setup,
   steps, expected and actual observations, and explicitly leaves acceptance
   pending human review. AI must not mark it complete.
-- Preserved private TODO separation, publication authority and duplicate/full-scope
-  closed-issue checks. No issue-closing automation or policy changed.
 - Updated this summary with the expanded scope and handoff.
 
 ## Second-slice verification
@@ -70,3 +66,20 @@ post-open validation; this summary does not claim those actions are complete.
 - `git diff --check` passed.
 - Test scripts remain unrun per assignment; coordinator validation for the
   expanded scope is pending.
+
+## Correction: complete public-body information across variants
+
+- Added safe evidence and user impact to enhancements; explicit bounded scope,
+  acceptance and a named blocking dependency to decision requests; and context,
+  impact, scope, exact build/version/commit/environment/setup, safe actual
+  results and related links to UAT.
+- Security-risk bodies now describe current and expected secure behavior,
+  affected surface, impact, safe evidence, remediation, scope and acceptance.
+  Shared authoring guidance directs known-channel reports privately, asks the
+  owner privately when the channel is unknown or unavailable, and forbids putting
+  secrets or exploit-sensitive details in public issues.
+- Updated How to fill and completion guidance to refer to the selected variant.
+- Manual review confirmed each variant includes the applicable context/problem,
+  safe evidence, impact, expected outcome, scope, acceptance and related links.
+- `git diff --check` passed. Test scripts remain unrun per assignment; coordinator
+  validation remains pending.

@@ -6,6 +6,35 @@
 **Consumers:** Issue reviewers and implementers; capture publication reads the separately reviewed body file.
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
+## Title format and examples
+
+- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
+  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
+  following the project's existing Git subject convention.
+- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
+- Describe the resolution requested in the issue title; choose a matching type
+  and affected-area scope. Examples:
+
+  ```text
+  feat(checkout): allow saving an address before placing an order
+  fix(search): return an empty result for a blank query
+  docs(api): document the supported pagination parameters
+  test(import): cover duplicate rows in the CSV preview
+  ```
+
+## How to fill it
+
+- Complete the prompts in the selected variant with facts about the problem or
+  need, context, safe evidence, impact, acceptance, scope and related links as
+  applicable. Remove secrets and private data.
+- For a security-risk variant, use the repository's private reporting channel if
+  known. If unavailable or unknown, ask the owner privately before publishing.
+  Never put secrets or exploit-sensitive details in a public issue.
+- Review open and closed issues plus related and current PR context for duplicates.
+  Keep defects within the current change's scope in that change.
+- Review the public title and separate body file before authorized publication;
+  never copy private TODO metadata or sensitive context into it.
+
 Select the appropriate variant below, then copy only its fenced **File Template**
 block into the public body file. Never copy the whole source or all variants.
 The [Git workflow](../references/git-workflow.md) owns publication authority
@@ -66,6 +95,14 @@ table, other variants or surrounding authoring guidance in the public body.
 
 <!-- Describe the capability or improvement requested. -->
 
+## Current limitation and evidence
+
+<!-- What cannot users do today? Include safe repro or evidence. -->
+
+## Impact
+
+<!-- Which users or systems are affected, and how? -->
+
 ## Scope
 
 <!-- Boundaries and important exclusions. -->
@@ -83,28 +120,32 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ```markdown
 ## Decision question
-
 <!-- State the specific choice needed. -->
 
 ## Context
-
-<!-- Why is the decision needed, and what work depends on it? -->
+<!-- Why is the decision needed, who is affected, and what is its impact? -->
 
 ## Options
 
 - Option A:
 - Option B:
 
+## Evidence
+<!-- Safe, relevant evidence that helps compare the options. -->
+
 ## Recommendation
+<!-- Preferred option and rationale. -->
 
-<!-- Preferred option and evidence or rationale. -->
+## Blocking dependency
+<!-- Name the work blocked on this choice and what decision unblocks it. -->
 
-## Consequences
+## Scope
+<!-- Bound the choice and exclude unrelated decisions. -->
 
-<!-- Impact of deciding or waiting; name the blocked work. -->
+## Acceptance
+<!-- Record the chosen option and confirm the named dependency can proceed. -->
 
 ## Related links
-
 <!-- Relevant PRs, issues, requirements or evidence. -->
 ```
 
@@ -115,9 +156,13 @@ table, other variants or surrounding authoring guidance in the public body.
 
 <!-- Describe the concern without exploit-sensitive details. -->
 
-## Affected surface and impact
+## Affected surface and behavior
 
-<!-- Name the affected component and plausible user or system impact. -->
+<!-- Name the component, current behavior and expected secure behavior. -->
+
+## Impact
+
+<!-- Who or what could be affected, and how? -->
 
 ## Safe evidence
 
@@ -131,11 +176,6 @@ table, other variants or surrounding authoring guidance in the public body.
 
 <!-- Bound the work and state observable, safe resolution criteria. -->
 
-## Private reporting
-
-<!-- Use the repository's private reporting channel. If unavailable or unknown,
-     ask the owner before publishing. Do not include secrets or exploit-sensitive details. -->
-
 ## Related links
 
 <!-- Public, non-sensitive references only. -->
@@ -145,55 +185,37 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ```markdown
 ## Acceptance checklist
+- [ ] <!-- Human-verifiable acceptance condition. -->
+- [ ] <!-- Human-verifiable acceptance condition. -->
 
-- [ ] <!-- Human-verifiable acceptance condition. -->
-- [ ] <!-- Human-verifiable acceptance condition. -->
+## Context
+<!-- Identify the user flow, problem under review and affected users. -->
+
+## Impact and scope
+<!-- State the impact and boundaries of this validation. -->
 
 ## Build and environment
 
-- Build or commit:
+- Build or version:
+- Commit:
 - Environment:
 - Setup or prerequisites:
 
 ## Steps and expected observations
-
 1. <!-- Action and expected result. -->
 2. <!-- Action and expected result. -->
 
 ## Actual results
+<!-- Record actual observations and safe evidence for each step; remove secrets
+     and private data. Leave pending if not run. -->
 
-<!-- Record observed results for each step; leave pending if not run. -->
+## Related links
+<!-- Relevant PRs, issues, requirements or evidence. -->
 
 ## Human acceptance
-
 PENDING HUMAN acceptance. Record the human reviewer and decision after review.
 AI must not mark this complete.
 ```
-
-## Title format and examples
-
-- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
-  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
-  following the project's existing Git subject convention.
-- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
-- Describe the resolution requested in the issue title; choose a matching type
-  and affected-area scope. Examples:
-
-  ```text
-  feat(checkout): allow saving an address before placing an order
-  fix(search): return an empty result for a blank query
-  docs(api): document the supported pagination parameters
-  test(import): cover duplicate rows in the CSV preview
-  ```
-
-## How to fill it
-
-- Replace prompts with facts: name the problem, safe repro, expected behavior,
-  impact, observable acceptance and scope. Remove secrets and private data.
-- Review open and closed issues plus related and current PR context for duplicates.
-  Keep defects within the current change's scope in that change.
-- Review the public title and separate body file before authorized publication;
-  never copy private TODO metadata or sensitive context into it.
 
 ## Good and bad examples
 
@@ -205,6 +227,7 @@ test instance. Expected: HTTP 200 with no results. Acceptance: that repro return
 
 ## Completion and downstream handoff
 
-- The copied body contains concrete facts, safe evidence and bounded acceptance.
+- The copied block comes from the selected variant and contains concrete facts,
+  safe evidence and bounded acceptance as applicable.
 - Duplicate review and publication authority follow the Git workflow.
 - Hand off the reviewed body file; report the verified issue URL or the publication blocker.
