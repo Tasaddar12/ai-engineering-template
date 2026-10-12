@@ -49,7 +49,10 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 ## Follow-up issues
 
-- Read [the issue template](../templates/issue.md) and copy only its **File Template** block into the separately reviewed public issue body file. Publish only when the user authorized it.
+- Read [the issue template](../templates/issue.md), select the appropriate
+  variant and copy only that variant's fenced **File Template** block into the
+  separately reviewed public issue body file. Never copy the whole source or all
+  variants. Publish only when the user authorized it.
 - Invoking `/capture` authorizes reviewed publication for its new TODO or the single TODO selected by `/capture --list`, in the current repository. It does not authorize unrelated follow-ups, issue closure or implementation.
 - For a captured TODO, inspect `todo.issue-preview` candidates across open and closed issues and the related PR context. Runtime provides evidence; it does not perform semantic deduplication.
 - Reuse only an actionable matching issue. Linking does not edit or close it. For closed matches, compare closure evidence with the full TODO scope; closed status alone does not prove resolution. Keep mismatches pending and report them. Reopen only with separate authorization or choose an appropriate distinct scope.

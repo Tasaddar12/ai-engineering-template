@@ -139,10 +139,13 @@ use `previewToken` as `preview_token`.
 
 Compare its private local input with all open and closed issue candidates and
 related PR context. Runtime supplies candidates but does not semantically dedupe.
-Use the existing issue template to prepare a separately reviewed public title
-and body; keep private metadata and sensitive context out. Reuse the local title
-only if safe after review. If no safe, actionable public text is available, stop
-with publication blocked and leave the TODO pending. Choose one of
+Use the existing issue template to select the appropriate body variant, then
+copy only that variant's fenced **File Template** block into a separately
+reviewed public body file. Never copy the whole source or all variants. Prepare
+a separately reviewed public title. Keep private metadata and sensitive context
+out, and reuse the local title only if safe after review. If no safe, actionable
+public text is available, stop with publication blocked and leave the TODO
+pending. Choose one of
 `--existing-issue "${issue_url}"` or `--no-match`; reuse only an
 actionable issue and never edit or close it as part of linking. For a closed
 match, compare closure evidence with the full TODO scope; closed status alone

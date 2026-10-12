@@ -1,10 +1,13 @@
 ---
 maintenance: title-examples
 status: documentation_committed_validation_pending
-scope: issue and pull request title authoring guidance
+scope: issue body variants and issue and pull request title authoring guidance
 documentation:
   - .ai/templates/issue.md
   - .ai/templates/pull-request.md
+  - .ai/references/git-workflow.md
+  - .ai/workflows/add-todo.md
+  - .ai/workflows/check-todos.md
 ---
 
 # Issue and pull request title examples
@@ -38,3 +41,32 @@ from implemented pull request outcomes.
 
 No issue-closing change was made. Coordinator owns push, draft PR publication and
 post-open validation; this summary does not claim those actions are complete.
+
+## Second slice: issue body variants
+
+- Added five separately fenced body variants for bugs, enhancements, decisions,
+  security risks and UAT, with a selection table, distinct type-first title
+  examples and explicit copy-one-block guidance.
+- Updated the Git workflow, add-todo and check-todos instructions to select one
+  appropriate variant and copy only its fenced block into a separate public body.
+- Polished the PR title guidance into imperative authoring instructions. The
+  existing PR public body remains unchanged.
+- Preserved duplicate and closure safeguards, publication authority and private
+  TODO separation. Security guidance directs sensitive reports to the repository's
+  private reporting channel; if unavailable or unknown, ask the owner before
+  publication. It does not assume a channel exists.
+- UAT keeps acceptance items unchecked, records build/commit/environment/setup,
+  steps, expected and actual observations, and explicitly leaves acceptance
+  pending human review. AI must not mark it complete.
+- Preserved private TODO separation, publication authority and duplicate/full-scope
+  closed-issue checks. No issue-closing automation or policy changed.
+- Updated this summary with the expanded scope and handoff.
+
+## Second-slice verification
+
+- Manual source review confirmed five variant fences, concise variant fields,
+  and one-block selection instructions at the named consumers. The PR public
+  File Template block matches its prior committed version.
+- `git diff --check` passed.
+- Test scripts remain unrun per assignment; coordinator validation for the
+  expanded scope is pending.

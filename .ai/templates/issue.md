@@ -6,47 +6,178 @@
 **Consumers:** Issue reviewers and implementers; capture publication reads the separately reviewed body file.
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
-Read this source, then copy only the fenced **File Template** body into that file.
-The [Git workflow](../references/git-workflow.md) owns publication authority and procedure.
+Select the appropriate variant below, then copy only its fenced **File Template**
+block into the public body file. Never copy the whole source or all variants.
+The [Git workflow](../references/git-workflow.md) owns publication authority
+and procedure.
 
 ## File Template
 
+| Variant | Use when | Type-first title example |
+|---|---|---|
+| Bug | Existing behavior is wrong or broken. | `fix(search): return an empty result for a blank query` |
+| Enhancement | A user needs a new or improved capability. | `feat(checkout): allow saving an address before placing an order` |
+| Decision required | Work is blocked on choosing among options. | `chore(auth): choose an admin MFA policy` |
+| Security risk | A security concern needs assessment or remediation. | `fix(auth): restrict session reset tokens` |
+| UAT | A human needs to validate a specific build in an environment. | `test(checkout): validate the refund flow in staging` |
+
+Choose exactly one variant. Copy only its fenced block; do not include this
+table, other variants or surrounding authoring guidance in the public body.
+
+### Bug
+
 ```markdown
 ## Problem
-
 <!-- What is wrong and who is affected? -->
 
-## Evidence or repro
+## Expected behavior
+<!-- What should happen? -->
 
-<!-- Minimal reproducible steps and safe evidence; remove secrets and private data. -->
+## Actual behavior
+<!-- What happens instead? -->
 
-## ExpectedBehavior
+## Reproduction
+<!-- Minimal steps and affected version/environment. -->
 
-<!-- What should happen instead? -->
+## Safe evidence
+<!-- Logs, screenshots or other evidence with secrets and private data removed. -->
 
 ## Impact
-
-<!-- User or system impact and severity. -->
+<!-- Who or what is affected and how severely? -->
 
 ## Acceptance
-
 <!-- Observable conditions that demonstrate resolution. -->
 
 ## Scope
+<!-- Boundaries of the follow-up. -->
 
-<!-- Boundaries of the follow-up; keep current in-scope defects in the current change. -->
+## Related links
+<!-- Relevant PRs, issues, requirements or evidence. -->
+```
+
+### Enhancement
+
+```markdown
+## User need
+
+<!-- Who needs what, and why? -->
+
+## Proposed outcome
+
+<!-- Describe the capability or improvement requested. -->
+
+## Scope
+
+<!-- Boundaries and important exclusions. -->
+
+## Acceptance
+
+<!-- Observable conditions that demonstrate the need is met. -->
 
 ## Related links
 
-<!-- Relevant PRs, open or closed issues, requirements or evidence.
-Search these for duplicates before publishing. -->
+<!-- Relevant PRs, issues, requirements or evidence. -->
+```
+
+### Decision required
+
+```markdown
+## Decision question
+
+<!-- State the specific choice needed. -->
+
+## Context
+
+<!-- Why is the decision needed, and what work depends on it? -->
+
+## Options
+
+- Option A:
+- Option B:
+
+## Recommendation
+
+<!-- Preferred option and evidence or rationale. -->
+
+## Consequences
+
+<!-- Impact of deciding or waiting; name the blocked work. -->
+
+## Related links
+
+<!-- Relevant PRs, issues, requirements or evidence. -->
+```
+
+### Security risk
+
+```markdown
+## Security concern
+
+<!-- Describe the concern without exploit-sensitive details. -->
+
+## Affected surface and impact
+
+<!-- Name the affected component and plausible user or system impact. -->
+
+## Safe evidence
+
+<!-- Include only evidence safe for public review; omit secrets and sensitive exploit details. -->
+
+## Requested remediation
+
+<!-- State the outcome needed without prescribing unsupported implementation. -->
+
+## Scope and acceptance
+
+<!-- Bound the work and state observable, safe resolution criteria. -->
+
+## Private reporting
+
+<!-- Use the repository's private reporting channel. If unavailable or unknown,
+     ask the owner before publishing. Do not include secrets or exploit-sensitive details. -->
+
+## Related links
+
+<!-- Public, non-sensitive references only. -->
+```
+
+### UAT
+
+```markdown
+## Acceptance checklist
+
+- [ ] <!-- Human-verifiable acceptance condition. -->
+- [ ] <!-- Human-verifiable acceptance condition. -->
+
+## Build and environment
+
+- Build or commit:
+- Environment:
+- Setup or prerequisites:
+
+## Steps and expected observations
+
+1. <!-- Action and expected result. -->
+2. <!-- Action and expected result. -->
+
+## Actual results
+
+<!-- Record observed results for each step; leave pending if not run. -->
+
+## Human acceptance
+
+PENDING HUMAN acceptance. Record the human reviewer and decision after review.
+AI must not mark this complete.
 ```
 
 ## Title format and examples
 
-- Format: `type(scope): summary`. Use an existing type (`feat`, `fix`, `docs`, `refactor`, `test` or `chore`) and a short, lowercase scope naming the affected area, such as `search`, `api` or `checkout`, following the project's existing Git subject convention.
+- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
+  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
+  following the project's existing Git subject convention.
 - This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
-- Issue titles describe the resolution being requested:
+- Describe the resolution requested in the issue title; choose a matching type
+  and affected-area scope. Examples:
 
   ```text
   feat(checkout): allow saving an address before placing an order

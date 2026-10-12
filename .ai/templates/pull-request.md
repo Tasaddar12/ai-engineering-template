@@ -51,9 +51,12 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## Title format and examples
 
-- Format: `type(scope): summary`. Use an existing type (`feat`, `fix`, `docs`, `refactor`, `test` or `chore`) and a short, lowercase scope naming the affected area, such as `search`, `api` or `checkout`, following the project's existing Git subject convention.
+- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
+  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
+  following the project's existing Git subject convention.
 - This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
-- PR titles describe the outcome implemented in the change:
+- Describe the implemented outcome in the PR title; choose a matching type and
+  affected-area scope. Examples:
 
   ```text
   feat(checkout): save addresses independently of orders
