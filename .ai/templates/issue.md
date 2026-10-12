@@ -34,31 +34,39 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ```markdown
 ## Problem
-<!-- Describe the current behavior and the user or system affected. -->
+[One sentence: affected user/system + failing action or current state.]
 
 ## Expected behavior
-<!-- State the observable result the affected user should get. -->
+[One sentence: observable result the affected user should get.]
 
 ## Actual behavior
-<!-- Record the observed result and the version or environment; use Unknown if unverified. -->
+[One sentence: observed result, build/version and environment; Unknown if unverified.]
 
 ## Reproduction
-<!-- List minimal steps, inputs and prerequisites, plus the version/environment. -->
+Build/version: [exact version or artifact]
+Environment: [name/configuration]
+Setup: [roles, data and prerequisites]
+1. [One action with input]
+2. [Next action that reproduces the failure]
 
 ## Safe evidence
-<!-- Link accessible, redacted logs/screenshots or matching test evidence; never paste secrets. -->
+[1-3 accessible redacted evidence URLs; include the observed revision. No secrets.]
 
 ## Impact
-<!-- Name affected users or systems and the practical impact or severity. -->
+[One sentence: affected users/systems and practical impact or severity.]
 
 ## Acceptance
-<!-- List measurable outcomes reviewers can check to confirm resolution. -->
+- [Outcome 1: observable pass/fail result]
+- [Outcome 2: observable pass/fail result]
+- [Outcome 3: if needed]
+- [Outcome 4: if needed]
 
 ## Scope
-<!-- State what this follow-up includes and excludes. -->
+In: [bounded behavior]
+Out: [adjacent behavior excluded]
 
 ## Related links
-<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
 ```
 
 ### Enhancement
@@ -66,64 +74,75 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## User need
 
-<!-- Name the user, their goal and why the current workflow falls short. -->
+[One sentence: user + goal + current limitation.]
 
 ## Proposed outcome
 
-<!-- Describe the requested capability as an observable user-facing change. -->
+[One sentence: requested observable user-facing change.]
 
 ## Current limitation and evidence
 
-<!-- State what users cannot do now and add a safe repro or accessible evidence link. -->
+[1-2 sentences: limitation. Add build/version, environment, observed commit and 1-3 actual safe evidence URLs.]
 
 ## Impact
 
-<!-- Identify affected users/systems and expected practical impact. -->
+[One sentence: affected users/systems and practical impact.]
 
 ## Scope
 
-<!-- State in-scope behavior and important exclusions. -->
+In: [bounded capability]
+Out: [adjacent behavior excluded]
 
 ## Acceptance
 
-<!-- List measurable user outcomes that demonstrate the need is met. -->
+- [Outcome 1: observable user result]
+- [Outcome 2: observable user result]
+- [Outcome 3: if needed]
+- [Outcome 4: if needed]
 
 ## Related links
 
-<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
 ```
 
 ### Decision required
 
 ```markdown
 ## Decision question
-<!-- Ask one answerable question and state the decision boundary. -->
+[One answerable sentence: decision and boundary.]
 
 ## Context
-<!-- Explain the current situation, affected users/systems and impact. -->
+[2-3 sentences: current state, affected users/systems and impact.]
 
 ## Options
 
-- Option A: [choice and consequence]
-- Option B: [choice and consequence]
+| Option | Choice | Consequence / tradeoff |
+|---|---|---|
+| A | [specific choice] | [consequence or tradeoff] |
+| B | [specific choice] | [consequence or tradeoff] |
 
 ## Evidence
-<!-- Link safe, accessible evidence for the options; use actual refs only. -->
+[1-3 actual safe evidence URLs/references; identify matching build/commit when applicable; no secrets.]
 
 ## Recommendation
-<!-- Name the preferred option and justify it with the evidence above. -->
+[One sentence: preferred option and evidence-based reason.]
 
 ## Blocking dependency
-<!-- Identify blocked work and the selected decision needed to resume it. -->
+| Blocked work | Decision needed | Observable unblock condition |
+|---|---|---|
+| [work item] | [choice required] | [condition that allows work to resume] |
 
 ## Scope
-<!-- State which decision is in scope and which related choices are excluded. -->
+In: [bounded decision]
+Out: [related choices excluded]
 
 ## Acceptance
-<!-- Record the decision and the observable condition that unblocks the named work. -->
+- [Outcome 1: record selected option and observable unblock condition]
+- [Outcome 2: measurable decision outcome, if needed]
+- [Outcome 3: if needed]
 
 ## Related links
-<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
 ```
 
 ### Security risk
@@ -131,31 +150,39 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## Security concern
 
-<!-- State the security concern without secrets or exploit-sensitive details. -->
+[One public-safe sentence: security concern without secrets/exploit details.]
 
 ## Affected surface and behavior
 
-<!-- Name the affected component, current behavior and expected secure behavior. -->
+Surface: [component or data]
+Current: [one concise sentence]
+Expected: [one concise sentence describing secure behavior]
 
 ## Impact
 
-<!-- Describe affected users/data/systems and the plausible impact. -->
+[One sentence: affected users/data/systems and plausible impact.]
 
 ## Safe evidence
 
-<!-- Link actual, accessible, redacted evidence; omit secrets and exploit details. -->
+[1-3 actual accessible, redacted, non-sensitive evidence URLs; identify affected build/commit when known. Omit exploit details.]
 
 ## Requested remediation
 
-<!-- State the safe outcome needed; avoid unsupported implementation assumptions. -->
+- [Safe remediation outcome]
+- [Observable secure check]
+- [Additional safe criterion, if needed]
+- [Additional safe criterion, if needed]
 
 ## Scope and acceptance
 
-<!-- Bound the remediation and list observable, safe resolution criteria. -->
+In: [bounded remediation]
+Out: [related work excluded]
+- [Observable safe resolution criterion]
+- [Safe regression criterion]
 
 ## Related links
 
-<!-- Add actual public PR/issue/requirement IDs and accessible, non-sensitive evidence. -->
+[1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
 ```
 
 ### UAT
@@ -163,14 +190,16 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## Acceptance checklist
 
-- [ ] [Observable condition a human can verify]
-- [ ] [Observable condition a human can verify]
+- [ ] [Observable pass/fail condition a human can verify]
+- [ ] [Observable pass/fail condition a human can verify]
 
 ## Context
-<!-- Identify the user flow, problem under review and affected users. -->
+[2-3 sentences: user flow, problem under review and affected users.]
 
 ## Impact and scope
-<!-- State user/system impact and the exact boundaries of this validation. -->
+Impact: [One sentence: affected users/systems and practical effect]
+In: [flow/behavior being validated]
+Out: [adjacent flow/behavior excluded]
 
 ## Build and environment
 
@@ -179,17 +208,15 @@ table, other variants or surrounding authoring guidance in the public body.
 - Environment: [name and relevant configuration]
 - Setup: [roles, data and prerequisites]
 
-## Steps and expected observations
+## Steps and expected outcomes
 
-1. [Action and observable expected result]
-2. [Action and observable expected result]
-
-## Actual results
-<!-- Record observed outcome for each step and link matching, accessible evidence.
-     Keep unrun checks Pending and redact secrets/private data. -->
+| Step | Action | Expected outcome | Actual outcome / evidence |
+|---|---|---|---|
+| 1 | [one action] | [observable result] | [Pending; replace with actual result and safe evidence URL after human run] |
+| 2 | [one action] | [observable result] | [Pending; replace with actual result and safe evidence URL after human run] |
 
 ## Related links
-<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
+[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
 
 ## Human acceptance
 PENDING HUMAN acceptance. After review, record the human reviewer, date, actual
@@ -214,38 +241,22 @@ decision and evidence reference; AI must not mark this complete.
 
 ## How to fill it
 
-- Replace each prompt with the actual information for this issue. Use `N/A`
-  only with a reason when a field truly does not apply; use `Unknown` or
-  `Pending` with the missing evidence or dependency when the answer is not known
-  or work has not run. Never invent observations or results.
-- Use this shared field guide for differently named headings:
-
-  | Field | What to provide |
-  |---|---|
-  | Problem, User need, Security concern, Context, Current limitation | Name the user/system, current state and why it needs attention. |
-  | Expected behavior, Proposed outcome, Affected surface and behavior | State the desired observable behavior. For decisions, state the choice; for security, include the expected secure behavior. |
-  | Evidence, Safe evidence, Reproduction | Give minimal steps and safe inputs; identify build/version, full commit, environment/setup and exact test command/result when relevant. Link only accessible evidence matching that revision. Redact secrets and private data. |
-  | Impact | Name affected users/systems and the practical effect or severity. |
-  | Scope, Scope and acceptance, Acceptance | State what is in and out, then list measurable outcomes reviewers can check. |
-  | Related links | Add actual issue/PR/requirement IDs and accessible evidence links; search open and closed issues and related PRs for duplicates. |
-- Complete specialized fields with the following details:
-
-  | Variant fields | What to provide |
-  |---|---|
-  | Decision: Options, Recommendation, Blocking dependency | Give distinct options and consequences; recommend one using evidence; name the blocked work and the decision that lets it resume. Acceptance records the selected option and observable unblocking condition. |
-  | Security: Requested remediation | State the safe outcome, affected surface and current versus expected behavior. Use the private-reporting instruction above before composing a public body. |
-  | UAT: checklist, Build and environment, Steps, Actual results, Human acceptance | Put unchecked acceptance items first. Record exact build/version, full commit, environment and setup; list each action and expected observation; after execution record actual results and matching evidence. Keep the human decision pending until a human records it. |
-- Illustrative values only; these are examples, not observed evidence. Replace
-  them with verified facts and actual accessible links before publishing:
+- Use the visible field shape and answer size in the selected block. Replace
+  every bracketed value with actual information; remove remaining prompts,
+  examples and instructional text before publishing.
+- Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
+  or `Pending` with the missing evidence/dependency when facts or checks are
+  unavailable. Never invent observations, results or links.
+- For security risks, follow the private-reporting instruction above before
+  selecting or publishing a public body. Redact private data and secrets.
+- Example excerpt (fictional values, not evidence; replace before publishing):
 
   | Field | Example value |
   |---|---|
-  | Build/version | `storefront 2.4.1+build.142`. |
-  | Scope | In: blank-query handling; Out: search ranking. |
-  | Acceptance | Blank query returns HTTP 200 with `[]`; the blank-query regression check passes. |
-  | UAT setup | Staging; Chrome 129; test customer with one refundable order. |
+  | Build/version and setup | `storefront 2.4.1+build.142`; staging; Chrome 129. |
+  | Scope and acceptance | In: blank-query handling; Out: search ranking. Blank query returns HTTP 200 with `[]`. |
   | Command / result | `python -m unittest discover -s tests -p test_workflow_links.py -v` — Pending (not run). |
-  | Evidence link | `https://github.com/example/project/actions/runs/12345` — fictional format only; replace with a verified, accessible run matching the recorded commit. |
+  | Evidence URL | `https://github.com/example/project/actions/runs/12345` (fictional URL format only; replace with a verified, accessible run matching the commit). |
 - Review open and closed issues plus related and current PR context for duplicates.
   Keep defects within the current change's scope in that change.
 - Review the public title and separate body file before authorized publication;

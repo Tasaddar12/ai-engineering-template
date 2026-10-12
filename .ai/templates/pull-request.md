@@ -15,38 +15,44 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 ```markdown
 ## Goal
 
-<!-- State the authorized user or system outcome in one sentence. -->
+[One sentence: authorized user/system outcome.]
 
 ## Changes
 
-<!-- Summarize the implemented behavior and why; use the owned summaries. -->
+- [Implemented behavior and why]
+- [Additional owned change]
 
 ## Requirements or Issues
 
-<!-- Add exact requirement IDs and issue references; omit this section if none apply. -->
+[1-3 exact requirement IDs and issue URLs; omit this section if none apply.]
 
 ## Verification
 
-- Revision: [full current candidate SHA; verification Pending until tested]
-- Commands and results: [exact command and observed result]
-- Evidence: [accessible link to evidence matching this revision]
+| Revision status | SHA |
+|---|---|
+| Candidate | [full current head SHA] |
+| Tested | [full tested SHA, or Pending until verified] |
 
-<!-- For a tracking draft, state Pending and name the exact outstanding checks. -->
+| Exact command | Observed result | Matching accessible evidence URL |
+|---|---|---|
+| [exact command] | [observed result, or Pending (not run)] | [URL matching tested SHA, or Pending] |
 
 ## Known gaps
 
-<!-- List unfinished work, unverified behavior, pending checks and dependencies. -->
+- [Gap 1: unfinished work, unverified behavior, pending check or dependency]
+- [Gap 2: if applicable]
+- [Gap 3: if applicable]
 
 ## Risks or rollback
 
-<!-- State material risks or that none were identified, then give a practical rollback for this change. -->
+Risks: [material risks, or state none identified]
+Rollback: [practical rollback for this change]
 
-<!-- Include these fields for stacked PRs; omit them for independent PRs. -->
 ## Stack
 
 - stackParent: [parent PR number or URL]
 - Target: [current target branch]
-- DependsOn: [prerequisite PR numbers or URLs]
+- DependsOn: [prerequisite PR URLs, or None if none]
 - OwnChangeBoundary: [full base SHA..full head SHA]
 ```
 
@@ -68,49 +74,29 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## How to fill it
 
-- Replace every prompt, comment and placeholder with actual information, then
-  remove all remaining instructional text, placeholders and guidance examples
-  from the public body. Use `N/A` only with a reason when a field truly does not
-  apply; use `Unknown` or `Pending` with the missing evidence/dependency when
-  facts or checks are not available. Never invent results or links.
-- Fill each field from the authorized scope, owned summaries and verification
-  evidence:
+- Replace every bracketed value with facts from the authorized scope, owned
+  summaries and verification records. Remove all remaining prompts, examples
+  and instructional text before publishing.
+- Keep evidence truthful: record the full current candidate SHA; record the
+  tested SHA only after checks ran. For each check give the exact command, actual
+  result and accessible evidence URL matching that tested SHA. Leave unrun checks
+  Pending and never invent observations or links.
+- Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
+  or `Pending` with the missing evidence/dependency when unavailable. State risks
+  or that none were identified, and always give a practical rollback unless it
+  truly does not apply.
+- In Known gaps, write `None` only after checking. For a PR with no stacked
+  dependency, omit the entire Stack section.
+- Example excerpt (fictional values; not evidence; replace before publishing):
 
-  | Field | What to provide |
+  | Field | Example value |
   |---|---|
-  | Goal | One sentence naming the authorized result for users or the system. |
-  | Changes | The implemented behavior, why it changed, and the owned work. |
-  | Requirements or Issues | Exact applicable requirement IDs and issue references; omit the section only when none apply. |
-  | Revision | Record the full current candidate SHA for a tracking draft and mark verification Pending; after checks, record the full SHA actually tested. |
-  | Commands and results | Exact commands and observed outcomes, each tied to the recorded revision; list unrun checks as Pending. |
-  | Evidence | Accessible review, CI or artifact links that match the recorded revision; redact private data. |
-  | Known gaps | Unfinished work, unverified behavior, pending checks or dependencies; state none only after checking. |
-  | Risks or rollback | State material risks or that none were identified, and give a practical rollback for this change. Use N/A with a reason only if rollback truly does not apply. Example: `Risks: no material risk identified; Rollback: revert this PR.` |
-- A tracking draft marks final verification Pending, names exact outstanding checks
-  and lists unfinished work under Known gaps. Verified work records actual
-  commands, results and matching evidence; a draft alone proves none of these.
+  | Goal / Changes | Goal: Checkout can save addresses before order submission. Changes: Save the address independently; validate its required fields. |
+  | Revision status | Candidate: `a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0` (fictional); Tested: Pending. |
+  | Check | `python -m unittest discover -s tests -p test_workflow_links.py -v` — Pending (not run). |
+  | Evidence URL | `https://github.com/example/project/actions/runs/12345` (fictional format only; replace with accessible evidence matching tested SHA). |
 - Review open and closed issues plus related and current PR context before adding
   issue references or proposing follow-ups. Keep in-scope defects in this change.
-- Include Stack only when this PR depends on another PR; omit the heading and all
-  four fields for an independent PR. The required values are:
-
-  | Field | Exact value |
-  |---|---|
-  | stackParent | Parent PR number or URL. |
-  | Target | Exact branch this PR currently targets (parent branch while stacked; for example, `main` after an authorized restack). |
-  | DependsOn | PR numbers/URLs that must land first. |
-  | OwnChangeBoundary | Base commit SHA..head commit SHA for this PR's own diff. |
-
-  Illustrative stack values only: `stackParent: #42`, `Target: feature/auth-base`,
-  `DependsOn: #42`,
-  `OwnChangeBoundary: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0..b8e20c5d7a1f9346e2b0c8d5f9a3176c4e8d2a10`.
-  Replace them with actual dependency and commit values; remove all examples
-  from the public body.
-- Illustrative verification values only; the SHA is a fictional candidate and
-  the URL is a fictional format, not a claim of an existing run or passing check:
-  `Revision: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0 (candidate; verification Pending)`;
-  `Commands and results: python -m unittest discover -s tests -p test_workflow_links.py -v — Pending (not run)`;
-  `Evidence: https://github.com/example/project/actions/runs/12345 (fictional; replace only with an accessible run matching the tested SHA)`.
 
 ## Good and bad examples
 

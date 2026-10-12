@@ -123,3 +123,17 @@ post-open validation; this summary does not claim those actions are complete.
   when no material risk is identified.
 - Manual review and `git diff --check` passed. Test scripts remain unrun; parent
   validation for this slice is pending.
+
+## Visible body-field prompts
+
+- Replaced instructional HTML comments in all five issue variants and the PR
+  body with visible field shapes, bounded answer sizes, and direct placeholders.
+- Kept the UAT checklist first and used a step/action/expected/actual-evidence
+  table with Pending status until a human runs the steps. PR verification now
+  separates candidate and tested revisions; risks and rollback have distinct
+  fields.
+- Kept short common publishing guidance and compact illustrative excerpts
+  outside the copyable bodies. Manual review confirmed five issue body fences,
+  one PR body fence, no HTML comments, and unchanged authorized file scope.
+- `git diff --check` passed. Test scripts remain unrun per instruction; parent
+  validation for this slice is pending.
