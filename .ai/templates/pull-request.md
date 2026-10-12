@@ -19,8 +19,10 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## Changes
 
-- [Implemented behavior and why]
-- [Additional owned change]
+- [Change 1 of 2-4: implemented behavior and why]
+- [Change 2 of 2-4: implemented behavior and why]
+- [Change 3: if needed]
+- [Change 4: if needed]
 
 ## Requirements or Issues
 
@@ -30,23 +32,23 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 | Revision status | SHA |
 |---|---|
-| Candidate | [full current head SHA] |
-| Tested | [full tested SHA, or Pending until verified] |
+| Candidate | [one full current head SHA] |
+| Tested | [one full tested SHA, or Pending until verified] |
 
-| Exact command | Observed result | Matching accessible evidence URL |
+| Exact command (one row per check) | Result (one sentence or Pending) | Evidence URL matching tested SHA |
 |---|---|---|
-| [exact command] | [observed result, or Pending (not run)] | [URL matching tested SHA, or Pending] |
+| [one exact command] | [one sentence with actual result, or Pending (not run)] | [one accessible matching URL, or Pending] |
 
 ## Known gaps
 
-- [Gap 1: unfinished work, unverified behavior, pending check or dependency]
+- [Gap 1 of 1-3: unfinished work, unverified behavior, pending check or dependency; or None after checking]
 - [Gap 2: if applicable]
 - [Gap 3: if applicable]
 
 ## Risks or rollback
 
-Risks: [material risks, or state none identified]
-Rollback: [practical rollback for this change]
+- Risks: [one sentence: material risks or none identified]
+- Rollback: [one sentence: practical rollback for this change]
 
 ## Stack
 

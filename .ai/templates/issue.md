@@ -43,9 +43,11 @@ table, other variants or surrounding authoring guidance in the public body.
 [One sentence: observed result, build/version and environment; Unknown if unverified.]
 
 ## Reproduction
-Build/version: [exact version or artifact]
-Environment: [name/configuration]
-Setup: [roles, data and prerequisites]
+
+- Build/version: [exact version or artifact]
+- Environment: [name/configuration]
+- Setup: [roles, data and prerequisites]
+
 1. [One action with input]
 2. [Next action that reproduces the failure]
 
@@ -62,8 +64,8 @@ Setup: [roles, data and prerequisites]
 - [Outcome 4: if needed]
 
 ## Scope
-In: [bounded behavior]
-Out: [adjacent behavior excluded]
+- In: [bounded behavior]
+- Out: [adjacent behavior excluded]
 
 ## Related links
 [1-3 actual issue/PR/requirement references or accessible evidence URLs.]
@@ -90,8 +92,8 @@ Out: [adjacent behavior excluded]
 
 ## Scope
 
-In: [bounded capability]
-Out: [adjacent behavior excluded]
+- In: [bounded capability]
+- Out: [adjacent behavior excluded]
 
 ## Acceptance
 
@@ -118,8 +120,10 @@ Out: [adjacent behavior excluded]
 
 | Option | Choice | Consequence / tradeoff |
 |---|---|---|
-| A | [specific choice] | [consequence or tradeoff] |
-| B | [specific choice] | [consequence or tradeoff] |
+| A | [one-line choice] | [one-line consequence/tradeoff] |
+| B | [one-line choice] | [one-line consequence/tradeoff] |
+| C | [optional; one-line choice] | [optional; one-line consequence/tradeoff] |
+| D | [optional; one-line choice] | [optional; one-line consequence/tradeoff] |
 
 ## Evidence
 [1-3 actual safe evidence URLs/references; identify matching build/commit when applicable; no secrets.]
@@ -130,11 +134,11 @@ Out: [adjacent behavior excluded]
 ## Blocking dependency
 | Blocked work | Decision needed | Observable unblock condition |
 |---|---|---|
-| [work item] | [choice required] | [condition that allows work to resume] |
+| [blocked work and actual issue/PR ref] | [choice required] | [one-sentence observable condition that allows work to resume] |
 
 ## Scope
-In: [bounded decision]
-Out: [related choices excluded]
+- In: [bounded decision]
+- Out: [related choices excluded]
 
 ## Acceptance
 - [Outcome 1: record selected option and observable unblock condition]
@@ -154,9 +158,9 @@ Out: [related choices excluded]
 
 ## Affected surface and behavior
 
-Surface: [component or data]
-Current: [one concise sentence]
-Expected: [one concise sentence describing secure behavior]
+- Surface: [component or data]
+- Current: [one sentence: current behavior]
+- Expected: [one sentence: secure behavior]
 
 ## Impact
 
@@ -175,8 +179,8 @@ Expected: [one concise sentence describing secure behavior]
 
 ## Scope and acceptance
 
-In: [bounded remediation]
-Out: [related work excluded]
+- In: [bounded remediation]
+- Out: [related work excluded]
 - [Observable safe resolution criterion]
 - [Safe regression criterion]
 
@@ -198,8 +202,8 @@ Out: [related work excluded]
 
 ## Impact and scope
 Impact: [One sentence: affected users/systems and practical effect]
-In: [flow/behavior being validated]
-Out: [adjacent flow/behavior excluded]
+- In: [flow/behavior being validated]
+- Out: [adjacent flow/behavior excluded]
 
 ## Build and environment
 
@@ -212,15 +216,18 @@ Out: [adjacent flow/behavior excluded]
 
 | Step | Action | Expected outcome | Actual outcome / evidence |
 |---|---|---|---|
-| 1 | [one action] | [observable result] | [Pending; replace with actual result and safe evidence URL after human run] |
-| 2 | [one action] | [observable result] | [Pending; replace with actual result and safe evidence URL after human run] |
+| 1 | [one-line action] | [one-line observable result] | [Pending until human runs; then one-line actual result + safe evidence URL] |
+| 2 | [one-line action] | [one-line observable result] | [Pending until human runs; then one-line actual result + safe evidence URL] |
 
 ## Related links
 [1-3 actual issue/PR/requirement references or accessible evidence URLs.]
 
 ## Human acceptance
-PENDING HUMAN acceptance. After review, record the human reviewer, date, actual
-decision and evidence reference; AI must not mark this complete.
+Status: PENDING HUMAN acceptance
+Reviewer: [Pending until human review; actual reviewer name]
+Date: [Pending until human review; YYYY-MM-DD]
+Decision: [Pending until human review; one sentence stating the actual human decision]
+Evidence: [Pending until human review; actual decision evidence URL/reference]
 ```
 
 ## Title format and examples
@@ -247,6 +254,8 @@ decision and evidence reference; AI must not mark this complete.
 - Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
   or `Pending` with the missing evidence/dependency when facts or checks are
   unavailable. Never invent observations, results or links.
+- For UAT, AI may replace Pending only with the actual human decision, reviewer,
+  date and evidence reference after the human review.
 - For security risks, follow the private-reporting instruction above before
   selecting or publishing a public body. Redact private data and secrets.
 - Example excerpt (fictional values, not evidence; replace before publishing):

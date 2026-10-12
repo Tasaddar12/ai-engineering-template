@@ -137,3 +137,14 @@ post-open validation; this summary does not claim those actions are complete.
   one PR body fence, no HTML comments, and unchanged authorized file scope.
 - `git diff --check` passed. Test scripts remain unrun per instruction; parent
   validation for this slice is pending.
+
+## Field-shape and UAT acceptance clarification
+
+- Bounded PR change/gap bullets, command verification rows, and concise risk and
+  rollback fields; made issue scope, reproduction, security, and UAT field groups
+  visible as Markdown lists or tables.
+- Structured UAT human acceptance as pending status, reviewer, ISO date, actual
+  human decision and evidence reference. Shared guidance permits replacing the
+  pending values only with recorded human-review facts.
+- Manual review and `git diff --check` passed. Test scripts remain unrun; parent
+  validation for this slice is pending.
