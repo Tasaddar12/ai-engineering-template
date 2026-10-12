@@ -324,6 +324,12 @@ explicitly before continuing.
 </step>
 
 <step name="spawn_preparer">
+Capture the exact input revision before the preparer starts:
+
+```bash
+PLAN_INPUT_REVISION=$(git rev-parse HEAD)
+```
+
 ```
 ### ► PLANNING PHASE {phase_number}
 
@@ -336,6 +342,9 @@ Agent(
 <planning_context>
 **Phase:** {phase_number} — {phase_name}
 **Goal:** {goal}
+**Repository:** {absolute repository root}
+**Branch:** {current branch}
+**Input revision:** ${PLAN_INPUT_REVISION}
 **Mode:** {standard | gap_closure}
 **Depends on:** {depends_on}
 ${handoff ? `
@@ -481,6 +490,13 @@ silently into plans.
 </step>
 
 <step name="spawn_checker">
+After the prepared plans are integrated, capture the revision the checker will
+inspect:
+
+```bash
+PLAN_REVIEWED_REVISION=$(git rev-parse HEAD)
+```
+
 ```
 ### ► VERIFYING PLANS
 
@@ -491,6 +507,8 @@ silently into plans.
 Agent(
   prompt="
 Review the plans for Phase {phase_number} goal-backward.
+**Input revision:** ${PLAN_INPUT_REVISION}
+**Reviewed revision:** ${PLAN_REVIEWED_REVISION}
 ${handoff ? `
 <handoff>
 {the continuation field of phase_run query handoff.read <id>, verbatim}
@@ -513,11 +531,17 @@ Check specifically:
 - Decisions locked in CONTEXT.md are honoured, not re-opened
 - `depends_on` and `wave` describe a workable execution order
 - No task authorizes edits outside the phase scope
+- Mandatory goal, safety, coverage, task, ownership and dependency checks are conclusive
 
-Return:
+Return only the canonical schema in
+`.ai/agents/phase-checker.md#structured-returns`:
 ## PLAN REVIEW
 Verdict: approved | needs-revision
-Findings: <numbered; each names the plan and task it affects>
+Include exact input/reviewed revisions, all reviewed PLAN paths, conclusive
+coverage/evidence for mandatory checks, stable issue IDs with authority citations
+and observed evidence, and reusable prior evidence with its revision and compared
+paths. INFO issues may accompany approval and must be shown. Approve only when all
+mandatory checks are conclusive and there are no blockers or warnings.
 ",
   subagent_type="phase-checker",
   ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
@@ -529,14 +553,120 @@ Findings: <numbered; each names the plan and task it affects>
 If the checker reports plans it did not reach, dispatch a fresh phase-checker
 for them with its handoff in a `<handoff>` block, per
 [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-Merge both reviews' findings before routing on the verdict.
+Merge both reviews' coverage, evidence and issues before routing on the verdict;
+any unreviewed mandatory check keeps the result from approval.
 </step>
 
 <step name="revision_loop">
-On `needs-revision`, hand the findings back to the phase-preparer to revise.
+On `Verdict: needs-revision`, pass the checker issues to the phase-preparer in
+the correction packet below. Do not dispatch a revision for INFO-only issues.
+On `Verdict: approved`, continue the workflow and display every INFO issue.
 **Maximum 3 iterations.** Continue a revising preparer that returns
 `## PLANNING PARTIAL` exactly as in `handle_preparer_return`, with its handoff
-in the `<handoff>` block.
+in the `<handoff>` block. After integrating the preparer's owned commit, send a
+fresh independent phase-checker the same packet updated with the corrected
+revision and actual changed paths. The checker inspects every corrected property
+and affected producer/consumer. Route its canonical verdict again through this
+step; INFO may accompany `approved` and is displayed without revision.
+For each new iteration, start a fresh packet from the latest checker report:
+set `reviewed_revision` to that report's reviewed revision, `input_revision` to
+the current integrated HEAD, assign only unresolved blocker/warning IDs, and
+preserve reusable conclusive evidence with each source revision and compared
+path list.
+
+### Correction dispatch packet
+
+Construct one `<revision_context>` packet and provide it verbatim to both the
+author and the fresh checker. The result schema is the one defined in
+`../agents/phase-checker.md#structured-returns`; preserve checker finding IDs and
+all issue fields. For the author dispatch, `reviewed_revision` is the revision
+of the prior checker report and `input_revision` is the current revision from
+which the correction is made. After the author's commit is integrated, update
+`input_revision` to that corrected revision, retain `reviewed_revision` for the
+report being answered, and compute `changed_paths_since_review` from the actual
+repository diff between those revisions. List only plan paths connected to
+those changes and findings as affected; include producer/consumer plans when a
+changed export, ownership path, dependency or acceptance mapping connects them.
+
+```xml
+<revision_context>
+  <repository_root>{absolute repository root}</repository_root>
+  <branch>{current branch}</branch>
+  <reviewed_revision>{revision named by prior checker report}</reviewed_revision>
+  <input_revision>{current integrated revision for this dispatch}</input_revision>
+  <prior_checker_report>
+    <result_destination>{path or assigned result location}</result_destination>
+    {complete prior PLAN REVIEW report}
+  </prior_checker_report>
+  <finding_ids>{exact stable IDs being addressed}</finding_ids>
+  <issues>{exact structured issue payloads, unchanged}</issues>
+  <owned_plan_paths>{exact PLAN paths the author may edit}</owned_plan_paths>
+  <affected_plan_paths>{affected plans, including connected producer/consumers}</affected_plan_paths>
+  <governing_paths>{goal, requirements, decisions, safety and source-contract paths cited by issues}</governing_paths>
+  <changed_paths_since_review>{actual repository paths changed since reviewed_revision}</changed_paths_since_review>
+  <reusable_prior_evidence>
+    {only conclusive checks, each with its review_revision, conclusion and exact compared_paths}
+  </reusable_prior_evidence>
+</revision_context>
+```
+
+Dispatch the author with that packet and the targeted revision method:
+
+```text
+Agent(
+  prompt="
+<revision_context>
+{the complete populated packet above}
+</revision_context>
+
+Read the owned and affected PLANs and the cited governing sources. Address only
+the listed finding IDs by satisfying each binding required_property; fix_hint
+is non-binding. Follow `.ai/references/methods/planner-revision.md`,
+preserve valid existing plan content, recheck corrected properties and connected
+producer/consumer contracts, and return REVISION COMPLETE or REVISION_CONFLICT
+with your owned PLAN commit and result.
+",
+  subagent_type="phase-preparer",
+  ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
+  ${efforts['phase-preparer'] === 'inherit' ? '' : `effort="${efforts['phase-preparer']}",`}
+  description="Revise phase {phase_number} plans"
+)
+```
+
+Verify and integrate the author's owned commit using the active session's
+worker-integration route before review. Set the updated packet's `input_revision`
+to the integrated HEAD and populate `changed_paths_since_review` from that
+revision diff; do not infer paths from the author's report. Dispatch a fresh
+independent checker:
+
+```text
+Agent(
+  prompt="
+<revision_context>
+{the same complete packet, updated after commit integration}
+</revision_context>
+
+Independently inspect every corrected property and affected producer/consumer
+in the current PLANs and governing sources. Reuse only prior conclusive checks
+whose PLAN content, governing acceptance and inspected source remain unchanged;
+verify this against the actual compared paths. If packet fields/evidence are
+missing, perform the full applicable assessment. If ownership or dependency
+changed, check the entire graph. Return the canonical PLAN REVIEW schema,
+including the updated reviewed revision and actual inspected paths.
+",
+  subagent_type="phase-checker",
+  ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
+  ${efforts['phase-checker'] === 'inherit' ? '' : `effort="${efforts['phase-checker']}",`}
+  description="Recheck phase {phase_number} plans"
+)
+```
+
+Reuse a prior pass only if the PLAN content, governing acceptance and inspected
+source in its compared paths are unchanged; an author's assertion alone never
+establishes unchanged content. Missing packet fields or reusable evidence require
+the full applicable assessment. Ownership or dependency changes trigger the
+entire graph check, while unrelated source inspection remains scoped to affected
+findings.
 
 After the third, stop and present the outstanding findings to the user with a
 choice: proceed as-is, revise a specific finding together, or cancel. Do not loop

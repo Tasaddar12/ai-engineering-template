@@ -166,6 +166,11 @@ Extract: `id`, `directory`, `record`. Store as `QUICK_ID` and `QUICK_DIR`.
 </step>
 
 <step name="plan">
+Capture the exact input revision before the preparer starts:
+
+```bash
+PLAN_INPUT_REVISION=$(git rev-parse HEAD)
+```
 Display: `◆ Spawning phase-preparer... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
 
 ```
@@ -176,6 +181,9 @@ Agent(
 **Mode:** ${VALIDATE_MODE ? 'quick-validate' : 'quick'}
 **Directory:** ${QUICK_DIR}
 **Description:** ${DESCRIPTION}
+**Repository:** {absolute repository root}
+**Branch:** {current branch}
+**Input revision:** ${PLAN_INPUT_REVISION}
 
 <required_reading>
 - ${paths.state} (Project State)
@@ -225,18 +233,32 @@ If the plan is missing, stop with: "phase-preparer failed to create ${QUICK_ID}-
 <step name="check_plan">
 **Only when `VALIDATE_MODE` is true.** Otherwise skip to `execute`.
 
+After the prepared plan is integrated, capture the exact revision the checker
+will inspect:
+
+```bash
+PLAN_REVIEWED_REVISION=$(git rev-parse HEAD)
+```
+
 ```
 Agent(
   prompt="
 Review ${QUICK_DIR}/${QUICK_ID}-PLAN.md against the stated task:
 
 **Task:** ${DESCRIPTION}
+**Input revision:** ${PLAN_INPUT_REVISION}
+**Reviewed revision:** ${PLAN_REVIEWED_REVISION}
+**Reviewed PLANs:** ${QUICK_DIR}/${QUICK_ID}-PLAN.md
 
 Check goal-backward: would executing exactly these tasks deliver the task's
-outcome? Report gaps, not style. Return:
+outcome? Check the mandatory goal, safety, task, ownership and dependency
+properties. Report gaps, not style. Return only the canonical schema in
+`.ai/agents/phase-checker.md#structured-returns`, including conclusive coverage
+and evidence, authority citations, stable issue IDs, and any INFO advisories.
+`approved` requires conclusive mandatory checks and zero blockers or warnings;
+INFO may accompany approval and must be displayed. Return:
 ## PLAN REVIEW
 Verdict: approved | needs-revision
-Findings: <numbered, each naming the task it affects>
 ",
   subagent_type="phase-checker",
   ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
@@ -245,9 +267,65 @@ Findings: <numbered, each naming the task it affects>
 )
 ```
 
-On `needs-revision`, hand the findings back to the phase-preparer once. Cap at
-two iterations; after that, present the remaining findings to the user and ask
-whether to proceed, revise again, or stop.
+On `Verdict: needs-revision`, pass the structured blocker/warning issues to the
+phase-preparer once using the same `<revision_context>` packet defined in
+`../workflows/plan-phase.md#correction-dispatch-packet`. For this quick task,
+set the exact repository root and branch, prior reviewed revision and current
+input revision, complete checker report and result destination, finding IDs and
+payloads, the preparer's owned PLAN path and affected paths, cited task/scope and
+source-contract paths, actual changed paths, and prior conclusive evidence with
+its review revision and compared paths. Preserve the checker issue fields. Build
+the packet from observed repository state; do not infer its changed paths from
+the author's summary.
+
+```text
+Agent(
+  prompt="
+<revision_context>
+{complete populated packet, using the schema in plan-phase correction dispatch}
+</revision_context>
+
+Read the owned PLAN and cited governing sources. Address only the listed
+blocker/warning IDs by satisfying each binding required_property; fix_hint is
+non-binding. Follow `.ai/references/methods/planner-revision.md`, preserve valid
+plan content, and return the owned PLAN commit and result.
+",
+  subagent_type="phase-preparer",
+  ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
+  ${efforts['phase-preparer'] === 'inherit' ? '' : `effort="${efforts['phase-preparer']}",`}
+  description="Revise quick plan ${QUICK_ID}"
+)
+```
+
+After integrating that commit, set the packet's `input_revision` to the new
+HEAD and compute its actual path delta from `reviewed_revision`. Then dispatch a
+fresh independent checker with that updated packet:
+
+```text
+Agent(
+  prompt="
+<revision_context>
+{same complete packet, updated after commit integration}
+</revision_context>
+
+Inspect each corrected property and affected producer/consumer directly. Reuse
+only prior conclusive evidence whose PLAN content, governing acceptance and
+inspected source are unchanged; verify this from the compared paths. If packet
+fields/evidence are missing, perform the full applicable assessment. Ownership
+or dependency changes require the entire graph check. Return the canonical PLAN
+REVIEW schema at `.ai/agents/phase-checker.md#structured-returns`.
+",
+  subagent_type="phase-checker",
+  ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
+  ${efforts['phase-checker'] === 'inherit' ? '' : `effort="${efforts['phase-checker']}",`}
+  description="Recheck quick plan ${QUICK_ID}"
+)
+```
+
+Reuse prior evidence only when the PLAN content, governing acceptance and
+inspected source remain unchanged. INFO-only approval displays advisories and
+does not dispatch a revision. Keep the existing two-iteration limit and
+escalation choice when blocker/warning findings remain.
 </step>
 
 <step name="execute">

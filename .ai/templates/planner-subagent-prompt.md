@@ -134,9 +134,14 @@ Continue: {standard | gap_closure}
 **Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the planner agent. This template only passes context.
 
 For revision assignments, replace the standard context block with the exact
-checkout/branch/revision, CONTEXT path, affected PLAN paths, prior checker report
-and finding IDs, and changed source/contract paths. Apply
-[correction rounds](../commands/plan-phase.md).
+`<revision_context>` packet and targeted author prompt in the
+[plan-phase correction dispatch](../workflows/plan-phase.md#correction-dispatch-packet).
+Preserve its repository root, branch, reviewed and input revisions, complete
+prior checker report/result destination, exact finding IDs and payloads, owned
+and affected PLAN paths, governing acceptance/decision/source-contract paths,
+actual changed paths, and reusable prior evidence with its review revision and
+compared paths. The preparer edits only owned plans, inspects the corrected
+properties, and returns its owned commit and result.
 Do not paste PLAN bodies or the previous agent conversation. The preparer reads
 the canonical files and preserves every concrete requirement it edits.
 
