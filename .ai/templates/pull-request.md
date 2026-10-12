@@ -1,3 +1,17 @@
+# Pull Request Template
+
+**Purpose:** Explain the authorized outcome, owned changes and current verification evidence.
+
+**Producer:** The coordinator or assigned author, using summaries and verification records.
+**Consumers:** PR reviewers and the coordinator responsible for verified delivery.
+**Destination:** A separately composed public PR body file passed to publication.
+
+Read this source, then copy only the fenced **File Template** body into that file.
+The [Git workflow](../references/git-workflow.md) owns publication authority and procedure.
+
+## File Template
+
+```markdown
 ## Goal
 
 <!-- Stable statement of the authorized outcome. -->
@@ -33,3 +47,30 @@
 - Target:
 - DependsOn:
 - OwnChangeBoundary: <!-- Base and commit boundary for this PR's own diff. -->
+```
+
+## How to fill it
+
+- Replace prompts with facts from the owned summaries and verification records.
+  Keep evidence safe; remove secrets, private logs and sensitive data.
+- A tracking draft states final verification is pending, names the exact outstanding
+  checks and lists unfinished work under Known gaps. Verified work records the tested
+  revision, actual commands/results and evidence; a draft alone proves none of these.
+- Review open and closed issues plus related and current PR context before adding
+  issue references or proposing follow-ups. Keep in-scope defects in this change.
+- Include Stack only for a real dependency. For an independent PR, omit the Stack
+  heading and its fields from the composed body.
+
+## Good and bad examples
+
+**Good:** "Tracking draft: final verification pending. Outstanding: python -m
+unittest discover -s tests -v. Known gap: empty-query acceptance is unverified."
+
+**Bad:** "All checks passed," when no checks ran. A tracking draft needs exact pending checks.
+
+## Completion and downstream handoff
+
+- The copied body states the authorized goal, owned changes, evidence and remaining gaps.
+- Stack fields describe an actual dependency or are omitted from the public body.
+- Hand off the reviewed body file and evidence under the Git workflow; readiness and
+  merge authority require its delivery gates.

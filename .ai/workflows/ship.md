@@ -295,7 +295,7 @@ force-push: the remote branch may hold work you cannot see.
 </step>
 
 <step name="generate_pr_body">
-Use the [pull request template](../templates/pull-request.md) for the body.
+Read the [pull request template](../templates/pull-request.md) and copy only its **File Template** block into the PR body file.
 Populate it from the phase records:
 
 - Goal: phase goal.
