@@ -115,3 +115,11 @@ post-open validation; this summary does not claim those actions are complete.
   stacked or `main` after an authorized restack.
 - Manual review and `git diff --check` passed. Test scripts remain unrun; parent
   validation for this slice is pending.
+
+## Final field-value clarification
+
+- Added an illustrative build/version value, aligned the Stack Target placeholder
+  with the current target branch, and clarified that rollback remains stated even
+  when no material risk is identified.
+- Manual review and `git diff --check` passed. Test scripts remain unrun; parent
+  validation for this slice is pending.

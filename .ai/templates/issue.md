@@ -240,6 +240,7 @@ decision and evidence reference; AI must not mark this complete.
 
   | Field | Example value |
   |---|---|
+  | Build/version | `storefront 2.4.1+build.142`. |
   | Scope | In: blank-query handling; Out: search ranking. |
   | Acceptance | Blank query returns HTTP 200 with `[]`; the blank-query regression check passes. |
   | UAT setup | Staging; Chrome 129; test customer with one refundable order. |

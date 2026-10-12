@@ -39,13 +39,13 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## Risks or rollback
 
-<!-- State material risks and the practical rollback; use N/A with a reason only when none apply. -->
+<!-- State material risks or that none were identified, then give a practical rollback for this change. -->
 
 <!-- Include these fields for stacked PRs; omit them for independent PRs. -->
 ## Stack
 
 - stackParent: [parent PR number or URL]
-- Target: [parent branch]
+- Target: [current target branch]
 - DependsOn: [prerequisite PR numbers or URLs]
 - OwnChangeBoundary: [full base SHA..full head SHA]
 ```
@@ -85,7 +85,7 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   | Commands and results | Exact commands and observed outcomes, each tied to the recorded revision; list unrun checks as Pending. |
   | Evidence | Accessible review, CI or artifact links that match the recorded revision; redact private data. |
   | Known gaps | Unfinished work, unverified behavior, pending checks or dependencies; state none only after checking. |
-  | Risks or rollback | Material risk and a practical rollback path, or `N/A — no material risk identified` when justified. |
+  | Risks or rollback | State material risks or that none were identified, and give a practical rollback for this change. Use N/A with a reason only if rollback truly does not apply. Example: `Risks: no material risk identified; Rollback: revert this PR.` |
 - A tracking draft marks final verification Pending, names exact outstanding checks
   and lists unfinished work under Known gaps. Verified work records actual
   commands, results and matching evidence; a draft alone proves none of these.
