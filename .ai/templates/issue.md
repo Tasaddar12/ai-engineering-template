@@ -46,10 +46,11 @@ table, other variants or surrounding authoring guidance in the public body.
 
 - Build/version: [exact version or artifact]
 - Environment: [name/configuration]
-- Setup: [roles, data and prerequisites]
+- Entry point: [one exact accessible URL including full path/trailing slash, or directly runnable supplied launcher]
+- Prepared setup: [one line: ready test role/session and safe fixture values; maintainer prepares prerequisites]
 
-1. [One action with input]
-2. [Next action that reproduces the failure]
+1. [One action: visible screen/control/object + exact click/key and concrete safe input. Expected: one visible result.]
+2. [Next action with exact control/input. Expected: one visible result. Actual: observed failure or Unknown with reason.]
 
 ## Safe evidence
 [1-3 accessible redacted evidence URLs; include the observed revision. No secrets.]
@@ -194,30 +195,32 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## Acceptance checklist
 
-- [ ] [Observable pass/fail condition a human can verify]
-- [ ] [Observable pass/fail condition a human can verify]
+- [ ] [One short visible behavior]
+- [ ] [One short visible behavior]
 
 ## Context
-[2-3 sentences: user flow, problem under review and affected users.]
+[One brief factual sentence: user flow and problem under review.]
 
 ## Impact and scope
-Impact: [One sentence: affected users/systems and practical effect]
-- In: [flow/behavior being validated]
+Impact: [One short sentence: practical effect on affected users/systems]
+- In: [bounded flow/behavior being validated]
 - Out: [adjacent flow/behavior excluded]
 
 ## Build and environment
 
-- Build/version: [exact release or artifact identifier]
-- Commit: [full SHA]
-- Environment: [name and relevant configuration]
-- Setup: [roles, data and prerequisites]
+- Entry point: [one exact accessible URL including full path/trailing slash, or supplied launcher with full path and exact launch keys]
+- Ready environment: [one line: environment name and prepared test role/session]
+- Safe fixtures: [1-3 exact input values or prepared test objects used below; N/A with reason if no inputs]
+- Maintainer record: [one accessible reference to the separate build/provenance/technical evidence record; reference only]
 
 ## Steps and expected outcomes
 
 | Step | Action | Expected outcome | Actual outcome / evidence |
 |---|---|---|---|
-| 1 | [one-line action] | [one-line observable result] | [Pending until human runs; then one-line actual result + safe evidence URL] |
-| 2 | [one-line action] | [one-line observable result] | [Pending until human runs; then one-line actual result + safe evidence URL] |
+| 1 | [Open exact entry point above via verified click/key sequence; include Win+R, paste full path, Enter for a Windows launcher] | [One sentence: actual visible screen and identifying label/object] | [Pending until human runs; then numbered reply and short observation] |
+| 2 | [One action: actual visible button/field/object + exact click/key + safe fixture value if needed] | [One sentence: visible state/output after that action] | [Pending until human runs; then numbered reply and short observation] |
+
+Reply for each numbered step: `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>`.
 
 ## Related links
 [1-3 actual issue/PR/requirement references or accessible evidence URLs.]
@@ -251,11 +254,21 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
 - Use the visible field shape and answer size in the selected block. Replace
   every bracketed value with actual information; remove remaining prompts,
   examples and instructional text before publishing.
+- Preserve the selected variant's headings, order and table/result structure;
+  retain UAT's Human acceptance fields. The author and coordinator review this
+  shape before publication. The publication runtime does not validate template
+  structure automatically.
 - Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
   or `Pending` with the missing evidence/dependency when facts or checks are
   unavailable. Never invent observations, results or links.
 - For UAT, AI may replace Pending only with the actual human decision, reviewer,
   date and evidence reference after the human review.
+- For UAT and user-facing bug reproduction, follow the [canonical UAT authoring
+  contract](UAT.md#authoring-contract): verify the entry point, visible labels,
+  inputs and key behavior against the delivered UI. Mark unavailable functions
+  or unverified entry points `BLOCKED` with the missing prerequisite; never
+  invent controls or claim a pass. AI/maintainer prepares the build, access,
+  fixtures and technical evidence in the separate maintainer record.
 - For security risks, follow the private-reporting instruction above before
   selecting or publishing a public body. Redact private data and secrets.
 - Example excerpt (fictional values, not evidence; replace before publishing):

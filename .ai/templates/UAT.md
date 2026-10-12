@@ -2,6 +2,47 @@
 
 Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT session tracking.
 
+**Producer:** Coordinator or assigned author; the verifier returns a proposed script read-only.
+**Consumers:** Human reviewer for actions/results; coordinator for durable session tracking.
+
+## Authoring contract
+
+- Copy only the File Template block. Fill the visible bracket placeholders with
+  the indicated content and length; remove unused rows/fields and prompts before
+  delivery. Do not insert hidden HTML comments or authoring rationale in the body.
+- Start with one exact accessible URL, including its full path and trailing slash
+  when required, or a directly runnable supplied launcher. Verify it opens the
+  delivered build. A homepage, package name or guessed route is insufficient.
+  For a supplied Windows launcher, state the exact launch actions, such as
+  `Win+R`, paste the full prepared path, then press `Enter`, and its expected
+  startup screen. The maintainer selects the source/build before handoff.
+- When multiple tests need an index, give a numbered run order with descriptive
+  linked test names. Do not use bare issue numbers or ask the human to choose a
+  source/build. An issue index uses the same [issue UAT variant](issue.md#uat),
+  preserving its headings, order and step table. Each numbered row names the
+  linked test and exact opening action; its Actual outcome / evidence column
+  says reporting belongs in that linked test. Record each reply there once.
+- Give a short checklist of 2-4 observable behaviors and numbered actions. Each
+  action identifies the actual visible screen, button, field or object and exact
+  click/key; supply concrete safe fixture values for required inputs. Every action
+  has its own expected visible result. Map actions to approved acceptance IDs.
+- Verify the script against the delivered UI, including labels and key behavior.
+  Do not invent controls. Mark an unavailable function or unverified entry point
+  `BLOCKED` with the missing prerequisite, keep dependent actions unresolved, and
+  do not count it as passing. Author checks do not supply human acceptance.
+- AI/maintainer selects and prepares the build, credentials/test session and data,
+  extracts packages, records hashes, versions and provenance, runs technical
+  checks, gathers evidence and prepares bundles. Never assign these tasks to the
+  human reviewer. Link a clearly separate **maintainer-owned record** containing
+  that provenance and evidence; the human need not read or compare it.
+  The record identifies the exact build/commit, artifact hashes/versions,
+  environment, prepared access/data references, UI inspection evidence and
+  technical check/bundle references. Keep secrets out of public records.
+- Ask for `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>` for each
+  numbered action. Record actual replies; silence, skips and source inspection
+  never imply PASS. Keep `PENDING HUMAN acceptance` until the actual human
+  decision is recorded, even when author checks pass.
+
 ---
 
 ## File Template
@@ -10,48 +51,55 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 ---
 status: testing | partial | complete
 phase: XX-name
-source: [list of SUMMARY.md files tested]
+source: [1+ SUMMARY.md paths tested]
 started: [ISO timestamp]
 updated: [ISO timestamp]
 ---
 
 ## Current Test
-<!-- OVERWRITE each test - shows where we are -->
 
 number: [N]
-name: [test name]
-expected: |
-  [what user should observe]
+name: [one short action name]
+expected: [one sentence: visible result]
 awaiting: user response
+
+## Entry point and prepared fixtures
+
+- Open: [one exact accessible URL including full path/trailing slash, or supplied launcher with full path and exact launch keys]
+- Ready environment: [one line: environment name and prepared test role/session]
+- Safe fixtures: [1-3 exact input values or prepared objects; N/A with reason if no inputs]
+- Maintainer record: [one accessible reference to separate build/provenance/technical evidence; reference only]
+
+## Acceptance checklist
+
+- [ ] [One short observable behavior]
+- [ ] [One short observable behavior]
 
 ## Tests
 
-### 1. [Test Name]
-expected: [observable behavior - what user should see]
-result: [pending]
+### 1. [Open the delivered screen; short action name]
+acceptance: [approved acceptance ID(s)]
+action: [Open exact entry point above; verified click/key sequence, including Win+R, paste full path, Enter when applicable]
+expected: [one sentence: visible screen and identifying label/object]
+result: pending
 
-### 2. [Test Name]
-expected: [observable behavior]
-result: pass
+### 2. [Use the visible control; short action name]
+acceptance: [approved acceptance ID(s)]
+action: [one action: actual visible button/field/object + exact click/key + safe fixture value if needed]
+expected: [one sentence: visible state/output after that action]
+result: pending
 
-### 3. [Test Name]
-expected: [observable behavior]
-result: issue
-reported: "[verbatim user response]"
-severity: major
+## Reply format
 
-### 4. [Test Name]
-expected: [observable behavior]
-result: skipped
-reason: [why skipped]
+Reply for each numbered action: `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>`.
 
-### 5. [Test Name]
-expected: [observable behavior]
-result: blocked
-blocked_by: server | physical-device | release-build | third-party | prior-phase
-reason: [why blocked]
+## Human acceptance
 
-...
+Status: PENDING HUMAN acceptance
+Reviewer: [Pending until human review; actual reviewer name]
+Date: [Pending until human review; YYYY-MM-DD]
+Decision: [Pending until human review; one sentence stating actual decision]
+Evidence: [Pending until human review; actual decision reference]
 
 ## Summary
 
@@ -64,16 +112,18 @@ blocked: [N]
 
 ## Gaps
 
-<!-- YAML evidence for plan-phase assignments with mode: gap_closure -->
 - truth: "[expected behavior from test]"
   status: failed
   reason: "User reported: [verbatim response]"
   severity: blocker | major | minor | cosmetic
   test: [N]
-  root_cause: ""     # Filled by diagnosis
-  artifacts: []      # Filled by diagnosis
-  missing: []        # Filled by diagnosis
-  debug_session: ""  # Filled by diagnosis
+  root_cause: "[maintainer diagnosis, or Unknown with missing evidence]"
+  artifacts:
+    - path: "[affected source path]"
+      issue: "[one sentence: diagnosed source issue]"
+  missing:
+    - "[one sentence: needed correction]"
+  debug_session: "[actual diagnosis reference, or N/A with reason]"
 ```
 
 ---
@@ -90,14 +140,14 @@ blocked: [N]
 **Current Test:**
 - OVERWRITE entirely on each test transition
 - Shows which test is active and what's awaited
-- On completion: "[testing complete]"
+- On completion: "testing complete"
 
 **Tests:**
 - Each test: OVERWRITE result field when user responds
-- `result` values: [pending], pass, issue, skipped, blocked
+- `result` values: pending, pass, issue, skipped, blocked
 - If issue: add `reported` (verbatim) and `severity` (inferred)
-- If skipped: record the user's explicit decision in `reason` and the CLI `--note`.
-- If blocked: record the prerequisite in `blocked_by` and the reason in `reason` and `--note`.
+- If skipped: record the user's explicit decision in `reason`.
+- If blocked: record the prerequisite in `blocked_by` and its `reason`.
 
 **Summary:**
 - OVERWRITE counts after each response
@@ -122,7 +172,7 @@ blocked: [N]
 5. Retain `status: partial`; store diagnosis in Gaps, not in a new session status
 6. Return the diagnosed gaps to `plan-phase` for repair planning
 
-**After diagnosis:**
+**After diagnosis (fictional example only; replace with actual diagnosis):**
 ```yaml
 ## Gaps
 
@@ -145,21 +195,21 @@ blocked: [N]
 <lifecycle>
 
 **Creation:** When verify-work starts new session
-- Derive one case per CONTEXT acceptance ID; use SUMMARY files as implementation evidence.
+- Derive actions covering each CONTEXT acceptance ID; use SUMMARY files as claims to check against the delivered UI.
 - Set status to "testing"
 - Current Test points to test 1
-- All tests have result: [pending]
+- All runnable tests have result: pending; unavailable/unverified actions have result: blocked and a reason.
 
 **During testing:**
 - Present test from Current Test section
-- User responds with pass confirmation or issue description
-- Update test result (pass/issue/skipped)
+- User replies `N PASS`, `N FAIL <short observation>` or `N BLOCKED <reason>`
+- Coordinator records the reply and updates result (pass/issue/blocked; skipped only by explicit decision)
 - Update Summary counts
 - If issue: append to Gaps section (YAML format), infer severity
-- Current Test names the first nonpassing case; select a different remaining case explicitly with `--case N`.
+- Current Test names the first nonpassing action; coordinator may explicitly select an independent remaining action by its number.
 
 **On completion:**
-- Set `status: complete` only when every case result is `pass`.
+- Set `status: complete` only when every required action result is `pass` and actual human acceptance is recorded.
 - Current Test → "[testing complete]"
 - Commit file
 - Present summary with next steps
@@ -171,8 +221,14 @@ blocked: [N]
 - Present summary with outstanding items highlighted
 
 **Resuming partial session:**
-- Run `python .ai/runtime/phase.py query verification.status PHASE`; inspect the first nonpassing case and preserve prior observations.
+- Read the UAT file directly; inspect the first nonpassing action and preserve prior observations.
 - Set `status: complete` only after every case records `pass`.
+
+The coordinator authors and updates this session document. The local runtime has
+no UAT creation, case-selection or result-recording verbs/flags.
+`verification.status PHASE` reads `NN-VERIFICATION.md` metadata only; it does not
+report UAT progress. Use the supported verification workflow for phase status,
+and preserve this file's actual observations when reconciling its report.
 
 **Resume after /clear:**
 1. Read frontmatter → know phase and status
@@ -198,72 +254,101 @@ Default: **major** (safe default, user can clarify if wrong)
 </severity_guide>
 
 <good_example>
+Fictional example only: the URL, controls, fixtures, record and observations below
+describe an assumed comments UI, not this repository or verified project evidence.
+
 ```markdown
 ---
 status: partial
 phase: 04-comments
-source: 04-01-SUMMARY.md, 04-02-SUMMARY.md
+source: 04-01-SUMMARY.md
 started: 2025-01-15T10:30:00Z
 updated: 2025-01-15T10:45:00Z
 ---
 
 ## Current Test
 
-number: 2
-name: Create Top-Level Comment
-expected: Comment appears immediately after submission
+number: 4
+name: Post the comment
+expected: A comment reading "UAT comment 04" appears below UAT Post 04 immediately
 awaiting: correction and user retest
+
+## Entry point and prepared fixtures
+
+- Open: https://comments.example.test/posts/uat-post-04/
+- Ready environment: staging, prepared signed-in test account UAT Reviewer
+- Safe fixtures: post "UAT Post 04"; comment text "UAT comment 04"
+- Maintainer record: comments-04-build-record.md (reference only)
+
+## Acceptance checklist
+
+- [x] UAT Post 04 opens with a usable comment composer.
+- [ ] Posting a comment displays its text immediately.
 
 ## Tests
 
-### 1. View Comments on Post
-expected: Comments section expands, shows count and comment list
+### 1. Open the test post
+acceptance: AC-04-01
+action: Open https://comments.example.test/posts/uat-post-04/
+expected: The heading "UAT Post 04" and "New comment" button appear
 result: pass
+reported: "1 PASS"
 
-### 2. Create Top-Level Comment
-expected: Submit comment via rich text editor, appears in list with author info
+### 2. Open the composer
+acceptance: AC-04-01
+action: Click "New comment" below "UAT Post 04"
+expected: The "Comment" field and "Post comment" button appear
+result: pass
+reported: "2 PASS"
+
+### 3. Enter the safe comment
+acceptance: AC-04-02
+action: Type "UAT comment 04" into the "Comment" field
+expected: The field displays "UAT comment 04"
+result: pass
+reported: "3 PASS"
+
+### 4. Post the comment
+acceptance: AC-04-02
+action: Click "Post comment" below the "Comment" field
+expected: A comment reading "UAT comment 04" appears below UAT Post 04 immediately
 result: issue
-reported: "works but doesn't show until I refresh the page"
+reported: "4 FAIL The comment appears only after I refresh."
 severity: major
 
-### 3. Reply to a Comment
-expected: Click Reply, inline composer appears, submit shows nested reply
-result: pass
+## Reply format
 
-### 4. Visual Nesting
-expected: 3+ level thread shows indentation, left borders, caps at reasonable depth
-result: pass
+Reply for each numbered action: `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>`.
 
-### 5. Delete Own Comment
-expected: Click delete on own comment, removed or shows [deleted] if has replies
-result: pass
+## Human acceptance
 
-### 6. Comment Count
-expected: Post shows accurate count, increments when adding comment
-result: pass
+Status: PENDING HUMAN acceptance
+Reviewer: Pending final human review
+Date: Pending final human review
+Decision: Pending correction and retest of action 4
+Evidence: Recorded action replies above; final decision pending
 
 ## Summary
 
-total: 6
-passed: 5
+total: 4
+passed: 3
 issues: 1
 pending: 0
 skipped: 0
+blocked: 0
 
 ## Gaps
 
-- truth: "Comment appears immediately after submission in list"
+- truth: "Posting a comment displays its text immediately"
   status: failed
-  reason: "User reported: works but doesn't show until I refresh the page"
+  reason: "User reported: 4 FAIL The comment appears only after I refresh."
   severity: major
-  test: 2
-  root_cause: "useEffect in CommentList.tsx missing commentCount dependency"
-  artifacts:
-    - path: "src/components/CommentList.tsx"
-      issue: "useEffect missing dependency"
+  test: 4
+  root_cause: "Unknown; maintainer diagnosis pending"
+  artifacts: []
   missing:
-    - "Add commentCount to useEffect dependency array"
-  debug_session: ".planning/debug/comment-not-refreshing.md"
+    - "Diagnose and correct delayed display before human retest"
+  debug_session: "N/A; diagnosis has not started"
 ```
 </good_example>
 

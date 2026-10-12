@@ -365,6 +365,35 @@ start a fresh verification batch on the integrated revision. Do not combine
 evidence from different frozen revisions as if it described one tree.
 </step>
 
+<step name="prepare_human_acceptance">
+When the joined report contains human checks, prepare a concrete script before
+reporting the shipping blocker. This also applies when `gaps_found` takes
+precedence over `human_needed`; preserve the required human checks.
+
+Use the [canonical UAT template and authoring contract](../templates/UAT.md)
+for the phase session. For an authorized issue body, select only the
+[UAT issue variant](../templates/issue.md#uat), following the same contract.
+Direct verifier-generated checks follow that contract too; the verifier returns
+its proposed script read-only and the coordinator persists it. Keep technical
+evidence and build provenance in the separate maintainer-owned record.
+
+The AI/maintainer prepares the delivered environment and checks each proposed
+action against its actual UI before handoff. Record unavailable functions and
+unverified entry points as BLOCKED with their missing prerequisites. The human
+receives the entry point, short behavior checklist, numbered concrete actions,
+expected visible results and the reply format from the template. Retain
+`PENDING HUMAN acceptance` until the actual decision and observation evidence
+arrive; automated checks do not supply it. After actual feedback, the coordinator
+updates the session and reconciles verification through the existing procedure.
+
+For an authorized issue-generation or rewrite batch, assign exactly one named
+author per issue, with its explicit issue URL/number and owned draft path. No
+concurrent edits to the same issue or draft. The coordinator reviews each draft
+and publishes within the existing authorization; other project owners remain
+scoped to their assigned issues. This rule grants no authority to rewrite other
+repositories.
+</step>
+
 <step name="persist_nonpass_report">
 Do not persist the provisional report. For an initial `gaps_found` or
 `human_needed`, the coordinator writes the final joined report after
@@ -392,7 +421,7 @@ phase_run query verification.status "${phase_number}"  # non-pass report only
 
 **status: human_needed** → do not convert it to a pass and do not ask. List each
 such criterion — what a person must check and how — in the closing report as
-what blocks shipping.
+what blocks shipping, with the concrete script from `prepare_human_acceptance`.
 
 **status: gaps_found** → continue to `plan_gap_closure`.
 </step>
