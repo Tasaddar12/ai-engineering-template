@@ -42,6 +42,19 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 Search these for duplicates before publishing. -->
 ```
 
+## Title format and examples
+
+- Format: `type(scope): summary`. Use an existing type (`feat`, `fix`, `docs`, `refactor`, `test` or `chore`) and a short, lowercase scope naming the affected area, such as `search`, `api` or `checkout`, following the project's existing Git subject convention.
+- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
+- Issue titles describe the resolution being requested:
+
+  ```text
+  feat(checkout): allow saving an address before placing an order
+  fix(search): return an empty result for a blank query
+  docs(api): document the supported pagination parameters
+  test(import): cover duplicate rows in the CSV preview
+  ```
+
 ## How to fill it
 
 - Replace prompts with facts: name the problem, safe repro, expected behavior,

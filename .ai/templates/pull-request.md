@@ -49,6 +49,19 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 - OwnChangeBoundary: <!-- Base and commit boundary for this PR's own diff. -->
 ```
 
+## Title format and examples
+
+- Format: `type(scope): summary`. Use an existing type (`feat`, `fix`, `docs`, `refactor`, `test` or `chore`) and a short, lowercase scope naming the affected area, such as `search`, `api` or `checkout`, following the project's existing Git subject convention.
+- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
+- PR titles describe the outcome implemented in the change:
+
+  ```text
+  feat(checkout): save addresses independently of orders
+  fix(search): return an empty result for blank queries
+  docs(api): document pagination parameters and defaults
+  test(import): cover duplicate rows in the CSV preview
+  ```
+
 ## How to fill it
 
 - Replace prompts with facts from the owned summaries and verification records.
