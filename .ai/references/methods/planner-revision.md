@@ -6,11 +6,15 @@ Triggered when orchestrator provides `<revision_context>` with checker issues. N
 
 ### Step 1: Load Existing Plans
 
-Read the coordinator's exact finding IDs, reviewed revision, changed paths and
-affected PLAN paths. Read those PLANs and the acceptance/decisions they implement.
-Read another PLAN only when a changed export, ownership path, dependency or
-acceptance mapping connects it to a finding. Name that connection in the result.
-Do not load all phase PLANs through a wildcard or rerun standard discovery.
+Read the complete `<revision_context>` packet from the
+[plan-phase correction dispatch](../../workflows/plan-phase.md#correction-dispatch-packet):
+
+- Capture the exact finding IDs, revisions, changed paths, governing sources,
+  affected PLAN paths and prior evidence.
+- Read the listed PLANs and the acceptance/decisions they implement.
+- Read another PLAN only when a changed export, ownership path, dependency or
+  acceptance mapping connects it to a finding, and name that connection in the result.
+- Keep the correction bounded to the packet's paths and findings.
 
 ### Step 2: Parse Checker Issues
 
@@ -19,10 +23,12 @@ Issues come in structured format:
 ```yaml
 issues:
   - plan: "16-01"
+    id: "PC-16-01-task_completeness-01"
     dimension: "task_completeness"
     severity: "blocker"
     required_property: "Every `auto` task has a `<verify>` separating pass from fail"
-    description: "Task 2 missing <verify> element"
+    authority: ".ai/runtime/TEMPLATE-CONTRACT.md#author-an-executable-plan"
+    description: ".planning/phases/16/16-01-PLAN.md Task 2 has no <verify> element"
     fix_hint: "Add verification command for build output"
 ```
 
@@ -33,9 +39,13 @@ Group by plan, dimension, severity.
 example** of a route to that property — an illustration, never an instruction. You address an
 issue by making `required_property` true; the hint's own mechanism is optional.
 
-An older checker may return an issue with no `required_property`. Derive it from `dimension`
-+ `description` and state the derived property in your revision summary. Never treat the
-absence of the field as licence to apply `fix_hint` literally.
+For a legacy issue without `required_property` or an authority citation:
+
+- Inspect the governing sources.
+- State the property derived from those sources and cite the exact authority in
+  the revision summary.
+- If the sources do not establish the property or authority, leave the issue
+  unresolved for fresh checker assessment.
 
 **Prefer the smallest sufficient mechanism.** If a smaller change than the hint makes
 `required_property` true, take it — that fully addresses the issue and must be reported as

@@ -16,7 +16,7 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phas
 phase: XX-name
 plan: NN
 type: execute
-wave: N                     # Derived execution wave label; phase-plan-index recomputes dependency and file-overlap order.
+wave: N                     # Declared planning label; execute-phase forms actual groups from dependencies and file overlap.
 depends_on: []              # Plan IDs this plan requires (e.g., ["01-01"]).
 files_modified: []          # Files this plan modifies.
 files_deleted: []           # OPTIONAL. Files this plan REMOVES. A deletion not declared here
@@ -140,7 +140,7 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `phase` | Yes | Phase identifier (e.g., `01-foundation`) |
 | `plan` | Yes | Plan number within phase (e.g., `01`, `02`) |
 | `type` | Yes | Always `execute` for standard plans, `tdd` for TDD plans |
-| `wave` | Yes | Derived execution wave label; phase-plan-index recomputes the ordered dependency and file-overlap waves. |
+| `wave` | Yes | Declared planning label; it does not replace dependency or ownership metadata. |
 | `depends_on` | Yes | Array of plan IDs this plan requires. |
 | `files_modified` | Yes | Files this plan touches. |
 | `autonomous` | Yes | `true` if no checkpoints, `false` if has checkpoints |
@@ -148,7 +148,16 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `user_setup` | No | Array of human-required setup items (external services) |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
-**Waves are ordered execution groups:** `wave` is a derived plan label. `phase-plan-index` recomputes dependency and file-overlap waves. `execute-phase` integrates and checks each wave before dispatching the next, then runs independent plans concurrently within a wave subject to file ownership, exclusive resources and capacity. Declare every real prerequisite; the label does not replace a missing dependency edge.
+**Waves are ordered execution groups:**
+
+- Record `wave` as planning metadata and declare every real prerequisite.
+- Read plan IDs, paths, declared dependencies and available summaries from
+  `phase-plan-index`.
+- In `execute-phase`, have the coordinator group plans by satisfied dependencies
+  and overlapping `files_modified`, then integrate and check each wave before
+  dispatching the next.
+- Run eligible independent plans concurrently subject to ownership, shared
+  resources and capacity.
 
 **Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all components integrate, the coordinator runs `verify-work` to dispatch the independent verifier against these criteria and the integrated code. `phase.py query init.execute-phase` does not start final verification automatically.
 
