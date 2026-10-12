@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from . import delivery, gitops, todos
+from . import delivery, gitops, issue_format, todos
 from .paths import read_text
 from .results import VerbError, require
 
@@ -247,7 +247,7 @@ def unchanged(workspace, name, expected):
 
 
 def publish(workspace, name, preview_token, title, body_file,
-            existing_issue=None, no_match=False):
+            existing_issue=None, no_match=False, variant=None):
     require(isinstance(preview_token, str) and bool(preview_token.strip()),
             "A current reviewed preview token is required", "issue-review")
     require(isinstance(title, str) and bool(title.strip()),
@@ -260,6 +260,7 @@ def publish(workspace, name, preview_token, title, body_file,
     require(metadata.get("todoId") and metadata.get("issueRepo")
             and publication.get("previewToken"), "Preview this TODO first", "issue-review")
     public_body = reviewed_body(body_file, metadata["todoId"], path)
+    issue_format.validate(public_body, variant)
     intent = digest({"title": title, "body": public_body})
     repository = target(workspace)
     require(isinstance(metadata["issueRepo"], str)

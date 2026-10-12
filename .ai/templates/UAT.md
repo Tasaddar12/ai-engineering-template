@@ -10,6 +10,9 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 - Copy only the File Template block. Fill the visible bracket placeholders with
   the indicated content and length; remove unused rows/fields and prompts before
   delivery. Do not insert hidden HTML comments or authoring rationale in the body.
+- This template tracks a phase session. The [UAT issue variant](issue.md#uat)
+  is the canonical issue body; its readiness instructions own saved-issue
+  readback, saved entry-point checks and authoring/publication-error repair.
 - Start with one exact accessible URL, including its full path and trailing slash
   when required, or a directly runnable supplied launcher. Verify it opens the
   delivered build. A homepage, package name or guessed route is insufficient.
@@ -22,6 +25,10 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
   preserving its headings, order and step table. Each numbered row names the
   linked test and exact opening action; its Actual outcome / evidence column
   says reporting belongs in that linked test. Record each reply there once.
+  Replace the standalone "Reply for each numbered step" sentence with "Record
+  action results only in each linked test; no separate index-row replies."
+  Retain Human acceptance fields; its decision/evidence reference the actual
+  linked test decisions, without a duplicate acceptance action at the index.
 - Give a short checklist of 2-4 observable behaviors and numbered actions. Each
   action identifies the actual visible screen, button, field or object and exact
   click/key; supply concrete safe fixture values for required inputs. Every action
@@ -39,7 +46,8 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
   environment, prepared access/data references, UI inspection evidence and
   technical check/bundle references. Keep secrets out of public records.
 - Ask for `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>` for each
-  numbered action. Record actual replies; silence, skips and source inspection
+  numbered action in a test (index results belong only in the linked tests).
+  Record actual replies; silence, skips and source inspection
   never imply PASS. Keep `PENDING HUMAN acceptance` until the actual human
   decision is recorded, even when author checks pass.
 
@@ -141,6 +149,9 @@ blocked: [N]
 - OVERWRITE entirely on each test transition
 - Shows which test is active and what's awaited
 - On completion: "testing complete"
+- When all required actions pass but the final human decision is absent:
+  `awaiting: final human acceptance decision`; omit number, name and expected
+  because no test remains. Keep `status: partial`.
 
 **Tests:**
 - Each test: OVERWRITE result field when user responds
@@ -215,14 +226,22 @@ blocked: [N]
 - Present summary with next steps
 
 **Partial completion:**
-- After any recorded response, set `status: partial` while any case is pending, issue/failed, blocked or skipped.
+- After any recorded response, set `status: partial` while any case is pending, issue/failed, blocked or skipped, or the actual final human acceptance decision is absent.
 - Keep Current Test on the first nonpassing case with its expected result and `awaiting: user response`.
+- If all required actions pass, replace Current Test with only
+  `awaiting: final human acceptance decision`; do not invent another test.
+- Preserve pending Human acceptance status, reviewer, date, decision and evidence
+  until actual final feedback arrives. Action PASS replies never imply the final
+  decision or supply its reviewer/date/evidence.
 - Commit file
 - Present summary with outstanding items highlighted
 
 **Resuming partial session:**
-- Read the UAT file directly; inspect the first nonpassing action and preserve prior observations.
-- Set `status: complete` only after every case records `pass`.
+- Read the UAT file directly; inspect the first nonpassing action or the pending
+  final decision when all required actions pass. Preserve prior observations
+  and pending Human acceptance fields until actual final feedback arrives.
+- Set `status: complete` only after every required action records `pass` AND
+  the actual final human acceptance decision, reviewer, date and evidence are recorded.
 
 The coordinator authors and updates this session document. The local runtime has
 no UAT creation, case-selection or result-recording verbs/flags.
@@ -233,7 +252,7 @@ and preserve this file's actual observations when reconciling its report.
 **Resume after /clear:**
 1. Read frontmatter → know phase and status
 2. Read Current Test → know where we are
-3. Inspect the first nonpassing result and its prior observations; record a new outcome only from fresh user feedback.
+3. Inspect the first nonpassing result or, if all required actions pass, the pending final human decision; record a new outcome only from fresh user feedback. Apply the same action-pass AND actual-decision completion predicate.
 4. Summary shows progress so far
 
 </lifecycle>

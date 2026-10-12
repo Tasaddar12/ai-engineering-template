@@ -14,6 +14,11 @@ plan_head_before: 320574f9b3f07628789058e2aaccc7b6a7fc677d
 
 # Actionable human acceptance scripts
 
+Historical first-slice evidence at `04880c2f89533ff44d9620637e965e9b3ea135c5`.
+Runtime/no-validator observations below describe that slice, not the current
+tree. The later supported-path structural validator and current limitations are
+recorded in [issue validation](issue-validation-SUMMARY.md).
+
 **Concrete human actions and expected visible results now share one canonical UAT contract, with build preparation and provenance assigned to the maintainer.**
 
 ## Scope and identity
@@ -87,10 +92,10 @@ changes. These are repository integration checks, not product human acceptance.
 - `python C:/Users/killi/AppData/Local/Temp/actionable-uat-export-check.py D:/Codex/2026-10-12/task-15/uat-worker`: PASS. The transient author check reused the existing InstallerTests fixture on final source, compared the UAT issue's headings/order, table/result schema and Human acceptance fields with the assigned base, confirmed the other three untouched typed variant bodies remain identical, and checked that actual Codex and Claude exports preserve the final issue/session bodies and include their verification consumers. This is explicit author/export validation, not a publication gate.
 - The final-source workflow-link rerun passed all 3 tests after the layout clarification.
 
-Publication does not automatically enforce these template shapes: the TODO runtime
+At that first-slice revision, publication did not automatically enforce these template shapes: the TODO runtime
 checks body safety, freshness and readback, not headings/order/tables. Direct issue
 editing also requires author/coordinator shape review. No structural publication
-validator or runtime enforcement was implemented or claimed.
+validator or runtime enforcement was implemented or claimed in that first slice.
 
 ## Commits and handoff
 

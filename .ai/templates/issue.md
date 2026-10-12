@@ -256,13 +256,31 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
   examples and instructional text before publishing.
 - Preserve the selected variant's headings, order and table/result structure;
   retain UAT's Human acceptance fields. The author and coordinator review this
-  shape before publication. The publication runtime does not validate template
-  structure automatically.
+  shape before publication. `todo.issue-publish --variant "<canonical variant>"`
+  validates headings/order and UAT table/acceptance fields against this template
+  before supported TODO publication. `issue.validate --variant "<canonical variant>"
+  --body-file PATH` provides the same read-only structural check for other drafts.
+  Direct `gh`/API creates or edits bypass this runtime gate. Structural success
+  does not verify content quality, working URLs, real UI controls, safe evidence
+  or an actual human decision; these remain author verification responsibilities.
 - Use `N/A` only with a reason when a field truly does not apply. Use `Unknown`
   or `Pending` with the missing evidence/dependency when facts or checks are
   unavailable. Never invent observations, results or links.
 - For UAT, AI may replace Pending only with the actual human decision, reviewer,
   date and evidence reference after the human review.
+- For a UAT issue index, retain this variant's headings, step table and Human
+  acceptance fields. Replace the standalone numbered-step reply sentence with
+  "Record action results only in each linked test; no separate index-row replies."
+  Its decision/evidence reference the actual linked test decisions; do not add
+  a duplicate acceptance action.
+- UAT issue readiness requires successful saving and actual issue-body readback,
+  followed by verification of the saved links and launch/starting instructions
+  against the prepared delivered UI. Repair authoring or publication errors
+  before claiming ready; a local draft or structural PASS is insufficient.
+  Missing/unavailable prerequisites remain `BLOCKED` with their explanation.
+  Preserve genuine product bugs as FAIL/unresolved; never change instructions
+  to hide a failing behavior. An uncertain create still requires the existing
+  exact-intent recovery procedure, never a duplicate create.
 - For UAT and user-facing bug reproduction, follow the [canonical UAT authoring
   contract](UAT.md#authoring-contract): verify the entry point, visible labels,
   inputs and key behavior against the delivered UI. Mark unavailable functions

@@ -276,7 +276,8 @@ Recovery does not discard subsequently authored work or permanently delete histo
 | `todo.complete <name>` | Move a pending TODO only when publication is resolved and any linked issue is verified closed; returns `completed` path |
 | `todo.match-phase <phase>` | Score pending todos against a phase's name and goal |
 | `todo.issue-preview <name> [--related-pr URL]` | Private selected-TODO input, current issue candidates, related PRs and review token |
-| `todo.issue-publish <name> --preview-token TOKEN --title PUBLIC_TITLE --body-file PATH (--existing-issue URL \| --no-match)` | Link a reviewed issue or create one after explicit no-match; TODO stays pending |
+| `todo.issue-publish <name> --preview-token TOKEN --title PUBLIC_TITLE --body-file PATH --variant VARIANT (--existing-issue URL \| --no-match)` | Validate the selected template shape, then link a reviewed issue or create one after explicit no-match; TODO stays pending |
+| `issue.validate --variant VARIANT --body-file PATH` | Read-only template-derived structural validation for a public draft |
 | `quick.create <description>` | Open `.planning/quick/YYMMDD-NNN-slug/` with its QUICK.md |
 | `quick.list [--status]` | Active quick tasks, newest first; separate `archived_tasks`, `archived_count` and `total_count` preserve discovery |
 | `quick.update <id> [--status] [--files] [--verification]` | Record progress or completion |
@@ -307,6 +308,15 @@ claiming phases shipped when they did not is the record this exists to keep hone
   reviewed file, not the TODO. The runtime appends the stable
   `<!-- todo-id: UUID -->` marker. It does not redact or publish arbitrary local
   context for you.
+- `--variant` must be an exact canonical name from the issue template: `Bug`,
+  `Enhancement`, `Decision required`, `Security risk` or `UAT`. Publication checks
+  headings/order and UAT table columns, sequential rows and Human acceptance
+  fields before persisting a create attempt. Missing/unknown variants and missing
+  or malformed schema fail closed. The schema is `templates/issue.md` beside the
+  running runtime's namespace, including installed `.codex` and `.claude` trees.
+  `issue.validate` runs the same check without provider calls or planning writes.
+  Direct `gh`/API creates and edits bypass this gate. Structural success does
+  not verify working URLs, actual UI controls, safe content or human decisions.
 - The preview token binds the TODO snapshot, repository, issue candidates and PR
   context. Re-preview and review again when any input changes. Provider access
   requires a supported GitHub HTTPS, SSH or scp-style `origin`, GitHub CLI auth,

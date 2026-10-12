@@ -186,7 +186,25 @@ class TodoIssues(unittest.TestCase):
         self.todo.write_text("---\ntitle: Private customer title\narea: tooling\nseverity: major\nfiles: [src/app.py:12]\ncustom: retain me\n---\n" + self.body,
                              encoding="utf-8")
         self.public = self.directory / "reviewed public.md"
-        self.public.write_text("## Problem\n\nSafe evidence\n\n## ExpectedBehavior\n\nResolve it\n\n## Acceptance\n\nRepro passes\n\n## Scope\n\nsrc/app.py\n", encoding="utf-8")
+        self.public.write_text("""## Problem
+Blank search fails for signed-in users.
+## Expected behavior
+An empty result appears.
+## Actual behavior
+Build fixture-1 shows an error in the prepared test environment.
+## Reproduction
+Open https://example.test/search/ and click Search with an empty query.
+## Safe evidence
+https://example.test/evidence/fixture-1
+## Impact
+Users cannot clear a search.
+## Acceptance
+Blank searches show an empty result.
+## Scope
+In: blank searches. Out: ranking.
+## Related links
+https://example.test/requirements/search
+""", encoding="utf-8")
         self.fake = self.directory / "fake_gh.py"
         self.fake.write_text(FAKE_GH, encoding="utf-8")
         self.statefile = self.directory / "remote.json"
@@ -248,7 +266,8 @@ class TodoIssues(unittest.TestCase):
         preview = preview or self.preview()
         return self.run_verb("todo.issue-publish", self.todo.name,
                         "--preview-token", preview["previewToken"], "--title", title,
-                        "--body-file", str(self.public), *(decision or ("--no-match",)), ok=ok)
+                        "--body-file", str(self.public), "--variant", "Bug",
+                        *(decision or ("--no-match",)), ok=ok)
 
     def issue(self, number=1, state="open", title="Existing semantic duplicate", body="Relevant evidence"):
         return {"number": number, "html_url": "https://github.com/acme/project/issues/" + str(number),
@@ -399,6 +418,31 @@ class TodoIssues(unittest.TestCase):
         linked = self.run_verb("todo.list")["todos"][0]
         self.assertEqual(linked["issueURL"], metadata["issueURL"])
 
+    def test_structural_failure_precedes_create_and_attempt_persistence(self):
+        preview = self.preview()
+        before = self.todo.read_bytes()
+        before_calls = self.remote()["calls"]
+        valid_body = self.public.read_text(encoding="utf-8")
+        for changed in (valid_body.replace("## Expected behavior", "## ExpectedBehavior"),
+                        valid_body.replace("## Impact", ""),
+                        valid_body + "\n## Problem\nDuplicate"):
+            self.public.write_text(changed, encoding="utf-8")
+            failure = self.publish(preview, ok=False)
+            self.assertEqual(failure["code"], "issue-format")
+            self.assertEqual(self.todo.read_bytes(), before)
+            self.assertEqual(self.metadata()["issuePublication"]["state"], "prepared")
+            self.assertEqual(self.remote()["creates"], 0)
+            self.assertEqual(self.remote()["calls"], before_calls)
+        self.public.write_text(valid_body, encoding="utf-8")
+        for variant in ([], ["--variant", "Unknown"], ["--variant"]):
+            failure = self.run_verb("todo.issue-publish", self.todo.name,
+                "--preview-token", preview["previewToken"], "--title", "Public",
+                "--body-file", str(self.public), "--no-match", *variant, ok=False)
+            self.assertEqual(failure["code"], "issue-variant")
+            self.assertEqual(self.todo.read_bytes(), before)
+            self.assertEqual(self.remote()["creates"], 0)
+            self.assertEqual(self.remote()["calls"], before_calls)
+
     def test_missing_or_empty_public_title_and_decision_refuse_before_create(self):
         preview = self.preview()
         options = ["--preview-token", preview["previewToken"], "--body-file", str(self.public)]
@@ -408,6 +452,26 @@ class TodoIssues(unittest.TestCase):
             with self.subTest(extra=extra):
                 self.run_verb("todo.issue-publish", self.todo.name, *options, *extra, ok=False)
         self.assertEqual(self.remote()["creates"], 0)
+
+    def test_missing_or_malformed_schema_precedes_remote_mutation(self):
+        import shutil
+        preview = self.preview()
+        before = self.todo.read_bytes()
+        before_calls = self.remote()["calls"]
+        runtime = self.directory / ".codex/runtime"
+        shutil.copytree(RUNTIME.parent, runtime)
+        templates = self.directory / ".codex/templates"
+        templates.mkdir()
+        self.environment.update(FAKE_RUNTIME=str(runtime / "phase.py"),
+                                FAKE_RUNTIME_LIB=str(runtime))
+        for schema in (None, "malformed schema"):
+            if schema is not None:
+                (templates / "issue.md").write_text(schema, encoding="utf-8")
+            failure = self.publish(preview, ok=False)
+            self.assertEqual(failure["code"], "issue-schema")
+            self.assertEqual(self.todo.read_bytes(), before)
+            self.assertEqual(self.remote()["creates"], 0)
+            self.assertEqual(self.remote()["calls"], before_calls)
 
     def test_semantic_reuse_open_and_closed_does_not_edit_or_complete(self):
         for state in ("open", "closed"):
@@ -523,7 +587,8 @@ class TodoIssues(unittest.TestCase):
         self.remote(mode="lost")
         self.publish(ok=False)
         self.remote(mode="")
-        self.public.write_text("Different reviewed publication", encoding="utf-8")
+        self.public.write_text(self.public.read_text(encoding="utf-8").replace(
+            "Blank search fails", "Different reviewed problem"), encoding="utf-8")
         self.publish(ok=False)
         self.assertEqual(self.remote()["creates"], 1)
         self.assertNotIn("issueURL", self.metadata())

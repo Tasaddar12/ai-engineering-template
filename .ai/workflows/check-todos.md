@@ -146,6 +146,13 @@ a separately reviewed public title. Keep private metadata and sensitive context
 out, and reuse the local title only if safe after review. If no safe, actionable
 public text is available, stop with publication blocked and leave the TODO
 pending. Choose one of
+the canonical template names as `issue_variant` (`Bug`, `Enhancement`,
+`Decision required`, `Security risk` or `UAT`) and pass it explicitly. Structural
+validation does not establish working URLs, real UI controls, safe content or
+an actual human decision; the author checks these. Direct `gh`/API edits bypass
+the gate; first validate a full replacement draft with `phase_run query
+issue.validate --variant "${issue_variant}" --body-file "${public_body_file}"`
+before an authorized edit. Choose one of
 `--existing-issue "${issue_url}"` or `--no-match`; reuse only an
 actionable issue and never edit or close it as part of linking. For a closed
 match, compare closure evidence with the full TODO scope; closed status alone
@@ -159,6 +166,7 @@ PUBLISH=$(phase_run query todo.issue-publish "${todo_name}" \
   --preview-token "${preview_token}" \
   --title "${public_title}" \
   --body-file "${public_body_file}" \
+  --variant "${issue_variant}" \
   --existing-issue "${issue_url}")
 ```
 

@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
-                 models, phases, project_record, quick, requirements, state,
+                 issue_format, models, phases, project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
@@ -660,7 +660,13 @@ def verb_todo_issue_publish(workspace, positionals, options):
             workspace, argument(positionals, 0, "todo"),
             option_text(options, "preview_token"), option_text(options, "title"),
             option_text(options, "body_file"), option_text(options, "existing_issue"),
-            options.get("no_match", False))
+            options.get("no_match", False), option_text(options, "variant"))
+
+
+def verb_issue_validate(workspace, positionals, options):
+    require(not positionals, "Use --body-file and --variant", "issue-review")
+    return issue_format.validate_file(option_text(options, "body_file"),
+                                      option_text(options, "variant"))
 
 
 def verb_todo_match_phase(workspace, positionals, options):
@@ -825,6 +831,7 @@ VERBS = {
     "todo.match-phase": verb_todo_match_phase,
     "todo.issue-preview": verb_todo_issue_preview,
     "todo.issue-publish": verb_todo_issue_publish,
+    "issue.validate": verb_issue_validate,
 
     "quick.create": verb_quick_create,
     "quick.list": verb_quick_list,
