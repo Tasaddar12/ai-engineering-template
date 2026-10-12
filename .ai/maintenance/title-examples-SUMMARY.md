@@ -75,10 +75,13 @@ post-open validation; this summary does not claim those actions are complete.
   results and related links to UAT.
 - Security-risk bodies now describe current and expected secure behavior,
   affected surface, impact, safe evidence, remediation, scope and acceptance.
-  Shared authoring guidance directs known-channel reports privately, asks the
-  owner privately when the channel is unknown or unavailable, and forbids putting
-  secrets or exploit-sensitive details in public issues.
+  A single private-reporting instruction appears before variant selection,
+  directs known-channel reports privately, asks the owner privately when the
+  channel is unknown or unavailable, and forbids sensitive details in public issues.
 - Updated How to fill and completion guidance to refer to the selected variant.
+- Restored Purpose/metadata, File Template, Title format, How to fill, examples
+  and completion/handoff order. Added blank lines after the UAT checklist and
+  steps headings for CommonMark rendering.
 - Manual review confirmed each variant includes the applicable context/problem,
   safe evidence, impact, expected outcome, scope, acceptance and related links.
 - `git diff --check` passed. Test scripts remain unrun per assignment; coordinator

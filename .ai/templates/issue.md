@@ -6,35 +6,9 @@
 **Consumers:** Issue reviewers and implementers; capture publication reads the separately reviewed body file.
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
-## Title format and examples
-
-- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
-  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
-  following the project's existing Git subject convention.
-- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
-- Describe the resolution requested in the issue title; choose a matching type
-  and affected-area scope. Examples:
-
-  ```text
-  feat(checkout): allow saving an address before placing an order
-  fix(search): return an empty result for a blank query
-  docs(api): document the supported pagination parameters
-  test(import): cover duplicate rows in the CSV preview
-  ```
-
-## How to fill it
-
-- Complete the prompts in the selected variant with facts about the problem or
-  need, context, safe evidence, impact, acceptance, scope and related links as
-  applicable. Remove secrets and private data.
 - For a security-risk variant, use the repository's private reporting channel if
   known. If unavailable or unknown, ask the owner privately before publishing.
   Never put secrets or exploit-sensitive details in a public issue.
-- Review open and closed issues plus related and current PR context for duplicates.
-  Keep defects within the current change's scope in that change.
-- Review the public title and separate body file before authorized publication;
-  never copy private TODO metadata or sensitive context into it.
-
 Select the appropriate variant below, then copy only its fenced **File Template**
 block into the public body file. Never copy the whole source or all variants.
 The [Git workflow](../references/git-workflow.md) owns publication authority
@@ -185,6 +159,7 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ```markdown
 ## Acceptance checklist
+
 - [ ] <!-- Human-verifiable acceptance condition. -->
 - [ ] <!-- Human-verifiable acceptance condition. -->
 
@@ -202,6 +177,7 @@ table, other variants or surrounding authoring guidance in the public body.
 - Setup or prerequisites:
 
 ## Steps and expected observations
+
 1. <!-- Action and expected result. -->
 2. <!-- Action and expected result. -->
 
@@ -216,6 +192,32 @@ table, other variants or surrounding authoring guidance in the public body.
 PENDING HUMAN acceptance. Record the human reviewer and decision after review.
 AI must not mark this complete.
 ```
+
+## Title format and examples
+
+- Use `type(scope): summary` with an existing type (`feat`, `fix`, `docs`,
+  `refactor`, `test` or `chore`) and a short, lowercase affected-area scope,
+  following the project's existing Git subject convention.
+- This authoring guidance is inspired by Conventional Commits; Git and GitHub do not enforce this title syntax.
+- Describe the resolution requested in the issue title; choose a matching type
+  and affected-area scope. Examples:
+
+  ```text
+  feat(checkout): allow saving an address before placing an order
+  fix(search): return an empty result for a blank query
+  docs(api): document the supported pagination parameters
+  test(import): cover duplicate rows in the CSV preview
+  ```
+
+## How to fill it
+
+- Complete the prompts in the selected variant with facts about the problem or
+  need, context, safe evidence, impact, acceptance, scope and related links as
+  applicable. Remove secrets and private data.
+- Review open and closed issues plus related and current PR context for duplicates.
+  Keep defects within the current change's scope in that change.
+- Review the public title and separate body file before authorized publication;
+  never copy private TODO metadata or sensitive context into it.
 
 ## Good and bad examples
 
