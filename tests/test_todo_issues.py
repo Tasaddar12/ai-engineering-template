@@ -463,8 +463,22 @@ https://example.test/requirements/search
                                    re.M | re.S))
         cases = [(variant, "<" + tag + ">\n" + templates[variant] + "\n</" + tag + ">")
                  for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")]
+        cases += [(variant, opening + "\n" + templates[variant] + "\n</" + tag + ">")
+                  for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")
+                  for opening in ("<" + tag + "\n>", "<" + tag + "\n class=\"literal\">")]
         cases += [("UAT", re.sub(r"^(\|.*)$", lambda match: prefix + match[1],
                                 templates["UAT"], flags=re.M)) for prefix in (" \t", "  \t", "   \t")]
+        table = re.search(r"^\| Step .*?(?=\n\n)", templates["UAT"], re.M | re.S).group()
+        cases += [("UAT", templates["UAT"].replace(table, opening + "\n" + table + "\n</" + tag + ">"))
+                  for tag in ("div", "table") for opening in
+                  ("<" + tag + ">", "<" + tag + "\n>", "<" + tag + "\n class=\"literal\">",
+                   "<" + tag + "> leading prose")]
+        cases += [("Bug", templates["Bug"].replace("## Problem", prefix + "## Problem", 1))
+                  for prefix in ("<!--x-->", "<!-- literal\n-->")]
+        cases += [("UAT", re.sub(r"^(\|.*)$", lambda match: "<!--x-->" + match[1], templates["UAT"], flags=re.M))]
+        cases += [("UAT", templates["UAT"].replace(table, opening + "\n" + table + "\n" + closing))
+                  for opening, closing in (("<?literal", "?>"), ("<!DOCTYPE literal", ">"),
+                                           ("<![CDATA[", "]]>"))]
         for variant, draft in cases:
             with self.subTest(variant=variant, prefix=draft[:30]):
                 self.public.write_text(draft, encoding="utf-8")

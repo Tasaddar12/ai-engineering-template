@@ -151,6 +151,54 @@ Fresh correction evidence on that worker commit plus the four owned changes:
 This correction is committed separately from the initial slice. Its exact hash
 is returned in the worker handoff; no push, publication, merge or branch switch.
 
+## Review correction: multiline/raw HTML boundaries
+
+The next independent review of frozen integrated `ba33cc2` found that a raw
+literal tag name ending its line (`<pre` followed by `>` or attributes on the
+next line) bypassed the opening-tag condition. The reviewer subsequently
+identified raw `div`/`table` wrappers around the canonical UAT table and asked
+for direct checks of comment-prefix removal and PI/declaration/CDATA blocks.
+Correction base: `500ca344bcb4935bbbaeb634e2884d8aedfbbc77`;
+`git diff --stat ba33cc2 HEAD` was empty before editing.
+
+The tag-name lookahead now includes end-of-line. Delimiter-ended raw blocks
+retain their closing-boundary handling; other line-start HTML tag blocks are
+conservatively ignored through the next blank line. Comments are handled as raw
+blocks rather than globally deleted, so comment prefixes cannot manufacture
+headings/table rows. Processing instructions, declarations and CDATA use their
+own terminators. Canonical Markdown, ordinary code/list/table content, unrelated
+tags before a separated canonical body, and the existing runtime recovery
+marker remain accepted. This remains a bounded structural gate, with no
+dependency/schema duplication, provider-state changes, content/UI-quality check
+or universal HTML enforcement claim.
+
+Fresh evidence on that correction base plus the four owned changes:
+
+- RED: `python -m unittest discover -s tests -p test_issue_format.py -k
+  html_literal -v` exited 1 with 16 multiline-opening failures before repair.
+- RED: `python -m unittest discover -s tests -p test_issue_format.py -k
+  raw_html_tables -k comment_prefixes -v` exited 1 with 11 failure reports.
+  A follow-up `-k comment_prefixes` run, allowing every case to execute,
+  independently confirmed all six comment/PI/declaration/CDATA bypasses.
+- `python -m compileall -q .ai/runtime`: PASS.
+- `python -m unittest discover -s tests -p test_issue_format.py -v`: PASS,
+  13 tests covering final boundary handling and preserved actual structure.
+- `python -m unittest discover -s tests -p test_todo_issues.py -k literal
+  -k structural -k schema -v`: PASS, 3 focused tests. The literal publication
+  regression covers 41 drafts, including multiline literal tags, raw div/table
+  wrappers, comment-prefixed headings/rows and PI/declaration/CDATA wrappers.
+  Every rejected draft returns `issue-format` and exit 1, leaves prepared TODO
+  metadata/body byte-identical, adds no provider call and creates no issue.
+- `python -m unittest discover -s tests -p test_issue_format.py -k
+  literal_examples -v`: PASS, 1 focused positive test after strengthening the
+  unrelated-tag example; the subsequent full 13-test run includes that check.
+- `git diff --check`: PASS. Only the helper, two assigned test files and this
+  summary changed. No full safety-suite repeat: provider-state logic was not
+  changed, and the coordinator owns final frozen-suite/review reconciliation.
+
+This correction is committed separately; its full hash is returned in the
+handoff. No worker push, publication, merge or branch switch.
+
 ## Remaining and handoff
 
 No product UAT performed: this is an unfilled workflow template with no adopting

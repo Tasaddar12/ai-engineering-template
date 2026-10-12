@@ -74,7 +74,8 @@ class IssueFormat(unittest.TestCase):
         for variant in ("Bug", "UAT"):
             body = bodies()[variant]
             for tag in ("pre", "script", "style", "textarea"):
-                for opening in ("<" + tag + ">", "<" + tag.upper() + " class=\"literal\">"):
+                for opening in ("<" + tag + ">", "<" + tag.upper() + " class=\"literal\">",
+                                "<" + tag + "\n>", "<" + tag + "\n class=\"literal\">"):
                     with self.subTest(variant=variant, opening=opening):
                         self.assert_invalid(opening + "\n" + body + "\n</" + tag + ">", variant)
             with self.subTest(variant=variant, unclosed=True):
@@ -86,14 +87,41 @@ class IssueFormat(unittest.TestCase):
             with self.subTest(prefix=repr(prefix)):
                 self.assert_invalid(re.sub(r"^(\|.*)$", lambda match: prefix + match[1], body, flags=re.M))
 
+    def test_raw_html_tables_do_not_supply_markdown_table(self):
+        body = bodies()["UAT"]
+        table = re.search(r"^\| Step .*?(?=\n\n)", body, re.M | re.S).group()
+        for tag in ("div", "table"):
+            for opening in ("<" + tag + ">", "<" + tag + "\n>",
+                            "<" + tag + "\n class=\"literal\">", "<" + tag + "> leading prose"):
+                with self.subTest(tag=tag, opening=opening):
+                    self.assert_invalid(body.replace(table, opening + "\n" + table + "\n</" + tag + ">"))
+
+    def test_comment_prefixes_and_raw_instructions_do_not_supply_structure(self):
+        bug = bodies()["Bug"]
+        for prefix in ("<!--x-->", "<!-- literal\n-->"):
+            with self.subTest(prefix=prefix):
+                self.assert_invalid(bug.replace("## Problem", prefix + "## Problem", 1), "Bug")
+        uat = bodies()["UAT"]
+        with self.subTest(prefix="table comments"):
+            self.assert_invalid(re.sub(r"^(\|.*)$", lambda match: "<!--x-->" + match[1], uat, flags=re.M))
+        table = re.search(r"^\| Step .*?(?=\n\n)", uat, re.M | re.S).group()
+        for opening, closing in (("<?literal", "?>"), ("<!DOCTYPE literal", ">"),
+                                 ("<![CDATA[", "]]>")):
+            with self.subTest(opening=opening):
+                self.assert_invalid(uat.replace(table, opening + "\n" + table + "\n" + closing))
+
     def test_literal_examples_and_shallow_tables_preserve_real_structure(self):
         for variant, body in bodies().items():
             extra = "\n<pre class=\"literal\">\n## Problem\n| Fake | Table |\n</PRE>\n"
             extra += "\n```html\n<pre>\n## Problem\n</pre>\n```\n"
             extra += "\n    ## Problem\n \t## Problem\n"
             extra += "\n- Example with `<pre>` and inline code.\n| Example | `<pre>` |\n"
+            extra += "\n<preview>\nExample unrelated tag.\n</preview>\n"
             with self.subTest(variant=variant):
                 self.assertTrue(issue_format.validate(body + extra, variant)["valid"])
+                self.assertTrue(issue_format.validate(
+                    "<preview>\nExample unrelated tag.\n</preview>\n\n" + body, variant)["valid"])
+                self.assertTrue(issue_format.validate(body + "\n<!-- todo-id: fixture -->\n", variant)["valid"])
         for spaces in (1, 2, 3):
             padded = re.sub(r"^(\|.*)$", lambda match: " " * spaces + match[1], bodies()["UAT"], flags=re.M)
             self.assertTrue(issue_format.validate(padded, "UAT")["valid"])

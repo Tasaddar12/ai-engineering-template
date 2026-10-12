@@ -17,14 +17,19 @@ def template_path():
 
 def visible_lines(content):
     """Ignore literal code/raw HTML blocks, comments and block quotes."""
-    content = re.sub(r"<!--.*?(?:-->|\Z)", "", content, flags=re.S)
     fence = None
-    raw_tag = None
+    raw_end = None
+    html_block = False
     lines = []
     for line in content.splitlines():
-        if raw_tag:
-            if re.search(r"</" + raw_tag + r"\s*>", line, re.I):
-                raw_tag = None
+        if raw_end:
+            if re.search(raw_end, line, re.I):
+                raw_end = None
+            lines.append("")
+            continue
+        if html_block:
+            if not line.strip():
+                html_block = False
             lines.append("")
             continue
         indentation = re.match(r"^[ \t]*", line).group()
@@ -32,12 +37,27 @@ def visible_lines(content):
                           or line.lstrip().startswith(">")):
             lines.append("")
             continue
-        raw_start = re.match(r"^ {0,3}<(pre|script|style|textarea)(?=[\s>])", line, re.I)
-        if not fence and raw_start:
-            tag = raw_start.group(1).lower()
-            raw_tag = None if re.search(r"</" + tag + r"\s*>", line, re.I) else tag
-            lines.append("")
-            continue
+        raw_start = re.match(r"^ {0,3}<(pre|script|style|textarea)(?=[\s>]|$)", line, re.I)
+        if not fence:
+            end = None
+            if raw_start:
+                end = r"</" + raw_start.group(1) + r"\s*>"
+            else:
+                for opening, closing in ((r"<!--", r"-->"), (r"<\?", r"\?>"),
+                                         (r"<!\[CDATA\[", r"\]\]>"), (r"<![A-Z]", r">")):
+                    if re.match(r"^ {0,3}" + opening, line):
+                        end = closing
+                        break
+            if end:
+                raw_end = None if re.search(end, line, re.I) else end
+                lines.append("")
+                continue
+            # Conservatively exclude line-start HTML tag blocks through the
+            # next blank line; their raw rows cannot supply Markdown structure.
+            if re.match(r"^ {0,3}</?[A-Za-z][A-Za-z0-9-]*(?=[\s/>]|$)", line):
+                html_block = True
+                lines.append("")
+                continue
         match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
         if match:
             mark, tail = match.groups()
