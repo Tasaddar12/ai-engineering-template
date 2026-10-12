@@ -200,13 +200,16 @@ not re-derived by the preparer.
 </step>
 
 <step name="refresh_codebase_maps">
-After context is loaded, decide which map focus areas this phase needs from its
-goal, locked decisions, canonical references, SPEC and (for `--gaps`) the
-verification gap. Use `tech` when the work depends on the existing runtime,
-framework, dependencies, platform or build/deployment choices. Use `arch` when
-it depends on existing components, boundaries, data flow or integrations. Skip
-an area that is irrelevant to the named phase interfaces, even if its map is
-missing or stale.
+After loading context:
+
+- Select needed map focus areas from the phase goal, locked decisions, canonical
+  references, SPEC and (for `--gaps`) the verification gap.
+- Select `tech` when work depends on the existing runtime, framework,
+  dependencies, platform or build/deployment choices.
+- Select `arch` when work depends on existing components, boundaries, data flow
+  or integrations.
+- Skip areas irrelevant to the named phase interfaces, even when their maps are
+  missing or stale.
 
 Inspect the existing status fields; do not gate on the aggregate `fresh` flag,
 which also covers irrelevant maps:
@@ -215,12 +218,14 @@ which also covers irrelevant maps:
 phase_run query codebase.status
 ```
 
-Initialize `CURRENT_CODEBASE_MAP_PATHS` as an empty list. From `maps`, match each
-needed focus area's `focus`, `path` and `state`. Skip a matching map whose state
-is `fresh`. For each relevant map whose state is `missing` or `stale`, dispatch
-one mapper to rebuild that map from the current source. This applies to standard,
-gap-closure and correction runs; a mode flag does not make a needed stale map
-current.
+Then inspect the returned `maps` entries:
+
+- Initialize `CURRENT_CODEBASE_MAP_PATHS` as an empty list.
+- Match each needed focus area's `focus`, `path` and `state`.
+- Skip a matching map whose state is `fresh`.
+- For each relevant `missing` or `stale` map, dispatch one mapper to rebuild it
+  from current source. Apply this step to standard, gap-closure and correction
+  runs.
 
 ```text
 Agent(
@@ -236,12 +241,15 @@ Return ## MAP COMPLETE and the path you refreshed.",
 )
 ```
 
-Wait for each mapper result and integrate its owned commit before continuing.
-Then set `CURRENT_CODEBASE_MAP_PATHS` to the exact `path` values for the needed
-focus areas from `maps`; pass those current paths to every researcher or
-preparer that consumes them. An empty list means no map is applicable. Existing
-freshness thresholds and source sensitivity come from `codebase.status`; do not
-add stamps, thresholds or separate map state.
+For each mapper result, wait and integrate its owned commit before continuing.
+Then:
+
+- Set `CURRENT_CODEBASE_MAP_PATHS` to the exact `path` values for needed focus
+  areas from `maps`.
+- Pass those current paths to every researcher or preparer that consumes them.
+- Leave the list empty when no map applies.
+- Use the existing freshness thresholds and source sensitivity from
+  `codebase.status`.
 </step>
 
 <step name="handle_research">
@@ -580,15 +588,14 @@ Check specifically:
 - No task authorizes edits outside the phase scope
 - Mandatory goal, safety, coverage, task, ownership and dependency checks are conclusive
 
-Return only the canonical schema in
-`.ai/agents/phase-checker.md#structured-returns`:
+Follow the canonical PLAN REVIEW contract in
+`.ai/agents/phase-checker.md#structured-returns`. Select the approved or
+needs-revision presentation that matches the result, with the shared header and
+exact verdict line:
 ## PLAN REVIEW
 Verdict: approved | needs-revision
-Include exact input/reviewed revisions, all reviewed PLAN paths, conclusive
-coverage/evidence for mandatory checks, stable issue IDs with authority citations
-and observed evidence, and reusable prior evidence with its revision and compared
-paths. INFO issues may accompany approval and must be shown. Approve only when all
-mandatory checks are conclusive and there are no blockers or warnings.
+Include each mandatory coverage check, the Plan Summary, handoff revisions and
+any reused evidence required by the contract. Show INFO issues with approval.
 ",
   subagent_type="phase-checker",
   ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
@@ -605,39 +612,46 @@ any unreviewed mandatory check keeps the result from approval.
 </step>
 
 <step name="revision_loop">
-On `Verdict: needs-revision`, pass the checker issues to the phase-preparer in
-the correction packet below. Do not dispatch a revision for INFO-only issues.
-On `Verdict: approved`, continue the workflow and display every INFO issue.
-For a correction, reuse a relevant map only while `codebase.status` still reports
-it `fresh` for the inputs the correction needs. If a needed map is missing or
-stale, run the applicable part of `refresh_codebase_maps` before dispatch; gap
-and correction scope do not bypass freshness.
-**Maximum 3 iterations.** Continue a revising preparer that returns
-`## PLANNING PARTIAL` exactly as in `handle_preparer_return`, with its handoff
-in the `<handoff>` block. After integrating the preparer's owned commit, send a
-fresh independent phase-checker the same packet updated with the corrected
-revision and actual changed paths. The checker inspects every corrected property
-and affected producer/consumer. Route its canonical verdict again through this
-step; INFO may accompany `approved` and is displayed without revision.
-For each new iteration, start a fresh packet from the latest checker report:
-set `reviewed_revision` to that report's reviewed revision, `input_revision` to
-the current integrated HEAD, assign only unresolved blocker/warning IDs, and
-preserve reusable conclusive evidence with each source revision and compared
-path list.
+Route each checker result as follows:
+
+- For `Verdict: needs-revision`, send the checker issues to the phase-preparer
+  in the correction packet below. INFO-only issues do not trigger a revision.
+- For `Verdict: approved`, continue and display every INFO issue.
+- On correction, reuse a relevant map only while `codebase.status` reports it
+  `fresh` for the needed inputs. Refresh a needed missing or stale map before
+  dispatching; apply the same rule to gap-closure and correction runs.
+- Continue a preparer returning `## PLANNING PARTIAL` using the handoff process
+  in `handle_preparer_return` and its `<handoff>` block.
+- Keep the maximum at 3 iterations.
+- After integrating the preparer's owned commit, send a fresh independent
+  phase-checker the packet updated with the corrected revision and actual changed
+  paths. Have it inspect each corrected property and affected producer/consumer.
+- Route the fresh checker's canonical verdict through this step; display INFO
+  issues that accompany approval without revising for them.
+- For each iteration, start a new packet from the latest checker report. Set
+  `reviewed_revision` to that report's reviewed revision and `input_revision` to
+  the current integrated HEAD. Assign only unresolved blocker/warning IDs and
+  retain reusable conclusive evidence with its source revision and compared paths.
 
 ### Correction dispatch packet
 
-Construct one `<revision_context>` packet and provide it verbatim to both the
-author and the fresh checker. The result schema is the one defined in
-`../agents/phase-checker.md#structured-returns`; preserve checker finding IDs and
-all issue fields. For the author dispatch, `reviewed_revision` is the revision
-of the prior checker report and `input_revision` is the current revision from
-which the correction is made. After the author's commit is integrated, update
-`input_revision` to that corrected revision, retain `reviewed_revision` for the
-report being answered, and compute `changed_paths_since_review` from the actual
-repository diff between those revisions. List only plan paths connected to
-those changes and findings as affected; include producer/consumer plans when a
-changed export, ownership path, dependency or acceptance mapping connects them.
+Construct one `<revision_context>` packet and provide it to the author and fresh
+checker:
+
+- Use the result schema in `../agents/phase-checker.md#structured-returns` and
+  preserve checker finding IDs and issue fields.
+- Reference the captured prior report by its result destination and include the
+  structured issues once; do not embed the report body in the packet.
+- Map each finding record losslessly to the existing `revision_context.issues`
+  fields, retaining its stable ID, severity and exact property/evidence values.
+- For the author, set `reviewed_revision` to the prior checker report's revision
+  and `input_revision` to the current revision for the correction.
+- After integrating the author's commit, set `input_revision` to that corrected
+  revision. Retain `reviewed_revision` for the report being answered.
+- Compute `changed_paths_since_review` from the actual repository diff between
+  those revisions.
+- Include only connected plan paths as affected; include producer/consumer plans
+  when a changed export, ownership path, dependency or acceptance mapping links them.
 
 ```xml
 <revision_context>
@@ -646,8 +660,7 @@ changed export, ownership path, dependency or acceptance mapping connects them.
   <reviewed_revision>{revision named by prior checker report}</reviewed_revision>
   <input_revision>{current integrated revision for this dispatch}</input_revision>
   <prior_checker_report>
-    <result_destination>{path or assigned result location}</result_destination>
-    {complete prior PLAN REVIEW report}
+    <result_destination>{exact host-captured report path or stable assigned result location}</result_destination>
   </prior_checker_report>
   <finding_ids>{exact stable IDs being addressed}</finding_ids>
   <issues>{exact structured issue payloads, unchanged}</issues>
@@ -670,13 +683,14 @@ Agent(
 {the complete populated packet above}
 </revision_context>
 
-Read the owned and affected PLANs and the cited governing sources, including the
-relevant map paths when they support a finding. Address only
-the listed finding IDs by satisfying each binding required_property; fix_hint
-is non-binding. Follow `.ai/references/methods/planner-revision.md`,
-preserve valid existing plan content, recheck corrected properties and connected
-producer/consumer contracts, and return REVISION COMPLETE or REVISION_CONFLICT
-with your owned PLAN commit and result.
+Read the owned and affected PLANs and cited governing sources, including maps
+that support a finding. Then:
+
+- Address only listed finding IDs by satisfying each binding
+  `required_property`; treat `fix_hint` as non-binding.
+- Follow `.ai/references/methods/planner-revision.md` and preserve valid plan content.
+- Recheck corrected properties and connected producer/consumer contracts.
+- Return `REVISION COMPLETE` or `REVISION_CONFLICT` with the owned PLAN commit and result.
 ",
   subagent_type="phase-preparer",
   ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
@@ -685,11 +699,13 @@ with your owned PLAN commit and result.
 )
 ```
 
-Verify and integrate the author's owned commit using the active session's
-worker-integration route before review. Set the updated packet's `input_revision`
-to the integrated HEAD and populate `changed_paths_since_review` from that
-revision diff; do not infer paths from the author's report. Dispatch a fresh
-independent checker:
+Before review, verify and integrate the author's owned commit through the active
+session's worker-integration route. Update the packet:
+
+- Set `input_revision` to the integrated HEAD.
+- Populate `changed_paths_since_review` from the revision diff; do not infer paths
+  from the author's report.
+- Dispatch a fresh independent checker with the updated packet.
 
 ```text
 Agent(
@@ -698,13 +714,15 @@ Agent(
 {the same complete packet, updated after commit integration}
 </revision_context>
 
-Independently inspect every corrected property and affected producer/consumer
-in the current PLANs and governing sources. Reuse only prior conclusive checks
-whose PLAN content, governing acceptance and inspected source remain unchanged;
-verify this against the actual compared paths. If packet fields/evidence are
-missing, perform the full applicable assessment. If ownership or dependency
-changed, check the entire graph. Return the canonical PLAN REVIEW schema,
-including the updated reviewed revision and actual inspected paths.
+Independently inspect each corrected property and affected producer/consumer in
+the current PLANs and governing sources. Then:
+
+- Reuse only prior conclusive checks whose PLAN content, governing acceptance
+  and inspected source remain unchanged; verify against the actual compared paths.
+- Perform the full applicable assessment when packet fields or evidence are missing.
+- Check the entire graph when ownership or dependencies changed.
+- Return the canonical PLAN REVIEW schema with the updated reviewed revision and
+  actual inspected paths.
 ",
   subagent_type="phase-checker",
   ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
@@ -713,12 +731,14 @@ including the updated reviewed revision and actual inspected paths.
 )
 ```
 
-Reuse a prior pass only if the PLAN content, governing acceptance and inspected
-source in its compared paths are unchanged; an author's assertion alone never
-establishes unchanged content. Missing packet fields or reusable evidence require
-the full applicable assessment. Ownership or dependency changes trigger the
-entire graph check, while unrelated source inspection remains scoped to affected
-findings.
+For evidence reuse:
+
+- Reuse a prior pass only when PLAN content, governing acceptance and inspected
+  source in its compared paths are unchanged; verify the paths directly.
+- Run the full applicable assessment when packet fields or reusable evidence are
+  missing.
+- Check the entire graph when ownership or dependencies changed. Keep unrelated
+  source inspection scoped to affected findings.
 
 After the third, stop and present the outstanding findings to the user with a
 choice: proceed as-is, revise a specific finding together, or cancel. Do not loop

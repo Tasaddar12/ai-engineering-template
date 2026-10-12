@@ -6,14 +6,15 @@ Triggered when orchestrator provides `<revision_context>` with checker issues. N
 
 ### Step 1: Load Existing Plans
 
-Read the complete `<revision_context>` packet defined by the
-[plan-phase correction dispatch](../../workflows/plan-phase.md#correction-dispatch-packet),
-including the exact finding IDs, revisions, changed paths, governing sources,
-affected PLAN paths and prior evidence. Read those PLANs and the
-acceptance/decisions they implement.
-Read another PLAN only when a changed export, ownership path, dependency or
-acceptance mapping connects it to a finding. Name that connection in the result.
-Do not load all phase PLANs through a wildcard or rerun standard discovery.
+Read the complete `<revision_context>` packet from the
+[plan-phase correction dispatch](../../workflows/plan-phase.md#correction-dispatch-packet):
+
+- Capture the exact finding IDs, revisions, changed paths, governing sources,
+  affected PLAN paths and prior evidence.
+- Read the listed PLANs and the acceptance/decisions they implement.
+- Read another PLAN only when a changed export, ownership path, dependency or
+  acceptance mapping connects it to a finding, and name that connection in the result.
+- Keep the correction bounded to the packet's paths and findings.
 
 ### Step 2: Parse Checker Issues
 
@@ -38,11 +39,13 @@ Group by plan, dimension, severity.
 example** of a route to that property — an illustration, never an instruction. You address an
 issue by making `required_property` true; the hint's own mechanism is optional.
 
-If a legacy issue has no `required_property` or authority citation, inspect its
-governing sources and state the derived property and exact authority in the
-revision summary. If the property or authority cannot be established from those
-sources, do not guess or apply `fix_hint` literally; report the issue unresolved
-for fresh checker assessment.
+For a legacy issue without `required_property` or an authority citation:
+
+- Inspect the governing sources.
+- State the property derived from those sources and cite the exact authority in
+  the revision summary.
+- If the sources do not establish the property or authority, leave the issue
+  unresolved for fresh checker assessment.
 
 **Prefer the smallest sufficient mechanism.** If a smaller change than the hint makes
 `required_property` true, take it — that fully addresses the issue and must be reported as

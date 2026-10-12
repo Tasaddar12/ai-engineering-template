@@ -252,11 +252,11 @@ Review ${QUICK_DIR}/${QUICK_ID}-PLAN.md against the stated task:
 
 Check goal-backward: would executing exactly these tasks deliver the task's
 outcome? Check the mandatory goal, safety, task, ownership and dependency
-properties. Report gaps, not style. Return only the canonical schema in
-`.ai/agents/phase-checker.md#structured-returns`, including conclusive coverage
-and evidence, authority citations, stable issue IDs, and any INFO advisories.
-`approved` requires conclusive mandatory checks and zero blockers or warnings;
-INFO may accompany approval and must be displayed. Return:
+properties. Report gaps, not style. Follow the canonical PLAN REVIEW contract in
+`.ai/agents/phase-checker.md#structured-returns`; select the approved or
+needs-revision presentation that matches the result and include its required
+coverage, Plan Summary and handoff evidence. Show INFO issues with approval.
+Return the shared header and exact verdict line:
 ## PLAN REVIEW
 Verdict: approved | needs-revision
 ",
@@ -267,16 +267,18 @@ Verdict: approved | needs-revision
 )
 ```
 
-On `Verdict: needs-revision`, pass the structured blocker/warning issues to the
-phase-preparer once using the same `<revision_context>` packet defined in
-`../workflows/plan-phase.md#correction-dispatch-packet`. For this quick task,
-set the exact repository root and branch, prior reviewed revision and current
-input revision, complete checker report and result destination, finding IDs and
-payloads, the preparer's owned PLAN path and affected paths, cited task/scope and
-source-contract paths, actual changed paths, and prior conclusive evidence with
-its review revision and compared paths. Preserve the checker issue fields. Build
-the packet from observed repository state; do not infer its changed paths from
-the author's summary.
+On `Verdict: needs-revision`, send the phase-preparer one correction packet using
+the schema in `../workflows/plan-phase.md#correction-dispatch-packet`:
+
+- Set the exact repository root and branch, prior reviewed revision and current
+  input revision.
+- Include the exact prior-report reference/result destination, finding IDs and
+  payloads, the preparer's owned PLAN path and affected paths, and cited
+  task/scope and source-contract paths.
+- Include actual changed paths and prior conclusive evidence with its review
+  revision and compared paths.
+- Preserve the checker issue fields. Build the packet from observed repository
+  state; calculate changed paths rather than inferring them from the author's summary.
 
 ```text
 Agent(
@@ -285,10 +287,12 @@ Agent(
 {complete populated packet, using the schema in plan-phase correction dispatch}
 </revision_context>
 
-Read the owned PLAN and cited governing sources. Address only the listed
-blocker/warning IDs by satisfying each binding required_property; fix_hint is
-non-binding. Follow `.ai/references/methods/planner-revision.md`, preserve valid
-plan content, and return the owned PLAN commit and result.
+Read the owned PLAN and cited governing sources. Then:
+
+- Address only listed blocker/warning IDs by satisfying each binding
+  `required_property`; treat `fix_hint` as non-binding.
+- Follow `.ai/references/methods/planner-revision.md` and preserve valid plan content.
+- Return the owned PLAN commit and result.
 ",
   subagent_type="phase-preparer",
   ${models['phase-preparer'] === 'inherit' ? '' : `model="${models['phase-preparer']}",`}
@@ -297,9 +301,11 @@ plan content, and return the owned PLAN commit and result.
 )
 ```
 
-After integrating that commit, set the packet's `input_revision` to the new
-HEAD and compute its actual path delta from `reviewed_revision`. Then dispatch a
-fresh independent checker with that updated packet:
+After integrating that commit:
+
+- Set packet `input_revision` to the new HEAD.
+- Compute its actual path delta from `reviewed_revision`.
+- Dispatch a fresh independent checker with the updated packet.
 
 ```text
 Agent(
@@ -308,12 +314,14 @@ Agent(
 {same complete packet, updated after commit integration}
 </revision_context>
 
-Inspect each corrected property and affected producer/consumer directly. Reuse
-only prior conclusive evidence whose PLAN content, governing acceptance and
-inspected source are unchanged; verify this from the compared paths. If packet
-fields/evidence are missing, perform the full applicable assessment. Ownership
-or dependency changes require the entire graph check. Return the canonical PLAN
-REVIEW schema at `.ai/agents/phase-checker.md#structured-returns`.
+Inspect each corrected property and affected producer/consumer directly. Then:
+
+- Reuse prior conclusive evidence only when PLAN content, governing acceptance
+  and inspected source are unchanged; verify this from the compared paths.
+- Perform the full applicable assessment when packet fields or evidence are missing.
+- Check the entire graph when ownership or dependencies changed.
+- Return the canonical PLAN REVIEW schema at
+  `.ai/agents/phase-checker.md#structured-returns`.
 ",
   subagent_type="phase-checker",
   ${models['phase-checker'] === 'inherit' ? '' : `model="${models['phase-checker']}",`}
@@ -322,10 +330,13 @@ REVIEW schema at `.ai/agents/phase-checker.md#structured-returns`.
 )
 ```
 
-Reuse prior evidence only when the PLAN content, governing acceptance and
-inspected source remain unchanged. INFO-only approval displays advisories and
-does not dispatch a revision. Keep the existing two-iteration limit and
-escalation choice when blocker/warning findings remain.
+Apply these routing rules:
+
+- Reuse prior evidence only when PLAN content, governing acceptance and
+  inspected source remain unchanged.
+- Display advisories on INFO-only approval; do not dispatch a revision for INFO.
+- Keep the existing two-iteration limit and escalation choice when blocker or
+  warning findings remain.
 </step>
 
 <step name="execute">

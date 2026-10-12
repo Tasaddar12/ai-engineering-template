@@ -250,12 +250,14 @@ issue:
 ## Dimension 3b: Undeclared / Temporal Coupling
 
 **Question:** Can plans race on shared mutable state or consume an output before
-its producer integrates? Review all potentially concurrent plan pairs, including
-plans that the coordinator may group together after checking prerequisites and
-file overlap. The index is an inventory, not a scheduler; declared wave labels
-do not replace dependency or ownership checks. Independent plans may run
-concurrently within an eligible wave, subject to shared-resource and capacity
-constraints.
+its producer integrates? Review all potentially concurrent plan pairs:
+
+- Read `phase-plan-index` for plan IDs, file paths, declared dependencies and
+  available summaries.
+- Use `execute-phase` to identify coordinator groups formed from satisfied
+  prerequisites and file overlap.
+- Check declared wave labels against dependencies and ownership, and account for
+  shared resources and capacity when assessing concurrent plans.
 
 Compare task files/actions, `depends_on` and `resources`. Flag a concrete config
 key, table/row, migration, environment variable, singleton or cache with at least
@@ -773,16 +775,17 @@ PLAN commands. Read and apply [verify-command-path-resolvability](../references/
 
 ## Step 1: Load Context
 
-For a correction review, first read the prior report and the complete
-`<revision_context>` packet defined by the
-[plan-phase correction dispatch](../workflows/plan-phase.md#correction-dispatch-packet).
-Inspect every corrected property and affected producer/consumer directly in the
-current PLANs and source. Carry forward only prior conclusive evidence whose PLAN
-content, governing acceptance and inspected source are unchanged; cite its prior
-review revision and compared paths. Recheck the entire dependency/ownership graph
-if an edge or owned path changed. If the packet or prior evidence is incomplete,
-perform the full applicable assessment below. Never accept the preparer's claim
-that a finding is fixed without inspecting the changed task and its evidence.
+For a correction review:
+
+- Read the prior report and complete `<revision_context>` packet from the
+  [plan-phase correction dispatch](../workflows/plan-phase.md#correction-dispatch-packet).
+- Inspect each corrected property and affected producer/consumer directly in
+  the current PLANs and source.
+- Reuse prior conclusive evidence only when PLAN content, governing acceptance
+  and inspected source are unchanged; cite its review revision and compared paths.
+- Recheck the full dependency/ownership graph when an edge or owned path changed.
+- Complete the full applicable assessment when packet fields or prior evidence
+  are incomplete. Verify the changed task and its evidence yourself.
 
 Read the assigned phase CONTEXT, ROADMAP, REQUIREMENTS, relevant RESEARCH and
 current PLAN/SUMMARY records locally. Resolve the exact phase directory and
@@ -797,13 +800,12 @@ to that scope, plus any required whole-graph check. Do not restart the full revi
 when its unchanged checks have revision-specific evidence. Inspect YAML and XML against
 [the runtime contract](../runtime/TEMPLATE-CONTRACT.md), including ownership,
 acceptance, documentation, argv checks, dependencies and checkpoint compatibility.
-There is no `phase.py check` command. Inspect the assigned PLANs directly against
-the runtime contract; do not claim a structural CLI result. If a whole-project
-inventory is useful, `python .ai/runtime/phase.py query planning.review` is an
-optional read-only audit of the planning tree, not a required per-correction gate
-or a substitute for this semantic review. Missing task fields map to task
-completeness, missing wiring to key links, and broken dependencies to dependency
-correctness.
+Inspect the assigned PLANs directly against the runtime contract for structural
+readiness, then assess goal delivery and semantic feasibility independently. When
+a whole-tree inventory is useful, optionally run
+`python .ai/runtime/phase.py query planning.review`; use its findings as context
+for the assigned PLAN review. Map missing task fields to task completeness,
+missing wiring to key links, and broken dependencies to dependency correctness.
 
 ## Step 3: Parse must_haves
 
@@ -865,13 +867,14 @@ done
 ```
 
 Validate that referenced plans exist, there are no cycles, and every prerequisite
-is identified. `phase-plan-index` returns the phase/directory/count and, for each
-plan, its ID, file path, declared dependencies and available summary path. It
-does not derive waves. The coordinator groups actual execution waves in
-`execute-phase` from satisfied dependencies and file overlap, then integrates and
-checks those waves in order. Treat a declared wave label as planning metadata;
-it cannot override prerequisites or ownership. If A -> B -> C -> A, report the
-cycle.
+is identified:
+
+- Read phase, directory and count, plus each plan's ID, file path, declared
+  dependencies and available summary path, from `phase-plan-index`.
+- Follow `execute-phase`: the coordinator groups plans by satisfied dependencies
+  and file overlap, then integrates and checks each wave in order.
+- Check every declared wave label against prerequisites and ownership.
+- Report cycles such as A -> B -> C -> A.
 
 ## Step 7: Check Key Links
 
@@ -901,15 +904,16 @@ Set a blocking finding when a PLAN exceeds a configured positive `execution.max_
 
 ## Step 10: Determine Overall Status
 
-Return the canonical `## PLAN REVIEW` schema below for every assessment.
-`Verdict: approved` requires every mandatory applicable goal, safety, coverage,
-task, ownership and dependency check to be conclusive, with zero blocker and
-warning issues. INFO issues may accompany approval and must be listed for the
-coordinator to display. Missing evidence or incomplete coverage for a mandatory
-check cannot pass; complete the applicable assessment, or report the specific
-verification defect as a blocker or warning. `Verdict: needs-revision` is
-reserved for one or more evidenced blockers or warnings. Never use an advisory
-or a preference to require revision.
+Return the canonical `## PLAN REVIEW` schema below for every assessment:
+
+- Approve only when every mandatory applicable goal, safety, coverage, task,
+  ownership and dependency check is conclusive and there are no blocker or warning
+  issues.
+- List INFO issues with approval for the coordinator to display.
+- Complete any mandatory check with missing evidence or incomplete coverage, or
+  report the specific verification defect as a blocker or warning.
+- Use `Verdict: needs-revision` only for one or more evidenced blockers or
+  warnings; an advisory or preference does not require revision.
 
 </verification_process>
 
@@ -987,7 +991,9 @@ concern is not by itself a blocker or warning. Missing goal, safety, coverage,
 task, ownership or dependency evidence remains a mandatory gap and cannot be
 approved.
 
-Return all issues as a structured `issues:` YAML list (see dimension examples for format).
+Write findings once as Markdown records using the format in
+`<structured_returns>`. Dimension YAML examples illustrate issue fields; do not
+repeat findings in a second YAML list.
 
 </issue_structure>
 
@@ -995,62 +1001,126 @@ Return all issues as a structured `issues:` YAML list (see dimension examples fo
 
 ## PLAN REVIEW
 
-Every initial and correction assessment returns this same schema. Coverage must
-account for each mandatory applicable check and cite its authority, evidence and
-inspected paths. Include goal and safety, phase requirement coverage, task
-completeness, ownership, dependency and temporal coupling, key links, context
-decisions/deferred scope, must_haves derivation and applicable source-contract
-checks. `not_applicable` requires a reason. Record prior
-content-sensitive evidence only when it is conclusive; include the prior review
-revision, check, compared paths and conclusion. The coordinator supplies the
-packet on correction dispatch. Keep summaries readable, but do not omit fields
-or replace the structured issue list with prose.
+For every initial and correction assessment:
+
+- Report separate coverage rows for phase goal, safety, requirement coverage,
+  task completeness, ownership, dependency graph, temporal coupling, key links,
+  context decisions/deferred scope, `must_haves` derivation and applicable
+  source-contract checks. Cite authority, evidence and inspected paths for each.
+- Map every requirement ID to the PLAN path and task that covers it; identify any
+  uncovered requirement explicitly.
+- Use `conclusive`, `incomplete` or `not_applicable` for coverage status, and give
+  each `not_applicable` row a reason.
+- Do not combine checks in a way that hides a missing assessment.
+- Use the same `## PLAN REVIEW` routing header and exact verdict line below.
+- Keep each finding in one Markdown record. Do not duplicate finding prose or add
+  a YAML issues appendix.
+
+**Approved report template** (use when every mandatory check is conclusive and
+there are zero blockers and warnings):
 
 ```markdown
 ## PLAN REVIEW
-Verdict: approved | needs-revision
+Verdict: approved
 
 **Phase or quick task:** {name and goal}
-**Input revision:** {revision used to prepare the reviewed plans}
-**Reviewed revision:** {commit whose content was inspected}
-**Reviewed PLANs:** {exact repository-relative paths}
 
-### Coverage
-- check: phase_goal
-  status: conclusive | incomplete | not_applicable
-  authority: "ROADMAP.md#{phase-goal}"
-  evidence: "{PLAN path#task/section and observed outcome mapping}"
-  inspected_paths: ["{path}"]
-- check: safety
-  status: conclusive | incomplete | not_applicable
-  authority: "{controlling safety source#section}"
-  evidence: "{observed task/verification coverage or precise gap}"
-  inspected_paths: ["{path}"]
-- check: requirement_coverage, task_completeness, ownership, dependency_graph
-  status: conclusive | incomplete | not_applicable
-  authority: "{exact controlling source#section}"
-  evidence: "{coverage/contract/graph result}"
-  inspected_paths: ["{path}"]
+### Coverage Summary
+| Check | Status | Authority | Evidence | Inspected paths |
+|---|---|---|---|---|
+| phase_goal | conclusive | {source#section} | {PLAN task and outcome} | {paths} |
+| requirement_coverage | conclusive | {source#section} | {requirement IDs -> PLAN paths and tasks} | {paths} |
+| {each other mandatory check listed above} | {status} | {source} | {evidence or not-applicable reason} | {paths} |
 
-### Prior content-sensitive evidence
-- check: {check or finding property}
-  review_revision: {prior reviewed revision}
-  compared_paths: ["{PLAN/acceptance/source paths actually compared}"]
-  conclusion: {conclusive result and why its inputs remain unchanged}
+### Plan Summary
+| PLAN path | Tasks | Files | Declared wave | Dependencies | Status |
+|---|---:|---:|---|---|---|
+| {exact path} | {count} | {count} | {label} | {IDs or none} | {review status} |
 
-### Issues
-issues:
-  - id: "PC-{phase-or-quick}-{plan-or-phase}-{dimension}-{stable-sequence}"
-    plan: "{plan path or null}"
-    task: {task number or null}
-    dimension: "{dimension}"
-    severity: blocker | warning | info
-    required_property: "{binding invariant}"
-    authority: "{exact source path#heading or decision/requirement id}"
-    description: "{observed evidence with path and task/section}"
-    fix_hint: "{optional non-binding example}"
-# Use `issues: []` when none. INFO issues may accompany approved.
+### Handoff Evidence
+- input_revision: {preparation input revision}
+- reviewed_revision: {revision inspected}
+<!-- Include the table only when reusing prior conclusive evidence. -->
+| Check | Prior review revision | Compared paths | Conclusion |
+|---|---|---|---|
+| {check} | {revision} | {exact paths} | {conclusion and unchanged-input basis} |
+
+### Advisories
+{Include shared finding records for INFO issues only; omit when none.}
 ```
+
+- INFO advisories may accompany approval and must be shown.
+- Approval returns readiness to the coordinator; it does not grant implementation
+  authority.
+
+**Needs-revision report template** (use when at least one evidenced blocker or
+warning requires correction):
+
+```markdown
+## PLAN REVIEW
+Verdict: needs-revision
+
+**Phase or quick task:** {name and goal}
+
+### Coverage Summary
+| Check | Status | Authority | Evidence | Inspected paths |
+|---|---|---|---|---|
+| phase_goal | {status} | {source#section} | {outcome evidence or exact gap} | {paths} |
+| requirement_coverage | {status} | {source#section} | {requirement IDs -> PLAN paths/tasks or uncovered IDs} | {paths} |
+| {each other mandatory check listed above} | {status} | {source} | {evidence or not-applicable reason} | {paths} |
+
+### Plan Summary
+| PLAN path | Tasks | Files | Declared wave | Dependencies | Status |
+|---|---:|---:|---|---|---|
+| {exact path} | {count} | {count} | {label} | {IDs or none} | {review status} |
+
+### Handoff Evidence
+- input_revision: {preparation input revision}
+- reviewed_revision: {revision inspected}
+<!-- Include the table only when reusing prior conclusive evidence. -->
+| Check | Prior review revision | Compared paths | Conclusion |
+|---|---|---|---|
+| {check} | {revision} | {exact paths} | {conclusion and unchanged-input basis} |
+
+### Blockers
+{Shared finding records for blockers; omit when none.}
+
+### Warnings
+{Shared finding records for warnings; omit when none.}
+
+### Advisories
+{Shared finding records for INFO issues; omit when none.}
+
+**Required corrections:** Satisfy the required properties for blocker/warning IDs
+{IDs} before execution.
+```
+
+- List only nonempty severity groups. The correction line refers to stable IDs;
+  do not repeat finding bodies.
+
+Write each finding once under its severity group:
+
+```markdown
+#### {stable ID}
+- Plan: {exact PLAN path or null}
+- Task: {task number or null}
+- Dimension: {dimension}
+- Severity: {blocker | warning | info}
+- Required property: {binding invariant}
+- Authority: {exact source path#heading or decision/requirement ID}
+- Evidence: {observed evidence with path and task/section}
+- Example fix: {optional non-binding example}
+```
+
+- Map the heading to `id`; map `Plan`, `Task`, `Dimension`, `Severity`,
+  `Required property`, `Authority`, `Evidence` and optional `Example fix` to
+  `plan`, `task`, `dimension`, `severity`, `required_property`, `authority`,
+  `description` and `fix_hint`, respectively.
+- Use exact `input_revision` and `reviewed_revision` keys. The Plan Summary lists
+  every exact reviewed PLAN path.
+- Apply configured positive task caps; treat other task/file counts as inventory.
+- Record reused evidence only when conclusive, with prior review revision,
+  compared paths and conclusion. Omit the table when no prior evidence is reused.
 </structured_returns>
 
 <anti_patterns>
@@ -1093,8 +1163,9 @@ Plan verification complete when:
 - [ ] Architectural tier compliance checked (tasks match responsibility map tiers)
 - [ ] Cross-plan data contracts checked (no conflicting transforms on shared data)
 - [ ] AGENTS.md compliance checked (plans respect project conventions)
-- [ ] Structured issues returned (if any found), each carrying a binding `required_property` +
-      evidence + severity, with `fix_hint` rendered as a non-binding example
+- [ ] Each finding appears once as a readable Markdown record with binding
+      `required_property`, evidence and severity; map it to the handoff fields
+      with `fix_hint` rendered as a non-binding example
 - [ ] Result returned to orchestrator
 
 </success_criteria>

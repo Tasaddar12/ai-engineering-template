@@ -23,12 +23,16 @@ Return:
 | {padded_phase}-02 | [brief objective] | 1 | none | REQ-003 |
 ```
 
-The coordinator reviews the outline and assigns one bounded plan per worker when
-useful. `phase-plan-index` inventories plan IDs, file paths, declared dependencies
-and available summaries. In `execute-phase`, the coordinator groups eligible
-plans by satisfied dependencies and overlapping files, then integrates and checks
-each wave before releasing the next. Independent assignments may run in parallel
-within a wave, subject to ownership, shared resources and available capacity.
+The coordinator reviews the outline and assigns bounded plans to workers when
+useful. For execution:
+
+- Read plan IDs, file paths, declared dependencies and available summaries from
+  `phase-plan-index`.
+- Group eligible plans in `execute-phase` by satisfied dependencies and
+  overlapping files.
+- Integrate and check each wave before releasing the next.
+- Run independent assignments in parallel within a wave when ownership, shared
+  resources and available capacity allow.
 
 #### single-plan
 

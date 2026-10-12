@@ -6,16 +6,18 @@ not a registration of extra runtime commands.
 
 ## Pre-flight gate
 
-Check preconditions before beginning an operation: explicit implementation
-authorization, committed inputs, exact ownership, required records, runnable
-commands and satisfied dependencies. There is no `phase.py check` command:
-inspect each assigned PLAN directly against the runtime contract, then assess
-semantic feasibility separately. The optional
-`python .ai/runtime/phase.py query planning.review` command audits the whole
-planning tree; it is not a required per-correction gate and does not establish
-semantic feasibility. Missing preconditions block dependent work; existing
-independent work may continue. A file-existence check establishes presence, not
-product correctness.
+Before beginning an operation, check explicit implementation authorization,
+committed inputs, exact ownership, required records, runnable commands and
+satisfied dependencies. For planning readiness:
+
+- Inspect each assigned PLAN directly against the runtime contract.
+- Assess semantic feasibility separately.
+- Optionally run `python .ai/runtime/phase.py query planning.review` for a
+  whole-tree inventory when useful.
+
+Let missing preconditions block dependent work while independent work continues.
+Use a file-existence check to establish presence; assess product correctness
+from the relevant evidence.
 
 ## Revision gate
 

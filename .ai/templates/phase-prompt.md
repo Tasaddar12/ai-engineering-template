@@ -148,7 +148,16 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `user_setup` | No | Array of human-required setup items (external services) |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
-**Waves are ordered execution groups:** `wave` is declared planning metadata. `phase-plan-index` inventories plan IDs, paths, declared dependencies and available summaries; it does not derive execution waves. In `execute-phase`, the coordinator forms groups from satisfied dependencies and overlapping `files_modified`, integrates and checks each wave before dispatching the next, then runs eligible independent plans concurrently subject to ownership, shared resources and capacity. Declare every real prerequisite; the label does not replace a missing dependency edge.
+**Waves are ordered execution groups:**
+
+- Record `wave` as planning metadata and declare every real prerequisite.
+- Read plan IDs, paths, declared dependencies and available summaries from
+  `phase-plan-index`.
+- In `execute-phase`, have the coordinator group plans by satisfied dependencies
+  and overlapping `files_modified`, then integrate and check each wave before
+  dispatching the next.
+- Run eligible independent plans concurrently subject to ownership, shared
+  resources and capacity.
 
 **Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all components integrate, the coordinator runs `verify-work` to dispatch the independent verifier against these criteria and the integrated code. `phase.py query init.execute-phase` does not start final verification automatically.
 

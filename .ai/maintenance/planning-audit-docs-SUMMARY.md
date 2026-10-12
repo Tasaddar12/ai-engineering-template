@@ -84,3 +84,58 @@ and independent documentation review remain coordinator-owned.
   workflow source and reviewed the exact two-path diff. No benchmarks ran.
 - Independent documentation verification, combined acceptance and repository
   final checks remain with the coordinator.
+
+## Wording and report-format correction
+
+- Rephrased the structural-check guidance as direct PLAN inspection against the
+  runtime contract, with independent semantic review and optional whole-tree
+  `planning.review` inventory. Described `phase-plan-index` as an inventory and
+  assigned eligible wave grouping, ordered integration and checks to the
+  `execute-phase` coordinator procedure.
+- Converted the assigned long operational paragraphs to concise imperative
+  lists while preserving code, issue examples, safety constraints, dependency
+  rules and revision limits.
+- Updated the checker to use one human-readable Markdown report with distinct
+  approved and needs-revision layouts, mandatory per-check coverage, a plan
+  inventory, stable findings grouped by severity, and lossless mapping to the
+  existing correction issue fields. Approval still requires conclusive mandatory
+  checks and zero blockers/warnings; INFO remains visible and non-blocking.
+- Correction packets now reference the captured prior report by its result
+  destination and carry issue payloads once, rather than embedding the report
+  body. The independent checker still inspects corrected content and reuses only
+  evidence whose compared inputs are unchanged.
+- Representative wording: “There is no `phase.py check` command” became “Inspect
+  the assigned PLANs directly against the runtime contract for structural
+  readiness, then assess goal delivery and semantic feasibility independently.”
+  Index wording now directs readers to `phase-plan-index` for IDs, paths,
+  dependencies and summaries, then to `execute-phase` for coordinator wave
+  grouping and integration/check order.
+
+Changed paths in this correction:
+
+- `.ai/agents/phase-checker.md`
+- `.ai/agents/phase-preparer.md`
+- `.ai/references/methods/gates.md`
+- `.ai/references/methods/planner-chunked.md`
+- `.ai/references/methods/planner-revision.md`
+- `.ai/references/template-adaptation.md`
+- `.ai/templates/phase-prompt.md`
+- `.ai/templates/planner-subagent-prompt.md`
+- `.ai/workflows/plan-phase.md`
+- `.ai/workflows/quick.md`
+
+**Checks:** `git diff --check` passed. The writer ran no tests or benchmarks;
+coordinator-reported static-document suite results are listed below. Independent
+documentation verification remains coordinator-owned.
+
+## Coordinator follow-up
+
+- Refined the report guidance into explicit approved and needs-revision
+  templates, removed the duplicate ID field, and clarified the lossless Markdown
+  finding-to-handoff mapping.
+- The coordinator reports the affected static-document suites passed:
+  efficiency-contracts (8), workflow-links (3) and agent-sources (16). The writer
+  did not run those suites.
+- Staging is blocked: Git cannot write the linked worktree's shared index, and
+  auto-review rejected the escalation requests. The edits remain unstaged for
+  coordinator handling; no commit was created.

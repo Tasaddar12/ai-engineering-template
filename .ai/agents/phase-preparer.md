@@ -449,12 +449,15 @@ Create `.planning/phases/XX-name/{padded_phase}-{plan}-SUMMARY.md` when done
 | `must_haves` | Yes | Goal-backward verification criteria |
 
 Add all local fields from [the runtime contract](../runtime/TEMPLATE-CONTRACT.md).
-`phase-plan-index` inventories plan IDs, paths, declared dependencies and
-available summaries. The coordinator groups execution waves in `execute-phase`
-from satisfied dependencies and overlapping `files_modified`, then integrates
-and checks waves in order. A declared wave label cannot make an unmet dependency
-or file conflict ready. Ownership, shared resources, capacity and command
-resource locks govern concurrency separately.
+For execution planning:
+
+- Use `phase-plan-index` to read plan IDs, paths, declared dependencies and
+  available summaries.
+- Record satisfied prerequisites and `files_modified` so the coordinator can
+  group execution waves in `execute-phase`, then integrate and check them in order.
+- Check wave labels against dependencies and file conflicts.
+- Account for ownership, shared resources, capacity and command resource locks
+  when planning concurrency.
 
 ## Interface Context for Executors
 
@@ -868,14 +871,14 @@ dependencies, exact task behavior and command paths satisfy the contract, return
 the committed result to the independent checker; do not begin another speculative
 research or polishing pass.
 
-Inspect the complete PLAN against [the runtime contract](../runtime/TEMPLATE-CONTRACT.md)
-and its template: required metadata, ownership, acceptance, documentation, argv
-checks, dependencies, task fields and autonomous/checkpoint compatibility.
-`gap_closure`, when used, is a YAML boolean. Fix structural errors and concrete
-checker findings; do not claim an unrun schema validator succeeded.
-There is no `phase.py check` command. Inspect every assigned PLAN directly
-against the runtime contract and correct concrete structural findings. Independent
-semantic and content review is still required.
+Inspect every assigned PLAN against [the runtime contract](../runtime/TEMPLATE-CONTRACT.md)
+and its template. Check required metadata, ownership, acceptance, documentation,
+argv checks, dependencies, task fields and autonomous/checkpoint compatibility.
+Then:
+
+- Keep `gap_closure`, when used, as a YAML boolean.
+- Correct concrete structural findings and checker findings.
+- Send the plans for independent semantic and content review.
 </step>
 
 <step name="update_roadmap">
