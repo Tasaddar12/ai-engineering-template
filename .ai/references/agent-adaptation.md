@@ -74,7 +74,7 @@ The role and method files describe the following actual local operations:
 | Configure execution | `.planning/config.yaml` owns commit behavior, model and effort overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
 | Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
-| Schedule work | `phase-plan-index` inventories plan IDs, paths, declared dependencies and available summaries; the coordinator groups eligible work in `execute-phase` by satisfied dependencies and file overlap, then integrates and checks waves in order |
+| Schedule work | `phase-plan-index` inventories plan IDs, paths, declared dependencies and available summaries; in `execute-phase`, the coordinator forms dependency and file-overlap waves from satisfied prerequisites and overlapping `files_modified`, then integrates and checks each wave before releasing the next |
 | Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
 | Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
 

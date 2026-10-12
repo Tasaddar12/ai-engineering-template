@@ -68,12 +68,19 @@ and independent documentation review remain coordinator-owned.
 
 ## Checks and remaining work
 
-- `git diff --check` passed; manually inspected map-step ordering, map status
-  fields, caller paths, CLI entry points, index output and coordinator wave
-  grouping against committed source.
-- No tests run for documentation wording. The three focused runtime test
-  results above are reported by the separate Task2 source summary, not run by
-  this documentation assignment.
+- A prior Ubuntu CI run found one wording regression in
+  `test_execute_keeps_dependency_waves_and_uses_receipts` (the canonical phrase
+  `dependency and file-overlap waves` was missing from the Schedule work row);
+  that run reported 556 tests, one failure and 13 skips. The local full-suite
+  run was interrupted with the same failure. GitHub run `38258207986` concluded
+  cancelled and the Windows job was cancelled. All four hooks passed (235
+  checks).
+- Restored the tested phrase while keeping `phase-plan-index` inventory-only and
+  assigning prerequisite/file-overlap grouping and ordered integration checks
+  to the coordinator's `execute-phase` procedure. The authorized focused command
+  `python -m unittest discover -s tests -p test_efficiency_contracts.py -v`
+  passed: 8 tests, including the regression test.
+- `git diff --check` passed; manually inspected the changed row against the
+  workflow source and reviewed the exact two-path diff. No benchmarks ran.
 - Independent documentation verification, combined acceptance and repository
-  final checks remain with the coordinator. No tests or benchmarks were
-  invented or run for this doc-only slice.
+  final checks remain with the coordinator.
