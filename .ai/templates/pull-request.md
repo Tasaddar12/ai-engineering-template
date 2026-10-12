@@ -87,6 +87,8 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   or `Pending` with the missing evidence/dependency when unavailable. State risks
   or that none were identified, and always give a practical rollback unless it
   truly does not apply.
+- Keep evidence safe: redact secrets, private logs and sensitive data before
+  adding evidence to the public body.
 - In Known gaps, write `None` only after checking. For a PR with no stacked
   dependency, omit the entire Stack section.
 - Example excerpt (fictional values; not evidence; replace before publishing):

@@ -148,3 +148,10 @@ post-open validation; this summary does not claim those actions are complete.
   pending values only with recorded human-review facts.
 - Manual review and `git diff --check` passed. Test scripts remain unrun; parent
   validation for this slice is pending.
+
+## Public evidence redaction reminder
+
+- Restored the shared PR guidance to redact secrets, private logs and sensitive
+  data before adding evidence to a public body.
+- `git diff --check` passed. Test scripts remain unrun; parent validation on the
+  corrected head is pending.
