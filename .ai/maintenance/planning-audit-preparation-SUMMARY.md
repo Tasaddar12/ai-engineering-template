@@ -29,7 +29,7 @@ Prepared one three-task maintenance plan for the authorized recommendations 1-4.
 - Task 2 refreshes relevant maps before consumers and fixes mapper role enumeration through the existing resolver, with behavioral bundle regression evidence planned.
 - Task 3 corrects unsupported structural CLI and index-wave claims with targeted documentation; no new validator or global correction audit.
 
-Tasks execute in order because their documentation paths overlap. Runtime changes belong to coder, changed operational sequences to doc-writer; coordinator owns integration, checks, publication and read-only specialist evidence.
+Task 1 documentation and Task 2 Python bundle/test changes may execute concurrently in separate isolated checkouts with disjoint exact ownership. One doc-writer serializes shared documentation edits and inspects the coder's committed bundle evidence before Task 2 map instruction completion is accepted; Task 3 claims rely on unchanged runtime source and may follow within that writer. Runtime changes belong to coder, changed operational sequences to doc-writer; coordinator owns integration, checks, publication and read-only specialist evidence.
 
 ## Source audit
 
@@ -71,6 +71,8 @@ Use maintenance metadata outside numbered phases, as explicitly assigned and sup
 ## Task commits and files
 
 One preparation slice commits only .ai/maintenance/planning-audit-PLAN.md and this preparation SUMMARY. The final coordinator handoff supplies the resulting commit hash; no implementation task is claimed complete. The coordinator-owned planning-audit-scope.md change is preserved and excluded from staging/commit.
+
+The preparation slice is dde844e613ca12687c3cddc5d7e507cbe2956d48. A bounded follow-up corrects only the execution_context scheduling instruction and this summary: allow disjoint documentation/Python work concurrently while retaining serialized documentation ownership and the committed-source evidence dependency. No task, scope, acceptance or owned path changes; no tests run for this correction.
 
 ## User setup
 
