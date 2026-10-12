@@ -1,7 +1,7 @@
 ---
 maintenance: title-examples
 status: documentation_committed_validation_pending
-scope: issue body variants and issue and pull request title authoring guidance
+scope: issue body variants and issue and pull request authoring guidance
 documentation:
   - .ai/templates/issue.md
   - .ai/templates/pull-request.md
@@ -86,3 +86,21 @@ post-open validation; this summary does not claim those actions are complete.
   safe evidence, impact, expected outcome, scope, acceptance and related links.
 - `git diff --check` passed. Test scripts remain unrun per assignment; coordinator
   validation remains pending.
+
+## Field-level issue and PR guidance
+
+- Added one shared issue field guide for repeated headings and focused guidance
+  for decision, security and UAT fields, including realistic evidence formatting
+  with explicit pending/not-run status and no claimed observations.
+- Added PR field definitions and illustrative stack values using parent PR,
+  target branch, prerequisites and full base/head commit boundaries.
+- Instructed authors to remove prompts and placeholders, preserve unknown/unrun
+  evidence as Unknown/Pending, and link only accessible evidence matching the
+  recorded revision. Independent PRs omit the entire Stack section.
+- UAT human acceptance requires the reviewer, date, actual decision and evidence
+  reference; AI is instructed to leave acceptance pending.
+- Manual review confirmed field guidance stays outside copyable body blocks,
+  public examples make no observed-result claim, and the issue/PR body boundaries
+  remain intact. The issue template has five variant fences; the PR has one.
+- `git diff --check` passed. Test scripts remain unrun per assignment; coordinator
+  validation on the new head is pending.

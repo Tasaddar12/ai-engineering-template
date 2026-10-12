@@ -9,8 +9,11 @@
 - For a security-risk variant, use the repository's private reporting channel if
   known. If unavailable or unknown, ask the owner privately before publishing.
   Never put secrets or exploit-sensitive details in a public issue.
+
 Select the appropriate variant below, then copy only its fenced **File Template**
 block into the public body file. Never copy the whole source or all variants.
+Remove prompts, comments, placeholders and examples from the final public body;
+for UAT, retain `PENDING HUMAN acceptance` until a human records the decision.
 The [Git workflow](../references/git-workflow.md) owns publication authority
 and procedure.
 
@@ -31,31 +34,31 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ```markdown
 ## Problem
-<!-- What is wrong and who is affected? -->
+<!-- Describe the current behavior and the user or system affected. -->
 
 ## Expected behavior
-<!-- What should happen? -->
+<!-- State the observable result the affected user should get. -->
 
 ## Actual behavior
-<!-- What happens instead? -->
+<!-- Record the observed result and the version or environment; use Unknown if unverified. -->
 
 ## Reproduction
-<!-- Minimal steps and affected version/environment. -->
+<!-- List minimal steps, inputs and prerequisites, plus the version/environment. -->
 
 ## Safe evidence
-<!-- Logs, screenshots or other evidence with secrets and private data removed. -->
+<!-- Link accessible, redacted logs/screenshots or matching test evidence; never paste secrets. -->
 
 ## Impact
-<!-- Who or what is affected and how severely? -->
+<!-- Name affected users or systems and the practical impact or severity. -->
 
 ## Acceptance
-<!-- Observable conditions that demonstrate resolution. -->
+<!-- List measurable outcomes reviewers can check to confirm resolution. -->
 
 ## Scope
-<!-- Boundaries of the follow-up. -->
+<!-- State what this follow-up includes and excludes. -->
 
 ## Related links
-<!-- Relevant PRs, issues, requirements or evidence. -->
+<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
 ```
 
 ### Enhancement
@@ -63,64 +66,64 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## User need
 
-<!-- Who needs what, and why? -->
+<!-- Name the user, their goal and why the current workflow falls short. -->
 
 ## Proposed outcome
 
-<!-- Describe the capability or improvement requested. -->
+<!-- Describe the requested capability as an observable user-facing change. -->
 
 ## Current limitation and evidence
 
-<!-- What cannot users do today? Include safe repro or evidence. -->
+<!-- State what users cannot do now and add a safe repro or accessible evidence link. -->
 
 ## Impact
 
-<!-- Which users or systems are affected, and how? -->
+<!-- Identify affected users/systems and expected practical impact. -->
 
 ## Scope
 
-<!-- Boundaries and important exclusions. -->
+<!-- State in-scope behavior and important exclusions. -->
 
 ## Acceptance
 
-<!-- Observable conditions that demonstrate the need is met. -->
+<!-- List measurable user outcomes that demonstrate the need is met. -->
 
 ## Related links
 
-<!-- Relevant PRs, issues, requirements or evidence. -->
+<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
 ```
 
 ### Decision required
 
 ```markdown
 ## Decision question
-<!-- State the specific choice needed. -->
+<!-- Ask one answerable question and state the decision boundary. -->
 
 ## Context
-<!-- Why is the decision needed, who is affected, and what is its impact? -->
+<!-- Explain the current situation, affected users/systems and impact. -->
 
 ## Options
 
-- Option A:
-- Option B:
+- Option A: [choice and consequence]
+- Option B: [choice and consequence]
 
 ## Evidence
-<!-- Safe, relevant evidence that helps compare the options. -->
+<!-- Link safe, accessible evidence for the options; use actual refs only. -->
 
 ## Recommendation
-<!-- Preferred option and rationale. -->
+<!-- Name the preferred option and justify it with the evidence above. -->
 
 ## Blocking dependency
-<!-- Name the work blocked on this choice and what decision unblocks it. -->
+<!-- Identify blocked work and the selected decision needed to resume it. -->
 
 ## Scope
-<!-- Bound the choice and exclude unrelated decisions. -->
+<!-- State which decision is in scope and which related choices are excluded. -->
 
 ## Acceptance
-<!-- Record the chosen option and confirm the named dependency can proceed. -->
+<!-- Record the decision and the observable condition that unblocks the named work. -->
 
 ## Related links
-<!-- Relevant PRs, issues, requirements or evidence. -->
+<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
 ```
 
 ### Security risk
@@ -128,31 +131,31 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## Security concern
 
-<!-- Describe the concern without exploit-sensitive details. -->
+<!-- State the security concern without secrets or exploit-sensitive details. -->
 
 ## Affected surface and behavior
 
-<!-- Name the component, current behavior and expected secure behavior. -->
+<!-- Name the affected component, current behavior and expected secure behavior. -->
 
 ## Impact
 
-<!-- Who or what could be affected, and how? -->
+<!-- Describe affected users/data/systems and the plausible impact. -->
 
 ## Safe evidence
 
-<!-- Include only evidence safe for public review; omit secrets and sensitive exploit details. -->
+<!-- Link actual, accessible, redacted evidence; omit secrets and exploit details. -->
 
 ## Requested remediation
 
-<!-- State the outcome needed without prescribing unsupported implementation. -->
+<!-- State the safe outcome needed; avoid unsupported implementation assumptions. -->
 
 ## Scope and acceptance
 
-<!-- Bound the work and state observable, safe resolution criteria. -->
+<!-- Bound the remediation and list observable, safe resolution criteria. -->
 
 ## Related links
 
-<!-- Public, non-sensitive references only. -->
+<!-- Add actual public PR/issue/requirement IDs and accessible, non-sensitive evidence. -->
 ```
 
 ### UAT
@@ -160,37 +163,37 @@ table, other variants or surrounding authoring guidance in the public body.
 ```markdown
 ## Acceptance checklist
 
-- [ ] <!-- Human-verifiable acceptance condition. -->
-- [ ] <!-- Human-verifiable acceptance condition. -->
+- [ ] [Observable condition a human can verify]
+- [ ] [Observable condition a human can verify]
 
 ## Context
 <!-- Identify the user flow, problem under review and affected users. -->
 
 ## Impact and scope
-<!-- State the impact and boundaries of this validation. -->
+<!-- State user/system impact and the exact boundaries of this validation. -->
 
 ## Build and environment
 
-- Build or version:
-- Commit:
-- Environment:
-- Setup or prerequisites:
+- Build/version: [exact release or artifact identifier]
+- Commit: [full SHA]
+- Environment: [name and relevant configuration]
+- Setup: [roles, data and prerequisites]
 
 ## Steps and expected observations
 
-1. <!-- Action and expected result. -->
-2. <!-- Action and expected result. -->
+1. [Action and observable expected result]
+2. [Action and observable expected result]
 
 ## Actual results
-<!-- Record actual observations and safe evidence for each step; remove secrets
-     and private data. Leave pending if not run. -->
+<!-- Record observed outcome for each step and link matching, accessible evidence.
+     Keep unrun checks Pending and redact secrets/private data. -->
 
 ## Related links
-<!-- Relevant PRs, issues, requirements or evidence. -->
+<!-- Add actual PR/issue/requirement IDs and accessible evidence links. -->
 
 ## Human acceptance
-PENDING HUMAN acceptance. Record the human reviewer and decision after review.
-AI must not mark this complete.
+PENDING HUMAN acceptance. After review, record the human reviewer, date, actual
+decision and evidence reference; AI must not mark this complete.
 ```
 
 ## Title format and examples
@@ -211,9 +214,39 @@ AI must not mark this complete.
 
 ## How to fill it
 
-- Complete the prompts in the selected variant with facts about the problem or
-  need, context, safe evidence, impact, acceptance, scope and related links as
-  applicable. Remove secrets and private data.
+- Replace each prompt with the actual information for this issue. Use `N/A`
+  only with a reason when a field truly does not apply; use `Unknown` or
+  `Pending` with the missing evidence or dependency when the answer is not known
+  or work has not run. Never invent observations or results.
+- Use this shared field guide for differently named headings:
+
+  | Field | What to provide |
+  |---|---|
+  | Problem, User need, Security concern, Context, Current limitation | Name the user/system, current state and why it needs attention. |
+  | Expected behavior, Proposed outcome, Affected surface and behavior | State the desired observable behavior. For decisions, state the choice; for security, include the expected secure behavior. |
+  | Evidence, Safe evidence, Reproduction | Give minimal steps and safe inputs; identify build/version, full commit, environment/setup and exact test command/result when relevant. Link only accessible evidence matching that revision. Redact secrets and private data. |
+  | Impact | Name affected users/systems and the practical effect or severity. |
+  | Scope, Scope and acceptance, Acceptance | State what is in and out, then list measurable outcomes reviewers can check. |
+  | Related links | Add actual issue/PR/requirement IDs and accessible evidence links; search open and closed issues and related PRs for duplicates. |
+- Complete specialized fields with the following details:
+
+  | Variant fields | What to provide |
+  |---|---|
+  | Decision: Options, Recommendation, Blocking dependency | Give distinct options and consequences; recommend one using evidence; name the blocked work and the decision that lets it resume. Acceptance records the selected option and observable unblocking condition. |
+  | Security: Requested remediation | State the safe outcome, affected surface and current versus expected behavior. Use the private-reporting instruction above before composing a public body. |
+  | UAT: checklist, Build and environment, Steps, Actual results, Human acceptance | Put unchecked acceptance items first. Record exact build/version, full commit, environment and setup; list each action and expected observation; after execution record actual results and matching evidence. Keep the human decision pending until a human records it. |
+- Illustrative evidence format only; replace values with evidence from the reviewed
+  issue and do not treat this example as an observed result:
+
+  ```text
+  Build/version: storefront 2.4.1
+  Commit: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0 (illustrative)
+  Environment: staging
+  Setup: test account
+  Command: [exact project test command]
+  Result: Pending (not run)
+  Evidence: add an accessible link only after finding the matching run
+  ```
 - Review open and closed issues plus related and current PR context for duplicates.
   Keep defects within the current change's scope in that change.
 - Review the public title and separate body file before authorized publication;

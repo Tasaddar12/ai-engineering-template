@@ -7,6 +7,7 @@
 **Destination:** A separately composed public PR body file passed to publication.
 
 Read this source, then copy only the fenced **File Template** body into that file.
+Remove prompts, comments, placeholders and guidance examples from the final public body.
 The [Git workflow](../references/git-workflow.md) owns publication authority and procedure.
 
 ## File Template
@@ -14,39 +15,39 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 ```markdown
 ## Goal
 
-<!-- Stable statement of the authorized outcome. -->
+<!-- State the authorized user or system outcome in one sentence. -->
 
 ## Changes
 
-<!-- What changed and why, based on the owned summaries. -->
+<!-- Summarize the implemented behavior and why; use the owned summaries. -->
 
 ## Requirements or Issues
 
-<!-- Requirement IDs or issue references, when applicable. -->
+<!-- Add exact requirement IDs and issue references; omit this section if none apply. -->
 
 ## Verification
 
-- Revision:
-- Commands and results:
-- Evidence:
+- Revision: [full tested commit SHA or Pending]
+- Commands and results: [exact command and observed result]
+- Evidence: [accessible link to evidence matching this revision]
 
-<!-- For a tracking draft, say that final verification is pending and identify the exact checks still outstanding. -->
+<!-- For a tracking draft, state Pending and name the exact outstanding checks. -->
 
 ## Known gaps
 
-<!-- Unfinished plans, runtime behavior, accepted gaps, or pending checks. -->
+<!-- List unfinished work, unverified behavior, pending checks and dependencies. -->
 
 ## Risks or rollback
 
-<!-- Material risks and a practical rollback path. -->
+<!-- State material risks and the practical rollback; use N/A with a reason only when none apply. -->
 
 <!-- Include these fields for stacked PRs; omit them for independent PRs. -->
 ## Stack
 
-- stackParent:
-- Target:
-- DependsOn:
-- OwnChangeBoundary: <!-- Base and commit boundary for this PR's own diff. -->
+- stackParent: [parent PR number or URL]
+- Target: [parent branch]
+- DependsOn: [prerequisite PR numbers or URLs]
+- OwnChangeBoundary: [full base SHA..full head SHA]
 ```
 
 ## Title format and examples
@@ -67,15 +68,48 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## How to fill it
 
-- Replace prompts with facts from the owned summaries and verification records.
-  Keep evidence safe; remove secrets, private logs and sensitive data.
-- A tracking draft states final verification is pending, names the exact outstanding
-  checks and lists unfinished work under Known gaps. Verified work records the tested
-  revision, actual commands/results and evidence; a draft alone proves none of these.
+- Replace every prompt, comment and placeholder with actual information, then
+  remove all remaining instructional text, placeholders and guidance examples
+  from the public body. Use `N/A` only with a reason when a field truly does not
+  apply; use `Unknown` or `Pending` with the missing evidence/dependency when
+  facts or checks are not available. Never invent results or links.
+- Fill each field from the authorized scope, owned summaries and verification
+  evidence:
+
+  | Field | What to provide |
+  |---|---|
+  | Goal | One sentence naming the authorized result for users or the system. |
+  | Changes | The implemented behavior, why it changed, and the owned work. |
+  | Requirements or Issues | Exact applicable requirement IDs and issue references; omit the section only when none apply. |
+  | Revision | Full commit SHA actually tested. For an unverified tracking draft, write Pending. |
+  | Commands and results | Exact commands and observed outcomes, each tied to the recorded revision; list unrun checks as Pending. |
+  | Evidence | Accessible review, CI or artifact links that match the recorded revision; redact private data. |
+  | Known gaps | Unfinished work, unverified behavior, pending checks or dependencies; state none only after checking. |
+  | Risks or rollback | Material risk and a practical rollback path, or `N/A — no material risk identified` when justified. |
+- A tracking draft marks final verification Pending, names exact outstanding checks
+  and lists unfinished work under Known gaps. Verified work records actual
+  commands, results and matching evidence; a draft alone proves none of these.
 - Review open and closed issues plus related and current PR context before adding
   issue references or proposing follow-ups. Keep in-scope defects in this change.
-- Include Stack only for a real dependency. For an independent PR, omit the Stack
-  heading and its fields from the composed body.
+- Include Stack only when this PR depends on another PR; omit the heading and all
+  four fields for an independent PR. The required values are:
+
+  | Field | Exact value |
+  |---|---|
+  | stackParent | Parent PR number or URL. |
+  | Target | Parent branch this PR targets. |
+  | DependsOn | PR numbers/URLs that must land first. |
+  | OwnChangeBoundary | Base commit SHA..head commit SHA for this PR's own diff. |
+
+  Illustrative stack values only: `stackParent: #42`, `Target: feature/auth-base`,
+  `DependsOn: #42`,
+  `OwnChangeBoundary: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0..b8e20c5d7a1f9346e2b0c8d5f9a3176c4e8d2a10`.
+  Replace them with actual dependency and commit values; remove all examples
+  from the public body.
+- Example verification format only: `Revision: a3f14d9c6b2e8075c1a4f9b3d6e20a7c8f51b4e0 (illustrative)`;
+  `Commands and results: [exact project test command] — Pending (not run)`;
+  `Evidence: add an accessible matching CI link when one exists`. This is
+  not a claim that a check ran or passed.
 
 ## Good and bad examples
 
