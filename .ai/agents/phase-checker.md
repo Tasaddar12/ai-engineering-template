@@ -230,9 +230,11 @@ issue:
 **Dependency rules:**
 - `depends_on: []` = no prerequisite components; ownership/resources still constrain concurrency
 - `depends_on: ["03-01"]` waits for component 03-01 to integrate and pass checks
-- `phase-plan-index` defines ordered dependency/file-overlap waves. The
-  coordinator integrates and checks one eligible wave before dispatching the
-  next; independent plans may run concurrently within their eligible wave.
+- `phase-plan-index` inventories plan IDs, file paths, declared dependencies
+  and available summaries. In `execute-phase`, the coordinator groups plans by
+  satisfied dependencies and overlapping `files_modified`, then integrates and
+  checks each wave before releasing the next. Ownership, shared resources and
+  capacity still constrain concurrency within a wave.
 
 **Example issue:**
 ```yaml
@@ -249,9 +251,11 @@ issue:
 
 **Question:** Can plans race on shared mutable state or consume an output before
 its producer integrates? Review all potentially concurrent plan pairs, including
-plans that share a wave. The index's ordered waves enforce cross-wave
-dependencies and file ownership; they do not imply that unrelated tasks should
-be serialized inside an eligible wave.
+plans that the coordinator may group together after checking prerequisites and
+file overlap. The index is an inventory, not a scheduler; declared wave labels
+do not replace dependency or ownership checks. Independent plans may run
+concurrently within an eligible wave, subject to shared-resource and capacity
+constraints.
 
 Compare task files/actions, `depends_on` and `resources`. Flag a concrete config
 key, table/row, migration, environment variable, singleton or cache with at least
@@ -793,9 +797,13 @@ to that scope, plus any required whole-graph check. Do not restart the full revi
 when its unchanged checks have revision-specific evidence. Inspect YAML and XML against
 [the runtime contract](../runtime/TEMPLATE-CONTRACT.md), including ownership,
 acceptance, documentation, argv checks, dependencies and checkpoint compatibility.
-The coordinator can supply `phase.py check` results when authorized; do not claim
-an absent SDK produced structure JSON. Missing task fields map to task completeness,
-missing wiring to key links, and broken dependencies to dependency correctness.
+There is no `phase.py check` command. Inspect the assigned PLANs directly against
+the runtime contract; do not claim a structural CLI result. If a whole-project
+inventory is useful, `python .ai/runtime/phase.py query planning.review` is an
+optional read-only audit of the planning tree, not a required per-correction gate
+or a substitute for this semantic review. Missing task fields map to task
+completeness, missing wiring to key links, and broken dependencies to dependency
+correctness.
 
 ## Step 3: Parse must_haves
 
@@ -856,10 +864,14 @@ for plan in "$PHASE_DIR"/*-PLAN.md; do
 done
 ```
 
-Validate: all referenced plans exist, no cycles, wave labels match the derived
-`phase-plan-index`, and every prerequisite is identified. The index recomputes
-dependency and file-overlap waves; `execute-phase` runs them in order. If
-A -> B -> C -> A, report the cycle.
+Validate that referenced plans exist, there are no cycles, and every prerequisite
+is identified. `phase-plan-index` returns the phase/directory/count and, for each
+plan, its ID, file path, declared dependencies and available summary path. It
+does not derive waves. The coordinator groups actual execution waves in
+`execute-phase` from satisfied dependencies and file overlap, then integrates and
+checks those waves in order. Treat a declared wave label as planning metadata;
+it cannot override prerequisites or ownership. If A -> B -> C -> A, report the
+cycle.
 
 ## Step 7: Check Key Links
 

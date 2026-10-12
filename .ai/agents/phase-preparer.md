@@ -449,11 +449,12 @@ Create `.planning/phases/XX-name/{padded_phase}-{plan}-SUMMARY.md` when done
 | `must_haves` | Yes | Goal-backward verification criteria |
 
 Add all local fields from [the runtime contract](../runtime/TEMPLATE-CONTRACT.md).
-`phase-plan-index` and `execute-phase` use ordered dependency and file-overlap
-waves. Waves run in order; plans run concurrently only inside their eligible
-wave, with path conflicts kept in separate waves. A declared wave label cannot
-make an unmet dependency or file conflict ready. Command resource locks govern
-check-command concurrency separately.
+`phase-plan-index` inventories plan IDs, paths, declared dependencies and
+available summaries. The coordinator groups execution waves in `execute-phase`
+from satisfied dependencies and overlapping `files_modified`, then integrates
+and checks waves in order. A declared wave label cannot make an unmet dependency
+or file conflict ready. Ownership, shared resources, capacity and command
+resource locks govern concurrency separately.
 
 ## Interface Context for Executors
 
@@ -872,8 +873,9 @@ and its template: required metadata, ownership, acceptance, documentation, argv
 checks, dependencies, task fields and autonomous/checkpoint compatibility.
 `gap_closure`, when used, is a YAML boolean. Fix structural errors and concrete
 checker findings; do not claim an unrun schema validator succeeded.
-The coordinator may run `python .ai/runtime/phase.py check PHASE` for structural
-readiness when checks are authorized. Independent content review is still needed.
+There is no `phase.py check` command. Inspect every assigned PLAN directly
+against the runtime contract and correct concrete structural findings. Independent
+semantic and content review is still required.
 </step>
 
 <step name="update_roadmap">

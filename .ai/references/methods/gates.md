@@ -8,10 +8,14 @@ not a registration of extra runtime commands.
 
 Check preconditions before beginning an operation: explicit implementation
 authorization, committed inputs, exact ownership, required records, runnable
-commands and satisfied dependencies. The coordinator uses `phase.py check` for
-structural readiness and inspects semantic feasibility separately. Missing
-preconditions block dependent work; existing independent work may continue.
-A file-existence check establishes presence, not product correctness.
+commands and satisfied dependencies. There is no `phase.py check` command:
+inspect each assigned PLAN directly against the runtime contract, then assess
+semantic feasibility separately. The optional
+`python .ai/runtime/phase.py query planning.review` command audits the whole
+planning tree; it is not a required per-correction gate and does not establish
+semantic feasibility. Missing preconditions block dependent work; existing
+independent work may continue. A file-existence check establishes presence, not
+product correctness.
 
 ## Revision gate
 

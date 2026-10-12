@@ -67,14 +67,14 @@ The role and method files describe the following actual local operations:
 | Need | Local operation and owner |
 |---|---|
 | Load context or locate phase records | Read the assignment and `.planning/` records at the assigned revision; coordinator uses `python .ai/runtime/phase.py query init.progress` and `check` |
-| Validate executable plans | `check` covers structural fields; the preparation checker separately assesses semantics, exact ownership, dependency order and actual command paths |
+| Validate executable plans | Inspect assigned PLANs against `TEMPLATE-CONTRACT`; the independent checker separately assesses semantics, exact ownership, dependency order and command paths |
 | Update shared project records | Agents propose changes in their SUMMARY; the orchestrator applies them through `phase_run query state.*` and `roadmap.*` verbs |
 | Commit authored work | Native Git staging of exact owned paths and descriptive commits; include the assigned SUMMARY and preserve other agents' files |
 | Verify artifacts, wiring or behavior | Trace source and callers, inspect actual results and run the authorized project checks; return a report with the exact revision |
 | Configure execution | `.planning/config.yaml` owns commit behavior, model and effort overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
 | Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
-| Schedule work | `phase-plan-index` groups plans into dependency and file-overlap waves; execute waves in order and run each wave's work concurrently only within that wave |
+| Schedule work | `phase-plan-index` inventories plan IDs, paths, declared dependencies and available summaries; the coordinator groups eligible work in `execute-phase` by satisfied dependencies and file overlap, then integrates and checks waves in order |
 | Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
 | Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
 

@@ -199,6 +199,51 @@ If `has_spec` is true, read the SPEC.md too: its requirements are locked and are
 not re-derived by the preparer.
 </step>
 
+<step name="refresh_codebase_maps">
+After context is loaded, decide which map focus areas this phase needs from its
+goal, locked decisions, canonical references, SPEC and (for `--gaps`) the
+verification gap. Use `tech` when the work depends on the existing runtime,
+framework, dependencies, platform or build/deployment choices. Use `arch` when
+it depends on existing components, boundaries, data flow or integrations. Skip
+an area that is irrelevant to the named phase interfaces, even if its map is
+missing or stale.
+
+Inspect the existing status fields; do not gate on the aggregate `fresh` flag,
+which also covers irrelevant maps:
+
+```bash
+phase_run query codebase.status
+```
+
+Initialize `CURRENT_CODEBASE_MAP_PATHS` as an empty list. From `maps`, match each
+needed focus area's `focus`, `path` and `state`. Skip a matching map whose state
+is `fresh`. For each relevant map whose state is `missing` or `stale`, dispatch
+one mapper to rebuild that map from the current source. This applies to standard,
+gap-closure and correction runs; a mode flag does not make a needed stale map
+current.
+
+```text
+Agent(
+  prompt="
+Refresh the relevant {focus} map from the current source and phase interfaces.
+Use the existing map as context if present, then rebuild it; do not rely on its
+stale conclusions. Write the result to the exact status path: {path}.
+Return ## MAP COMPLETE and the path you refreshed.",
+  subagent_type="codebase-mapper",
+  ${models['codebase-mapper'] === 'inherit' ? '' : `model="${models['codebase-mapper']}",`}
+  ${efforts['codebase-mapper'] === 'inherit' ? '' : `effort="${efforts['codebase-mapper']}",`}
+  description="Refresh the relevant {focus} map"
+)
+```
+
+Wait for each mapper result and integrate its owned commit before continuing.
+Then set `CURRENT_CODEBASE_MAP_PATHS` to the exact `path` values for the needed
+focus areas from `maps`; pass those current paths to every researcher or
+preparer that consumes them. An empty list means no map is applicable. Existing
+freshness thresholds and source sensitivity come from `codebase.status`; do not
+add stamps, thresholds or separate map state.
+</step>
+
 <step name="handle_research">
 **Skip when `--skip-research` is set, or `has_research` is true, `research_partial`
 is false and `--research` was not passed.** A partial RESEARCH.md is not finished
@@ -238,6 +283,7 @@ and open a listed file only as its reading rule allows.
 - {paths.project} (Project)
 - {paths.requirements} (Requirements)
 - {phase_dir}/{padded_phase}-CONTEXT.md (USER DECISIONS — locked, do not revisit)
+- ${CURRENT_CODEBASE_MAP_PATHS} (relevant current codebase maps, if any)
 - {every path in canonical_refs}
 </required_reading>
 
@@ -363,6 +409,7 @@ and open a listed file only as its reading rule allows.
 - {phase_dir}/{padded_phase}-RESEARCH.md (Technical research, if it exists)
 - {phase_dir}/{padded_phase}-SPEC.md (Locked requirements, if it exists)
 - {phase_dir}/{padded_phase}-VERIFICATION.md (Gaps to close — gap_closure mode only)
+- ${CURRENT_CODEBASE_MAP_PATHS} (relevant current codebase maps, if any)
 - {every path in canonical_refs}
 </required_reading>
 ${context_window >= 500000 ? `
@@ -561,6 +608,10 @@ any unreviewed mandatory check keeps the result from approval.
 On `Verdict: needs-revision`, pass the checker issues to the phase-preparer in
 the correction packet below. Do not dispatch a revision for INFO-only issues.
 On `Verdict: approved`, continue the workflow and display every INFO issue.
+For a correction, reuse a relevant map only while `codebase.status` still reports
+it `fresh` for the inputs the correction needs. If a needed map is missing or
+stale, run the applicable part of `refresh_codebase_maps` before dispatch; gap
+and correction scope do not bypass freshness.
 **Maximum 3 iterations.** Continue a revising preparer that returns
 `## PLANNING PARTIAL` exactly as in `handle_preparer_return`, with its handoff
 in the `<handoff>` block. After integrating the preparer's owned commit, send a
@@ -602,7 +653,7 @@ changed export, ownership path, dependency or acceptance mapping connects them.
   <issues>{exact structured issue payloads, unchanged}</issues>
   <owned_plan_paths>{exact PLAN paths the author may edit}</owned_plan_paths>
   <affected_plan_paths>{affected plans, including connected producer/consumers}</affected_plan_paths>
-  <governing_paths>{goal, requirements, decisions, safety and source-contract paths cited by issues}</governing_paths>
+  <governing_paths>{goal, requirements, decisions, safety, source-contract paths and relevant current map paths cited by issues}</governing_paths>
   <changed_paths_since_review>{actual repository paths changed since reviewed_revision}</changed_paths_since_review>
   <reusable_prior_evidence>
     {only conclusive checks, each with its review_revision, conclusion and exact compared_paths}
@@ -619,7 +670,8 @@ Agent(
 {the complete populated packet above}
 </revision_context>
 
-Read the owned and affected PLANs and the cited governing sources. Address only
+Read the owned and affected PLANs and the cited governing sources, including the
+relevant map paths when they support a finding. Address only
 the listed finding IDs by satisfying each binding required_property; fix_hint
 is non-binding. Follow `.ai/references/methods/planner-revision.md`,
 preserve valid existing plan content, recheck corrected properties and connected
@@ -671,36 +723,6 @@ findings.
 After the third, stop and present the outstanding findings to the user with a
 choice: proceed as-is, revise a specific finding together, or cancel. Do not loop
 indefinitely, and do not approve the plans yourself to end the loop.
-</step>
-
-<step name="refresh_codebase_maps">
-Skip on a `--gaps` run.
-
-```bash
-phase_run query codebase.status
-```
-
-Every map `fresh` → continue. Any `missing` or `stale` → dispatch one
-codebase-mapper per focus area named in `focus_areas`:
-
-```
-Agent(
-  prompt="
-Refresh the codebase map for focus area: {focus}.
-
-Rewrite it against the current revision. Do not patch the old text.
-
-Write to: .planning/codebase/{MAP}.md
-Return: ## MAP COMPLETE with what changed since the previous revision.
-",
-  subagent_type="codebase-mapper",
-  ${models['codebase-mapper'] === 'inherit' ? '' : `model="${models['codebase-mapper']}",`}
-  ${efforts['codebase-mapper'] === 'inherit' ? '' : `effort="${efforts['codebase-mapper']}",`}
-  description="Refresh the {focus} map"
-)
-```
-
-> **ORCHESTRATOR RULE**: wait for the subagent before continuing.
 </step>
 
 <step name="update_roadmap">

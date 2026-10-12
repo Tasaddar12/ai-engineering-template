@@ -24,10 +24,11 @@ Return:
 ```
 
 The coordinator reviews the outline and assigns one bounded plan per worker when
-useful. `phase-plan-index` groups plans into dependency/file-overlap waves. The
-coordinator completes integration and checks for one eligible wave before
-releasing the next; independent assignments may run in parallel within a wave,
-subject to ownership, resource conflicts and available capacity.
+useful. `phase-plan-index` inventories plan IDs, file paths, declared dependencies
+and available summaries. In `execute-phase`, the coordinator groups eligible
+plans by satisfied dependencies and overlapping files, then integrates and checks
+each wave before releasing the next. Independent assignments may run in parallel
+within a wave, subject to ownership, shared resources and available capacity.
 
 #### single-plan
 
