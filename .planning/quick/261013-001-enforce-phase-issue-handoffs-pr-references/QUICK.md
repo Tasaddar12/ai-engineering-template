@@ -1,7 +1,7 @@
 ---
 title: Enforce phase issue handoffs, PR references and post-merge TODO reconciliation
-status: open
-created: 2026-10-13T14:46:32
+status: in_progress
+created: 2026-10-13 14:46:32
 completed: ''
 files: []
 ---
