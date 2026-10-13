@@ -174,8 +174,8 @@ Run the focused commands and existing repository required validation only after 
 
 | Threat ID | Category | Component/scope | Severity and assessment | Disposition | Mitigation/task/check | Owner | Status | Canonical issue | Resolution evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| T-QT-01 | Information disclosure | Publishable PLAN/SUMMARY/issue/PR text and links | high: accidental secret or exploit disclosure has broad public impact; actual sensitive payload not identified | mitigate | Task1 safe-public/restricted-detail rule; Task2 consumers; test_issue_format.py and test_threat_tracking_contract.py plus independent safe-content review | coordinator | unresolved | Pending: coordinator reconciles this safe risk after PLAN integration | Pending implementation and review; offline checks alone do not verify redaction |
-| T-QT-02 | Tampering/Repudiation | Canonical issue identity, lifecycle and closing references | medium: duplicate or premature closure can conceal remaining work; source currently lacks shared threat lifecycle | mitigate | Task1 dedup/closure procedure; Task2 carry-forward and ship checks; Task3 contract mutations and independent lifecycle review | coordinator | unresolved | Pending: coordinator reconciles this safe risk after PLAN integration | Pending implementation, actual issue readback and PR closure-reference review |
+| T-QT-01 | Information disclosure | Publishable PLAN/SUMMARY/issue/PR text and links | high: accidental secret or exploit disclosure has broad public impact; actual sensitive payload not identified | mitigate | Task1 safe-public/restricted-detail rule; Task2 consumers; test_issue_format.py and test_threat_tracking_contract.py plus independent safe-content review | coordinator | unresolved | https://github.com/Tasaddar12/ai-engineering-template/issues/81 | Pending implementation and review; offline checks alone do not verify redaction |
+| T-QT-02 | Tampering/Repudiation | Canonical issue identity, lifecycle and closing references | medium: duplicate or premature closure can conceal remaining work; source currently lacks shared threat lifecycle | mitigate | Task1 dedup/closure procedure; Task2 carry-forward and ship checks; Task3 contract mutations and independent lifecycle review | coordinator | unresolved | https://github.com/Tasaddar12/ai-engineering-template/issues/82 | Pending implementation, actual issue readback and PR closure-reference review |
 </threat_model>
 
 <verification>
@@ -207,3 +207,4 @@ All QT outcomes are covered by the integrated instructions/templates and focused
 <output>
 Create and commit `.planning/quick/261013-001-track-every-plan-summary-threat-canonical/261013-001-track-every-plan-summary-threat-canonical-SUMMARY.md`. Return owned commits, exact changed paths, actual checks/results, issue requests/links and remaining blockers to the coordinator. Only the coordinator updates QUICK/STATE and publishes; this preparer owns and commits only the assigned PLAN.
 </output>
+
