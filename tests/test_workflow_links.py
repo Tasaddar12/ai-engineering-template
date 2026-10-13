@@ -57,6 +57,10 @@ class WorkflowNavigationTests(unittest.TestCase):
             self.assertIn(boundary, execute)
         self.assertIn("phase.issue-declare", execute)
         self.assertIn("phase.handoff", execute)
+        wave_tracking = execute.split('<step name="track_integrated_slice">', 1)[1].split("</step>", 1)[0]
+        self.assertLess(wave_tracking.index("review_phase_issues"), wave_tracking.index("phase_run query pr.open"))
+        self.assertIn("canonical issue URL", wave_tracking)
+        self.assertIn("same-execution fixed-work exemption", wave_tracking)
         self.assertNotIn("query todo.complete", execute)
         self.assertNotIn('step name="close_phase_todos"', execute)
         self.assertLess(ship.index("Require `merged: true`"), ship.index("query phase.reconcile-todos"))

@@ -526,9 +526,13 @@ preserved and let the user choose.
 </step>
 
 <step name="track_integrated_slice">
-After a wave is integrated and its applicable checks pass, push the session
-branch and open or update the tracking draft before dispatching the next wave or
-final verification. Use the stable phase title and `--body-file` composed from
+After a wave is integrated and its applicable checks pass, run
+`review_phase_issues` for the current integrated summaries before opening or
+updating the tracking draft. Apply the same-execution fixed-work exemption while
+reviewing leftovers; do not ticket ordinary in-process planned work. Put each
+resulting canonical issue URL in the tracking body. Then push the session branch
+and open or update the draft before dispatching the next wave or final
+verification. Use the stable phase title and `--body-file` composed from
 integrated summaries and the current report. Mark final verification pending and
 list unfinished plans or runtime behavior under Known gaps. On the first push, run:
 
@@ -815,7 +819,9 @@ report them as the blocker instead.
 - [ ] Requirement coverage aggregated, with gaps reported
 - [ ] Code review run; critical findings fixed and re-reviewed
 - [ ] Roadmap plans ticked only for complete summaries
-- [ ] Folded todos closed, STATE.md updated, work committed
+- [ ] Folded TODOs remain pending through execution handoff; after merge, reconcile
+      only selected folded TODOs whose linked issues are closed and any required
+      human UAT acceptance is confirmed; update STATE.md and commit
 - [ ] Phase session left open for the workflows that follow
 - [ ] `/verify-work` run in this same session once execution finished, without
       asking the user to run it

@@ -411,10 +411,17 @@ def reconcile_todos(workspace, number, pr, names):
             metadata, body = todos.read_record(pending)
             linkage(metadata, repository)
             remote = todo_issues.issue_view(workspace, repository, metadata["issueURL"])
-            if "Human acceptance" in [heading for _, heading in issue_format.headings(issue_format.visible_lines(remote["body"]))]:
+            requires_uat = "Human acceptance" in [
+                heading for _, heading in issue_format.headings(issue_format.visible_lines(remote["body"]))]
+            if requires_uat:
                 require_accepted_uat(remote["body"])
             require(todos.read_record(pending) == (metadata, body), "Selected TODO changed before reconciliation", "stale-todo")
-            result = todos.complete(workspace, name)
+            def validate_final_issue(issue):
+                final_is_uat = "Human acceptance" in [
+                    heading for _, heading in issue_format.headings(issue_format.visible_lines(issue["body"]))]
+                if requires_uat or final_is_uat:
+                    require_accepted_uat(issue["body"])
+            result = todos.complete(workspace, name, issue_validator=validate_final_issue)
             item.update(state="completed", completed=result["completed"])
         except VerbError as exc:
             item["reason"] = str(exc)

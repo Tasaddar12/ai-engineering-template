@@ -26,6 +26,14 @@ class PhaseIssues(unittest.TestCase):
             todo.write_text(todo.read_text(encoding="utf-8") + "Changed during readback\\n", encoding="utf-8")
         if mode == "bodyfile-mutate":
             Path(data["pr_body"]).write_text("Closes #1", encoding="utf-8")""")
+        fake = fake.replace('out = json.dumps(dict(matches[0], **data.get("direct_changes", {})))', '''if "/issues/" in endpoint and data.get("issue_view_sequence"):
+                next_view = data["issue_view_sequence"].pop(0)
+                if next_view is None:
+                    code = 1
+                else:
+                    out = json.dumps(next_view)
+            else:
+                out = json.dumps(dict(matches[0], **data.get("direct_changes", {})))''')
         fake = fake.replace('else:\n    raise AssertionError("unexpected provider call " + repr(args))', """elif args[:2] == ["pr", "view"]:
     if data.get("pr"):
         out = json.dumps(data["pr"])
@@ -150,7 +158,7 @@ else:
         try:
             alias.symlink_to(self.record)
         except OSError:
-            return
+            self.skipTest("Symlink creation privilege is unavailable")
         self.assertEqual(self.preview(name=alias.name, ok=False)["code"], "path-escape")
         self.assertEqual(self.remote()["creates"], 0)
 
@@ -289,6 +297,16 @@ else:
         template = (fixtures.ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8")
         return re.search(r"### UAT\n\n```markdown\n(.*?)\n```", template, re.S)[1]
 
+    def accepted_uat_body(self):
+        body = self.uat_body()
+        return body.replace("Status: PENDING HUMAN acceptance", "Status: ACCEPTED") \
+            .replace("Reviewer: [Pending until human review; actual reviewer name]", "Reviewer: Prepared synthetic reviewer") \
+            .replace("Date: [Pending until human review; YYYY-MM-DD]", "Date: 2026-10-13") \
+            .replace("Decision: [Pending until human review; one sentence stating the actual human decision]",
+                     "Decision: Prepared fixture accepts the listed behavior.") \
+            .replace("Evidence: [Pending until human review; actual decision evidence URL/reference]",
+                     "Evidence: https://example.test/prepared-acceptance-record")
+
     def test_pending_human_uat_cannot_be_forged_as_resolving_even_when_closed(self):
         self.phase([self.entry(variant="UAT", state="pending-human")])
         self.public.write_text(self.uat_body(), encoding="utf-8")
@@ -308,6 +326,61 @@ else:
         self.remote(issues=[self.issue(state="closed", body=self.uat_body())])
         self.assertEqual(self.reconcile()["items"][0]["state"], "pending")
         self.assertTrue(self.todo.exists())
+
+    def test_uat_final_readback_must_preserve_accepted_human_evidence(self):
+        self.folded(state="closed")
+        accepted = self.issue(state="closed", body=self.accepted_uat_body())
+        final_responses = (
+            self.issue(state="closed", body=self.uat_body()),
+            self.issue(state="closed", body=self.public.read_text(encoding="utf-8")),
+            None,
+            self.issue(state="open", body=self.accepted_uat_body()),
+        )
+        for final in final_responses:
+            with self.subTest(final_state=(final or {}).get("state"), final_body=(final or {}).get("body")):
+                self.remote(issues=[accepted], issue_view_sequence=[accepted, final])
+                result = self.reconcile()
+                self.assertEqual(result["items"][0]["state"], "pending")
+                self.assertTrue(self.todo.exists())
+        bug = self.issue(state="closed", body=self.public.read_text(encoding="utf-8"))
+        self.remote(issues=[bug], issue_view_sequence=[bug, self.issue(state="closed", body=self.uat_body())])
+        result = self.reconcile()
+        self.assertEqual(result["items"][0]["state"], "pending")
+        self.assertTrue(self.todo.exists())
+
+    def test_accepted_uat_todo_can_be_retired_after_final_closed_readback(self):
+        self.folded(state="closed")
+        accepted = self.issue(state="closed", body=self.accepted_uat_body())
+        self.remote(issues=[accepted])
+        self.assertEqual(self.reconcile()["items"][0]["state"], "completed")
+        self.assertFalse(self.todo.exists())
+
+    def test_resolved_bug_issue_can_be_referenced_as_resolving_by_pr(self):
+        self.phase([self.entry()])
+        self.publish()
+        self.session()
+        item = self.metadata()["issue_refs"][0]
+        item.update(state="resolved", relationship="resolving", reason="Prepared bug fix is verified.")
+        self.write_record([item])
+        url = "https://github.com/acme/project/issues/1"
+        result = self.run_verb("pr.open", self.branch, "--body", "Closes " + url)
+        self.assertTrue(result["created"] or result["updated"])
+        self.assertEqual(self.remote()["pr"]["body"], "Closes " + url)
+
+    def test_accepted_uat_issue_can_be_referenced_as_resolving_by_pr(self):
+        self.phase([self.entry(variant="UAT")])
+        accepted_body = self.accepted_uat_body()
+        self.public.write_text(accepted_body, encoding="utf-8")
+        self.publish(variant="UAT")
+        self.session()
+        item = self.metadata()["issue_refs"][0]
+        item.update(state="resolved", relationship="resolving", reason="Prepared UAT acceptance evidence is recorded.")
+        self.write_record([item])
+        url = "https://github.com/acme/project/issues/1"
+        self.remote(issues=[self.issue(state="closed", body=accepted_body)])
+        result = self.run_verb("pr.open", self.branch, "--body", "Closes " + url)
+        self.assertTrue(result["created"] or result["updated"])
+        self.assertEqual(self.remote()["pr"]["body"], "Closes " + url)
 
     def test_phase_session_ambiguity_and_wrong_origin_pr_cannot_mutate(self):
         self.phase()

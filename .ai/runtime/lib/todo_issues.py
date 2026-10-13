@@ -350,7 +350,7 @@ def publish(workspace, name, preview_token, title, body_file,
     return linked_result(workspace, path, metadata, body, issue, created=True, source=source)
 
 
-def require_closed(workspace, metadata):
+def require_closed(workspace, metadata, issue_validator=None):
     publication = metadata.get("issuePublication") or {}
     require(isinstance(publication, dict)
             and publication.get("state") in (None, "prepared", "linked"),
@@ -371,3 +371,5 @@ def require_closed(workspace, metadata):
         require(issue["number"] == metadata.get("issueNumber")
                 and issue["state"] == "CLOSED",
                 "Only a verified closed linked issue permits completion", "issue-open")
+        if issue_validator is not None:
+            issue_validator(issue)
