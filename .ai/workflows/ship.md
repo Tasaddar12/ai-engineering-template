@@ -124,6 +124,11 @@ Session: {branch} at {worktree}
 </step>
 
 <step name="preflight_checks">
+Run `phase_run query phase.handoff "${phase_number}"` and require `ready: true`.
+Review current leftovers and canonical declarations as
+[execution handoff](execute-phase.md) requires. Necessary issue tracking is
+already authorized; unavailable publication stays retryable/incomplete. This
+operational gate does not prove prose completeness or actual human acceptance.
 Verify the work is ready to publish. Every check below blocks; none is advisory.
 
 - Reconcile each PLAN's threat links and SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
@@ -327,6 +332,10 @@ phase_run query planning.validate
 Append a short `### Record health` section when `warning_count` is above zero,
 naming each finding and the verb that resolves it. This never blocks the PR.
 
+Include each declared issue's canonical URL in the body. Use resolving references
+only for demonstrated accepted work; deferred/unresolved/pending-human followups
+use plain links and never closing keywords. `pr.open` binds the existing phase
+session automatically and validates the effective body even on body-omitted edits.
 Show the composed body to the user before opening the PR.
 </step>
 
@@ -410,8 +419,49 @@ On "Leave it open", report the URL and stop. The session stays open and a later
 On "Merge now":
 
 ```bash
-phase_run query pr.merge "${SESSION_BRANCH}"
+MERGE=$(phase_run query pr.merge "${SESSION_BRANCH}")
+```
+
+Require `merged: true` with matching number/URL/head and observed `pr_state:
+MERGED`. Command success alone is insufficient. Unknown/mismatched readback keeps
+the PR/session and requires readback of that same canonical PR; never call
+`pr.merge` again to settle uncertainty or restart source reviews for unchanged code.
+Only after verified merge, sync the base and require `synced: true`:
+
+```bash
 phase_run query pr.sync
+```
+
+From the synchronized primary checkout, select only the exact CONTEXT Folded Todos
+filenames (never reviewed-only or unselected items), then run:
+
+```bash
+phase_run query phase.reconcile-todos "${phase_number}" \
+  --pr "${pr_url}" --todos "${folded_todo_files[@]}"
+```
+
+Skip this call when no TODOs were folded. It independently validates the phase
+session's matching MERGED PR and each linked CLOSED issue. CLOSED UAT still marked
+PENDING HUMAN acceptance remains pending. Record completed/already-completed/pending
+items and their issue URLs. For delayed/unavailable readback, report the returned
+reconciliation-only `retry` command and pending filenames/URLs; preserve those
+records and the session. No fresh review or issue creation is needed for this retry.
+
+Commit successful TODO/STATE-only retirement through the existing runtime-owned
+TODO planning-record policy in [worktree sessions](../references/worktree-sessions.md).
+Collect only each selected moved record's old/new paths in `todo_record_paths`:
+
+```bash
+phase_run query state.sync-todos
+phase_run query commit "chore(todos): reconcile merged phase ${phase_number}" \
+  --files "${todo_record_paths[@]}" .planning/STATE.md
+```
+
+Publish that planning-record-only commit under the existing policy. Never add a
+new source commit to the merged PR. Close the source session only after selected
+reconciliation and record publication settle:
+
+```bash
 phase_run query session.close "${SESSION_BRANCH}"
 ```
 

@@ -52,7 +52,10 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 - Read [the issue template](../templates/issue.md), select the appropriate
   variant and copy only that variant's fenced **File Template** block into the
   separately reviewed public issue body file. Never copy the whole source or all
-  variants. Publish only when the user authorized it.
+  variants. Authorized execution includes necessary issue creation/update for
+  every actionable unresolved problem at normal, deferred or early handoff;
+  do not request another issue approval. Honor actual platform permissions and
+  sensitive-security reporting requirements.
 - Invoking `/capture` authorizes reviewed publication for its new TODO or the single TODO selected by `/capture --list`, in the current repository. It does not authorize unrelated follow-ups, issue closure or implementation.
 - For a captured TODO, inspect `todo.issue-preview` candidates across open and closed issues and the related PR context. Runtime provides evidence; it does not perform semantic deduplication.
 - Reuse only an actionable matching issue. Linking does not edit or close it. For closed matches, compare closure evidence with the full TODO scope; closed status alone does not prove resolution. Keep mismatches pending and report them. Reopen only with separate authorization or choose an appropriate distinct scope.
@@ -63,7 +66,16 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
   --variant "Bug" --body-file "${public_body_file}"` (select the actual variant).
   Direct `gh`/API writes bypass the runtime gate; this check does not verify
   working links, delivered UI controls, safe content or actual human decisions.
-- Before other issue creation, search open and closed issues, linked PRs and the current PR for duplicates. Keep in-scope defects in the current change; record other discoveries in the owned summary until issue creation is authorized.
+- Before other issue creation, search open and closed issues, linked PRs and the current PR for duplicates. Keep in-scope defects in the current change; track actionable unresolved discoveries through the phase issue path and retain their canonical URLs in the owned SUMMARY.
+- For phase records, amend declarations through `phase.issue-declare`, then use
+  `phase.issue-preview`/`phase.issue-publish`/`phase.issue-update`. Keep Bug/UAT
+  intent and canonical origin linkage. `phase.handoff` gates completion, and
+  `pr.open` automatically gates the phase session's effective body. Pending human
+  UAT can accompany advancing code as a followup/plain link, never auto-closing.
+- Retire selected folded TODOs only through `phase.reconcile-todos` after matching
+  MERGED PR and CLOSED issue readback. Open/unknown results are pending; retry
+  reconciliation alone. Resolved inline work needs no new issue; this generic
+  exemption does not waive separate threat-record tracking requirements.
 - Remove secrets, private logs and sensitive data from publishable text. Close an issue only after acceptance is demonstrated and closure is authorized. Do not use premature auto-closing references for tracking or deferred work.
 
 ## Canonical threat tracking

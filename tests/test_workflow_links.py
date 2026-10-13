@@ -47,6 +47,27 @@ class WorkflowNavigationTests(unittest.TestCase):
             self.assertIn(instruction, body)
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
 
+    def test_phase_handoff_producers_and_post_merge_reconciliation_are_wired(self):
+        execute = (ROOT / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8")
+        ship = (ROOT / ".ai/workflows/ship.md").read_text(encoding="utf-8")
+        git = (ROOT / ".ai/references/git-workflow.md").read_text(encoding="utf-8")
+        runtime = (ROOT / ".ai/runtime/README.md").read_text(encoding="utf-8")
+        self.assertIn('step name="review_phase_issues"', execute)
+        for boundary in ("normal", "deferral", "blocked/halted", "early termination"):
+            self.assertIn(boundary, execute)
+        self.assertIn("phase.issue-declare", execute)
+        self.assertIn("phase.handoff", execute)
+        self.assertNotIn("query todo.complete", execute)
+        self.assertNotIn('step name="close_phase_todos"', execute)
+        self.assertLess(ship.index("Require `merged: true`"), ship.index("query phase.reconcile-todos"))
+        self.assertIn("reconciliation-only", ship)
+        self.assertIn("no repeated issue", execute)
+        self.assertNotIn("Publish only when the user authorized it", git)
+        for verb in ("phase.issue-declare", "phase.issue-preview", "phase.issue-publish", "phase.issue-update", "phase.handoff", "phase.reconcile-todos"):
+            self.assertIn(verb, runtime)
+        self.assertIn("Direct", runtime)
+        self.assertIn("warn-only", runtime)
+
     def test_literal_link_examples_do_not_hide_real_navigation(self):
         body = without_fences("`[example](missing.md)` and [actual](required.md)\n"
                               "```markdown\n[example](also-missing.md)\n```\n")

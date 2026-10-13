@@ -1,57 +1,126 @@
 ---
 phase: quick-261013-001
 plan: "01"
-status: in-progress
+status: complete
 requirements-completed: []
-acceptance: []
-documentation: []
+acceptance: [HANDOFF-01, PUBLICATION-01, PR-01, RECONCILE-01, AUTHORITY-01]
+documentation:
+  - .ai/workflows/execute-phase.md
+  - .ai/workflows/ship.md
+  - .ai/references/git-workflow.md
+  - .ai/runtime/README.md
 issue_refs: []
+coverage:
+  - id: D1
+    description: Declared phase issue publication and handoff gate
+    verification:
+      - kind: integration
+        ref: tests/test_phase_issues.py plus tests/test_todo_issues.py
+        status: pass
+    human_judgment: false
+  - id: D2
+    description: Phase PR body gates and verified folded TODO reconciliation
+    verification:
+      - kind: integration
+        ref: tests/test_phase_issues.py plus tests/test_session_delivery.py
+        status: pass
+    human_judgment: false
+  - id: D3
+    description: Normal and early handoff producers and post-merge procedures
+    verification:
+      - kind: other
+        ref: tests/test_workflow_links.py
+        status: pass
+    human_judgment: false
 ---
-# Phase issue enforcement execution summary
+# Phase issue handoff and delivery enforcement
 
-Base: `21eeed1e6c5c7f215689d3ace0c2090659abc6a2`.
-Root: `D:/Codex Projects/ai-engineering-template/.worktrees/phase-issue-code-150554588`.
-Branch: `phase-phase-issue-code-150554588`.
+Execution SUMMARY declarations now gate supported handoffs/completion and phase
+PR bodies. Publication reuses the existing TODO duplicate/recovery helpers;
+folded TODO retirement waits for matching MERGED/CLOSED readback.
 
-## TDD Evidence
+## Identity and commits
 
-Task 1 RED: `python -m unittest discover -s tests -p test_phase_issues.py` at base plus owned tests: 3 tests, 3 intended failures, exit 1. Missing SUMMARY declaration incorrectly passed phase.complete and modified the roadmap; phase.handoff is not registered. Initial test discovery imported the TODO TestCase and was corrected before this evidence run. No production changes preceded RED.
+- Root: `D:/Codex Projects/ai-engineering-template/.worktrees/phase-issue-code-150554588`.
+- Branch: `phase-phase-issue-code-150554588`.
+- Base: `21eeed1e6c5c7f215689d3ace0c2090659abc6a2`.
+- Task 1 RED: `efc66d9fbf20687a798790c51c3ec30421bfc736`.
+- Task 1 GREEN: `a3a5ad1c7c881b98b40bb32ee04362f0c1b3928e`.
+- Task 2 RED: `5b601e8cbdd404d967fa40f768acf12892505fc8`.
+- Declaration-producer RED: `4354fb9b89e845320c26915b6145968625a115fd`.
+- Task 2 GREEN: `8dfeb6ec559448360373c4072a74e0b9744b0839`.
+- Task 3: this documentation/SUMMARY commit; final SHA returned to the coordinator.
 
-## Remaining
+## Changes
 
-Task 3 workflow/runtime documentation and its focused checks remain. Coordinator owns integration, publication, full suite and independent review. Context usage: unavailable.
+1. Added phase_issues entry adapter and locked handoff/declaration/preview/publish/
+   update verbs. Explicit reviewed [] passes; missing/malformed/unlinked problems
+   fail before completion writes. Provider failure preserves attempted intent as
+   retryable blocked-publication. Publication/update preserves selected issue kind.
+2. Phase pr.open automatically binds the existing session, pins phase calls to
+   origin, validates the effective body and publishes its exact validated bytes.
+   Deferred/pending-human followups cannot use closing references. Remote pending
+   UAT cannot be made resolving through a forged local claim. Merge command success
+   is verified only by matching number/URL/head MERGED readback. Reconciliation
+   selects exact Folded Todos and the session PR; open/unknown/CLOSED-but-pending-UAT
+   and stale records remain pending. Retry is idempotent and creates/closes no issue.
+3. Wired normal/deferral/blocked/halted/early execution handoffs to coordinator
+   leftover review and runtime declarations. Necessary issue tracking uses existing
+   execution authority. Removed execution-time TODO retirement; ship reconciles
+   after verified merge and records TODO-only changes through existing planning
+   policy. Documented fields, argv, provider boundary and semantic limits.
 
-## Task 1 Changes and Checks
+## Checks and TDD evidence
 
-Added declared SUMMARY/optional CONTEXT issue validation, phase.handoff and pre-write phase.complete gating, plus one entry adapter for existing todo_issues publication/recovery callbacks and type-preserving reviewed update. No separate ledger, provider implementation, issue closure or template changes. Explicit success-fixture declarations preserve every original assertion.
+All checks used fake providers and temporary Git repositories; no live network,
+publication or merge was used. Runs occurred at the named RED HEAD plus the owned
+implementation/test diff subsequently committed as GREEN; commit content was
+preserved. Task 3 checks ran at `8dfeb6e` plus the owned documentation/test diff.
 
-Task 1 RED commit: `efc66d9fbf20687a798790c51c3ec30421bfc736`.
-Task 1 GREEN checks at that commit plus owned implementation/test changes:
-- `python -m unittest discover -s tests -p test_phase_issues.py`: 20 tests, pass, 50.903s.
-- `python -m unittest discover -s tests -p test_todo_issues.py`: 34 tests, pass, one existing platform skip, 157.141s.
-- `python -m unittest discover -s tests -p test_phase_runtime.py`: 162 tests, pass, 246.760s.
-- Initial runtime run: 162 tests, two failures caused by this worker's Windows default decoding of original Unicode assertions. Restored original UTF-8 text; affected PlanRegistration20 passed, then named full file passed. No assertions weakened.
+| Check | Observed result |
+| --- | --- |
+| Task 1 RED: unittest discover test_phase_issues.py | 3 tests, 3 intended failures, exit 1: missing declarations passed phase.complete; phase.handoff absent |
+| Task 1 GREEN: unittest discover test_phase_issues.py | 20 tests passed, 50.903s |
+| unittest discover test_todo_issues.py | 34 tests passed, one existing platform skip, 157.141s |
+| unittest discover test_phase_runtime.py | 162 tests passed, 246.760s |
+| Task 2 RED: test_phase_issues.py -k phase_session | 1 intended failure, exit 1: omitted phase still edited undeclared PR |
+| Task 2 RED: test_session_delivery.py -k matching_merged_readback | 1 test, 7 intended failures, exit 1: false merged success on unknown/mismatched readback |
+| Producer RED: test_phase_issues.py -k declaration_setter | 1 intended missing-verb failure, exit 1 before setter implementation |
+| Task 2 GREEN: unittest discover test_phase_issues.py | 32 tests passed, 95.957s |
+| Final affected/new phase cases: -k closing_keyword, -k effective_body, -k changed_todo | Each passed 1 test; current file has 34 cases, full combined run remains coordinator-owned |
+| unittest discover test_session_delivery.py | 60 tests passed, 125.113s |
+| unittest discover test_workflow_links.py | 4 tests passed, 1.641s |
+| git diff --check; phase.py query help | Passed; documented verbs registered |
 
-STRIDE negative coverage includes private source/diagnostic separation, traversal/out-of-phase/link denial, stale records, repository/URL/number mismatch, malformed dispositions, uncertain/ambiguous creation and remote issue kind preservation. Windows symlink denial executes when link privilege is available; existing TODO suite retains its platform skip.
+Commands use `python -m unittest discover -s tests -p <named file>` with the shown
+`-k` selectors for affected cases. Negative coverage maps SEC-01 to private-source/
+diagnostic separation, SEC-02 to traversal/link/stale-record and retirement guards,
+and SEC-03 to origin/number/URL/session/remote-kind/MERGED/CLOSED/pending-UAT guards.
+Windows symlink checks execute when link privilege is available; the existing TODO
+suite reports its platform skip. No separate REFACTOR commit was needed.
 
-Task 1 GREEN commit: `a3a5ad1c7c881b98b40bb32ee04362f0c1b3928e`.
-Task 2 RED at Task 1 commit plus owned tests:
-- `python -m unittest discover -s tests -p test_phase_issues.py -k phase_session`: 1 test, intended failure, exit 1; omitting phase still edits a PR with no declaration.
-- `python -m unittest discover -s tests -p test_session_delivery.py -k matching_merged_readback`: 1 test, 7 intended assertion failures, exit 1; command success claims merged for unreadable, OPEN/CLOSED, mismatched and incomplete responses. Initial missing config fixture was repaired before valid RED evidence.
+## Deviations and resolved authoring mistakes
 
-Task 2 RED commit: `5b601e8cbdd404d967fa40f768acf12892505fc8`.
-Bounded producer correction: existing SUMMARY amendments need a runtime declaration path. Added phase.issue-declare regression before implementing that setter; `python -m unittest discover -s tests -p test_phase_issues.py -k declaration_setter`: 1 intended missing-verb failure, exit 1. This stays in existing record entries, with no ledger.
+- Added bounded phase.issue-declare after the coordinator identified the existing
+  SUMMARY producer gap. It uses a whole-record digest and preserves publication
+  identity/kind; no ledger or provider extension was added.
+- Initial test discovery imported the TODO TestCase; corrected before valid Task 1
+  RED. Initial merge fixture lacked config; corrected before valid Task 2 RED.
+- A Windows default decode changed original Unicode assertions in the first runtime
+  run (162 tests, two failures). Restored their original UTF-8 bytes; affected
+  PlanRegistration20 then the named full162 file passed. No assertion was weakened.
 
-## Task 2 Changes and Checks
+## Remaining and limits
 
-Phase pr.open binds the existing session, pins phase provider calls to origin, validates canonical body references (including body-omitted retarget), preserves generic base/draft/body-file behavior, and publishes the exact validated body bytes under the planning lock. Resolving UAT references require non-pending remote acceptance status; plain followup links still permit code advancement. Successful merge commands require matching number/URL/head MERGED readback; unknown results are retryable without another merge.
+No implementation blocker or actionable unresolved author finding remains. The
+coordinator owns integration, combined final tests/CI, independent code/document/
+outcome review and draft delivery. No worker push, merge, branch switch or cleanup
+was performed. Context usage: unavailable.
 
-phase.reconcile-todos accepts only selected exact Folded Todos filenames and the phase session's canonical PR. Matching MERGED plus CLOSED linked issue is required; CLOSED UAT with PENDING HUMAN acceptance, stale TODOs, wrong head/PR, unknown/open readbacks and unselected records remain pending. Retry alone is idempotent and never creates/closes issues or restarts source reviews.
-
-Added phase.issue-declare as a bounded producer correction: read preview/digest then amend through runtime with expected digest, preserving publication/linkage and issue kind. RED commit `4354fb9b89e845320c26915b6145968625a115fd` precedes setter implementation.
-
-Task 2 GREEN at that RED commit plus owned implementation/tests:
-- `python -m unittest discover -s tests -p test_phase_issues.py`: 32 tests, pass, 95.957s.
-- After the final bounded closing-reference/body-byte change, affected `-k closing_keyword` passed 1 test; new `-k effective_body` and `-k changed_todo` each passed 1 test. Current file contains 34 cases; coordinator final combined suite will run all together.
-- `python -m unittest discover -s tests -p test_session_delivery.py`: 60 tests, pass, 125.113s.
-No live provider, publication or merge was used by these tests.
+Runtime validates declared records, source paths, selected kinds/format and observed
+provider fields. It cannot discover omitted prose, prove semantic issue type or real
+human acceptance, or intercept arbitrary direct gh/API edits. issue.validate remains
+structuralOnly and planning.validate warn-only. Templates, issue_format, threat roles/
+methods and PR 80 threat architecture are unchanged. PR 80 remains separate additive
+work requiring coordinator overlap reconciliation; PR 78's base behavior is preserved,
+and held PRs 76/77 are not dependencies.

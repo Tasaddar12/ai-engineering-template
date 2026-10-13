@@ -79,6 +79,13 @@ discussion, planning and readiness do not grant implementation permission.
 
 <process>
 
+**Every execution exit uses `review_phase_issues` below.** Apply it on normal
+completion, deferral, a blocked/halted checkpoint, an exhausted continuation or
+early termination before the closing report or session handoff. Wait for active
+owners before amending their records. A missing SUMMARY remains a blocker; if no
+worker SUMMARY exists, author the selected plan's first halted SUMMARY from the
+summary template, recording the actual halt and no invented code/evidence.
+
 <step name="parse_args">
 Recognised flags:
 - `--plan {id}` — execute only this plan
@@ -425,6 +432,7 @@ ${ISOLATION === 'harness-worktree' ? `
 Write: {phase_dir}/{plan_id}-SUMMARY.md with:
 - frontmatter: status (complete|blocked), commits, files changed, requirements covered
 - what was built, and the evidence each acceptance criterion was met
+- reviewed issue_refs declarations for every actionable unresolved problem, or [] when none remain
 - anything deferred, and why
 Return: ## EXECUTION COMPLETE with status and the summary path
 Also return the branch you committed on, so the wave can be integrated.
@@ -598,7 +606,8 @@ not every plan reported complete.
 
 List what is still open in the closing report: each SUMMARY's Deferred and
 Remaining entries, minus anything a later plan in this phase completed, plus
-out-of-scope code-review findings. Do not create todos.
+out-of-scope code-review findings. Do not create todos. Reconcile these through
+`review_phase_issues`; prose alone is not a tracking handoff.
 </step>
 
 <step name="code_review_gate">
@@ -646,6 +655,43 @@ Findings: <numbered, each with file:line, severity (critical|warning), and why i
 5. Record warnings in the phase summary for the verifier to weigh; warnings do not block.
 </step>
 
+<step name="review_phase_issues">
+The coordinator reviews each current SUMMARY Deferred/Remaining section, major
+halt problems and validated unresolved review findings, subtracting work fixed in
+this execution. Routine resolved corrections and unrelated checker notices need
+no issue. Separate threat tracking retains its own reconciliation requirements;
+generic resolved-problem exemptions do not waive them.
+
+1. Workers author explicit `issue_refs` on their first SUMMARY, including []
+   after leftover review. For later coordinator amendments, preview
+   `phase.issue-declare <phase> <record>`, then apply a reviewed JSON list with
+   `--entries-file PATH --expect-digest TOKEN`. Preserve current publication
+   identity and selected kind; never hand-edit those runtime-owned amendments.
+2. Create/reuse/update the appropriate canonical issue through
+   `phase.issue-preview`, `phase.issue-publish` or `phase.issue-update`, following
+   [the Git workflow](../references/git-workflow.md). Necessary tracking is part
+   of authorized execution; no repeated issue create/update approval is needed.
+   Keep private records separate from reviewed public title/body and preserve Bug
+   or UAT intent. Pending human acceptance is `pending-human`/`followup`; code may
+   advance while its issue remains open and accurately tracked.
+3. Record canonical URLs in the SUMMARY and handoff. A resolved disposition needs
+   demonstrated acceptance/reason. Publication unavailable means explicit
+   `blocked-publication` with reason and retry obligation, preserved completed
+   code, and an incomplete-tracking closing report; it never counts as ready.
+4. Run the same gate before plan/phase completion or any closing/early handoff:
+
+   ```bash
+   phase_run query phase.handoff "${phase_number}"
+   ```
+
+Only `ready: true` permits completion/publication. An unlinked actionable problem
+must be tracked first; blocked publication is retried with the same reviewed
+intent, without another create when the attempted outcome is uncertain. Commit
+exact amended SUMMARY/CONTEXT paths with the execution records. The runtime checks
+declared records; the coordinator must find omitted problems and verify actual
+acceptance. `planning.validate` stays warn-only.
+</step>
+
 <step name="update_roadmap">
 Tick each completed plan through the runtime so the roadmap, the progress table
 and STATE.md counters all move together:
@@ -659,16 +705,12 @@ in the phase is ticked, the runtime marks the phase complete in the overview
 checklist automatically.
 </step>
 
-<step name="close_phase_todos">
-Any todo folded into this phase during discussion is now resolved. Move each one
-and refresh the state section:
-
-```bash
-phase_run query todo.complete "${todo_file}"
-phase_run query state.sync-todos
-```
-
-Leave todos that were reviewed but not folded in exactly where they are.
+<step name="pending_todo_reconciliation">
+Keep folded TODOs pending during execution. Carry their exact filenames from
+CONTEXT's Folded Todos subsection and canonical issue URLs into the shipping
+handoff. `/ship` reconciles only that selection after matching MERGED PR and
+CLOSED issue readback. Reviewed but not folded TODOs remain outside the selection.
+Pending human UAT is not auto-closed. Do not retire TODOs before merge.
 </step>
 
 <step name="update_state">
@@ -678,7 +720,7 @@ phase_run query state.record-session \
   --stopped-at "Phase ${phase_number} executed (${completed}/${plan_count} plans)" \
   --resume-file "${phase_dir}/${padded_phase}-VERIFICATION.md"
 phase_run query commit "chore(${padded_phase}): record phase execution" \
-  --files .planning/ROADMAP.md .planning/STATE.md .planning/todos
+  --files .planning/ROADMAP.md .planning/STATE.md "${phase_dir}"
 ```
 </step>
 
