@@ -159,6 +159,19 @@ For a TDD plan, also add a TDD Evidence section with the contract's RED/GREEN/RE
 [If no USER-SETUP.md:]
 None - no external service configuration required.
 
+## Threat Flags
+
+[Carry every PLAN threat forward with the same ID/key, aliases and issue, citing
+its PLAN entry. Include newly discovered, pre-existing, mitigated, accepted and
+deferred threats anywhere in this SUMMARY. Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking);
+authors return safe Pending requests and never publish or edit shared PLAN/status.]
+
+| Threat ID / risk key and source aliases | Category | Component/scope | Severity and assessment | Disposition | Mitigation/task/check | Owner | Status | Canonical issue | Resolution evidence |
+|---|---|---|---|---|---|---|---|---|---|
+| [stable ID/key and aliases] | [STRIDE category] | [affected control/scope] | [critical/ high/ medium/ low; impact/likelihood and uncertainty] | [mitigate/accept/transfer] | [task + secure check or safe next action] | [responsible party] | [unresolved/mitigated/accepted/deferred] | [verified URL or Pending with dependency] | [revision + actual result, or Pending with dependency] |
+
+[None identified with inspected scope is allowed after assessment.]
+
 ## Next Phase Readiness
 [What's ready for next phase]
 [Any blockers or concerns]

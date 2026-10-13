@@ -230,6 +230,16 @@ After the preparer returns:
 If the plan is missing, stop with: "phase-preparer failed to create ${QUICK_ID}-PLAN.md".
 </step>
 
+<step name="reconcile_plan_threats">
+After the preparer's committed PLAN is available, scan every section and reconcile
+every threat through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Search/reuse or create safe
+canonical issues, read back, then reconcile aliases, links, status and evidence
+in coordinator-owned planning records before reporting preparation complete.
+This step is mandatory in ordinary quick and quick-validate, outside check_plan.
+Keep actual provider/private-access blockers Pending with dependency; continue
+independent authorized work. Repeat after PLAN revisions or review threats.
+</step>
+
 <step name="check_plan">
 **Only when `VALIDATE_MODE` is true.** Otherwise skip to `execute`.
 
@@ -419,6 +429,16 @@ phase_run query worktree.cleanup-wave --phase "quick-${QUICK_ID}"
 
 Read the result. `blocked` non-empty means an undeclared deletion or a conflict;
 escalate it rather than re-running the merge to get past it.
+</step>
+
+<step name="reconcile_summary_threats">
+After integration, read the integrated SUMMARY and every PLAN/SUMMARY section.
+Reconcile all findings under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking), including carried
+identity/aliases, new findings, status/evidence, safe issue create/reuse/readback
+and coordinator-owned planning links. This mandatory step runs in ordinary quick
+and quick-validate, outside verify. Keep real publication blockers Pending with
+dependency and remaining risks visible; continue independent authorized work.
+Repeat after review findings are represented in the owned PLAN/SUMMARY.
 </step>
 
 <step name="run_checks">

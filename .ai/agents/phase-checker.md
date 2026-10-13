@@ -555,6 +555,12 @@ with no trigger must state its concrete non-applicability reason. Do not infer
 an unavailable `security_enforcement` setting or treat an absent setting as an
 exemption.
 
+Also inspect every identified threat in all PLAN sections under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+Require assessed severity, owner, observed lifecycle, resolution evidence and
+stable ID/key/aliases with coordinator handoff/link. A worker's safe Pending
+request with concrete dependency before publication is valid; never demand an
+invented URL. Actual missing required publication after reconciliation remains a gap.
+
 ## Dimension 8: Nyquist Compliance
 
 **Question:** Is every task's completion decided by an automated check that can actually fail?
