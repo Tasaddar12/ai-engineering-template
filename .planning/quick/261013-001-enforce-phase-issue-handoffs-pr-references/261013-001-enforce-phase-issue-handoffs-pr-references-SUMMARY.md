@@ -38,3 +38,6 @@ Task 1 GREEN commit: `a3a5ad1c7c881b98b40bb32ee04362f0c1b3928e`.
 Task 2 RED at Task 1 commit plus owned tests:
 - `python -m unittest discover -s tests -p test_phase_issues.py -k phase_session`: 1 test, intended failure, exit 1; omitting phase still edits a PR with no declaration.
 - `python -m unittest discover -s tests -p test_session_delivery.py -k matching_merged_readback`: 1 test, 7 intended assertion failures, exit 1; command success claims merged for unreadable, OPEN/CLOSED, mismatched and incomplete responses. Initial missing config fixture was repaired before valid RED evidence.
+
+Task 2 RED commit: `5b601e8cbdd404d967fa40f768acf12892505fc8`.
+Bounded producer correction: existing SUMMARY amendments need a runtime declaration path. Added phase.issue-declare regression before implementing that setter; `python -m unittest discover -s tests -p test_phase_issues.py -k declaration_setter`: 1 intended missing-verb failure, exit 1. This stays in existing record entries, with no ledger.

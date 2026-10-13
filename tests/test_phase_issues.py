@@ -232,7 +232,7 @@ else:
         self.phase([self.entry()])
         self.publish()
         self.session()
-        for body in ("Fixes #1", "Closes acme/project#1", "Resolves https://github.com/acme/project/issues/1"):
+        for body in ("Fixes #1. Related: https://github.com/acme/project/issues/1", "Closes acme/project#1. Related: https://github.com/acme/project/issues/1", "Resolves https://github.com/acme/project/issues/1"):
             self.run_verb("pr.open", self.branch, "--body", body, ok=False)
         data = self.remote(); data["pr"]["body"] = "Fixes #1"; self.save(data)
         self.run_verb("pr.open", self.branch, "--base", "other", ok=False)
@@ -277,6 +277,84 @@ else:
             result = self.reconcile()
             self.assertEqual(result["items"][0]["state"], "pending")
             self.assertTrue(self.todo.exists())
+
+    def uat_body(self):
+        import re
+        template = (fixtures.ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8")
+        return re.search(r"### UAT\n\n```markdown\n(.*?)\n```", template, re.S)[1]
+
+    def test_pending_human_uat_cannot_be_forged_as_resolving_even_when_closed(self):
+        self.phase([self.entry(variant="UAT", state="pending-human")])
+        self.public.write_text(self.uat_body(), encoding="utf-8")
+        self.publish(variant="UAT")
+        self.session()
+        url = "https://github.com/acme/project/issues/1"
+        self.run_verb("pr.open", self.branch, "--body", "Follow-up: " + url)
+        metadata = self.metadata(); entry = metadata["issue_refs"][0]
+        entry.update(state="resolved", relationship="resolving", reason="Claimed human acceptance")
+        self.write_record(metadata["issue_refs"])
+        self.remote(issues=[self.issue(state="closed", body=self.public.read_text(encoding="utf-8"))])
+        self.run_verb("pr.open", self.branch, "--body", "Closes " + url, ok=False)
+        self.assertEqual(self.remote()["pr_edits"], 1)
+
+    def test_closed_uat_without_human_acceptance_keeps_folded_todo_pending(self):
+        self.folded(state="closed")
+        self.remote(issues=[self.issue(state="closed", body=self.uat_body())])
+        self.assertEqual(self.reconcile()["items"][0]["state"], "pending")
+        self.assertTrue(self.todo.exists())
+
+    def test_phase_session_ambiguity_and_wrong_origin_pr_cannot_mutate(self):
+        self.phase()
+        self.session()
+        state = json.loads(self.sessions.read_text(encoding="utf-8"))
+        state["sessions"].append(dict(state["sessions"][0]))
+        self.sessions.write_text(json.dumps(state), encoding="utf-8")
+        self.run_verb("pr.open", self.branch, "--body", "", ok=False)
+        state["sessions"].pop(); self.sessions.write_text(json.dumps(state), encoding="utf-8")
+        data = self.remote(); data["pr"]["url"] = "https://github.com/other/project/pull/5"; self.save(data)
+        self.run_verb("pr.open", self.branch, "--body", "", ok=False)
+        self.assertEqual(self.remote().get("pr_edits", 0), 0)
+
+    def test_reconciliation_rejects_unfolded_and_traversal_without_moving(self):
+        self.folded(state="closed")
+        for name in ("unselected.md", "../legacy.md"):
+            self.run_verb("phase.reconcile-todos", "1", "--pr", "https://github.com/acme/project/pull/5", "--todos", name, ok=False)
+            self.assertTrue(self.todo.exists())
+
+    def test_failed_issue_readback_and_local_change_preserve_folded_todo(self):
+        self.folded(state="closed")
+        self.remote(mode="view")
+        self.assertEqual(self.reconcile()["items"][0]["state"], "pending")
+        self.assertTrue(self.todo.exists())
+
+    def test_phase_create_and_body_file_precedence_use_origin_pinned_target(self):
+        self.phase([self.entry()])
+        self.publish()
+        self.session()
+        self.remote(pr=None)
+        body = self.directory / "pr body.md"
+        body.write_text("Follow-up: https://github.com/acme/project/issues/1", encoding="utf-8")
+        result = self.run_verb("pr.open", self.branch, "--base", "main", "--body", "Closes #1",
+                              "--body-file", str(body), "--draft")
+        self.assertTrue(result["created"])
+        self.assertEqual(self.remote()["pr"]["body"], body.read_text(encoding="utf-8"))
+        command = next(call for call in self.remote()["calls"] if call[:2] == ["pr", "create"])
+        self.assertEqual(command[command.index("--repo")+1], "github.com/acme/project")
+
+    def test_declaration_setter_uses_snapshot_and_preserves_publication_identity(self):
+        self.phase(declaration=False)
+        draft = self.directory / "declarations.json"
+        draft.write_text(json.dumps([self.entry()]), encoding="utf-8")
+        preview = self.run_verb("phase.issue-declare", "1", self.name)
+        self.run_verb("phase.issue-declare", "1", self.name, "--entries-file", str(draft), "--expect-digest", preview["snapshotDigest"])
+        self.assertEqual(self.metadata()["issue_refs"][0]["id"], "P1")
+        self.publish()
+        preview = self.run_verb("phase.issue-declare", "1", self.name)
+        draft.write_text(json.dumps([self.entry(state="resolved", reason="Fixed inline and checked")]), encoding="utf-8")
+        self.run_verb("phase.issue-declare", "1", self.name, "--entries-file", str(draft), "--expect-digest", preview["snapshotDigest"])
+        self.assertEqual(self.metadata()["issue_refs"][0]["issueURL"], "https://github.com/acme/project/issues/1")
+        self.assertEqual(self.metadata()["issue_refs"][0]["issuePublication"]["state"], "linked")
+        self.run_verb("phase.issue-declare", "1", self.name, "--entries-file", str(draft), "--expect-digest", "stale", ok=False)
 
     def test_reviewed_empty_handoff_and_complete(self):
         self.phase()
