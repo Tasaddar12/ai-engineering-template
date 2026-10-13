@@ -46,27 +46,33 @@ Configuration uses delivery.provider auto/github/gitlab and delivery.gitlab_host
 - python -m unittest discover -s tests -p test_workflow_links.py -q: 3 passed.
 - python -m unittest discover -s tests -p test_session_delivery.py -q: 59 passed; repeated against frozen integration b995255 in 127.111s.
 - python -m unittest discover -s tests -p test_todo_issues.py -q: 34 passed, one platform skip, against b995255 in 157.021s.
-- python -m unittest discover -s tests -p test_gitlab_delivery.py -q: initial exact-resolver integration b995255 passed all 38 cases. Repair slice passed 24 unit/boundary cases; 24 integration cases require the dependency.
-- python -m unittest discover -s tests -p test_providers.py -q: six passed against exact initial resolver 941099c in b995255.
+- python -m unittest discover -s tests -p test_gitlab_delivery.py -q: final exact-resolver integration 94dfe272994cf1507bc1291159c259d011ae4a61 passed all 48 cases, no skips, in 13.184s. The independent delivery tree runs 24 unit/boundary cases and explicitly skips 24 dependency cases.
+- python -m unittest discover -s tests -p test_providers.py -q: six passed against latest exact resolver e819ff6 in final integration 94dfe27.
+- python -m unittest discover -s tests -p test_agent_sources.py -q: 16 passed against 94dfe27.
+- python -m unittest discover -s tests -p test_efficiency_contracts.py -q: eight passed against 94dfe27.
+- python -m unittest discover -s tests -p test_unattended_flow.py -q: ten passed against 94dfe27.
+- python -m unittest discover -s tests -p test_verification_bookkeeping.py -q: three passed against 94dfe27.
 - git diff --check: passed.
 
 ## Commits
 
 - 8b0b856460ffef1fe3e5278ee27c1c05d00518d2: provider-aware ship instructions.
 - d360b7a5c509793b9adfaffd197ff28ce53232d4: MR adapter, provider dispatch, offline tests and summary.
-- Review corrections: recorded in Git history after this summary is committed.
+- 5c4345d65e92bd692ef8f0a5b7b2ec4a4217a3ec: independent-review corrections and regression coverage.
+- Final evidence summary: subsequent documentation-only commit recorded in Git history; three implementation/documentation slices precede it.
 
 ## Independent review
 
-Fresh code-reviewer reviewed frozen integration b995255 and identified seven BLOCKER findings: CLI route overrides, stale merge evidence, merged-results SHA, unrelated retry discarding intent, explicit-provider mismatch, GitLab failure diagnostics and canonical ship title. The repair slice addresses each with focused regression coverage and provider-aware instructions. Fresh review and exact latest-resolver tests remain pending.
+Fresh code-reviewer reviewed frozen integration b995255 and identified seven BLOCKER findings: CLI route overrides, stale merge evidence, merged-results SHA, unrelated retry discarding intent, explicit-provider mismatch, GitLab failure diagnostics and canonical ship title.
+Correction review at frozen integration 94dfe272994cf1507bc1291159c259d011ae4a61 independently confirmed all seven resolved, with zero blockers/warnings. Independent offline reproductions also confirmed a pipeline changing after draft clearance blocks merge and a refused provider merge cannot return success. Source remained clean and unchanged during both review batches.
 
 ## Remaining
 
-- Run all repaired MR cases in an integration worktree containing exact resolver tip e819ff6.
-- Obtain fresh independent review of that frozen integration tree and fix findings.
-- Await required GitHub CI on the final delivery revision. Draft status does not establish readiness.
+- GitLab delivery requires separately reviewed PR #77/resolver tip e819ff6; this PR deliberately contains no duplicate shared resolver/config files and is not independently GitLab-ready. Both reviewable worktrees remain preserved.
+- Required GitHub CI on the final summary commit was pending when this summary was committed; the current result is maintained on PR #76. Required `validate` aggregates both unchanged Linux/Windows suites; no Actions/protection configuration was edited.
+- Real provider execution and on-prem tests were intentionally excluded by the assignment; all GitLab tests are offline fakes and no credentials were changed. No PR was merged.
 - Adoption PROJECT/STATE/ROADMAP skeleton remains unfilled; no phase requirement IDs assigned.
 
 ## Self-Check
 
-Owned implementation and tests exist; documentation slice commit exists. Dependency and pending evidence are explicit. Context usage: unavailable.
+PASSED: owned implementation, tests and documentation exist; all three slice commits exist; no tracked deletions or unrelated changes. Final reviewed source is delivery candidate 5c4345d with exact dependency e819ff6; final summary commit changes only this report. Dependency and CI evidence boundaries are explicit. Context usage: unavailable.
