@@ -532,11 +532,11 @@ phase_run query phase-plan-index "${phase_number}"
 Extract `plans` and `count`. If the count is 0, the preparer failed — report it
 and stop. Do not write plans yourself to cover for a failed agent.
 
-After committed PLANs are available, reconcile every finding in all PLAN sections
-through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking): search/reuse or create safe canonical issues,
-read back and reconcile links/aliases/status/evidence in coordinator-owned records.
-Return actual provider/private-access blockers as Pending, continuing independent
-authorized work; do this before reporting preparation complete and after revisions.
+- Reconcile each committed PLAN's threats through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+  before reporting preparation complete; repeat after revisions.
+- Create/reuse/read back canonical issues; update each owning PLAN's Threat ID
+  links. Keep threat content in that PLAN and issue detail in the Security risk issue.
+- Retain Pending dependencies; continue independent authorized work.
 
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
 the rest is unplanned. Re-dispatch the same `Agent(...)` call with the

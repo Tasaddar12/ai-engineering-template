@@ -50,11 +50,11 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 - Risks: [one sentence: material risks or none identified]
 - Rollback: [one sentence: practical rollback for this change]
 
-| Threat ID / risk key | Severity | Status | Canonical issue | Safe mitigation / resolution evidence |
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| [stable ID/key and aliases] | [assessed severity] | [observed state] | [verified URL or Pending with dependency] | [revision/check/result or safe next action] |
+| [Owning PLAN#threat-id] | [Verified issue URL or Pending: dependency] | [Observed outcome] | [open/closed/Pending readback] | [Safe revision/check/result and readback, or Pending: dependency] |
 
-[None identified with inspected scope is allowed after assessment.]
+[Use None identified with inspected scope when applicable.]
 
 ## Stack
 
@@ -94,13 +94,12 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   or that none were identified, and always give a practical rollback unless it
   truly does not apply.
 - Keep evidence safe: redact secrets, private logs and sensitive data before
-  adding evidence to the public body. Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
-  for every PLAN/SUMMARY finding, including mitigated/accepted/deferred risks.
-  Preserve stable identity and verified links. Use neutral references until
-  scope-complete mitigation and existing explicit closure authority are verified.
-  Audit closing references before publication/merge; merge is not resolution and
-  unresolved risks must never autoclose. GitLab MR policy also applies, but
-  runtime support is GitHub-only; unavailable host tools leave publication Pending.
+  adding evidence to the public body.
+- Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); link every finding's
+  owning PLAN and issue. Keep still-open, accepted/deferred and mitigated/resolved
+  outcomes distinct. List actual closed issues only with readback and evidence.
+  Audit closing references; require scope-complete mitigation and existing closure
+  authority. Never infer closure from merge. Use neutral links for remaining risks.
 - In Known gaps, write `None` only after checking. For a PR with no stacked
   dependency, omit the entire Stack section.
 - Example excerpt (fictional values; not evidence; replace before publishing):

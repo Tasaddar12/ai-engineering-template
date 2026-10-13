@@ -153,22 +153,20 @@ Only the user converts an abstention into acceptance.
 
 ## Threat records and ownership
 
-The PLAN threat_model and SUMMARY Threat Flags retain stable Threat ID/risk key,
-source aliases, category, affected component/scope, assessed severity/rationale,
-disposition, mitigation/task/check, owner, observed status, canonical issue
-(verified URL or Pending with dependency) and actual resolution evidence.
-Carry every PLAN finding forward and include every identified threat anywhere,
-including pre-existing, mitigated, accepted and deferred risks. None identified
-requires inspected scope; boundary-triggered STRIDE planning still applies.
-
-Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Workers author safe requests and their
-SUMMARY; coordinator owns publication, semantic dedup/readback and shared
-PLAN/status links before preparation/execution completion. Mandatory phase and
-both quick-mode hooks run outside optional review/verification. PR/MR tables
-retain remaining risks and neutral links until evidence and explicit closure
-authority permit closing. No automatic prose scanner or risk-close guard exists.
-Security risk issue.validate is structuralOnly: headings/order, not assessment
-values, semantic dedup, safe disclosure or resolution truth.
+- Keep each threat's description, category, component, severity, disposition and
+  mitigation in its respective PLAN's six-column register; link its local Threat ID
+  to the canonical issue or retain ID + Pending dependency.
+- Keep stable key, aliases, assessment, owner, status, details and evidence in the
+  existing Security risk issue under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Preserve conditional three-column SUMMARY Threat Flags for discovery. Carry
+  all PLAN threats separately in Threat Outcomes: PLAN/ID, issue, outcome, Git
+  state and evidence. Do not duplicate or combine PLAN registers.
+- Keep open/unresolved, accepted/deferred and mitigated/resolved distinct; list
+  actual closed only with readback/evidence. Never infer closure from merge.
+- Workers return safe requests/SUMMARY; coordinators update each owning PLAN's
+  links and reconcile status. Run phase and both quick-mode hooks outside optional review.
+- Limitation: issue.validate checks headings/order only; semantic review and
+  provider reconciliation remain author/coordinator duties.
 
 ## Storage boundary
 

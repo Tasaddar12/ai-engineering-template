@@ -7,12 +7,9 @@
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
 - For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
-  A separately reviewed sanitized public tracker can proceed under standing
-  tracking authorization without private-channel approval. Sensitive details use
-  an existing authorized restricted channel. Missing private access blocks only
-  that detail or dependent action. If even a safe description/link cannot be
-  disclosed, retain a publication blocker and accessible restricted canonical
-  reference. Respect destination visibility; never invent a public URL.
+  Publish reviewed sanitized tracking without private-channel approval; keep
+  sensitive detail in an authorized restricted channel. Retain explicit blockers
+  for unavailable detail or unsafe disclosure; respect destination visibility.
 
 Select the appropriate variant below, then copy only its fenced **File Template**
 block into the public body file. Never copy the whole source or all variants.
@@ -309,13 +306,10 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
   or unverified entry points `BLOCKED` with the missing prerequisite; never
   invent controls or claim a pass. AI/maintainer prepares the build, access,
   fixtures and technical evidence in the separate maintainer record.
-- For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
-  and the safe-public/restricted-detail instruction above. Carry source aliases
-  and occurrences; assess actual severity. Planned mitigation/transfer remains
-  unresolved until evidenced; accepted needs responsible-party rationale,
-  deferred needs owner/reason/next action, mitigated needs secure revision/check
-  evidence. Fields, semantic dedup, disclosure safety and resolution truth remain
-  review obligations; structural validation checks headings/order only.
+- For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+  Keep stable key, aliases, assessed severity, owner, observed status and evidence
+  here; link each owning PLAN. Redact restricted detail. Keep accepted/deferred
+  distinct from resolved; structural validation checks headings/order only.
 - Example excerpt (fictional values, not evidence; replace before publishing):
 
   | Field | Example value |

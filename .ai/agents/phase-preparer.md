@@ -412,14 +412,11 @@ Output: [Artifacts created]
 
 ## STRIDE Threat Register
 
-| Threat ID / risk key and source aliases | Category | Component/scope | Severity and assessment | Disposition | Mitigation/task/check | Owner | Status | Canonical issue | Resolution evidence |
-|---|---|---|---|---|---|---|---|---|---|
-| T-{phase}-01 / {stable key}; {source aliases} | {S/T/R/I/D/E} | {function/endpoint/file} | {assessed severity; impact/likelihood; uncertainty} | mitigate | {implementing task + secure check} | {owner} | unresolved | Pending coordinator reconciliation | Pending implementing task/check |
-| T-{phase}-02 / {stable key}; {source aliases} | {category} | {component} | low; {limited impact/likelihood; uncertainty} | accept | {proposed acceptance rationale and responsible party} | {owner} | unresolved until actual acceptance evidence | Pending coordinator reconciliation | Pending responsible-party decision/evidence |
-| T-{phase}-SC / {dependency key}; {source aliases} | Tampering | dependency installation | high; {supply-chain impact/likelihood; uncertainty} | mitigate | {task/check}: verify exact package identity/version and project-approved source | {owner} | unresolved | Pending coordinator reconciliation | Pending identity/source check |
-
-[Use only actual findings; examples are not project risks. Preserve ID/key and
-source aliases; coordinator publishes, workers return Pending with dependency.]
+| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
+|-----------|----------|-----------|----------|-------------|-----------------|
+| T-{phase}-01 | {S/T/R/I/D/E} | {function/endpoint/file} | {critical\|high\|medium\|low} | mitigate | {specific mitigation action} |
+| T-{phase}-02 | {category} | {component} | low | accept | {rationale for acceptance} |
+| T-{phase}-SC | Tampering | dependency installation | high | mitigate | verify exact package identity/version and project-approved source |
 </threat_model>
 
 <verification>
@@ -515,17 +512,17 @@ mitigation must name its implementing task and verification command; accepted or
 transferred threats require the rationale and responsible boundary/party. Apply
 [security review levels](../references/methods/security-asvs-levels.md).
 
-Every actually identified threat anywhere in the PLAN follows [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking),
-even when no new boundary changes. Preserve ID/key and source aliases; record
-assessed severity, owner, observed status, issue (verified URL or Pending with
-dependency) and resolution evidence in the template register. Disposition is
-intent, not resolution. Workers return safe requests and never publish.
+- Track every identified threat in its respective PLAN's six-column register
+  under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Link the local Threat ID
+  to its issue; return Pending with dependency until coordinator reconciliation.
+- Keep descriptions, category, component, severity, disposition and mitigation
+  in that PLAN; keep keys, aliases, owner, observed status and evidence in the issue.
 
-When no boundary trigger applies, state `Security review: not applicable` with
-the concrete scope reason; still track identified threats. A no-threat outcome
-states None identified with inspected scope. The checker rejects a triggered
-PLAN missing its register/dispositions. These are preparation/review obligations,
-not Python threat analysis.
+When none of those triggers applies, state `Security review: not applicable`
+with the exact unchanged boundary or documentation/configuration-only scope in
+the PLAN verification section. The independent checker must reject a triggered
+PLAN with a missing register or disposition. These are mandatory preparation
+checks, not a claim that the Python runtime performs threat analysis.
 
 **Dependency identity:** Before planning a new install, establish the exact package,
 version constraints and official source from available project or research evidence.
@@ -1049,7 +1046,8 @@ Phase planning complete when:
 - [ ] User knows next steps and wave structure
 - [ ] Every PLAN satisfies the Security planning gate: required STRIDE register or explicit non-applicability with the concrete scope reason
 - [ ] Every threat has a disposition (mitigate / accept / transfer)
-- [ ] Every identified PLAN threat, including prose findings, has stable ID/key/aliases, assessed Severity (critical|high|medium|low), owner, observed status, canonical issue or safe Pending handoff, and resolution evidence
+- [ ] Every threat has a Severity (critical|high|medium|low)
+- [ ] Every identified PLAN threat has a canonical issue link or safe Pending request with dependency
 - [ ] Mitigations reference specific implementation (not generic advice)
 
 ## Gap Closure Mode

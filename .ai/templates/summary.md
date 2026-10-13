@@ -161,16 +161,26 @@ None - no external service configuration required.
 
 ## Threat Flags
 
-[Carry every PLAN threat forward with the same ID/key, aliases and issue, citing
-its PLAN entry. Include newly discovered, pre-existing, mitigated, accepted and
-deferred threats anywhere in this SUMMARY. Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking);
-authors return safe Pending requests and never publish or edit shared PLAN/status.]
+[Emit only for new security-relevant surface outside the PLAN threat_model;
+omit this section if nothing found. Link discoveries to the owning PLAN/issue.]
 
-| Threat ID / risk key and source aliases | Category | Component/scope | Severity and assessment | Disposition | Mitigation/task/check | Owner | Status | Canonical issue | Resolution evidence |
-|---|---|---|---|---|---|---|---|---|---|
-| [stable ID/key and aliases] | [STRIDE category] | [affected control/scope] | [critical/ high/ medium/ low; impact/likelihood and uncertainty] | [mitigate/accept/transfer] | [task + secure check or safe next action] | [responsible party] | [unresolved/mitigated/accepted/deferred] | [verified URL or Pending with dependency] | [revision + actual result, or Pending with dependency] |
+| Flag | File | Description |
+|------|------|-------------|
+| threat_flag: {type} | {file} | {new surface description} |
 
-[None identified with inspected scope is allowed after assessment.]
+## Threat Outcomes
+
+- Carry every PLAN threat into the linked status table; add discoveries via the
+  owning PLAN. Do not repeat descriptions, categories or mitigation registers.
+- Distinguish open/unresolved, accepted/deferred and mitigated/resolved outcomes.
+- List actual closed issues only with readback and resolution evidence; never
+  label accepted/deferred resolved or infer closure from merge.
+
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|---|---|---|---|---|
+| [Owning PLAN#threat-id] | [Verified issue URL or Pending: dependency] | [unresolved/mitigated/resolved/accepted/deferred] | [open/closed/Pending readback] | [Revision/check/result and issue readback, or Pending: dependency] |
+
+[Use None identified with inspected scope when no threats were identified.]
 
 ## Next Phase Readiness
 [What's ready for next phase]
@@ -180,6 +190,8 @@ authors return safe Pending requests and never publish or edit shared PLAN/statu
 *Phase: XX-name*
 *Completed: [date]*
 ```
+
+- Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); workers return safe requests, coordinators update owning PLAN links.
 
 <frontmatter_guidance>
 **Purpose:** Enable automatic context assembly via dependency graph. Frontmatter makes summary metadata machine-readable so plan-phase can scan all summaries quickly and select relevant ones based on dependencies.
