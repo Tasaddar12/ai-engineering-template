@@ -84,3 +84,13 @@ No unrelated scope added. PR #76/#77 provider work remains held. PR #78 merged m
 Ready for independent phase-checker assessment and implementation dispatch under existing user authorization. Exact editable paths are declared in PLAN frontmatter.
 
 Mechanical enforcement validates declared records, canonical identity, effective supported PR references, and observed MERGED/CLOSED evidence. Semantic completeness, correct issue-kind judgment, relationship to folded CONTEXT entries and genuine human acceptance remain coordinator/agent obligations. Arbitrary direct provider edits bypass the supported runtime gate. This plan does not claim those semantic judgments are mechanically proven.
+
+## Review Corrections
+
+- **Revision input/reviewed:** d43f4ff30daf29d8e368bd81312939c70160b087; PR #78 Git routing is now included.
+- **Pinned revision root/branch:** D:/Codex Projects/ai-engineering-template/.worktrees/phase-issue-plan-revision-150003118 / phase-phase-issue-plan-revision-150003118.
+- **PC-SEC-01 addressed:** Added a plan-local L1 STRIDE register for private/public leakage, record/path tampering, and wrong-origin/false-closure evidence. Each risk has high severity, mitigate disposition, owning task, concrete existing safeguards, denied-input scenarios and executable check mapping. Authority: .ai/agents/phase-preparer.md#security-planning-gate and phase-checker Dimension 7d. Canonical issue #83 tracks this scope; no duplicate #81/#82 issue or PR #80 template architecture is created.
+- **PC-REG-01 addressed:** Declared tests/test_phase_runtime.py in exact ownership and Task 1 files/read_first, added its automated command/failure signal, and assigned correction of the observed phase.complete success fixtures through reviewed empty issue_refs SUMMARY records. Missing-declaration negative tests remain intact; no global fixture bypass is allowed.
+- **Scope preserved:** Three tasks, existing publication recovery and provider boundaries, ordinary/early/halt tracking, resolved-inline exemption, necessary issue authorization and independent PR #80 ownership.
+- **Checks:** Inspected current PLAN, changed AGENTS, security gate/review depth and actual phase.complete callers. Scoped PLAN/SUMMARY diff and staged whitespace are checked before commit. No tests were run.
+- **Remaining review:** Fresh independent checker assessment; no unresolved correction IDs or new architecture blockers.
