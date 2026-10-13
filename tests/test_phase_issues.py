@@ -19,6 +19,15 @@ class PhaseIssues(unittest.TestCase):
         self.record = directory / "01-01-SUMMARY.md"
         self.name = self.record.relative_to(self.directory).as_posix()
         (self.directory / ".planning/ROADMAP.md").write_text("# Roadmap\n\n## Phases\n\n- [ ] **Phase 1: Fixture** - Test\n\n## Phase Details\n\n### Phase 1: Fixture\n**Goal**: Test\n**Plans**: 1 plan\n\nPlans:\n- [ ] 01-01: Test\n", encoding="utf-8")
+        fake = fixtures.FAKE_GH.replace('metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])', 'metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])["issue_refs"][0]')
+        fake = fake.replace('else:\n    raise AssertionError("unexpected provider call " + repr(args))', """elif args[:2] == ["issue", "edit"]:
+    issue = next(i for i in data["issues"] if i["html_url"] == args[2])
+    issue.update(title=args[args.index("--title")+1], body=Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8"))
+    data["edits"] = data.get("edits", 0) + 1
+else:
+    raise AssertionError("unexpected provider call " + repr(args))""")
+        self.fake.write_text(fake, encoding="utf-8")
+        self.remote(todo=str(self.record))
         self.write_record(entries, declaration, status)
 
     def write_record(self, entries=None, declaration=True, status="complete"):
@@ -29,6 +38,165 @@ class PhaseIssues(unittest.TestCase):
 
     def entry(self, **changes):
         return dict({"id": "P1", "summary": "Private problem", "variant": "Bug", "state": "unresolved", "relationship": "followup"}, **changes)
+
+    def metadata(self):
+        return yaml.safe_load(self.record.read_text(encoding="utf-8").split("---", 2)[1])
+
+    def preview(self, ok=True, name=None):
+        return self.run_verb("phase.issue-preview", "1", name or self.name, "P1", ok=ok)
+
+    def publish(self, preview=None, decision=None, variant="Bug", ok=True, body_file=None):
+        preview = preview or self.preview()
+        return self.run_verb("phase.issue-publish", "1", self.name, "P1",
+            "--preview-token", preview["previewToken"], "--title", "Public reviewed title",
+            "--body-file", str(body_file or self.public), "--variant", variant,
+            *(decision or ["--no-match"]), ok=ok)
+
+    def test_publish_shared_engine_and_handoff_keeps_private_content(self):
+        self.phase([self.entry()])
+        result = self.publish()
+        self.assertTrue(result["created"])
+        self.assertEqual(self.metadata()["issue_refs"][0]["variant"], "Bug")
+        self.assertNotIn("Private", self.remote()["issues"][0]["body"])
+        self.assertTrue(self.run_verb("phase.handoff", "1")["ready"])
+
+    def test_reuse_open_and_closed_preserves_variant(self):
+        for state in ("open", "closed"):
+            with self.subTest(state=state):
+                self.phase([self.entry()])
+                self.remote(issues=[self.issue(state=state, body=self.public.read_text(encoding="utf-8"))], creates=0)
+                result = self.publish(decision=["--existing-issue", "https://github.com/acme/project/issues/1"])
+                self.assertFalse(result["created"])
+                self.assertEqual(self.remote()["creates"], 0)
+
+    def test_malformed_reused_kind_cannot_link(self):
+        self.phase([self.entry()])
+        self.remote(issues=[self.issue(body="## Human acceptance\nStatus: PENDING HUMAN acceptance")])
+        result = self.publish(decision=["--existing-issue", "https://github.com/acme/project/issues/1"], ok=False)
+        self.assertEqual(result["code"], "issue-format")
+        self.assertNotIn("issueURL", self.metadata()["issue_refs"][0])
+
+    def test_uncertain_create_records_blocked_then_recovers_without_duplicate(self):
+        self.phase([self.entry()])
+        self.remote(mode="lost")
+        result = self.publish()
+        self.assertEqual(result["state"], "blocked-publication")
+        self.assertFalse(self.run_verb("phase.handoff", "1")["ready"])
+        self.assertEqual(self.metadata()["issue_refs"][0]["issuePublication"]["state"], "attempted")
+        self.remote(mode="")
+        recovered = self.publish()
+        self.assertTrue(recovered["recovered"])
+        self.assertEqual(self.remote()["creates"], 1)
+
+    def test_uncertain_zero_matches_never_retry_creation(self):
+        self.phase([self.entry()])
+        self.remote(mode="create-before")
+        self.publish()
+        self.remote(mode="")
+        self.assertEqual(self.publish(ok=False)["code"], "issue-unresolved")
+        self.assertEqual(self.remote()["creates"], 1)
+
+    def test_private_source_and_invalid_shape_precede_remote_mutation(self):
+        self.phase([self.entry()])
+        preview = self.preview()
+        self.assertEqual(self.publish(preview, body_file=self.record, ok=False)["code"], "issue-review")
+        self.public.write_text("Private invalid body", encoding="utf-8")
+        self.assertEqual(self.publish(preview, ok=False)["code"], "issue-format")
+        self.assertEqual(self.remote()["creates"], 0)
+
+    def test_wrong_variant_cannot_reclassify_problem(self):
+        self.phase([self.entry()])
+        self.assertEqual(self.publish(variant="UAT", ok=False)["code"], "issue-variant")
+        self.assertEqual(self.remote()["creates"], 0)
+
+    def test_stale_record_refuses_create(self):
+        self.phase([self.entry()])
+        preview = self.preview()
+        self.record.write_text(self.record.read_text(encoding="utf-8") + "Changed private evidence\n", encoding="utf-8")
+        self.assertEqual(self.publish(preview, ok=False)["code"], "stale-preview")
+        self.assertEqual(self.remote()["creates"], 0)
+
+    def test_changed_record_during_preview_preserves_concurrent_evidence(self):
+        self.phase([self.entry()])
+        self.remote(mode="preview-mutate")
+        self.assertEqual(self.preview(ok=False)["code"], "stale-preview")
+        self.assertIn("Concurrent context", self.record.read_text(encoding="utf-8"))
+
+    def test_traversal_wrong_phase_and_symlink_are_denied(self):
+        self.phase([self.entry()])
+        for name in ("../outside.md", ".planning/phases/02-other/02-01-SUMMARY.md"):
+            self.assertEqual(self.preview(name=name, ok=False)["code"], "path-escape")
+        alias = self.record.parent / "01-02-SUMMARY.md"
+        try:
+            alias.symlink_to(self.record)
+        except OSError:
+            return
+        self.assertEqual(self.preview(name=alias.name, ok=False)["code"], "path-escape")
+        self.assertEqual(self.remote()["creates"], 0)
+
+    def test_malformed_duplicate_and_untruthful_dispositions_fail(self):
+        for refs in ("wrong", [self.entry(), self.entry()], [self.entry(state="resolved")],
+                     [self.entry(state="pending-human", relationship="resolving")], [self.entry(state="blocked-publication")]):
+            with self.subTest(refs=refs):
+                self.phase(refs)
+                self.run_verb("phase.handoff", "1", ok=False)
+
+    def test_canonical_identity_rejects_pr_wrong_origin_and_number(self):
+        for changes in ({"issueURL": "https://github.com/acme/project/pull/1"},
+                        {"issueURL": "https://github.com/other/project/issues/1"},
+                        {"issueNumber": 2}, {"issueRepo": "github.com/other/project"}):
+            self.phase([self.entry(**dict({"issueRepo": "github.com/acme/project",
+                "issueURL": "https://github.com/acme/project/issues/1", "issueNumber": 1}, **changes))])
+            self.run_verb("phase.handoff", "1", ok=False)
+
+    def test_type_preserving_update_requires_fresh_review_and_readback(self):
+        self.phase([self.entry()])
+        self.publish()
+        preview = self.preview()
+        self.public.write_text(self.public.read_text(encoding="utf-8").replace("An empty result appears.", "A reviewed empty result appears."), encoding="utf-8")
+        result = self.run_verb("phase.issue-update", "1", self.name, "P1", "--preview-token", preview["previewToken"],
+            "--title", "Updated public title", "--body-file", str(self.public), "--variant", "Bug")
+        self.assertTrue(result["updated"])
+        self.assertEqual(self.remote()["edits"], 1)
+        self.assertEqual(self.metadata()["issue_refs"][0]["variant"], "Bug")
+
+    def test_attempted_multiple_markers_and_changed_intent_are_rejected(self):
+        self.phase([self.entry()])
+        self.remote(mode="lost")
+        self.publish()
+        self.remote(mode="")
+        issue = self.remote()["issues"][0]
+        duplicate = dict(issue, number=2, html_url="https://github.com/acme/project/issues/2")
+        self.remote(issues=[issue, duplicate])
+        self.assertEqual(self.publish(ok=False)["code"], "issue-unresolved")
+        self.assertEqual(self.remote()["creates"], 1)
+
+    def test_update_cannot_change_kind_or_use_stale_body_readback(self):
+        self.phase([self.entry()])
+        self.publish()
+        preview = self.preview()
+        result = self.run_verb("phase.issue-update", "1", self.name, "P1", "--preview-token", preview["previewToken"],
+            "--title", "Changed", "--body-file", str(self.public), "--variant", "UAT", ok=False)
+        self.assertEqual(result["code"], "issue-variant")
+        self.remote(direct_changes={"body": "Unexpected changed body"})
+        result = self.run_verb("phase.issue-update", "1", self.name, "P1", "--preview-token", preview["previewToken"],
+            "--title", "Changed", "--body-file", str(self.public), "--variant", "Bug", ok=False)
+        self.assertEqual(result["code"], "stale-preview")
+        self.assertEqual(self.remote().get("edits", 0), 0)
+
+    def test_context_declarations_are_included_but_legacy_context_needs_none(self):
+        self.phase()
+        context = self.record.parent / "01-CONTEXT.md"
+        context.write_text("Legacy planning narrative\n", encoding="utf-8")
+        self.assertTrue(self.run_verb("phase.handoff", "1")["ready"])
+        context.write_text("---\n" + yaml.safe_dump({"issue_refs": [self.entry()]}) + "---\n", encoding="utf-8")
+        self.run_verb("phase.handoff", "1", ok=False)
+
+    def test_private_malformed_yaml_diagnostics_are_sanitized(self):
+        self.phase()
+        self.record.write_text("---\nissue_refs: [PRIVATE INVALID RECORD\n---\n", encoding="utf-8")
+        result = self.run_verb("phase.handoff", "1", ok=False)
+        self.assertNotIn("PRIVATE INVALID RECORD", json.dumps(result))
 
     def test_reviewed_empty_handoff_and_complete(self):
         self.phase()

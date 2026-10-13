@@ -173,6 +173,15 @@ class RuntimeCase(unittest.TestCase):
             self.assertFalse(payload.get("ok"), "verb unexpectedly succeeded")
         return payload
 
+    def reviewed_summary(self, number):
+        """Explicit completion setup; run_verb never inserts declarations."""
+        root = self.directory / ".planning/phases"
+        existing = sorted(root.glob(number.zfill(2) + "-*")) if root.exists() else []
+        selected = existing[0] if existing else root / (number.zfill(2) + "-reviewed")
+        selected.mkdir(parents=True, exist_ok=True)
+        (selected / (number.zfill(2) + "-01-SUMMARY.md")).write_text(
+            "---\nissue_refs: []\n---\nReviewed: no remaining problems.\n", encoding="utf-8")
+
     def read(self, relative):
         return (self.directory / relative).read_text(encoding="utf-8")
 
@@ -267,6 +276,7 @@ class PlanProgress(RuntimeCase):
         self.assertIn("| 1. Foundation | 2/2 | Complete |", roadmap)
 
     def test_phase_complete_ticks_all_plans(self):
+        self.reviewed_summary("01")
         result = self.run_verb("phase.complete", "1")
         self.assertEqual(result["plans_completed"], 2)
         roadmap = self.read(".planning/ROADMAP.md")
@@ -274,6 +284,7 @@ class PlanProgress(RuntimeCase):
         self.assertIn("- [x] 01-02: Wire it up", roadmap)
 
     def test_state_frontmatter_is_derived_from_the_roadmap(self):
+        self.reviewed_summary("01")
         self.run_verb("phase.complete", "1")
         state = self.run_verb("state.get")
         self.assertEqual(state["progress"]["completed_phases"], 1)
@@ -470,6 +481,7 @@ class PlanRegistration(RuntimeCase):
         self.assertEqual(after["progress"]["total_plans"], 4)
 
     def test_reopening_another_phase_leaves_current_phase_status_untouched(self):
+        self.reviewed_summary("02")
         self.run_verb("phase.complete", "2")
         self.run_verb("state.begin-phase", "1", "--status", "Shipped")
         before = self.run_verb("state.get")
@@ -496,6 +508,7 @@ class PlanRegistration(RuntimeCase):
                 self.write_record("ROADMAP.md", ROADMAP)
                 self.write_record("STATE.md", STATE)
                 self.run_verb("state.begin-phase", "1")
+                self.reviewed_summary("01")
                 self.run_verb("phase.complete", "1")
                 self.run_verb("state.record-session", "--status", status)
                 self.run_verb("roadmap.set-plans", "1", "--plans", "01-01: Scaffold",
@@ -537,6 +550,7 @@ class PlanRegistration(RuntimeCase):
                 self.write_record("ROADMAP.md", ROADMAP)
                 self.write_record("STATE.md", STATE)
                 self.run_verb("state.begin-phase", "1")
+                self.reviewed_summary("01")
                 self.run_verb("phase.complete", "1")
                 self.run_verb("state.record-session", "--status", status)
                 self.run_verb("roadmap.set-plans", "1", "--plans", "01-01: Scaffold", "01-02: Wiring")
@@ -746,6 +760,7 @@ class Milestones(RuntimeCase):
     def test_complete_writes_the_milestones_entry(self):
         self.run_verb("milestone.create", "v1.1 Hardening")
         self.run_verb("phase.add", "Hardening work", "--goal", "Harden it")
+        self.reviewed_summary("03")
         self.run_verb("phase.complete", "3")
         result = self.run_verb("milestone.complete", "v1.1", "--name", "Hardening",
                                "--confirm")
@@ -1460,6 +1475,7 @@ class PlanningValidation(RuntimeCase):
                         messages)
 
     def test_requirements_pending_under_a_complete_phase_are_reported(self):
+        self.reviewed_summary("01")
         self.run_verb("phase.complete", "1")
         messages = [item["message"] for item in self.validate()["warnings"]]
         self.assertTrue(any("still Pending" in message for message in messages),
@@ -1675,6 +1691,7 @@ class RequirementTraceability(RuntimeCase):
                          ["DATA-01"])
 
     def test_closing_the_phase_clears_the_validation_warning(self):
+        self.reviewed_summary("01")
         self.run_verb("phase.complete", "1")
         before = [item["check"] for item
                   in self.run_verb("planning.validate", "--skip",

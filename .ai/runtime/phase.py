@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
-                 issue_format, models, phases, project_record, quick, requirements, state,
+                 issue_format, models, phase_issues, phases, project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
@@ -627,6 +627,34 @@ def verb_milestone_complete(workspace, positionals, options):
 
 # --- todos ----------------------------------------------------------------
 
+def verb_phase_handoff(workspace, positionals, options):
+    with planning_lock(workspace):
+        return phase_issues.handoff(workspace, argument(positionals, 0, "phase"))
+
+
+def verb_phase_issue_preview(workspace, positionals, options):
+    require(len(positionals) == 3, "Select phase, record and issue ID", "issue-review")
+    with planning_lock(workspace):
+        return phase_issues.preview(workspace, *positionals, related_pr=option_text(options, "related_pr"))
+
+
+def verb_phase_issue_publish(workspace, positionals, options):
+    require(len(positionals) == 3, "Select phase, record and issue ID", "issue-review")
+    with planning_lock(workspace):
+        return phase_issues.publish(workspace, *positionals,
+            token=option_text(options, "preview_token"), title=option_text(options, "title"),
+            body_file=option_text(options, "body_file"), existing_issue=option_text(options, "existing_issue"),
+            no_match=options.get("no_match", False), variant=option_text(options, "variant"))
+
+
+def verb_phase_issue_update(workspace, positionals, options):
+    require(len(positionals) == 3, "Select phase, record and issue ID", "issue-review")
+    with planning_lock(workspace):
+        return phase_issues.update(workspace, *positionals,
+            token=option_text(options, "preview_token"), title=option_text(options, "title"),
+            body_file=option_text(options, "body_file"), variant=option_text(options, "variant"))
+
+
 def verb_todo_add(workspace, positionals, options):
     title = argument(positionals, 0, "title")
     with planning_lock(workspace):
@@ -782,6 +810,10 @@ VERBS = {
     "phase.remove": verb_phase_remove,
     "phase.edit": verb_phase_edit,
     "phase.complete": verb_phase_complete,
+    "phase.handoff": verb_phase_handoff,
+    "phase.issue-preview": verb_phase_issue_preview,
+    "phase.issue-publish": verb_phase_issue_publish,
+    "phase.issue-update": verb_phase_issue_update,
     "phase.next-decimal": verb_phase_next_decimal,
     "phases.list": verb_phases_list,
     "find-phase": verb_find_phase,
