@@ -193,13 +193,24 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
 
    Exit.
 
-6. **`gh` available and authenticated.**
+6. **Configured delivery provider available and authenticated.**
 
    ```bash
-   gh auth status
+   phase_run query gh.status
    ```
 
-   If `gh` is missing or unauthenticated, report the setup steps and exit.
+   Require both `available` and `authenticated`. The compatibility verb
+   `gh.status` selects `gh` for GitHub or `glab` for configured GitLab and checks
+   authentication against the resolved host. Invalid provider/remote ownership
+   blocks publication. Report a missing CLI or authentication and exit; never
+   change credentials automatically.
+
+   Keep the canonical pull-request template and `type(scope): summary` title
+   for both providers. GitLab adds its required `Draft:` prefix for draft MRs;
+   metadata edits preserve draft state and an omitted base preserves the target.
+   Use the same `pr.open`, `pr.checks` and session metadata for either provider.
+   Unreadable or uncertain publication blocks readiness; retry by readback and
+   never assume a failed response means no MR was created.
 
 7. **Configured checks pass.**
 
