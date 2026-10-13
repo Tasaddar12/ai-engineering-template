@@ -371,17 +371,22 @@ reporting the shipping blocker. This also applies when `gaps_found` takes
 precedence over `human_needed`; preserve the required human checks.
 
 Use the [canonical UAT template and authoring contract](../templates/UAT.md)
-for the phase session. For an authorized issue body, select only the
+for the phase session. For a new authorized human-test issue, select only the
 [UAT issue variant](../templates/issue.md#uat), following the same contract.
-Apply that variant's readiness instructions: saved-body readback and verified
-saved links/launch entry point against the prepared UI precede any ready claim.
-Direct verifier-generated checks follow that contract too; the verifier returns
-its proposed script read-only and the coordinator persists it. Keep technical
-evidence and build provenance in the separate maintainer-owned record.
+For existing issue rewrites, follow the template's
+[type-preservation rule](../templates/issue.md#how-to-fill-it).
+For UAT issues, apply that variant's readiness instructions: saved-body readback
+and verified saved links/launch entry point against the prepared UI precede any
+ready claim. Direct verifier-generated human checks follow that contract too;
+the verifier returns its proposed script read-only and the coordinator persists
+it. Keep technical evidence and build provenance in the separate maintainer-owned
+record.
 
-The AI/maintainer prepares the delivered environment and checks each proposed
-action against its actual UI before handoff. Record unavailable functions and
-unverified entry points as BLOCKED with their missing prerequisites. The human
+The following script and Human acceptance instructions apply to phase human
+checks and actual UAT issue bodies. The AI/maintainer prepares the delivered
+environment and checks each proposed action against its actual UI before
+handoff. Record unavailable functions and unverified entry points as BLOCKED
+with their missing prerequisites. The human
 receives the entry point, short behavior checklist, numbered concrete actions,
 expected visible results and the reply format from the template. Retain
 `PENDING HUMAN acceptance` until the actual decision and observation evidence
@@ -393,7 +398,7 @@ keep the session `status: partial` and Current Test as only
 `awaiting: final human acceptance decision`. Preserve pending acceptance fields;
 do not infer the final decision from action PASS replies. Completion and resume
 both require passing actions AND the actual recorded human decision.
-For an issue index, preserve the UAT headings/table/Human acceptance fields but
+For a UAT issue index, preserve the UAT headings/table/Human acceptance fields but
 replace the standalone numbered-step reply sentence with results only in the
 linked tests. Index decision/evidence reference actual linked test decisions;
 collect no separate row replies or duplicate acceptance action.

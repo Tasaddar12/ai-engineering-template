@@ -254,6 +254,12 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
 - Use the visible field shape and answer size in the selected block. Replace
   every bracketed value with actual information; remove remaining prompts,
   examples and instructional text before publishing.
+- When formatting an existing issue, preserve its type from the original intent,
+  labels and prior/archived body. Bugs discovered during UAT remain Bug reports.
+  A missing release prerequisite stays the appropriate engineering issue;
+  do not convert it to UAT without runnable human actions. Never classify by the
+  title keyword "acceptance" alone. UAT Human acceptance fields apply only to
+  UAT bodies; formatting does not authorize changing an issue's intent.
 - Preserve the selected variant's headings, order and table/result structure;
   retain UAT's Human acceptance fields. The author and coordinator review this
   shape before publication. `todo.issue-publish --variant "<canonical variant>"`

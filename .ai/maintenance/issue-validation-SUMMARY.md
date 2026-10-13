@@ -199,6 +199,45 @@ Fresh evidence on that correction base plus the four owned changes:
 This correction is committed separately; its full hash is returned in the
 handoff. No worker push, publication, merge or branch switch.
 
+## Type-preservation guidance and issue audit
+
+The user's subsequent instruction requires preserving existing issue types when
+formatting. This guidance-only slice starts from
+`b0e50bb07dd60db1fc8f498de694169a63d73730`, identical to integrated `8b40`
+(`git diff --stat 8b40 HEAD` was empty before editing).
+
+The coordinator's 2026-10-13 audit of touched issues against original intent,
+labels and prior/archive bodies reports:
+
+- #66 and #67: original bug + documentation labels and contract defects;
+  current Bug variants preserve that intent.
+- #68: original enhancement + documentation labels and dependency/evidence
+  improvement; the current Enhancement variant preserves that intent.
+- All three remain OPEN. No issue correction was needed or performed in this
+  slice. Other-repository restoration remains with its assigned owner.
+
+The existing issue template now owns the concise type-preservation rule. Bugs
+discovered during UAT remain Bug reports, missing release prerequisites stay
+appropriate engineering issues, and the title keyword "acceptance" alone does
+not determine type. The verification consumer limits UAT-only selection to new
+human-test issues, references the canonical rule for rewrites, and scopes human
+script/readiness/acceptance fields to phase human checks and actual UAT bodies.
+No new template, validator semantics, runtime/test change or human acceptance
+claim was added.
+
+Checks on that base plus the three owned guidance/summary paths:
+
+- `python -m unittest discover -s tests -p test_issue_format.py -v`: PASS, 13 tests.
+- `python -m unittest discover -s tests -p test_workflow_links.py -v`: PASS, 3 tests.
+- Manual/source comparison of the five `### Variant` fenced Markdown body blocks
+  against `git show HEAD:.ai/templates/issue.md`: PASS; all five variant names
+  and complete fenced bodies are unchanged.
+- `git diff --check`: PASS; exact owned paths inspected.
+
+The audit evidence above was supplied by the coordinator; this worker made no
+provider reads/writes, other-repository edits, push, PR or merge. The separate
+guidance-slice commit hash is returned in its handoff.
+
 ## Remaining and handoff
 
 No product UAT performed: this is an unfilled workflow template with no adopting
