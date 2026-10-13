@@ -33,6 +33,8 @@ DEFAULTS = {
     # How a session worktree's work reaches the base branch. There is no key
     # here that means "commit directly": the pull request is the only route.
     "delivery": {
+        "provider": "auto",
+        "gitlab_hosts": {},
         "merge_method": "squash",
         "delete_branch": True,
     },
