@@ -20,6 +20,12 @@ class PhaseIssues(unittest.TestCase):
         self.name = self.record.relative_to(self.directory).as_posix()
         (self.directory / ".planning/ROADMAP.md").write_text("# Roadmap\n\n## Phases\n\n- [ ] **Phase 1: Fixture** - Test\n\n## Phase Details\n\n### Phase 1: Fixture\n**Goal**: Test\n**Plans**: 1 plan\n\nPlans:\n- [ ] 01-01: Test\n", encoding="utf-8")
         fake = fixtures.FAKE_GH.replace('metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])', 'metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])["issue_refs"][0]')
+        fake = fake.replace('number = int(endpoint.rsplit("/", 1)[1])', """number = int(endpoint.rsplit("/", 1)[1])
+        if mode == "todo-view-mutate":
+            todo = Path(data["todo"])
+            todo.write_text(todo.read_text(encoding="utf-8") + "Changed during readback\\n", encoding="utf-8")
+        if mode == "bodyfile-mutate":
+            Path(data["pr_body"]).write_text("Closes #1", encoding="utf-8")""")
         fake = fake.replace('else:\n    raise AssertionError("unexpected provider call " + repr(args))', """elif args[:2] == ["pr", "view"]:
     if data.get("pr"):
         out = json.dumps(data["pr"])
@@ -232,7 +238,7 @@ else:
         self.phase([self.entry()])
         self.publish()
         self.session()
-        for body in ("Fixes #1. Related: https://github.com/acme/project/issues/1", "Closes acme/project#1. Related: https://github.com/acme/project/issues/1", "Resolves https://github.com/acme/project/issues/1"):
+        for body in ("Fixes #1. Related: https://github.com/acme/project/issues/1", "Closes acme/project#1. Related: https://github.com/acme/project/issues/1", "Resolves https://github.com/acme/project/issues/1", "Closes [problem](https://github.com/acme/project/issues/1)"):
             self.run_verb("pr.open", self.branch, "--body", body, ok=False)
         data = self.remote(); data["pr"]["body"] = "Fixes #1"; self.save(data)
         self.run_verb("pr.open", self.branch, "--base", "other", ok=False)
@@ -355,6 +361,25 @@ else:
         self.assertEqual(self.metadata()["issue_refs"][0]["issueURL"], "https://github.com/acme/project/issues/1")
         self.assertEqual(self.metadata()["issue_refs"][0]["issuePublication"]["state"], "linked")
         self.run_verb("phase.issue-declare", "1", self.name, "--entries-file", str(draft), "--expect-digest", "stale", ok=False)
+
+    def test_changed_todo_during_issue_readback_is_not_retired(self):
+        self.folded(state="closed")
+        self.remote(mode="todo-view-mutate", todo=str(self.todo))
+        self.assertEqual(self.reconcile()["items"][0]["state"], "pending")
+        self.assertTrue(self.todo.exists())
+        self.assertIn("Changed during readback", self.todo.read_text(encoding="utf-8"))
+
+    def test_effective_body_cannot_change_between_validation_and_publish(self):
+        self.phase([self.entry()])
+        self.publish()
+        self.session()
+        body = self.directory / "phase pr body.md"
+        expected = "Follow-up: https://github.com/acme/project/issues/1"
+        body.write_text(expected, encoding="utf-8")
+        self.remote(mode="bodyfile-mutate", pr_body=str(body))
+        self.run_verb("pr.open", self.branch, "--body-file", str(body))
+        self.assertEqual(self.remote()["pr"]["body"], expected)
+        self.assertEqual(body.read_text(encoding="utf-8"), "Closes #1")
 
     def test_reviewed_empty_handoff_and_complete(self):
         self.phase()

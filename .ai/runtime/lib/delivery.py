@@ -18,6 +18,9 @@ unchecked repository is allowed.
 import json
 import subprocess
 import time
+import tempfile
+from contextlib import nullcontext
+from pathlib import Path
 
 from . import gitops
 from .config import get as config_get
@@ -88,32 +91,68 @@ def require_gh(workspace):
 # --- pull requests --------------------------------------------------------
 
 PR_FIELDS = ("number,url,state,isDraft,baseRefName,headRefName,mergeable,"
-             "mergeStateStatus,statusCheckRollup")
+             "mergeStateStatus,statusCheckRollup,body")
 
 
-def view(workspace, branch, cwd=None):
+def view(workspace, branch, cwd=None, repository=None):
     """The pull request for a branch, or None when it has none."""
-    result = gh(workspace, "pr", "view", branch, "--json", PR_FIELDS, cwd=cwd)
+    arguments = ["pr", "view", branch, "--json", PR_FIELDS]
+    if repository:
+        arguments += ["--repo", repository]
+    result = gh(workspace, *arguments, cwd=cwd)
     if result.returncode != 0:
         return None
     try:
-        return json.loads(result.stdout or "{}") or None
+        payload = json.loads(result.stdout or "{}")
+        return payload if isinstance(payload, dict) and payload else None
     except ValueError:
         return None
 
 
 def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
-            draft=True, cwd=None):
+            draft=True, cwd=None, phase=None):
     """Open the pull request for a branch, or update the one that exists.
 
     Opening is idempotent: a second call on the same branch edits the existing
     pull request rather than failing, because a workflow that resumes must not
     be blocked by its own earlier success.
     """
-    require_gh(workspace)
-    existing = view(workspace, branch, cwd=cwd)
+    from . import phase_issues
+    from .paths import read_text
+    from .state import planning_lock
+    session = phase_issues.phase_session(workspace, branch, phase)
+    with planning_lock(workspace) if session else nullcontext():
+        require_gh(workspace)
+        repository = phase_issues.todo_issues.target(workspace) if session else None
+        existing = view(workspace, branch, cwd=cwd, repository=repository)
+        if session:
+            if existing is not None:
+                phase_issues.pr_identity(repository, branch, existing)
+            if body_file:
+                try:
+                    effective = read_text(body_file)
+                except (VerbError, OSError, UnicodeError):
+                    raise VerbError("Reviewed PR body cannot be read", "phase-issues") from None
+            elif body is not None:
+                effective = body
+            else:
+                effective = existing.get("body") if existing else ""
+            phase_issues.pr_body(workspace, session["label"], effective)
+            if body_file:
+                # Publish exactly the validated bytes even if the input changes.
+                with tempfile.TemporaryDirectory(prefix="phase-pr-public-") as directory:
+                    reviewed = Path(directory) / "body.md"
+                    reviewed.write_text(effective, encoding="utf-8")
+                    return _open_pr(workspace, branch, existing, base, title, body,
+                                    reviewed, draft, cwd, repository)
+        return _open_pr(workspace, branch, existing, base, title, body, body_file, draft, cwd, repository)
+
+
+def _open_pr(workspace, branch, existing, base, title, body, body_file, draft, cwd, repository=None):
     if existing:
         arguments = ["pr", "edit", branch]
+        if repository:
+            arguments += ["--repo", repository]
         if base is not None:
             arguments += ["--base", base]
         if title:
@@ -125,12 +164,17 @@ def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
         changed = bool(base is not None or title or body is not None or body_file)
         if changed:
             gh(workspace, *arguments, check=True, cwd=cwd)
-        refreshed = view(workspace, branch, cwd=cwd) or existing
+        refreshed = view(workspace, branch, cwd=cwd, repository=repository) or existing
+        if repository:
+            from .phase_issues import pr_identity
+            pr_identity(repository, branch, refreshed)
         return dict(refreshed, created=False, updated=changed)
 
     base = base or gitops.base_branch(workspace)
     arguments = ["pr", "create", "--base", base, "--head", branch,
                  "--title", title or branch]
+    if repository:
+        arguments += ["--repo", repository]
     if body_file:
         arguments += ["--body-file", str(body_file)]
     else:
@@ -138,10 +182,13 @@ def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
     if draft:
         arguments.append("--draft")
     gh(workspace, *arguments, check=True, cwd=cwd)
-    created = view(workspace, branch, cwd=cwd)
+    created = view(workspace, branch, cwd=cwd, repository=repository)
     require(created is not None,
             "gh reported the pull request was created but it cannot be read back",
             "pr-unreadable")
+    if repository:
+        from .phase_issues import pr_identity
+        pr_identity(repository, branch, created)
     return dict(created, created=True, updated=False)
 
 
@@ -276,16 +323,27 @@ def merge_pr(workspace, branch, local_checks_passed=None, cwd=None):
     if result.returncode != 0:
         raise VerbError("merge of " + branch + " was refused by gh: "
                         + (result.stderr or result.stdout).strip(), "merge-refused")
-    merged = view(workspace, branch, cwd=cwd) or {}
+    try:
+        merged = view(workspace, branch, cwd=cwd)
+    except VerbError:
+        merged = None
+    observed = (isinstance(merged, dict) and merged.get("state") == "MERGED"
+                and isinstance(verdict.get("number"), int) and not isinstance(verdict["number"], bool)
+                and isinstance(merged.get("number"), int) and not isinstance(merged["number"], bool)
+                and merged.get("number") == verdict["number"]
+                and isinstance(verdict.get("url"), str) and merged.get("url") == verdict["url"]
+                and merged.get("headRefName") == branch)
     return {
         "branch": branch,
-        "merged": True,
+        "merged": observed,
+        "retryable": not observed,
+        "retry": None if observed else "Read the same PR again; reconcile TODOs after matching MERGED readback. Do not repeat the merge command.",
         "method": method,
         "evidence": state if state != "none" else "local-verification",
         "number": verdict.get("number"),
         "url": verdict.get("url"),
-        "pr_state": merged.get("state") or "MERGED",
-        "remote_branch_deleted": delete_branch,
+        "pr_state": merged.get("state") if isinstance(merged, dict) else "UNKNOWN",
+        "remote_branch_deleted": delete_branch if observed else None,
     }
 
 

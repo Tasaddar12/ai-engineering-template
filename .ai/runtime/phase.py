@@ -28,7 +28,7 @@ from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
 LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
-                "findings", "files_read", "only"}
+                "findings", "files_read", "only", "todos"}
 
 
 def parse(argv):
@@ -233,7 +233,7 @@ def verb_pr_open(workspace, positionals, options):
         workspace, branch, base=option_text(options, "base"),
         title=option_text(options, "title"), body=option_text(options, "body"),
         body_file=option_text(options, "body_file"),
-        draft=bool(options.get("draft")))
+        draft=bool(options.get("draft")), phase=option_text(options, "phase"))
     try:
         worktrees.record_session_pr(workspace, branch, pull.get("url"),
                                     pull.get("number"))
@@ -627,6 +627,19 @@ def verb_milestone_complete(workspace, positionals, options):
 
 # --- todos ----------------------------------------------------------------
 
+def verb_phase_reconcile_todos(workspace, positionals, options):
+    with planning_lock(workspace):
+        return phase_issues.reconcile_todos(workspace, argument(positionals, 0, "phase"),
+            option_text(options, "pr"), as_list(options.get("todos")))
+
+
+def verb_phase_issue_declare(workspace, positionals, options):
+    require(len(positionals) == 2, "Select phase and exact record", "issue-review")
+    with planning_lock(workspace):
+        return phase_issues.declare(workspace, *positionals,
+            entries_file=option_text(options, "entries_file"), expected=option_text(options, "expect_digest"))
+
+
 def verb_phase_handoff(workspace, positionals, options):
     with planning_lock(workspace):
         return phase_issues.handoff(workspace, argument(positionals, 0, "phase"))
@@ -811,6 +824,8 @@ VERBS = {
     "phase.edit": verb_phase_edit,
     "phase.complete": verb_phase_complete,
     "phase.handoff": verb_phase_handoff,
+    "phase.issue-declare": verb_phase_issue_declare,
+    "phase.reconcile-todos": verb_phase_reconcile_todos,
     "phase.issue-preview": verb_phase_issue_preview,
     "phase.issue-publish": verb_phase_issue_publish,
     "phase.issue-update": verb_phase_issue_update,

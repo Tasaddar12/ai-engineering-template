@@ -19,7 +19,7 @@ Task 1 RED: `python -m unittest discover -s tests -p test_phase_issues.py` at ba
 
 ## Remaining
 
-Tasks 2-3 implementation and focused checks remain. Coordinator owns integration, publication, full suite and independent review. Context usage: unavailable.
+Task 3 workflow/runtime documentation and its focused checks remain. Coordinator owns integration, publication, full suite and independent review. Context usage: unavailable.
 
 ## Task 1 Changes and Checks
 
@@ -41,3 +41,17 @@ Task 2 RED at Task 1 commit plus owned tests:
 
 Task 2 RED commit: `5b601e8cbdd404d967fa40f768acf12892505fc8`.
 Bounded producer correction: existing SUMMARY amendments need a runtime declaration path. Added phase.issue-declare regression before implementing that setter; `python -m unittest discover -s tests -p test_phase_issues.py -k declaration_setter`: 1 intended missing-verb failure, exit 1. This stays in existing record entries, with no ledger.
+
+## Task 2 Changes and Checks
+
+Phase pr.open binds the existing session, pins phase provider calls to origin, validates canonical body references (including body-omitted retarget), preserves generic base/draft/body-file behavior, and publishes the exact validated body bytes under the planning lock. Resolving UAT references require non-pending remote acceptance status; plain followup links still permit code advancement. Successful merge commands require matching number/URL/head MERGED readback; unknown results are retryable without another merge.
+
+phase.reconcile-todos accepts only selected exact Folded Todos filenames and the phase session's canonical PR. Matching MERGED plus CLOSED linked issue is required; CLOSED UAT with PENDING HUMAN acceptance, stale TODOs, wrong head/PR, unknown/open readbacks and unselected records remain pending. Retry alone is idempotent and never creates/closes issues or restarts source reviews.
+
+Added phase.issue-declare as a bounded producer correction: read preview/digest then amend through runtime with expected digest, preserving publication/linkage and issue kind. RED commit `4354fb9b89e845320c26915b6145968625a115fd` precedes setter implementation.
+
+Task 2 GREEN at that RED commit plus owned implementation/tests:
+- `python -m unittest discover -s tests -p test_phase_issues.py`: 32 tests, pass, 95.957s.
+- After the final bounded closing-reference/body-byte change, affected `-k closing_keyword` passed 1 test; new `-k effective_body` and `-k changed_todo` each passed 1 test. Current file contains 34 cases; coordinator final combined suite will run all together.
+- `python -m unittest discover -s tests -p test_session_delivery.py`: 60 tests, pass, 125.113s.
+No live provider, publication or merge was used by these tests.
