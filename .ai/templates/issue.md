@@ -208,6 +208,8 @@ Impact: [One short sentence: practical effect on affected users/systems]
 
 ## Build and environment
 
+- Build/version: [exact release or artifact identifier]
+- Commit: [full SHA]
 - Entry point: [one exact accessible URL including full path/trailing slash, or supplied launcher with full path and exact launch keys]
 - Ready environment: [one line: environment name and prepared test role/session]
 - Safe fixtures: [1-3 exact input values or prepared test objects used below; N/A with reason if no inputs]
