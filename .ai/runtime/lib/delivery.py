@@ -6,7 +6,7 @@ directly, so this module owns the far end of that contract: it opens the pull
 request, decides whether its checks are genuinely green, merges it, and brings
 the primary checkout back in step afterwards.
 
-`gh` is a hard dependency, not a convenience. A project that cannot open a pull
+The configured provider CLI is a hard dependency. A project that cannot open a pull
 request cannot deliver work here, and degrading to a direct commit would defeat
 the audit trail the worktree model exists to produce.
 
@@ -55,7 +55,32 @@ def gh(workspace, *args, check=False, cwd=None):
     return result
 
 
+def gitlab_target(workspace, cwd=None):
+    """Resolve opt-in GitLab without changing the legacy GitHub CLI route."""
+    if not hasattr(workspace, "config"):
+        return None
+    provider = config_get(workspace, "delivery.provider", "auto")
+    hosts = config_get(workspace, "delivery.gitlab_hosts", {})
+    if provider == "github" or (provider == "auto" and not hosts):
+        return None
+    try:
+        from . import providers
+    except ImportError:
+        raise VerbError("GitLab delivery requires the shared provider resolver",
+                        "provider-unavailable")
+    target = providers.resolve(workspace, cwd=cwd)
+    return target if target["provider"] == "gitlab" else None
+
+
 def availability(workspace):
+    target = gitlab_target(workspace)
+    if target:
+        from . import gitlab_delivery
+        return gitlab_delivery.availability(workspace, target)
+    return github_availability(workspace)
+
+
+def github_availability(workspace):
     """Whether `gh` is installed and authenticated, without raising."""
     try:
         version = gh(workspace, "--version")
@@ -76,7 +101,7 @@ def availability(workspace):
 
 
 def require_gh(workspace):
-    state = availability(workspace)
+    state = github_availability(workspace)
     require(state["available"], state.get("reason") or "gh is not available",
             "gh-missing")
     require(state["authenticated"],
@@ -93,6 +118,10 @@ PR_FIELDS = ("number,url,state,isDraft,baseRefName,headRefName,mergeable,"
 
 def view(workspace, branch, cwd=None):
     """The pull request for a branch, or None when it has none."""
+    target = gitlab_target(workspace, cwd=cwd)
+    if target:
+        from . import gitlab_delivery
+        return gitlab_delivery.view(workspace, target, branch, cwd=cwd)
     result = gh(workspace, "pr", "view", branch, "--json", PR_FIELDS, cwd=cwd)
     if result.returncode != 0:
         return None
@@ -110,6 +139,12 @@ def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
     pull request rather than failing, because a workflow that resumes must not
     be blocked by its own earlier success.
     """
+    target = gitlab_target(workspace, cwd=cwd)
+    if target:
+        from . import gitlab_delivery
+        return gitlab_delivery.open_pr(workspace, target, branch, base=base,
+                                      title=title, body=body, body_file=body_file,
+                                      draft=draft, cwd=cwd)
     require_gh(workspace)
     existing = view(workspace, branch, cwd=cwd)
     if existing:
@@ -203,6 +238,12 @@ def checks(workspace, branch, cwd=None, wait=0, interval=CHECK_POLL_SECONDS,
     shell call is: a caller that still sees `pending` calls again. `waited`
     reports the seconds spent.
     """
+    target = gitlab_target(workspace, cwd=cwd)
+    if target:
+        from . import gitlab_delivery
+        return gitlab_delivery.checks(workspace, target, branch, cwd=cwd,
+                                      wait=wait, interval=interval, sleep=sleep,
+                                      clock=clock)
     require_gh(workspace)
     started = clock()
     while True:
@@ -238,6 +279,12 @@ def merge_pr(workspace, branch, local_checks_passed=None, cwd=None):
     unchecked repository still has to show evidence from somewhere, and when it
     has neither this refuses rather than merging on silence.
     """
+    target = gitlab_target(workspace, cwd=cwd)
+    if target:
+        from . import gitlab_delivery
+        return gitlab_delivery.merge_pr(workspace, target, branch,
+                                       local_checks_passed=local_checks_passed,
+                                       cwd=cwd)
     require_gh(workspace)
     verdict = checks(workspace, branch, cwd=cwd)
     require(verdict.get("pr_state") == "OPEN",
