@@ -33,3 +33,8 @@ Task 1 GREEN checks at that commit plus owned implementation/test changes:
 - Initial runtime run: 162 tests, two failures caused by this worker's Windows default decoding of original Unicode assertions. Restored original UTF-8 text; affected PlanRegistration20 passed, then named full file passed. No assertions weakened.
 
 STRIDE negative coverage includes private source/diagnostic separation, traversal/out-of-phase/link denial, stale records, repository/URL/number mismatch, malformed dispositions, uncertain/ambiguous creation and remote issue kind preservation. Windows symlink denial executes when link privilege is available; existing TODO suite retains its platform skip.
+
+Task 1 GREEN commit: `a3a5ad1c7c881b98b40bb32ee04362f0c1b3928e`.
+Task 2 RED at Task 1 commit plus owned tests:
+- `python -m unittest discover -s tests -p test_phase_issues.py -k phase_session`: 1 test, intended failure, exit 1; omitting phase still edits a PR with no declaration.
+- `python -m unittest discover -s tests -p test_session_delivery.py -k matching_merged_readback`: 1 test, 7 intended assertion failures, exit 1; command success claims merged for unreadable, OPEN/CLOSED, mismatched and incomplete responses. Initial missing config fixture was repaired before valid RED evidence.

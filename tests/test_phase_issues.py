@@ -20,7 +20,21 @@ class PhaseIssues(unittest.TestCase):
         self.name = self.record.relative_to(self.directory).as_posix()
         (self.directory / ".planning/ROADMAP.md").write_text("# Roadmap\n\n## Phases\n\n- [ ] **Phase 1: Fixture** - Test\n\n## Phase Details\n\n### Phase 1: Fixture\n**Goal**: Test\n**Plans**: 1 plan\n\nPlans:\n- [ ] 01-01: Test\n", encoding="utf-8")
         fake = fixtures.FAKE_GH.replace('metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])', 'metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])["issue_refs"][0]')
-        fake = fake.replace('else:\n    raise AssertionError("unexpected provider call " + repr(args))', """elif args[:2] == ["issue", "edit"]:
+        fake = fake.replace('else:\n    raise AssertionError("unexpected provider call " + repr(args))', """elif args[:2] == ["pr", "view"]:
+    if data.get("pr"):
+        out = json.dumps(data["pr"])
+    else:
+        code = 1
+elif args[:2] in (["pr", "edit"], ["pr", "create"]):
+    if args[1] == "create":
+        data["pr"] = {"number": 5, "url": "https://github.com/acme/project/pull/5", "state": "OPEN", "headRefName": args[args.index("--head")+1], "isDraft": "--draft" in args}
+    for option, field in (("--base", "baseRefName"), ("--title", "title"), ("--body", "body")):
+        if option in args:
+            data["pr"][field] = args[args.index(option)+1]
+    if "--body-file" in args:
+        data["pr"]["body"] = Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8")
+    data["pr_edits"] = data.get("pr_edits", 0) + 1
+elif args[:2] == ["issue", "edit"]:
     issue = next(i for i in data["issues"] if i["html_url"] == args[2])
     issue.update(title=args[args.index("--title")+1], body=Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8"))
     data["edits"] = data.get("edits", 0) + 1
@@ -197,6 +211,72 @@ else:
         self.record.write_text("---\nissue_refs: [PRIVATE INVALID RECORD\n---\n", encoding="utf-8")
         result = self.run_verb("phase.handoff", "1", ok=False)
         self.assertNotIn("PRIVATE INVALID RECORD", json.dumps(result))
+
+    def session(self, **changes):
+        self.branch = self.git("branch", "--show-current")
+        entry = dict({"kind": "phase", "label": "1", "branch": self.branch, "worktree": str(self.directory),
+            "status": "open", "pr": {"url": "https://github.com/acme/project/pull/5", "number": 5}}, **changes)
+        self.sessions = self.directory / ".git/ai-phase/sessions.json"
+        self.sessions.parent.mkdir(parents=True, exist_ok=True)
+        self.sessions.write_text(json.dumps({"sessions": [entry]}), encoding="utf-8")
+        self.remote(pr={"number": 5, "url": "https://github.com/acme/project/pull/5", "state": "OPEN",
+            "headRefName": self.branch, "body": "", "isDraft": True, "baseRefName": "main"})
+
+    def test_phase_session_cannot_bypass_handoff_by_omitting_phase(self):
+        self.phase(declaration=False)
+        self.session()
+        self.run_verb("pr.open", self.branch, "--body", "No declarations", ok=False)
+        self.assertEqual(self.remote().get("pr_edits", 0), 0)
+
+    def test_followup_closing_keyword_and_body_omitted_retarget_are_blocked(self):
+        self.phase([self.entry()])
+        self.publish()
+        self.session()
+        for body in ("Fixes #1", "Closes acme/project#1", "Resolves https://github.com/acme/project/issues/1"):
+            self.run_verb("pr.open", self.branch, "--body", body, ok=False)
+        data = self.remote(); data["pr"]["body"] = "Fixes #1"; self.save(data)
+        self.run_verb("pr.open", self.branch, "--base", "other", ok=False)
+        self.assertEqual(self.remote().get("pr_edits", 0), 0)
+
+    def test_canonical_followup_link_delivers_and_explicit_phase_conflict_denies(self):
+        self.phase([self.entry()])
+        self.publish()
+        self.session()
+        self.run_verb("pr.open", self.branch, "--body", "Follow-up: https://github.com/acme/project/issues/1")
+        self.run_verb("pr.open", self.branch, "--phase", "2", "--body", "Follow-up: https://github.com/acme/project/issues/1", ok=False)
+        self.assertEqual(self.remote()["pr_edits"], 1)
+
+    def folded(self, state="open"):
+        self.phase()
+        self.session()
+        context = self.record.parent / "01-CONTEXT.md"
+        context.write_text("## Decisions\n\n### Folded Todos\n\n- `legacy.md`: implemented here.\n\n### Reviewed Todos\n\n- `unselected.md`: not folded.\n", encoding="utf-8")
+        self.todo.write_text("---\n" + yaml.safe_dump({"issueRepo": "github.com/acme/project", "issueURL": "https://github.com/acme/project/issues/1", "issueNumber": 1, "issuePublication": {"state": "linked"}}) + "---\nPrivate TODO evidence\n", encoding="utf-8")
+        data = self.remote(issues=[self.issue(state=state)])
+        data["pr"]["state"] = "MERGED"; self.save(data)
+
+    def reconcile(self):
+        return self.run_verb("phase.reconcile-todos", "1", "--pr", "https://github.com/acme/project/pull/5", "--todos", "legacy.md")
+
+    def test_reconciliation_waits_for_closed_issue_then_retries_idempotently(self):
+        self.folded()
+        result = self.reconcile()
+        self.assertEqual(result["items"][0]["state"], "pending")
+        self.assertTrue(self.todo.exists())
+        self.remote(issues=[self.issue(state="closed")])
+        self.assertEqual(self.reconcile()["items"][0]["state"], "completed")
+        self.assertFalse(self.todo.exists())
+        self.assertEqual(self.reconcile()["items"][0]["state"], "already-completed")
+        self.assertEqual(self.remote()["creates"], 0)
+
+    def test_open_wrong_head_and_missing_merge_readback_preserve_todo(self):
+        self.folded(state="closed")
+        original = self.remote()["pr"]
+        for pull in (dict(original, state="OPEN"), dict(original, headRefName="another"), None):
+            self.remote(pr=pull)
+            result = self.reconcile()
+            self.assertEqual(result["items"][0]["state"], "pending")
+            self.assertTrue(self.todo.exists())
 
     def test_reviewed_empty_handoff_and_complete(self):
         self.phase()
