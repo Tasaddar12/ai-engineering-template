@@ -50,6 +50,12 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 - Risks: [one sentence: material risks or none identified]
 - Rollback: [one sentence: practical rollback for this change]
 
+| Threat ID / risk key | Severity | Status | Canonical issue | Safe mitigation / resolution evidence |
+|---|---|---|---|---|
+| [stable ID/key and aliases] | [assessed severity] | [observed state] | [verified URL or Pending with dependency] | [revision/check/result or safe next action] |
+
+[None identified with inspected scope is allowed after assessment.]
+
 ## Stack
 
 - stackParent: [parent PR number or URL]
@@ -88,7 +94,13 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   or that none were identified, and always give a practical rollback unless it
   truly does not apply.
 - Keep evidence safe: redact secrets, private logs and sensitive data before
-  adding evidence to the public body.
+  adding evidence to the public body. Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+  for every PLAN/SUMMARY finding, including mitigated/accepted/deferred risks.
+  Preserve stable identity and verified links. Use neutral references until
+  scope-complete mitigation and existing explicit closure authority are verified.
+  Audit closing references before publication/merge; merge is not resolution and
+  unresolved risks must never autoclose. GitLab MR policy also applies, but
+  runtime support is GitHub-only; unavailable host tools leave publication Pending.
 - In Known gaps, write `None` only after checking. For a PR with no stacked
   dependency, omit the entire Stack section.
 - Example excerpt (fictional values; not evidence; replace before publishing):

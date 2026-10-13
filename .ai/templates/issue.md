@@ -6,9 +6,13 @@
 **Consumers:** Issue reviewers and implementers; capture publication reads the separately reviewed body file.
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
-- For a security-risk variant, use the repository's private reporting channel if
-  known. If unavailable or unknown, ask the owner privately before publishing.
-  Never put secrets or exploit-sensitive details in a public issue.
+- For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+  A separately reviewed sanitized public tracker can proceed under standing
+  tracking authorization without private-channel approval. Sensitive details use
+  an existing authorized restricted channel. Missing private access blocks only
+  that detail or dependent action. If even a safe description/link cannot be
+  disclosed, retain a publication blocker and accessible restricted canonical
+  reference. Respect destination visibility; never invent a public URL.
 
 Select the appropriate variant below, then copy only its fenced **File Template**
 block into the public body file. Never copy the whole source or all variants.
@@ -167,6 +171,16 @@ table, other variants or surrounding authoring guidance in the public body.
 
 [One sentence: affected users/data/systems and plausible impact.]
 
+## Risk assessment and lifecycle
+
+- Threat ID / risk key: [stable repository + surface/control + failure mode/remediation key]
+- Source aliases: [all PLAN/SUMMARY IDs and source occurrences]
+- Severity: [critical|high|medium|low; impact/likelihood rationale and uncertainty]
+- Owner: [responsible party]
+- Status: [unresolved|mitigated|accepted|deferred; observed state, not PLAN disposition]
+- Mitigation or safe next action: [bounded outcome; accepted rationale or deferral reason/next action]
+- Resolution evidence: [matching revision and actual secure check/result, or Pending with dependency]
+
 ## Safe evidence
 
 [1-3 actual accessible, redacted, non-sensitive evidence URLs; identify affected build/commit when known. Omit exploit details.]
@@ -295,8 +309,13 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
   or unverified entry points `BLOCKED` with the missing prerequisite; never
   invent controls or claim a pass. AI/maintainer prepares the build, access,
   fixtures and technical evidence in the separate maintainer record.
-- For security risks, follow the private-reporting instruction above before
-  selecting or publishing a public body. Redact private data and secrets.
+- For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+  and the safe-public/restricted-detail instruction above. Carry source aliases
+  and occurrences; assess actual severity. Planned mitigation/transfer remains
+  unresolved until evidenced; accepted needs responsible-party rationale,
+  deferred needs owner/reason/next action, mitigated needs secure revision/check
+  evidence. Fields, semantic dedup, disclosure safety and resolution truth remain
+  review obligations; structural validation checks headings/order only.
 - Example excerpt (fictional values, not evidence; replace before publishing):
 
   | Field | Example value |

@@ -33,6 +33,58 @@ class IssueFormat(unittest.TestCase):
             with self.subTest(variant=variant):
                 self.assertTrue(issue_format.validate(body, variant)["valid"])
 
+    def test_security_risk_heading_required_and_ordered(self):
+        body = bodies()["Security risk"]
+        heading = "## Risk assessment and lifecycle"
+        self.assertIn(heading[3:], issue_format.schema()["Security risk"]["headings"])
+        self.assert_invalid(body.replace(heading, "", 1), "Security risk")
+        section = re.search(r"## Risk assessment and lifecycle\n.*?(?=\n## )",
+                            body, re.S).group()
+        moved = body.replace(section, "").replace(
+            "## Requested remediation", section + "\n## Requested remediation")
+        self.assert_invalid(moved, "Security risk")
+
+    def test_safe_filled_security_risks_at_different_states(self):
+        body = bodies()["Security risk"]
+        for severity, status, evidence in (
+                ("low", "unresolved", "Pending owner inspection"),
+                ("medium", "deferred", "Maintainer; scoped follow-up; next: inspect control"),
+                ("high", "accepted", "Maintainer acceptance rationale: limited residual risk"),
+                ("critical", "mitigated", "Revision fixture-sha; isolated secure check passed")):
+            filled = re.sub(r"\[[^\n]*?\]", "Safe fixture assessment", body)
+            filled = re.sub(r"^- Severity:.*$", "- Severity: " + severity +
+                            "; impact/likelihood assessed; uncertainty recorded", filled, flags=re.M)
+            filled = re.sub(r"^- Status:.*$", "- Status: " + status, filled, flags=re.M)
+            filled = re.sub(r"^- Resolution evidence:.*$", "- Resolution evidence: " +
+                            evidence, filled, flags=re.M)
+            with self.subTest(severity=severity, status=status):
+                result = issue_format.validate(filled, "Security risk")
+                self.assertTrue(result["valid"])
+                self.assertTrue(result["structuralOnly"])
+
+    def test_installed_security_schema_owns_its_heading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runtime = root / ".codex/runtime"
+            shutil.copytree(ROOT / ".ai/runtime", runtime)
+            templates = root / ".codex/templates"
+            templates.mkdir()
+            source = TEMPLATE.read_text(encoding="utf-8")
+            installed = source.replace("## Risk assessment and lifecycle", "## Installed risk assessment")
+            (templates / "issue.md").write_text(installed, encoding="utf-8")
+            sibling = root / ".ai/templates"
+            sibling.mkdir(parents=True)
+            (sibling / "issue.md").write_text(source, encoding="utf-8")
+            draft = root / "body.md"
+            command = [sys.executable, str(runtime / "phase.py"), "query", "issue.validate",
+                       "--variant", "Security risk", "--body-file", str(draft)]
+            for body, code in ((bodies()["Security risk"], 1),
+                               (bodies()["Security risk"].replace("## Risk assessment and lifecycle",
+                                                                "## Installed risk assessment"), 0)):
+                draft.write_text(body, encoding="utf-8")
+                result = subprocess.run(command, cwd=root, capture_output=True, text=True)
+                self.assertEqual(result.returncode, code, result.stdout + result.stderr)
+
     def test_missing_unknown_or_noncanonical_variant(self):
         for variant in (None, "", "bug", "expected-behavior", True):
             self.assert_invalid(bodies()["Bug"], variant, "issue-variant")
