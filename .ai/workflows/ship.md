@@ -339,7 +339,7 @@ Show the composed body to the user before opening the PR.
 
 ```bash
 phase_run query pr.open "${SESSION_BRANCH}" \
-  --title "Phase ${phase_number}: ${phase_name}" \
+  --title "feat(phase-${phase_number}): ${phase_name}" \
   --body-file "${body_path}" --draft
 ```
 
@@ -375,7 +375,12 @@ exactly as observed:
 
 **Fixing a failing check** — at most 2 rounds:
 
-1. Read each failing run's log: `gh run view <run-id> --log-failed`
+1. Read each failing check's linked logs using the selected provider. GitHub:
+   `gh run view <run-id> --log-failed`. GitLab: use `glab api` against the resolved
+   HTTPS host and encoded project to read `pipelines/<pipeline-id>/jobs`, then
+   `jobs/<job-id>/trace` for failing jobs. Pin the same command-local API authority,
+   HTTPS protocol and root subfolder as delivery; disable CI automatic login.
+   Never treat a GitLab pipeline ID as a GitHub Actions run ID.
 2. Send unknown causes to an isolated `debugger` with check names, log excerpts and current revision.
 3. Route complete diagnosed bounded findings/proposals through [bounded correction dispatch](../references/bounded-correction-dispatch.md).
 4. Return incomplete or contradictory inputs to the originating debugger/reviewer via the coordinator; send broader authorized repairs to preparer/coder.
@@ -475,7 +480,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - Don't hand waiting on `pending` checks to the user
 - Don't tell the user to re-run `/ship`
 - Don't `--force` a preserved session away to make the report look clean
-- Don't report CI as passing because the PR opened; report what `gh` observed
+- Don't report CI as passing because the PR opened; report what the selected provider observed
 - Don't compose the PR body from the diff when the phase's own records say it better
 - Don't ship over an uncommitted working tree
 </anti_patterns>
@@ -484,7 +489,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - [ ] Verification confirmed `passed` and current for the revision being shipped
 - [ ] The phase's open session resolved, and every command run from its worktree
 - [ ] Session worktree clean, on the session branch, with commits to deliver
-- [ ] Remote and `gh` available; configured checks run and passing
+- [ ] Remote and configured provider CLI authenticated; configured checks run and passing
 - [ ] Review run and critical findings resolved when `--review` was passed
 - [ ] Session branch pushed and the PR opened or updated through `pr.open`
 - [ ] PR body composed from the phase's summaries and verification report

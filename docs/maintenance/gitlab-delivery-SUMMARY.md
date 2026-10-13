@@ -26,7 +26,7 @@ Configured GitLab delivery normalizes MR readback, draft state and pipeline evid
 
 ## Shared interface and dependency
 
-GitLab support depends on PR #77's providers-only commit 941099c282a27162177c4b251037a66b032d0a0a. No resolver/config/TODO files are copied into this branch.
+GitLab support depends on PR #77's providers-only tip e819ff6f9d7a3e9dfe44a05030c261ed574ab3a5 (initial resolver 941099c282a27162177c4b251037a66b032d0a0a plus unsafe-URL suffix correction). No resolver/config/TODO files are copied into this branch.
 `providers.resolve(workspace,cwd=None)` returns provider, host, project, remote, web_url and repository; `providers.item_number(target,url,kind='merge_requests')` verifies URL ownership.
 Configuration uses delivery.provider auto/github/gitlab and delivery.gitlab_hosts origin hostname to canonical HTTPS authority mapping. SSH transport and web ports remain separate.
 
@@ -36,25 +36,33 @@ Configuration uses delivery.provider auto/github/gitlab and delivery.gitlab_host
 - GitLab API paths encode the full nested namespace; all calls explicitly select the resolved host.
 - MR metadata updates preserve draft/ready state and omitted target. Body-file contents take precedence and readback verifies exact requested fields.
 - Persistent publication intent and exclusive lock live under shared Git runtime metadata. Lost/failed responses require readback; unresolved creates block duplicate POSTs on retry. Unresolved edits cannot return stale success.
-- Pipeline status and source SHA map to existing four-state check gates. Failed, canceled, manual, skipped, stale and unknown outcomes cannot become passing evidence.
+- Pipeline status and source SHA map to existing four-state check gates. Failed, canceled, manual, skipped, stale and unknown outcomes cannot become passing evidence. Merged-results pipeline commits must contain both current source and current target tips as parents.
 - Runtime pr.open writes the normalized MR URL/number into the existing session pr metadata.
-- GitLab merge uses source-SHA guarding and confirmed merged readback. GitLab rebase strategy is project-managed; runtime rejects delivery.merge_method rebase for this provider.
+- GitLab merge binds evidence to MR number, URL, source SHA and target branch, rechecks pipeline state before writes and confirms merged readback. GitLab rebase strategy is project-managed; runtime rejects delivery.merge_method rebase for this provider.
+- Every glab auth/API subprocess pins HTTPS API authority and root subfolder, disables automatic CI login and preserves credential/CA settings. Explicit provider mismatches fail before CLI calls.
 
 ## Checks
 
 - python -m unittest discover -s tests -p test_workflow_links.py -q: 3 passed.
-- python -m unittest discover -s tests -p test_session_delivery.py -q: 59 passed in 132.458s.
-- python -m unittest discover -s tests -p test_gitlab_delivery.py -q: 19 adapter tests passed; 19 exact-resolver integration cases require the separate dependency.
+- python -m unittest discover -s tests -p test_session_delivery.py -q: 59 passed; repeated against frozen integration b995255 in 127.111s.
+- python -m unittest discover -s tests -p test_todo_issues.py -q: 34 passed, one platform skip, against b995255 in 157.021s.
+- python -m unittest discover -s tests -p test_gitlab_delivery.py -q: initial exact-resolver integration b995255 passed all 38 cases. Repair slice passed 24 unit/boundary cases; 24 integration cases require the dependency.
+- python -m unittest discover -s tests -p test_providers.py -q: six passed against exact initial resolver 941099c in b995255.
 - git diff --check: passed.
 
 ## Commits
 
 - 8b0b856460ffef1fe3e5278ee27c1c05d00518d2: provider-aware ship instructions.
-- Runtime slice: recorded in Git history after this summary is committed.
+- d360b7a5c509793b9adfaffd197ff28ce53232d4: MR adapter, provider dispatch, offline tests and summary.
+- Review corrections: recorded in Git history after this summary is committed.
+
+## Independent review
+
+Fresh code-reviewer reviewed frozen integration b995255 and identified seven BLOCKER findings: CLI route overrides, stale merge evidence, merged-results SHA, unrelated retry discarding intent, explicit-provider mismatch, GitLab failure diagnostics and canonical ship title. The repair slice addresses each with focused regression coverage and provider-aware instructions. Fresh review and exact latest-resolver tests remain pending.
 
 ## Remaining
 
-- Run all MR cases in an integration worktree containing exact resolver commit 941099c.
+- Run all repaired MR cases in an integration worktree containing exact resolver tip e819ff6.
 - Obtain fresh independent review of that frozen integration tree and fix findings.
 - Await required GitHub CI on the final delivery revision. Draft status does not establish readiness.
 - Adoption PROJECT/STATE/ROADMAP skeleton remains unfilled; no phase requirement IDs assigned.

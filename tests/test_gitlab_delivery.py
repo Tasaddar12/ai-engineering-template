@@ -5,6 +5,7 @@ contract; integration tests below require the exact real resolver in the tree.
 No test contacts a provider or reads credentials.
 """
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -53,6 +54,8 @@ class GitLabDelivery(unittest.TestCase):
         self.hidden = False
         self.bad_json = False
         self.extra = []
+        self.base_tip = "c" * 40
+        self.merge_parents = []
         self.start_patch(patch.object(adapter, "glab", side_effect=self.fake_glab))
         self.dispatch = patch.object(delivery, "gitlab_target", return_value=TARGET)
         self.start_patch(self.dispatch)
@@ -88,8 +91,13 @@ class GitLabDelivery(unittest.TestCase):
         self.assertEqual(args[0], "api")
         self.assertEqual(args[2:6], ("--hostname", TARGET["host"], "--method", args[5]))
         path, method = args[1], args[5]
-        self.assertTrue(path.startswith("projects/group%2Fsub%2Fproject/merge_requests"))
+        self.assertTrue(path.startswith("projects/group%2Fsub%2Fproject/"))
         if method == "GET":
+            if "/repository/commits/" in path:
+                data = dict(id=path.rsplit("/", 1)[1], parent_ids=self.merge_parents)
+                return subprocess.CompletedProcess(args, 0, json.dumps(data), "")
+            if "/repository/branches/" in path:
+                return subprocess.CompletedProcess(args, 0, json.dumps(dict(commit=dict(id=self.base_tip))), "")
             if self.bad_json:
                 return subprocess.CompletedProcess(args, 0, "not-json", "")
             if "?" in path:
@@ -212,6 +220,19 @@ class GitLabDelivery(unittest.TestCase):
         result = delivery.open_pr(self.workspace, "feature/child", body="new")
         self.assertEqual(result["body"], "new")
 
+    def test_unrelated_edit_retry_preserves_unresolved_body_intent(self):
+        self.write_mode = "lost-before"
+        with self.assertRaises(VerbError):
+            delivery.open_pr(self.workspace, "feature/child", body="new canonical body")
+        self.write_mode = "ok"
+        with self.assertRaises(VerbError) as raised:
+            delivery.open_pr(self.workspace, "feature/child", title="feat(delivery): unrelated")
+        self.assertEqual(raised.exception.code, "mr-uncertain")
+        self.assertEqual(len(self.writes()), 1)
+        self.assertEqual(self.pull["description"], "Original body")
+        intents = list((worktrees.state_dir(self.workspace) / "mr-publication").glob("*.json"))
+        self.assertEqual(len(intents), 1)
+
     def test_wrong_owner_or_branch_blocks_mutation(self):
         for field, value in (("web_url", "https://other.test/group/sub/project/-/merge_requests/7"),
                              ("iid", 9), ("draft", None), ("state", "unknown")):
@@ -268,6 +289,16 @@ class GitLabDelivery(unittest.TestCase):
         self.pull["detailed_merge_status"] = "unknown"
         self.assertEqual(delivery.checks(self.workspace, "feature/child")["state"], "failing")
 
+    def test_merged_results_pipeline_requires_current_source_and_target_parents(self):
+        self.pull["head_pipeline"]["sha"] = "b" * 40
+        self.merge_parents = [self.pull["sha"], self.base_tip]
+        self.assertEqual(delivery.checks(self.workspace, "feature/child")["state"], "passing")
+        self.base_tip = "d" * 40
+        self.assertEqual(delivery.checks(self.workspace, "feature/child")["state"], "pending")
+        self.base_tip = "c" * 40
+        self.merge_parents = ["e" * 40, self.base_tip]
+        self.assertEqual(delivery.checks(self.workspace, "feature/child")["state"], "pending")
+
     def test_pending_checks_wait_and_settle(self):
         self.pull["head_pipeline"]["status"] = "running"
         now = [0]
@@ -296,6 +327,34 @@ class GitLabDelivery(unittest.TestCase):
         self.assertEqual(self.writes()[-1][1]["sha"], "a" * 40)
         self.assertEqual(result["pr_state"], "MERGED")
 
+    def test_merge_rechecks_same_sha_pipeline_before_any_write(self):
+        original = adapter.checks
+        def checked(*args, **kwargs):
+            verdict = original(*args, **kwargs)
+            self.pull["head_pipeline"]["status"] = "running"
+            return verdict
+        with patch.object(adapter, "checks", side_effect=checked):
+            with self.assertRaises(VerbError) as raised:
+                delivery.merge_pr(self.workspace, "feature/child")
+        self.assertEqual(raised.exception.code, "checks-pending")
+        self.assertEqual(self.writes(), [])
+
+    def test_merge_rejects_replacement_mr_or_retarget_with_same_source_sha(self):
+        original = adapter.checks
+        for replacement in (dict(iid=8, web_url=TARGET["web_url"] + "/-/merge_requests/8"),
+                            dict(target_branch="other-target")):
+            with self.subTest(replacement=replacement):
+                self.pull = self.mr()
+                def checked(*args, **kwargs):
+                    verdict = original(*args, **kwargs)
+                    self.pull.update(replacement)
+                    return verdict
+                with patch.object(adapter, "checks", side_effect=checked):
+                    with self.assertRaises(VerbError) as raised:
+                        delivery.merge_pr(self.workspace, "feature/child")
+                self.assertEqual(raised.exception.code, "mr-changed")
+                self.assertEqual(self.writes(), [])
+
 
 @unittest.skipIf(providers is None, "Requires separate provider-resolver PR; run in integration tree")
 class ExactResolverIntegration(GitLabDelivery):
@@ -308,6 +367,36 @@ class ExactResolverIntegration(GitLabDelivery):
                                          "    gitlab.example.test: https://gitlab.example.test:8443\n", encoding="utf-8")
         subprocess.run(["git", "-C", str(self.root), "remote", "add", "origin",
                         "ssh://git@gitlab.example.test:2222/group/sub/project.git"], check=True)
+
+    def test_explicit_github_mode_rejects_gitlab_origin_before_any_cli(self):
+        self.workspace.config.write_text("delivery:\n  provider: github\n", encoding="utf-8")
+        with patch.object(delivery, "gh") as gh:
+            for call in (lambda: delivery.availability(self.workspace),
+                         lambda: delivery.open_pr(self.workspace, "feature/child")):
+                with self.assertRaises(VerbError):
+                    call()
+            gh.assert_not_called()
+        self.assertEqual(self.calls, [])
+
+
+class CommandBoundary(unittest.TestCase):
+    def test_conflicting_environment_is_pinned_without_changing_credentials_or_ca(self):
+        from types import SimpleNamespace
+        conflicting = dict(GITLAB_API_HOST="other.test", GLAB_API_PROTOCOL="http",
+                           GITLAB_SUBFOLDER="other", GLAB_ENABLE_CI_AUTOLOGIN="true",
+                           GITLAB_TOKEN="offline-fixture", GLAB_CA_CERT="private-ca.pem")
+        with patch.dict(os.environ, conflicting), patch.object(adapter.subprocess, "run") as run:
+            adapter.glab(SimpleNamespace(root=ROOT), "api", "projects/group%2Fsub%2Fproject/merge_requests",
+                         "--hostname", TARGET["host"])
+            environment = run.call_args.kwargs["env"]
+            self.assertEqual(environment["GITLAB_API_HOST"], TARGET["host"])
+            self.assertEqual(environment["GITLAB_HOST"], TARGET["host"])
+            self.assertEqual(environment["GLAB_API_PROTOCOL"], "https")
+            self.assertEqual(environment["GITLAB_SUBFOLDER"], "/")
+            self.assertEqual(environment["GLAB_ENABLE_CI_AUTOLOGIN"], "false")
+            self.assertEqual(environment["GITLAB_TOKEN"], "offline-fixture")
+            self.assertEqual(environment["GLAB_CA_CERT"], "private-ca.pem")
+            self.assertEqual(os.environ["GITLAB_API_HOST"], "other.test")
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ def gitlab_target(workspace, cwd=None):
         return None
     provider = config_get(workspace, "delivery.provider", "auto")
     hosts = config_get(workspace, "delivery.gitlab_hosts", {})
-    if provider == "github" or (provider == "auto" and not hosts):
+    if provider == "auto" and not hosts:
         return None
     try:
         from . import providers

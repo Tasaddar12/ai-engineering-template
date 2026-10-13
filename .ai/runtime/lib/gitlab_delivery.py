@@ -1,6 +1,7 @@
 """GitLab adapter for the existing PR/session contract; no credential writes."""
 import hashlib
 import json
+import os
 import re
 import subprocess
 import time
@@ -14,10 +15,17 @@ from .results import VerbError, require
 
 
 def glab(workspace, *args, cwd=None, payload=None):
+    environment = dict(os.environ, GLAB_CHECK_UPDATE="false", GLAB_ENABLE_CI_AUTOLOGIN="false",
+                       GLAB_API_PROTOCOL="https", API_PROTOCOL="https", GITLAB_SUBFOLDER="/",
+                       GLAB_SKIP_TLS_VERIFY="false")
+    if "--hostname" in args:
+        host = args[args.index("--hostname") + 1]
+        environment.update(GITLAB_HOST=host, GITLAB_API_HOST=host)
     try:
         return subprocess.run(["glab", *args], cwd=str(cwd or workspace.root),
                               capture_output=True, text=True,
                               input=json.dumps(payload) if payload is not None else None,
+                              env=environment,
                               timeout=delivery.TIMEOUT)
     except FileNotFoundError:
         raise VerbError("GitLab delivery requires glab", "glab-missing")
@@ -174,7 +182,17 @@ def open_pr(workspace, target, branch, base=None, title=None, body=None, body_fi
         if intent.exists():
             # A later successful read resolves uncertainty. An absent MR never
             # proves the earlier POST did not land; preserve intent and stop.
-            saved = json.loads(intent.read_text(encoding="utf-8"))
+            try:
+                saved = json.loads(intent.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                raise VerbError("Prior MR intent cannot be read; reconcile before retrying", "mr-uncertain")
+            require(isinstance(saved, dict) and isinstance(saved.get("fields"), list)
+                    and all(key in ("title", "description", "source_branch", "target_branch")
+                            for key in saved["fields"])
+                    and isinstance(saved.get("digest"), str)
+                    and re.fullmatch(r"[0-9a-f]{64}", saved["digest"])
+                    and (saved.get("number") is None or type(saved["number"]) is int),
+                    "Prior MR intent is invalid; reconcile before retrying", "mr-uncertain")
             require(existing is not None and (saved["number"] is None
                     or saved["number"] == existing["number"]),
                     "Prior MR write is uncertain; reconcile it before creating another", "mr-uncertain")
@@ -197,6 +215,10 @@ def open_pr(workspace, target, branch, base=None, title=None, body=None, body_fi
             if intent.exists():
                 intent.unlink()
             return dict(existing, created=False, updated=False)
+        require(not unresolved or (saved["number"] is not None
+                and intent_digest(fields) == saved["digest"]),
+                "Prior MR edit is unresolved; retry exactly its saved fields before other edits",
+                "mr-uncertain")
         intent.write_text(json.dumps(dict(number=existing["number"] if existing else None,
                                          fields=list(fields), digest=intent_digest(fields))), encoding="utf-8")
         path = endpoint(target) + ("/" + str(existing["number"]) if existing else "")
@@ -217,7 +239,7 @@ def open_pr(workspace, target, branch, base=None, title=None, body=None, body_fi
         raise VerbError("MR write is uncertain; intent retained for readback on retry", "mr-uncertain")
 
 
-def classify_pipeline(pull):
+def classify_pipeline(pull, merged_result_current=False):
     pipeline = pull.get("head_pipeline")
     status = pull.get("mergeStateStatus")
     if pipeline is None:
@@ -228,7 +250,7 @@ def classify_pipeline(pull):
                                                   status="COMPLETED", conclusion="UNKNOWN")])
         return delivery.classify_checks([])
     require(isinstance(pipeline, dict), "Invalid pipeline response", "mr-response")
-    current = pipeline.get("sha") == pull["sha"]
+    current = pipeline.get("sha") == pull["sha"] or merged_result_current
     state = pipeline.get("status")
     if not current or state in ("created", "waiting_for_resource", "preparing", "pending", "running", "scheduled"):
         entry = dict(name="GitLab pipeline", status="PENDING")
@@ -240,6 +262,37 @@ def classify_pipeline(pull):
     return delivery.classify_checks([entry])
 
 
+def pipeline_verdict(workspace, target, pull, cwd=None):
+    """Verify temporary merge-result commits against both current branch tips."""
+    pipeline = pull.get("head_pipeline")
+    current = False
+    if isinstance(pipeline, dict) and pipeline.get("sha") != pull["sha"]:
+        sha = pipeline.get("sha")
+        if isinstance(sha, str) and re.fullmatch(r"[0-9a-fA-F]{40,64}", sha):
+            project = "projects/" + quote(target["project"], safe="")
+            commit = api(workspace, target, project + "/repository/commits/" + sha, cwd=cwd)
+            base = api(workspace, target, project + "/repository/branches/"
+                       + quote(pull["baseRefName"], safe=""), cwd=cwd)
+            require(isinstance(commit, dict) and isinstance(base, dict)
+                    and isinstance(base.get("commit"), dict),
+                    "Invalid merge-result commit evidence", "mr-response")
+            parents = commit.get("parent_ids")
+            current = (commit.get("id") == sha and isinstance(parents, list)
+                       and len(parents) == 2 and pull["sha"] in parents
+                       and base["commit"].get("id") in parents)
+    return classify_pipeline(pull, merged_result_current=current)
+
+
+def checked_snapshot(workspace, target, pull, verdict, cwd=None):
+    require(pull and all(pull.get(field) == verdict[key] for field, key in
+                        (("number", "number"), ("url", "url"), ("sha", "sha"),
+                         ("baseRefName", "target_branch"))) and pull["state"] == "OPEN",
+            "MR identity, source or target changed after checks", "mr-changed")
+    current = pipeline_verdict(workspace, target, pull, cwd=cwd)
+    require(current["state"] == verdict["state"],
+            "MR check evidence changed after checks", "checks-" + current["state"])
+
+
 def checks(workspace, target, branch, cwd=None, wait=0, interval=30,
            sleep=time.sleep, clock=time.monotonic):
     require_provider(workspace, target)
@@ -247,13 +300,14 @@ def checks(workspace, target, branch, cwd=None, wait=0, interval=30,
     while True:
         pull = view(workspace, target, branch, cwd=cwd)
         require(pull is not None, "No merge request for branch", "no-pr")
-        verdict = classify_pipeline(pull)
+        verdict = pipeline_verdict(workspace, target, pull, cwd=cwd)
         if verdict["state"] != "pending" or clock() - started + interval > wait:
             break
         sleep(interval)
     return dict(verdict, branch=branch, number=pull["number"], url=pull["url"],
                 pr_state=pull["state"], draft=pull["isDraft"], mergeable=pull["mergeable"],
-                merge_state=pull["mergeStateStatus"], waited=int(clock() - started), sha=pull["sha"])
+                merge_state=pull["mergeStateStatus"], waited=int(clock() - started), sha=pull["sha"],
+                target_branch=pull["baseRefName"])
 
 
 def merge_pr(workspace, target, branch, local_checks_passed=None, cwd=None):
@@ -267,12 +321,15 @@ def merge_pr(workspace, target, branch, local_checks_passed=None, cwd=None):
     require(method != "rebase", "GitLab rebase merge strategy is project-managed; select squash or merge",
             "bad-merge-method")
     pull = view(workspace, target, branch, cwd=cwd)
-    require(pull and pull["sha"] == verdict["sha"], "MR source changed after checks", "mr-changed")
+    checked_snapshot(workspace, target, pull, verdict, cwd=cwd)
     if pull["isDraft"]:
         # Metadata edits deliberately preserve draft; only an explicit merge
         # operation may clear it, after evidence has passed.
         api(workspace, target, endpoint(target) + "/" + str(pull["number"]), method="PUT",
             payload=dict(title=draft_title(pull["title"], False)), cwd=cwd)
+        pull = view(workspace, target, branch, cwd=cwd)
+        checked_snapshot(workspace, target, pull, verdict, cwd=cwd)
+        require(not pull["isDraft"], "MR readiness update not confirmed", "mr-uncertain")
     deleted = bool(config_get(workspace, "delivery.delete_branch", True))
     try:
         api(workspace, target, endpoint(target) + "/" + str(pull["number"]) + "/merge",
