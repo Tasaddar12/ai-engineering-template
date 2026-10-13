@@ -1,7 +1,8 @@
 ---
-title: Track every PLAN and SUMMARY threat with a canonical Git issue and PR/MR lifecycle links
-status: open
-created: 2026-10-13T14:33:30
+title: Track every PLAN and SUMMARY threat with a canonical Git issue and PR/MR lifecycle
+  links
+status: in_progress
+created: 2026-10-13 14:33:30
 completed: ''
 files: []
 ---
