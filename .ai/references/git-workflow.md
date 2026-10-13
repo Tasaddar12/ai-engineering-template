@@ -57,6 +57,12 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 - For a captured TODO, inspect `todo.issue-preview` candidates across open and closed issues and the related PR context. Runtime provides evidence; it does not perform semantic deduplication.
 - Reuse only an actionable matching issue. Linking does not edit or close it. For closed matches, compare closure evidence with the full TODO scope; closed status alone does not prove resolution. Keep mismatches pending and report them. Reopen only with separate authorization or choose an appropriate distinct scope.
 - Add only separately reviewed safe context when needed, then preview again or block publication.
+- Supported `todo.issue-publish` requires `--variant` with the exact variant name
+  from the issue template and validates structural shape before publication.
+  For direct issue creates/edits, first run `phase_run query issue.validate
+  --variant "Bug" --body-file "${public_body_file}"` (select the actual variant).
+  Direct `gh`/API writes bypass the runtime gate; this check does not verify
+  working links, delivered UI controls, safe content or actual human decisions.
 - Before other issue creation, search open and closed issues, linked PRs and the current PR for duplicates. Keep in-scope defects in the current change; record other discoveries in the owned summary until issue creation is authorized.
 - Remove secrets, private logs and sensitive data from publishable text. Close an issue only after acceptance is demonstrated and closure is authorized. Do not use premature auto-closing references for tracking or deferred work.
 

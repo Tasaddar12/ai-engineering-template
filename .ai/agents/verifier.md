@@ -555,9 +555,16 @@ blocks; do not use this route for a source fact that can be inspected directly.
 </verify>
 ```
 
-Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → phase UAT artifact managed through [phase verification](../commands/verify-work.md) is the durable sink — no separate file is created.
+Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The coordinator manages the durable phase UAT artifact and its separate maintainer evidence link through [phase verification](../commands/verify-work.md).
 
-**Format:**
+**Format:** Generate concrete human actions using the
+[canonical UAT authoring contract](../templates/UAT.md#authoring-contract),
+including the checked entry point, visible controls, safe fixtures, expected
+results and numbered PASS/FAIL/BLOCKED replies. Return the proposal read-only;
+the [verification workflow](../workflows/verify-work.md) owns preparation and
+persistence. Keep build provenance and technical tasks in its separate
+maintainer-owned record. The item below maps a required check to its script;
+it is not a substitute for the runnable human actions.
 
 ```markdown
 ### 1. {Test Name}

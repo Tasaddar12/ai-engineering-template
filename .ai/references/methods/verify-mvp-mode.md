@@ -7,12 +7,10 @@ User-flow evidence supplements, and never replaces, other required acceptance.
 
 ## Core rule
 
-**Show expected, ask if reality matches.** Describe the user-visible outcome:
-
-- **Standard verify-work:** "The API endpoint at /users/register returns 201 with the new user's ID." → user confirms.
-- **MVP verify-work:** "Open the registration page. Fill in 'name', 'email', 'password'. Click Submit. You should see your dashboard with your name in the header." → user confirms.
-
-The user-flow form mirrors what a real user does: open, fill, click, see. No HTTP verbs, no JSON shapes, no error codes.
+**Show expected, ask if reality matches.** The human script describes what a
+real user opens, fills, clicks and sees, using the canonical template linked below.
+AI/maintainer prepares access and data, performs technical checks and keeps their
+results in the separate maintainer-owned record.
 
 ## When this framing applies
 
@@ -23,23 +21,28 @@ Do not require a nonexistent command or force rewording of an already clear goal
 
 ## Generated UAT script structure under MVP mode
 
-The proposed UAT script has THREE sections, in this exact order:
+The verification packet has THREE sections, in this exact order. Only section 1
+is the human script; sections 2 and 3 belong to the separate maintainer record.
+Apply the [canonical UAT authoring contract](../../templates/UAT.md#authoring-contract)
+to that script, including the prepared environment and numbered PASS/FAIL/BLOCKED replies.
 
 ### 1. User-flow walk-through (always first, always required)
 
 Derive ordered steps from the phase's user-story goal:
 
-1. The first step opens the entry point ("Open the app", "Navigate to /register", "Run the product's CLI command").
-2. Each subsequent step is one user action: fill, click, type, observe.
+1. The first step opens the verified exact URL (full path and required trailing slash) or directly runnable supplied launcher from the canonical template.
+2. Each subsequent step names one actual visible screen/control/object, exact click/key and concrete safe input when needed.
 3. The final step asserts the user-visible outcome from the `[outcome]` clause of the user story.
 
-Format each step as: "**Step N: [action]** — Expected: [what the user should see]". The user responds with one of:
-- an explicit report of the observed expected result → step passes
-- a reported mismatch → issue; a skipped, blocked or unanswered step remains unresolved. Do not proceed to a dependent step with a broken prerequisite.
+Use the canonical template's numbered action and expected-visible-result fields.
+The user replies `N PASS`, `N FAIL <short observation>` or `N BLOCKED <reason>`.
+A skipped, blocked or unanswered step stays unresolved. Do not proceed to a
+dependent step with a broken prerequisite. Mark unavailable functions or
+unverified entry points BLOCKED; never invent labels or substitute a guessed route.
 
 If ALL user-flow steps pass, advance to section 2. If a step fails, preserve the failure and stop dependent user actions. Continue independent technical checks when authorized; never hide their results.
 
-### 2. Technical checks
+### 2. Technical checks (AI/maintainer only)
 
 After the user-flow section, record technical checks for the approved scope:
 - API endpoint schema verification (if the phase shipped APIs)
@@ -49,7 +52,7 @@ After the user-flow section, record technical checks for the approved scope:
 
 Run only authorized checks. Independent checks can proceed despite a failed flow; blocked or unrun checks must be labeled honestly.
 
-### 3. Coverage check (always last, always required)
+### 3. Coverage check (AI/maintainer only; always last, always required)
 
 Verify that the user-story `[outcome]` clause is observably true in the codebase:
 - If the outcome is "I can access my dashboard", verify a dashboard route exists and renders for an authenticated user.
@@ -65,14 +68,20 @@ Coverage is a goal-backward check: "did this phase deliver what its user story p
 
 ## Local UAT contract
 
-The coordinator records actual observations through the local phase UAT procedure.
+The coordinator records actual observations in the canonical UAT session
+document through [verify-work](../../workflows/verify-work.md). The runtime has
+no UAT result-recording or case-selection verb. Keep PENDING HUMAN acceptance
+until the actual human decision is recorded.
 Silence, an empty reply, a skipped case or source inspection alone is not a human
 pass. Preserve source revision and actual expected/observed results. Required UAT
 remains incomplete until every required case passes; no framing auto-passes it.
 
 ## Output: VERIFICATION.md changes under MVP mode
 
-The verifier produces `VERIFICATION.md`. Under MVP mode, the report adds a top-level "User Flow Coverage" section that maps each step of the user story to evidence in the codebase:
+The verifier returns a read-only proposed `VERIFICATION.md` report to the
+coordinator. Under this framing, it adds a top-level "User Flow Coverage"
+section mapping each story step to codebase evidence. This fictional example
+shows source coverage only; it is not human acceptance or actual project evidence:
 
 ```markdown
 ## User Flow Coverage

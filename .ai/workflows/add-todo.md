@@ -193,6 +193,13 @@ copy only that variant's fenced **File Template** block into a separately
 reviewed public body file. Never copy the whole source or all variants. Prepare
 a separately reviewed public title. Reuse the local title only after checking
 that it is safe to publish.
+Set `issue_variant` to the selected canonical name exactly as shown in the
+template (`Bug`, `Enhancement`, `Decision required`, `Security risk` or `UAT`).
+The runtime validates structural shape before publication; working URLs, real
+UI controls, safe content and actual human decisions remain author checks.
+Direct `gh`/API edits bypass this gate; validate a full replacement draft with
+`phase_run query issue.validate --variant "${issue_variant}" --body-file "${public_body_file}"`
+before such an authorized edit.
 Never copy private TODO metadata or sensitive context into the public body. If no
 safe, actionable public text is available, block publication and keep the local
 TODO pending. Put the body in a separate non-empty file, never the TODO file.
@@ -210,6 +217,7 @@ PUBLISH=$(phase_run query todo.issue-publish "${todo_name}" \
   --preview-token "${preview_token}" \
   --title "${public_title}" \
   --body-file "${public_body_file}" \
+  --variant "${issue_variant}" \
   --existing-issue "${issue_url}")
 ```
 

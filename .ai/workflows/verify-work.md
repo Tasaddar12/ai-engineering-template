@@ -365,6 +365,52 @@ start a fresh verification batch on the integrated revision. Do not combine
 evidence from different frozen revisions as if it described one tree.
 </step>
 
+<step name="prepare_human_acceptance">
+When the joined report contains human checks, prepare a concrete script before
+reporting the shipping blocker. This also applies when `gaps_found` takes
+precedence over `human_needed`; preserve the required human checks.
+
+Use the [canonical UAT template and authoring contract](../templates/UAT.md)
+for the phase session. For a new authorized human-test issue, select only the
+[UAT issue variant](../templates/issue.md#uat), following the same contract.
+For existing issue rewrites, follow the template's
+[type-preservation rule](../templates/issue.md#how-to-fill-it).
+For UAT issues, apply that variant's readiness instructions: saved-body readback
+and verified saved links/launch entry point against the prepared UI precede any
+ready claim. Direct verifier-generated human checks follow that contract too;
+the verifier returns its proposed script read-only and the coordinator persists
+it. Keep technical evidence and build provenance in the separate maintainer-owned
+record.
+
+The following script and Human acceptance instructions apply to phase human
+checks and actual UAT issue bodies. The AI/maintainer prepares the delivered
+environment and checks each proposed action against its actual UI before
+handoff. Record unavailable functions and unverified entry points as BLOCKED
+with their missing prerequisites. The human
+receives the entry point, short behavior checklist, numbered concrete actions,
+expected visible results and the reply format from the template. Retain
+`PENDING HUMAN acceptance` until the actual decision and observation evidence
+arrive; automated checks do not supply it. After actual feedback, the coordinator
+updates the session and reconciles verification through the existing procedure.
+
+When all required actions pass but the actual final human decision is pending,
+keep the session `status: partial` and Current Test as only
+`awaiting: final human acceptance decision`. Preserve pending acceptance fields;
+do not infer the final decision from action PASS replies. Completion and resume
+both require passing actions AND the actual recorded human decision.
+For a UAT issue index, preserve the UAT headings/table/Human acceptance fields but
+replace the standalone numbered-step reply sentence with results only in the
+linked tests. Index decision/evidence reference actual linked test decisions;
+collect no separate row replies or duplicate acceptance action.
+
+For an authorized issue-generation or rewrite batch, assign exactly one named
+author per issue, with its explicit issue URL/number and owned draft path. No
+concurrent edits to the same issue or draft. The coordinator reviews each draft
+and publishes within the existing authorization; other project owners remain
+scoped to their assigned issues. This rule grants no authority to rewrite other
+repositories.
+</step>
+
 <step name="persist_nonpass_report">
 Do not persist the provisional report. For an initial `gaps_found` or
 `human_needed`, the coordinator writes the final joined report after
@@ -392,7 +438,7 @@ phase_run query verification.status "${phase_number}"  # non-pass report only
 
 **status: human_needed** → do not convert it to a pass and do not ask. List each
 such criterion — what a person must check and how — in the closing report as
-what blocks shipping.
+what blocks shipping, with the concrete script from `prepare_human_acceptance`.
 
 **status: gaps_found** → continue to `plan_gap_closure`.
 </step>
