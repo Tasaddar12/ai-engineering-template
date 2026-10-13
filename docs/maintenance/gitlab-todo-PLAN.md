@@ -10,11 +10,32 @@ Authorization: implement this bounded lifecycle in a new worktree, publish a lin
 2. Add GitLab issue operations behind the existing TODO state machine: preview, candidates and MR context, create/reuse, verified readback, persistent linkage, uncertain-create recovery and explicit closed-status checks. Reuse portable issue validation.
 3. Add fake-provider lifecycle regression coverage, run focused tests, obtain independent review and await required GitHub CI. Keep the draft current.
 
+### Task 1 evidence
+
+- read_first: `.ai/runtime/lib/config.py`, `.ai/runtime/lib/gitops.py`, `.ai/runtime/lib/todo_issues.py`, `tests/test_todo_issues.py`.
+- action: implement the accepted `providers.resolve` dictionary and `item_number` ownership contract. Own defaults in `.ai/runtime/lib/config.py` and configuration guidance in `.ai/references/providers.md`; do not edit adoption config or delivery files.
+- acceptance_criteria: known GitHub shapes remain valid; configured GitLab nested project and SSH/web ports resolve offline; unknown hosts, credentials and cross-project item URLs are rejected.
+- verify: `python -m unittest discover -s tests -p test_providers.py -v`; fails_when: nonzero exit or zero tests discovered.
+
+### Task 2 evidence
+
+- read_first: `.ai/runtime/lib/todo_issues.py`, `.ai/runtime/lib/todos.py`, `.ai/runtime/lib/issue_format.py`, `.ai/templates/issue.md`, `tests/test_todo_issues.py`, `.ai/runtime/lib/providers.py`.
+- action: route only GitLab issue operations through a pinned adapter; retain the publication state machine and portable issue validator.
+- acceptance_criteria: selected preview, open/closed candidates and MR context, reviewed creation/reuse, verified readback/linkage, uncertain-create recovery without retry and explicit closed-status completion work offline.
+- verify: `python -m unittest discover -s tests -p test_gitlab_todo_issues.py -v`; fails_when: nonzero exit or zero tests discovered.
+
+### Task 3 evidence
+
+- read_first: `tests/test_todo_issues.py`, `tests/test_gitlab_todo_issues.py`, `tests/test_providers.py`, `.github/workflows/validate.yml`, `.ai/agents/code-reviewer.md`.
+- action: run focused lifecycle/portable validator tests, capture independent review, correct blockers and observe required CI at the published candidate. Keep honest draft evidence and write the owned SUMMARY.
+- acceptance_criteria: GitHub regression and GitLab suites pass; review has no unresolved blockers; required validate CI succeeds. Unverified evidence remains a reported gap.
+- verify: `python -m unittest discover -s tests -p test_todo_issues.py -v` and `python -m unittest discover -s tests -p test_issue_format.py -v`; fails_when: nonzero exit or zero tests discovered for either command. `gh pr checks 77 --repo Tasaddar12/ai-engineering-template`; fails_when: a required check fails or remains pending at completion.
+
 ## Ownership
 
 - `.ai/runtime/lib/providers.py`, `.ai/runtime/lib/gitlab_issues.py`, `.ai/runtime/lib/todo_issues.py`
 - `tests/test_providers.py`, `tests/test_gitlab_todo_issues.py`; preserve `tests/test_todo_issues.py` as GitHub regression suite.
-- Provider config documentation/defaults after coordination; maintenance plan/summary.
+- `.ai/runtime/lib/config.py`, `.ai/references/providers.md`, `docs/maintenance/gitlab-todo-PLAN.md`, `docs/maintenance/gitlab-todo-SUMMARY.md`; owned by this maintenance coordinator after delivery-owner contract agreement. No `.planning/config.yaml` edits.
 - MR delivery and ship paths belong to the separate delivery owner.
 
 ## Acceptance and validation
