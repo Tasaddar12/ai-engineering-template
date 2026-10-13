@@ -35,7 +35,7 @@ Track every PLAN and SUMMARY threat with a canonical Git issue and PR/MR lifecyc
 
 ## Verification
 
-Source acceptance QT-01 through QT-06 passed at 9dc8840; independent code review clean and all14 documentation paths PASS. Local17issue/11threat/3links/3entrypoint passed; TODO33pass/1Windows symlink skip. Canonical81/82 read back OPEN/unresolved with neutralPR80 links. Required final CI checked separately; keep draft unmerged.
+Source acceptance QT-01 through QT-06 passed at 9dc8840; independent code review clean and all 14 documentation paths PASS. Local checks passed: 17 issue-format, 11 threat-contract, 3 workflow-link and 3 entrypoint tests; TODO: 33 passed, 1 Windows symlink skip. Canonical issues 81/82 read back OPEN/unresolved with neutral PR80 links. Required final CI checked separately; keep draft unmerged.
 
 ## Changes
 
