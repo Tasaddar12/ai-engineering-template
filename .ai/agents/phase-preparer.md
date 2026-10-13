@@ -414,7 +414,9 @@ Output: [Artifacts created]
 
 | Threat ID / risk key and source aliases | Category | Component/scope | Severity and assessment | Disposition | Mitigation/task/check | Owner | Status | Canonical issue | Resolution evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| [stable ID/key and aliases] | [STRIDE category] | [affected control/scope] | [critical/ high/ medium/ low; impact/likelihood and uncertainty] | [mitigate/accept/transfer] | [task + secure check or safe next action] | [responsible party] | [unresolved/mitigated/accepted/deferred] | [verified URL or Pending with dependency] | [revision + actual result, or Pending with dependency] |
+| T-{phase}-01 / {stable key}; {source aliases} | {S/T/R/I/D/E} | {function/endpoint/file} | {assessed severity; impact/likelihood; uncertainty} | mitigate | {implementing task + secure check} | {owner} | unresolved | Pending coordinator reconciliation | Pending implementing task/check |
+| T-{phase}-02 / {stable key}; {source aliases} | {category} | {component} | low; {limited impact/likelihood; uncertainty} | accept | {proposed acceptance rationale and responsible party} | {owner} | unresolved until actual acceptance evidence | Pending coordinator reconciliation | Pending responsible-party decision/evidence |
+| T-{phase}-SC / {dependency key}; {source aliases} | Tampering | dependency installation | high; {supply-chain impact/likelihood; uncertainty} | mitigate | {task/check}: verify exact package identity/version and project-approved source | {owner} | unresolved | Pending coordinator reconciliation | Pending identity/source check |
 
 [Use only actual findings; examples are not project risks. Preserve ID/key and
 source aliases; coordinator publishes, workers return Pending with dependency.]

@@ -35,8 +35,9 @@ def file_template(text):
 
 
 def section(text, title):
-    return re.search(r"^" + re.escape(title) + r"\n(.*?)(?=^## |\Z)",
-                     text, re.M | re.S).group(1)
+    depth = len(title.split(" ", 1)[0])
+    return re.search(r"^" + re.escape(title) + r"\n(.*?)(?=^#{1," + str(depth) +
+                     r"}\s|\Z)", text, re.M | re.S).group(1)
 
 
 def steps(text):
@@ -111,6 +112,54 @@ def contract_errors(root):
                 quick_order.index(before) >= quick_order.index(after)):
             errors.append("quick: mandatory reconciliation order")
     return errors
+
+
+
+def review_obligation_errors(text):
+    """Audit declared review duties only, never provider/redaction behavior."""
+    canonical = section(text, "## Canonical threat tracking")
+    failures = []
+    try:
+        identity = section(canonical, "### Identity and publication")
+        safety = section(canonical, "### Safe reporting")
+        lifecycle = section(canonical, "### Assessment, status and closure")
+    except AttributeError:
+        return ["review section missing"]
+    # Ordered workflow records are the evidence source, not a title match.
+    actions = re.findall(r"^([1-4])\. (.*?)(?=^[1-4]\. |\Z)", identity, re.M | re.S)
+    if [number for number, _ in actions] != ["1", "2", "3", "4"]:
+        failures.append("identity sequence")
+    normalized = [" ".join(body.split()) for _, body in actions]
+    duties = (
+        (0, ("stable canonical risk key per repository", "source IDs as aliases",
+             "PLAN, SUMMARY and reruns", "all source occurrences"), "identity/aliases"),
+        (1, ("open and closed issues", "linked PR/MRs", "current PR/MR",
+             "semantic scope", "full-scope match", "matching resolution evidence",
+             "reopening authority"), "duplicate and closed-match review"),
+        (2, ("Serialize coordinator writes", "issue.validate", "Never create a TODO",
+             "todo.issue-publish"), "serialized authorized writes"),
+        (3, ("read back", "uncertain creation", "exact reviewed intent and key",
+             "before any retry", "Pending", "publication blocker"), "uncertain-create recovery"),
+    )
+    for index, phrases, label in duties:
+        if index >= len(normalized) or not all(p in normalized[index] for p in phrases):
+            failures.append(label)
+    for body, phrases, label in (
+            (safety, ("without private-channel approval", "existing authorized restricted",
+                      "Missing private access blocks only", "safe tracking proceeds",
+                      "safe description/link cannot be disclosed", "publication blocker",
+                      "destination visibility"), "safe public/restricted detail"),
+            (lifecycle, ("unresolved|mitigated|accepted|deferred", "impact/likelihood",
+                         "uncertainty", "responsible-party rationale/evidence",
+                         "Deferred records owner, reason and next action",
+                         "matching revision/check evidence"), "assessed lifecycle"),
+            (lifecycle, ("neutral issue links", "verified closure eligibility",
+                         "Merge is not risk resolution", "scope-complete mitigation",
+                         "explicit closure authority", "never autoclose unresolved risk"),
+             "non-closing references")):
+        if not all(p in " ".join(body.split()) for p in phrases):
+            failures.append(label)
+    return failures
 
 
 class ThreatTrackingContract(unittest.TestCase):
@@ -193,6 +242,71 @@ class ThreatTrackingContract(unittest.TestCase):
         name = ".ai/templates/phase-prompt.md"
         self.mutate(root, name, "git-workflow.md#canonical-threat-tracking", "missing.md")
         self.assertIn(name + ": canonical procedure unreachable", contract_errors(root))
+
+
+    def test_canonical_review_sequence_and_mutations(self):
+        text = (ROOT / CANONICAL).read_text(encoding="utf-8")
+        self.assertEqual([], review_obligation_errors(text))
+        # Remove a complete provider-recovery action, closed-match evidence, or
+        # a lifecycle/safety duty; audit must detect each missing obligation.
+        mutations = (
+            (re.sub(r"^4\. Publish/reuse.*?(?=^GitLab)", "", text, flags=re.M | re.S),
+             "identity sequence"),
+            (text.replace("matching resolution\n   evidence", "closed status alone"),
+             "duplicate and closed-match review"),
+            (text.replace("source IDs as\n   aliases", "unrelated IDs"),
+             "identity/aliases"),
+            (text.replace("without private-channel approval", "after private approval"),
+             "safe public/restricted detail"),
+            (text.replace("Missing private access blocks only", "Private access always blocks"),
+             "safe public/restricted detail"),
+            (text.replace("matching revision/check evidence", "assumed result"),
+             "assessed lifecycle"),
+            (text.replace("explicit closure authority", "assumed closure authority"),
+             "non-closing references"),
+        )
+        for changed, expected in mutations:
+            with self.subTest(expected=expected):
+                self.assertNotEqual(text, changed)
+                self.assertIn(expected, review_obligation_errors(changed))
+
+    def test_plan_summary_alias_handoff_uses_real_template_positions(self):
+        # Populate the actual artifact rows for a repeated observation. This
+        # proves the handoff schema carries aliases; no dedup engine is modeled.
+        template_rows = []
+        for name in (".ai/templates/phase-prompt.md", ".ai/templates/summary.md"):
+            block = file_template((ROOT / name).read_text(encoding="utf-8"))
+            header = next(line for line in block.splitlines() if line.startswith("| Threat ID"))
+            placeholder = block.split(header + "\n", 1)[1].splitlines()[1]
+            values = (
+                "T-P-01 / repository-control-failure; aliases T-P-01,T-S-09",
+                "Tampering", "affected control", "medium; impact/likelihood assessed",
+                "mitigate", "Task 1; secure check Pending", "maintainer", "unresolved",
+                "Pending authorized provider readback", "Pending check on candidate",
+            )
+            filled = block.replace(placeholder, "| " + " | ".join(values) + " |", 1)
+            root = self.fixture()
+            fixture = root / ("fixture-PLAN.md" if "phase-prompt" in name else "fixture-SUMMARY.md")
+            fixture.write_text(filled, encoding="utf-8")
+            row = fixture.read_text(encoding="utf-8").split(header + "\n", 1)[1].splitlines()[1]
+            record = dict(zip(REGISTER_FIELDS, (value.strip() for value in row.strip("|").split("|"))))
+            template_rows.append(record)
+        self.assertEqual(template_rows[0], template_rows[1])
+        for source_id in ("T-P-01", "T-S-09"):
+            self.assertIn(source_id, template_rows[1][REGISTER_FIELDS[0]])
+        self.assertEqual("unresolved", template_rows[1]["Status"])
+        self.assertTrue(template_rows[1]["Canonical issue"].startswith("Pending "))
+
+    def test_pending_host_limit_is_declared_without_runtime_support_claim(self):
+        text = " ".join(section((ROOT / CANONICAL).read_text(encoding="utf-8"),
+                                "## Canonical threat tracking").split())
+        self.assertIn("GitHub-only", text)
+        self.assertIn("verified authorized host tool", text)
+        self.assertIn("otherwise retain Pending/publication blocker", text)
+        self.assertIn("No runtime GitLab adapter", text)
+        contract = " ".join((ROOT / ".ai/runtime/TEMPLATE-CONTRACT.md").read_text(
+            encoding="utf-8").split())
+        self.assertIn("No automatic prose scanner or risk-close guard exists.", contract)
 
 
 if __name__ == "__main__":

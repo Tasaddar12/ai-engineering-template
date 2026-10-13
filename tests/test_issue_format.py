@@ -85,6 +85,23 @@ class IssueFormat(unittest.TestCase):
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, code, result.stdout + result.stderr)
 
+    def test_security_assessment_values_remain_structural_only(self):
+        body = bodies()["Security risk"]
+        # Correct shape with absent/incorrect risk facts still passes today.
+        # This is negative evidence: semantic review is required after validation.
+        missing = re.sub(r"^- (Threat ID / risk key|Source aliases|Severity|Owner|Status|"
+                         r"Mitigation or safe next action|Resolution evidence):.*\n",
+                         "", body, flags=re.M)
+        wrong = re.sub(r"^- Severity:.*$", "- Severity: banana", body, flags=re.M)
+        wrong = re.sub(r"^- Status:.*$", "- Status: merged-means-secure", wrong, flags=re.M)
+        wrong = re.sub(r"^- Resolution evidence:.*$", "- Resolution evidence: unknown",
+                       wrong, flags=re.M)
+        for changed in (missing, wrong):
+            with self.subTest(body=changed):
+                result = issue_format.validate(changed, "Security risk")
+                self.assertTrue(result["valid"])
+                self.assertTrue(result["structuralOnly"])
+
     def test_missing_unknown_or_noncanonical_variant(self):
         for variant in (None, "", "bug", "expected-behavior", True):
             self.assert_invalid(bodies()["Bug"], variant, "issue-variant")
