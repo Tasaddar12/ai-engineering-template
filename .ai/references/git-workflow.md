@@ -68,84 +68,70 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 ## Canonical threat tracking
 
-Every threat identified anywhere in PLAN/SUMMARY prose, tables, deviations,
-Deferred/Remaining or Threat Flags needs a canonical Git issue, regardless of
-severity, provenance, scope or mitigation. Include pre-existing, already mitigated,
-accepted and deferred findings. Finding a threat does not authorize remediation
-beyond the plan. State None identified with inspected scope when appropriate;
-never invent threats to fill a register.
-
-Workers preserve local Threat IDs, stable risk keys and source aliases, returning
-safe issue requests marked Pending with the concrete dependency. They own their
-SUMMARY, never publication or shared PLAN/status edits. Coordinators reconcile
-all sections before reporting preparation/execution complete, including review
-threats once represented in the owned PLAN/SUMMARY, without an ordinary approval gate.
+- Create/reuse an issue for every identified PLAN/SUMMARY threat: prose, tables,
+  deviations, Deferred/Remaining, pre-existing, mitigated, accepted and deferred.
+  Do not expand remediation beyond the plan.
+- Keep description, category, component, severity, disposition and mitigation in
+  its respective PLAN's existing six-column register. Link the local Threat ID to
+  the verified issue, or keep the ID plus `Pending: <dependency>`.
+- Reuse the same issue for duplicate findings in different PLANs. Do not relocate
+  or collapse PLAN content into a combined registry.
+- Workers return safe requests/SUMMARY. Coordinators update each owning PLAN's
+  links before preparation/execution completion; add discoveries to that PLAN.
+  Do not add an ordinary approval gate.
+- In SUMMARY/PR, link PLAN/Threat ID and issue; show outcomes and Git state without
+  repeating the register. Use `None identified` with inspected scope when applicable.
 
 ### Identity and publication
 
-1. Keep one stable canonical risk key per repository, affected surface/control
-   and failure mode/remediation scope. Preserve existing keys and source IDs as
-   aliases across PLAN, SUMMARY and reruns; record all source occurrences.
-2. Search all open and closed issues, linked PR/MRs and current PR/MR before
-   creation. Compare semantic scope rather than titles, severity or source
-   location. Reuse an actionable full-scope match; distinct risks need distinct
-   issues. A fully resolved closed match is reusable only with matching resolution
-   evidence. If a closed match has unresolved risk, follow existing reopening
-   authority and report an actual blocker; do not claim resolution or duplicate it.
-3. Serialize coordinator writes. Review a safe title and separate body from the
-   [Security risk template](../templates/issue.md); run
-   `phase_run query issue.validate --variant "Security risk" --body-file PATH`
-   before direct authorized provider writes. Never create a TODO or use
-   `todo.issue-publish` as a workaround for threat records.
-4. Publish/reuse then read back the saved issue, checking key, aliases, scope,
-   lifecycle, evidence and URL. After uncertain creation, search/read back the
-   exact reviewed intent and key before any retry. Reconcile verified links into
-   coordinator-owned planning records and related PR/MR bodies. Unavailable
-   provider/access stays Pending with publication blocker; independent authorized
-   work continues. Never fabricate URLs or claim all issues published.
+1. Keep the stable canonical risk key (repository, surface/control, failure mode/
+   remediation scope) and source aliases/occurrences in the Security risk issue.
+   Preserve keys across reruns.
+2. Search open and closed issues, linked PR/MRs and current PR/MR. Compare semantic
+   scope; reuse an actionable full-scope match. Reuse resolved closed matches only
+   with matching resolution evidence. For unresolved closed matches, use existing
+   reopening authority or record the blocker; do not duplicate. Separate distinct risks.
+3. Serialize coordinator writes. Review the [Security risk template](../templates/issue.md)
+   title/body; run `phase_run query issue.validate --variant "Security risk" --body-file PATH`
+   before authorized writes. Never create a TODO or use `todo.issue-publish` for threats.
+4. Create/reuse; read back key, aliases, scope, lifecycle, evidence and URL. After
+   uncertain creation, search/read back the exact reviewed intent and key before retrying.
+   Update each owning PLAN's links and SUMMARY/PR outcomes. Keep unavailable
+   publication `Pending: <dependency>`; continue independent work. Never fabricate URLs.
 
-GitLab MR-neutral policy is the same as GitHub PR policy. The observed runtime
-delivery and TODO provider implementation is GitHub-only. Use a verified authorized
-host tool for other hosts if available; otherwise retain Pending/publication
-blocker. No runtime GitLab adapter or automatic provider enforcement is implied.
+- Apply neutral-link policy to GitLab MRs. Runtime support is GitHub-only; use a
+  verified authorized host tool, otherwise retain Pending/publication blocker.
 
 ### Safe reporting
 
-Standing tracking authorization permits a separately reviewed sanitized public
-tracker without private-channel approval. Credentials, private logs, exploit
-steps and sensitive attachments stay out of every publishable title, body,
-planning document and link. Use an existing authorized restricted reporting
-channel for sensitive detail. Missing private access blocks only that detail or
-dependent action while safe tracking proceeds. Respect destination visibility
-when linking private records. If even a safe description/link cannot be disclosed,
-record an explicit publication blocker and restricted canonical issue/reference
-where accessible; never fabricate a public URL.
+- Publish reviewed sanitized tracking without private-channel approval.
+- Exclude credentials, private logs, exploit steps and sensitive attachments from
+  publishable titles, bodies, documents and links.
+- Use an existing authorized restricted channel for sensitive detail. Missing
+  private access blocks only that detail/dependent action; continue safe tracking.
+- Respect destination visibility. If safe disclosure is impossible, retain the
+  publication blocker and accessible restricted canonical reference.
 
 ### Assessment, status and closure
 
-Record Threat ID/risk key and source aliases; assessed Severity
-(critical|high|medium|low) with impact/likelihood rationale and uncertainty;
-affected scope and measurable resolution criteria; Owner; observed Status
-(unresolved|mitigated|accepted|deferred); Mitigation or safe next action;
-Resolution evidence (revision and actual check/result, or Pending with dependency);
-safe sources and related PR/MR links. Assess actual impact, never blanket critical.
+- In the issue, record assessed severity (`critical|high|medium|low`), impact/
+  likelihood, uncertainty, owner, scope/acceptance, next action and revision/check
+  evidence. Do not blanket-classify as critical.
 
-PLAN disposition (mitigate|accept|transfer) is intent, not observed status.
-Planned mitigation and transfer remain unresolved until evidenced. Accepted
-requires actual responsible-party rationale/evidence and retains residual risk.
-Deferred records owner, reason and next action. Mitigated requires demonstrated
-secure outcome and matching revision/check evidence.
+| Observed status | Required evidence |
+|---|---|
+| unresolved | Pending mitigation/check or transfer; disposition alone is not an outcome |
+| mitigated | Secure outcome at matching revision; actual check/result |
+| accepted | Responsible-party decision/rationale; retain residual risk |
+| deferred | Owner, reason and next action; retain unresolved work |
 
-Keep every risk visible in the PR/MR threat table. Use neutral issue links for
-unresolved, accepted and deferred risks, and mitigated findings without verified
-closure eligibility. Merge is not risk resolution. Only verified scope-complete
-mitigation plus existing explicit closure authority justifies closing references
-or closure; never autoclose unresolved risk. Audit closing references before
-publication and merge against actual issue evidence.
-
-The unchanged issue validator is structuralOnly. Fields, semantic deduplication,
-disclosure safety and resolution truth remain author/coordinator and independent
-review obligations; these instructions are not an automatic risk-close guard.
+- Distinguish open/unresolved, accepted/deferred and mitigated/resolved outcomes.
+  List actual closed issues only with readback and scope-complete resolution evidence.
+- Keep neutral issue links until scope-complete mitigation and existing explicit
+  closure authority are verified. Audit closing references before publication/merge.
+  Never label accepted/deferred as resolved or infer closure from merge.
+- Limitation: `issue.validate` checks headings/order only; assessment, dedup,
+  disclosure safety and resolution truth require review.
 
 ## Stacks
 

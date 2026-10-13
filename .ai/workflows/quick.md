@@ -231,13 +231,11 @@ If the plan is missing, stop with: "phase-preparer failed to create ${QUICK_ID}-
 </step>
 
 <step name="reconcile_plan_threats">
-After the preparer's committed PLAN is available, scan every section and reconcile
-every threat through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Search/reuse or create safe
-canonical issues, read back, then reconcile aliases, links, status and evidence
-in coordinator-owned planning records before reporting preparation complete.
-This step is mandatory in ordinary quick and quick-validate, outside check_plan.
-Keep actual provider/private-access blockers Pending with dependency; continue
-independent authorized work. Repeat after PLAN revisions or review threats.
+- Reconcile every committed PLAN threat through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+  before preparation completion; repeat after revisions/review discoveries.
+- Create/reuse/read back issues; update each owning PLAN's Threat ID link and
+  keep its six-column register in place. Retain Pending dependencies.
+- Run in ordinary quick and quick-validate, outside check_plan; continue independent work.
 </step>
 
 <step name="check_plan">
@@ -432,13 +430,12 @@ escalate it rather than re-running the merge to get past it.
 </step>
 
 <step name="reconcile_summary_threats">
-After integration, read the integrated SUMMARY and every PLAN/SUMMARY section.
-Reconcile all findings under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking), including carried
-identity/aliases, new findings, status/evidence, safe issue create/reuse/readback
-and coordinator-owned planning links. This mandatory step runs in ordinary quick
-and quick-validate, outside verify. Keep real publication blockers Pending with
-dependency and remaining risks visible; continue independent authorized work.
-Repeat after review findings are represented in the owned PLAN/SUMMARY.
+- Read the integrated SUMMARY and all PLAN/SUMMARY sections; reconcile each
+  owning PLAN's threats through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Create/reuse/read back issues; update that PLAN's links and SUMMARY outcomes.
+  Add discoveries to the owning PLAN; retain Pending dependencies and open risks.
+- Distinguish accepted/deferred from resolved; list closed only with readback/evidence.
+- Run in ordinary quick and quick-validate, outside verify; repeat after reviews.
 </step>
 
 <step name="run_checks">

@@ -114,17 +114,19 @@ Output: [What artifacts will be created]
 <threat_model>
 ## Trust Boundaries
 
-[Changed boundaries, or inspected unchanged scope.]
+| Boundary | Description |
+|----------|-------------|
+| [Changed boundary or inspected unchanged scope] | [Untrusted input or concrete scope] |
 
 ## STRIDE Threat Register
 
-| Threat ID / risk key and source aliases | Category | Component/scope | Severity and assessment | Disposition | Mitigation/task/check | Owner | Status | Canonical issue | Resolution evidence |
-|---|---|---|---|---|---|---|---|---|---|
-| [stable ID/key and aliases] | [STRIDE category] | [affected control/scope] | [critical/ high/ medium/ low; impact/likelihood and uncertainty] | [mitigate/accept/transfer] | [task + secure check or safe next action] | [responsible party] | [unresolved/mitigated/accepted/deferred] | [verified URL or Pending with dependency] | [revision + actual result, or Pending with dependency] |
+| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
+|-----------|----------|-----------|----------|-------------|-----------------|
+| [Threat ID](verified canonical issue URL), or ID + Pending: dependency | [STRIDE category] | [function/endpoint/file] | [critical/high/medium/low] | [mitigate/accept/transfer] | [Specific task/check or acceptance/transfer rationale] |
 
-[None identified with inspected scope is allowed after assessment. Track every
-identified threat anywhere in this PLAN under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking);
-workers return safe Pending requests, coordinator reconciles verified links.]
+- Keep each finding in this PLAN; follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Link its Threat ID to the canonical issue; retain the local ID and Pending
+  dependency until coordinator readback. Use only actual findings.
 </threat_model>
 
 <verification>

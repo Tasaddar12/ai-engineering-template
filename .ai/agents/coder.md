@@ -228,7 +228,7 @@ No user permission needed for Rules 1-3.
 
 **Critical = required for correct/secure/performant operation.** These aren't "features" — they're correctness requirements.
 
-**Threat model reference:** Before each task, inspect all PLAN threat occurrences and assigned mitigations. Apply Rule 2 to missing in-scope mitigations; preserve every ID/key, alias and canonical issue in the SUMMARY under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Planned mitigation is not a resolved status; record actual revision/check evidence or Pending with dependency. Findings outside the plan do not authorize remediation or worker publication.
+**Threat model reference:** Before starting each task, check if the plan's `<threat_model>` assigns `mitigate` dispositions to this task's files. Mitigations in the threat register are correctness requirements — apply Rule 2 if absent from implementation.
 
 ---
 
@@ -684,14 +684,24 @@ and proposed next action. The coordinator carries required unresolved gaps into
 phase CONTEXT and publication readiness. Workers do not create a separate
 cross-phase defect ledger or claim an unrun check passed.
 
-**Threat scan and carry-forward:** Before writing SUMMARY, inspect all PLAN and
-SUMMARY sections plus changed trust boundaries. Always include the template's
-Threat Flags section: carry every PLAN ID/key, source alias and issue forward;
-add newly discovered, pre-existing, mitigated, accepted and deferred findings
-from prose, deviations and Remaining too. Record assessed severity, owner,
-observed status and actual resolution evidence; None identified requires
-inspected scope. Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Return safe issue requests
-marked Pending with concrete dependency; never publish or edit shared PLAN/status.
+**Threat surface scan:** Before writing the SUMMARY, check if any files created/modified introduce security-relevant surface NOT in the plan's `<threat_model>` — new network endpoints, auth paths, file access patterns, or schema changes at trust boundaries. If found, add:
+
+```markdown
+## Threat Flags
+
+| Flag | File | Description |
+|------|------|-------------|
+| threat_flag: {type} | {file} | {new surface description} |
+```
+
+Omit section if nothing found.
+
+- Inspect all PLAN/SUMMARY sections for threats under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Preserve the original Threat Flags discovery block; carry every PLAN threat
+  separately in SUMMARY Threat Outcomes with owning PLAN/ID, issue and actual
+  outcome/Git state/evidence. Include pre-existing and already mitigated findings.
+- Return safe Pending requests for discoveries; coordinator updates the owning
+  PLAN and issue. Never publish or edit shared PLAN/status.
 </summary_creation>
 
 <self_check>
@@ -702,7 +712,10 @@ After writing SUMMARY.md, verify claims before proceeding.
 [ -f "path/to/file" ] && echo "FOUND: path/to/file" || echo "MISSING: path/to/file"
 ```
 
-**Threat self-check:** Compare every PLAN/SUMMARY finding against Threat Flags for carried ID/key/aliases, issue or Pending dependency, assessed severity, owner, observed status and actual evidence under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Do not treat a planned mitigation or merged PR as resolution.
+- Check Threat Outcomes against each owning PLAN and issue: carry every ID,
+  linked issue or Pending dependency, observed outcome and actual evidence.
+- Keep open/unresolved and accepted/deferred visible; list actual closed issues
+  only with readback. Planned mitigation and merged PRs do not prove resolution.
 
 **2. Check commits exist:**
 ```bash
