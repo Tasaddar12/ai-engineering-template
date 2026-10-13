@@ -1,4 +1,4 @@
-"""Reviewed, repository-pinned GitHub linkage for one pending TODO.
+"""Reviewed, repository-pinned forge linkage for one pending TODO.
 
 Callers hold the planning lock for the complete operation, including provider
 reads and attempted-intent persistence. This is coordinator-serialized work.
@@ -8,9 +8,8 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from urllib.parse import urlsplit
 
-from . import delivery, gitops, issue_format, todos
+from . import delivery, gitops, gitlab_issues, issue_format, providers, todos
 from .paths import read_text
 from .results import VerbError, require
 
@@ -46,29 +45,11 @@ def json_call(workspace, *args):
 
 
 def target(workspace):
-    origin = gitops.git(workspace, "remote", "get-url", "origin", check=False)
-    require(origin.returncode == 0, "GitHub origin required", "issue-repository")
-    value = origin.stdout.strip()
-    match = re.fullmatch(r"git@github\.com:([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?", value)
-    if not match:
-        try:
-            parsed = urlsplit(value)
-            port = parsed.port
-        except ValueError:
-            raise VerbError("Invalid GitHub origin", "issue-repository")
-        require(parsed.scheme in ("https", "ssh") and parsed.hostname == HOST
-                and not parsed.query and not parsed.fragment and not port
-                and (parsed.username is None or
-                     (parsed.scheme == "ssh" and parsed.username == "git"))
-                and parsed.password is None,
-                "Only a GitHub HTTPS or SSH origin is supported", "issue-repository")
-        match = re.fullmatch(r"/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?",
-                             parsed.path)
-    require(match is not None, "Invalid GitHub origin repository", "issue-repository")
-    owner, name = match.groups()
-    require(owner not in (".", "..") and name not in (".", ".."),
-            "Invalid GitHub repository", "issue-repository")
-    repository = HOST + "/" + owner + "/" + name
+    resolved = providers.resolve(workspace)
+    if resolved["provider"] == "gitlab":
+        return gitlab_issues.verify(workspace, resolved)
+    owner, name = resolved["project"].split("/")
+    repository = resolved["repository"]
     call(workspace, "--version")
     call(workspace, "auth", "status", "--hostname", HOST)
     remote = json_call(workspace, "repo", "view", repository, "--json", REPO_FIELDS)
@@ -84,6 +65,9 @@ def target(workspace):
 
 
 def number_from_url(repository, url, kind="issues"):
+    if isinstance(repository, gitlab_issues.Repository):
+        return providers.item_number(repository.target, url,
+                                     "merge_requests" if kind == "pull" else kind)
     require(isinstance(url, str), "A verified GitHub URL is required", "issue-url")
     match = re.fullmatch(re.escape("https://" + repository + "/" + kind + "/")
                          + r"([1-9][0-9]*)", url, re.IGNORECASE)
@@ -147,6 +131,8 @@ def collection(workspace, repository, kind):
 
 
 def issue_view(workspace, repository, url):
+    if isinstance(repository, gitlab_issues.Repository):
+        return gitlab_issues.issue_view(workspace, repository, url)
     number = number_from_url(repository, url)
     item = record(repository, api(workspace, repository, "issues/" + str(number)))
     require(item["number"] == number, "Issue readback mismatch", "issue-response")
@@ -154,6 +140,8 @@ def issue_view(workspace, repository, url):
 
 
 def lookup(workspace, repository, related_pr=None):
+    if isinstance(repository, gitlab_issues.Repository):
+        return gitlab_issues.lookup(workspace, repository, related_pr)
     issues = collection(workspace, repository, "issues")
     pulls = collection(workspace, repository, "pulls")
     branch = gitops.current_branch(workspace)
@@ -184,7 +172,7 @@ def prepare_identity(workspace, path, metadata, body, repository):
             and metadata["issueRepo"].lower() == repository.lower()),
             "TODO is pinned to another repository", "issue-repository")
     metadata["todoId"] = todos.identity(metadata.get("todoId"))
-    metadata["issueRepo"] = repository
+    metadata["issueRepo"] = str(repository)
     todos.save_record(path, metadata, body)
 
 
@@ -325,12 +313,15 @@ def publish(workspace, name, preview_token, title, body_file,
     metadata["issuePublication"] = dict(publication, state="attempted", publicTitle=title,
                                        intentDigest=intent, snapshotDigest=local_snapshot)
     todos.save_record(path, metadata, body)
-    # A distinct reviewed file avoids accidentally publishing the private TODO.
-    with tempfile.TemporaryDirectory(prefix="todo-public-") as directory:
-        public_path = Path(directory) / "body.md"
-        public_path.write_text(public_body, encoding="utf-8", newline="\n")
-        url = call(workspace, "issue", "create", "--repo", repository,
-                   "--title", title, "--body-file", str(public_path)).strip()
+    if isinstance(repository, gitlab_issues.Repository):
+        url = gitlab_issues.create(workspace, repository, title, public_body)
+    else:
+        # A distinct reviewed file avoids accidentally publishing the private TODO.
+        with tempfile.TemporaryDirectory(prefix="todo-public-") as directory:
+            public_path = Path(directory) / "body.md"
+            public_path.write_text(public_body, encoding="utf-8", newline="\n")
+            url = call(workspace, "issue", "create", "--repo", repository,
+                       "--title", title, "--body-file", str(public_path)).strip()
     issue = issue_view(workspace, repository, url)
     require(digest({"title": issue["title"], "body": issue["body"]}) == intent,
             "Created issue does not match reviewed public intent", "issue-unresolved")
