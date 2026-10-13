@@ -7,7 +7,7 @@ from .results import VerbError, require
 
 
 def _url(value):
-    require(isinstance(value, str) and not any(c.isspace() or c == "\\" for c in value),
+    require(isinstance(value, str) and not any(c.isspace() or c in "\\?#" for c in value),
             "Invalid provider URL", "issue-repository")
     try:
         parsed = urlsplit(value)

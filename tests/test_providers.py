@@ -64,6 +64,7 @@ class Providers(unittest.TestCase):
                        "https://user@gitlab.example.test:8443/group/project", "http://gitlab.com/g/p",
                        "ssh://root@gitlab.com/g/p", "https://gitlab.com/g/../p",
                        "https://gitlab.com/g/%2e%2e/p", "https://gitlab.com/g/p?token=x",
+                       "https://gitlab.com/g/p?", "https://gitlab.com/g/p#",
                        "https://gitlab.com/g/p#x", "https://gitlab.com/g//p", "https://gitlab.com/g/p\\x",
                        "https://gitlab.com/g/\np", "https://gitlab.com:0/g/p",
                        "https://gitlab.example.test/group/project", "https://gitlab.example.test:2222/g/p",
