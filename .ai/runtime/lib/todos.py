@@ -210,13 +210,13 @@ def add(workspace, title, problem=None, solution=None, area=None, severity="majo
             "files": files, "file_count": len(files), "todoId": todo_id}
 
 
-def complete(workspace, name):
+def complete(workspace, name, issue_validator=None):
     """Explicit retirement after resolving any publication and linked issue."""
     from .todo_issues import require_closed
 
     source = resolve_pending(workspace, name)
     metadata, body = read_record(source)
-    require_closed(workspace, metadata)
+    require_closed(workspace, metadata, issue_validator=issue_validator)
     # The caller holds the planning lock. Revalidate after provider reads.
     require(resolve_pending(workspace, source.name) == source
             and read_record(source) == (metadata, body),

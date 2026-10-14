@@ -530,7 +530,7 @@ class OpeningPullRequests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="phase-pr-")
         self.addCleanup(temporary.cleanup)
         self.directory = Path(temporary.name)
-        self.workspace = SimpleNamespace(root=self.directory)
+        self.workspace = SimpleNamespace(root=self.directory, config=self.directory / ".planning/config.yaml")
         self.pull = {
             "number": 7, "url": "https://example.test/pull/7", "state": "OPEN",
             "isDraft": True, "baseRefName": "stack-parent",
@@ -539,6 +539,7 @@ class OpeningPullRequests(unittest.TestCase):
         self.calls = []
         self.edit_error = None
         self.authenticated = True
+        self.original_run = subprocess.run
         self.provider = patch.object(delivery.subprocess, "run", side_effect=self.fake_gh)
         self.provider.start()
         self.addCleanup(self.provider.stop)
@@ -547,6 +548,8 @@ class OpeningPullRequests(unittest.TestCase):
         self.addCleanup(self.default_base.stop)
 
     def fake_gh(self, command, **options):
+        if command[0] != "gh":
+            return self.original_run(command, **options)
         self.assertEqual(command[0], "gh")
         self.calls.append(command[1:])
         args = command[1:]
@@ -565,6 +568,11 @@ class OpeningPullRequests(unittest.TestCase):
             else:
                 stdout = json.dumps({key: value for key, value in self.pull.items()
                                      if key in selected_fields})
+        elif args[:2] == ["pr", "ready"]:
+            self.pull["isDraft"] = False
+        elif args[:2] == ["pr", "merge"]:
+            self.merge_calls = getattr(self, "merge_calls", 0) + 1
+            self.pull = self.merge_response
         elif args[:2] == ["pr", "edit"]:
             self.assertEqual(args[2], self.BRANCH)
             if self.edit_error:
@@ -595,6 +603,21 @@ class OpeningPullRequests(unittest.TestCase):
     def mutations(self):
         return [args for args in self.calls
                 if args[:2] in (["pr", "edit"], ["pr", "create"], ["pr", "ready"])]
+
+    def test_merge_command_success_needs_matching_merged_readback(self):
+        original = dict(self.pull)
+        for response in (None, dict(original, state="OPEN"), dict(original, state="CLOSED"),
+                         dict(original, state="MERGED", number=99),
+                         dict(original, state="MERGED", url="https://other.test/pull/7"),
+                         dict(original, state="MERGED", headRefName="other"), {}):
+            with self.subTest(response=response):
+                self.pull = dict(original)
+                self.merge_response = response
+                self.merge_calls = 0
+                result = delivery.merge_pr(self.workspace, self.BRANCH, local_checks_passed=True)
+                self.assertFalse(result["merged"])
+                self.assertTrue(result["retryable"])
+                self.assertEqual(self.merge_calls, 1)
 
     def test_explicit_base_only_retargets_and_returns_refreshed_pr(self):
         result = delivery.open_pr(self.workspace, self.BRANCH, base="main")

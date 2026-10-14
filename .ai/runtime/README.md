@@ -65,7 +65,13 @@ Every bundle also carries `commit_docs`, `response_language`, `text_mode`,
 | `phase.insert <after> <description> [--goal G]` | Insert a decimal phase after `<after>`, marked `(INSERTED)` |
 | `phase.remove <phase> [--force] [--no-renumber]` | Remove a future phase, renumber later phases, rename their directories and files |
 | `phase.edit <phase> [--name] [--goal] [--depends-on] [--requirements]` | Edit fields in place; number, position and plan checklist preserved |
-| `phase.complete <phase>` | Tick every plan and the checklist entry; refresh progress |
+| `phase.complete <phase>` | Require ready phase.handoff before ticking plans/checklist or refreshing progress |
+| `phase.handoff <phase>` | Validate explicit execution SUMMARY issue_refs and optional CONTEXT declarations; report ready/blocked/retryable |
+| `phase.issue-declare <phase> <record> [--entries-file PATH --expect-digest TOKEN]` | Preview existing record declarations/digest, or apply a reviewed JSON list preserving publication identity and kind |
+| `phase.issue-preview <phase> <record> <id> [--related-pr URL]` | Selected entry private review, origin-pinned candidates/context and previewToken |
+| `phase.issue-publish <phase> <record> <id> --preview-token TOKEN --title TITLE --body-file PATH --variant VARIANT (--existing-issue URL \| --no-match)` | Reuse/create with shared TODO duplicate/uncertain-intent recovery; link exact selected entry |
+| `phase.issue-update <phase> <record> <id> --preview-token TOKEN --title TITLE --body-file PATH --variant VARIANT` | Fresh reviewed title/body update with preserved local/remote kind and verified readback |
+| `phase.reconcile-todos <phase> --pr URL --todos NAME...` | Reconcile exact Folded Todos selection only after phase-session MERGED/CLOSED evidence; pending/already-completed are retryable/idempotent |
 | `phase.next-decimal <after>` | The decimal number an insert would allocate |
 | `phases.list` | Active and archived phases with status, counts, directory and execution completeness; `count` is active, with separate `archived_count` and `total_count` |
 | `find-phase <number-or-slug>` | Resolve a phase by number or name fragment |
@@ -86,7 +92,7 @@ unless `--force` is passed.
 
 | Verb | Effect |
 |---|---|
-| `pr.open <branch> [--base BASE] [--title TITLE] [--body BODY] [--body-file PATH] [--draft]` | Create the branch's PR or update that same PR |
+| `pr.open <branch> [--phase N] [--base BASE] [--title TITLE] [--body BODY] [--body-file PATH] [--draft]` | Create the branch's PR or update that same PR |
 
 For an existing PR, an explicit `--base` retargets it; omitting `--base`
 preserves its current target, including a nondefault parent branch. A base-only
@@ -285,6 +291,60 @@ Recovery does not discard subsequently authored work or permanently delete histo
 `milestone.complete` refuses without `--confirm`, and refuses while any phase in
 the milestone is open. There is deliberately no force path: a milestone entry
 claiming phases shipped when they did not is the record this exists to keep honest.
+
+#### Declared phase issue handoffs
+
+- Workers include an explicit `issue_refs` list in each first execution SUMMARY,
+  including blocked/halted SUMMARYs and [] after reviewed no-leftover results.
+  Legacy CONTEXT, planning-only records and the adoption skeleton need no new
+  declaration. Existing CONTEXT declarations are included when present.
+- Each entry has unique stable `id`, nonempty `summary`, canonical template
+  `variant`, `state` (`unresolved`, `pending-human`, `resolved`,
+  `blocked-publication`) and `relationship` (`resolving`, `followup`). Resolved
+  and blocked-publication need nonempty `reason`; resolving requires resolved
+  demonstrated acceptance. Pending-human requires followup. Blocked publication
+  means incomplete tracking/retry, never a readiness exemption.
+- Example private declaration draft for `phase.issue-declare`:
+
+  ```json
+  [{"id":"P1","summary":"Blank search fails","variant":"Bug","state":"unresolved","relationship":"followup"}]
+  ```
+
+  Preview without `--entries-file` returns `snapshotDigest`; apply with that
+  `--expect-digest` and a separate reviewed JSON list. Existing issue identity,
+  publication intent and selected variant are preserved. Source selection is an
+  exact active-phase SUMMARY/CONTEXT basename or repository-relative path;
+  traversal, links, another phase and stale snapshots fail before mutation.
+- Publication writes existing `issueRepo`, `issueURL`, `issueNumber` and
+  `issuePublication` fields in that entry. It reuses TODO origin verification,
+  duplicate candidates, exact retry markers and persisted attempted intent.
+  The separate reviewed public body/title is never copied from the private
+  source. Provider failure returns explicit retryable blocked-publication;
+  uncertain attempts keep their exact intent and never create another issue.
+  Update requires canonical linkage, fresh preview, unchanged selected kind,
+  structural validation before edit and verified remote readback. No issue is
+  automatically closed by these operations.
+- `phase.handoff` returns `ready`, `declarations`, `blocked`, `retryable` and
+  `structuralOnly`; missing/malformed or unlinked unresolved declarations fail.
+  `phase.complete` checks it before roadmap writes. `pr.open` automatically uses
+  the branch's existing phase session; an explicit phase must match. It pins
+  phase calls to origin, requires every canonical URL in the effective body,
+  and rejects followup closing references (shorthand, repository-qualified or
+  full URL), including body-omitted edits. File content takes precedence and
+  the exact validated bytes are published. Remote pending UAT cannot be forged
+  as resolving through a local status claim.
+- Reconciliation requires exact filenames in CONTEXT's `### Folded Todos`, the
+  session's canonical matching PR number/URL/head, MERGED readback and each
+  linked CLOSED issue. CLOSED UAT with pending/unknown acceptance stays pending.
+  Results contain per-item `completed`, `already-completed` or `pending`, reasons
+  and a reconciliation-only `retry`. Unselected/reviewed-only TODOs remain.
+  A successful merge command with missing/mismatched/non-MERGED readback returns
+  `merged: false`, `retryable: true`; read back the same PR without another merge.
+- These current GitHub guards reuse the existing provider seam; no provider
+  extension is implemented here. Runtime validates declarations and observed
+  fields, not omitted prose, semantic issue type or real human judgment. Direct
+  gh/API changes bypass supported gates. `issue.validate` remains structuralOnly;
+  `planning.validate` remains warn-only. Separate threat tracking is unchanged.
 
 #### Reviewed TODO issue linkage
 

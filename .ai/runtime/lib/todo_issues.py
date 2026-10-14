@@ -173,28 +173,36 @@ def snapshot(metadata, body):
                    "body": body})
 
 
-def current(workspace, name):
+def current(workspace, name, source=None):
+    if source is not None:
+        return source.current()
     path = todos.resolve_pending(workspace, name)
     metadata, body = todos.read_record(path)
     return path, metadata, body
 
 
-def prepare_identity(workspace, path, metadata, body, repository):
+def save_record(path, metadata, body, source=None):
+    if source is not None:
+        return source.save(metadata, body)
+    return todos.save_record(path, metadata, body)
+
+
+def prepare_identity(workspace, path, metadata, body, repository, source=None):
     require(not metadata.get("issueRepo") or (isinstance(metadata["issueRepo"], str)
             and metadata["issueRepo"].lower() == repository.lower()),
             "TODO is pinned to another repository", "issue-repository")
     metadata["todoId"] = todos.identity(metadata.get("todoId"))
     metadata["issueRepo"] = repository
-    todos.save_record(path, metadata, body)
+    save_record(path, metadata, body, source)
 
 
-def preview(workspace, name, related_pr=None):
-    path, metadata, body = current(workspace, name)
+def preview(workspace, name, related_pr=None, source=None):
+    path, metadata, body = current(workspace, name, source)
     repository = target(workspace)
-    prepare_identity(workspace, path, metadata, body, repository)
+    prepare_identity(workspace, path, metadata, body, repository, source)
     local_snapshot = snapshot(metadata, body)
     candidates, context = lookup(workspace, repository, related_pr)
-    path, metadata, body = unchanged(workspace, name, local_snapshot)
+    path, metadata, body = unchanged(workspace, name, local_snapshot, source)
     token = digest({"todo": snapshot(metadata, body), "repository": repository,
                     "candidates": candidates, "context": context, "relatedPR": related_pr})
     publication = metadata.get("issuePublication") or {}
@@ -202,7 +210,7 @@ def preview(workspace, name, related_pr=None):
     publication = dict(publication, previewToken=token, relatedPR=related_pr)
     publication.setdefault("state", "prepared")
     metadata["issuePublication"] = publication
-    todos.save_record(path, metadata, body)
+    save_record(path, metadata, body, source)
     return {"file": workspace.relative(path), "todoId": metadata["todoId"],
             "repository": repository, "previewToken": token,
             "privateLocal": {"label": "PRIVATE LOCAL REVIEW INPUT",
@@ -228,33 +236,35 @@ def reviewed_body(body_file, todo_id, selected_path):
     return content.rstrip() + "\n\n" + MARKER.format(todo_id) + "\n"
 
 
-def linked_result(workspace, path, metadata, body, issue, created=False, recovered=False):
+def linked_result(workspace, path, metadata, body, issue, created=False, recovered=False, source=None):
+    if source is not None:
+        source.validate_issue(issue)
     metadata["issueURL"], metadata["issueNumber"] = issue["url"], issue["number"]
     publication = dict(metadata.get("issuePublication") or {}, state="linked")
     metadata["issuePublication"] = publication
-    todos.save_record(path, metadata, body)
+    save_record(path, metadata, body, source)
     return {"file": workspace.relative(path), "todoId": metadata["todoId"],
             "repository": metadata["issueRepo"], "issueURL": issue["url"],
             "issueNumber": issue["number"], "linked": True, "created": created,
             "recovered": recovered}
 
 
-def unchanged(workspace, name, expected):
-    path, metadata, body = current(workspace, name)
+def unchanged(workspace, name, expected, source=None):
+    path, metadata, body = current(workspace, name, source)
     require(snapshot(metadata, body) == expected,
             "Selected TODO changed; pending context preserved", "stale-preview")
     return path, metadata, body
 
 
 def publish(workspace, name, preview_token, title, body_file,
-            existing_issue=None, no_match=False, variant=None):
+            existing_issue=None, no_match=False, variant=None, source=None):
     require(isinstance(preview_token, str) and bool(preview_token.strip()),
             "A current reviewed preview token is required", "issue-review")
     require(isinstance(title, str) and bool(title.strip()),
             "A separately reviewed public title is required", "issue-review")
     require(isinstance(no_match, bool) and bool(existing_issue) != no_match,
             "Choose exactly one existing issue or explicit --no-match", "issue-review")
-    path, metadata, body = current(workspace, name)
+    path, metadata, body = current(workspace, name, source)
     publication = metadata.get("issuePublication") or {}
     require(isinstance(publication, dict), "Invalid publication metadata", "issue-unresolved")
     require(metadata.get("todoId") and metadata.get("issueRepo")
@@ -272,6 +282,8 @@ def publish(workspace, name, preview_token, title, body_file,
         issue = issue_view(workspace, repository, metadata["issueURL"])
         require(issue["number"] == metadata.get("issueNumber"),
                 "Linked issue number mismatch", "issue-response")
+        if source is not None:
+            source.validate_issue(issue)
         return {"file": workspace.relative(path), "todoId": metadata["todoId"],
                 "repository": repository, "issueURL": issue["url"],
                 "issueNumber": issue["number"], "linked": True, "created": False,
@@ -301,8 +313,8 @@ def publish(workspace, name, preview_token, title, body_file,
         issue = issue_view(workspace, repository, matches[0]["url"])
         require(digest({"title": issue["title"], "body": issue["body"]}) == intent,
                 "Recovered marker does not match stored public intent", "issue-unresolved")
-        path, metadata, body = unchanged(workspace, name, local_snapshot)
-        return linked_result(workspace, path, metadata, body, issue, recovered=True)
+        path, metadata, body = unchanged(workspace, name, local_snapshot, source)
+        return linked_result(workspace, path, metadata, body, issue, recovered=True, source=source)
     require(state == "prepared"
             and not any(publication.get(key) for key in
                         ("intentDigest", "snapshotDigest", "publicTitle")),
@@ -319,12 +331,12 @@ def publish(workspace, name, preview_token, title, body_file,
         issue = issue_view(workspace, repository, selected)
         require(issue == reviewed,
                 "Selected issue changed after review; renew review", "stale-preview")
-        path, metadata, body = unchanged(workspace, name, local_snapshot)
-        return linked_result(workspace, path, metadata, body, issue)
-    path, metadata, body = unchanged(workspace, name, local_snapshot)
+        path, metadata, body = unchanged(workspace, name, local_snapshot, source)
+        return linked_result(workspace, path, metadata, body, issue, source=source)
+    path, metadata, body = unchanged(workspace, name, local_snapshot, source)
     metadata["issuePublication"] = dict(publication, state="attempted", publicTitle=title,
                                        intentDigest=intent, snapshotDigest=local_snapshot)
-    todos.save_record(path, metadata, body)
+    save_record(path, metadata, body, source)
     # A distinct reviewed file avoids accidentally publishing the private TODO.
     with tempfile.TemporaryDirectory(prefix="todo-public-") as directory:
         public_path = Path(directory) / "body.md"
@@ -334,11 +346,11 @@ def publish(workspace, name, preview_token, title, body_file,
     issue = issue_view(workspace, repository, url)
     require(digest({"title": issue["title"], "body": issue["body"]}) == intent,
             "Created issue does not match reviewed public intent", "issue-unresolved")
-    path, metadata, body = unchanged(workspace, name, local_snapshot)
-    return linked_result(workspace, path, metadata, body, issue, created=True)
+    path, metadata, body = unchanged(workspace, name, local_snapshot, source)
+    return linked_result(workspace, path, metadata, body, issue, created=True, source=source)
 
 
-def require_closed(workspace, metadata):
+def require_closed(workspace, metadata, issue_validator=None):
     publication = metadata.get("issuePublication") or {}
     require(isinstance(publication, dict)
             and publication.get("state") in (None, "prepared", "linked"),
@@ -359,3 +371,5 @@ def require_closed(workspace, metadata):
         require(issue["number"] == metadata.get("issueNumber")
                 and issue["state"] == "CLOSED",
                 "Only a verified closed linked issue permits completion", "issue-open")
+        if issue_validator is not None:
+            issue_validator(issue)

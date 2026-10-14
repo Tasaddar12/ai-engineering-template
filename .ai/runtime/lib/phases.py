@@ -328,6 +328,9 @@ def complete(workspace, number):
     require(roadmap.exists, "No roadmap found (.planning/ROADMAP.md)", "no-roadmap")
     phase = roadmap.require_phase(number)
     require(not phase.archived, "archived phase is historical; recover it before mutation", "phase-archived")
+    from .phase_issues import handoff
+    result = handoff(workspace, number)
+    require(result["ready"], "Phase tracking publication remains blocked; retry publication", "phase-issues")
     for plan in phase.plans:
         roadmap.save(roadmap.set_plan(plan["id"], True))
     roadmap.save(roadmap.set_checklist(phase.number, True))
