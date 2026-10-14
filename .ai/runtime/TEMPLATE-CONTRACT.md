@@ -151,6 +151,23 @@ A `must_have` the verifier cannot confirm with explicit evidence is not a pass.
 It reports the gap, or `human_needed` where the criterion itself is unverifiable.
 Only the user converts an abstention into acceptance.
 
+## Threat records and ownership
+
+- Keep each threat's description, category, component, severity, disposition and
+  mitigation in its respective PLAN's six-column register; link its local Threat ID
+  to the canonical issue or retain ID + Pending dependency.
+- Keep stable key, aliases, assessment, owner, status, details and evidence in the
+  existing Security risk issue under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Preserve conditional three-column SUMMARY Threat Flags for discovery. Carry
+  all PLAN threats separately in Threat Outcomes: PLAN/ID, issue, outcome, Git
+  state and evidence. Do not duplicate or combine PLAN registers.
+- Keep open/unresolved, accepted/deferred and mitigated/resolved distinct; list
+  actual closed only with readback/evidence. Never infer closure from merge.
+- Workers return safe requests/SUMMARY; coordinators update each owning PLAN's
+  links and reconcile status. Run phase and both quick-mode hooks outside optional review.
+- Limitation: issue.validate checks headings/order only; semantic review and
+  provider reconciliation remain author/coordinator duties.
+
 ## Storage boundary
 
 Project data lives in `.planning/`; reusable instructions, workflows, templates

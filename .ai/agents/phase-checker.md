@@ -555,6 +555,12 @@ with no trigger must state its concrete non-applicability reason. Do not infer
 an unavailable `security_enforcement` setting or treat an absent setting as an
 exemption.
 
+- Inspect every PLAN threat under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Preserve its six-column register and local ID/issue link; check assessment,
+  owner, status and evidence in the issue or safe coordinator handoff.
+- Accept worker Pending with concrete dependency before publication; report
+  missing required publication after reconciliation as a gap.
+
 ## Dimension 8: Nyquist Compliance
 
 **Question:** Is every task's completion decided by an automated check that can actually fail?

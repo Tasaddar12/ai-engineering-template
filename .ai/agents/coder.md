@@ -695,6 +695,13 @@ cross-phase defect ledger or claim an unrun check passed.
 ```
 
 Omit section if nothing found.
+
+- Inspect all PLAN/SUMMARY sections for threats under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Preserve the original Threat Flags discovery block; carry every PLAN threat
+  separately in SUMMARY Threat Outcomes with owning PLAN/ID, issue and actual
+  outcome/Git state/evidence. Include pre-existing and already mitigated findings.
+- Return safe Pending requests for discoveries; coordinator updates the owning
+  PLAN and issue. Never publish or edit shared PLAN/status.
 </summary_creation>
 
 <self_check>
@@ -704,6 +711,11 @@ After writing SUMMARY.md, verify claims before proceeding.
 ```bash
 [ -f "path/to/file" ] && echo "FOUND: path/to/file" || echo "MISSING: path/to/file"
 ```
+
+- Check Threat Outcomes against each owning PLAN and issue: carry every ID,
+  linked issue or Pending dependency, observed outcome and actual evidence.
+- Keep open/unresolved and accepted/deferred visible; list actual closed issues
+  only with readback. Planned mitigation and merged PRs do not prove resolution.
 
 **2. Check commits exist:**
 ```bash

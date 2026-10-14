@@ -126,6 +126,10 @@ Session: {branch} at {worktree}
 <step name="preflight_checks">
 Verify the work is ready to publish. Every check below blocks; none is advisory.
 
+- Reconcile each PLAN's threat links and SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+  Read back safe issue status/evidence; keep remaining risks explicit and Pending
+  publication as a gap. Preserve the readiness and critical-risk gates below.
+
 1. **Verification passed.**
 
    ```bash
@@ -310,7 +314,10 @@ Populate it from the phase records:
 - Verification: exact revision, actual commands and results, and the Acceptance
   definition from `VERIFICATION.md`.
 - Known gaps: accepted gaps and their reasons.
-- Risks or rollback: material risks and a practical rollback path.
+- Risks or rollback: link/status table with each owning PLAN/Threat ID, issue,
+  outcome, Git state and evidence; list open risks and practical rollback.
+  Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); audit closing references
+  against scope-complete mitigation and existing explicit closure authority.
 - Stack fields: include only for a dependent PR; use the recorded own-change boundary.
 
 ```bash
@@ -382,6 +389,11 @@ Still failing after round 2: report it with its logs as the blocker.
 <step name="merge_and_close">
 **Skip when `--no-push` or `--no-merge` was passed.** On `--no-merge`, report the
 pull request URL and that the session stays open, then go to the report step.
+
+- Audit the PR/MR linked outcomes and closing references through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Keep neutral links for unresolved, accepted, deferred and mitigated risks without
+  verified closure eligibility. List actual closed only with evidence/readback;
+  never infer closure from merge.
 
 Merging moves the base branch. Merge only with the user's explicit
 authorization. If the current instruction already authorizes this merge, do not

@@ -586,6 +586,13 @@ Read each SUMMARY.md and build the phase picture:
 - What was deferred
 - Which files changed overall
 
+- Reconcile each PLAN's threats and linked SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking),
+  independently of the optional code review gate.
+- Create/reuse/read back issues; update each owning PLAN's links and SUMMARY
+  outcomes. Keep each PLAN register in place; do not aggregate threat content.
+- Carry still-open/accepted/deferred risks and evidenced closed issues distinctly;
+  retain Pending dependencies and continue independent authorized work.
+
 Report any phase requirement id that no summary claims. That is a gap, whether or
 not every plan reported complete.
 
@@ -596,6 +603,9 @@ out-of-scope code-review findings. Do not create todos.
 
 <step name="code_review_gate">
 **Skip only when `--no-review` was passed and the user asked for it.**
+
+- After joined review, add discoveries to their owning PLAN and reconcile its
+  issue and SUMMARY outcome through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
 
 After all waves are integrated, freeze the session revision. Start the required
 fresh code-reviewer and call `verification.run-checks` together against that

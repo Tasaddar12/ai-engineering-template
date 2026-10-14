@@ -149,6 +149,12 @@ must-haves against that authority. Read the actual changed source independently.
 
 Extract phase goal from ROADMAP.md — this is the outcome to verify, not the tasks.
 
+- Inspect every PLAN/SUMMARY threat under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Compare each owning PLAN's local ID/issue link with SUMMARY outcomes and actual
+  issue readback. Check assessment, aliases, owner, status and evidence in the issue.
+- Report unavailable required publication as a gap; Pending is not a verified URL.
+  Keep open/accepted/deferred visible and require readback/evidence for actual closed.
+
 ## Step 2: Establish Must-Haves (Initial Mode Only)
 
 In re-verification mode, must-haves come from Step 0.

@@ -512,6 +512,12 @@ mitigation must name its implementing task and verification command; accepted or
 transferred threats require the rationale and responsible boundary/party. Apply
 [security review levels](../references/methods/security-asvs-levels.md).
 
+- Track every identified threat in its respective PLAN's six-column register
+  under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking). Link the local Threat ID
+  to its issue; return Pending with dependency until coordinator reconciliation.
+- Keep descriptions, category, component, severity, disposition and mitigation
+  in that PLAN; keep keys, aliases, owner, observed status and evidence in the issue.
+
 When none of those triggers applies, state `Security review: not applicable`
 with the exact unchanged boundary or documentation/configuration-only scope in
 the PLAN verification section. The independent checker must reject a triggered
@@ -1041,6 +1047,7 @@ Phase planning complete when:
 - [ ] Every PLAN satisfies the Security planning gate: required STRIDE register or explicit non-applicability with the concrete scope reason
 - [ ] Every threat has a disposition (mitigate / accept / transfer)
 - [ ] Every threat has a Severity (critical|high|medium|low)
+- [ ] Every identified PLAN threat has a canonical issue link or safe Pending request with dependency
 - [ ] Mitigations reference specific implementation (not generic advice)
 
 ## Gap Closure Mode

@@ -111,6 +111,24 @@ Output: [What artifacts will be created]
 
 </tasks>
 
+<threat_model>
+## Trust Boundaries
+
+| Boundary | Description |
+|----------|-------------|
+| [Changed boundary or inspected unchanged scope] | [Untrusted input or concrete scope] |
+
+## STRIDE Threat Register
+
+| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
+|-----------|----------|-----------|----------|-------------|-----------------|
+| [Threat ID](verified canonical issue URL), or ID + Pending: dependency | [STRIDE category] | [function/endpoint/file] | [critical/high/medium/low] | [mitigate/accept/transfer] | [Specific task/check or acceptance/transfer rationale] |
+
+- Keep each finding in this PLAN; follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Link its Threat ID to the canonical issue; retain the local ID and Pending
+  dependency until coordinator readback. Use only actual findings.
+</threat_model>
+
 <verification>
 Before declaring plan complete:
 - [ ] [Specific test command]

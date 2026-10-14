@@ -159,6 +159,29 @@ For a TDD plan, also add a TDD Evidence section with the contract's RED/GREEN/RE
 [If no USER-SETUP.md:]
 None - no external service configuration required.
 
+## Threat Flags
+
+[Emit only for new security-relevant surface outside the PLAN threat_model;
+omit this section if nothing found. Link discoveries to the owning PLAN/issue.]
+
+| Flag | File | Description |
+|------|------|-------------|
+| threat_flag: {type} | {file} | {new surface description} |
+
+## Threat Outcomes
+
+- Carry every PLAN threat into the linked status table; add discoveries via the
+  owning PLAN. Do not repeat descriptions, categories or mitigation registers.
+- Distinguish open/unresolved, accepted/deferred and mitigated/resolved outcomes.
+- List actual closed issues only with readback and resolution evidence; never
+  label accepted/deferred resolved or infer closure from merge.
+
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|---|---|---|---|---|
+| [Owning PLAN#threat-id] | [Verified issue URL or Pending: dependency] | [unresolved/mitigated/resolved/accepted/deferred] | [open/closed/Pending readback] | [Revision/check/result and issue readback, or Pending: dependency] |
+
+[Use None identified with inspected scope when no threats were identified.]
+
 ## Next Phase Readiness
 [What's ready for next phase]
 [Any blockers or concerns]
@@ -167,6 +190,8 @@ None - no external service configuration required.
 *Phase: XX-name*
 *Completed: [date]*
 ```
+
+- Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); workers return safe requests, coordinators update owning PLAN links.
 
 <frontmatter_guidance>
 **Purpose:** Enable automatic context assembly via dependency graph. Frontmatter makes summary metadata machine-readable so plan-phase can scan all summaries quickly and select relevant ones based on dependencies.

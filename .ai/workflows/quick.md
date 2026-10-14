@@ -230,6 +230,14 @@ After the preparer returns:
 If the plan is missing, stop with: "phase-preparer failed to create ${QUICK_ID}-PLAN.md".
 </step>
 
+<step name="reconcile_plan_threats">
+- Reconcile every committed PLAN threat through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+  before preparation completion; repeat after revisions/review discoveries.
+- Create/reuse/read back issues; update each owning PLAN's Threat ID link and
+  keep its six-column register in place. Retain Pending dependencies.
+- Run in ordinary quick and quick-validate, outside check_plan; continue independent work.
+</step>
+
 <step name="check_plan">
 **Only when `VALIDATE_MODE` is true.** Otherwise skip to `execute`.
 
@@ -419,6 +427,15 @@ phase_run query worktree.cleanup-wave --phase "quick-${QUICK_ID}"
 
 Read the result. `blocked` non-empty means an undeclared deletion or a conflict;
 escalate it rather than re-running the merge to get past it.
+</step>
+
+<step name="reconcile_summary_threats">
+- Read the integrated SUMMARY and all PLAN/SUMMARY sections; reconcile each
+  owning PLAN's threats through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Create/reuse/read back issues; update that PLAN's links and SUMMARY outcomes.
+  Add discoveries to the owning PLAN; retain Pending dependencies and open risks.
+- Distinguish accepted/deferred from resolved; list closed only with readback/evidence.
+- Run in ordinary quick and quick-validate, outside verify; repeat after reviews.
 </step>
 
 <step name="run_checks">
