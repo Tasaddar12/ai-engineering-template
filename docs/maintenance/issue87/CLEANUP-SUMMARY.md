@@ -258,6 +258,12 @@ for I87-C-T2. These repairs mitigate the reviewed identity/staleness paths; no n
 risk issue or closure is inferred. Coordinator still owns parent propagation and
 independent final child review after release. No parent pull/merge was attempted.
 
-All assigned repair checks pass on the frozen source. The implementation commit
-containing this block is the repair GREEN boundary; its exact identity will be
-pinned in a subsequent SUMMARY-only commit. No source refactor was necessary.
+All assigned repair checks pass on frozen repair GREEN source
+`1b5eb8a4ad3eb5c6026637be92687987042ff20a`. This subsequent SUMMARY-only commit
+pins that identity; no production source changed after the full checks. Repair
+own-change boundary is
+`4370fb18853cf842fbb40845da0c54c7cd1d0e6f..1b5eb8a4ad3eb5c6026637be92687987042ff20a`;
+it includes the observed RED/control commits above, library fix, narrow contract
+sentence and evidence. The original full child boundary still begins at the
+supplied guard parent `4c35d27436add6867934c85eb9e853bd2fc3052e`. Working tree
+clean after GREEN, no tracked deletions. No source refactor was necessary.
