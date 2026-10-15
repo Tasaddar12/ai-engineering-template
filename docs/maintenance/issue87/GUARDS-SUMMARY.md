@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: in_progress
+status: complete
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-RED]
-acceptance: [I87-A3]
+requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
+acceptance: [I87-A1, I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -422,6 +422,47 @@ allow-versus-deny assertions (genuine class, mixed genuine class, and two active
 pattern/parent combinations). Pure printf proofs and all literal/sibling
 controls passed; zero skips or import/fixture errors. Production is unchanged
 for this committed RED.
+
+## Minimal provenance correction
+
+RED `0dbb0a84aa44421abb1fcddfc4a04e69ceedeb53` precedes the correction.
+The ambiguous escape-stripping/component inference was removed. A raw parent
+component combined with nonNone active-pattern provenance now immediately
+returns `unsupported-glob-parent-traversal` before canonicalization, regardless
+of whether the active part precedes or follows the parent. No second pattern
+parser is introduced. Literal/fully quoted operands with None retain the
+existing literal alias-parent and ordinary parent checks; ordinary active
+sibling globs without a parent remain supported.
+
+The one authorized sentence in `.ai/references/destructive-operations.md`
+documents active-pattern/parent combinations as unsupported and directs callers
+to resolved direct literal targets. Other scope, provider and installer behavior
+is unchanged. Final checks and exact source identity are recorded below.
+
+The first full 22-test run exited 1 in 76.315s solely because the retained
+`../.workflow-*` test expected its old `backup-approval-required` reason. The
+newly approved active-pattern/parent grammar correctly refuses it as
+`unsupported-glob-parent-traversal`. That one test retains an exact assertion
+with the new declared reason; other backup cases keep their original exact
+reason. No production source changed for this expectation alignment. All new
+bracket-class/mixed-word proof and allow-control assertions had passed already.
+
+| Final provenance correction check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 22 tests in 73.130s, zero skips; new pure printf-derived bracket/mixed provenance cases, literal/quoted/sibling controls and all retained native/provider/registered matrices pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.684s, zero skips; actual both-host launcher and advisory scratchpad/dispatch coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| PyYAML safe_load of SUMMARY and destructive-operations frontmatter | Exit 0, both mappings valid; summary issue_refs present |
+| `git diff --check` | Exit 0 |
+
+No production source changed between the first full run and passing rerun; only
+the one obsolete exact-reason assertion was aligned to the approved grammar.
+All test processes completed. Final provenance source commit is the commit
+containing this section; exact identity is pinned in a following summary-only
+update. Fresh bounded independent review remains pending. The only additional
+documentation ownership was the single reference grammar-limit sentence; no
+installer, provider, PR86 hook, child source, adoption record, publication or
+merge changed.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures

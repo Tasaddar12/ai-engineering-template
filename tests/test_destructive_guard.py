@@ -271,7 +271,9 @@ class RegisteredGuardTests(unittest.TestCase):
                            "tool_input": {"cmd": command}}
                 decision = policy.evaluate_payload(payload, evidence_runner=lambda *a: self.fail("backup policy queried provider/Git"))
                 self.assertFalse(decision.allowed)
-                self.assertEqual("backup-approval-required", decision.reason_code)
+                expected = ("unsupported-glob-parent-traversal" if command == "rm -rf ../.workflow-*"
+                            else "backup-approval-required")
+                self.assertEqual(expected, decision.reason_code)
 
     def source_verdict(self, command, deny, tool="Bash", cwd=None, shell=None):
         """Only execute the hook. The submitted command stays JSON data."""

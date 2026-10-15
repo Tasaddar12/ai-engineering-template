@@ -570,14 +570,8 @@ def _unsupported_parent_traversal(operand, pattern, cwd, dialect):
     """Preserve raw parent components before canonicalization can erase them."""
     if ".." not in Path(operand).parts:
         return None
-    active = False
     if pattern is not None:
-        for component in Path(pattern).parts:
-            if component == ".." and active:
-                return "unsupported-glob-parent-traversal"
-            # Lexer-escaped metacharacters are literal even in mixed words.
-            unquoted = component.replace("[*]", "").replace("[?]", "").replace("[[]", "")
-            active = active or any(char in unquoted for char in "*?[")
+        return "unsupported-glob-parent-traversal"
     raw = Path(_shell_path(operand, cwd, dialect, resolve=False))
     current, alias = Path(raw.anchor), False
     last_parent = max(index for index, component in enumerate(raw.parts) if component == "..")
@@ -587,7 +581,7 @@ def _unsupported_parent_traversal(operand, pattern, cwd, dialect):
                 return "unsupported-alias-parent-traversal"
             current = current.parent
             continue
-        # Active pre-parent globs were refused above. A remaining * or ? is
+        # Active pattern/parent combinations were refused above. A remaining * or ? is
         # literal data and cannot name a Windows component; do not ask native
         # metadata APIs to interpret or reject that impossible literal name.
         if os.name == "nt" and any(char in component for char in "*?"):
