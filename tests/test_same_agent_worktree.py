@@ -50,6 +50,7 @@ class SimulatedClaude:
         self.writable_root = None
         self.reads = {}
         self.edits = 0
+        self.entry_head = None
 
     def gate(self, mode):
         if not self.available:
@@ -77,6 +78,10 @@ class SimulatedClaude:
         self.gate(mode)
         if mode == "existing" and not approved:
             raise SimulatedRefusal("existing outside path requires native approval")
+        # Existing sessions accumulate commits beyond their immutable fork
+        # base. Observe HEAD before path entry separately from that base.
+        self.entry_head = (self.case.git("rev-parse", "HEAD", cwd=target["worktree"]).strip()
+                           if mode == "existing" else target["base"])
         arguments = ({"name": target["creation_name"]} if mode == "new"
                      else {"path": target["worktree"]})
         self.events.append((self.actor, "EnterWorktree", arguments))
@@ -109,7 +114,8 @@ class SimulatedClaude:
         # CLAUDE_PROJECT_DIR cannot substitute for the destination default cwd.
         self.case.assertEqual(expected, Path(self.git("rev-parse", "--show-toplevel").strip()).resolve())
         self.case.assertEqual(target["branch"], self.git("branch", "--show-current").strip())
-        self.case.assertEqual(target["base"], self.git("rev-parse", "HEAD").strip())
+        self.case.assertEqual(self.entry_head, self.git("rev-parse", "HEAD").strip())
+        self.case.assertEqual(target["base"], self.git("merge-base", target["base"], "HEAD").strip())
         self.case.assertNotEqual(self.project_dir, self.cwd)
 
     def git(self, *args):
@@ -224,7 +230,8 @@ class NativeRouteTests(unittest.TestCase):
         # Reuse the aggregate's real Windows/POSIX launcher and native decision
         # interpretation, including the original mutation's failure-open path.
         return self.seed.prewrite_pipeline("claude", self.group, host.cwd, payload,
-                                          destination, mutation=mutation)
+                                          destination, mutation=mutation,
+                                          environment_overrides={"CLAUDE_PROJECT_DIR": str(self.directory)})
 
     def creation_callback(self, name, host=None):
         actor = host or self.host
@@ -414,6 +421,13 @@ class NativeRouteTests(unittest.TestCase):
         for kind, label in (("phase", "01"), ("quick", "ordinary-existing")):
             with self.subTest(kind=kind):
                 opened = self.runtime("session.open", kind, label, "--no-sync")
+                session_root = Path(opened["worktree"])
+                committed = ("committed " + kind + " session work\n").encode("utf-8")
+                (session_root / "source.txt").write_bytes(committed)
+                self.git("add", "source.txt", cwd=session_root)
+                self.git("commit", "-qm", "advance ordinary " + kind + " session", cwd=session_root)
+                advanced_head = self.git("rev-parse", "HEAD", cwd=session_root).strip()
+                self.assertNotEqual(opened["base"], advanced_head)
                 metadata = self.directory / ".git/ai-phase/sessions.json"
                 sessions = metadata.read_bytes()
                 self.host = SimulatedClaude(self)
@@ -424,6 +438,8 @@ class NativeRouteTests(unittest.TestCase):
                 existing = self.begin(bootstrap["request_id"], kind, label, "existing")
                 self.assertEqual("existing", existing["mode"])
                 self.assertEqual(Path(opened["worktree"]), Path(existing["worktree"]))
+                self.assertEqual(opened["base"], existing["base"], "existing request rewrote the historical base")
+                self.assertEqual(advanced_head, self.git("rev-parse", "HEAD", cwd=session_root).strip())
                 self.assertFalse(existing.get("creation_name"), "ordinary sessions need no creation identity")
                 self.assertEqual(snapshot[0], self.inventory()[0])
                 with self.assertRaisesRegex(SimulatedRefusal, "approval"):
@@ -431,6 +447,8 @@ class NativeRouteTests(unittest.TestCase):
                 self.assertEqual([], self.host.events)
                 self.host.enter(existing, approved=True)
                 self.assert_confirm(bootstrap["request_id"], existing, reused=True)
+                self.assertEqual(advanced_head, self.host.git("rev-parse", "HEAD").strip())
+                self.assertEqual(committed, self.host.read("source.txt"), "fresh reads lost committed session work")
                 self.assertEqual(sessions, metadata.read_bytes(), "existing confirmation rewrote ownership")
                 self.assertEqual(snapshot[0], self.inventory()[0], "existing native entry created another checkout")
                 self.assertEqual("path", next(iter(self.host.events[0][2])))

@@ -679,7 +679,8 @@ class InstallerTests(unittest.TestCase):
         nested.mkdir()
         return editing[0], nested
 
-    def prewrite_pipeline(self, host, group, cwd, payload, destination, mutation=None):
+    def prewrite_pipeline(self, host, group, cwd, payload, destination, mutation=None,
+                          *, environment_overrides=None):
         """Model synchronous native decisions, executing the fake edit only if allowed.
 
         An ordinary hook error is deliberately failure-open, as documented by Codex.
@@ -688,6 +689,7 @@ class InstallerTests(unittest.TestCase):
         denied, results = False, []
         environment = dict(os.environ, PYTHONIOENCODING="utf-8",
                            PATH=str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"])
+        environment.update(environment_overrides or {})
         for handler in group["hooks"]:
             result = subprocess.run(self.launcher_argv(host, handler), cwd=cwd, env=environment,
                                     input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
