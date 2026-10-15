@@ -199,9 +199,11 @@ The runtime `commit` verb validates the full actual index after staging its
 requested files and before Git creates a commit. Newly added or modified active
 `.planning/phases/<number>-<name>/NN-CONTEXT.md`, `NN-MM-PLAN.md` and
 `NN-MM-SUMMARY.md` records must have valid YAML mappings, required fields and
-field types. Duplicate mapping keys at any depth are rejected with record/key
-evidence; a later duplicate cannot erase an issue declaration or replace an
-invalid value. This strict loader is local to the current-record boundary; the
+field types. Duplicate explicit mapping keys at any depth, including anchored
+sources, are rejected with record/key evidence; a later duplicate cannot erase
+an issue declaration or replace an invalid value. Valid YAML merge keys retain
+SafeLoader precedence, so an explicit destination key may override an inherited
+key. This strict loader is local to the current-record boundary; the
 broad historical/warn-only frontmatter reader is unchanged. Directory and
 filename numbers use the existing phase conventions.
 Deleted records are not parsed. Unchanged legacy records, archives, maintenance

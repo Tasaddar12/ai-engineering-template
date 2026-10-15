@@ -47,25 +47,34 @@ def record_kind(path):
 class IntegrityLoader(yaml.SafeLoader):
     """Strict only at the current-record boundary; historical readers stay lenient."""
 
-    def construct_mapping(self, node, deep=False):
-        if not isinstance(node, yaml.MappingNode):
-            return super().construct_mapping(node, deep=deep)
-        self.flatten_mapping(node)
-        mapping = {}
-        for key_node, value_node in node.value:
-            key = self.construct_object(key_node, deep=deep)
-            try:
-                duplicate = key in mapping
-            except TypeError:
-                raise yaml.constructor.ConstructorError(
-                    'while reading frontmatter', node.start_mark,
-                    'mapping key must be hashable', key_node.start_mark) from None
-            if duplicate:
-                raise yaml.constructor.ConstructorError(
-                    'while reading frontmatter', node.start_mark,
-                    'duplicate key: ' + repr(key), key_node.start_mark)
-            mapping[key] = self.construct_object(value_node, deep=deep)
-        return mapping
+    def flatten_mapping(self, node):
+        # Check each original mapping before SafeLoader expands inherited keys.
+        # Its recursive calls also check anchored merge sources. Remember nodes
+        # so their later construction cannot mistake flattened inherited keys
+        # for duplicate explicit keys.
+        checked = getattr(self, '_integrity_checked_mappings', None)
+        if checked is None:
+            checked = self._integrity_checked_mappings = set()
+        if node not in checked:
+            checked.add(node)
+            seen = set()
+            for key_node, _ in node.value:
+                if key_node.tag in ('tag:yaml.org,2002:merge', 'tag:yaml.org,2002:value'):
+                    key = key_node.value
+                else:
+                    key = self.construct_object(key_node, deep=False)
+                try:
+                    duplicate = key in seen
+                except TypeError:
+                    raise yaml.constructor.ConstructorError(
+                        'while reading frontmatter', node.start_mark,
+                        'mapping key must be hashable', key_node.start_mark) from None
+                if duplicate:
+                    raise yaml.constructor.ConstructorError(
+                        'while reading frontmatter', node.start_mark,
+                        'duplicate explicit key: ' + repr(key), key_node.start_mark)
+                seen.add(key)
+        return super().flatten_mapping(node)
 
 
 def validate_record(path, content):
