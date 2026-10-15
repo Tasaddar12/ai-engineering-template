@@ -114,6 +114,35 @@ class PrewriteTests(unittest.TestCase):
             self.assertEqual(1, self.inventory()[0].count("worktree "))
             self.assertEqual(b"committed source\n", (self.root / "source.md").read_bytes())
 
+    def test_review_external_temp_repository_discovery_failure_denies_without_bookkeeping(self):
+        """CR-03: failed Git discovery cannot establish a plain nongit note."""
+        external = self.base / "external repo"
+        external.mkdir()
+        self.git("init", "-q", cwd=external)
+        target = external / "note.md"
+        target.write_bytes(b"external repository data\n")
+        (external / ".git/config").write_bytes(b"[broken local configuration\n")
+        probe = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=external,
+                               capture_output=True)
+        self.assertNotEqual(0, probe.returncode, "fixture must reach actual failed discovery")
+        before = self.inventory()
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                event = self.event(target)
+                event.pop("session_id")
+                event.pop("agent_id")
+                environment = dict(os.environ, PYTHONIOENCODING="utf-8")
+                environment.pop("CLAUDE_CODE_SESSION_ID", None)
+                result = subprocess.run([sys.executable, str(RUNTIME.parent / "lib/prewrite.py"),
+                                         "hook", "--host", host], cwd=self.root, env=environment,
+                                        input=json.dumps(event).encode("utf-8"), capture_output=True)
+                self.assertEqual(0, result.returncode, result.stderr.decode("utf-8", "replace"))
+                decision = json.loads(result.stdout) if result.stdout.strip() else {}
+                self.assertEqual("deny", decision.get("hookSpecificOutput", {}).get("permissionDecision"),
+                                 "failed external Git discovery allowed a repository target as an OS-temp note")
+                self.assertEqual(b"external repository data\n", target.read_bytes())
+                self.assertEqual(before, self.inventory(), "refusal must not create a ticket or checkout")
+
     def test_tracked_mixed_delete_move_and_delivered_markdown_are_source(self):
         tracked = self.root / ".planning/scratchpads/tracked.md"
         tracked.parent.mkdir(parents=True)

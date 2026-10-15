@@ -3,7 +3,7 @@ phase: maintenance-issue87-auto-worktree
 plan: "01"
 subsystem: hooks
 tags: [worktrees, prewrite, tdd]
-status: partial
+status: blocked
 requirements-completed: []
 acceptance: []
 documentation: [.ai/references/same-agent-worktree.md]
@@ -21,15 +21,15 @@ coverage:
 
 The first Task 1 native-route RED was independently assessed VALID. Its two
 review corrections were independently rechecked CLEAN and Task 2 was explicitly
-released. The assigned Tasks 1-2 source implementation and deterministic safety
-coverage and all assigned deterministic regression checks are complete.
-Frontmatter remains partial because Task 3, independent review, integrated CI
-and live acceptance are separate unfinished layers. Task 3 documentation and all
-integration/publication belong to separate owners. Current source assignment:
+released. The earlier Tasks 1-2 source checks passed, but the frozen independent
+review at `ef325b62c0df6efcf603d72cfae55b8269a3052e` found three in-scope
+blockers. Their bounded regression/fix assignment is now in progress; historical
+GREEN is not full acceptance. Task 3 documentation and all integration/publication
+belong to separate owners. Current source correction assignment:
 
-- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-04-182454222`.
-- Branch: `phase-issue87-native-code-04-182454222`.
-- Exact starting revision: `ff81660b493305b5714c8efce9835ee4c2d128a0`.
+- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-05-185913375`.
+- Branch: `phase-issue87-native-code-05-185913375`.
+- Exact starting revision: `ef325b62c0df6efcf603d72cfae55b8269a3052e`.
 - Authored paths are the exact owned source/test paths in this slice's Git diff,
   plus this summary. The four Task 3 documentation paths remain untouched.
 - Context usage: unavailable.
@@ -39,8 +39,10 @@ The first Task 2 source slice was authored as
 `d1d8d31a01b0b4c426d726f8e5975de9166c7a1f`, in isolated code-03, then integrated
 and published by the coordinator as `ff81660b493305b5714c8efce9835ee4c2d128a0`.
 The coordinator independently reran its native suite: 9 tests / 74.627s, exit 0.
-This final source continuation is the enclosing owned-path commit; it does not
-modify any old worker checkout or the separate migration leaf.
+The remaining Task 2 source slice was authored in code-04 as
+`2b13757d441642a9ce9eafe976d0fa1d743433ae` from exact input
+`ff81660b493305b5714c8efce9835ee4c2d128a0` and is preserved in the current input.
+The code-05 correction does not modify any old worker checkout or disjoint leaf.
 
 Test corrections were committed in `dcf73710d9557fc18b7ec8e8fa60cd09ce9594cd`
 from input `5273cfd353fd46e3d1582d71c3fcbc5e58a3248e`, in isolated code-02.
@@ -56,6 +58,49 @@ The previous cancellation RED remains historical evidence. Its input/root was
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-code-171041844`.
 
 ## TDD Evidence
+
+### Frozen-review correction RED (code-05, 2026-10-15)
+
+Production remains exactly `ef325b62c0df6efcf603d72cfae55b8269a3052e` for this
+test-only slice. Only `tests/test_prewrite.py`,
+`tests/test_same_agent_worktree.py` and this summary change before RED commit.
+The assigned corrections preserve the generic locale helpers and all prior
+history. Commands use the exact Python 3.13 executable recorded below:
+
+```text
+<python> -m unittest discover -s tests -p test_prewrite.py -k review_ -v
+<python> -m unittest discover -s tests -p test_same_agent_worktree.py -k review_ -v
+```
+
+CR-03 real external OS-temp Git repository with deliberately malformed local
+`.git/config`: 1 test / 1.546s, exit 1, two meaningful failures (Claude and
+Codex). Actual standalone synchronous hook returned exit 0 with no decision;
+the assertion was `'deny' != None: failed external Git discovery allowed a
+repository target as an OS-temp note`. Setup's real Git discovery failed as
+intended before invoking the actual source adapter. There are no new modules,
+verbs or imports in this test.
+
+CR-01/02 focused installed-native run: 2 tests / 50.963s, exit 1, nine meaningful
+assertion failures, no errors/skips. CR-01 deliberately sets
+PYTHONUTF8=0 and PYTHONIOENCODING=cp1252 for the actual installed creation provider
+with a nonrepresentable Unicode configured root; binary UTF-8 input and real
+creation/journal facts distinguish protocol failure after creation from setup.
+CR-02 interprets the installed initialize/open_session ordering for all four
+phase workflows, both new and ordinary existing mode, using actual locator,
+primary-only request, native callback, Git confirmation and destination init.
+Only native host state is SIMULATED; a prescribed shell cd never proves entry.
+It retains accumulated existing HEAD, immutable base and session ownership.
+CR-01 observed the actual created checkout, correct pinned HEAD and `created`
+journal before the assertion `0 != 2: native provider created its checkout but
+failed its UTF-8 path protocol: source-prewrite: 'charmap' codec can't encode
+characters ... character maps to <undefined>`. CR-02 reached all eight workflow/
+mode subcases: each new-mode initializer loaded primary inputs before native
+entry (`destination initialization ran before native entry completed`), and each
+existing mode reached actual `prewrite-root: bootstrap must run from the original
+primary checkout` after the prescribed locator cd. No launcher, import, missing
+verb or setup failure establishes these RED results. Native preservation
+diagnostics and the failed subcases' downstream assertions remain unexecuted at
+RED. The enclosing test-only commit preserves this evidence before any fix.
 
 ### Remaining Task 2 safety and regression slice (2026-10-15)
 

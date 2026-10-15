@@ -243,7 +243,7 @@ class NativeRouteTests(unittest.TestCase):
     def creation_callback(self, name, host=None):
         return self.location_callback("WorktreeCreate", "name", name, host)
 
-    def location_callback(self, event, field, value, host=None):
+    def location_callback(self, event, field, value, host=None, environment_overrides=None):
         actor = host or self.host
         groups = self.settings["hooks"][event]
         self.assertEqual(1, len(groups))
@@ -255,6 +255,7 @@ class NativeRouteTests(unittest.TestCase):
                            CLAUDE_PROJECT_DIR=str(self.directory),
                            CLAUDE_CODE_SESSION_ID=actor.actor[0],
                            PATH=str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"])
+        environment.update(environment_overrides or {})
         return subprocess.run(self.seed.launcher_argv("claude", handler), cwd=actor.cwd,
                               env=environment, input=json.dumps(payload).encode("utf-8"),
                               capture_output=True, timeout=40)
@@ -478,6 +479,115 @@ class NativeRouteTests(unittest.TestCase):
                 self.assertIn("same-agent-worktree.md", text)
                 self.assertIn("prewrite.request", text)
                 self.assertNotIn("context: fork", text)
+
+    def test_review_native_provider_writes_one_utf8_path_under_legacy_stdout_codec(self):
+        """CR-01: actual installed provider, binary UTF-8 input, legacy stdout."""
+        config = self.directory / ".planning/config.yaml"
+        data = yaml.safe_load(config.read_text(encoding="utf-8"))
+        data["worktree"]["root"] = ".native-trees-\u6f22\u5b57"
+        config.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+        with (self.directory / ".gitignore").open("a", encoding="utf-8") as stream:
+            stream.write("\n.native-trees-\u6f22\u5b57/\n")
+        self.git("add", ".planning/config.yaml", ".gitignore")
+        self.git("commit", "-qm", "nonrepresentable native root fixture")
+        requested = self.runtime("prewrite.request", "quick", "legacy-native-output", "--mode", "new")
+        target = self.begin(requested["request_id"], label="legacy-native-output")
+        self.host.gate("new")
+        result = self.location_callback("WorktreeCreate", "name", target["creation_name"],
+                                        environment_overrides={"PYTHONUTF8": "0", "PYTHONIOENCODING": "cp1252"})
+        # The creation journal/Git facts are observed before checking status:
+        # encoding failure after creation is an actual protocol failure, not
+        # a launcher/import/setup failure. No fixture forces UTF-8 stdout.
+        record = json.loads((self.directory / ".git/ai-phase/prewrite" /
+                             (requested["request_id"] + ".json")).read_text(encoding="utf-8"))
+        self.assertEqual("created", record["state"])
+        self.assertTrue(Path(target["worktree"]).is_dir())
+        self.assertEqual(target["base"], self.git("rev-parse", "HEAD", cwd=target["worktree"]).strip())
+        self.assertEqual(0, result.returncode,
+                         "native provider created its checkout but failed its UTF-8 path protocol: "
+                         + result.stderr.decode("utf-8", "replace"))
+        self.assertEqual((target["worktree"] + "\n").encode("utf-8"), result.stdout)
+        # Preservation diagnostics also cross this standalone protocol boundary.
+        removed = self.location_callback("WorktreeRemove", "worktree_path", target["worktree"],
+                                         environment_overrides={"PYTHONUTF8": "0", "PYTHONIOENCODING": "cp1252"})
+        self.assertEqual(0, removed.returncode, removed.stderr.decode("utf-8", "replace"))
+        self.assertFalse(removed.stdout)
+        self.assertIn(target["worktree"].encode("utf-8"), removed.stderr)
+        self.assertTrue(Path(target["worktree"]).is_dir())
+
+    def test_review_four_phase_initializers_follow_native_entry_before_locator_cd_and_init(self):
+        """CR-02: interpret installed instruction order with real runtime/Git.
+
+        This bounded instruction adapter is SIMULATED, not a live model. It
+        executes the locator, primary-only bootstrap and destination init in
+        the order prescribed by each installed initializer/open-session pair.
+        A prescribed shell cd changes only cwd, never native completion.
+        """
+        roadmap = self.directory / ".planning/ROADMAP.md"
+        roadmap.write_text("# Roadmap\n\n## Phases\n\n## Progress\n", encoding="utf-8")
+        cases = [(name, mode) for name in ("discuss-phase", "plan-phase", "execute-phase", "verify-work")
+                 for mode in ("new", "existing")]
+        labels = []
+        for index, (name, mode) in enumerate(cases, 1):
+            self.runtime("phase.add", name + " " + mode)
+            labels.append(str(index).zfill(2))
+        self.git("add", ".planning")
+        self.git("commit", "-qm", "phase initializer fixture inputs")
+        for (name, mode), label in zip(cases, labels):
+            with self.subTest(workflow=name, mode=mode):
+                expected = b"committed source\n"
+                metadata_before = None
+                opened = None
+                if mode == "existing":
+                    opened = self.runtime("session.open", "phase", label, "--no-sync")
+                    expected = (name + " accumulated committed work\n").encode("utf-8")
+                    destination = Path(opened["worktree"])
+                    (destination / "source.txt").write_bytes(expected)
+                    self.git("add", "source.txt", cwd=destination)
+                    self.git("commit", "-qm", "advance ordinary phase session", cwd=destination)
+                    metadata_before = (self.directory / ".git/ai-phase/sessions.json").read_bytes()
+                self.host = SimulatedClaude(self)
+                text = (self.directory / ".claude/workflows" / (name + ".md")).read_text(encoding="utf-8")
+                initialize = re.search(r'<step name="initialize"[^>]*>(.*?)</step>', text, re.S)[1]
+                open_session = re.search(r'<step name="open_session"[^>]*>(.*?)</step>', text, re.S)[1]
+                instructions = initialize + "\n" + open_session.split("`phase.locate` has already", 1)[0]
+                actions = list(re.finditer(
+                    r'phase_run query phase\.locate|prewrite\.request phase <label>|'
+                    r'if \[ -n "\$\{worktree:-\}" \]; then cd|'
+                    r'INIT=\$\(phase_run query (?P<init>init\.[\w.-]+)', instructions))
+                self.assertTrue(actions, "installed workflow must provide executable routing steps")
+                located, target, init_roots = None, None, []
+                native_requests = 0
+                for action in actions:
+                    if action[0] == "phase_run query phase.locate":
+                        located = self.host.runtime("phase.locate", label)
+                        self.assertTrue(located["phase_found"])
+                    elif action[0].startswith("if "):
+                        if not self.host.completed and located.get("worktree"):
+                            self.host.cwd = Path(located["worktree"])
+                    elif action[0].startswith("prewrite.request"):
+                        self.assertIsNotNone(located, "native bootstrap requires the read-only locator facts")
+                        requested = self.host.runtime("prewrite.request", "phase", label, "--mode", mode)
+                        native_requests += 1
+                        target = self.host.runtime("prewrite.begin", requested["request_id"], "phase", label,
+                                                   "--mode", mode)
+                        self.host.enter(target)
+                        self.assert_confirm(requested["request_id"], target, reused=mode == "existing")
+                        located = self.host.runtime("phase.locate", label)
+                        self.assertEqual(expected, self.host.read("source.txt"))
+                    else:
+                        bundle = self.host.runtime(action["init"], label)
+                        self.assertTrue(bundle["phase_found"])
+                        init_roots.append(self.host.cwd)
+                self.assertEqual(1, native_requests, "workflow must not enter twice at open_session")
+                self.assertEqual(1, len(self.host.events))
+                self.assertTrue(init_roots)
+                self.assertEqual([Path(target["worktree"])] * len(init_roots), init_roots,
+                                 "destination initialization ran before native entry completed")
+                if opened:
+                    self.assertEqual(opened["base"], target["base"])
+                    self.assertNotEqual(target["base"], self.host.git("rev-parse", "HEAD").strip())
+                    self.assertEqual(metadata_before, (self.directory / ".git/ai-phase/sessions.json").read_bytes())
 
     def test_workflow_new_bootstrap_and_existing_ordinary_phase_quick_path_entry(self):
         """Workflow fixture has no intercepted edit and no fabricated denial.
