@@ -86,6 +86,8 @@ class State:
         self.path = workspace.state
         content = read_text(self.path, "") if self.path.is_file() else ""
         self.frontmatter, self.body = split_frontmatter(content)
+        self.original = content
+        self.changed_sections = set()
 
     @property
     def exists(self):
@@ -132,7 +134,11 @@ class State:
         }
 
     def set_section(self, name, body, level=3):
-        self.body = replace_section(self.body, name, body, level)
+        from .planning_integrity import require_preserved
+        candidate = replace_section(self.body, name, body, level)
+        require_preserved(self.body, candidate, ".planning/STATE.md", (name,))
+        self.body = candidate
+        self.changed_sections.add(name)
 
     def append_bullet(self, name, bullet, level=3):
         current = section_body(self.body, name, level)
@@ -184,8 +190,13 @@ class State:
         require(self.exists or self.body.strip(),
                 "STATE.md does not exist and no body was produced", "missing-state")
         progress = self.derive_frontmatter()
+        self.check_integrity()
         write_text(self.path, join_frontmatter(self.frontmatter, self.body))
         return progress
+
+    def check_integrity(self):
+        from .planning_integrity import require_preserved
+        require_preserved(self.original, self.body, ".planning/STATE.md", self.changed_sections)
 
 
 def bullets(body):
@@ -274,6 +285,7 @@ def prepare_progress(workspace, roadmap, registration_phase=None):
 def update_progress(workspace):
     """Re-derive counters and the Current Position plan line from the roadmap."""
     state, progress = prepare_progress(workspace, Roadmap(workspace))
+    state.check_integrity()
     write_text(state.path, join_frontmatter(state.frontmatter, state.body))
     return progress
 
@@ -290,6 +302,7 @@ def register_plans(workspace, number, entries, summary=None):
     roadmap.content = roadmap.update_progress_table()
     state, progress = prepare_progress(workspace, roadmap, registration_phase=number)
     content = join_frontmatter(state.frontmatter, state.body)
+    state.check_integrity()
     roadmap.save(roadmap.content)
     write_text(state.path, content)
     return {"phase": str(number), "plans": [plan["id"] + ": " + plan["description"]

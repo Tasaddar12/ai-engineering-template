@@ -105,6 +105,9 @@ def commit(workspace, message, files=None):
     pending = git(workspace, "diff", "--cached", "--name-only", check=False)
     if not pending.stdout.strip():
         return {"committed": False, "reason": "no staged changes", "files": staged}
+    # The commit includes the complete index, including previously staged paths.
+    from .planning_integrity import validate_index
+    validate_index(workspace.root)
     git(workspace, "commit", "-m", message)
     revision = git(workspace, "rev-parse", "HEAD", check=False).stdout.strip()
     return {"committed": True, "message": message, "files": staged, "revision": revision}
