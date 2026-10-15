@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: complete
+status: in_progress
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
-acceptance: [I87-A1, I87-A3]
+requirements-completed: [ISSUE87-RED]
+acceptance: [I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -397,6 +397,31 @@ Earlier removed literal-alias-parent discrepancy is now retained, proved and
 repaired; no discovered required case is silently deferred. Fresh bounded
 independent review remains pending. No installer, child source, PR86 hook,
 provider adapter, adoption record, publication or merge changed.
+
+## Final provenance-only RED
+
+The frozen `804979b` review retained previous clearances but confirmed one sole
+provenance blocker: genuine Bash `[[]` bracket classes and lexer-encoded literal
+`[` characters collide when fnmatch escapes are stripped to infer active path
+components. The prescribed native RED matrix creates a disposable junction/
+symlink named `ordinary[alias`, proves genuine and mixed-word bracket-class
+expansion with pure printf, and tests paired fully quoted/mixed literal,
+ordinary sibling glob and literal-parent controls. Submitted removal commands
+remain inert JSON; no protected file content is read in the new proof.
+
+The approved minimal correction will refuse any nonNone active pattern
+provenance combined with a parent component before canonicalization, removing
+the ambiguous inference. Literal/quoted operands with None and sibling globs
+without parent remain supported. One narrowly authorized reference sentence
+will document this grammar limit and direct-literal guidance. No broader parser
+or provider/child/installer changes are authorized.
+
+Observed RED: `python -m unittest discover -s tests -p test_destructive_guard.py
+-k final_bracket_class -v` exited 1, Ran 1 test in 1.793s, four intended native
+allow-versus-deny assertions (genuine class, mixed genuine class, and two active
+pattern/parent combinations). Pure printf proofs and all literal/sibling
+controls passed; zero skips or import/fixture errors. Production is unchanged
+for this committed RED.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures

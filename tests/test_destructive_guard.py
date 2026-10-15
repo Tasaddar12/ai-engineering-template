@@ -527,6 +527,38 @@ class RegisteredGuardTests(unittest.TestCase):
         self.source_verdict("Remove-Item -LiteralPath 'ordinary-*/../kept.txt' -Force", False,
                             tool="exec_command", shell="powershell")
 
+    def test_final_bracket_class_parent_provenance_native_entrypoint(self):
+        child = self.root / ".workflow-backups/child"
+        child.mkdir(parents=True)
+        (child.parent / "kept.txt").write_text("preserve\n", encoding="utf-8")
+        (self.root / "kept.txt").write_text("ordinary\n", encoding="utf-8")
+        alias = self.root / "ordinary[alias"
+        if os.name == "nt":
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(child)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else:
+            alias.symlink_to(child, target_is_directory=True)
+        bash = "C:/Program Files/Git/bin/bash.exe" if os.name == "nt" else shutil.which("bash")
+        self.assertIsNotNone(bash)
+        for expression in ("ordinary[[]alias/../kept.txt", "'ordinary'[[]alias/../kept.txt"):
+            # Pure printf proves bracket-class expansion without executing any
+            # submitted destructive command or reading protected file content.
+            proof = subprocess.run([bash, "-c", "printf '%s\\n' " + expression],
+                                   cwd=self.root, capture_output=True)
+            self.assertEqual(0, proof.returncode, proof.stderr)
+            self.assertEqual(b"ordinary[alias/../kept.txt\n", proof.stdout.replace(b"\r\n", b"\n"))
+            with self.subTest(active=expression):
+                observed = self.source_verdict("rm -f " + expression, True)
+                self.assertEqual("unsupported-glob-parent-traversal", json.loads(observed.stdout)["reason_code"])
+        for command in ("rm -f unrelated/../ordinary*.txt", "rm -f ordinary'[[]alias'/../*.txt"):
+            with self.subTest(active_parent_combination=command):
+                observed = self.source_verdict(command, True)
+                self.assertEqual("unsupported-glob-parent-traversal", json.loads(observed.stdout)["reason_code"])
+        for command in ("rm -f 'ordinary[[]alias/../kept.txt'", "rm -f ordinary'[[]alias'/../kept.txt",
+                        "rm -f unrelated/../ordinary.txt", "rm -f ordinary*.txt",
+                        "rm -f 'ordinary*.txt'", "printf '%s' 'ordinary[[]alias/../kept.txt'"):
+            with self.subTest(control=command): self.source_verdict(command, False)
+
 
 if __name__ == "__main__":
     unittest.main()
