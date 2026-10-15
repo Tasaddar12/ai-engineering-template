@@ -48,7 +48,7 @@ coverage:
       - {kind: integration, ref: tests/test_planning_integrity.py, status: pass}
     human_judgment: false
 completed: 2026-10-15
-status: complete
+status: blocked
 ---
 
 # Issue 87 planning integrity execution summary
@@ -163,3 +163,12 @@ Before source edits, the separately committed RED matrix ran **6 tests with 28 f
 ---
 *Phase: issue87-maintenance / PLANNING*
 *Completed: 2026-10-15 (owned corrections; independent/installed/CI acceptance pending)*
+
+
+## CR05 bounded merge-override continuation — RED
+
+Input `160578385bd3c3a89b84e77d198d5d1194908b56`. Independent re-review cleared CR01-CR04 and found one false positive: duplicate detection after YAML merge flattening rejects a valid explicit override of an inherited key.
+
+Before source edits, `python -m unittest discover -s tests -p test_planning_integrity.py -k review_cr05` ran **6 tests in 8.102s**, with **2 failing assertions** for the valid merge override's native and runtime gates. Equivalent explicit metadata, destination explicit duplicates, anchored-source duplicates, previous top/nested duplicates and unchanged historical-reader controls passed. The native index and unrelated staged content are compared; valid runtime commits retain unrelated staged bytes. This RED matrix is committed separately before correction.
+
+Fix and GREEN evidence pending. Existing risk I87-P-T1 / issue96 remains open/unresolved; no new risk identity or closure is asserted.

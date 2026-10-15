@@ -322,6 +322,63 @@ class IntegrityTests(unittest.TestCase):
         self.assertNotIn('Traceback', result.stderr)
         self.assertEqual(self.git('rev-parse', 'HEAD'), self.head)
 
+    def review_cr05_gate_control(self, content, allowed):
+        self.write(RECORD, content)
+        self.write('unrelated', 'merge-control staged bytes\n')
+        self.git('add', RECORD, 'unrelated')
+        before = self.git('ls-files', '--stage')
+        native = self.hook('git commit -m merge-control')
+        with self.subTest(gate='native'):
+            self.assertEqual(native.returncode, 0 if allowed else 2, native.stderr)
+            self.assertNotIn('Traceback', native.stderr)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+        result, data = self.runtime('commit', 'merge control', '--files', RECORD)
+        with self.subTest(gate='runtime'):
+            self.assertEqual(result.returncode, 0 if allowed else 1, data)
+            if allowed:
+                self.assertTrue(data['committed'])
+                self.assertEqual(self.git('show', 'HEAD:unrelated'), 'merge-control staged bytes')
+            else:
+                self.assertEqual(data['code'], 'planning-integrity')
+                self.assertEqual(self.git('rev-parse', 'HEAD'), self.head)
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+
+    def review_cr05_merge_record(self):
+        return VALID.replace('must_haves: {truths: [], artifacts: [], key_links: []}',
+                             'defaults: &defaults {truths: [], artifacts: [], key_links: []}\n'
+                             'must_haves: {<<: *defaults, truths: [A verified outcome]}')
+
+    def test_review_cr05_valid_merge_explicit_override_is_allowed(self):
+        self.review_cr05_gate_control(self.review_cr05_merge_record(), True)
+
+    def test_review_cr05_equivalent_explicit_mapping_is_allowed(self):
+        content = VALID.replace('truths: []', 'truths: [A verified outcome]')
+        self.review_cr05_gate_control(content, True)
+
+    def test_review_cr05_duplicate_explicit_destination_keys_are_denied(self):
+        content = self.review_cr05_merge_record().replace('truths: [A verified outcome]}',
+                                                         'truths: [first], truths: [second]}')
+        self.review_cr05_gate_control(content, False)
+
+    def test_review_cr05_duplicate_keys_in_anchored_source_are_denied(self):
+        content = self.review_cr05_merge_record().replace('defaults: &defaults {truths: [],',
+                                                         'defaults: &defaults {truths: [], truths: [erased],')
+        self.review_cr05_gate_control(content, False)
+
+    def test_review_cr05_prior_top_and_nested_duplicates_stay_denied(self):
+        for content in [VALID.replace('wave: 1', 'wave: -2\nwave: 1'),
+                        VALID.replace('artifacts: []', 'artifacts: [{path: first, path: second}]')]:
+            with self.subTest(content=content):
+                self.review_cr05_gate_control(content, False)
+
+    def test_review_cr05_historical_reader_preserves_merge_and_lenient_controls(self):
+        sys.path.insert(0, str(ROOT / '.ai/runtime'))
+        from lib.text import split_frontmatter
+        merged, _ = split_frontmatter(self.review_cr05_merge_record())
+        explicit, _ = split_frontmatter(VALID.replace('truths: []', 'truths: [A verified outcome]'))
+        self.assertEqual(merged['must_haves'], explicit['must_haves'])
+        self.assertEqual(split_frontmatter(VALID.replace('wave: 1', 'wave: -2\nwave: 1'))[0]['wave'], 1)
+
     def test_runtime_rejects_missing_issue_refs_before_commit(self):
         self.write(RECORD, INVALID)
         result, data = self.runtime('commit', 'fixture', '--files', RECORD)
