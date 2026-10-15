@@ -28,6 +28,7 @@ files_modified:
   - tests/test_same_agent_worktree.py
   - tests/test_install.py
   - tests/test_install_update.py
+  - tests/test_install_migration.py
   - .ai/hooks/README.md
   - .ai/references/worktree-sessions.md
   - .ai/runtime/README.md
@@ -45,6 +46,7 @@ checks:
   - [python, -m, unittest, discover, -s, tests, -p, test_prewrite.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_install_update.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_install_migration.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_session_delivery.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_agent_sources.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_workflow_links.py, -v]
@@ -165,7 +167,8 @@ owns only PLAN/PREPARER-SUMMARY; no code, tests or provider writes run now.
 | AW-07 | Bounded ticket/creation lifecycle, concurrent separation, uncertain native outcome and retry handling avoid duplicate creation, double edits or creation-name approval bypass. Already-correct worktree is a no-movement control. | Tasks 1-2; failure/race/recovery cases |
 | AW-08 | Fresh genuine behavioral native-route RED before fixes, GREEN of same case, independent source/docs/integration review, honest live evidence and completion status. | All tasks; receipts and independent verification |
 
-Source worker (Tasks 1-2) owns every files_modified path except these Task 3
+Source worker (Tasks 1-2) owns every files_modified path except the bounded Task 2
+migration subassignment below and these Task 3
 doc-writer paths: `.ai/hooks/README.md`, `.ai/references/worktree-sessions.md`,
 `.ai/runtime/README.md`, `.ai/RULES.md`. The shared operational protocol
 `.ai/references/same-agent-worktree.md` is source-worker-owned executable workflow
@@ -173,6 +176,29 @@ instruction, covered by contract tests; doc-writer reads and explains it without
 editing it. Coordinator explicitly delegates only the standing native-route link
 in AGENTS and the narrow Hooks and validation section in RULES to their respective
 owners. Other shared policy and adoption skeleton sections stay untouched.
+
+Bounded Task 2 CI-regression subassignment at published source input
+ff81660b493305b5714c8efce9835ee4c2d128a0: coordinator assigns isolated targeted-fixer
+only `tests/test_install_migration.py` plus its own
+`docs/maintenance/issue87-auto-worktree/MIGRATION-SUMMARY.md`. This leaf may run
+concurrently with main source coder04 because those paths are disjoint; coder04
+retains all other Task 2 ownership. No installer or production edits belong to
+the leaf. Ubuntu full CI reported 644 tests, one failure and three errors; the
+named migration failure at test_install_migration.py:357 compares raw event-group
+counts and observes 3 != 2 after intended editing-group coalescing. This is an
+actual regression receipt, not a setup/missing-test RED. Replace that count-only
+assumption with meaningful managed-script identity and preserved-user-hook
+assertions: exactly one editing group contains advisory first and source second,
+each managed registration identity (event, matcher, script) occurs once after
+relocation, and original user hooks remain. The advisory script's intentional
+dispatch and editing registrations are distinct identities, not duplicates.
+Do not merely change the expected count or weaken behavior. If the assertions
+expose a production defect, return it to coder04/coordinator rather than editing
+the installer. Run `python -m unittest discover -s tests -p test_install_migration.py -v`;
+nonzero exit or zero executed cases fails the focused check. Record actual revision/results
+and commit the test plus MIGRATION-SUMMARY. Coordinator integrates this disjoint
+repair and checks its receipt before final verification; unrelated CI errors stay
+with the currently assigned source worker.
 
 Excluded: original six drafts; GitHub/GitLab/provider workflow changes; provider
 73/74; live infrastructure, installations, cleanup and merges; generalized command
@@ -395,13 +421,13 @@ with bounded coverage, not a universal filesystem enforcement boundary.
 
 <task type="auto" tdd="true">
   <name>Task 2: Wire the same-agent native route, creation provider and session consumers</name>
-  <files>AGENTS.md, .ai/install.py, .ai/hooks/source-prewrite.sh, .ai/hooks/source-prewrite.test.sh, .ai/hooks/worktree-location.sh, .ai/hooks/worktree-location.test.sh, .ai/runtime/phase.py, .ai/runtime/lib/prewrite.py, .ai/runtime/lib/worktrees.py, .ai/references/same-agent-worktree.md, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md, tests/test_prewrite.py, tests/test_same_agent_worktree.py, tests/test_install.py, tests/test_install_update.py</files>
-  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, Task 1 tests and committed RED summary, AGENTS.md, .ai/install.py, .ai/agents/coordinator.md, .ai/agents/coder.md, .ai/hooks/worktree-guard.sh, .ai/hooks/worktree-location.sh, .ai/runtime/phase.py, .ai/runtime/lib/worktrees.py, .ai/runtime/lib/gitops.py, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md</read_first>
+  <files>AGENTS.md, .ai/install.py, .ai/hooks/source-prewrite.sh, .ai/hooks/source-prewrite.test.sh, .ai/hooks/worktree-location.sh, .ai/hooks/worktree-location.test.sh, .ai/runtime/phase.py, .ai/runtime/lib/prewrite.py, .ai/runtime/lib/worktrees.py, .ai/references/same-agent-worktree.md, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md, tests/test_prewrite.py, tests/test_same_agent_worktree.py, tests/test_install.py, tests/test_install_update.py, tests/test_install_migration.py</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, Task 1 tests and committed RED summary, AGENTS.md, .ai/install.py, .ai/agents/coordinator.md, .ai/agents/coder.md, .ai/hooks/worktree-guard.sh, .ai/hooks/worktree-location.sh, .ai/runtime/phase.py, .ai/runtime/lib/worktrees.py, .ai/runtime/lib/gitops.py, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md, tests/test_install_migration.py</read_first>
   <action>Consume the actual fresh RED and implement the operational contract above. Lead with the installed-source-deny to same-model native instruction to trusted creation callback to Git-confirmed destination slice, then complete refusal/retry/path/dirty cases. Source hook never precreates; native WorktreeCreate owns fresh pinned-base creation. Add the dedicated wf-entry name branch, ticket lifecycle and narrow phase/quick native adoption without changing normal dispatch reuse/session defaults. Add Claude-only EnterWorktree permission to actual restrictive coordinator/coder exports, the standing AGENTS/installed CLAUDE link, and the six conditional workflow branches so Claude does not reach shell session.open/cd as its movement mechanism. Actual availability, role, schema and policy remain positive model-side gates. Existing-session entry uses genuine native path form and honors required approval; no name-reuse bypass. Preserve user hooks, Windows Unicode/spaces/status propagation, one editing group with advisory first, and the old advisory bytes. Codex returns precise unsupported movement rather than claiming a controller. Finish matching GREEN, record all actual commands/results and commits in the implementation summary, and commit source/test slice. Refactor only changed owned code if needed, with affected checks rerun.</action>
   <behavior>AW-01 through AW-07 hold through composed installed/export/real-Git fixtures, including the matrix below. Test-only host simulation is always identified; runtime Git confirmation is never labeled host binding proof.</behavior>
   <acceptance_criteria>The same fresh RED target passes GREEN; native creation is causally after denial and same-agent capability gate; default context/fresh reads/rebuilt edit are required; preservation and unsupported controls pass; no preparation-only/manual-child substitute or inferred live success remains.</acceptance_criteria>
   <verify><automated>python -m unittest discover -s tests -p test_same_agent_worktree.py -v</automated><fails_when>Nonzero exit, zero cases, stale actor/default-cwd contract, missing gate, creation-name reuse bypass, or double edit/creation.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -v</automated><fails_when>Nonzero exit, zero cases, missing actual role/hook exports, pipeline denial failure or note false positive.</fails_when><automated>python -m unittest discover -s tests -p test_prewrite.py -v</automated><fails_when>Nonzero exit, zero cases, wrong path/identity/dirty-state decision or broken ticket/native-session confirmation.</fails_when><automated>bash .ai/hooks/worktree-location.test.sh</automated><fails_when>Nonzero exit, no executed cases, ticketed reuse bypass, wrong pinned base or changed ordinary dispatch reuse behavior.</fails_when></verify>
-  <done>Conditional native route and precise unsupported paths are implemented with matching GREEN and committed evidence. Live native smoke remains a separate unmet acceptance layer in this executor.</done>
+  <done>Conditional native route and precise unsupported paths are implemented with matching GREEN and committed evidence. The isolated migration-test subassignment has meaningful script-identity/user-hook assertions, a passing focused receipt and committed MIGRATION-SUMMARY before final verification. Live native smoke remains a separate unmet acceptance layer in this executor.</done>
 </task>
 
 <task type="auto">

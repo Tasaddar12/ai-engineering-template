@@ -20,6 +20,22 @@ Preparation is complete for independent review, not implementation or user-goal
 verification. The prior preparation/manual-handoff design is replaced under the
 actual human clarification: "This time we actually move the agent itself."
 
+## Bounded CI-regression ownership amendment at ff81660
+
+Authorized clean fast-forward reached published coordinator-source input
+ff81660b493305b5714c8efce9835ee4c2d128a0. This amendment adds only migration-test
+ownership, Task 2 files/read-first and the focused test_install_migration.py check.
+The coordinator's Ubuntu receipt reports 644 tests, one failure and three errors;
+the migration count assertion at line357 conflicts with intended editing-group
+coalescing. An isolated targeted-fixer owns only tests/test_install_migration.py
+and MIGRATION-SUMMARY.md, disjoint/concurrent with active source coder04. It must
+assert managed-script identity/order/uniqueness and preserved user hooks rather
+than changing a count or weakening behavior. Any production defect routes back
+to coder04/coordinator. The real CI failure is the regression receipt, not setup
+RED. Native/cleanup scope, frozen drafts and all other ownership stay unchanged.
+No active worker checkout was inspected; no tests/source/provider writes or child
+dispatch ran in this amendment. Coordinator integrates and verifies the repair.
+
 ## Bounded checker correction at 66986955
 
 Addressed BLOCKER PC-AW-source-interface-01 by defining prewrite.request as a
