@@ -717,11 +717,14 @@ class CleanupTests(unittest.TestCase):
         backup = self.repair_two_owned_fixture()
         preview = self.preview()
         self.assertEqual(5, len(preview["operations"]), preview)
+        self.assertTrue(any(row["target"] == str(backup.parent) for row in preview["preserved"]), preview)
         result = self.apply(self.envelope(preview))
         self.assertEqual("complete", result["status"], result)
         self.assertEqual(5, len(result["removed"]), result)
         self.assertFalse(backup.exists())
         self.assertTrue(backup.parent.is_dir())
+        self.assertTrue(any(row["target"] == str(backup.parent) and row["exists"]
+                            for row in result["final_preserved"]), result)
         self.assertFalse(self.tree.exists())
         self.assertFalse(self.other_tree.exists())
         self.assertIsNone(self.repair_ref_output("refs/heads/phase-owned"))
@@ -750,9 +753,31 @@ class CleanupTests(unittest.TestCase):
                     self.assertEqual("partial", result["status"], result)
                     self.assertEqual(3, len(result["removed"]), result)
                     self.assertEqual(1, len(result["failed"]), result)
+                    self.assertEqual("cleanup-state-stale", result["failed"][0]["reason"], result)
+                    self.assertEqual(2, len(case.mutations), case.mutations)
                     self.assertFalse(backup.exists())
                     self.assertTrue(backup.parent.is_dir())
                     self.assertTrue(case.other_tree.is_dir())
                     self.assertTrue(case.repair_ref_output("refs/heads/phase-z-other"))
                 finally:
                     case.doCleanups()
+
+    def test_cleanup_review_unowned_backup_sibling_stops_before_second_tree(self):
+        backup = self.repair_two_owned_fixture()
+        envelope = self.envelope()
+        unowned = self.root / ".workflow-backups/new-unowned"
+        def mutation(argv, cwd):
+            result = subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+            if "update-ref" in argv and "refs/heads/phase-owned" in argv:
+                unowned.mkdir()
+                (unowned / "valuable").write_text("preserve sibling", encoding="utf-8")
+            return result
+        result = self.apply(envelope, mutation)
+        self.assertEqual("partial", result["status"], result)
+        self.assertEqual(3, len(result["removed"]), result)
+        self.assertEqual("cleanup-state-stale", result["failed"][0]["reason"], result)
+        self.assertEqual(2, len(self.mutations), self.mutations)
+        self.assertTrue(self.other_tree.is_dir())
+        self.assertTrue(self.repair_ref_output("refs/heads/phase-z-other"))
+        self.assertTrue((unowned / "valuable").is_file())
+        self.assertTrue(backup.parent.is_dir())

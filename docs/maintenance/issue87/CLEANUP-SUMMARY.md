@@ -199,6 +199,20 @@ before the backup owner, so it did not reproduce owner-first container drift.
 Renamed it phase-z-other, preserving original provider records after local ref
 removal. The corrected nested-only run had 2 tests/1 expected happy-path failure
 in 35.887s; the complete nine-test run above is the accepted coherent evidence.
-No production file changed for this RED matrix. Independent matrix review and
-implementation repair are pending; prior completion statements above describe
-the original delivered slice, not acceptance of these review findings.
+No production file changed for this RED matrix. RED commit:
+`a357e507247ee1a818639f66f8a421f777cd94f1`. Independent matrix review accepted
+both reproductions and requested a bounded additional control: introduce an
+unrelated unowned backup sibling after the first owner's branch deletion and
+require the next operation to stop before touching the second worktree. The
+adjusted happy-path assertion also requires the retained group container in the
+original preview and final readback. Dirty/provider/ownership controls now assert
+the stale reason and absence of a second-tree mutation, preventing a fallback
+command failure from masquerading as the freshness check.
+
+Adjusted RED: same cleanup_review command, exit 1, Ran 10 tests in 51.215s,
+5 intended assertion failures, zero errors/skips; all five control tests pass,
+including the new unrelated-unowned-sibling control. The nested happy case now
+fails at the stronger initial retained-container assertion. Production unchanged.
+Implementation repair remains pending; prior
+completion statements above describe the original delivered slice, not acceptance
+of these review findings.
