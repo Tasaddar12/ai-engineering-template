@@ -11,9 +11,9 @@ provides:
   - Independent semantic/provider issue-link audit before merge eligibility
 affects: [execution, planning, shipping]
 actuals:
-  tokens: 0
+  tokens: 16544
   tasks: 3
-  commits: 3
+  commits: 4
 plan_head_before: 54d0558b65e18da108586d438a31054397d5f527
 tech-stack:
   added: []
@@ -71,7 +71,7 @@ status: complete
 - Started: 2026-10-15, assigned base 54d0558b65e18da108586d438a31054397d5f527.
 - Tasks: 3/3, locally implemented and checked; coordinator integration/review remains pending.
 - Files: ten implementation paths, assigned PLAN reconciliation and this required summary.
-- Actuals tokens: Pending final chars/4 measurement over assigned-base diff; zero above is provisional, not a measured claim.
+- Actuals tokens: chars/4 of the UTF-8 text Git diff from assigned base through this final metadata tree, rounded up. No binary/generated files were changed. Commit count includes the three task slices and final summary metadata commit; measured from assigned base.
 
 ## Accomplishments
 
@@ -85,7 +85,9 @@ status: complete
 
 1. Task 1: bounded wave reporting - `cfc5255`.
 2. Task 2: planned security tracking - `55f4c81`.
-3. Task 3: independent issue-link audit - current implementation slice; hash returned from Git.
+3. Task 3: independent issue-link audit - `d345282a3024f801fd98b82bf8565d656a7f9516`.
+
+Final summary metadata is committed separately after the immutable implementation checks.
 
 ## Checks
 
@@ -102,8 +104,33 @@ Task 3 source tree is `55f4c81` plus the exact owned audit/lifecycle diff commit
 in the next task slice. Focused threat tracking: Ran 20 tests, OK. Final status
 suite: Ran 5 tests, OK. Final workflow links: Ran 4 tests, OK. Phase issue rerun:
 Ran 38 tests, OK (one skipped for Windows symlink privilege). Immutable
-source-revision evidence will be recorded before final handoff.
+source-revision checks use `d345282a3024f801fd98b82bf8565d656a7f9516`:
+
+| Exact command | Actual result at immutable implementation commit |
+|---|---|
+| `python -m unittest discover -s tests -p test_threat_tracking_contract.py -v` | Ran 20 tests in 7.760s, OK |
+| `python -m unittest discover -s tests -p test_parallel_status_contract.py -v` | Ran 5 tests in 0.766s, OK |
+| `python -m unittest discover -s tests -p test_workflow_links.py -v` | Ran 4 tests in 0.791s, OK |
+| `python -m unittest discover -s tests -p test_phase_issues.py -v` | Ran 38 tests in 108.572s, OK (skipped=1: Windows symlink privilege unavailable) |
+
 `git diff --check` produced no whitespace errors.
+
+The following author walkthroughs supplement offline mutation evidence; they are
+not independent review or live provider results:
+
+- New planned mitigation: choose a distinct checklist entry with all eleven
+  identity/assessment/lifecycle fields, keep its owning six-column PLAN register
+  and mark its URL Pending until actual provider readback verifies the anchor.
+- Existing actionable full-scope match: keep the existing issue canonical and
+  link it from the checklist; unresolved closed matches retain reopening blockers.
+- Distinct execution/review discovery: require standalone actionable Security
+  risk tracking (or an existing full-scope match), linked from PLAN/checklist;
+  ordinary resolved-work exemption cannot waive it.
+- Missing link/readback or stale body: independent result retains a dependency
+  gap, body/outcome changes invalidate affected evidence, and merge is ineligible.
+- Stalled worker: reference example traces A/B dispatch, W1 watch, W2 stalled
+  decision, host status request and joined integration/check evidence. Active B
+  paths are never reassigned from elapsed time.
 
 ## Files Created/Modified
 
@@ -154,7 +181,7 @@ All three owned tasks are locally implemented. No phase completion, publication 
 | Operation | Worker evidence / proposed reconciliation |
 |---|---|
 | Position/progress | Three owned tasks complete locally; integrate and independently verify before phase completion |
-| Metrics | Final duration, diff chars/4 and commit count pending final summary |
+| Metrics | Four owned commits including summary; chars/4 is measured over assigned-base diff; full duration unavailable |
 | Decisions | None beyond approved plan |
 | Session | Integrate owned commits, reconcile shared contract and code-reviewer link, obtain fresh review/audit |
 | Roadmap/requirements | Keep shared adoption skeleton unchanged; no runtime mutations assigned |
@@ -162,4 +189,8 @@ All three owned tasks are locally implemented. No phase completion, publication 
 
 ## Self-Check: PASSED
 
-Created reference/test and owned source paths exist. Focused suites and mutation checks pass, with the explicit host symlink skip. Exact task commit identities and final tested revision are reconciled at final metadata commit; no unrun provider audit is claimed.
+Created reference/test and owned source paths exist. Task commits exist on assigned
+branch `phase-issue87-orchestration`; exact root/base/ownership were checked before
+writes and commits. Focused suites and mutation checks pass with the explicit host
+symlink skip. Final metadata changes only this SUMMARY; source-currentness still
+requires coordinator integration/review, and no unrun provider audit is claimed.
