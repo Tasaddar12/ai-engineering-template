@@ -65,6 +65,12 @@ again for an approval already supplied. Record consequential decisions in the
 phase's CONTEXT. When code and documents disagree, establish which side is wrong
 with evidence and preserve approved outcomes.
 
+For security or static guard repairs, follow the
+[guard repair workflow](.ai/references/guard-repair-workflow.md): independent
+bypass and false-positive cases, then observed failing regression tests before
+guard implementation. Its communication and approval guidance preserves existing
+authority and advisory notices.
+
 ## Dispatch
 
 The orchestrator routes; it does not do the work it dispatched. After spawning an

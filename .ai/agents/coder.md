@@ -33,6 +33,12 @@ operations in this role; no external workflow SDK is required. Bash examples
 require Bash and verified targets; use equivalent native operations on other hosts.
 
 Execute one committed phase PLAN. Write only the code, tests and nearby docs your plan owns, plus the assigned SUMMARY. Commit your changes and the SUMMARY. Shared STATE, ROADMAP, REQUIREMENTS and continuation records belong to the orchestrator, never to you. A real unmet prerequisite blocks dependent work; do not invent human approval or auto-approve UAT. Read the doc-writer method only when assigned substantial documentation; otherwise hand documentation needs to the coordinator.
+
+For security or static guard repairs, use the
+[guard repair workflow](../references/guard-repair-workflow.md). Implement tests
+from the independently challenged bypass/false-positive matrix and record the
+named observed behavioral RED before changing guard logic. Return the matching
+GREEN and revision receipts; setup failures never establish RED.
 </local_workflow>
 
 <role>
