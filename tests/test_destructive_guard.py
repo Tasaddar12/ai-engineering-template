@@ -569,15 +569,18 @@ class CleanupTests(unittest.TestCase):
 
     def test_cleanup_raw_registered_junction_is_not_hidden_by_canonicalization(self):
         physical = Path(self.temp.name) / "physical tree"
-        physical.mkdir()
-        alias = Path(self.temp.name) / "tree alias"
+        alias = self.tree
+        # Git canonicalizes aliases supplied to worktree add. Replace an
+        # already registered fixture directory to exercise the actual boundary.
+        self.assertTrue(physical.is_relative_to(Path(self.temp.name)))
+        self.assertTrue(alias.is_relative_to(Path(self.temp.name)))
+        alias.rename(physical)
         if os.name == "nt":
             result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(physical)], capture_output=True)
             self.assertEqual(0, result.returncode, result.stderr)
         else:
             alias.symlink_to(physical, target_is_directory=True)
         try:
-            git(self.root, "worktree", "add", "-qb", "phase-alias", str(alias))
             with self.assertRaises(self.policy.EvidenceError):
                 self.preview()
         finally:

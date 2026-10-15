@@ -38,9 +38,18 @@ Interim GREEN (uncommitted implementation): full destructive-guard suite passed
 found raw registered junction paths could be hidden by the parent's canonical
 listing. Added cleanup-only regression before repair:
 `python -m unittest discover -s tests -p test_destructive_guard.py -k raw_registered -v`
-exited 1, Ran 1 test in 1.160s, intended `EvidenceError not raised` assertion.
-This test uses a disposable actual Windows junction and does not modify parent
-grammar or ownership readers. Final repair/GREEN evidence pending.
+initially exited 1, Ran 1 test in 1.160s, `EvidenceError not raised`. Inspection
+showed Git canonicalizes aliases during worktree add: that fixture did not
+establish the intended raw-registration boundary. The first attempted repair's
+22-test run therefore still failed that one assertion (102.019s). This is not
+accepted as valid boundary RED/GREEN evidence.
+
+Corrected fixture: move the already registered temporary directory within its
+verified temporary root, then replace its original path with an actual Windows
+junction. Remove the attempted raw-reader override and rerun the same focused
+command before restoring it: exit 1, Ran 1 test in 1.083s, intended
+`EvidenceError not raised` assertion. Parent grammar/ownership readers unchanged.
+Final repair/GREEN evidence pending.
 
 ## Threat Outcomes
 
