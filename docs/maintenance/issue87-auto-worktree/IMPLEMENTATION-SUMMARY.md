@@ -19,16 +19,24 @@ coverage:
 
 # Issue 87 implementation receipt
 
-Task 1 native-route RED is complete for independent review. Task 2 is explicitly
-held by the coordinator; no production fix has begun. Task 3 documentation and
-all integration/publication belong to separate owners. Current assignment:
+The first Task 1 native-route RED was independently assessed VALID. Its review
+held production for the two test-contract corrections recorded below. Task 2
+remains explicitly held by the coordinator; no production fix has begun. Task 3
+documentation and all integration/publication belong to separate owners. Current
+test-correction assignment:
 
-- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-01-174821869`.
-- Branch: `phase-issue87-native-code-01-174821869`.
-- Starting production revision: `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b`.
+- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-02-180244789`.
+- Branch: `phase-issue87-native-code-02-180244789`.
+- Exact starting revision: `5273cfd353fd46e3d1582d71c3fcbc5e58a3248e`.
 - Authored paths: `tests/test_same_agent_worktree.py`, `tests/test_install.py`,
-  and this summary. The enclosing test-only commit contains the recorded RED.
+  and this summary. The enclosing test-only correction commit preserves RED.
 - Context usage: unavailable.
+
+The first native-route RED is preserved in `efa6da649b65585d939c1b88e2c369af327b2168`,
+authored from `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b` in
+`D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-01-174821869`,
+branch `phase-issue87-native-code-01-174821869`. It is integrated in the current
+input; no old branch or checkout was modified during this correction.
 
 The previous cancellation RED remains historical evidence. Its input/root was
 `26969d7184c2bf25a0468efe805b325471ea58c6`,
@@ -36,6 +44,46 @@ The previous cancellation RED remains historical evidence. Its input/root was
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-code-171041844`.
 
 ## TDD Evidence
+
+### Independent native RED review corrections (Task 1, 2026-10-15)
+
+- **Native review CR-01:** Existing ordinary phase/quick sessions can commit work
+  beyond their immutable fork base. `SimulatedClaude.enter` now observes each
+  existing destination's actual HEAD before native path entry; `prove_defaults`
+  verifies that HEAD is preserved and the historical base remains its ancestor.
+  New creation still requires HEAD at its pinned base. Both ordinary-session
+  fixtures now commit distinct source content before their existing workflow
+  request, assert HEAD differs from the recorded base, retain the exact base and
+  session-ownership bytes, and require fresh destination reads to see those
+  commits. No public runtime field, base rewrite or creation journal was added.
+- **Native review CR-02:** `prewrite_pipeline` accepts an explicit environment
+  override and passes it to every actual installed editing handler subprocess.
+  The simulated host's common editing wrapper sets `CLAUDE_PROJECT_DIR` to the
+  original primary checkout on every call, including the rebuilt destination
+  edit. Native default-context checks still require destination cwd to differ
+  from that anchored project root. Runtime and creation subprocess anchoring is
+  retained; the editing aggregate no longer inherits an arbitrary project root.
+
+Correction execution used exact input
+`5273cfd353fd46e3d1582d71c3fcbc5e58a3248e` plus only the declared tests/summary.
+The same native command recorded below ran 6 tests in 17.900s, exit 1, with the
+same 8 intended assertion failures and no errors/skips. The named behavioral
+target again reached the missing installed native continuation assertion with
+`actual decision reasons=[]`; supporting failures remain missing native role
+exports/protocol linkage. The original RED is unchanged in meaning.
+
+The same `test_install.py -k prewrite -v` command recorded below ran 4 tests in
+48.969s, exit 1, with the two expected historical source-denial failures and both
+note tests passing their Claude/Codex create/update subcases. There were no
+errors/skips. Both suites used separate disposable installed/Git fixtures.
+
+The advanced ordinary-session fixture, native entry, destination rebuilt edit
+and other downstream contract cases still have **not executed** past the absent
+native contract. The editing subprocess environment override did execute on the
+four installed source-attempt cases at RED; destination execution remains a
+planned GREEN check. Neither these test corrections nor the RED receipt prove
+live host binding. Review findings map to existing T-AW-03 and the T-AW-01
+preservation aliases; they create no new threat identities or mitigation claims.
 
 ### Fresh native-route RED (Task 1, 2026-10-15)
 
@@ -185,8 +233,9 @@ assertion. Neither is counted as the fresh native-route RED. A preceding run
 before strengthening scratchpad create/update checks had the same 4-test,
 2-failure result in 46.050s.
 
-Only tests and this summary are in the enclosing Task 1 commit. The final scoped
-diff is checked with `git diff --check` before committing. The base diff for
+Only tests and this summary are in the first Task 1 commit and its bounded
+review-correction commit. The final scoped diff is checked with
+`git diff --check` before committing. The base diff for
 `.ai/hooks/worktree-guard.sh` is empty: its advisory bytes remain unchanged.
 
 ## Threat Outcomes
