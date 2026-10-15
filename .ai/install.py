@@ -598,28 +598,50 @@ def merge_hooks(current, incoming, path, replace=False):
         additions = json.loads(incoming)["hooks"]
         changed = False
         scripts = managed_scripts()
+        known = {handler["command"]: handler
+                 for host in ("claude", "codex")
+                 for groups in hook_settings(host)["hooks"].values()
+                 for group in groups for handler in group["hooks"]}
+
+        def owned_script(handler):
+            """Recognize shipped commands, never a user command mentioning one.
+
+            Timeouts and the historical missing Windows exit suffix may age;
+            unknown commands/fields and mixed user handlers remain conflicts.
+            """
+            reference = known.get(handler.get("command"))
+            if (not reference or handler.get("type") != "command"
+                    or set(handler) - {"type", "command", "commandWindows", "timeout"}):
+                return None
+            if "commandWindows" in handler:
+                windows = reference.get("commandWindows")
+                if not windows or handler["commandWindows"] not in (
+                        windows, windows.replace("; exit $LASTEXITCODE", "")):
+                    return None
+            return next((name for name in scripts if "/hooks/" + name + '"' in reference["command"]), None)
+
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
-                if group in existing:
-                    continue
-                script = next((name for name in scripts
-                               if f"/hooks/{name}" in json.dumps(group)), None)
+                group_scripts = {owned_script(handler) for handler in group["hooks"]} - {None}
                 # A group already registering THIS script under THIS matcher,
                 # but not byte-identical, is a customized or older managed
                 # registration. A user hook on the same event that names a
                 # different script is theirs, and is left alone.
                 stale = [other for other in existing
-                         if script and f"/hooks/{script}" in json.dumps(other)
+                         if any(f"/hooks/{name}" in json.dumps(other) for name in group_scripts)
                          and other.get("matcher") == group.get("matcher")]
+                if len(stale) == 1 and stale[0] == group:
+                    continue
                 # An update replaces a stale registration, as it replaces any
                 # other shipped file, once the caller has backed the settings
                 # up. A group that also carries a user handler is not wholly
                 # ours to replace, and an install never replaces at all.
                 if stale and not (replace and all(
-                        all(f"/hooks/{script}" in json.dumps(handler)
-                            for handler in other["hooks"]) for other in stale)):
-                    raise ValueError(f"managed {event} registration for {script} "
+                        not (set(other) - {"matcher", "hooks"}) and other["hooks"]
+                        and all(owned_script(handler) in group_scripts
+                                for handler in other["hooks"]) for other in stale)):
+                    raise ValueError(f"managed {event} registration for {', '.join(sorted(group_scripts))} "
                                      "differs; reconcile it manually")
                 existing[:] = [other for other in existing if other not in stale]
                 existing.append(group)

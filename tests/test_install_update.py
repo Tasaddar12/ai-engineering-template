@@ -308,6 +308,41 @@ class UpdateTests(unittest.TestCase):
             self.plan()
         self.assertIn("differs", str(caught.exception))
 
+    def test_old_advisory_only_editing_group_upgrades_once_and_keeps_user_hooks(self):
+        events = installer.hook_settings(self.host)["hooks"]
+        editing = next(group for group in events["PreToolUse"] if "NotebookEdit" in group.get("matcher", ""))
+        editing["hooks"] = editing["hooks"][:1]  # Real shape before source-prewrite existed.
+        user = {"matcher": "Write", "hooks": [{"type": "command", "command": "my-own-hook"}]}
+        events["PreToolUse"].append(user)
+        content = (installer.hooks_toml(events) if self.host == "codex"
+                   else installer.json_bytes({"hooks": events}))
+        self.write(self.settings_name(), content)
+        self.apply(self.plan()[0])
+        result = self.read(self.settings_name())
+        parsed = installer.tomllib.loads(result.decode()) if self.host == "codex" else installer.json.loads(result)
+        actual = [group for group in parsed["hooks"]["PreToolUse"] if "NotebookEdit" in group.get("matcher", "")]
+        self.assertEqual(1, len(actual))
+        self.assertEqual(2, len(actual[0]["hooks"]))
+        self.assertIn("worktree-guard.sh", actual[0]["hooks"][0]["command"])
+        self.assertIn("source-prewrite.sh", actual[0]["hooks"][1]["command"])
+        self.assertIn(user, parsed["hooks"]["PreToolUse"])
+        self.assertEqual([], self.plan()[0])
+
+    def test_unknown_user_commands_in_managed_editing_group_are_preserved_by_refusal(self):
+        for forged in (False, True):
+            events = installer.hook_settings(self.host)["hooks"]
+            editing = next(group for group in events["PreToolUse"] if "NotebookEdit" in group.get("matcher", ""))
+            if forged:
+                editing["hooks"][0]["command"] += "; user-action"
+            else:
+                editing["hooks"].append({"type": "command", "command": "my-own-hook"})
+            content = (installer.hooks_toml(events) if self.host == "codex"
+                       else installer.json_bytes({"hooks": events}))
+            path = self.write(self.settings_name(), content)
+            with self.assertRaisesRegex(ValueError, "differs"):
+                self.plan()
+            self.assertEqual(content, path.read_bytes())
+
     # --- files this revision no longer ships ---------------------------------
 
     def test_an_unshipped_file_is_reported_and_kept(self):

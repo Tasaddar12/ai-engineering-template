@@ -939,10 +939,18 @@ def main(argv=None):
     raw = bool(options.pop("raw", False))
     options["raw"] = raw
     try:
-        workspace = Workspace()
+        # Native request adapters resolve bounded UTF-8 Git facts themselves.
+        # Do not precede their internal deadline with the generic 30s root
+        # lookup or use its locale-decoded Windows path as native evidence.
+        workspace = None if verb.startswith("prewrite.") else Workspace()
         result = run_verb(workspace, verb, positionals, options)
     except VerbError as exc:
         emit(failure(str(exc), exc.code))
+        return 1
+    except OSError as exc:
+        if not verb.startswith("prewrite."):
+            raise
+        emit(failure("prewrite I/O failed; preserve and inspect: " + str(exc), "prewrite-io"))
         return 1
     if raw and not isinstance(result, dict):
         emit(result, raw=True)

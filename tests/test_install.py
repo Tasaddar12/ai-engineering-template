@@ -147,6 +147,11 @@ class InstallerTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("Source-only project history", encoding="utf-8")
         command("git", "init", "--quiet", str(cls.source))
+        # Disposable fixture writers must finish before TemporaryDirectory
+        # cleanup. Git supports these foreground maintenance controls on both
+        # platforms; this prevents a detached pack writer racing rmtree.
+        command("git", "config", "gc.autoDetach", "false", cwd=cls.source)
+        command("git", "config", "maintenance.autoDetach", "false", cwd=cls.source)
         command("git", "add", ".", cwd=cls.source)
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
                 "commit", "--quiet", "-m", "Template fixture", cwd=cls.source)
@@ -666,6 +671,8 @@ class InstallerTests(unittest.TestCase):
         self.target = self.base / (host + " prewrite café nested project")
         installed = self.install("--host", host)
         self.assertEqual(0, installed.returncode, installed.stderr)
+        command("git", "config", "gc.autoDetach", "false", cwd=self.target)
+        command("git", "config", "maintenance.autoDetach", "false", cwd=self.target)
         command("git", "config", "user.email", "prewrite@example.test", cwd=self.target)
         command("git", "config", "user.name", "Prewrite Fixture", cwd=self.target)
         (self.target / "source.txt").write_bytes(b"committed source\n")
