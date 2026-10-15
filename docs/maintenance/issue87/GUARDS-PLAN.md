@@ -176,9 +176,9 @@ No adopting-project ROADMAP goal or requirement is claimed: those files remain u
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |---|---|---|---|---|---|
-| I87-G-T1; Pending: coordinator canonical-risk dedup/readback | Tampering | destructive command parsing | high | mitigate | GUARD bounded grammar, conservative unknown handling and offline attack matrix; do not claim arbitrary-shell protection |
-| I87-G-T2; Pending: coordinator canonical-risk dedup/readback | Spoofing | provider/ownership/approval evidence | high | mitigate | Exact project/source/head matching, real human instruction recorded by workflow, no broad overrides, unknown preserves |
-| I87-G-T3; Pending: coordinator canonical-risk dedup/readback | Tampering | cleanup preview/apply state | high | mitigate | Revalidate, shared cleanup lock, expected ref OID, non-force worktree remove, backup digest and truthful partial results |
+| I87-G-T1; https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t1 | Tampering | destructive command parsing | high | mitigate | GUARD bounded grammar, conservative unknown handling and offline attack matrix; do not claim arbitrary-shell protection |
+| I87-G-T2; https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2 | Spoofing | provider/ownership/approval evidence | high | mitigate | Exact project/source/head matching, real human instruction recorded by workflow, no broad overrides, unknown preserves |
+| I87-G-T3; https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3 | Tampering | cleanup preview/apply state | high | mitigate | Revalidate, shared cleanup lock, expected ref OID, non-force worktree remove, backup digest and truthful partial results |
 
 These are findings about the changed guard/deletion trust boundaries, not published exploit instructions. Coordinator owns canonical issue identity and safe tracking. Keep Pending until actual matching issue readback; never invent a URL or close a risk from a merge. A residual concurrent external filesystem race and opaque-script coverage limit must remain documented and independently assessed.
 </threat_model>

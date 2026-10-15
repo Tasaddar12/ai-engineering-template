@@ -475,3 +475,20 @@ It does not inspect opaque Python/Node/external executable contents. Backup
 approval preview/apply, exact operation ordering, locks and transient one-use
 receipts are intentionally the separately assigned CLEANUP child, which has
 not started in this checkout. No broad approval override exists here.
+
+## Coordinator final independent clearance
+
+The final bounded review at0a164473aba0be58f6c45c07e19a238d2b902245 cleared
+the sole provenance finding, with zero critical/warning/info findings. Prior
+independent clearances remain applicable. Source d2e285b02363b2cd3c5b5f1ec040b78451d69876
+is frozen; this coordinator update changes maintenance records only.
+
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|---|---|---|---|---|
+| GUARDS-PLAN / I87-G-T1 | https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t1 | Proposed parsing mitigation locally verified and independently cleared; final CI pending | OPEN; readback verified | RED0dbb0a8 before d2e285b;22 tests, installed1, advisory60 passed; final review0a16447 |
+| GUARDS-PLAN / I87-G-T2 | https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2 | Proposed evidence/input mitigation locally verified and independently reviewed; final CI pending | OPEN; readback verified | Both-provider offline contracts and native denial matrices; dependent cleanup identity repair reviewed |
+| GUARDS-PLAN / I87-G-T3 | https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3 | Cleanup child source reviewed; final parent synchronization/CI pending | OPEN; readback verified | CLEANUP source1b5eb8a and portability7f1e236 |
+
+Canonical PLAN rows now link the verified95 entries without dropping local IDs.
+These proposed changes remain unmerged; no real cleanup, merge or issue closure
+is authorized. Live GitLab and arbitrary-script protection are not claimed.
