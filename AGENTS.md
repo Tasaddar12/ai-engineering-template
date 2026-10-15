@@ -96,6 +96,12 @@ packet or report; it does not create a commit or SUMMARY.md.
 
 ## Skills
 
+After a source denial, the same existing caller follows
+[the native entry protocol](.ai/references/same-agent-worktree.md). Gate its
+actual native tool/schema, eligible role, policy and trusted hooks; observe
+native completion and destination defaults before fresh reads and one rebuilt
+edit. Never replay the cancelled call or substitute a child or shell `cd`.
+
 The skills under `.agents/skills/` mirror `.ai/commands/` one-for-one; a host
 that discovers skills and a host that registers slash commands behave
 identically. Load the skills that match the work, plus those named in the plan's

@@ -164,6 +164,16 @@ Display: `► EXECUTE PHASE {phase_number}: {phase_name}`
 </step>
 
 <step name="open_session">
+**Conditional Claude same-caller route:** First follow
+[native entry](../references/same-agent-worktree.md) using the known padded phase
+and exact session facts: `prewrite.request phase <label> --mode <new|existing>`.
+Gate actual native tool/schema, role, policy and trusted hook; invoke
+EnterWorktree as this existing caller, prove defaults and confirm Git. Reload
+the destination runtime and rerun locate/init there, replacing old context.
+Then skip this step's shell session.open/adopt/cd route. Unsupported entry stops
+precisely; already-correct isolated callers need no move. The ordinary runtime
+route below is not native movement proof and no child is a substitute.
+
 `phase.locate` has already confirmed the phase and selected any existing session.
 If `session` from `LOCATE` is present, require its absolute `worktree`, then use
 its `worktree`, `branch`, `base`, `reused` and `synced` fields. Do not call

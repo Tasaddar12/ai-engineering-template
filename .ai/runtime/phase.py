@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
-                 issue_format, models, phase_issues, phases, project_record, quick, requirements, state,
+                 issue_format, models, phase_issues, phases, prewrite, project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
@@ -215,6 +215,24 @@ def verb_session_open(workspace, positionals, options):
 def verb_session_adopt(workspace, positionals, options):
     return worktrees.adopt_session(workspace, argument(positionals, 0, "kind"),
                                   argument(positionals, 1, "phase"))
+
+
+def verb_prewrite_request(workspace, positionals, options):
+    return prewrite.workflow_request(workspace, argument(positionals, 0, "kind"),
+                                    argument(positionals, 1, "label"), option_text(options, "mode"),
+                                    option_text(options, "session_id"), option_text(options, "agent_id"))
+
+
+def verb_prewrite_begin(workspace, positionals, options):
+    return prewrite.begin(workspace, argument(positionals, 0, "request"),
+                          argument(positionals, 1, "kind"), argument(positionals, 2, "label"),
+                          option_text(options, "mode"), option_text(options, "session_id"),
+                          option_text(options, "agent_id"))
+
+
+def verb_prewrite_confirm(workspace, positionals, options):
+    return prewrite.confirm(workspace, argument(positionals, 0, "request"),
+                            option_text(options, "session_id"), option_text(options, "agent_id"))
 
 
 def verb_session_status(workspace, positionals, options):
@@ -796,6 +814,9 @@ VERBS = {
     "dispatch-isolation": verb_dispatch_isolation,
     "session.open": verb_session_open,
     "session.adopt": verb_session_adopt,
+    "prewrite.request": verb_prewrite_request,
+    "prewrite.begin": verb_prewrite_begin,
+    "prewrite.confirm": verb_prewrite_confirm,
     "session.status": verb_session_status,
     "session.close": verb_session_close,
     "pr.open": verb_pr_open,

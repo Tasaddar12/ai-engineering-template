@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 import yaml
 
@@ -169,8 +170,9 @@ class NativeRouteTests(unittest.TestCase):
             stream.write("\n.native-trees/\nignored.bin\n")
         (cls.seed.target / "staged.bin").write_bytes(b"committed\x00binary")
         (cls.seed.target / "unstaged.txt").write_bytes(b"committed\n")
+        (cls.seed.target / ".gitattributes").write_text("source.txt -text\n", encoding="utf-8")
         installed.command("git", "add", ".planning/config.yaml", ".gitignore", "staged.bin",
-                          "unstaged.txt", cwd=cls.seed.target)
+                          "unstaged.txt", ".gitattributes", "source.txt", cwd=cls.seed.target)
         installed.command("git", "commit", "-qm", "native fixture custom ignored root", cwd=cls.seed.target)
 
     def setUp(self):
@@ -203,8 +205,8 @@ class NativeRouteTests(unittest.TestCase):
         identity = actor or self.host.actor
         extra = (["--session-id", identity[0], "--agent-id", identity[1]]
                  if args[0].startswith("prewrite.") else [])
-        environment = dict(os.environ, PYTHONIOENCODING="utf-8",
-                           CLAUDE_PROJECT_DIR=str(self.directory))
+        environment = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1",
+                           CLAUDE_PROJECT_DIR=str(self.directory), CLAUDE_CODE_SESSION_ID=identity[0])
         actual_cwd = cwd or self.directory
         root = Path(self.git("rev-parse", "--show-toplevel", cwd=actual_cwd).strip())
         runtime = root / ".claude/runtime/phase.py"
@@ -231,18 +233,23 @@ class NativeRouteTests(unittest.TestCase):
         # interpretation, including the original mutation's failure-open path.
         return self.seed.prewrite_pipeline("claude", self.group, host.cwd, payload,
                                           destination, mutation=mutation,
-                                          environment_overrides={"CLAUDE_PROJECT_DIR": str(self.directory)})
+                                          environment_overrides={"CLAUDE_PROJECT_DIR": str(self.directory),
+                                                                 "CLAUDE_CODE_SESSION_ID": host.actor[0]})
 
     def creation_callback(self, name, host=None):
+        return self.location_callback("WorktreeCreate", "name", name, host)
+
+    def location_callback(self, event, field, value, host=None):
         actor = host or self.host
-        groups = self.settings["hooks"]["WorktreeCreate"]
+        groups = self.settings["hooks"][event]
         self.assertEqual(1, len(groups))
         self.assertEqual(1, len(groups[0]["hooks"]))
         handler = groups[0]["hooks"][0]
-        payload = {"hook_event_name": "WorktreeCreate", "cwd": str(actor.cwd),
-                   "session_id": actor.actor[0], "agent_id": actor.actor[1], "name": name}
+        payload = {"hook_event_name": event, "cwd": str(actor.cwd),
+                   "session_id": actor.actor[0], "agent_id": actor.actor[1], field: value}
         environment = dict(os.environ, PYTHONIOENCODING="utf-8",
                            CLAUDE_PROJECT_DIR=str(self.directory),
+                           CLAUDE_CODE_SESSION_ID=actor.actor[0],
                            PATH=str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"])
         return subprocess.run(self.seed.launcher_argv("claude", handler), cwd=actor.cwd,
                               env=environment, input=json.dumps(payload).encode("utf-8"),
@@ -382,6 +389,66 @@ class NativeRouteTests(unittest.TestCase):
         self.assertEqual(0, self.host.edits)
         self.assertEqual(2, before[0].count("worktree "))
 
+    def test_registered_native_removal_preserves_clean_dirty_ignored_and_corrupt_receipt(self):
+        request = self.source_request()
+        target = self.begin(request)
+        self.host.enter(target)
+        self.assert_confirm(request, target)
+        root = Path(target["worktree"])
+        journal = self.directory / ".git/ai-phase/prewrite" / (request + ".json")
+        for state in ("clean", "ignored-only", "dirty", "corrupt-receipt"):
+            with self.subTest(state=state):
+                if state == "ignored-only":
+                    (root / "ignored.bin").write_bytes(b"native ignored\x00data")
+                    self.assertFalse(self.host.git("status", "--porcelain").strip())
+                elif state == "dirty":
+                    (root / "source.txt").write_bytes(b"native unfinished source\n")
+                elif state == "corrupt-receipt":
+                    journal.write_bytes(b"{corrupt")
+                before = self.inventory()
+                observed = self.location_callback("WorktreeRemove", "worktree_path", str(root))
+                self.assertEqual(0, observed.returncode, observed.stderr)
+                self.assertFalse(observed.stdout.strip())
+                self.assertIn(b"preserved", observed.stderr)
+                self.assertEqual(before, self.inventory())
+                self.assertTrue((root / ".git").is_file())
+                if state != "clean":
+                    self.assertEqual(b"native ignored\x00data", (root / "ignored.bin").read_bytes())
+
+    def test_concurrent_registered_creation_calls_do_not_duplicate_tree(self):
+        request = self.source_request()
+        target = self.begin(request)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: self.creation_callback(target["creation_name"]), range(2)))
+        self.assertEqual([0, 2], sorted(result.returncode for result in results))
+        self.assertEqual(1, sum(bool(result.stdout.strip()) for result in results))
+        self.assertEqual(2, self.inventory()[0].count("worktree "))
+        self.assertEqual(0, self.host.edits)
+
+    def test_old_source_and_wrong_actor_stay_denied_after_native_confirmation(self):
+        request = self.source_request()
+        target = self.begin(request)
+        self.host.enter(target)
+        self.assert_confirm(request, target)
+        before = self.inventory()
+        old = SimulatedClaude(self)
+        primary = self.directory / "source.txt"
+        original = primary.read_bytes()
+        event = self.event(old, "original-pending", "Edit", {
+            "file_path": str(primary), "old_string": original.decode(),
+            "new_string": "STALE PENDING EDIT MUST NEVER BE REPLAYED\n"})
+        denied, _ = self.pipeline(old, event, primary)
+        self.assertTrue(denied)
+        self.assertEqual(original, primary.read_bytes())
+        self.assertEqual(before, self.inventory())
+        self.host.actor = ("SIMULATED-session", "wrong-agent")
+        fresh = self.host.cwd / "source.txt"
+        denied, _ = self.pipeline(self.host, self.event(self.host, "wrong-actor", "Write", {
+            "file_path": "source.txt", "content": "wrong actor"}), fresh)
+        self.assertTrue(denied)
+        self.assertEqual(b"committed source\n", fresh.read_bytes())
+        self.assertEqual(before, self.inventory())
+
     def test_installed_exports_and_six_workflow_consumers_preserve_restrictions(self):
         """A2/A6 structural layer; the behavioral test above is the RED target."""
         for role in ("coordinator", "coder"):
@@ -391,6 +458,10 @@ class NativeRouteTests(unittest.TestCase):
                 self.assertEqual(source_tools | {"EnterWorktree"}, self.role_tools(role))
         entry = (self.directory / "CLAUDE.md").read_text(encoding="utf-8")
         self.assertIn(".claude/references/same-agent-worktree.md", entry)
+        self.assertEqual(2, len(self.group["hooks"]))
+        self.assertIn("worktree-guard.sh", self.group["hooks"][0]["command"])
+        self.assertIn("source-prewrite.sh", self.group["hooks"][1]["command"])
+        self.assertEqual(30, self.group["hooks"][1]["timeout"])
         for name in ("quick", "discuss-phase", "plan-phase", "execute-phase", "verify-work", "ship"):
             with self.subTest(workflow=name):
                 text = (self.directory / ".claude/workflows" / (name + ".md")).read_text(encoding="utf-8")
