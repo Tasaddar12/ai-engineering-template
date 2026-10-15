@@ -32,3 +32,20 @@ The actual human request delivered through Jarvis was: “AI Workflows often ign
 - To implement the user's source-versus-task-note distinction without guessing from file extensions, ordinary external temporary artifacts are limited to plain unlinked create/update paths under the resolved OS temporary directory and outside every Git repository. No identity or preparation is needed there. This is a bounded technical choice under delegated implementation discretion, not an additional human approval.
 - Mixed, rename/delete, linked/reparse/hardlinked, cross-repository and ambiguous paths receive source/unsupported handling. Non-temp external locations are not a note exemption.
 - Independent RED review required the corresponding both-host control before production; corrected test-only38b7b1c retains genuine source refusal failures and passing ordinary-note controls. PLAN/MATRIX alignment and independent bounded recheck precede source release.
+
+## Coordinator dependency reconciliation for Task 4
+
+The user authorized preserving existing prior work through distinct adjustments
+and stacked drafts. Coordinator therefore selects frozen PR93 (47593a3d3f71739bd146a6c2c3590798d7c73c2e),
+already on frozen PR92 (d8f2c8bd0c4dca0f82a7fc8a95e4f0abb8bcd2b6), as PR97's
+dependency. After current code-05 review corrections integrate and this plan is
+independently checked, use a local non-rewriting merge into97 and the bounded
+native/planning runtime/installer union in STACK-PLAN. This is routine dependency
+reconciliation within existing delegated authority, not a new human approval.
+Preserve both frozen parent heads and PR89/91/94/88; no PR is merged. Change the
+actual PR97 base only after checked integration; never import the original-six
+umbrella/prototype into97 or copy independent PR91/94 policy into its own diff.
+After final97, test/review a separate disposable local original-six composition
+without publishing it. Existing maintenance acceptance and live-native uncertainty
+remain; a real planning-preservation integration failure must be repaired, not
+deferred. Native exit stays essential preservation, with no second cleanup project.

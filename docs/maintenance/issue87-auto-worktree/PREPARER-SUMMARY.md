@@ -20,6 +20,36 @@ Preparation is complete for independent review, not implementation or user-goal
 verification. The prior preparation/manual-handoff design is replaced under the
 actual human clarification: "This time we actually move the agent itself."
 
+## Bounded stack-integration preparation at 92a2212
+
+New assigned root/branch: issue87-native-stack-plan-190605907 /
+phase-issue87-native-stack-plan-190605907, clean input
+92a221241a2e0bf191fccd981f944c1862029288. Owned only PLAN, CONTEXT, STACK-PLAN
+and this summary. Read committed REVIEW-01/VERIFICATION and source diffs against
+frozen93=47593a3d3f71739bd146a6c2c3590798d7c73c2e and frozen92=d8f2c8bd0c4dca0f82a7fc8a95e4f0abb8bcd2b6.
+Added bounded same-phase Task 4 after code-05 corrections: exact registered native
+adapter exception to snapshot(None), preservation of ordinary PR93 planning
+snapshots/warnings/commit guards, installer timeout/registration union and narrow
+shared policy/docs union. Reuse existing native and installer tests; no new harness.
+
+STACK-PLAN records the PR92 -> PR93 -> PR97 dependency and frozen93..final97
+own-change boundary. Coordinator locally merges93 without history rewrite and
+changes PR97's actual base only after checked corrections/integration. Six original
+heads remain frozen; disposable original-six/final97 composition is checked and
+reviewed locally, never published or merged into97. Context records this routine
+dependency choice under actual delegated authorization; no invented approval.
+
+Coordinator reported genuine installed RED on local prototype9060: one native
+tracer, 15.981s, exit1, assertion after denial/ticket then installed begin reaches
+planning_integrity.snapshot(None), AttributeError NoneType.root. No tests ran in
+this preparer assignment, and no still-running prototype check is claimed passed.
+Task 4 must record the same RED on the intended joined input before corresponding
+GREEN, preserve authored/index bytes and all ordinary planning controls, and obtain
+independent source/integration/doc review. Current code-05 active worktree was not
+inspected. No source implementation, child dispatch, provider write or publication.
+Prior valid history/RED remains; review defects and live movement are not marked
+resolved. Task 4 receipt belongs in STACK-SUMMARY; live native remains unverified.
+
 ## Bounded CI-regression ownership amendment at ff81660
 
 Authorized clean fast-forward reached published coordinator-source input
@@ -137,9 +167,9 @@ and all independent source, integration, documentation and final verification.
 
 | PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| PLAN / T-AW-01 | [98 / target confinement](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | unresolved / unimplemented | OPEN | Revised AW-03/04/05 plan only; no mitigation run |
-| PLAN / T-AW-02 | [98 / unit identity](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | unresolved / unimplemented | OPEN | Native ticket/creation/approval/retry plan only; unexecuted |
-| PLAN / T-AW-03 | [98 / host transition proof](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | unresolved / unimplemented | OPEN | Same-existing-agent target acceptance; simulated/live layers distinct |
+| PLAN / T-AW-01 | [98 / target confinement](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | unresolved / partial implementation | OPEN | REVIEW-01/VERIFICATION gaps; code-05 corrections and Task 4 preservation join pending |
+| PLAN / T-AW-02 | [98 / unit identity](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | unresolved / partial implementation | OPEN | Reviewed bounded implementation; final corrected stack and live evidence not verified |
+| PLAN / T-AW-03 | [98 / host transition proof](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | unresolved / partial implementation | OPEN | Reviewed native gaps plus composed snapshot(None) RED; live movement unverified |
 
 Canonical keys/aliases remain unchanged and distinct from issues95/96. Coordinator
 reconciles the new same-agent acceptance within issue98; no new risk identity,
