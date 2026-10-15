@@ -334,12 +334,21 @@ Execution plan for Phase {N}:
 
 A dependency cycle is a planning defect: report it and stop rather than picking
 an order.
+
+Create the coordinator's separate assignment table for each actual wave under
+[parallel wave status](../references/parallel-status.md). Show every assignment,
+role, resolved model, lifecycle state and explicit Pending evidence at grouping.
 </step>
 
 <step name="execute_waves">
 Execute waves in order. Within a wave, dispatch every plan **in a single message
 with multiple Agent calls** so they run concurrently, unless `--sequential` was
 passed or the wave has one plan.
+
+Refresh [parallel wave status](../references/parallel-status.md) at dispatch,
+each observed worker update, each bounded host wait return and join. Apply its
+two-interval stalled decision without inferring completion or termination from
+elapsed time. Status uses host observations, never active workers' owned files.
 
 Before dispatching, capture the base every executor in this wave must fork from,
 and record each plan's declared scope so the wave can be integrated:
@@ -486,6 +495,10 @@ remaining tasks, report it as a blocker.
 </step>
 
 <step name="integrate_wave">
+After every active write-capable worker has joined, record the integration
+result/revision in [parallel wave status](../references/parallel-status.md).
+Preserve blocked rows and their evidence; a worker return alone is not acceptance.
+
 The wave's work is on branches, not in your tree — it always is, because every
 plan ran isolated. Integrate it into the **session branch** before running
 checks, reviewing, or starting the next wave. `merge-wave` merges into whatever
@@ -570,6 +583,10 @@ resolve a checkpoint by guessing.
 </step>
 
 <step name="run_checks">
+Record check evidence and verification state in
+[parallel wave status](../references/parallel-status.md) before accepting the wave.
+Refresh that table again at handoff/final report, retaining Pending dependencies.
+
 If `checks_configured` is true, run the project's configured checks once per
 wave, after the wave's agents have all returned **and the wave has been
 integrated** — checks run against the merged tree, not against a tree the

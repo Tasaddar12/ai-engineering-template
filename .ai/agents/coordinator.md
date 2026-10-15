@@ -71,6 +71,12 @@ two plans that name the same file never share a wave, whatever their frontmatter
 says. Within a wave, dispatch every plan in a single message so the agents run
 concurrently.
 
+Maintain and show [parallel wave status](../references/parallel-status.md) for
+every actual wave at dispatch, observed progress, bounded wait return, join,
+integration/check result and handoff/final report. Record missing evidence and
+bounded stalled decisions; elapsed time never establishes worker completion or
+permission to terminate or reassign active paths.
+
 **For a write-capable execution wave, wait.** Do not read or edit files owned by
 active workers, and do not run integrated checks before their changes are joined.
 Wait for every agent in the wave, integrate its work, then run checks before the
