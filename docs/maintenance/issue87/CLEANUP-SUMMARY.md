@@ -25,8 +25,13 @@ Branch: `phase-issue87-cleanup`. Guard parent tip and own-change boundary start:
 Guard implementation source is `e5af9bd16d6c81dbd161f952886808baf85b8a10`;
 the parent above also contains its completed evidence summary. Child commits:
 `c488678` initial RED, `d4ed3aa` expanded matrix/junction attempt,
-`8ac55ee` corrected registered-junction RED. The GREEN commit is the subsequent
-implementation commit; its exact identity will be recorded after creation.
+`8ac55ee` corrected registered-junction RED. GREEN source commit:
+`f277d8ae7c092c36eca8152eade12348881e39ef`. This subsequent summary-only commit
+pins that identity; no source changed after the final checks. Own-change boundary:
+`4c35d27436add6867934c85eb9e853bd2fc3052e..f277d8ae7c092c36eca8152eade12348881e39ef`;
+the evidence-only tip adds this summary update. Working tree clean after GREEN,
+no tracked deletions, and only the nine source paths plus owned plan/summary differ
+from the parent.
 
 ## Accomplishments
 
