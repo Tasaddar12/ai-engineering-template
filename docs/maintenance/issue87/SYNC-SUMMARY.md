@@ -4,7 +4,7 @@ plan: SYNC
 subsystem: updater
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
-status: in_progress
+status: complete
 input_revision: 14f8a780af4bc2d035425b022ea637269f08b6ae
 source_revision: 77b5668f2003bea60127d87e8785469286abafb3
 requires: []
@@ -17,9 +17,9 @@ acceptance: [SYNC-01, SYNC-02, SYNC-03, SYNC-04]
 documentation: [.ai/workflows/update-workflows.md]
 requirements-completed: [ISSUE87-A5]
 actuals:
-  tokens: 13110
+  tokens: 13200
   tasks: 3
-  commits: 3
+  commits: 4
 tech-stack:
   added: []
   patterns: [strict UTF-8 comparison, raw source fingerprints, exact reviewed candidates]
@@ -98,11 +98,12 @@ Documentation coverage: `.ai/workflows/update-workflows.md` explains both compar
 
 1. Task 1: `e8469456e2529a4ad3c630de669ad0a448609861` - conservative comparison/reporting and installed read-only tracer.
 2. Task 2: `71f348621c89481735cc8375d327d1ac78cc179f` - raw source/baseline guards and preservation/apply regression matrix.
-3. Task 3: this commit - LF policy, matching workflow guidance and shell/nginx integration assertions.
+3. Task 3: `05237fc4b6f540da2aa11bca7a94a1c675f607e6` - LF policy, matching workflow guidance and shell/nginx integration assertions.
+4. Final metadata: this summary-only commit records the completed checks; exact hash is returned in the worker handoff.
 
 ## Checks
 
-- Final source under test: `71f348621c89481735cc8375d327d1ac78cc179f` plus the owned Task 3 delta. Final focused suite: `python -m unittest discover -s tests -p test_update_line_endings.py -v`: 12 tests in 307.688s, OK, no skips. Final existing regression run remains pending.
+- Final tested source revision: `05237fc4b6f540da2aa11bca7a94a1c675f607e6` (the test processes began against the matching owned source/test delta before its commit). Final focused suite: `python -m unittest discover -s tests -p test_update_line_endings.py -v`: 12 tests in 307.688s, OK, no skips. Final existing regression: `python -m unittest discover -s tests -p test_install_update.py -v`: 62 tests in 462.006s, OK (4 expected skips).
 - `git diff --check`: passed for the owned changes.
 - `python -m unittest discover -s tests -p test_update_line_endings.py -k installed_both_hosts -v`: 1 test passed in 119.768s, covering both hosts before LF fixture expansion.
 - `python -m unittest discover -s tests -p test_update_line_endings.py -k comparison_matrix -k raw_source_change_after_backup -k crlf_only_changes -v`: 4 tests passed in 109.973s.
@@ -143,7 +144,7 @@ None. Worker did not push, publish, integrate, merge, close an issue, install de
 
 | PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| [SYNC-PLAN / T-SYNC-01](SYNC-PLAN.md#threat_model) | Pending: coordinator canonical issue search/readback | Local mitigation implemented; final checks/independent verification pending | Worker commits only; canonical issue state Pending readback | Strict eligibility cannot supply ownership; source/target/manifest tamper and post-backup guards; both-host exact-backup/stale-original/fresh-no-op tests. No issue closure claim. |
+| [SYNC-PLAN / T-SYNC-01](SYNC-PLAN.md#stride-threat-register) | Pending: coordinator canonical issue search/readback | Local mitigation checks passed; independent verification pending | Worker commits only; canonical issue state Pending readback | Strict eligibility cannot supply ownership; source/target/manifest tamper and post-backup guards; both-host exact-backup/stale-original/fresh-no-op tests. No issue closure claim. |
 
 No additional threat surface outside the assigned PLAN was identified.
 
@@ -153,9 +154,9 @@ Independent code review, documentation claim verification and installed integrat
 
 | Operation | Worker evidence / proposed reconciliation |
 |---|---|
-| Advance position | SYNC implementation done after final checks; other issue87 plans remain independent. |
+| Advance position | SYNC implementation and final worker checks complete; other issue87 plans remain independent. |
 | Update progress | Three owned tasks and source acceptance SYNC-01 through SYNC-04; do not count independent review as done. |
-| Record metrics | Three tasks; six files including summary; actual unittest counts/wall times above; diff character metric in frontmatter. |
+| Record metrics | Three tasks; four commits including final metadata; six files including summary; actual unittest counts/wall times above; diff character metric in frontmatter. |
 | Add decisions | No new human decision; conservative comparison, raw source guard and schema regeneration implement approved scope. |
 | Record session | Resume with independent reviews on the integrated revision, then coordinator-authorized draft delivery. |
 | Update roadmap | Maintenance scope only; no adopting-project identity or phase/roadmap invented. |
