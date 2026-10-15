@@ -1,10 +1,11 @@
 # Independent prewrite matrix proposal
 
-Scout: `gpt-6-luna/high`; input `e87f49debbd64daf25157da0b693d328ad3dd531`. The coordinator condensed the returned static proposal. No tests ran; these rows do not establish implementation correctness or live-host support.
+Scout: `gpt-6-luna/high`; input `e87f49debbd64daf25157da0b693d328ad3dd531`. The coordinator condensed the returned static proposal. The initial scout ran no tests; its rows do not establish implementation correctness or live-host support. Independent RED review added N2. Test-only 1414979 and corrected 38b7b1c establish the initial installed-boundary RED; their source-denial failures and passing note controls are recorded separately in IMPLEMENTATION-SUMMARY. Other matrix families remain unrun until implementation.
 
 | ID | Refusal or preservation case | Legitimate control / evidence |
 |---|---|---|
 | N1 | Untracked create/update under `.planning/scratchpads/**`, even without session identity: advisory; no creation | Preserve current `.ai/hooks/worktree-guard.test.sh:120` and `tests/test_install.py:722` behavior |
+| N2 | Plain unlinked create/update under the resolved OS temporary directory, outside every Git repository: allow without identity or preparation | Independent RED review CR-01; both installed host pipelines mutate the disposable note and preserve exact worktree/preparation state. No extension guessing, linked/cross-repository, rename/delete/mixed exemption. |
 | S1 | Source write in primary: cancel original operation; select/create at most one verified destination and provide exact continuation | Fresh destination root/branch/base check, read and rebuilt mutation |
 | S2 | Missing exclusive actor/unit identity: no guessed/newest session | Explicit verified unit mapping takes precedence; Codex parent session ID is not exclusive |
 | S3 | Conflicting repository/session/unit mapping or multiple plausible units: cancel | One exact verified mapping reuses only its unit |

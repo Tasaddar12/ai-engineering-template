@@ -19,3 +19,9 @@ The actual human request delivered through Jarvis was: “AI Workflows often ign
 ## Deferred Ideas
 
 - Work 73/74, unrelated drafts, live infrastructure, tool installs and real cleanup.
+
+## Coordinator technical scope decisions
+
+- To implement the user's source-versus-task-note distinction without guessing from file extensions, ordinary external temporary artifacts are limited to plain unlinked create/update paths under the resolved OS temporary directory and outside every Git repository. No identity or preparation is needed there. This is a bounded technical choice under delegated implementation discretion, not an additional human approval.
+- Mixed, rename/delete, linked/reparse/hardlinked, cross-repository and ambiguous paths receive source/unsupported handling. Non-temp external locations are not a note exemption.
+- Independent RED review required the corresponding both-host control before production; corrected test-only38b7b1c retains genuine source refusal failures and passing ordinary-note controls. PLAN/MATRIX alignment and independent bounded recheck precede source release.
