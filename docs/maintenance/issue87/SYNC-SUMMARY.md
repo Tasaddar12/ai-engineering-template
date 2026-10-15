@@ -17,9 +17,9 @@ acceptance: [SYNC-01, SYNC-02, SYNC-03, SYNC-04]
 documentation: [.ai/workflows/update-workflows.md]
 requirements-completed: [ISSUE87-A5]
 actuals:
-  tokens: 13200
+  tokens: 13329
   tasks: 3
-  commits: 4
+  commits: 5
 tech-stack:
   added: []
   patterns: [strict UTF-8 comparison, raw source fingerprints, exact reviewed candidates]
@@ -99,7 +99,8 @@ Documentation coverage: `.ai/workflows/update-workflows.md` explains both compar
 1. Task 1: `e8469456e2529a4ad3c630de669ad0a448609861` - conservative comparison/reporting and installed read-only tracer.
 2. Task 2: `71f348621c89481735cc8375d327d1ac78cc179f` - raw source/baseline guards and preservation/apply regression matrix.
 3. Task 3: `05237fc4b6f540da2aa11bca7a94a1c675f607e6` - LF policy, matching workflow guidance and shell/nginx integration assertions.
-4. Final metadata: this summary-only commit records the completed checks; exact hash is returned in the worker handoff.
+4. Final metadata: `d160fac886f165f2ab821a568449326c4f11fb07` records the completed checks.
+5. Self-check metadata: this summary-only commit replaces the stale self-check placeholder; exact hash is returned in the handoff.
 
 ## Checks
 
@@ -156,13 +157,13 @@ Independent code review, documentation claim verification and installed integrat
 |---|---|
 | Advance position | SYNC implementation and final worker checks complete; other issue87 plans remain independent. |
 | Update progress | Three owned tasks and source acceptance SYNC-01 through SYNC-04; do not count independent review as done. |
-| Record metrics | Three tasks; four commits including final metadata; six files including summary; actual unittest counts/wall times above; diff character metric in frontmatter. |
+| Record metrics | Three tasks; five commits including two final metadata commits; six files including summary; actual unittest counts/wall times above; diff character metric in frontmatter. |
 | Add decisions | No new human decision; conservative comparison, raw source guard and schema regeneration implement approved scope. |
 | Record session | Resume with independent reviews on the integrated revision, then coordinator-authorized draft delivery. |
 | Update roadmap | Maintenance scope only; no adopting-project identity or phase/roadmap invented. |
 | Complete requirements | ISSUE87-A5 worker evidence supplied; reconcile only after integrated verification. |
 | Record blockers | None in implementation; canonical threat readback and independent verification remain explicit delivery dependencies. |
 
-## Self-check
+## Self-Check: PASSED
 
-Pending final test results, commit and exact-path/clean-worktree verification.
+All six owned deliverables and all three source slice commits exist. The final focused suite (12 tests) and existing regression suite (62 tests, 4 expected skips) pass. Exact changed-path audit matches approved ownership; source is frozen at 05237fc. Summary frontmatter parses with issue_refs, all four acceptance IDs and four passing coverage entries. Final metadata changes only this summary; the clean post-commit status and exact hash are returned in the handoff.
