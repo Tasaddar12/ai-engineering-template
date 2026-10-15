@@ -38,3 +38,15 @@ repository. No implementation paths were changed.
 
 None within this documentation assignment. Live native smoke remains a separate
 acceptance gap owned by integration and verification.
+
+## Follow-up documentation review
+
+DOC-01 found that the Hooks README claim “There is no Python hook adapter” was
+incorrect. The registered entrypoint is the shell script
+`.ai/hooks/source-prewrite.sh`, which invokes
+`.ai/runtime/lib/prewrite.py hook --host <host>`; the Python adapter's `main`
+dispatches the `hook` action to `source_decision`. The README now distinguishes
+the shell hook entrypoint from its Python decision adapter and preserves the
+nearby installed-host hook folder and launcher guidance. No other document or
+source path changed in this follow-up. The independent review's live-host
+conditions remain unverified as already recorded above.

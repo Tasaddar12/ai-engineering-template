@@ -85,9 +85,11 @@ silently did not run:
   arguments and consumes a bare `"` rather than passing it, which re-split the
   script at its spaces and left bash treating `rev-parse` as its own name.
 
-Scripts live in the selected host's `hooks` folder. There is no Python hook
-adapter. The command locates the script from the active Git root, including when
-the host starts from a subdirectory.
+Registered hook entrypoints live in the selected host's `hooks` folder and are
+shell scripts. `source-prewrite.sh` delegates its source decision to
+`runtime/lib/prewrite.py`; the host hook entrypoint itself is not Python. The
+command locates the script from the active Git root, including when the host
+starts from a subdirectory.
 
 Use `--no-hooks` to skip adding registrations; existing hooks are preserved.
 Existing settings remain authoritative. Codex must trust the project and hooks
