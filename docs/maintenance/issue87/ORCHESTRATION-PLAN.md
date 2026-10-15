@@ -14,6 +14,7 @@ files_modified:
   - .ai/references/git-workflow.md
   - .ai/references/parallel-status.md
   - .ai/agents/verifier.md
+  - .ai/agents/code-reviewer.md
   - .ai/agents/coordinator.md
   - .ai/templates/issue.md
   - tests/test_threat_tracking_contract.py
@@ -99,12 +100,12 @@ dispatch; the sibling checkout used during preparation is evidence transport onl
   A separate `threat-tracking.md` adds no needed owner and is not planned.
 - The assigned worker owns only frontmatter paths plus its coordinator-assigned
   SUMMARY. The coordinator owns integration, shared records, publication and status.
-- Other workers own `.ai/agents/code-reviewer.md`, `AGENTS.md`, `.ai/RULES.md`,
-  templates and runtime. Do not edit them. Ask the coordinator to have the review
-  worker add a small link to `git-workflow.md#issue-link-audit` once this plan
-  creates the `Issue-link audit` heading. Until integrated together, that worker
-  may link the existing `git-workflow.md#canonical-threat-tracking` section.
-  No copied procedure or broad reviewer rewrite is needed.
+- Other workers own `AGENTS.md`, `.ai/RULES.md`, runtime and templates except the
+  explicitly assigned Security risk instructions in `.ai/templates/issue.md`.
+  After the workflow worker stopped, the coordinator sequentially assigned the
+  narrow `.ai/agents/code-reviewer.md` audit cross-reference to this plan. Keep
+  the detailed procedure at `git-workflow.md#issue-link-audit`; no copied procedure
+  or broad reviewer rewrite is needed. Runtime ownership remains untransferred.
 - The issue-link audit and status procedure are instruction contracts, with no
   monitoring daemon, timer service, new runtime store, scheduler or dependency.
   A production-code tracer is inapplicable; Task 1 traces the actual documented
@@ -221,7 +222,7 @@ unplanned risks. Preserve original restored blocks and per-PLAN/discovery schema
 
 <task type="auto">
   <name>Task 3: Require independent issue-link audit before merge eligibility</name>
-  <files>.ai/references/git-workflow.md, .ai/workflows/execute-phase.md, .ai/workflows/ship.md, .ai/agents/verifier.md, tests/test_threat_tracking_contract.py</files>
+  <files>.ai/references/git-workflow.md, .ai/workflows/execute-phase.md, .ai/workflows/ship.md, .ai/agents/verifier.md, .ai/agents/code-reviewer.md, tests/test_threat_tracking_contract.py</files>
   <read_first>.ai/references/git-workflow.md; .ai/workflows/execute-phase.md code_review_gate and review_phase_issues; .ai/workflows/ship.md preflight_checks, generate_pr_body and merge_and_close around line 402; .ai/agents/verifier.md around 152-156; .ai/references/verification-evidence.md; .ai/templates/pull-request.md; tests/test_threat_tracking_contract.py; tests/test_phase_issues.py; tests/test_workflow_links.py; docs/maintenance/issue87/CONTEXT.md.</read_first>
   <action>
 Add the canonical `Issue-link audit` subsection in git-workflow, yielding
@@ -244,14 +245,19 @@ generation may publish truthful drafts with pending review, but merge eligibilit
 requires the current independent audit and last provider readback. Never infer
 closure from merge, checked checklist items or accepted/deferred status.
 
-Send the coordinator the exact desired code-reviewer cross-reference to this
-subsection; that file remains the other worker's ownership. Extend focused real-
+Add the narrow code-reviewer cross-reference to this subsection only under the
+coordinator's sequential ownership transfer below. Extend focused real-
 artifact/step and mutation tests for independent audit reachability, scope/readback,
 neutral closing references and currentness. Keep mandatory threat reconciliation
 outside optional code review. Do not merge or close issue 87 in this assignment.
 If changed prose breaks tests/test_phase_issues.py or tests/test_workflow_links.py,
 return the exact failing
 assertion to the coordinator for ownership assignment rather than editing it.
+
+Coordinator-assigned sequential integration after the workflow worker completed:
+the orchestration worker now owns the narrow code-reviewer cross-reference and
+actual provider body/head/readback evidence fields. Preserve the remaining role
+and existing authority; no provider implementation changes are assigned.
   </action>
   <verify>
     <automated>python -m unittest discover -s tests -p test_threat_tracking_contract.py</automated>

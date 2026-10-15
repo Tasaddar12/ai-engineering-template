@@ -12,6 +12,7 @@ PRODUCERS = (
     ".ai/templates/issue.md", ".ai/templates/pull-request.md",
     ".ai/agents/phase-preparer.md", ".ai/agents/coder.md",
     ".ai/agents/phase-checker.md", ".ai/agents/verifier.md",
+    ".ai/agents/code-reviewer.md",
     ".ai/workflows/plan-phase.md", ".ai/workflows/execute-phase.md",
     ".ai/workflows/quick.md", ".ai/workflows/ship.md",
     ".ai/runtime/TEMPLATE-CONTRACT.md",
@@ -240,6 +241,12 @@ def issue_audit_errors(root):
     prompt = re.search(r'Agent\(\s+prompt="(.*?)",\s+subagent_type="code-reviewer"', review, re.S).group(1)
     if anchor not in prompt or "body/link snapshot" not in prompt or "actual provider" not in prompt:
         errors.append("reviewer assignment: audit packet")
+    reviewer = (root / ".ai/agents/code-reviewer.md").read_text(encoding="utf-8")
+    local = " ".join(reviewer.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0].split())
+    if not all(phrase in local for phrase in (anchor, "reviewed source revision", "actual PR/MR head SHA",
+            "actual provider body/link snapshot", "verified URLs", "issue state and timestamped provider readback evidence",
+            "unresolved findings/dependencies", "gap, not a pass")):
+        errors.append("reviewer role: independent audit packet")
     return errors
 
 
@@ -458,6 +465,14 @@ class ThreatTrackingContract(unittest.TestCase):
         self.assertIn(old, text)
         path.write_text(text.replace(old, "Removed reviewer audit", 1), encoding="utf-8")
         self.assertIn("reviewer assignment: audit packet", issue_audit_errors(root))
+
+    def test_reviewer_role_audit_and_actual_provider_fields_are_required(self):
+        for phrase in ("../references/git-workflow.md#issue-link-audit", "actual PR/MR head SHA",
+                       "actual provider body/link snapshot", "provider readback evidence"):
+            with self.subTest(field=phrase):
+                root = self.fixture()
+                self.mutate(root, ".ai/agents/code-reviewer.md", phrase, "Removed")
+                self.assertIn("reviewer role: independent audit packet", issue_audit_errors(root))
 
     def test_summary_outcome_and_git_state_are_independent(self):
         block = file_template((ROOT / ".ai/templates/summary.md").read_text(encoding="utf-8"))

@@ -11,16 +11,16 @@ provides:
   - Independent semantic/provider issue-link audit before merge eligibility
 affects: [execution, planning, shipping]
 actuals:
-  tokens: 16544
+  tokens: 18689
   tasks: 3
-  commits: 4
+  commits: 5
 plan_head_before: 54d0558b65e18da108586d438a31054397d5f527
 tech-stack:
   added: []
   patterns: [single-owner instruction contracts]
 key-files:
   created: [.ai/references/parallel-status.md, tests/test_parallel_status_contract.py]
-  modified: [.ai/workflows/execute-phase.md, .ai/agents/coordinator.md, .ai/references/git-workflow.md, .ai/workflows/plan-phase.md, .ai/templates/issue.md, tests/test_threat_tracking_contract.py, .ai/agents/verifier.md, .ai/workflows/ship.md]
+  modified: [.ai/workflows/execute-phase.md, .ai/agents/coordinator.md, .ai/references/git-workflow.md, .ai/workflows/plan-phase.md, .ai/templates/issue.md, tests/test_threat_tracking_contract.py, .ai/agents/verifier.md, .ai/workflows/ship.md, .ai/agents/code-reviewer.md]
 key-decisions: []
 patterns-established: [bounded host observations preserve active worker ownership]
 requirements-completed: [ISSUE87-6, ISSUE87-7]
@@ -70,8 +70,8 @@ status: complete
 
 - Started: 2026-10-15, assigned base 54d0558b65e18da108586d438a31054397d5f527.
 - Tasks: 3/3, locally implemented and checked; coordinator integration/review remains pending.
-- Files: ten implementation paths, assigned PLAN reconciliation and this required summary.
-- Actuals tokens: chars/4 of the UTF-8 text Git diff from assigned base through this final metadata tree, rounded up. No binary/generated files were changed. Commit count includes the three task slices and final summary metadata commit; measured from assigned base.
+- Files: eleven implementation paths, assigned PLAN reconciliation and this required summary.
+- Actuals tokens: chars/4 of the UTF-8 text Git diff from assigned base through this summary tree, rounded up. No binary/generated files were changed. Commit count includes the three task slices, final summary metadata and sequential reviewer-link follow-up; measured from assigned base.
 
 ## Accomplishments
 
@@ -87,7 +87,9 @@ status: complete
 2. Task 2: planned security tracking - `55f4c81`.
 3. Task 3: independent issue-link audit - `d345282a3024f801fd98b82bf8565d656a7f9516`.
 
-Final summary metadata is committed separately after the immutable implementation checks.
+Final summary metadata: `9c1d086cfb25c63503405c2a007a6c267764ccf9`.
+Sequential reviewer-link integration: current bounded follow-up commit, returned
+from Git after the exact-path commit.
 
 ## Checks
 
@@ -114,6 +116,19 @@ source-revision checks use `d345282a3024f801fd98b82bf8565d656a7f9516`:
 | `python -m unittest discover -s tests -p test_phase_issues.py -v` | Ran 38 tests in 108.572s, OK (skipped=1: Windows symlink privilege unavailable) |
 
 `git diff --check` produced no whitespace errors.
+
+Sequential reviewer-link follow-up tested tree: `9c1d086cfb25c63503405c2a007a6c267764ccf9`
+plus the exact owned reviewer/contract-test/PLAN diff committed with this update:
+
+- `python -m unittest discover -s tests -p test_threat_tracking_contract.py -v`:
+  Ran 21 tests in 7.698s, OK, including direct reviewer-role link and actual
+  PR/MR head/body/readback field mutations.
+- `python -m unittest discover -s tests -p test_workflow_links.py -v`:
+  Ran 4 tests in 0.729s, OK.
+- `python -m unittest discover -s tests -p test_agent_sources.py -v`:
+  Ran 16 tests in 0.091s, OK.
+- `git diff --check`: no whitespace errors. No runtime/provider behavior changed;
+  previously observed phase-issue evidence remains identified at its tested revision.
 
 The following author walkthroughs supplement offline mutation evidence; they are
 not independent review or live provider results:
@@ -145,6 +160,8 @@ not independent review or live provider results:
 - `docs/maintenance/issue87/ORCHESTRATION-PLAN.md`: coordinator-authorized issue-template ownership reconciliation.
 - `.ai/agents/verifier.md`: mandatory independent provider/link audit and gap reporting.
 - `.ai/workflows/ship.md`: audit preflight/body/readback/currentness and merge gate.
+- `.ai/agents/code-reviewer.md`: sequentially assigned direct canonical audit duty
+  and actual source/head/body/readback evidence packet; remaining role preserved.
 
 ## Decisions Made
 
@@ -152,7 +169,7 @@ None - followed the approved plan within assigned ownership.
 
 ## Deviations from Plan
 
-The coordinator corrected the nonexistent compatibility suite name to `test_phase_issues.py` before dispatch. During execution, the coordinator explicitly added `.ai/templates/issue.md` and narrow PLAN ownership reconciliation; added existing-variant instructions without a new runtime variant. TEMPLATE-CONTRACT remains the planning worker's responsibility.
+The coordinator corrected the nonexistent compatibility suite name to `test_phase_issues.py` before dispatch. During execution, the coordinator explicitly added `.ai/templates/issue.md` and narrow PLAN ownership reconciliation; added existing-variant instructions without a new runtime variant. After the workflow worker finished, the coordinator transferred the narrow `.ai/agents/code-reviewer.md` link/evidence-field update to this worker sequentially. TEMPLATE-CONTRACT remains untouched pending its explicit ownership handoff.
 
 ## Issues Encountered
 
@@ -168,7 +185,7 @@ None identified as a new product exploit. Inspected documentation/contract-test 
 
 ## Remaining / Deferred
 
-- Coordinator owns final integration and independent review, TEMPLATE-CONTRACT risk-routing reconciliation after planning ownership ends, code-reviewer cross-reference and draft publication. The contract edit is intentionally not included until explicit sequential ownership handoff.
+- Coordinator owns final integration and independent review, TEMPLATE-CONTRACT risk-routing reconciliation after planning ownership ends, and draft publication. The reviewer cross-reference is now included; the contract edit remains excluded until explicit sequential ownership handoff.
 - Offline contracts check instruction structure and mutations, not provider behavior or a live PR audit. Actual PR89/readback audit remains independent coordinator work; no live issue was created, changed or closed here.
 - One Windows symlink regression is skipped for missing host privilege; all other targeted checks execute. Full wall-clock duration is unavailable because start time was not captured.
 
@@ -181,9 +198,9 @@ All three owned tasks are locally implemented. No phase completion, publication 
 | Operation | Worker evidence / proposed reconciliation |
 |---|---|
 | Position/progress | Three owned tasks complete locally; integrate and independently verify before phase completion |
-| Metrics | Four owned commits including summary; chars/4 is measured over assigned-base diff; full duration unavailable |
+| Metrics | Five owned commits including summary and reviewer follow-up; chars/4 measured over assigned-base diff; full duration unavailable |
 | Decisions | None beyond approved plan |
-| Session | Integrate owned commits, reconcile shared contract and code-reviewer link, obtain fresh review/audit |
+| Session | Await explicit shared-contract ownership handoff; then reconcile it and obtain fresh bounded-delta review/audit |
 | Roadmap/requirements | Keep shared adoption skeleton unchanged; no runtime mutations assigned |
 | Blockers | No implementation blocker; independent integrated verification remains coordinator-owned |
 
@@ -192,5 +209,5 @@ All three owned tasks are locally implemented. No phase completion, publication 
 Created reference/test and owned source paths exist. Task commits exist on assigned
 branch `phase-issue87-orchestration`; exact root/base/ownership were checked before
 writes and commits. Focused suites and mutation checks pass with the explicit host
-symlink skip. Final metadata changes only this SUMMARY; source-currentness still
-requires coordinator integration/review, and no unrun provider audit is claimed.
+symlink skip. The bounded reviewer follow-up has its own cited checks; currentness
+still requires coordinator integration/review, and no unrun provider audit is claimed.
