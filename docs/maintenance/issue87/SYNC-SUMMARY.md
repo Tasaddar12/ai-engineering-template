@@ -145,7 +145,7 @@ None. Worker did not push, publish, integrate, merge, close an issue, install de
 
 | PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| [SYNC-PLAN / T-SYNC-01](SYNC-PLAN.md#stride-threat-register) | Pending: coordinator canonical issue search/readback | Local mitigation checks passed; independent verification pending | Worker commits only; canonical issue state Pending readback | Strict eligibility cannot supply ownership; source/target/manifest tamper and post-backup guards; both-host exact-backup/stale-original/fresh-no-op tests. No issue closure claim. |
+| [SYNC-PLAN / T-SYNC-01](SYNC-PLAN.md#stride-threat-register) | [#95 / T-SYNC-01](https://github.com/Tasaddar12/ai-engineering-template/issues/95#t-sync-01) | Local mitigation and independent code/documentation reviews passed; final CI pending | Open; coordinator verified issue95 key/aliases and state | Strict eligibility cannot supply ownership; source/target/manifest tamper and post-backup guards; both-host exact-backup/stale-original/fresh-no-op tests. No issue closure claim. |
 
 No additional threat surface outside the assigned PLAN was identified.
 
@@ -167,3 +167,7 @@ Independent code review, documentation claim verification and installed integrat
 ## Self-Check: PASSED
 
 All six owned deliverables and all three source slice commits exist. The final focused suite (12 tests) and existing regression suite (62 tests, 4 expected skips) pass. Exact changed-path audit matches approved ownership; source is frozen at 05237fc. Summary frontmatter parses with issue_refs, all four acceptance IDs and four passing coverage entries. Final metadata changes only this summary; the clean post-commit status and exact hash are returned in the handoff.
+
+## Coordinator canonical-risk readback
+
+Issue95 is the verified planned-risk checklist. Its T-SYNC-01 entry preserves the updater reviewed-byte/ownership key and PLAN/SUMMARY aliases. Duplicate review found no actionable full-scope matching risk in issues81/82 or the searched updater/destructive/cleanup issues. Local source05237fc passed12 focused and62 updater tests (four expected skips); independent code/documentation reviews passed. Required CI remains pending. No issue was closed and no PR merged.

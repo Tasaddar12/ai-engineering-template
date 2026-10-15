@@ -178,9 +178,9 @@ Update the workflow guidance to explain the comparison categories, conservative 
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |-----------|----------|-----------|----------|-------------|-----------------|
-| T-SYNC-01; Pending: coordinator canonical issue search/readback | Tampering | .ai/update.py build_plan/apply_plan and comparison helper | high | mitigate | Tasks 1–2 keep comparison distinct from ownership and raw SHA256; focused stale-byte, binary, unproven ownership and project-preservation cases must pass. Coordinator deduplicates against issue87/related canonical security records before publication. |
+| T-SYNC-01; [canonical checklist entry](https://github.com/Tasaddar12/ai-engineering-template/issues/95#t-sync-01) | Tampering | .ai/update.py build_plan/apply_plan and comparison helper | high | mitigate | Tasks 1–2 keep comparison distinct from ownership and raw SHA256; focused stale-byte, binary, unproven ownership and project-preservation cases must pass. Coordinator deduplicates against issue87/related canonical security records before publication. |
 
-This register describes the control regression this change must prevent; it does not claim an observed exploit or completed mitigation. Review depth L1, including the primary write boundary. Retain pending canonical identity until coordinator reconciliation; do not fabricate a security issue URL.
+This register describes the control regression this change must prevent; it does not claim an observed exploit or completed mitigation. Review depth L1, including the primary write boundary. Coordinator read back checklist issue95 and its T-SYNC-01 key/aliases; retain neutral links and open state until scope-complete verification and closure authority.
 </threat_model>
 
 <verification>
