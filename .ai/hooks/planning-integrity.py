@@ -18,30 +18,40 @@ except ImportError as exc:
     raise SystemExit(2)
 
 
-def tokens(command):
+def tokens(command, grammar):
+    if grammar == 'bash':
+        command = command.replace('\\\r\n', '').replace('\\\n', '')
     lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
+    lexer.escape = '\\' if grammar == 'bash' else ('`' if grammar == 'powershell' else '^')
     lexer.whitespace_split = True
     lexer.commenters = ''
     return list(lexer)
 
 
-def segments(command):
-    values = tokens(command)
+def segments(command, grammar):
+    values = tokens(command, grammar)
+    if grammar == 'bash' and values[:2] not in (['command', '-v'], ['command', '-V']):
+        while values and values[0] in ('command', 'env', 'exec', 'time', '!'):
+            values = values[1:]
+            if values and values[0] == '--':
+                values = values[1:]
     if values and Path(values[0]).name.lower().removesuffix('.exe') in ('bash', 'sh', 'powershell', 'pwsh', 'cmd'):
         for index, value in enumerate(values[1:], 1):
             if value.lower() in ('-c', '-lc', '-command', '/c'):
                 remaining = values[index + 1:]
-                return segments(remaining[0] if len(remaining) == 1 else shlex.join(remaining))
+                wrapper = Path(values[0]).name.lower().removesuffix('.exe')
+                nested = 'bash' if wrapper in ('bash', 'sh') else ('cmd' if wrapper == 'cmd' else 'powershell')
+                return segments(remaining[0] if len(remaining) == 1 else shlex.join(remaining), nested)
     result, current = [], []
     for value in values:
         if value in ('&&', ';', '||', '|', '&'):
             if current:
-                result.append(current)
+                result.append((grammar, current))
             current = []
         else:
             current.append(value)
     if current:
-        result.append(current)
+        result.append((grammar, current))
     return result
 
 
@@ -88,7 +98,7 @@ def commit_options(args):
             break
         if value in ('--only', '-o'):
             mode = 'only'
-        elif value in ('--all', '-a') or (re.fullmatch(r'-[a-zA-Z]+', value) and 'a' in value[1:].split('m', 1)[0] and value not in takes_value):
+        elif value in ('--all', '-a') or (re.fullmatch(r'-[a-zA-Z]+', value) and 'a' in re.split('[mFCcS]', value[1:], maxsplit=1)[0] and value not in takes_value):
             mode = 'all'
         elif value in ('--include', '-i', '--interactive', '--patch', '-p') or value.startswith('--pathspec-'):
             unsupported = True
@@ -104,10 +114,24 @@ def commit_options(args):
     return mode, paths, unsupported
 
 
-def inspect(command, cwd):
+def inspect(command, cwd, grammar):
     additions = []
     ambiguous = False
-    for values in segments(command):
+    for grammar, values in segments(command, grammar):
+        # Harmless diagnostics do not execute their textual git arguments.
+        if values[0].lower() in ('echo', 'printf', 'write-output', 'get-command', 'which', 'where'):
+            if grammar == 'bash' and ('$' + '(' in command or '`' in command) and 'commit' in command:
+                raise VerbError('Unsupported command substitution around commit; use a separate Git command.', integrity.CODE)
+            continue
+        if grammar == 'bash':
+            if values[:2] in (['command', '-v'], ['command', '-V']):
+                continue
+            while values and values[0] in ('command', 'env', 'exec', 'time', '!'):
+                values = values[1:]
+                if values and values[0] == '--':
+                    values = values[1:]
+            if not values:
+                continue
         if values and not git_command(values, cwd) and any(Path(value).name.lower().removesuffix('.exe') == 'git' for value in values) and 'commit' in values:
             raise VerbError('Unsupported Git commit prefix or environment; run a separate plain Git commit.', integrity.CODE)
         if values[0].lower() in ('cd', 'set-location') and len(values) == 2:
@@ -124,6 +148,9 @@ def inspect(command, cwd):
                 ambiguous = True
             else:
                 specs = [arg for arg in args if arg != '--' and not arg.startswith('-')]
+                if not specs and not any(arg in ('-A', '--all', '-u', '--update') for arg in args):
+                    # Bare git add is a no-op, not an implicit add of every path.
+                    continue
                 additions.append((target, globals_, specs, '-u' in args or '--update' in args))
             continue
         if operation != 'commit':
@@ -136,6 +163,8 @@ def inspect(command, cwd):
             raise VerbError('Ambiguous shell mutation before Git commit; separate the commands for safe issue_refs inspection.', integrity.CODE)
         root = Path(integrity.git_read(target, *globals_, 'rev-parse', '--show-toplevel').decode('utf-8').strip())
         mode, specs, unsupported = commit_options(args)
+        if unsupported:
+            raise VerbError('Unsupported interactive/include/pathspec-file prospective planning commit (issue_refs cannot be inspected safely); stage separately and use a plain commit.', integrity.CODE)
         staged = set(integrity.names(target, *globals_, 'diff', '--cached', '--name-only', '--diff-filter=ACMRT', '-z'))
         work = set()
         if mode == 'only':
@@ -146,7 +175,9 @@ def inspect(command, cwd):
             work = set(integrity.names(target, *globals_, 'diff', '--name-only', '--diff-filter=ACDMRT', '-z'))
         for add_cwd, add_globals, add_specs, tracked in additions:
             if Path(integrity.git_read(add_cwd, *add_globals, 'rev-parse', '--show-toplevel').decode().strip()) == root:
-                added = changed_worktree(add_cwd, add_globals, add_specs, tracked)
+                # Since Git 2, -A/-u without a pathspec is repository-wide,
+                # including when the native command starts in a subdirectory.
+                added = changed_worktree(add_cwd if add_specs else root, add_globals, add_specs, tracked)
                 if mode != 'only':
                     work.update(added)
         relevant = {path for path in staged | work if integrity.record_kind(path)}
@@ -177,11 +208,15 @@ def main():
         payload = json.load(sys.stdin)
         data = payload.get('tool_input') or {}
         command = data.get('command') or data.get('cmd') or payload.get('command') or payload.get('cmd') or ''
+        shell = str(data.get('shell') or '').lower()
+        grammar = ('bash' if payload.get('tool_name') == 'Bash' or 'bash' in shell or shell.endswith('/sh')
+                   else ('cmd' if shell.endswith(('cmd', 'cmd.exe')) else ('powershell' if os.name == 'nt' else 'bash')))
         if isinstance(command, list) and all(isinstance(arg, str) for arg in command):
             command = shlex.join(command)
-        if not isinstance(command, str) or not re.search(r'\bgit(?:\.exe)?\b.*\bcommit\b', command, re.S | re.I):
+            grammar = 'bash'  # quoting an existing argv, not inferring a shell
+        if not isinstance(command, str):
             return 0
-        inspect(command, data.get('cwd') or payload.get('cwd') or os.getcwd())
+        inspect(command, data.get('cwd') or payload.get('cwd') or os.getcwd(), grammar)
         return 0
     except (VerbError, OSError, ValueError, UnicodeError) as exc:
         print('planning-integrity: ' + str(exc), file=sys.stderr)

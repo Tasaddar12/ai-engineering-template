@@ -82,6 +82,100 @@ class IntegrityTests(unittest.TestCase):
         self.git('commit', '-m', 'fixture')
         self.assertNotEqual(self.git('rev-parse', 'HEAD'), self.head)
 
+    def test_supported_native_tool_names_and_only_source_exception(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        for tool in ('Bash', 'exec_command', 'shell_command', 'shell'):
+            with self.subTest(tool=tool):
+                self.assert_denied(self.hook('git commit -m fixture', tool=tool, field='command'))
+        self.write('seed', 'changed source\n')
+        self.assertEqual(self.hook('git commit --only -m source -- seed').returncode, 0)
+
+    def test_worktree_clean_filter_refused_without_index_mutation(self):
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.write('.gitattributes', '*.md filter=fixture\n')
+        self.write(RECORD, INVALID)
+        before = self.git('ls-files', '--stage')
+        result = self.hook('git commit --only -m fixture -- ' + RECORD)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('clean filter', result.stderr)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
+    def test_empty_add_cannot_hide_invalid_index_and_nested_all_is_repository_wide(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        self.write(RECORD, VALID)
+        self.assert_denied(self.hook('git add && git commit -m fixture'))
+        self.git('add', RECORD)
+        self.write(RECORD, INVALID)
+        nested = self.root / 'nested'
+        nested.mkdir()
+        self.assert_denied(self.hook('git add -A && git commit -m fixture', nested))
+
+    def test_real_multi_record_loss_returns_json_evidence_on_success_and_error(self):
+        from test_phase_runtime import STATE, ROADMAP
+        for missing_state in (False, True):
+            with self.subTest(missing_state=missing_state):
+                self.write('.planning/ROADMAP.md', ROADMAP + '| authored table sentinel | retain this |\n')
+                if missing_state:
+                    (self.root / '.planning/STATE.md').unlink()
+                else:
+                    self.write('.planning/STATE.md', STATE)
+                result, data = self.runtime('roadmap.update-plan-progress', '01-01', '--raw')
+                self.assertEqual(result.returncode, 1 if missing_state else 0, data)
+                warnings = data['integrity_warnings']
+                evidence = next(item for item in warnings if 'authored table sentinel' in item['content'])
+                self.assertEqual(evidence['verb'], 'roadmap.update-plan-progress')
+                self.assertEqual(evidence['section'], '## Progress')
+                self.assertNotIn('authored table sentinel', (self.root / '.planning/ROADMAP.md').read_text())
+                if missing_state:
+                    self.assertEqual(data['code'], 'missing-state')
+                    self.assertFalse((self.root / '.planning/STATE.md').exists())
+
+    def test_normal_milestone_demotion_preserves_authored_notes_without_warning(self):
+        from test_phase_runtime import ROADMAP
+        self.write('.planning/ROADMAP.md', ROADMAP + '\n## Authored notes\nMilestone sentinel.\n')
+        for name in ('v1 Foundation', 'v2 Expansion'):
+            result, data = self.runtime('milestone.create', name)
+            self.assertEqual(result.returncode, 0, data)
+            self.assertNotIn('integrity_warnings', data)
+            self.assertIn('Milestone sentinel.', (self.root / '.planning/ROADMAP.md').read_text())
+
+    def test_bash_escaped_commit_spellings_and_transparent_wrapper_families(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        commands = [r'g\it commit -m fixture', 'gi\\\nt commit -m fixture',
+                    'command env git commit -m fixture', 'env env git commit -m fixture',
+                    'exec env git commit -m fixture', 'time git commit -m fixture',
+                    '! git commit -m fixture']
+        for command in commands:
+            with self.subTest(command=command):
+                self.assert_denied(self.hook(command, tool='Bash', field='command'))
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        for command in commands:
+            with self.subTest(valid=command):
+                result = self.hook(command, tool='Bash', field='command')
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_escaped_add_chain_and_harmless_commit_diagnostics(self):
+        self.write(RECORD, INVALID)
+        for command in [r'g\it add ' + RECORD + ' && git commit -m fixture',
+                        'gi\\\nt add ' + RECORD + ' && git commit -m fixture']:
+            with self.subTest(command=command):
+                self.assert_denied(self.hook(command, tool='Bash', field='command'))
+        for command in ['echo git commit', 'printf "%s" "git commit"', 'command -v git', 'git status']:
+            with self.subTest(diagnostic=command):
+                self.assertEqual(self.hook(command, tool='Bash', field='command').returncode, 0)
+
+    def test_native_windows_paths_and_bash_specific_escape_meaning(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        self.assert_denied(self.hook('git -C ' + str(self.root) + ' commit -m fixture', tool='exec_command'))
+        # Backslash is a native path separator, not a PowerShell quote escape.
+        self.assertEqual(self.hook(r'g\it commit -m fixture', tool='exec_command').returncode, 0)
+
     def test_runtime_rejects_missing_issue_refs_before_commit(self):
         self.write(RECORD, INVALID)
         result, data = self.runtime('commit', 'fixture', '--files', RECORD)
@@ -144,7 +238,7 @@ class IntegrityTests(unittest.TestCase):
     def test_hook_global_cwd_options_and_nested_directory(self):
         self.write(RECORD, INVALID)
         self.git('add', RECORD)
-        nested = self.root / 'nested unicode ÃƒÂ©'
+        nested = self.root / 'nested unicode \u00e9'
         nested.mkdir()
         self.assert_denied(self.hook('git -c core.quotepath=false -C "' + str(self.root) + '" commit -m fixture', nested))
         self.assertEqual(self.hook('git status --short', nested).returncode, 0)
@@ -197,7 +291,8 @@ None yet.
                         ('phase.edit', '1', '--name', 'Renamed foundation', '--goal', 'New goal'),
                         ('roadmap.set-plans', '1', '--plans', '01-01: Scaffold', '01-02: Wire it up'),
                         ('phase.add', 'Third phase'),
-                        ('phase.remove', '3', '--no-renumber')]:
+                        ('phase.remove', '3', '--no-renumber'),
+                        ('phase.remove', '1')]:
             with self.subTest(command=command):
                 result, data = self.runtime(*command)
                 self.assertEqual(result.returncode, 0, data)
@@ -310,6 +405,29 @@ class SchemaTests(unittest.TestCase):
         sys.path.insert(0, str(ROOT / '.ai/runtime'))
         from lib import planning_integrity
         cls.integrity = planning_integrity
+
+    def test_complete_source_file_templates_match_validator(self):
+        import re
+        for source, path in [('context.md', RECORD.replace('01-01-PLAN', '01-CONTEXT')),
+                             ('phase-prompt.md', RECORD),
+                             ('summary.md', RECORD.replace('PLAN', 'SUMMARY'))]:
+            with self.subTest(template=source):
+                text = (ROOT / '.ai/templates' / source).read_text(encoding='utf-8')
+                body = re.search(r'```markdown\n(.*?)\n```', text, re.S)[1]
+                body = body.replace('phase: XX-name', 'phase: 01-foundation')
+                body = body.replace('wave: N ', 'wave: 1 ')
+                body = body.replace('requirements: []', 'requirements: [REQ-01]')
+                self.assertTrue(self.integrity.validate_record(path, body)['valid'])
+                self.assertIn('issue_refs: []', body)
+
+    def test_upstream_halted_summary_and_native_tdd_plan_stay_valid(self):
+        from lib.text import split_frontmatter, join_frontmatter
+        data, body = split_frontmatter(VALID)
+        data['type'] = 'tdd'
+        self.integrity.validate_record(RECORD, join_frontmatter(data, body))
+        summary = {'phase': '01-foundation', 'plan': '01', 'status': 'halted',
+                   'requirements-completed': [], 'acceptance': [], 'documentation': [], 'issue_refs': []}
+        self.integrity.validate_record(RECORD.replace('PLAN', 'SUMMARY'), join_frontmatter(summary, body))
 
     def test_required_keys_and_types_for_each_record(self):
         from lib.results import VerbError

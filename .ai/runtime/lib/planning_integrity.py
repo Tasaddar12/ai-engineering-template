@@ -72,7 +72,7 @@ def validate_record(path, content):
         need(all(isinstance(check, list) and check and all(isinstance(arg, str) and arg for arg in check)
                  for check in data['checks']), 'checks', 'each command must be a nonempty argv list of strings')
     elif kind == 'SUMMARY':
-        need(data['status'] in ('complete', 'blocked'), 'status', 'must be complete or blocked')
+        need(data['status'] in ('complete', 'blocked', 'halted'), 'status', 'must be complete, blocked or halted')
     else:
         need(data['discussion'] in ('pending', 'in-progress', 'complete'), 'discussion',
              'must be pending, in-progress or complete; this does not authorize implementation')
@@ -206,6 +206,11 @@ def mutation_warnings(workspace, before, verb, positionals, options, result=None
     for name, original in before.items():
         current = read_text(workspace.root / name, '')
         if original and current != original:
+            if name.endswith('STATE.md') and verb == 'planning.repair':
+                # Use the repair owner's conservative heading-only proposal;
+                # restored section boundaries are intended, authored lines stay.
+                from . import planning_review
+                original = planning_review._state_headings(split_frontmatter(original)[1])[0]
             if name.endswith('ROADMAP.md'):
                 original = expected_roadmap(original, current, verb, positionals, options, result)
             warnings.extend(content_loss(original, current, name, verb,
@@ -228,6 +233,17 @@ def expected_roadmap(before, after, verb, positionals, options, result=None):
         # Renumbering is part of explicit removal; preserve successors' prose.
         for item in result.get('renumbered', []):
             before = phases.renumber_text(before, item['from'], item['to'])
+    if positionals and verb in ('milestone.create', 'milestone.complete'):
+        from . import milestones
+        if verb == 'milestone.create':
+            before = milestones.MILESTONE_LINE.sub(lambda match: milestones.demote(match, positionals[0]), before)
+        elif isinstance(result, dict):
+            version, date = positionals[0], result['date']
+            before = milestones.MILESTONE_LINE.sub(lambda match: milestones.ship(match, version, date), before)
+            before = re.sub(r'^###\s+' + re.escape(milestones.STATUS_EMOJI['in_progress'])
+                            + r'\s+(' + re.escape(version) + r'[^\n]*?)\s*\(In Progress\)\s*$',
+                            '### ' + milestones.STATUS_EMOJI['shipped'] + r' \g<1> (Shipped ' + date + ')',
+                            before, flags=re.M)
     if not positionals:
         return before
     target = str(positionals[0]).split('-')[0]
