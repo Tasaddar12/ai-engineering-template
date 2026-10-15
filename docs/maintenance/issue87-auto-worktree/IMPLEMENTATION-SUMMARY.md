@@ -3,7 +3,7 @@ phase: maintenance-issue87-auto-worktree
 plan: "01"
 subsystem: hooks
 tags: [worktrees, prewrite, tdd]
-status: blocked
+status: partial
 requirements-completed: []
 acceptance: []
 documentation: [.ai/references/same-agent-worktree.md]
@@ -23,8 +23,10 @@ The first Task 1 native-route RED was independently assessed VALID. Its two
 review corrections were independently rechecked CLEAN and Task 2 was explicitly
 released. The earlier Tasks 1-2 source checks passed, but the frozen independent
 review at `ef325b62c0df6efcf603d72cfae55b8269a3052e` found three in-scope
-blockers. Their bounded regression/fix assignment is now in progress; historical
-GREEN is not full acceptance. Task 3 documentation and all integration/publication
+blockers. Their bounded regression/fix assignment is now **source-complete /
+live-unverified** with all affected deterministic checks GREEN. Historical or
+current fixture GREEN is not full acceptance; corrected-source independent review
+and integrated CI remain required. Documentation and all integration/publication
 belong to separate owners. Current source correction assignment:
 
 - Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-05-185913375`.
@@ -58,6 +60,58 @@ The previous cancellation RED remains historical evidence. Its input/root was
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-code-171041844`.
 
 ## TDD Evidence
+
+### Frozen-review corrections and affected GREEN (code-05)
+
+RED was committed as `c69aef9bd49dc732bab8e0c03a44790f00da9921` before any
+production edits. The bounded production correction changes only
+`.ai/runtime/lib/prewrite.py` and the four phase workflows named in this dispatch.
+The native standalone adapter writes stdout protocol and stderr diagnostics as
+explicit UTF-8 bytes. Input parsing and bounded UTF-8 Git facts were already
+correct; no generic `paths.py`/`gitops.py` or fixture UTF-8 override repairs the
+new legacy-codec regression. Creation still returns exactly one path line;
+preservation-only removal returns no stdout path or deletion authority.
+
+Each phase workflow now uses read-only locator facts for the conditional Claude
+bootstrap/entry before its first session cd or destination init. Native callers
+prove defaults, confirm Git, re-resolve destination runtime/locator and consume
+fresh destination inputs; later open_session retains those facts without another
+request or native entry. Ordinary consumers retain the existing shell route.
+The new bounded instruction adapter consumes that installed ordering for all
+four workflows in new and ordinary existing mode; it executes actual public
+runtime calls/Git and labels host movement/context as SIMULATED. It preserves
+the existing accumulated committed HEAD, immutable base and ownership checks;
+the original ordinary phase/quick contract cases are also retained.
+
+Failed target Git discovery now scans ancestor repository markers and accepts
+only Git's recognized not-a-repository result with no such marker as the
+nongit-note candidate. Corrupt metadata, ownership errors and indeterminate
+results refuse without ticket/tree creation. A localized or unfamiliar discovery
+diagnostic also refuses rather than expanding the OS-temp exemption.
+
+Affected GREEN commands use the exact Python 3.13 executable shown in the earlier
+receipt, followed by `-m unittest discover -s tests -p FILE -v`:
+
+| FILE | Cases / seconds | Result / actual skips |
+|---|---|---|
+| `test_prewrite.py` | 24 / 60.514 | exit 0, skipped 1 (WinError 1314 symlink privilege); both-host malformed external repo refusal and legitimate note controls pass |
+| `test_same_agent_worktree.py` | 11 / 148.402 | exit 0, no skips; actual installed legacy-codec create/remove protocol and all eight workflow/mode ordering cases pass |
+| `test_workflow_links.py` | 4 / 1.725 | exit 0, no skips |
+| `test_agent_sources.py` | 16 / 0.113 | exit 0, no skips |
+
+The same Bash source/location/advisory command recorded below passed with exit 0:
+source **12**, location **25**, unchanged advisory **60** checks, all with zero
+failures. Installer/updater/session-delivery remain
+the previous explicit GREEN receipts, not new executions at code-05; the bounded
+correction assignment does not require repeating them absent a concrete concern.
+Independent corrected-source/integration review and integrated CI remain with
+the coordinator. Native actual host acceptance remains unverified.
+
+No source stub, new threat identity, provider write or broad locale repair was
+introduced. The advisory script, four Task 3 documents and generic locale helpers
+have empty code-05 base diffs. `git diff --check` passed. The source correction is
+the enclosing owned-path commit; its full hash is recorded in the metadata
+follow-up after Git creates it.
 
 ### Frozen-review correction RED (code-05, 2026-10-15)
 
@@ -475,15 +529,15 @@ review-correction commit. The final scoped diff is checked with
 
 | Owning PLAN / Threat | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| [PLAN T-AW-01](PLAN.md#threat_model) | [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | deterministic source mitigation implemented; independent/integrated verification pending | OPEN per coordinator input; no worker readback/write | installed cancellation, both-host notes, strict path/mutation controls and exact dirty preservation GREEN; symlink privilege skip explicit |
-| [PLAN T-AW-02](PLAN.md#threat_model) | [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | deterministic source mitigation implemented; independent/integrated verification pending | OPEN per coordinator input; no worker readback/write | native collision/reuse/concurrency, actor/intent/lifecycle validation, real OS locks and uncertain-result preservation GREEN |
-| [PLAN T-AW-03](PLAN.md#threat_model) | [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | conditional route implemented; live unverified | OPEN per coordinator input; no worker readback/write | installed exports/hooks/six workflows and matching SIMULATED native tracer GREEN; actual same-agent host transition remains unverified |
+| [PLAN T-AW-01](PLAN.md#threat_model) | [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | deterministic source mitigation implemented; corrected-source independent/integrated verification pending | OPEN per coordinator input; no worker readback/write | installed cancellation, both-host notes, strict path/mutation controls and dirty preservation GREEN; code-05 failed external Git discovery denies without bookkeeping; symlink privilege skip explicit |
+| [PLAN T-AW-02](PLAN.md#threat_model) | [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | deterministic source mitigation implemented; corrected-source independent/integrated verification pending | OPEN per coordinator input; no worker readback/write | native collision/reuse/concurrency, identity/lifecycle/lock preservation GREEN; code-05 actual standalone native output and preservation diagnostics pass under legacy codec |
+| [PLAN T-AW-03](PLAN.md#threat_model) | [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | conditional route implemented; live unverified | OPEN per coordinator input; no worker readback/write | installed exports/hooks/six workflows and SIMULATED tracer GREEN; all four phase initializers execute native-first new/existing ordering before destination init; actual same-agent host transition remains unverified |
 
 ## Remaining
 
-No assigned source/safety/regression check remains pending. Task 3 and
-independent final source/doc/integration review and CI remain separate
-later assignments. Conditional target Claude
+The code-05 bounded source correction and all assigned affected checks are
+complete. Independent corrected-source/doc/integration review and integrated CI
+remain separate later assignments. Conditional target Claude
 support is documented by the capability research; a live supported host/version
 and actual same-existing-agent transition remain unverified in this executor.
 Codex still lacks the authenticated same-thread controller. Hooks cannot guarantee
@@ -516,3 +570,13 @@ modified. Native adapters use explicit UTF-8 and bounded facts. Ordinary Unicode
 session fixtures explicitly set PYTHONUTF8=1, so their GREEN does not claim this
 generic issue was repaired. The reproduction printed no credentials and changed
 only disposable fixture data.
+
+## Self-Check: PASSED
+
+Code-05 root/branch/input were verified before writes and commits. RED is
+preserved in `c69aef9bd49dc732bab8e0c03a44790f00da9921`; every new failing
+contract has matching affected-suite GREEN above. Exact changed paths stay
+within the eight-path correction assignment, exclusions have empty base diffs,
+and there are no intended deletions. No shared status or provider state changed.
+Full source-fix and final metadata commit hashes are returned to the coordinator;
+this self-check does not replace independent verification or native live proof.

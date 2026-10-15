@@ -72,12 +72,31 @@ Use /progress to see available phases.
 Exit. If `session` is present but `worktree` is null, stop and report the
 locator result as inconsistent.
 
-When `worktree` is set, it is the locator-validated phase checkout. Run the
+**Conditional Claude same-caller route, before destination initialization:**
+From the original primary default cwd, use these read-only locator facts to
+follow [native entry](../references/same-agent-worktree.md):
+`prewrite.request phase <label> --mode <new|existing>`, with the known padded
+phase as label and existing mode only for the exact validated open session.
+Do this before any session `cd` or destination init. Positively gate the actual
+native tool/schema, eligible role, policy and trusted creation hook, bind the
+request with prewrite.begin, then invoke EnterWorktree as this same existing
+caller. Existing-path entry must honor its actual native approval requirements.
+Observe native completion, destination default cwd/root/branch/base, permissions
+and loaded project context; confirm Git with prewrite.confirm. Re-resolve
+PHASE_RUNTIME and rerun phase.locate from that native default destination, then
+load fresh destination inputs with INIT below. A shell cd, child or per-call cwd
+override is never movement proof. Unsupported native entry stops precisely.
+Already-correct isolated callers validate their selected session and need no move
+or primary-only bootstrap. Native callers skip the ordinary locator cd below.
+
+**Ordinary runtime consumers only:** When `worktree` is set, it is the
+locator-validated phase checkout. Run the
 explicit quoted `cd` to that absolute path before loading phase data. Keep
 `PHASE_RUNTIME` absolute so the launcher still resolves after the directory
 change. Stop if `cd` fails.
 
 ```bash
+# Ordinary consumers only; native callers already use destination defaults.
 if [ -n "${worktree:-}" ]; then cd -- "${worktree}" || exit 1; fi
 INIT=$(phase_run query init.plan-phase "${PHASE}")
 ```
@@ -113,15 +132,12 @@ Set `MODE` to `standard` or `gap_closure` accordingly.
 </step>
 
 <step name="open_session">
-**Conditional Claude same-caller route:** First follow
-[native entry](../references/same-agent-worktree.md) using the known padded phase
-and exact session facts: `prewrite.request phase <label> --mode <new|existing>`.
-Gate actual native tool/schema, role, policy and trusted hook; invoke
-EnterWorktree as this existing caller, prove defaults and confirm Git. Reload
-the destination runtime and rerun locate/init there, replacing old context.
-Then skip this step's shell session.open/adopt/cd route. Unsupported entry stops
-precisely; already-correct isolated callers need no move. The ordinary runtime
-route below is not native movement proof and no child is a substitute.
+Native callers completed entry and fresh destination initialization in
+`initialize`. Retain that confirmed session and the reloaded locator/init facts;
+skip this step's shell session.open/adopt/cd route. Do not bootstrap or invoke
+native entry a second time here. Already-correct isolated callers retain their
+validated session. The remaining route is for ordinary runtime consumers and is
+not native movement proof.
 
 `phase.locate` has already confirmed the phase and selected any existing session.
 If `session` from `LOCATE` is present, require its absolute `worktree`, then use
