@@ -48,6 +48,10 @@ checks:
   - [python, -m, unittest, discover, -s, tests, -p, test_install_update.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_install_migration.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_session_delivery.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_planning_integrity.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_phase_runtime.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -k, registered_hooks_run_planning_integrity_from_installed_hosts, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -k, installed_runtime_answers_its_verb_contract, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_agent_sources.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_workflow_links.py, -v]
   - [bash, .ai/hooks/source-prewrite.test.sh]
@@ -148,10 +152,14 @@ trusted-hook gate with no existing-path approval bypass; D-07 Codex lacks the
 observed controller, and live smoke is distinct from simulated contract evidence.
 These summarize actual CONTEXT decisions, not invented discussion or approval.
 
-One feature, one TDD plan, three sequential tasks. Coordinator dispatches one
+One feature, one TDD plan, three original tasks plus bounded Task 4 for the
+same-phase dependency join. Coordinator dispatches one
 isolated source worker for Tasks 1-2, then an isolated doc-writer for Task 3 after
-source integration. Sources and docs have disjoint ownership below. Preparation
-owns only PLAN/PREPARER-SUMMARY; no code, tests or provider writes run now.
+source integration. Sources and docs have disjoint ownership below. Task 4 follows
+integrated code-05 corrections and the coordinator's local non-rewriting PR93
+dependency merge; overlapping source/doc paths are serial, never assigned to
+concurrent writers. Preparation now owns only this PLAN, CONTEXT, STACK-PLAN and
+PREPARER-SUMMARY; no code, tests or provider writes run in this assignment.
 </context>
 
 ## Acceptance, ownership and exclusions
@@ -176,6 +184,10 @@ instruction, covered by contract tests; doc-writer reads and explains it without
 editing it. Coordinator explicitly delegates only the standing native-route link
 in AGENTS and the narrow Hooks and validation section in RULES to their respective
 owners. Other shared policy and adoption skeleton sections stay untouched.
+Task 4 is a later isolated integration assignment with exactly its six listed
+paths; it supersedes no active writer's ownership. Its overlaps are permitted only
+after earlier commits integrate and writers finish. It owns the automatic summary
+docs/maintenance/issue87-auto-worktree/STACK-SUMMARY.md.
 
 Bounded Task 2 CI-regression subassignment at published source input
 ff81660b493305b5714c8efce9835ee4c2d128a0: coordinator assigns isolated targeted-fixer
@@ -200,13 +212,17 @@ and commit the test plus MIGRATION-SUMMARY. Coordinator integrates this disjoint
 repair and checks its receipt before final verification; unrelated CI errors stay
 with the currently assigned source worker.
 
-Excluded: original six drafts; GitHub/GitLab/provider workflow changes; provider
+Excluded: edits to original six draft heads; GitHub/GitLab/provider workflow changes; provider
 73/74; live infrastructure, installations, cleanup and merges; generalized command
 parsing; shell/external writers; existing exec-session input; cloud hooks; new
 Codex controller; whole-host sandbox claims; broad role/tool or workflow rewrites.
 Keep `.ai/hooks/worktree-guard.sh` byte-identical and its warning preference intact.
 No automatic stash/reset/clean, dirty-file bulk copy, path rewriting or old-input
-replay. Worker lifecycle/integration/publication remain coordinator-owned.
+replay. Worker lifecycle/integration/publication remain coordinator-owned. The
+explicit Task 4 exception imports frozen PR93 (already on frozen PR92) as a
+non-rewriting local dependency merge into PR97; it does not merge either PR,
+change either frozen head or import the original-six umbrella into PR97. See
+STACK-PLAN.md for the exact stack, own-change boundary and composition evidence.
 
 ## Inspected source map and precise integration
 
@@ -439,6 +455,18 @@ with bounded coverage, not a universal filesystem enforcement boundary.
   <verify><manual>At the integrated source/docs revision, independent doc-verifier checks all four exact paths, explicitly RULES Hooks and validation, against actual native protocol, exports, creation callback and receipts. Missing, failed or required unverifiable claims prevent conclusive coverage; a native live claim requires separate observed host evidence.</manual></verify>
   <done>Four-path documentation is integrated before final verification with explicit per-document/section review evidence and the real live-smoke limitation preserved.</done>
 </task>
+
+<task type="auto" tdd="true">
+  <name>Task 4: Join the native adapters to frozen PR93 planning integrity without weakening either control</name>
+  <files>.ai/runtime/phase.py, .ai/install.py, .ai/RULES.md, .ai/hooks/README.md, tests/test_same_agent_worktree.py, tests/test_install.py</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/STACK-PLAN.md, docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/REVIEW-01.md, docs/maintenance/issue87-auto-worktree/VERIFICATION.md, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md, .ai/runtime/phase.py, .ai/runtime/lib/prewrite.py, .ai/runtime/lib/planning_integrity.py, .ai/install.py, .ai/RULES.md, .ai/hooks/README.md, tests/test_same_agent_worktree.py, tests/test_install.py, tests/test_install_update.py, tests/test_planning_integrity.py, tests/test_phase_runtime.py, tests/test_session_delivery.py</read_first>
+  <precondition>Coordinator has integrated code-05's CR-01/02/03 correction commits and joined doc correction DOC-01, then locally merged frozen PR93 into PR97 without rewriting either history; all earlier writers on these six paths have finished. PR93 dependency supplies planning_integrity.py and its tests. No test is run against a worker's uncommitted checkout.</precondition>
+  <action>Implement only the shared-interface reconciliation detailed in STACK-PLAN. First preserve the coordinator's genuine installed-native composition RED receipt; on the intended corrected-native plus frozen93 joined input, run the same installed tracer before the fix and record the actual native-query failure. Extend the existing native/installed suites for three exact adapters, new and existing ordinary phase/quick sessions, unknown prewrite-prefixed verbs, native OSError output, ordinary handler success/error integrity_warnings, malformed canonical planning commit refusal, authored-record sentinels and unchanged real index. A named assertion after successful installation/denial/ticket dispatch is RED; missing imports/files, zero tests or setup crashes are invalid. Commit test-only additions/receipt before adapter fixes. Add no new harness/file: existing tests/test_same_agent_worktree.py and tests/test_install.py can exercise the join, while imported planning tests retain their own behavior. In phase.py preserve both imports, planning.integrity registration, ordinary registered-verb snapshot/mutation_warnings behavior and VerbError integrity_warnings emission, together with native bounded UTF-8 discovery and native OSError handling. Validate handler existence before a bypass. Use one exact registered adapter set containing only prewrite.request, prewrite.begin and prewrite.confirm for workspace=None selection, canonical snapshot bypass and native OSError boundary; no startswith exemption, unknown-verb bypass, removal of planning validation or blanket disabling of integrity warnings. These three handlers write journal/session metadata in Git common-dir, not canonical .planning records; future planning-mutating verbs do not inherit the exception. Keep initializer routing and all ordinary behavior from PR93. Resolve installer union with destructive-git-guard.py and planning-integrity.sh retained, one advisory-first/source-second editing group, user hooks and registration identities preserved; Python hooks use Python/runpy launchers and timeout120, source-prewrite timeout30, other managed hooks10, existing host-specific timeouts unchanged. Retain source shell/native exit propagation and Unicode launchers. Reconcile only RULES Hooks and validation plus hooks README to describe destructive, canonical-planning and conditional native controls together, including Python entrypoints/adapters and limits. Do not copy PR91 guard-workflow prose or PR94 cleanup introduction from the disposable all-six composition into PR97. Run matching GREEN and the focused checks below, commit only six assigned files plus STACK-SUMMARY, and return exact dependency/integration/test revisions and remaining live limits. The coordinator owns Git merge/base/publication and final local combined-original-six checks; workers do not alter frozen heads.</action>
+  <behavior>Installed native request/begin/confirm complete Git-only new and existing phase/quick paths without snapshot(None), while canonical malformed planning still blocks and ordinary success/error warnings preserve authored records. Both hosts retain all intended managed registrations/order/timeouts and user hooks. Runtime confirm still cannot certify live host binding.</behavior>
+  <acceptance_criteria>AW-03/05/06/08 integration remains intact at the joined stack: handler-validated exact native exception, all ordinary PR93 snapshot/warning/error/commit controls preserved, no index/authored-byte loss, actual installed pipeline and timeout union verified, no unrelated PR91/94 changes in the PR97 own-change diff. Genuine installed RED precedes corresponding GREEN; code-05 defects and live movement are not declared resolved by this task alone.</acceptance_criteria>
+  <verify><automated>python -m unittest discover -s tests -p test_same_agent_worktree.py -v</automated><fails_when>Nonzero exit, zero cases, snapshot(None), native/ordinary-session regression, unknown-verb bypass or simulated behavior labeled live.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -k registered_hooks_run_planning_integrity_from_installed_hosts -v</automated><fails_when>Nonzero exit, zero cases, missing canonical-planning denial or changed real index/authored bytes.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -k installed_runtime_answers_its_verb_contract -v</automated><fails_when>Nonzero exit, zero cases, missing native/planning verb or incorrect structured result.</fails_when><automated>python -m unittest discover -s tests -p test_install_update.py -v</automated><fails_when>Nonzero exit, zero cases, lost/duplicated managed or user hook, wrong launcher/order/timeout or damaged installed records.</fails_when><automated>python -m unittest discover -s tests -p test_planning_integrity.py -v</automated><fails_when>Nonzero exit, zero cases, malformed canonical commit allowed, absent success/error warning or lost authored/index data.</fails_when><automated>python -m unittest discover -s tests -p test_phase_runtime.py -v</automated><fails_when>Nonzero exit, zero cases or ordinary runtime verb regression.</fails_when><automated>python -m unittest discover -s tests -p test_session_delivery.py -v</automated><fails_when>Nonzero exit, zero cases, changed phase/quick session ownership/base or unintended checkout/sync.</fails_when></verify>
+  <done>The exact frozen93-on92/native97 join has passing focused receipts and committed STACK-SUMMARY; independent code, integration and narrow documentation reviews confirm both controls survive. The coordinator then performs the separate disposable original-six composition check/review, without publishing it or altering those heads. Live native movement remains unverified unless separately observed.</done>
+</task>
 </tasks>
 
 ## Independent behavioral matrix and evidence layers
@@ -489,6 +517,10 @@ Coordinator reconciles the changed same-agent acceptance within those entries;
 workers make no provider writes. Distinct from issues 95/96. L2 review applies to
 these changed trust boundaries; storing no payload/transcript contents bounds
 disclosure, and exact receipts support review without claiming audit authentication.
+Task 4 carries these same risks across the dependency join: T-AW-01 requires
+canonical planning/authored/index preservation, and T-AW-03 requires actual
+installed native/planning routing and exception output. The exact-set adapter
+exception is not a new canonical risk identity or a verified mitigation.
 </threat_model>
 
 <verification>
@@ -508,6 +540,10 @@ role/CLAUDE exports, six routes, ticket/denial, native gate/call contract, actua
 creation callback/adoption and fresh rebuilt edit. Independent doc-verifier checks
 the four doc-writer paths, explicitly the narrow RULES section, after integration.
 Verifier reconciles AW-01 through AW-08 and all evidence layers.
+Task 4 additionally requires independent review of the exact stacked integration
+revision and the separate disposable final97/original-six composition described
+in STACK-PLAN. Earlier e464 original-six checks and uncorrected9060 RED are inputs,
+not final native97 composition GREEN. No composition branch is published.
 
 Live native smoke is UNAVAILABLE HERE and remains required for a conclusive actual
 same-agent movement claim. On an available eligible target Claude host record its
@@ -566,7 +602,12 @@ Source worker updates docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMM
 with new native-route commits, TDD Evidence, Checks, AW coverage, explicitly
 SIMULATED contract results, live gaps and issue98 Threat Outcomes. Doc-writer owns
 docs/maintenance/issue87-auto-worktree/DOCUMENTATION-SUMMARY.md. Summaries belong
-to assigned authors. Coordinator integrates source before docs, commits/reconciles
+to assigned authors. Task 4 returns
+docs/maintenance/issue87-auto-worktree/STACK-SUMMARY.md with exact frozen parents,
+joined input/output tips, real RED/GREEN and focused receipts, preservation and
+scope-diff evidence, review obligations and unverified live behavior. Coordinator
+records the separate disposable composition evidence and keeps all frozen heads
+unchanged. Coordinator integrates source before docs, commits/reconciles
 native MATRIX and canonical issue98 scope, obtains independent plan recheck before
 source release and independent final reviews, and owns publication. No adoption
 roadmap/status mutation, provider worker writes or merge is proposed.
