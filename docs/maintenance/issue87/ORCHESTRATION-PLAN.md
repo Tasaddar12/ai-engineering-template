@@ -100,7 +100,9 @@ dispatch; the sibling checkout used during preparation is evidence transport onl
   SUMMARY. The coordinator owns integration, shared records, publication and status.
 - Other workers own `.ai/agents/code-reviewer.md`, `AGENTS.md`, `.ai/RULES.md`,
   templates and runtime. Do not edit them. Ask the coordinator to have the review
-  worker add a small link to the canonical issue-link audit in `git-workflow.md`.
+  worker add a small link to `git-workflow.md#issue-link-audit` once this plan
+  creates the `Issue-link audit` heading. Until integrated together, that worker
+  may link the existing `git-workflow.md#canonical-threat-tracking` section.
   No copied procedure or broad reviewer rewrite is needed.
 - The issue-link audit and status procedure are instruction contracts, with no
   monitoring daemon, timer service, new runtime store, scheduler or dependency.
@@ -161,7 +163,7 @@ the stalled decision and non-completion/non-termination safeguards.
 <task type="auto">
   <name>Task 2: Track planned security work without losing risk identity</name>
   <files>.ai/references/git-workflow.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, tests/test_threat_tracking_contract.py</files>
-  <read_first>docs/maintenance/issue87/CONTEXT.md; .ai/references/git-workflow.md canonical threat tracking around lines 81-145; .ai/workflows/plan-phase.md handle_preparer_return; .ai/workflows/execute-phase.md aggregate_results around 602-605 and review_phase_issues around 663-697; .ai/templates/issue.md Security risk variant; .ai/runtime/TEMPLATE-CONTRACT.md Threat records and ownership; tests/test_threat_tracking_contract.py around 172-203, 222-267; tests/test_phase_tracking_contract.py for compatibility inspection only.</read_first>
+  <read_first>docs/maintenance/issue87/CONTEXT.md; .ai/references/git-workflow.md canonical threat tracking around lines 81-145; .ai/workflows/plan-phase.md handle_preparer_return; .ai/workflows/execute-phase.md aggregate_results around 602-605 and review_phase_issues around 663-697; .ai/templates/issue.md Security risk variant; .ai/runtime/TEMPLATE-CONTRACT.md Threat records and ownership; tests/test_threat_tracking_contract.py around 172-203, 222-267; tests/test_phase_issues.py and tests/test_workflow_links.py for compatibility inspection only.</read_first>
   <action>
 Extend canonical threat tracking to permit one phase security checklist issue for
 planned security mitigations. Preserve every local Threat ID, stable canonical
@@ -199,7 +201,9 @@ unplanned risks. Preserve original restored blocks and per-PLAN/discovery schema
   <verify>
     <automated>python -m unittest discover -s tests -p test_threat_tracking_contract.py</automated>
     <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
-    <automated>python -m unittest discover -s tests -p test_phase_tracking_contract.py</automated>
+    <automated>python -m unittest discover -s tests -p test_phase_issues.py</automated>
+    <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
+    <automated>python -m unittest discover -s tests -p test_workflow_links.py</automated>
     <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
   </verify>
   <acceptance_criteria>
@@ -213,9 +217,10 @@ unplanned risks. Preserve original restored blocks and per-PLAN/discovery schema
 <task type="auto">
   <name>Task 3: Require independent issue-link audit before merge eligibility</name>
   <files>.ai/references/git-workflow.md, .ai/workflows/execute-phase.md, .ai/workflows/ship.md, .ai/agents/verifier.md, tests/test_threat_tracking_contract.py</files>
-  <read_first>.ai/references/git-workflow.md; .ai/workflows/execute-phase.md code_review_gate and review_phase_issues; .ai/workflows/ship.md preflight_checks, generate_pr_body and merge_and_close around line 402; .ai/agents/verifier.md around 152-156; .ai/references/verification-evidence.md; .ai/templates/pull-request.md; tests/test_threat_tracking_contract.py; docs/maintenance/issue87/CONTEXT.md.</read_first>
+  <read_first>.ai/references/git-workflow.md; .ai/workflows/execute-phase.md code_review_gate and review_phase_issues; .ai/workflows/ship.md preflight_checks, generate_pr_body and merge_and_close around line 402; .ai/agents/verifier.md around 152-156; .ai/references/verification-evidence.md; .ai/templates/pull-request.md; tests/test_threat_tracking_contract.py; tests/test_phase_issues.py; tests/test_workflow_links.py; docs/maintenance/issue87/CONTEXT.md.</read_first>
   <action>
-Add one canonical issue-link audit subsection in git-workflow and point verifier,
+Add the canonical `Issue-link audit` subsection in git-workflow, yielding
+`git-workflow.md#issue-link-audit`, and point verifier,
 execute-phase review assignment and ship seams to it. Require a fresh independent
 reviewer/verifier to compare PR/MR body and issue links against CONTEXT acceptance,
 each PLAN threat/checklist identity, SUMMARY outcomes and actual provider readback.
@@ -239,7 +244,8 @@ subsection; that file remains the other worker's ownership. Extend focused real-
 artifact/step and mutation tests for independent audit reachability, scope/readback,
 neutral closing references and currentness. Keep mandatory threat reconciliation
 outside optional code review. Do not merge or close issue 87 in this assignment.
-If changed prose breaks test_phase_tracking_contract.py, return the exact failing
+If changed prose breaks tests/test_phase_issues.py or tests/test_workflow_links.py,
+return the exact failing
 assertion to the coordinator for ownership assignment rather than editing it.
   </action>
   <verify>
@@ -247,7 +253,9 @@ assertion to the coordinator for ownership assignment rather than editing it.
     <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
     <automated>python -m unittest discover -s tests -p test_parallel_status_contract.py</automated>
     <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
-    <automated>python -m unittest discover -s tests -p test_phase_tracking_contract.py</automated>
+    <automated>python -m unittest discover -s tests -p test_phase_issues.py</automated>
+    <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
+    <automated>python -m unittest discover -s tests -p test_workflow_links.py</automated>
     <fails_when>non-zero exit, any FAILED/ERROR result, or Ran 0 tests</fails_when>
     <automated>git diff --check</automated>
     <fails_when>non-zero exit or reported whitespace errors</fails_when>
@@ -283,7 +291,7 @@ coordinator. Preserve PR80/84 and issues81/82 identity and closure constraints.
 </threat_model>
 
 <verification>
-- Run the three targeted unittest discovery commands above with a functioning
+- Run the four targeted unittest discovery suites above with a functioning
   Python interpreter; record exact interpreter, revision, counts and actual output.
 - Inspect the per-wave lifecycle trace and a stalled-worker example without
   reading/editing worker files or interpreting elapsed time as completion.

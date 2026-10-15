@@ -47,6 +47,10 @@ or test file was changed.
   works with escalation and advised no further runtime search/tests as planner.
 - Plan verification commands use existing unittest discovery convention and named
   tracked test files; Task 1 explicitly creates the new status test prerequisite.
+- Corrected PC-ORCH-01: the initially named phase-tracking contract suite did not
+  exist at the base revision. `git ls-files` and source inspection confirm
+  `tests/test_phase_issues.py` and `tests/test_workflow_links.py`; Task 2/3 now
+  read and run both existing suites. Every command rejects zero discovered tests.
 - Final `git diff --check` and exact-path staged inspection recorded in return.
 
 ## Files Created/Modified
@@ -63,7 +67,10 @@ monitoring service. Keep other workers' reviewer/templates/rules/runtime ownersh
 
 ## Deviations from Plan
 
-None. This assignment is planning only and does not claim implemented acceptance.
+PC-ORCH-01 corrected the nonexistent compatibility suite to the two inspected
+existing suites. The canonical audit heading is explicitly `Issue-link audit`,
+with anchor `git-workflow.md#issue-link-audit`. This assignment remains planning
+only and does not claim implemented acceptance.
 
 ## Issues Encountered
 
@@ -84,6 +91,8 @@ do not create duplicate risk identities from the plan's lifecycle description.
 
 Coordinator should obtain independent phase-checker assessment, then dispatch the
 authorized owned implementation. Ask the reviewer-owning worker to link its role
-to the canonical git-workflow issue-link audit. If phase-tracking exact-phrase
-tests need edits, request explicit ownership through coordinator. Never merge or
+to `git-workflow.md#issue-link-audit` when the target heading is integrated;
+until then its existing canonical-threat-tracking link remains valid. If the
+phase-issue or workflow-link compatibility tests need edits, request explicit
+ownership through coordinator. Never merge or
 close issue 87. No product requirement is marked complete by this preparation.
