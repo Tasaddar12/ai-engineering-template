@@ -390,9 +390,9 @@ before the final full run. Its final checks/source commit are recorded below.
 | `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
 | `git diff --check` | Exit 0 |
 
-All test processes completed before source commit. Source commit: the commit
-containing this final section, pinned by exact SHA in the following summary-only
-evidence update. Source bytes did not change after the final passing run.
+All test processes completed before source commit. Source commit:
+`bf83325492e6be9f9b2803df63a532c5568b10ae`, pinned by this summary-only evidence
+update. Source bytes did not change after the final passing run.
 Earlier removed literal-alias-parent discrepancy is now retained, proved and
 repaired; no discovered required case is silently deferred. Fresh bounded
 independent review remains pending. No installer, child source, PR86 hook,
