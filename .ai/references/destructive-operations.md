@@ -92,7 +92,11 @@ remain preserved; squash-merged unique tips are conservatively preserved too.
 Literal `rm`/`rmdir` and PowerShell `Remove-Item`/`rm`/`ri`/`rmdir`, including
 `-LiteralPath`, refuse removal of `.workflow-backups`, its contents, or a broad
 parent. Canonical path resolution covers traversal and symlink/junction aliases;
-wildcards that can cover protected backup paths refuse. Broad overrides,
+wildcards that can cover protected backup paths refuse.
+Active wildcard patterns combined with a `..` path component are unsupported
+and refuse before canonicalization; use a resolved direct literal target
+without wildcard/parent traversal.
+Broad overrides,
 environment flags or approval text placed in a shell command cannot authorize
 backup removal. Ordinary shell backup removal always refuses in this slice.
 

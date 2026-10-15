@@ -94,17 +94,377 @@ Only the worktrees.py module docstring changed, as explicitly directed.
 GUARDS-PLAN I87-G-T1: literal parsing, all-segment inspection, conservative
 unsupported/alias handling and backup canonicalization mitigate the assigned
 bounded preflight failure mode; attack/precision and junction evidence above.
+Independent review CR01–CR06 demonstrates these initial mitigations are
+incomplete. The coherent repair below now passes the approved regression matrix;
+fresh independent review remains required before accepting the repaired source.
 I87-G-T2: unknown/open/partial/stale/mismatched provider evidence, unowned and
 dirty targets preserve work; both-provider offline tests above. Canonical
-threat issue identity/readback and independent review remain coordinator owned.
+threat issue readback was confirmed by the coordinator as
+[I87-G-T1](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t1),
+[I87-G-T2](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2)
+and [I87-G-T3](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3).
+The coordinator owns the PLAN link update and independent review.
 I87-G-T3 lock, exact snapshot approval and receipt lifecycle belong to dependent
 cleanup; no cleanup behavior is claimed here. Opaque external execution and
 post-preflight concurrent changes remain documented limits of this control.
 
 ## Remaining
 
-No implementation blocker remains for the assigned guard slice. Independent
-review/verification and coordinator publication are pending. `glab` was absent;
+Independent source review found six blocking regression families (CR01–CR06)
+in `e5af9bd`: Bash literal escapes/continuations, wrapper fixed-point parsing,
+Git destructive option abbreviations/clusters, PowerShell removal aliases,
+root ancestry and malformed ownership JSON roots. A native-entrypoint regression
+matrix now asserts JSON denial/exit 2 and independently exercises paired harmless
+controls. Its first run on unchanged production source exited 1, Ran 6 tests in
+14.030s, with 42 intentional behavior assertion failures: unsafe commands
+returned exit 0/empty stdout, while malformed sessions/wave scalar roots
+returned exit 1/traceback instead of structured denial. This is observed RED;
+no regression implementation has been applied. A repeated run after ensuring
+controls execute independently also exited 1, Ran 6 tests in 16.863s, with the
+same 42 attack assertions failing and no harmless-control failures. No skips or
+fixture/import failures occurred. Independent matrix review approved the six
+families and requested exactly three added cases: nested prohibited GIT_DIR
+after `command env`, a `branch --list -- '--delete'` harmless pattern, and a
+`push --push-option=-d` harmless option value. The approved-matrix run on
+unchanged production source exited 1, Ran 6 tests in 17.740s, with 44 assertion
+failures: the added nested environment still allowed, the branch pattern was
+incorrectly refused, and the push option-value control passed. This preserves
+the extra RED evidence before the coherent repair; no production source changed.
+The coordinator authorized implementation after this test commit without a
+further pause. Installer, installer tests and hooks README are released to the
+separate planning registration worker; repairs own only the guard library,
+guard tests and this summary.
+
+Review RED commits: `5c927709c9e74ff9def38837f3ebd1e29dd304a6` and
+`fec735e79233067dd19220c60f2fa3937c64195a`. They precede the coherent production
+repair; no implementation was applied before the independent matrix approval.
+
+## Coherent review repair
+
+The repair changes only `destructive_guard.py` and this summary after the two
+test-first commits. Bash tool payloads and explicitly selected POSIX shells
+apply literal unquoted backslash escapes and remove backslash-newline
+continuations. Native Windows commands preserve path backslashes; quoted
+Windows Git executable-path controls pass. Wrapper/assignment layers normalize
+to a fixed point, checking prohibited context variables at each layer, including
+after `command env`. Literal `time` and `!` prefixes expose the assessed command;
+unsupported wrapper flags refuse.
+
+Git options are separated from their values and operands. `--` ends option
+parsing; long destructive abbreviations and short destructive clusters refuse.
+`branch --list -- '--delete'` and `push --push-option=-d` remain harmless.
+PowerShell del/rd/erase aliases, including case variants, use backup protection.
+Component-aware common-path comparisons handle compatible drive/POSIX roots,
+parents and doubled separators without string-prefix ancestry. Ownership
+sessions/wave JSON requires an object root, the proper list container and
+object records with string branch/worktree fields before any access; malformed
+records refuse with native denial JSON/exit 2 instead of a traceback.
+
+| Repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 14 tests in 58.200s, zero skips; all six approved review families and controls, original registered/native/backup matrix and both-provider offline contracts pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.009s, zero skips; actual Codex Windows / Claude launchers and advisory scratchpad/dispatch coverage retained |
+| `git diff --check` | Exit 0 |
+
+Repair source commit: `180e189719624ab01aba31cb700f69eeb4cf7de6`.
+This summary-only evidence update pins the source identity. These checks exercised
+the repaired source descending from `fec735e`. No production source changed
+after the passing run. Fresh independent review is pending, so the earlier
+blockers are reported as repaired with test evidence, not independently cleared.
+Released installer/test_install/hooks README paths were not changed. No cleanup
+child path, provider adapter, PR86 hook, adoption record, publication or merge
+was touched.
+
+## Second independent review RED
+
+Frozen source `b74241f` received five further blockers: Windows environment-name
+case folding, explicit cmd syntax, MSYS drive paths, malformed tool_name types,
+and quoted/escaped wildcard provenance. The new matrix exercises the real
+source JSON stdin entrypoint and pairs each family with harmless controls.
+It covers nested mixed/lower/upper environment names with POSIX case behavior,
+explicit cmd caret/percent/delayed syntax and literal read/echo controls,
+MSYS drive roots/parents/-C/sibling paths on both available Windows drives,
+unmodeled POSIX roots, non-string tool names, and literal versus active globs.
+Submitted destructive commands are never executed. Temporary Git fixtures and
+their cleanup are confined to test-owned directories.
+
+The first matrix run on unchanged production source exited 1, Ran 5 tests in
+12.168s, with 36 behavior assertion failures (unsafe allow, malformed payload
+traceback instead of refusal JSON, and false-positive literal removals).
+An exact primary-branch-switch reason assertion was then added to the MSYS -C
+cases, so unknown/misresolved context cannot count as protection. Final RED:
+`python -m unittest discover -s tests -p test_destructive_guard.py -k second_cr -v`
+exited 1, Ran 5 tests in 12.660s, with 38 intended behavior assertion failures,
+zero skips or fixture/import failures. This is recorded before the independently
+requested matrix review.
+No production source has changed for this review attempt. Guard acceptance
+remains blocked until repaired and independently reviewed. Existing canonical
+risk 95 anchors I87-G-T1 (parser/context/paths) and I87-G-T2 (payload schema)
+remain authoritative; no new issue is requested.
+
+Independent matrix review accepted all five families and requested exactly two
+PowerShell Path/LiteralPath cases plus renaming the harmless `git_directory`
+variable to `gitdirectory` (the former belongs to conservative GIT_* scope on
+Windows). The adjusted matrix on unchanged production source exited 1, Ran 5
+tests in 11.642s, with 39 behavior assertion failures and zero skips. Quoted
+PowerShell `-Path '.workflow-*'` correctly refused already; the added
+`-LiteralPath 'ordinary*.txt'` control exposed a false positive. This RED commit
+precedes the approved coherent repair; no further authority pause is required.
+
+## Second coherent review repair
+
+RED commits `4914218afe6badf52546954463a5e404a192075c` and
+`034729b9fb7c5caef52be07bfc7434d973fd30c7` precede this repair. The independent
+matrix gate approved all five families and the final PowerShell additions
+before production source changed. Only the guard library and this summary
+changed after those test commits.
+
+Windows prohibited environment comparisons now normalize case at every prefix
+layer; POSIX variable names retain their case semantics. Explicit cmd shell
+selection refuses caret, percent and delayed-expansion syntax with
+`unsupported-cmd-syntax`; literal read commands and quoted echo text retain
+their declared allow behavior. No cmd expansion or command body is evaluated.
+
+Windows Bash path operands model `/c`/`/c/...` drive spelling (and corresponding
+other drive letters), sharing canonicalization across cwd overrides, cd, Git -C,
+worktree removal and filesystem removal. Unmodeled POSIX roots on Windows Bash
+refuse instead of being interpreted as invented native paths. Both actual
+available drives C and D were exercised in disposable fixture repositories;
+the Git -C tests require the exact primary-branch-switch reason, so unknown
+context cannot count as protection. Sibling paths remain allowed.
+
+Non-string/empty tool names are rejected before any hash-based membership test,
+and malformed payloads produce native denial JSON with exit 2. Lexing retains
+per-character quoted/escaped wildcard provenance. Component-wise glob overlap
+permits ordinary sibling globs and literal wildcard filenames while preserving
+backup-covering globs and paths inside backups. PowerShell `-Path` retains
+wildcard semantics even when quoted; `-LiteralPath` treats wildcard characters
+as literal data.
+
+The immutable Segment interface keeps canonical `.cwd` and plain literal
+`.argv` unchanged. Additive defaulted fields are `shell_dialect` (`native`) and
+aligned `glob_patterns` (empty tuple by default; each parsed argument has a
+pattern or None). This preserves existing two-argument construction while
+making shell/path and wildcard provenance available to downstream consumers.
+
+| Second repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 19 tests in 77.277s, zero skips; original attacks/precision/native/provider, first-review six families and second-review five families including approved controls all pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 27.315s, zero skips; actual both-host launchers plus advisory dispatch/scratchpad coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+Second repair source commit: `c41f6b2f5a8d074bc7606b686dc90b23f130c98f`.
+This summary-only evidence update pins the repaired source. Checks exercised the
+production bytes descending from `034729b`; no source changed after the passing
+run. All five findings are repaired with these tests; fresh independent review
+remains pending. Canonical 95 I87-G-T1/T2 remain the same risk identities. No
+installer, released test_install/hooks README, PR86 hook, provider adapter,
+adopting-project planning record, cleanup child, publication or merge changed.
+
+## Final bounded wildcard-ancestor review RED
+
+The final bounded review cleared the previous eleven findings but identified
+one introduced gap: a wildcarded ancestor can select an ordinary-looking
+junction/symlink into `.workflow-backups`, which unresolved spelling comparison
+does not detect. The prescribed single native-entrypoint matrix creates only
+disposable backup/kept.txt, alias and unrelated sibling fixtures. It tests
+wildcard ancestor/child traversal, exact alias and direct backup controls,
+quoted/escaped literals, benign sibling globs and PowerShell Path/LiteralPath.
+All submitted removal strings stay inert JSON. Production source remains
+`c41f6b2` during RED; no child/installer change is authorized.
+
+RED command: `python -m unittest discover -s tests -p test_destructive_guard.py
+-k final_wildcard -v`. Exit 1, Ran 1 test in 2.006s, four intended native
+behavior assertion failures: three Bash wildcard-ancestor forms and PowerShell
+`-Path` returned exit 0 instead of denial JSON/exit 2. Exact alias/direct backup
+attacks already refused; all quoted, LiteralPath and unrelated sibling controls
+passed. Zero skips or fixture/import errors. This RED is committed before the
+bounded read-only resolved-match repair.
+
+## Final bounded wildcard repair
+
+The repair retains literal/provenance parsing and the direct glob comparison.
+For active patterns it additionally enumerates path components read-only and
+canonicalizes each selected match, detecting a wildcard-selected junction or
+symlink that resolves into protected backups before following child components.
+Quoted Bash operands and PowerShell LiteralPath operands do not enter expansion;
+unrelated sibling matches remain allowed. Expansion never executes a submitted
+command or substitutes its arguments into an executable shell.
+
+The walk is bounded to 64 path components and 8192 inspected entries/candidates.
+Unsupported recursive glob syntax, failed/inconsistent inspection, excessive
+enumeration and unresolved errors refuse conservatively. External filesystem
+changes after preflight remain the already documented race limit under the
+existing I87-G-T1 identity. No new risk issue or broader parser scope is added.
+
+RED commit: `b97d496a5617d949738e5853e049d4d4689e861b` precedes this repair.
+
+| Final bounded repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 20 tests in 74.528s, zero skips; all original/provider/native/registered, previously cleared review matrices and the final alias matrix with controls pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.873s, zero skips; actual both-host launcher denial/allow and advisory scratchpad/dispatch coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+Final bounded source commit: `e2c4ed44cab7c865863dea0a577eaa7639ff61e9`.
+This summary-only update pins the exact source. No production source
+changed after the passing checks. Fresh bounded independent review remains
+pending. Only the library and summary changed after the prescribed RED commit;
+installer, children, PR86 bytes and provider adapters remain unchanged.
+
+## Wildcard-before-parent canonicalization RED
+
+The retained final review found one further case in the same wildcard family:
+`ordinary-*/../kept.txt` can select a junction into backup/child before `..`
+resolves to backup/kept.txt. Canonicalizing the unresolved pattern first loses
+that selection. The prescribed native-entrypoint matrix tests the exact Bash
+and shared PowerShell Path cases, quoted/escaped literal and unrelated parent/
+glob controls, and the previous exact alias/direct wildcard protections. All
+submitted command strings remain inert JSON; only disposable fixtures change.
+The approved repair will refuse active wildcard-before-parent traversal before
+canonicalization rather than expand the supported shell grammar.
+
+Prescribed RED command: `python -m unittest discover -s tests -p
+test_destructive_guard.py -k final_active_glob_parent -v`. Exit 1, Ran 1 test
+in 1.710s, two intended allow-versus-deny failures (Bash and PowerShell Path),
+zero skips or fixture/import errors; literal/quoted/unrelated controls and prior
+alias refusals passed. A preliminary extra assertion outside the prescribed
+matrix observed literal `ordinary-alias/../kept.txt` also allowed on Windows;
+that junction-parent canonicalization discrepancy was sent to the coordinator
+for scope judgment, and the unprescribed assertion was replaced with the actual
+previously cleared exact-alias control. It is not claimed fixed by the narrow
+active-glob correction. Production source is unchanged for this RED commit.
+
+The coordinator retained the literal discrepancy as in scope and required
+harmless confirmation. A disposable fixture with different ordinary/protected
+kept.txt content confirmed both Git Bash `cat ordinary-alias/../kept.txt` and
+`cat ordinary-*/../kept.txt` return the protected content (exit 0); harmless printf
+reported the expanded alias-parent spelling. No removal command was executed.
+The coherent RED matrix now retains BOTH proved forms before production edits,
+and embeds the harmless read proof. The narrowly approved fix will also refuse
+parent traversal through a detected raw symlink/junction before canonicalization.
+Ordinary literal-parent, quoted wildcard and unrelated glob controls remain.
+The coordinator separately authorized normalizing only the fresh fixture root
+with `Path(self.temp.name).resolve()` for Windows TEMP 8.3 portability; raw attack
+operands and production alias policy are not weakened.
+
+Coherent proved RED result: same `-k final_active_glob_parent -v` command exited
+1, Ran 1 test in 1.806s, three intended native allow-versus-deny assertions
+(Bash active glob, shared PowerShell Path, proved literal Bash alias-parent).
+Harmless read proof and all legitimate controls passed; zero skips/import or
+fixture errors. This is committed before the single small production repair.
+
+## Bounded parent-traversal correction
+
+RED `5dec5dddc2b690fe49816d2021101441b97eeb6c` and coherent proved RED
+`12d2b8f4c5e61cbafaf2a001166afa391f853570` precede the production correction.
+The library retains raw components before canonicalization: active wildcard
+selection followed by `..` returns `unsupported-glob-parent-traversal`; a parent
+step through a detected raw symlink/junction/reparse point returns
+`unsupported-alias-parent-traversal`. Existing resolved path behavior is the
+default; raw inspection is a private opt-in only for this bounded check. No
+full shell/path AST or additional expansion grammar is introduced.
+
+The first full 21-test implementation run exited 1 in 76.078s with three
+precision failures: two Windows literal wildcard controls and an existing
+backup-glob reason assertion. The raw inspector was narrowed to the prefix
+through the last parent step. After active glob-parent syntax is refused,
+remaining literal * or ? names cannot be Windows components and do not trigger
+native metadata lookup. Both harmless read proofs and the three actual attack
+refusals remain asserted. Focused parent test passed in 1.796s; existing
+backup-alias test passed in 0.686s after the precision correction.
+
+Attribution note: the Windows literal-name early-return hunk was present on
+inspection after a resumed status exchange without a visible successful write
+receipt in this worker history. The coordinator confirmed no known writer and
+directed inspection/testing of the captured bytes. Attribution is unavailable;
+no external writer is inferred. The complete captured source was inspected and
+fingerprinted SHA256 F1419D38150518321F16C7679268908E89495ABC23839CED4C0859A1782AAB87
+before the final full run. Its final checks/source commit are recorded below.
+
+| Parent correction final check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 21 tests in 74.301s, zero skips; both harmless semantics proofs, all three parent-traversal attacks, all legitimate controls and retained prior guard/provider/native/registered matrices pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.754s, zero skips; actual both-host launcher and advisory scratchpad/dispatch coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+All test processes completed before source commit. Source commit:
+`bf83325492e6be9f9b2803df63a532c5568b10ae`, pinned by this summary-only evidence
+update. Source bytes did not change after the final passing run.
+Earlier removed literal-alias-parent discrepancy is now retained, proved and
+repaired; no discovered required case is silently deferred. Fresh bounded
+independent review remains pending. No installer, child source, PR86 hook,
+provider adapter, adoption record, publication or merge changed.
+
+## Final provenance-only RED
+
+The frozen `804979b` review retained previous clearances but confirmed one sole
+provenance blocker: genuine Bash `[[]` bracket classes and lexer-encoded literal
+`[` characters collide when fnmatch escapes are stripped to infer active path
+components. The prescribed native RED matrix creates a disposable junction/
+symlink named `ordinary[alias`, proves genuine and mixed-word bracket-class
+expansion with pure printf, and tests paired fully quoted/mixed literal,
+ordinary sibling glob and literal-parent controls. Submitted removal commands
+remain inert JSON; no protected file content is read in the new proof.
+
+The approved minimal correction will refuse any nonNone active pattern
+provenance combined with a parent component before canonicalization, removing
+the ambiguous inference. Literal/quoted operands with None and sibling globs
+without parent remain supported. One narrowly authorized reference sentence
+will document this grammar limit and direct-literal guidance. No broader parser
+or provider/child/installer changes are authorized.
+
+Observed RED: `python -m unittest discover -s tests -p test_destructive_guard.py
+-k final_bracket_class -v` exited 1, Ran 1 test in 1.793s, four intended native
+allow-versus-deny assertions (genuine class, mixed genuine class, and two active
+pattern/parent combinations). Pure printf proofs and all literal/sibling
+controls passed; zero skips or import/fixture errors. Production is unchanged
+for this committed RED.
+
+## Minimal provenance correction
+
+RED `0dbb0a84aa44421abb1fcddfc4a04e69ceedeb53` precedes the correction.
+The ambiguous escape-stripping/component inference was removed. A raw parent
+component combined with nonNone active-pattern provenance now immediately
+returns `unsupported-glob-parent-traversal` before canonicalization, regardless
+of whether the active part precedes or follows the parent. No second pattern
+parser is introduced. Literal/fully quoted operands with None retain the
+existing literal alias-parent and ordinary parent checks; ordinary active
+sibling globs without a parent remain supported.
+
+The one authorized sentence in `.ai/references/destructive-operations.md`
+documents active-pattern/parent combinations as unsupported and directs callers
+to resolved direct literal targets. Other scope, provider and installer behavior
+is unchanged. Final checks and exact source identity are recorded below.
+
+The first full 22-test run exited 1 in 76.315s solely because the retained
+`../.workflow-*` test expected its old `backup-approval-required` reason. The
+newly approved active-pattern/parent grammar correctly refuses it as
+`unsupported-glob-parent-traversal`. That one test retains an exact assertion
+with the new declared reason; other backup cases keep their original exact
+reason. No production source changed for this expectation alignment. All new
+bracket-class/mixed-word proof and allow-control assertions had passed already.
+
+| Final provenance correction check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 22 tests in 73.130s, zero skips; new pure printf-derived bracket/mixed provenance cases, literal/quoted/sibling controls and all retained native/provider/registered matrices pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.684s, zero skips; actual both-host launcher and advisory scratchpad/dispatch coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| PyYAML safe_load of SUMMARY and destructive-operations frontmatter | Exit 0, both mappings valid; summary issue_refs present |
+| `git diff --check` | Exit 0 |
+
+No production source changed between the first full run and passing rerun; only
+the one obsolete exact-reason assertion was aligned to the approved grammar.
+All test processes completed. Final provenance source commit:
+`d2e285b02363b2cd3c5b5f1ec040b78451d69876`, pinned by this summary-only update.
+Fresh bounded independent review remains pending. The only additional
+documentation ownership was the single reference grammar-limit sentence; no
+installer, provider, PR86 hook, child source, adoption record, publication or
+merge changed.
+
+`glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
 were used. No live GitLab/on-prem execution is claimed. Arbitrary enterprise
 hostnames, fork ambiguity, unsupported Git context flags, conditional-cd
@@ -115,3 +475,20 @@ It does not inspect opaque Python/Node/external executable contents. Backup
 approval preview/apply, exact operation ordering, locks and transient one-use
 receipts are intentionally the separately assigned CLEANUP child, which has
 not started in this checkout. No broad approval override exists here.
+
+## Coordinator final independent clearance
+
+The final bounded review at0a164473aba0be58f6c45c07e19a238d2b902245 cleared
+the sole provenance finding, with zero critical/warning/info findings. Prior
+independent clearances remain applicable. Source d2e285b02363b2cd3c5b5f1ec040b78451d69876
+is frozen; this coordinator update changes maintenance records only.
+
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|---|---|---|---|---|
+| GUARDS-PLAN / I87-G-T1 | https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t1 | Proposed parsing mitigation locally verified and independently cleared; final CI pending | OPEN; readback verified | RED0dbb0a8 before d2e285b;22 tests, installed1, advisory60 passed; final review0a16447 |
+| GUARDS-PLAN / I87-G-T2 | https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2 | Proposed evidence/input mitigation locally verified and independently reviewed; final CI pending | OPEN; readback verified | Both-provider offline contracts and native denial matrices; dependent cleanup identity repair reviewed |
+| GUARDS-PLAN / I87-G-T3 | https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3 | Cleanup child source reviewed; final parent synchronization/CI pending | OPEN; readback verified | CLEANUP source1b5eb8a and portability7f1e236 |
+
+Canonical PLAN rows now link the verified95 entries without dropping local IDs.
+These proposed changes remain unmerged; no real cleanup, merge or issue closure
+is authorized. Live GitLab and arbitrary-script protection are not claimed.
