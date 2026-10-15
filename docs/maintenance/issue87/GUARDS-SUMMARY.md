@@ -117,8 +117,18 @@ returned exit 1/traceback instead of structured denial. This is observed RED;
 no regression implementation has been applied. A repeated run after ensuring
 controls execute independently also exited 1, Ran 6 tests in 16.863s, with the
 same 42 attack assertions failing and no harmless-control failures. No skips or
-fixture/import failures occurred. Implementation is paused for
-the coordinator's independent matrix review, as instructed.
+fixture/import failures occurred. Independent matrix review approved the six
+families and requested exactly three added cases: nested prohibited GIT_DIR
+after `command env`, a `branch --list -- '--delete'` harmless pattern, and a
+`push --push-option=-d` harmless option value. The approved-matrix run on
+unchanged production source exited 1, Ran 6 tests in 17.740s, with 44 assertion
+failures: the added nested environment still allowed, the branch pattern was
+incorrectly refused, and the push option-value control passed. This preserves
+the extra RED evidence before the coherent repair; no production source changed.
+The coordinator authorized implementation after this test commit without a
+further pause. Installer, installer tests and hooks README are released to the
+separate planning registration worker; repairs own only the guard library,
+guard tests and this summary.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures

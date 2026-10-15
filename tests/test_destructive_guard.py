@@ -313,6 +313,8 @@ class RegisteredGuardTests(unittest.TestCase):
                 self.source_verdict("echo '" + prefix + " git switch topic'", False)
         for command in ("command env git status", "env env git status", "exec env git status"):
             with self.subTest(control=command): self.source_verdict(command, False)
+        with self.subTest(prohibited_environment="nested env"):
+            self.source_verdict("command env GIT_DIR=/tmp/other git switch topic", True)
 
     def test_review_cr03_git_option_variant_family_native_entrypoint(self):
         for option in ("--del", "--dele", "--delet", "--delete"):
@@ -320,7 +322,8 @@ class RegisteredGuardTests(unittest.TestCase):
         for option in ("-vd", "-dv", "-vvd", "-dvv", "--del", "--delet", "--delete"):
             with self.subTest(option=option): self.source_verdict("git push " + option + " origin topic", True)
         for command in ("git branch --list", "git branch -v", "git push -v origin topic",
-                        "echo 'git branch --del topic'", "printf '%s' 'git push -vd origin topic'"):
+                        "echo 'git branch --del topic'", "printf '%s' 'git push -vd origin topic'",
+                        "git branch --list -- '--delete'", "git push --push-option=-d origin topic"):
             with self.subTest(control=command): self.source_verdict(command, False)
 
     def test_review_cr04_powershell_removal_alias_family_native_entrypoint(self):
