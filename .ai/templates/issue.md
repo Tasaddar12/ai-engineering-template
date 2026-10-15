@@ -201,6 +201,18 @@ table, other variants or surrounding authoring guidance in the public body.
 [1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
 ```
 
+For planned phase security work, this same Security risk variant may contain one
+phase security checklist; keep every required heading above. Under Risk assessment
+and lifecycle, give each risk an individually addressable entry with its stable
+key, aliases/occurrences, owning PLAN/Threat ID link, owner, scope/acceptance,
+assessment/uncertainty, lifecycle/outcome, next action, revision/check evidence and
+verified canonical reference, following
+[canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+Existing actionable matching issues remain canonical and are linked from the
+checklist. Distinct unplanned threats require standalone Security risk issues or
+existing full-scope matches. Keep full six-column registers in their owning PLANs;
+checked entries require outcome evidence and do not authorize issue closure.
+
 ### UAT
 
 ```markdown

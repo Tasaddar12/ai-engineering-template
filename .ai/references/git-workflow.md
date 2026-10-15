@@ -82,10 +82,13 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Create/reuse an issue for every identified PLAN/SUMMARY threat: prose, tables,
   deviations, Deferred/Remaining, pre-existing, mitigated, accepted and deferred.
-  Do not expand remediation beyond the plan.
+  Planned security mitigations may share one phase security checklist issue under
+  the routing below; each risk still needs its own canonical reference. Do not
+  expand remediation beyond the plan.
 - Keep description, category, component, severity, disposition and mitigation in
   its respective PLAN's existing six-column register. Link the local Threat ID to
-  the verified issue, or keep the ID plus `Pending: <dependency>`.
+  the verified issue or individually addressable checklist entry, or keep the
+  ID plus `Pending: <dependency>`.
 - Reuse the same issue for duplicate findings in different PLANs. Do not relocate
   or collapse PLAN content into a combined registry.
 - Workers return safe requests/SUMMARY. Coordinators update each owning PLAN's
@@ -97,7 +100,8 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 ### Identity and publication
 
 1. Keep the stable canonical risk key (repository, surface/control, failure mode/
-   remediation scope) and source aliases/occurrences in the Security risk issue.
+   remediation scope) and source aliases/occurrences in the Security risk issue
+   or its individually addressable planned checklist entry.
    Preserve keys across reruns.
 2. Search open and closed issues, linked PR/MRs and current PR/MR. Compare semantic
    scope; reuse an actionable full-scope match. Reuse resolved closed matches only
@@ -113,6 +117,49 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Apply neutral-link policy to GitLab MRs. Runtime support is GitHub-only; use a
   verified authorized host tool, otherwise retain Pending/publication blocker.
+
+### Planned checklist and unplanned routing
+
+Mandatory preparation/execution reconciliation chooses the canonical destination
+for every risk after the open/closed issue and linked/current PR/MR semantic
+search above. Existing actionable matching trackers remain canonical: a phase
+checklist links them without duplicating or replacing their identities. Preserve
+stable canonical risk keys and aliases across reruns, including occurrences in
+different PLANs. Closed unresolved matches retain the reopening-authority blocker;
+creating a new checklist entry must not bypass it.
+
+New planned security mitigations may use distinct entries in one phase security
+checklist issue as their canonical references. Use the Security risk variant's
+required headings and reviewed safe body; the checklist is a tracking container,
+never a combined PLAN register. Keep each full six-column register in its owning
+PLAN and keep SUMMARY/PR linked outcomes separate. Each entry must have:
+
+| Entry identity | Canonical risk key | Aliases / occurrences | PLAN / Threat ID | Owner | Scope / acceptance | Assessment / uncertainty | Lifecycle / outcome | Next action | Revision / check evidence | Canonical reference |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Individually addressable entry anchor | Stable repository/surface/failure-mode key | Every source occurrence | Owning PLAN/ID link | Responsible owner | Bounded scope and observable acceptance | Severity, impact/likelihood and uncertainty | Observed status and outcome | Concrete next action | Matching revision/check/result or Pending dependency | Verified entry URL or existing matching issue URL |
+
+Verify that each entry URL actually addresses that risk at the provider; do not
+invent an anchor. If an actionable matching issue already exists, link that issue
+as the canonical reference and keep its lifecycle/evidence authoritative. A new
+entry is canonical only for a new planned risk with all fields above. Semantic
+deduplication, safe separate review, serialized writes, template validation,
+readback and uncertain-create recovery apply to the checklist and every entry.
+`issue.validate` checks structural shape, not per-risk completeness or identity.
+
+A distinct unplanned threat discovered during execution or review needs its own
+actionable standalone Security risk issue, or an existing full-scope matching
+issue. Add its canonical reference to the owning PLAN and the phase checklist
+when one exists; a checklist-only entry cannot replace standalone tracking for a
+distinct unplanned risk. Never route threats through TODO publication. The generic
+resolved-problem exemption never waives this reconciliation, including findings
+already mitigated in the current execution.
+
+A checked checklist item requires individual outcome evidence. It does not mean
+issue closure or erase accepted/deferred/open work. Closing a checklist container
+requires scope-complete evidence for every included risk and existing explicit
+closure authority; checked items, accepted/deferred status and merge never grant
+that authority. Keep unavailable publication Pending with its dependency, and
+apply safe reporting and provider fallback below/above to every destination.
 
 ### Safe reporting
 

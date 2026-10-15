@@ -20,6 +20,9 @@ PATHS = (CANONICAL,) + PRODUCERS
 PLAN_FIELDS = ("Threat ID", "Category", "Component", "Severity", "Disposition", "Mitigation Plan")
 FLAG_FIELDS = ("Flag", "File", "Description")
 OUTCOME_FIELDS = ("PLAN / Threat ID", "Canonical issue", "Outcome", "Git state", "Evidence")
+CHECKLIST_FIELDS = ("Entry identity", "Canonical risk key", "Aliases / occurrences", "PLAN / Threat ID",
+                    "Owner", "Scope / acceptance", "Assessment / uncertainty", "Lifecycle / outcome",
+                    "Next action", "Revision / check evidence", "Canonical reference")
 
 # Exact base blocks embedded for shallow/offline CI; no Git subprocess in tests.
 RESTORED_BLOCKS = (
@@ -140,6 +143,57 @@ def review_obligation_errors(text):
     return [label for label, phrases in duties.items() if not all(p in normalized for p in phrases)]
 
 
+def checklist_errors(root):
+    canonical = (root / CANONICAL).read_text(encoding="utf-8")
+    routing = section(canonical, "### Planned checklist and unplanned routing")
+    normalized = " ".join(routing.split())
+    errors = []
+    if CHECKLIST_FIELDS not in table_headers(routing):
+        errors.append("checklist entry fields")
+    duties = {
+        "existing tracker reuse": ("Existing actionable matching trackers remain canonical",
+                                  "without duplicating or replacing their identities",
+                                  "Closed unresolved matches retain the reopening-authority blocker"),
+        "planned canonical identity": ("stable canonical risk keys and aliases across reruns",
+                                       "distinct entries in one phase security checklist issue",
+                                       "Verify that each entry URL actually addresses that risk"),
+        "register separation": ("never a combined PLAN register", "full six-column register in its owning PLAN",
+                                "SUMMARY/PR linked outcomes separate"),
+        "standalone unplanned": ("distinct unplanned threat discovered during execution or review",
+                                 "actionable standalone Security risk issue, or an existing full-scope matching issue",
+                                 "checklist-only entry cannot replace standalone tracking",
+                                 "owning PLAN and the phase checklist"),
+        "mandatory safe reconciliation": ("safe separate review, serialized writes, template validation, readback and uncertain-create recovery",
+                                           "Never route threats through TODO publication",
+                                           "resolved-problem exemption never waives this reconciliation"),
+        "checked is not closed": ("checked checklist item requires individual outcome evidence",
+                                  "does not mean issue closure", "scope-complete evidence for every included risk",
+                                  "existing explicit closure authority"),
+    }
+    for label, phrases in duties.items():
+        if not all(phrase in normalized for phrase in phrases):
+            errors.append(label)
+    template = (root / ".ai/templates/issue.md").read_text(encoding="utf-8").split(
+        "### Security risk\n", 1)[1].split("### UAT\n", 1)[0]
+    if not all(phrase in " ".join(template.split()) for phrase in (
+            "same Security risk variant", "keep every required heading", "individually addressable entry",
+            "Existing actionable matching issues remain canonical", "Distinct unplanned threats require standalone",
+            "do not authorize issue closure")):
+        errors.append("Security risk template routing")
+    for name, step, phrases in (
+        (".ai/workflows/plan-phase.md", "handle_preparer_return",
+         ("existing matching tracker", "planned phase security checklist entry", "stable key, aliases", "six-column register")),
+        (".ai/workflows/execute-phase.md", "aggregate_results",
+         ("existing actionable matching trackers", "distinct canonical entries", "standalone actionable Security risk issues")),
+        (".ai/workflows/execute-phase.md", "review_phase_issues",
+         ("canonical-threat-tracking", "standalone distinct unplanned risks", "closure authority")),
+    ):
+        body = " ".join(steps((root / name).read_text(encoding="utf-8")).get(step, "").split())
+        if not all(phrase in body for phrase in phrases):
+            errors.append(step + ": routing hook")
+    return errors
+
+
 class ThreatTrackingContract(unittest.TestCase):
     def fixture(self):
         temporary = tempfile.TemporaryDirectory()
@@ -244,6 +298,55 @@ class ThreatTrackingContract(unittest.TestCase):
                 pattern = r"\s+".join(re.escape(word) for word in old.split())
                 self.assertRegex(text, pattern)
                 self.assertIn(expected, review_obligation_errors(re.sub(pattern, "Removed", text)))
+
+    def test_planned_checklist_real_structure_and_each_field_mutation(self):
+        self.assertEqual([], checklist_errors(ROOT))
+        for field in CHECKLIST_FIELDS:
+            with self.subTest(field=field):
+                root = self.fixture()
+                path = root / CANONICAL
+                text = path.read_text(encoding="utf-8")
+                routing = section(text, "### Planned checklist and unplanned routing")
+                path.write_text(text.replace(routing, routing.replace("| " + field + " |", "| Removed |", 1), 1), encoding="utf-8")
+                self.assertIn("checklist entry fields", checklist_errors(root))
+
+    def test_planned_unplanned_routing_duties_and_mutations(self):
+        cases = (
+            ("Existing actionable matching trackers remain canonical", "existing tracker reuse"),
+            ("Closed unresolved matches retain the reopening-authority blocker", "existing tracker reuse"),
+            ("stable canonical risk keys and aliases across reruns", "planned canonical identity"),
+            ("Verify that each entry URL actually addresses that risk", "planned canonical identity"),
+            ("never a combined PLAN register", "register separation"),
+            ("checklist-only entry cannot replace standalone tracking", "standalone unplanned"),
+            ("resolved-problem exemption never waives this reconciliation", "mandatory safe reconciliation"),
+            ("checked checklist item requires individual outcome evidence", "checked is not closed"),
+            ("scope-complete evidence for every included risk", "checked is not closed"),
+        )
+        for phrase, error in cases:
+            with self.subTest(duty=error):
+                root = self.fixture()
+                path = root / CANONICAL
+                text = path.read_text(encoding="utf-8")
+                pattern = r"\s+".join(re.escape(word) for word in phrase.split())
+                self.assertRegex(text, pattern)
+                path.write_text(re.sub(pattern, "Removed", text, count=1), encoding="utf-8")
+                self.assertIn(error, checklist_errors(root))
+
+    def test_routing_stays_in_mandatory_real_steps(self):
+        for name, step, phrase in (
+            (".ai/workflows/plan-phase.md", "handle_preparer_return", "planned phase security checklist entry"),
+            (".ai/workflows/execute-phase.md", "aggregate_results", "standalone actionable Security risk issues"),
+            (".ai/workflows/execute-phase.md", "review_phase_issues", "standalone distinct unplanned risks"),
+        ):
+            with self.subTest(step=step):
+                root = self.fixture()
+                self.mutate(root, name, phrase, "Removed")
+                self.assertIn(step + ": routing hook", checklist_errors(root))
+
+    def test_security_risk_template_preserves_canonical_routing(self):
+        root = self.fixture()
+        self.mutate(root, ".ai/templates/issue.md", "Existing actionable matching issues remain canonical", "Removed")
+        self.assertIn("Security risk template routing", checklist_errors(root))
 
     def test_summary_outcome_and_git_state_are_independent(self):
         block = file_template((ROOT / ".ai/templates/summary.md").read_text(encoding="utf-8"))

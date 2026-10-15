@@ -620,6 +620,12 @@ Read each SUMMARY.md and build the phase picture:
   independently of the optional code review gate.
 - Create/reuse/read back issues; update each owning PLAN's links and SUMMARY
   outcomes. Keep each PLAN register in place; do not aggregate threat content.
+- At this mandatory reconciliation, reuse existing actionable matching trackers.
+  Planned security mitigations may use distinct canonical entries in one phase
+  checklist; preserve keys/aliases and individual evidence. Distinct unplanned
+  execution/review threats require standalone actionable Security risk issues
+  (or existing full-scope matching issues), linked from the owning PLAN and any
+  phase checklist. Checked entries do not mean issue closure.
 - Carry still-open/accepted/deferred risks and evidenced closed issues distinctly;
   retain Pending dependencies and continue independent authorized work.
 
@@ -683,6 +689,11 @@ halt problems and validated unresolved review findings, subtracting work fixed i
 this execution. Routine resolved corrections and unrelated checker notices need
 no issue. Separate threat tracking retains its own reconciliation requirements;
 generic resolved-problem exemptions do not waive them.
+
+Reconcile threats through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+before this ordinary follow-up review: preserve planned-checklist identities,
+existing matching trackers and standalone distinct unplanned risks. Keep neutral
+links and closure authority separate from checked items and accepted/deferred outcomes.
 
 1. Workers author explicit `issue_refs` on their first SUMMARY, including []
    after leftover review. For later coordinator amendments, preview
