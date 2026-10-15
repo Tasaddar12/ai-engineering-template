@@ -40,7 +40,7 @@ coverage:
       - {kind: integration, ref: tests/test_planning_integrity.py, status: pass}
     human_judgment: false
 completed: 2026-10-15
-status: complete
+status: blocked
 ---
 
 # Issue 87 planning integrity execution summary
@@ -133,3 +133,17 @@ None newly identified in the inspected local planning schema/commit and authored
 ---
 *Phase: issue87-maintenance / PLANNING*
 *Completed: 2026-10-15 (owned slice; installed integration pending)*
+
+
+## Independent final review correction — RED matrix
+
+Review input: `f782a0ad7eefaa0a552ca187ed0667c6783953e5`. Independent review found four blocking commit-boundary defects; this continuation is explicitly authorized by the coordinator within the original owned paths.
+
+- CR01: attached short-option clusters such as `-amfix87` selected index instead of tracked working bytes. A controlled temporary native Git commit reproduced invalid bytes entering HEAD.
+- CR02: wrapper parsing consumed outer command tokens, allowing wrapped commit commands with surrounding harmless commands to escape inspection.
+- CR03: duplicate top-level and nested YAML keys silently used the last value, including declarations overwritten by `issue_refs: []`.
+- CR04: malformed cross-kind collection metadata could raise a traceback/exit 1 or accept a string/dict; unexpected inspection errors did not use native denial exit 2.
+
+Before any correction source edits, `python -m unittest discover -s tests -p test_planning_integrity.py -k review_cr` ran six new tests and reported **28 failing assertions in 15.759s**. Tests cover actual native JSON payloads, prospective index/working disagreement, attached-message controls, 16 wrapper/operator forms with invalid/valid pairs, duplicate actionable/scalar/nested keys, typed containers and injected unexpected inspection errors. Unrelated index entries are compared throughout. The test matrix and this RED evidence are committed separately before implementation.
+
+Correction source and GREEN evidence remain pending. Distinct risk tracking is coordinator-owned and awaits canonical readback; no new issue identity or closure is asserted here.

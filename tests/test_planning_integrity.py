@@ -176,6 +176,114 @@ class IntegrityTests(unittest.TestCase):
         # Backslash is a native path separator, not a PowerShell quote escape.
         self.assertEqual(self.hook(r'g\it commit -m fixture', tool='exec_command').returncode, 0)
 
+    def test_review_cr01_attached_all_clusters_select_working_bytes(self):
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.git('commit', '-qm', 'tracked valid record')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.write(RECORD, INVALID)
+        self.write('unrelated', 'preserve staged bytes\n')
+        self.git('add', 'unrelated')
+        before = self.git('ls-files', '--stage')
+        for command in ['git commit -am"fix issue 87"', 'git commit -amfix87',
+                        'git commit -qam"fix 87"', 'git commit -a -m "fix 87"']:
+            with self.subTest(command=command):
+                self.assert_denied(self.hook(command))
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+        for command in ['git commit -mdata', 'git commit -mfix87']:
+            with self.subTest(index_control=command):
+                self.assertEqual(self.hook(command).returncode, 0)
+
+    def test_review_cr01_controlled_native_cluster_cannot_commit_invalid_working_bytes(self):
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.git('commit', '-qm', 'tracked valid record')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.write(RECORD, INVALID)
+        observed = self.hook('git commit -amfix87')
+        if observed.returncode == 0:
+            self.git('commit', '-amfix87')
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.head,
+                         'native -amfix87 must not reach Git with invalid prospective bytes')
+        self.assertEqual(observed.returncode, 2, observed.stderr)
+
+    def test_review_cr02_wrapped_commits_survive_outer_segmentation(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        self.write('unrelated', 'preserve stage\n')
+        self.git('add', 'unrelated')
+        before = self.git('ls-files', '--stage')
+        wrappers = ['bash -lc "git commit -m fixture"', 'sh -c "git commit -m fixture"',
+                    'powershell -Command "git commit -m fixture"', 'cmd /c "git commit -m fixture"']
+        commands = [form for wrapper in wrappers for form in
+                    [wrapper, wrapper + '; echo done', wrapper + ' && echo done', 'echo start; ' + wrapper]]
+        for command in commands:
+            with self.subTest(invalid=command):
+                self.assert_denied(self.hook(command))
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        for command in commands:
+            with self.subTest(valid=command):
+                result = self.hook(command)
+                self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.hook('echo "git commit -m fixture"').returncode, 0)
+
+    def test_review_cr03_duplicate_yaml_keys_are_denied_in_actual_staged_records(self):
+        duplicates = [
+            ('issue_refs', VALID.replace('issue_refs: []', 'issue_refs: [https://example.invalid/issues/1]\nissue_refs: []')),
+            ('issue_refs', VALID.replace('issue_refs: []', 'issue_refs: [{id: review, summary: Retain declared followup, variant: UAT, state: pending-human, relationship: followup}]\nissue_refs: []')),
+            ('wave', VALID.replace('wave: 1', 'wave: -2\nwave: 1')),
+            ('truths', VALID.replace('must_haves: {truths: [], artifacts: [], key_links: []}', 'must_haves: {truths: [retained], truths: [], artifacts: [], key_links: []}')),
+            ('path', VALID.replace('artifacts: []', 'artifacts: [{path: first, path: second}]')),
+        ]
+        for key, content in duplicates:
+            with self.subTest(key=key, content=content):
+                self.write(RECORD, content)
+                self.git('add', RECORD)
+                before = self.git('ls-files', '--stage')
+                result = self.hook('git commit -m fixture')
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn(key, result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+                self.assertEqual(self.git('rev-parse', 'HEAD'), self.head)
+        self.write(RECORD, duplicates[0][1])
+        result, data = self.runtime('commit', 'duplicate fixture', '--files', RECORD)
+        self.assertEqual(result.returncode, 1, data)
+        self.assertEqual(data['code'], 'planning-integrity')
+        self.assertIn('issue_refs', data['error'])
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.head)
+
+    def test_review_cr04_cross_kind_collection_types_deny_without_traceback(self):
+        for value in ['7', 'null', '{}', 'true', 'REQ-OLD']:
+            with self.subTest(value=value):
+                self.write(RECORD, VALID.replace('issue_refs: []', 'requirements-completed: ' + value + '\nissue_refs: []'))
+                self.git('add', RECORD)
+                before = self.git('ls-files', '--stage')
+                result = self.hook('git commit -m fixture')
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn('requirements-completed', result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+        self.write(RECORD, VALID.replace('issue_refs: []', 'requirements-completed: [REQ-OLD]\nissue_refs: []'))
+        self.git('add', RECORD)
+        result = self.hook('git commit -m fixture')
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_review_cr04_unexpected_inspection_error_uses_native_denial_exit(self):
+        bootstrap = ('import importlib.util,sys; '
+                     's=importlib.util.spec_from_file_location("review_hook",sys.argv[1]); '
+                     'm=importlib.util.module_from_spec(s); s.loader.exec_module(m); '
+                     'm.inspect=lambda *args: (_ for _ in ()).throw(RuntimeError("injected inspection failure")); '
+                     'sys.exit(m.main())')
+        result = subprocess.run([sys.executable, '-c', bootstrap, str(HOOK)], cwd=self.root,
+                                input=json.dumps({'tool_name': 'exec_command', 'tool_input': {'cmd': 'git commit -m fixture'}}),
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('inspection', result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+
     def test_runtime_rejects_missing_issue_refs_before_commit(self):
         self.write(RECORD, INVALID)
         result, data = self.runtime('commit', 'fixture', '--files', RECORD)
