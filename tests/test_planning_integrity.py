@@ -1,5 +1,6 @@
 """Behavioral planning integrity regressions against isolated real repositories."""
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -173,8 +174,13 @@ class IntegrityTests(unittest.TestCase):
         self.write(RECORD, INVALID)
         self.git('add', RECORD)
         self.assert_denied(self.hook('git -C ' + str(self.root) + ' commit -m fixture', tool='exec_command'))
-        # Backslash is a native path separator, not a PowerShell quote escape.
-        self.assertEqual(self.hook(r'g\it commit -m fixture', tool='exec_command').returncode, 0)
+        result = self.hook(r'g\it commit -m fixture', tool='exec_command')
+        if os.name == 'nt':
+            # Native PowerShell preserves backslash as a path separator.
+            self.assertEqual(result.returncode, 0, result.stderr)
+        else:
+            # The native POSIX shell removes this executable-name escape.
+            self.assert_denied(result)
 
     def test_review_cr01_attached_all_clusters_select_working_bytes(self):
         self.write(RECORD, VALID)

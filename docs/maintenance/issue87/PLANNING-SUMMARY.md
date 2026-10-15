@@ -12,7 +12,7 @@ affects: [runtime, planning-authoring, hook-installation]
 actuals:
   tokens: 23990
   tasks: 3
-  commits: 6
+  commits: 7
 tech-stack:
   added: []
   patterns: [read-only prospective Git inspection, scoped section preservation]
@@ -76,7 +76,8 @@ status: complete
 3. Independent review RED matrix: `29485b6275ddf7b7b5e110c0dae9294ca67181f4` — six new tests, 28 failing assertions, no correction source changes.
 4. CR01-CR04 corrections: `160578385bd3c3a89b84e77d198d5d1194908b56`.
 5. CR05 merge control RED matrix: `060bd99457c8c6d7f31758d4674a6c3bafddb660`.
-6. CR05 bounded loader correction and final evidence: this commit; exact hash returned in the worker handoff.
+6. CR05 bounded loader correction: `2a7086b097c6fbccec08841885b0ccec0b4ed7f0`.
+7. Approved CI test-compatibility correction: this commit; exact hash returned in the worker handoff.
 
 ## Checks
 
@@ -189,3 +190,22 @@ Independent planning review cleared CR01-CR05; the CR05 reviewer independently
 ran six merge/duplicate controls successfully. Final corrected guard parent
 synchronization, cross-component review, required CI and PR-link audit remain
 pending. Issue96 remains OPEN, with no merge or closure authority inferred.
+
+
+## Approved CI test compatibility correction
+
+Input: `9efc7311e29393a2e73e1c012973a80705e53f40` on the released planning branch, including coordinator installer integration. The coordinator explicitly extended ownership only to the producer-link-loss method/control in `tests/test_threat_tracking_contract.py`, alongside the existing planning test and this summary. Production modules, installer, contract validation and useful documentation links are unchanged.
+
+Saved prior CI run **38792001394**, reviewed from `D:/Codex/2026-10-15/task-2/planning-ci-prior.log`, showed Linux's correct native POSIX denial conflicting with a Windows-only test expectation, plus both platforms' producer-link mutation still reaching the canonical procedure through the new integrity-contract link. The latter failure was independently reproduced locally before edits: **1 test failed in 0.309s**.
+
+- The native escape test now expects Windows path-separator meaning on Windows and POSIX executable-escape denial on other hosts. No production parsing behavior changed.
+- The producer-link mutation first proves the alternate integrity-contract route remains valid after the direct link is removed. It then removes all Markdown links only from the temporary producer fixture and explicitly confirms both graph unreachability and the existing `contract_errors` diagnostic. The production documents and validator remain intact.
+
+Verification on the corrected Windows working tree:
+
+- `python -m unittest discover -s tests -p test_planning_integrity.py`: **47 passed in 62.453s**.
+- `python -m unittest discover -s tests -p test_threat_tracking_contract.py`: **12 passed in 5.040s**.
+- `python -m unittest discover -s tests -p test_workflow_links.py`: **4 passed in 1.392s**.
+- `git diff --check`: passed.
+
+A fresh Linux CI run is coordinator-owned and remains pending; the saved Linux log establishes the expected native denial value. Existing risk I87-P-T1 / issue96 remains OPEN/unresolved pending required final CI and acceptance evidence. No publication, integration, merge, closure or installer edit was performed in this test-only slice.
