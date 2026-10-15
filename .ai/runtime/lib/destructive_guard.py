@@ -672,6 +672,38 @@ def _cleanup_generation(repo):
     return _digest(rows)
 
 
+def _cleanup_ref_identity(evidence, repo_path, ref):
+    """Read the exact named ref, including symbolic refs with missing targets."""
+    try:
+        if time.monotonic() >= evidence.deadline:
+            raise EvidenceError("evidence-time-budget")
+        probe = evidence.runner(["git", "--no-optional-locks", "symbolic-ref", "--quiet",
+                                 "--no-recurse", ref], str(repo_path))
+        if not isinstance(probe.stdout, str) or probe.returncode not in (0, 1):
+            raise EvidenceError("ref-identity-unknown")
+        if probe.returncode == 0:
+            target = probe.stdout.strip()
+            if not target.startswith("refs/") or any(c in target for c in "\0\r\n"):
+                raise EvidenceError("ref-identity-unknown")
+            return {"kind": "symbolic", "ref": ref, "target": target}
+        # Exit 1 is Git's explicit "not symbolic" result, not evidence failure.
+        raw = evidence.git(repo_path, "for-each-ref", "--format=%(refname)%00%(objectname)%00%(symref)", ref)
+        rows = [line.split("\0") for line in raw.splitlines() if line.split("\0")[0] == ref]
+        if not rows:
+            return {"kind": "missing", "ref": ref}
+        if len(rows) != 1 or len(rows[0]) != 3:
+            raise EvidenceError("ref-identity-unknown")
+        _, oid, target = rows[0]
+        if target:
+            # A concurrent direct-to-symbolic change between the two reads.
+            return {"kind": "symbolic", "ref": ref, "target": target}
+        if not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", oid):
+            raise EvidenceError("ref-identity-unknown")
+        return {"kind": "direct", "ref": ref, "oid": oid}
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise EvidenceError("ref-identity-unknown") from exc
+
+
 def cleanup_preview(repo_path, evidence_runner=None):
     """Read-only, deterministic snapshot. Unknown evidence preserves targets."""
     evidence = CleanupEvidence(evidence_runner)
@@ -706,11 +738,17 @@ def cleanup_preview(repo_path, evidence_runner=None):
             recorded_path = owner.get("worktree", owner.get("path"))
             if not tree and recorded_path and os.path.lexists(recorded_path):
                 raise EvidenceError("ownership-worktree-unregistered")
-            oid = evidence.git(repo["root"], "rev-parse", "--verify", "refs/heads/" + branch)
+            ref_identity = _cleanup_ref_identity(evidence, repo["root"], "refs/heads/" + branch)
+            if ref_identity["kind"] != "direct":
+                raise EvidenceError("symbolic-ref-candidate" if ref_identity["kind"] == "symbolic" else "ref-identity-unknown")
+            oid = ref_identity["oid"]
+            provider = _cleanup_provider(evidence, repo, branch)
+            if any(record["head"] != oid for record in provider["records"]):
+                raise EvidenceError("provider-identity-mismatch")
             base_oid = evidence.git(repo["root"], "rev-parse", "--verify", "refs/heads/" + owner["base_branch"])
             common = {"branch": branch, "ref": "refs/heads/" + branch, "oid": oid,
-                      "base_oid": base_oid, "ownership": owner, "cleanliness": "clean",
-                      "provider": _cleanup_provider(evidence, repo, branch)}
+                      "ref_identity": ref_identity, "base_oid": base_oid,
+                      "ownership": owner, "cleanliness": "clean", "provider": provider}
             if target:
                 operations.append(dict(common, kind="worktree_remove", target=target))
             operations.append(dict(common, kind="branch_delete", target="refs/heads/" + branch))
@@ -751,7 +789,10 @@ def cleanup_preview(repo_path, evidence_runner=None):
             _safe_path(root)
             if Path(root).exists():
                 for child in sorted(Path(root).iterdir()):
-                    if not any(_contains(str(child), canonical(value)) for value, _ in backups):
+                    # Owning a nested target does not authorize its container.
+                    # Keep that ancestor visible before and after our own ref
+                    # deletion, so genuine unrelated preserved drift still fails.
+                    if not any(child == Path(canonical(value)) for value, _ in backups):
                         preserved.append({"kind": "backup", "target": str(child), "reason": "backup-unowned-or-ineligible"})
         except (EvidenceError, OSError) as exc:
             preserved.append({"kind": "backup", "target": root, "reason": str(exc)})
@@ -811,8 +852,11 @@ def _remove_backup(path):
 def _final_operation(evidence, repo_path, op):
     try:
         if op["kind"] == "branch_delete":
-            refs = evidence.git(repo_path, "for-each-ref", "--format=%(refname) %(objectname)", op["ref"])
-            return {"kind": op["kind"], "target": op["target"], "exists": bool(refs), "refs": refs}
+            identity = _cleanup_ref_identity(evidence, repo_path, op["ref"])
+            refs = (op["ref"] + " " + identity["oid"] if identity["kind"] == "direct" else
+                    "ref: " + identity["target"] if identity["kind"] == "symbolic" else "")
+            return {"kind": op["kind"], "target": op["target"], "exists": identity["kind"] != "missing",
+                    "identity": identity, "refs": refs}
         path = op["target"]
         row = {"kind": op["kind"], "target": path, "exists": os.path.lexists(path)}
         if op["kind"] == "worktree_remove":
@@ -887,7 +931,11 @@ def cleanup_apply(repo_path, approval_path, evidence_runner=None, mutation_runne
                 elif op["kind"] == "branch_delete":
                     if any(tree.get("branch") == op["branch"] for tree in evidence.repository(repo_path)["worktrees"]):
                         raise EvidenceError("branch-still-checked-out")
-                    argv = ["git", "update-ref", "-d", op["ref"], op["oid"]]
+                    if _cleanup_ref_identity(evidence, repo_path, op["ref"]) != op["ref_identity"]:
+                        raise EvidenceError("ref-identity-stale")
+                    # --no-deref binds the mutation to the approved name even
+                    # if an uncooperative writer aliases it after inspection.
+                    argv = ["git", "update-ref", "-d", "--no-deref", op["ref"], op["oid"]]
                 elif op["kind"] == "backup_remove":
                     if _backup_digest(op["target"]) != op["digest"]:
                         raise EvidenceError("backup-content-stale")

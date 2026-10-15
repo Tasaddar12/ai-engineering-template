@@ -1,11 +1,11 @@
 ---
 phase: issue87-maintenance
 plan: cleanup
-status: in_progress
+status: complete
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 4c35d27436add6867934c85eb9e853bd2fc3052e
-requirements-completed: []
+requirements-completed: [ISSUE87-CLEANUP, ISSUE87-RED]
 acceptance: [I87-A2, I87-A3]
 documentation:
   - .ai/hooks/README.md
@@ -213,6 +213,51 @@ Adjusted RED: same cleanup_review command, exit 1, Ran 10 tests in 51.215s,
 5 intended assertion failures, zero errors/skips; all five control tests pass,
 including the new unrelated-unowned-sibling control. The nested happy case now
 fails at the stronger initial retained-container assertion. Production unchanged.
-Implementation repair remains pending; prior
-completion statements above describe the original delivered slice, not acceptance
-of these review findings.
+Adjusted RED commit: `02270a815740fcbe30bac55b1fd3b524053370a7`.
+Prior completion statements above describe the original delivered slice; the
+following evidence owns this repair's current result.
+
+CR01 repair records direct/symbolic/missing identity of the exact named ref,
+including dangling symbolic refs. Explicit symbolic-ref status 1 means "not
+symbolic"; other failed evidence remains unknown. Direct candidate identity is
+part of the pinned operation and is compared again immediately before mutation.
+`git update-ref -d --no-deref REF EXPECTED_OID` binds deletion to the approved
+name even if an external writer aliases it after that inspection. Actual Git
+controls prove named aliases can be removed without deleting their referents,
+while moved-OID refs survive. Readback uses exact identity rather than treating
+for-each-ref omission of dangling aliases as absence.
+
+CR02 repair lists each retained root-level backup container in preserved rows
+unless that container is itself the exact owned backup removal target. Owning a
+nested child grants no ancestor removal approval. The group's preserved row is
+therefore stable before and after our own approved removals. The existing full
+preserved-list and remaining-operation equality checks are unchanged; genuine
+dirty/provider/ownership/unrelated-unowned-sibling changes still stop before the
+second tree. The five-operation success case leaves the unapproved group and
+reports it in final preserved readback.
+
+| Repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -k cleanup_review -v` | Exit 0, 10 tests in 69.860s, zero skips; all attack/false-positive/drift controls passed |
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` full repaired suite | Exit 0, 32 tests in 170.226s, zero skips; includes CLI/replay regressions and the accepted review matrix |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, 1 test in 27.107s, zero skips; actual installed host launchers |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` after repair | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+The repair changes only the child library, tests and this SUMMARY plus the
+specifically authorized existing local-ref deletion sentence in
+destructive-operations.md. No hook registration, legacy runtime, RULES or parent
+guard/parser/ownership function changed. All mutation scenarios are disposable
+temporary Git repositories with offline evidence; no real cleanup/provider write.
+
+Threat aliases remain the existing canonical
+[I87-G-T2](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2)
+for I87-C-T1 and
+[I87-G-T3](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3)
+for I87-C-T2. These repairs mitigate the reviewed identity/staleness paths; no new
+risk issue or closure is inferred. Coordinator still owns parent propagation and
+independent final child review after release. No parent pull/merge was attempted.
+
+All assigned repair checks pass on the frozen source. The implementation commit
+containing this block is the repair GREEN boundary; its exact identity will be
+pinned in a subsequent SUMMARY-only commit. No source refactor was necessary.

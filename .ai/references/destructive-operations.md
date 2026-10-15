@@ -156,8 +156,10 @@ Apply validates before mutation and holds an exclusive `ai-cleanup/lock` under
 the shared Git common-dir. It refreshes all evidence under that lock, pins the
 approval-file payload and revalidates before every item. A non-force `git worktree
 remove -- PATH` must leave the path absent and unregistered before branch
-deletion can proceed. Local refs use `git update-ref -d REF EXPECTED_OID`, so
-a moved ref cannot be silently deleted. Remote branch deletion is unsupported;
+deletion can proceed. Symbolic candidates are preserved; local refs pin and
+recheck direct identity and use `git update-ref --no-deref -d REF EXPECTED_OID`,
+with exact identity readback, so a moved ref is preserved and a concurrent alias
+cannot redirect deletion to its referent. Remote branch deletion is unsupported;
 there is no remote force or lease bypass. No merge, rewrite, provider closure or
 unrelated metadata prune is performed.
 
