@@ -25,7 +25,9 @@ class RegisteredGuardTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="guard café ")
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # CI TEMP may use an 8.3 spelling. Normalize only this freshly created
+        # fixture root; actual alias/junction operands below remain unresolved.
+        self.root = Path(self.temp.name).resolve()
         git(self.root, "init", "-q", "-b", "main")
         (self.root / "tracked").write_text("safe\n", encoding="utf-8")
         git(self.root, "add", "tracked")
@@ -282,14 +284,17 @@ class CleanupTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="cleanup café ")
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name) / "repo"
+        # Establish a canonical disposable root before constructing any normal
+        # fixture paths. Never resolve the alias operands in protection tests.
+        self.temp_root = Path(self.temp.name).resolve()
+        self.root = self.temp_root / "repo"
         self.root.mkdir()
         git(self.root, "init", "-q", "-b", "main")
         (self.root / "tracked").write_text("safe\n", encoding="utf-8")
         git(self.root, "add", "tracked")
         git(self.root, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "fixture")
         git(self.root, "remote", "add", "origin", "https://github.com/owner/repo.git")
-        self.tree = Path(self.temp.name) / "owned tree"
+        self.tree = self.temp_root / "owned tree"
         git(self.root, "worktree", "add", "-qb", "phase-owned", str(self.tree))
         self.state = self.root / ".git/ai-phase"
         self.state.mkdir()
@@ -355,7 +360,7 @@ class CleanupTests(unittest.TestCase):
                 "reference": "human-message-fixture", "snapshot_id": preview["snapshot_id"]}}
 
     def apply(self, envelope, mutate=None):
-        approval = Path(self.temp.name) / "approval.json"
+        approval = self.temp_root / "approval.json"
         approval.write_text(json.dumps(envelope), encoding="utf-8")
         def mutation(argv, cwd):
             self.mutations.append(argv)
@@ -551,7 +556,7 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual("refused", result["status"])
         self.assertTrue((backup / "valuable").exists())
         approval.unlink()
-        outside = Path(self.temp.name) / "outside"
+        outside = self.temp_root / "outside"
         outside.mkdir()
         (outside / "valuable").write_text("keep outside", encoding="utf-8")
         link = backup / "alias"
@@ -569,7 +574,7 @@ class CleanupTests(unittest.TestCase):
         self.assertTrue((outside / "valuable").exists())
 
     def test_cleanup_detached_and_unrecorded_backups_are_preserved(self):
-        detached = Path(self.temp.name) / "detached"
+        detached = self.temp_root / "detached"
         git(self.root, "worktree", "add", "--detach", str(detached))
         backup = self.root / ".workflow-backups/unrecorded"
         backup.mkdir(parents=True)
@@ -580,12 +585,12 @@ class CleanupTests(unittest.TestCase):
         self.assertFalse(any(op["kind"] == "backup_remove" for op in preview["operations"]))
 
     def test_cleanup_raw_registered_junction_is_not_hidden_by_canonicalization(self):
-        physical = Path(self.temp.name) / "physical tree"
+        physical = self.temp_root / "physical tree"
         alias = self.tree
         # Git canonicalizes aliases supplied to worktree add. Replace an
         # already registered fixture directory to exercise the actual boundary.
-        self.assertTrue(physical.is_relative_to(Path(self.temp.name)))
-        self.assertTrue(alias.is_relative_to(Path(self.temp.name)))
+        self.assertTrue(physical.is_relative_to(self.temp_root))
+        self.assertTrue(alias.is_relative_to(self.temp_root))
         alias.rename(physical)
         if os.name == "nt":
             result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(physical)], capture_output=True)
@@ -687,7 +692,7 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
 
     def repair_two_owned_fixture(self):
-        self.other_tree = Path(self.temp.name) / "second owned tree"
+        self.other_tree = self.temp_root / "second owned tree"
         git(self.root, "worktree", "add", "-qb", "phase-z-other", str(self.other_tree))
         self.other_owner = {"branch": "phase-z-other", "worktree": str(self.other_tree),
                             "base_branch": "main", "session_id": "second-fixture"}

@@ -281,3 +281,39 @@ unowned content, consistent with the bounded contract.
 The proposed child mitigation is locally checked and independently reviewed;
 latest guard synchronization, final integrated checks and required CI are pending.
 Issue95 stays OPEN; these unmerged changes grant no real cleanup or closure authority.
+
+## Windows CI fixture portability correction
+
+Input revision: `0f7cab53a7e29bcf221cf49e27080e8a72a0e55d`, including the
+coordinator's canonical readback above. Prior provided CI run `38793499728`
+reported Windows `Ran 659 tests in 1178.224s`, 1 failure, 39 errors and 2 skips.
+The saved cleanup-ci-prior.log traces cleanup preview errors to
+`_safe_path(repo_path)` / `EvidenceError: path-alias`, and CLI preview to expected
+exit 0 versus actual refusal exit 2. The disposable fixtures constructed roots
+from unnormalized TemporaryDirectory names. A Windows runner TEMP path can use
+8.3 spelling while canonical resolution expands it, correctly triggering the
+strict production alias check before the intended fixture behavior is exercised.
+
+Correction is fixture-only: RegisteredGuardTests resolves its freshly created
+temporary root; CleanupTests resolves one fresh temporary root and derives the
+ordinary repo/worktree/approval/outside/detached/physical/second-tree paths from
+it. Actual alias/junction operands remain raw. The raw registered worktree
+junction is still formed after its normal fixture path exists and is still
+expected to refuse. No production policy, hook, CLI, command or cleanup semantics
+changed. This uses the observed CI failure as regression evidence; no fabricated
+new RED cycle is claimed.
+
+| Portability check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` full child suite | Exit 0, 32 tests in 173.763s, zero skips; includes actual raw-registration junction refusal |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, 1 test in 24.818s, zero skips |
+| Real Win32 8.3 TEMP probe | Exit 0, 3 tests in 5.544s, zero skips; primary-switch guard, read-only preview and real raw-registration junction rejection pass with tempfile.tempdir set to an actual GetShortPathNameW spelling |
+| Strict production control within that probe | The unchanged `_safe_path` still rejects that actual raw short spelling as path-alias |
+| `git diff --check` | Exit 0 |
+
+The focused short-TEMP probe uses a freshly created disposable root, obtains its
+real Windows short spelling, restores tempfile.tempdir afterward, and preserves
+the actual junction operand in the protection test. No string-only alias mock is
+used. Hosted CI rerun and parent integration remain coordinator-owned; these
+local checks do not claim the hosted 659-test suite is green. No parent sync,
+real cleanup, provider write, installation or publication was performed here.
