@@ -20,6 +20,21 @@ Preparation is complete for independent review, not implementation or user-goal
 verification. The prior preparation/manual-handoff design is replaced under the
 actual human clarification: "This time we actually move the agent itself."
 
+## Bounded checker correction at 66986955
+
+Addressed BLOCKER PC-AW-source-interface-01 by defining prewrite.request as a
+known-unit workflow bootstrap with no prior intercepted edit, and an explicit
+immutable new/existing target mode. begin consumes either intercepted or workflow
+requests. New mode uses the native creation journal and adoption; existing ordinary
+phase/quick mode validates existing session metadata plus actual native/default
+context proof, confirms reuse without adoption and requires no retroactive native
+creation journal. Added real-Git/composed-contract cases for workflow entry without
+a prior write and existing ordinary phase/quick sessions, including mode mismatch.
+Addressed WARNING PC-AW-read-first-02 by adding tests/test_install_update.py to
+Task 1 read_first. All other contracts remain unchanged; exit/removal remains
+essential preservation only. No discovery, source changes, tests or provider writes
+ran for this bounded correction. Independent checker recheck remains required.
+
 ## Input and authority
 
 Assigned branch/root: phase-issue87-auto-plan-164901267 at
