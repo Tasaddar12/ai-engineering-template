@@ -157,6 +157,7 @@ drop_active() {
     [[ -n "$line" ]] || continue
     if [[ "$dropped" -eq 0 ]]; then
       entry_agent="$(printf '%s' "$line" | sed -n 's/.*"agent"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+      entry_agent="${entry_agent##*:}"
       entry_plan="$(printf '%s' "$line" | sed -n 's/.*"plan"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       entry_summary="$(printf '%s' "$line" | sed -n 's/.*"summary"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       if [[ "$entry_agent" == "$want_agent" \
@@ -218,6 +219,8 @@ case "$event" in
     # that, the plan was never recovered and every coder stop -- finished or
     # not -- left an unattributed handoff behind.
     if [[ -n "${agent_type:-}" ]]; then
+      # Match the guard's normalized active role for classification and recovery.
+      agent_type="${agent_type##*:}"
       # A read-only role leaves no half-written plan behind.
       agent_writes_files "$agent_type" || exit 0
       plan="$(handoff_plan_in_transcript "$(subagent_transcript)" "$cwd")"
@@ -251,6 +254,12 @@ case "$event" in
     while IFS= read -r line; do
       [[ -n "$line" ]] || continue
       agent="$(printf '%s' "$line" | sed -n 's/.*"agent"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+      agent="${agent##*:}"
+      if [[ -n "${agent_type:-}" && ( "$wrote" -eq 1 || "$agent" != "$agent_type" ) ]]; then
+        remaining="$remaining$line
+"
+        continue
+      fi
       plan="$(printf '%s' "$line" | sed -n 's/.*"plan"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       summary="$(printf '%s' "$line" | sed -n 's/.*"summary"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
       plan="$(handoff_safe_repo_path "$plan" "$cwd")"
@@ -258,6 +267,7 @@ case "$event" in
       summary="$(handoff_safe_repo_path "$summary" "$cwd")"
       # A finished plan leaves the stack without a handoff.
       if plan_finished "$summary"; then
+        [[ -z "${agent_type:-}" ]] || wrote=1
         continue
       fi
       # One SubagentStop closes one dispatch. Later entries stay on the stack

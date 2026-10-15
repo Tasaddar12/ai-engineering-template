@@ -7,9 +7,9 @@ requires: []
 provides: [Advisory worktree checks, Normalized dispatch handoffs, Matching workflow guidance]
 affects: [workflow-hooks, installed-launchers]
 actuals:
-  tokens: 11720
-  tasks: 2
-  commits: 4
+  tokens: 12537
+  tasks: 3
+  commits: 6
 tech-stack:
   added: []
   patterns: [stderr warnings with successful continuation]
@@ -19,6 +19,7 @@ key-files:
   modified:
     - .ai/hooks/worktree-guard.sh
     - .ai/hooks/worktree-guard.test.sh
+    - .ai/hooks/context-handoff.sh
     - .ai/hooks/context-handoff.test.sh
     - tests/test_install.py
     - .ai/hooks/README.md
@@ -52,9 +53,9 @@ coverage:
     verification:
       - {kind: other, ref: "git diff --check; installer AST, 62 local links and retained-policy inspection", status: pass}
     human_judgment: false
-duration: 12.4min
+duration: 19.3min
 completed: 2026-10-15
-status: blocked
+status: complete
 plan_head_before: 2379f6f5d1c8d72e3badfc4aaa1abe2218506a8f
 ---
 
@@ -64,10 +65,10 @@ Worktree-condition checks warn and succeed, including scratchpads; write-capable
 
 ## Performance
 
-- Task execution: 2026-10-15T13:23:39Z to 2026-10-15T13:36:00Z.
-- Completed: 2 tasks, 10 assigned source files and this SUMMARY, 4 commits including final documentation metadata.
+- Initial Tasks 1-2 execution: 2026-10-15T13:23:39Z to 2026-10-15T13:36:00Z.
+- Completed: 3 tasks, 11 assigned source files and this SUMMARY, 6 coder commits; coordinator bookkeeping excluded.
 - Base: `phase-guard-warn-092129318` at `2379f6f5d1c8d72e3badfc4aaa1abe2218506a8f`.
-- Tokens: ceil(chars/4) over the complete textual Git diff from the assigned base through this final slice; includes SUMMARY, no binary/generated files.
+- Tokens: ceil(chars/4) over the textual Git diff from the original assigned base for declared source paths and SUMMARY; coordinator planning changes excluded, no binary/generated files.
 
 ## Accomplishments
 
@@ -80,11 +81,13 @@ Worktree-condition checks warn and succeed, including scratchpads; write-capable
 1. `439b383`: initial TDD RED tests and interim SUMMARY.
 2. `bd88045`: nested and installed scratchpad RED regressions.
 3. `69b990e`: Task 1 implementation and GREEN evidence.
-4. Task 2 documentation and final SUMMARY: the commit containing this file (returned by the worker after commit).
+4. `ab9f6d9`: Task 2 documentation and initial execution SUMMARY.
+5. `d0984ea`: Task 3 CR-01 attributed-stop RED regressions.
+6. Task 3 correction and GREEN evidence: this final commit, returned after commit.
 
 ## Checks
 
-Behavioral evidence is from `bd88045` plus the exact hook blob committed in `69b990e`. Only documentation/comments and this SUMMARY changed afterward.
+Tasks 1-2 historical evidence is from `bd88045` plus the hook blob committed in `69b990e`. Task 3 below supersedes handoff evidence for attributed stops; earlier passes did not establish that path.
 
 | Command | Observed result |
 |---|---|
@@ -139,26 +142,29 @@ No worker blocker or unmet plan outcome. Coordinator owns integrated checks, fre
 
 ## Next Phase Readiness
 
-Both tasks are committed for coordinator integration. Preserve the unfilled adoption skeleton and existing shared records.
+All three tasks are committed for coordinator integration. Preserve the unfilled adoption skeleton and existing shared records.
 
 | Reconciliation | Worker evidence / coordinator next action |
 |---|---|
-| Advance position | Quick plan 01 tasks 2/2; integrate worker commits |
+| Advance position | Quick plan 01 tasks 3/3; integrate correction commits |
 | Update progress | Q85-01..03 supported above; reconcile only task-local quick tracking after review |
-| Record metrics | Assigned base, duration, 10 source files + SUMMARY, 4 commits and chars/4 scale above |
+| Record metrics | Assigned base, duration, 11 source files + SUMMARY, 6 coder commits and chars/4 scale above |
 | Add decisions | None; no adopting-project decision invented |
-| Record session | Last action: Task 2 docs/SUMMARY; resume with integrated validation and review |
+| Record session | Last action: Task 3 CR-01 correction/SUMMARY; resume with integrated validation and review |
 | Update roadmap | No phase/adoption roadmap change; quick-task scope only |
 | Complete requirements | QUICK-85 task-local label only; preserve adoption requirements skeleton |
 | Record blockers | None from worker; retain any coordinator validation findings |
 
 ## Self-Check: PASSED
 
-All 10 assigned source files and SUMMARY exist; RED and implementation commits are present. Scope, stub/threat, link and installer-code inspections passed. Final commit/count and clean status are checked after committing and returned to the coordinator.
+All 11 assigned source files and SUMMARY exist; RED and implementation commits are present. Scope, stub/threat, link and installer-code inspections passed. Final commit/count and clean status are checked after committing and returned to the coordinator.
 
 ## Task 3: CR-01 attributed-stop correction
 
-- Correction base: `9d137438da3fa5867f662d3d8f281298176b7046`, branch `phase-guard-fix-094306090`.
-- RED: `bash .ai/hooks/context-handoff.test.sh`, exit 1, 224 passed/38 failed on 12 new attributed-stop scenarios. Qualified stops skip recovery/consumption; bare stops without transcripts can consume another role. Source unchanged before this evidence.
-- Coverage: warned/isolated qualified dispatches; qualified/bare stop payloads; missing/blocked/complete SUMMARY; normalized recovery identity; matching-entry preservation and repeat consumption. Existing anonymous/read-only checks remain.
-- Remaining: apply the bounded normalization/matching fix, obtain GREEN, commit source and final evidence. Earlier Q85-02 evidence did not establish the attributed path.
+- Worker base: `9d137438da3fa5867f662d3d8f281298176b7046`; branch `phase-guard-fix-094306090`. Scope: context-handoff hook/test and this SUMMARY only.
+- RED (`d0984ea`): `bash .ai/hooks/context-handoff.test.sh`, exit 1, 224 passed/38 failed on intended attributed-stop assertions. About 171 seconds from log creation/final write. Production source was unchanged.
+- Fix: normalize payload/stack roles for classification, matching and recovery; an attributed stack fallback consumes one matching role and preserves unrelated entries. Anonymous order/read-only skipping remain covered.
+- GREEN: `bash .ai/hooks/context-handoff.test.sh`: exit 0, 262 passed/0 failed, 187.285 seconds. `bash .ai/hooks/worktree-guard.test.sh`: exit 0, 60 passed/0 failed, 51.702 seconds. `python -m unittest discover -s tests -p test_handoff.py -v`: exit 0, 39 tests passed, 13.643 seconds.
+- Tested revision: `d0984ea` plus the exact production hook change committed with this final SUMMARY; tests were unchanged during GREEN. Twelve scenarios cover warned/isolated dispatches, qualified/bare attributed stops, missing/blocked/complete SUMMARY, normalized recovery identity, matching-entry and repeated-stop consumption.
+- Correction execution: 6.9 minutes. Logs: `D:/Codex/2026-10-15/task/cr01-{red,green,guard,python}.log`. Diff check passed; no new stub/threat surface or benchmark. All three owned files and RED commit verified before final commit.
+- CR-01 repaired; no worker blocker. Coordinator retains integration, fresh review and final CI. Historical Tasks 1-2 remain unchanged; Q85-02 now has attributed-path evidence.
