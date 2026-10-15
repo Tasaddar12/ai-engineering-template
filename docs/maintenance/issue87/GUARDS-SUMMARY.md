@@ -457,9 +457,9 @@ bracket-class/mixed-word proof and allow-control assertions had passed already.
 
 No production source changed between the first full run and passing rerun; only
 the one obsolete exact-reason assertion was aligned to the approved grammar.
-All test processes completed. Final provenance source commit is the commit
-containing this section; exact identity is pinned in a following summary-only
-update. Fresh bounded independent review remains pending. The only additional
+All test processes completed. Final provenance source commit:
+`d2e285b02363b2cd3c5b5f1ec040b78451d69876`, pinned by this summary-only update.
+Fresh bounded independent review remains pending. The only additional
 documentation ownership was the single reference grammar-limit sentence; no
 installer, provider, PR86 hook, child source, adoption record, publication or
 merge changed.
