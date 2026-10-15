@@ -209,3 +209,12 @@ Verification on the corrected Windows working tree:
 - `git diff --check`: passed.
 
 A fresh Linux CI run is coordinator-owned and remains pending; the saved Linux log establishes the expected native denial value. Existing risk I87-P-T1 / issue96 remains OPEN/unresolved pending required final CI and acceptance evidence. No publication, integration, merge, closure or installer edit was performed in this test-only slice.
+
+## Coordinator final parent synchronization
+
+Planning now includes exact reviewed guard parent d8f2c8bd0c4dca0f82a7fc8a95e4f0abb8bcd2b6
+through clean local merge07333f0420f5006b87ba719a5ae4ee30b66ce917. Actual
+registered installed-host checks after synchronization passed2 tests in49.911s,
+zero skips. PLANNING-REVIEW records retained source, installer and portability
+clearances. Required remote CI, combined full-suite completion and independent
+publication-link audit remain pending; no PR was merged and issue96 stays OPEN.

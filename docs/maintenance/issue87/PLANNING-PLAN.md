@@ -17,6 +17,7 @@ files_modified:
   - .ai/templates/phase-prompt.md
   - .ai/runtime/README.md
   - tests/test_planning_integrity.py
+  - tests/test_threat_tracking_contract.py
 files_deleted: []
 autonomous: true
 requirements: [ISSUE87-PLANNING]
@@ -217,6 +218,8 @@ Canonical key: `Tasaddar12/ai-engineering-template/planning-commit/prospective-b
 - SUMMARY's optional coverage/upstream metadata remains available; the gate does not fabricate completion, commits or required human UAT. Explicit native TDD-plan feature syntax remains supported by existing runtime contracts.
 
 ## Direct commit integration interface
+
+- Coordinator-authorized CI correction also owns only `test_producer_link_loss_is_detected` in `tests/test_threat_tracking_contract.py`: preserve the valid alternate contract link, then remove all temporary producer links before asserting complete loss. Production contract logic and useful source links remain unchanged.
 
 - Ownership also includes .ai/hooks/planning-integrity.sh: an LF shell wrapper that resolves its sibling planning-integrity.py and execs the available supported Python interpreter, preserving stdin and the checker exit status. The wrapper preserves the existing Bash/Windows launcher; missing required runtime support must produce an actionable hook error rather than silently pretending validation ran.
 - Add both new hook files to Task 1's implementation scope and read .ai/install.py MANAGED_HOOKS, managed_scripts and hook_settings, plus .ai/hooks/worktree-guard.sh payload extraction and tests/test_install.py::test_registered_hooks_execute_from_installed_subdirectory. These are inspected integration references, not additional write ownership.
