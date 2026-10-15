@@ -273,6 +273,97 @@ class RegisteredGuardTests(unittest.TestCase):
                 self.assertFalse(decision.allowed)
                 self.assertEqual("backup-approval-required", decision.reason_code)
 
+    def source_verdict(self, command, deny, tool="Bash", cwd=None):
+        """Only execute the hook. The submitted command stays JSON data."""
+        payload = {"cwd": str(cwd or self.root), "tool_name": tool,
+                   "tool_input": {"command": command, "cmd": command}}
+        result = subprocess.run([sys.executable, str(ROOT / ".ai/hooks/destructive-git-guard.py")],
+            cwd=self.root, input=json.dumps(payload).encode("utf-8"), capture_output=True)
+        self.assertEqual(2 if deny else 0, result.returncode,
+            f"command={command!r}, stdout={result.stdout!r}, stderr={result.stderr!r}")
+        if deny:
+            output = json.loads(result.stdout)
+            self.assertEqual("deny", output["hookSpecificOutput"]["permissionDecision"])
+            self.assertTrue(output["reason_code"])
+        else:
+            self.assertEqual(b"", result.stdout)
+        return result
+
+    def test_review_cr01_bash_escape_family_native_entrypoint(self):
+        attacks = [r"g\it switch topic", "gi\\\nt switch topic", r"r\m -rf .workflow-backups",
+                   r"git branch --de\lete phase-owned", r"git sw\itch topic",
+                   r"git branch -\D phase-owned", r"command g\it switch topic",
+                   '"C:\\Program Files\\Git\\cmd\\git.exe" switch topic']
+        controls = [r"g\it status", "gi\\\nt status", r"git branch --li\st",
+                    "echo 'g\\it switch topic'", "printf '%s' 'r\\m -rf .workflow-backups'",
+                    '"C:\\Program Files\\Git\\cmd\\git.exe" status',
+                    r"Remove-Item -LiteralPath 'ordinary\notes'"]
+        for command in attacks:
+            with self.subTest(command=command): self.source_verdict(command, True)
+        for command in controls:
+            with self.subTest(control=command): self.source_verdict(command, False)
+
+    def test_review_cr02_wrapper_fixedpoint_family_native_entrypoint(self):
+        prefixes = ["command env", "env env", "exec env", "time", "!", "env command env",
+                    "command env MODE=literal exec env", "! time command env"]
+        for prefix in prefixes:
+            with self.subTest(prefix=prefix):
+                self.source_verdict(prefix + " git switch topic", True)
+            with self.subTest(control=prefix):
+                self.source_verdict("echo '" + prefix + " git switch topic'", False)
+        for command in ("command env git status", "env env git status", "exec env git status"):
+            with self.subTest(control=command): self.source_verdict(command, False)
+
+    def test_review_cr03_git_option_variant_family_native_entrypoint(self):
+        for option in ("--del", "--dele", "--delet", "--delete"):
+            with self.subTest(option=option): self.source_verdict("git branch " + option + " phase-owned", True)
+        for option in ("-vd", "-dv", "-vvd", "-dvv", "--del", "--delet", "--delete"):
+            with self.subTest(option=option): self.source_verdict("git push " + option + " origin topic", True)
+        for command in ("git branch --list", "git branch -v", "git push -v origin topic",
+                        "echo 'git branch --del topic'", "printf '%s' 'git push -vd origin topic'"):
+            with self.subTest(control=command): self.source_verdict(command, False)
+
+    def test_review_cr04_powershell_removal_alias_family_native_entrypoint(self):
+        for alias in ("del", "rd", "erase", "DEL", "RD", "ERASE"):
+            with self.subTest(alias=alias):
+                self.source_verdict(alias + " -Recurse -Force .workflow-backups", True, tool="exec_command")
+            with self.subTest(control=alias):
+                self.source_verdict(alias + " -LiteralPath ordinary.txt -Force", False, tool="exec_command")
+            with self.subTest(quoted=alias):
+                self.source_verdict("echo '" + alias + " -Recurse -Force .workflow-backups'", False, tool="exec_command")
+
+    def test_review_cr05_root_ancestry_family_native_entrypoint(self):
+        # Root names are submitted to the hook as inert JSON, never run.
+        anchor = Path(self.root.anchor).as_posix()
+        for target in (anchor, anchor.rstrip("/") + "//", str(self.root.parent), str(self.root)):
+            for command in (f'Remove-Item -LiteralPath "{target}" -Recurse -Force', f'rm -rf "{target}"'):
+                with self.subTest(command=command): self.source_verdict(command, True, tool="exec_command")
+        for command in ("rm -rf ordinary", "Remove-Item -LiteralPath ordinary -Recurse -Force",
+                        f'Get-ChildItem "{anchor}"', f'echo \'rm -rf "{anchor}"\''):
+            with self.subTest(control=command): self.source_verdict(command, False, tool="exec_command")
+
+    def test_review_cr06_malformed_ownership_root_family_native_entrypoint(self):
+        git(self.root, "branch", "phase-owned")
+        state = self.root / ".git/ai-phase"
+        waves = state / "waves"
+        waves.mkdir(parents=True)
+        sessions = state / "sessions.json"
+        wave = waves / "review.json"
+        shapes = [[], "text", 7, None, True, {"sessions": "bad"}]
+        for shape in shapes:
+            sessions.write_text(json.dumps(shape), encoding="utf-8")
+            with self.subTest(record="sessions", shape=shape):
+                self.source_verdict("git branch -D phase-owned", True)
+            with self.subTest(control="sessions", shape=shape):
+                self.source_verdict("git status", False)
+        sessions.write_text(json.dumps({"sessions": []}), encoding="utf-8")
+        for shape in [[], "text", 7, None, True, {"entries": "bad"}]:
+            wave.write_text(json.dumps(shape), encoding="utf-8")
+            with self.subTest(record="wave", shape=shape):
+                self.source_verdict("git branch -D phase-owned", True)
+            with self.subTest(control="wave", shape=shape):
+                self.source_verdict("git status", False)
+
 
 if __name__ == "__main__":
     unittest.main()

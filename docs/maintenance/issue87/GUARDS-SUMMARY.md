@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: complete
+status: in_progress
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
-acceptance: [I87-A1, I87-A3]
+requirements-completed: [ISSUE87-RED]
+acceptance: [I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -94,6 +94,8 @@ Only the worktrees.py module docstring changed, as explicitly directed.
 GUARDS-PLAN I87-G-T1: literal parsing, all-segment inspection, conservative
 unsupported/alias handling and backup canonicalization mitigate the assigned
 bounded preflight failure mode; attack/precision and junction evidence above.
+Independent review CR01–CR06 demonstrates these initial mitigations are
+incomplete; I87-A1 / ISSUE87-GUARD remain blocked pending repair and fresh review.
 I87-G-T2: unknown/open/partial/stale/mismatched provider evidence, unowned and
 dirty targets preserve work; both-provider offline tests above. Canonical
 threat issue identity/readback and independent review remain coordinator owned.
@@ -103,8 +105,22 @@ post-preflight concurrent changes remain documented limits of this control.
 
 ## Remaining
 
-No implementation blocker remains for the assigned guard slice. Independent
-review/verification and coordinator publication are pending. `glab` was absent;
+Independent source review found six blocking regression families (CR01–CR06)
+in `e5af9bd`: Bash literal escapes/continuations, wrapper fixed-point parsing,
+Git destructive option abbreviations/clusters, PowerShell removal aliases,
+root ancestry and malformed ownership JSON roots. A native-entrypoint regression
+matrix now asserts JSON denial/exit 2 and independently exercises paired harmless
+controls. Its first run on unchanged production source exited 1, Ran 6 tests in
+14.030s, with 42 intentional behavior assertion failures: unsafe commands
+returned exit 0/empty stdout, while malformed sessions/wave scalar roots
+returned exit 1/traceback instead of structured denial. This is observed RED;
+no regression implementation has been applied. A repeated run after ensuring
+controls execute independently also exited 1, Ran 6 tests in 16.863s, with the
+same 42 attack assertions failing and no harmless-control failures. No skips or
+fixture/import failures occurred. Implementation is paused for
+the coordinator's independent matrix review, as instructed.
+
+`glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
 were used. No live GitLab/on-prem execution is claimed. Arbitrary enterprise
 hostnames, fork ambiguity, unsupported Git context flags, conditional-cd
