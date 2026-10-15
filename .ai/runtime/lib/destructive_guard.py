@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import time
 from urllib.parse import quote, urlsplit
@@ -51,13 +52,16 @@ def canonical(path, cwd=None):
     return str((value if value.is_absolute() else Path(cwd or os.getcwd()) / value).resolve())
 
 
-def _shell_path(path, cwd, dialect):
+def _shell_path(path, cwd, dialect, *, resolve=True):
     """Translate modeled Windows Bash drive roots; never invent /usr or /tmp."""
     if os.name == "nt" and dialect == "posix" and str(path).startswith("/"):
         drive = re.fullmatch(r"/([A-Za-z])(?:/(.*))?", str(path))
         if not drive:
             raise ValueError("unsupported-posix-root")
         path = drive[1] + ":/" + (drive[2] or "")
+    if not resolve:
+        value = Path(path)
+        return str(value if value.is_absolute() else Path(cwd) / value)
     return canonical(path, cwd)
 
 
@@ -562,6 +566,44 @@ def _resolved_glob_overlaps(pattern, protected):
         raise EvidenceError("glob-evidence-unknown") from exc
 
 
+def _unsupported_parent_traversal(operand, pattern, cwd, dialect):
+    """Preserve raw parent components before canonicalization can erase them."""
+    if ".." not in Path(operand).parts:
+        return None
+    active = False
+    if pattern is not None:
+        for component in Path(pattern).parts:
+            if component == ".." and active:
+                return "unsupported-glob-parent-traversal"
+            # Lexer-escaped metacharacters are literal even in mixed words.
+            unquoted = component.replace("[*]", "").replace("[?]", "").replace("[[]", "")
+            active = active or any(char in unquoted for char in "*?[")
+    raw = Path(_shell_path(operand, cwd, dialect, resolve=False))
+    current, alias = Path(raw.anchor), False
+    last_parent = max(index for index, component in enumerate(raw.parts) if component == "..")
+    for component in raw.parts[1:last_parent + 1]:
+        if component == "..":
+            if alias:
+                return "unsupported-alias-parent-traversal"
+            current = current.parent
+            continue
+        # Active pre-parent globs were refused above. A remaining * or ? is
+        # literal data and cannot name a Windows component; do not ask native
+        # metadata APIs to interpret or reject that impossible literal name.
+        if os.name == "nt" and any(char in component for char in "*?"):
+            return None
+        current = current / component
+        try:
+            metadata = current.lstat()
+        except (FileNotFoundError, NotADirectoryError):
+            return None
+        except OSError as exc:
+            raise EvidenceError("parent-traversal-unknown") from exc
+        alias = alias or stat.S_ISLNK(metadata.st_mode) or bool(
+            getattr(metadata, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+    return None
+
+
 def _git_argument_parts(args, value_longs=(), value_shorts=()):
     """Separate option names from operands/values without expanding shell data.
 
@@ -641,11 +683,14 @@ def _backup_removal(segment, evidence):
         if "," in operand or operand.startswith("~"):
             return _deny("dynamic-removal", "backup-delete", operands)
         try:
-            target = _shell_path(operand, segment.cwd, segment.shell_dialect)
             if segment.shell_dialect != "posix":
                 # PowerShell -Path expands wildcard characters even in quotes;
                 # -LiteralPath explicitly treats every such character as data.
                 pattern = None if literal_paths else operand if any(c in operand for c in "*?[") else None
+            unsupported = _unsupported_parent_traversal(operand, pattern, segment.cwd, segment.shell_dialect)
+            if unsupported:
+                return _deny(unsupported, "backup-delete", operands)
+            target = _shell_path(operand, segment.cwd, segment.shell_dialect)
             pattern = _shell_path(pattern, segment.cwd, segment.shell_dialect) if pattern is not None else None
         except ValueError as exc:
             return _deny(str(exc), "backup-delete", operands)

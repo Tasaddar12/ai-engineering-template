@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: in_progress
+status: complete
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-RED]
-acceptance: [I87-A3]
+requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
+acceptance: [I87-A1, I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -354,6 +354,49 @@ Coherent proved RED result: same `-k final_active_glob_parent -v` command exited
 (Bash active glob, shared PowerShell Path, proved literal Bash alias-parent).
 Harmless read proof and all legitimate controls passed; zero skips/import or
 fixture errors. This is committed before the single small production repair.
+
+## Bounded parent-traversal correction
+
+RED `5dec5dddc2b690fe49816d2021101441b97eeb6c` and coherent proved RED
+`12d2b8f4c5e61cbafaf2a001166afa391f853570` precede the production correction.
+The library retains raw components before canonicalization: active wildcard
+selection followed by `..` returns `unsupported-glob-parent-traversal`; a parent
+step through a detected raw symlink/junction/reparse point returns
+`unsupported-alias-parent-traversal`. Existing resolved path behavior is the
+default; raw inspection is a private opt-in only for this bounded check. No
+full shell/path AST or additional expansion grammar is introduced.
+
+The first full 21-test implementation run exited 1 in 76.078s with three
+precision failures: two Windows literal wildcard controls and an existing
+backup-glob reason assertion. The raw inspector was narrowed to the prefix
+through the last parent step. After active glob-parent syntax is refused,
+remaining literal * or ? names cannot be Windows components and do not trigger
+native metadata lookup. Both harmless read proofs and the three actual attack
+refusals remain asserted. Focused parent test passed in 1.796s; existing
+backup-alias test passed in 0.686s after the precision correction.
+
+Attribution note: the Windows literal-name early-return hunk was present on
+inspection after a resumed status exchange without a visible successful write
+receipt in this worker history. The coordinator confirmed no known writer and
+directed inspection/testing of the captured bytes. Attribution is unavailable;
+no external writer is inferred. The complete captured source was inspected and
+fingerprinted SHA256 F1419D38150518321F16C7679268908E89495ABC23839CED4C0859A1782AAB87
+before the final full run. Its final checks/source commit are recorded below.
+
+| Parent correction final check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 21 tests in 74.301s, zero skips; both harmless semantics proofs, all three parent-traversal attacks, all legitimate controls and retained prior guard/provider/native/registered matrices pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.754s, zero skips; actual both-host launcher and advisory scratchpad/dispatch coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+All test processes completed before source commit. Source commit: the commit
+containing this final section, pinned by exact SHA in the following summary-only
+evidence update. Source bytes did not change after the final passing run.
+Earlier removed literal-alias-parent discrepancy is now retained, proved and
+repaired; no discovered required case is silently deferred. Fresh bounded
+independent review remains pending. No installer, child source, PR86 hook,
+provider adapter, adoption record, publication or merge changed.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
