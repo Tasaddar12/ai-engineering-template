@@ -45,7 +45,7 @@ Tests cover stderr-only warnings, scratchpads, MultiEdit, mixed-path patches and
 
 ## Task Commits
 
-The RED commit contains these tests and this interim summary; implementation is pending.
+`439b383` records the initial RED tests and interim summary. The next test commit captures nested-primary and installed scratchpad failures before their fix.
 
 ## Checks
 
@@ -53,7 +53,9 @@ Tested base: `2379f6f5d1c8d72e3badfc4aaa1abe2218506a8f` plus test-only changes.
 
 - `bash .ai/hooks/worktree-guard.test.sh`: exit 1; 24 passed, 34 failed on intended warning assertions.
 - `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v`: exit 1; 1 selected test, both host subtests fail because actual dispatch exit is 2, expected 0.
-- `bash .ai/hooks/context-handoff.test.sh`: executing; intended warned/qualified recording assertions already fail; final result pending.
+- `bash .ai/hooks/context-handoff.test.sh`: initial RED exit 1, 164 passed/22 failed; advisory implementation GREEN exit 0, 186 passed/0 failed.
+
+Additional caller regression: current advisory implementation passes the original 58 direct checks but fails the new nested-primary check (59 passed/1 failed). Installed scratchpad subtests fail on both hosts because stderr is empty. Git 2.49.0.windows.1 emits absolute `--git-dir` and relative `../.git` common-dir from nested primary cwd. The detection fix is pending; unrelated source is untouched.
 
 ## TDD Evidence
 
@@ -71,7 +73,7 @@ None; followed the assigned plan.
 
 ## Deviations from Plan
 
-None.
+Rule 1: installed scratchpad coverage exposed inconsistent Git directory spellings from nested cwd. Normalize query context to the repository root within the owned hook; regression recorded before that fix. Scope remains issue #85.
 
 ## Issues Encountered
 

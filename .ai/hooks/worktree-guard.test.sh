@@ -119,6 +119,10 @@ check 'a nested planning record warns and continues' 0 'editing outside a worktr
 
 check 'a scratchpad in the primary checkout warns and continues' 0 'session.open' \
   '{"tool_name":"Write","tool_input":{"file_path":".planning/scratchpads/notes.md"}}' "$primary"
+check 'a nested primary scratchpad edit warns and continues' 0 'session.open' \
+  '{"tool_name":"Edit","tool_input":{"file_path":"../.planning/scratchpads/notes.md"}}' "$primary/src"
+check 'a nested linked-worktree edit stays silent' 0 '-' \
+  '{"tool_name":"Edit","tool_input":{"file_path":"a.txt"}}' "$worktree/src"
 check 'a MultiEdit in the primary checkout warns and continues' 0 'editing outside a worktree' \
   '{"tool_name":"MultiEdit","tool_input":{"file_path":"src/a.txt","edits":[]}}' "$primary"
 check 'dispatch guidance names isolation' 0 'isolation="worktree"' \

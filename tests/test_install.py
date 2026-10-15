@@ -716,6 +716,23 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(b"", observed.stdout)
                 self.assertEqual(b"", observed.stderr)
 
+            writes = [group for group in groups if "NotebookEdit" in group.get("matcher", "")]
+            self.assertEqual(1, len(writes),
+                             "exactly one managed editing-tool registration is expected")
+            with self.subTest(host=host, hook="worktree-guard scratchpad"):
+                argv = self.launcher_argv(host, writes[0]["hooks"][0])
+                scratchpad = self.target / ".planning/scratchpads/notes.md"
+                payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse",
+                           "tool_name": "Edit", "tool_input": {"file_path": str(scratchpad)}}
+                observed = subprocess.run(argv, cwd=cwd, env=environment,
+                                          input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                          capture_output=True)
+                self.assertEqual(0, observed.returncode, observed.stderr)
+                self.assertEqual(b"", observed.stdout)
+                self.assertIn(b"WARNING", observed.stderr)
+                self.assertIn(b"session.open", observed.stderr)
+                self.assertIn(b"scratchpads", observed.stderr)
+
     def test_claude_worktrees_are_placed_by_the_project_hook(self):
         """Claude Code would put a subagent's checkout under .claude/worktrees/;
         the project's WorktreeCreate hook puts it under the worktree root."""
