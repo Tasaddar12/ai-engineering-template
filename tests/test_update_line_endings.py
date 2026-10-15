@@ -42,6 +42,23 @@ class ComparisonTests(unittest.TestCase):
                     self.assertEqual(expected in ("unchanged", "line-ending-only"),
                                      legacy.same_text(current, candidate))
 
+    def test_shell_and_nginx_attributes_apply_at_every_depth(self):
+        with tempfile.TemporaryDirectory(prefix="line-ending-attrs-") as temporary:
+            root = Path(temporary)
+            git("init", "--quiet", cwd=root)
+            shutil.copyfile(ROOT / ".gitattributes", root / ".gitattributes")
+            names = ("run.sh", "nested/tools/run.sh", "nginx.conf",
+                     "deep/config/nginx.conf", "nginx.conf.template",
+                     "deep/templates/nginx.conf.template")
+            output = git("check-attr", "text", "eol", "--", *names, cwd=root)
+            actual = {}
+            for line in output.splitlines():
+                name, attribute, value = line.split(": ")
+                actual[name, attribute] = value
+            for name in names:
+                self.assertEqual("set", actual[name, "text"], name)
+                self.assertEqual("lf", actual[name, "eol"], name)
+
 
 class ReviewedLineEndings(unittest.TestCase):
     @classmethod
@@ -54,6 +71,13 @@ class ReviewedLineEndings(unittest.TestCase):
         shutil.copyfile(ROOT / ".gitattributes", cls.source / ".gitattributes")
         (cls.source / ".ai/workflows/newlines.md").write_bytes(b"first\nsecond\n")
         (cls.source / ".ai/workflows/retired.md").write_bytes(b"retired\n")
+        cls.lf_assets = {"hooks/line-ending-fixture.sh": b"#!/bin/sh\nprintf fixture\\n\n",
+                         "fixtures/nginx.conf": b"events {}\nhttp {}\n",
+                         "fixtures/nginx.conf.template": b"events {}\n# template\n"}
+        for name, content in cls.lf_assets.items():
+            path = cls.source / ".ai" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
         cls.commit("baseline")
         cls.first = git("rev-parse", "HEAD", cwd=cls.source)
         cls.baseline = Path(cls.fixture.name) / "baseline"
@@ -62,6 +86,8 @@ class ReviewedLineEndings(unittest.TestCase):
         rules.write_bytes(rules.read_bytes() + b"\nSubstantive upstream fixture change.\n")
         (cls.source / ".ai/workflows/retired.md").unlink()
         (cls.source / ".ai/workflows/added.md").write_bytes(b"added\n")
+        for name, content in cls.lf_assets.items():
+            (cls.source / ".ai" / name).write_bytes(content + b"# reviewed LF update\n")
         cls.commit("upstream")
         cls.second = git("rev-parse", "HEAD", cwd=cls.source)
 
@@ -361,6 +387,12 @@ class ReviewedLineEndings(unittest.TestCase):
                                   "--ref", self.second, "--host", host, "--no-hooks", "--plan", saved)
                 self.assertEqual(0, result.returncode, result.stderr)
                 plan = self.resolve(json.loads(saved.read_bytes()), replace_rules=True)
+                for name, content in self.lf_assets.items():
+                    candidate = content + b"# reviewed LF update\n"
+                    row = self.row(plan, root + "/" + name)
+                    self.assertEqual(candidate, base64.b64decode(row["candidate_base64"]))
+                    self.assertNotIn(b"\r", candidate)
+                    self.assertEqual(update.digest(candidate), row["candidate_sha256"])
                 saved.write_bytes(installer.json_bytes(plan))
                 reviewed_raw = saved.read_bytes()
                 reviewed_hash = update.digest(reviewed_raw)
@@ -395,6 +427,10 @@ class ReviewedLineEndings(unittest.TestCase):
                 self.assertEqual(self.first, manifest["previous"]["revision"])
                 for name, record in manifest["files"].items():
                     self.assertEqual(update.digest((self.target / name).read_bytes()), record["installed_sha256"])
+                for name, content in self.lf_assets.items():
+                    candidate = content + b"# reviewed LF update\n"
+                    self.assertEqual(candidate, (self.target / root / name).read_bytes())
+                    self.assertEqual(update.digest(candidate), manifest["files"][root + "/" + name]["installed_sha256"])
                 self.assertNotEqual(plan["manifest_sha256"], update.digest(
                     (self.target / root / "workflow-ownership.json").read_bytes()))
                 after_apply = self.snapshot()

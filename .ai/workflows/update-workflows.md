@@ -106,6 +106,53 @@ YAML fields uses the runtime's safe-load/safe-dump style and may reformat commen
 review the actual diff. An unchanged config remains byte-for-byte unchanged.
 </configuration_contract>
 
+<comparison_contract>
+Saved review schema 2 separates content comparison from ownership and action.
+Each entry's `comparison` describes installed bytes versus the rendered upstream
+payload, before project preservation, generated-file merging or config migration.
+Its `candidate_comparison` describes installed bytes versus the effective candidate
+after those operations. For example, protected PROJECT content can be substantive
+versus upstream while its preserved effective candidate is unchanged. Ownership,
+project preservation and conflict reasons remain separately visible.
+
+The categories are `unchanged` for exact bytes (including identical binary bytes),
+`line-ending-only`, `substantive`, `added` for a missing current file and `retired`
+for a missing upstream candidate. Two absent values are unchanged; a missing file
+is distinct from an empty file. A retired comparison also describes project-only
+additions absent upstream: it does not establish that upstream ever owned them.
+
+Line-ending-only requires two distinct strict UTF-8 byte strings with no NUL and
+no bare CR, equal after replacing CRLF pairs with LF. Mixed LF/CRLF pairs qualify.
+Invalid UTF-8, NUL-bearing data and lone-CR differences are substantive. Whitespace,
+BOM and terminal-newline changes remain substantive; comparison never trims,
+removes BOMs, decodes with replacement or normalizes other newline characters.
+CLI output labels comparison alongside ownership/action and omits equivalent
+newline diffs while retaining substantive candidate diffs. The legacy installer
+updater reports these differences and retains its equivalent-workflow skip.
+
+Line-ending-only is information, never write or deletion authority. It cannot prove
+ownership, reclassify a customized/generated/project file, clear a conflict or
+prune a retired file. Review every existing classification and required resolution.
+
+Candidate base64, candidate/installed/upstream/manifest hashes and the complete
+reviewed-plan SHA256 use exact bytes. The plan also fingerprints raw tracked source
+and baseline inputs because rendering can normalize source text. Apply regenerates
+the full plan and rechecks target, manifest, source and baseline bytes after backup
+before writes. A changed input byte, even CRLF-only, requires replan and review;
+an older schema requires regeneration. Any saved JSON edit, including line endings,
+comparison, candidate or resolutions, invalidates the prior reviewed digest. Review
+valid resolutions or formatting edits and hash the complete file again. Manually
+edited comparison/candidate metadata still fails full regeneration; generate a new
+plan rather than treating a new digest as permission to change generated content.
+After apply updates ownership, reuse of the original plan is stale. Generate and
+review a fresh pinned plan and hash its complete bytes for a no-op apply.
+
+Shell files and nginx.conf/nginx.conf.template basenames have explicit LF Git
+attributes at every depth. This checkout policy does not authorize normalization
+of authored records or backups. Apply writes the exact reviewed candidate bytes
+and verifies their installed hashes; it never silently normalizes during writing.
+</comparison_contract>
+
 <output>
 Return pinned current/previous upstream provenance, reviewed classifications,
 changed/preserved files, unresolved conflicts/optional defaults, exact checks and
