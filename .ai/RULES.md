@@ -393,8 +393,11 @@ correct the roadmap.
 
 ## Hooks and validation
 
-Hooks are optional advisory notices: they warn and return success. They neither
-grant permission nor create a sandbox, and lexical path detection has limits.
+Hooks are optional. Notices and `worktree-guard.sh` remain advisory: they warn
+and return success. The separate
+[destructive Git guard](references/destructive-operations.md) refuses its
+documented destructive shell operations. Hooks neither grant permission nor
+create a sandbox, and lexical path detection has limits.
 
 Run checks appropriate to the changed behavior plus the project's required
 commands. Runtime changes need real Git and subprocess tests; hook changes need
