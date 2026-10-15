@@ -166,8 +166,8 @@ records refuse with native denial JSON/exit 2 instead of a traceback.
 | `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.009s, zero skips; actual Codex Windows / Claude launchers and advisory scratchpad/dispatch coverage retained |
 | `git diff --check` | Exit 0 |
 
-Repair source commit: the commit containing this section; its exact SHA is
-recorded in the following summary-only evidence update. These checks exercised
+Repair source commit: `180e189719624ab01aba31cb700f69eeb4cf7de6`.
+This summary-only evidence update pins the source identity. These checks exercised
 the repaired source descending from `fec735e`. No production source changed
 after the passing run. Fresh independent review is pending, so the earlier
 blockers are reported as repaired with test evidence, not independently cleared.
