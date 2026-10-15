@@ -194,6 +194,55 @@ def checklist_errors(root):
     return errors
 
 
+def issue_audit_errors(root):
+    canonical = (root / CANONICAL).read_text(encoding="utf-8")
+    if "## Issue-link audit\n" not in canonical:
+        return ["canonical audit heading"]
+    audit = " ".join(section(canonical, "## Issue-link audit").split())
+    errors = []
+    duties = {
+        "independent semantic scope": ("fresh independent reviewer/verifier", "must not be the author",
+                                       "CONTEXT acceptance", "every PLAN threat/checklist identity", "SUMMARY outcomes",
+                                       "Ordinary linked follow-ups", "structural `issue.validate` success does not prove it"),
+        "audit tracking scope": ("Actionable link destination and full scope/acceptance", "omitted or duplicate tracking",
+                                 "planned-checklist coverage", "separate standalone tracking for distinct unplanned risks",
+                                 "safe destination visibility"),
+        "audit closure authority": ("Neutral versus closing references", "GitLab neutral-link policy",
+                                    "scope-complete resolution evidence", "existing explicit closure authority",
+                                    "Never infer closure from merge, checked checklist items or accepted/deferred status"),
+        "audit evidence packet": ("reviewed source revision", "PR/MR body/link snapshot", "verified URLs",
+                                  "provider readback evidence", "observed state and when it was read",
+                                  "unresolved findings/dependencies", "unverifiable link is a gap with a dependency, never a pass"),
+        "audit currentness": ("Material changes to links, body, risk outcomes or source invalidate the affected audit",
+                              "fresh applicable independent evidence before claiming ready", "verification-evidence.md#coordinator-currentness-check",
+                              "Before merge, require the current independent audit and last provider readback",
+                              "no new merge or issue closure authority"),
+    }
+    for label, phrases in duties.items():
+        if not all(phrase in audit for phrase in phrases):
+            errors.append(label)
+    anchor = "../references/git-workflow.md#issue-link-audit"
+    for name, step in (
+        (".ai/workflows/execute-phase.md", "code_review_gate"),
+        (".ai/workflows/execute-phase.md", "review_phase_issues"),
+        (".ai/workflows/ship.md", "preflight_checks"),
+        (".ai/workflows/ship.md", "generate_pr_body"),
+        (".ai/workflows/ship.md", "create_pr"),
+        (".ai/workflows/ship.md", "merge_and_close"),
+    ):
+        if anchor not in steps((root / name).read_text(encoding="utf-8")).get(step, ""):
+            errors.append(step + ": audit hook")
+    verifier = (root / ".ai/agents/verifier.md").read_text(encoding="utf-8")
+    context = verifier.split("## Step 1: Load Context", 1)[1].split("## Step 2:", 1)[0]
+    if anchor not in context:
+        errors.append("verifier: independent audit hook")
+    review = steps((root / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8"))["code_review_gate"]
+    prompt = re.search(r'Agent\(\s+prompt="(.*?)",\s+subagent_type="code-reviewer"', review, re.S).group(1)
+    if anchor not in prompt or "body/link snapshot" not in prompt or "actual provider" not in prompt:
+        errors.append("reviewer assignment: audit packet")
+    return errors
+
+
 class ThreatTrackingContract(unittest.TestCase):
     def fixture(self):
         temporary = tempfile.TemporaryDirectory()
@@ -347,6 +396,68 @@ class ThreatTrackingContract(unittest.TestCase):
         root = self.fixture()
         self.mutate(root, ".ai/templates/issue.md", "Existing actionable matching issues remain canonical", "Removed")
         self.assertIn("Security risk template routing", checklist_errors(root))
+
+    def test_independent_audit_real_scope_packet_and_currentness(self):
+        self.assertEqual([], issue_audit_errors(ROOT))
+
+    def test_independent_audit_duty_mutations(self):
+        cases = (
+            ("fresh independent reviewer/verifier", "independent semantic scope"),
+            ("Ordinary linked follow-ups", "independent semantic scope"),
+            ("structural `issue.validate` success does not prove it", "independent semantic scope"),
+            ("planned-checklist coverage", "audit tracking scope"),
+            ("separate standalone tracking for distinct unplanned risks", "audit tracking scope"),
+            ("Neutral versus closing references", "audit closure authority"),
+            ("existing explicit closure authority", "audit closure authority"),
+            ("unverifiable link is a gap with a dependency, never a pass", "audit evidence packet"),
+            ("PR/MR body/link snapshot", "audit evidence packet"),
+            ("Material changes to links, body, risk outcomes or source invalidate the affected audit", "audit currentness"),
+            ("Before merge, require the current independent audit and last provider readback", "audit currentness"),
+        )
+        for phrase, error in cases:
+            with self.subTest(duty=error):
+                root = self.fixture()
+                path = root / CANONICAL
+                text = path.read_text(encoding="utf-8")
+                audit = section(text, "## Issue-link audit")
+                pattern = r"\s+".join(re.escape(word) for word in phrase.split())
+                self.assertRegex(audit, pattern)
+                path.write_text(text.replace(audit, re.sub(pattern, "Removed", audit, count=1), 1), encoding="utf-8")
+                self.assertIn(error, issue_audit_errors(root))
+
+    def test_each_actual_audit_step_and_verifier_hook_is_required(self):
+        anchor = "../references/git-workflow.md#issue-link-audit"
+        for name, step in (
+            (".ai/workflows/execute-phase.md", "code_review_gate"),
+            (".ai/workflows/execute-phase.md", "review_phase_issues"),
+            (".ai/workflows/ship.md", "preflight_checks"),
+            (".ai/workflows/ship.md", "generate_pr_body"),
+            (".ai/workflows/ship.md", "create_pr"),
+            (".ai/workflows/ship.md", "merge_and_close"),
+        ):
+            with self.subTest(step=step):
+                root = self.fixture()
+                path = root / name
+                text = path.read_text(encoding="utf-8")
+                body = steps(text)[step]
+                path.write_text(text.replace(body, body.replace(anchor, "missing.md"), 1), encoding="utf-8")
+                self.assertIn(step + ": audit hook", issue_audit_errors(root))
+        root = self.fixture()
+        self.mutate(root, ".ai/agents/verifier.md", anchor, "missing.md")
+        self.assertIn("verifier: independent audit hook", issue_audit_errors(root))
+
+    def test_audit_heading_and_reviewer_prompt_cannot_be_replaced_by_guidance(self):
+        root = self.fixture()
+        self.mutate(root, CANONICAL, "## Issue-link audit", "## Removed audit")
+        self.assertIn("canonical audit heading", issue_audit_errors(root))
+        root = self.fixture()
+        name = ".ai/workflows/execute-phase.md"
+        path = root / name
+        text = path.read_text(encoding="utf-8")
+        old = "[Issue-link audit](../references/git-workflow.md#issue-link-audit)"
+        self.assertIn(old, text)
+        path.write_text(text.replace(old, "Removed reviewer audit", 1), encoding="utf-8")
+        self.assertIn("reviewer assignment: audit packet", issue_audit_errors(root))
 
     def test_summary_outcome_and_git_state_are_independent(self):
         block = file_template((ROOT / ".ai/templates/summary.md").read_text(encoding="utf-8"))

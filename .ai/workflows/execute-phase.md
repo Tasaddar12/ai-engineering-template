@@ -651,6 +651,12 @@ source correctness and security findings. Wait for both results before accepting
 the phase or repairing it. If a repair changes source, rerun affected checks and
 obtain a fresh review of the repaired revision.
 
+Assign the independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
+with CONTEXT, PLAN/checklist identities, SUMMARY outcomes and current PR/MR/body
+readback. Its missing provider evidence remains a gap with its dependency. This
+audit is also required through verification/ship when this optional code review
+gate is skipped; mandatory threat reconciliation above remains unconditional.
+
 ```
 Agent(
   prompt="
@@ -662,6 +668,12 @@ Review the source changes made by Phase {phase_number}.
 
 Review the changed source for correctness bugs, security issues and code quality
 problems. Judge the code as it now stands, not the summaries' claims about it.
+
+Independently audit the PR/MR body and all ordinary/security issue links through
+[Issue-link audit](../references/git-workflow.md#issue-link-audit). Compare CONTEXT
+acceptance, PLAN/checklist identities and SUMMARY outcomes with actual provider
+readback. Return source revision, body/link snapshot, verified URLs, readback
+evidence and unresolved gaps; do not pass missing/unverifiable evidence.
 
 Return:
 ## CODE REVIEW
@@ -694,6 +706,9 @@ Reconcile threats through [canonical threat tracking](../references/git-workflow
 before this ordinary follow-up review: preserve planned-checklist identities,
 existing matching trackers and standalone distinct unplanned risks. Keep neutral
 links and closure authority separate from checked items and accepted/deferred outcomes.
+Provide these reconciled records and ordinary follow-up links to the independent
+[issue-link audit](../references/git-workflow.md#issue-link-audit); structural handoff
+readiness alone does not establish semantic link correctness or merge eligibility.
 
 1. Workers author explicit `issue_refs` on their first SUMMARY, including []
    after leftover review. For later coordinator amendments, preview

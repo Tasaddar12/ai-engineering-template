@@ -95,10 +95,12 @@ ready work moving when idle; otherwise name the concrete blocker. A completed wa
 or a progress message is not a handoff back to the user. Preserve explicit user
 stop boundaries and reconcile interruptions before restarting anything.
 
-An agent that times out, exhausts its context or turn limit, or returns blocked
-does not end the phase and does not need another user prompt. Inspect what it
-committed, what it left dirty and what it reported, then assign only the remaining
-work to a fresh bounded agent. Stop dependent work only for a concrete blocker you
+After the host confirms an agent stopped/interrupted (including a timeout,
+context/turn-limit exit or blocked return), inspect what it committed, what it
+left dirty and what it reported, then assign only the remaining work to a fresh
+bounded agent. A wait timeout or stalled status alone does not confirm it stopped.
+The stopped attempt does not end the phase or need another user prompt.
+Stop dependent work only for a concrete blocker you
 cannot resolve within authorized scope; name the unavailable access, external
 change or user decision.
 

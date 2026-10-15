@@ -134,6 +134,12 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
 - Reconcile each PLAN's threat links and SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
   Read back safe issue status/evidence; keep remaining risks explicit and Pending
   publication as a gap. Preserve the readiness and critical-risk gates below.
+- Inspect the current independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
+  against CONTEXT, PLAN/checklist identities, SUMMARY outcomes and actual provider
+  body/link readback. Record Pending dependencies or stale findings explicitly.
+  Truthful tracking drafts may carry pending audit under the existing Git workflow;
+  this does not waive verification below or establish merge eligibility. Merge
+  requires the current independent audit and last provider readback.
 
 1. **Verification passed.**
 
@@ -337,6 +343,12 @@ only for demonstrated accepted work; deferred/unresolved/pending-human followups
 use plain links and never closing keywords. `pr.open` binds the existing phase
 session automatically and validates the effective body even on body-omitted edits.
 Show the composed body to the user before opening the PR.
+
+Compare this composed body/link snapshot with the independent
+[issue-link audit](../references/git-workflow.md#issue-link-audit). Material body,
+link, risk-outcome or source changes invalidate affected evidence; obtain fresh
+applicable independent review. A truthful tracking draft may state pending audit
+dependencies, but it cannot claim readiness from structural issue validation.
 </step>
 
 <step name="create_pr">
@@ -356,6 +368,10 @@ a draft for tracking, even when `/ship` was called without `--draft`.
 state when editing; it does not mark the PR ready automatically. Report the
 `created`, `updated` and `isDraft` fields. Opening a PR can start CI; it does not
 mean checks have finished or that the PR is ready to merge.
+
+Read back the actual published body/links and provide that snapshot to the
+independent [issue-link audit](../references/git-workflow.md#issue-link-audit).
+Missing or changed readback remains a gap; publication success is not audit success.
 </step>
 
 <step name="judge_checks">
@@ -400,6 +416,11 @@ Still failing after round 2: report it with its logs as the blocker.
 pull request URL and that the session stays open, then go to the report step.
 
 - Audit the PR/MR linked outcomes and closing references through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Require the current independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
+  and last provider readback before merge eligibility. Compare source revision,
+  actual body/link snapshot, verified URLs and outcomes; stale or missing required
+  readback is a gap with its dependency and blocks merge. Obtain fresh applicable
+  independent evidence after material changes, including ordinary follow-up links.
 - Keep neutral links for unresolved, accepted, deferred and mitigated risks without
   verified closure eligibility. List actual closed only with evidence/readback;
   never infer closure from merge.

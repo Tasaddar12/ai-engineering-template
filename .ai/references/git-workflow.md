@@ -192,6 +192,47 @@ apply safe reporting and provider fallback below/above to every destination.
 - Limitation: `issue.validate` checks headings/order only; assessment, dedup,
   disclosure safety and resolution truth require review.
 
+## Issue-link audit
+
+Before merge eligibility, obtain a fresh independent reviewer/verifier's audit of
+the PR/MR body and all issue links. The auditor must not be the author of the
+reviewed changes. Compare CONTEXT acceptance, every PLAN threat/checklist identity,
+SUMMARY outcomes and actual provider readback of the PR/MR and linked issues.
+Ordinary linked follow-ups need the same audit as security records. This is a
+semantic/provider review: structural `issue.validate` success does not prove it.
+
+The independent result must check:
+
+- Actionable link destination and full scope/acceptance; verified URLs must reach
+  the intended issue or individually addressable checklist entry. Detect omitted
+  or duplicate tracking, planned-checklist coverage and separate standalone
+  tracking for distinct unplanned risks. Reuse existing matching canonical issues.
+- Per-risk key/aliases, PLAN ownership, assessment/uncertainty, owner, actual
+  lifecycle/outcome, revision/check evidence and safe destination visibility.
+  Preserve unresolved, accepted/deferred and mitigated/resolved distinctions.
+- Neutral versus closing references across the actual body/links and provider
+  semantics, including GitLab neutral-link policy. Closing references need
+  scope-complete resolution evidence and existing explicit closure authority.
+  Never infer closure from merge, checked checklist items or accepted/deferred status.
+
+Capture reviewed source revision, PR/MR body/link snapshot, verified URLs,
+provider readback evidence (including observed state and when it was read), and
+unresolved findings/dependencies in the independent result. Missing required
+readback or an unverifiable link is a gap with a dependency, never a pass. An
+unpublished body or unavailable provider may be reviewed provisionally, but its
+required provider readback remains Pending. Use a verified authorized host tool;
+otherwise keep the Pending dependency and continue independent work.
+
+Material changes to links, body, risk outcomes or source invalidate the affected
+audit. Obtain fresh applicable independent evidence before claiming ready; apply
+[verification currentness](verification-evidence.md#coordinator-currentness-check)
+to source evidence and compare the current provider body/link snapshot as well.
+Preflight/body generation may support truthful tracking drafts with pending
+audit findings under the existing delivery policy; they do not establish merge
+eligibility. Before merge, require the current independent audit and last provider
+readback to match the proposed body/links and source. Reconcile changed or
+unavailable readback first. The audit grants no new merge or issue closure authority.
+
 ## Stacks
 
 - Create a stacked PR only for a real dependency. Record `stackParent`, `Target`, `DependsOn` and `OwnChangeBoundary`. Target the parent branch while it is open and show only the child's delta. Give independent changes independent PRs.
