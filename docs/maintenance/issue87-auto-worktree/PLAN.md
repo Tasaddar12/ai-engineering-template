@@ -42,7 +42,7 @@ must_haves:
     - A first source edit with a trustworthy actor/unit identity prepares or selects one isolated checkout and cancels the original mutation; ambiguous identity cancels with explicit coordinator preparation instructions.
     - Repeated and concurrent attempts for the same repository, host and actor/unit reuse the same validated unit without primary synchronization or additional checkouts.
     - The session must explicitly enter the selected root and reread destination files before rebuilding its mutation; creation never counts as host binding.
-    - Ordinary untracked scratchpad create/update operations warn and continue without preparation; plain unlinked temporary note create/update outside every Git repository is allowed without session identity or preparation.
+    - Ordinary untracked scratchpad create/update operations warn and continue without preparation; plain unlinked note create/update under resolved tempfile.gettempdir() and outside every Git repository is allowed without session identity or preparation.
     - All existing primary tracked, staged, untracked and ignored bytes and index state survive preparation, failed preparation and retries.
     - Malformed or ambiguous source requests and stale or cross-root targets cannot become successful old-root edits through the supported hook.
     - Both actual installed host hook pipelines exercise the new component while the existing advisory script stays byte-identical.
@@ -150,7 +150,7 @@ doc-writer after integration. No concurrent writers share these paths.
 |---|---|---|
 | AW-01 | Primary source mutation with trustworthy actor/unit identity prepares exactly one checkout from local committed HEAD, or reuses the explicitly selected valid unit; original mutation is cancelled. Codex parent-only identity cancels with explicit preparation route and no inferred unit. | Task 2; real-Git and installed-pipeline fixtures |
 | AW-02 | Deterministic identity, explicit binding precedence, concurrency and uncertain-outcome recovery prevent selection of another unit and duplicate checkout creation. | Task 2; distinct-session, race and timeout fixtures |
-| AW-03 | Scratchpad-only create/update remains warning/continue; plain unlinked temporary PR-body/task-note create/update proven outside every Git repository remains allowed. Both need no identity, preparation or worktree creation; delivered records and mixed operations are source. | Tasks 1-2; both-host installed aggregate note controls, false-positive fixtures and old advisory suite |
+| AW-03 | Scratchpad-only create/update remains warning/continue; plain unlinked PR-body/task-note create/update under resolved Python tempfile.gettempdir() and proven outside every Git repository remains allowed. Both need no identity, preparation or worktree creation; delivered records and mixed operations are source. Other external targets are unsupported cancellation. | Tasks 1-2; both-host installed aggregate note controls, false-positive fixtures and old advisory suite |
 | AW-04 | Existing tracked/staged/untracked/ignored bytes, primary branch/HEAD and index are unchanged; no fetch, primary sync, stash, reset, clean or bulk copy. | Tasks 1-2; full preservation snapshots and offline fixtures |
 | AW-05 | Strict input/path handling refuses unsupported or ambiguous source mutations, stale paths, cross-checkout requests and unsafe note exceptions. | Tasks 1-2; independent bypass matrix |
 | AW-06 | Both installed hosts run the new component in their existing editing group; advisory handler remains first and its script is byte-identical. | Tasks 1-2; actual installed-launcher aggregate fixtures and upgrade tests |
@@ -253,12 +253,16 @@ lock by age, or fall back to the primary checkout. Conflicting/stale records rem
 preserved and return an actionable error. Concurrency coverage is for cooperating
 prewrite callers; arbitrary external Git writers are outside the lock guarantee.
 
-**Source/note policy:** ordinary plain unlinked temporary PR-body/task-note file
-create/update proven outside every Git repository is outside this repository-source
-guard's scope and remains allowed without session identity, preparation, handoff
-state or worktree creation. Determine that boundary from actual target/ancestor
-filesystem and Git facts, including the nearest existing ancestor for a new file;
-never use a temp-directory prefix, filename extension or content guess as proof.
+**Source/note policy:** ordinary plain unlinked PR-body/task-note file create/update
+is allowed only under the resolved OS temporary directory returned by Python
+`tempfile.gettempdir()`, and only when proven outside every Git repository and
+nested repository. That narrow temporary-artifact control needs no session identity,
+preparation, handoff state or worktree creation. Resolve the OS temp root and target
+using filesystem facts and require real path containment, including the nearest
+existing ancestor for a new file; a lexical temp-directory prefix is insufficient.
+This is location-based temporary-artifact classification, never filename extension
+or content guessing. Other external targets outside this resolved OS temp root
+are unsupported and cancelled; there is no arbitrary external-note exemption.
 Require all targets to be ordinary create/update files with no symlink, junction,
 reparse traversal, hard-linked existing target, Git repository or unresolved path
 ambiguity. A target in any other repository remains a cross-repository source
@@ -266,9 +270,10 @@ target, even if its name says note or PR body. This narrow nonrepository control
 does not exempt any additional paths inside a Git repository. Any mixed operation
 with a repository-source target takes the source decision for the whole operation;
 malformed, ambiguous, delete and rename/move operations gain no exception here.
-Exercise plain nonrepository note creation and update through both actual installed
-host aggregate pipelines without session identity, alongside repository-source
-controls receiving their required decision.
+Exercise plain note creation and update in an ordinary TemporaryDirectory under
+that OS temp root, outside every repository, through both actual installed host
+aggregate pipelines without session identity. Companion repository-source controls
+must receive their required decision, and non-temp external targets must cancel.
 
 For in-repository notes, preserve existing `.planning/scratchpads/**` ordinary
 untracked file create/update behavior. Also allow create/update in the ignored
@@ -392,7 +397,7 @@ trigger merely because an arbitrary file edit was attempted.
   <files>.ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md</files>
   <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/RESEARCH.md, .ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md, .ai/hooks/source-prewrite.sh, .ai/hooks/worktree-guard.sh, .ai/runtime/lib/prewrite.py, .ai/install.py, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md</read_first>
   <action>Coordinator dispatches doc-writer after Task 2's integrated implementation summary exists. Explain first-source automatic preparation, deterministic auto-unit and explicit unit override, note policy, errors/recovery and the supported entrypoints exactly as implemented. Add the source-prewrite continuation section named by denial output to worktree-sessions: enter/bind through the supported host or coordinator, verify actual Git root/branch/base, reload context and reread destination before rebuilding, and report dirty dependencies. Retain ordinary workflow source-session routing and named runtime planning exceptions. Explain that native/manual transition is still required unless independently demonstrated on a supported host; list shell/external/cloud-orchestration/hook-error coverage limits and fail-open host behavior. The coordinator explicitly delegates the narrow .ai/RULES.md#Hooks-and-validation reconciliation to this doc-writer: replace only that section's blanket all-hooks-advisory claim with the distinction between unchanged advisory hooks and the separate supported source-prewrite denial/preparation component. Preserve the existing advisory script/policy, optional-hook and no-sandbox limits, required-check guidance, and all other RULES sections. Correct the corresponding wording in the three guides. Record actual fixture evidence and the pending live proof without turning unavailable live evidence into user approval or success. Commit all four required documentation paths and the documentation summary, then have the coordinator integrate them before final verification.</action>
-  <acceptance_criteria>AW-03, AW-07 and AW-08 are explained against implementation; exact continuation is actionable; creation, fixture pass and live automatic entry remain distinct facts; the existing advisory policy is preserved. Task 3's note documentation explicitly distinguishes allowed plain unlinked temporary PR-body/task-note create/update proven outside every Git repository, without identity or preparation, from repository-source, cross-repository, linked, malformed, ambiguous and mixed targets. The .ai/RULES.md Hooks and validation section accurately distinguishes advisory behavior from the new supported denial behavior, and the narrow reconciliation is committed and integrated before final verification.</acceptance_criteria>
+  <acceptance_criteria>AW-03, AW-07 and AW-08 are explained against implementation; exact continuation is actionable; creation, fixture pass and live automatic entry remain distinct facts; the existing advisory policy is preserved. Task 3's note documentation explicitly limits allowed plain unlinked PR-body/task-note create/update to resolved Python tempfile.gettempdir() containment outside every Git repository, without identity or preparation; non-temp external targets are unsupported cancellation. Preserve repository-source, cross-repository, linked, malformed, ambiguous and mixed-target constraints. The .ai/RULES.md Hooks and validation section accurately distinguishes advisory behavior from the new supported denial behavior, and the narrow reconciliation is committed and integrated before final verification.</acceptance_criteria>
   <verify><manual>At the integrated implementation/documentation revision, independent doc-verifier checks all four exact documentation paths, specifically .ai/RULES.md#Hooks-and-validation, against the registered source-prewrite entrypoint, unchanged worktree-guard.sh and fixture receipts. Trace every new command/option and continuation reference, compare note/error behavior, and reject any blanket all-hooks-return-success claim, changed advisory policy, live-host-binding assertion or universal-enforcement claim. Missing, failed or required unverifiable section claims prevent conclusive documentation coverage and final verification.</manual></verify>
   <done>All four required documents, including the narrow shared-policy section, describe integrated behavior and the remaining host transition limitation; doc-writer returns its committed summary, coordinator integrates it before final verification, and independent doc-verifier returns explicit per-document/section evidence.</done>
 </task>
@@ -412,7 +417,7 @@ verdict. This is an additional committed input, not a new preparer-owned file.
 
 | Family | Required cases / expected observable result |
 |---|---|
-| Allow without creation | Read-only; ordinary scratchpad create/update with and without session_id (N1); plain unlinked temporary PR-body/task-note create/update proven outside every Git repository through both installed aggregate pipelines without session_id/preparation/worktree creation (N2); safe nested note paths; assigned valid linked checkout with relative targets. Existing advisory warnings preserved; companion repository-source controls still receive their required decision. |
+| Allow without creation | Read-only; ordinary scratchpad create/update with and without session_id (N1); plain unlinked PR-body/task-note create/update under resolved Python tempfile.gettempdir(), proven outside every Git repository, through both installed aggregate pipelines without session_id/preparation/worktree creation (N2); safe nested note paths; assigned valid linked checkout with relative targets. Existing advisory warnings preserved; companion repository-source controls still receive their required decision and non-temp external targets cancel. |
 | Prepare then cancel | Clean primary Write/Edit/MultiEdit/NotebookEdit and each supported patch operation; dirty primary; offline/no remote; nested cwd; Claude actor identity and explicitly bound Codex request. One selected checkout, zero original mutations. Unbound Codex cancels without guessed unit. |
 | Reuse and identity | Same native actor retries; different host/session/Claude agent IDs; same Codex parent session with two indistinguishable unisolated workers; omitted/malformed Claude agent_id cannot establish coordinator identity; explicit per-request mapping precedence; changed targets under old tool_use_id; new unrelated/retried request ID; valid existing unit; two possible units; absent/empty/non-string/oversized identity; equivalent Windows spellings; conflicting repository. Codex shared session never proves ownership. Missing/ambiguous identity cancels without guessing. |
 | Note bypass attempts | Tracked notes; deleted/renamed note; mixed note/source; source Markdown; traversal; symlink/junction/reparse ancestor; hard-link target; nested repo; missing/unresolvable ancestors; misleading prefix. Source policy/cancellation applies. |

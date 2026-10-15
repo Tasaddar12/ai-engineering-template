@@ -53,6 +53,12 @@ addresses only that original source-versus-note boundary in AW-03, policy, matri
 N2 and Task 3 documentation. The coordinator reports genuine test-only RED at
 `1414979` and source coding paused; this preparer did not execute or reverify it.
 Coordinator owns MATRIX N2 and bounded checker recheck before source release.
+Exact-definition alignment after `1d8091e2580fe57bdb6776688df9dd216ec898b8`:
+the coordinator selected real containment under resolved Python
+`tempfile.gettempdir()` as the temporary-artifact boundary, still outside every
+Git repository. Non-temp external targets are unsupported cancellation. This
+revision makes only that location definition explicit in policy, AW-03, controls
+and documentation acceptance; no other scope, ownership or canonical risk changes.
 
 ## Decisions within delegated discretion
 
@@ -69,13 +75,15 @@ Coordinator owns MATRIX N2 and bounded checker recheck before source release.
   ordinary untracked `.planning/scratchpads/**` create/update remains advisory
   without identity. Mixed, tracked, rename/delete or linked-path notes use source
   policy. This retains the observed installed fixture preference.
-- Plain unlinked temporary PR-body/task-note file create/update proven outside
-  every Git repository remains allowed without session identity, preparation or
-  worktree creation. This is a repository-scope boundary established by real
-  filesystem/Git facts, not extension/content guessing or a broad temp-path
-  exemption. Repository-source, cross-repository, linked, malformed, ambiguous
-  and mixed-operation constraints remain unchanged. Both installed host aggregate
-  pipelines require the nonrepository control and companion source decision.
+- Plain unlinked PR-body/task-note file create/update under resolved Python
+  `tempfile.gettempdir()` and proven outside every Git repository remains allowed
+  without session identity, preparation or worktree creation. Real containment
+  and filesystem/Git facts establish this location-based temporary-artifact
+  boundary; extension/content guessing and lexical prefix checks do not. Other
+  non-temp external targets are unsupported cancellation. Repository-source,
+  cross-repository, linked, malformed, ambiguous, rename/delete and mixed-operation
+  constraints remain unchanged. Both installed host aggregate pipelines require
+  the OS-temp nonrepository control and companion source/non-temp decisions.
 - Keep a small Git-common-dir journal and bounded process lock, deterministic
   request identity for creation/recovery, and validate actual Git facts before
   reuse. Preserve all pre-existing dirty bytes/index; no synchronization, stash,
