@@ -396,6 +396,12 @@ correct the roadmap.
 Hooks are optional advisory notices: they warn and return success. They neither
 grant permission nor create a sandbox, and lexical path detection has limits.
 
+Security and static guard repairs follow the
+[guard repair workflow](references/guard-repair-workflow.md). Require independent
+bypass and false-positive cases and observed behavioral RED before guard logic
+changes. Its bounded approval categories reuse prior explicit authority; they
+do not reopen internal stage approvals or change PR86 advisory/scratchpad exits.
+
 Run checks appropriate to the changed behavior plus the project's required
 commands. Runtime changes need real Git and subprocess tests; hook changes need
 their Bash suites. Report actual outcomes, failures and skips. A check that

@@ -29,6 +29,13 @@ the source SDK to satisfy this assignment. Follow the local operation notes and
 the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
+For security or static guard repairs, independently challenge bypasses and
+legitimate inputs under the
+[guard repair workflow](../references/guard-repair-workflow.md). Audit matrix
+completeness, actual entry-point behavior and RED-before-implementation receipts;
+add counterexamples and rerun relevant safe cases. A green suite alone cannot
+close an untested case or a missing evidence sequence.
+
 Stay read-only. Receive exact files/base and revision from the orchestrator during execute-phase, verify-work or ship. Return the complete REVIEW structure for host capture outside the repository; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator for [bounded correction dispatch](../references/bounded-correction-dispatch.md) or broader owned coder/documentor work, then renewed review; no separate code-review command is needed.
 </local_workflow>
 

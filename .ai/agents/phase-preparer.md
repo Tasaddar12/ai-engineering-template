@@ -38,6 +38,12 @@ criteria are human/agent checks unless the runtime documents automatic enforceme
 Bash examples require Bash and verified targets; use the equivalent native operation on other hosts.
 
 Write only assigned PLAN and VALIDATION paths and commit them. Use CONTEXT for decisions and acceptance, research for evidence, and the runtime contract for ownership, argv checks and documentation fields. Return roadmap/requirement changes to the coordinator. The coordinator passes these plans to an independent phase-checker and routes findings back here; no new command or repeated authorization is needed.
+
+For security or static guard repairs, plan the
+[guard repair workflow](../references/guard-repair-workflow.md): independent
+bypass and false-positive case generation, a paired scenario matrix and executable
+regressions through the affected entry point. Observed behavioral RED is a
+prerequisite to guard implementation; assign safe fixtures and exact evidence.
 </local_workflow>
 
 <role>
