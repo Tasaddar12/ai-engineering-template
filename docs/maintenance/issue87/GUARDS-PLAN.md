@@ -15,6 +15,8 @@ files_modified:
   - tests/test_install.py
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
+  - .ai/RULES.md
+  - .ai/runtime/lib/worktrees.py
 files_deleted: []
 autonomous: true
 requirements: [ISSUE87-GUARD, ISSUE87-RED]
@@ -84,8 +86,8 @@ At the input revision, worktrees.cleanup_wave (467-510) requires manifest merged
 <tasks>
 <task type="auto" tdd="true">
   <name>GUARD: prove refusal through the registered hook, then implement bounded destructive policy</name>
-  <files>.ai/hooks/destructive-git-guard.py, .ai/runtime/lib/destructive_guard.py, tests/test_destructive_guard.py, .ai/install.py, tests/test_install.py, .ai/hooks/README.md, .ai/references/destructive-operations.md</files>
-  <read_first>docs/maintenance/issue87/CONTEXT.md, .ai/hooks/worktree-guard.sh, .ai/hooks/README.md, .ai/install.py, tests/test_install.py (InstallerTests.launcher_argv and test_registered_hooks_execute_from_installed_subdirectory), .ai/runtime/lib/worktrees.py (listing, primary_checkout, load_sessions, load_manifest, session_merged), .ai/runtime/lib/delivery.py (gh and view), .ai/references/worktree-path-safety.md, .ai/references/worktree-recovery-policy.md, .ai/references/methods/tdd.md; read each new assigned file if it already exists</read_first>
+  <files>.ai/hooks/destructive-git-guard.py, .ai/runtime/lib/destructive_guard.py, tests/test_destructive_guard.py, .ai/install.py, tests/test_install.py, .ai/hooks/README.md, .ai/references/destructive-operations.md, .ai/RULES.md (Hooks and validation prose only), .ai/runtime/lib/worktrees.py (advisory dispatch module docstring only)</files>
+  <read_first>docs/maintenance/issue87/CONTEXT.md, .ai/RULES.md (Hooks and validation), .ai/hooks/worktree-guard.sh, .ai/hooks/README.md, .ai/install.py, tests/test_install.py (InstallerTests.launcher_argv and test_registered_hooks_execute_from_installed_subdirectory), .ai/runtime/lib/worktrees.py (module docstring, listing, primary_checkout, load_sessions, load_manifest, session_merged), .ai/runtime/lib/delivery.py (gh and view), .ai/references/worktree-path-safety.md, .ai/references/worktree-recovery-policy.md, .ai/references/methods/tdd.md; read each new assigned file if it already exists</read_first>
   <behavior>
     - Registered PreToolUse pipeline receives a primary-checkout git switch payload: before implementation it allows; after implementation it denies with a reason and stable code.
     - Explicit git checkout -- path and git checkout REF -- path restore forms allow, including quoted paths and filenames resembling branches/options. Branch checkout, -b/-B, --orphan, switch -c/-C/--detach and checkout REF without -- deny in the primary checkout. Ambiguous checkout path-or-ref syntax there denies with guidance to add -- for a path restore.
@@ -102,7 +104,7 @@ Use the grammar and matrix below. Resolve every effective Git repository from pa
 
 Collect canonical primary/common-dir identity, registered worktrees, exact branch tips, ownership records and full porcelain status including ignored content before deletions. A managed-looking path alone does not establish ownership. Resolve provider from repository remote plus existing metadata, never branch text alone. Use existing gh/glab read-only CLI surfaces through the local runner; keep all delivery/provider adapter files untouched. Query all relevant PR/MR matches with pagination or return unknown on incomplete enumeration. Match host/project, source repository, branch and head SHA; linked terminal records cannot authorize deletion after new local commits. Missing CLI/auth/network, ambiguous origin/fork, unsupported schema or no matching record means unknown, never merged. A current open record overrides any old terminal record and Git ancestry. Normalize GitHub OPEN/CLOSED/MERGED and GitLab opened/closed/merged without conflating unknown, locked or draft with terminal. Derive CLI argv from installed help/current repository conventions and pin it in offline contract tests; do not assume a GitLab adapter exists. No live provider writes are needed.
 
-Register the Python hook separately for Bash and actual Codex shell tool names supported by installer matcher conventions, including exec_command where the host supplies it; document exact registered names. Handle script suffix/interpreter in hook_settings rather than invoking Python as bash. Resolve installed library relative to the hook in .codex or .claude. Extend the installed registered-hooks test to exercise allow and deny from nested directories with spaces/non-ASCII and Windows status propagation, while retaining existing advisory scratchpad/dispatch assertions. Keep --no-hooks and user hook settings behavior intact. No broad hook disabling, .ai/hooks/worktree-guard.sh edits, provider adapter changes or benchmark harness.
+Register the Python hook separately for Bash and actual Codex shell tool names supported by installer matcher conventions, including exec_command where the host supplies it; document exact registered names. Handle script suffix/interpreter in hook_settings rather than invoking Python as bash. Resolve installed library relative to the hook in .codex or .claude. Extend the installed registered-hooks test to exercise allow and deny from nested directories with spaces/non-ASCII and Windows status propagation, while retaining existing advisory scratchpad/dispatch assertions. Keep --no-hooks and user hook settings behavior intact. No broad hook disabling, .ai/hooks/worktree-guard.sh edits, provider adapter changes or benchmark harness. Coordinator-authorized documentation amendment: qualify the Hooks and validation paragraph in .ai/RULES.md and correct only the stale advisory dispatch module docstring in .ai/runtime/lib/worktrees.py; no runtime logic, worktree creation/base/root/integration safeguards or scratchpad policy changes.
   </action>
   <verify>
     <automated>python -m unittest discover -s tests -p test_destructive_guard.py -v</automated>
@@ -188,7 +190,7 @@ Before declaring implementation complete:
 - Run existing worktree-guard Bash suite when Git Bash is available to verify unchanged advisory behavior; report inability to run explicitly, never a pass.
 - Inspect the actual Python launcher from both host namespaces; registered-hooks tests exercise Windows exit propagation where running on Windows.
 - Independent review must assess parser coverage against the matrix, approval/provenance limits, exact ownership, provider identity and closed-unmerged preservation.
-- Verify no edits to .ai/runtime/phase.py, .ai/runtime/lib/worktrees.py, .ai/RULES.md, provider adapters, adoption records, shell line-ending rules or unrelated source.
+- Verify no edits to .ai/runtime/phase.py, worktrees.py runtime logic, .ai/RULES.md outside the Hooks and validation prose, provider adapters, adoption records, shell line-ending rules or unrelated source. The coordinator-authorized worktrees.py module docstring correction is documentation only.
 </verification>
 
 <success_criteria>

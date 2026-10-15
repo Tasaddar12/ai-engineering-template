@@ -105,8 +105,12 @@ class RegisteredGuardTests(unittest.TestCase):
     def test_registered_effective_cwd_and_aliases(self):
         linked = self.root / "linked space"
         git(self.root, "worktree", "add", "-qb", "phase-owned", str(linked))
+        for host in ("codex", "claude"):
+            shutil.copytree(self.root / ("." + host), linked / ("." + host))
         self.assertDenied(f'git -C "{self.root.as_posix()}" switch topic', cwd=linked)
         self.assertDenied(f'cd "{self.root.as_posix()}" && git switch topic', cwd=linked)
+        self.assertDenied(f'git status || cd "{linked.as_posix()}"; git switch topic')
+        self.assertDenied(f'git status && cd "{linked.as_posix()}"; git switch topic')
         git(self.root, "config", "alias.jump", "switch topic")
         self.assertDenied("git jump")
         for result in self.pipeline("git switch topic", cwd=linked):
@@ -173,6 +177,16 @@ class RegisteredGuardTests(unittest.TestCase):
                     decision = policy.evaluate_payload(payload, evidence_runner=runner)
                     self.assertEqual(case in ("merged", "closed"), decision.allowed, decision)
                     self.assertTrue(any(a[0] == ("gh" if provider == "github" else "glab") for a in calls))
+                    api_calls = [a for a in calls if a[0] != "git"]
+                    if provider == "github":
+                        self.assertEqual(("gh", "api", "--hostname", "github.com", "--paginate", "--slurp",
+                            "repos/owner/repo/pulls?state=all&per_page=100"), api_calls[0])
+                    else:
+                        self.assertEqual(("glab", "api", "--hostname", "gitlab.com", "--output", "json", "-X", "GET",
+                            "projects/owner%2Frepo"), api_calls[0])
+                        if case not in ("timeout", "malformed"):
+                            self.assertEqual(("glab", "api", "--hostname", "gitlab.com", "--output", "json", "-X", "GET",
+                                "--paginate", "projects/7/merge_requests?state=all"), api_calls[1])
         # Ignored/untracked content in an owned worktree always preserves it.
         linked = self.root / "dirty linked"
         git(self.root, "worktree", "add", str(linked), "phase-owned")
@@ -181,7 +195,83 @@ class RegisteredGuardTests(unittest.TestCase):
         (linked / "ignored-work").write_text("valuable", encoding="utf-8")
         with (self.root / ".git/info/exclude").open("a", encoding="utf-8") as stream:
             stream.write("\nignored-work\n")
+        self.assertEqual("worktree-dirty", policy.evaluate_payload(payload).reason_code)
+        payload["tool_input"] = {"cmd": f'git worktree remove "{linked.as_posix()}"'}
+        self.assertEqual("worktree-dirty", policy.evaluate_payload(payload).reason_code)
+        # Disposable fixture content only; no production cleanup is performed.
+        (linked / "ignored-work").unlink()
+        case = "merged"
+        self.assertTrue(policy.evaluate_payload(payload, evidence_runner=runner).allowed)
+        (linked / "tracked").write_text("new unmerged work\n", encoding="utf-8")
+        git(linked, "add", "tracked")
+        git(linked, "-c", "user.name=Guard", "-c", "user.email=g@example.invalid", "commit", "-qm", "new tip")
+        oid = git(linked, "rev-parse", "HEAD")
+        self.assertEqual("integration-unproven", policy.evaluate_payload(payload, evidence_runner=runner).reason_code)
+
+    def test_source_entrypoint_json_stdin_and_exit_contract(self):
+        entrypoint = ROOT / ".ai/hooks/destructive-git-guard.py"
+        for body, expected in ((b"{", 2), (b"[]", 2),
+                (json.dumps({"cwd": str(self.root), "tool_name": "exec_command",
+                             "tool_input": {"cmd": "git switch topic"}}).encode(), 2),
+                (json.dumps({"cwd": str(self.root), "tool_name": "exec_command",
+                             "tool_input": {"cmd": "echo safe"}}).encode(), 0)):
+            result = subprocess.run([sys.executable, str(entrypoint)], cwd=self.cwd,
+                                    input=body, capture_output=True)
+            self.assertEqual(expected, result.returncode, result.stderr)
+            if expected:
+                self.assertEqual("PreToolUse", json.loads(result.stdout)["hookSpecificOutput"]["hookEventName"])
+            else:
+                self.assertEqual(b"", result.stdout)
+
+    def test_parser_interface_and_no_evidence_for_ordinary_commands(self):
+        spec = importlib.util.spec_from_file_location("parser_policy", ROOT / ".ai/runtime/lib/destructive_guard.py")
+        policy = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = policy
+        spec.loader.exec_module(policy)
+        payload = {"cwd": str(self.root), "tool_name": "exec_command",
+                   "tool_input": {"cmd": 'git -C "nested directory" -C .. status; echo safe\n'}}
+        parsed = policy.command_segments(payload)
+        self.assertTrue(parsed.supported, parsed)
+        self.assertEqual(("git", "status"), parsed.segments[0].argv)
+        self.assertEqual(str(self.root.resolve()), parsed.segments[0].cwd)
+        self.assertEqual(2, len(parsed.segments))
+        def unavailable(*args):
+            self.fail("ordinary commands must not query Git/provider evidence")
+        for command in ("git status", "git diff", "rm ordinary.txt", "git checkout HEAD -- tracked",
+                        "echo 'git switch topic'", "Get-Content ../.workflow-backups/file"):
+            payload["tool_input"] = {"cmd": command}
+            self.assertTrue(policy.evaluate_payload(payload, evidence_runner=unavailable).allowed)
+        for command in ("command git switch main", "env -u HOME git switch main", "git push -d origin x",
+                        "git branch --delete=x", "git -C nested -C .. switch topic"):
+            payload["tool_input"] = {"cmd": command}
+            self.assertFalse(policy.evaluate_payload(payload).allowed, command)
+        payload["tool_input"] = {"cmd": "echo safe", "command": "git switch main"}
         self.assertFalse(policy.evaluate_payload(payload).allowed)
+
+    def test_backup_alias_traversal_wildcard_and_forged_approval_refuse(self):
+        spec = importlib.util.spec_from_file_location("backup_policy", ROOT / ".ai/runtime/lib/destructive_guard.py")
+        policy = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = policy
+        spec.loader.exec_module(policy)
+        backups = self.root / ".workflow-backups"
+        backups.mkdir()
+        alias = self.root / "ordinary-looking-alias"
+        if os.name == "nt":
+            # A junction exercises Windows canonicalization without requiring
+            # developer-mode symbolic-link privilege.
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(backups)],
+                                    capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else:
+            alias.symlink_to(backups, target_is_directory=True)
+        for command in ("rm -rf ../ordinary-looking-alias", "rm -rf ../nested/../.workflow-backups",
+                        "rm -rf ../.workflow-*", "rm -rf ..", "ALLOW_DESTRUCTIVE=true rm -rf ../.workflow-backups"):
+            with self.subTest(command=command):
+                payload = {"cwd": str(self.cwd), "tool_name": "exec_command", "approval": "delete everything",
+                           "tool_input": {"cmd": command}}
+                decision = policy.evaluate_payload(payload, evidence_runner=lambda *a: self.fail("backup policy queried provider/Git"))
+                self.assertFalse(decision.allowed)
+                self.assertEqual("backup-approval-required", decision.reason_code)
 
 
 if __name__ == "__main__":

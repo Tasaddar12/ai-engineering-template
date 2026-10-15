@@ -1,15 +1,16 @@
 ---
 tier: contract
 authority: agent
-title: Advisory host hooks
+title: Host hooks
 ---
 
-# Advisory host hooks
+# Host hooks
 
 [Installation](../commands/install.md) registers the existing scripts directly:
 
 | Script | Event | Output |
 |---|---|---|
+| [destructive-git-guard.py](destructive-git-guard.py) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Blocking refusal JSON with stable `reason_code` and exit 2 for recognized unsafe Git/backup operations |
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
@@ -52,9 +53,24 @@ silently did not run:
   arguments and consumes a bare `"` rather than passing it, which re-split the
   script at its spaces and left bash treating `rev-parse` as its own name.
 
-Scripts live in the selected host's `hooks` folder. There is no Python hook
-adapter. The command locates the script from the active Git root, including when
-the host starts from a subdirectory.
+Scripts live in the selected host's `hooks` folder. Python suffixes use the
+`python` interpreter; shell scripts use Bash. The command locates the script
+from the active Git root, including when the host starts from a subdirectory.
+The Codex Python `commandWindows` resolves that root inside Python, runs the
+entrypoint with `runpy` and propagates `$LASTEXITCODE`. Python source is never
+interpreted as Bash. Both `.codex` and `.claude` copies import their adjacent
+`runtime/lib/destructive_guard.py` rather than the source `.ai` namespace.
+
+The destructive hook has a 120-second host timeout and an 80-second evidence
+budget, with individual subprocess calls limited to 20 seconds. Missing or
+failed Git/provider evidence refuses the recognized operation. The installed
+launcher tests verify refusal status and JSON on Windows and allow behavior
+from nested paths with spaces/non-ASCII characters. They establish launcher
+execution, not a trusted live host session.
+
+See [destructive operations](../references/destructive-operations.md) for the
+literal command grammar, preservation policy and limits. This new hook is
+separate from `worktree-guard.sh`, whose bytes and advisory behavior are unchanged.
 
 Use `--no-hooks` to skip adding registrations; existing hooks are preserved.
 Existing settings remain authoritative. Codex must trust the project and hooks
