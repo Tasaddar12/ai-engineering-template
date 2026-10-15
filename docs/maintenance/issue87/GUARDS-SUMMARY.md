@@ -307,8 +307,8 @@ RED commit: `b97d496a5617d949738e5853e049d4d4689e861b` precedes this repair.
 | `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
 | `git diff --check` | Exit 0 |
 
-Final bounded source commit: the commit containing this section; exact SHA is
-pinned in the following summary-only evidence update. No production source
+Final bounded source commit: `e2c4ed44cab7c865863dea0a577eaa7639ff61e9`.
+This summary-only update pins the exact source. No production source
 changed after the passing checks. Fresh bounded independent review remains
 pending. Only the library and summary changed after the prescribed RED commit;
 installer, children, PR86 bytes and provider adapters remain unchanged.
