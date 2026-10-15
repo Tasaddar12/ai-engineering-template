@@ -86,7 +86,7 @@ must_haves:
       via: Host WorktreeCreate event, exact reserved name, pinned local base and validated creation journal.
     - from: Native completion and subsequent default-root tools
       to: prewrite.confirm and worktrees.adopt_native_session
-      via: Same-actor host observation plus separate real Git checks and phase/quick registration; runtime never certifies host binding.
+      via: Same-actor host observation plus real Git checks; new native units are adopted, existing ordinary sessions are confirmed without creating/adopting them again. Runtime never certifies host binding.
 ---
 
 <objective>
@@ -192,7 +192,7 @@ replay. Worker lifecycle/integration/publication remain coordinator-owned.
 | `.ai/hooks/worktree-location.sh:27-45,91-112`; ordinary .test.sh:52-85 | Add only the dedicated reserved `wf-entry-` ticket branch. Validate journal and pinned base; create fresh destination or return explicit uncertain/refusal. Never reuse a registered destination/branch through this creation branch. Ordinary dispatch name reuse/custom-root/calling-HEAD behavior remains covered unchanged. |
 | `.ai/runtime/lib/worktrees.py:766-832` open_session | Do not use it to precreate the Claude native destination; retain its defaults and existing callers. Reuse existing common_dir/root/listing/session helpers where sufficient. |
 | `.ai/runtime/lib/worktrees.py:835-893` phase-only session.adopt | Add narrowly scoped adopt_native_session for verified native-created phase/quick units with exact journal base/root/branch. Do not broaden ordinary session.adopt or infer a remote base/phase from recency. |
-| `.ai/runtime/phase.py` registry and normal JSON envelopes | Add prewrite.begin and prewrite.confirm adapters to lib.prewrite. These record/check local preparation/native Git facts; they never assert same-agent host binding or invoke native tools. |
+| `.ai/runtime/phase.py` registry and normal JSON envelopes | Add prewrite.request, prewrite.begin and prewrite.confirm adapters to lib.prewrite. request bootstraps a known workflow unit without an intercepted edit; begin resolves explicit new/existing target mode; confirm branches between new native adoption and existing-session validation. None certifies host binding or invokes native tools. |
 | quick:127-140, discuss:236-253, plan:127-144, execute:178-195, verify:132-149, ship:90-98 | Add a conditional Claude native-route branch before shell session.open/cd routing. New unit uses native creation then adoption. Existing session uses the actual native existing-path operation with eligibility/policy/approval checks. Reload locate/init from post-native default root. Shell cd remains ordinary runtime guidance, never native movement proof. |
 | `tests/test_install.py:682-780` aggregate and note/source tests | Preserve valid cancellation/note controls; replace obsolete Claude precreated-second-checkout expectation with denial ticket followed by native creation contract. Codex refusal remains unsupported-control evidence, not the new native-route RED. |
 | `tests/test_session_delivery.py`, `.ai/hooks/worktree-location.test.sh`, `tests/test_agent_sources.py` | Existing real-Git/session, ordinary location reuse and role/export regression checks remain. New native behavior cases live in new test_same_agent_worktree.py and test_prewrite.py. |
@@ -224,9 +224,28 @@ replay. Worker lifecycle/integration/publication remain coordinator-owned.
    this attempt precisely as unsupported, with the edit unapplied. The selected
    executor's missing tool is a live-smoke limit, not a target-host veto.
 
-3. **Reserve native creation once.** `prewrite.begin <ticket> <phase|quick> <label>`
-   validates exact repository/session/actor/request, source targets and explicit
-   local full commit captured by the ticket, then reserves one safe fresh
+3. **Bootstrap and choose target mode explicitly.** Intercepted source events
+   produce denial requests as in step 1. Separately, each of the six workflow
+   entrypoints can call `prewrite.request <phase|quick> <label> --mode <new|existing>`
+   before any edit/session.open/cd. This known-unit bootstrap validates actual
+   repository/root and explicit workflow kind/label, captures local committed HEAD
+   for new mode, and returns a workflow request ID with origin=workflow. It has
+   no denied mutation or source-target digest: never fabricate an intercepted edit
+   or require one to start a workflow. For existing mode it resolves exactly one
+   open kind/label session and validates its recorded root/branch/base against real
+   Git registration; missing, conflicting or ambiguous metadata refuses. No
+   arbitrary external path or newest-session selection is accepted. Bootstrap
+   records a request, not native capability, identity or movement proof.
+
+   `prewrite.begin <request> <phase|quick> <label> --mode <new|existing>` accepts
+   either the exact intercepted request or the workflow request. It validates
+   repository/session/actor/request linkage and explicit unit/mode; intercepted
+   requests additionally retain target/operation confinement. For workflow requests
+   mode/kind/label must match their bootstrap. New mode requires no existing unit
+   and the pinned local commit; existing mode requires the exact validated open
+   session and returns its actual destination with no creation name/base fiction.
+   New/existing disagreement refuses instead of switching modes implicitly.
+   Only new mode reserves one safe fresh
    `wf-entry-<opaque-token>` name under the configured ignored immediate-child
    worktree root. Store minimal unit/root/base/name/state/digests under
    common_dir/ai-phase/prewrite; no source contents or transcript text. Use a bounded
@@ -241,7 +260,7 @@ replay. Worker lifecycle/integration/publication remain coordinator-owned.
    satisfies the existing isolation branch namespace; do not infer its branch
    from an unrelated session or relax existing branch checks.
 
-4. **Native entry is the next operation.** The same existing model invokes its
+4. **Native entry is the next operation.** In new mode the same existing model invokes its
    own advertised EnterWorktree creation form with the reserved creation identity.
    The host fires WorktreeCreate; the dedicated location-hook branch consumes the
    exact journal name/source/base and creates the checkout from that pinned local
@@ -252,6 +271,11 @@ replay. Worker lifecycle/integration/publication remain coordinator-owned.
    inspect/preserve, or use the genuine native existing-path route if its schema,
    eligibility and required approval allow it. Never disguise reuse to evade
    outside `.claude/worktrees/` approval. Preserve ordinary dispatch hook reuse.
+   In existing mode the same agent invokes the actual advertised native
+   existing-path form for the returned session root, subject to its eligibility,
+   policy and required approval. It does not call creation or WorktreeCreate and
+   does not need a native-creation journal. Failure leaves the existing session
+   untouched; no new-unit fallback or approval bypass is allowed.
 
 5. **Prove post-entry defaults.** Native completion must be observed for the same
    existing session/agent. Subsequent tools, without explicit cwd overrides or
@@ -261,9 +285,16 @@ replay. Worker lifecycle/integration/publication remain coordinator-owned.
    re-resolve runtime and all locate/init inputs there, and confirm destination
    write permissions. The original project-directory environment variable stays
    anchored on Claude; do not use it as the post-entry cwd. `prewrite.confirm
-   <ticket>` verifies actual Git/journal facts in its default cwd, then registers
-   the phase/quick unit through adopt_native_session without another checkout or
-   primary synchronization. Its output explicitly says Git facts verified, host
+   <request>` verifies actual Git/request facts in its default cwd. In new mode it
+   requires the matching native creation journal, then registers the phase/quick
+   unit through adopt_native_session without another checkout or primary sync.
+   In existing mode it validates the original open session's kind/label/root/
+   branch/base and registration against current Git and the request, returning
+   reused=true without adopt_native_session, a fabricated creation receipt or
+   rewriting session ownership. No native-creation journal is required for an
+   ordinary existing phase/quick session. Native/default-context proof is still
+   mandatory in both modes and is separate from these Git checks. Its output
+   explicitly says Git facts verified, host
    binding not certified by runtime. Intended-root state, self-reported tool lists,
    a child process cwd or confirm success alone are not host movement proof.
 
@@ -354,7 +385,7 @@ with bounded coverage, not a universal filesystem enforcement boundary.
 <task type="auto" tdd="true">
   <name>Task 1: Commit fresh native-route behavioral RED and installed contract controls</name>
   <files>tests/test_same_agent_worktree.py, tests/test_prewrite.py, tests/test_install.py, tests/test_install_update.py, .ai/hooks/source-prewrite.test.sh, .ai/hooks/worktree-location.test.sh</files>
-  <read_first>docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, docs/maintenance/issue87-auto-worktree/MATRIX.md, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md, docs/maintenance/issue87-auto-worktree/RED-REVIEW.md, .ai/install.py, .ai/hooks/worktree-location.sh, .ai/hooks/worktree-location.test.sh, .ai/runtime/lib/worktrees.py, tests/test_install.py, tests/test_session_delivery.py, .ai/references/methods/tdd.md</read_first>
+  <read_first>docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, docs/maintenance/issue87-auto-worktree/MATRIX.md, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md, docs/maintenance/issue87-auto-worktree/RED-REVIEW.md, .ai/install.py, .ai/hooks/worktree-location.sh, .ai/hooks/worktree-location.test.sh, .ai/runtime/lib/worktrees.py, tests/test_install.py, tests/test_install_update.py, tests/test_session_delivery.py, .ai/references/methods/tdd.md</read_first>
   <action>Per D-01 through D-07, retain valid historical 38b7b1c refusal/note evidence but update its obsolete Claude precreated-tree assertion: first denial must produce a native continuation ticket and no checkout until the native creation event. Add a fresh installed export/orchestration contract suite using an explicitly SIMULATED host/session adapter with stable actor identity, advertised creation schema fixture and default tool cwd. Drive the actual generated source pipeline, continuation ticket/contract, native operation simulation, actual registered WorktreeCreate launcher, real disposable Git confirmation and subsequent default-cwd relative read/rebuilt mutation exactly once. A test-supplied host adapter models native movement; it does not prove a live host or model follows instructions. The target RED must reach an assertion about absent same-agent native continuation/export/default-context contract, not just the old Codex/source refusal, missing new module or test setup. Add the independent matrix below, preserving ordinary dispatch name reuse tests separately. Record command, named target, expected/actual assertion, exit, revision and case count, then commit only tests plus implementation summary before any production fix. Setup/import/syntax errors, zero tests or unrelated failures are INVALID_RED; do not create a production stub to manufacture RED.</action>
   <behavior>Native-capable simulated caller must preserve identity and use destination defaults after the registered creation sequence. Missing capability, path-only/pinned policy, untrusted hook, cancelled or uncertain transition, stale request and forbidden existing-name reuse cannot pass as native success. Both host note controls remain allowed.</behavior>
   <acceptance_criteria>AW-01/02/06/07/08 have a genuine fresh target assertion RED at a test-only commit; AW-03 controls pass; native contract assertions are independent of implementation internals and explicitly labeled SIMULATED.</acceptance_criteria>
@@ -395,6 +426,7 @@ to drop same-agent movement. Task 1 and fresh reviewers assess these native case
 |---|---|
 | Native positive | Actual installed denial -> actionable same-model protocol/ticket -> advertised schema fixture -> simulated native creation using actual registered WorktreeCreate -> same stable simulated actor/default destination cwd -> relative fresh read -> rebuilt edit once. Test subsequent simulated turn defaults too. Label SIMULATED. |
 | Actual exports/consumers | Installed Claude coordinator/coder permit EnterWorktree while unrelated restrictions remain; installed CLAUDE protocol link and six workflow routes consume it. Skill allowed-tools is not mistaken for tool availability, and context:fork is never used. |
+| Workflow request / ordinary existing sessions | Real-Git plus simulated native contract covers workflow entry with no prior write/denial: known-unit new bootstrap -> fresh native creation -> adoption, and existing ordinary phase and quick sessions with no native-creation journal -> actual native path entry/default-context proof -> reused confirmation without creation/adoption/metadata rewrite. Missing/ambiguous session and new/existing mode mismatch refuse. No fake denied edit or retroactive creation journal. |
 | Capability/refusal | Missing tool, missing/incompatible creation schema, ineligible/pinned/already-worktree role, policy refusal, untrusted/missing creation hook, unsupported Codex and absent/ambiguous identity. No workaround child, shell cd or guessed invocation. Correct isolated control proceeds without movement. |
 | Creation/approval | Explicit local pinned base; custom ignored root; offline; registered/unregistered existing destination or branch collision; ordinary dispatch reuse control. wf-entry creation refuses existing-name reuse; actual existing-path operation preserves approval and role restrictions. |
 | Context/identity | Native completion missing, old-root default cwd, only explicit cwd override works, wrong actor, branch/base/root/context drift, intended-root marker without host action, original environment project dir still old. Reject native completion claims; verify destination-local control separately. |
