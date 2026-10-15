@@ -1,5 +1,20 @@
 # Independent pre-implementation RED review
 
+## Native-entry RED: valid; production gate held for test corrections
+
+Fresh code-reviewer `gpt-6.1-sol/high` reviewed integrated `5273cfd353fd46e3d1582d71c3fcbc5e58a3248e`, authored test-only `efa6da649b65585d939c1b88e2c369af327b2168`, against `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b`. Exact reviewed paths: `tests/test_same_agent_worktree.py`, `tests/test_install.py` and IMPLEMENTATION-SUMMARY. No tests rerun, edits, provider writes, children or commits.
+
+**Fresh RED is valid:** the actual installed aggregate reaches the missing model-visible native continuation assertion before proposed files/verbs. Six tests report eight assertion failures, no setup/import/unknown-verb errors. Historical denial failures are distinct. Downstream real-Git/SIMULATED host steps have not executed and are not live movement proof. Both-host ordinary-note create/update controls are meaningful reported evidence.
+
+Production remains **HOLD** for two bounded test-contract blockers:
+
+- **CR-01:** simulated existing-session proof equates immutable historical session base with current HEAD. Capture actual pre-entry target HEAD separately; add committed source work to both ordinary phase/quick fixtures and preserve base/ownership while fresh reads observe that work.
+- **CR-02:** actual editing aggregate does not receive the anchored original `CLAUDE_PROJECT_DIR` environment, although runtime/creation subprocesses do. Pass an explicit override through the real pipeline helper for every simulated Claude edit, including the rebuilt destination edit; verify the anchored variable differs from the moved default cwd.
+
+Both findings map to existing issue98 boundaries, especially T-AW-03, without new identities. Corrections, refreshed receipts and bounded independent recheck precede production. No implementation or live acceptance verdict is given.
+
+## Historical preparation-only RED gate
+
 Reviewer role/model: code-reviewer, gpt-6.1-sol/high. Read-only inspection; no tests rerun, edits, provider writes or cleanup.
 
 - Initial reviewed141497912e832ee418a78f7f01c7da2a8f273076 against26969d7: genuine installed aggregate RED, not missing/setup/unknown-verb failure.
