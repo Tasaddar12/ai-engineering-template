@@ -1,6 +1,15 @@
 # Independent plan review
 
-## Native-entry plan: correction required
+## Native-entry plan: approved after bounded correction
+
+The same independent phase-checker rechecked `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b` after correction `b4b512f178671f3430cee0a00c7a336ffad8175f`. Verdict: **approved; zero remaining blockers or warnings**. The delta contains only PLAN/PREPARER-SUMMARY and coordinator review prose; governing acceptance and production sources are unchanged.
+
+- PC-AW-source-interface-01 resolved: explicit workflow request bootstrap, immutable new/existing modes, fresh-creation adoption versus established-session confirmation, and corresponding real-Git/simulated contract cases are specified. No fabricated denied edit, creation journal or ownership rewrite is required.
+- PC-AW-read-first-02 resolved: Task 1 now reads `tests/test_install_update.py`.
+- Unchanged conclusive safety, ownership, scheduling, scope, TDD, documentation and threat coverage was retained; affected interfaces were rechecked directly. No tests, edits or native/provider operations occurred; checkout remained clean.
+- Plan readiness releases fresh test-only native-route RED work. Source fixes require the separate independent RED gate; live same-agent acceptance remains unverified.
+
+### Initial native-entry findings
 
 Fresh independent phase-checker `gpt-6.1-sol/high` reviewed `66986955e2110847cc2a87fce3c0be622a07bf4c` against input `4f978af0521b2ba960750545ba36f01268f3cbff`. Verdict: **needs revision**, one blocker and one warning. No edits, tests, native operations, provider writes or children; HEAD and checkout remained unchanged/clean.
 
