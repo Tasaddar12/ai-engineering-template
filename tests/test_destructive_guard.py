@@ -273,10 +273,12 @@ class RegisteredGuardTests(unittest.TestCase):
                 self.assertFalse(decision.allowed)
                 self.assertEqual("backup-approval-required", decision.reason_code)
 
-    def source_verdict(self, command, deny, tool="Bash", cwd=None):
+    def source_verdict(self, command, deny, tool="Bash", cwd=None, shell=None):
         """Only execute the hook. The submitted command stays JSON data."""
         payload = {"cwd": str(cwd or self.root), "tool_name": tool,
                    "tool_input": {"command": command, "cmd": command}}
+        if shell is not None:
+            payload["tool_input"]["shell"] = shell
         result = subprocess.run([sys.executable, str(ROOT / ".ai/hooks/destructive-git-guard.py")],
             cwd=self.root, input=json.dumps(payload).encode("utf-8"), capture_output=True)
         self.assertEqual(2 if deny else 0, result.returncode,
@@ -366,6 +368,93 @@ class RegisteredGuardTests(unittest.TestCase):
                 self.source_verdict("git branch -D phase-owned", True)
             with self.subTest(control="wave", shape=shape):
                 self.source_verdict("git status", False)
+
+    def test_second_cr01_environment_case_families_native_entrypoint(self):
+        linked = self.root / "linked context"
+        git(self.root, "worktree", "add", "-qb", "phase-case", str(linked))
+        primary = self.root.as_posix()
+        for names in (("git_dir", "git_work_tree"), ("Git_Dir", "gIt_WoRk_TrEe"),
+                      ("GIT_DIR", "GIT_WORK_TREE")):
+            assignment = f'{names[0]}="{primary}/.git" {names[1]}="{primary}"'
+            for prefix in ("env", "command env env", "env MODE=x exec env"):
+                with self.subTest(names=names, prefix=prefix):
+                    # On POSIX, lower/mixed-case names do not select Git's
+                    # uppercase context variables. Windows names fold case.
+                    denied = os.name == "nt" or names[0] == "GIT_DIR"
+                    self.source_verdict(prefix + " " + assignment + " git switch topic", denied, cwd=linked)
+        for command in ("env MODE=x git status", "env git_directory=literal git status",
+                        "echo 'env git_dir=elsewhere git switch topic'", "git status"):
+            with self.subTest(control=command): self.source_verdict(command, False, cwd=linked)
+
+    def test_second_cr02_explicit_cmd_dialect_native_entrypoint(self):
+        attacks = ["g^it switch topic", "d^el .workflow-backups/a",
+                   "rd /s /q %REVIEW_TARGET%", "git switch !REVIEW_TARGET!",
+                   "command g^it switch topic"]
+        # Explicit cmd caret/percent/delayed-expansion syntax is outside the
+        # bounded grammar and must refuse; ordinary literal reads/data remain.
+        controls = ["git status", 'echo "git switch topic"', 'echo "del .workflow-backups/a"']
+        for shell in ("cmd", "C:/Windows/System32/cmd.exe"):
+            for command in attacks:
+                with self.subTest(shell=shell, command=command):
+                    self.source_verdict(command, True, tool="exec_command", shell=shell)
+            for command in controls:
+                with self.subTest(shell=shell, control=command):
+                    self.source_verdict(command, False, tool="exec_command", shell=shell)
+
+    def test_second_cr03_msys_drive_context_native_entrypoint(self):
+        fixtures = [self.root]
+        if os.name == "nt" and Path(ROOT).drive.lower() != self.root.drive.lower():
+            # Disposable fixture on the workspace's second drive, not another
+            # worker checkout. Submitted removal commands are never executed.
+            secondary = tempfile.TemporaryDirectory(prefix="guard-msys-", dir=ROOT)
+            self.addCleanup(secondary.cleanup)
+            secondary_root = Path(secondary.name)
+            git(secondary_root, "init", "-q", "-b", "main")
+            fixtures.append(secondary_root)
+        for root in fixtures:
+            (root / ".workflow-backups").mkdir(exist_ok=True)
+            if os.name == "nt":
+                msys = "/" + root.drive[0].lower() + root.as_posix()[2:]
+                drive_root = "/" + root.drive[0].lower()
+                targets = (msys, str(Path(msys).parent).replace("\\", "/"), drive_root, drive_root + "/")
+                sibling = msys + "-sibling/ordinary.txt"
+            else:
+                msys = root.as_posix()
+                targets = (msys, str(root.parent), "/")
+                sibling = msys + "-sibling/ordinary.txt"
+            for target in targets:
+                with self.subTest(root=root, target=target):
+                    self.source_verdict(f'rm -rf "{target}"', True, cwd=root)
+            with self.subTest(git_context=msys):
+                observed = self.source_verdict(f'git -C "{msys}" switch topic', True, cwd=root)
+                self.assertEqual("primary-branch-switch", json.loads(observed.stdout)["reason_code"])
+            with self.subTest(sibling=sibling):
+                self.source_verdict(f'rm -f "{sibling}"', False, cwd=root)
+            with self.subTest(native_equivalent=root):
+                self.source_verdict(f'rm -rf "{root.as_posix()}"', True, cwd=root)
+        if os.name == "nt":
+            for command in ("rm -rf /unmodeled-posix-root/data", "git -C /unmodeled-posix-root switch topic"):
+                with self.subTest(unmodeled=command): self.source_verdict(command, True)
+            self.source_verdict("echo '/unmodeled-posix-root/data'", False)
+
+    def test_second_cr04_tool_name_schema_native_entrypoint(self):
+        for malformed in (["Bash"], {"name": "Bash"}, [], {}, 7, True, None):
+            with self.subTest(tool_name=malformed):
+                self.source_verdict("git status", True, tool=malformed)
+        for tool in ("Bash", "exec_command"):
+            with self.subTest(control=tool): self.source_verdict("git status", False, tool=tool)
+
+    def test_second_cr05_literal_and_active_glob_provenance_native_entrypoint(self):
+        controls = ["rm -f 'ordinary*.txt'", 'rm -f "ordinary*.txt"', r"rm -f ordinary\*.txt",
+                    "rm -f ordinary*.txt", "rm -f '.workflow-backup*'",
+                    r"rm -f .workflow-backup\*", "echo 'rm -rf .workflow-*'",
+                    "printf '%s' '.workflow-*'"]
+        attacks = ["rm -rf .workflow-*", "rm -rf *", "rm -f .workflow-backups/'literal*.txt'",
+                   "rm -rf .work*/*", 'rm -rf ".workflow-backups"/*']
+        for command in controls:
+            with self.subTest(control=command): self.source_verdict(command, False)
+        for command in attacks:
+            with self.subTest(command=command): self.source_verdict(command, True)
 
 
 if __name__ == "__main__":

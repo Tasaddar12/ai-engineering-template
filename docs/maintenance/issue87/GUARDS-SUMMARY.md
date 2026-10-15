@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: complete
+status: in_progress
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
-acceptance: [I87-A1, I87-A3]
+requirements-completed: [ISSUE87-RED]
+acceptance: [I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -174,6 +174,33 @@ blockers are reported as repaired with test evidence, not independently cleared.
 Released installer/test_install/hooks README paths were not changed. No cleanup
 child path, provider adapter, PR86 hook, adoption record, publication or merge
 was touched.
+
+## Second independent review RED
+
+Frozen source `b74241f` received five further blockers: Windows environment-name
+case folding, explicit cmd syntax, MSYS drive paths, malformed tool_name types,
+and quoted/escaped wildcard provenance. The new matrix exercises the real
+source JSON stdin entrypoint and pairs each family with harmless controls.
+It covers nested mixed/lower/upper environment names with POSIX case behavior,
+explicit cmd caret/percent/delayed syntax and literal read/echo controls,
+MSYS drive roots/parents/-C/sibling paths on both available Windows drives,
+unmodeled POSIX roots, non-string tool names, and literal versus active globs.
+Submitted destructive commands are never executed. Temporary Git fixtures and
+their cleanup are confined to test-owned directories.
+
+The first matrix run on unchanged production source exited 1, Ran 5 tests in
+12.168s, with 36 behavior assertion failures (unsafe allow, malformed payload
+traceback instead of refusal JSON, and false-positive literal removals).
+An exact primary-branch-switch reason assertion was then added to the MSYS -C
+cases, so unknown/misresolved context cannot count as protection. Final RED:
+`python -m unittest discover -s tests -p test_destructive_guard.py -k second_cr -v`
+exited 1, Ran 5 tests in 12.660s, with 38 intended behavior assertion failures,
+zero skips or fixture/import failures. This is recorded before the independently
+requested matrix review.
+No production source has changed for this review attempt. Guard acceptance
+remains blocked until repaired and independently reviewed. Existing canonical
+risk 95 anchors I87-G-T1 (parser/context/paths) and I87-G-T2 (payload schema)
+remain authoritative; no new issue is requested.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
