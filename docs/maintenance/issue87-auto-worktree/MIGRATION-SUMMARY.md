@@ -1,0 +1,32 @@
+---
+status: complete
+base: 4593c432dcf3f27e49f2a8b12eedc9f9c79bb15d
+---
+
+# Migration Test Correction
+
+## Changes
+
+Replaced the managed-hook group-count assertion with flattened canonical
+identity counters keyed by event, matcher and every handler field. The fixture
+now includes a standalone user editing hook and verifies it survives once,
+checks managed editing-handler order, compares migrated `command` and
+`commandWindows` values with canonical Codex registrations, retains both
+distinct worktree-guard registrations, asserts Codex's `SessionStart` entry,
+and keeps the legacy `.ai/hooks` absence check.
+
+## Checks
+
+- `C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe -m unittest discover -s tests -p test_install_migration.py -k test_existing_managed_hooks_relocate_without_duplicate_registration -v` — passed; 1 test.
+- `C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe -m unittest discover -s tests -p test_install_migration.py -v` — passed; 18 tests.
+- `git diff --check` — passed.
+
+## Deviations
+
+None. The correction is limited to the assigned migration test and this
+summary; no installer or production files changed.
+
+## Remaining
+
+None within this assignment. Integration and independent verification remain
+with the coordinator.
