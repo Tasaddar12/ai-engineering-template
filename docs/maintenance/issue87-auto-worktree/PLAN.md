@@ -20,11 +20,13 @@ files_modified:
   - .ai/hooks/README.md
   - .ai/references/worktree-sessions.md
   - .ai/runtime/README.md
+  - .ai/RULES.md
 files_deleted: []
 documentation:
   - .ai/hooks/README.md
   - .ai/references/worktree-sessions.md
   - .ai/runtime/README.md
+  - .ai/RULES.md
 resources: [issue87-source-worker-checkout, issue87-disposable-git-fixtures]
 checks:
   - [python, -m, unittest, discover, -s, tests, -p, test_prewrite.py, -v]
@@ -55,6 +57,8 @@ must_haves:
       provides: Native hook input, cancellation and allowed-note fixture behavior.
     - path: .ai/references/worktree-sessions.md
       provides: Actionable host/coordinator continuation and explicit supported-host evidence gate.
+    - path: .ai/RULES.md
+      provides: Narrow Hooks and validation policy reconciliation, independently checked against integrated behavior before final verification.
   key_links:
     - from: .ai/install.py hook_settings(host)
       to: .ai/hooks/source-prewrite.sh
@@ -118,6 +122,11 @@ Input revision: e87f49debbd64daf25157da0b693d328ad3dd531. Research inspected
 inspected again at this plan's input revision. Preparation authoring runs only in
 the assigned phase-issue87-auto-plan-164901267 worktree. Implementation, tests,
 integration and publication belong to separately dispatched owners.
+Bounded correction input: 60f285933ea64e9018532d6fc69b9ca83f37e0fe. The delta
+from authored a04cc284fcc279b4e64679e9430774b23e704b10 adds only MATRIX.md.
+This revision addresses PC-ISSUE87-01-ownership-01 and verified issue 98 linkage;
+other conclusive planning evidence and behavior remain unchanged. Source readiness
+requires the checker's bounded recheck of the integrated correction.
 
 Decision aliases used here refer to the existing CONTEXT bullets, without
 inventing new user replies: D-01 = separate draft, never merge; D-02 = source/note
@@ -361,12 +370,12 @@ trigger merely because an arbitrary file edit was attempted.
 
 <task type="auto">
   <name>Task 3: Document the concrete continuation and evidence boundary</name>
-  <files>.ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md</files>
-  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/RESEARCH.md, .ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/hooks/source-prewrite.sh, .ai/runtime/lib/prewrite.py, .ai/install.py, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md</read_first>
-  <action>Coordinator dispatches doc-writer after Task 2's integrated implementation summary exists. Explain first-source automatic preparation, deterministic auto-unit and explicit unit override, note policy, errors/recovery and the supported entrypoints exactly as implemented. Add the source-prewrite continuation section named by denial output to worktree-sessions: enter/bind through the supported host or coordinator, verify actual Git root/branch/base, reload context and reread destination before rebuilding, and report dirty dependencies. Retain ordinary workflow source-session routing and named runtime planning exceptions. Explain that native/manual transition is still required unless independently demonstrated on a supported host; list shell/external/cloud-orchestration/hook-error coverage limits and fail-open host behavior. Correct blanket all-hooks-advisory wording only in these owned guides; return any required shared RULES wording change to coordinator rather than editing RULES. Record actual fixture evidence and the pending live proof without turning unavailable live evidence into user approval or success.</action>
-  <acceptance_criteria>AW-03, AW-07 and AW-08 are explained against implementation; exact continuation is actionable; creation, fixture pass and live automatic entry remain distinct facts; the existing advisory policy is preserved.</acceptance_criteria>
-  <verify><manual>Doc-verifier traces every new command/option and hook continuation reference to implemented entrypoints, compares note/error behavior with receipts, and confirms no assertion of live host binding or universal enforcement.</manual></verify>
-  <done>Required guides describe implemented behavior and the remaining host transition limitation; doc-writer returns committed documentation summary and doc-verifier reports evidence.</done>
+  <files>.ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/RESEARCH.md, .ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md, .ai/hooks/source-prewrite.sh, .ai/hooks/worktree-guard.sh, .ai/runtime/lib/prewrite.py, .ai/install.py, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md</read_first>
+  <action>Coordinator dispatches doc-writer after Task 2's integrated implementation summary exists. Explain first-source automatic preparation, deterministic auto-unit and explicit unit override, note policy, errors/recovery and the supported entrypoints exactly as implemented. Add the source-prewrite continuation section named by denial output to worktree-sessions: enter/bind through the supported host or coordinator, verify actual Git root/branch/base, reload context and reread destination before rebuilding, and report dirty dependencies. Retain ordinary workflow source-session routing and named runtime planning exceptions. Explain that native/manual transition is still required unless independently demonstrated on a supported host; list shell/external/cloud-orchestration/hook-error coverage limits and fail-open host behavior. The coordinator explicitly delegates the narrow .ai/RULES.md#Hooks-and-validation reconciliation to this doc-writer: replace only that section's blanket all-hooks-advisory claim with the distinction between unchanged advisory hooks and the separate supported source-prewrite denial/preparation component. Preserve the existing advisory script/policy, optional-hook and no-sandbox limits, required-check guidance, and all other RULES sections. Correct the corresponding wording in the three guides. Record actual fixture evidence and the pending live proof without turning unavailable live evidence into user approval or success. Commit all four required documentation paths and the documentation summary, then have the coordinator integrate them before final verification.</action>
+  <acceptance_criteria>AW-03, AW-07 and AW-08 are explained against implementation; exact continuation is actionable; creation, fixture pass and live automatic entry remain distinct facts; the existing advisory policy is preserved. The .ai/RULES.md Hooks and validation section accurately distinguishes advisory behavior from the new supported denial behavior, and the narrow reconciliation is committed and integrated before final verification.</acceptance_criteria>
+  <verify><manual>At the integrated implementation/documentation revision, independent doc-verifier checks all four exact documentation paths, specifically .ai/RULES.md#Hooks-and-validation, against the registered source-prewrite entrypoint, unchanged worktree-guard.sh and fixture receipts. Trace every new command/option and continuation reference, compare note/error behavior, and reject any blanket all-hooks-return-success claim, changed advisory policy, live-host-binding assertion or universal-enforcement claim. Missing, failed or required unverifiable section claims prevent conclusive documentation coverage and final verification.</manual></verify>
+  <done>All four required documents, including the narrow shared-policy section, describe integrated behavior and the remaining host transition limitation; doc-writer returns its committed summary, coordinator integrates it before final verification, and independent doc-verifier returns explicit per-document/section evidence.</done>
 </task>
 </tasks>
 
@@ -408,9 +417,9 @@ verdict. This is an additional committed input, not a new preparer-owned file.
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |---|---|---|---|---|---|
-| T-AW-01 - Pending: coordinator canonical prewrite-target-confinement linkage | Tampering / Elevation of Privilege | prewrite path classifier and pending mutation | high | mitigate | Tasks 1-2, AW-03/04/05: reject mixed, linked, stale and cross-root targets; cancel original; no input rewriting or dirty-byte movement. Verify real-Git snapshots and native bypass fixtures. |
-| T-AW-02 - Pending: coordinator canonical prewrite-unit-identity linkage | Spoofing / Tampering / Denial of Service | prepare journal, lock and worktree selection | high | mitigate | Tasks 1-2, AW-01/02/04: Claude actor tuple, Codex explicit request/unit binding, no shared-parent ownership inference, deterministic unit/base, bounded lock, journal-before-create and exact recovery. Verify distinct actors, ambiguity, concurrent first requests and uncertain outcomes. |
-| T-AW-03 - Pending: coordinator canonical prewrite-host-transition-proof linkage | Spoofing / Tampering | installed host pipeline and continuation | high | mitigate | Tasks 1-3, AW-06/07/08: actual registered denial, destination Git verification, fresh reads, never claim updatedInput binds cwd, live evidence gate. Verify aggregate pipeline and independent integration trace; no automatic-entry advertisement without real proof. |
+| [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Tampering / Elevation of Privilege | prewrite path classifier and pending mutation | high | mitigate | Tasks 1-2, AW-03/04/05: reject mixed, linked, stale and cross-root targets; cancel original; no input rewriting or dirty-byte movement. Verify real-Git snapshots and native bypass fixtures. |
+| [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Spoofing / Tampering / Denial of Service | prepare journal, lock and worktree selection | high | mitigate | Tasks 1-2, AW-01/02/04: Claude actor tuple, Codex explicit request/unit binding, no shared-parent ownership inference, deterministic unit/base, bounded lock, journal-before-create and exact recovery. Verify distinct actors, ambiguity, concurrent first requests and uncertain outcomes. |
+| [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Spoofing / Tampering | installed host pipeline and continuation | high | mitigate | Tasks 1-3, AW-06/07/08: actual registered denial, destination Git verification, fresh reads, never claim updatedInput binds cwd, live evidence gate. Verify aggregate pipeline and independent integration trace; no automatic-entry advertisement without real proof. |
 
 Review depth: L2 for the changed input-to-filesystem boundary. Applicable
 information disclosure is bounded by storing no tool contents or transcripts;
@@ -419,7 +428,7 @@ authentication. These are aspects of the three scoped findings above, not separa
 untracked risk claims. External writers and hook opt-outs remain documented host
 coverage boundaries, not accepted guarantees of isolation.
 
-Coordinator safe linkage requests (no worker provider writes):
+Canonical linkage verified by coordinator readback (no worker provider writes):
 
 - Repository: `Tasaddar12/ai-engineering-template`; canonical surface/control:
   `source-prewrite/target-confinement`; failure/remediation scope: unsafe source
@@ -431,13 +440,13 @@ Coordinator safe linkage requests (no worker provider writes):
   `source-prewrite/host-transition-proof`; failure/remediation scope: old-root
   mutation or false automatic-entry claim through cancellation/transition wiring.
 
-All are unresolved Pending semantic dedup, sanitized checklist publication and
-readback by coordinator. These scopes differ from issue 95's updater/destructive
-command/provider/cleanup risks and issue 96's planning-commit prospective bytes.
-Do not invent equivalence, URLs, closure or mitigation outcomes. Reuse a verified
-full-scope canonical match when coordinator finds one, otherwise create scoped
-tracking under existing authority. Pending linkage is a coordinator dependency,
-not another user approval gate.
+The coordinator validated the Security risk body and read back issue 98 OPEN
+with all three supplied canonical keys and aliases as a same-phase three-entry
+checklist. The exact anchors above identify the entries. All remain unresolved
+and unimplemented; no mitigation is verified. These scopes differ from issue 95's
+updater/destructive command/provider/cleanup risks and issue 96's planning-commit
+prospective bytes. Coordinator owns subsequent reconciliation and readback; do not
+infer resolution or closure from this linkage or from any future PR merge.
 </threat_model>
 
 <verification>
@@ -454,8 +463,13 @@ inspect `git diff <implementation-base> -- .ai/hooks/worktree-guard.sh`: any out
 violates the byte-preservation acceptance. Independent code-reviewer reviews source
 and test adequacy; integration-checker traces the generated host settings through
 the launcher, preparation, denial, explicit root transition and rebuilt mutation;
-doc-verifier checks the guides; verifier reconciles AW-01 through AW-08 and the TDD
-receipts. Test-only RED must precede source changes in Git and recorded execution.
+doc-verifier checks all four Task 3 documentation paths, explicitly the narrow
+.ai/RULES.md#Hooks-and-validation section, against the integrated implementation
+and receipts; verifier reconciles AW-01 through AW-08 and the TDD receipts. Task 3's
+four-path committed documentation must be integrated before final verification;
+missing, failed or required unverifiable shared-policy claims block conclusive
+documentation coverage. Test-only RED must precede source changes in Git and
+recorded execution.
 
 Live-host evidence gate: only in an available, identified, supported installed host
 with hooks enabled/trusted and appropriate orchestration, use a disposable repo to
@@ -510,6 +524,6 @@ with actual task commits, Checks, TDD Evidence, AW coverage and Threat Outcomes.
 Task 3's doc-writer returns
 `docs/maintenance/issue87-auto-worktree/DOCUMENTATION-SUMMARY.md`. These summaries
 are automatically owned by their assigned authors. Coordinator integrates isolated
-workers, reconciles Pending canonical links, arranges independent checks/reviews,
+workers, reconciles canonical issue 98 outcomes, arranges independent checks/reviews,
 and owns the separate draft PR. No adoption roadmap/status update is proposed.
 </output>

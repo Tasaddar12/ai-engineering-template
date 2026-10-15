@@ -33,6 +33,16 @@ committed CONTEXT/RESEARCH and the consumed hook/session/installer/test interfac
 No adoption records, production code, existing advisory bytes, other drafts,
 provider 73/74, live infrastructure or host installation were changed.
 
+Bounded revision input: `60f285933ea64e9018532d6fc69b9ca83f37e0fe` after the
+authorized fast-forward from authored `a04cc284fcc279b4e64679e9430774b23e704b10`.
+The compared delta contains only the independent `MATRIX.md`; no production
+interfaces or prior behavioral acceptance changed. The checker review at the
+integrated input returned `needs-revision` for
+`PC-ISSUE87-01-ownership-01` (warning). This correction addresses that single
+finding and the coordinator's verified canonical issue linkage. Unaffected prior
+plan evidence remains applicable; changed ownership/verification requires the
+checker's bounded recheck after integration.
+
 ## Decisions within delegated discretion
 
 - Claude automatic preparation uses a deterministic quick unit keyed by canonical Git
@@ -74,6 +84,11 @@ provider 73/74, live infrastructure or host installation were changed.
   register, scope exclusions and four-source coverage audit.
 - No test, implementation, live-host operation, installer, provider write or
   worktree cleanup ran. Future commands in PLAN are unexecuted, not passing checks.
+- Bounded revision: verified the clean assigned branch, fast-forwarded to
+  `60f285933ea64e9018532d6fc69b9ca83f37e0fe`, and inspected the exact one-file
+  input delta plus the affected ownership, Task 3, verification and threat sections.
+  The scoped correction is confined to PLAN.md and this summary; no production
+  change or test execution is included.
 
 ## Remaining evidence and coordinator dependencies
 
@@ -91,23 +106,30 @@ integration, canonical risk dedup/publication/readback, separate draft tracking 
 and final verification. Existing user authorization is recorded; no new internal
 approval is requested. Never merge. No adopting-project roadmap, requirement or
 STATE change is proposed.
-The independent scout's matrix case IDs are preserved in PLAN; coordinator owns
-committing MATRIX.md and supplying it before source dispatch. Its read-only
-findings are not executed behavioral evidence. Coordinator also owns reconciling
-the current shared RULES all-hooks-advisory statement with the new separate
-source component; the preparer's/source worker's ownership does not include RULES.
+The independent scout's matrix case IDs are preserved in PLAN; committed MATRIX.md
+is present at the bounded revision input. Its read-only findings are not executed
+behavioral evidence. Task 3 now explicitly assigns doc-writer the narrow
+`.ai/RULES.md#Hooks-and-validation` reconciliation in addition to the three guides,
+under the coordinator's scoped delegation. All four paths must be committed and
+integrated before final verification, and independent doc-verifier must assess
+that exact section against integrated implementation and fixture evidence. The
+advisory script/policy and other RULES sections remain unchanged. This supplies
+the authorized owner, completion point and independent evidence gate required by
+`PC-ISSUE87-01-ownership-01`; it does not authorize this preparer to edit RULES.
 
 ## Threat Outcomes
 
 | PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| PLAN.md / T-AW-01 | Pending: coordinator prewrite-target-confinement linkage | unresolved | Pending readback | Planned AW-03/04/05 path and preservation cases; unexecuted |
-| PLAN.md / T-AW-02 | Pending: coordinator prewrite-unit-identity linkage | unresolved | Pending readback | Planned AW-01/02/04 identity, race and recovery cases; unexecuted |
-| PLAN.md / T-AW-03 | Pending: coordinator prewrite-host-transition-proof linkage | unresolved | Pending readback | Planned AW-06/07/08 installed pipeline and live gate; unexecuted |
+| PLAN.md / T-AW-01 | [98 / T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | unresolved / unimplemented | OPEN | Coordinator validated/read back key and entry; planned AW-03/04/05 cases unexecuted |
+| PLAN.md / T-AW-02 | [98 / T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | unresolved / unimplemented | OPEN | Coordinator validated/read back key and entry; planned AW-01/02/04 cases unexecuted |
+| PLAN.md / T-AW-03 | [98 / T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | unresolved / unimplemented | OPEN | Coordinator validated/read back key and entry; planned AW-06/07/08 cases unexecuted |
 
-Canonical keys and safe linkage requests are in the owning PLAN. Coordinator
-confirmed their scope differs from issues 95/96; no issue equivalence or URL was
-invented. No new threat beyond the PLAN register was identified in preparation.
+Canonical keys and exact verified anchors are in the owning PLAN. Coordinator
+confirmed Security risk issue 98 is OPEN with the same-phase three-entry checklist
+and that its scope differs from issues 95/96. Linking these entries verifies no
+mitigation and resolves no threat. No provider writes ran in this assignment and
+no new threat beyond the PLAN register was identified in preparation.
 
 ## Deferred / exclusions
 
