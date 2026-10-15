@@ -17,6 +17,7 @@ files_modified:
   - .ai/agents/code-reviewer.md
   - .ai/agents/coordinator.md
   - .ai/templates/issue.md
+  - .ai/runtime/TEMPLATE-CONTRACT.md
   - tests/test_threat_tracking_contract.py
   - tests/test_parallel_status_contract.py
 files_deleted: []
@@ -105,7 +106,9 @@ dispatch; the sibling checkout used during preparation is evidence transport onl
   After the workflow worker stopped, the coordinator sequentially assigned the
   narrow `.ai/agents/code-reviewer.md` audit cross-reference to this plan. Keep
   the detailed procedure at `git-workflow.md#issue-link-audit`; no copied procedure
-  or broad reviewer rewrite is needed. Runtime ownership remains untransferred.
+  or broad reviewer rewrite is needed. After the planning worker stopped, the
+  coordinator transferred only TEMPLATE-CONTRACT's narrow risk-routing subsection
+  to this plan; do not import its sibling frontmatter/integrity changes.
 - The issue-link audit and status procedure are instruction contracts, with no
   monitoring daemon, timer service, new runtime store, scheduler or dependency.
   A production-code tracer is inapplicable; Task 1 traces the actual documented
@@ -164,7 +167,7 @@ the stalled decision and non-completion/non-termination safeguards.
 
 <task type="auto">
   <name>Task 2: Track planned security work without losing risk identity</name>
-  <files>.ai/references/git-workflow.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/templates/issue.md, tests/test_threat_tracking_contract.py</files>
+  <files>.ai/references/git-workflow.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/templates/issue.md, .ai/runtime/TEMPLATE-CONTRACT.md, tests/test_threat_tracking_contract.py</files>
   <read_first>docs/maintenance/issue87/CONTEXT.md; .ai/references/git-workflow.md canonical threat tracking around lines 81-145; .ai/workflows/plan-phase.md handle_preparer_return; .ai/workflows/execute-phase.md aggregate_results around 602-605 and review_phase_issues around 663-697; .ai/templates/issue.md Security risk variant; .ai/runtime/TEMPLATE-CONTRACT.md Threat records and ownership; tests/test_threat_tracking_contract.py around 172-203, 222-267; tests/test_phase_issues.py and tests/test_workflow_links.py for compatibility inspection only.</read_first>
   <action>
 Extend canonical threat tracking to permit one phase security checklist issue for
@@ -179,6 +182,9 @@ register or an excuse to omit individual risks.
 Coordinator-authorized maintenance reconciliation during execution: add narrow
 checklist guidance to the existing Security risk template instructions, retaining
 all required headings and the existing variant. No new variant/runtime behavior.
+After the planning worker completed and stopped, the coordinator additionally
+assigned only TEMPLATE-CONTRACT's narrow risk-routing subsection to align the
+canonical destinations; preserve this branch's other contract content.
 
 Search open/closed issues and linked/current PR/MRs first. Existing actionable
 matching trackers remain canonical; a checklist may link them without duplicating
