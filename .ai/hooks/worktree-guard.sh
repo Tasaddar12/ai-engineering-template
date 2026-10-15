@@ -1,34 +1,16 @@
 #!/usr/bin/env bash
-# PreToolUse hook. Worktree isolation is a hard requirement of this project, and
-# this script is where that requirement is enforced rather than requested.
+# PreToolUse advisory hook. Workflows start source work in isolated worktrees.
 #
 # Two jobs, dispatched on tool_name:
-#
-#   1. Agent/Task dispatch of a write-capable subagent that does not carry
-#      isolation="worktree" -> BLOCK (exit 2). The workflow text tells the
-#      orchestrator to pass it, but prose is exactly the artifact a model under
-#      load skips, and when it is skipped the executor commits into the primary
-#      checkout with no warning. A prose instruction cannot enforce itself.
-#
-#   2. Write/Edit/MultiEdit/NotebookEdit/apply_patch from a checkout that is not
-#      a linked worktree, or targeting a path outside the active worktree ->
-#      BLOCK (exit 2). Nothing in this project is written outside a session
-#      worktree, planning records included: every unit of work reaches the base
-#      branch through a pull request from its own checkout, so a write in the
-#      primary checkout has no route to land and no audit trail behind it.
-#
-#      Planning records used to be exempt here, on the reasoning that the
-#      orchestrator owns them and works in the primary checkout by design. That
-#      premise no longer holds -- the orchestrator now opens a session worktree
-#      first (`phase_run query session.open <kind> <label>`) and works there, so
-#      a planning write landing in the primary checkout means the session was
-#      never opened.
+#   1. Agent/Task dispatch of a write-capable subagent without
+#      isolation="worktree" -> warn on stderr, continue and record its handoff.
+#   2. Write/Edit/MultiEdit/NotebookEdit/apply_patch from the primary checkout
+#      (including planning records and scratchpads), or targeting another
+#      checkout -> warn on stderr and continue.
 #
 # Fails OPEN on anything it cannot determine -- no git, no JSON parser, an
-# unparseable payload. A guard that blocks when it cannot see is worse than one
-# that admits it cannot see. Both jobs block only on a positive determination:
-# job 1 on a dispatch that names a write-capable agent and lacks the isolation
-# argument, job 2 on a path git itself places outside a linked worktree.
+# unparseable payload. Warnings require a recognized write-capable dispatch
+# or a path git places outside the active linked worktree. Exit is always 0.
 
 set -u
 
@@ -121,7 +103,7 @@ record_dispatch() {
 
 tool="$(field tool_name)"
 
-# --- job 1: an unisolated executor dispatch is refused -----------------------
+# --- job 1: warn about an unisolated executor dispatch -----------------------
 
 if [[ "$tool" == "Agent" || "$tool" == "Task" ]]; then
   subagent="$(field subagent_type)"
@@ -136,35 +118,28 @@ if [[ "$tool" == "Agent" || "$tool" == "Task" ]]; then
     carried="no isolation argument"
   fi
   for candidate in $WRITE_CAPABLE_AGENTS; do
-    if [[ "$role" == "$candidate" && "$isolation" != "worktree" ]]; then
+    [[ "$role" == "$candidate" ]] || continue
+    if [[ "$isolation" != "worktree" ]]; then
       cat >&2 <<REASON
-BLOCKED  worktree isolation is required for subagent_type="$subagent".
+WARNING  dispatch without worktree isolation: subagent_type="$subagent".
 
 This dispatch carries $carried, so the agent would
 edit and commit in the primary checkout alongside every other agent in its
 wave. Concurrent agents in one tree interleave their commits into one history,
 which makes a plan impossible to attribute or revert.
 
-Add isolation="worktree" to the Agent(...) call.
+Add isolation="worktree" to the Agent(...) or Task(...) call.
 
-Worktree isolation is not configurable in this project -- see
-.ai/RULES.md#worktrees-integration-and-cleanup. If this agent genuinely does not
-write files, it does not belong in the write-capable list in
-.ai/hooks/worktree-guard.sh.
+The workflow uses isolated worktrees -- see
+.ai/RULES.md#worktrees-integration-and-cleanup. This advisory hook allows the
+dispatch to continue.
 REASON
-      exit 2
     fi
-  done
-  # An allowed write-capable dispatch is recorded so context-handoff.sh can
-  # tell, at SubagentStop, whether this agent left a finished plan behind. The
-  # guard is the only place that sees a dispatch at all, and a dispatch that
-  # reached this line is one that will actually run. Purely additive: nothing
-  # below changes the decision above, and every failure is swallowed.
-  for candidate in $WRITE_CAPABLE_AGENTS; do
-    if [[ "$subagent" == "$candidate" ]]; then
-      record_dispatch "$subagent"
-      break
-    fi
+    # Every allowed write-capable dispatch, including one just warned about,
+    # is recorded once for SubagentStop. Use the same normalized role as the
+    # warning check so qualified agent names retain handoff tracking.
+    record_dispatch "$role"
+    break
   done
   exit 0
 fi
@@ -178,13 +153,17 @@ esac
 
 command -v git >/dev/null 2>&1 || exit 0
 
-git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
-common_dir="$(git rev-parse --git-common-dir 2>/dev/null || true)"
-[[ -n "$git_dir" ]] || exit 0          # not a git repository -- nothing to say
+toplevel="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[[ -n "$toplevel" ]] || exit 0         # not a git repository -- nothing to say
+# Query both from the root: in a nested primary directory git can return an
+# absolute git-dir but a relative common-dir for the same directory.
+git_dir="$(git -C "$toplevel" rev-parse --git-dir 2>/dev/null || true)"
+common_dir="$(git -C "$toplevel" rev-parse --git-common-dir 2>/dev/null || true)"
+[[ -n "$git_dir" ]] || exit 0
 
 # A linked worktree is the one case where these two differ: its own git dir sits
-# under <common>/worktrees/<name>. Comparing git's own two answers avoids every
-# path-separator and short-name pitfall of matching the string ourselves.
+# under <common>/worktrees/<name>. Comparing git's answers from the same root
+# avoids path-separator and short-name pitfalls of matching the string ourselves.
 in_worktree=0
 [[ -n "$common_dir" && "$git_dir" != "$common_dir" ]] && in_worktree=1
 
@@ -195,8 +174,6 @@ else
   [[ -n "$paths" ]] || paths="$(field notebook_path)"
 fi
 [[ -n "$paths" ]] || exit 0
-
-toplevel="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 
 # Walk up to the nearest directory that exists: a Write creates a new file, so
 # the target itself frequently does not exist yet, but an ancestor must.
@@ -223,7 +200,7 @@ while IFS= read -r path; do
 
   if [[ "$in_worktree" -eq 0 ]]; then
     cat >&2 <<NOTICE
-BLOCKED  editing outside a worktree: $path
+WARNING  editing outside a worktree: $path
 
 This checkout is not a linked worktree, so this write would land in the primary
 checkout, on a branch with no pull request behind it. Nothing in this project
@@ -238,12 +215,12 @@ session for the same unit is reused, so a phase accumulates onto one branch and
 into one pull request.
 
 If you are an executor running a plan, you were meant to be dispatched with
-isolation="worktree" -- stop and report rather than writing here.
-
-Worktree isolation is a hard requirement of this project
+isolation="worktree". Prefer the assigned worktree for plan writes
 (.ai/RULES.md#worktrees-integration-and-cleanup).
+
+This advisory hook allows the write to continue.
 NOTICE
-    exit 2
+    continue
   fi
 
   # Inside a worktree, an absolute path built from the orchestrator's directory
@@ -265,7 +242,7 @@ NOTICE
       [[ -n "$target_top" ]] || continue
       if [[ -n "$toplevel" && "$target_top" != "$toplevel" ]]; then
         cat >&2 <<NOTICE
-BLOCKED  absolute path outside the active worktree: $path
+WARNING  absolute path outside the active worktree: $path
 
 The active worktree is $toplevel. A path built from the orchestrator's directory
 resolves to a different checkout, where the write would be invisible to this
@@ -274,8 +251,9 @@ worktree's commit -- the work would appear to succeed and then be lost.
 Use a relative path, or rebuild the absolute path from
 \`git rev-parse --show-toplevel\` run inside this worktree
 (.ai/references/worktree-path-safety.md).
+
+This advisory hook allows the write to continue.
 NOTICE
-        exit 2
       fi
       ;;
   esac

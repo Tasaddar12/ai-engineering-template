@@ -428,8 +428,8 @@ def merge_codex_config(current, incoming, path, replace=False, preserve_agents=F
 
 
 #: Managed hook registrations: (event, script, matcher). The worktree guard is
-#: registered twice because its two jobs watch different tools -- refusing an
-#: unisolated subagent dispatch, and warning about a write outside a worktree.
+#: registered twice because its two advisory jobs watch different tools --
+#: warning about an unisolated dispatch or a write outside a worktree. Both exit 0.
 MANAGED_HOOKS = (
     ("PostToolUse", "ai-tier-notice.sh",
      "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
@@ -491,21 +491,20 @@ def hook_settings(host):
             # it at <root>\mingw64\bin\git.exe, where the same relative path
             # points at mingw64\bin\bash.exe, which does not exist. Assuming
             # the first layout meant every Codex hook failed to launch on the
-            # second -- including the dispatch guard, so an unisolated executor
-            # went through while PowerShell printed CommandNotFoundException.
+            # second -- including the dispatch guard, so its isolation guidance
+            # was lost while PowerShell printed CommandNotFoundException.
             #
             # Probe the known layouts and take the first bash that is really
             # there. PATH is deliberately not a fallback: on Windows it
             # commonly resolves to WSL's bash, which cannot see the Windows
             # checkout the hook is about to inspect. Finding none is a
             # misconfiguration worth surfacing, so it exits 1 (an error) rather
-            # than 0 (silently no hook) or 2 (a denial the hook never made).
+            # than 0 (silently no hook).
             #
             # `; exit $LASTEXITCODE` is load-bearing. PowerShell -Command does not
-            # propagate a native command's exit status, so a hook that exits 2 to
-            # deny a tool call arrived at the host as 1 -- the decision was made
-            # and then thrown away. It went unnoticed while every managed hook
-            # exited 0; worktree-guard.sh is the first that denies.
+            # propagate a native command's exit status. Preserve actual script
+            # results and launcher failures; the advisory worktree guard returns
+            # 0 after warning on stderr.
             handler["commandWindows"] = (
                 "$d=Split-Path (Get-Command git).Source; "
                 "$b=@('..\\bin\\bash.exe','..\\..\\bin\\bash.exe',"
