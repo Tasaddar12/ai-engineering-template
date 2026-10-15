@@ -1,5 +1,18 @@
 # Independent plan review
 
+## Native-entry plan: correction required
+
+Fresh independent phase-checker `gpt-6.1-sol/high` reviewed `66986955e2110847cc2a87fce3c0be622a07bf4c` against input `4f978af0521b2ba960750545ba36f01268f3cbff`. Verdict: **needs revision**, one blocker and one warning. No edits, tests, native operations, provider writes or children; HEAD and checkout remained unchanged/clean.
+
+- **PC-AW-source-interface-01 — blocker:** six workflow routes can run before an intercepted edit exists, but the plan only defines a denial-produced ticket. Existing ordinary phase/quick sessions also lack the native creation journal required by the planned confirmation/adoption path. Define an explicit known-unit request producer, new-versus-existing target modes, and established-session confirmation; test proactive no-edit entry and pre-existing phase/quick sessions. Never fabricate a pending edit or retroactive creation journal.
+- **PC-AW-read-first-02 — warning:** Task 1 modifies `tests/test_install_update.py` but omits it from `read_first`; include it.
+- Other reviewed ownership, task ordering, capability/safety gates, fresh RED, threat linkage and source/documentation split are conclusive. Native removal remains limited to essential preservation.
+- Official target Claude semantics support authoring the conditional native route. Unavailable live smoke does not block authoring; actual same-agent default-context acceptance remains unverified. Codex lacks the authenticated same-thread controller.
+
+Corrections and bounded independent recheck precede production release. The older approval below concerns the earlier preparation-only scope and cannot release this native-entry plan.
+
+## Historical preparation-only plan
+
 Role/model: phase-checker, gpt-6.1-sol/high. Final verdict: **approved; zero blockers, warnings or INFO advisories**.
 
 - Initial reviewed revision:60f285933ea64e9018532d6fc69b9ca83f37e0fe. The bounded preparation/cancellation/explicit-handoff feature was substantively covered.
