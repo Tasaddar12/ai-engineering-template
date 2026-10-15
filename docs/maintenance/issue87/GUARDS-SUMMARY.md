@@ -254,8 +254,8 @@ making shell/path and wildcard provenance available to downstream consumers.
 | `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
 | `git diff --check` | Exit 0 |
 
-Second repair source commit: the commit containing this section; its exact SHA
-is recorded in a following summary-only evidence update. Checks exercised the
+Second repair source commit: `c41f6b2f5a8d074bc7606b686dc90b23f130c98f`.
+This summary-only evidence update pins the repaired source. Checks exercised the
 production bytes descending from `034729b`; no source changed after the passing
 run. All five findings are repaired with these tests; fresh independent review
 remains pending. Canonical 95 I87-G-T1/T2 remain the same risk identities. No
