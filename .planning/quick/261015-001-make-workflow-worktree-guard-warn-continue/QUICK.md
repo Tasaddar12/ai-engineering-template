@@ -1,7 +1,7 @@
 ---
 title: Make workflow worktree guard warn and continue, including scratchpad edits
-status: open
-created: 2026-10-15T09:15:31
+status: in_progress
+created: 2026-10-15 09:15:31
 completed: ''
 files: []
 ---
