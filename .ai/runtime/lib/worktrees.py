@@ -893,6 +893,43 @@ def adopt_session(workspace, kind, number):
                 worktree_relative=workspace.relative(workspace.root))
 
 
+def adopt_native_session(workspace, record, *, budget, info):
+    """Adopt one verified native creation; never create/sync another checkout.
+
+    prewrite.confirm holds the repository ticket lock and validates the actual
+    creation journal/Git identity before calling this narrow phase/quick route.
+    Ordinary session.adopt keeps its original phase-only behavior.
+    """
+    require(record.get("kind") in ("phase", "quick") and record.get("mode") == "new",
+            "not a native phase/quick creation", "bad-native-session")
+    from . import prewrite
+    # Native receipts use bounded UTF-8 Git throughout, including on Windows;
+    # the generic Workspace/locale-decoded Git wrappers cannot represent every
+    # Unicode checkout. Do not infer this root from the original project env.
+    require(str(info["root"]) == record.get("worktree")
+            and (info["root"] / ".git").is_file(), "native adoption requires its linked checkout", "bad-native-session")
+    validate_branch(record["branch"])
+    prewrite.validate_created(record, info, budget)
+    entries = prewrite.sessions(info)
+    existing = [entry for entry in entries if entry.get("status") == "open"
+                and (entry.get("kind"), entry.get("label")) == (record["kind"], record["label"])]
+    require(len(existing) <= 1, "ambiguous native unit session", "native-session-conflict")
+    if existing:
+        entry = existing[0]
+        require(entry.get("branch") == record["branch"] and entry.get("base") == record["base"]
+                and entry.get("worktree") == record["worktree"], "native unit already owned", "native-session-conflict")
+        return dict(entry, reused=True, synced=None)
+    require(not any(entry.get("status") == "open" and
+                    (entry.get("branch") == record["branch"] or entry.get("worktree") == record["worktree"])
+                    for entry in entries), "another unit owns native checkout", "native-session-conflict")
+    entry = {key: record[key] for key in ("kind", "label", "branch", "base", "worktree")}
+    entry.update(status="open", pr=None, adopted=True, native_request=record["request_id"],
+                 base_branch=budget.git(info["primary"], "symbolic-ref", "--short", "HEAD"),
+                 created_at=datetime.now().isoformat(timespec="seconds"))
+    prewrite.atomic(info["common"] / STATE_DIR / SESSIONS_FILE, {"sessions": entries + [entry]})
+    return dict(entry, reused=False, synced=None)
+
+
 def record_session_pr(workspace, branch, url, number=None):
     """Attach the pull request to its session so close can find it."""
     data = load_sessions(workspace)

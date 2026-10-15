@@ -6,32 +6,36 @@ tags: [worktrees, prewrite, tdd]
 status: blocked
 requirements-completed: []
 acceptance: []
-documentation: []
+documentation: [.ai/references/same-agent-worktree.md]
 coverage:
   - id: native-prewrite
     description: Same-agent native continuation through actual installed hooks and a SIMULATED host
     verification:
       - kind: integration
         ref: tests/test_same_agent_worktree.py#test_simulated_installed_denial_native_entry_defaults_and_fresh_rebuilt_edit
-        status: fail
+        status: pass
     human_judgment: false
 ---
 
 # Issue 87 implementation receipt
 
-The first Task 1 native-route RED was independently assessed VALID. Its review
-held production for the two test-contract corrections recorded below. Task 2
-remains explicitly held by the coordinator; no production fix has begun. Task 3
-documentation and all integration/publication belong to separate owners. Current
-test-correction assignment:
+The first Task 1 native-route RED was independently assessed VALID. Its two
+review corrections were independently rechecked CLEAN and Task 2 was explicitly
+released. Task 2 is now **in progress**: this meaningful native source slice is
+committed for coordinator integration/publication, with remaining safety checks
+and full regression work still required. Frontmatter remains blocked because
+the assigned plan is unfinished. Task 3 documentation and all integration/
+publication belong to separate owners. Current source-slice assignment:
 
-- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-02-180244789`.
-- Branch: `phase-issue87-native-code-02-180244789`.
-- Exact starting revision: `5273cfd353fd46e3d1582d71c3fcbc5e58a3248e`.
-- Authored paths: `tests/test_same_agent_worktree.py`, `tests/test_install.py`,
-  and this summary. The enclosing test-only correction commit preserves RED.
+- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-03-180817570`.
+- Branch: `phase-issue87-native-code-03-180817570`.
+- Exact starting revision: `d1d8d31a01b0b4c426d726f8e5975de9166c7a1f`.
+- Authored paths are the exact owned source/test paths in this slice's Git diff,
+  plus this summary. The four Task 3 documentation paths remain untouched.
 - Context usage: unavailable.
 
+Test corrections were committed in `dcf73710d9557fc18b7ec8e8fa60cd09ce9594cd`
+from input `5273cfd353fd46e3d1582d71c3fcbc5e58a3248e`, in isolated code-02.
 The first native-route RED is preserved in `efa6da649b65585d939c1b88e2c369af327b2168`,
 authored from `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b` in
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-01-174821869`,
@@ -44,6 +48,74 @@ The previous cancellation RED remains historical evidence. Its input/root was
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-code-171041844`.
 
 ## TDD Evidence
+
+### Matching native GREEN, first Task 2 source slice (2026-10-15)
+
+Exact input is `d1d8d31a01b0b4c426d726f8e5975de9166c7a1f`, plus this
+owned source/test slice. The same command and original RED target were retained:
+
+```text
+C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe -m unittest discover -s tests -p test_same_agent_worktree.py -v
+```
+
+Final observed result for this slice: **exit 0, 9 tests in 67.904s, OK, no
+skips/errors**. The original
+`test_simulated_installed_denial_native_entry_defaults_and_fresh_rebuilt_edit`
+now passes the full composed path: actual installed source denial/ticket (no
+precreation), actual registered native creation callback at the pinned local
+base/custom ignored root, real Git confirmation and narrow phase/quick adoption,
+same **SIMULATED** actor/default destination context, relative fresh reads, one
+rebuilt destination edit and later simulated-turn defaults. Primary staged,
+unstaged, untracked and ignored binary bytes/index facts remain preserved.
+
+Other executed cases cover actual coordinator/coder exports, installed CLAUDE
+link and six workflow consumers; absent/incompatible simulated capabilities and
+role/policy/trust refusal; native existing-name reuse/uncertain-result refusal;
+old default cwd; old-root replay and wrong actor after confirmation; concurrent
+same-ticket actual creation callbacks yielding one checkout; and the actual
+registered WorktreeRemove provider preserving clean, ignored-only, dirty and
+corrupt-receipt native candidates. Workflow entry executes without a fabricated
+denial: new bootstrap/native creation/adoption and ordinary phase/quick sessions
+with accumulated committed source work, immutable base/ownership, native path
+approval, fresh reads, mode mismatch and ambiguous/missing metadata controls.
+
+Earlier implementation attempts remain visible: the first run executed 6 tests
+in 33.066s, exit 1, three failures (Windows native adoption root decoding and
+fixture CRLF assumptions). The next 6-test run took 36.546s, exit 1; the original
+native RED target and four other methods passed, while the workflow method's
+three assertions exposed the ordinary session.open locale-path issue. Those
+results were intermediate diagnostics, not final GREEN.
+
+The narrow native path now uses its bounded UTF-8 Git facts and atomic session
+registration instead of generic locale-decoded Workspace/Git helpers. The
+ordinary-session fixture's runtime subprocesses explicitly set PYTHONUTF8=1;
+generic paths.py/gitops.py were not changed or broadly repaired. Source fixture
+`.gitattributes` marks source.txt `-text` so byte-preservation checks have an
+explicit checkout contract under Windows autocrlf. The documented
+CLAUDE_CODE_SESSION_ID is supplied as a fixture environment correlation matching
+actual hook session_id; no agent-ID environment variable or skill-substitution
+shell variable was invented. Optional CLI actor arguments remain claims.
+
+Implemented source: one synchronous editing group (unchanged advisory first,
+new 30-second source handler second); Claude-only coordinator/coder tool export;
+standing source protocol and six native-first workflow routes; bounded strict
+mutation/path classification; repo/actor/request/unit tickets under the common
+Git directory with OS-released lock/atomic journal; explicit new/existing begin;
+fresh-name-only native creation and preservation-only native removal; Git-only
+confirmation and narrow phase/quick native adoption. Normal dispatch creation
+reuse and ordinary session APIs retain their original routes. Codex primary
+source cancellation reports the missing authenticated same-thread controller;
+already-correct ordinary isolated callers need no movement.
+
+This is conditional implementation plus SIMULATED contract evidence. No live
+Claude native tool is exposed here; actual native identity, permissions, project
+context and later-turn binding remain unverified. Runtime output explicitly
+states `host_binding_verified: false`. No source-denial callback itself is
+claimed to move its caller. No automatic stash/reset/clean/copy/replay is used.
+
+The coordinator requested this meaningful-slice commit after the running native
+check finished. Remaining Task 2 safety/regression work is listed below; this
+slice does not mark the plan or issue complete.
 
 ### Independent native RED review corrections (Task 1, 2026-10-15)
 
@@ -242,17 +314,27 @@ review-correction commit. The final scoped diff is checked with
 
 | Owning PLAN / Threat | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| [PLAN T-AW-01](PLAN.md#threat_model) | [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | unresolved / unimplemented | OPEN per coordinator input; no worker readback | RED only; mitigation pending |
-| [PLAN T-AW-02](PLAN.md#threat_model) | [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | unresolved / unimplemented | OPEN per coordinator input; no worker readback | RED only; mitigation pending |
-| [PLAN T-AW-03](PLAN.md#threat_model) | [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | unresolved / unimplemented | OPEN per coordinator input; no worker readback | fixture cancellation currently absent; live host transition unverified |
+| [PLAN T-AW-01](PLAN.md#threat_model) | [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | partial implementation; not finally verified | OPEN per coordinator input; no worker readback | composed source cancellation/dirty preservation GREEN; helper/path matrix and full regressions remain |
+| [PLAN T-AW-02](PLAN.md#threat_model) | [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | partial implementation; not finally verified | OPEN per coordinator input; no worker readback | ticketed creation reuse/concurrency/uncertain-result controls GREEN; additional failure/identity checks remain |
+| [PLAN T-AW-03](PLAN.md#threat_model) | [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | conditional route implemented; live unverified | OPEN per coordinator input; no worker readback | matching SIMULATED native tracer GREEN; actual same-agent host transition remains unverified |
 
 ## Remaining
 
-Task 2 production implementation, remaining safety cases (including the actual
-registered preservation-only native removal callback), matching GREEN and full
-assigned regression checks remain. Stop here for independent RED review; Task 2
-requires the coordinator's explicit release. Task 3 and independent final
-review/verification are separate later assignments. Conditional target Claude
+Task 2 remains in progress at the coordinator's requested meaningful-slice
+integration boundary; no new human approval is required to resume its existing
+authorization. Next source assignment must finish focused helper/path/link/
+mutation/identity/deadline/stale-request/before-and-after-creation failure cases,
+including dirty-dependent intent and legitimate isolated controls; add the new
+test_prewrite.py and source-prewrite.test.sh suites and extend ordinary location
+regressions as needed. Inspect journal tamper/corrupt/changed-target handling and
+unknown outcomes without duplicate creation or data loss. Run every PLAN check:
+native, prewrite, install, install_update, session_delivery, agent_sources,
+workflow_links, Bash source-prewrite/location/advisory suites. Only the native
+suite has final GREEN for this source slice; the full source implementation is
+not finally verified and remaining case gaps are not waived. The advisory script
+base diff remains empty, and git diff --check passes for this slice. Task 3 and
+independent final source/doc/integration review and CI remain separate later
+assignments. Conditional target Claude
 support is documented by the capability research; a live supported host/version
 and actual same-existing-agent transition remain unverified in this executor.
 Codex still lacks the authenticated same-thread controller. Hooks cannot guarantee

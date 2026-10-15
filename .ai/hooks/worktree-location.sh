@@ -39,6 +39,25 @@ payload="$(cat 2>/dev/null || true)"
 } < <(many_fields hook_event_name name cwd worktree_path)
 [[ -n "${cwd:-}" ]] || cwd="$PWD"
 
+# Reserved names belong to same-existing-agent native entry, never ordinary
+# dispatch reuse. The Python provider validates its ticket and pinned local
+# base. Missing/corrupt/uncertain native candidates are preserved on removal.
+native_action=""
+case "$event:$name:${removing//\\//}" in
+  WorktreeCreate:wf-entry-*:*) native_action=native-create ;;
+  WorktreeRemove:*:*/wf-entry-*) native_action=native-remove ;;
+esac
+if [[ "$event" == WorktreeRemove && -z "$native_action" && -d "${removing:-}" ]]; then
+  case "$(git -C "$removing" branch --show-current 2>/dev/null)" in
+    worktree-wf_*) native_action=native-remove ;;
+  esac
+fi
+if [[ -n "$native_action" ]]; then
+  [[ -n "$_HOOK_PY" ]] || { printf 'worktree-location: Python unavailable; native checkout preserved\n' >&2; exit 2; }
+  printf '%s' "$payload" | "$_HOOK_PY" "$script_dir/../runtime/lib/prewrite.py" "$native_action"
+  exit $?
+fi
+
 fail() {
   printf 'worktree-location: %s\n' "$1" >&2
   exit 1

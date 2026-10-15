@@ -143,6 +143,17 @@ def render_asset(name, content, host):
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
     if name in (".ai/agents/scout.md", ".ai/agents/targeted-fixer.md") and host == "claude":
         text = claude_fixed_role_metadata(text)
+    if host == "claude" and name in (".ai/agents/coordinator.md", ".ai/agents/coder.md"):
+        text = re.sub(r"(?m)^(tools: .+)$", lambda match: match[1] + ", EnterWorktree"
+                      if "EnterWorktree" not in match[1].split(", ") else match[1], text, count=1)
+    if host == "claude" and name == "AGENTS.md":
+        standing = ("## Same-existing-agent native entry\n\n"
+                    "After source denial, the same existing caller follows "
+                    "[the native entry protocol](.ai/references/same-agent-worktree.md). "
+                    "Gate actual tool/schema, eligible role, policy and trusted hooks; "
+                    "invoke native entry, verify destination defaults, then read afresh and rebuild "
+                    "the edit once. Never replay the cancelled call or substitute a child/cd.\n\n")
+        text = text.replace(AGENT_END, standing + AGENT_END)
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -436,6 +447,8 @@ MANAGED_HOOKS = (
     ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
     ("PreToolUse", "worktree-guard.sh",
      "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+    ("PreToolUse", "source-prewrite.sh",
+     "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
     # The handoff hook measures on PostToolUse, catches an executor that
     # stopped early on SubagentStop, and clears its own session state on Stop.
     # SubagentStop and Stop carry no tool, so neither carries a tool matcher.
@@ -478,7 +491,8 @@ def managed_scripts():
 
 def hook_settings(host):
     events = {}
-    registrations = [(event, script, matcher, 10) for event, script, matcher in MANAGED_HOOKS]
+    registrations = [(event, script, matcher, 30 if script == "source-prewrite.sh" else 10)
+                     for event, script, matcher in MANAGED_HOOKS]
     registrations += [(event, script, None, timeout)
                       for event, script, timeout in HOST_HOOKS.get(host, ())]
     for event, script, matcher, timeout in registrations:
@@ -531,7 +545,11 @@ def hook_settings(host):
                 "exit $LASTEXITCODE")
         group = {"hooks": [handler]} if matcher is None else {"matcher": matcher,
                                                                "hooks": [handler]}
-        events.setdefault(event, []).append(group)
+        if script == "source-prewrite.sh":
+            editing = next(item for item in events[event] if item.get("matcher") == matcher)
+            editing["hooks"].append(handler)
+        else:
+            events.setdefault(event, []).append(group)
     return {"hooks": events}
 
 

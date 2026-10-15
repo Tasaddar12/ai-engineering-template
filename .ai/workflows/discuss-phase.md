@@ -222,6 +222,17 @@ answered from the context in `.continue-here.md`, stop and ask the user.
 </step>
 
 <step name="open_session">
+**Conditional Claude same-caller route:** Before the shell route below, follow
+[native entry](../references/same-agent-worktree.md). Use the known padded phase
+and exact session facts with `prewrite.request phase <label> --mode <new|existing>`;
+no intercepted edit is required. Gate the actual native tool/schema, role,
+policy and trusted hook, invoke EnterWorktree as this existing caller, prove
+destination defaults, confirm Git and rerun locate/init with the runtime resolved
+there. Skip this step's shell session.open/adopt/cd route after native completion.
+Unsupported native entry stops precisely; no child or shell substitute counts.
+Already-correct isolated callers need no move. The remaining route retains
+ordinary runtime consumer semantics, not native movement proof.
+
 `phase.locate` has already confirmed the phase and selected any existing session.
 If `session` from `LOCATE` is present, require its absolute `worktree`, then use
 its `worktree`, `branch`, `base`, `reused` and `synced` fields. Do not call

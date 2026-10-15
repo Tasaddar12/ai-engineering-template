@@ -125,6 +125,17 @@ Use AskUserQuestion (header: "Quick task"; options: "Start a new one" /
 </step>
 
 <step name="open_session">
+**Conditional Claude same-caller route:** Before the shell route below, follow
+[native entry](../references/same-agent-worktree.md). Use the stable QUICK_LABEL
+described below and exact session facts; `prewrite.request quick <label> --mode
+<new|existing>` bootstraps without an edit. Gate the actual native tool/schema,
+role, policy and trusted hook, invoke EnterWorktree as this existing caller,
+prove default destination context, confirm Git and reload init/runtime there.
+Then skip the shell session.open/cd route in this step. If native entry is
+unsupported, stop precisely; no child or shell movement substitutes for it.
+Already-correct isolated sessions need no move. The remaining route is for
+ordinary runtime session consumers, not Claude native movement proof.
+
 Open the worktree this work lives in, before writing anything. Read
 @~/.ai/references/worktree-sessions.md for the full contract.
 
