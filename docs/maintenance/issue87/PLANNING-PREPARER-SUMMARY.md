@@ -10,7 +10,7 @@ affects: [issue87-planning]
 actuals:
   tokens: unmeasured
   tasks: 1
-  commits: 1
+  commits: 2
 tech-stack:
   added: []
   patterns: [scoped commit validation, authored-content snapshots]
@@ -52,7 +52,8 @@ status: complete
 
 ## Task Commits
 
-1. Preparation plan and this summary: the single commit containing these two records; obtain its exact hash with git log -1 after commit.
+1. Preparation plan and this summary: a96176fcf79b40c72a873f90449d6156eba456a4.
+2. PC-PLANNING-01 correction: the follow-up commit containing only this summary and the plan's structured must_haves entries; obtain its exact hash with git log -1 after commit.
 
 ## Checks
 
@@ -62,6 +63,7 @@ status: complete
 - Existing tests/test_phase_runtime.py, tests/test_planning_review.py and tests/test_phase_issues.py ground regression command paths. Task 1 creates tests/test_planning_integrity.py before any command references its implementation.
 - No Python tests, install, native runtime mutation, source implementation or publication was run.
 - git diff --check and staged path/content inspection are performed immediately before this preparation commit; their result is reported with the returned commit.
+- PC-PLANNING-01: changed the same four must_haves artifacts to path/provides mappings and the same four key links to from/to/via mappings. Scope, dependencies, task behavior and prospective-byte interfaces remain unchanged; source and tests are untouched.
 
 ## Files Created/Modified
 

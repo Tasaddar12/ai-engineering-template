@@ -40,15 +40,27 @@ must_haves:
     - Runtime STATE and ROADMAP changes prevent or visibly report unexpected loss of authored content.
     - Ordinary planning.validate remains warn-only and unfilled adoption records remain instructional.
   artifacts:
-    - .ai/hooks/planning-integrity.sh
-    - .ai/runtime/lib/planning_integrity.py
-    - tests/test_planning_integrity.py
-    - .ai/runtime/TEMPLATE-CONTRACT.md
+    - path: .ai/hooks/planning-integrity.sh
+      provides: Standalone PreToolUse commit-checker launcher for coordinator-owned installer registration.
+    - path: .ai/runtime/lib/planning_integrity.py
+      provides: Shared canonical-record validation and scoped authored-content integrity checks.
+    - path: tests/test_planning_integrity.py
+      provides: Behavioral commit-gate, prospective-byte and content-preservation regressions.
+    - path: .ai/runtime/TEMPLATE-CONTRACT.md
+      provides: Required frontmatter, accepted exceptions and integrity diagnostic contract.
   key_links:
-    - Runtime commit calls validate the actual committed record content through planning_integrity before git commit.
-    - A standalone PreToolUse commit checker applies the same validation to direct Git commits; coordinator-owned installer registration is a required integration dependency.
-    - State save and runtime mutation dispatch use scoped content-integrity checks.
-    - Authoring templates and runtime README describe the same required fields and exceptions as the validator.
+    - from: .ai/runtime/lib/gitops.py
+      to: .ai/runtime/lib/planning_integrity.py
+      via: Runtime commit validates actual committed record content before git commit.
+    - from: .ai/hooks/planning-integrity.sh
+      to: .ai/hooks/planning-integrity.py
+      via: Standalone PreToolUse checker applies shared validation to direct Git commits through required coordinator-owned installer registration.
+    - from: .ai/runtime/phase.py
+      to: .ai/runtime/lib/planning_integrity.py
+      via: Runtime mutation snapshots and .ai/runtime/lib/state.py State.save use scoped content-integrity checks.
+    - from: .ai/runtime/TEMPLATE-CONTRACT.md
+      to: .ai/runtime/lib/planning_integrity.py
+      via: Authoring templates and runtime README document the validator's same required fields and exceptions.
 ---
 
 <objective>
