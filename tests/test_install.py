@@ -4,6 +4,7 @@ from pathlib import Path
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -690,6 +691,24 @@ class InstallerTests(unittest.TestCase):
             # The installed dispatch guard must preserve warning-and-continue
             # behavior and actionable isolation guidance from nested directories.
             groups = settings["hooks"]["PreToolUse"]
+            for tool in (("exec_command", "shell_command", "shell", "Bash") if host == "codex" else ("Bash",)):
+                matched = [group for group in groups if re.search(group.get("matcher", ".*"), tool)]
+                self.assertEqual(1, len(matched), "one destructive shell handler")
+                handler = matched[0]["hooks"][0]
+                self.assertIn('python "', handler["command"])
+                for shell_command, status in (("git status", 0), ("git switch topic", 2),
+                                               ("git checkout HEAD -- 'branch name'", 0)):
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": tool,
+                               "tool_input": {"command": shell_command, "cmd": shell_command}}
+                    observed = subprocess.run(self.launcher_argv(host, handler), cwd=cwd, env=environment,
+                        input=json.dumps(payload, ensure_ascii=False).encode("utf-8"), capture_output=True)
+                    self.assertEqual(status, observed.returncode, observed.stderr)
+                    if status == 2:
+                        output = json.loads(observed.stdout)
+                        self.assertEqual("primary-branch-switch", output["reason_code"])
+                        self.assertEqual("deny", output["hookSpecificOutput"]["permissionDecision"])
+                    else:
+                        self.assertEqual(b"", observed.stdout)
             dispatch = [group for group in groups if "Agent" in group.get("matcher", "")]
             self.assertEqual(1, len(dispatch),
                              "exactly one managed Agent/Task registration is expected")
