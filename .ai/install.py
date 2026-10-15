@@ -433,6 +433,8 @@ def merge_codex_config(current, incoming, path, replace=False, preserve_agents=F
 MANAGED_HOOKS = (
     ("PreToolUse", "destructive-git-guard.py",
      "^(Bash|exec_command|shell_command|shell)$"),
+    ("PreToolUse", "planning-integrity.sh",
+     "^(Bash|exec_command|shell_command|shell)$"),
     ("PostToolUse", "ai-tier-notice.sh",
      "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
     ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
