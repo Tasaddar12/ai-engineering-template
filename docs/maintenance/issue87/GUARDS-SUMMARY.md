@@ -336,6 +336,25 @@ for scope judgment, and the unprescribed assertion was replaced with the actual
 previously cleared exact-alias control. It is not claimed fixed by the narrow
 active-glob correction. Production source is unchanged for this RED commit.
 
+The coordinator retained the literal discrepancy as in scope and required
+harmless confirmation. A disposable fixture with different ordinary/protected
+kept.txt content confirmed both Git Bash `cat ordinary-alias/../kept.txt` and
+`cat ordinary-*/../kept.txt` return the protected content (exit 0); harmless printf
+reported the expanded alias-parent spelling. No removal command was executed.
+The coherent RED matrix now retains BOTH proved forms before production edits,
+and embeds the harmless read proof. The narrowly approved fix will also refuse
+parent traversal through a detected raw symlink/junction before canonicalization.
+Ordinary literal-parent, quoted wildcard and unrelated glob controls remain.
+The coordinator separately authorized normalizing only the fresh fixture root
+with `Path(self.temp.name).resolve()` for Windows TEMP 8.3 portability; raw attack
+operands and production alias policy are not weakened.
+
+Coherent proved RED result: same `-k final_active_glob_parent -v` command exited
+1, Ran 1 test in 1.806s, three intended native allow-versus-deny assertions
+(Bash active glob, shared PowerShell Path, proved literal Bash alias-parent).
+Harmless read proof and all legitimate controls passed; zero skips/import or
+fixture errors. This is committed before the single small production repair.
+
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
 were used. No live GitLab/on-prem execution is claimed. Arbitrary enterprise

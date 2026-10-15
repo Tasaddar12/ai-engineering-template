@@ -25,7 +25,7 @@ class RegisteredGuardTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="guard café ")
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         git(self.root, "init", "-q", "-b", "main")
         (self.root / "tracked").write_text("safe\n", encoding="utf-8")
         git(self.root, "add", "tracked")
@@ -498,19 +498,27 @@ class RegisteredGuardTests(unittest.TestCase):
         child = backups / "child"
         child.mkdir(parents=True)
         (backups / "kept.txt").write_text("preserve\n", encoding="utf-8")
+        (self.root / "kept.txt").write_text("ordinary\n", encoding="utf-8")
         alias = self.root / "ordinary-alias"
         if os.name == "nt":
             result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(child)], capture_output=True)
             self.assertEqual(0, result.returncode, result.stderr)
         else:
             alias.symlink_to(child, target_is_directory=True)
+        bash = "C:/Program Files/Git/bin/bash.exe" if os.name == "nt" else shutil.which("bash")
+        self.assertIsNotNone(bash, "harmless Bash path-semantics proof requires Bash")
+        for command in ("cat -- ordinary-alias/../kept.txt", "cat -- ordinary-*/../kept.txt"):
+            proof = subprocess.run([bash, "-c", command], cwd=self.root, capture_output=True)
+            self.assertEqual(0, proof.returncode, proof.stderr)
+            self.assertEqual(b"preserve\n", proof.stdout.replace(b"\r\n", b"\n"))
         (self.root / "unrelated-child").mkdir()
-        attacks = [("rm -rf ordinary-*/../kept.txt", "Bash", None),
-                   ("Remove-Item -Path 'ordinary-*/../kept.txt' -Force", "exec_command", "powershell")]
-        for command, tool, shell in attacks:
+        attacks = [("rm -rf ordinary-*/../kept.txt", "Bash", None, "unsupported-glob-parent-traversal"),
+                   ("Remove-Item -Path 'ordinary-*/../kept.txt' -Force", "exec_command", "powershell", "unsupported-glob-parent-traversal"),
+                   ("rm -f ordinary-alias/../kept.txt", "Bash", None, "unsupported-alias-parent-traversal")]
+        for command, tool, shell, reason in attacks:
             with self.subTest(attack=command):
                 observed = self.source_verdict(command, True, tool=tool, shell=shell)
-                self.assertEqual("unsupported-glob-parent-traversal", json.loads(observed.stdout)["reason_code"])
+                self.assertEqual(reason, json.loads(observed.stdout)["reason_code"])
         for command in ("rm -f unrelated-child/../ordinary.txt", "rm -f 'ordinary-*/../kept.txt'",
                         "rm -f ordinary*.txt", "printf '%s' 'ordinary-*/../kept.txt'"):
             with self.subTest(control=command): self.source_verdict(command, False)
