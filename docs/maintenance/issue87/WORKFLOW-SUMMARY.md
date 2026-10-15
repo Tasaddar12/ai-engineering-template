@@ -209,3 +209,22 @@ review. Shared/adoption status records remain coordinator-owned.
 ---
 *Phase: issue87-maintenance / workflow*
 *Completed: 2026-10-15*
+
+## Coordinator-authorized integration adjustment
+
+At input revision `8238d41e6b49d21e2f8f6865625930cef587b232`, moved the unchanged
+guard-repair paragraph immediately before `Stay read-only.` in
+`.ai/agents/code-reviewer.md`. Removed this component's simple three-line
+issue-link audit addition; independent PR89 owns the detailed actual-provider
+audit immediately after `Stay read-only.`. This supersedes the earlier summary's
+claim that this component supplies that audit link and avoids the demonstrated
+independent-PR conflict. No other role content or guard behavior changed.
+
+Validation on that input plus the exact relocation/removal: the commands
+`python -m unittest discover -s tests -p test_guard_repair_contract.py -v`,
+`python -m unittest discover -s tests -p test_agent_sources.py -v`, and
+`python -m unittest discover -s tests -p test_workflow_links.py -v` passed 7, 16
+and 4 tests respectively, all exit 0; `git diff --check` passed. No new RED was
+needed for this coordinator-assigned documentation relocation. Independent
+bounded review and CI follow through the coordinator; no provider writes,
+publication, integration or merge were performed by this worker.
