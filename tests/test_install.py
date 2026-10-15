@@ -679,7 +679,7 @@ class InstallerTests(unittest.TestCase):
         nested.mkdir()
         return editing[0], nested
 
-    def prewrite_pipeline(self, host, group, cwd, payload, destination):
+    def prewrite_pipeline(self, host, group, cwd, payload, destination, mutation=None):
         """Model synchronous native decisions, executing the fake edit only if allowed.
 
         An ordinary hook error is deliberately failure-open, as documented by Codex.
@@ -706,21 +706,29 @@ class InstallerTests(unittest.TestCase):
                     denied = True
         if not denied:
             destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(b"FAKE PENDING MUTATION EXECUTED\n")
+            if mutation is None:
+                destination.write_bytes(b"FAKE PENDING MUTATION EXECUTED\n")
+            else:
+                mutation()
         return denied, results
 
-    def test_prewrite_claude_first_source_prepares_and_cancels_pending_mutation(self):
+    def test_prewrite_claude_first_source_tickets_without_precreating_and_cancels(self):
         group, cwd = self.prewrite_fixture("claude")
         source = self.target / "source.txt"
         original = source.read_bytes()
         payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "session_id": "parent",
                    "agent_id": "worker-one", "tool_use_id": "request-one", "tool_name": "Edit",
                    "tool_input": {"file_path": str(source), "old_string": "source", "new_string": "edit"}}
-        denied, _ = self.prewrite_pipeline("claude", group, cwd, payload, source)
+        denied, results = self.prewrite_pipeline("claude", group, cwd, payload, source)
         self.assertTrue(denied, "S1/H1: installed Claude editing pipeline allowed the original source mutation")
         self.assertEqual(original, source.read_bytes())
         listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
-        self.assertEqual(2, sum(line.startswith("worktree ") for line in listed.splitlines()))
+        self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()),
+                         "A1: cancellation must not precreate the native destination")
+        reasons = [json.loads(result.stdout).get("hookSpecificOutput", {}).get(
+                   "permissionDecisionReason", "") for result in results if result.stdout.strip()]
+        self.assertIn("EnterWorktree", "\n".join(reasons),
+                      "A1: denial must tell the same caller how to continue natively")
 
     def test_prewrite_codex_shared_parent_cancels_without_guessing_unit(self):
         group, cwd = self.prewrite_fixture("codex")
@@ -741,13 +749,25 @@ class InstallerTests(unittest.TestCase):
             with self.subTest(host=host):
                 group, cwd = self.prewrite_fixture(host)
                 note = self.target / ".planning/scratchpads/nested/note.md"
-                payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
-                           "tool_input": {"file_path": str(note), "content": "note"}}
-                denied, results = self.prewrite_pipeline(host, group, cwd, payload, note)
-                self.assertFalse(denied)
-                self.assertIn(b"WARNING", results[0].stderr)
                 listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
-                self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()))
+                state = self.target / ".git/ai-phase/prewrite"
+
+                def inventory():
+                    return {p.relative_to(state).as_posix(): p.read_bytes()
+                            for p in state.rglob("*") if p.is_file()} if state.exists() else {}
+
+                before = inventory()
+                for existing in (False, True):
+                    if existing:
+                        note.write_bytes(b"existing scratchpad\n")
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
+                               "tool_input": {"file_path": str(note), "content": "note"}}
+                    denied, results = self.prewrite_pipeline(host, group, cwd, payload, note)
+                    self.assertFalse(denied)
+                    self.assertIn(b"WARNING", results[0].stderr)
+                    self.assertEqual(b"FAKE PENDING MUTATION EXECUTED\n", note.read_bytes())
+                    self.assertEqual(listed, command("git", "worktree", "list", "--porcelain", cwd=self.target))
+                    self.assertEqual(before, inventory())
 
     def test_prewrite_external_temporary_note_without_identity_continues(self):
         """CR-01: a plain task note outside every repo is not a source handoff."""

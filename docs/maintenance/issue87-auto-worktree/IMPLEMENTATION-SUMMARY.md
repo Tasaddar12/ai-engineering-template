@@ -9,22 +9,96 @@ acceptance: []
 documentation: []
 coverage:
   - id: native-prewrite
-    description: Source-sensitive preparation and cancellation through installed host hooks
+    description: Same-agent native continuation through actual installed hooks and a SIMULATED host
     verification:
       - kind: integration
-        ref: tests/test_install.py#test_prewrite_claude_first_source_prepares_and_cancels_pending_mutation
+        ref: tests/test_same_agent_worktree.py#test_simulated_installed_denial_native_entry_defaults_and_fresh_rebuilt_edit
         status: fail
     human_judgment: false
 ---
 
 # Issue 87 implementation receipt
 
-Tasks 1–2 only; Task 3 documentation and all integration/publication belong to
-separate owners. Input/root pin: `26969d7184c2bf25a0468efe805b325471ea58c6`,
+Task 1 native-route RED is complete for independent review. Task 2 is explicitly
+held by the coordinator; no production fix has begun. Task 3 documentation and
+all integration/publication belong to separate owners. Current assignment:
+
+- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-01-174821869`.
+- Branch: `phase-issue87-native-code-01-174821869`.
+- Starting production revision: `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b`.
+- Authored paths: `tests/test_same_agent_worktree.py`, `tests/test_install.py`,
+  and this summary. The enclosing test-only commit contains the recorded RED.
+- Context usage: unavailable.
+
+The previous cancellation RED remains historical evidence. Its input/root was
+`26969d7184c2bf25a0468efe805b325471ea58c6`,
 `phase-issue87-auto-code-171041844`,
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-code-171041844`.
 
 ## TDD Evidence
+
+### Fresh native-route RED (Task 1, 2026-10-15)
+
+The production revision remained exactly `c58af6db4f41b0acc88c6ef1bb5f053d6f561c1b`;
+only the three paths above changed. The named behavioral target is
+`NativeRouteTests.test_simulated_installed_denial_native_entry_defaults_and_fresh_rebuilt_edit`.
+It launches the actual installed Claude editing aggregate before importing or
+calling any proposed prewrite API. Expected: synchronous denial supplies an
+actionable same-agent `EnterWorktree` instruction and ticket, with the original
+edit unapplied and no precreated destination. Actual assertion:
+
+```text
+AssertionError: 'EnterWorktree' not found in '' : A1/A2: installed Claude source decision did not deliver a same-agent native EnterWorktree continuation; actual decision reasons=[]
+```
+
+Command (PowerShell, actual Python 3.13 executable):
+
+```text
+C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe -m unittest discover -s tests -p test_same_agent_worktree.py -v
+```
+
+Initial run: exit 1, 6 tests in 17.153s, 8 assertion failures. Final native test
+content rerun: exit 1, 6 tests in 16.889s, the same 8 assertion failures, no
+errors/skips. Four cases reach the native continuation assertion above. The
+export case reports two missing `EnterWorktree` role permissions and the absent
+installed CLAUDE protocol link; the workflow case stops at the missing native
+role permission. Those structural failures are supporting observations, not the
+behavioral RED target. There were no missing-module, unknown-verb, discovery,
+launcher or fixture errors. No production stub was added to produce RED.
+
+The suite uses one real installer-produced Claude seed, then separate offline
+real-Git clones with canonical ordinary temporary roots, spaces/Unicode, a
+custom ignored worktree root and a pinned local commit. It reuses the installed
+aggregate launcher/decision fixture. Its test-only `SimulatedClaude` adapter is
+explicitly **SIMULATED**: stable actor, advertised creation/path schema fixture,
+policy/trust/role gates and persistent default cwd/context/permission state.
+After the missing continuation is implemented, the same behavioral target will
+call public `prewrite.begin`, run the actual registered WorktreeCreate handler,
+check real Git facts through `prewrite.confirm`, freshly read relative destination
+content and execute exactly one rebuilt mutation. A later simulated turn checks
+the retained destination default. These downstream steps have **not executed**
+at RED, and no live model behavior, native entry, permissions or context binding
+has been demonstrated.
+
+Additional authored fixtures cover absent/incompatible advertised tool/schema,
+pinned creation/policy/trust refusal, wrong actor/default cwd, missing native
+completion, strict existing-name creation refusal, and primary staged/unstaged/
+untracked/ignored binary preservation. The workflow fixture starts with
+`prewrite.request` and no intercepted edit: known-unit new native creation and
+adoption; ordinary phase/quick `session.open` sessions use genuine simulated
+native path entry, approval and reused confirmation without a native-creation
+journal or ownership rewrite. It includes explicit new/existing mismatch,
+missing session and ambiguous real-session metadata controls. These are planned
+GREEN coverage, currently blocked before their substantive assertions. Public
+CLI fixture identity claims bind requests and do not authenticate host identity.
+
+The old Claude installer test is renamed to
+`test_prewrite_claude_first_source_tickets_without_precreating_and_cancels` and
+expects one registered checkout after denial, followed by native instructions.
+It no longer treats precreation as success. The historical name/results below
+are retained as history, not a native movement claim.
+
+### Historical cancellation RED (before the native-route plan)
 
 RED ran against unchanged production at the input revision plus test-only edits.
 Command (PowerShell; approved Python 3.13 executable):
@@ -70,8 +144,10 @@ unlinked create/update only. Other paths, mixed operations, deletes, renames,
 links and repository targets gain no exemption.
 
 Independent input: [MATRIX.md](MATRIX.md), committed by its separate owner.
-The following named coverage is required during Task 2; rows beyond the three
-installed tests above are planned, not claimed executed at RED.
+The following table preserves the earlier preparation-plan proposals; obsolete
+precreation wording and proposed helper names are superseded by the committed
+native PLAN/MATRIX and the fresh fixtures above. These rows are not current
+execution claims or authority to replace native movement with preparation.
 
 | Matrix | Named test family | Expected behavior |
 |---|---|---|
@@ -89,9 +165,29 @@ installed tests above are planned, not claimed executed at RED.
 
 ## Checks / Task Commits
 
-RED command and its bounded test-only rerun above are the only execution receipts
-so far. No source changes yet; awaiting coordinator acknowledgement of corrected
-behavioral RED and reconciled plan clarification.
+Current Task 1 command receipts are recorded above. The exact final both-host
+control command was:
+
+```text
+C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe -m unittest discover -s tests -p test_install.py -k prewrite -v
+```
+
+Final result: exit 1, 4 tests in 47.942s, 2 expected historical source-denial
+failures and 2 passing controls; no errors/skips. Both
+`test_prewrite_untracked_note_without_identity_warns_and_continues` and
+`test_prewrite_external_temporary_note_without_identity_continues` pass their
+Claude and Codex subcases. Each now exercises actual fake create **and** update
+bytes without identity and asserts unchanged exact worktree listing and ticket
+inventory; scratchpad controls also assert the advisory warning. The Claude
+source case fails its old aggregate-denial assertion before the revised no-tree
+expectation; the Codex case likewise fails its historical aggregate-denial
+assertion. Neither is counted as the fresh native-route RED. A preceding run
+before strengthening scratchpad create/update checks had the same 4-test,
+2-failure result in 46.050s.
+
+Only tests and this summary are in the enclosing Task 1 commit. The final scoped
+diff is checked with `git diff --check` before committing. The base diff for
+`.ai/hooks/worktree-guard.sh` is empty: its advisory bytes remain unchanged.
 
 ## Threat Outcomes
 
@@ -103,9 +199,14 @@ behavioral RED and reconciled plan clarification.
 
 ## Remaining
 
-Task 2 source/coverage/checks remain. Task 3 and independent review/verification
-are separate later assignments. No supported installed host/version or actual
-automatic session transition has been established. Hooks cannot guarantee
+Task 2 production implementation, remaining safety cases (including the actual
+registered preservation-only native removal callback), matching GREEN and full
+assigned regression checks remain. Stop here for independent RED review; Task 2
+requires the coordinator's explicit release. Task 3 and independent final
+review/verification are separate later assignments. Conditional target Claude
+support is documented by the capability research; a live supported host/version
+and actual same-existing-agent transition remain unverified in this executor.
+Codex still lacks the authenticated same-thread controller. Hooks cannot guarantee
 enforcement for outer failures, cloud orchestration, existing exec sessions,
 opaque shell/external writers or opted-out specialized tools. No provider
 writes, merge, installation or real cleanup performed.
