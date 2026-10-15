@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: complete
+status: in_progress
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
-acceptance: [I87-A1, I87-A3]
+requirements-completed: [ISSUE87-RED]
+acceptance: [I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -261,6 +261,26 @@ run. All five findings are repaired with these tests; fresh independent review
 remains pending. Canonical 95 I87-G-T1/T2 remain the same risk identities. No
 installer, released test_install/hooks README, PR86 hook, provider adapter,
 adopting-project planning record, cleanup child, publication or merge changed.
+
+## Final bounded wildcard-ancestor review RED
+
+The final bounded review cleared the previous eleven findings but identified
+one introduced gap: a wildcarded ancestor can select an ordinary-looking
+junction/symlink into `.workflow-backups`, which unresolved spelling comparison
+does not detect. The prescribed single native-entrypoint matrix creates only
+disposable backup/kept.txt, alias and unrelated sibling fixtures. It tests
+wildcard ancestor/child traversal, exact alias and direct backup controls,
+quoted/escaped literals, benign sibling globs and PowerShell Path/LiteralPath.
+All submitted removal strings stay inert JSON. Production source remains
+`c41f6b2` during RED; no child/installer change is authorized.
+
+RED command: `python -m unittest discover -s tests -p test_destructive_guard.py
+-k final_wildcard -v`. Exit 1, Ran 1 test in 2.006s, four intended native
+behavior assertion failures: three Bash wildcard-ancestor forms and PowerShell
+`-Path` returned exit 0 instead of denial JSON/exit 2. Exact alias/direct backup
+attacks already refused; all quoted, LiteralPath and unrelated sibling controls
+passed. Zero skips or fixture/import errors. This RED is committed before the
+bounded read-only resolved-match repair.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures

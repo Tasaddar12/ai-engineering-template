@@ -462,6 +462,37 @@ class RegisteredGuardTests(unittest.TestCase):
             self.source_verdict("Remove-Item -LiteralPath 'ordinary*.txt' -Force", False,
                                 tool="exec_command", shell="powershell")
 
+    def test_final_wildcard_ancestor_alias_matrix_native_entrypoint(self):
+        backups = self.root / ".workflow-backups"
+        backups.mkdir()
+        (backups / "kept.txt").write_text("preserve\n", encoding="utf-8")
+        alias = self.root / "ordinary-alias"
+        if os.name == "nt":
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(backups)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else:
+            alias.symlink_to(backups, target_is_directory=True)
+        sibling = self.root / "unrelated-directory"
+        sibling.mkdir()
+        (sibling / "ordinary.txt").write_text("unrelated\n", encoding="utf-8")
+        # Every submitted destructive string is inert stdin JSON. Only the
+        # hook is launched; fixtures use read-only path resolution as evidence.
+        for command in ("rm -rf ordinary-*/*", "rm -rf ord*/kept.txt",
+                        "rm -rf ordinary-*/./kept.txt", "rm -rf ordinary-alias/*",
+                        "rm -rf .workflow-*/*"):
+            with self.subTest(attack=command): self.source_verdict(command, True)
+        for command in ("rm -rf 'ordinary-*/*'", r"rm -rf ordinary-\*/\*",
+                        "rm -f ordinary*.txt", "rm -f 'ordinary*.txt'",
+                        "rm -rf unrelated-*/*", "printf '%s' 'ordinary-*/*'"):
+            with self.subTest(control=command): self.source_verdict(command, False)
+        with self.subTest(powershell="Path traverses wildcard junction"):
+            self.source_verdict("Remove-Item -Path 'ordinary-*/*' -Recurse -Force", True,
+                                tool="exec_command", shell="powershell")
+        for command in ("Remove-Item -LiteralPath 'ordinary-*/*' -Force",
+                        "Remove-Item -Path 'unrelated-*/*' -Force"):
+            with self.subTest(powershell_control=command):
+                self.source_verdict(command, False, tool="exec_command", shell="powershell")
+
 
 if __name__ == "__main__":
     unittest.main()
