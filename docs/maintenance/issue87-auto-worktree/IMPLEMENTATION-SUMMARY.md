@@ -3,7 +3,7 @@ phase: maintenance-issue87-auto-worktree
 plan: "01"
 subsystem: hooks
 tags: [worktrees, prewrite, tdd]
-status: blocked
+status: partial
 requirements-completed: []
 acceptance: []
 documentation: [.ai/references/same-agent-worktree.md]
@@ -21,18 +21,26 @@ coverage:
 
 The first Task 1 native-route RED was independently assessed VALID. Its two
 review corrections were independently rechecked CLEAN and Task 2 was explicitly
-released. Task 2 is now **in progress**: this meaningful native source slice is
-committed for coordinator integration/publication, with remaining safety checks
-and full regression work still required. Frontmatter remains blocked because
-the assigned plan is unfinished. Task 3 documentation and all integration/
-publication belong to separate owners. Current source-slice assignment:
+released. The assigned Tasks 1-2 source implementation and deterministic safety
+coverage and all assigned deterministic regression checks are complete.
+Frontmatter remains partial because Task 3, independent review, integrated CI
+and live acceptance are separate unfinished layers. Task 3 documentation and all
+integration/publication belong to separate owners. Current source assignment:
 
-- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-03-180817570`.
-- Branch: `phase-issue87-native-code-03-180817570`.
-- Exact starting revision: `d1d8d31a01b0b4c426d726f8e5975de9166c7a1f`.
+- Root: `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-native-code-04-182454222`.
+- Branch: `phase-issue87-native-code-04-182454222`.
+- Exact starting revision: `ff81660b493305b5714c8efce9835ee4c2d128a0`.
 - Authored paths are the exact owned source/test paths in this slice's Git diff,
   plus this summary. The four Task 3 documentation paths remain untouched.
 - Context usage: unavailable.
+
+The first Task 2 source slice was authored as
+`b0e6b3d3191a02fff833b816e7713b79ed2090e4` from exact input
+`d1d8d31a01b0b4c426d726f8e5975de9166c7a1f`, in isolated code-03, then integrated
+and published by the coordinator as `ff81660b493305b5714c8efce9835ee4c2d128a0`.
+The coordinator independently reran its native suite: 9 tests / 74.627s, exit 0.
+This final source continuation is the enclosing owned-path commit; it does not
+modify any old worker checkout or the separate migration leaf.
 
 Test corrections were committed in `dcf73710d9557fc18b7ec8e8fa60cd09ce9594cd`
 from input `5273cfd353fd46e3d1582d71c3fcbc5e58a3248e`, in isolated code-02.
@@ -48,6 +56,70 @@ The previous cancellation RED remains historical evidence. Its input/root was
 `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-code-171041844`.
 
 ## TDD Evidence
+
+### Remaining Task 2 safety and regression slice (2026-10-15)
+
+Exact input is `ff81660b493305b5714c8efce9835ee4c2d128a0` plus this owned diff.
+The original native behavioral target remains GREEN in the final 9-test suite
+(75.530s, exit 0, no skips). It now also exercises separate loaded-project and
+permission-root drift and the pinned native existing-path refusal before the
+genuine simulated approval. All movement/default-context assertions are still
+explicitly **SIMULATED**; installed handlers and creation callbacks execute for
+real against disposable offline Git repositories.
+
+The additional helper suite initially passed 18 tests / 35.385s with one actual
+Windows symlink-privilege skip. Four new lifecycle cases then reached meaningful
+failures: a changed tool-use ID allocated another pending request; an absent
+observed source actor was accepted after confirmation; an incomplete bound
+journal raised KeyError instead of structured refusal; and HEAD advanced before
+initial confirmation was accepted. That focused lifecycle run was 22 tests /
+38.867s, exit 1, four assertion failures. Corrections reuse only unchanged
+pending caller intent, require exact observed native actor, validate bounded
+record shape and require initial HEAD at the pinned base. Confirmed native
+sessions retain durable checks beyond the creation-ticket deadline. The final
+helper suite is 23 tests / 57.603s, exit 0, skipped 1; real Windows hardlink,
+junction and raw 8.3-alias refusals executed successfully. The symlink case alone
+skipped because Windows returned WinError 1314 for creating a symlink.
+
+Other helper controls cover all supported mutation envelopes and CRLF patches,
+tracked/mixed/delete/move source classification, narrow both-host notes/reads,
+malformed paths and JSON, linked/nested/external paths, CLI/environment identity
+conflicts, changed targets, workflow modes, stale source HEAD/branch/config,
+preexisting path/branch collisions, a real subprocess OS lock with bounded
+contention/recovery, deadline refusal, and simulated missing Git results both
+before and after actual creation. The latter preserve staged, unstaged,
+untracked, ignored binary bytes and index facts; uncertain results neither
+retry creation nor replay dirty-dependent intent. Runtime confirmation continues
+to report `host_binding_verified: false`.
+
+The full Ubuntu CI feedback at the first source revision exposed a real
+multi-handler updater bug: the old merger selected one arbitrary managed script
+and rejected the new advisory-plus-source group when its timeout aged. Local
+`test_install_update.py -k an_aged -v` reproduced 4 cases / 15.295s, exit 1, with
+two errors (Claude and Codex managed hook registration); both aged shipped-file
+controls passed. The actual failure was `ValueError: managed PreToolUse
+registration for worktree-guard.sh differs; reconcile it manually`, at the old
+`.ai/install.py:622`. The merger now recognizes exact shipped handler commands
+as a set and replaces only wholly managed groups under explicit update mode.
+Both-host old advisory-only migration is idempotent, keeps user groups, and
+restores exactly one advisory-first/source-second editing group. Mixed user
+handlers, forged commands and unknown fields remain refused with bytes intact.
+The final full updater receipt below includes both original failing cases.
+
+The same CI job reported only a cleanup error for the otherwise passing Claude
+prewrite fixture: `tempfile.py:947 -> _rmtree:929 -> shutil._rmtree_safe_fd:672 ->
+os.rmdir`, `OSError [Errno 39] Directory not empty: 'pack'` (job
+116703758682, run 38816902323; no complete temporary path printed). Disposable
+installer source and prewrite target repositories now set the installed Git's
+supported `gc.autoDetach=false` and `maintenance.autoDetach=false`, so maintenance
+writers finish before fixture lifetime ends. No cleanup error is ignored or
+retried. Local full installer validation includes that case; coordinator CI
+readback remains necessary to assess recurrence on Ubuntu.
+
+Native CLI adapters now enter their own bounded UTF-8 Git path directly rather
+than first constructing the generic Workspace with its separate 30-second
+lookup. Native-only I/O failure emits structured refusal. The old generic
+Windows locale issue remains unchanged and is recorded under Deferred below.
 
 ### Matching native GREEN, first Task 2 source slice (2026-10-15)
 
@@ -285,6 +357,50 @@ execution claims or authority to replace native movement with preparation.
 
 ## Checks / Task Commits
 
+Final code-04 commands run from the exact root/base above, against this owned
+diff. Python commands use the actual executable
+`C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe`;
+every row below invokes it as `-m unittest discover -s tests -p FILE -v`.
+
+| FILE | Cases / seconds | Result / actual skips |
+|---|---|---|
+| `test_same_agent_worktree.py` | 9 / 75.530 | exit 0, no skips |
+| `test_prewrite.py` | 23 / 57.603 | exit 0, skipped 1 (Windows symlink creation privilege); hardlink/junction/raw 8.3 executed |
+| `test_install.py` | 41 / 454.590 | exit 0, skipped 1 (Windows symlink creation privilege); original cleanup case passed |
+| `test_install_update.py` | 66 / 415.745 | exit 0, skipped 4 (two symlink privilege cases, two Claude instances of Codex-only settings checks) |
+| `test_session_delivery.py` | 60 / 127.942 | exit 0, no skips |
+| `test_agent_sources.py` | 16 / 0.283 | exit 0, no skips |
+| `test_workflow_links.py` | 4 / 1.675 | exit 0, no skips |
+
+Actual Bash command (PowerShell, installed Git Bash; Python executable directory
+prefixed to PATH and PYTHONUTF8=1 in this validation environment):
+
+```text
+& 'C:/Program Files/Git/bin/bash.exe' -c 'bash .ai/hooks/source-prewrite.test.sh && bash .ai/hooks/worktree-location.test.sh && bash .ai/hooks/worktree-guard.test.sh'
+```
+
+Exit 0: source prewrite **12 passed, 0 failed**; worktree location **25 passed,
+0 failed**; unchanged advisory **60 passed, 0 failed**. The new source suite
+checks actual synchronous deny JSON/exit 2, no precreation or old edit, note/read
+controls, malformed input and an adapter failure mapped to blocking exit 2.
+The location suite retains ordinary reuse controls and adds six reserved-native
+preservation/refusal cases. The helper's actual process cwd now matches the
+event cwd, so native missing-journal assertions reach that boundary directly.
+
+| Current AW evidence | Executed layer |
+|---|---|
+| AW-01/05/08 | original installed tracer, later simulated defaults, fresh relative read/rebuilt edit, old-root/context/actor refusals |
+| AW-02/06 | actual installed role/CLAUDE exports and six routes, positive simulated native schema/role/policy/trust gates and approval |
+| AW-03/04 | both-host installed plain notes/source decisions, helper path/mutation/link matrix, exact dirty bytes/index preservation |
+| AW-07 | fresh native creation, exact modes, real-Git collisions/concurrency, stale/changed/uncertain receipts, bounded locks/deadlines, preservation-only native remove |
+
+The four Task 3 documents and advisory production script have empty base diffs.
+`git diff --check` and exact owned-path/branch/base checks passed before
+the enclosing source-ready commit. The separate migration test repair belongs
+to the coordinator's disjoint leaf; it is not claimed as this worker's change.
+
+### Historical Task 1 command receipts
+
 Current Task 1 command receipts are recorded above. The exact final both-host
 control command was:
 
@@ -314,30 +430,44 @@ review-correction commit. The final scoped diff is checked with
 
 | Owning PLAN / Threat | Canonical issue | Outcome | Git state | Evidence |
 |---|---|---|---|---|
-| [PLAN T-AW-01](PLAN.md#threat_model) | [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | partial implementation; not finally verified | OPEN per coordinator input; no worker readback | composed source cancellation/dirty preservation GREEN; helper/path matrix and full regressions remain |
-| [PLAN T-AW-02](PLAN.md#threat_model) | [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | partial implementation; not finally verified | OPEN per coordinator input; no worker readback | ticketed creation reuse/concurrency/uncertain-result controls GREEN; additional failure/identity checks remain |
-| [PLAN T-AW-03](PLAN.md#threat_model) | [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | conditional route implemented; live unverified | OPEN per coordinator input; no worker readback | matching SIMULATED native tracer GREEN; actual same-agent host transition remains unverified |
+| [PLAN T-AW-01](PLAN.md#threat_model) | [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | deterministic source mitigation implemented; independent/integrated verification pending | OPEN per coordinator input; no worker readback/write | installed cancellation, both-host notes, strict path/mutation controls and exact dirty preservation GREEN; symlink privilege skip explicit |
+| [PLAN T-AW-02](PLAN.md#threat_model) | [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | deterministic source mitigation implemented; independent/integrated verification pending | OPEN per coordinator input; no worker readback/write | native collision/reuse/concurrency, actor/intent/lifecycle validation, real OS locks and uncertain-result preservation GREEN |
+| [PLAN T-AW-03](PLAN.md#threat_model) | [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | conditional route implemented; live unverified | OPEN per coordinator input; no worker readback/write | installed exports/hooks/six workflows and matching SIMULATED native tracer GREEN; actual same-agent host transition remains unverified |
 
 ## Remaining
 
-Task 2 remains in progress at the coordinator's requested meaningful-slice
-integration boundary; no new human approval is required to resume its existing
-authorization. Next source assignment must finish focused helper/path/link/
-mutation/identity/deadline/stale-request/before-and-after-creation failure cases,
-including dirty-dependent intent and legitimate isolated controls; add the new
-test_prewrite.py and source-prewrite.test.sh suites and extend ordinary location
-regressions as needed. Inspect journal tamper/corrupt/changed-target handling and
-unknown outcomes without duplicate creation or data loss. Run every PLAN check:
-native, prewrite, install, install_update, session_delivery, agent_sources,
-workflow_links, Bash source-prewrite/location/advisory suites. Only the native
-suite has final GREEN for this source slice; the full source implementation is
-not finally verified and remaining case gaps are not waived. The advisory script
-base diff remains empty, and git diff --check passes for this slice. Task 3 and
-independent final source/doc/integration review and CI remain separate later
-assignments. Conditional target Claude
+No assigned source/safety/regression check remains pending. Task 3 and
+independent final source/doc/integration review and CI remain separate
+later assignments. Conditional target Claude
 support is documented by the capability research; a live supported host/version
 and actual same-existing-agent transition remain unverified in this executor.
 Codex still lacks the authenticated same-thread controller. Hooks cannot guarantee
 enforcement for outer failures, cloud orchestration, existing exec sessions,
 opaque shell/external writers or opted-out specialized tools. No provider
 writes, merge, installation or real cleanup performed.
+
+## Deferred
+
+Untracked follow-up outside the native path; issue linkage **Pending
+coordinator**, with no promise of a new issue. The pre-existing generic Windows
+locale/session.open failure was independently reproduced using the exact Python
+3.13 executable above and a disposable offline committed Git repository at
+`<OS-temp>/project café`, with ignored `worktree.root: .worktrees` and environment
+`PYTHONUTF8=0`, `PYTHONIOENCODING=utf-8`:
+
+```text
+<python> <implementation-root>/.ai/runtime/phase.py query session.open quick legacy-encoding --no-sync
+```
+
+Actual exit **1**, stderr empty, stdout:
+
+```json
+{"ok":false,"error":"git rev-parse --git-dir failed: [WinError 267] The directory name is invalid","code":"git-failed"}
+```
+
+The generic `.ai/runtime/lib/paths.py:repo_root` and
+`.ai/runtime/lib/gitops.py:git` use locale-decoded subprocess text; neither was
+modified. Native adapters use explicit UTF-8 and bounded facts. Ordinary Unicode
+session fixtures explicitly set PYTHONUTF8=1, so their GREEN does not claim this
+generic issue was repaired. The reproduction printed no credentials and changed
+only disposable fixture data.

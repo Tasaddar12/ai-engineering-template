@@ -82,6 +82,13 @@ Do not create another random tree, repeat native entry or replay an edit. A
 missing result might hide completed entry: prove defaults or leave pending and
 unverified. A creation ticket is not authority to retry a native existing name.
 
+A repeated source attempt from the same observed caller with a new tool-use ID
+reuses its pending request only for the unchanged intent/root/branch/base. A
+changed intent while entry is pending refuses; use an explicit known workflow
+unit rather than silently reserving another ad-hoc tree. Creation tickets expire;
+a Git-confirmed native unit retains its durable source-actor and Git checks for
+continued edits without a new move. Incomplete records remain refused/preserved.
+
 ## Prove defaults, confirm Git, then reconstruct
 
 Observe native completion for the same existing session/actor. Run subsequent

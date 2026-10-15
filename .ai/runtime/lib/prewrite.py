@@ -172,7 +172,7 @@ def read_json(path):
     plain(path)
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:
         raise VerbError("missing/corrupt record; preserve and inspect: " + str(exc), "prewrite-record")
     require(isinstance(value, dict), "invalid prewrite record", "prewrite-record")
     return value
@@ -180,16 +180,40 @@ def read_json(path):
 
 def load(directory, request, info, fresh=True):
     require(isinstance(request, str) and bool(TOKEN.fullmatch(request)), "invalid request identity", "prewrite-request")
-    record = read_json(directory / (request + ".json"))
+    path = directory / (request + ".json")
+    plain(path)
+    require(not path.exists() or path.stat().st_size <= 32768, "oversized request record", "prewrite-record")
+    record = read_json(path)
     require(all(isinstance(record.get(key), str) and bool(record[key]) for key in
                 ("primary", "common", "source_root", "source_head", "session_id", "origin", "state")),
             "incomplete prewrite record", "prewrite-record")
+    require(record["state"] in ("requested", "ready", "creating", "created", "uncertain", "confirmed")
+            and record["origin"] in ("workflow", "intercepted")
+            and isinstance(record.get("created"), (float, int))
+            and isinstance(record.get("source_branch"), str), "invalid request state", "prewrite-record")
+    if record["origin"] == "workflow" or record["state"] != "requested":
+        require(record.get("mode") in ("new", "existing")
+                and all(isinstance(record.get(key), str) and bool(record[key]) for key in ("kind", "label")),
+                "incomplete unit/mode binding", "prewrite-record")
+        unit(record["kind"], record["label"])
+    if record["state"] != "requested":
+        require(all(isinstance(record.get(key), str) and bool(record[key])
+                    for key in ("worktree", "branch", "base")), "incomplete target binding", "prewrite-record")
+        require(record["mode"] != "existing" or isinstance(record.get("existing_session"), dict),
+                "missing existing session receipt", "prewrite-record")
     require(record.get("request_id") == request and record.get("primary") == str(info["primary"])
             and record.get("common") == str(info["common"]), "request repository conflict", "prewrite-request")
     if fresh:
         require(isinstance(record.get("created"), (float, int)) and 0 <= time.time() - record["created"] < TTL,
                 "stale request; preserve and inspect instead of recreating", "prewrite-stale")
     return record
+
+
+def records(directory, info, budget):
+    for count, path in enumerate(directory.glob("*.json")):
+        budget.remaining()
+        require(count < 1024, "request inventory is full; preserve and reconcile before new entry", "prewrite-capacity")
+        yield load(directory, path.stem, info, fresh=False)
 
 
 def identity(session=None, agent=None, *, observed=False):
@@ -201,6 +225,7 @@ def identity(session=None, agent=None, *, observed=False):
             "unsupported: no correlated Claude session identity", "prewrite-identity")
     require(agent is None or isinstance(agent, str) and bool(agent) and len(agent) <= 256,
             "invalid optional agent identity", "prewrite-identity")
+    require(not any(ord(char) < 32 for char in session + (agent or "")), "invalid identity characters", "prewrite-identity")
     require(observed or environment, "unsupported: CLAUDE_CODE_SESSION_ID correlation is unavailable", "prewrite-identity")
     return session, agent
 
@@ -258,6 +283,7 @@ def new_record(info, session, agent, origin, request=None):
     return {"request_id": request or uuid.uuid4().hex, "created": time.time(),
             "primary": str(info["primary"]), "common": str(info["common"]),
             "source_root": str(info["root"]), "source_head": info["head"],
+            "source_branch": info["branch"],
             "session_id": session, "agent_id": agent, "origin": origin, "state": "requested"}
 
 
@@ -302,7 +328,8 @@ def begin(workspace, request, kind, label, mode, session=None, agent=None):
     with locked(info, budget) as directory:
         record = load(directory, request, info)
         correlate(record, session, agent)
-        require(str(info["root"]) == record["source_root"] and info["head"] == record["source_head"],
+        require(str(info["root"]) == record["source_root"] and info["head"] == record["source_head"]
+                and info["branch"] == record["source_branch"],
                 "source root/base changed since request", "prewrite-drift")
         if record.get("kind"):
             require((record["kind"], record["label"], record["mode"]) == (kind, label, mode),
@@ -318,9 +345,7 @@ def begin(workspace, request, kind, label, mode, session=None, agent=None):
             record.update(worktree=existing["worktree"], branch=existing["branch"], base=existing["base"],
                           existing_session=existing, state="ready")
         else:
-            for path in directory.glob("*.json"):
-                budget.remaining()
-                other = load(directory, path.stem, info, fresh=False)
+            for other in records(directory, info, budget):
                 require(other["request_id"] == request or other.get("kind") != kind or other.get("label") != label,
                         "another native request owns this unit; inspect existing request", "prewrite-conflict")
             name = "wf-entry-" + request
@@ -348,6 +373,8 @@ def validate_created(record, info, budget):
     require(budget.git(path, "symbolic-ref", "--short", "HEAD") == record["branch"]
             and budget.git(path, "merge-base", record["base"], "HEAD") == record["base"],
             "native branch/base drift", "prewrite-drift")
+    require(record["state"] == "confirmed" or budget.git(path, "rev-parse", "HEAD") == record["base"],
+            "new native HEAD advanced before first Git confirmation", "prewrite-drift")
     return path
 
 
@@ -374,19 +401,25 @@ def confirm(workspace, request, session=None, agent=None):
 
 def mutation(payload):
     tool = payload.get("tool_name")
+    require(isinstance(tool, str), "invalid captured tool name", "bad-mutation")
     if tool in READ_TOOLS:
         return []
     data = payload.get("tool_input")
     if tool == "apply_patch":
+        if isinstance(data, dict):
+            require(not ("command" in data and "patch" in data) or data["command"] == data["patch"],
+                    "conflicting native patch inputs", "bad-mutation")
         patch = data if isinstance(data, str) else data.get("command", data.get("patch")) if isinstance(data, dict) else None
         require(isinstance(patch, str), "missing native patch", "bad-mutation")
         lines = patch.replace("\r\n", "\n").strip().splitlines()
         require(lines and lines[0] == "*** Begin Patch" and lines[-1] == "*** End Patch", "malformed patch", "bad-mutation")
-        paths, current = [], None
+        paths, current, changed = [], None, False
         for line in lines[1:-1]:
             header = re.fullmatch(r"\*\*\* (Add|Update|Delete) File: (.+)", line)
             if header:
+                require(current != "update" or changed, "Update has no changes", "bad-mutation")
                 current = header[1].lower()
+                changed = False
                 paths.append((current, header[2]))
             elif line.startswith("*** Move to: "):
                 require(current == "update", "Move requires an Update source", "bad-mutation")
@@ -396,12 +429,25 @@ def mutation(payload):
             else:
                 require(current is not None and (line.startswith(("+", "-", " ", "@@")) or line == "*** End of File"),
                         "unrecognized patch framing", "bad-mutation")
+                require(current != "delete" and (current != "add" or line.startswith("+")),
+                        "invalid Add/Delete patch body", "bad-mutation")
+                changed = changed or line.startswith(("+", "-"))
+        require(current != "update" or changed, "Update has no changes", "bad-mutation")
         require(paths, "empty mutation", "bad-mutation")
         return paths
     require(isinstance(data, dict), "missing mutation input", "bad-mutation")
     require(tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"), "unknown captured mutation", "bad-mutation")
     if tool == "MultiEdit":
         require(isinstance(data.get("edits"), list) and data["edits"], "empty MultiEdit", "bad-mutation")
+        require(all(isinstance(edit, dict) and isinstance(edit.get("old_string"), str)
+                    and isinstance(edit.get("new_string"), str)
+                    and edit.get("file_path", data.get("file_path")) == data.get("file_path")
+                    for edit in data["edits"]), "invalid MultiEdit target/body", "bad-mutation")
+    elif tool == "Write":
+        require(isinstance(data.get("content"), str), "invalid Write body", "bad-mutation")
+    elif tool == "Edit":
+        require(isinstance(data.get("old_string"), str) and isinstance(data.get("new_string"), str),
+                "invalid Edit body", "bad-mutation")
     return [("update", data.get("notebook_path") if tool == "NotebookEdit" else data.get("file_path"))]
 
 
@@ -459,8 +505,10 @@ def source_decision(payload, host):
             require(host == "claude", "native unit requires its Claude caller", "prewrite-identity")
             session, agent = identity(payload.get("session_id"), payload.get("agent_id"), observed=True)
             with locked(info, budget) as directory:
-                record = load(directory, info["branch"][len("worktree-wf_"):], info)
+                record = load(directory, info["branch"][len("worktree-wf_"):], info, fresh=False)
                 correlate(record, session, agent)
+                require((record.get("agent_id") or record.get("native_agent_id")) == agent,
+                        "source event lacks the native unit's observed actor", "prewrite-identity")
                 require(record.get("state") == "confirmed", "native Git confirmation is still pending", "prewrite-pending")
                 validate_created(record, info, budget)
                 require(payload.get("tool_use_id") != record.get("tool_use_id"), "cancelled original call must not be replayed", "prewrite-replay")
@@ -480,13 +528,29 @@ def source_decision(payload, host):
             record = load(directory, request, info)
             require(record.get("mutation_digest") == digest, "changed mutation under old request identity", "prewrite-replay")
         else:
-            record = new_record(info, session, agent, "intercepted", request)
-            record.update(tool_use_id=use, mutation_digest=digest)
-            atomic(path, record)
+            previous = next((item for item in records(directory, info, budget)
+                             if item["session_id"] == session and item.get("agent_id") == agent), None)
+            if previous:
+                require(previous["origin"] == "intercepted" and previous.get("mutation_digest") == digest
+                        and previous["source_root"] == str(info["root"])
+                        and previous["source_head"] == info["head"]
+                        and previous["source_branch"] == info["branch"],
+                        "this caller already has an entry request; inspect it or use an explicit known workflow unit", "prewrite-conflict")
+                record = load(directory, previous["request_id"], info)
+                request = record["request_id"]
+            else:
+                record = new_record(info, session, agent, "intercepted", request)
+                record.update(tool_use_id=use, mutation_digest=digest)
+                atomic(path, record)
     namespace = Path(__file__).resolve().parents[2].name
+    if record["state"] in ("creating", "created", "uncertain", "confirmed"):
+        return deny("Original edit cancelled; native request " + request + " is " + record["state"]
+                    + ". Inspect same-agent native state, journal and default context via " + namespace
+                    + "/references/same-agent-worktree.md. Do not repeat EnterWorktree, create another tree or replay the old edit.")
     return deny("Original source edit cancelled; no worktree precreated. Same existing agent: read " + namespace
                 + "/references/same-agent-worktree.md; positively gate your actual EnterWorktree tool/schema, role, policy and trusted creation hook. Then prewrite.begin "
-                + request + " quick native-" + request[:8] + " --mode new. Source " + str(info["root"])
+                + request + " " + record.get("kind", "quick") + " " + record.get("label", "native-" + request[:8])
+                + " --mode " + record.get("mode", "new") + ". Source " + str(info["root"])
                 + " at " + record["source_head"] + ". Never retry/replay this pending edit; native entry and fresh reads must precede a rebuilt edit.")
 
 
@@ -497,7 +561,7 @@ def native_create(payload):
             and isinstance(payload.get("cwd"), str) and Path(payload["cwd"]).resolve() == Path.cwd().resolve(),
             "native creation event/default cwd conflict", "prewrite-root")
     name = payload.get("name", "")
-    require(name.startswith("wf-entry-"), "not a reserved native creation", "prewrite-request")
+    require(isinstance(name, str) and name.startswith("wf-entry-"), "not a reserved native creation", "prewrite-request")
     session, agent = identity(payload.get("session_id"), payload.get("agent_id"), observed=True)
     request = name[len("wf-entry-"):]
     with locked(info, budget) as directory:
@@ -505,7 +569,8 @@ def native_create(payload):
         correlate(record, session, agent)
         require(record.get("state") == "ready" and record.get("mode") == "new"
                 and record.get("creation_name") == name, "native creation is not fresh/ready; inspect instead of reusing its name", "prewrite-pending")
-        require(str(info["root"]) == record["source_root"] and info["head"] == record["source_head"],
+        require(str(info["root"]) == record["source_root"] and info["head"] == record["source_head"]
+                and info["branch"] == record["source_branch"],
                 "native source/base drift", "prewrite-drift")
         path = target_path(record["worktree"], info["primary"])
         require(path == destination(info, request, budget) and record["branch"] == "worktree-wf_" + request
@@ -578,6 +643,6 @@ def main(argv=None):
         else:
             raise VerbError("unknown prewrite adapter", "bad-adapter")
         return 0
-    except (VerbError, ValueError, OSError) as exc:
+    except (VerbError, ValueError, OSError, RecursionError) as exc:
         print("source-prewrite: " + str(exc), file=sys.stderr)
         return 2

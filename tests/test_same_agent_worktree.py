@@ -77,6 +77,10 @@ class SimulatedClaude:
     def enter(self, target, *, bind=True, complete=True, approved=True):
         mode = target["mode"]
         self.gate(mode)
+        if mode == "existing" and not self.eligible:
+            permitted = self.project_dir / ".claude/worktrees"
+            if not Path(target["worktree"]).resolve().is_relative_to(permitted):
+                raise SimulatedRefusal("pinned/already-worktree native path is outside its permitted root")
         if mode == "existing" and not approved:
             raise SimulatedRefusal("existing outside path requires native approval")
         # Existing sessions accumulate commits beyond their immutable fork
@@ -329,6 +333,12 @@ class NativeRouteTests(unittest.TestCase):
         self.assertEqual([(self.host.actor, "EnterWorktree", {"name": target["creation_name"]})], self.host.events)
         with self.assertRaises(SimulatedRefusal):
             self.host.prove_defaults(target, actor=("SIMULATED-session", "replacement-child"))
+        for field in ("loaded_root", "writable_root"):
+            actual = getattr(self.host, field)
+            setattr(self.host, field, self.directory)
+            with self.assertRaises(SimulatedRefusal):
+                self.host.prove_defaults(target)
+            setattr(self.host, field, actual)
         self.assert_confirm(request, target)
         self.assertEqual(b"committed source\n", self.host.read("source.txt"))
         self.assertFalse((self.host.cwd / "untracked.txt").exists())
@@ -513,6 +523,10 @@ class NativeRouteTests(unittest.TestCase):
                 self.assertEqual(advanced_head, self.git("rev-parse", "HEAD", cwd=session_root).strip())
                 self.assertFalse(existing.get("creation_name"), "ordinary sessions need no creation identity")
                 self.assertEqual(snapshot[0], self.inventory()[0])
+                self.host.eligible = False
+                with self.assertRaisesRegex(SimulatedRefusal, "permitted root"):
+                    self.host.enter(existing)
+                self.host.eligible = True
                 with self.assertRaisesRegex(SimulatedRefusal, "approval"):
                     self.host.enter(existing, approved=False)
                 self.assertEqual([], self.host.events)
