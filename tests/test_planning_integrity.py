@@ -284,6 +284,44 @@ class IntegrityTests(unittest.TestCase):
         self.assertIn('inspection', result.stderr)
         self.assertNotIn('Traceback', result.stderr)
 
+    def test_review_cr02_shell_diagnostics_and_unsupported_inline_shapes(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        for command in ['bash --version', 'sh --help', 'cmd /?', 'powershell -Help']:
+            with self.subTest(diagnostic=command):
+                self.assertEqual(self.hook(command).returncode, 0)
+        for command in ['bash -lc', 'powershell -Command "git commit -m fixture" extra',
+                        'cmd /c "git commit -m fixture" extra']:
+            with self.subTest(unsupported=command):
+                result = self.hook(command)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+
+    def test_review_cr03_working_duplicate_and_lenient_historical_reader_control(self):
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.git('commit', '-qm', 'valid tracked fixture')
+        self.head = self.git('rev-parse', 'HEAD')
+        duplicate = VALID.replace('wave: 1', 'wave: -2\nwave: 1')
+        self.write(RECORD, duplicate)
+        self.assertEqual(self.hook('git commit -m fixture').returncode, 0)
+        denied = self.hook('git commit --only -m fixture -- ' + RECORD)
+        self.assertEqual(denied.returncode, 2, denied.stderr)
+        self.assertIn('wave', denied.stderr)
+        sys.path.insert(0, str(ROOT / '.ai/runtime'))
+        from lib.text import split_frontmatter
+        self.assertEqual(split_frontmatter(duplicate)[0]['wave'], 1,
+                         'the broad historical/warn-only reader must remain unchanged')
+
+    def test_review_cr04_runtime_malformed_collection_returns_structured_error(self):
+        self.write(RECORD, VALID.replace('issue_refs: []', 'requirements-completed: 7\nissue_refs: []'))
+        result, data = self.runtime('commit', 'typed fixture', '--files', RECORD)
+        self.assertEqual(result.returncode, 1, data)
+        self.assertEqual(data['code'], 'planning-integrity')
+        self.assertIn('requirements-completed', data['error'])
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.head)
+
     def test_runtime_rejects_missing_issue_refs_before_commit(self):
         self.write(RECORD, INVALID)
         result, data = self.runtime('commit', 'fixture', '--files', RECORD)

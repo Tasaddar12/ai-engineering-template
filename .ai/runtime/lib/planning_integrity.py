@@ -8,6 +8,8 @@ import subprocess
 from collections import Counter
 from pathlib import Path, PurePosixPath
 
+import yaml
+
 from . import phase_issues, phases
 from .paths import read_text
 from .results import VerbError, require
@@ -42,17 +44,43 @@ def record_kind(path):
     return None
 
 
+class IntegrityLoader(yaml.SafeLoader):
+    """Strict only at the current-record boundary; historical readers stay lenient."""
+
+    def construct_mapping(self, node, deep=False):
+        if not isinstance(node, yaml.MappingNode):
+            return super().construct_mapping(node, deep=deep)
+        self.flatten_mapping(node)
+        mapping = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            try:
+                duplicate = key in mapping
+            except TypeError:
+                raise yaml.constructor.ConstructorError(
+                    'while reading frontmatter', node.start_mark,
+                    'mapping key must be hashable', key_node.start_mark) from None
+            if duplicate:
+                raise yaml.constructor.ConstructorError(
+                    'while reading frontmatter', node.start_mark,
+                    'duplicate key: ' + repr(key), key_node.start_mark)
+            mapping[key] = self.construct_object(value_node, deep=deep)
+        return mapping
+
+
 def validate_record(path, content):
     kind = record_kind(path)
     if not kind:
         return None
     def need(condition, key, message):
         require(condition, str(path) + ': ' + key + ': ' + message, CODE)
-    need(FRONTMATTER.match(content) is not None, 'frontmatter', 'required YAML mapping is missing or unterminated')
+    block = FRONTMATTER.match(content)
+    need(block is not None, 'frontmatter', 'required YAML mapping is missing or unterminated')
     try:
-        data, _ = split_frontmatter(content)
-    except VerbError as exc:
+        data = yaml.load(block[1], Loader=IntegrityLoader)
+    except yaml.YAMLError as exc:
         raise VerbError(str(path) + ': frontmatter: ' + str(exc), CODE) from None
+    need(isinstance(data, dict), 'frontmatter', 'must be a YAML mapping')
     for key, expected in REQUIRED[kind].items():
         need(key in data, key, 'required field is missing')
         value = data[key]
@@ -62,6 +90,7 @@ def validate_record(path, content):
             need(bool(value.strip()), key, 'must be nonempty')
     for key in ('depends_on', 'files_modified', 'requirements', 'requirements-completed', 'acceptance', 'documentation'):
         if key in data:
+            need(isinstance(data[key], list), key, 'must be a list')
             need(all(isinstance(item, str) and item.strip() for item in data[key]), key, 'entries must be nonempty strings')
     if kind == 'PLAN':
         need(data['wave'] > 0, 'wave', 'must be a positive integer')

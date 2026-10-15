@@ -199,7 +199,11 @@ The runtime `commit` verb validates the full actual index after staging its
 requested files and before Git creates a commit. Newly added or modified active
 `.planning/phases/<number>-<name>/NN-CONTEXT.md`, `NN-MM-PLAN.md` and
 `NN-MM-SUMMARY.md` records must have valid YAML mappings, required fields and
-field types. Directory and filename numbers use the existing phase conventions.
+field types. Duplicate mapping keys at any depth are rejected with record/key
+evidence; a later duplicate cannot erase an issue declaration or replace an
+invalid value. This strict loader is local to the current-record boundary; the
+broad historical/warn-only frontmatter reader is unchanged. Directory and
+filename numbers use the existing phase conventions.
 Deleted records are not parsed. Unchanged legacy records, archives, maintenance
 records, source templates and unrelated Markdown are outside this commit gate;
 there is no historical migration sweep or skeleton rewrite.
@@ -219,6 +223,10 @@ never stages or resets the real index. A relevant working record with a custom
 clean filter, unsupported interactive/pathspec-file commit forms or ambiguous
 shell mutations is refused with actionable stderr; stage separately and use a
 plain commit. CRLF normalization alone does not alter metadata meaning.
+
+Malformed inspected metadata containers return an explicit schema diagnostic.
+Unexpected native inspection errors also deny with exit 2 and actionable stderr,
+rather than becoming a hook crash that a host might treat as nonblocking.
 
 Native checker payloads carry top-level `tool_name`, `cwd` and
 `tool_input.command` / `tool_input.cmd`; `shell` command argv lists and legacy

@@ -28,30 +28,71 @@ def tokens(command, grammar):
     return list(lexer)
 
 
-def segments(command, grammar):
-    values = tokens(command, grammar)
-    if grammar == 'bash' and values[:2] not in (['command', '-v'], ['command', '-V']):
-        while values and values[0] in ('command', 'env', 'exec', 'time', '!'):
-            values = values[1:]
-            if values and values[0] == '--':
+def outer_commands(command, grammar):
+    """Split only unquoted outer operators, retaining each command's raw text."""
+    if grammar == 'bash':
+        command = command.replace('\\\r\n', '').replace('\\\n', '')
+    escape = '\\' if grammar == 'bash' else ('`' if grammar == 'powershell' else '^')
+    result, start, index, quote = [], 0, 0, None
+    while index < len(command):
+        char = command[index]
+        if char == escape and quote != "'":
+            index += 2
+            continue
+        if quote:
+            if char == quote:
+                if grammar != 'bash' and index + 1 < len(command) and command[index + 1] == quote:
+                    index += 2
+                    continue
+                quote = None
+        elif char in ("'", '"'):
+            quote = char
+        elif char in ';&|\r\n':
+            if command[start:index].strip():
+                result.append(command[start:index])
+            start = index + 1
+        index += 1
+    if quote:
+        raise ValueError('Unterminated shell quote; cannot inspect prospective commit')
+    if command[start:].strip():
+        result.append(command[start:])
+    return result
+
+
+def segments(command, grammar, depth=0):
+    if depth > 32:
+        raise ValueError('Shell wrapper nesting exceeds the supported inspection boundary')
+    result = []
+    # Outer segmentation precedes wrapper unwrapping: trailing/leading commands
+    # are never joined into a wrapper's actual -c script argument.
+    for part in outer_commands(command, grammar):
+        values = tokens(part, grammar)
+        if grammar == 'bash' and values[:2] not in (['command', '-v'], ['command', '-V']):
+            while values and values[0] in ('command', 'env', 'exec', 'time', '!'):
                 values = values[1:]
-    if values and Path(values[0]).name.lower().removesuffix('.exe') in ('bash', 'sh', 'powershell', 'pwsh', 'cmd'):
-        for index, value in enumerate(values[1:], 1):
-            if value.lower() in ('-c', '-lc', '-command', '/c'):
-                remaining = values[index + 1:]
-                wrapper = Path(values[0]).name.lower().removesuffix('.exe')
-                nested = 'bash' if wrapper in ('bash', 'sh') else ('cmd' if wrapper == 'cmd' else 'powershell')
-                return segments(remaining[0] if len(remaining) == 1 else shlex.join(remaining), nested)
-    result, current = [], []
-    for value in values:
-        if value in ('&&', ';', '||', '|', '&'):
-            if current:
-                result.append((grammar, current))
-            current = []
+                if values and values[0] == '--':
+                    values = values[1:]
+        if not values:
+            continue
+        wrapper = Path(values[0]).name.lower().removesuffix('.exe')
+        if wrapper in ('bash', 'sh', 'powershell', 'pwsh', 'cmd'):
+            if len(values) == 2 and values[1].lower() in ('--version', '--help', '-version', '-help', '-h', '/?'):
+                continue  # These diagnostic invocations have no inline script.
+            switches = ('/c',) if wrapper == 'cmd' else (('-command', '-c') if wrapper in ('powershell', 'pwsh') else ('-c', '-lc', '-cl'))
+            selected = next((i for i, value in enumerate(values[1:], 1) if value.lower() in switches), None)
+            if selected is None:
+                if any('commit' in value for value in values):
+                    raise ValueError('Unsupported inline shell wrapper; use one explicit -c/-Command script argument')
+                result.append((grammar, values))
+                continue
+            if selected + 1 >= len(values):
+                raise ValueError('Missing inline shell script; cannot inspect prospective commit')
+            if wrapper not in ('bash', 'sh') and selected + 2 != len(values):
+                raise ValueError('Unsupported inline shell wrapper arguments; quote one complete script')
+            nested = 'bash' if wrapper in ('bash', 'sh') else ('cmd' if wrapper == 'cmd' else 'powershell')
+            result.extend(segments(values[selected + 1], nested, depth + 1))
         else:
-            current.append(value)
-    if current:
-        result.append((grammar, current))
+            result.append((grammar, values))
     return result
 
 
@@ -88,24 +129,43 @@ def changed_worktree(cwd, globals_, pathspec=(), tracked=False):
 
 def commit_options(args):
     paths, mode, index = [], 'index', 0
-    takes_value = {'-m', '--message', '-F', '--file', '-C', '--reuse-message', '-c', '--reedit-message',
-                   '--author', '--date', '--cleanup', '--trailer', '--fixup', '--squash', '--pathspec-from-file'}
+    takes_value = {'--message', '--file', '--reuse-message', '--reedit-message',
+                   '--author', '--date', '--cleanup', '--trailer', '--fixup', '--squash'}
     unsupported = False
     while index < len(args):
         value = args[index]
         if value == '--':
             paths.extend(args[index + 1:])
             break
-        if value in ('--only', '-o'):
+        if value == '--only':
             mode = 'only'
-        elif value in ('--all', '-a') or (re.fullmatch(r'-[a-zA-Z]+', value) and 'a' in re.split('[mFCcS]', value[1:], maxsplit=1)[0] and value not in takes_value):
+        elif value == '--all':
             mode = 'all'
-        elif value in ('--include', '-i', '--interactive', '--patch', '-p') or value.startswith('--pathspec-'):
+        elif value in ('--include', '--interactive', '--patch') or value.startswith('--pathspec-'):
             unsupported = True
         elif value in takes_value:
             index += 1
-        elif value.startswith('-'):
-            pass
+            unsupported = unsupported or index >= len(args)
+        elif value.startswith('--'):
+            pass  # Attached long-option values remain inside their option token.
+        elif value.startswith('-') and len(value) > 1:
+            # Scan flags only until the first argument-consuming option. Its
+            # remaining characters are an attached argument, including digits,
+            # spaces, punctuation and letters that happen to name other flags.
+            for offset, flag in enumerate(value[1:], 1):
+                if flag == 'a':
+                    mode = 'all'
+                elif flag == 'o':
+                    mode = 'only'
+                elif flag in ('i', 'p'):
+                    unsupported = True
+                elif flag in ('m', 'F', 'C', 'c'):
+                    if offset + 1 == len(value):
+                        index += 1
+                        unsupported = unsupported or index >= len(args)
+                    break
+                elif flag == 'S':
+                    break  # Optional attached signing-key argument consumes the rest.
         else:
             paths.append(value)
         index += 1
@@ -220,6 +280,12 @@ def main():
         return 0
     except (VerbError, OSError, ValueError, UnicodeError) as exc:
         print('planning-integrity: ' + str(exc), file=sys.stderr)
+        return 2
+    except Exception as exc:
+        # Native hosts distinguish deliberate denial (2) from a hook crash (1).
+        # Never let an unexpected inspection defect silently allow a commit.
+        print('planning-integrity: inspection failed (' + type(exc).__name__
+              + '); commit denied. Use planning.integrity to diagnose the selected records.', file=sys.stderr)
         return 2
 
 
