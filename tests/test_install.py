@@ -159,7 +159,7 @@ class InstallerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="installer-target-")
         self.addCleanup(self.temporary.cleanup)
-        self.base = Path(self.temporary.name)
+        self.base = Path(self.temporary.name).resolve()
         self.target = self.base / "project with spaces"
 
     def install(self, *extra):
@@ -660,6 +660,124 @@ class InstallerTests(unittest.TestCase):
                 bash = str(git_bash)
         self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
         return [bash, "-c", handler["command"]]
+
+    def prewrite_fixture(self, host):
+        """Install real settings/assets and capture a committed, offline base."""
+        self.target = self.base / (host + " prewrite café nested project")
+        installed = self.install("--host", host)
+        self.assertEqual(0, installed.returncode, installed.stderr)
+        command("git", "config", "user.email", "prewrite@example.test", cwd=self.target)
+        command("git", "config", "user.name", "Prewrite Fixture", cwd=self.target)
+        (self.target / "source.txt").write_bytes(b"committed source\n")
+        command("git", "add", ".", cwd=self.target)
+        command("git", "commit", "-qm", "installed fixture", cwd=self.target)
+        setting = ".codex/config.toml" if host == "codex" else ".claude/settings.json"
+        groups = read_settings(self.target / setting)["hooks"]["PreToolUse"]
+        editing = [g for g in groups if "NotebookEdit" in g.get("matcher", "")]
+        self.assertEqual(1, len(editing))
+        nested = self.target / "nested cwd"
+        nested.mkdir()
+        return editing[0], nested
+
+    def prewrite_pipeline(self, host, group, cwd, payload, destination):
+        """Model synchronous native decisions, executing the fake edit only if allowed.
+
+        An ordinary hook error is deliberately failure-open, as documented by Codex.
+        A setup/launcher error is asserted separately and never counts as RED.
+        """
+        denied, results = False, []
+        environment = dict(os.environ, PYTHONIOENCODING="utf-8",
+                           PATH=str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"])
+        for handler in group["hooks"]:
+            result = subprocess.run(self.launcher_argv(host, handler), cwd=cwd, env=environment,
+                                    input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                    capture_output=True, timeout=40)
+            self.assertIn(result.returncode, (0, 2), result.stderr.decode("utf-8", "replace"))
+            results.append(result)
+            if result.returncode == 2:
+                denied = True
+            elif result.stdout.strip():
+                output = json.loads(result.stdout)
+                decision = output.get("hookSpecificOutput", {})
+                if decision.get("permissionDecision") == "deny":
+                    self.assertEqual("PreToolUse", decision.get("hookEventName"))
+                    self.assertTrue(decision.get("permissionDecisionReason"))
+                    self.assertEqual({"hookSpecificOutput"}, set(output))
+                    denied = True
+        if not denied:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b"FAKE PENDING MUTATION EXECUTED\n")
+        return denied, results
+
+    def test_prewrite_claude_first_source_prepares_and_cancels_pending_mutation(self):
+        group, cwd = self.prewrite_fixture("claude")
+        source = self.target / "source.txt"
+        original = source.read_bytes()
+        payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "session_id": "parent",
+                   "agent_id": "worker-one", "tool_use_id": "request-one", "tool_name": "Edit",
+                   "tool_input": {"file_path": str(source), "old_string": "source", "new_string": "edit"}}
+        denied, _ = self.prewrite_pipeline("claude", group, cwd, payload, source)
+        self.assertTrue(denied, "S1/H1: installed Claude editing pipeline allowed the original source mutation")
+        self.assertEqual(original, source.read_bytes())
+        listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+        self.assertEqual(2, sum(line.startswith("worktree ") for line in listed.splitlines()))
+
+    def test_prewrite_codex_shared_parent_cancels_without_guessing_unit(self):
+        group, cwd = self.prewrite_fixture("codex")
+        source = self.target / "source.txt"
+        original = source.read_bytes()
+        payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "session_id": "shared-parent",
+                   "tool_use_id": "request-one", "tool_name": "apply_patch",
+                   "tool_input": {"command": "*** Begin Patch\n*** Update File: "
+                                  + source.as_posix() + "\n@@\n-committed source\n+pending\n*** End Patch"}}
+        denied, _ = self.prewrite_pipeline("codex", group, cwd, payload, source)
+        self.assertTrue(denied, "S2/H1: installed Codex editing pipeline allowed an ambiguous shared-parent source mutation")
+        self.assertEqual(original, source.read_bytes())
+        listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+        self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()))
+
+    def test_prewrite_untracked_note_without_identity_warns_and_continues(self):
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                group, cwd = self.prewrite_fixture(host)
+                note = self.target / ".planning/scratchpads/nested/note.md"
+                payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
+                           "tool_input": {"file_path": str(note), "content": "note"}}
+                denied, results = self.prewrite_pipeline(host, group, cwd, payload, note)
+                self.assertFalse(denied)
+                self.assertIn(b"WARNING", results[0].stderr)
+                listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()))
+
+    def test_prewrite_external_temporary_note_without_identity_continues(self):
+        """CR-01: a plain task note outside every repo is not a source handoff."""
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                group, cwd = self.prewrite_fixture(host)
+                notes = self.base / (host + " temporary task notes")
+                notes.mkdir()
+                outside = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=notes,
+                                         capture_output=True)
+                self.assertNotEqual(0, outside.returncode, "fixture notes must be outside every repository")
+                note = notes / "draft-pr-body.md"
+                listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                state = self.target / ".git/ai-phase/prewrite"
+
+                def preparation_state():
+                    return {p.relative_to(state).as_posix(): p.read_bytes()
+                            for p in state.rglob("*") if p.is_file()} if state.exists() else {}
+
+                before = preparation_state()
+                for existing in (False, True):
+                    if existing:
+                        note.write_bytes(b"existing temporary task note\n")
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
+                               "tool_input": {"file_path": str(note), "content": "temporary PR body"}}
+                    denied, _ = self.prewrite_pipeline(host, group, cwd, payload, note)
+                    self.assertFalse(denied, "plain external temporary note must continue without identity")
+                    self.assertEqual(b"FAKE PENDING MUTATION EXECUTED\n", note.read_bytes())
+                    self.assertEqual(listed, command("git", "worktree", "list", "--porcelain", cwd=self.target))
+                    self.assertEqual(before, preparation_state())
 
     def test_registered_hooks_execute_from_installed_subdirectory(self):
         """Every managed hook resolves the project root from a nested directory."""
