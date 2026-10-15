@@ -283,12 +283,13 @@ be established — a git too old for worktrees, a worktree root that is not
 ignored — the verb **fails and execution stops** with the cause. It never
 degrades to a shared checkout.
 
-**Enforcement is not prose.** [worktree-guard.sh](hooks/worktree-guard.sh)
-refuses (exit 2) an `Agent`/`Task` dispatch of a write-capable subagent —
-`coder`, `doc-writer`, `debugger` — that arrives without `isolation="worktree"`,
-and warns on any edit or write from a checkout that is not a linked worktree.
-The instruction in the workflow tells you to isolate; the hook is what makes
-skipping it fail. A read-only agent has nothing to isolate and is not gated.
+[worktree-guard.sh](hooks/worktree-guard.sh) is advisory. It emits stderr warnings
+and exits 0 for write-capable `Agent`/`Task` dispatches without
+`isolation="worktree"`, primary-checkout edits (including scratchpads), and
+absolute paths into another checkout. Workflows still use isolated executors;
+allowed write-capable dispatches retain handoff tracking. Read-only agents and
+properly isolated calls remain quiet. Runtime creation failures, base checks,
+root pinning and integration safeguards retain their existing stop conditions.
 
 A wrong base is caught where it happens, not predicted beforehand: under
 `harness-worktree` each executor's spawn-time branch check compares its real
