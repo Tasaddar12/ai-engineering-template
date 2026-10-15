@@ -382,7 +382,7 @@ class RegisteredGuardTests(unittest.TestCase):
                     # uppercase context variables. Windows names fold case.
                     denied = os.name == "nt" or names[0] == "GIT_DIR"
                     self.source_verdict(prefix + " " + assignment + " git switch topic", denied, cwd=linked)
-        for command in ("env MODE=x git status", "env git_directory=literal git status",
+        for command in ("env MODE=x git status", "env gitdirectory=literal git status",
                         "echo 'env git_dir=elsewhere git switch topic'", "git status"):
             with self.subTest(control=command): self.source_verdict(command, False, cwd=linked)
 
@@ -455,6 +455,12 @@ class RegisteredGuardTests(unittest.TestCase):
             with self.subTest(control=command): self.source_verdict(command, False)
         for command in attacks:
             with self.subTest(command=command): self.source_verdict(command, True)
+        with self.subTest(powershell="active Path glob despite quotes"):
+            self.source_verdict("Remove-Item -Path '.workflow-*' -Recurse -Force", True,
+                                tool="exec_command", shell="powershell")
+        with self.subTest(powershell="LiteralPath wildcard data"):
+            self.source_verdict("Remove-Item -LiteralPath 'ordinary*.txt' -Force", False,
+                                tool="exec_command", shell="powershell")
 
 
 if __name__ == "__main__":

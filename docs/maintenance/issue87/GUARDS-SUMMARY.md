@@ -202,6 +202,15 @@ remains blocked until repaired and independently reviewed. Existing canonical
 risk 95 anchors I87-G-T1 (parser/context/paths) and I87-G-T2 (payload schema)
 remain authoritative; no new issue is requested.
 
+Independent matrix review accepted all five families and requested exactly two
+PowerShell Path/LiteralPath cases plus renaming the harmless `git_directory`
+variable to `gitdirectory` (the former belongs to conservative GIT_* scope on
+Windows). The adjusted matrix on unchanged production source exited 1, Ran 5
+tests in 11.642s, with 39 behavior assertion failures and zero skips. Quoted
+PowerShell `-Path '.workflow-*'` correctly refused already; the added
+`-LiteralPath 'ordinary*.txt'` control exposed a false positive. This RED commit
+precedes the approved coherent repair; no further authority pause is required.
+
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
 were used. No live GitLab/on-prem execution is claimed. Arbitrary enterprise
