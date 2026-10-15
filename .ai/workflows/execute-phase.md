@@ -285,10 +285,11 @@ is not gitignored. **Stop and report its message.** Do not continue unisolated,
 and do not look for a flag that lets you: `--sequential` still runs one plan at
 a time, but each plan is still isolated.
 
-This is enforced, not requested: `hooks/worktree-guard.sh` refuses an
-`Agent(...)` dispatch of `coder`, `doc-writer`, `debugger` or `targeted-fixer` that arrives
-without `isolation="worktree"`, and warns on any write from outside a worktree.
-A dispatch you forget to isolate will be blocked, not silently run.
+`hooks/worktree-guard.sh` warns on stderr and exits 0 when a write-capable
+`Agent(...)` or `Task(...)` dispatch lacks `isolation="worktree"`, or an edit
+lands in the primary checkout (including scratchpads) or another checkout.
+Continue to use the isolation model above; this advisory hook does not replace
+session creation, branch/base checks, root pinning or integration safeguards.
 
 Then clear any metadata a crashed earlier session left behind:
 

@@ -11,8 +11,8 @@ title: Advisory host hooks
 | Script | Event | Output |
 |---|---|---|
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
-| [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | **Blocks** (exit 2) a write-capable subagent dispatched without `isolation="worktree"` |
-| [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A `WARNING` when an edit lands outside a linked worktree |
+| [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
+| [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
 | [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY. Works on both hosts, from different inputs — see below |
 | [context-handoff.sh](context-handoff.sh) | `Stop` | Nothing; clears the session's debounce state |
@@ -20,20 +20,19 @@ title: Advisory host hooks
 | [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Creates `.worktrees/<name>` on branch `worktree-<name>` from the dispatching checkout's `HEAD`; prints the path |
 | [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Runs `git worktree remove` without `--force`; keeps the branch |
 
-`worktree-guard.sh` is the exception to the advisory rule below: worktree
-isolation is a hard requirement of this project, so its dispatch check emits a
-real permission decision. The workflow text asks the orchestrator to pass
-`isolation="worktree"`, but a prose instruction cannot enforce itself — a model
-under load skips it, and the executor then commits into the primary checkout
-unnoticed. Its write check only warns, because the orchestrator legitimately
-edits planning records in the primary checkout and a hook that cannot tell an
-orchestrator from a stray executor must not stop the user's work.
+`worktree-guard.sh` is advisory for both dispatches and editing tools. It warns
+and continues when a write-capable dispatch lacks `isolation="worktree"`, when a
+write targets the primary checkout (including planning records and scratchpads),
+or when an absolute path targets another checkout. Workflows still start source
+work in session worktrees and dispatch isolated executors. Allowed write-capable
+dispatches, including warned and qualified roles, retain handoff tracking.
 
 Codex registrations use `.codex/config.toml`; Claude uses `.claude/settings.json`.
 The Codex Windows launcher ends in `; exit $LASTEXITCODE` because PowerShell
-`-Command` does not otherwise propagate the script's exit status, which would
-discard a denial the hook had already decided. Three other details of that one
-line are each load-bearing, and each was a hook that silently did not run:
+`-Command` does not otherwise propagate the script's exit status. The advisory
+guard returns 0; launcher failures still need their actual status. Three other
+details of that one line are each load-bearing, and each was a hook that
+silently did not run:
 
 - **Git Bash is probed, not computed.** `git.exe` sits at `<root>/cmd/git.exe`
   in an installer-managed install but at `<root>/mingw64/bin/git.exe` in a
@@ -43,7 +42,7 @@ line are each load-bearing, and each was a hook that silently did not run:
   first bash that is really there. PATH is deliberately not a fallback: on
   Windows it commonly finds WSL's `bash.exe`, which cannot see the Windows
   checkout the hook is about to inspect. Finding none exits 1 -- an error worth
-  seeing, not a silent no-op and not a denial the hook never made.
+  seeing rather than a silent no-op.
 - **The repository path never crosses into PowerShell.** Capturing
   `git rev-parse` there and passing the result to bash mangles every non-ASCII
   component; a checkout under `projet café 日本語` reached bash as box-drawing
@@ -69,10 +68,11 @@ fallback. The script supports file fields and Codex `apply_patch`
 Add/Update/Delete/Move headers.
 
 `ai-tier-notice.sh` is advisory: it exits successfully and never emits a
-permission decision. `worktree-guard.sh` warns on writes and blocks only an
-unisolated write-capable dispatch. `context-handoff.sh` is advisory throughout:
-losing a handoff costs a re-read, blocking the agent costs the session. Neither parses arbitrary scripts, resolves
-every symlink, validates runtime ownership or creates a sandbox. Repository
+permission decision. `worktree-guard.sh` warns and exits 0 for both dispatch and
+write checks. `context-handoff.sh` is advisory throughout: losing a handoff costs
+a re-read, blocking the agent costs the session. These hooks do not parse
+arbitrary scripts, resolve every symlink, validate runtime ownership or create
+a sandbox. Repository
 instructions and host permissions still govern the work.
 
 Run the Bash suite and the installed-launcher test after hook changes:

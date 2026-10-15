@@ -10,8 +10,11 @@ per-plan dispatch checkouts a session's executors run in.
 **Work that touches source does not reach the base branch directly.** It happens
 in its own worktree, on its own branch, and lands by being merged from a pull
 request whose checks passed. There is no flag, no configuration and no recovery
-path around that, and [worktree-guard.sh](../hooks/worktree-guard.sh) blocks the
-attempt rather than warning about it.
+path around that workflow. [worktree-guard.sh](../hooks/worktree-guard.sh) warns
+on stderr and exits 0 for unisolated write-capable dispatches, primary-checkout
+writes (including scratchpads), and absolute paths into another checkout. Keep
+using session worktrees; runtime creation, base validation, worker root pinning,
+merge and cleanup safeguards retain their existing behavior.
 
 ## Scope
 

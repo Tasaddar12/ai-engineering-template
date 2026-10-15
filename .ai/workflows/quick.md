@@ -148,8 +148,9 @@ Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
 ```
 
 If the verb fails, **stop and report its message**. It means isolation could not
-be established, and continuing in the invoking checkout is the one outcome this
-project does not allow — the dispatch guard would block the write anyway.
+be established. Follow this stop condition even though `worktree-guard.sh`
+would only warn and continue on a primary-checkout write, including a scratchpad
+edit. The advisory hook does not replace successful session creation.
 </step>
 
 <step name="create_task">
