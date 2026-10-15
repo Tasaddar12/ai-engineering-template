@@ -26,6 +26,8 @@ SEPARATORS = frozenset((";", "&&", "||", "|", "\n"))
 class Segment:
     cwd: str
     argv: tuple[str, ...]
+    shell_dialect: str = "native"
+    glob_patterns: tuple[str | None, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -49,15 +51,39 @@ def canonical(path, cwd=None):
     return str((value if value.is_absolute() else Path(cwd or os.getcwd()) / value).resolve())
 
 
+def _shell_path(path, cwd, dialect):
+    """Translate modeled Windows Bash drive roots; never invent /usr or /tmp."""
+    if os.name == "nt" and dialect == "posix" and str(path).startswith("/"):
+        drive = re.fullmatch(r"/([A-Za-z])(?:/(.*))?", str(path))
+        if not drive:
+            raise ValueError("unsupported-posix-root")
+        path = drive[1] + ":/" + (drive[2] or "")
+    return canonical(path, cwd)
+
+
 def executable(value):
     return value.replace("\\", "/").rsplit("/", 1)[-1].lower().removesuffix(".exe")
 
 
+class _Literal(str):
+    """Private lexer word; public segments expose plain strings and metadata."""
+    def __new__(cls, value, pattern, active_glob):
+        word = super().__new__(cls, value)
+        word.glob_pattern = pattern if active_glob else None
+        return word
+
+
 def _tokens(command, posix=False):
     """Literal shell subset; Bash escapes are distinct from native backslashes."""
-    tokens, word = [], []
+    tokens, word, pattern = [], [], []
     quote_char = None
-    active = False
+    active, active_glob = False, False
+    def append(char, unquoted=False):
+        nonlocal active_glob
+        word.append(char)
+        pattern.append(char if unquoted else {"*": "[*]", "?": "[?]", "[": "[[]"}.get(char, char))
+        active_glob = active_glob or (unquoted and char in "*?[")
+
     index = 0
     while index < len(command):
         char = command[index]
@@ -71,9 +97,9 @@ def _tokens(command, posix=False):
             elif posix and char == "\\" and quote_char == '"' and index + 1 < len(command) and command[index + 1] in ('"', "\\", "$", "`", "\n"):
                 index += 1
                 if command[index] != "\n":
-                    word.append(command[index])
+                    append(command[index])
             else:
-                word.append(char)
+                append(char)
         elif char in ("'", '"'):
             quote_char, active = char, True
         elif posix and char == "\\":
@@ -81,7 +107,7 @@ def _tokens(command, posix=False):
                 raise ValueError("malformed-shell")
             index += 1
             if command[index] != "\n":
-                word.append(command[index])
+                append(command[index])
                 active = True
         elif char in "$`":
             raise ValueError("dynamic-shell")
@@ -89,8 +115,8 @@ def _tokens(command, posix=False):
             raise ValueError("unsupported-shell")
         elif char in ";|&\n":
             if active:
-                tokens.append("".join(word))
-                word, active = [], False
+                tokens.append(_Literal("".join(word), "".join(pattern), active_glob))
+                word, pattern, active, active_glob = [], [], False, False
             sep = char
             if char in "|&" and index + 1 < len(command) and command[index + 1] == char:
                 index += 1
@@ -100,17 +126,22 @@ def _tokens(command, posix=False):
             tokens.append((sep,))
         elif char.isspace():
             if active:
-                tokens.append("".join(word))
-                word, active = [], False
+                tokens.append(_Literal("".join(word), "".join(pattern), active_glob))
+                word, pattern, active, active_glob = [], [], False, False
         else:
-            word.append(char)
+            append(char, unquoted=True)
             active = True
         index += 1
     if quote_char:
         raise ValueError("malformed-shell")
     if active:
-        tokens.append("".join(word))
+        tokens.append(_Literal("".join(word), "".join(pattern), active_glob))
     return tokens
+
+
+def _segment(cwd, argv, dialect):
+    return Segment(cwd, tuple(str(a) for a in argv), dialect,
+                   tuple(getattr(a, "glob_pattern", None) for a in argv))
 
 
 def _literal_prefixes(argv):
@@ -124,6 +155,8 @@ def _literal_prefixes(argv):
         word = argv[cursor]
         if ASSIGNMENT.match(word):
             variable = word.split("=", 1)[0]
+            if os.name == "nt":
+                variable = variable.upper()
             if variable.startswith("GIT_") or variable in (
                     "PATH", "HOME", "XDG_CONFIG_HOME", "BASH_ENV", "ENV", "PWD", "CDPATH"):
                 raise ValueError("unsupported-git-context")
@@ -155,25 +188,32 @@ def command_segments(payload):
     try:
         if not isinstance(payload, dict) or not isinstance(payload.get("tool_input"), dict):
             raise ValueError("malformed-payload")
+        if not isinstance(payload.get("tool_name"), str) or not payload["tool_name"]:
+            raise ValueError("malformed-tool-name")
         data = payload["tool_input"]
         if "command" in data and "cmd" in data and data["command"] != data["cmd"]:
             raise ValueError("ambiguous-payload")
         command = data.get("command", data.get("cmd"))
         if not isinstance(command, str) or not command.strip():
             raise ValueError("malformed-payload")
+        shell = data.get("shell")
+        shell_name = executable(shell) if isinstance(shell, str) else ""
+        posix = (payload.get("tool_name") == "Bash" or shell_name in ("bash", "sh", "zsh", "dash")
+                 or (not shell_name and os.name != "nt"))
+        dialect = "cmd" if shell_name == "cmd" else "posix" if posix else "native"
+        # cmd's caret, percent and delayed expansion need a different grammar.
+        # Refuse them as data instead of incorrectly parsing a native argv.
+        if dialect == "cmd" and any(char in command for char in "^%!"):
+            raise ValueError("unsupported-cmd-syntax")
         cwd = canonical(payload.get("cwd") or os.getcwd())
         override = data.get("workdir", data.get("cwd"))
         if override is not None:
             if not isinstance(override, str):
                 raise ValueError("unknown-cwd")
-            cwd = canonical(override, cwd)
+            cwd = _shell_path(override, cwd, dialect)
         if not Path(cwd).is_dir():
             raise ValueError("unknown-cwd")
         result, argv, previous_separator = [], [], None
-        shell = data.get("shell")
-        shell_name = executable(shell) if isinstance(shell, str) else ""
-        posix = (payload.get("tool_name") == "Bash" or shell_name in ("bash", "sh", "zsh", "dash")
-                 or (not shell_name and os.name != "nt"))
         pieces = _tokens(command, posix=posix)
         while pieces and pieces[-1] in ((";",), ("\n",)):
             pieces.pop()
@@ -200,7 +240,7 @@ def command_segments(payload):
                 if (len(operands) != 1 or separator in ("||", "|") or
                         previous_separator in ("&&", "||", "|")):
                     raise ValueError("ambiguous-cwd")
-                cwd = canonical(operands[0], cwd)
+                cwd = _shell_path(operands[0], cwd, dialect)
                 if not Path(cwd).is_dir():
                     raise ValueError("unknown-cwd")
             else:
@@ -212,7 +252,7 @@ def command_segments(payload):
                             cursor += 1
                             if cursor >= len(argv):
                                 raise ValueError("unsupported-git-context")
-                            git_cwd = canonical(argv[cursor], git_cwd)
+                            git_cwd = _shell_path(argv[cursor], git_cwd, dialect)
                         else:
                             normalized.append(flag)
                             if flag in ("-c", "--git-dir", "--work-tree", "--namespace", "--config-env"):
@@ -222,9 +262,9 @@ def command_segments(payload):
                                 normalized.append(argv[cursor])
                         cursor += 1
                     # -C changes Git's cwd only, never later shell segments.
-                    result.append(Segment(git_cwd, tuple(normalized + argv[cursor:])))
+                    result.append(_segment(git_cwd, normalized + argv[cursor:], dialect))
                 else:
-                    result.append(Segment(cwd, tuple(argv)))
+                    result.append(_segment(cwd, argv, dialect))
             argv = []
             previous_separator = separator
         return CommandSegments(True, "literal-commands", tuple(result))
@@ -457,6 +497,18 @@ def _within(path, parent):
         return False
 
 
+def _glob_overlaps(pattern, protected):
+    """A glob can cover a protected ancestor, exact path or descendant.
+
+    Compare components, retaining quoted/escaped metacharacters as literals in
+    the lexer-provided fnmatch pattern. A benign sibling prefix is unrelated.
+    """
+    parts = Path(os.path.normcase(pattern)).parts
+    protected_parts = Path(os.path.normcase(protected)).parts
+    return all(fnmatch.fnmatchcase(target, candidate)
+               for candidate, target in zip(parts, protected_parts))
+
+
 def _git_argument_parts(args, value_longs=(), value_shorts=()):
     """Separate option names from operands/values without expanding shell data.
 
@@ -496,16 +548,19 @@ def _long_option(option, complete):
 
 
 def _backup_removal(segment, evidence):
-    operands = []
-    skip_option = False
-    for arg in segment.argv[1:]:
+    operands, patterns = [], []
+    skip_option, literal_paths = False, False
+    for index, arg in enumerate(segment.argv[1:], 1):
         if arg == "--":
             skip_option = True
         elif not skip_option and arg.startswith("-"):
             if arg.lower() not in ("-literalpath", "-path", "-recurse", "-force", "-r", "-f", "-rf", "-fr", "-recursive"):
                 return _deny("unsupported-removal", "backup-delete")
+            literal_paths = literal_paths or arg.lower() == "-literalpath"
         else:
             operands.append(arg)
+            patterns.append(segment.glob_patterns[index] if len(segment.glob_patterns) == len(segment.argv)
+                            else arg if any(char in arg for char in "*?[") else None)
     if not operands:
         return _deny("unresolved-removal", "backup-delete")
     # Filesystem identity is enough for backup protection. Ordinary removals
@@ -529,14 +584,20 @@ def _backup_removal(segment, evidence):
         except OSError:
             return _deny("repository-identity-unknown", "backup-delete")
         break
-    for operand in operands:
+    for operand, pattern in zip(operands, patterns):
         if "," in operand or operand.startswith("~"):
             return _deny("dynamic-removal", "backup-delete", operands)
-        target = canonical(operand, segment.cwd)
-        if any(char in operand for char in "*?["):
-            prefix = re.split(r"[*?\[]", target, maxsplit=1)[0]
-            parent = str(Path(prefix).parent)
-            if any(_within(root, parent) or fnmatch.fnmatch(root, target) for root in roots):
+        try:
+            target = _shell_path(operand, segment.cwd, segment.shell_dialect)
+            if segment.shell_dialect != "posix":
+                # PowerShell -Path expands wildcard characters even in quotes;
+                # -LiteralPath explicitly treats every such character as data.
+                pattern = None if literal_paths else operand if any(c in operand for c in "*?[") else None
+            pattern = _shell_path(pattern, segment.cwd, segment.shell_dialect) if pattern is not None else None
+        except ValueError as exc:
+            return _deny(str(exc), "backup-delete", operands)
+        if pattern is not None:
+            if any(_glob_overlaps(pattern, root) for root in roots):
                 return _deny("backup-approval-required", "backup-delete", operands)
         for root in roots:
             if _within(target, root) or _within(root, target):
@@ -547,7 +608,12 @@ def _backup_removal(segment, evidence):
 
 
 def evaluate_payload(payload, evidence_runner=None):
-    if isinstance(payload, dict) and payload.get("tool_name") and payload["tool_name"] not in SHELL_TOOLS:
+    if not isinstance(payload, dict):
+        return _deny("malformed-payload")
+    tool = payload.get("tool_name")
+    if not isinstance(tool, str) or not tool:
+        return _deny("malformed-tool-name")
+    if tool not in SHELL_TOOLS:
         return Decision(True, "unrelated-tool")
     parsed = command_segments(payload)
     if not parsed.supported:
@@ -614,7 +680,7 @@ def evaluate_payload(payload, evidence_runner=None):
                 if len(paths) != 1:
                     return _deny("unresolved-worktree", "worktree-delete", paths)
                 repo = evidence.repository(segment.cwd)
-                target = canonical(paths[0], segment.cwd)
+                target = _shell_path(paths[0], segment.cwd, segment.shell_dialect)
                 tree = next((t for t in repo["worktrees"] if t["path"] == target), None)
                 if not tree:
                     return _deny("target-unregistered", "worktree-delete", (target,))

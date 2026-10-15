@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: in_progress
+status: complete
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-RED]
-acceptance: [I87-A3]
+requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
+acceptance: [I87-A1, I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -210,6 +210,57 @@ tests in 11.642s, with 39 behavior assertion failures and zero skips. Quoted
 PowerShell `-Path '.workflow-*'` correctly refused already; the added
 `-LiteralPath 'ordinary*.txt'` control exposed a false positive. This RED commit
 precedes the approved coherent repair; no further authority pause is required.
+
+## Second coherent review repair
+
+RED commits `4914218afe6badf52546954463a5e404a192075c` and
+`034729b9fb7c5caef52be07bfc7434d973fd30c7` precede this repair. The independent
+matrix gate approved all five families and the final PowerShell additions
+before production source changed. Only the guard library and this summary
+changed after those test commits.
+
+Windows prohibited environment comparisons now normalize case at every prefix
+layer; POSIX variable names retain their case semantics. Explicit cmd shell
+selection refuses caret, percent and delayed-expansion syntax with
+`unsupported-cmd-syntax`; literal read commands and quoted echo text retain
+their declared allow behavior. No cmd expansion or command body is evaluated.
+
+Windows Bash path operands model `/c`/`/c/...` drive spelling (and corresponding
+other drive letters), sharing canonicalization across cwd overrides, cd, Git -C,
+worktree removal and filesystem removal. Unmodeled POSIX roots on Windows Bash
+refuse instead of being interpreted as invented native paths. Both actual
+available drives C and D were exercised in disposable fixture repositories;
+the Git -C tests require the exact primary-branch-switch reason, so unknown
+context cannot count as protection. Sibling paths remain allowed.
+
+Non-string/empty tool names are rejected before any hash-based membership test,
+and malformed payloads produce native denial JSON with exit 2. Lexing retains
+per-character quoted/escaped wildcard provenance. Component-wise glob overlap
+permits ordinary sibling globs and literal wildcard filenames while preserving
+backup-covering globs and paths inside backups. PowerShell `-Path` retains
+wildcard semantics even when quoted; `-LiteralPath` treats wildcard characters
+as literal data.
+
+The immutable Segment interface keeps canonical `.cwd` and plain literal
+`.argv` unchanged. Additive defaulted fields are `shell_dialect` (`native`) and
+aligned `glob_patterns` (empty tuple by default; each parsed argument has a
+pattern or None). This preserves existing two-argument construction while
+making shell/path and wildcard provenance available to downstream consumers.
+
+| Second repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 19 tests in 77.277s, zero skips; original attacks/precision/native/provider, first-review six families and second-review five families including approved controls all pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 27.315s, zero skips; actual both-host launchers plus advisory dispatch/scratchpad coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+Second repair source commit: the commit containing this section; its exact SHA
+is recorded in a following summary-only evidence update. Checks exercised the
+production bytes descending from `034729b`; no source changed after the passing
+run. All five findings are repaired with these tests; fresh independent review
+remains pending. Canonical 95 I87-G-T1/T2 remain the same risk identities. No
+installer, released test_install/hooks README, PR86 hook, provider adapter,
+adopting-project planning record, cleanup child, publication or merge changed.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
