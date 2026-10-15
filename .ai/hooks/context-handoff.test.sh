@@ -336,16 +336,35 @@ check "the guard records the dispatch" \
 contains "the guard captured the plan path" \
   "$(cat "$handoffs/.active-sess-guard.jsonl" 2>/dev/null)" "03-09-PLAN.md"
 
-# An unisolated dispatch is refused, and a refused dispatch never runs, so it
-# must not leave an active entry behind for a stop that will never come.
-blocked='{"hook_event_name":"PreToolUse","session_id":"sess-blockedguard","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"coder","prompt":"Execute .planning/phases/03-thing/03-10-PLAN.md now"}}'
-set +e
-( cd "$repo" && printf '%s' "$blocked" | bash "$guard" >/dev/null 2>&1 )
-status=$?
-set -e
-check "an unisolated dispatch is still blocked" "$status" "2"
-check "a blocked dispatch records nothing" \
-  "$([[ -f "$handoffs/.active-sess-blockedguard.jsonl" ]] && echo present || echo gone)" "gone"
+# Warned dispatches run and must be tracked once, including qualified roles.
+for tool in Agent Task; do
+  for agent in coder plugin:workflow:coder; do
+    session="warned-$tool-${agent//:/-}"
+    dispatch='{"hook_event_name":"PreToolUse","session_id":"'"$session"'","cwd":"'"$repo"'","tool_name":"'"$tool"'","tool_input":{"subagent_type":"'"$agent"'","prompt":"Execute .planning/phases/03-thing/03-10-PLAN.md now"}}'
+    set +e
+    out="$(cd "$repo" && printf '%s' "$dispatch" | bash "$guard" 2>&1)"
+    status=$?
+    set -e
+    check "a warned $tool $agent dispatch is allowed" "$status" "0"
+    contains "a warned dispatch gives guidance" "$out" 'isolation="worktree"'
+    active="$(cat "$handoffs/.active-$session.jsonl" 2>/dev/null || true)"
+    check "a warned dispatch records exactly once" "$(printf '%s' "$active" | grep -c '03-10-PLAN' || true)" "1"
+    contains "a warned dispatch records the normalized role" "$active" '"agent": "coder"'
+    contains "a warned dispatch preserves the plan" "$active" '.planning/phases/03-thing/03-10-PLAN.md'
+    run_hook "$(payload_for SubagentStop "$session" "$workspace/high.jsonl")" >/dev/null
+    record="$(cat "$handoffs/$session--03-10.json" 2>/dev/null || true)"
+    contains "a warned dispatch remains eligible for recovery" "$record" '"reason": "incomplete-exit"'
+    check "a warned dispatch is consumed once" \
+      "$([[ -f "$handoffs/.active-$session.jsonl" ]] && echo present || echo gone)" "gone"
+  done
+done
+
+# Qualified isolated dispatches use the same normalized recording path.
+dispatch='{"hook_event_name":"PreToolUse","session_id":"qualified-isolated","tool_name":"Agent","tool_input":{"subagent_type":"plugin:workflow:coder","isolation":"worktree","prompt":"Execute .planning/phases/03-thing/03-11-PLAN.md"}}'
+( cd "$repo" && printf '%s' "$dispatch" | bash "$guard" >/dev/null 2>&1 )
+active="$(cat "$handoffs/.active-qualified-isolated.jsonl" 2>/dev/null || true)"
+check "a qualified isolated dispatch records exactly once" "$(printf '%s' "$active" | grep -c '03-11-PLAN' || true)" "1"
+contains "a qualified isolated dispatch records its role" "$active" '"agent": "coder"'
 
 # A read-only agent needs no worktree and no handoff.
 readonly_dispatch='{"hook_event_name":"PreToolUse","session_id":"sess-ro","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"researcher","prompt":"Research .planning/phases/03-thing/03-11-PLAN.md"}}'

@@ -687,11 +687,8 @@ class InstallerTests(unittest.TestCase):
                 self.assertIn(b"NOTICE", observed.stdout)
                 self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
 
-            # The dispatch guard is the only managed hook that returns a
-            # permission decision, so proving it launches from the installed
-            # path matters more than for an advisory one: a registration that
-            # silently fails to run is an isolation requirement that is not
-            # enforced at all.
+            # The installed dispatch guard must preserve warning-and-continue
+            # behavior and actionable isolation guidance from nested directories.
             groups = settings["hooks"]["PreToolUse"]
             dispatch = [group for group in groups if "Agent" in group.get("matcher", "")]
             self.assertEqual(1, len(dispatch),
@@ -704,16 +701,20 @@ class InstallerTests(unittest.TestCase):
                 observed = subprocess.run(argv, cwd=cwd, env=environment,
                                           input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                                           capture_output=True)
-                self.assertEqual(2, observed.returncode,
-                                 "an unisolated coder dispatch must be blocked: "
+                self.assertEqual(0, observed.returncode,
+                                 "an unisolated coder dispatch must warn and continue: "
                                  + observed.stderr.decode("utf-8", "replace"))
-                self.assertIn(b"BLOCKED", observed.stderr)
+                self.assertIn(b"WARNING", observed.stderr)
+                self.assertIn(b'isolation="worktree"', observed.stderr)
+                self.assertEqual(b"", observed.stdout)
                 # Same registration, isolated dispatch: must get out of the way.
                 payload["tool_input"]["isolation"] = "worktree"
                 observed = subprocess.run(argv, cwd=cwd, env=environment,
                                           input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                                           capture_output=True)
                 self.assertEqual(0, observed.returncode, observed.stderr)
+                self.assertEqual(b"", observed.stdout)
+                self.assertEqual(b"", observed.stderr)
 
     def test_claude_worktrees_are_placed_by_the_project_hook(self):
         """Claude Code would put a subagent's checkout under .claude/worktrees/;
