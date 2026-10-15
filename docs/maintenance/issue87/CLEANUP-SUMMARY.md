@@ -30,7 +30,17 @@ valid RED observation. Production source remains unchanged at this slice.
 
 Fixtures are temporary Git repositories with offline GitHub/GitLab evidence.
 No actual project cleanup, install, push, publication or merge ran.
-Implementation and GREEN checks pending.
+RED commit: `c488678f5c75663b040cfd7e7aafa2f66a2f2921`.
+
+Interim GREEN (uncommitted implementation): full destructive-guard suite passed
+21 tests in 95.807s; actual registered installed-host hook test passed 1 test in
+25.942s; advisory guard passed 60 checks. No skips. A final boundary inspection
+found raw registered junction paths could be hidden by the parent's canonical
+listing. Added cleanup-only regression before repair:
+`python -m unittest discover -s tests -p test_destructive_guard.py -k raw_registered -v`
+exited 1, Ran 1 test in 1.160s, intended `EvidenceError not raised` assertion.
+This test uses a disposable actual Windows junction and does not modify parent
+grammar or ownership readers. Final repair/GREEN evidence pending.
 
 ## Threat Outcomes
 

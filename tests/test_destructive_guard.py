@@ -317,6 +317,7 @@ class CleanupTests(unittest.TestCase):
                     "head": {"ref": "phase-owned", "sha": oid, "repo": {"full_name": "owner/repo"}},
                     "base": {"repo": {"full_name": "owner/repo"}}}
             if self.case == "fork": item["head"]["repo"]["full_name"] = "fork/repo"
+            if self.case == "recordless": item.pop("number")
             obj = [[item]]
             if self.case == "mixed": obj[0].append(dict(item, state="open"))
             if self.case == "partial": obj = [[item] * 100]
@@ -327,6 +328,7 @@ class CleanupTests(unittest.TestCase):
             item = {"iid": 42, "state": "opened" if self.case == "open" else "merged" if self.case == "merged" else "closed",
                     "source_branch": "phase-owned", "sha": oid, "source_project_id": 7, "target_project_id": 7}
             if self.case == "fork": item["source_project_id"] = 8
+            if self.case == "recordless": item.pop("iid")
             obj = [item]
             if self.case == "mixed": obj.append(dict(item, state="opened"))
             if self.case == "partial": obj = {"partial": True}
@@ -369,7 +371,7 @@ class CleanupTests(unittest.TestCase):
         for provider in ("github", "gitlab"):
             self.provider = provider
             git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
-            for case in ("merged", "closed", "open", "offline", "fork", "partial", "missing", "mixed"):
+            for case in ("merged", "closed", "open", "offline", "fork", "partial", "missing", "mixed", "recordless"):
                 with self.subTest(provider=provider, case=case):
                     self.case = case
                     preview = self.preview()
@@ -471,3 +473,113 @@ class CleanupTests(unittest.TestCase):
         invalid = subprocess.run([sys.executable, str(hook), "cleanup-apply", "--repo", str(self.root)], capture_output=True)
         self.assertNotEqual(0, invalid.returncode)
 
+
+    def test_cleanup_apply_open_github_and_gitlab_stale_ownership_and_ref(self):
+        for provider in ("github", "gitlab"):
+            with self.subTest(provider=provider):
+                self.provider = provider
+                git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
+                self.case = "merged"
+                envelope = self.envelope()
+                self.case = "open"
+                self.assertEqual("refused", self.apply(envelope)["status"])
+                self.assertEqual([], self.mutations)
+        self.case = "merged"
+        envelope = self.envelope()
+        self.owner["session_id"] = "different-owner"
+        self.write_owner()
+        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.assertEqual([], self.mutations)
+        envelope = self.envelope()
+        (self.tree / "tracked").write_text("new tip\n", encoding="utf-8")
+        git(self.tree, "add", "tracked")
+        git(self.tree, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "new tip")
+        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.assertEqual([], self.mutations)
+
+    def test_cleanup_common_dir_lock_preserves_existing_lock(self):
+        envelope = self.envelope()
+        storage = self.root / ".git/ai-cleanup"
+        storage.mkdir()
+        lock = storage / "lock"
+        lock.write_text("other cleanup owns this", encoding="utf-8")
+        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.assertEqual("other cleanup owns this", lock.read_text(encoding="utf-8"))
+        self.assertEqual([], self.mutations)
+
+    def test_cleanup_revalidates_before_each_item_and_truthful_success_readback(self):
+        envelope = self.envelope()
+        def mutation(argv, cwd):
+            result = subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+            self.case = "open"
+            return result
+        result = self.apply(envelope, mutation)
+        self.assertEqual("partial", result["status"], result)
+        self.assertEqual(1, len(self.mutations))
+        self.assertEqual(1, len(result["removed"]))
+        self.assertTrue(result["final_state"][1]["exists"])
+        self.case = "merged"
+        # Fake success cannot fabricate branch removal.
+        result = self.apply(self.envelope(), lambda argv, cwd: subprocess.CompletedProcess(argv, 0, "", ""))
+        self.assertEqual("partial", result["status"], result)
+        self.assertEqual([], result["removed"])
+        self.assertTrue(result["final_state"][0]["exists"])
+
+    def test_cleanup_backup_approval_file_ancestor_and_junction_preserved(self):
+        backup = self.root / ".workflow-backups/owned"
+        backup.mkdir(parents=True)
+        (backup / "valuable").write_text("keep", encoding="utf-8")
+        self.owner["backups"] = [str(backup)]
+        self.write_owner()
+        envelope = self.envelope()
+        approval = backup / "approval.json"
+        approval.write_text(json.dumps(envelope), encoding="utf-8")
+        # Changed content is stale as well as approval-file ancestry unsafe.
+        result = self.policy.cleanup_apply(self.root, approval, evidence_runner=self.runner)
+        self.assertEqual("refused", result["status"])
+        self.assertTrue((backup / "valuable").exists())
+        approval.unlink()
+        outside = Path(self.temp.name) / "outside"
+        outside.mkdir()
+        (outside / "valuable").write_text("keep outside", encoding="utf-8")
+        link = backup / "alias"
+        if os.name == "nt":
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else:
+            link.symlink_to(outside, target_is_directory=True)
+        preview = self.preview()
+        self.assertFalse(any(op["kind"] == "backup_remove" for op in preview["operations"]), preview)
+        self.assertTrue(any("symlink" in row["reason"] for row in preview["preserved"]), preview)
+        # Remove only the temporary alias itself, never its referent.
+        if os.name == "nt": link.rmdir()
+        else: link.unlink()
+        self.assertTrue((outside / "valuable").exists())
+
+    def test_cleanup_detached_and_unrecorded_backups_are_preserved(self):
+        detached = Path(self.temp.name) / "detached"
+        git(self.root, "worktree", "add", "--detach", str(detached))
+        backup = self.root / ".workflow-backups/unrecorded"
+        backup.mkdir(parents=True)
+        (backup / "valuable").write_text("keep", encoding="utf-8")
+        preview = self.preview()
+        self.assertTrue(any(row["reason"] == "detached-worktree" for row in preview["preserved"]))
+        self.assertTrue(any(row["reason"] == "backup-unowned-or-ineligible" for row in preview["preserved"]))
+        self.assertFalse(any(op["kind"] == "backup_remove" for op in preview["operations"]))
+
+    def test_cleanup_raw_registered_junction_is_not_hidden_by_canonicalization(self):
+        physical = Path(self.temp.name) / "physical tree"
+        physical.mkdir()
+        alias = Path(self.temp.name) / "tree alias"
+        if os.name == "nt":
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(physical)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else:
+            alias.symlink_to(physical, target_is_directory=True)
+        try:
+            git(self.root, "worktree", "add", "-qb", "phase-alias", str(alias))
+            with self.assertRaises(self.policy.EvidenceError):
+                self.preview()
+        finally:
+            if os.name == "nt": alias.rmdir()
+            else: alias.unlink()
