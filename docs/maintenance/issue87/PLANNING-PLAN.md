@@ -182,7 +182,13 @@ The existing gitops.commit stages requested files and commits its current index.
 
 ## STRIDE Threat Register
 
-None newly identified in the inspected local planning commit and mutation scope. Existing issue 87 integrity defects are the acceptance being repaired; no authentication, secret, tenant or network boundary is added. Return any independently identified security risk to the coordinator for canonical tracking rather than inventing an issue URL.
+At preparation, none was newly identified in the inspected local planning commit and mutation scope. Independent implementation review subsequently identified the unplanned risk below; its standalone canonical issue was deduplicated and read back OPEN by the coordinator.
+
+| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
+|---|---|---|---|---|---|
+| I87-P-T1; https://github.com/Tasaddar12/ai-engineering-template/issues/96 | Tampering | prospective commit bytes and canonical metadata; review CR01-CR05 | medium | mitigate; proposed source locally verified, unmerged | Reject commit-option/wrapper bypasses, ambiguous literal keys and malformed containers; preserve valid YAML merge precedence; native/runtime RED/GREEN, installed registration, independent review and CI |
+
+Canonical key: `Tasaddar12/ai-engineering-template/planning-commit/prospective-bytes-and-canonical-metadata`. No live user-data corruption was observed. Final CI and cross-component evidence remain pending; this record grants no risk closure authority.
 </threat_model>
 
 <verification>

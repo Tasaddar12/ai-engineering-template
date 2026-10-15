@@ -64,4 +64,3 @@ python -m unittest discover -s tests -p test_install.py -k registered_hooks -v
 passed two tests in42.432s, exit0. This validates both actual installed pipelines
 at the assembly tree; corrected planning/guard parent synchronization and fresh
 applicable review still remain before final acceptance.
-

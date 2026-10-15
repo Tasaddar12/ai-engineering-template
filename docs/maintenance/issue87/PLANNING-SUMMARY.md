@@ -177,3 +177,15 @@ GREEN: merge-control matrix **6/6**; complete planning-integrity suite **47/47 i
 ---
 *Phase: issue87-maintenance / PLANNING*
 *Completed: 2026-10-15 (owned corrections; independent/installed/CI acceptance pending)*
+
+## Coordinator installed integration and review
+
+At integrated2eafa8be899ec941fe7dfc4766646f2bded89ae5, the exact command
+`python -m unittest discover -s tests -p test_install.py -k registered_hooks -v`
+passed two tests in45.809s, zero skips. This combines corrected planning2a7086b
+with the registered installer. Independent installer review cleared all four
+assigned paths (zero critical/warning; one trailing-blank INFO corrected here).
+Independent planning review cleared CR01-CR05; the CR05 reviewer independently
+ran six merge/duplicate controls successfully. Final corrected guard parent
+synchronization, cross-component review, required CI and PR-link audit remain
+pending. Issue96 remains OPEN, with no merge or closure authority inferred.
