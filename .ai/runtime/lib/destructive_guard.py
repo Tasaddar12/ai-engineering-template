@@ -509,6 +509,59 @@ def _glob_overlaps(pattern, protected):
                for candidate, target in zip(parts, protected_parts))
 
 
+def _resolved_glob_overlaps(pattern, protected):
+    """Resolve bounded read-only matches, including wildcard-selected aliases.
+
+    Unlike shell execution this only enumerates directory components. Errors,
+    recursive glob syntax or an exceeded inspection budget preserve the target.
+    Literal/quoted operands never enter this function.
+    """
+    parts = Path(pattern).parts
+    if not parts or len(parts) > 64 or "**" in parts:
+        raise EvidenceError("glob-evidence-unsupported")
+    candidates, inspected = [Path(parts[0])], 0
+    try:
+        for index, component in enumerate(parts[1:], 1):
+            following = []
+            magic = any(char in component for char in "*?[")
+            for parent in candidates:
+                if magic:
+                    children = []
+                    try:
+                        with os.scandir(parent) as entries:
+                            for entry in entries:
+                                inspected += 1
+                                if inspected > 8192:
+                                    raise EvidenceError("glob-evidence-budget")
+                                if fnmatch.fnmatchcase(os.path.normcase(entry.name), os.path.normcase(component)):
+                                    children.append(Path(entry.path))
+                    except (FileNotFoundError, NotADirectoryError):
+                        continue
+                else:
+                    children = [parent / component]
+                for child in children:
+                    inspected += 1
+                    if inspected > 8192:
+                        raise EvidenceError("glob-evidence-budget")
+                    try:
+                        child.lstat()
+                    except FileNotFoundError:
+                        if magic:
+                            raise EvidenceError("glob-evidence-changed")
+                        continue
+                    resolved = canonical(child)
+                    final = index == len(parts) - 1
+                    if any(_within(resolved, root) or (final and _within(root, resolved)) for root in protected):
+                        return True
+                    following.append(child)
+            candidates = following
+            if not candidates:
+                return False
+        return False
+    except (OSError, RuntimeError) as exc:
+        raise EvidenceError("glob-evidence-unknown") from exc
+
+
 def _git_argument_parts(args, value_longs=(), value_shorts=()):
     """Separate option names from operands/values without expanding shell data.
 
@@ -597,7 +650,7 @@ def _backup_removal(segment, evidence):
         except ValueError as exc:
             return _deny(str(exc), "backup-delete", operands)
         if pattern is not None:
-            if any(_glob_overlaps(pattern, root) for root in roots):
+            if any(_glob_overlaps(pattern, root) for root in roots) or _resolved_glob_overlaps(pattern, roots):
                 return _deny("backup-approval-required", "backup-delete", operands)
         for root in roots:
             if _within(target, root) or _within(root, target):

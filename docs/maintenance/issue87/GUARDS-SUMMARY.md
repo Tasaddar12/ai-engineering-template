@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: in_progress
+status: complete
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-RED]
-acceptance: [I87-A3]
+requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
+acceptance: [I87-A1, I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -281,6 +281,37 @@ behavior assertion failures: three Bash wildcard-ancestor forms and PowerShell
 attacks already refused; all quoted, LiteralPath and unrelated sibling controls
 passed. Zero skips or fixture/import errors. This RED is committed before the
 bounded read-only resolved-match repair.
+
+## Final bounded wildcard repair
+
+The repair retains literal/provenance parsing and the direct glob comparison.
+For active patterns it additionally enumerates path components read-only and
+canonicalizes each selected match, detecting a wildcard-selected junction or
+symlink that resolves into protected backups before following child components.
+Quoted Bash operands and PowerShell LiteralPath operands do not enter expansion;
+unrelated sibling matches remain allowed. Expansion never executes a submitted
+command or substitutes its arguments into an executable shell.
+
+The walk is bounded to 64 path components and 8192 inspected entries/candidates.
+Unsupported recursive glob syntax, failed/inconsistent inspection, excessive
+enumeration and unresolved errors refuse conservatively. External filesystem
+changes after preflight remain the already documented race limit under the
+existing I87-G-T1 identity. No new risk issue or broader parser scope is added.
+
+RED commit: `b97d496a5617d949738e5853e049d4d4689e861b` precedes this repair.
+
+| Final bounded repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 20 tests in 74.528s, zero skips; all original/provider/native/registered, previously cleared review matrices and the final alias matrix with controls pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.873s, zero skips; actual both-host launcher denial/allow and advisory scratchpad/dispatch coverage |
+| `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
+| `git diff --check` | Exit 0 |
+
+Final bounded source commit: the commit containing this section; exact SHA is
+pinned in the following summary-only evidence update. No production source
+changed after the passing checks. Fresh bounded independent review remains
+pending. Only the library and summary changed after the prescribed RED commit;
+installer, children, PR86 bytes and provider adapters remain unchanged.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
