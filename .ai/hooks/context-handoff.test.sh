@@ -366,6 +366,56 @@ active="$(cat "$handoffs/.active-qualified-isolated.jsonl" 2>/dev/null || true)"
 check "a qualified isolated dispatch records exactly once" "$(printf '%s' "$active" | grep -c '03-11-PLAN' || true)" "1"
 contains "a qualified isolated dispatch records its role" "$active" '"agent": "coder"'
 
+# Attributed stops must match normalized active roles, even when transcript
+# recovery falls back to the stack. Keep an unrelated dispatch ahead of the
+# matching one, and (with a known plan) another coder behind it.
+mkdir -p "$repo/.planning/phases/07-attributed"
+for isolation in warned worktree; do
+  for stop_agent in coder plugin:workflow:coder; do
+    for state in missing blocked complete; do
+      session="attributed-$isolation-${stop_agent//:/-}-$state"
+      plan=".planning/phases/07-attributed/07-01-PLAN.md"
+      summary="${plan%-PLAN.md}-SUMMARY.md"
+      rm -f "$repo/$summary"
+      if [[ "$state" != missing ]]; then
+        printf -- '---\nstatus: %s\n---\n' "$state" > "$repo/$summary"
+      fi
+      printf '{"agent": "debugger", "plan": ".planning/phases/07-attributed/07-02-PLAN.md"}\n' \
+        > "$handoffs/.active-$session.jsonl"
+      isolation_field=''
+      [[ "$isolation" == worktree ]] && isolation_field=',"isolation":"worktree"'
+      dispatch='{"session_id":"'"$session"'","tool_name":"Agent","tool_input":{"subagent_type":"plugin:workflow:coder"'"$isolation_field"',"prompt":"Execute '"$plan"'"}}'
+      ( cd "$repo" && printf '%s' "$dispatch" | bash "$guard" >/dev/null 2>&1 )
+      transcript="$workspace/$session.jsonl"
+      if [[ "$state" != missing ]]; then
+        printf '{"role":"user","content":"Execute %s"}\n' "$plan" > "$transcript"
+        printf '{"agent": "coder", "plan": ".planning/phases/07-attributed/07-03-PLAN.md"}\n' \
+          >> "$handoffs/.active-$session.jsonl"
+      fi
+      expected_active="$(grep -v '07-01-PLAN' "$handoffs/.active-$session.jsonl")"
+      stop='{"hook_event_name":"SubagentStop","session_id":"'"$session"'","cwd":"'"$repo"'","agent_type":"'"$stop_agent"'","agent_transcript_path":"'"$transcript"'"}'
+      out="$(run_hook "$stop")"
+      check "attributed $session stays quiet" "$out" ""
+      active="$(cat "$handoffs/.active-$session.jsonl" 2>/dev/null || true)"
+      check "attributed $session consumes only its matching entry" "$active" "$expected_active"
+      count="$(ls "$handoffs/$session--"*.json 2>/dev/null | wc -l | tr -d ' ')"
+      expected=1
+      [[ "$state" == complete ]] && expected=0
+      check "attributed $session has expected recovery count" "$count" "$expected"
+      if [[ "$state" != complete ]]; then
+        record="$(cat "$handoffs/$session--07-01.json" 2>/dev/null || true)"
+        contains "attributed $session recovers the matching plan" "$record" '07-01-PLAN.md'
+        contains "attributed $session normalizes recovery identity" "$record" '"agent": "coder"'
+      fi
+      run_hook "$stop" >/dev/null
+      check "attributed $session repeat leaves unrelated entries" \
+        "$(cat "$handoffs/.active-$session.jsonl" 2>/dev/null || true)" "$expected_active"
+      check "attributed $session repeat does not duplicate recovery" \
+        "$(ls "$handoffs/$session--"*.json 2>/dev/null | wc -l | tr -d ' ')" "$expected"
+    done
+  done
+done
+
 # A read-only agent needs no worktree and no handoff.
 readonly_dispatch='{"hook_event_name":"PreToolUse","session_id":"sess-ro","cwd":"'"$repo"'","tool_name":"Agent","tool_input":{"subagent_type":"researcher","prompt":"Research .planning/phases/03-thing/03-11-PLAN.md"}}'
 set +e

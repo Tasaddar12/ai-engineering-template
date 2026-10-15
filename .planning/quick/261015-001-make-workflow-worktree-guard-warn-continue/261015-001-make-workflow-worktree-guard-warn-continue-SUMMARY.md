@@ -54,7 +54,7 @@ coverage:
     human_judgment: false
 duration: 12.4min
 completed: 2026-10-15
-status: complete
+status: blocked
 plan_head_before: 2379f6f5d1c8d72e3badfc4aaa1abe2218506a8f
 ---
 
@@ -155,3 +155,10 @@ Both tasks are committed for coordinator integration. Preserve the unfilled adop
 ## Self-Check: PASSED
 
 All 10 assigned source files and SUMMARY exist; RED and implementation commits are present. Scope, stub/threat, link and installer-code inspections passed. Final commit/count and clean status are checked after committing and returned to the coordinator.
+
+## Task 3: CR-01 attributed-stop correction
+
+- Correction base: `9d137438da3fa5867f662d3d8f281298176b7046`, branch `phase-guard-fix-094306090`.
+- RED: `bash .ai/hooks/context-handoff.test.sh`, exit 1, 224 passed/38 failed on 12 new attributed-stop scenarios. Qualified stops skip recovery/consumption; bare stops without transcripts can consume another role. Source unchanged before this evidence.
+- Coverage: warned/isolated qualified dispatches; qualified/bare stop payloads; missing/blocked/complete SUMMARY; normalized recovery identity; matching-entry preservation and repeat consumption. Existing anonymous/read-only checks remain.
+- Remaining: apply the bounded normalization/matching fix, obtain GREEN, commit source and final evidence. Earlier Q85-02 evidence did not establish the attributed path.
