@@ -22,9 +22,9 @@ root that is not ignored -- resolution *fails* and the workflow halts. It never
 degrades to a shared checkout, because a degrade is the one outcome the project
 has ruled out.
 
-Enforcement of the dispatch itself lives in ``hooks/worktree-guard.sh``: this
-module decides and creates, the hook refuses a write-capable dispatch that
-arrives without isolation.
+Dispatch guidance lives in ``hooks/worktree-guard.sh``: this module decides and
+creates, while the advisory hook warns and continues for a write-capable
+dispatch that arrives without isolation.
 
 Cleanup is never destructive by default: a worktree whose branch is not proven
 merged is preserved for inspection.

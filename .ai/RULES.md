@@ -393,7 +393,11 @@ correct the roadmap.
 
 ## Hooks and validation
 
-Most host hooks are optional advisories: they warn and return success. The
+Hooks are optional. Notices and `worktree-guard.sh` remain advisory: they warn
+and return success. The separate
+[destructive Git guard](references/destructive-operations.md) refuses its
+documented destructive shell operations. The planning integrity hook validates
+prospective changed canonical planning records. The
 installed `source-prewrite.sh` is a separate synchronous decision for source
 mutations: it cancels the original edit and returns a same-agent native-entry
 request for eligible Claude callers. It does not create a worktree. The caller
