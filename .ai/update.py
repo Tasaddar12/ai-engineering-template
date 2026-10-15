@@ -219,6 +219,15 @@ def inventory(target, roots):
     return names
 
 
+def source_fingerprints(source):
+    """Pin raw source inputs too: rendering can otherwise hide CRLF edits."""
+    names = installer.run("git", "ls-files", "-z", cwd=source, capture=True).split("\0")
+    return {name: digest(read(source, name)) for name in sorted(names)
+            if name and not name.startswith(".ai/maintenance/")
+            and (name.startswith((".ai/", ".agents/skills/"))
+                 or name in installer.PLANNING_RESOURCES)}
+
+
 def build_plan(source, target, host, hooks, source_url, revision, baseline=None, baseline_source=None):
     """Pure comparison: ownership is evidence, never a version-stamp shortcut."""
     # Apply uses a canonical root; review must use the same identity for aliases.
@@ -306,6 +315,8 @@ def build_plan(source, target, host, hooks, source_url, revision, baseline=None,
             "previous": manifest.get("current") if manifest else None,
             "baseline_revision": installer.run("git", "rev-parse", "HEAD", cwd=baseline, capture=True).strip() if baseline else None,
             "baseline_source": (baseline_source or source_url) if baseline else None,
+            "source_fingerprints": source_fingerprints(source),
+            "baseline_fingerprints": source_fingerprints(baseline) if baseline else None,
             "manifest_sha256": digest(read(target, manifest_name)), "entries": entries, "resolutions": {}}
 
 
@@ -379,6 +390,9 @@ def apply_plan(plan, source, baseline=None):
             raise ValueError("Installed files changed during backup; update stopped")
     if digest(read(target, manifest_path.relative_to(target).as_posix())) != plan["manifest_sha256"]:
         raise ValueError("Ownership manifest changed during backup")
+    if (source_fingerprints(source) != plan["source_fingerprints"]
+            or (source_fingerprints(baseline) if baseline else None) != plan["baseline_fingerprints"]):
+        raise ValueError("Source inputs changed during backup; update stopped")
     for path, content in changed:
         installer.safe_path(path)
         if content is None:
