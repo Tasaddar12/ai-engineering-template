@@ -462,6 +462,16 @@ def classification(payload, info, budget, cwd):
         while not ancestor.exists():
             ancestor = ancestor.parent
         actual = budget.git(ancestor, "rev-parse", "--show-toplevel", check=False)
+        if actual.returncode != 0:
+            # Failed discovery is not evidence of a nongit note location.
+            # Corrupt config, dubious ownership and invalid .git files must
+            # remain refused even when Git cannot report their worktree root.
+            for directory in (ancestor, *ancestor.parents):
+                budget.remaining()
+                require(not os.path.lexists(directory / ".git"),
+                        "Git discovery failed near repository metadata; no OS-temp note exemption", "unsafe-path")
+            require(actual.returncode == 128 and actual.stderr.startswith("fatal: not a git repository"),
+                    "indeterminate Git discovery; no OS-temp note exemption", "unsafe-path")
         repository = Path(actual.stdout.strip()).resolve() if actual.returncode == 0 else None
         within = path.is_relative_to(info["root"])
         require(repository is None or repository == info["root"], "cross/nested repository target", "unsafe-path")
@@ -635,14 +645,14 @@ def main(argv=None):
             except VerbError as exc:
                 result = deny(str(exc))
             if result:
-                print(json.dumps(result, ensure_ascii=True))
+                sys.stdout.buffer.write((json.dumps(result, ensure_ascii=True) + "\n").encode("utf-8"))
         elif action == "native-create":
-            print(native_create(payload))
+            sys.stdout.buffer.write((native_create(payload) + "\n").encode("utf-8"))
         elif action == "native-remove":
-            print(native_remove(payload), file=sys.stderr)
+            sys.stderr.buffer.write((native_remove(payload) + "\n").encode("utf-8"))
         else:
             raise VerbError("unknown prewrite adapter", "bad-adapter")
         return 0
     except (VerbError, ValueError, OSError, RecursionError) as exc:
-        print("source-prewrite: " + str(exc), file=sys.stderr)
+        sys.stderr.buffer.write(("source-prewrite: " + str(exc) + "\n").encode("utf-8"))
         return 2
