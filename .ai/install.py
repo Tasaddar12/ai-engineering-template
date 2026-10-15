@@ -431,6 +431,8 @@ def merge_codex_config(current, incoming, path, replace=False, preserve_agents=F
 #: registered twice because its two advisory jobs watch different tools --
 #: warning about an unisolated dispatch or a write outside a worktree. Both exit 0.
 MANAGED_HOOKS = (
+    ("PreToolUse", "destructive-git-guard.py",
+     "^(Bash|exec_command|shell_command|shell)$"),
     ("PostToolUse", "ai-tier-notice.sh",
      "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
     ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
@@ -478,13 +480,23 @@ def managed_scripts():
 
 def hook_settings(host):
     events = {}
-    registrations = [(event, script, matcher, 10) for event, script, matcher in MANAGED_HOOKS]
+    registrations = [(event, script, matcher, 120 if script.endswith(".py") else 10)
+                     for event, script, matcher in MANAGED_HOOKS]
     registrations += [(event, script, None, timeout)
                       for event, script, timeout in HOST_HOOKS.get(host, ())]
     for event, script, matcher, timeout in registrations:
-        command = f'bash "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
+        interpreter = "python" if script.endswith(".py") else "bash"
+        command = f'{interpreter} "$(git rev-parse --show-toplevel)/.{host}/hooks/{script}"'
         handler = {"type": "command", "command": command, "timeout": timeout}
-        if host == "codex":
+        if host == "codex" and script.endswith(".py"):
+            # Resolve non-ASCII paths inside Python; no path crosses PowerShell's
+            # native argument boundary. runpy preserves the hook's SystemExit.
+            program = ("import pathlib,runpy,subprocess; "
+                       "p=pathlib.Path(subprocess.check_output(['git','rev-parse',"
+                       "'--show-toplevel']).decode('utf-8').strip()); "
+                       f"runpy.run_path(str(p/'.{host}'/'hooks'/'{script}'),run_name='__main__')")
+            handler["commandWindows"] = f'& python -c "{program}"; exit $LASTEXITCODE'
+        elif host == "codex":
             # Git for Windows does not put git.exe in one fixed place. An
             # installer-managed install has it at <root>\cmd\git.exe, so
             # ../bin/bash.exe resolves; a portable, scoop or winget layout has
