@@ -147,8 +147,8 @@ The adopting-project skeleton is unfilled and is not modified. No separate resea
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |---|---|---|---|---|---|
-| I87-C-T1; Pending: coordinator canonical-risk dedup/readback; alias parent I87-G-T2 where same scope | Spoofing | cleanup approval and identity | high | mitigate | Exact canonical targets/provider head, actual approval text/reference and no broad override |
-| I87-C-T2; Pending: coordinator canonical-risk dedup/readback; alias parent I87-G-T3 where same scope | Tampering | cleanup stale state and partial outcomes | high | mitigate | Lock, immediate revalidation, non-force remove, expected ref OID, digest and final-state evidence |
+| I87-C-T1; https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2; alias parent I87-G-T2 | Spoofing | cleanup approval and identity | high | mitigate | Exact canonical targets/provider head, direct-ref identity, actual approval text/reference and no broad override |
+| I87-C-T2; https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3; alias parent I87-G-T3 | Tampering | cleanup stale state and partial outcomes | high | mitigate | Lock, immediate revalidation, non-force remove, no-deref expected ref OID, digest, retained-container consistency and final-state evidence |
 
 Coordinator reconciles stable risk identity rather than opening duplicates for parent aliases. No issue closure is inferred. Document residual opaque-script and external filesystem race limits honestly.
 </threat_model>

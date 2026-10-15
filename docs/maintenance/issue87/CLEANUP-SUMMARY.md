@@ -267,3 +267,17 @@ it includes the observed RED/control commits above, library fix, narrow contract
 sentence and evidence. The original full child boundary still begins at the
 supplied guard parent `4c35d27436add6867934c85eb9e853bd2fc3052e`. Working tree
 clean after GREEN, no tracked deletions. No source refactor was necessary.
+
+## Coordinator canonical readback and final child review
+
+Issue95 was read back OPEN with matching keys and aliases. The six-column PLAN
+register now links I87-C-T1 to95#i87-g-t2 and I87-C-T2 to95#i87-g-t3.
+Independent final correction review at e5cabcb178c141b2aa9167b6f8370d7c1531f9e8
+found zero critical/warning/info findings. It verified direct reference identity,
+non-dereferencing mutation/readback, nested five-operation completion and genuine
+stale-state preservation. An additional retained-container probe preserved new
+unowned content, consistent with the bounded contract.
+
+The proposed child mitigation is locally checked and independently reviewed;
+latest guard synchronization, final integrated checks and required CI are pending.
+Issue95 stays OPEN; these unmerged changes grant no real cleanup or closure authority.
