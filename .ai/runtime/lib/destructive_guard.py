@@ -53,8 +53,8 @@ def executable(value):
     return value.replace("\\", "/").rsplit("/", 1)[-1].lower().removesuffix(".exe")
 
 
-def _tokens(command):
-    """Literal shell subset, preserving Windows separators and quoted data."""
+def _tokens(command, posix=False):
+    """Literal shell subset; Bash escapes are distinct from native backslashes."""
     tokens, word = [], []
     quote_char = None
     active = False
@@ -68,17 +68,21 @@ def _tokens(command):
                 quote_char = None
             elif char in ("$", "`") and quote_char == '"':
                 raise ValueError("dynamic-shell")
-            elif char == "\\" and quote_char == '"' and index + 1 < len(command) and command[index + 1] in ('"', "\\", "$", "`"):
+            elif posix and char == "\\" and quote_char == '"' and index + 1 < len(command) and command[index + 1] in ('"', "\\", "$", "`", "\n"):
                 index += 1
-                word.append(command[index])
+                if command[index] != "\n":
+                    word.append(command[index])
             else:
                 word.append(char)
         elif char in ("'", '"'):
             quote_char, active = char, True
-        elif char == "\\" and index + 1 < len(command) and command[index + 1] in " \t\n'\";|&\\":
+        elif posix and char == "\\":
+            if index + 1 == len(command):
+                raise ValueError("malformed-shell")
             index += 1
-            word.append(command[index])
-            active = True
+            if command[index] != "\n":
+                word.append(command[index])
+                active = True
         elif char in "$`":
             raise ValueError("dynamic-shell")
         elif char in "<>(){}":
@@ -109,6 +113,39 @@ def _tokens(command):
     return tokens
 
 
+def _literal_prefixes(argv):
+    """Normalize each literal wrapper/assignment layer until the command is fixed.
+
+    No expansion or executable body is evaluated. Context-changing assignment
+    checks apply at every layer, including after command/exec/env prefixes.
+    """
+    cursor = 0
+    while cursor < len(argv):
+        word = argv[cursor]
+        if ASSIGNMENT.match(word):
+            variable = word.split("=", 1)[0]
+            if variable.startswith("GIT_") or variable in (
+                    "PATH", "HOME", "XDG_CONFIG_HOME", "BASH_ENV", "ENV", "PWD", "CDPATH"):
+                raise ValueError("unsupported-git-context")
+            cursor += 1
+            continue
+        name = executable(word)
+        if name == "env":
+            cursor += 1
+            if cursor < len(argv) and argv[cursor] == "--":
+                cursor += 1
+            if cursor < len(argv) and argv[cursor].startswith("-"):
+                raise ValueError("unsupported-environment")
+            continue
+        if name in ("command", "builtin", "exec", "time", "!"):
+            cursor += 1
+            if cursor < len(argv) and argv[cursor].startswith("-"):
+                raise ValueError("unsupported-wrapper")
+            continue
+        return argv[cursor:]
+    raise ValueError("unsupported-shell")
+
+
 def command_segments(payload):
     """Immutable ordered literal argv/cwd interface for other preflight hooks.
 
@@ -133,7 +170,11 @@ def command_segments(payload):
         if not Path(cwd).is_dir():
             raise ValueError("unknown-cwd")
         result, argv, previous_separator = [], [], None
-        pieces = _tokens(command)
+        shell = data.get("shell")
+        shell_name = executable(shell) if isinstance(shell, str) else ""
+        posix = (payload.get("tool_name") == "Bash" or shell_name in ("bash", "sh", "zsh", "dash")
+                 or (not shell_name and os.name != "nt"))
+        pieces = _tokens(command, posix=posix)
         while pieces and pieces[-1] in ((";",), ("\n",)):
             pieces.pop()
         pieces += [(";",)]
@@ -146,23 +187,7 @@ def command_segments(payload):
                 if separator == "\n":
                     continue
                 raise ValueError("malformed-shell")
-            if executable(argv[0]) == "env":
-                argv.pop(0)
-                if argv and argv[0] == "--":
-                    argv.pop(0)
-                if argv and argv[0].startswith("-"):
-                    raise ValueError("unsupported-environment")
-            while argv and ASSIGNMENT.match(argv[0]):
-                variable = argv[0].split("=", 1)[0]
-                if variable.startswith("GIT_") or variable in ("PATH", "HOME", "XDG_CONFIG_HOME", "BASH_ENV", "ENV", "PWD", "CDPATH"):
-                    raise ValueError("unsupported-git-context")
-                argv.pop(0)
-            if not argv:
-                raise ValueError("unsupported-shell")
-            while executable(argv[0]) in ("command", "builtin", "exec"):
-                argv.pop(0)
-                if not argv or argv[0].startswith("-"):
-                    raise ValueError("unsupported-wrapper")
+            argv = _literal_prefixes(argv)
             name = executable(argv[0])
             if name in WRAPPERS:
                 raise ValueError("nested-shell")
@@ -287,9 +312,22 @@ def _ownership(repo, branch, target=None):
         for path in paths:
             if path.exists():
                 data = json.loads(path.read_text(encoding="utf-8"))
-                values = data.get("sessions", data.get("entries"))
-                if not isinstance(values, list) or any(not isinstance(x, dict) for x in values):
+                key = "sessions" if path == state / "sessions.json" else "entries"
+                if not isinstance(data, dict):
                     return None
+                values = data.get(key)
+                if not isinstance(values, list):
+                    return None
+                for record in values:
+                    if not isinstance(record, dict):
+                        return None
+                    branch_value = record.get("branch")
+                    worktree_value = record.get("worktree", record.get("path"))
+                    base_value = record.get("base_branch")
+                    if (not isinstance(branch_value, str) or not branch_value or
+                            not isinstance(worktree_value, str) or not worktree_value or
+                            (base_value is not None and not isinstance(base_value, str))):
+                        return None
                 records.extend(values)
         matches = [r for r in records if r.get("branch") == branch and
                    isinstance(r.get("worktree", r.get("path")), str) and
@@ -410,6 +448,53 @@ def deletion_decision(evidence, repo, branch, target=None):
     return Decision(True, "clean-owned-terminal-integrated", operation, targets)
 
 
+def _within(path, parent):
+    """Component ancestry, including roots, with compatible-drive comparison."""
+    path, parent = os.path.normcase(path), os.path.normcase(parent)
+    try:
+        return os.path.commonpath((path, parent)) == parent
+    except ValueError:
+        return False
+
+
+def _git_argument_parts(args, value_longs=(), value_shorts=()):
+    """Separate option names from operands/values without expanding shell data.
+
+    Long = values and short-option attached/separate values never become flags.
+    `--` ends option parsing. Unknown options remain literal flags for the
+    caller's conservative destructive-option classification.
+    """
+    options, operands, cursor, literal = [], [], 0, False
+    while cursor < len(args):
+        arg = args[cursor]
+        cursor += 1
+        if literal or not arg.startswith("-") or arg == "-":
+            operands.append(arg)
+        elif arg == "--":
+            literal = True
+        elif arg.startswith("--"):
+            name, equals, _ = arg.partition("=")
+            options.append(name)
+            if not equals and name in value_longs:
+                if cursor >= len(args):
+                    raise ValueError("malformed-git-option")
+                cursor += 1
+        else:
+            for index, short in enumerate(arg[1:], 1):
+                options.append("-" + short)
+                if short in value_shorts:
+                    if index == len(arg) - 1:
+                        if cursor >= len(args):
+                            raise ValueError("malformed-git-option")
+                        cursor += 1
+                    break
+    return tuple(options), tuple(operands)
+
+
+def _long_option(option, complete):
+    return option.startswith("--") and len(option) > 2 and complete.startswith(option)
+
+
 def _backup_removal(segment, evidence):
     operands = []
     skip_option = False
@@ -451,10 +536,10 @@ def _backup_removal(segment, evidence):
         if any(char in operand for char in "*?["):
             prefix = re.split(r"[*?\[]", target, maxsplit=1)[0]
             parent = str(Path(prefix).parent)
-            if any(root.startswith(parent + os.sep) or fnmatch.fnmatch(root, target) for root in roots):
+            if any(_within(root, parent) or fnmatch.fnmatch(root, target) for root in roots):
                 return _deny("backup-approval-required", "backup-delete", operands)
         for root in roots:
-            if target == root or target.startswith(root + os.sep) or root.startswith(target + os.sep):
+            if _within(target, root) or _within(root, target):
                 return _deny("backup-approval-required", "backup-delete", operands)
         if ".workflow-backups" in Path(target).parts:
             return _deny("backup-approval-required", "backup-delete", operands)
@@ -472,7 +557,7 @@ def evaluate_payload(payload, evidence_runner=None):
         for segment in parsed.segments:
             argv = segment.argv
             name = executable(argv[0])
-            if name in ("rm", "ri", "rmdir", "remove-item"):
+            if name in ("rm", "ri", "rmdir", "remove-item", "del", "rd", "erase"):
                 denied = _backup_removal(segment, evidence)
                 if denied:
                     return denied
@@ -503,18 +588,23 @@ def evaluate_payload(payload, evidence_runner=None):
                 continue
             branch_targets = None
             if verb == "branch":
-                destructive = any(a.startswith(("--delete", "--move", "--copy", "--force")) or
-                                  (a.startswith("-") and not a.startswith("--") and any(c in a[1:] for c in "dDmMcCf")) for a in args)
+                options, operands = _git_argument_parts(args,
+                    value_longs=("--format", "--sort", "--set-upstream-to", "--points-at"), value_shorts=("u",))
+                destructive = any(a in ("-d", "-D", "-m", "-M", "-c", "-C", "-f") or
+                    any(_long_option(a, flag) for flag in ("--delete", "--move", "--copy", "--force"))
+                    for a in options)
                 if not destructive:
                     continue
-                if any(a.startswith("--") and "=" in a for a in args):
+                if any(a in ("-m", "-M", "-c", "-C", "-f") or
+                       any(_long_option(a, flag) for flag in ("--move", "--copy", "--force")) for a in options):
                     return _deny("unsupported-branch-mutation", "branch-delete", args)
-                if any(a in ("--move", "--copy", "--force") or
-                       (a.startswith("-") and any(c in a[1:] for c in "mMcCf")) for a in args):
-                    return _deny("unsupported-branch-mutation", "branch-delete", args)
-                branch_targets = [a for a in args if not a.startswith("-")]
-            elif verb == "push" and any(a == "-d" or a.startswith("--delete") or a.startswith(":") or a.startswith("+:" ) for a in args):
-                return _deny("remote-deletion-unsupported", "branch-delete", args)
+                branch_targets = operands
+            elif verb == "push":
+                options, operands = _git_argument_parts(args,
+                    value_longs=("--push-option", "--repo", "--receive-pack", "--exec"), value_shorts=("o",))
+                if (any(a == "-d" or _long_option(a, "--delete") for a in options) or
+                        any(a.startswith((":", "+:")) for a in operands)):
+                    return _deny("remote-deletion-unsupported", "branch-delete", args)
             elif verb == "update-ref":
                 return _deny("ref-mutation-unsupported", "branch-delete", args)
             elif verb == "worktree" and args and args[0] in ("remove", "prune", "move", "repair"):

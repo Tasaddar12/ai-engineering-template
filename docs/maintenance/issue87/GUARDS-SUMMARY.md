@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: in_progress
+status: complete
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-RED]
-acceptance: [I87-A3]
+requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
+acceptance: [I87-A1, I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -95,10 +95,15 @@ GUARDS-PLAN I87-G-T1: literal parsing, all-segment inspection, conservative
 unsupported/alias handling and backup canonicalization mitigate the assigned
 bounded preflight failure mode; attack/precision and junction evidence above.
 Independent review CR01–CR06 demonstrates these initial mitigations are
-incomplete; I87-A1 / ISSUE87-GUARD remain blocked pending repair and fresh review.
+incomplete. The coherent repair below now passes the approved regression matrix;
+fresh independent review remains required before accepting the repaired source.
 I87-G-T2: unknown/open/partial/stale/mismatched provider evidence, unowned and
 dirty targets preserve work; both-provider offline tests above. Canonical
-threat issue identity/readback and independent review remain coordinator owned.
+threat issue readback was confirmed by the coordinator as
+[I87-G-T1](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t1),
+[I87-G-T2](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t2)
+and [I87-G-T3](https://github.com/Tasaddar12/ai-engineering-template/issues/95#i87-g-t3).
+The coordinator owns the PLAN link update and independent review.
 I87-G-T3 lock, exact snapshot approval and receipt lifecycle belong to dependent
 cleanup; no cleanup behavior is claimed here. Opaque external execution and
 post-preflight concurrent changes remain documented limits of this control.
@@ -129,6 +134,46 @@ The coordinator authorized implementation after this test commit without a
 further pause. Installer, installer tests and hooks README are released to the
 separate planning registration worker; repairs own only the guard library,
 guard tests and this summary.
+
+Review RED commits: `5c927709c9e74ff9def38837f3ebd1e29dd304a6` and
+`fec735e79233067dd19220c60f2fa3937c64195a`. They precede the coherent production
+repair; no implementation was applied before the independent matrix approval.
+
+## Coherent review repair
+
+The repair changes only `destructive_guard.py` and this summary after the two
+test-first commits. Bash tool payloads and explicitly selected POSIX shells
+apply literal unquoted backslash escapes and remove backslash-newline
+continuations. Native Windows commands preserve path backslashes; quoted
+Windows Git executable-path controls pass. Wrapper/assignment layers normalize
+to a fixed point, checking prohibited context variables at each layer, including
+after `command env`. Literal `time` and `!` prefixes expose the assessed command;
+unsupported wrapper flags refuse.
+
+Git options are separated from their values and operands. `--` ends option
+parsing; long destructive abbreviations and short destructive clusters refuse.
+`branch --list -- '--delete'` and `push --push-option=-d` remain harmless.
+PowerShell del/rd/erase aliases, including case variants, use backup protection.
+Component-aware common-path comparisons handle compatible drive/POSIX roots,
+parents and doubled separators without string-prefix ancestry. Ownership
+sessions/wave JSON requires an object root, the proper list container and
+object records with string branch/worktree fields before any access; malformed
+records refuse with native denial JSON/exit 2 instead of a traceback.
+
+| Repair check | Observed result |
+|---|---|
+| `python -m unittest discover -s tests -p test_destructive_guard.py -v` | Exit 0, Ran 14 tests in 58.200s, zero skips; all six approved review families and controls, original registered/native/backup matrix and both-provider offline contracts pass |
+| `python -m unittest discover -s tests -p test_install.py -k registered_hooks -v` | Exit 0, Ran 1 test in 25.009s, zero skips; actual Codex Windows / Claude launchers and advisory scratchpad/dispatch coverage retained |
+| `git diff --check` | Exit 0 |
+
+Repair source commit: the commit containing this section; its exact SHA is
+recorded in the following summary-only evidence update. These checks exercised
+the repaired source descending from `fec735e`. No production source changed
+after the passing run. Fresh independent review is pending, so the earlier
+blockers are reported as repaired with test evidence, not independently cleared.
+Released installer/test_install/hooks README paths were not changed. No cleanup
+child path, provider adapter, PR86 hook, adoption record, publication or merge
+was touched.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
