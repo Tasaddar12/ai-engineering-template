@@ -102,6 +102,87 @@ class RegisteredGuardTests(unittest.TestCase):
                     self.assertEqual(0, result.returncode, result.stderr)
                     self.assertEqual(b"", result.stdout)
 
+    def test_registered_effective_cwd_and_aliases(self):
+        linked = self.root / "linked space"
+        git(self.root, "worktree", "add", "-qb", "phase-owned", str(linked))
+        self.assertDenied(f'git -C "{self.root.as_posix()}" switch topic', cwd=linked)
+        self.assertDenied(f'cd "{self.root.as_posix()}" && git switch topic', cwd=linked)
+        git(self.root, "config", "alias.jump", "switch topic")
+        self.assertDenied("git jump")
+        for result in self.pipeline("git switch topic", cwd=linked):
+            self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_provider_deletion_matrix_through_policy(self):
+        # Before production exists, the registered pipeline is the real allow
+        # baseline; this is a behavior failure rather than an import failure.
+        module = ROOT / ".ai/runtime/lib/destructive_guard.py"
+        if not module.exists():
+            self.assertDenied("git branch -D phase-owned")
+            return
+        spec = importlib.util.spec_from_file_location("guard_policy", module)
+        policy = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = policy
+        spec.loader.exec_module(policy)
+        git(self.root, "branch", "phase-owned")
+        oid = git(self.root, "rev-parse", "phase-owned")
+        shared = self.root / ".git/ai-phase"
+        shared.mkdir()
+        (shared / "sessions.json").write_text(json.dumps({"sessions": [{
+            "branch": "phase-owned", "worktree": str(self.root / "old"),
+            "base_branch": "main", "status": "open"}]}), encoding="utf-8")
+        payload = {"cwd": str(self.root), "tool_name": "exec_command",
+                   "tool_input": {"cmd": "git branch -D phase-owned"}}
+        for provider in ("github", "gitlab"):
+            remote = f"https://{provider}.com/owner/repo.git"
+            git(self.root, "config", "remote.origin.url", remote)
+            for case in ("merged", "closed", "open", "draft", "mixed", "missing", "malformed",
+                         "partial", "wrong-head", "wrong-project", "wrong-source", "timeout", "locked"):
+                with self.subTest(provider=provider, case=case):
+                    calls = []
+                    def runner(argv, cwd):
+                        calls.append(tuple(argv))
+                        if argv[0] == "git":
+                            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+                        if case == "timeout":
+                            raise subprocess.TimeoutExpired(argv, 1)
+                        if "/merge_requests" not in argv[-1] and "/pulls" not in argv[-1]:
+                            obj = {"id": 7, "path_with_namespace": "owner/repo",
+                                   "web_url": "https://gitlab.com/owner/repo"}
+                        elif provider == "github":
+                            item = {"state": "open" if case in ("open", "draft") else "closed",
+                                    "draft": case == "draft", "merged_at": "2026-01-01" if case == "merged" else None,
+                                    "head": {"ref": "phase-owned", "sha": oid, "repo": {"full_name": "owner/repo"}},
+                                    "base": {"repo": {"full_name": "owner/repo"}}}
+                            if case == "locked": item["state"] = "locked"
+                            if case == "wrong-head": item["head"]["sha"] = "0" * 40
+                            if case == "wrong-project": item["base"]["repo"]["full_name"] = "other/repo"
+                            if case == "wrong-source": item["head"]["repo"]["full_name"] = "fork/repo"
+                            items = [item]
+                            if case == "mixed": items += [dict(item, state="open")]
+                            obj = [[]] if case == "missing" else [items * 100] if case == "partial" else [items]
+                        else:
+                            item = {"state": "opened" if case in ("open", "draft") else case if case == "locked" else "merged" if case == "merged" else "closed",
+                                    "source_branch": "phase-owned", "sha": oid,
+                                    "source_project_id": 7, "target_project_id": 7}
+                            if case == "wrong-head": item["sha"] = "0" * 40
+                            if case == "wrong-project": item["target_project_id"] = 8
+                            if case == "wrong-source": item["source_project_id"] = 8
+                            obj = [] if case == "missing" else {"partial": True} if case == "partial" else [item]
+                            if case == "mixed": obj += [dict(item, state="opened")]
+                        return subprocess.CompletedProcess(argv, 0, "{" if case == "malformed" else json.dumps(obj), "")
+                    decision = policy.evaluate_payload(payload, evidence_runner=runner)
+                    self.assertEqual(case in ("merged", "closed"), decision.allowed, decision)
+                    self.assertTrue(any(a[0] == ("gh" if provider == "github" else "glab") for a in calls))
+        # Ignored/untracked content in an owned worktree always preserves it.
+        linked = self.root / "dirty linked"
+        git(self.root, "worktree", "add", str(linked), "phase-owned")
+        (shared / "sessions.json").write_text(json.dumps({"sessions": [{
+            "branch": "phase-owned", "worktree": str(linked), "base_branch": "main"}]}), encoding="utf-8")
+        (linked / "ignored-work").write_text("valuable", encoding="utf-8")
+        with (self.root / ".git/info/exclude").open("a", encoding="utf-8") as stream:
+            stream.write("\nignored-work\n")
+        self.assertFalse(policy.evaluate_payload(payload).allowed)
+
 
 if __name__ == "__main__":
     unittest.main()
