@@ -8,13 +8,24 @@ autonomous: true
 requirements: [ISSUE87]
 acceptance: [AW-01, AW-02, AW-03, AW-04, AW-05, AW-06, AW-07, AW-08]
 files_modified:
+  - AGENTS.md
+  - .ai/install.py
   - .ai/hooks/source-prewrite.sh
   - .ai/hooks/source-prewrite.test.sh
+  - .ai/hooks/worktree-location.sh
+  - .ai/hooks/worktree-location.test.sh
+  - .ai/runtime/phase.py
   - .ai/runtime/lib/prewrite.py
   - .ai/runtime/lib/worktrees.py
-  - .ai/runtime/phase.py
-  - .ai/install.py
+  - .ai/references/same-agent-worktree.md
+  - .ai/workflows/quick.md
+  - .ai/workflows/discuss-phase.md
+  - .ai/workflows/plan-phase.md
+  - .ai/workflows/execute-phase.md
+  - .ai/workflows/verify-work.md
+  - .ai/workflows/ship.md
   - tests/test_prewrite.py
+  - tests/test_same_agent_worktree.py
   - tests/test_install.py
   - tests/test_install_update.py
   - .ai/hooks/README.md
@@ -23,83 +34,82 @@ files_modified:
   - .ai/RULES.md
 files_deleted: []
 documentation:
+  - .ai/references/same-agent-worktree.md
   - .ai/hooks/README.md
   - .ai/references/worktree-sessions.md
   - .ai/runtime/README.md
   - .ai/RULES.md
-resources: [issue87-source-worker-checkout, issue87-disposable-git-fixtures]
+resources: [issue87-source-worker-checkout, issue87-disposable-native-fixtures]
 checks:
+  - [python, -m, unittest, discover, -s, tests, -p, test_same_agent_worktree.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_prewrite.py, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_session_delivery.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -v]
   - [python, -m, unittest, discover, -s, tests, -p, test_install_update.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_session_delivery.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_agent_sources.py, -v]
+  - [python, -m, unittest, discover, -s, tests, -p, test_workflow_links.py, -v]
   - [bash, .ai/hooks/source-prewrite.test.sh]
-  - [bash, .ai/hooks/worktree-guard.test.sh]
   - [bash, .ai/hooks/worktree-location.test.sh]
+  - [bash, .ai/hooks/worktree-guard.test.sh]
 user_setup: []
 must_haves:
   truths:
-    - A first source edit with a trustworthy actor/unit identity prepares or selects one isolated checkout and cancels the original mutation; ambiguous identity cancels with explicit coordinator preparation instructions.
-    - Repeated and concurrent attempts for the same repository, host and actor/unit reuse the same validated unit without primary synchronization or additional checkouts.
-    - The session must explicitly enter the selected root and reread destination files before rebuilding its mutation; creation never counts as host binding.
-    - Ordinary untracked scratchpad create/update operations warn and continue without preparation; plain unlinked note create/update under resolved tempfile.gettempdir() and outside every Git repository is allowed without session identity or preparation.
-    - All existing primary tracked, staged, untracked and ignored bytes and index state survive preparation, failed preparation and retries.
-    - Malformed or ambiguous source requests and stale or cross-root targets cannot become successful old-root edits through the supported hook.
-    - Both actual installed host hook pipelines exercise the new component while the existing advisory script stays byte-identical.
+    - An eligible Claude agent cancels its first old-root source edit, invokes its own available native EnterWorktree creation tool, and continues as the same existing agent in the destination.
+    - Subsequent tools use destination cwd, permission and repository context by default; shell cd, argument retargeting and replacement children never count as movement.
+    - The cancelled mutation is never replayed; destination files are freshly read and a rebuilt edit executes once after native and Git checks.
+    - Missing tool/schema, ineligible role, policy refusal, untrusted hook or uncertain movement yields a precise unsupported or pending result without repeated edit retries or approval bypass.
+    - Scratchpad and narrow ordinary OS-temp notes remain allowed without session identity or worktree creation; source, mixed and unsafe paths retain their required decisions.
+    - Dirty staged, unstaged, untracked and ignored data remain preserved and accounted for; creation never silently copies, discards or replays them.
+    - Actual installed hooks, Claude role exports and workflow consumers connect this route; simulated contract evidence and live native movement are reported separately.
   artifacts:
+    - path: .ai/references/same-agent-worktree.md
+      provides: Standing same-agent native capability gate, creation/entry sequence and default-context proof protocol.
     - path: .ai/runtime/lib/prewrite.py
-      provides: Strict classification, session-keyed preparation journal, Git validation, and native host cancellation adapter.
+      provides: Strict request classification, bounded ticket/name lifecycle, native creation callback and Git-only confirmation.
     - path: .ai/hooks/source-prewrite.sh
-      provides: Registered stdin-preserving launcher for the selected host adapter.
-    - path: tests/test_prewrite.py
-      provides: Disposable real-Git preservation, reuse, recovery, path and concurrency evidence.
-    - path: .ai/hooks/source-prewrite.test.sh
-      provides: Native hook input, cancellation and allowed-note fixture behavior.
-    - path: .ai/references/worktree-sessions.md
-      provides: Actionable host/coordinator continuation and explicit supported-host evidence gate.
+      provides: Registered synchronous native source denial with actionable same-agent continuation.
+    - path: .ai/hooks/worktree-location.sh
+      provides: Dedicated ticketed native creation branch without existing-name reuse; unchanged ordinary dispatch branch semantics.
+    - path: tests/test_same_agent_worktree.py
+      provides: Explicitly simulated same-agent native contract harness composed with real installed exports/hooks and disposable Git.
     - path: .ai/RULES.md
-      provides: Narrow Hooks and validation policy reconciliation, independently checked against integrated behavior before final verification.
+      provides: Narrow Hooks and validation policy consistent with integrated implementation and verified documentation.
   key_links:
-    - from: .ai/install.py hook_settings(host)
-      to: .ai/hooks/source-prewrite.sh
-      via: Second handler of the existing editing-tool PreToolUse group, after the advisory handler.
-    - from: .ai/hooks/source-prewrite.sh
-      to: .ai/runtime/lib/prewrite.py handle_event
-      via: Explicit installed host argument and original stdin, without shell interpolation of payload fields.
-    - from: .ai/runtime/lib/prewrite.py prepare
-      to: .ai/runtime/lib/worktrees.py open_session
-      via: Explicit full committed base, sync=False, deterministic request identity and validated matching unit.
-    - from: Hook cancellation reason
-      to: .ai/references/worktree-sessions.md source-prewrite continuation
-      via: Exact selected root, branch, base and preparation key, with instructions to enter, reread and rebuild.
+    - from: .ai/install.py hook_settings and render_asset
+      to: Installed source hook, coordinator/coder tool exports and CLAUDE.md
+      via: One editing group, advisory first, source handler second; Claude-only native tool permission and standing contract link.
+    - from: Source denial and six source-session workflows
+      to: .ai/references/same-agent-worktree.md
+      via: Same caller reads protocol, gates actual native tool/schema and invokes it without a child/fork.
+    - from: Native EnterWorktree creation
+      to: .ai/hooks/worktree-location.sh ticketed branch
+      via: Host WorktreeCreate event, exact reserved name, pinned local base and validated creation journal.
+    - from: Native completion and subsequent default-root tools
+      to: prewrite.confirm and worktrees.adopt_native_session
+      via: Same-actor host observation plus separate real Git checks and phase/quick registration; runtime never certifies host binding.
 ---
 
 <objective>
-Deliver one source-sensitive prewrite preparation and handoff feature. A first
-source edit with trustworthy actor/unit identity can create/select isolation once, then cancels
-the old-root edit and routes continuation into an explicit host/coordinator root
-handoff. It must not become another repeated hard-halt loop.
+Implement the conditional Claude path that actually moves the same existing agent,
+as required by the human: "This time we actually move the agent itself."
+Synchronous denial is the trigger for instruction-driven native orchestration,
+not fulfillment. The same model next invokes its own available EnterWorktree
+creation operation; after completion it proves default destination context, reads
+the destination afresh and rebuilds the intended edit.
 
-This maintenance plan is kept outside the unfilled adoption skeleton. ISSUE87 is
-the maintenance issue identifier, not an invented adopting-project requirement.
-The assigned PLAN.md filename is an explicit maintenance exception to phase-local
-numbering. It is not registered as an adoption phase.
+The earlier preparation/manual-handoff plan is replaced. Do not create a checkout
+in PreToolUse and call that movement; do not use shell cd, per-call cwd/path
+overrides, attachment, a replacement executor or a new task/fork as fulfillment.
+Native creation through the trusted existing WorktreeCreate provider is supported
+conditionally on the target Claude host. This selected executor lacks the native
+tool, so live demonstration is unavailable here; that does not prevent authoring
+the gated supported-target implementation.
 
-The deliverable can establish automatic **checkout preparation**. No trustworthy
-installed Codex/Claude release or live same-session transition is available here.
-Automatic **session entry** remains unproven: neither documented pretool response
-binds cwd/session, and updatedInput only replaces input. Never rewrite the pending
-mutation's paths, replace it with a purported native tool call, or advertise full
-automatic context switching without the separate live proof below. A remaining
-manual/native handoff is an explicit limitation, not a passed end-to-end claim.
-Codex PreToolUse documents only the parent's session_id for subagents, so an
-unbound Codex actor cannot safely receive a session-only automatic checkout.
-This is a second explicit partial-support limit: Codex requires a coordinator's
-per-request named-unit preparation, while a present valid Claude agent_id can
-distinguish actor-local automatic preparation. An absent Claude agent_id is
-insufficient to distinguish a coordinator from a missing field: it also takes
-the explicit coordinator route. Both hosts still cancel unbound
-source mutation attempts through their registered pipeline.
+Codex same-agent automatic movement is unsupported by the observed template
+integration: there is no authenticated same-thread host controller. Its source
+hook may cancel and explain that exact limitation, but neither cancellation nor
+creation counts as movement. Do not add an unverified controller, invoke idle CLI
+commands from a running hook, or claim Codex products cannot move conversations.
 </objective>
 
 <execution_context>
@@ -112,442 +122,394 @@ source mutation attempts through their registered pipeline.
 <context>
 @docs/maintenance/issue87-auto-worktree/CONTEXT.md
 @docs/maintenance/issue87-auto-worktree/RESEARCH.md
+@docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md
+@docs/maintenance/issue87-auto-worktree/MATRIX.md
+@docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md
+@docs/maintenance/issue87-auto-worktree/RED-REVIEW.md
 @AGENTS.md
 @.ai/RULES.md
-@.ai/references/worktree-sessions.md
 @.ai/references/git-workflow.md
 
-Input revision: e87f49debbd64daf25157da0b693d328ad3dd531. Research inspected
-77b5668f2003bea60127d87e8785469286abafb3; the consumed definitions below were
-inspected again at this plan's input revision. Preparation authoring runs only in
-the assigned phase-issue87-auto-plan-164901267 worktree. Implementation, tests,
-integration and publication belong to separately dispatched owners.
-Bounded correction input: 60f285933ea64e9018532d6fc69b9ca83f37e0fe. The delta
-from authored a04cc284fcc279b4e64679e9430774b23e704b10 adds only MATRIX.md.
-This revision addresses PC-ISSUE87-01-ownership-01 and verified issue 98 linkage;
-other conclusive planning evidence and behavior remain unchanged. Source readiness
-requires the checker's bounded recheck of the integrated correction.
+Fresh source/decision input: 206deb7578ca51e3bbea0caa75beed1769a08363, including
+the updated actual human/parent decisions and source-map packet. Final preparation
+input 4f978af0521b2ba960750545ba36f01268f3cbff additionally contains only the
+coordinator's native MATRIX A1-A7 update. The prior source boundary RED
+at 38b7b1c changed only tests; no production implementation has been released.
+Keep that honest historical evidence but require fresh native-route RED below.
+Do not reinterpret prior plan approval or source-denial RED as native fulfillment.
 
-Decision aliases used here refer to the existing CONTEXT bullets, without
-inventing new user replies: D-01 = separate draft, never merge; D-02 = source/note
-distinction and scratchpad warnings without retry loop; D-03 = preserve dirty
-state and prevent old-root writes after claimed handoff; D-04 = six frozen drafts,
-73/74, live infrastructure, installation and cleanup excluded. The latest actual
-user constraints recorded by the coordinator satisfy the discussion prerequisite.
-No extra approval is needed at internal preparation transitions.
+Decision aliases: D-01 separate PR97 draft, never merge; D-02 source versus notes
+and no denial/retry loop; D-03 preserve dirty data and stop old-root edits; D-04 six
+original drafts frozen, 73/74, live infrastructure/install/cleanup excluded; D-05
+same existing agent/session moves natively; D-06 actual availability/role/policy/
+trusted-hook gate with no existing-path approval bypass; D-07 Codex lacks the
+observed controller, and live smoke is distinct from simulated contract evidence.
+These summarize actual CONTEXT decisions, not invented discussion or approval.
 
-Granularity: Standard. One feature, one TDD plan, three sequential tasks. Task 1
-produces independent behavioral expectations; Task 2 consumes its real RED and
-implements the complete hook-to-Git-to-cancellation slice; Task 3 consumes the
-implementation and receipts to document truthful continuation. Same source worker
-may own Tasks 1-2; coordinator assigns Task 3's exact documentation paths to a
-doc-writer after integration. No concurrent writers share these paths.
+One feature, one TDD plan, three sequential tasks. Coordinator dispatches one
+isolated source worker for Tasks 1-2, then an isolated doc-writer for Task 3 after
+source integration. Sources and docs have disjoint ownership below. Preparation
+owns only PLAN/PREPARER-SUMMARY; no code, tests or provider writes run now.
 </context>
 
-## Acceptance and scope
+## Acceptance, ownership and exclusions
 
-| ID | Observable acceptance | Producer / evidence |
+| ID | Required observable result | Owner / evidence |
 |---|---|---|
-| AW-01 | Primary source mutation with trustworthy actor/unit identity prepares exactly one checkout from local committed HEAD, or reuses the explicitly selected valid unit; original mutation is cancelled. Codex parent-only identity cancels with explicit preparation route and no inferred unit. | Task 2; real-Git and installed-pipeline fixtures |
-| AW-02 | Deterministic identity, explicit binding precedence, concurrency and uncertain-outcome recovery prevent selection of another unit and duplicate checkout creation. | Task 2; distinct-session, race and timeout fixtures |
-| AW-03 | Scratchpad-only create/update remains warning/continue; plain unlinked PR-body/task-note create/update under resolved Python tempfile.gettempdir() and proven outside every Git repository remains allowed. Both need no identity, preparation or worktree creation; delivered records and mixed operations are source. Other external targets are unsupported cancellation. | Tasks 1-2; both-host installed aggregate note controls, false-positive fixtures and old advisory suite |
-| AW-04 | Existing tracked/staged/untracked/ignored bytes, primary branch/HEAD and index are unchanged; no fetch, primary sync, stash, reset, clean or bulk copy. | Tasks 1-2; full preservation snapshots and offline fixtures |
-| AW-05 | Strict input/path handling refuses unsupported or ambiguous source mutations, stale paths, cross-checkout requests and unsafe note exceptions. | Tasks 1-2; independent bypass matrix |
-| AW-06 | Both installed hosts run the new component in their existing editing group; advisory handler remains first and its script is byte-identical. | Tasks 1-2; actual installed-launcher aggregate fixtures and upgrade tests |
-| AW-07 | Cancellation supplies a concrete continuation; real destination Git facts, fresh reads and rebuilt edits are required. Remaining unsupported native transition is reported explicitly. | Tasks 2-3; fixture flow plus documentation review |
-| AW-08 | Test-only RED precedes fixes, same target passes GREEN, independent reviews assess preservation/bypasses, and live-host proof is distinguished from fixtures. | Tasks 1-3; TDD receipts, independent review and live evidence gate |
+| AW-01 | Eligible target Claude: source denial leads to the same existing agent's native creation call, completed movement and subsequent default destination tools. | Task 2; composed SIMULATED contract, plus separate live gate |
+| AW-02 | Positive actual native tool/schema, eligible role, permitted policy, trusted creation hook and unambiguous work identity gate; unsupported cases are precise. Existing outside-path approval is honored. | Tasks 1-2; installed export and capability/refusal fixtures |
+| AW-03 | Untracked .planning/scratchpads/** create/update warns/continues; plain unlinked OS-temp note create/update outside every repository allows without identity/ticket/creation. Other external and unsafe targets gain no exemption. | Tasks 1-2; both-host installed aggregate controls |
+| AW-04 | Every pre-existing staged, unstaged, untracked and ignored change remains preserved/recoverable at its documented location. Selected custom native creation preserves primary bytes/index; any observed legitimate host relocation is separately accounted for. No blind copy/replay. | Task 2; disposable dirty Git snapshots; live gate |
+| AW-05 | Strict source/target confinement, mixed/rename/delete handling and identity checks; original pending call always cancelled, fresh reads precede exactly one rebuilt edit. | Tasks 1-2; bypass matrix and composed contract |
+| AW-06 | Actual installed hook pipeline, Claude native tool exports, standing instructions, six workflow consumers and native creation callback are connected. Phase/quick session adoption does not create a second checkout or sync primary. | Task 2; installed/real-Git/export tests |
+| AW-07 | Bounded ticket/creation lifecycle, concurrent separation, uncertain native outcome and retry handling avoid duplicate creation, double edits or creation-name approval bypass. Already-correct worktree is a no-movement control. | Tasks 1-2; failure/race/recovery cases |
+| AW-08 | Fresh genuine behavioral native-route RED before fixes, GREEN of same case, independent source/docs/integration review, honest live evidence and completion status. | All tasks; receipts and independent verification |
 
-Excluded: editing `.planning/` adoption records; changing old
-`.ai/hooks/worktree-guard.sh` bytes; six other drafts; provider 73/74; provider
-changes by workers; live infrastructure, installing/upgrading a host, cleanup,
-merges; arbitrary shell-command parsing; external writers; existing exec-session
-input; specialized tools that do not run these hooks; a universal sandbox; a
-general workflow engine; automatic dirty-content migration or copying. New
-preparation metadata and a newly created worktree are expected additions; no
-existing ignored primary files may be rewritten or removed.
+Source worker (Tasks 1-2) owns every files_modified path except these Task 3
+doc-writer paths: `.ai/hooks/README.md`, `.ai/references/worktree-sessions.md`,
+`.ai/runtime/README.md`, `.ai/RULES.md`. The shared operational protocol
+`.ai/references/same-agent-worktree.md` is source-worker-owned executable workflow
+instruction, covered by contract tests; doc-writer reads and explains it without
+editing it. Coordinator explicitly delegates only the standing native-route link
+in AGENTS and the narrow Hooks and validation section in RULES to their respective
+owners. Other shared policy and adoption skeleton sections stay untouched.
 
-## Inspected producer/consumer map
+Excluded: original six drafts; GitHub/GitLab/provider workflow changes; provider
+73/74; live infrastructure, installations, cleanup and merges; generalized command
+parsing; shell/external writers; existing exec-session input; cloud hooks; new
+Codex controller; whole-host sandbox claims; broad role/tool or workflow rewrites.
+Keep `.ai/hooks/worktree-guard.sh` byte-identical and its warning preference intact.
+No automatic stash/reset/clean, dirty-file bulk copy, path rewriting or old-input
+replay. Worker lifecycle/integration/publication remain coordinator-owned.
 
-| Existing owner / entrypoint | Proposed connection and exact owned path |
+## Inspected source map and precise integration
+
+| Producer/consumer at fresh input | Required change / retained contract |
 |---|---|
-| `.ai/install.py:430-468` MANAGED_HOOKS/HOST_HOOKS and `hook_settings(host)` | Keep the one editing matcher group; append `.ai/hooks/source-prewrite.sh` after the existing advisory handler, passing the explicit host. Include the new script in managed installation/update ownership. Preserve unrelated user hooks. |
-| `.ai/hooks/worktree-guard.sh:147-262` file-tool advisory | Unchanged reference consumer. Keep warning behavior and its existing tests; new component handles source preparation separately. |
-| `.ai/hooks/worktree-location.sh:91-112` Claude WorktreeCreate | Read-only dependency; still a location hook, not an arbitrary edit trigger or session registration. Do not edit it. |
-| `.ai/runtime/lib/worktrees.py:71-115,621-653,747-832` | Reuse common_dir, worktree_root, listing, load_sessions, open_session/put_session. Add only deterministic request identity support necessary for crash recovery; preserve ordinary open_session defaults. Do not rely on session_for's first-match/missing-entry mutation as proof of safe reuse. |
-| `.ai/runtime/phase.py` `verb_session_open` and verb registry | Add only `prewrite.prepare`, delegating to `lib.prewrite.prepare`; existing session.open keeps its existing default sync semantics. |
-| `.ai/hooks/lib/handoff-io.sh` Python probe/native-path pattern | Read-only pattern; source-prewrite launcher has a strict failure/cancellation contract and must not inherit this helper's fail-open behavior. |
-| `tests/test_session_delivery.py` SessionCase/SessionLifecycle/PhaseLocate | Read-only disposable-repository/subprocess pattern and regression command. New feature cases live in `tests/test_prewrite.py`. |
-| `tests/test_install.py:666-733` installed launcher and scratchpad cases | Extend the actual generated host settings pipeline; retain exactly one matching editing group and advisory first. New note case must work with no session_id. |
-| `.ai/references/worktree-sessions.md:68-102` explicit root transition | Add one source-prewrite continuation section to this existing shared routing reference; no new workflow/skill/command catalog. |
+| `.ai/install.py:128-145,188-198` render_asset/destination_path; Claude roles copied verbatim | Add a bounded Claude-only export adjustment granting EnterWorktree in restrictive coordinator/coder tools metadata; preserve all other tool restrictions, role bodies and Codex TOMLs. Source-tree roles without that export still require actual native availability. Skill allowed-tools grants preapproval, not availability; do not add context:fork or blanket privileges. |
+| `AGENTS.md` installed as CLAUDE.md; coordinator/coder read it | Add a standing same-existing-agent source-denial rule linking the new protocol. A returned deny reason names the installed protocol, so ad-hoc source edits also reach it. |
+| `.ai/install.py:430-468,479` hook registrations | Append source-prewrite after unchanged advisory in the single existing editing PreToolUse group on both hosts; keep actual Windows launcher and user-hook behavior. Claude WorktreeCreate remains worktree-location. |
+| `.ai/hooks/worktree-location.sh:27-45,91-112`; ordinary .test.sh:52-85 | Add only the dedicated reserved `wf-entry-` ticket branch. Validate journal and pinned base; create fresh destination or return explicit uncertain/refusal. Never reuse a registered destination/branch through this creation branch. Ordinary dispatch name reuse/custom-root/calling-HEAD behavior remains covered unchanged. |
+| `.ai/runtime/lib/worktrees.py:766-832` open_session | Do not use it to precreate the Claude native destination; retain its defaults and existing callers. Reuse existing common_dir/root/listing/session helpers where sufficient. |
+| `.ai/runtime/lib/worktrees.py:835-893` phase-only session.adopt | Add narrowly scoped adopt_native_session for verified native-created phase/quick units with exact journal base/root/branch. Do not broaden ordinary session.adopt or infer a remote base/phase from recency. |
+| `.ai/runtime/phase.py` registry and normal JSON envelopes | Add prewrite.begin and prewrite.confirm adapters to lib.prewrite. These record/check local preparation/native Git facts; they never assert same-agent host binding or invoke native tools. |
+| quick:127-140, discuss:236-253, plan:127-144, execute:178-195, verify:132-149, ship:90-98 | Add a conditional Claude native-route branch before shell session.open/cd routing. New unit uses native creation then adoption. Existing session uses the actual native existing-path operation with eligibility/policy/approval checks. Reload locate/init from post-native default root. Shell cd remains ordinary runtime guidance, never native movement proof. |
+| `tests/test_install.py:682-780` aggregate and note/source tests | Preserve valid cancellation/note controls; replace obsolete Claude precreated-second-checkout expectation with denial ticket followed by native creation contract. Codex refusal remains unsupported-control evidence, not the new native-route RED. |
+| `tests/test_session_delivery.py`, `.ai/hooks/worktree-location.test.sh`, `tests/test_agent_sources.py` | Existing real-Git/session, ordinary location reuse and role/export regression checks remain. New native behavior cases live in new test_same_agent_worktree.py and test_prewrite.py. |
 
-## Bounded contract
+## Same-agent operational contract
 
-`lib.prewrite.prepare(workspace, host, session_id, agent_id=None, tool_use_id=None,
-kind=None, label=None, base=None)` is shared by the hook and one runtime verb:
-`phase.py query prewrite.prepare --host <codex|claude> --session-id <opaque-id>`.
-An optional explicit unit uses both `--kind <existing-session-kind>` and
-`--label <unit>` plus `--base <full-commit-id>`; partial selection is an error.
-For Codex and Claude events lacking a valid agent_id, all of that explicit unit
-selection plus the captured `--tool-use-id` is required, binding only that request
-to the named unit. For Claude subagents include `--agent-id`. Do not create a
-Codex unit from session_id alone, even when just one session exists. A missing
-tool_use_id in the explicit route cancels with the existing named session.open
-route using --base and --no-sync, followed by isolated dispatch/entry; it never
-authorizes inventing a request identity.
-The runtime emits its usual JSON result. Direct hook execution uses
-`source-prewrite.sh --host <codex|claude>`, reads the native event on stdin, and
-invokes `lib/prewrite.py`'s hook adapter from that installed runtime. Keep host
-output serialization separate from runtime JSON envelopes. Do not pass raw tool
-arguments through shell interpolation or evaluate payload strings.
+1. **Classify and cancel.** Strictly parse the synchronous native event and full
+   mutation. Source requests from primary produce a bounded local ticket and deny;
+   they do not create a worktree. Use exit 0 plus
+   `hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",
+   permissionDecisionReason:"..."}`; internal parse/adapter failure uses blocking
+   exit 2/stderr. Never use continue:false, stopReason or generic runtime JSON as
+   host cancellation. Denial identifies ticket, original committed HEAD, source
+   root and the installed same-agent protocol. The same agent follows that next;
+   it must not resubmit the pending mutation or silently rewrite its arguments.
 
-**Identity and automatic unit:** trust only the installed registration's explicit
-host, the native nonempty bounded string session_id, actual process cwd/Git facts,
-and the repository's existing runtime bookkeeping. A payload cwd must resolve to
-the actual process root/subdirectory; a disagreement is not permission to operate
-there. Canonicalize the Git common directory using filesystem identity rules.
-Claude with a present valid agent_id hashes `(canonical common directory, host,
-exact opaque session_id, agent_id)` with SHA-256 for a filesystem-safe preparation key.
-Codex explicit preparation additionally binds the captured tool_use_id to the
-coordinator-selected kind/label; the unit identity, not changing request IDs,
-determines checkout reuse. Never scrub session IDs
-into colliding filenames. Do not use transcript contents, prompt text, tool paths,
-current branch name or newest session to infer a work unit.
+2. **Gate in the same model's standing protocol.** The hook cannot inspect the
+   tool pool. The actual caller checks that its advertised native tool pool/schema
+   exposes EnterWorktree creation, that its current role is eligible/unpinned,
+   policy allows it and the installed creation hook is trusted/registered.
+   Use the host-advertised creation argument field, including a name only when the
+   schema actually supplies it. No guessed minimum version, guessed JSON schema,
+   config flag or marker can manufacture availability. A restrictive installed
+   creation schema that cannot safely carry the reserved creation identity is an
+   unsupported adapter case; do not invent a field or invoke unnamed creation.
+   A restrictive installed
+   role must actually permit the tool; preapproval alone is insufficient. Missing
+   schema/tool, pinned creation restriction, policy denial or untrusted hook ends
+   this attempt precisely as unsupported, with the edit unapplied. The selected
+   executor's missing tool is a live-smoke limit, not a target-host veto.
 
-A previously explicit, valid actor/request mapping takes precedence. For Claude
-only, when its documented native actor identity is available, otherwise
-derive `kind=quick`, `label=auto-<full-preparation-key>` and capture the calling
-checkout's full local `HEAD^{commit}` before creation. This is a technical
-session-local work identity, not a guessed phase or a new planning record. Create
-with that explicit base and `sync=False`; no origin/remote assumption or network
-call. Codex PreToolUse has session_id, cwd, hook_event_name, tool_name, tool_input,
-tool_use_id and turn_id, but its subagents share the parent session_id and no actor
-field is documented. Neither turn_id nor tool_use_id establishes exclusive work
-ownership; do not invent such a use. An unbound Codex event therefore cancels
-without creation and gives the coordinator the captured request identity for one
-explicit prepare-and-handoff operation. The coordinator names the work unit under
-existing authorization; it must not resubmit the denied edit in the old root.
-Claude includes agent_id for subagents; root/coordinator events may omit it, but
-absence alone cannot distinguish a real coordinator from a missing/malformed
-identity field. Only a present valid native actor ID enables unbound automatic
-creation; otherwise require the explicit named-unit/request route. Validate its
-type when present. Missing session identity, ambiguous/mismatched explicit mappings, unsupported
-host or unavailable Git/commit cannot auto-create. Cancel the source call with
-the exact missing fact and the one-time coordinator preparation/entry instruction.
-Note-only calls do not require this identity.
+3. **Reserve native creation once.** `prewrite.begin <ticket> <phase|quick> <label>`
+   validates exact repository/session/actor/request, source targets and explicit
+   local full commit captured by the ticket, then reserves one safe fresh
+   `wf-entry-<opaque-token>` name under the configured ignored immediate-child
+   worktree root. Store minimal unit/root/base/name/state/digests under
+   common_dir/ai-phase/prewrite; no source contents or transcript text. Use a bounded
+   OS-released common-repository lock and atomic journal. Stable actor identity is
+   Claude session_id plus agent_id when present; omitted agent_id alone never
+   proves main-agent eligibility. Native role/tool/context checks establish the
+   caller's route; a request-specific unit binding avoids guessing ownership.
+   Known workflow kind/label takes precedence; an ad-hoc call uses an explicit
+   ticket-local quick label returned by begin, not newest session/branch/transcript.
+   Conflict or ambiguous ownership refuses, never shares a unit implicitly.
+   Reserve exact branch `worktree-wf_<opaque-token>` so the native-created unit
+   satisfies the existing isolation branch namespace; do not infer its branch
+   from an unrelated session or relax existing branch checks.
 
-**Storage and idempotence:** keep only the key, source repository/root, host/unit,
-full base, selected branch/root and preparation state under
-`common_dir/ai-phase/prewrite/<key>.json`; no source payloads or transcript text.
-Use an OS-released exclusive repository-level preparation lock with at most one second wait,
-then atomic journal writes. Recheck mapping and Git registration after acquiring
-the lock. Journal deterministic branch/path ownership before creating; add an
-optional `request_id` to open_session solely to stabilize its normal branch/path
-token for this caller. All ordinary callers retain existing behavior. Validate
-duplicate session records, existing branch ownership, common-dir identity,
-configured ignored root, immediate-child destination, actual registration,
-expected branch and recorded base before reuse. A crash after worktree creation
-but before session registration must be recoverable only from this exact journal
-and matching Git facts. Timeout/uncertain outcomes require inspection before retry;
-never delete an uncertain tree, create a new random alternative, steal a stale
-lock by age, or fall back to the primary checkout. Conflicting/stale records remain
-preserved and return an actionable error. Concurrency coverage is for cooperating
-prewrite callers; arbitrary external Git writers are outside the lock guarantee.
+4. **Native entry is the next operation.** The same existing model invokes its
+   own advertised EnterWorktree creation form with the reserved creation identity.
+   The host fires WorktreeCreate; the dedicated location-hook branch consumes the
+   exact journal name/source/base and creates the checkout from that pinned local
+   commit without fetch/sync. Return only its validated destination as the host's
+   creation provider. No worktree exists merely because begin succeeded. Existing
+   registered destination, branch/name collision, stale journal, wrong base or
+   uncertain prior creation cannot be returned as "new" creation. Refuse and
+   inspect/preserve, or use the genuine native existing-path route if its schema,
+   eligibility and required approval allow it. Never disguise reuse to evade
+   outside `.claude/worktrees/` approval. Preserve ordinary dispatch hook reuse.
 
-**Source/note policy:** ordinary plain unlinked PR-body/task-note file create/update
-is allowed only under the resolved OS temporary directory returned by Python
-`tempfile.gettempdir()`, and only when proven outside every Git repository and
-nested repository. That narrow temporary-artifact control needs no session identity,
-preparation, handoff state or worktree creation. Resolve the OS temp root and target
-using filesystem facts and require real path containment, including the nearest
-existing ancestor for a new file; a lexical temp-directory prefix is insufficient.
-This is location-based temporary-artifact classification, never filename extension
-or content guessing. Other external targets outside this resolved OS temp root
-are unsupported and cancelled; there is no arbitrary external-note exemption.
-Require all targets to be ordinary create/update files with no symlink, junction,
-reparse traversal, hard-linked existing target, Git repository or unresolved path
-ambiguity. A target in any other repository remains a cross-repository source
-target, even if its name says note or PR body. This narrow nonrepository control
-does not exempt any additional paths inside a Git repository. Any mixed operation
-with a repository-source target takes the source decision for the whole operation;
-malformed, ambiguous, delete and rename/move operations gain no exception here.
-Exercise plain note creation and update in an ordinary TemporaryDirectory under
-that OS temp root, outside every repository, through both actual installed host
-aggregate pipelines without session identity. Companion repository-source controls
-must receive their required decision, and non-temp external targets must cancel.
+5. **Prove post-entry defaults.** Native completion must be observed for the same
+   existing session/agent. Subsequent tools, without explicit cwd overrides or
+   prefixed cd, must report actual destination cwd/Git root, registration, named
+   branch and pinned base; a relative read must come from the destination. Reload
+   the destination CLAUDE.md/AGENTS and relevant instructions/project configuration,
+   re-resolve runtime and all locate/init inputs there, and confirm destination
+   write permissions. The original project-directory environment variable stays
+   anchored on Claude; do not use it as the post-entry cwd. `prewrite.confirm
+   <ticket>` verifies actual Git/journal facts in its default cwd, then registers
+   the phase/quick unit through adopt_native_session without another checkout or
+   primary synchronization. Its output explicitly says Git facts verified, host
+   binding not certified by runtime. Intended-root state, self-reported tool lists,
+   a child process cwd or confirm success alone are not host movement proof.
 
-For in-repository notes, preserve existing `.planning/scratchpads/**` ordinary
-untracked file create/update behavior. Also allow create/update in the ignored
-`.planning/handoffs/<preparation-key>/scratch/**` namespace when identity exists.
-The whole operation must stay inside the selected note namespace, with every
-ancestor resolved inside the same real checkout, no symlink/junction/reparse
-traversal, nested repository, tracked file or existing hard-linked target.
-Malformed paths, tracking ambiguity, deletion, rename/move, or any non-note member
-make the entire operation source. A source file with a Markdown extension remains
-source; delivered `.planning/` records are source for these editing tools. The
-existing named runtime planning-record exception remains unchanged and outside
-this hook's tool coverage. These explicit scratch namespaces are a note exception,
-not an attempt to infer semantic source from file contents. The old advisory
-continues to warn on ordinary scratchpad writes. Read-only tools are quiet and
-create no bookkeeping.
+6. **Fresh reconstruction and continuation.** Re-read every destination file,
+   including rename/delete sources; rebuild the intended mutation against those
+   reads, and apply once in the destination. Do not reuse old absolute paths,
+   old content offsets or the cancelled pending call. If intent depends on dirty
+   primary content absent there, surface the dependency and keep data preserved;
+   no automatic copy/replay. A later source hook validates current root/unit/targets
+   and rejects stale paths or drift. Already correctly isolated callers need no
+   native move. Wrong-root/already-worktree/pinned callers may use only the actual
+   permitted native path form with its restrictions; no replacement child counts.
 
-**Input/path handling:** structurally parse the whole native JSON object and
-supported tool input; no jq/text fallback that silently loses fields. Cover Write,
-Edit, MultiEdit, NotebookEdit and apply_patch's documented Add/Update/Delete/Move
-operations, with each source and destination included. Require complete recognized
-patch framing and operation headers; reject unrecognized or malformed captured
-mutations rather than classifying an empty path set as allowed. Do not parse
-general shell scripts. Resolve relative paths against actual cwd, handle nested
-cwd, CRLF, spaces, Unicode, Windows drive/case/separator variants and Git Bash
-native path conversion. Reject drive-relative paths, unsafe UNC/device forms,
-traversal, alternate streams and cross-repository/root source targets; only the
-proven plain nonrepository note create/update control above is outside that source
-scope. Unsupported path
-forms get an explicit cancellation. Use real nearest existing ancestors for new
-files and inspect filesystem links, not lexical prefix tests alone. No path is
-silently translated into the selected worktree.
+7. **Failure and retry.** Register synchronous source handler timeout 30 seconds;
+   ticket work has a 15-second cumulative internal budget, at most one-second lock
+   wait and bounded Git subprocesses, reserving time for valid denial. Native
+   creation uses the existing WorktreeCreate timeout and explicit bounded child
+   Git calls shorter than that outer deadline. On timeout/unknown native outcome,
+   inspect same-session native state, journal and actual registration before any
+   next call; no new random tree, repeated EnterWorktree, second edit or cleanup.
+   Actual movement may have completed despite missing result: prove it or leave
+   pending/unverified. Old-root source remains denied. Explicit request bindings
+   do not authorize later unrelated calls or changed targets under the old ID.
 
-**Cancellation and continuation:** synchronous successful denial uses exit 0 and
-the exact JSON shape `hookSpecificOutput: {hookEventName: "PreToolUse",
-permissionDecision: "deny", permissionDecisionReason: "..."}` on both hosts.
-Use documented blocking exit 2 plus stderr when the wrapper cannot parse/execute
-safely. Never emit `continue:false` or `stopReason`. Pin native envelopes and exit behavior in fixtures;
-unsupported stop fields, a generic runtime error envelope or an exit-1 hook error
-are not cancellation. Successful preparation always cancels the pending source
-mutation. Its reason contains the preparation key, selected root/branch/base when
-prepared, or the exact one-time preparation command and missing identity otherwise,
-and the existing reference's exact continuation section. Repeated old-root calls
-remain cancelled and refer to the same destination without another creation.
-For Codex, an unbound new request is never routed using a different request's
-mapping merely because session_id matches; refer to the coordinator route rather
-than invent an actor. Bound per-request retries reuse their unit.
-Record a digest of the captured request identity, operation and targets alongside
-an explicit request binding; changed targets/operation under the same tool_use_id
-cancel as a mismatch. Such binding authorizes only selecting/preparing the unit,
-never executing the original payload. A later unrelated/retried call with a new
-request identity gains no permission from it. The coordinator continues directly
-to isolated dispatch/entry and fresh destination reads under existing authority;
-there is no blanket new approval prompt or old-root resubmission step.
+8. **Preserve native-session lifetime.** In the existing WorktreeRemove handler,
+   recognize a native-entry-owned path only through its exact common-repository
+   journal/Git identity, and preserve that checkout rather than removing it. This
+   applies to clean, dirty, ignored-only and uncertain native-owned state; retain
+   journal/branch and report preservation. No new cleanup is authorized. A prefix
+   or missing/corrupt journal cannot authorize deletion: a reserved native-entry
+   candidate with missing/corrupt identity must be preserved/refused, never fall
+   through to ordinary dispatch removal. Test the actual registered
+   removal callback with ignored-only native data and uncertain outcomes. Preserve
+   all ordinary dispatch WorktreeRemove behavior and its separate tests. If a
+   target host does not honor the trusted custom removal provider, report that
+   lifecycle unsupported/unverified rather than promising data preservation.
 
-Register the new synchronous handler with a 30-second host timeout. From adapter
-startup use a monotonic 15-second cumulative budget, one-second lock wait and Git
-subprocess bounds no longer than the remaining budget (at most five seconds per
-call), reserving time to serialize denial. A large/slow creation can time out;
-preserve its journal and inspect actual Git state before the next attempt. Test
-deadline/uncertain outcome behavior and never wait until the outer hook timeout
-to return a decision. This bounds cooperating subprocess work, not failure to
-launch the hook. Codex missing/crashed/malformed/timed-out hooks may allow the
-call; background hooks cannot cancel, and cloud orchestration is unsupported.
-Claude onFailure:"block" is documented only from 2.1.295; do not inject that
-configuration without confirmed host compatibility. Installed versions remain
-unknown. Neither host's outer failure behavior is made safe merely by these
-internal deadlines or fixtures.
+Existing native session paths are never shell-cd fulfillment: use the real native
+path form, honor host approval and role restrictions, then perform steps 5-6.
+If unavailable, the exact same-agent route is unsupported; do not create a new
+unit to evade that condition. Prior shell-based runtime routes are not relabeled
+as movement. Do not remove ordinary session.open semantics for unrelated callers.
 
-The coordinator/host must next enter the selected checkout through a supported
-native operation or explicitly bind a fresh executor there, using existing
-authorization. The continuation verifies actual cwd, common-dir, Git registration,
-branch and base; reloads instructions/planning inputs from that root; rereads every
-destination file and every rename/delete source; and rebuilds the edit there.
-Dirty-primary content is not transferred. If intent depends on absent dirty or
-untracked content, surface that dependency and preserve both trees. A later
-supported source call is allowed only when its actual root and all targets match
-the validated destination (or an already independently valid assigned linked
-worktree); stale absolute primary paths remain cancelled. A JSON intended-root
-marker alone never authorizes a write. Do not treat a changed subprocess directory,
-checkout attachment, updatedInput, or printed path as host/session entry.
+## Classification and preservation boundaries
 
-Native entry may require host approval or be unavailable. Report that dependent
-transition plainly and preserve the prepared checkout. Do not reinstall tools,
-invent APIs, loop the denied mutation, or claim the user has approved a different
-permission boundary. Codex create/attach leaves its caller in the original checkout;
-the exposed handoff tool cannot move its caller. Claude WorktreeCreate does not
-trigger merely because an arbitrary file edit was attempted.
+Preserve untracked create/update under `.planning/scratchpads/**` as advisory
+without identity. The ignored `.planning/handoffs/<ticket>/scratch/**` may hold
+session-local create/update notes under the same safety checks. Plain unlinked
+create/update under resolved Python tempfile.gettempdir(), proven outside every
+Git/nested repository, is an allowed ordinary temporary artifact without identity,
+ticket or creation. Use real containment/ancestor/Git facts, no lexical temp prefix,
+extension or content guessing. Non-temp external targets are unsupported; no
+arbitrary external exemption. Tracked notes, mixed note/source, delete/rename/move,
+symlink/junction/reparse traversal, existing hardlinks, nested repositories and
+ambiguous paths receive source/unsupported handling for the whole operation.
+
+Parse complete Write/Edit/MultiEdit/NotebookEdit and native apply_patch Add/Update/
+Delete/Move input structurally, collecting all source/destination targets. Unknown
+captured mutation, malformed JSON/patch or empty path set must not silently allow.
+Resolve actual default cwd with Windows drives/case/separators, spaces, Unicode,
+CRLF and Git Bash native conversion. Reject unsafe traversal, drive-relative,
+device/UNC/alternate-stream forms and cross-repository targets; no broad shell
+parsing. Read-only tools create no tickets or worktrees. Keep named runtime-owned
+planning-record exceptions unchanged; editable delivered Markdown is source.
+
+The chosen custom creation hook creates a fresh committed checkout and preserves
+primary staged/unstaged/untracked/ignored bytes, index, branch and HEAD. Snapshot
+them in disposable tests before denial/native creation/failure/retry. If a real
+host legitimately relocates existing data, record each change's before/after
+location, recoverability and conflict behavior separately; do not silently treat
+missing primary data as success or impose byte-identical primary state on a
+documented relocation. No automatic stash/reset/clean/remove or dirty bulk-copy.
+
+Outer Codex missing/crashed/malformed/timed-out hooks may fail open; background
+hooks cannot cancel, cloud orchestration and existing exec-session inputs are not
+covered. Claude onFailure:block requires confirmed compatible host support; do not
+invent an installed version or add unverified config. These are optional hooks
+with bounded coverage, not a universal filesystem enforcement boundary.
 
 <feature>
-  <name>Source-sensitive one-time checkout preparation with explicit continuation</name>
-  <files>.ai/runtime/lib/prewrite.py, .ai/runtime/lib/worktrees.py, .ai/runtime/phase.py, .ai/hooks/source-prewrite.sh, .ai/install.py, tests/test_prewrite.py, .ai/hooks/source-prewrite.test.sh, tests/test_install.py, tests/test_install_update.py</files>
-  <behavior>Native first source event -> one prepared isolated root plus cancellation; same event retries/concurrency -> same root plus cancellation; permitted notes/read-only -> no creation; destination-local rebuilt mutation -> allowed; stale/cross-root/malformed mutation -> cancelled; uncertain creation -> exact recovery or preserved actionable error.</behavior>
-  <implementation>Implement the bounded contract above only after observed test-only RED. Reuse existing Git/session/install surfaces; add no dependencies, generalized command parser or new workflow engine.</implementation>
+  <name>Same-existing-agent conditional Claude native worktree entry</name>
+  <files>.ai/references/same-agent-worktree.md, .ai/runtime/lib/prewrite.py, .ai/hooks/source-prewrite.sh, .ai/hooks/worktree-location.sh, .ai/install.py, tests/test_same_agent_worktree.py</files>
+  <behavior>Supported caller: deny old edit -> positive native gate -> same-agent native creation -> default destination context proof -> fresh read -> rebuilt edit once. Unsupported/uncertain caller: precise unapplied/pending outcome, never simulated fulfillment. Notes/read-only remain controls.</behavior>
+  <implementation>Implement only this route and its bounded existing-session/workflow connections after fresh target behavioral RED. Reuse existing Git/session/install surfaces; no new host controller or workflow engine.</implementation>
 </feature>
 
 <tasks>
 <task type="auto" tdd="true">
-  <name>Task 1: Commit native-hook and real-Git behavioral RED</name>
-  <files>tests/test_prewrite.py, .ai/hooks/source-prewrite.test.sh, tests/test_install.py, tests/test_install_update.py</files>
-  <read_first>docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/RESEARCH.md, .ai/runtime/lib/worktrees.py, .ai/runtime/phase.py, .ai/install.py, tests/test_session_delivery.py, tests/test_install.py, tests/test_install_update.py, .ai/hooks/worktree-guard.test.sh, .ai/references/methods/tdd.md</read_first>
-  <action>Per D-01 through D-04, build the independent bypass/false-positive matrix below before production changes. Start with a real installed-pipeline Claude first-source event carrying session_id and agent_id in a disposable Git repository, expecting a prepared checkout and a cancelled fake pending mutation. Add the Codex parent-only identity case expecting cancellation without guessed checkout creation. Existing registration currently permits these edits; require assertions about that missing behavior to fail. Build the harness so missing new code is not the failure reason. Use a test executor that runs the fake mutation only when the aggregate native hook result permits it, and assert primary bytes never change when denied. Capture command, named test, actual assertion, expected/observed value, exit status and input revision; commit only tests plus the worker summary with RED evidence before Task 2. A syntax/import/setup crash, zero tests, unavailable Bash, wrong fixture or unrelated failure is INVALID_RED. Do not create a stub production hook or alter production behavior to manufacture RED.</action>
-  <behavior>Clean primary source request must fail the current allowed-write behavior; notes remain allowed, read-only stays quiet, and the fixture checks actual Git worktree registration and bytes rather than success wording.</behavior>
-  <acceptance_criteria>AW-01 through AW-06 and AW-08 have named cases; genuine test-only target assertion failure is recorded and committed before fixes; ordinary note and advisory expectations remain intact.</acceptance_criteria>
-  <verify><automated>python -m unittest discover -s tests -p test_install.py -k prewrite -v</automated><fails_when>At RED, no named target assertion fails for missing checkout preparation/cancellation, zero tests run, or setup/import/launcher errors cause the nonzero exit.</fails_when></verify>
-  <done>A committed test-only RED proves the original supported mutation can currently proceed without preparation, and an independent matrix states expected allowed and cancelled outcomes.</done>
+  <name>Task 1: Commit fresh native-route behavioral RED and installed contract controls</name>
+  <files>tests/test_same_agent_worktree.py, tests/test_prewrite.py, tests/test_install.py, tests/test_install_update.py, .ai/hooks/source-prewrite.test.sh, .ai/hooks/worktree-location.test.sh</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, docs/maintenance/issue87-auto-worktree/MATRIX.md, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md, docs/maintenance/issue87-auto-worktree/RED-REVIEW.md, .ai/install.py, .ai/hooks/worktree-location.sh, .ai/hooks/worktree-location.test.sh, .ai/runtime/lib/worktrees.py, tests/test_install.py, tests/test_session_delivery.py, .ai/references/methods/tdd.md</read_first>
+  <action>Per D-01 through D-07, retain valid historical 38b7b1c refusal/note evidence but update its obsolete Claude precreated-tree assertion: first denial must produce a native continuation ticket and no checkout until the native creation event. Add a fresh installed export/orchestration contract suite using an explicitly SIMULATED host/session adapter with stable actor identity, advertised creation schema fixture and default tool cwd. Drive the actual generated source pipeline, continuation ticket/contract, native operation simulation, actual registered WorktreeCreate launcher, real disposable Git confirmation and subsequent default-cwd relative read/rebuilt mutation exactly once. A test-supplied host adapter models native movement; it does not prove a live host or model follows instructions. The target RED must reach an assertion about absent same-agent native continuation/export/default-context contract, not just the old Codex/source refusal, missing new module or test setup. Add the independent matrix below, preserving ordinary dispatch name reuse tests separately. Record command, named target, expected/actual assertion, exit, revision and case count, then commit only tests plus implementation summary before any production fix. Setup/import/syntax errors, zero tests or unrelated failures are INVALID_RED; do not create a production stub to manufacture RED.</action>
+  <behavior>Native-capable simulated caller must preserve identity and use destination defaults after the registered creation sequence. Missing capability, path-only/pinned policy, untrusted hook, cancelled or uncertain transition, stale request and forbidden existing-name reuse cannot pass as native success. Both host note controls remain allowed.</behavior>
+  <acceptance_criteria>AW-01/02/06/07/08 have a genuine fresh target assertion RED at a test-only commit; AW-03 controls pass; native contract assertions are independent of implementation internals and explicitly labeled SIMULATED.</acceptance_criteria>
+  <verify><automated>python -m unittest discover -s tests -p test_same_agent_worktree.py -v</automated><fails_when>At RED, no named native-route behavior assertion fails, zero cases run, or setup/import/launcher faults cause the nonzero result.</fails_when></verify>
+  <done>A fresh committed native-route RED exists with legitimate controls; historical cancellation RED is preserved without being relabeled movement evidence.</done>
 </task>
 
 <task type="auto" tdd="true">
-  <name>Task 2: Implement and register the complete preparation/cancellation slice</name>
-  <files>.ai/hooks/source-prewrite.sh, .ai/runtime/lib/prewrite.py, .ai/runtime/lib/worktrees.py, .ai/runtime/phase.py, .ai/install.py, tests/test_prewrite.py, .ai/hooks/source-prewrite.test.sh, tests/test_install.py, tests/test_install_update.py</files>
-  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, tests/test_prewrite.py, .ai/hooks/source-prewrite.test.sh, tests/test_install.py, tests/test_install_update.py, .ai/hooks/lib/handoff-io.sh, .ai/runtime/lib/worktrees.py, .ai/runtime/lib/gitops.py, .ai/runtime/phase.py, .ai/install.py, .ai/hooks/worktree-guard.sh</read_first>
-  <action>Implement the bounded contract, consuming Task 1's actual RED. Lead with its first source-event tracer across installed registration, strict adapter, real Git preparation and cancellation; then cover the matrix. Keep the existing advisory script byte-identical. Append the new handler in the existing editing matcher group after advisory on both hosts; do not add a duplicate editing group. Preserve user hooks and test reinstall/update idempotence. The generated Codex commandWindows launcher must preserve cancellation exit status, spaces and Unicode, and use the already supported Git Bash discovery pattern. Include the new script in installer management. Use local committed base and deterministic identity, validated journal recovery, bounded lock and no-sync session creation; never copy dirty content. Preserve ordinary session.open callers. Test a rebuilt destination operation after actual fixture cwd/root transition; never replay the original payload. Record GREEN command/results at the implementation revision, then commit source/tests and summary. Refactor only changed owned code when necessary and rerun affected checks.</action>
-  <behavior>Every bounded-contract outcome and matrix case below is exercised through either actual generated launchers or real disposable Git subprocesses; the old source mutation never executes after successful preparation.</behavior>
-  <acceptance_criteria>AW-01 through AW-07 pass fixture evidence; AW-08 has matching RED/GREEN history. Primary index/dirty snapshots match; repeated/concurrent calls have one selected destination; no native-binding claim is made from a fixture.</acceptance_criteria>
-  <verify><automated>python -m unittest discover -s tests -p test_prewrite.py -v</automated><fails_when>Nonzero exit, zero tests, preservation mismatch, duplicate destination, or any bypass/false-positive matrix case has the wrong decision.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -v</automated><fails_when>Nonzero exit, zero tests, wrong editing-group/handler order, absent registered cancellation, or installed-launcher fixture fails.</fails_when><automated>bash .ai/hooks/source-prewrite.test.sh</automated><fails_when>Nonzero exit, no executed cases, a native envelope/exit is misread, or a denied fake mutation executes.</fails_when></verify>
-  <done>The registered bounded feature passes the same target that failed RED, preserves dirty state, and routes explicit continuation. Fixture completion does not satisfy the live-host automatic-entry gate.</done>
+  <name>Task 2: Wire the same-agent native route, creation provider and session consumers</name>
+  <files>AGENTS.md, .ai/install.py, .ai/hooks/source-prewrite.sh, .ai/hooks/source-prewrite.test.sh, .ai/hooks/worktree-location.sh, .ai/hooks/worktree-location.test.sh, .ai/runtime/phase.py, .ai/runtime/lib/prewrite.py, .ai/runtime/lib/worktrees.py, .ai/references/same-agent-worktree.md, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md, tests/test_prewrite.py, tests/test_same_agent_worktree.py, tests/test_install.py, tests/test_install_update.py</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, Task 1 tests and committed RED summary, AGENTS.md, .ai/install.py, .ai/agents/coordinator.md, .ai/agents/coder.md, .ai/hooks/worktree-guard.sh, .ai/hooks/worktree-location.sh, .ai/runtime/phase.py, .ai/runtime/lib/worktrees.py, .ai/runtime/lib/gitops.py, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md</read_first>
+  <action>Consume the actual fresh RED and implement the operational contract above. Lead with the installed-source-deny to same-model native instruction to trusted creation callback to Git-confirmed destination slice, then complete refusal/retry/path/dirty cases. Source hook never precreates; native WorktreeCreate owns fresh pinned-base creation. Add the dedicated wf-entry name branch, ticket lifecycle and narrow phase/quick native adoption without changing normal dispatch reuse/session defaults. Add Claude-only EnterWorktree permission to actual restrictive coordinator/coder exports, the standing AGENTS/installed CLAUDE link, and the six conditional workflow branches so Claude does not reach shell session.open/cd as its movement mechanism. Actual availability, role, schema and policy remain positive model-side gates. Existing-session entry uses genuine native path form and honors required approval; no name-reuse bypass. Preserve user hooks, Windows Unicode/spaces/status propagation, one editing group with advisory first, and the old advisory bytes. Codex returns precise unsupported movement rather than claiming a controller. Finish matching GREEN, record all actual commands/results and commits in the implementation summary, and commit source/test slice. Refactor only changed owned code if needed, with affected checks rerun.</action>
+  <behavior>AW-01 through AW-07 hold through composed installed/export/real-Git fixtures, including the matrix below. Test-only host simulation is always identified; runtime Git confirmation is never labeled host binding proof.</behavior>
+  <acceptance_criteria>The same fresh RED target passes GREEN; native creation is causally after denial and same-agent capability gate; default context/fresh reads/rebuilt edit are required; preservation and unsupported controls pass; no preparation-only/manual-child substitute or inferred live success remains.</acceptance_criteria>
+  <verify><automated>python -m unittest discover -s tests -p test_same_agent_worktree.py -v</automated><fails_when>Nonzero exit, zero cases, stale actor/default-cwd contract, missing gate, creation-name reuse bypass, or double edit/creation.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -v</automated><fails_when>Nonzero exit, zero cases, missing actual role/hook exports, pipeline denial failure or note false positive.</fails_when><automated>python -m unittest discover -s tests -p test_prewrite.py -v</automated><fails_when>Nonzero exit, zero cases, wrong path/identity/dirty-state decision or broken ticket/native-session confirmation.</fails_when><automated>bash .ai/hooks/worktree-location.test.sh</automated><fails_when>Nonzero exit, no executed cases, ticketed reuse bypass, wrong pinned base or changed ordinary dispatch reuse behavior.</fails_when></verify>
+  <done>Conditional native route and precise unsupported paths are implemented with matching GREEN and committed evidence. Live native smoke remains a separate unmet acceptance layer in this executor.</done>
 </task>
 
 <task type="auto">
-  <name>Task 3: Document the concrete continuation and evidence boundary</name>
+  <name>Task 3: Reconcile guides and shared policy with actual native movement behavior</name>
   <files>.ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md</files>
-  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/RESEARCH.md, .ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md, .ai/hooks/source-prewrite.sh, .ai/hooks/worktree-guard.sh, .ai/runtime/lib/prewrite.py, .ai/install.py, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md</read_first>
-  <action>Coordinator dispatches doc-writer after Task 2's integrated implementation summary exists. Explain first-source automatic preparation, deterministic auto-unit and explicit unit override, note policy, errors/recovery and the supported entrypoints exactly as implemented. Add the source-prewrite continuation section named by denial output to worktree-sessions: enter/bind through the supported host or coordinator, verify actual Git root/branch/base, reload context and reread destination before rebuilding, and report dirty dependencies. Retain ordinary workflow source-session routing and named runtime planning exceptions. Explain that native/manual transition is still required unless independently demonstrated on a supported host; list shell/external/cloud-orchestration/hook-error coverage limits and fail-open host behavior. The coordinator explicitly delegates the narrow .ai/RULES.md#Hooks-and-validation reconciliation to this doc-writer: replace only that section's blanket all-hooks-advisory claim with the distinction between unchanged advisory hooks and the separate supported source-prewrite denial/preparation component. Preserve the existing advisory script/policy, optional-hook and no-sandbox limits, required-check guidance, and all other RULES sections. Correct the corresponding wording in the three guides. Record actual fixture evidence and the pending live proof without turning unavailable live evidence into user approval or success. Commit all four required documentation paths and the documentation summary, then have the coordinator integrate them before final verification.</action>
-  <acceptance_criteria>AW-03, AW-07 and AW-08 are explained against implementation; exact continuation is actionable; creation, fixture pass and live automatic entry remain distinct facts; the existing advisory policy is preserved. Task 3's note documentation explicitly limits allowed plain unlinked PR-body/task-note create/update to resolved Python tempfile.gettempdir() containment outside every Git repository, without identity or preparation; non-temp external targets are unsupported cancellation. Preserve repository-source, cross-repository, linked, malformed, ambiguous and mixed-target constraints. The .ai/RULES.md Hooks and validation section accurately distinguishes advisory behavior from the new supported denial behavior, and the narrow reconciliation is committed and integrated before final verification.</acceptance_criteria>
-  <verify><manual>At the integrated implementation/documentation revision, independent doc-verifier checks all four exact documentation paths, specifically .ai/RULES.md#Hooks-and-validation, against the registered source-prewrite entrypoint, unchanged worktree-guard.sh and fixture receipts. Trace every new command/option and continuation reference, compare note/error behavior, and reject any blanket all-hooks-return-success claim, changed advisory policy, live-host-binding assertion or universal-enforcement claim. Missing, failed or required unverifiable section claims prevent conclusive documentation coverage and final verification.</manual></verify>
-  <done>All four required documents, including the narrow shared-policy section, describe integrated behavior and the remaining host transition limitation; doc-writer returns its committed summary, coordinator integrates it before final verification, and independent doc-verifier returns explicit per-document/section evidence.</done>
+  <read_first>docs/maintenance/issue87-auto-worktree/PLAN.md, docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md, docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md, .ai/references/same-agent-worktree.md, .ai/hooks/README.md, .ai/references/worktree-sessions.md, .ai/runtime/README.md, .ai/RULES.md, .ai/install.py, .ai/hooks/source-prewrite.sh, .ai/hooks/worktree-location.sh, .ai/runtime/lib/prewrite.py</read_first>
+  <action>Coordinator dispatches doc-writer after integrated Task 2 evidence. Document the supported conditional Claude same-existing-agent sequence, actual capability gate and native creation/session adoption; explain that shell cd, cancellation, prepared roots and replacement children do not fulfill movement. Preserve existing ordinary dispatch reuse and note warnings; explain the strict wf-entry no-reuse/approval boundary, narrow OS-temp notes, dirty-data accounting and unsupported Codex controller. Coordinator explicitly delegates only RULES Hooks and validation reconciliation: distinguish advisory hooks from the new supported source denial, native continuation requirement and honest coverage limits; preserve all other sections. Update the three guides against exact implemented commands and installed paths, including ordinary session.open versus native creation/adoption. State fixture results as SIMULATED and live smoke unavailable here without misrepresenting target Claude support. Commit all four documentation paths and summary; coordinator integrates before final verification. Do not edit source-worker-owned operational protocol.</action>
+  <acceptance_criteria>All four paths accurately explain integrated behavior, notes, existing-path approval and unsupported hosts. The narrow RULES section has an owner, committed completion point and independent check. No preparation-only fallback or simulated/live conflation appears.</acceptance_criteria>
+  <verify><manual>At the integrated source/docs revision, independent doc-verifier checks all four exact paths, explicitly RULES Hooks and validation, against actual native protocol, exports, creation callback and receipts. Missing, failed or required unverifiable claims prevent conclusive coverage; a native live claim requires separate observed host evidence.</manual></verify>
+  <done>Four-path documentation is integrated before final verification with explicit per-document/section review evidence and the real live-smoke limitation preserved.</done>
 </task>
 </tasks>
 
-## Independent bypass / false-positive matrix
+## Independent behavioral matrix and evidence layers
 
-Task 1 owns expected decisions; the fresh code-reviewer and verifier must assess
-this matrix independently rather than accept a copied implementation checklist.
-Before source dispatch the coordinator supplies its independently scouted
-`docs/maintenance/issue87-auto-worktree/MATRIX.md` at a committed revision and
-obtains phase-checker approval. Task 1 consumes that packet and maps named test
-cases to N1-N2, S1-S3, M1-M3, P1-P2, D1-D2, B1-B2, V1-V2, I1, H1 and R1; no
-case may disappear because an implementation chooses a different internal shape.
-The scout performed no execution and supplied no implementation correctness
-verdict. This is an additional committed input, not a new preparer-owned file.
+Consume coordinator-owned MATRIX A1-A7 as the native acceptance rows, plus
+retained controls N1-N2, S1-S3, M1-M3, P1-P2, D1-D2, B1-B2, V1-V2, I1, H1 and
+R1. Native A1-A7 are committed in the final preparation input. Prior matrix preparation wording is not authority
+to drop same-agent movement. Task 1 and fresh reviewers assess these native cases:
 
-| Family | Required cases / expected observable result |
+| Family | Required case and legitimate control |
 |---|---|
-| Allow without creation | Read-only; ordinary scratchpad create/update with and without session_id (N1); plain unlinked PR-body/task-note create/update under resolved Python tempfile.gettempdir(), proven outside every Git repository, through both installed aggregate pipelines without session_id/preparation/worktree creation (N2); safe nested note paths; assigned valid linked checkout with relative targets. Existing advisory warnings preserved; companion repository-source controls still receive their required decision and non-temp external targets cancel. |
-| Prepare then cancel | Clean primary Write/Edit/MultiEdit/NotebookEdit and each supported patch operation; dirty primary; offline/no remote; nested cwd; Claude actor identity and explicitly bound Codex request. One selected checkout, zero original mutations. Unbound Codex cancels without guessed unit. |
-| Reuse and identity | Same native actor retries; different host/session/Claude agent IDs; same Codex parent session with two indistinguishable unisolated workers; omitted/malformed Claude agent_id cannot establish coordinator identity; explicit per-request mapping precedence; changed targets under old tool_use_id; new unrelated/retried request ID; valid existing unit; two possible units; absent/empty/non-string/oversized identity; equivalent Windows spellings; conflicting repository. Codex shared session never proves ownership. Missing/ambiguous identity cancels without guessing. |
-| Note bypass attempts | Tracked notes; deleted/renamed note; mixed note/source; source Markdown; traversal; symlink/junction/reparse ancestor; hard-link target; nested repo; missing/unresolvable ancestors; misleading prefix. Source policy/cancellation applies. |
-| Input and paths | Malformed JSON/object/type/patch; empty path set; all rename source/destination pairs; Delete File; CRLF; Unicode/spaces; absolute primary path from selected tree; unrelated checkout; drive-relative/UNC/device/alternate-stream path; unsupported aliases/shapes. No unsafe allow or input rewrite. |
-| Preservation | Before/after file bytes plus file inventory for tracked, staged, unstaged, untracked and pre-existing ignored content; binary/NUL-sensitive index snapshot including staged rename/delete entries; primary branch and HEAD. Failed/repeated/offline preparation preserves the same snapshot. |
-| Concurrency/recovery | Simultaneous first events; lock contention/timeout; crash after Git creation before metadata registration; uncertain subprocess outcome; deleted/unregistered destination; wrong branch/base/common-dir; existing unowned path/branch; stale journal. One safe reuse or preserved actionable cancellation, never random retry creation. |
-| Actual registration | Both hosts install/reinstall/update; one editing matcher group, advisory first, new handler second; user hooks retained; commandWindows cancellation status; non-ASCII nested root; exact native denial envelope and exit 2; allowed notes without session_id; internal deadline versus outer timeout. Aggregate pipeline must cancel even though advisory exits 0. Explicitly simulate outer failure as a limitation, never a passing enforcement case. |
-| Explicit continuation | Fixture actually changes executor cwd, verifies Git facts, freshly reads destination then builds a new edit; absolute old-root input stays cancelled. Missing dirty source yields dependency, not bulk copy. Original pending input never executes. |
+| Native positive | Actual installed denial -> actionable same-model protocol/ticket -> advertised schema fixture -> simulated native creation using actual registered WorktreeCreate -> same stable simulated actor/default destination cwd -> relative fresh read -> rebuilt edit once. Test subsequent simulated turn defaults too. Label SIMULATED. |
+| Actual exports/consumers | Installed Claude coordinator/coder permit EnterWorktree while unrelated restrictions remain; installed CLAUDE protocol link and six workflow routes consume it. Skill allowed-tools is not mistaken for tool availability, and context:fork is never used. |
+| Capability/refusal | Missing tool, missing/incompatible creation schema, ineligible/pinned/already-worktree role, policy refusal, untrusted/missing creation hook, unsupported Codex and absent/ambiguous identity. No workaround child, shell cd or guessed invocation. Correct isolated control proceeds without movement. |
+| Creation/approval | Explicit local pinned base; custom ignored root; offline; registered/unregistered existing destination or branch collision; ordinary dispatch reuse control. wf-entry creation refuses existing-name reuse; actual existing-path operation preserves approval and role restrictions. |
+| Context/identity | Native completion missing, old-root default cwd, only explicit cwd override works, wrong actor, branch/base/root/context drift, intended-root marker without host action, original environment project dir still old. Reject native completion claims; verify destination-local control separately. |
+| Failure/concurrency | Denied native call; timeout before/after creation; missing native result; same-ticket concurrent calls; different units; stale ticket; changed targets; repeated old edit. Inspect native/journal/Git before retries; no duplicate tree, second edit or cleanup. |
+| Dirty data | Staged/unstaged/untracked/ignored/binary bytes and index preservation through chosen fresh custom creation, error/retry; dirty-dependent intent not copied/replayed. Any legitimate host relocation has full per-change accounting, never inferred from missing primary bytes. Registered WorktreeRemove preserves native-owned clean/dirty/ignored-only/uncertain checkout and journal; ordinary dispatch removal remains unchanged. |
+| Classification | Both hosts ordinary in-repo notes and resolved-OS-temp plain nongit create/update without identity; read-only no ticket; source Markdown, mixed, rename/delete/Move all source; Windows/Unicode/CRLF/relative/absolute paths, symlink/junction/hardlink/nested-repo/traversal/cross-root/malformed controls. |
+| Cancellation/pipeline | Exact native synchronous deny JSON/exit2, one installed editing group advisory first; Windows actual launcher status; original pending mutation never executes. Outer host launch/error/timeout failures are reported limitations, never proof of enforcement. |
+
+Native A-row coverage: A1 = AW-01/05/06; A2 = AW-02/06; A3 = AW-02/07;
+A4 = AW-01/05/08; A5 = AW-05/07; A6 = AW-03/04; A7 = AW-02/08.
 
 <threat_model>
 ## Trust Boundaries
 
 | Boundary | Description |
 |---|---|
-| Host event to privileged Git/filesystem operation | Payload paths, identity, shape and cwd claims are untrusted until checked against installed host argument and actual process/Git facts. |
-| Primary checkout to isolated destination | Dirty source and index bytes stay owned by the primary; local metadata cannot authorize path translation or movement. |
-| Session journal to Git registration / concurrency | Persisted intended roots and units are claims; reuse/recovery requires exact Git and ownership verification under a bounded lock. |
-| Hook result to active host context | Only supported cancellation is claimed by fixtures; native session binding and permissions require separate host evidence. Hooks are optional and not a sandbox. |
+| Native event to local ticket/Git operation | Input/paths/identity claims must match actual process/Git facts; installed host selection is explicit, not inferred from payload. |
+| Model instruction to native host transition | Only actual available native tool/schema and eligible same caller can move itself; runtime markers do not certify host identity, permissions or default context. |
+| Creation journal to WorktreeCreate and session registration | Exact reserved new name/base/root controls creation; existing-name reuse cannot bypass native existing-path approval. |
+| Primary dirty state to fresh destination | No silent transfer/replay or data loss; destination reads are fresh and any legitimate native relocation is separately accounted for. |
 
 ## STRIDE Threat Register
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |---|---|---|---|---|---|
-| [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Tampering / Elevation of Privilege | prewrite path classifier and pending mutation | high | mitigate | Tasks 1-2, AW-03/04/05: reject mixed, linked, stale and cross-root targets; cancel original; no input rewriting or dirty-byte movement. Verify real-Git snapshots and native bypass fixtures. |
-| [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Spoofing / Tampering / Denial of Service | prepare journal, lock and worktree selection | high | mitigate | Tasks 1-2, AW-01/02/04: Claude actor tuple, Codex explicit request/unit binding, no shared-parent ownership inference, deterministic unit/base, bounded lock, journal-before-create and exact recovery. Verify distinct actors, ambiguity, concurrent first requests and uncertain outcomes. |
-| [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Spoofing / Tampering | installed host pipeline and continuation | high | mitigate | Tasks 1-3, AW-06/07/08: actual registered denial, destination Git verification, fresh reads, never claim updatedInput binds cwd, live evidence gate. Verify aggregate pipeline and independent integration trace; no automatic-entry advertisement without real proof. |
+| [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Tampering / Elevation of Privilege | Source classification, old mutation and dirty-data boundary | high | mitigate | Tasks 1-2 AW-03/04/05: strict all-target decisions, narrow notes, original denial, no blind copy/replay, fresh reads and dirty snapshots; real-Git/native pipeline cases. |
+| [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Spoofing / Tampering / Denial of Service | Ticket, work identity, native creation and retry | high | mitigate | Tasks 1-2 AW-02/06/07: exact actor/request/unit linkage, bounded lock/journal, pinned base, fresh name, refusal on existing-name collision, uncertain-result inspection; race/reuse/approval-bypass tests. |
+| [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Spoofing / Tampering | Same-agent native availability/entry and installed orchestration | high | mitigate | All tasks AW-01/02/06/08: positive schema/role/policy/trusted-hook gate, actual native call and default-context proof, no child/cd substitute, actual exports, explicit SIMULATED fixtures and separate live acceptance. |
 
-Review depth: L2 for the changed input-to-filesystem boundary. Applicable
-information disclosure is bounded by storing no tool contents or transcripts;
-repudiation is bounded by key/root/branch/base receipts without claiming audit-grade
-authentication. These are aspects of the three scoped findings above, not separate
-untracked risk claims. External writers and hook opt-outs remain documented host
-coverage boundaries, not accepted guarantees of isolation.
-
-Canonical linkage verified by coordinator readback (no worker provider writes):
-
-- Repository: `Tasaddar12/ai-engineering-template`; canonical surface/control:
-  `source-prewrite/target-confinement`; failure/remediation scope: unsafe source
-  target or dirty-byte movement through note/path classification.
-- Repository: `Tasaddar12/ai-engineering-template`; canonical surface/control:
-  `source-prewrite/unit-identity`; failure/remediation scope: wrong/duplicate unit
-  selection or uncertain worktree creation through session/journal/concurrency.
-- Repository: `Tasaddar12/ai-engineering-template`; canonical surface/control:
-  `source-prewrite/host-transition-proof`; failure/remediation scope: old-root
-  mutation or false automatic-entry claim through cancellation/transition wiring.
-
-The coordinator validated the Security risk body and read back issue 98 OPEN
-with all three supplied canonical keys and aliases as a same-phase three-entry
-checklist. The exact anchors above identify the entries. All remain unresolved
-and unimplemented; no mitigation is verified. These scopes differ from issue 95's
-updater/destructive command/provider/cleanup risks and issue 96's planning-commit
-prospective bytes. Coordinator owns subsequent reconciliation and readback; do not
-infer resolution or closure from this linkage or from any future PR merge.
+Canonical keys remain `Tasaddar12/ai-engineering-template/source-prewrite/` plus
+`target-confinement`, `unit-identity`, `host-transition-proof`; issue 98 is OPEN,
+all three unresolved and unimplemented. No new identities or mitigation claims.
+Coordinator reconciles the changed same-agent acceptance within those entries;
+workers make no provider writes. Distinct from issues 95/96. L2 review applies to
+these changed trust boundaries; storing no payload/transcript contents bounds
+disclosure, and exact receipts support review without claiming audit authentication.
 </threat_model>
 
 <verification>
-No implementation or test execution is authorized in this preparer assignment.
-The commands in frontmatter and Tasks are future implementation checks, grounded
-in existing suites or the new test files explicitly produced by Task 1. No result
-is implied. Empty adoption verification.commands is unchanged; coordinator owns
-explicit maintenance checks and independent review.
+No tests, source implementation, provider writes or native operations run in this
+preparer assignment. Future check commands are grounded in existing suites or the
+new files Task 1 creates. Existing source-denial RED38b7b1c is historical boundary
+evidence; fresh native-route RED and matching GREEN are mandatory before claiming
+the new implementation. Zero-case/setup errors are not evidence. Record revision,
+command, case count, assertion/result, commits and actual skips in summaries.
 
-After implementation, run every frontmatter check in the isolated implementation
-checkout. A nonzero exit, zero-case run, skipped required environment or preservation
-mismatch is a gap; record exact command, revision, case counts and result. Also
-inspect `git diff <implementation-base> -- .ai/hooks/worktree-guard.sh`: any output
-violates the byte-preservation acceptance. Independent code-reviewer reviews source
-and test adequacy; integration-checker traces the generated host settings through
-the launcher, preparation, denial, explicit root transition and rebuilt mutation;
-doc-verifier checks all four Task 3 documentation paths, explicitly the narrow
-.ai/RULES.md#Hooks-and-validation section, against the integrated implementation
-and receipts; verifier reconciles AW-01 through AW-08 and the TDD receipts. Task 3's
-four-path committed documentation must be integrated before final verification;
-missing, failed or required unverifiable shared-policy claims block conclusive
-documentation coverage. Test-only RED must precede source changes in Git and
-recorded execution.
+Run every frontmatter command after implementation, in the implementation root.
+Nonzero exit, zero required cases, preservation mismatch, forbidden reuse or
+missing native-route wiring is a gap. Inspect implementation-base diff of
+.ai/hooks/worktree-guard.sh: any byte change violates scope. Fresh code-reviewer
+assesses source/tests and threat boundaries; integration-checker traces installed
+role/CLAUDE exports, six routes, ticket/denial, native gate/call contract, actual
+creation callback/adoption and fresh rebuilt edit. Independent doc-verifier checks
+the four doc-writer paths, explicitly the narrow RULES section, after integration.
+Verifier reconciles AW-01 through AW-08 and all evidence layers.
 
-Live-host evidence gate: only in an available, identified, supported installed host
-with hooks enabled/trusted and appropriate orchestration, use a disposable repo to
-show the first source attempt is cancelled, one checkout is prepared, a real native
-or coordinator-supported operation binds subsequent work to its actual root and
-permission context, destination reads are fresh, and a rebuilt destination mutation
-succeeds while primary bytes stay intact. Record host/version, mode, revision,
-observed operation and results separately from fixtures. No installed version or
-supported same-session transition has been verified here. If unavailable, leave
-live automatic entry unverified and keep the PR draft with an explicit manual/native
-handoff limitation; fixture results may establish preparation/cancellation only.
+Live native smoke is UNAVAILABLE HERE and remains required for a conclusive actual
+same-agent movement claim. On an available eligible target Claude host record its
+actual version/tool schema, hook trust/policy, same session/actor identity, original
+cwd/root/branch/base and dirty inventory. Trigger source denial and show the old
+mutation did not run; the same existing agent invokes its advertised native
+creation tool; observe native completion. Subsequent tools without cwd overrides,
+including a later turn, must use destination defaults, permissions and loaded
+project context. Freshly read and rebuild the edit once, verify only the intended
+destination changed, and account for all initial staged/unstaged/untracked/ignored
+data. Exercise denied/uncertain/native-existing-path approval and offline cases.
+No hook output, runtime confirm or simulated host adapter proves these live facts.
+
+The lack of that live tool in this executor does not block writing/reviewing the
+conditionally supported Claude implementation. Keep its code/fixture status
+distinct from actual live acceptance. Without observed smoke, report live native
+entry unverified and keep PR97 draft/issue87 open; never call the user's same-agent
+goal completely verified. Codex movement remains unsupported by current plumbing,
+not fulfilled by cancellation or an unrelated host product feature.
 </verification>
 
-## Multi-source coverage audit
+## Four-source coverage audit
 
-| Source | ID | Outcome / constraint | Plan coverage | Disposition |
-|---|---|---|---|---|
-| GOAL | ISSUE87 | User's first source-write isolation request and another separate PR | Tasks 1-3, AW-01/07/08 | Covered for preparation/handoff; automatic native entry expressly gated on live evidence |
-| REQ | ISSUE87 | Maintenance assignment, not adoption placeholder requirements | All tasks | Covered; no roadmap/requirement mutation proposed |
-| CONTEXT | D-01 | Separate draft, never merge | Scope and coordinator output | Covered; publication owned by coordinator |
-| CONTEXT | D-02 | Notes/source distinction and avoid retry loop | Contract, Tasks 1-3, AW-03/07 | Covered |
-| CONTEXT | D-03 | Preserve dirty state; prevent old-root writes | Contract, Tasks 1-2, AW-01/04/05 | Covered |
-| CONTEXT | D-04 | Frozen drafts, 73/74, infrastructure/install/cleanup excluded | Scope and exact ownership | Excluded as required |
-| RESEARCH | R-01 | updatedInput replaces input but cannot bind session | Objective, cancellation contract, AW-07/08 | Covered; no blind path rewrite |
-| RESEARCH | R-02 | Existing session.open can sync primary by default | Explicit base and sync=False, AW-04 | Covered; ordinary defaults preserved |
-| RESEARCH | R-03 | Unknown/mixed/Windows/rename paths and note policy | Contract and matrix, AW-03/05 | Covered |
-| RESEARCH | R-04 | Reuse, concurrency, offline and uncertain creation; Codex shared parent identity | Journal, Claude actor identity and explicit Codex request/unit binding, AW-02/04 | Covered; unbound Codex automatic preparation is unsupported |
-| RESEARCH | R-05 | Native fixtures and actual installer registration are distinct from live host | Tasks 1-3 and live gate, AW-06/08 | Covered; live proof remains unavailable |
-| RESEARCH | R-06 | Shell/external writers prevent universal enforcement | Scope and required guides | Explicit unsupported boundary; no broad parser added |
+| Source | ID | Required outcome / boundary | Coverage / disposition |
+|---|---|---|---|
+| GOAL | ISSUE87 | Actually move same existing agent after source attempt | Tasks 1-3; conditional Claude native route, live smoke explicitly unverified |
+| REQ | ISSUE87 | Maintenance acceptance outside adoption skeleton | AW-01..08; no invented adoption phase/requirements |
+| CONTEXT | D-01/D-04 | Separate draft, never merge; frozen six/73/74/providers/infrastructure excluded | Ownership/exclusions and coordinator delivery |
+| CONTEXT | D-02 | Source versus notes, no retry loop | AW-03/05/07; narrow notes, next native action or precise unsupported |
+| CONTEXT | D-03 | Preserve data and stop old-root edit | AW-04/05; snapshots/accounting, original denial and fresh rebuild |
+| CONTEXT | D-05 | Same existing agent and subsequent default context | AW-01/08; native contract plus distinct live proof; no cd/child substitute |
+| CONTEXT | D-06 | Positive availability/role/policy/trusted creation gate, no approval bypass | AW-02/06/07; installed exports, fresh-name-only provider, real path approval |
+| CONTEXT | D-07 | Codex unsupported controller; simulation is not live | Objective, capability cases and live gate |
+| RESEARCH | Native capabilities | Official target Claude semantics support instruction-driven native route | Implement gated route; this executor's missing tool limits live observation only |
+| RESEARCH | Source map | Restrictive role exports, six shell routes, creation reuse and phase-only adopt | AW-06; exact producer/consumer changes above |
+| RESEARCH | Prior RED/matrix | Cancellation/note cases useful but preparation-only assertions insufficient | Task 1 fresh native-route RED; preserve valid controls and historical receipts |
 
-Hardest constraint: an actual host/session root transition is not supplied by
-pretool output. It is addressed up front by always cancelling and routing explicit
-continuation; it cannot be hidden in the last documentation step. Pre-mortem:
-wrong unit -> identity/race cases; dirty edit lost -> primary snapshots and fresh
-reads; hook silently allows -> aggregate native cancellation cases and live gate.
-All required behaviors have owners; unproven live entry is a named evidence gap,
-not a reduced acceptance represented as complete.
+Hardest constraint is real native same-agent default context, addressed by the
+first tracer and not deferred to docs. Pre-mortem controls: unavailable/schema
+tool -> positive gates; approval bypass through reused creation name -> dedicated
+refusal; apparently moved agent still writing old root -> default-cwd/context and
+fresh-read tests plus live gate. No complexity/deadline-based scope reduction.
 
 <success_criteria>
-One bounded feature is implemented with genuine RED/GREEN evidence, all required
-fixture checks pass at the reported revision, existing advisory bytes and primary
-state remain preserved, and independent reviewers confirm the actual wiring and
-documented limits. Automatic session entry is advertised only with real supported
-transition evidence. Otherwise report automatic preparation plus the remaining
-manual/native handoff, with live entry explicitly unverified. Keep the separate
-tracking PR draft and never merge.
+Source and docs implement the conditional native same-agent route, required
+deterministic checks pass at the reported integrated revision with fresh genuine
+RED/GREEN, and independent reviewers confirm actual export/creation/workflow
+wiring and data safety. Actual same-agent fulfillment is verified only with live
+native evidence. If unavailable, return implemented/fixture-verified conditional
+behavior and live acceptance unverified; no preparation/manual-child fallback is
+presented as fulfillment. Keep PR97 draft, issue87 open and never merge.
 </success_criteria>
 
 <output>
-Tasks 1-2 return `docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md`
-with actual task commits, Checks, TDD Evidence, AW coverage and Threat Outcomes.
-Task 3's doc-writer returns
-`docs/maintenance/issue87-auto-worktree/DOCUMENTATION-SUMMARY.md`. These summaries
-are automatically owned by their assigned authors. Coordinator integrates isolated
-workers, reconciles canonical issue 98 outcomes, arranges independent checks/reviews,
-and owns the separate draft PR. No adoption roadmap/status update is proposed.
+Source worker updates docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md
+with new native-route commits, TDD Evidence, Checks, AW coverage, explicitly
+SIMULATED contract results, live gaps and issue98 Threat Outcomes. Doc-writer owns
+docs/maintenance/issue87-auto-worktree/DOCUMENTATION-SUMMARY.md. Summaries belong
+to assigned authors. Coordinator integrates source before docs, commits/reconciles
+native MATRIX and canonical issue98 scope, obtains independent plan recheck before
+source release and independent final reviews, and owns publication. No adoption
+roadmap/status mutation, provider worker writes or merge is proposed.
 </output>
