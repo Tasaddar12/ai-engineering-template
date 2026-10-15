@@ -1,5 +1,23 @@
 # Independent prewrite matrix proposal
 
+## Native-entry acceptance update
+
+The human's same-agent clarification replaces preparation-only acceptance. Read the earlier rows as historical test proposals where they conflict with this update. Scout `issue87-native-acceptance-gaps` inspected `206deb7578ca51e3bbea0caa75beed1769a08363` without tests or writes; the coordinator condensed its cited packet below. The preparer and independent checker own the executable plan and readiness verdict.
+
+| ID | Required conditional Claude contract | Evidence boundary |
+|---|---|---|
+| A1 | Cancel the old source mutation and return an actionable instruction to the same agent; the hook must not precreate a checkout as a substitute for native entry. | Current `tests/test_install.py:682-723` models a fake pending mutation and expects precreation. It must be revised; it proves no native movement. |
+| A2 | Positively check actual native tool/schema, eligible role, policy and trusted creation hook. Call creation-form `EnterWorktree` through the advertised schema. | Generated role exports need coverage. Missing tool, pinned role, denied policy or missing hook remains unsupported with no mutation or automatic retry loop. |
+| A3 | Preserve native approval for an existing outside path. Never disguise existing-name reuse as new creation. | Existing dispatch reuse tests at `.ai/hooks/worktree-location.test.sh:52-85` remain separate and valid; a reserved native-entry route must reject unsafe reuse. |
+| A4 | Verify the same agent's default cwd, root, branch, permissions and context after native entry; freshly read and rebuild the intended edit exactly once. | A simulated host adapter can test the orchestration contract only. Real identity, permissions and later-turn default binding require the live checklist in SAME-AGENT-CAPABILITIES. |
+| A5 | Failure, timeout, uncertain completion, repeat requests and identity drift cannot create duplicate worktrees or replay old-root writes. | Real-Git ticket/journal fixtures plus distinct simulated native failure/retry cases; runtime markers are not host binding proof. |
+| A6 | Account for staged, unstaged, untracked and ignored data. Preserve note and read-only controls, including mixed source/note classification. | Ordinary OS-temp and scratchpad controls remain useful. Never stash/reset/clean or blindly copy dirty data. |
+| A7 | Codex automatic movement stays unsupported without an authenticated same-thread controller. | No new child, shell `cd`, prepared checkout or successful Claude fixture establishes Codex movement. Preserve existing behavior outside the bounded unsupported route. |
+
+Live smoke is unavailable in this executor. No row above has been demonstrated on a live native Claude session. This limitation does not prevent implementing the documented conditional route, and must remain visible in verification and publication.
+
+## Earlier preparation-plan matrix
+
 Scout: `gpt-6-luna/high`; input `e87f49debbd64daf25157da0b693d328ad3dd531`. The coordinator condensed the returned static proposal. The initial scout ran no tests; its rows do not establish implementation correctness or live-host support. Independent RED review added N2. Test-only 1414979 and corrected 38b7b1c establish the initial installed-boundary RED; their source-denial failures and passing note controls are recorded separately in IMPLEMENTATION-SUMMARY. Other matrix families remain unrun until implementation.
 
 | ID | Refusal or preservation case | Legitimate control / evidence |
