@@ -122,12 +122,12 @@ Leave candidate_base64, candidate_sha256, before_sha256, upstream_sha256, manife
     - Retired files are kept until an explicit eligible reviewed remove; a CRLF-only classification never prunes. An already missing file remains distinct from an empty file.
     - Authored PROJECT, STATE, REQUIREMENTS, ROADMAP, phase PLAN/SUMMARY/CONTEXT, custom rules and existing backup data survive authorized update exactly. Existing config values remain authoritative; required config migration keeps its bounded existing contract.
     - For an authorized substantive replacement, the verified backup contains the exact pre-update CRLF/mixed bytes; previous backups are not rewritten. Post-backup concurrent raw-byte changes are refused before writes.
-    - The installed .codex/update.py and .claude/update.py entries can review/apply pinned local revisions and replan idempotently with no network, dependency installation or upstream executable execution.
+    - The installed .codex/update.py and .claude/update.py entries can review/apply pinned local revisions, then produce a fresh pinned plan whose newly reviewed digest permits a no-op apply. Reusing the original saved plan after the first apply changes the ownership manifest is rejected as stale before writes.
   </behavior>
   <action>
 Expand the new test module with table-driven LF, CRLF, mixed LF/CRLF, lone CR, invalid UTF-8, NUL/binary, empty/missing, trailing newline, whitespace, addition and deletion cases. Add snapshot assertions around rejected apply so no installed/project/backup mutation is hidden. Build on the existing tests' saved-plan, manifest, project-addition and subprocess patterns (test_install_update.py lines 684–736 at the input revision), using temporary local Git upstream repositories and existing installer fixture APIs. Running a local fixture installer is test setup only; do not install into the user's project or modify install.py.
 
-Exercise the actual copied installed updater entrypoint for both hosts with a pinned commit, save the review outside protected roots, calculate its exact digest, review required resolutions, apply and replan. Assert provenance, final raw hashes, retained custom content, exact backup originals and no-op behavior on repeat apply. Do not assert only helper output. Preserve every pre-existing stale-plan, ownership and generated-file guard; make bounded production corrections in the owned updater files only if these tests expose a regression. Existing tests remain read-only unless the coordinator grants exact additional ownership.
+Exercise the actual copied installed updater entrypoint for both hosts with a pinned commit, save the review outside protected roots, calculate its exact digest, review required resolutions and apply. Assert provenance, final raw hashes, retained custom content and exact backup originals. Attempt reuse of the original saved plan and its original digest after the first apply: the changed manifest_sha256 must cause a stale-plan rejection before target or backup writes. Then generate a fresh plan pinned to the same upstream commit against the updated target, review it, calculate the fresh complete plan's exact SHA256 and apply that fresh plan to prove no-op behavior without weakening freshness. Keep both scenarios distinct in test assertions. Do not assert only helper output. Preserve every pre-existing stale-plan, ownership and generated-file guard; make bounded production corrections in the owned updater files only if these tests expose a regression. Existing tests remain read-only unless the coordinator grants exact additional ownership. Use temporary local Git repositories with no network, dependency installation or upstream executable execution.
   </action>
   <verify>
     <automated>python -m unittest discover -s tests -p test_update_line_endings.py -v</automated>
@@ -138,7 +138,7 @@ Exercise the actual copied installed updater entrypoint for both hosts with a pi
   <acceptance_criteria>
     - SYNC-02: Authored planning records and existing backup data remain byte-for-byte unchanged; newly required backups retain exact originals.
     - SYNC-03: Normalized equality cannot permit stale/tampered review, target, manifest or candidate bytes to pass apply.
-    - Installed Codex and Claude integration covers pinned dry-run, authorized apply, preservation and idempotence.
+    - Installed Codex and Claude integration covers pinned dry-run, authorized apply, preservation, original-plan stale rejection and a no-op apply using a freshly generated and reviewed pinned plan with its fresh digest.
   </acceptance_criteria>
   <done>Focused matrix and existing regression suite pass with scenario-level evidence, including exact-byte stale review and both installed hosts.</done>
 </task>

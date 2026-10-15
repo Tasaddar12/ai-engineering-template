@@ -38,10 +38,11 @@ completed: 2026-10-15
 - Required exact-byte stale review, manifest/candidate tampering, authored planning/backups, explicit deletion review and installed Codex/Claude integration coverage.
 - Limited implementation ownership to .ai/install_update.py, .ai/update.py, .ai/workflows/update-workflows.md, .gitattributes and tests/test_update_line_endings.py. Existing tests stay read-only; no install.py, phase.py, templates or provider adapters.
 - Captured the supplied scout packet's existing regression command and inspected its fixture/stale-review patterns; no additional discovery needed for execution.
+- Addressed checker PC-SYNC-01: distinguish stale rejection of the original saved plan after manifest mutation from a no-op apply using a fresh pinned plan, new review and exact fresh digest.
 
 ## Task Commits
 
-One preparation slice commits this summary and SYNC-PLAN.md together. The coordinator can obtain its immutable hash from the returned commit; no implementation commit exists yet.
+Initial preparation commit: 171d6561103f68a38889eee9c0dd23c79d00eaf0. A bounded checker-revision slice commits only this summary and SYNC-PLAN.md after coordinator CONTEXT commit fed3223b33f6d6724cb319a30ac987dae758658d. The coordinator can obtain the revision slice's immutable hash from the returned commit; no implementation commit exists yet.
 
 ## Checks
 
@@ -50,6 +51,7 @@ One preparation slice commits this summary and SYNC-PLAN.md together. The coordi
 - Manually checked plan metadata, exact ownership, task fields/fails_when pairs, coverage audit, independent wave and security boundary.
 - git diff --cached --check returned exit 0 with no whitespace errors; staged path inspection contained exactly the two assigned preparation files.
 - Implementation tests were not run: this assignment authorizes planning only. The plan records future focused/regression commands and expected failure signals.
+- Revision review: PC-SYNC-01 wording was checked against the existing raw manifest fingerprint contract; no production/test source changed and no implementation checks ran.
 
 ## Files Created/Modified
 
@@ -62,7 +64,7 @@ Normalization is classification-only and conservative; raw bytes remain the auth
 
 ## Deviations from Plan
 
-None. Maintenance filenames and scope follow the coordinator assignment rather than inventing adopting-project phase records.
+Checker correction PC-SYNC-01 replaces ambiguous repeat-apply language with explicit original-plan rejection and fresh-reviewed-plan no-op scenarios. Maintenance filenames and scope follow the coordinator assignment rather than inventing adopting-project phase records.
 
 ## Issues Encountered
 
@@ -80,4 +82,4 @@ None. Existing environment Python execution may need managed approval; implement
 
 ## Next Phase Readiness
 
-The plan is ready for independent phase-checker review and authorized implementation. No missing human decision or source discovery blocks the plan. Coordinator must reconcile the canonical threat identity, integrate CONTEXT for worker read_first, dispatch exact owned paths and obtain independent final source/document/integration evidence. Existing regression fixture reuse requires no test ownership expansion. Publishing and all shared status remain coordinator-owned; never merge or close issue87.
+The revised plan is ready for phase-checker confirmation of PC-SYNC-01 and authorized implementation. No missing human decision or source discovery blocks the plan. Coordinator CONTEXT is now present through fed3223; it was preserved unchanged. Coordinator must reconcile the canonical threat identity, dispatch exact owned paths and obtain independent final source/document/integration evidence. Existing regression fixture reuse requires no test ownership expansion. Publishing and all shared status remain coordinator-owned; never merge or close issue87.
