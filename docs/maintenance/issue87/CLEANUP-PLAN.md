@@ -6,7 +6,7 @@ wave: 2
 depends_on: [guards]
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
-input_revision: guard implementation tip supplied by coordinator
+input_revision: 4c35d27436add6867934c85eb9e853bd2fc3052e
 files_modified:
   - .ai/hooks/destructive-git-guard.py
   - .ai/runtime/lib/destructive_guard.py
@@ -172,3 +172,4 @@ Coordinator reconciles stable risk identity rather than opening duplicates for p
 <output>
 Create docs/maintenance/issue87/CLEANUP-SUMMARY.md with parent tip, child commit IDs/own-change boundary, acceptance/documentation coverage, actual RED/GREEN/check results, Threat Outcomes and remaining limitations. The coordinator owns integration, canonical threat reconciliation and authorized stacked draft publication. No native phase_run facade is needed; a later facade requires separately assigned coordinator ownership.
 </output>
+

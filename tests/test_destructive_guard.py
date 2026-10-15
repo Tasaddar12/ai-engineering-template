@@ -276,3 +276,198 @@ class RegisteredGuardTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class CleanupTests(unittest.TestCase):
+    """Only disposable repositories and offline provider fixtures can mutate."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="cleanup café ")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "repo"
+        self.root.mkdir()
+        git(self.root, "init", "-q", "-b", "main")
+        (self.root / "tracked").write_text("safe\n", encoding="utf-8")
+        git(self.root, "add", "tracked")
+        git(self.root, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "fixture")
+        git(self.root, "remote", "add", "origin", "https://github.com/owner/repo.git")
+        self.tree = Path(self.temp.name) / "owned tree"
+        git(self.root, "worktree", "add", "-qb", "phase-owned", str(self.tree))
+        self.state = self.root / ".git/ai-phase"
+        self.state.mkdir()
+        self.owner = {"branch": "phase-owned", "worktree": str(self.tree), "base_branch": "main", "session_id": "fixture"}
+        self.write_owner()
+        self.provider, self.case = "github", "merged"
+        spec = importlib.util.spec_from_file_location("cleanup_policy", ROOT / ".ai/runtime/lib/destructive_guard.py")
+        self.policy = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = self.policy
+        spec.loader.exec_module(self.policy)
+        self.mutations = []
+
+    def write_owner(self):
+        (self.state / "sessions.json").write_text(json.dumps({"sessions": [self.owner]}), encoding="utf-8")
+
+    def runner(self, argv, cwd):
+        if argv[0] == "git":
+            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+        oid = git(self.root, "rev-parse", "phase-owned")
+        if self.case == "offline":
+            raise OSError("fixture offline")
+        if self.provider == "github":
+            item = {"number": 42, "state": "open" if self.case == "open" else "closed",
+                    "merged_at": "2026-01-01" if self.case == "merged" else None,
+                    "head": {"ref": "phase-owned", "sha": oid, "repo": {"full_name": "owner/repo"}},
+                    "base": {"repo": {"full_name": "owner/repo"}}}
+            if self.case == "fork": item["head"]["repo"]["full_name"] = "fork/repo"
+            obj = [[item]]
+            if self.case == "mixed": obj[0].append(dict(item, state="open"))
+            if self.case == "partial": obj = [[item] * 100]
+            if self.case == "missing": obj = [[]]
+        elif "/merge_requests" not in argv[-1]:
+            obj = {"id": 7, "path_with_namespace": "owner/repo", "web_url": "https://gitlab.com/owner/repo"}
+        else:
+            item = {"iid": 42, "state": "opened" if self.case == "open" else "merged" if self.case == "merged" else "closed",
+                    "source_branch": "phase-owned", "sha": oid, "source_project_id": 7, "target_project_id": 7}
+            if self.case == "fork": item["source_project_id"] = 8
+            obj = [item]
+            if self.case == "mixed": obj.append(dict(item, state="opened"))
+            if self.case == "partial": obj = {"partial": True}
+            if self.case == "missing": obj = []
+        return subprocess.CompletedProcess(argv, 0, json.dumps(obj), "")
+
+    def preview(self):
+        if not hasattr(self.policy, "cleanup_preview"):
+            # Existing hook has no cleanup mode. Its real structured decision is
+            # the baseline, so RED fails on behavior rather than module loading.
+            result = subprocess.run([sys.executable, str(ROOT / ".ai/hooks/destructive-git-guard.py"),
+                "cleanup-preview", "--repo", str(self.root)], input=b"{}", capture_output=True)
+            return json.loads(result.stdout)
+        return self.policy.cleanup_preview(self.root, evidence_runner=self.runner)
+
+    def envelope(self, preview=None):
+        preview = preview or self.preview()
+        return {"schema_version": 1, "repository": preview["repository"], "snapshot_id": preview["snapshot_id"],
+                "operations": preview["operations"], "approval": {"text": "Approve exact cleanup snapshot " + preview["snapshot_id"],
+                "reference": "human-message-fixture", "snapshot_id": preview["snapshot_id"]}}
+
+    def apply(self, envelope, mutate=None):
+        approval = Path(self.temp.name) / "approval.json"
+        approval.write_text(json.dumps(envelope), encoding="utf-8")
+        def mutation(argv, cwd):
+            self.mutations.append(argv)
+            if mutate: return mutate(argv, cwd)
+            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+        return self.policy.cleanup_apply(self.root, approval, evidence_runner=self.runner, mutation_runner=mutation)
+
+    def test_cleanup_preview_is_readonly_and_lists_distinct_operations(self):
+        before = (git(self.root, "show-ref"), git(self.root, "worktree", "list", "--porcelain"), (self.state / "sessions.json").read_bytes())
+        preview = self.preview()
+        self.assertEqual(["worktree_remove", "branch_delete"], [x["kind"] for x in preview.get("operations", [])], preview)
+        self.assertEqual(preview, self.preview())
+        self.assertEqual(before, (git(self.root, "show-ref"), git(self.root, "worktree", "list", "--porcelain"), (self.state / "sessions.json").read_bytes()))
+        self.assertFalse((self.state / "cleanup").exists())
+
+    def test_cleanup_provider_matrix_preserves_open_unknown_fork_and_partial(self):
+        for provider in ("github", "gitlab"):
+            self.provider = provider
+            git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
+            for case in ("merged", "closed", "open", "offline", "fork", "partial", "missing", "mixed"):
+                with self.subTest(provider=provider, case=case):
+                    self.case = case
+                    preview = self.preview()
+                    self.assertEqual(2 if case in ("merged", "closed") else 0, len(preview.get("operations", [])), preview)
+        (self.tree / "tracked").write_text("unique\n", encoding="utf-8")
+        git(self.tree, "add", "tracked")
+        git(self.tree, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "unique")
+        self.case = "closed"
+        self.assertEqual([], self.preview().get("operations", ["missing"]))
+
+    def test_cleanup_dirty_ignored_unowned_locked_detached_preserved(self):
+        for name in ("untracked", "ignored"):
+            with self.subTest(name=name):
+                if name == "ignored": (self.root / ".git/info/exclude").write_text("ignored\n", encoding="utf-8")
+                (self.tree / name).write_text("valuable", encoding="utf-8")
+                self.assertEqual([], self.preview().get("operations", ["missing"]))
+                (self.tree / name).unlink()
+        git(self.root, "worktree", "lock", str(self.tree))
+        self.assertEqual([], self.preview().get("operations", ["missing"]))
+        git(self.root, "worktree", "unlock", str(self.tree))
+        self.owner["branch"] = "different"
+        self.write_owner()
+        self.assertEqual([], self.preview().get("operations", ["missing"]))
+
+    def test_cleanup_exact_approval_and_stale_refuse_before_mutation(self):
+        preview = self.preview()
+        self.assertIn("snapshot_id", preview, preview)
+        original = self.envelope(preview)
+        import copy
+        for variant in ("missing", "broad", "wildcard", "duplicate", "extra", "repository", "snapshot", "reference"):
+            with self.subTest(variant=variant):
+                envelope = copy.deepcopy(original)
+                if variant == "missing": envelope["operations"].pop()
+                if variant == "broad": envelope["approval"]["text"] = "yes delete everything"
+                if variant == "wildcard": envelope["operations"][0]["target"] = "*"
+                if variant == "duplicate": envelope["operations"].append(envelope["operations"][0])
+                if variant == "extra": envelope["operations"].append({"kind": "backup_remove", "target": "/"})
+                if variant == "repository": envelope["repository"]["common_dir"] += "-other"
+                if variant == "snapshot": envelope["snapshot_id"] = "0" * 64
+                if variant == "reference": envelope["approval"]["reference"] = ""
+                self.assertEqual("refused", self.apply(envelope)["status"])
+                self.assertEqual([], self.mutations)
+        (self.tree / "new work").write_text("valuable", encoding="utf-8")
+        self.assertEqual("refused", self.apply(original)["status"])
+        self.assertEqual([], self.mutations)
+
+    def test_cleanup_apply_consumes_once_and_reports_real_removal(self):
+        preview = self.preview()
+        self.assertIn("snapshot_id", preview, preview)
+        envelope = self.envelope(preview)
+        result = self.apply(envelope)
+        self.assertEqual("complete", result["status"], result)
+        self.assertEqual(2, len(result["removed"]), result)
+        self.assertFalse(self.tree.exists())
+        self.assertNotIn("refs/heads/phase-owned", git(self.root, "show-ref"))
+        self.assertTrue(any(a[1:3] == ["update-ref", "-d"] and a[-1] == preview["operations"][1]["oid"] for a in self.mutations))
+        self.assertFalse(any("--force" in a for a in self.mutations))
+        self.assertEqual("refused", self.apply(envelope)["status"])
+
+    def test_cleanup_partial_failure_stops_and_reports_fresh_state(self):
+        preview = self.preview()
+        self.assertIn("snapshot_id", preview, preview)
+        def mutation(argv, cwd):
+            if "update-ref" in argv: return subprocess.CompletedProcess(argv, 1, "", "fixture failure")
+            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+        result = self.apply(self.envelope(preview), mutation)
+        self.assertEqual("partial", result["status"], result)
+        self.assertEqual(1, len(result["removed"]))
+        self.assertEqual(1, len(result["failed"]))
+        self.assertFalse(self.tree.exists())
+        self.assertIn("refs/heads/phase-owned", git(self.root, "show-ref"))
+
+    def test_cleanup_recorded_backup_digest_and_approval_boundary(self):
+        backup = self.root / ".workflow-backups/fixture"
+        backup.mkdir(parents=True)
+        (backup / "valuable").write_text("original", encoding="utf-8")
+        self.owner["backups"] = [str(backup)]
+        self.write_owner()
+        preview = self.preview()
+        self.assertEqual(1, len([x for x in preview.get("operations", []) if x["kind"] == "backup_remove"]), preview)
+        envelope = self.envelope(preview)
+        (backup / "valuable").write_text("changed", encoding="utf-8")
+        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.assertTrue(backup.exists())
+        self.assertEqual([], self.mutations)
+        result = self.apply(self.envelope())
+        self.assertEqual("complete", result["status"], result)
+        self.assertFalse(backup.exists())
+
+    def test_cleanup_cli_source_and_installed_hosts(self):
+        for host in ("ai", "codex", "claude"):
+            hook = ROOT / ".ai/hooks/destructive-git-guard.py"
+            if host != "ai":
+                shutil.copytree(ROOT / ".ai", self.root / ("." + host), ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                hook = self.root / ("." + host) / "hooks/destructive-git-guard.py"
+            result = subprocess.run([sys.executable, str(hook), "cleanup-preview", "--repo", str(self.root)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(1, json.loads(result.stdout).get("schema_version"))
+        invalid = subprocess.run([sys.executable, str(hook), "cleanup-apply", "--repo", str(self.root)], capture_output=True)
+        self.assertNotEqual(0, invalid.returncode)
+
