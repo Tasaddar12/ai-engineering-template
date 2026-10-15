@@ -1,24 +1,57 @@
 ---
 tier: contract
 authority: agent
-title: Advisory host hooks
+title: Managed host hooks
 ---
 
-# Advisory host hooks
+# Managed host hooks
 
 [Installation](../commands/install.md) registers the existing scripts directly:
 
 | Script | Event | Output |
 |---|---|---|
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
+| [source-prewrite.sh](source-prewrite.sh) | `PreToolUse` on write tools | Cancels source mutations that need isolation; Claude receives a ticketed same-agent native-entry instruction, while Codex reports that this integration has no authenticated same-thread controller |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
 | [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY. Works on both hosts, from different inputs — see below |
 | [context-handoff.sh](context-handoff.sh) | `Stop` | Nothing; clears the session's debounce state |
 | [context-handoff.sh](context-handoff.sh) | `SessionStart` (Codex only) | Nothing on stdout; writes the orchestrator's transcript path to `.planning/handoffs/.root-<session>.json` |
-| [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Creates `.worktrees/<name>` on branch `worktree-<name>` from the dispatching checkout's `HEAD`; prints the path |
-| [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Runs `git worktree remove` without `--force`; keeps the branch |
+| [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Ordinary dispatch creation retains name reuse and starts from the dispatching checkout's `HEAD`; reserved `wf-entry-<request>` creation is ticket-validated, fresh-only, and starts from its pinned local base |
+| [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Ordinary removal runs `git worktree remove` without `--force`; native-entry candidates are preserved for inspection |
+
+`source-prewrite.sh` runs after the advisory guard in the managed editing group.
+It treats source, mixed, tracked and unsafe mutations as source decisions; it
+does not precreate a worktree. Untracked planning scratchpads and handoff scratch
+notes, plus plain add/update notes under the OS temporary directory outside any
+repository, retain their narrow allow path. The advisory guard still warns on
+primary-checkout writes, including scratchpads; its behavior is unchanged.
+
+The Claude continuation is conditional on the same existing agent actually
+having a compatible native `EnterWorktree` tool/schema, an eligible role, policy
+permission, and the trusted registered creation hook. The installed coordinator
+and coder roles export the native tool, but an export alone does not prove that
+the active host advertises or permits it. After source denial, the caller uses
+the request ID from the reason and the documented `prewrite.begin` verb. For a
+new unit, only the reserved fresh `wf-entry-` name enters the ticketed
+`WorktreeCreate` path, which verifies source root/branch/HEAD and creates from
+that pinned local commit. A creation callback or returned path is not movement:
+the same agent must observe native completion and prove that later calls use the
+destination by default, then run `prewrite.confirm` for Git checks. Confirmation
+returns `host_binding_verified: false`; it does not authenticate host binding,
+permissions or loaded context. Fresh destination reads and a rebuilt edit are
+required, and the cancelled mutation is never replayed.
+
+Phase and quick workflows also request native entry before their first edit,
+without inventing a pending mutation. `prewrite.request` binds a known unit in
+explicit `new` or `existing` mode. Existing mode targets the validated ordinary
+session and preserves its accumulated HEAD, historical base and ownership; it
+uses the host's native existing-path form and honors any required approval.
+Native creation never reuses an existing name to bypass that approval. The
+regular `session.open` route still creates or resumes ordinary sessions with
+its existing behavior. See [same-agent native entry](../references/same-agent-worktree.md)
+for the full gate and recovery protocol.
 
 `worktree-guard.sh` is advisory for both dispatches and editing tools. It warns
 and continues when a write-capable dispatch lacks `isolation="worktree"`, when a
@@ -69,7 +102,9 @@ Add/Update/Delete/Move headers.
 
 `ai-tier-notice.sh` is advisory: it exits successfully and never emits a
 permission decision. `worktree-guard.sh` warns and exits 0 for both dispatch and
-write checks. `context-handoff.sh` is advisory throughout: losing a handoff costs
+write checks. `source-prewrite.sh` is the separate blocking source decision; it
+cancels the original call when required and never turns cancellation into native
+movement. `context-handoff.sh` is advisory throughout: losing a handoff costs
 a re-read, blocking the agent costs the session. These hooks do not parse
 arbitrary scripts, resolve every symlink, validate runtime ownership or create
 a sandbox. Repository

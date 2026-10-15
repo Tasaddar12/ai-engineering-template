@@ -46,6 +46,68 @@ See the [canonical Git workflow](git-workflow.md).
 Work a planning record *leads to* is a different matter. `/check-todos` hands
 implementation to `/quick` or `/phase`, and those open sessions of their own.
 
+## Conditional same-agent native entry
+
+Claude's `/quick`, `/discuss-phase`, `/plan-phase`, `/execute-phase`,
+`/verify-work` and `/ship` workflows have a conditional native route before
+their ordinary session-opening steps. A source-edit denial is one trigger; the
+workflow route can also bootstrap a known unit before any edit. This route is
+available only when this same existing caller's actual tool pool exposes a
+compatible `EnterWorktree` schema, the role is eligible and permits it, policy
+allows it, and the trusted `WorktreeCreate` hook is registered. The installed
+coordinator and coder exports include `EnterWorktree`; that does not establish
+availability or approval in a live session. If a gate fails, stop with the
+specific unsupported reason. Codex's current template integration has no
+authenticated same-thread controller, so it cancels and explains that
+limitation; this does not make a claim about Codex products generally.
+
+For an intercepted source edit, the hook cancels the complete original
+mutation, returns a request ID and does not create a checkout. Never retry that
+call. For workflow entry, use the known phase or quick unit and its exact
+session facts:
+
+```bash
+phase_run query prewrite.request <phase|quick> <label> --mode <new|existing>
+phase_run query prewrite.begin <request_id> <phase|quick> <label> --mode <new|existing>
+```
+
+These are runtime verbs, not native tool arguments. `new` requires no open
+session; `existing` requires exactly one validated open session. The source
+hook's `prewrite.begin` instruction supplies its request ID and mode. The
+runtime uses `CLAUDE_CODE_SESSION_ID` when available from tool subprocesses;
+`${CLAUDE_SESSION_ID}` is skill-content substitution, not a shell environment
+variable. Optional CLI session/agent values are correlation claims, not
+authentication. Conflicting or ambiguous identity is refused.
+
+For `new`, `prewrite.begin` reserves a unique `wf-entry-<request>` name and
+`worktree-wf_<request>` branch, without creating a checkout or copying dirty
+data. Invoke the actual advertised creation form as this same caller. The
+registered `WorktreeCreate` callback accepts only that ready, fresh ticket,
+checks the unchanged source root/branch/HEAD and creates from the pinned local
+commit under the configured ignored worktree root. It refuses existing paths
+and branches. Ordinary dispatch `WorktreeCreate` keeps its existing name-reuse
+and current-HEAD behavior; the reserved native branch does not change that
+contract.
+
+For `existing`, use the actual native existing-path form for the exact root
+returned by the runtime. This preserves the ordinary session's branch,
+historical base, accumulated commits and ownership. It does not run the
+creation callback or adopt the session again. Honor required approval for an
+existing path; never invoke fresh-name creation to evade it.
+
+After native completion, prove that subsequent calls without cwd/path
+overrides use the destination, and reload its permissions, project instructions
+and configuration. Resolve the runtime there, rerun the workflow's locate/init
+inputs from those defaults, then run `phase_run query prewrite.confirm
+<request_id>`. Confirmation validates Git facts and returns
+`host_binding_verified: false`; it cannot prove host binding, default
+permissions or loaded context. Freshly read the destination and reconstruct the
+intended change once. A later turn must keep using destination defaults. If
+entry is denied, unknown or timed out, inspect native state and the request/Git
+receipt before any further action. Do not retry creation with the same name,
+replay the cancelled mutation, or substitute shell `cd`, per-call cwd changes,
+or a child/fork.
+
 ## Phase session routing
 
 Run these steps in `/discuss-phase`, `/plan-phase`, `/execute-phase`, `/verify-work` and `/ship`:

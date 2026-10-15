@@ -88,6 +88,45 @@ unless `--force` is passed.
 | `session.open <kind> <label>` | Reuse or open a session worktree from the primary checkout |
 | `session.adopt phase <phase>` | Register the selected linked worktree and existing branch without switching, copying or changing files; reject unsupported or conflicting checkouts |
 
+### Conditional native source entry
+
+`prewrite.request`, `prewrite.begin` and `prewrite.confirm` support the
+conditional Claude same-existing-agent route described in
+[same-agent native entry](../references/same-agent-worktree.md). Their
+angle-bracketed values below are placeholders, not literal shell syntax.
+
+| Verb | Effect |
+|---|---|
+| `prewrite.request <phase|quick> <label> --mode <new|existing>` | Bootstrap a known workflow unit before an edit; requires no open session for `new`, exactly one validated open session for `existing` |
+| `prewrite.begin <request> <phase|quick> <label> --mode <new|existing>` | Bind the request to its source and unit; for `new`, reserve a fresh native creation name and pinned local base; for `existing`, return the validated session unchanged |
+| `prewrite.confirm <request>` | From the destination's actual default cwd, validate request and Git facts; adopt a new native checkout or confirm reuse of the existing session |
+
+An intercepted source edit is cancelled in full and is never replayed. The hook
+returns its request ID and does not precreate a checkout. The same caller must
+positively gate its actual advertised `EnterWorktree` schema, role eligibility,
+policy and trusted registered `WorktreeCreate` hook before invoking native
+entry. Creation accepts only the fresh reserved name and creates from the
+captured local HEAD under the configured ignored root. Existing destination or
+branch reuse is refused by this creation route; use the native existing-path
+form when the exact validated ordinary session is already open, and honor any
+required path approval.
+
+For an existing session, confirmation preserves its ownership, accumulated
+HEAD and historical base. Confirmation returns `git_facts_verified: true` and
+`host_binding_verified: false`: runtime checks do not authenticate the host
+transition, permissions or loaded project context. Observe native completion,
+prove default destination context, reload instructions/configuration, and
+freshly read the destination before rebuilding the intended edit once. Later
+tools and turns must continue from destination defaults. Shell `cd`, per-call
+cwd/path overrides and replacement children do not establish movement.
+
+`CLAUDE_CODE_SESSION_ID` is the documented environment correlation used when
+available to tool subprocesses. A supplied CLI session/agent ID is a binding
+claim, not authentication; `${CLAUDE_SESSION_ID}` in skill content is
+substitution, not a shell environment variable. Codex source denial reports
+that this template integration has no authenticated same-thread controller;
+it does not claim that Codex products cannot move conversations.
+
 ### Pull requests
 
 | Verb | Effect |

@@ -393,12 +393,38 @@ correct the roadmap.
 
 ## Hooks and validation
 
-Hooks are optional advisory notices: they warn and return success. They neither
-grant permission nor create a sandbox, and lexical path detection has limits.
+Most host hooks are optional advisories: they warn and return success. The
+installed `source-prewrite.sh` is a separate synchronous decision for source
+mutations: it cancels the original edit and returns a same-agent native-entry
+request for eligible Claude callers. It does not create a worktree. The caller
+must positively gate the actual advertised `EnterWorktree` schema, role,
+eligibility, policy and trusted `WorktreeCreate` registration. Native completion
+and destination defaults must be observed before fresh reads, one rebuilt edit
+and Git-only confirmation. Confirmation reports `host_binding_verified: false`;
+it does not prove host identity, permissions or loaded context. Cancellation,
+shell `cd`, per-call cwd/path overrides and a replacement child/fork do not
+fulfill movement. This template's Codex integration has no authenticated
+same-thread controller; that is not a product-wide claim.
+
+For known phase and quick workflow entry, `prewrite.request` binds an explicit
+unit in `new` or `existing` mode before any edit. New mode reserves a fresh
+ticketed name and its creation callback uses the pinned local base. Existing
+mode validates the ordinary session and preserves accumulated HEAD, historical
+base and ownership; its native path form must honor required approval. Never
+reuse a creation name to bypass approval. Ordinary dispatch worktree reuse and
+the advisory worktree guard retain their existing behavior. Untracked
+scratchpads, handoff scratch notes and plain OS-temp notes remain within their
+narrow note rules; the advisory guard continues warning on primary-checkout
+writes, including scratchpads. Hooks do not grant permission or create a
+sandbox, and lexical path detection has limits.
 
 Run checks appropriate to the changed behavior plus the project's required
 commands. Runtime changes need real Git and subprocess tests; hook changes need
-their Bash suites. Report actual outcomes, failures and skips. A check that
+their Bash suites, including the source-prewrite and worktree-location suites.
+Report actual outcomes, failures and skips. Fixtures may simulate native host
+behavior; label those results SIMULATED. Installed hooks and Git tests do not
+prove live same-agent entry, host binding or default-context changes. Report
+live host smoke as unverified unless it was actually observed. A check that
 restates the implementation's wording does not establish behavior.
 [Config](../.planning/config.yaml) owns command values and the model and effort
 overrides; [runtime documentation](runtime/README.md) owns the verb interface.
