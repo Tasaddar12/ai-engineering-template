@@ -6,6 +6,14 @@ title: Host hooks
 
 # Host hooks
 
+The destructive hook also exposes standalone `cleanup-preview --repo PATH` and
+`cleanup-apply --repo PATH --approval-file PATH` subcommands. Resolve the hook
+from the invoking installed host's namespace. [Cleanup](../workflows/cleanup.md)
+owns the read-only preview, actual human exact-list approval and truthful result
+report; [destructive operations](../references/destructive-operations.md) owns
+the evidence, backup, lock and single-use receipt contract. These subcommands do
+not change hook registration or the advisory worktree guard.
+
 [Installation](../commands/install.md) registers the existing scripts directly:
 
 | Script | Event | Output |

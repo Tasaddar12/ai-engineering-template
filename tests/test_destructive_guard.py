@@ -322,6 +322,9 @@ class CleanupTests(unittest.TestCase):
             if self.case == "mixed": obj[0].append(dict(item, state="open"))
             if self.case == "partial": obj = [[item] * 100]
             if self.case == "missing": obj = [[]]
+            if self.case == "pages":
+                unrelated = dict(item, head=dict(item["head"], ref="unrelated"))
+                obj = [[unrelated] * 100, [item]]
         elif "/merge_requests" not in argv[-1]:
             obj = {"id": 7, "path_with_namespace": "owner/repo", "web_url": "https://gitlab.com/owner/repo"}
         else:
@@ -333,6 +336,7 @@ class CleanupTests(unittest.TestCase):
             if self.case == "mixed": obj.append(dict(item, state="opened"))
             if self.case == "partial": obj = {"partial": True}
             if self.case == "missing": obj = []
+            if self.case == "pages": obj = [dict(item, source_branch="unrelated")] * 100 + [item]
         return subprocess.CompletedProcess(argv, 0, json.dumps(obj), "")
 
     def preview(self):
@@ -371,16 +375,21 @@ class CleanupTests(unittest.TestCase):
         for provider in ("github", "gitlab"):
             self.provider = provider
             git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
-            for case in ("merged", "closed", "open", "offline", "fork", "partial", "missing", "mixed", "recordless"):
+            for case in ("merged", "closed", "open", "offline", "fork", "partial", "missing", "mixed", "recordless", "pages"):
                 with self.subTest(provider=provider, case=case):
                     self.case = case
                     preview = self.preview()
-                    self.assertEqual(2 if case in ("merged", "closed") else 0, len(preview.get("operations", [])), preview)
+                    self.assertEqual(2 if case in ("merged", "closed", "pages") else 0, len(preview.get("operations", [])), preview)
         (self.tree / "tracked").write_text("unique\n", encoding="utf-8")
         git(self.tree, "add", "tracked")
         git(self.tree, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "unique")
-        self.case = "closed"
-        self.assertEqual([], self.preview().get("operations", ["missing"]))
+        for provider in ("github", "gitlab"):
+            self.provider = provider
+            git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
+            for state in ("closed", "merged"):
+                with self.subTest(provider=provider, unique_state=state):
+                    self.case = state
+                    self.assertEqual([], self.preview().get("operations", ["missing"]))
 
     def test_cleanup_dirty_ignored_unowned_locked_detached_preserved(self):
         for name in ("untracked", "ignored"):
@@ -462,6 +471,9 @@ class CleanupTests(unittest.TestCase):
         self.assertFalse(backup.exists())
 
     def test_cleanup_cli_source_and_installed_hosts(self):
+        # CLI mode has no injected runner: an unsupported fixture host ensures
+        # this wiring check cannot contact a real provider or need credentials.
+        git(self.root, "remote", "set-url", "origin", "https://unsupported.example.invalid/owner/repo.git")
         for host in ("ai", "codex", "claude"):
             hook = ROOT / ".ai/hooks/destructive-git-guard.py"
             if host != "ai":

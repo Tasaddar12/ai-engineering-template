@@ -172,4 +172,3 @@ Coordinator reconciles stable risk identity rather than opening duplicates for p
 <output>
 Create docs/maintenance/issue87/CLEANUP-SUMMARY.md with parent tip, child commit IDs/own-change boundary, acceptance/documentation coverage, actual RED/GREEN/check results, Threat Outcomes and remaining limitations. The coordinator owns integration, canonical threat reconciliation and authorized stacked draft publication. No native phase_run facade is needed; a later facade requires separately assigned coordinator ownership.
 </output>
-

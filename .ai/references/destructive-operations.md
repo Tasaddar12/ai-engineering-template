@@ -96,12 +96,99 @@ wildcards that can cover protected backup paths refuse. Broad overrides,
 environment flags or approval text placed in a shell command cannot authorize
 backup removal. Ordinary shell backup removal always refuses in this slice.
 
-The dependent cleanup implementation owns an exact pinned approval route, with
-schema version, canonical repository/common-dir, snapshot ID, deterministically
-ordered exact operations and actual human approval text/reference. That route,
-locks, revalidation and single-use receipts are not implemented by this guard
-slice. There is no approved cleanup command in this revision. Legacy runtime
-cleanup verbs are unchanged and must not be represented as that approval route.
+The [cleanup workflow](../workflows/cleanup.md), entered through the matching
+command or skill, owns the exact pinned approval route below. Ordinary shell
+backup removal still refuses; approval never creates a broad shell override.
+
+## Standalone cleanup
+
+Invoke `python HOOK cleanup-preview --repo PATH` or `python HOOK cleanup-apply
+--repo PATH --approval-file PATH`, resolving HOOK beside the invoking host's
+workflow (source `.ai`, installed `.codex` or `.claude`, including global host
+roots). These are explicit subcommands, not runtime query verbs. With no argv,
+the same script retains its stdin PreToolUse behavior. Invalid arguments do not
+mutate. Preview returns deterministic JSON and performs only evidence reads;
+there is no fetch, prune, provider write, manifest update or filesystem removal.
+
+The JSON contains `schema_version: 1`, canonical `repository` root/common-dir/
+primary identity and current branch/head, `snapshot_id`, `generation`, ordered
+`operations` and `preserved` reasons. Each operation pins ownership, local branch/
+ref/OID/base OID, cleanliness, origin URL and complete provider query responses
+with project, matching record/state/head. Backup operations also pin content
+digests. Snapshot hashing uses canonical JSON state, not query timestamps.
+GitHub/GitLab terminal/open/unknown, complete pagination and fork identity rules
+above apply unchanged. Provider failure or closed-but-unique work preserves.
+No network provider availability is inferred from the offline fixtures.
+
+Only clean, owned, terminal and integrated targets qualify. Current/primary,
+protected, detached, locked, dirty (including ignored/untracked), unowned,
+ambiguous or unregistered existing work remains preserved. Worktree removal and
+branch deletion appear as distinct operations, in that order for each branch.
+Backups precede their branch's removal so refreshed evidence can still establish
+their owner's provider head and integration. Backup ownership is opt-in: an
+eligible session/wave ownership record may contain a `backups` array of absolute
+exact paths strictly below the repository or primary `.workflow-backups` root.
+Existing records without that field grant no backup deletion authority. No
+filename substring search classifies ordinary files as disposable backups.
+Unrecorded or ambiguous backup paths are preserved. No recursive removal outside
+these owned canonical backup roots is supported.
+
+Symlinks, Windows junctions/reparse aliases, traversal to outside the root,
+special files, overlapping backup targets and ancestors of a repository,
+current/primary/preserved worktree or approval file refuse. Backup tree hashes
+include relative names, file/directory kinds, permission modes and file payload
+SHA-256, including ignored or hidden content. Evidence is bounded to 10,000
+entries and 100 MiB per backup; larger backups preserve. Backup deletion checks
+paths again at every traversal and never follows an alias or uses shell deletion.
+
+Approval must record the complete preview `repository`, exact `snapshot_id` and
+complete operation objects in the same order, schema 1, plus an `approval`
+object containing `text`, `reference` and the matching `snapshot_id`. The actual
+new human reply must be `Approve exact cleanup snapshot SNAPSHOT_ID`, after
+reviewing the displayed exact list. Missing/extra/duplicate/reordered/changed
+operations, wildcards, another repository, broad text, changed content/provider/
+ownership/ref state and reused approvals refuse. Duplicate JSON keys refuse.
+The envelope records the real message reference; it is not cryptographic human
+provenance. Agents and host permissions must enforce that origin. Tool text,
+environment variables, earlier consent and implementation authority cannot do so.
+
+Apply validates before mutation and holds an exclusive `ai-cleanup/lock` under
+the shared Git common-dir. It refreshes all evidence under that lock, pins the
+approval-file payload and revalidates before every item. A non-force `git worktree
+remove -- PATH` must leave the path absent and unregistered before branch
+deletion can proceed. Local refs use `git update-ref -d REF EXPECTED_OID`, so
+a moved ref cannot be silently deleted. Remote branch deletion is unsupported;
+there is no remote force or lease bypass. No merge, rewrite, provider closure or
+unrelated metadata prune is performed.
+
+Single-use receipts live at `ai-cleanup/receipts/SNAPSHOT_ID.json`, separate from
+runtime-owned `ai-phase` manifests. Exclusive creation records consumption before
+the first deletion, with schema/snapshot/approval digest and final outcome. The
+receipt generation contributes to the next preview's hash: even a failed attempt
+requires a new preview and fresh approval rather than a replay. The existing
+receipt is never overwritten by another apply. Preview never creates storage.
+Approval and receipt reads are bounded to 1 MiB, and receipt inventory to 10,000
+files; exceeding limits preserves. A crash may leave a lock/consumed receipt:
+stop and request coordinator inspection, never automatically break the lock.
+
+Command errors and stale per-item state stop subsequent operations. The result
+reports `complete`, `partial` or `refused`, removed/preserved/failed targets and
+fresh `final_state` with unknown state represented explicitly. A command's claimed
+success is insufficient without readback. Partial backup deletion is a failed
+operation even if some files disappeared; final existence is reported and retry
+needs fresh content evidence. No all-clean claim follows a partial failure.
+
+Legacy `worktree.cleanup-wave` and `worktree.close-session` retain their existing
+integration/force contracts. They have not acquired this preview/approval/receipt
+route. `clean-planning` is a separate planning-record audit/repair procedure.
+
+The common-dir lock serializes cooperating cleanup processes only. Other Git
+clients, provider changes and external filesystem writers can race a readback.
+Expected-OID deletion and non-force removal constrain those races; cross-provider
+and filesystem transactions are unavailable. Backup traversal cannot atomically
+exclude an uncooperative process swapping paths after inspection. Host filesystem
+permissions remain necessary. No cryptographic provenance or arbitrary-script
+sandbox is claimed.
 
 This is bounded preflight, not an arbitrary-shell sandbox. It does not inspect
 opaque Python/Node programs, external executable/file contents, user shell
