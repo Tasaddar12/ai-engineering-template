@@ -59,8 +59,9 @@ The latter's focused `-k provider` run exited 1, Ran 1 test, on the intended
 not cause an import/setup error. Detailed provider cases were written before
 implementation and exercised during GREEN.
 
-GREEN source commit: the implementation commit containing this SUMMARY; exact
-SHA is recorded by the following evidence update. No separate refactor needed.
+GREEN source commit: `e5af9bd16d6c81dbd161f952886808baf85b8a10`.
+This summary-only evidence update records the exact source commit after it was
+created. No separate refactor needed.
 
 ## Checks
 
@@ -78,7 +79,8 @@ the guard were not executed.
 | `C:/Program Files/Git/bin/bash.exe .ai/hooks/worktree-guard.test.sh` | Exit 0, 60 passed, 0 failed |
 | `git diff --check` | Exit 0 |
 
-The checks cover the implementation working tree descending from `442754e`.
+The checks cover the implementation working tree committed as `e5af9bd`,
+descending from `442754e`.
 Exact provider argv contract assertions were the only test change after the
 eight-test full run, and their focused test passed subsequently. No production
 source changed between those checks and the implementation commit.
