@@ -110,8 +110,8 @@ the coordinator. Native actual host acceptance remains unverified.
 No source stub, new threat identity, provider write or broad locale repair was
 introduced. The advisory script, four Task 3 documents and generic locale helpers
 have empty code-05 base diffs. `git diff --check` passed. The source correction is
-the enclosing owned-path commit; its full hash is recorded in the metadata
-follow-up after Git creates it.
+`2030ce829d54b348ddf7c80afbc8095f09c780fc`. This summary-only follow-up records
+that generated hash; it changes no tested source or fixture behavior.
 
 ### Frozen-review correction RED (code-05, 2026-10-15)
 
