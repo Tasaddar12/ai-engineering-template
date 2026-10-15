@@ -55,13 +55,27 @@ establish this RED. GREEN and future helper coverage have not run.
 
 ## Matrix / expected decisions
 
+Bounded independent RED review requested CR-01 and IN-01 before GREEN. A second
+test-only run at `1414979` plus corrected tests used the same command above:
+exit 1, 4 tests, 46.432s, the same two intended source denial assertion failures,
+both note controls passing. Codex now supplies native `apply_patch` with
+`tool_input.command` and complete Update File framing. New
+`test_prewrite_external_temporary_note_without_identity_continues` exercises
+actual fake create/update for both installed pipelines under a canonical plain
+OS-temp directory outside every repository; it verifies fake bytes, unchanged
+exact worktree listing and unchanged preparation inventory. No source changed.
+CR-01 belongs to T-AW-01; IN-01 to T-AW-03. The allowed range is location based,
+not extension/content based: resolved OS temp, outside every repository, plain
+unlinked create/update only. Other paths, mixed operations, deletes, renames,
+links and repository targets gain no exemption.
+
 Independent input: [MATRIX.md](MATRIX.md), committed by its separate owner.
 The following named coverage is required during Task 2; rows beyond the three
 installed tests above are planned, not claimed executed at RED.
 
 | Matrix | Named test family | Expected behavior |
 |---|---|---|
-| N1 | installed `test_prewrite_untracked_note_without_identity_warns_and_continues`; `test_notes_and_read_controls` | ordinary untracked nested note create/update allows without identity; read does nothing |
+| N1, CR-01 | installed `test_prewrite_untracked_note_without_identity_warns_and_continues`, `test_prewrite_external_temporary_note_without_identity_continues`; `test_notes_and_read_controls` | ordinary untracked nested notes and plain external OS-temp note create/update allow without identity; read does nothing |
 | S1, H1 | installed `test_prewrite_claude_first_source_prepares_and_cancels_pending_mutation`; `test_native_tools_prepare_once` | exact denial; one committed-base destination; zero original mutation |
 | S2 | installed `test_prewrite_codex_shared_parent_cancels_without_guessing_unit`; `test_identity_and_explicit_request_binding` | no shared-parent or missing-Claude-actor inference; explicit request mapping only |
 | S3, V2 | `test_conflicting_and_stale_records` | reject ambiguous, mismatched, missing or drifted destination |
@@ -75,8 +89,9 @@ installed tests above are planned, not claimed executed at RED.
 
 ## Checks / Task Commits
 
-RED command and result above are the only execution receipt so far. No source
-changes yet; awaiting coordinator acknowledgement of valid behavioral RED.
+RED command and its bounded test-only rerun above are the only execution receipts
+so far. No source changes yet; awaiting coordinator acknowledgement of corrected
+behavioral RED and reconciled plan clarification.
 
 ## Threat Outcomes
 

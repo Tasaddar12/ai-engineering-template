@@ -159,7 +159,7 @@ class InstallerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="installer-target-")
         self.addCleanup(self.temporary.cleanup)
-        self.base = Path(self.temporary.name)
+        self.base = Path(self.temporary.name).resolve()
         self.target = self.base / "project with spaces"
 
     def install(self, *extra):
@@ -727,8 +727,9 @@ class InstallerTests(unittest.TestCase):
         source = self.target / "source.txt"
         original = source.read_bytes()
         payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "session_id": "shared-parent",
-                   "tool_use_id": "request-one", "tool_name": "Write",
-                   "tool_input": {"file_path": str(source), "content": "pending"}}
+                   "tool_use_id": "request-one", "tool_name": "apply_patch",
+                   "tool_input": {"command": "*** Begin Patch\n*** Update File: "
+                                  + source.as_posix() + "\n@@\n-committed source\n+pending\n*** End Patch"}}
         denied, _ = self.prewrite_pipeline("codex", group, cwd, payload, source)
         self.assertTrue(denied, "S2/H1: installed Codex editing pipeline allowed an ambiguous shared-parent source mutation")
         self.assertEqual(original, source.read_bytes())
@@ -747,6 +748,36 @@ class InstallerTests(unittest.TestCase):
                 self.assertIn(b"WARNING", results[0].stderr)
                 listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
                 self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()))
+
+    def test_prewrite_external_temporary_note_without_identity_continues(self):
+        """CR-01: a plain task note outside every repo is not a source handoff."""
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                group, cwd = self.prewrite_fixture(host)
+                notes = self.base / (host + " temporary task notes")
+                notes.mkdir()
+                outside = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=notes,
+                                         capture_output=True)
+                self.assertNotEqual(0, outside.returncode, "fixture notes must be outside every repository")
+                note = notes / "draft-pr-body.md"
+                listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                state = self.target / ".git/ai-phase/prewrite"
+
+                def preparation_state():
+                    return {p.relative_to(state).as_posix(): p.read_bytes()
+                            for p in state.rglob("*") if p.is_file()} if state.exists() else {}
+
+                before = preparation_state()
+                for existing in (False, True):
+                    if existing:
+                        note.write_bytes(b"existing temporary task note\n")
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
+                               "tool_input": {"file_path": str(note), "content": "temporary PR body"}}
+                    denied, _ = self.prewrite_pipeline(host, group, cwd, payload, note)
+                    self.assertFalse(denied, "plain external temporary note must continue without identity")
+                    self.assertEqual(b"FAKE PENDING MUTATION EXECUTED\n", note.read_bytes())
+                    self.assertEqual(listed, command("git", "worktree", "list", "--porcelain", cwd=self.target))
+                    self.assertEqual(before, preparation_state())
 
     def test_registered_hooks_execute_from_installed_subdirectory(self):
         """Every managed hook resolves the project root from a nested directory."""
