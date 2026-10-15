@@ -1,11 +1,11 @@
 ---
 phase: issue87-maintenance
 plan: cleanup
-status: complete
+status: in_progress
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 4c35d27436add6867934c85eb9e853bd2fc3052e
-requirements-completed: [ISSUE87-CLEANUP, ISSUE87-RED]
+requirements-completed: []
 acceptance: [I87-A2, I87-A3]
 documentation:
   - .ai/hooks/README.md
@@ -168,3 +168,37 @@ lock. A crash can leave a lock/consumed receipt requiring coordinator inspection
 No automatic stale-lock breaking, opaque-script sandbox or cryptographic proof
 of human approval is claimed. Canonical parent risk linkage and draft94 updates
 are coordinator owned. No real cleanup is authorized by these implementation tests.
+
+## Independent review repair CR01 / CR02
+
+Repair input: `4370fb18853cf842fbb40845da0c54c7cd1d0e6f` on the same assigned
+branch/root. Ownership is limited to the child library/tests/summary, plus the
+existing local-ref deletion sentence in destructive-operations.md. Parent guard
+repair and synchronization are separate coordinator work; no parent pull/merge.
+
+Observed RED before production repair:
+`python -m unittest discover -s tests -p test_destructive_guard.py -k cleanup_review -v`
+exited 1, Ran 9 tests in 53.006s, 5 intended assertion failures, zero errors/skips.
+The unchanged library still made a symbolic candidate eligible; a same-OID
+direct-to-symbolic swap retained approval and reported complete; mutation-time
+aliasing deleted the disposable protected main referent; dangling alias readback
+falsely reported absence; and nested-backup/two-worktree cleanup stopped partial
+after its own first three removals. Expected results were preservation/refusal,
+referent survival, truthful existing-alias state, and all five approved operations
+completing with the ancestor group retained.
+
+Passing controls in that same run: normal direct branch deletion, moved-OID
+compare-delete refusal, real Git --no-deref deletion semantics and nested dirty/
+provider-open/changed-owner drift. The latter has three independent disposable
+subcases and must remain stale after the repair. Git is 2.49.0.windows.1;
+`git update-ref --no-deref -d REF OLD_OID` actually removed a named symbolic probe
+while preserving its protected referent, and removed a normal direct probe.
+
+Fixture correction before accepted RED: the original second branch name sorted
+before the backup owner, so it did not reproduce owner-first container drift.
+Renamed it phase-z-other, preserving original provider records after local ref
+removal. The corrected nested-only run had 2 tests/1 expected happy-path failure
+in 35.887s; the complete nine-test run above is the accepted coherent evidence.
+No production file changed for this RED matrix. Independent matrix review and
+implementation repair are pending; prior completion statements above describe
+the original delivered slice, not acceptance of these review findings.
