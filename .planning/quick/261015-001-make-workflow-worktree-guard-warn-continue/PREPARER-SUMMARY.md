@@ -32,3 +32,12 @@ Task-local QUICK-85/Q85-* labels provide maintenance traceability without adding
 ## Issues and handoff
 
 None identified beyond the authorized issue #85 scope. Source implementation and its checks remain pending. The coordinator owns integration, status, publication and any additional verification.
+
+## CR-01 plan revision
+
+- Input and prior reviewed revision: `e7627378268da77593e196705a03cd9055b467a9`.
+- Added Task 3 for Q85-02: consistent normalized qualified/bare attributed-stop classification, active-stack matching and recovery. Existing Tasks 1-2 remain valid.
+- Added `.ai/hooks/context-handoff.sh` ownership; correction source scope is exactly that file and `.ai/hooks/context-handoff.test.sh`, plus the executor's existing SUMMARY update.
+- Required regressions use attributed qualified stops for warned/isolated dispatches, incomplete/complete SUMMARYs and once-only matching-stack consumption.
+- Read the cited stop branch, drop_active, role helper and current regressions. The coordinator reports prior local checks passed and documentation PASS; those do not verify the newly covered path. No tests or benchmarks run by the preparer. No runtime/installer/config changes or new security threat.
+- CR-01 is addressed in planning; implementation and fresh affected checks/review remain pending.

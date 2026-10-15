@@ -7,6 +7,7 @@ depends_on: []
 files_modified:
   - .ai/hooks/worktree-guard.sh
   - .ai/hooks/worktree-guard.test.sh
+  - .ai/hooks/context-handoff.sh
   - .ai/hooks/context-handoff.test.sh
   - tests/test_install.py
   - .ai/hooks/README.md
@@ -36,11 +37,14 @@ must_haves:
     - "Primary-checkout writes, including scratchpads, and cross-checkout absolute paths emit warnings and exit 0."
     - "Allowed write-capable dispatches retain handoff recording; read-only, properly isolated, irrelevant and indeterminate cases retain their existing quiet/fail-open behavior."
     - "Workflow guidance still starts work in worktrees while accurately describing the advisory guard and unchanged runtime safeguards."
+    - "Qualified and bare attributed stops classify consistently, recover unfinished work, suppress recovery for complete summaries, and consume their matching active entry once."
   artifacts:
     - path: .ai/hooks/worktree-guard.sh
       provides: "Warning-and-continue dispatch/write checks with handoff recording"
     - path: .ai/hooks/worktree-guard.test.sh
       provides: "Regression coverage for warning status, guidance, scratchpads, patch paths and unchanged quiet cases"
+    - path: .ai/hooks/context-handoff.sh
+      provides: "Consistent normalized role classification, stack matching and attributed-stop recovery"
     - path: .ai/hooks/context-handoff.test.sh
       provides: "Warned dispatches remain eligible for handoff tracking"
     - path: tests/test_install.py
@@ -86,6 +90,15 @@ an unisolated dispatch to leave no active entry. The installed-launcher test in
 tests/test_install.py expects exit 2. Adjacent documentation and installer comments
 still claim hard hook enforcement. These exact paths were inspected at planning.
 
+
+CR-01 correction input and prior reviewed revision:
+e7627378268da77593e196705a03cd9055b467a9. The joined batch reported local tests
+passing and documentation PASS; code review found Q85-02 incomplete. The guard
+records plugin:workflow:coder as coder, but context-handoff.sh's attributed
+SubagentStop branch passes raw agent_type to agent_writes_files, then to
+stack matching/recovery. Qualified stops exit before recovery or drop_active.
+Existing added regressions use anonymous stops and miss this path. Task 3 is
+an authorized issue #85 correction; no runtime, installer or new threat scope.
 Boundaries: retain worktree-first workflow guidance, isolation configuration,
 worktree creation failures, base checks, worker root pinning, and merge/cleanup
 checks. Do not alter runtime isolation implementation, hook registrations,
@@ -129,10 +142,26 @@ launcher executable behavior, shared status or unrelated documentation.
   </verify>
   <done>Focused documentation matches warning-and-continue behavior. All retained safeguards are explicit and untouched. Commit the owned documentation slice and required execution SUMMARY.</done>
 </task>
+
+<task type="auto" tdd="true">
+  <name>Task 3: Correct CR-01 attributed qualified-stop handling</name>
+  <files>.ai/hooks/context-handoff.sh, .ai/hooks/context-handoff.test.sh</files>
+  <read_first>.ai/hooks/context-handoff.sh, .ai/hooks/context-handoff.test.sh, .ai/hooks/worktree-guard.sh, .ai/hooks/lib/agent-roles.sh, .planning/quick/261015-001-make-workflow-worktree-guard-warn-continue/261015-001-make-workflow-worktree-guard-warn-continue-SUMMARY.md</read_first>
+  <behavior>Attributed qualified and bare write-capable stops use consistent role classification and matching. For both warned and isolated qualified dispatches, missing/blocked SUMMARY produces recovery, complete SUMMARY produces none, and the matching active-stack entry is consumed exactly once without consuming another dispatch.</behavior>
+  <action>Address CR-01 against reviewed/input revision e7627378268da77593e196705a03cd9055b467a9. Add regressions carrying agent_type="plugin:workflow:coder" on the actual SubagentStop payload, covering warned and isolated dispatches, incomplete and complete SUMMARY outcomes, normalized stack matching and once-only active-entry consumption. Preserve bare-role, anonymous-stop and read-only behavior. Normalize the stop identity consistently for write-capable classification, matching the guard's normalized active entry, and recovery identity; do not modify shared role helpers, runtime or installer. Run the handoff regression before and after the production correction, then the guard regression. Update the existing execution SUMMARY with CR-01, repair commit, exact tested revision and actual results; earlier passing tests do not establish the repaired path. Commit this bounded repair.</action>
+  <acceptance_criteria>Q85-02 / CR-01 required property: consistent normalized qualified/bare stop classification, stack matching and recovery. An attributed qualified stop cannot bypass recovery or leave its matching active entry for an unrelated later stop.</acceptance_criteria>
+  <verify>
+    <automated>bash .ai/hooks/context-handoff.test.sh</automated>
+    <fails_when>Nonzero exit or any FAIL line, including missing recovery, recovery for a complete SUMMARY, duplicate consumption or an unrelated active entry removed.</fails_when>
+    <automated>bash .ai/hooks/worktree-guard.test.sh</automated>
+    <fails_when>Nonzero exit or any FAIL line; warned/isolated dispatch recording must remain correct.</fails_when>
+  </verify>
+  <done>Attributed qualified and bare stop regressions pass for warned/isolated dispatches and incomplete/complete SUMMARY outcomes; matching active entries are consumed once. CR-01 repair and execution SUMMARY evidence are committed.</done>
+</task>
 </tasks>
 
 <source_audit>
-GOAL: QUICK.md title and issue #85 are covered by Tasks 1-2.
+GOAL: QUICK.md title and issue #85 are covered by Tasks 1-2, with Q85-02 / CR-01 corrected by Task 3.
 REQ: No adopting-project requirements exist; QUICK-85 names this maintenance scope.
 RESEARCH: Coordinator scout packet is evidence; every required source consumer is
 covered by Tasks 1-2. No new research artifact or capability is needed.
