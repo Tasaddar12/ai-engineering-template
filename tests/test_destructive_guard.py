@@ -493,6 +493,32 @@ class RegisteredGuardTests(unittest.TestCase):
             with self.subTest(powershell_control=command):
                 self.source_verdict(command, False, tool="exec_command", shell="powershell")
 
+    def test_final_active_glob_parent_traversal_native_entrypoint(self):
+        backups = self.root / ".workflow-backups"
+        child = backups / "child"
+        child.mkdir(parents=True)
+        (backups / "kept.txt").write_text("preserve\n", encoding="utf-8")
+        alias = self.root / "ordinary-alias"
+        if os.name == "nt":
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(child)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else:
+            alias.symlink_to(child, target_is_directory=True)
+        (self.root / "unrelated-child").mkdir()
+        attacks = [("rm -rf ordinary-*/../kept.txt", "Bash", None),
+                   ("Remove-Item -Path 'ordinary-*/../kept.txt' -Force", "exec_command", "powershell")]
+        for command, tool, shell in attacks:
+            with self.subTest(attack=command):
+                observed = self.source_verdict(command, True, tool=tool, shell=shell)
+                self.assertEqual("unsupported-glob-parent-traversal", json.loads(observed.stdout)["reason_code"])
+        for command in ("rm -f unrelated-child/../ordinary.txt", "rm -f 'ordinary-*/../kept.txt'",
+                        "rm -f ordinary*.txt", "printf '%s' 'ordinary-*/../kept.txt'"):
+            with self.subTest(control=command): self.source_verdict(command, False)
+        for command in ("rm -rf ordinary-*/*", "rm -rf ordinary-alias/*"):
+            with self.subTest(retained_refusal=command): self.source_verdict(command, True)
+        self.source_verdict("Remove-Item -LiteralPath 'ordinary-*/../kept.txt' -Force", False,
+                            tool="exec_command", shell="powershell")
+
 
 if __name__ == "__main__":
     unittest.main()

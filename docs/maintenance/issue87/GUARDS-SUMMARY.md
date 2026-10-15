@@ -1,12 +1,12 @@
 ---
 phase: issue87-maintenance
 plan: guards
-status: complete
+status: in_progress
 issue_refs:
   - https://github.com/Tasaddar12/ai-engineering-template/issues/87
 input_revision: 14e8bd97481524c306d853ebb21249b6da57f60f
-requirements-completed: [ISSUE87-GUARD, ISSUE87-RED]
-acceptance: [I87-A1, I87-A3]
+requirements-completed: [ISSUE87-RED]
+acceptance: [I87-A3]
 documentation:
   - .ai/hooks/README.md
   - .ai/references/destructive-operations.md
@@ -312,6 +312,29 @@ This summary-only update pins the exact source. No production source
 changed after the passing checks. Fresh bounded independent review remains
 pending. Only the library and summary changed after the prescribed RED commit;
 installer, children, PR86 bytes and provider adapters remain unchanged.
+
+## Wildcard-before-parent canonicalization RED
+
+The retained final review found one further case in the same wildcard family:
+`ordinary-*/../kept.txt` can select a junction into backup/child before `..`
+resolves to backup/kept.txt. Canonicalizing the unresolved pattern first loses
+that selection. The prescribed native-entrypoint matrix tests the exact Bash
+and shared PowerShell Path cases, quoted/escaped literal and unrelated parent/
+glob controls, and the previous exact alias/direct wildcard protections. All
+submitted command strings remain inert JSON; only disposable fixtures change.
+The approved repair will refuse active wildcard-before-parent traversal before
+canonicalization rather than expand the supported shell grammar.
+
+Prescribed RED command: `python -m unittest discover -s tests -p
+test_destructive_guard.py -k final_active_glob_parent -v`. Exit 1, Ran 1 test
+in 1.710s, two intended allow-versus-deny failures (Bash and PowerShell Path),
+zero skips or fixture/import errors; literal/quoted/unrelated controls and prior
+alias refusals passed. A preliminary extra assertion outside the prescribed
+matrix observed literal `ordinary-alias/../kept.txt` also allowed on Windows;
+that junction-parent canonicalization discrepancy was sent to the coordinator
+for scope judgment, and the unprescribed assertion was replaced with the actual
+previously cleared exact-alias control. It is not claimed fixed by the narrow
+active-glob correction. Production source is unchanged for this RED commit.
 
 `glab` was absent;
 its official documented paginated JSON contract and injected offline fixtures
