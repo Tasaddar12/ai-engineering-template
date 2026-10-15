@@ -11,6 +11,7 @@ title: Host hooks
 | Script | Event | Output |
 |---|---|---|
 | [destructive-git-guard.py](destructive-git-guard.py) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Blocking refusal JSON with stable `reason_code` and exit 2 for recognized unsafe Git/backup operations |
+| [planning-integrity.sh](planning-integrity.sh) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Exit 2 with a diagnostic when prospective commits contain malformed changed canonical planning records |
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
@@ -60,6 +61,11 @@ The Codex Python `commandWindows` resolves that root inside Python, runs the
 entrypoint with `runpy` and propagates `$LASTEXITCODE`. Python source is never
 interpreted as Bash. Both `.codex` and `.claude` copies import their adjacent
 `runtime/lib/destructive_guard.py` rather than the source `.ai` namespace.
+
+The planning integrity hook has a 10-second host timeout and invokes its
+installed sibling Python checker through the same Bash launcher on both hosts.
+It validates prospective commit bytes without modifying the real Git index;
+missing required frontmatter such as `issue_refs` blocks the commit with exit 2.
 
 The destructive hook has a 120-second host timeout and an 80-second evidence
 budget, with individual subprocess calls limited to 20 seconds. Missing or

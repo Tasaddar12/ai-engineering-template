@@ -15,6 +15,12 @@ ready status do not grant execution permission.
 
 **Key principle:** Categories are NOT predefined. They emerge from what was actually discussed for THIS phase. A CLI phase has CLI-relevant sections, a UI phase has UI-relevant sections.
 
+Required frontmatter: `phase` (nonempty string), `discussion` (`pending`,
+`in-progress` or `complete`) and explicit `issue_refs` (list). A completed
+record uses `discussion: complete` only after its actual discussion is recorded.
+Metadata never grants implementation authority. See the
+[commit integrity contract](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity).
+
 **Downstream consumers:**
 - `phase-researcher` — Reads decisions to focus research (e.g., "card layout" → research card component patterns)
 - `planner` — Reads decisions to create specific tasks (e.g., "infinite scroll" → task includes virtualization)
@@ -24,6 +30,11 @@ ready status do not grant execution permission.
 ## File Template
 
 ```markdown
+---
+phase: XX-name
+discussion: pending        # pending | in-progress | complete; record the actual discussion state
+issue_refs: []             # Reviewed declarations; [] means no actionable follow-up
+---
 # Phase [X]: [Name] - Context
 
 **Gathered:** [date]

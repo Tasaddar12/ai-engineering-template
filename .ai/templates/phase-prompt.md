@@ -9,6 +9,11 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phas
 
 ---
 
+Required current-record metadata and types are listed in the
+[planning integrity contract](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity).
+Complete the instructional values from approved scope before committing a real
+canonical phase record; leave teaching source values instructional.
+
 ## File Template
 
 ```markdown
@@ -27,6 +32,10 @@ coupling_justified: []      # OPTIONAL. Deliberate, order-independent same-wave 
                             # from the plan-checker's Dimension 3b advisory.
 autonomous: true            # false if plan has checkpoints requiring user interaction
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
+acceptance: []              # REQUIRED - Bare phase acceptance IDs this plan covers.
+documentation: []           # REQUIRED - Exact assigned documentation paths; [] when none.
+checks: []                  # REQUIRED - Commands as argv lists, e.g. [[python, -m, unittest]].
+issue_refs: []              # REQUIRED - Reviewed declaration mappings; [] when no actionable follow-up.
 user_setup: []              # Human-required setup Claude cannot automate (see below)
 
 # Goal-backward verification (derived during planning, verified after execution)
@@ -163,6 +172,10 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `files_modified` | Yes | Files this plan touches. |
 | `autonomous` | Yes | `true` if no checkpoints, `false` if has checkpoints |
 | `requirements` | Yes | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement MUST appear in at least one plan. |
+| `acceptance` | Yes | List of bare phase acceptance IDs; [] when none apply. |
+| `documentation` | Yes | List of exact assigned documentation paths; [] when none. |
+| `checks` | Yes | List of command argv lists of strings. |
+| `issue_refs` | Yes | Reviewed declaration mapping list; [] when no actionable follow-up. |
 | `user_setup` | No | Array of human-required setup items (external services) |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
