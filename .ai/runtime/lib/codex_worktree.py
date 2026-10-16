@@ -135,7 +135,10 @@ def hook_decision(payload):
     budget = prewrite.Budget()
     info = prewrite.facts(budget, cwd)
     if event != "PreToolUse":
-        validate_root(info, budget)
+        # Lifecycle hooks provide cwd/repository diagnostics, but must not
+        # reject primary prompts before the source-tool boundary can classify
+        # an ordinary read or task note. The selected launcher and source
+        # PreToolUse decisions retain mandatory isolated-root enforcement.
         return
     tool = payload.get("tool_name")
     require(isinstance(tool, str) and bool(tool), "missing native tool name", "codex-tool")
