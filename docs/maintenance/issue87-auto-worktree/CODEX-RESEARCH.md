@@ -39,6 +39,21 @@ Official sources support local-tool denial and project hook configuration, but d
 
 The native idle `/worktree` command can continue the current conversation, while CLI `--worktree` starts a new/forked run. Neither establishes automatic in-flight movement by a hook. A separate authenticated host controller would be needed for that integration.
 
+## Follow-up native trust and effective feature evidence
+
+After the first runtime slice, an isolated temporary native CLI review trusted a known hook through the supported review UI. A separate app-server read reported enabled=true, trustStatus=trusted and no errors/warnings. No bypass, model turn or private trust-store edit was used. CLI exit1 followed intentional Ctrl+C after approval; it is not a model-run pass. The native UI also exposed “Trust all and continue”; the observed fixture contained one hook. B must review its actual generated definitions in its own destination and temporary home.
+
+The same trusted fixture with temporary user features.hooks=false produced:
+
+| Invocation | config/read config.features.hooks | Native features list | hooks/list |
+|---|---|---|---|
+| --enable hooks | true | hooks stable true | Enabled/trusted, same definition hash |
+| --disable hooks | false | hooks stable false | Empty |
+
+The config/read origin was sessionFlags, so the read includes invocation overrides and can check effective enabling without rewriting stored user=false. Both native processes exited0; no thread, turn or model call occurred. The temporary config was restored byte-for-byte. Disabled execution retaining enabled/trusted catalog metadata was not reproduced. The supported configRequirements/read response has nullable requirements and a featureRequirements boolean map; both actual reads returned requirements=null, so managed override behavior was not exercised.
+
+Receipts and exact sources remain in the capability directory: hooks-feature-differential.py, hooks-feature-differential-results.json, feature-enable/disable full RPC/config/hooks/requirements outputs, and interactive-trust/native-control-receipt.json plus trust-approval-receipt.json. These prove capability only; generated-adapter and positive production-launch acceptance remain pending B.
+
 ## References
 
 - [Hooks and trust](https://learn.chatgpt.com/docs/hooks)
