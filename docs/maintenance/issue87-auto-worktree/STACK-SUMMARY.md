@@ -22,6 +22,8 @@ obligations. Context usage: unavailable.
 - Branch: `phase-issue87-native-code-06-203146625`.
 - Immutable input: `a14a0fe2e64eba9d93579f6e29942ab3261f5b62`.
 - Corrected native97 first parent: `5714d1d53df054ce06585c1726dae20b5a879afd`.
+- Task4 RED commit: `e0204a89f9d7191d5e70256441354573c09625bf`.
+- Task4 source fix: `9ae9e119495783e9a9e22404ef18627db59e3e50`.
 - Frozen PR93 dependency: `47593a3d3f71739bd146a6c2c3590798d7c73c2e`.
 - Frozen PR92 ancestor: `d8f2c8bd0c4dca0f82a7fc8a95e4f0abb8bcd2b6`.
 - Coordinator materialized the corrected native97/frozen93 merge before dispatch;
@@ -147,8 +149,9 @@ adoption-record update is proposed.
 ## Remaining / coordinator reconciliation
 
 - Assigned source, tests, narrow shared documentation and seven required checks
-  are complete. The source-ready commit includes this summary; a metadata-only
-  follow-up records its generated full hash without changing tested behavior.
+  are complete. Source commit `9ae9e119495783e9a9e22404ef18627db59e3e50` includes
+  this summary; this metadata-only follow-up records its generated full hash
+  without changing tested behavior.
 - Coordinator obtains fresh source/integration/narrow-doc review at the integrated
   result, checks frozen93..final97 scope, then runs/reviews the separate disposable
   original-six composition. Earlier prototype/six-only evidence is insufficient.
