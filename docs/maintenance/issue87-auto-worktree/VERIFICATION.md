@@ -1,25 +1,52 @@
 ---
 phase: maintenance-issue87-auto-worktree
-verified: "2026-10-16T02:26:17Z"
-revision: "b9cff8c23f43fbdf5411889214f25159152f1d32"
+verified: "2026-10-16T16:59:07Z"
+verified_at: "2026-10-16T16:59:07Z"
+revision: "7725566261fb1210b4ded9baedef6fdf125aab86"
+frozen_source_revision: "54c41fbc06a376d8cbebb92d745536558bf0a615"
 status: human_needed
-score: "4/8 acceptance outcomes verified at their conditional/runtime/process boundary"
-behavior_unverified: 4
+score: "1/6 current CW acceptance outcomes verified; CW-06 only at the static documentation/publication boundary"
+behavior_unverified: 9
 overrides_applied: 0
-issue_refs: [87, 98]
+findings:
+  critical: 0
+  warning: 3
+issue_refs:
+  - id: ISSUE87
+    summary: Automatic worktree enforcement remains incomplete pending current Codex behavioral evidence and original live same-agent observations.
+    variant: Feature
+    state: unresolved
+    relationship: implements
+    issueRepo: Tasaddar12/ai-engineering-template
+    issueURL: https://github.com/Tasaddar12/ai-engineering-template/issues/87
+    issueNumber: 87
+  - id: ISSUE98
+    summary: Source-confinement, unit-identity and host-transition risks remain unresolved; required validator blocks the intended issue update.
+    variant: Security risk
+    state: unresolved
+    relationship: followup
+    issueRepo: Tasaddar12/ai-engineering-template
+    issueURL: https://github.com/Tasaddar12/ai-engineering-template/issues/98
+    issueNumber: 98
 covered_files:
   - AGENTS.md
   - .ai/RULES.md
+  - .ai/agents/verifier.md
+  - .ai/references/agent-adaptation.md
+  - .ai/references/verification-evidence.md
+  - .ai/runtime/TEMPLATE-CONTRACT.md
   - .ai/install.py
-  - .ai/hooks/README.md
-  - .ai/hooks/source-prewrite.sh
-  - .ai/hooks/worktree-location.sh
-  - .ai/runtime/phase.py
+  - .ai/install_update.py
+  - .ai/install_migration.py
+  - .ai/install-assets/codex-worktree.py
+  - .ai/hooks/codex-worktree.py
+  - .ai/runtime/lib/codex_worktree.py
   - .ai/runtime/lib/prewrite.py
   - .ai/runtime/lib/worktrees.py
+  - .ai/runtime/phase.py
   - .ai/references/same-agent-worktree.md
   - .ai/references/worktree-sessions.md
-  - .ai/references/verification-evidence.md
+  - .ai/hooks/README.md
   - .ai/runtime/README.md
   - .ai/workflows/quick.md
   - .ai/workflows/discuss-phase.md
@@ -27,285 +54,266 @@ covered_files:
   - .ai/workflows/execute-phase.md
   - .ai/workflows/verify-work.md
   - .ai/workflows/ship.md
-  - .github/workflows/validate.yml
-  - tests/test_same_agent_worktree.py
-  - tests/test_prewrite.py
+  - tests/test_codex_worktree.py
+  - tests/test_destructive_guard.py
+  - tests/test_install.py
+  - tests/test_install_update.py
   - tests/test_install_migration.py
-  - docs/maintenance/issue87-auto-worktree/CONTEXT.md
-  - docs/maintenance/issue87-auto-worktree/PLAN.md
-  - docs/maintenance/issue87-auto-worktree/SAME-AGENT-CAPABILITIES.md
-  - docs/maintenance/issue87-auto-worktree/MATRIX.md
-  - docs/maintenance/issue87-auto-worktree/IMPLEMENTATION-SUMMARY.md
-  - docs/maintenance/issue87-auto-worktree/MIGRATION-SUMMARY.md
-  - docs/maintenance/issue87-auto-worktree/DOCUMENTATION-SUMMARY.md
-  - docs/maintenance/issue87-auto-worktree/RED-REVIEW.md
-  - docs/maintenance/issue87-auto-worktree/PLAN-REVIEW.md
-  - docs/maintenance/issue87-auto-worktree/REVIEW-02.md
-  - docs/maintenance/issue87-auto-worktree/DOC-RECHECK.md
-  - docs/maintenance/issue87-auto-worktree/STACK-PLAN.md
-  - docs/maintenance/issue87-auto-worktree/STACK-PLAN-REVIEW.md
-  - docs/maintenance/issue87-auto-worktree/STACK-SUMMARY.md
-  - docs/maintenance/issue87-auto-worktree/JOINED-REVIEW.md
-  - docs/maintenance/issue87-auto-worktree/REVIEW-03.md
-  - docs/maintenance/issue87-auto-worktree/REVIEW-04.md
-  - docs/maintenance/issue87-auto-worktree/COMPOSITION.md
-  - docs/maintenance/issue87-auto-worktree/CI-DIAGNOSIS.md
-  - docs/maintenance/issue87-auto-worktree/CI-PLAN.md
-  - docs/maintenance/issue87-auto-worktree/CI-PLAN-REVIEW.md
-  - docs/maintenance/issue87-auto-worktree/CI-SUMMARY.md
-  - docs/maintenance/issue87-auto-worktree/CI-REVIEW.md
-  - docs/maintenance/issue87-auto-worktree/VERIFICATION.md
   - .planning/PROJECT.md
   - .planning/STATE.md
   - .planning/ROADMAP.md
   - .planning/REQUIREMENTS.md
+  - docs/maintenance/issue87-auto-worktree/PLAN.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-PLAN.md
+  - docs/maintenance/issue87-auto-worktree/CONTEXT.md
+  - docs/maintenance/issue87-auto-worktree/MATRIX.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-RUNTIME-SUMMARY.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-WRAPPER-FIX-SUMMARY.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-NOTES-FIX-SUMMARY.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-INSTALL-SUMMARY.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-INSTALL-FIX-SUMMARY.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-DOCUMENTATION-SUMMARY.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-REVIEW-03.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-DOC-REVIEW.md
+  - docs/maintenance/issue87-auto-worktree/CODEX-INTEGRATION-REVIEW.md
+  - docs/maintenance/issue87-auto-worktree/VERIFICATION.md
 re_verification:
-  previous_status: gaps_found
-  previous_revision: "ef325b62c0df6efcf603d72cfae55b8269a3052e"
+  previous_status: human_needed
+  previous_revision: "b9cff8c23f43fbdf5411889214f25159152f1d32"
+  previous_score: "4/8 original AW outcomes at their historical conditional/runtime/process boundary"
   gaps_closed:
-    - "CR-01: locale-dependent native creation output"
-    - "CR-02: four phase workflows changed directory before native bootstrap"
-    - "CR-03: failed Git discovery could grant an external temporary-note exemption"
-    - "DOC-01: false no-Python-adapter statement"
-    - "CR-STACK-01: stale migration fixture after the PR93 dependency join"
-    - "CR-CI-01: Windows validation exhausted its job budget"
-  gaps_remaining: []
+    - "Saved Codex CR-01: batch launcher refusal and literal prompt forwarding are statically repaired."
+    - "Saved Codex CR-02: primary lifecycle note allowance is statically repaired while source-root validation remains connected."
+    - "Installer registration-consumer fixture now selects both intended shell handlers before regex matching."
+  gaps_remaining:
+    - "CW-01 through CW-05 lack current required behavioral acceptance evidence."
+    - "Original AW-01, AW-04, AW-05 and AW-07 live observations remain pending."
+    - "ISSUE98 update remains blocked by its required unavailable Python validator; all three risks remain unresolved."
   regressions: []
 behavior_unverified_items:
+  - acceptance: CW-01
+    truth: "Native startup uses the selected runtime-owned destination by default and preserves primary data."
+    test: "Observe authorized phase/quick creation and reuse through the installed launcher."
+    expected: "Exact destination defaults and unchanged primary data."
+    why_human: "Current native/default-root behavior was not exercised."
+  - acceptance: CW-02
+    truth: "Generated supported-tool interception refuses primary/invalid source operations and preserves narrow note allowances."
+    test: "Exercise generated supported-tool and note decisions."
+    expected: "Refusal before source action, with legitimate notes remaining usable."
+    why_human: "Current generated behavior was not exercised."
+  - acceptance: CW-03
+    truth: "Install, reinstall, update and migration preserve configuration while delivering reachable guards."
+    test: "Execute the five written export cases and applicable installed preservation checks when authorized."
+    expected: "Exact registrations and assets, idempotence, and preserved custom hooks/configuration/model settings."
+    why_human: "All current export and installed checks are NOT_RUN."
+  - acceptance: CW-04
+    truth: "Unsafe setup and conflicting options refuse without an unenforced model run or policy weakening."
+    test: "Resolve effective-feature, managed-disable, trust, policy and startup-default behavior when authorized."
+    expected: "Visible preservation-or-refusal before model startup."
+    why_human: "Static checks cannot establish effective native policy or feature behavior."
+  - acceptance: CW-05
+    truth: "Actual installed Codex executes the generated adapter and refuses both shell and patch attempts."
+    test: "Obtain separately authorized generated-installed native shell AND patch evidence."
+    expected: "Both attempts refused before mutation, with actual handler execution identified."
+    why_human: "BLOCKED/UNVERIFIED under the current execution restriction; no acceptance waiver."
   - acceptance: AW-01
-    truth: "The same existing live agent completes native entry and retains destination defaults across subsequent tools."
-    test: "Exercise source denial and native entry on an eligible live Claude host."
-    expected: "Stable session/actor identity, observed native completion and subsequent destination-default tools without cwd overrides."
-    why_human: "No callable native host entry tool is available in this executor; fixture host rebinding is SIMULATED."
+    truth: "The same existing live agent completes native entry and retains destination defaults across later tools and turns."
+    test: "Observe eligible live same-caller native entry and persistent defaults."
+    expected: "Identity continuity and destination cwd/root/branch, permissions and loaded context without per-call overrides."
+    why_human: "Historical fixture host rebinding is simulated; live observation remains pending."
   - acceptance: AW-04
-    truth: "Live native entry and lifecycle handling preserve and account for all existing dirty data."
-    test: "Exercise staged, unstaged, untracked and ignored data through live new/existing entry and native lifecycle callbacks."
-    expected: "Every initial change remains recoverable at its observed location; no unauthorized copying, discarding or removal."
-    why_human: "Real Git fixtures establish provider behavior but cannot establish the live host's transfer and lifecycle behavior."
+    truth: "Live native entry and lifecycle handling preserve and account for all dirty data."
+    test: "Account for staged, unstaged, untracked and ignored data through live entry and lifecycle handling."
+    expected: "Every initial item remains recoverable without unauthorized copying or removal."
+    why_human: "Git fixtures do not prove live host transfer or lifecycle behavior."
   - acceptance: AW-05
-    truth: "The live cancelled mutation is followed by fresh destination reads and exactly one rebuilt edit."
-    test: "Observe the complete denied-edit/native-entry/fresh-read/rebuilt-edit sequence."
-    expected: "The original call never executes; one reconstructed edit changes only the intended destination."
-    why_human: "Installed cancellation and runtime checks execute for real in fixtures, but the host continuation and edit sequencing are simulated."
+    truth: "Cancellation is followed by fresh destination reads and exactly one rebuilt edit."
+    test: "Observe the live cancellation, native entry, fresh-read and rebuilt-edit sequence."
+    expected: "No replay or old-root mutation; one intended destination edit."
+    why_human: "Host continuation remains simulated in historical evidence."
   - acceptance: AW-07
-    truth: "Live denied, uncertain and existing-path entry outcomes avoid duplicate movement, edits and approval bypass."
-    test: "Exercise live refusal, uncertain completion and required existing-path approval."
-    expected: "Inspect before retry; preserve existing state; no duplicate checkout, replay, replacement agent or disguised creation-name reuse."
-    why_human: "Deterministic ticket/provider controls pass, but actual native policy, completion and lifecycle behavior remain unobserved."
+    truth: "Live refusal, uncertain completion and existing-path approval avoid duplicate movement, edits and approval bypass."
+    test: "Observe live failure, uncertainty and existing-path approval handling."
+    expected: "State preserved and inspected before retry; no duplicate entry/edit or disguised creation."
+    why_human: "Actual native policy and completion behavior remain unobserved."
 human_verification:
-  - acceptance: AW-01
-    test: "Prove same-existing-agent native completion and destination defaults, including a later turn."
-    expected: "Identity continuity, destination cwd/root/branch, write permissions and loaded project context persist without overrides."
-    why_human: "Live native host unavailable here."
-  - acceptance: AW-04
-    test: "Account for dirty data and native lifecycle preservation on the live host."
-    expected: "All initial staged, unstaged, untracked and ignored data remain recoverable."
-    why_human: "Host transfer/lifecycle behavior is not established by Git fixtures."
-  - acceptance: AW-05
-    test: "Observe fresh reconstruction and one destination edit after cancellation."
-    expected: "No old-root mutation or replay; fresh reads precede the single rebuilt edit."
-    why_human: "The fixture explicitly simulates host continuation."
-  - acceptance: AW-07
-    test: "Observe refusal, uncertain completion and existing-path approval behavior."
-    expected: "No automatic repeated entry, duplicate edit or approval bypass."
-    why_human: "Native host policy and completion semantics require actual observation."
+  - acceptance: [CW-01, CW-02, CW-03, CW-04, CW-05]
+    test: "Resolve the current execution restriction before obtaining the named behavioral evidence."
+    expected: "Current runtime/export/native receipts, including generated installed shell AND patch refusal, with exact revision and evidence boundaries."
+    why_human: "No retry, alternate interpreter/host, new harness or execution reroute is authorized."
+  - acceptance: [AW-01, AW-04, AW-05, AW-07]
+    test: "Obtain the original eligible live same-agent observations."
+    expected: "Persistent destination defaults, data/lifecycle accounting, fresh reconstruction and correct refusal/approval behavior."
+    why_human: "These original obligations remain pending and unwaived."
 ---
 
-# Issue 87 final verification
+# Issue 87 final static acceptance reconciliation
 
-**Goal:** Move the same existing agent into an isolated worktree before source mutation, with subsequent tools using the destination by default.
+**Status: `human_needed` — incomplete.**
 
-**Status:** `human_needed`
+**Reviewed revision:** `7725566261fb1210b4ded9baedef6fdf125aab86`
 
-**Reviewed revision:** `b9cff8c23f43fbdf5411889214f25159152f1d32`
+**Frozen source reviewed by specialists:** `54c41fbc06a376d8cbebb92d745536558bf0a615`
 
-The conditional Claude implementation, dependency join, composition and required CI are supported by the joined evidence. All demonstrated source, documentation, test and CI findings are closed. The actual live same-agent outcome remains unverified.
+The authorized static deliverables are complete: the two defensive runtime repairs, thin installed launcher, three synchronous registrations, five fenced export fixtures, eleven guides and targeted matcher correction are integrated and independently reviewed. Full behavioral acceptance remains blocked.
 
-Final readback confirmed the exact assigned HEAD, tree `d3f6489eba47924282d9cc291bf012a6f78f6e77`, and a clean checkout including untracked files. This verifier performed no tests, writes, commits, provider changes or child dispatches.
+This report replaces the current report’s applicability statement, while retaining the [previous historical report in Git](https://github.com/Tasaddar12/ai-engineering-template/blob/b3cefa0c6436ddd5f606b5a34523c8e269a5ceac/docs/maintenance/issue87-auto-worktree/VERIFICATION.md). That report inspected `b9cff8c23f43fbdf5411889214f25159152f1d32` and recorded 4/8 original AW outcomes at their conditional/runtime/process boundary, with four live outcomes pending. Its tests, composition and CI receipts remain historical evidence at their recorded inputs. They do not certify the later Codex addition.
+
+No runtime fingerprint is asserted. This verifier performed read-only file and Git inspection only, with no writes, commits, dispatch, publication or execution of Python, tests, imports, validators, hooks, launchers, native commands or probes.
 
 ## Acceptance
 
-| ID | Verdict | Evidence and boundary |
-|---|---|---|
-| AW-01 | **UNCERTAIN — live behavior unverified** | Installed denial, ticket, callback, Git confirmation and adoption execute in the composed tracer. Host actor/default-context changes are explicitly simulated. Actual same-existing-agent entry and later-turn defaults have not been observed. |
-| AW-02 | **VERIFIED — conditional contract** | The standing protocol requires actual advertised native tool/schema, eligible role, policy and trusted creation hook. It preserves existing-path approval and rejects child/cd substitutes. Installed Claude coordinator/coder exports and refusal fixtures support that contract. Protocol: `.ai/references/same-agent-worktree.md:12-26,61-83`. |
-| AW-03 | **VERIFIED — runtime classification** | Narrow scratchpad and plain external OS-temp controls remain. Mixed, tracked, rename/delete, linked and cross-repository targets retain source/refusal handling. Failed discovery no longer establishes repository absence: `.ai/runtime/lib/prewrite.py:465-488`; real malformed-external-repository regression: `tests/test_prewrite.py:117-144`. |
-| AW-04 | **UNCERTAIN — live preservation unverified** | Real Git fixtures establish primary byte/index preservation and preservation-only callback behavior. They do not establish actual host relocation, transfer or lifecycle accounting. |
-| AW-05 | **UNCERTAIN — live sequence unverified** | Runtime confinement, cancellation, replay checks and fresh-rebuild instructions are implemented and exercised. The composed test performs one rebuilt destination mutation, but its host continuation remains simulated. |
-| AW-06 | **VERIFIED — installed/runtime wiring** | Actual exports, standing instructions, six workflow consumers, creation callback and new/existing confirmation paths are connected. Four phase initializers now route native entry before their first session cd/init. Existing phase/quick fixtures preserve accumulated HEAD, historical base and ownership. |
-| AW-07 | **UNCERTAIN — live native outcomes unverified** | Bounded locks, tickets, collisions, stale/uncertain state and fresh-name refusal pass deterministic checks. Live completion uncertainty, required approval and native lifecycle behavior remain unobserved. |
-| AW-08 | **VERIFIED — evidence and completion discipline** | Genuine RED/GREEN, independent source/docs/integration reviews, bounded correction reviews, actual composition evidence and fresh complete CI are present. No live outcome is inferred from fixture success. |
+### Current Codex addition
 
-**Score:** 4/8 acceptance outcomes verified at their declared conditional/runtime/process boundary. Four live-dependent outcomes remain unverified; none is waived.
+| ID | Verdict | Evidence and remaining condition |
+|---|---|---|
+| CW-01 | **PRESENT_BEHAVIOR_UNVERIFIED** | `launcher_main` validates arguments, resolves an exact phase/quick session and captured base, calls `open_session(..., sync=False)`, validates the destination and constructs native `--cd` argv. Actual native defaults and primary-data preservation are unverified. |
+| CW-02 | **PRESENT_BEHAVIOR_UNVERIFIED** | `hook_decision` connects structured classification and isolated-root checks; lifecycle events retain primary prompt/note access. Generated supported-tool refusal and note behavior were not exercised. |
+| CW-03 | **PRESENT_BEHAVIOR_UNVERIFIED** | Installer payload, shared managed inventory, update and migration paths connect the launcher/runtime/guards. Five export fixtures specify configuration preservation and idempotence. All current export/install checks are **NOT_RUN**. |
+| CW-04 | **PRESENT_BEHAVIOR_UNVERIFIED** | Source checks installed bytes, exact synchronous definitions, native hook trust, policy equality, arguments and final identity. Effective hook-feature, managed-disable, native trust/defaults and fail-open behavior remain unresolved. |
+| CW-05 | **PRESENT_BEHAVIOR_UNVERIFIED — BLOCKED/UNVERIFIED** | Required actual installed Codex execution of the generated adapter demonstrating **shell AND patch refusal** is absent. The retained installed tracer is active and unchanged, but was not run locally and is not native Codex proof. This requirement is not waived. |
+| CW-06 | **VERIFIED at the static documentation/publication boundary** | Eleven guides accurately distinguish new-run startup from active-agent movement and describe root/trust/policy/transport limits and pending evidence. Independent documentation review found no demonstrably false claim. Coordinator readback confirms PR97 remains open and draft. This verdict verifies accurate claims, not their unexercised runtime outcomes. |
+
+**Current score: 1/6 full CW outcomes verified.** CW-06 passes only at the stated documentation/publication boundary; CW-01 through CW-05 contribute no behavioral passes.
+
+### Original AW acceptance
+
+| ID | Reconciled disposition |
+|---|---|
+| AW-01 | **PRESENT_BEHAVIOR_UNVERIFIED:** live same-existing-agent entry and later-turn destination defaults remain pending. |
+| AW-02 | Historical conditional-contract verification retained: actual native schema, eligible role, policy and trusted hook are required; existing-path approval and no-child/no-cd rules remain. No new live capability result is claimed. |
+| AW-03 | Historical classification verification retained for unchanged prewrite source: narrow notes remain distinct from mixed, tracked, linked, cross-repository and ambiguous targets. No new execution is claimed. |
+| AW-04 | **PRESENT_BEHAVIOR_UNVERIFIED:** live dirty-data and native lifecycle accounting remain pending. |
+| AW-05 | **PRESENT_BEHAVIOR_UNVERIFIED:** live cancellation, fresh destination reads and exactly one rebuilt edit remain pending. |
+| AW-06 | Historical installed/runtime wiring verification retained. Static comparison preserves the Claude implementation and tracer; current installer conservation tests remain NOT_RUN. |
+| AW-07 | **PRESENT_BEHAVIOR_UNVERIFIED:** live refusal, uncertainty, approval and duplicate-prevention observations remain pending. |
+| AW-08 | Historical evidence-discipline/process verification retained at its original revision. Current Codex local checks are NOT_RUN and automatic CI is pending; historical green receipts are not current acceptance. |
+
+The historical AW **4/8** score is preserved separately. It is not added to the current CW score or relabeled as newly executed evidence. All four original live obligations remain open.
 
 ## Integration
 
-The installed flow is substantive and connected:
+Direct inspection confirms substantive source connections rather than summary-only claims:
 
-1. One editing group runs the unchanged advisory guard before the synchronous source decision.
-2. Source denial cancels the original mutation and supplies a request without precreating a checkout.
-3. The same caller follows the standing protocol and positively gates its actual native capability.
-4. The registered creation provider validates the reserved identity and creates the fresh pinned-base checkout.
-5. Git confirmation adopts a new native unit or validates an existing ordinary session.
-6. The protocol requires native/default-context proof, fresh destination reads and one rebuilt edit.
+| Connection | Static evidence | Boundary |
+|---|---|---|
+| Installer → installed launcher | `.ai/install.py:111-115` selects the thin asset for Codex. | Export execution NOT_RUN. |
+| Thin launcher/guard → adjacent runtime | `.ai/install-assets/codex-worktree.py:10-15` and `.ai/hooks/codex-worktree.py:7-12` call `launcher_main`/`hook_main`; unavailable runtime normalizes to refusal. | No adapter execution. |
+| Installer → three guards | `.ai/install.py:489-491,505-522` registers PreToolUse, SessionStart and UserPromptSubmit with timeout 30; only PreToolUse has literal `*`. | Live loading/execution unverified. |
+| Root receipts → eligibility | `.ai/runtime/lib/codex_worktree.py:73-125` checks ordinary/adopted sessions or active worker ownership, exact registration, common repository, branch and captured base. | Runtime outcomes unverified. |
+| Lifecycle/source decisions → prewrite classification | `:128-178` permits validated lifecycle diagnostics; supported source and opaque non-diagnostic tools retain root validation. | Generated note/refusal behavior unverified. |
+| Startup → session/runtime/native argv | `:394-446` validates committed inputs, selects/reuses without sync, compares policy, checks hooks, revalidates snapshots/root and builds `--cd`, `--enable hooks`, optional `exec`, then prompt after `--`. | Native defaults and effective policy unverified. |
+| Update/migration → installer payload | `.ai/install_update.py:118` and `.ai/install_migration.py:122` consume the same payload and existing configuration merge paths. | Preservation/idempotence checks NOT_RUN. |
+| Six workflows → canonical protocol | Quick, discuss-phase, plan-phase, execute-phase, verify-work and ship link to Codex startup. | No workflow/native execution. |
 
-`prewrite.confirm` explicitly returns `host_binding_verified: false` (`.ai/runtime/lib/prewrite.py:381-399`). This accurately limits its claim to request/Git facts.
+CR-01 is statically repaired: `.bat`/`.cmd` refusal occurs before session creation, and an accepted direct executable receives prompt text as one argv item. CR-02 is statically repaired: lifecycle events no longer reject primary prompts before tool classification; source classification still reaches root enforcement.
 
-The PR93 join preserves ordinary planning integrity. One exact set contains only `prewrite.request`, `prewrite.begin` and `prewrite.confirm`; registration is validated before bypassing canonical snapshots. Ordinary verbs retain snapshots and success/error warnings (`.ai/runtime/phase.py:33,81-109`). The same set governs native workspace selection and structured native I/O errors.
+The matcher correction in `tests/test_destructive_guard.py:45-59` selects `destructive-git-guard.py` and `planning-integrity.sh` before regex matching, asserts exactly one registration of each and preserves both handlers’ coexecution. Existing behavioral assertions remain. Production literal `*` remains unchanged.
 
-Actual installed tests cover all three adapters, unknown and future-prefix handling, handler validation, ordinary warning behavior, authored sentinels and real index preservation (`tests/test_same_agent_worktree.py:363-427`). The primary tracer also preserves canonical STATE/ROADMAP bytes (`:317-361`).
+`prewrite.confirm` still returns `host_binding_verified=False`. Git facts, checkout attachment, a prepared destination, shell `cd`, per-call overrides, a child or a new run cannot prove movement of an existing agent.
 
-Installed workflow-order cases consume all four affected phase initializers in new and existing modes, requiring destination initialization after native entry and preserving existing session history (`:615-687`).
-
-### Key links
-
-| Connection | Result |
-|---|---|
-| Installer → hooks, Claude role exports and standing instructions | **WIRED** |
-| Source denial → same-caller native protocol | **WIRED**; live compliance unverified |
-| Native creation → reserved location callback | **WIRED**, including explicit UTF-8 output |
-| Destination Git confirmation → new adoption/existing validation | **WIRED**; host binding deliberately not certified |
-| Six workflows → native/default-context protocol | **WIRED**; installed simulated contract exercised |
-| Native adapters → ordinary planning-integrity wrapper | **WIRED**, with exact bounded exception |
-| Complete managed inventory → migration preservation | **VERIFIED** after fixture correction |
-
-### Seven-PR composition
-
-`COMPOSITION.md` records the local-only composition and independent integration review. The final composition is `6a2df2d9c3c0a066b1f100c06c3cd1652c7fe43a`, with parents:
-
-- Prior composition `a9e3145d2b657f23a3c2e9e3a1eb1a88ec4d7d66`
-- Production input `b6a930e72a268a0433bbf8c7221f8bb857d73bbe`
-
-Its runtime and test trees remain unchanged from the previously checked composition. The only new configuration change is the reviewed CI timeout/comment; its workflow blob matches production.
-
-The independent integration-checker reconciled the final delta and found no additional broken interface. The composition was neither published nor imported into PR97. Original draft heads remain frozen.
+Codex startup creates or reuses a runtime-owned session before a **new run**. Movement of an existing active Codex conversation remains unsupported by this template’s authenticated host-control integration. This is a precise template boundary, not a product-wide impossibility claim.
 
 ## Documentation
 
-The joined doc-verifier checked **43 claims: 39 supported, zero false, four explicitly live-unverifiable**:
+The independent `CODEX-DOC-REVIEW.md` reviewed all eleven guides at the frozen source revision and found no demonstrably false claim. `CODEX-INTEGRATION-REVIEW.md` confirms the canonical links and wiring while explicitly withholding runtime acceptance.
 
-| Document | Supported / live-unverifiable |
-|---|---:|
-| `.ai/hooks/README.md` | 11 / 1 |
-| `.ai/references/worktree-sessions.md` | 9 / 1 |
-| `.ai/runtime/README.md` | 9 / 1 |
-| `.ai/RULES.md`, Hooks and validation | 10 / 1 |
-
-The Python-adapter statement is corrected. Exact adapter gating, ordinary warnings, canonical commit protection, installer union, launchers, timeouts, notes and native-before-directory routing agree with source. See `JOINED-REVIEW.md` and `DOC-RECHECK.md`.
-
-CI records distinguish the failed 30-minute run from the corrected run. Earlier whole-`.github` preservation statements remain historical: the sole new exception is `.github/workflows/validate.yml`’s timeout and adjacent comment.
-
-No required documentation is missing. The four live conditions remain evidence limitations, not false claims or implicit passes.
-
-## Checks and receipts
-
-### Fresh complete CI
-
-[Run 38837442649](https://github.com/Tasaddar12/ai-engineering-template/actions/runs/38837442649) completed successfully for head `b9cff8c23f43fbdf5411889214f25159152f1d32`.
-
-Both platform jobs checked out synthetic merge `c63f9ee0865ea26276550486e6e481115c35e7f8`. Coordinator API evidence identifies parents as frozen PR93 `47593a3d3f71739bd146a6c2c3590798d7c73c2e` and V2; its tree exactly equals V2 tree `d3f6489eba47924282d9cc291bf012a6f78f6e77`.
-
-| Required job | Actual result |
+| Required documents | Static result |
 |---|---|
-| Ubuntu `116769614272` | **SUCCESS** — 746 Python tests / 323.351s, 15 skips; Bash 10 + 60 + 262 + 25 = **357 passed**, zero failed |
-| Windows `116769613000` | **SUCCESS** — 746 Python tests / 1714.172s, two skips; same **357 Bash checks passed**, zero failed; all required steps completed |
-| Aggregate `116778338129` | **SUCCESS**, completed 2026-10-16 02:23:59 UTC |
+| `.ai/references/same-agent-worktree.md` | Canonical launcher, literal prompt handling, direct executable requirement, installation/trust/policy prerequisites and pending evidence accurately stated. |
+| `.ai/references/worktree-sessions.md` | Claude same-caller entry and Codex new-run startup remain distinct. |
+| `.ai/hooks/README.md` | Exact three events and lifecycle versus source boundary match source. |
+| `.ai/runtime/README.md`, `.ai/RULES.md` | Create/reuse semantics and evidence limits match source. |
+| Six workflow guides | Canonical startup references preserve ordinary workflow and conditional Claude gates. |
 
-Windows ran 01:52:25–02:23:54 UTC, **31m29s**, within the corrected 45-minute budget. Ubuntu retains 30 minutes. No test, suite, assertion, per-test bound or strict aggregate condition was removed.
+No required current guide is missing. The documentation summary’s earlier matcher concern belongs to its input revision; the later targeted fix and fresh source review resolve that static concern.
 
-Coordinator evidence includes the completed platform logs and watch exit zero. No manual CI rerun or cancellation was used for this corrected run.
+These are source-supported claims with explicit runtime limits. No usage example was executed.
 
-### Scoped composition receipts
+## Checks and evidence
 
-The following checks ran on initial composition `9d14d2234290ab6a1623c5a8bab28393124b2f42`, using the recorded Windows Python 3.13 executable and independent disposable fixtures:
+### Read-only checks performed
 
-| Suite | Cases / seconds | Result |
-|---|---:|---|
-| Native contract | 13 / 134.043 | PASS, no skips; host **SIMULATED** |
-| Installer | 42 / 491.768 | PASS, one Windows symlink-privilege skip |
-| Installer update | 66 / 483.832 | PASS, four documented skips |
-| Session delivery | 60 / 99.360 | PASS, no skips |
+| Check | Result |
+|---|---|
+| `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse HEAD` | Exact assigned checkout/branch and revision confirmed. |
+| `git status --porcelain=v1` | Empty at initial and final readback, including untracked files. |
+| `git diff --name-status 54c41fbc06a376d8cbebb92d745536558bf0a615 7725566261fb1210b4ded9baedef6fdf125aab86` | Exactly five coordinator records/reports changed: three specialist reports, CONTEXT and MATRIX. |
+| `git diff --quiet 54c41fbc06a376d8cbebb92d745536558bf0a615 HEAD -- .ai tests .github .gitlab-ci.yml .planning AGENTS.md` | Exit 0: source, tests, product guides and protected paths match the specialist source freeze. |
+| `git diff --check f416b603ca0d6ecbe2349abf0d28d2e6cae37ada HEAD` | Exit 0, no diagnostics; whitespace evidence only. |
+| Scoped Git comparisons and source reads | Codex addition preserves CI/provider workflows, planning configuration, model/agent assets, adoption skeleton, advisory guard and original Claude tracer. Original prewrite/worktree runtime sources remain unchanged from the historical AW revision. |
 
-Exact source/test preservation comparisons support reuse through subsequent composition deltas; these are not relabeled as new executions. Final composition’s affected migration method passed **1 / 3.525s**. The isolated full migration suite passed **18**, and the integrated affected method separately passed **1 / 3.904s**.
+No required implementation artifact was found missing in the assigned static scope. Historical suites and live/native acceptance were not independently rerun or treated as newly covered execution.
 
-Task4’s original source-slice receipts remain scoped to their recorded inputs:
+### Checks NOT_RUN
 
-- Native 13; installed planning 1; installed verb contract 1
-- Updater 66, four documented skips
-- Planning integrity 47; phase runtime 162; session delivery 60
+All current local Python, unit, export, runtime, import and validator checks remain **NOT_RUN** following the recorded pre-start denial of:
 
-Their commands, durations, skips and revision boundaries are preserved in `STACK-SUMMARY.md`. No deterministic success was repeated by this verifier.
+`C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe`
 
-### Historical nonpassing evidence
+The denied `safe_literal_launcher` selector did not start Python and produced no test result. This verifier did not retry it, substitute an interpreter or host, escalate, relocate a harness, install anything, execute generated commands/hooks/launchers, start a native server, run injection/host probes or manually dispatch CI.
 
-Run `38832833234` remains an incomplete, nonpassing run:
+The three future export selectors in CODEX-PLAN, the defensive stub-unit fixtures, retained installed tracer, full suites and required validators remain NOT_RUN. Written assertions do not establish RED/GREEN.
 
-- Windows Python 746 passed with two skips, followed by tier 10 and advisory 60.
-- The 30-minute job cap cancelled context-handoff; location was skipped.
-- Aggregate validation failed.
+### External CI evidence
 
-That run supplied CR-CI-01’s failure evidence. Its old Ubuntu success is not substituted for the fresh corrected run.
+Coordinator readback for published revision `7725566` identifies automatic [run 38935879473](https://github.com/Tasaddar12/ai-engineering-template/actions/runs/38935879473): Ubuntu and Windows were both **IN_PROGRESS**, started at `2026-10-16T16:56:52Z`. The initial empty status rollup was pending check registration, not success. No terminal result is claimed.
 
-**Probe execution:** No separate probe was executed. The assignment required read-only reconciliation using joined execution evidence.
+Historical CI remains scoped:
+
+- Planning revision `f416…`, run `38927621832`: historical green.
+- Older `a1238fc…`, run `38933582735`: Ubuntu failure; Windows ongoing at the recorded readback. Logs were unavailable while active. That revision predates integrated B; no failure cause is inferred.
+- Previous AW report’s complete CI/composition receipts remain historical at their recorded revisions.
+
+Ordinary authorized push triggered configured CI. No manual remote reroute occurred. External CI cannot substitute for blocked native shell-and-patch proof or live same-agent observations. A later report-publication commit and its CI require their own coordinator readback.
 
 ## Findings
 
-No demonstrated implementation, documentation, test or CI blocker remains open.
+1. **WARNING — current behavioral acceptance lacks evidence.** CW-01 through CW-05 remain present and wired but unverified. Effective `--enable hooks` behavior alongside preserved `features.hooks=false`, known managed disable, native trust/defaults, transport and host timeout/fail-open limits remain unresolved. CW-05 requires actual generated installed shell **and** patch refusal.
 
-| Finding | Closure evidence |
+2. **WARNING — original live acceptance remains pending.** AW-01, AW-04, AW-05 and AW-07 retain their required observations. Neither the Codex startup addition nor historical simulated host behavior waives them.
+
+3. **WARNING — canonical risk follow-up remains unresolved.** ISSUE98’s intended update is blocked by its required unavailable Python validator. Do not bypass that validator with a raw provider edit. All three canonical risks remain unresolved:
+   - `source-prewrite/target-confinement` — T-AW-01
+   - `source-prewrite/unit-identity` — T-AW-02
+   - `source-prewrite/host-transition-proof` — T-AW-03
+
+Fresh independent source review `CODEX-REVIEW-03.md` reports zero critical, warning or informational source findings. Documentation review reports no false claims; integration review reports wiring with behavior unverified. No new demonstrated source defect was established in this reconciliation.
+
+### Test quality audit
+
+Five export fixtures are present: two install, two update and one migration/followup case. They fence process APIs, permit only the expected stub metadata listing and inspect planned/exported content. Their assertions address exact registration inventory, custom hooks, feature-false preservation, model/agent/planning values and idempotence. They specify export behavior, not native behavior.
+
+The retained installed tracer remains active and unchanged through the restricted continuation; no skip, xfail or replacement pass was introduced. The matcher correction preserves planning-handler coexecution and prior assertions. None of these tests was executed locally.
+
+### Decision and deliverable coverage
+
+| Authorized deliverable/decision | Reconciled result |
 |---|---|
-| CR-01 — native stdout encoding | Explicit UTF-8 binary output and installed legacy-codec/nonrepresentable-path regression; independently closed in `REVIEW-02.md` |
-| CR-02 — initial phase cd before native bootstrap | Native branch moved before destination initialization; installed eight workflow/mode cases; independently closed in `REVIEW-02.md` |
-| CR-03 — failed Git discovery granted note exemption | Indeterminate discovery refuses; real bad-config external-repository control; independently closed in `REVIEW-02.md` |
-| DOC-01 — no-Python-adapter statement | Narrow corrected wording, six independently checked claims in `DOC-RECHECK.md` |
-| CR-STACK-01 — migration fixture inventory | Exact source-prewrite selector and complete managed inventory; substantive identity/user/order/Windows/legacy assertions retained; `REVIEW-04.md` reports zero findings |
-| CR-CI-01 — Windows job budget | Checked bounded plan, configuration-only correction, clean independent review and fresh complete CI success |
+| A: bounded CR-01/CR-02 repairs | Integrated and statically reviewed; behavioral fixtures NOT_RUN. |
+| B: thin asset, exact three hooks, managed exports, five fenced fixtures | Integrated and statically wired; export/installed acceptance NOT_RUN. |
+| C: eleven accurate guides | Complete at the static documentation boundary. |
+| Targeted matcher compatibility repair | Integrated; both intended handlers and existing assertions preserved; execution NOT_RUN. |
+| Preserve Claude, PR86, providers, model routing, PR99 and adoption skeleton | Static comparisons and coordinator frozen-head evidence support preservation. |
+| No active-agent child/controller substitute, dirty-state copy, implicit sync or cleanup | Source contract and scope remain bounded accordingly. |
+| Full original and Codex behavioral acceptance | Incomplete; no override or waiver applied. |
 
-The current source review found no additional demonstrated production defect. The fresh publication review at V2 reported zero critical, warning or information findings. Its captured provider readback accurately described the draft, stack, unresolved live evidence and historical reports; later CI success is established separately by the terminal packet above.
+### Advisory (New Scope, Unevidenced)
 
-### Test quality
+None. No new architectural preference is promoted into acceptance.
 
-The main tracer uses real installed hooks, launchers, runtime and Git; it verifies cancellation without precreation, preserves data/index facts and performs one rebuilt fixture edit. Its host rebinding and later-turn state are explicitly simulated.
+## Currentness and publication boundary
 
-Regression checks directly address the discovered defects rather than only checking symbols. Migration conservation checks retain complete registration fields and independent user-hook/order assertions.
+Final readback confirmed clean HEAD `7725566261fb1210b4ded9baedef6fdf125aab86`. The frozen source remains `54c41fbc06a376d8cbebb92d745536558bf0a615`; only five coordinator records/reports intervene.
 
-No fixture is accepted as proof of a live native transition. The remaining behavior gaps therefore remain UNCERTAIN rather than becoming passing outcomes.
+Coordinator provider evidence keeps PR97 **OPEN and draft**, based on PR93’s branch, with PR93 on PR92. Original six draft heads remain frozen; every PR remains unmerged. Separate PR99 remains unchanged at `6cd45670…`. Issue87 remains OPEN. ISSUE98 remains OPEN with its three risks unresolved. Provider state is attributed to the coordinator’s readback, not independently queried here.
 
-## Currentness and scope
+The reusable adoption skeleton remains unfilled. This maintenance report authorizes no source adoption, completion bookkeeping, requirement closure, issue closure, ship-ready claim or merge.
 
-Final product identities:
-
-| Item | Identity |
-|---|---|
-| Reviewed HEAD | `b9cff8c23f43fbdf5411889214f25159152f1d32` |
-| Complete tree | `d3f6489eba47924282d9cc291bf012a6f78f6e77` |
-| `.ai` tree | `f94be278661627424d478319d3e514dfe98d4094` |
-| `tests` tree | `8efbd354d5ed9ba8d8c326a5d6d9c707566d7cdc` |
-| Validation workflow blob | `cc11380c5cdd2fe6d069c34894b8c2076fb5cb50` |
-
-Product/test trees remain equal to the previously reconciled source. Per-commit inspection of old V through V2 found only the approved timeout/comment change and maintenance records. Merge-parent diffs were inspected. Planning, advisory, agents and attributes preservation boundaries remain intact.
-
-This report’s revision must remain V2. A later coordinator commit containing only this exact `VERIFICATION.md` is report publication, not a newly reviewed revision. No future report-commit CI result is claimed.
-
-The maintenance requirement is `ISSUE87`; the adoption skeleton remains unfilled. No acceptance override, phase-completion bookkeeping or requirement closure is supported by this report.
-
-Supplied final provider evidence keeps PR97 open and draft on PR93’s branch, with frozen PR93/PR92 ancestry. The six original drafts remain frozen and green. Issues 87/90/95/96/98 remain open; issue98 retains its three stable unchecked threat entries. No PR merge, issue closure, real cleanup, installation, work73/74 or unrelated repository change is claimed.
-
-## Required live verification
-
-Use an eligible live Claude host with the actual compatible native tool and trusted hooks. The existing authorization requires observation, not a replacement agent or shell workaround.
-
-1. **Same-agent entry and persistent defaults — AW-01.** Capture actual schema, policy/trust and session/actor identity. Trigger a source mutation from primary; observe cancellation, then the same caller’s native entry. Subsequent tools without cwd overrides must use destination cwd/root/branch, permissions and loaded context. Repeat in a later turn.
-2. **Data and lifecycle accounting — AW-04.** Inventory staged, unstaged, untracked and ignored data. Account for every item after new/existing entry and native lifecycle handling. Prove recoverability without automatic stash/reset/clean, bulk copying or unauthorized removal.
-3. **Fresh reconstruction — AW-05.** Prove the original pending call never executed. Read destination content afresh, rebuild the intended change and apply it once. Verify only the intended destination changed.
-4. **Failure and approval behavior — AW-07.** Exercise native refusal, uncertain completion and existing-path approval. Preserve state, inspect before retry and prove no duplicate checkout/edit or disguised creation-name reuse.
-
-The selected executor exposes no callable native entry tool. Git confirmation, an attached checkout, shell `cd`, per-call overrides, cancellation alone, and a child/fork do not satisfy these observations.
-
-Codex automatic movement remains unsupported by this template’s current authenticated same-thread control plumbing. That is not a product-wide impossibility claim. The separately recorded generic Windows helper locale issue remains deferred; it is not presented as repaired by the bounded native adapter or CI changes.
+The report’s `revision` must remain the actually inspected `7725566…`. Coordinator persistence of this exact report as the sole report-only change is publication of the result, not inspection of a future revision or a future CI pass.
 
 ## Outcome
 
-The conditional implementation and required deterministic validation are verified within their recorded boundaries. Actual live same-existing-agent movement and its associated context, edit and lifecycle behavior remain unverified.
+The safe static deliverables are complete and reviewable. Current Codex behavioral acceptance, generated installed native shell-and-patch proof, effective native setup behavior and the four original live AW observations remain unresolved.
 
-**Final status: `human_needed`.** Keep the draft and relevant issues open. This report does not establish complete goal achievement or readiness to merge.
+**Final status: `human_needed`; full goal incomplete.** Keep PR97 draft and issue87 open. Preserve the current execution restriction and all remaining evidence obligations.
