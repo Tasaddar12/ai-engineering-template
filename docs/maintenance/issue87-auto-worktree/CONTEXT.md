@@ -92,3 +92,27 @@ No original-six/finalC import into97, frozen-head change or PR merge is allowed.
 PR97 retains actual base93 and draft state;73/74, Whiskance/game, infrastructure
 and cleanup stay excluded. Actual native host movement/defaults/lifecycle remain
 unverified/human_needed with no acceptance waiver; issue87 remains open.
+
+## Authorized Codex enforcement addition (2026-10-16)
+
+The user explicitly requested: "AI Workflows PR 97 should have a same forced workflow for Codex." Jarvis directed implementation of the supported equivalent, including generated/installable configuration, focused regression coverage, actual Codex support verification and publication to this existing draft. If mechanisms differ, report precise guarantees. This authorization supersedes the earlier b3cefa0 freeze only for this addition. PR99 has a separate active model-routing owner; do not edit that worktree or its model/agent routing scope.
+
+Coordinator decisions within that delegated implementation discretion:
+
+- Add a Codex startup route which creates or reuses the exact runtime-owned phase/quick worktree, validates its Git registration/common repository, branch, unit and captured base, and starts a new native Codex run at that destination. This is startup isolation, not relocation of an existing agent. Preserve the original AW acceptance and its live evidence requirements.
+- Use the supported native `--cd` and invocation-scoped hook feature controls, backed by the installed runtime capability evidence in CODEX-RESEARCH.md. Do not introduce a new app-server orchestration product or a detached-worktree adoption contract. Codex's observed native `--worktree` output is detached and must not be admitted merely because it is linked.
+- Add generated synchronous Codex tool guards and startup/pre-prompt root checks. Primary or invalid source execution must refuse before a supported tool acts. Preserve ordinary narrowly classified task notes and the PR86 advisory script. Explicitly state the transport, opaque-writer, trust and host fail-open limits; do not advertise a complete security boundary.
+- Preserve user/global configuration and all agent/model settings. The explicitly selected workflow invocation enables the needed hooks without rewriting a user's `features.hooks=false`. Known managed disable, unresolved trust, missing configuration or unavailable guard/runtime must refuse rather than claim enforcement. Production must not silently bypass native hook trust or weaken sandbox/approval policy.
+- Validate the destination's installed runtime/configuration. Missing or uncommitted installed files are a dependency, not permission to copy dirty primary state. No implicit sync/fetch, branch replacement, unrequested phase creation, cleanup or data migration.
+- Reject conflicting launch arguments that redirect cwd, disable/bypass hooks, ignore project configuration or weaken the selected sandbox. Do not launch a replacement child from an active agent and call it same-agent movement. Existing active conversations require supported idle native worktree entry or an authenticated controlling host; this template does not own that controller.
+- Source, installer and documentation workers must have disjoint ownership and isolated worktrees. A checked plan precedes implementation. Preserve Claude native behavior, GitHub/GitLab paths, PR93/PR92 ancestry, all six frozen drafts and the unfilled adoption skeleton.
+- Actual post-implementation evidence must exercise the generated installed guard through native Codex for shell and patch attempts, using a bounded local canned-response fixture with no external model or credentials. Retain the earlier failed/confounded probes honestly. No benchmarks, installs, infrastructure changes, PR merge or work73/74 are authorized; Whiskance and game checkouts remain excluded.
+
+Additional acceptance for the supported Codex equivalent:
+
+- CW-01: The launcher selects one validated registered phase/quick worktree before native Codex startup; new-run defaults name that destination and primary data remain unchanged.
+- CW-02: Generated synchronous supported-tool interception refuses primary/invalid source execution and retains narrow note allowances; no path/input rewrite is called movement.
+- CW-03: Fresh install, repeated install and managed update produce the launcher/guards while preserving custom hooks, ordinary configuration, Claude behavior and model routing.
+- CW-04: Missing/disabled/untrusted/invalid setup and conflicting startup options fail visibly without starting an unenforced model run or destroying state.
+- CW-05: Real installed Codex executes the generated adapter and demonstrates a refused shell and patch attempt; simulated fixtures and actual host evidence are identified separately.
+- CW-06: Documentation and the PR state exact startup versus active-session guarantees, writable-root/trust prerequisites and remaining live/transport limits. Original AW outcomes are not waived.
