@@ -1,17 +1,27 @@
 ---
 status: blocked
+phase: maintenance-issue87-auto-worktree
+plan: '06-codex-CR01'
 origin: code-reviewer
 finding: CR-01
 base: 610771f9fdf36db2964f093cc15b3f18fafa7387
 source_commit: f690ff998ebc9566f0e027eaa1b0cd9260cc0355
+requirements-completed: []
+acceptance: []
+documentation: []
 changed_paths:
   - .ai/runtime/lib/codex_worktree.py
   - tests/test_codex_worktree.py
   - docs/maintenance/issue87-auto-worktree/CODEX-WRAPPER-FIX-SUMMARY.md
 issue_refs:
   - id: ISSUE98
-    relationship: neutral-key
+    summary: Canonical source confinement, unit identity and host transition risks remain unresolved pending joined verification.
+    variant: Security risk
     state: unresolved
+    relationship: followup
+    issueRepo: Tasaddar12/ai-engineering-template
+    issueURL: https://github.com/Tasaddar12/ai-engineering-template/issues/98
+    issueNumber: 98
 ---
 
 # CR-01 Windows launcher wrapper fix
@@ -25,7 +35,7 @@ issue_refs:
 ## Checks
 
 - `git diff --check`: passed for the source and regression changes before commit.
-- `python -m unittest discover -s tests -p test_codex_worktree.py -k safe_literal_launcher -v`: **not run; platform denied process startup before Python ran**. Exact target: `C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe`. No alternate interpreter or retry was used. No RED or GREEN test result is claimed.
+- `python -m unittest discover -s tests -p test_codex_worktree.py -k safe_literal_launcher -v`: **not run; platform denied process startup before Python ran**. Exact target: `C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe`. No RED or GREEN test result is claimed.
 - Static review confirmed the validated executable is passed to both `NativePreflight` and the final argv-list `subprocess.call`; no `shell=True`, wrapper parsing or prompt evaluation was added.
 - Native installation/generated-handler evidence remains pending Task6B.
 
@@ -35,5 +45,5 @@ issue_refs:
 
 ## Remaining
 
-- Coordinator: obtain an authorized environment where the exact safe selector can run, then review its results. Do not rerun via another interpreter under this assignment.
-- Independent static review and Task6B native evidence remain pending. ISSUE98 remains unresolved under its neutral reference; this change makes no closure or acceptance claim.
+- The selector remains not run. No retry, alternate interpreter or execution environment is authorized under this assignment; future test execution requires separate cleared authorization.
+- Independent static review and Task6B native evidence remain pending. ISSUE98 remains unresolved; this change makes no closure or acceptance claim.
