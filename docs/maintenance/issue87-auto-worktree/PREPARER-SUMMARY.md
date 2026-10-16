@@ -11,6 +11,8 @@ provides:
 key-files:
   modified:
     - docs/maintenance/issue87-auto-worktree/PLAN.md
+    - docs/maintenance/issue87-auto-worktree/CONTEXT.md
+    - docs/maintenance/issue87-auto-worktree/CI-PLAN.md
     - docs/maintenance/issue87-auto-worktree/PREPARER-SUMMARY.md
 ---
 
@@ -19,6 +21,48 @@ key-files:
 Preparation is complete for independent review, not implementation or user-goal
 verification. The prior preparation/manual-handoff design is replaced under the
 actual human clarification: "This time we actually move the agent itself."
+
+## Bounded CI-budget preparation at 7b24d95
+
+Assigned root/branch: issue87-native-ci-plan-213259825 /
+phase-issue87-native-ci-plan-213259825; clean input
+7b24d95d150e624af8c5025e37f1d81149172ac6. Owned only PLAN, CONTEXT, this summary
+and new CI-PLAN. Added configuration-only Task 5 and the exact workflow ownership
+exception after real run38832833234 timeout at production21488ca. Windows746
+Python tests passed (1674.794s, skipped2), tier10/advisory60 passed, context was
+canceled and location skipped; aggregate failed. Ubuntu746 Python tests passed
+(332.623s, skipped15) and all four Bash suites357 passed. Prior run timing is
+coordinator-supplied comparison evidence, not a preparer execution or proof of a
+stall. No Windows full-Bash/full-run GREEN is claimed.
+
+CI-PLAN fixes the future worker boundary to validate.yml budget/comment and its
+automatic CI-SUMMARY: Windows45/Ubuntu30 using existing matrix.os, every command,
+matrix/job/aggregate/protection/version and per-test bound preserved. No new
+test/harness, benchmark, shard, cache, infrastructure or installation. Existing
+PLAN/history is retained; earlier provider exclusions gain only this exception.
+Official GitHub syntax/context/operator documentation was read to ground the
+existing conditional expression; this does not claim remote evaluation.
+
+Self-check: exact Task 5 files/read_first/action/acceptance/verify/done, observed
+RED versus future GREEN, dependency on independent diagnosis/plan check, scoped
+YAML/diff checks, and four-source amendment coverage inspected. Root/branch/base
+pin and linked-worktree sentinel checked before writing; scoped Git diff/check
+and exact staged paths checked before commit. No tests, YAML execution, source
+implementation, provider writes, installation, child dispatch or publication ran.
+Future YAML parse and both-platform CI are unrun in this preparation assignment.
+
+Independent CR-CI-01 is recorded in CI-DIAGNOSIS.md at
+fad210d9811b44daf7335601d0ea67d06da6abd7 and was read via Git without changing
+the assigned base. It confirms budget exhaustion and no demonstrated stall.
+Coordinator must obtain plan review, then assign
+a fresh isolated targeted-fixer/coder only the workflow and CI-SUMMARY. After
+integration/publication, observe actual new Python/four-Bash results on both
+platforms plus validate, obtain fresh bounded review and final revision-specific
+verification. Reuse prior original-six/finalC/source receipts only at unchanged
+input boundaries; `.github` preservation becomes historical except this exact
+budget/comment. PR97 stays draft based on93, frozen six and protected bytes stay
+intact, issue87 stays open, and live native acceptance remains
+unverified/human_needed. No criteria waiver or new publication authority.
 
 ## Bounded stack-integration preparation at 92a2212
 
@@ -158,7 +202,8 @@ or invocation schema is prescribed. Unsupported Codex requires a real controller
 integration outside this scope. Outer hook failures/cloud/exec-session/external
 writers remain honest coverage limits, not a universal sandbox.
 
-Six original drafts, GitHub/GitLab/provider workflows, 73/74, live infrastructure,
+Six original drafts, GitHub/GitLab/provider workflows (except Task 5's exact
+validate job-budget/comment amendment), 73/74, live infrastructure,
 host installation, cleanup and merge remain excluded. PR97 stays draft and issue87
 open while live acceptance is unverified. Coordinator owns integration/publication
 and all independent source, integration, documentation and final verification.
