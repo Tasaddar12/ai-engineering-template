@@ -451,5 +451,113 @@ class MigrationTests(unittest.TestCase):
             link.rmdir() if os.name == "nt" and not link.is_symlink() else link.unlink()
 
 
+class CodexWorktreeExportSafeTests(unittest.TestCase):
+    """Content-only export specifications; never execute an exported entry point.
+
+    These fixtures are currently NOT_RUN under the Python execution restriction.
+    They deliberately avoid the real-Git/process setup in the older test classes.
+    """
+
+    def setUp(self):
+        from unittest.mock import patch
+
+        temporary = tempfile.TemporaryDirectory(prefix="codex-worktree-export-safe-")
+        self.addCleanup(temporary.cleanup)
+        self.target = Path(temporary.name)
+        for name in ("run", "Popen", "call", "check_call", "check_output"):
+            self.enterContext(patch.object(subprocess, name, side_effect=AssertionError(
+                "safe export forbids generated/native/model/server process execution")))
+        for name in ("system", "popen"):
+            self.enterContext(patch("os." + name, side_effect=AssertionError(
+                "safe export forbids shell execution")))
+        # payload() needs only tracked path/mode metadata. Fabricate that one
+        # listing from file names, rejecting every other runner request.
+        self.enterContext(patch.object(installer, "run", side_effect=self._listing))
+
+    def _listing(self, *args, cwd=None, capture=False):
+        self.assertEqual(("git", "ls-files", "--stage", "-z"), args)
+        self.assertEqual(ROOT, cwd)
+        self.assertIs(capture, True)
+        names = sorted(path.relative_to(ROOT).as_posix()
+                       for folder in (".ai", ".agents", ".planning")
+                       for path in (ROOT / folder).rglob("*")
+                       if path.is_file() and "__pycache__" not in path.parts
+                       and path.suffix != ".pyc")
+        return "".join("100644 " + "0" * 40 + " 0\t" + name + "\0" for name in names)
+
+    def _write(self, name, content):
+        path = self.target / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return path
+
+    def _export(self, changes):
+        # Materialize planned bytes in this disposable directory for inspection.
+        # Never call installer.main(), a generated command or a native runner.
+        for path, content in changes:
+            if content is None:
+                path.rmdir() if path.is_dir() else path.unlink()
+            else:
+                self._write(path.relative_to(self.target), content)
+
+    def test_codex_worktree_export_safe_migration_and_followup_export(self):
+        incoming = installer.payload(ROOT, "codex", True)
+        self._write(".ai/runtime/phase.py", b"# old implementation\n")
+        self._write(".ai/hooks/custom.py", b"# customer hook data; never execute\n")
+        self._write(".ai/RULES.md", b"# Custom rules\n")
+        planning = b"# customer model/effort configuration\nagents: {coder: {model: custom, effort: max}}\n"
+        self._write(".planning/config.yaml", planning)
+        project = b"# Real project identity\n"
+        self._write(".planning/PROJECT.md", project)
+        agent = b'model = "customer-agent"\nmodel_reasoning_effort = "high"\n'
+        self._write(".ai/agents/customer.toml", agent)
+        canonical = installer.hook_settings("codex")["hooks"]
+        old = {event: [group for group in groups if not any(
+            "codex-worktree.py" in h["command"] for h in group["hooks"])]
+               for event, groups in canonical.items()}
+        user = {"matcher": "*", "hooks": [{"type": "command", "command": "customer-hook"}]}
+        old["PreToolUse"].append(user)
+        prefix = (b'# keep user settings verbatim\nmodel = "keep-model"\n'
+                  b'model_reasoning_effort = "high"\nsandbox_mode = "workspace-write"\n'
+                  b'approval_policy = "never"\n[features]\nhooks = false\n'
+                  b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+                  b'[agents.customer]\nconfig_file = "agents/customer.toml"\n')
+        current = prefix + installer.hooks_toml(old).replace(b"/.codex/", b"/.ai/").replace(
+            b"/'.codex'/", b"/'.ai'/")
+        config = self._write(".codex/config.toml", current)
+        before = {p.relative_to(self.target): p.read_bytes()
+                  for p in self.target.rglob("*") if p.is_file()}
+        changes, originals, _ = migration.plan_migration(ROOT, self.target, "codex", True, installer)
+        self.assertEqual(before, {p.relative_to(self.target): p.read_bytes()
+                                 for p in self.target.rglob("*") if p.is_file()})
+        self.assertIn(config, originals)
+        self.assertIn(self.target / ".ai/agents/customer.toml", originals)
+        self._export(changes)
+        self.assertFalse((self.target / ".ai").exists())
+        content = config.read_bytes()
+        self.assertTrue(content.startswith(prefix))
+        parsed = tomllib.loads(content.decode())
+        self.assertIs(parsed["features"]["hooks"], False)
+        self.assertEqual("keep-model", parsed["model"])
+        self.assertEqual("high", parsed["model_reasoning_effort"])
+        for event, groups in canonical.items():
+            for group in groups:
+                self.assertEqual(1, parsed["hooks"][event].count(group))
+        self.assertIn(user, parsed["hooks"]["PreToolUse"])
+        self.assertNotIn("/.ai/hooks/", str(parsed["hooks"]))
+        self.assertEqual(agent, (self.target / ".codex/agents/customer.toml").read_bytes())
+        self.assertEqual(planning, (self.target / ".planning/config.yaml").read_bytes())
+        self.assertEqual(project, (self.target / ".planning/PROJECT.md").read_bytes())
+        for name in (".codex/codex-worktree.py", ".codex/hooks/codex-worktree.py",
+                     ".codex/runtime/lib/codex_worktree.py"):
+            self.assertEqual(incoming[name], (self.target / name).read_bytes())
+        # Migration's required update is also only a planned-byte export here.
+        changes, _, _ = update.plan_update(ROOT, self.target, "codex", True, installer)
+        self._export(changes)
+        self.assertEqual([], update.plan_update(ROOT, self.target, "codex", True, installer)[0])
+        self.assertEqual(agent, (self.target / ".codex/agents/customer.toml").read_bytes())
+        self.assertEqual(planning, (self.target / ".planning/config.yaml").read_bytes())
+        self.assertIs(tomllib.loads(config.read_text(encoding="utf-8"))["features"]["hooks"], False)
+
 if __name__ == "__main__":
     unittest.main()
