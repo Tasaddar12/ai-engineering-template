@@ -116,3 +116,9 @@ Additional acceptance for the supported Codex equivalent:
 - CW-04: Missing/disabled/untrusted/invalid setup and conflicting startup options fail visibly without starting an unenforced model run or destroying state.
 - CW-05: Real installed Codex executes the generated adapter and demonstrates a refused shell and patch attempt; simulated fixtures and actual host evidence are identified separately.
 - CW-06: Documentation and the PR state exact startup versus active-session guarantees, writable-root/trust prerequisites and remaining live/transport limits. Original AW outcomes are not waived.
+
+## Restricted safe continuation after platform flag
+
+The user's subsequent instruction permits only ordinary defensive repairs for saved review CR-01 (literal Windows launcher arguments) and CR-02 (primary note operations through UserPromptSubmit), using static inspection and safe unit fixtures with stub process runners. Then continue installer/configuration edits and non-executing export tests, preserving separate PR99 routing. Publish reviewed safe changes through the existing PR97 stack; never merge.
+
+Do not execute command-injection probes, native host probes or any suspected flagged operation; do not disable safeguards, retry a denial or move a blocked action to another route. Stop a newly denied action and report its exact target. The flag's exact original invocation is unavailable in the saved record. Native generated-adapter acceptance remains unverified and the draft remains explicitly incomplete; historical capability observations are not permission for further probes.
