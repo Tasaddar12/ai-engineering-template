@@ -148,5 +148,5 @@ All MODEL outcomes are demonstrated; focused tests pass without zero-test receip
 </success_criteria>
 
 <output>
-Coder writes .planning/quick/261016-001-configure-claude-scout-fixer-haiku-coder/261016-001-configure-claude-scout-fixer-haiku-coder-SUMMARY.md. Coordinator alone maintains QUICK.md/shared state and publication. No ROADMAP or REQUIREMENTS update is proposed.
+Coder writes docs/maintenance/agent-models-SUMMARY.md. Coordinator alone maintains agent-models-QUICK.md/shared state and publication. No ROADMAP or REQUIREMENTS update is proposed.
 </output>

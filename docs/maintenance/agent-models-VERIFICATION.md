@@ -69,7 +69,7 @@ Draft PR: https://github.com/Tasaddar12/ai-engineering-template/pull/99.
 Linux CI passed the full Python suite and four hook suites at this source revision.
 Windows CI and the final publication-head check were pending when verification
 finished; the PR body records their current results. The final bookkeeping commit
-changes only this report and QUICK.md; executable inputs remain unchanged.
+changes only this report and agent-models-QUICK.md; executable inputs remain unchanged.
 
 Current official Claude documentation supports model aliases and per-agent effort:
 https://code.claude.com/docs/en/sub-agents#choose-an-effort-level.
