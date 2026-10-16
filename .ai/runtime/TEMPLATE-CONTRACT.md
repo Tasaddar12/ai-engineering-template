@@ -170,15 +170,19 @@ Only the user converts an abstention into acceptance.
 
 ### Risk-routing destinations
 
-The canonical destination above may be an existing Security risk issue or an
-individually addressable planned entry in one phase security checklist issue,
+The canonical destination above is an existing matching Security risk issue or,
+for new planned mitigations, a stable `###` entry in the phase checklist issue BODY,
 under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
-New planned entries retain each risk's stable canonical key, aliases/occurrences,
-assessment/uncertainty, owner, scope/acceptance, lifecycle/status/outcome, next
-action and revision/check evidence. Verify the entry URL by provider readback;
+Use its deterministic title/label lookup before semantic risk search and mandatory
+default routing for new planned work. Entries retain each risk's stable canonical
+key, aliases/occurrences, owning PLAN assessment/mitigation links, owner,
+scope/acceptance, lifecycle/status/outcome, next action and revision/check evidence.
+Use a provider-verified heading-anchor URL, never an invented slug; renaming a
+heading breaks the link and requires reference repair/readback. Omit "(comment)"
+link-label suffixes. Follow the canonical identity rules above;
 unavailable publication stays Pending with its dependency.
 
-Search and semantically compare existing trackers first. Existing actionable
+Then search and semantically compare existing risk trackers. Existing actionable
 full-scope matching issues remain canonical; checklists link them without
 duplicating or replacing their identities. Closed unresolved matches retain the
 reopening-authority blocker. Distinct unplanned execution/review threats require

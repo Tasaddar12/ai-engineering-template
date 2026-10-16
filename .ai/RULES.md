@@ -233,6 +233,14 @@ Give agents their assignment, the applicable constraints, the files their plan
 names in `read_first`, and the dependency summaries they need — not every
 transcript. Follow [worker handoff](references/worker-handoff.md).
 
+A bounded host wait timeout is an observation, not worker exit. Keep active or
+unknown assignments owned until the host confirms exit/interruption; confirm the
+stop before reassigning paths. Never automatically terminate or restart a worker
+on elapsed time. Preserve completed commits and dirty work, inspect the handoff,
+and apply existing continuation checks/limits and fresh independent verification.
+Use [parallel wave status](references/parallel-status.md#bounded-stall-decision)
+for bounded wait observations and stall decisions.
+
 ## Issues found while working
 
 Never stop an authorized run to ask about an issue. Never create todos. Route

@@ -155,12 +155,8 @@ Extract phase goal from ROADMAP.md — this is the outcome to verify, not the ta
 - Report unavailable required publication as a gap; Pending is not a verified URL.
   Keep open/accepted/deferred visible and require readback/evidence for actual closed.
 - Independently perform [Issue-link audit](../references/git-workflow.md#issue-link-audit)
-  for all ordinary follow-up and security links in the actual PR/MR body. Compare
-  CONTEXT, PLAN/checklist identities and SUMMARY outcomes with provider readback;
-  return reviewed source revision, body/link snapshot, verified URLs, readback
-  evidence and unresolved findings/dependencies. Missing/unverifiable readback is
-  a gap, not a pass. Source/body/link/outcome changes require fresh applicable
-  independent evidence; structural validation and checked items cannot prove closure.
+  as the owning non-author verifier. Return its canonical evidence packet and
+  unresolved dependencies; apply its currentness and provider-readback gates.
 
 ## Step 2: Establish Must-Haves (Initial Mode Only)
 

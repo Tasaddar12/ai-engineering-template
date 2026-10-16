@@ -346,9 +346,8 @@ with multiple Agent calls** so they run concurrently, unless `--sequential` was
 passed or the wave has one plan.
 
 Refresh [parallel wave status](../references/parallel-status.md) at dispatch,
-each observed worker update, each bounded host wait return and join. Apply its
-two-interval stalled decision without inferring completion or termination from
-elapsed time. Status uses host observations, never active workers' owned files.
+actual host observations and join. Apply its interval and changed-row rules,
+including its blocking-dispatch fallback and confirmed-stop requirement.
 
 Before dispatching, capture the base every executor in this wave must fork from,
 and record each plan's declared scope so the wave can be integrated:
@@ -651,11 +650,9 @@ source correctness and security findings. Wait for both results before accepting
 the phase or repairing it. If a repair changes source, rerun affected checks and
 obtain a fresh review of the repaired revision.
 
-Assign the independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
-with CONTEXT, PLAN/checklist identities, SUMMARY outcomes and current PR/MR/body
-readback. Its missing provider evidence remains a gap with its dependency. This
-audit is also required through verification/ship when this optional code review
-gate is skipped; mandatory threat reconciliation above remains unconditional.
+Code review may supplement the verifier-owned
+[issue-link audit](../references/git-workflow.md#issue-link-audit). The mandatory
+audit assignment belongs to verify-work/ship even when this optional gate is skipped.
 
 ```
 Agent(
@@ -669,11 +666,8 @@ Review the source changes made by Phase {phase_number}.
 Review the changed source for correctness bugs, security issues and code quality
 problems. Judge the code as it now stands, not the summaries' claims about it.
 
-Independently audit the PR/MR body and all ordinary/security issue links through
-[Issue-link audit](../references/git-workflow.md#issue-link-audit). Compare CONTEXT
-acceptance, PLAN/checklist identities and SUMMARY outcomes with actual provider
-readback. Return source revision, body/link snapshot, verified URLs, readback
-evidence and unresolved gaps; do not pass missing/unverifiable evidence.
+If assigned a supplementary [Issue-link audit](../references/git-workflow.md#issue-link-audit),
+follow its canonical duties and evidence packet. The verifier owns the required audit.
 
 Return:
 ## CODE REVIEW

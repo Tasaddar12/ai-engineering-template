@@ -82,7 +82,7 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Create/reuse an issue for every identified PLAN/SUMMARY threat: prose, tables,
   deviations, Deferred/Remaining, pre-existing, mitigated, accepted and deferred.
-  Planned security mitigations may share one phase security checklist issue under
+  New planned security mitigations use one phase security checklist issue under
   the routing below; each risk still needs its own canonical reference. Do not
   expand remediation beyond the plan.
 - Keep description, category, component, severity, disposition and mitigation in
@@ -103,8 +103,9 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
    remediation scope) and source aliases/occurrences in the Security risk issue
    or its individually addressable planned checklist entry.
    Preserve keys across reruns.
-2. Search open and closed issues, linked PR/MRs and current PR/MR. Compare semantic
-   scope; reuse an actionable full-scope match. Reuse resolved closed matches only
+2. First perform the deterministic phase-checklist lookup in the routing section
+   below, then search open and closed issues, linked PR/MRs and current PR/MR.
+   Compare semantic scope; reuse an actionable full-scope match. Reuse resolved closed matches only
    with matching resolution evidence. For unresolved closed matches, use existing
    reopening authority or record the blocker; do not duplicate. Separate distinct risks.
 3. Serialize coordinator writes. Review the [Security risk template](../templates/issue.md)
@@ -120,26 +121,52 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 ### Planned checklist and unplanned routing
 
-Mandatory preparation/execution reconciliation chooses the canonical destination
-for every risk after the open/closed issue and linked/current PR/MR semantic
-search above. Existing actionable matching trackers remain canonical: a phase
+Mandatory preparation/execution reconciliation begins with **Checklist lookup**:
+use the exact title `chore(security): phase {phase-id} security checklist` and
+label `phase-security-checklist`, with the repository and stable phase id as the
+lookup key. Search open and closed issues for that title AND label before any
+per-risk semantic search. Reuse the matching container across reruns. Multiple
+matches or unavailable lookup stay Pending with the reconciliation dependency;
+do not create another container. A closed container with unresolved work requires
+existing reopening authority or a recorded blocker. After uncertain creation,
+repeat this lookup and read back the exact intended container before retrying.
+
+Then perform the open/closed issue and linked/current PR/MR semantic search above
+for every risk. Existing actionable matching trackers remain canonical: a phase
 checklist links them without duplicating or replacing their identities. Preserve
 stable canonical risk keys and aliases across reruns, including occurrences in
 different PLANs. Closed unresolved matches retain the reopening-authority blocker;
 creating a new checklist entry must not bypass it.
 
-New planned security mitigations may use distinct entries in one phase security
-checklist issue as their canonical references. Use the Security risk variant's
-required headings and reviewed safe body; the checklist is a tracking container,
+For NEW planned security mitigations without an existing canonical match, distinct
+entries in this phase security checklist are the mandatory default canonical
+references. Create the container only when needed after both searches, using the
+exact title and label above. Existing matching issue identities always take
+precedence, including a closed unresolved match's reopening-authority blocker.
+Use the Security risk variant's required headings and reviewed safe body;
+the checklist is a tracking container,
 never a combined PLAN register. Keep each full six-column register in its owning
 PLAN and keep SUMMARY/PR linked outcomes separate. Each entry must have:
 
 | Entry identity | Canonical risk key | Aliases / occurrences | PLAN / Threat ID | Owner | Scope / acceptance | Assessment / uncertainty | Lifecycle / outcome | Next action | Revision / check evidence | Canonical reference |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Individually addressable entry anchor | Stable repository/surface/failure-mode key | Every source occurrence | Owning PLAN/ID link | Responsible owner | Bounded scope and observable acceptance | Severity, impact/likelihood and uncertainty | Observed status and outcome | Concrete next action | Matching revision/check/result or Pending dependency | Verified entry URL or existing matching issue URL |
+| Stable ### entry heading | Stable repository/surface/failure-mode key | Every source occurrence | Owning PLAN/ID link | Responsible owner | Bounded scope and observable acceptance | Link to owning PLAN assessment and uncertainty | Observed status and outcome | Concrete next action | Matching revision/check/result or Pending dependency | Verified heading-anchor URL or existing matching issue URL |
 
-Verify that each entry URL actually addresses that risk at the provider; do not
-invent an anchor. If an actionable matching issue already exists, link that issue
+**Entry identity:** every risk entry is a stable `###` heading in the checklist
+issue BODY, including entries that link an existing canonical issue. Entry URLs
+are provider heading anchors. Inspect the saved body/rendered heading and verify
+that its provider-supplied anchor URL reaches the exact key, PLAN/ID and content
+before using the link; never fabricate anchor slugs. Reuse the matching heading
+on reruns and keep it immutable: renaming a heading breaks the link. A necessary
+rename requires readback and repair of all affected references before readiness.
+Use descriptive link labels without a "(comment)" suffix. An existing issue
+remains canonical while its checklist entry points to it; the entry does not
+replace that identity. Unavailable heading-anchor verification remains Pending
+with its dependency. After an uncertain body update, read back the exact reviewed
+key and intent before retrying.
+
+Verify that each entry URL actually addresses that risk at the provider.
+If an actionable matching issue already exists, link that issue
 as the canonical reference and keep its lifecycle/evidence authoritative. A new
 entry is canonical only for a new planned risk with all fields above. Semantic
 deduplication, safe separate review, serialized writes, template validation,
@@ -173,9 +200,11 @@ apply safe reporting and provider fallback below/above to every destination.
 
 ### Assessment, status and closure
 
-- In the issue, record assessed severity (`critical|high|medium|low`), impact/
-  likelihood, uncertainty, owner, scope/acceptance, next action and revision/check
-  evidence. Do not blanket-classify as critical.
+- The owning PLAN assessment records severity (`critical|high|medium|low`),
+  impact/likelihood, uncertainty and mitigation in its six-column register and
+  associated assessment. Issue entries link that assessment rather than copying
+  severity or mitigation. Record owner, scope/acceptance, next action and
+  revision/check evidence in the tracking entry. Do not blanket-classify as critical.
 
 | Observed status | Required evidence |
 |---|---|
@@ -194,7 +223,7 @@ apply safe reporting and provider fallback below/above to every destination.
 
 ## Issue-link audit
 
-Before merge eligibility, obtain a fresh independent reviewer/verifier's audit of
+Before merge eligibility, obtain a fresh independent non-author verifier's audit of
 the PR/MR body and all issue links. The auditor must not be the author of the
 reviewed changes. Compare CONTEXT acceptance, every PLAN threat/checklist identity,
 SUMMARY outcomes and actual provider readback of the PR/MR and linked issues.
@@ -215,13 +244,24 @@ The independent result must check:
   scope-complete resolution evidence and existing explicit closure authority.
   Never infer closure from merge, checked checklist items or accepted/deferred status.
 
-Capture reviewed source revision, PR/MR body/link snapshot, verified URLs,
-provider readback evidence (including observed state and when it was read), and
+Capture reviewed source revision, actual PR/MR head SHA, PR/MR body/link snapshot,
+verified URLs, provider readback evidence (including observed state and when it
+was read), and
 unresolved findings/dependencies in the independent result. Missing required
 readback or an unverifiable link is a gap with a dependency, never a pass. An
 unpublished body or unavailable provider may be reviewed provisionally, but its
 required provider readback remains Pending. Use a verified authorized host tool;
 otherwise keep the Pending dependency and continue independent work.
+
+The verifier owns this audit in verify-work and ship. A code-reviewer may provide
+an optional supplementary audit. If the required audit is missing or stale, the
+coordinator dispatches a fresh non-author verifier with the current source/head,
+exact proposed or published body/link snapshot, CONTEXT, PLANs, SUMMARYs and
+timestamped provider readback. The verifier obtains/validates actual provider
+readback and returns the packet above. Join the result before using it as a gate;
+an unpublished body keeps provider confirmation Pending. After publication,
+recheck the actual saved body/links and linked issue states against the packet;
+dispatch fresh applicable verification for changed or missing evidence.
 
 Material changes to links, body, risk outcomes or source invalidate the affected
 audit. Obtain fresh applicable independent evidence before claiming ready; apply

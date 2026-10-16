@@ -172,10 +172,11 @@ table, other variants or surrounding authoring guidance in the public body.
 
 - Threat ID / risk key: [stable repository + surface/control + failure mode/remediation key]
 - Source aliases: [all PLAN/SUMMARY IDs and source occurrences]
-- Severity: [critical|high|medium|low; impact/likelihood rationale and uncertainty]
+- PLAN assessment: [owning PLAN/Threat ID assessment link, including severity, impact/likelihood and uncertainty]
 - Owner: [responsible party]
 - Status: [unresolved|mitigated|accepted|deferred; observed state, not PLAN disposition]
-- Mitigation or safe next action: [bounded outcome; accepted rationale or deferral reason/next action]
+- PLAN mitigation: [owning PLAN mitigation link; keep the full register there]
+- Next action: [safe tracking action; accepted decision reference or deferral reason/dependency]
 - Resolution evidence: [matching revision and actual secure check/result, or Pending with dependency]
 
 ## Safe evidence
@@ -184,8 +185,8 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ## Requested remediation
 
-- [Safe remediation outcome]
-- [Observable secure check]
+- PLAN mitigation: [link to the owning PLAN's mitigation]
+- PLAN verification: [link to the observable secure check]
 - [Additional safe criterion, if needed]
 - [Additional safe criterion, if needed]
 
@@ -201,13 +202,20 @@ table, other variants or surrounding authoring guidance in the public body.
 [1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
 ```
 
-For planned phase security work, this same Security risk variant may contain one
-phase security checklist; keep every required heading above. Under Risk assessment
-and lifecycle, give each risk an individually addressable entry with its stable
-key, aliases/occurrences, owning PLAN/Threat ID link, owner, scope/acceptance,
-assessment/uncertainty, lifecycle/outcome, next action, revision/check evidence and
-verified canonical reference, following
+For new planned phase security work without an existing canonical match, this
+same Security risk variant is the mandatory default phase checklist container;
+keep every required heading above. Follow the deterministic title/label lookup
+before semantic risk search in
 [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+Under Risk assessment and lifecycle, give every risk a stable `###` heading in
+the checklist issue BODY. Use provider-verified heading-anchor URLs for entries;
+never fabricate slugs. Renaming a heading breaks the link: preserve headings on
+reruns, and repair/read back affected references after a necessary rename. Use
+descriptive link labels without a "(comment)" suffix. Each entry carries the
+stable key, aliases/occurrences, owning PLAN/Threat ID and assessment links,
+owner, scope/acceptance, lifecycle/outcome, next action, revision/check evidence
+and verified canonical reference. Link the PLAN's assessment and mitigation
+rather than repeating severity or mitigation; do not build a combined register.
 Existing actionable matching issues remain canonical and are linked from the
 checklist. Distinct unplanned threats require standalone Security risk issues or
 existing full-scope matches. Keep full six-column registers in their owning PLANs;
@@ -319,8 +327,8 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
   invent controls or claim a pass. AI/maintainer prepares the build, access,
   fixtures and technical evidence in the separate maintainer record.
 - For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
-  Keep stable key, aliases, assessed severity, owner, observed status and evidence
-  here; link each owning PLAN. Redact restricted detail. Keep accepted/deferred
+  Keep stable key, aliases, owning PLAN assessment/mitigation links, owner,
+  observed status and evidence here. Redact restricted detail. Keep accepted/deferred
   distinct from resolved; structural validation checks headings/order only.
 - Example excerpt (fictional values, not evidence; replace before publishing):
 

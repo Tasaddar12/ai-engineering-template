@@ -1,18 +1,42 @@
-"""Offline instruction contracts for actual wave observations and bounded stalls."""
+"""Offline contracts for real host observations; no timers or worker probes."""
 import re
 import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = ".ai/references/parallel-status.md"
 WORKFLOW = ".ai/workflows/execute-phase.md"
 COORDINATOR = ".ai/agents/coordinator.md"
-PATHS = (REFERENCE, WORKFLOW, COORDINATOR)
+RULES = ".ai/RULES.md"
+ENTRY = "AGENTS.md"
+PATHS = (REFERENCE, WORKFLOW, COORDINATOR, RULES, ENTRY)
 COLUMNS = ("Assignment / PLAN", "Worker id", "Role", "Resolved model", "Plan state",
            "Execute state", "Verify state", "Last observed progress", "Stall flag",
            "Blocker", "PR/MR")
+HOOKS = ("discover_and_group_plans", "execute_waves", "integrate_wave", "run_checks")
+LINK = "../references/parallel-status.md"
+
+# Short semantic cues are scoped to the real heading/step, never pinned paragraphs.
+DUTIES = {
+    "Assignment table": {
+        "states": ("queued", "running", "blocked", "complete", "pending", "passed", "failed", "unavailable"),
+        "evidence": ("timestamp", "cited evidence", "start/end", "check evidence", "acceptance"),
+    },
+    "Lifecycle refreshes": {
+        "refresh": ("grouping/dispatch", "changed rows", "join/handoff/final", "integration/check"),
+        "actual intervals": ("one actual bounded", "wait call", "its return", "Never split"),
+        "blocking host": ("blocking dispatch/join", "only the full dispatch", "intermediate observations unavailable"),
+    },
+    "Bounded stall decision": {
+        "stall decision": ("second consecutive", "neither progress", "host state change",
+                           "requires `stalled`", "coordinator", "decision", "both observation intervals"),
+        "bounded choices": ("continue one", "status/handoff", "access/decision blocker", "external blocker"),
+        "stop safety": ("never proves", "never grants", "wait timeout", "host confirmation",
+                        "Do not automatically", "confirmed stopped/interrupted", "dirty work",
+                        "continuation limits", "fresh independent verification"),
+    },
+}
 
 
 def steps(text):
@@ -25,44 +49,37 @@ def section(text, title):
 
 
 def contract_errors(root):
-    reference, workflow, coordinator = ((root / name).read_text(encoding="utf-8") for name in PATHS)
+    content = {name: (root / name).read_text(encoding="utf-8") for name in PATHS}
+    reference = content[REFERENCE]
     errors = []
-    table = section(reference, "Assignment table")
-    if "| " + " | ".join(COLUMNS) + " |" not in table:
+    headers = [tuple(c.strip() for c in line.strip("|").split("|"))
+               for line in reference.splitlines() if line.startswith("| ")]
+    if COLUMNS not in headers:
         errors.append("assignment columns")
-    duties = {
-        "assignment states": (table, ("`queued`", "`running`", "`blocked`", "`complete`",
-                                      "`pending`", "`passed`", "`failed`", "`inherit`", "`unavailable`")),
-        "progress evidence": (table, ("timestamp and cited evidence", "bounded host wait's start/end or duration",
-                                      "integration revision and check evidence", "does not establish acceptance")),
-        "refresh events": (section(reference, "Lifecycle refreshes"),
-                           ("grouping/dispatch", "observed worker update", "bounded host wait return",
-                            "join", "integration/check result", "handoff/final report", "observation interval")),
-        "stalled decision": (section(reference, "Bounded stall decision"),
-                             ("second consecutive bounded wait interval", "neither progress nor a meaningful host state change",
-                              "requires `stalled` and a recorded coordinator decision", "both observation intervals",
-                              "continue one observed wait", "request a concise status/handoff",
-                              "concrete access/decision blocker", "declared external blocker")),
-        "lifecycle safeguards": (section(reference, "Bounded stall decision"),
-                                 ("Elapsed time alone never proves a hang, completion or failure",
-                                  "never grants permission to terminate", "Do not automatically kill, restart, reassign active paths",
-                                  "Only a confirmed stopped/interrupted worker", "completed commits and dirty work",
-                                  "existing continuation limits", "fresh independent verification")),
-    }
-    for label, (body, required) in duties.items():
-        if not all(phrase in body for phrase in required):
+    for heading, groups in DUTIES.items():
+        body = section(reference, heading)
+        for label, tokens in groups.items():
+            if not all(token in body for token in tokens):
+                errors.append(label)
+    intro = " ".join(reference.split("## Assignment table", 1)[0].split())
+    for label, tokens in {
+        "waves": ("separate table", "actual dependency/file-overlap"),
+        "join": ("every active write-capable worker", "before integration"),
+    }.items():
+        if not all(t in intro for t in tokens):
             errors.append(label)
-    normalized = " ".join(reference.split())
-    if "separate table for each actual dependency/file-overlap wave" not in normalized:
-        errors.append("actual wave separation")
-    if "wait for every active write-capable worker before integration or integrated checks" not in normalized:
-        errors.append("join before integration")
-    for name in ("discover_and_group_plans", "execute_waves", "integrate_wave", "run_checks"):
-        if "../references/parallel-status.md" not in steps(workflow).get(name, ""):
-            errors.append(name + ": lifecycle hook")
-    execution = re.search(r"<execution>\n(.*?)</execution>", coordinator, re.S).group(1)
-    if "../references/parallel-status.md" not in execution:
-        errors.append("coordinator: lifecycle hook")
+    for name in HOOKS:
+        if LINK not in steps(content[WORKFLOW]).get(name, ""):
+            errors.append(name + ": hook")
+    execution = re.search(r"<execution>(.*?)</execution>", content[COORDINATOR], re.S)
+    if not execution or LINK not in execution.group(1):
+        errors.append("coordinator hook")
+    rules = section(content[RULES], "Orchestration and handoffs")
+    if not all(t in rules for t in ("timeout", "host confirms", "stop before reassigning",
+                                    "dirty work", "continuation", "Never automatically")):
+        errors.append("canonical stop rule")
+    if ".ai/RULES.md#orchestration-and-handoffs" not in content[ENTRY]:
+        errors.append("entry stop link")
     return errors
 
 
@@ -77,58 +94,63 @@ class ParallelStatusContract(unittest.TestCase):
             path.write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
         return root
 
-    def mutate(self, root, name, old):
+    def replace(self, root, name, old, new="Removed"):
         path = root / name
         text = path.read_text(encoding="utf-8")
-        pattern = r"\s+".join(re.escape(word) for word in old.split())
-        self.assertRegex(text, pattern)
-        path.write_text(re.sub(pattern, "Removed", text, count=1), encoding="utf-8")
+        self.assertIn(old, text)
+        path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
-    def test_real_wave_contract(self):
+    def test_real_contract(self):
         self.assertEqual([], contract_errors(ROOT))
 
-    def test_each_assignment_column_is_required(self):
+    def test_each_column(self):
         for field in COLUMNS:
             with self.subTest(field=field):
                 root = self.fixture()
-                self.mutate(root, REFERENCE, "| " + field + " |")
+                self.replace(root, REFERENCE, "| " + field + " |")
                 self.assertIn("assignment columns", contract_errors(root))
 
-    def test_each_actual_step_requires_its_own_hook(self):
-        for name in ("discover_and_group_plans", "execute_waves", "integrate_wave", "run_checks"):
+    def test_scoped_observation_and_safety_mutations(self):
+        for heading, groups in DUTIES.items():
+            for label, tokens in groups.items():
+                for token in tokens:
+                    with self.subTest(heading=heading, token=token):
+                        root = self.fixture()
+                        path = root / REFERENCE
+                        text = path.read_text(encoding="utf-8")
+                        start = text.index("## " + heading)
+                        end = text.find("\n## ", start + 1)
+                        body = text[start:end if end != -1 else len(text)]
+                        # Match across line wrapping without pinning sentence wording.
+                        pattern = r"\s+".join(re.escape(w) for w in token.split())
+                        changed, count = re.subn(pattern, "Removed", body)
+                        self.assertGreater(count, 0)
+                        path.write_text(text.replace(body, changed, 1), encoding="utf-8")
+                        self.assertIn(label, contract_errors(root))
+
+    def test_each_lifecycle_hook(self):
+        for name in HOOKS:
             with self.subTest(step=name):
                 root = self.fixture()
                 path = root / WORKFLOW
                 text = path.read_text(encoding="utf-8")
                 body = steps(text)[name]
-                path.write_text(text.replace(body, body.replace("../references/parallel-status.md", "missing.md"), 1), encoding="utf-8")
-                self.assertIn(name + ": lifecycle hook", contract_errors(root))
-
-    def test_coordinator_execution_hook_is_required(self):
+                path.write_text(text.replace(body, body.replace(LINK, "missing.md"), 1), encoding="utf-8")
+                self.assertIn(name + ": hook", contract_errors(root))
         root = self.fixture()
-        self.mutate(root, COORDINATOR, "../references/parallel-status.md")
-        self.assertIn("coordinator: lifecycle hook", contract_errors(root))
+        self.replace(root, COORDINATOR, LINK)
+        self.assertIn("coordinator hook", contract_errors(root))
 
-    def test_evidence_refresh_and_safeguard_mutations(self):
-        cases = (
-            ("separate table for each actual dependency/file-overlap wave", "actual wave separation"),
-            ("timestamp and cited evidence", "progress evidence"),
-            ("integration revision and check evidence", "progress evidence"),
-            ("handoff/final report", "refresh events"),
-            ("requires `stalled` and a recorded coordinator decision", "stalled decision"),
-            ("neither progress nor a meaningful host state change", "stalled decision"),
-            ("request a concise status/handoff", "stalled decision"),
-            ("Elapsed time alone never proves a hang, completion or failure", "lifecycle safeguards"),
-            ("never grants permission to terminate", "lifecycle safeguards"),
-            ("Do not automatically kill, restart, reassign active paths", "lifecycle safeguards"),
-            ("Only a confirmed stopped/interrupted worker", "lifecycle safeguards"),
-            ("wait for every active write-capable worker before integration or integrated checks", "join before integration"),
-        )
-        for phrase, error in cases:
-            with self.subTest(phrase=phrase):
+    def test_stop_rule_and_entry_link(self):
+        for name, token, expected in (
+            (RULES, "stop before reassigning", "canonical stop rule"),
+            (RULES, "Never automatically", "canonical stop rule"),
+            (ENTRY, ".ai/RULES.md#orchestration-and-handoffs", "entry stop link"),
+        ):
+            with self.subTest(token=token):
                 root = self.fixture()
-                self.mutate(root, REFERENCE, phrase)
-                self.assertIn(error, contract_errors(root))
+                self.replace(root, name, token)
+                self.assertIn(expected, contract_errors(root))
 
 
 if __name__ == "__main__":

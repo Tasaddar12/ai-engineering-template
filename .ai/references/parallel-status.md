@@ -30,12 +30,20 @@ verification passed from a worker's completion claim.
 
 ## Lifecycle refreshes
 
-Refresh and show the table at grouping/dispatch, each observed worker update,
-each bounded host wait return, join, integration/check result and handoff/final
-report. The coordinator owns this status; it does not amend worker files to
+Show the full assignment table at grouping/dispatch and join/handoff/final report.
+At each observed worker update, bounded host wait return or integration/check
+result, refresh only changed rows and their evidence; do not repeat unchanged
+full tables. The coordinator owns this status; it does not amend worker files to
 manufacture progress. Report the observation interval and next action while work
 remains active. Host-supported bounded waits are observations, not background
 polling or a new timer service.
+
+**Interval definition:** one interval is one actual bounded host wait call and
+its return. Record the call's real start/end or duration, result and meaningful
+state change. Never split a long call into invented intervals or reconstruct
+unobserved progress from elapsed time. A blocking dispatch/join host cannot
+observe intermediate waits: show only the full dispatch and join tables, mark
+intermediate observations unavailable, and do not invent watch/stalled intervals.
 
 ## Bounded stall decision
 
@@ -52,8 +60,10 @@ Use `clear`, `watch`, `stalled` or `blocked`, always with a reason:
 4. A declared external blocker may become `blocked` immediately with its evidence.
 
 Elapsed time alone never proves a hang, completion or failure and never grants
-permission to terminate. Do not automatically kill, restart, reassign active paths
-or clean up worktrees. Only a confirmed stopped/interrupted worker enters
+permission to terminate. A wait timeout leaves the worker active or unknown;
+only actual host confirmation establishes worker exit/interruption. Do not
+automatically kill, restart, reassign active paths or clean up worktrees.
+Only a confirmed stopped/interrupted worker enters
 [handoff inspection and bounded continuation](worker-handoff.md#dispatching-a-continuation).
 Preserve completed commits and dirty work, existing continuation limits and fresh
 independent verification requirements. A stalled flag alone does not authorize a
