@@ -165,3 +165,48 @@ integrates it, obtains fresh code/doc/integration review and verification, and
 publishes to existing draft97 with current required CI. Original live-native
 AW observations remain human_needed unless separately demonstrated. ISSUE87
 stays open and all PRs remain unmerged.
+
+## Revision: PC-06-codex-context_compliance-01
+
+Addressed the one blocker from independent phase-checker review at integrated
+`d48c5310e988b1c6e1558c343853807230f44164`. The two owned files in that revision
+match this worktree's preparation commit
+`7fb5c858dfb98db2e1cf560b37805a57a4e1aab2`; the scoped comparison had no diff.
+The governing CONTEXT.md:105 says production must not weaken sandbox/approval
+policy. Original CODEX-PLAN Task6A line265 unconditionally selected
+workspace-write, which could replace an effective read-only policy.
+
+The correction removes sandbox/approval overrides from production argv. It
+extends the existing no-thread preflight with native config/read for caller and
+destination, using the saved ConfigReadParams cwd/includeLayers interface and
+ConfigReadResponse.config fields. Only matching, unambiguous workspace-write
+and complete matching approval policy are admitted; read-only, differing,
+unsupported, missing/null or otherwise ambiguous sandbox/approval policy refuses
+before a model starts. Whole granular policy, sandbox_workspace_write settings
+and approvals_reviewer are preserved structurally; a changed prelaunch snapshot
+also refuses. No policy ordering, default permission grant, trust field or new
+controller is invented.
+
+Grounding is read-only inspection of the saved native schemas in the capability
+directory already named in CODEX-PLAN: ConfigReadParams.json defines effective
+cwd-layer resolution; ConfigReadResponse.json approval_policy line483,
+sandbox_mode line652, sandbox_workspace_write line662, AskForApproval line230
+and SandboxWorkspaceWrite line1009 provide the actual shapes. Saved
+cli-help.stdout states --sandbox selects shell policy. No native application,
+model or config API probe was run during this revision.
+
+A's existing runtime tests and B's generated-entry tests are assigned explicit
+stricter-policy, ambiguity, granular-policy mismatch and snapshot-drift refusal
+assertions, plus a positive unchanged-settings/no-policy-argv assertion. Task A
+acceptance/failing direction, B acceptance, C documentation and the CW-04 audit
+row now carry that requirement. Ownership, A -> B -> C order, retained installed
+RED frontier, actual-native shell/patch obligation, matcher and original AW
+acceptance are unchanged. Unaffected checker conclusions are reused only for
+that unchanged content; policy behavior requires fresh checker assessment.
+
+Revision checks: exact root/branch/input pin, scoped diff inspection and staged
+diff whitespace check. No source changes, tests, native probes or provider writes.
+No unresolved supported API field remains; this is a conservative refusal route,
+not a claim that config/read has already been executed by production. Ready for
+independent recheck of this correction. The bounded repair commit SHA is
+returned in the final handoff, and only these same two Markdown paths are owned.
