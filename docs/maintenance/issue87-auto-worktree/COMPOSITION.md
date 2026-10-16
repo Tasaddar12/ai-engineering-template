@@ -1,8 +1,8 @@
 ---
 phase: maintenance-issue87-auto-worktree
 status: source_composition_verified_live_unverified
-production_input: 21488caa19e3b76b11d84165bf4c69fb58f3ac96
-composition: a9e3145d2b657f23a3c2e9e3a1eb1a88ec4d7d66
+production_input: b6a930e72a268a0433bbf8c7221f8bb857d73bbe
+composition: 6a2df2d9c3c0a066b1f100c06c3cd1652c7fe43a
 ---
 
 # Final seven-PR composition evidence
@@ -99,3 +99,35 @@ preserves these source interfaces, so the initial bounded wiring review applies.
   no pending job is represented as GREEN. Final verifier/provider evidence owns
   the later result. This record proves scoped source composition, not full goal
   completion, merge readiness or live host binding.
+
+## Task5 CI-only reconciliation
+
+After actual run38832833234 exhausted Windows30 minutes, the checked Task5 plan
+and independently reviewed correction changed only validate.yml's adjacent
+comment and Windows45/Ubuntu30 timeout selection. See CI-DIAGNOSIS,
+CI-PLAN-REVIEW, CI-SUMMARY and CI-REVIEW for real RED/static checks/review.
+
+Final evidence composition is6a2df2d9c3c0a066b1f100c06c3cd1652c7fe43a, a clean
+automatic merge of priora9e3145 and productioninput
+b6a930e72a268a0433bbf8c7221f8bb857d73bbe. The entire a9..6a2 delta is the one
+validation workflow and nine maintenance records. Runtime, agents, every test,
+AGENTS, planning and attributes bytes remain unchanged. The .ai tree remains
+9ba7e03aa4108d7fa978ebfe998b23fc4c14873a; tests remain
+959025c9f65ba1696407b7638c7cc2b2d82c5ee1. Workflow blob
+cc11380c5cdd2fe6d069c34894b8c2076fb5cb50 exactly equals production input.
+
+The integration-checker (`gpt-6-luna/medium`) independently inspected final6a2,
+its parents, scoped diff and preservation boundary. Both platforms, commands,
+order, strict aggregate and protections are intact; no additional broken source
+interface was found. It ran no tests or other checks and changed nothing. Earlier
+runtime/source-wiring conclusions and four focused-suite receipts retain their
+unchanged input boundaries and original tested revisions; no full suite was
+repeated for this CI-only change.
+
+The old whole-.github-empty-diff statement is scoped to the earlier captured
+revision. This exact timeout/comment is now its sole exception; other protected
+source remains preserved. A fresh provider run for the changed workflow was not
+yet executed at this record's capture, and no GREEN is inferred. The interrupted
+context/skipped location checks remain unverified by failed38832833234. Final
+verification/provider evidence owns subsequent CI results. FinalC stays local,
+never imported into97, and actual native-host behavior remains unverified.
