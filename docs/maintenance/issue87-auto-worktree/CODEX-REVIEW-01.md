@@ -44,7 +44,8 @@ Two **BLOCKER** findings require correction: Windows batch launchers can execute
 
 **Classification:** BLOCKER — command injection / unmet literal-prompt requirement.
 
-**File:** `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-worktree-164410834/.ai/runtime/lib/codex_worktree.py:395`  
+**File:** `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-worktree-164410834/.ai/runtime/lib/codex_worktree.py:395`
+
 **Affected lines:**395–396,428–433; the same selected executable also reaches NativePreflight:270–271.
 
 **Trigger:** On Windows, `shutil.which("codex")` resolves a `.cmd` or `.bat` wrapper. The launcher accepts it and forwards `--prompt` through `subprocess.call(native_argv, cwd=destination)`.
@@ -93,7 +94,8 @@ The second marker came from prompt interpretation, not the wrapper body. No Code
 
 **Classification:** BLOCKER — unmet approved note-preservation acceptance.
 
-**File:** `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-worktree-164410834/.ai/runtime/lib/codex_worktree.py:137`  
+**File:** `D:/Codex/2026-10-15/task-2/repo/.worktrees/issue87-auto-worktree-164410834/.ai/runtime/lib/codex_worktree.py:137`
+
 **Affected lines:**137–139, with denial normalization at178–189.
 
 **Trigger:** A user submits any prompt while the native session cwd is primary, including a request to create an allowed untracked scratchpad or ordinary OS-temp note.
