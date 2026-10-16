@@ -340,6 +340,17 @@ class NativePreflight:
         self.process.stderr.close()
 
 
+def validate_native_launcher(executable):
+    """Refuse Windows batch launchers, whose argv can reinterpret prompt text."""
+    require(isinstance(executable, str) and executable,
+            "native codex executable unavailable", "codex-native")
+    suffix = os.path.splitext(executable)[1].lower()
+    require(suffix not in (".bat", ".cmd"),
+            "unsupported Windows batch launcher; install/use a direct native codex executable",
+            "codex-native")
+    return executable
+
+
 def check_hooks(response, destination, definitions):
     require(isinstance(response, dict) and isinstance(response.get("data"), list)
             and len(response["data"]) == 1, "unsupported hooks/list response", "codex-trust")
@@ -392,8 +403,7 @@ def launcher_main(argv=None):
         caller = prewrite.facts(budget)
         workspace = Workspace(caller["root"])
         installed_before, caller_definitions = installed_snapshot(caller["root"], budget)
-        executable = shutil.which("codex")
-        require(executable, "native codex executable unavailable", "codex-native")
+        executable = validate_native_launcher(shutil.which("codex"))
         if kind == "phase":
             require(worktrees.locate_phase(workspace, label)["phase_found"], "requested phase not found", "codex-unit")
         # Validate corrupt/duplicate/missing sessions before open_session can mutate them.

@@ -4,7 +4,7 @@ The retained installed tracer dispatches generated hooks locally. It is not a
 native Codex receipt; actual native generated-handler proof belongs to Task6B.
 """
 from pathlib import Path
-from contextlib import chdir
+from contextlib import ExitStack, chdir
 import copy
 import importlib
 import json
@@ -76,6 +76,85 @@ class InstalledTracer(unittest.TestCase):
                 self.assertEqual(0, acted.returncode, acted.stderr)
             self.assertEqual("original\n", sentinel.read_text(encoding="utf-8"),
                              "installed primary Bash mutation proceeded after successful setup")
+
+
+class SafeLiteralLauncherTests(unittest.TestCase):
+    """Isolated launcher regressions with every process boundary stubbed."""
+
+    def setUp(self):
+        self.runtime = importlib.import_module("lib.codex_worktree")
+        self.stack = ExitStack()
+        self.addCleanup(self.stack.close)
+        self.root = Path("C:/synthetic/repository")
+        self.destination = self.root / ".worktrees/quick-unit"
+        self.definitions = {event: "synthetic-guard-" + event
+                            for event in self.runtime.EVENTS}
+        self.caller = {"root": self.root, "common": self.root, "primary": self.root}
+        self.destination_info = {"root": self.destination, "common": self.root,
+                                 "primary": self.root}
+        self.record = {"synthetic": "validated-session"}
+        self.budget = type("StubBudget", (), {"git": lambda *_args, **_kwargs: "a" * 40})()
+        self.open_session = self.stack.enter_context(patch.object(
+            self.runtime.worktrees, "open_session", return_value={"worktree": self.destination}))
+        self.preflight = self.stack.enter_context(patch.object(
+            self.runtime, "NativePreflight", side_effect=AssertionError("preflight must not run")))
+        self.process_call = self.stack.enter_context(patch.object(
+            self.runtime.subprocess, "call", side_effect=AssertionError("final launch must not run")))
+        self.stack.enter_context(patch.object(self.runtime.prewrite, "unit",
+                                              side_effect=lambda kind, label: (kind, label)))
+        self.stack.enter_context(patch.object(self.runtime.prewrite, "Budget",
+                                              return_value=self.budget))
+        self.stack.enter_context(patch.object(self.runtime.prewrite, "facts",
+                                              side_effect=[self.caller, self.destination_info,
+                                                           self.destination_info]))
+        self.stack.enter_context(patch.object(self.runtime.prewrite, "existing_session",
+                                              return_value=None))
+        self.stack.enter_context(patch.object(self.runtime.prewrite, "target_path",
+                                              return_value=self.destination))
+        self.stack.enter_context(patch.object(self.runtime, "Workspace", return_value=object()))
+        self.stack.enter_context(patch.object(self.runtime, "installed_snapshot",
+                                              return_value=("stable-snapshot", self.definitions)))
+        self.stack.enter_context(patch.object(self.runtime, "validate_root",
+                                              return_value=self.record))
+        self.stack.enter_context(patch.object(self.runtime, "check_launchability"))
+        self.stack.enter_context(patch.object(self.runtime.shutil, "which",
+                                              return_value="C:/synthetic/bin/codex.cmd"))
+
+    def test_safe_literal_launcher_rejects_batch_before_session_or_native_entrypoints(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            result = self.runtime.launcher_main(["quick", "unit", "--prompt",
+                                                 "literal 100% punctuation: !?,"])
+
+        self.assertEqual(2, result)
+        self.assertIn("unsupported Windows batch launcher", stderr.getvalue())
+        self.open_session.assert_not_called()
+        self.preflight.assert_not_called()
+        self.process_call.assert_not_called()
+
+    def test_safe_literal_launcher_forwards_prompt_to_direct_executable_as_one_argument(self):
+        executable = "C:/synthetic/bin/codex.exe"
+        prompt = "literal 100% punctuation: !?,"
+        native = type("StubNative", (), {"request": lambda *_args, **_kwargs: {}})()
+        self.runtime.shutil.which.return_value = executable
+        self.preflight.side_effect = None
+        self.preflight.return_value.__enter__.return_value = native
+        self.process_call.side_effect = None
+        self.process_call.return_value = 0
+        self.stack.enter_context(patch.object(self.runtime, "check_hooks"))
+        self.stack.enter_context(patch.object(self.runtime, "policy_snapshot", return_value={"safe": True}))
+
+        result = self.runtime.launcher_main(["quick", "unit", "--prompt", prompt])
+
+        self.assertEqual(0, result)
+        self.preflight.assert_called_once_with(executable, self.destination)
+        argv = self.process_call.call_args.args[0]
+        self.assertEqual([executable, "--cd", str(self.destination), "--enable", "hooks",
+                          "--", prompt], argv)
+        self.assertNotIn("shell", self.process_call.call_args.kwargs)
 
 
 class RuntimeTests(unittest.TestCase):
