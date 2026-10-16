@@ -12,10 +12,10 @@ Both reports preserve all behavioral and native uncertainty.
 |---|---|---|
 | CW-01 startup selection | Runtime-owned phase/quick destination and startup argv | Historical A real-Git/launch-spy receipts keep their original revision; actual native destination/defaults remain unverified. |
 | CW-02 source versus notes | CR-02 permits primary lifecycle diagnostics; supported source tools still validate the root | Static repair review02 only. Written lifecycle/note/source fixtures are NOT_RUN. Generated native behavior remains unverified. |
-| CW-03 installation | Task6B owns Codex launcher asset, synchronous registrations and managed exports | Installer/export fixtures are current bounded work. No Python/import/render/install execution; no preservation or idempotence pass is claimed. |
+| CW-03 installation | Task6B owns Codex launcher asset, synchronous registrations and managed exports | B installer source and five export fixtures are committed. Fresh source review03 at54c41fbc confirms wiring only. No local Python/import/render/install execution or preservation/idempotence pass is claimed. |
 | CW-04 setup and arguments | CR-01 refuses batch launchers before preparation; accepted prompt stays one argv item | Static repair review02 only. Written stub fixtures are NOT_RUN. Native trust, managed feature behavior and effective policy remain unverified. |
 | CW-05 generated native shell and patch denial | No current native fixture implementation or execution authorized | BLOCKED / UNVERIFIED. Retained installed tracer stays active and unchanged, with no new execution or GREEN. |
-| CW-06 accurate claims | Task6C owns eleven documents and six canonical workflow references | Static document review follows integrated B; source presence cannot prove runtime acceptance or active-session movement. |
+| CW-06 accurate claims | Task6C owns eleven documents and six canonical workflow references | Fresh doc-verifier and integration-checker at54c41fbc confirm accurate source claims and canonical links. Source presence cannot prove runtime acceptance or active-session movement. |
 
 All new Python checks are NOT_RUN after the exact pre-start file-access denial
 recorded in CONTEXT. No retries, alternate interpreter/host/harness, generated

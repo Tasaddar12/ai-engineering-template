@@ -159,3 +159,26 @@ and behavioral acceptance stay unchanged. This is test-fixture maintenance
 needed by the authorized installer registrations, not new product behavior or
 permission to execute anything. Tests remain NOT_RUN; fresh static review is
 required. No probe, Python, hook/launcher execution or denial retry is authorized.
+
+## Joined static continuation result
+
+Integrated safe A repairs, B exports, C eleven docs and the test-only matcher
+correction at source revision54c41fbc06a376d8cbebb92d745536558bf0a615. Fresh
+independent source, documentation and integration specialists reviewed that
+same clean frozen revision; all returned no remaining demonstrated defect.
+CODEX-REVIEW-03, CODEX-DOC-REVIEW and CODEX-INTEGRATION-REVIEW preserve their
+exact reviewed source revision and static-only boundaries. The final verifier
+still must reconcile full acceptance; no runtime success or ship readiness.
+
+All local Python/unit/export/validator checks remain NOT_RUN. Automatic existing
+CI is separate evidence at its own revision. The older published a1238fc run
+38933582735 had Ubuntu FAILURE with Windows ongoing at readback; logs were
+unavailable while the run remained active. That revision predates integrated B
+and is not a result for54c41fbc. No manual CI dispatch or reroute was used.
+
+Issue98 publication remains blocked by its required unavailable Python validator;
+do not use a raw provider edit to bypass it. Keep all canonical threats open.
+Ordinary publication to existing incomplete draft97 on93-on92 remains within the
+user's explicit authorization; all original six heads and separate PR99 stay
+frozen, every PR remains unmerged, and issue87 remains open. The report-only
+commit after final verification must preserve the actual inspected source SHA.
