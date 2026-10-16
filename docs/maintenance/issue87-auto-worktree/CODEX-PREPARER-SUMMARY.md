@@ -210,3 +210,55 @@ No unresolved supported API field remains; this is a conservative refusal route,
 not a claim that config/read has already been executed by production. Ready for
 independent recheck of this correction. The bounded repair commit SHA is
 returned in the final handoff, and only these same two Markdown paths are owned.
+
+## Compatibility correction: PC-06-codex-worker-compatibility-01
+
+This is a coordinator finding reported during Task6A implementation, not a
+finding attributed to the initial independent checker. The published input is
+`30d4c9d8b5632e82043163b0d05c4eb5776162f4`; the two owned documents compare
+unchanged against this worktree's `12a9615a966eaea567ca823862be18ec03d5da34`.
+Independent checking of this bounded correction remains pending. The paused
+source worker's uncommitted module/hook/tests were neither read nor edited.
+
+The new broad guard must preserve ordinary parallel isolated workers. Launcher
+selection remains strict phase/quick; hook validation may instead recognize an
+exact unique active runtime-owned wave entry. Read existing worktrees.py only:
+state_dir line80 uses the common Git directory; manifest_path/load_manifest
+lines186/191 use waves metadata and phase/entries envelopes; create line253
+records plan, nullable phase, orchestrator-worktree isolation, worktree, branch,
+base and active status at lines292..304. The worker path is an immediate child
+named from the sanitized plan/token, while the default branch adds phase-.
+No path-basename equals branch rule is applied to workers.
+
+The plan now requires exact canonical Git registration/common root, live
+non-detached isolated branch, captured base commit/ancestry, phase/plan ownership
+and active status. Missing, malformed, ambiguous/duplicate, foreign or non-active
+ownership refuses. Because load_manifest deliberately returns an empty value for
+corrupt input, the guard must screen actual metadata errors and shape without
+editing that helper or schema. Closed/merged/stale workers and Claude's native
+journal remain excluded; later corrections use fresh active worker worktrees.
+
+A's behavior/action/acceptance assigns active-worker source/shell/tests/commit
+controls, concurrent distinct workers, accumulated HEAD and negative metadata
+cases to its existing suite. B adds installed generated-guard worker-root proof;
+C documents the launcher-session versus worker-unit distinction. The existing
+T-AW-02 row gains this unit-identity occurrence under issue98 with no new issue.
+No check command, owned path, API, lifecycle, policy-preservation correction,
+retained installed RED frontier or original CW/AW obligation is removed.
+
+The coordinator additionally identified ordinary adopted phase sessions under
+this same correction before commit. Existing worktrees.adopt_session line835
+registers an already named checkout at its real path; generated session naming
+is not its contract. Added A/B positive adopted-phase source/shell cases at a
+non-generated path with accumulated commits and negative phase/label, branch
+and recorded-path cases. Validate authoritative receipt/Git/common-root/base and
+phase facts instead of kind-label prefix or directory-name inference; keep the
+worker configured-root rule scoped to worker creation. C documents that this
+existing ordinary adoption differs from excluded Claude-journal/detached
+adoption. No new adoption operation or invented origin field is authorized.
+
+Only document/static scoped checks run here. No source implementation, test,
+native probe, provider mutation, worker lifecycle operation or publication ran.
+Reported partial source-worker checks are not relabeled as whole-A completion
+or installed/native GREEN. Ready for independent correction check; return the
+bounded repair SHA and clean status before the coordinator resumes affected A.
