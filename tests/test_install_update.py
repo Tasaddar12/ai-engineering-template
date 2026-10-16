@@ -59,6 +59,26 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(expected, self.read(path))
         self.assertEqual([], self.plan()[0])
 
+    def test_worker_defaults_update_preserves_config_and_is_idempotent(self):
+        config = b"agents:\n  coder:\n    model: opus\n    effort: max\n"
+        self.write(".planning/config.yaml", config)
+        for name in ("coder", "phase-preparer"):
+            self.write(self.namespace + "/agents/" + name + ".md",
+                       ("---\nname: " + name + "\nmodel: wrong\neffort: max\n---\nOld body.\n").encode())
+        changes, backups, _ = self.plan()
+        self.apply(changes)
+        for name, model, effort in (("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):
+            path = self.namespace + "/agents/" + name + ".md"
+            self.assertIn(self.target / path, backups)
+            exported = self.read(path).decode()
+            metadata = yaml.safe_load(exported.split("---", 2)[1])
+            self.assertEqual(model if self.host == "claude" else None, metadata.get("model"))
+            self.assertEqual(effort if self.host == "claude" else None, metadata.get("effort"))
+            shared = (self.source / ".ai/agents" / (name + ".md")).read_bytes()
+            self.assertEqual(installer.render_asset(".ai/agents/" + name + ".md", shared, self.host), self.read(path))
+        self.assertEqual(config, self.read(".planning/config.yaml"))
+        self.assertEqual([], self.plan()[0])
+
     def test_targeted_fixer_export_and_native_update_are_idempotent(self):
         path = self.namespace + "/agents/targeted-fixer.md"
         old = b'---\nname: targeted-fixer\nmodel: wrong\neffort: max\n---\nOld adapter.\n'
