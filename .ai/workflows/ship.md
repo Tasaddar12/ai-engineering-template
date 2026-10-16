@@ -1,6 +1,6 @@
 <!-- workflow
 step: ship
-agent-roles: orchestrator, code-reviewer
+agent-roles: orchestrator, code-reviewer, verifier
 produces: pull request, merged base branch, closed session
 consumes: VERIFICATION.md, SUMMARY.md, ROADMAP.md, STATE.md
 -->
@@ -24,6 +24,7 @@ verdict that is anything other than genuinely green.
 <available_agent_types>
 Valid subagent types (use these exact names — never fall back to a generic agent):
 - code-reviewer — reviews the changes being published
+- verifier - owns the independent current issue-link audit
 - debugger - diagnoses a failing check with unknown cause
 - targeted-fixer - repairs a diagnosed bounded CI defect through the coordinator
 </available_agent_types>
@@ -134,6 +135,10 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
 - Reconcile each PLAN's threat links and SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
   Read back safe issue status/evidence; keep remaining risks explicit and Pending
   publication as a gap. Preserve the readiness and critical-risk gates below.
+- Inspect the current independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
+  and its currentness/provider-readback gate. Run `refresh_issue_link_audit` below
+  when missing or stale. Truthful tracking drafts may state Pending dependencies;
+  merge requires the current audit and last provider readback.
 
 1. **Verification passed.**
 
@@ -337,6 +342,11 @@ only for demonstrated accepted work; deferred/unresolved/pending-human followups
 use plain links and never closing keywords. `pr.open` binds the existing phase
 session automatically and validates the effective body even on body-omitted edits.
 Show the composed body to the user before opening the PR.
+
+Compare this composed body/link snapshot with the independent
+[issue-link audit](../references/git-workflow.md#issue-link-audit). Apply its
+invalidation rules through `refresh_issue_link_audit`; Pending drafts do not
+establish readiness.
 </step>
 
 <step name="create_pr">
@@ -356,6 +366,41 @@ a draft for tracking, even when `/ship` was called without `--draft`.
 state when editing; it does not mark the PR ready automatically. Report the
 `created`, `updated` and `isDraft` fields. Opening a PR can start CI; it does not
 mean checks have finished or that the PR is ready to merge.
+
+Read back the actual published body/links and provide that snapshot to the
+independent [issue-link audit](../references/git-workflow.md#issue-link-audit).
+Missing or changed readback remains a gap; publication success is not audit success.
+Recheck the saved snapshot and linked issue states after publication; run
+`refresh_issue_link_audit` for missing or stale evidence.
+</step>
+
+<step name="refresh_issue_link_audit">
+Reuse only a current verifier-owned [issue-link audit](../references/git-workflow.md#issue-link-audit).
+Whenever it is missing or stale, capture the current source revision, actual
+PR/MR head SHA, exact proposed/published body and complete link snapshot, and
+timestamped provider readback (or explicit Pending dependency). Resolve model
+and effort for `verifier` using the existing dispatch rules, then dispatch a
+fresh non-author verifier:
+
+```
+Agent(
+  prompt="Perform the mandatory [Issue-link audit](../references/git-workflow.md#issue-link-audit).
+Source revision: {current_source_revision}; actual PR/MR head SHA: {provider_head_sha}.
+Exact body/link snapshot: {current_body_and_links}.
+Provider readback: {timestamped_provider_readback_or_Pending_dependency}.
+Read CONTEXT, owning PLANs and SUMMARY outcomes at the supplied revision.
+Obtain/validate actual provider readback and return the canonical audit packet.
+Remain read-only. Unavailable evidence stays Pending; do not claim a pass.",
+  subagent_type="verifier",
+  ${models['verifier'] === 'inherit' ? '' : `model="${models['verifier']}",`}
+  ${efforts['verifier'] === 'inherit' ? '' : `effort="${efforts['verifier']}",`}
+  description="Audit current PR/MR issue links"
+)
+```
+
+Join the result and compare it to the current snapshot. After publication,
+recheck actual saved body/links and provider state; refresh affected evidence
+again if changed. Missing readback blocks merge under the existing gate.
 </step>
 
 <step name="judge_checks">
@@ -400,6 +445,13 @@ Still failing after round 2: report it with its logs as the blocker.
 pull request URL and that the session stays open, then go to the report step.
 
 - Audit the PR/MR linked outcomes and closing references through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- Require the current independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
+  and last provider readback before merge eligibility. Compare source revision,
+  actual body/link snapshot, verified URLs and outcomes; stale or missing required
+  readback is a gap with its dependency and blocks merge. Obtain fresh applicable
+  independent evidence after material changes, including ordinary follow-up links.
+  Run `refresh_issue_link_audit` for a missing or stale verifier audit, then recheck
+  the current provider snapshot before proceeding.
 - Keep neutral links for unresolved, accepted, deferred and mitigated risks without
   verified closure eligibility. List actual closed only with evidence/readback;
   never infer closure from merge.
