@@ -13,7 +13,7 @@ title: Managed host hooks
 | [destructive-git-guard.py](destructive-git-guard.py) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Blocking refusal JSON with stable `reason_code` and exit 2 for recognized unsafe Git/backup operations |
 | [planning-integrity.sh](planning-integrity.sh) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Exit 2 with a diagnostic when prospective commits contain malformed changed canonical planning records |
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
-| [source-prewrite.sh](source-prewrite.sh) | `PreToolUse` on write tools | Cancels source mutations that need isolation; Claude receives a ticketed same-agent native-entry instruction, while Codex reports that this integration has no authenticated same-thread controller |
+| [source-prewrite.sh](source-prewrite.sh) | `PreToolUse` on write tools | Cancels source mutations that need isolation; Claude can receive a ticketed same-agent native-entry instruction, while Codex cannot move that caller (its separate launcher starts a new run) |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
@@ -29,6 +29,17 @@ does not precreate a worktree. Untracked planning scratchpads and handoff scratc
 notes, plus plain add/update notes under the OS temporary directory outside any
 repository, retain their narrow allow path. The advisory guard still warns on
 primary-checkout writes, including scratchpads; its behavior is unchanged.
+
+For Codex, the installed `.codex/codex-worktree.py` starts a **new** phase or
+quick run in a validated session worktree. It does not move the active caller.
+The Codex guard registers synchronous `PreToolUse` (`*`), `SessionStart` and
+`UserPromptSubmit` handlers. Lifecycle events provide repository diagnostics;
+the primary checkout's ordinary note lifecycle remains available at
+`UserPromptSubmit`, while supported source operations remain subject to
+`PreToolUse`. The canonical startup reference explains direct-executable
+requirements, trust and policy checks, and unverified host behavior.
+Installation or export inspection alone does not prove that a live Codex host
+ran a generated guard.
 
 The Claude continuation is conditional on the same existing agent actually
 having a compatible native `EnterWorktree` tool/schema, an eligible role, policy

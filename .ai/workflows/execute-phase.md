@@ -23,6 +23,11 @@ invokes the `ship` skill on a pass.
   Ask the user only the `/ship` merge question.
 </purpose>
 
+**Codex startup:** a new Codex run for this phase can be started in its
+validated session worktree with the installed launcher. This does not move an
+active agent; see the [canonical Codex startup protocol](../references/same-agent-worktree.md#codex-startup)
+for prerequisites and limits.
+
 <required_reading>
 @~/.ai/references/worktree-sessions.md
 @~/.ai/references/universal-anti-patterns.md
