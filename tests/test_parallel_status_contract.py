@@ -78,6 +78,12 @@ def contract_errors(root):
     if not all(t in rules for t in ("timeout", "host confirms", "stop before reassigning",
                                     "dirty work", "continuation", "Never automatically")):
         errors.append("canonical stop rule")
+    recovery = section(content[RULES], "Interruption and recovery")
+    if not all(t in recovery for t in ("host wait timeout", "does not establish exit",
+                                       "Before inspecting dirty files", "reassigning",
+                                       "host confirmation", "stopped", "continuation",
+                                       "#orchestration-and-handoffs", "worker-handoff.md")):
+        errors.append("recovery stop gate")
     if ".ai/RULES.md#orchestration-and-handoffs" not in content[ENTRY]:
         errors.append("entry stop link")
     return errors
@@ -151,6 +157,22 @@ class ParallelStatusContract(unittest.TestCase):
                 root = self.fixture()
                 self.replace(root, name, token)
                 self.assertIn(expected, contract_errors(root))
+
+    def test_recovery_seam_requires_confirmation_before_inspection(self):
+        for token in ("does not establish exit", "Before inspecting dirty files",
+                      "host confirmation", "#orchestration-and-handoffs", "worker-handoff.md"):
+            with self.subTest(token=token):
+                root = self.fixture()
+                path = root / RULES
+                text = path.read_text(encoding="utf-8")
+                start = text.index("## Interruption and recovery")
+                end = text.index("\n## ", start + 1)
+                body = text[start:end]
+                pattern = r"\s+".join(re.escape(w) for w in token.split())
+                changed, count = re.subn(pattern, "Removed", body)
+                self.assertGreater(count, 0)
+                path.write_text(text.replace(body, changed, 1), encoding="utf-8")
+                self.assertIn("recovery stop gate", contract_errors(root))
 
 
 if __name__ == "__main__":

@@ -82,9 +82,9 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Create/reuse an issue for every identified PLAN/SUMMARY threat: prose, tables,
   deviations, Deferred/Remaining, pre-existing, mitigated, accepted and deferred.
-  New planned security mitigations use one phase security checklist issue under
-  the routing below; each risk still needs its own canonical reference. Do not
-  expand remediation beyond the plan.
+  New planned risks, including accepted/deferred risks, use one phase security
+  checklist issue under the routing below; each risk still needs its own canonical
+  reference. Do not expand remediation beyond the plan.
 - Keep description, category, component, severity, disposition and mitigation in
   its respective PLAN's existing six-column register. Link the local Threat ID to
   the verified issue or individually addressable checklist entry, or keep the
@@ -138,9 +138,9 @@ stable canonical risk keys and aliases across reruns, including occurrences in
 different PLANs. Closed unresolved matches retain the reopening-authority blocker;
 creating a new checklist entry must not bypass it.
 
-For NEW planned security mitigations without an existing canonical match, distinct
-entries in this phase security checklist are the mandatory default canonical
-references. Create the container only when needed after both searches, using the
+For ALL NEW planned risks, including accepted/deferred, without an existing
+canonical match, distinct entries in this phase security checklist are the
+mandatory default canonical references. Create the container only when needed after both searches, using the
 exact title and label above. Existing matching issue identities always take
 precedence, including a closed unresolved match's reopening-authority blocker.
 Use the Security risk variant's required headings and reviewed safe body;
@@ -200,11 +200,14 @@ apply safe reporting and provider fallback below/above to every destination.
 
 ### Assessment, status and closure
 
-- The owning PLAN assessment records severity (`critical|high|medium|low`),
-  impact/likelihood, uncertainty and mitigation in its six-column register and
-  associated assessment. Issue entries link that assessment rather than copying
+- For checklist entries, the owning PLAN assessment records severity
+  (`critical|high|medium|low`), impact/likelihood, uncertainty and mitigation in
+  its six-column register and associated assessment. Issue entries link that assessment rather than copying
   severity or mitigation. Record owner, scope/acceptance, next action and
   revision/check evidence in the tracking entry. Do not blanket-classify as critical.
+- Standalone Security risk issues require no PLAN. Record their severity,
+  impact/likelihood, uncertainty, mitigation or safe next action and observable
+  secure check directly in the issue, with owner, acceptance and outcome evidence.
 
 | Observed status | Required evidence |
 |---|---|

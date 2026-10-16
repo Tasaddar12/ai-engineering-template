@@ -377,11 +377,17 @@ bypassing repository protections or claiming delivery.
 
 ## Interruption and recovery
 
-An agent that times out, exhausts its context or turn limit, or returns blocked
-does not end the authorized phase and does not require another user prompt.
-Inspect what it committed, what it left dirty and what it reported, then assign
-only the remaining work to a fresh bounded agent. Preserve incomplete work, reuse
-valid completed results, and keep independent ready plans moving.
+A host wait timeout does not establish exit or interruption; the worker remains
+active or unknown. Context/turn exhaustion or a blocked report also does not
+establish that the worker has stopped. These observations do not end the
+authorized phase or require another user prompt. Before inspecting dirty files
+or reassigning paths, obtain host confirmation that the worker stopped, following
+the [confirmed-stop rule](#orchestration-and-handoffs) and
+[worker handoff](references/worker-handoff.md#dispatching-a-continuation).
+Then inspect its commits, preserved dirty work and report, and assign only the
+remaining work to a fresh bounded agent under the existing continuation checks
+and limits. Preserve incomplete work, reuse valid completed results, and keep
+independent ready plans moving. Never automatically terminate an active worker.
 
 A source-changing plan assignment whose agent reports `complete` without its
 required SUMMARY.md and owned commits is blocked. A read-only assignment reports

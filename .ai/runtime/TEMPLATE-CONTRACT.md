@@ -171,7 +171,8 @@ Only the user converts an abstention into acceptance.
 ### Risk-routing destinations
 
 The canonical destination above is an existing matching Security risk issue or,
-for new planned mitigations, a stable `###` entry in the phase checklist issue BODY,
+for all new planned risks, including accepted/deferred, a stable `###` entry in
+the phase checklist issue BODY,
 under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
 Use its deterministic title/label lookup before semantic risk search and mandatory
 default routing for new planned work. Entries retain each risk's stable canonical

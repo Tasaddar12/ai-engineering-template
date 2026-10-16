@@ -171,12 +171,11 @@ table, other variants or surrounding authoring guidance in the public body.
 ## Risk assessment and lifecycle
 
 - Threat ID / risk key: [stable repository + surface/control + failure mode/remediation key]
-- Source aliases: [all PLAN/SUMMARY IDs and source occurrences]
-- PLAN assessment: [owning PLAN/Threat ID assessment link, including severity, impact/likelihood and uncertainty]
+- Source aliases: [all source occurrences; PLAN/SUMMARY IDs when present]
+- Severity: [critical|high|medium|low; impact/likelihood rationale and uncertainty]
 - Owner: [responsible party]
 - Status: [unresolved|mitigated|accepted|deferred; observed state, not PLAN disposition]
-- PLAN mitigation: [owning PLAN mitigation link; keep the full register there]
-- Next action: [safe tracking action; accepted decision reference or deferral reason/dependency]
+- Mitigation or safe next action: [bounded remediation; accepted rationale or deferral reason/next action]
 - Resolution evidence: [matching revision and actual secure check/result, or Pending with dependency]
 
 ## Safe evidence
@@ -185,8 +184,8 @@ table, other variants or surrounding authoring guidance in the public body.
 
 ## Requested remediation
 
-- PLAN mitigation: [link to the owning PLAN's mitigation]
-- PLAN verification: [link to the observable secure check]
+- [Safe remediation outcome]
+- [Observable secure check]
 - [Additional safe criterion, if needed]
 - [Additional safe criterion, if needed]
 
@@ -202,9 +201,14 @@ table, other variants or surrounding authoring guidance in the public body.
 [1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
 ```
 
-For new planned phase security work without an existing canonical match, this
-same Security risk variant is the mandatory default phase checklist container;
-keep every required heading above. Follow the deterministic title/label lookup
+Standalone issues require no PLAN: record their assessment, mitigation and secure
+check directly in the fields above. Only checklist containers/entries substitute
+`PLAN assessment:` and `PLAN mitigation:` links (including verification) for those
+values rather than repeating severity or mitigation. Keep every required heading.
+
+For new planned risks, including accepted/deferred risks, without an existing
+canonical match, this same Security risk variant is the mandatory default phase
+checklist container; keep every required heading above. Follow the deterministic title/label lookup
 before semantic risk search in
 [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
 Under Risk assessment and lifecycle, give every risk a stable `###` heading in
@@ -214,8 +218,8 @@ reruns, and repair/read back affected references after a necessary rename. Use
 descriptive link labels without a "(comment)" suffix. Each entry carries the
 stable key, aliases/occurrences, owning PLAN/Threat ID and assessment links,
 owner, scope/acceptance, lifecycle/outcome, next action, revision/check evidence
-and verified canonical reference. Link the PLAN's assessment and mitigation
-rather than repeating severity or mitigation; do not build a combined register.
+and verified canonical reference. For these checklist entries, link the PLAN's
+assessment and mitigation; do not build a combined register.
 Existing actionable matching issues remain canonical and are linked from the
 checklist. Distinct unplanned threats require standalone Security risk issues or
 existing full-scope matches. Keep full six-column registers in their owning PLANs;
@@ -327,8 +331,10 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
   invent controls or claim a pass. AI/maintainer prepares the build, access,
   fixtures and technical evidence in the separate maintainer record.
 - For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
-  Keep stable key, aliases, owning PLAN assessment/mitigation links, owner,
-  observed status and evidence here. Redact restricted detail. Keep accepted/deferred
+  Keep stable key, aliases, owner, observed status and evidence here. Standalone
+  issues carry actionable assessment/mitigation/checks without requiring a PLAN;
+  checklist entries link their owning PLAN assessment/mitigation instead.
+  Redact restricted detail. Keep accepted/deferred
   distinct from resolved; structural validation checks headings/order only.
 - Example excerpt (fictional values, not evidence; replace before publishing):
 

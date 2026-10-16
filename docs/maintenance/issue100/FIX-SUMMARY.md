@@ -13,8 +13,8 @@ provides:
   - Actual host wait intervals and confirmed-stop-before-reassignment rules
 affects: [planning, execution, verification, shipping]
 actuals:
-  tasks: 1
-  commits: 1
+  tasks: 2
+  commits: 3
 plan_head_before: d48d10d9fa9fb33dc05ad8552329aceee4e7d5cc
 tech-stack:
   added: []
@@ -68,12 +68,13 @@ Context usage: unavailable.
 
 ## Changes
 
-- Exact phase-checklist title/label lookup precedes semantic risk search. New
-  planned risks use the checklist by default; existing canonical matches and
+- Exact phase-checklist title/label lookup precedes semantic risk search. All new
+  planned risks, including accepted/deferred, use the checklist by default; existing canonical matches and
   closed unresolved reopening-authority blockers keep their identities.
 - Each risk has a stable body `###` heading and provider-verified anchor URL.
-  Renames require reference repair/readback. Tracking links owning PLAN assessment
-  and mitigation; six-column registers remain in their PLANs.
+  Renames require reference repair/readback. Checklist tracking links owning PLAN
+  assessment and mitigation; six-column registers remain in their PLANs. Standalone
+  issues retain assessment, remediation and secure-check fields without requiring a PLAN.
 - Canonical audit duties and evidence remain in git-workflow. verify-work assigns
   them to a fresh non-author verifier. Optional code review supplements that audit.
   Ship explicitly dispatches a verifier for missing/stale audit evidence, supplies
@@ -120,7 +121,7 @@ push, external write, merge or cleanup was performed by this worker.
 
 ## Remaining and coordinator reconciliation
 
-Local correction work is complete. Fresh independent review, integrated-revision
+Local correction work is complete. Renewed independent review, integrated-revision
 verification and full exact-tip Ubuntu/Windows CI remain Pending with the
 coordinator; local passes do not claim those results. The coordinator also owns
 the separate PR76 composition check and its provider-file conflict evidence.
@@ -134,3 +135,44 @@ All 14 changed paths are within the supplied ownership, the six focused suites
 ran with the results above, and no `.planning` file was created or edited.
 The exact commit hash is returned to the coordinator after the local commit;
 Git records this summary and its source changes together.
+
+## Joined-review repair
+
+Repair base: `99e2aa673692b9ac3e97971539640249ba5fdd16`, following the
+coordinator's joined independent review. The same correction plan and ownership
+continue; no adopting-project records or additional product scope were introduced.
+
+| Finding | Disposition and evidence |
+|---|---|
+| CR-01 BLOCKER | RULES Interruption and recovery now distinguishes a host wait timeout from actual exit and requires host-confirmed stop before dirty-file inspection or reassignment. It links the canonical stop rule and continuation procedure, preserving dirty work, limits and independent work. Recovery-section mutations cover this seam. |
+| CR-02 BLOCKER | The generic Security risk block again includes severity/rationale/uncertainty, mitigation or safe next action, requested remediation and an observable secure check. Standalone issues require no PLAN. Only checklist containers/entries substitute PLAN assessment/mitigation/verification links. Mutations independently require the standalone fields and scoped substitutions. |
+| CR-03 BLOCKER | Mandatory execute-phase aggregation now links the canonical default for every new planned risk instead of saying checklist use is optional. Matching canonical trackers and distinct unplanned standalone tracking remain explicit. Step-scoped mutations reject optional/default loss. |
+| DV-01 | Canonical routing, the runtime contract, issue guidance and execution now cover ALL new planned risks, including accepted/deferred risks. Existing canonical issue identities retain precedence. Negative scope mutations cover both canonical routing and the runtime seam. |
+
+The latest item-2 `###` body-heading anchor addendum is preserved unchanged in
+behavior: verified provider anchors, stable headings, rename repair/readback and
+no comment-link label. No combined or duplicate PLAN register was introduced.
+
+The new real-contract checks failed before these repairs: parallel reported the
+missing recovery stop gate, and threat routing reported the standalone/template,
+execution-default and planned-scope gaps. After correction:
+
+| Focused suite | Repair result |
+|---|---|
+| `test_parallel_status_contract.py` | 6 tests, OK |
+| `test_threat_tracking_contract.py` | 18 tests, OK |
+| `test_workflow_links.py` | 4 tests, OK |
+| `test_issue_format.py` | 17 tests, OK |
+
+Commands used the same interpreter and `-m unittest discover -s tests -p` prefix
+recorded above. Phase-issues were not repeated for this instruction-only repair;
+their earlier result is historical evidence, not a claim about the new revision.
+The revised test helper scopes mutations to the exact recovery section,
+aggregate step or runtime section. `git diff --check` passed.
+
+Worker implementation commits: `c24930d21f33b6256d68cbc61da828e671b9af7a`
+plus this repair commit (returned to the coordinator after commit). The total
+three-commit range from the immutable original base includes the coordinator's
+`99e2aa6` maintenance-context commit. Renewed independent review and current-tip
+Ubuntu/Windows CI remain Pending; the coordinator owns that evidence and PR76
+composition. No implementation blocker remains.

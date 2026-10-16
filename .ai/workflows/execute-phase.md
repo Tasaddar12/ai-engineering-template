@@ -619,12 +619,9 @@ Read each SUMMARY.md and build the phase picture:
   independently of the optional code review gate.
 - Create/reuse/read back issues; update each owning PLAN's links and SUMMARY
   outcomes. Keep each PLAN register in place; do not aggregate threat content.
-- At this mandatory reconciliation, reuse existing actionable matching trackers.
-  Planned security mitigations may use distinct canonical entries in one phase
-  checklist; preserve keys/aliases and individual evidence. Distinct unplanned
-  execution/review threats require standalone actionable Security risk issues
-  (or existing full-scope matching issues), linked from the owning PLAN and any
-  phase checklist. Checked entries do not mean issue closure.
+- Apply the [canonical default](../references/git-workflow.md#canonical-threat-tracking)
+  for every new planned risk, including accepted/deferred; preserve matching
+  canonical trackers and standalone tracking for distinct unplanned risks.
 - Carry still-open/accepted/deferred risks and evidenced closed issues distinctly;
   retain Pending dependencies and continue independent authorized work.
 

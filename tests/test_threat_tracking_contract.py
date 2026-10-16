@@ -51,7 +51,7 @@ ROUTING_DUTIES = {
                "phase-security-checklist", "title AND label", "before any", "open and closed"),
     "lookup recovery": ("Multiple matches", "Pending", "uncertain creation", "before retrying"),
     "existing identity": ("remain canonical", "reopening-authority blocker", "bypass"),
-    "planned default": ("NEW planned", "mandatory default", "without an existing", "both searches"),
+    "planned default": ("NEW planned risks", "accepted/deferred", "mandatory default", "without an existing", "both searches"),
     "heading identity": ("stable `###` heading", "issue BODY", "provider heading anchors",
                          "never fabricate anchor slugs", "Reuse the matching heading", "Pending"),
     "heading stability": ("renaming a heading breaks", "all affected references", "without a", '"(comment)"'),
@@ -209,11 +209,27 @@ def routing_errors(root):
     errors += duty_errors(template, {
         "template routing": ("mandatory default", "stable `###` heading", "heading-anchor URLs",
                              "Existing actionable", "Distinct unplanned", "owning PLANs"),
-        "template assessment": ("PLAN assessment:", "PLAN mitigation:", "rather than repeating"),
     })
     risk_block = re.search(r"^```markdown\n(.*?)^```", template, re.M | re.S).group(1)
-    if re.search(r"^- (Severity|Mitigation or safe next action):", risk_block, re.M):
-        errors.append("duplicated assessment")
+    guidance = template.split("```", 2)[-1]
+    errors += duty_errors(risk_block, {
+        "standalone assessment": ("- Severity:", "impact/likelihood", "uncertainty",
+                                  "- Mitigation or safe next action:", "Safe remediation outcome", "Observable secure check"),
+    })
+    errors += duty_errors(guidance, {
+        "template assessment": ("Only checklist", "PLAN assessment:", "PLAN mitigation:", "rather than repeating"),
+        "no PLAN required": ("Standalone issues require no PLAN",),
+    })
+    execution = steps((root / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8"))["aggregate_results"]
+    errors += duty_errors(execution, {
+        "execution default": ("canonical default", "new planned risk", "accepted/deferred",
+                              "canonical trackers", "standalone tracking", "distinct unplanned"),
+    })
+    if "may use" in execution:
+        errors.append("execution default")
+    runtime = section((root / ".ai/runtime/TEMPLATE-CONTRACT.md").read_text(encoding="utf-8"),
+                      "### Risk-routing destinations")
+    errors += duty_errors(runtime, {"runtime planned scope": ("new planned risks", "accepted/deferred", "mandatory")})
     return errors
 
 
@@ -260,10 +276,10 @@ class ThreatTrackingContract(unittest.TestCase):
             path.write_text((ROOT / name).read_text(encoding="utf-8"), encoding="utf-8")
         return root
 
-    def mutate(self, root, name, token, new="Removed", heading=None):
+    def mutate(self, root, name, token, new="Removed", heading=None, step=None):
         path = root / name
         text = path.read_text(encoding="utf-8")
-        body = section(text, heading) if heading else text
+        body = steps(text)[step] if step else section(text, heading) if heading else text
         pattern = r"\s+".join(re.escape(w) for w in token.split())
         changed, count = re.subn(pattern, lambda _: new, body)
         self.assertGreater(count, 0, token)
@@ -382,6 +398,36 @@ class ThreatTrackingContract(unittest.TestCase):
                 root = self.fixture()
                 self.mutate(root, ".ai/templates/issue.md", token)
                 self.assertIn("template assessment", routing_errors(root))
+
+    def test_standalone_assessment_and_no_plan_support(self):
+        for token, expected in (("- Severity:", "standalone assessment"),
+                                ("- Mitigation or safe next action:", "standalone assessment"),
+                                ("Observable secure check", "standalone assessment"),
+                                ("Standalone issues require no PLAN", "no PLAN required"),
+                                ("Only checklist", "template assessment")):
+            with self.subTest(token=token):
+                root = self.fixture()
+                self.mutate(root, ".ai/templates/issue.md", token, heading="### Security risk")
+                self.assertIn(expected, routing_errors(root))
+
+    def test_execution_and_runtime_default_seams(self):
+        for name, token, expected in (
+            (".ai/workflows/execute-phase.md", "canonical default", "execution default"),
+            (".ai/workflows/execute-phase.md", "accepted/deferred", "execution default"),
+            (".ai/workflows/execute-phase.md", "standalone tracking", "execution default"),
+            (".ai/runtime/TEMPLATE-CONTRACT.md", "new planned risks", "runtime planned scope"),
+            (".ai/runtime/TEMPLATE-CONTRACT.md", "accepted/deferred", "runtime planned scope"),
+        ):
+            with self.subTest(token=token, name=name):
+                root = self.fixture()
+                self.mutate(root, name, token,
+                            step="aggregate_results" if "execute-phase" in name else None,
+                            heading="### Risk-routing destinations" if "TEMPLATE-CONTRACT" in name else None)
+                self.assertIn(expected, routing_errors(root))
+        root = self.fixture()
+        self.mutate(root, ".ai/workflows/execute-phase.md", "canonical default", "optional path; may use",
+                    step="aggregate_results")
+        self.assertIn("execution default", routing_errors(root))
 
     def test_audit_duty_mutations(self):
         for label, tokens in AUDIT_DUTIES.items():
