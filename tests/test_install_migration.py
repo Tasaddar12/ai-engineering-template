@@ -47,6 +47,32 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("Custom scout evidence instruction sentinel.", exported)
         self.assertEqual(custom.encode(), (backup / "files/.ai/agents/scout.md").read_bytes())
 
+    def test_worker_defaults_migrate_preserving_custom_bodies_backups_and_config(self):
+        config = b"agents:\n  coder:\n    model: opus\n    effort: max\n"
+        self.write(".planning/config.yaml", config)
+        originals_by_role = {}
+        for name in ("coder", "phase-preparer"):
+            shared = (self.source / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+            custom = shared.replace("---\n", "---\nmodel: wrong\neffort: max\n", 1) + "\nCustom body sentinel.\n"
+            originals_by_role[name] = custom.encode()
+            self.write(".ai/agents/" + name + ".md", custom.encode())
+        changes, originals, _ = self.plan("claude", hooks=False)
+        backup = installer.backup_migration(self.target, originals)
+        self.apply(changes)
+        for name, model, effort in (("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):
+            exported = (self.target / ".claude/agents" / (name + ".md")).read_text(encoding="utf-8")
+            metadata = yaml.safe_load(exported.split("---", 2)[1])
+            self.assertEqual(model, metadata["model"])
+            self.assertEqual(effort, metadata.get("effort"))
+            self.assertIn("Custom body sentinel.", exported)
+            self.assertEqual(originals_by_role[name], (backup / "files/.ai/agents" / (name + ".md")).read_bytes())
+            self.assertEqual(installer.render_asset(".ai/agents/" + name + ".md", originals_by_role[name], "claude").decode(), exported)
+        self.assertEqual(config, (self.target / ".planning/config.yaml").read_bytes())
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "requires an existing .ai directory"):
+            self.plan("claude", hooks=False)
+        self.assertEqual(before, self.snapshot())
+
     def test_targeted_fixer_migration_preserves_body_and_leaf_permissions(self):
         shared = (self.source / ".ai/agents/targeted-fixer.md").read_text(encoding="utf-8")
         custom = shared + "\nCustom repair instruction sentinel.\n"
@@ -253,9 +279,9 @@ class MigrationTests(unittest.TestCase):
         self.assertIn(self.target / ".ai/agents/coder.md", backups)
         self.apply(changes)
         coder = (self.target / ".claude/agents/coder.md").read_bytes()
-        self.assertEqual(legacy.replace(b"\r\n", b"\n"), coder)
-        # Markdown roles carry no model frontmatter; nothing is seeded into them.
-        self.assertNotIn(b"model:", coder)
+        expected = legacy.replace(b"\r\n", b"\n").replace(b"\n---\n", b"\nmodel: sonnet\n---\n")
+        self.assertEqual(expected, coder)
+        self.assertEqual("sonnet", yaml.safe_load(coder.decode().split("---", 2)[1])["model"])
         for role, content in (("verifier", custom), ("debugger", unusual), ("custom", unrelated)):
             self.assertEqual(content, (self.target / ".claude/agents" / (role + ".md")).read_bytes())
         self.assertFalse(list((self.target / ".claude/agents").glob("*.toml")))

@@ -74,9 +74,12 @@ carry an effort and no model, or the reverse. `resolve-agent` returns both
 alongside the role's declared tools, disallowed tools and skills.
 
 Shared Markdown definitions carry no `model:` or `effort:` frontmatter. The
-installer adds `model: haiku` only to exported scout and targeted-fixer metadata
-for direct Claude dispatch; the shared role body remains host agnostic. Codex worker model and effort come from native TOML definitions.
-Claude worker overrides come from `.planning/config.yaml`; set one there:
+installer adds native Claude defaults: scout and targeted-fixer `haiku`, coder
+`sonnet` (all without effort), and phase-preparer `opus` with `effort: medium`.
+The shared role body remains host agnostic. Codex worker model and effort come from native TOML definitions.
+Claude runtime defaults in `.planning/config.yaml` are coder `sonnet`/`high`
+and phase-preparer `opus`/`medium`; ordinary-role overrides remain configurable.
+Set one there:
 
 ```yaml
 agents:
@@ -108,10 +111,16 @@ the installer relocates that path to `.codex/agents/<role>.md`. **Codex's TOML
 are unrelated to the inline injection above.
 
 Claude installation copies the full Markdown agents to `.claude/agents/`.
+For ordinary roles, explicit dispatch model/effort overrides native defaults.
+Claude supports per-agent `effort` frontmatter (per-invocation effort requires
+Claude Code v2.1.292+); `CLAUDE_CODE_EFFORT_LEVEL` overrides it. See
+[Claude effort precedence](https://code.claude.com/docs/en/sub-agents#choose-an-effort-level).
+No global effort setting is required.
 
 | Roles | Codex model | Codex effort |
 |---|---|---|
-| coordinator, researcher, phase-preparer, coder | `gpt-6.1-sol` | `high` |
+| coordinator, researcher, phase-preparer | `gpt-6.1-sol` | `high` |
+| coder | `gpt-6.1-sol` | `medium` |
 | debugger, code-reviewer, verifier, phase-checker | `gpt-6.1-sol` | `high` |
 | codebase-mapper, doc-writer | `gpt-6-luna` | `high` |
 | doc-verifier, integration-checker | `gpt-6-luna` | `medium` |

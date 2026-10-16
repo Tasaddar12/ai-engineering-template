@@ -70,7 +70,7 @@ class AgentSourceTests(unittest.TestCase):
             self.assertEqual(definition.stem, native["name"])
             self.assertEqual(frontmatter["description"], native["description"])
             self.assertEqual("gpt-6-luna" if definition.stem in luna else "gpt-6.1-sol", native["model"])
-            self.assertEqual("medium" if definition.stem in {"doc-verifier", "integration-checker"} else "high",
+            self.assertEqual("medium" if definition.stem in {"coder", "doc-verifier", "integration-checker"} else "high",
                              native["model_reasoning_effort"])
             self.assertNotIn("effort", frontmatter)
             self.assertNotIn("model", frontmatter)
