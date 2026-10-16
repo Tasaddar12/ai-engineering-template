@@ -422,6 +422,17 @@ narrow note rules; the advisory guard continues warning on primary-checkout
 writes, including scratchpads. Hooks do not grant permission or create a
 sandbox, and lexical path detection has limits.
 
+The runtime validates handler registration before dispatch. Only
+`prewrite.request`, `prewrite.begin` and `prewrite.confirm` use their own bounded
+UTF-8 Git discovery and skip canonical planning snapshots: they write journal or
+session metadata in the Git common directory, not canonical `.planning` records.
+Unknown names and future verbs sharing that prefix gain no exception. Ordinary
+registered mutations retain authored-content `integrity_warnings` on success
+and expected errors. Prospective malformed canonical planning commits still
+block without changing the real index; destructive-operation refusal remains
+a separate control. Python hook entrypoints use Python/runpy launchers, while
+shell entrypoints retain Bash and native exit-status propagation.
+
 Run checks appropriate to the changed behavior plus the project's required
 commands. Runtime changes need real Git and subprocess tests; hook changes need
 their Bash suites, including the source-prewrite and worktree-location suites.

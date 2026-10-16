@@ -2,7 +2,7 @@
 phase: maintenance-issue87-auto-worktree
 plan: "01"
 task: 4
-status: blocked
+status: partial
 requirements-completed: []
 acceptance: []
 documentation: [.ai/RULES.md, .ai/hooks/README.md]
@@ -10,9 +10,11 @@ documentation: [.ai/RULES.md, .ai/hooks/README.md]
 
 # PR97 native/planning stack implementation receipt
 
-Task 4 is in progress: genuine installed RED is preserved before production
-changes. This is a bounded source compatibility assignment, not full issue87
-acceptance or live host evidence. Context usage: unavailable.
+Task 4 is **source-complete / live-unverified**. Genuine installed RED preceded
+the minimal compatibility fix, and all seven approved checks are GREEN. This is
+a bounded source compatibility result, not full issue87 acceptance or live host
+evidence. Fresh independent joined review, composition and CI remain coordinator
+obligations. Context usage: unavailable.
 
 ## Identity and dependency boundary
 
@@ -33,7 +35,8 @@ The approved [PLAN Task 4](PLAN.md), [STACK-PLAN](STACK-PLAN.md), and clean
 [independent stack-plan review](STACK-PLAN-REVIEW.md) govern the assignment.
 Earlier code-05 correction commits and receipts remain in
 [IMPLEMENTATION-SUMMARY](IMPLEMENTATION-SUMMARY.md). The coordinator's prototype
-9060 receipt (one installed native test / 15.981s, snapshot(None) failure) is
+`9060df58033452483961d9eb1d7113cca10b0b4a` receipt (one installed native test /
+15.981s, snapshot(None) failure) is
 historical composition evidence, not the corrected input's execution receipt.
 
 ## TDD Evidence
@@ -71,25 +74,81 @@ must retain both planning.integrity and all three native adapter verbs.
 
 ## Checks
 
-RED command/result above is complete. All seven approved Task 4 GREEN commands
-remain pending before production repair; they will be recorded here with actual
-counts, durations, skips and exit status.
+RED was committed as `e0204a89f9d7191d5e70256441354573c09625bf` before source
+edits. One exact `NATIVE_ADAPTERS` set contains only the three registered native
+adapters. `main` uses it for Workspace selection and native OSError handling;
+`run_verb` validates the handler, then uses it for the snapshot/warning exception.
+Ordinary PR93 snapshots, success/error warnings, registration and init dispatch
+remain unchanged. No generic helper or global snapshot(None) handling changed.
+
+The materialized `.ai/install.py` union was inspected and retained byte-identical:
+Python/runpy hooks120, source-prewrite30, other shared shell hooks10, Claude
+creation/removal180/60. The stronger installed fixture verifies both hosts'
+unique managed identities, advisory-first/source-second editing group and user
+hook retention. Narrow RULES Hooks and validation and hooks README explain this
+boundary together with destructive/canonical/native controls; no PR91/94 prose
+was imported. These are local union clarifications, not a broader guide rewrite.
+
+All commands below run from the assigned root on the RED commit plus the exact
+owned production/docs diff. Python is the exact executable recorded in TDD
+Evidence, invoked as `-m unittest discover -s tests -p FILE [FILTER] -v`.
+
+| FILE / FILTER | Cases / seconds | Actual result |
+|---|---|---|
+| `test_same_agent_worktree.py` | 13 / 133.214 | exit 0, no skips; matching installed native tracer, all three exact adapters, new/existing phase/quick, native OSError and unknown/future-prefix boundaries, ordinary warning controls pass |
+| `test_install.py -k registered_hooks_run_planning_integrity_from_installed_hosts` | 1 / 30.906 | exit 0, no skips; both hosts' union and canonical/index/authored controls pass |
+| `test_install.py -k installed_runtime_answers_its_verb_contract` | 1 / 23.841 | exit 0, no skips; both installed namespaces retain native/planning verbs and unknown-verb result |
+| `test_install_update.py` | 66 / 395.173 | exit 0, skipped 4 (two Windows symlink-privilege cases and two Claude instances of Codex-only settings checks) |
+| `test_planning_integrity.py` | 47 / 67.598 | exit 0, no skips; imported canonical schema/commit/index/authored guard and ordinary warning cases pass |
+| `test_phase_runtime.py` | 162 / 219.832 | exit 0, no skips; ordinary dispatch, canonical/authored mutations, configuration, registration and isolation controls pass |
+| `test_session_delivery.py` | 60 / 100.123 | exit 0, no skips; ordinary session ownership/base/selection and delivery controls pass |
+
+The suites use independent disposable offline repositories. All seven approved
+checks passed with no failures/errors; no deterministic GREEN was repeated.
+No original-six suite or benchmark is run in this worker assignment.
+
+The matching original tracer now passes actual installed source cancellation and
+ticket, prewrite.begin, actual registered WorktreeCreate, real Git confirmation
+and native session adoption, then relative fresh reads and one rebuilt edit under
+the same SIMULATED host actor/default context. Primary staged/unstaged/untracked/
+ignored data, exact index facts and canonical STATE/ROADMAP bytes remain intact.
+Workflow fixtures cover no-edit request bootstrap, native new phase/quick creation
+and ordinary existing phase/quick entry with accumulated HEAD, immutable fork base
+and unchanged ownership. No request or runtime confirm claims authenticated host
+movement, permissions or loaded project context.
 
 ## Threat Outcomes
 
 | Owning PLAN threat | Canonical issue | Current outcome and state | Evidence |
 |---|---|---|---|
-| T-AW-01 | [issue98 target confinement](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Required preservation remains under review; OPEN per coordinator, no worker provider read/write | Ordinary success/error warnings, authored sentinel/index control passed at RED; installed canonical commit guard and native preservation GREEN pending |
-| T-AW-02 | [issue98 unit identity](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Prior native lifecycle retained; OPEN per coordinator, no worker provider read/write | New/existing phase/quick and exact actor/session controls remain required; no lifecycle expansion |
-| T-AW-03 | [issue98 host transition proof](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Actual installed dispatch join broken at RED; live unverified; OPEN per coordinator | Named installed native failure reaches canonical snapshot(None); exact registered adapter repair and matching GREEN required |
+| T-AW-01 | [issue98 target confinement](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Deterministic joined preservation GREEN; independent/integrated verification pending; OPEN per coordinator, no worker provider read/write | Ordinary success/error warnings, unrelated authored sentinel and exact index control; installed both-host canonical malformed commit denial; full imported integrity47 and ordinary runtime162 GREEN |
+| T-AW-02 | [issue98 unit identity](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Prior native lifecycle retained and focused GREEN; OPEN per coordinator, no worker provider read/write | New/existing phase/quick, accumulated HEAD/immutable base/ownership and exact actor/session controls pass; no lifecycle expansion |
+| T-AW-03 | [issue98 host transition proof](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Installed dispatch join corrected with matching GREEN; live unverified; OPEN per coordinator | Named installed native RED passes through creation/confirm/rebuilt edit; exact three-adapter OSError and unknown/future-prefix controls pass; source is not native host binding proof |
 
 No new canonical threat identity is introduced by the exact adapter exception.
 
+## Scope and deferred work
+
+The input-to-worker diff is limited to the owned source, two existing tests,
+the narrow RULES section, hooks README and this summary. `.ai/install.py`,
+`planning_integrity.py`, its imported tests, native protocol helper/workflows,
+advisory guard, cleanup policies and generic locale helpers have empty input
+diffs. No paths are deleted. No PR91 guard-workflow or PR94 cleanup introduction
+is copied into this bounded patch. Coordinator still owns the full
+`47593a3d3f71739bd146a6c2c3590798d7c73c2e..final97` own-change inspection and
+actual PR target metadata.
+
+No new out-of-scope defect was discovered. The earlier generic Windows locale
+follow-up remains in IMPLEMENTATION-SUMMARY Deferred; this adapter correction
+does not repair it. Root-reported pre-join CI and code-05/doc review results do
+not substitute for final joined CI/review. No new decision, approval or shared
+adoption-record update is proposed.
+
 ## Remaining / coordinator reconciliation
 
-- Implement the minimal registered three-adapter exception after this RED commit,
-  preserve ordinary snapshots/warnings/error payloads and imported planning guards.
-- Run all seven approved Task 4 checks and commit source/docs/this receipt.
+- Assigned source, tests, narrow shared documentation and seven required checks
+  are complete. The source-ready commit includes this summary; a metadata-only
+  follow-up records its generated full hash without changing tested behavior.
 - Coordinator obtains fresh source/integration/narrow-doc review at the integrated
   result, checks frozen93..final97 scope, then runs/reviews the separate disposable
   original-six composition. Earlier prototype/six-only evidence is insufficient.
@@ -98,3 +157,21 @@ No new canonical threat identity is introduced by the exact adapter exception.
   unverified; Codex still lacks this template's authenticated same-thread controller.
 - Keep PR97 draft and issue87 open; no PR merge, installation, provider action,
   real cleanup, shared status mutation or approval request belongs to this worker.
+
+| Coordinator operation | Supplied result / proposed reconciliation |
+|---|---|
+| Integrate component / record session | Task4 source-complete on immutable a14 input; exact commits returned, clean worker HEAD |
+| Progress / roadmap | Record bounded Task4 source completion after integration; do not infer phase/goal completion |
+| Decisions / requirements | No new human decision or adoption requirement completion; AW03/05/06/08 deterministic join evidence only |
+| Metrics / checks | Seven commands and actual counts/durations/skips above; dependency/input identities pinned |
+| Blockers / next action | Fresh joined source/integration/narrow-doc review, disposable original-six composition/review and final CI; live acceptance remains unmet |
+
+## Self-Check: PASSED
+
+Root, branch and immutable input were verified before writes; exact root/branch/
+HEAD and owned paths are rechecked for each commit. RED exists as
+`e0204a89f9d7191d5e70256441354573c09625bf`. The matching original native tracer
+and every required nonempty check passed after the repair. `git diff --check`
+passes, imported helper/tests and installer/advisory bytes are unchanged, and
+there are no deletions, new source stubs or new threat identities. This author
+self-check does not replace independent review or native live observation.

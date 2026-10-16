@@ -101,6 +101,19 @@ The planning integrity hook has a 10-second host timeout and invokes its
 installed sibling Python checker through the same Bash launcher on both hosts.
 It validates prospective commit bytes without modifying the real Git index;
 missing required frontmatter such as `issue_refs` blocks the commit with exit 2.
+Ordinary runtime mutations also retain canonical planning snapshots and return
+authored-content `integrity_warnings` on success or expected errors. The exact
+registered `prewrite.request`, `prewrite.begin` and `prewrite.confirm` adapters
+instead use bounded UTF-8 Git discovery and write Git-common-dir journal/session
+metadata, so they skip canonical `.planning` snapshots. Handler registration is
+checked first; unknown names and future prefix-sharing verbs have no exception.
+This adapter boundary does not disable the installed planning commit hook.
+
+The managed editing group remains advisory guard first, source decision second.
+Python hook entries have a 120-second timeout, `source-prewrite.sh` has 30 seconds,
+and other shared shell hooks have 10 seconds; Claude creation/removal retain their
+180/60-second timeouts. User hooks and distinct dispatch/editing registrations
+remain preserved when the workflow is installed or updated.
 
 The destructive hook has a 120-second host timeout and an 80-second evidence
 budget, with individual subprocess calls limited to 20 seconds. Missing or
