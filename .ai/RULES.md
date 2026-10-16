@@ -264,6 +264,12 @@ Do not call `todo.add`. Ask the user only the `/ship` merge question.
 
 ## Worktrees, integration and cleanup
 
+Codex phase/quick startup can launch a new run in a validated session worktree;
+it does not move an active conversation or agent. Use the canonical [Codex
+startup protocol](references/same-agent-worktree.md#codex-startup) for its
+invocation and guard boundaries. Claude native entry remains conditional on the
+same caller's actual native tool/schema, role, policy and trusted hook.
+
 **Every executor runs in its own worktree. This is not configurable.** Without
 isolation, concurrent agents edit one working tree and interleave their commits
 into one history, and a plan can no longer be attributed or reverted. Declaring

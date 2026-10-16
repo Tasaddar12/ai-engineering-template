@@ -17,6 +17,11 @@ decide that unverified work is good enough, and it does not merge on a check
 verdict that is anything other than genuinely green.
 </purpose>
 
+**Codex startup:** a new Codex run for this phase can be started in its
+validated session worktree with the installed launcher. This does not move an
+active agent or replace `/ship`'s validated-session and delivery gates; see the
+[canonical Codex startup protocol](../references/same-agent-worktree.md#codex-startup).
+
 <required_reading>
 @~/.ai/references/universal-anti-patterns.md
 </required_reading>

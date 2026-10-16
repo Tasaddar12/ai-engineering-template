@@ -15,6 +15,12 @@ With `--validate`: adds plan checking before execution and verification after it
 Use when the change touches something you cannot afford to get wrong.
 </purpose>
 
+**Codex startup:** to start a new Codex run for a quick task in its validated
+session worktree, use the installed launcher described in the [canonical Codex
+startup protocol](../references/same-agent-worktree.md#codex-startup). It does
+not move an already-running agent; ordinary workflow session and worker checks
+still apply.
+
 <required_reading>
 @~/.ai/references/worktree-sessions.md
 Read all files referenced by the invoking prompt's execution_context before starting.

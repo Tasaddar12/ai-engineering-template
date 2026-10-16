@@ -15,6 +15,11 @@ are the builder. Your job is to capture decisions that will guide research and
 planning, not to figure out implementation yourself.
 </purpose>
 
+**Codex startup:** a new Codex run for this phase can be started in its
+validated session worktree with the installed launcher. This does not move an
+active agent; see the [canonical Codex startup protocol](../references/same-agent-worktree.md#codex-startup)
+for prerequisites and limits.
+
 <required_reading>
 @~/.ai/references/domain-probes.md
 @~/.ai/references/gate-prompts.md

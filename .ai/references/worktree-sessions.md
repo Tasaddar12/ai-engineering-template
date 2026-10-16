@@ -48,6 +48,12 @@ implementation to `/quick` or `/phase`, and those open sessions of their own.
 
 ## Conditional same-agent native entry
 
+The Claude native-entry route below is for an existing caller. Codex has a
+separate startup launcher for a new phase/quick run; it does not move the
+current conversation or an active agent. See the canonical [Codex startup
+protocol](same-agent-worktree.md#codex-startup) for its CLI, installation,
+guard and verification limits.
+
 Claude's `/quick`, `/discuss-phase`, `/plan-phase`, `/execute-phase`,
 `/verify-work` and `/ship` workflows have a conditional native route before
 their ordinary session-opening steps. A source-edit denial is one trigger; the

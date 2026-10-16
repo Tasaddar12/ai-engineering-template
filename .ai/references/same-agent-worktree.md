@@ -1,13 +1,71 @@
 # Same-existing-agent native worktree entry
 
-This is an instruction-driven Claude route. A hook cancels a source edit and
-provides a request; it cannot move its caller. Only the same existing agent's
-actual native `EnterWorktree` operation can perform entry. Hook output, a
-prepared directory, a ticket, shell `cd`, per-call cwd/path overrides and a
-replacement child/fork are never movement proof. Codex automatic movement is
-unsupported here: this integration has no authenticated same-thread controller.
-Cancel and explain that precise limitation; do not invoke an idle CLI command or
-start another task as a substitute.
+This document covers two distinct host paths. Claude may conditionally move the
+same existing caller through its native `EnterWorktree` route below. Codex uses a
+bounded startup launcher for a **new** run, documented in [Codex startup](#codex-startup).
+That launcher does not move an existing conversation or active agent.
+
+## Codex startup
+
+The installer exports a thin `.codex/codex-worktree.py` entry point. It accepts
+`phase|quick LABEL [--base COMMIT] [--prompt TEXT] [--exec]` and calls the
+adjacent installed `runtime/lib/codex_worktree.py` `launcher_main`; it does not
+forward arbitrary native arguments. For example, after installing and reviewing
+the Codex project hooks:
+
+```text
+python .codex/codex-worktree.py phase 12 --prompt "Review the phase context"
+python .codex/codex-worktree.py quick 261016-001-example --exec --prompt "Implement the approved change"
+```
+
+These are source-level usage examples; this continuation did not execute them.
+The launcher selects and validates one runtime-owned phase or quick session,
+then starts the native `codex` executable with `--cd <destination> --enable
+hooks`. `--exec` adds the native `exec` subcommand. A prompt is passed as one
+argument after native `--`; a prompt that begins with a flag must use the
+launcher form `--prompt=--literal-flag` so the launcher's option parser treats
+it as prompt data. The launcher requires a directly resolvable native
+executable. On Windows, `.bat` and `.cmd` shims are refused because their shell
+parsing would alter argument boundaries.
+
+Startup reuses the existing session-selection/runtime ownership checks and
+never syncs or copies dirty data. Hook decisions also allow exactly the
+validated ordinary phase/quick receipt or active orchestrator-worktree worker
+receipt covered by the source contract; ordinary adopted phase sessions retain
+their established identity and accumulated commits. The primary checkout's
+ordinary note lifecycle may pass at `UserPromptSubmit`, while supported source
+mutations are still classified and require an eligible isolated root at
+`PreToolUse`. This distinction does not make `UserPromptSubmit` a source-write
+guard.
+
+The launcher verifies registered installation inputs, native hook definitions
+and trust/managed status, then compares effective sandbox and approval policy.
+It preserves those settings and refuses missing, changed, stricter, or ambiguous
+policy rather than replacing it. Native trust and host policy remain required;
+installation alone does not prove a live host will run the hooks. The generated
+guard checks structured targets and supported tools. Opaque shell/MCP writers,
+unhooked transports, host fail-open behavior and later configuration changes
+remain outside its proof. The actual generated-adapter shell and patch denial,
+effective-feature behavior and live host transition remain unverified here;
+Python execution was blocked, so no current runtime or native success is claimed.
+
+The launcher enables hooks for its native invocation with `--enable hooks`.
+Whether that invocation setting interacts safely with every effective feature
+or managed-policy configuration remains an open question; do not infer an
+answer from source or export inspection.
+
+Codex automatic movement for an already-running conversation is unsupported by
+this integration because it has no authenticated same-thread controller. Do not
+invoke a launcher to simulate movement, replay a cancelled edit, or substitute a
+child/fork or per-call directory override.
+
+## Claude native entry
+
+The protocol below is Claude-specific. A hook cancels a source edit and provides
+a request; it cannot move its caller. Only the same existing agent's actual
+native `EnterWorktree` operation can perform entry. Hook output, a prepared
+directory, a ticket, shell `cd`, per-call cwd/path overrides and a replacement
+child/fork are never movement proof.
 
 ## Gate before native action
 
