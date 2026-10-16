@@ -729,8 +729,9 @@ callers must inspect aggregate/check `passed` to judge command outcomes.
 ## Codex project concurrency
 
 Codex installs also include a phase/quick startup launcher and synchronous
-supported-tool guard. The launcher selects an existing runtime-owned session
-and starts a new native run in its worktree; it does not move an active agent.
+supported-tool guard. The launcher creates or reuses a runtime-owned phase/quick
+session and starts a new native run in its worktree; it does not move an active
+agent.
 See the [Codex startup protocol](../references/same-agent-worktree.md#codex-startup)
 for the CLI, literal prompt handling, installation/trust prerequisites and
 current runtime/native evidence limits.
