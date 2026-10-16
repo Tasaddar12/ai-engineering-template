@@ -144,3 +144,18 @@ identity before regex matching so the unrelated native literal `*` matcher is
 not parsed as a regex. Keep exactly one selected destructive handler and every
 behavioral assertion. These changes maintain test/export selection after the
 three authorized registrations; all execution restrictions remain in force.
+
+## Bounded registration-consumer fixture correction
+
+Fresh independent CODEX-INSTALL-REVIEW-01 at804afd78 confirms one stale test
+consumer: tests/test_destructive_guard.py:46 regex-parses the new native literal
+`*` registration. Complete this ordinary test-source compatibility repair in a
+separate pinned worktree, owned only by the targeted-fixer: that test helper and
+CODEX-INSTALL-FIX-SUMMARY.md. Select the intended destructive-git-guard.py and
+planning-integrity.sh handler identities before regex evaluation; assert one
+of each and preserve their prior coexecution and all existing assertions.
+Production registrations/guards, the retained full installed tracer, CI gates
+and behavioral acceptance stay unchanged. This is test-fixture maintenance
+needed by the authorized installer registrations, not new product behavior or
+permission to execute anything. Tests remain NOT_RUN; fresh static review is
+required. No probe, Python, hook/launcher execution or denial retry is authorized.
