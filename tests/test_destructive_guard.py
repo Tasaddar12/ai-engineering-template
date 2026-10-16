@@ -42,9 +42,20 @@ class RegisteredGuardTests(unittest.TestCase):
         payload = {"cwd": str(cwd or self.cwd), "tool_name": tool,
                    "hook_event_name": "PreToolUse", "tool_input": {"command": command, "cmd": command}}
         results = []
+        intended_scripts = ("destructive-git-guard.py", "planning-integrity.sh")
+        selected = {script: [] for script in intended_scripts}
         for group in installer.hook_settings(host)["hooks"].get("PreToolUse", []):
-            if re.search(group.get("matcher", ".*"), tool):
-                for handler in group["hooks"]:
+            for handler in group["hooks"]:
+                registered_command = handler.get("command", "")
+                for script in intended_scripts:
+                    if f"/hooks/{script}" in registered_command:
+                        selected[script].append((group, handler))
+        for script in intended_scripts:
+            self.assertEqual(1, len(selected[script]),
+                             f"expected exactly one registered {script} handler")
+        for script in intended_scripts:
+            for group, handler in selected[script]:
+                if re.search(group.get("matcher", ".*"), tool):
                     results.append(subprocess.run(self.launcher.launcher_argv(host, handler),
                         cwd=cwd or self.cwd, input=json.dumps(payload).encode(), capture_output=True))
         return results
