@@ -203,10 +203,44 @@ issue_refs: []
         for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
             with self.subTest(host=host):
                 self.target = self.base / (host + " projet caf" + chr(0xE9) + " nested")
+                user_group = {"matcher": "UserTool", "hooks": [{"type": "command", "command": "echo user-owned"}]}
+                settings_path = self.target / name
+                settings_path.parent.mkdir(parents=True)
+                settings_path.write_bytes(installer.hooks_toml({"PreToolUse": [user_group]}) if host == "codex"
+                                          else json.dumps({"hooks": {"PreToolUse": [user_group]}}).encode("utf-8"))
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
                 settings = read_settings(self.target / name)
                 groups = settings["hooks"]["PreToolUse"]
+                self.assertIn(user_group, groups)
+                identities = []
+                for event, registrations in settings["hooks"].items():
+                    for group in registrations:
+                        for entry in group["hooks"]:
+                            match = re.search(r"/hooks/([^/\"]+)", entry["command"])
+                            if not match:
+                                continue  # the preserved user command is not a managed registration
+                            script = match[1]
+                            identities.append((event, group.get("matcher"), script))
+                            expected_timeout = 120 if script.endswith(".py") else 30 if script == "source-prewrite.sh" else 10
+                            if event == "WorktreeCreate":
+                                expected_timeout = 180
+                            elif event == "WorktreeRemove":
+                                expected_timeout = 60
+                            self.assertEqual(expected_timeout, entry["timeout"], (host, event, script))
+                            if script.endswith(".py"):
+                                self.assertTrue(entry["command"].startswith("python "))
+                                if host == "codex":
+                                    self.assertIn("runpy.run_path", entry["commandWindows"])
+                                    self.assertTrue(entry["commandWindows"].endswith("exit $LASTEXITCODE"))
+                self.assertEqual(len(identities), len(set(identities)), "managed identities must remain unique")
+                editing = [group for group in groups if "NotebookEdit" in group.get("matcher", "")]
+                self.assertEqual(1, len(editing))
+                self.assertEqual(["worktree-guard.sh", "source-prewrite.sh"],
+                                 [re.search(r"/hooks/([^/\"]+)", entry["command"])[1] for entry in editing[0]["hooks"]])
+                self.assertEqual(2, sum(script == "worktree-guard.sh" for _, _, script in identities),
+                                 "advisory dispatch and editing registrations are distinct")
+                self.assertEqual(1, sum(script == "destructive-git-guard.py" for _, _, script in identities))
                 matches = [group for group in groups
                            if group.get("matcher") == "^(Bash|exec_command|shell_command|shell)$"
                            and "planning-integrity.sh" in group["hooks"][0]["command"]]
@@ -234,6 +268,11 @@ issue_refs: []
                 (self.target / unrelated).write_text("preserve staged index\n", encoding="utf-8")
                 command("git", "add", unrelated, cwd=self.target)
                 staged_before = command("git", "diff", "--cached", "--name-only", cwd=self.target)
+                index_before = (self.target / ".git/index").read_bytes()
+                authored = self.target / ".planning/authored-notes.md"
+                authored.write_bytes(b"untracked authored sentinel\n")
+                authored_before = {path: path.read_bytes() for path in
+                                   (authored, self.target / ".planning/STATE.md", self.target / ".planning/ROADMAP.md")}
                 environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
                 launcher = self.launcher_argv(host, handler)
                 tools = ("Bash", "exec_command", "shell_command", "shell")
@@ -250,6 +289,8 @@ issue_refs: []
                     self.assertEqual(head, command("git", "rev-parse", "HEAD", cwd=self.target).strip())
                     self.assertEqual(staged_before, command("git", "diff", "--cached", "--name-only",
                                                             cwd=self.target))
+                    self.assertEqual(index_before, (self.target / ".git/index").read_bytes())
+                    self.assertEqual(authored_before, {path: path.read_bytes() for path in authored_before})
 
                 # A complete record using --only is checked from prospective
                 # worktree bytes; unrelated staged content remains in the index.
@@ -270,6 +311,8 @@ issue_refs: []
                                      observed.stderr.decode("utf-8", "replace"))
                     self.assertEqual(staged_before, command("git", "diff", "--cached", "--name-only",
                                                             cwd=self.target))
+                    self.assertEqual(index_before, (self.target / ".git/index").read_bytes())
+                    self.assertEqual(authored_before, {path: path.read_bytes() for path in authored_before})
 
     def test_installed_runtime_answers_its_verb_contract(self):
         """The installed runtime resolves its own namespace and returns pure results."""
@@ -291,6 +334,13 @@ issue_refs: []
                                            cwd=self.target))["verbs"]
                 self.assertIn("phase.locate", verbs)
                 self.assertIn("session.adopt", verbs)
+                for verb in ("planning.integrity", "prewrite.request", "prewrite.begin", "prewrite.confirm"):
+                    self.assertIn(verb, verbs)
+                unknown = subprocess.run([sys.executable, runtime, "query", "prewrite.unknown"], cwd=self.target,
+                                         capture_output=True, encoding="utf-8")
+                self.assertEqual(1, unknown.returncode)
+                self.assertNotIn("Traceback", unknown.stderr)
+                self.assertEqual("unknown-verb", json.loads(unknown.stdout)["code"])
                 before = self.snapshot()
                 located = json.loads(command(sys.executable, runtime, "query", "phase.locate", "01",
                                              cwd=self.target))
