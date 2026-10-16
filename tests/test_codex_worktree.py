@@ -157,6 +157,46 @@ class SafeLiteralLauncherTests(unittest.TestCase):
         self.assertNotIn("shell", self.process_call.call_args.kwargs)
 
 
+class LifecycleNoteAllowanceTests(unittest.TestCase):
+    """Primary lifecycle/note decisions without process or Git boundaries."""
+
+    def setUp(self):
+        self.runtime = importlib.import_module("lib.codex_worktree")
+        self.temporary = tempfile.TemporaryDirectory(prefix="codex-lifecycle-stubs-")
+        self.addCleanup(self.temporary.cleanup)
+        self.primary = Path(self.temporary.name).resolve()
+        self.info = {"root": self.primary, "primary": self.primary}
+
+    def test_primary_prompt_note_then_source_write_denial(self):
+        from lib.results import VerbError
+
+        with patch.object(self.runtime.prewrite, "Budget", return_value=object()), \
+                patch.object(self.runtime.prewrite, "facts", return_value=self.info), \
+                patch.object(self.runtime.prewrite, "classification", side_effect=("note", "source")) as classify:
+            with chdir(self.primary):
+                for event in ("SessionStart", "UserPromptSubmit"):
+                    self.runtime.hook_decision({
+                        "hook_event_name": event,
+                        "cwd": str(self.primary),
+                        "prompt": "Please read the project and save a brief task note.",
+                    })
+                self.runtime.hook_decision({
+                    "hook_event_name": "PreToolUse",
+                    "cwd": str(self.primary),
+                    "tool_name": "Write",
+                    "tool_input": {"file_path": ".planning/scratchpads/task.md", "content": "note"},
+                })
+                with self.assertRaisesRegex(VerbError, "primary refused"):
+                    self.runtime.hook_decision({
+                        "hook_event_name": "PreToolUse",
+                        "cwd": str(self.primary),
+                        "tool_name": "Write",
+                        "tool_input": {"file_path": "source.py", "content": "change"},
+                    })
+
+        self.assertEqual(2, classify.call_count)
+
+
 class RuntimeTests(unittest.TestCase):
     """Real Git units; deterministic native RPC fixtures and SIMULATED launch spy."""
     def setUp(self):
@@ -467,7 +507,8 @@ class RuntimeTests(unittest.TestCase):
             self.assert_refused(self.event(self.root, tool, data))
         self.assert_refused(self.event(self.base), cwd=self.root)
         for event in ("SessionStart", "UserPromptSubmit"):
-            self.assert_refused(self.event(self.root, event=event))
+            self.assert_allowed(self.event(self.root, event=event),
+                                "primary lifecycle diagnostics must not block ordinary prompts")
         with chdir(self.root):
             self.runtime.hook_decision(self.event(self.root, data={"command": "git status --short"}))
         self.assertEqual(0, self.launch())
