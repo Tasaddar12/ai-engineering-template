@@ -265,9 +265,11 @@ a caller that explicitly wants drift to fail.
 
 Worker definitions under `.ai/agents/` carry `name`, `description`, `tools` and
 optionally `disallowedTools`, `skills` and `color`. Shared Markdown roles carry
-no `model:` or `effort:` field. The installer adds `model: haiku` only to the
-exported Claude scout metadata, with no effort. Codex worker model and effort are read from native
-role TOML; Claude worker overrides are read from `.planning/config.yaml`.
+no `model:` or `effort:` field. Claude exports default to scout/targeted-fixer
+`haiku`, coder `sonnet` (without effort), and phase-preparer `opus`/`medium`.
+Codex model and effort come from native role TOML (coder `gpt-6.1-sol`/`medium`).
+Claude runtime defaults are coder `sonnet`/`high` and preparer `opus`/`medium`;
+ordinary-role overrides come from `.planning/config.yaml`.
 
 They also carry **no `maxTurns:`**. A turn ceiling stops an agent mid-slice with
 work committed and no SUMMARY.md written, which the orchestrator is required to
@@ -293,7 +295,7 @@ Codex's `install-assets/codex-agents/*.toml` keep native `model` and
 `model_reasoning_effort` fields. Those are Codex's own agent configuration surface
 and are unrelated to this contract.
 
-The `scout` role is fixed per host and ignores project YAML overrides:
+The `scout` and `targeted-fixer` roles are fixed per host and ignore project YAML overrides:
 Codex uses `gpt-6-luna` and `high`; Claude uses `haiku` and `inherit` effort.
 The source and installed Codex TOML paths are `.ai/install-assets/codex-agents/`
 and `.codex/agents/`. See [scout dispatch](../references/scout-dispatch.md) for
