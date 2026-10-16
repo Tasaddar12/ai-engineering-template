@@ -10,7 +10,7 @@ behavior_unverified: 9
 overrides_applied: 0
 findings:
   critical: 0
-  warning: 3
+  warning: 4
 issue_refs:
   - id: ISSUE87
     summary: Automatic worktree enforcement remains incomplete pending current Codex behavioral evidence and original live same-agent observations.
@@ -89,6 +89,7 @@ re_verification:
     - "CW-01 through CW-05 lack current required behavioral acceptance evidence."
     - "Original AW-01, AW-04, AW-05 and AW-07 live observations remain pending."
     - "ISSUE98 update remains blocked by its required unavailable Python validator; all three risks remain unresolved."
+    - "Required automatic CI is nonpassing: Ubuntu failed and Windows remained in progress; diagnostics are blocked by a terminal-output safeguard."
   regressions: []
 behavior_unverified_items:
   - acceptance: CW-01
@@ -187,7 +188,7 @@ No runtime fingerprint is asserted. This verifier performed read-only file and G
 | AW-05 | **PRESENT_BEHAVIOR_UNVERIFIED:** live cancellation, fresh destination reads and exactly one rebuilt edit remain pending. |
 | AW-06 | Historical installed/runtime wiring verification retained. Static comparison preserves the Claude implementation and tracer; current installer conservation tests remain NOT_RUN. |
 | AW-07 | **PRESENT_BEHAVIOR_UNVERIFIED:** live refusal, uncertainty, approval and duplicate-prevention observations remain pending. |
-| AW-08 | Historical evidence-discipline/process verification retained at its original revision. Current Codex local checks are NOT_RUN and automatic CI is pending; historical green receipts are not current acceptance. |
+| AW-08 | Historical evidence-discipline/process verification retained at its original revision. Current Codex local checks are NOT_RUN and automatic CI is nonpassing: Ubuntu failed while Windows remained in progress. Historical green receipts are not current acceptance. |
 
 The historical AW **4/8** score is preserved separately. It is not added to the current CW score or relabeled as newly executed evidence. All four original live obligations remain open.
 
@@ -257,7 +258,20 @@ The three future export selectors in CODEX-PLAN, the defensive stub-unit fixture
 
 ### External CI evidence
 
-Coordinator readback for published revision `7725566` identifies automatic [run 38935879473](https://github.com/Tasaddar12/ai-engineering-template/actions/runs/38935879473): Ubuntu and Windows were both **IN_PROGRESS**, started at `2026-10-16T16:56:52Z`. The initial empty status rollup was pending check registration, not success. No terminal result is claimed.
+Coordinator readback for published revision `7725566261fb1210b4ded9baedef6fdf125aab86` identifies automatic [run 38935879473](https://github.com/Tasaddar12/ai-engineering-template/actions/runs/38935879473):
+
+| Platform | Job | Time-scoped result |
+|---|---|---|
+| Ubuntu | `117091120169` | **FAILURE**, completed `2026-10-16T17:01:19Z` |
+| Windows | `117091120652` | **IN_PROGRESS** at the latest coordinator readback |
+
+Required CI is therefore **nonpassing**. No complete-run success, failure cause or test counts are established.
+
+The full-run log frontend indicated that logs awaited run completion. A subsequent read-only job-log GET request was refused by the terminal-output safeguard because it required `--allow-escape-sequences`. The exact blocked command was:
+
+`gh api repos/Tasaddar12/ai-engineering-template/actions/jobs/117091120169/logs`
+
+The coordinator stopped without adding the override, retrying or obtaining the logs through another route. Diagnostic access remains blocked; no source repair can be inferred from the available result.
 
 Historical CI remains scoped:
 
@@ -265,7 +279,9 @@ Historical CI remains scoped:
 - Older `a1238fc…`, run `38933582735`: Ubuntu failure; Windows ongoing at the recorded readback. Logs were unavailable while active. That revision predates integrated B; no failure cause is inferred.
 - Previous AW report’s complete CI/composition receipts remain historical at their recorded revisions.
 
-Ordinary authorized push triggered configured CI. No manual remote reroute occurred. External CI cannot substitute for blocked native shell-and-patch proof or live same-agent observations. A later report-publication commit and its CI require their own coordinator readback.
+Ordinary authorized push triggered configured CI. No manual remote reroute occurred. External CI cannot substitute for blocked native shell-and-patch proof or live same-agent observations.
+
+Coordinator subsequently created local report-only commit `46f7a3c113f4f7dfe1a8bbd1557f8e5568ef3488`, which was not pushed at this readback. It changes no source and is not this verifier’s inspected revision. Publication of the amended report and any ensuing CI require their own coordinator readback.
 
 ## Findings
 
@@ -277,6 +293,8 @@ Ordinary authorized push triggered configured CI. No manual remote reroute occur
    - `source-prewrite/target-confinement` — T-AW-01
    - `source-prewrite/unit-identity` — T-AW-02
    - `source-prewrite/host-transition-proof` — T-AW-03
+
+4. **WARNING — required current CI is nonpassing and diagnostics are blocked.** Run `38935879473` has Ubuntu FAILURE and Windows IN_PROGRESS at the coordinator’s latest readback. The job-log GET request `gh api repos/Tasaddar12/ai-engineering-template/actions/jobs/117091120169/logs` was refused by the terminal-output safeguard requiring `--allow-escape-sequences`; the coordinator stopped without override, retry or reroute. The failure remains an additional acceptance blocker. Its cause and test counts are unknown; no new source defect is established.
 
 Fresh independent source review `CODEX-REVIEW-03.md` reports zero critical, warning or informational source findings. Documentation review reports no false claims; integration review reports wiring with behavior unverified. No new demonstrated source defect was established in this reconciliation.
 
@@ -314,6 +332,6 @@ The report’s `revision` must remain the actually inspected `7725566…`. Coord
 
 ## Outcome
 
-The safe static deliverables are complete and reviewable. Current Codex behavioral acceptance, generated installed native shell-and-patch proof, effective native setup behavior and the four original live AW observations remain unresolved.
+The safe static deliverables are complete and reviewable. Current Codex behavioral acceptance, generated installed native shell-and-patch proof, effective native setup behavior and the four original live AW observations remain unresolved. Required automatic CI is additionally nonpassing, with Ubuntu failed, Windows still in progress at readback and diagnostic access blocked.
 
-**Final status: `human_needed`; full goal incomplete.** Keep PR97 draft and issue87 open. Preserve the current execution restriction and all remaining evidence obligations.
+**Final status: `human_needed`; full goal incomplete.** Keep PR97 draft and issue87 open. Preserve the current execution restriction, terminal-output safeguard and all remaining evidence obligations. No CI pass, failure cause, new source defect or ship readiness is claimed.
