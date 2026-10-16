@@ -1,7 +1,7 @@
 ---
 title: Configure Claude Scout and Fixer Haiku, Coder Sonnet, Phase Preparer Opus medium
-status: open
-created: 2026-10-16T10:07:48
+status: in_progress
+created: 2026-10-16 10:07:48
 completed: ''
 files: []
 ---
