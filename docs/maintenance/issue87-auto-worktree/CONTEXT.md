@@ -124,3 +124,15 @@ The user's subsequent instruction permits only ordinary defensive repairs for sa
 Do not execute command-injection probes, native host probes or any suspected flagged operation; do not disable safeguards, retry a denial or move a blocked action to another route. Stop a newly denied action and report its exact target. The flag's exact original invocation is unavailable in the saved record. Native generated-adapter acceptance remains unverified and the draft remains explicitly incomplete; historical capability observations are not permission for further probes.
 
 The safe `safe_literal_launcher` unittest selector was subsequently denied before process startup at `C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe` (ResourceUnavailable/file access). No retry, alternate interpreter or relocated test is authorized. Further Python checks and runtime invocations remain paused. Continue static changes/review and ordinary Git operations only; coordinator-created Git worktrees retain exact root/base pins and owned paths without hand-editing runtime manifests. Report written tests as not_run, never RED/GREEN. Preserve existing CI configuration; do not manually dispatch a remote run as an alternative to the denied command.
+
+## Bounded installer export-inventory clarification
+
+The static B worker identified the committed `tests/test_install.py` assertion
+that Codex has exactly one `SessionStart` group. The authorized new independent
+Codex guard requires exactly two. Within existing installer/export-test scope,
+update that count and assert both exact identities while preserving the old
+context-handoff assertion, rerun-idempotence assertions and all behavioral tests.
+Do not weaken to an open-ended count. The retained installed behavioral tracer
+remains entirely unchanged. This corrects a directly stale export inventory;
+it grants no Python/native execution, new behavior, acceptance or policy change.
+All such fixtures and the edited existing case remain NOT_RUN in this work.
