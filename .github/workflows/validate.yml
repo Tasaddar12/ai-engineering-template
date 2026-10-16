@@ -16,9 +16,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # The Windows Git/process suite reaches ~20 minutes with recovery coverage;
-    # retain room for its final tests and both hook suites. Per-test limits stay intact.
-    timeout-minutes: 30
+    # Windows validation exceeded the 30-minute job budget; allow 45 minutes for the existing suites.
+    # Ubuntu retains its 30-minute budget. Per-test limits stay intact.
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && 45 || 30 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
