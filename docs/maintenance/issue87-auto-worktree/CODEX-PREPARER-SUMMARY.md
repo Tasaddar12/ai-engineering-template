@@ -262,3 +262,67 @@ native probe, provider mutation, worker lifecycle operation or publication ran.
 Reported partial source-worker checks are not relabeled as whole-A completion
 or installed/native GREEN. Ready for independent correction check; return the
 bounded repair SHA and clean status before the coordinator resumes affected A.
+
+## Binding safe-continuation amendment after platform flag
+
+Latest authority is CONTEXT's restricted continuation recorded at
+`56a2773960d4474338f678c645ca8adfcc64db81`, followed by the coordinator's report
+that the safe-unit selector was denied before Python started. The exact denied
+target is
+`C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe`
+with ResourceUnavailable/file-access refusal. The flag's original invocation is
+unavailable. This amendment does not investigate, retry or reroute either event.
+
+Current source scope is only CR-01 defensive literal Windows prompt/direct .exe
+handling with .cmd/.bat refusal, and CR-02 ordinary primary note preservation at
+UserPromptSubmit with source decisions remaining at the supported tool boundary.
+No new effective-feature/RPC/policy behavior is added; that earlier question
+remains unverified. The active fixer's uncommitted files were not read or edited.
+Read the committed A producer summary through Git object
+`a832c6c65cbda7195f7d25962d142b8382d74078` for launcher_main/guard_commands,
+paths, literal prompt separation and existing source contracts. Historical A
+receipts remain attributed to their tested revisions and are not current passes.
+
+Replaced current task bodies with the bounded continuation: A's two repairs and
+written stub fixtures; B's exact existing installer/config/assets paths and
+written non-executing export fixtures; C's eleven docs with static claim review.
+The A -> B -> C integration/static-review prerequisites remain. C's
+test_same_agent_worktree.py edits/runs are frozen. Original file ownership,
+model/PR99 preservation, unit compatibility and sandbox/approval constraints
+remain; no other source file or active worker was touched.
+
+All Python execution on this host is paused, including unit/export/runtime and
+static validators, imports and render execution. No alternate interpreter,
+escalation retry, PowerShell behavioral harness, manual remote CI or model/native
+route is authorized. B's future codex_worktree_export_safe selectors remain
+specified across test_install.py, test_install_update.py and
+test_install_migration.py, with explicit expected results/failing directions;
+they are currently NOT_RUN. The active checks list is only git diff --check.
+No generated command/hook/launcher, native Codex, model server, injection probe,
+retained installed tracer or full mixed suite is run. Native fixture
+implementation/execution is removed from current Task6B. The retained tracer
+stays active/unmodified and pending, without skip/xfail or GREEN.
+
+CW-05 shell AND patch proof is explicitly BLOCKED/UNVERIFIED, never waived or
+replaced by static/export evidence. Other unproved CW/AW runtime/live outcomes
+remain incomplete. Current safe edits and written fixtures cannot establish
+RED/GREEN, a component pass, final acceptance or ship readiness. Independent
+static source/doc/integration review joins at one frozen revision, followed by
+human_needed/incomplete verification and exact NOT_RUN reporting.
+
+Existing CI/actions/tests/protections remain unchanged. Ordinary authorized
+push may trigger configured CI, which the coordinator may observe; no skip-ci,
+gate change, manual workflow dispatch or test reroute is added. PR97 remains an
+incomplete unmerged draft on its existing stack, issue87 stays open, original six
+remain frozen, PR99 stays separate and the adoption skeleton is unchanged.
+
+This amendment uses only static text/Git inspection and the two owned Markdown
+edits. No Python, test, native probe, generated adapter, server or flagged action
+ran. Root/branch/input pin and scoped diff checks are the commit evidence; the
+exact amendment SHA and clean status are returned separately. Independent static
+plan checking is still required before B proceeds.
+
+Current static document inventory: three task elements and three paired
+automated/failing-direction entries, all git diff --check. The three Python
+export selectors occur only as future NOT_RUN specifications. Working/staged
+diff checks are document hygiene evidence, not a substitute behavioral harness.

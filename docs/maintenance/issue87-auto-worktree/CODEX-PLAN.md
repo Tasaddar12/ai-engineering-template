@@ -41,17 +41,9 @@ documentation:
   - .ai/workflows/execute-phase.md
   - .ai/workflows/verify-work.md
   - .ai/workflows/ship.md
-resources: [issue87-codex-native-temp-fixtures]
+resources: [issue87-codex-safe-export-fixtures]
 checks:
-  - [python, -m, unittest, discover, -s, tests, -p, test_codex_worktree.py, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -k, codex_worktree_install, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -k, codex_worktree_native_generated_guard, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_install.py, -k, selected_host_preserves_settings_instructions_and_worker_routes, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_install_update.py, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_install_migration.py, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_same_agent_worktree.py, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_prewrite.py, -v]
-  - [python, -m, unittest, discover, -s, tests, -p, test_workflow_links.py, -v]
+  - [git, diff, --check]
 issue_refs:
   - id: ISSUE98
     summary: Preserve canonical source-confinement, unit-identity and host-transition risk tracking for the Codex addition.
@@ -81,7 +73,7 @@ must_haves:
     - path: tests/test_codex_worktree.py
       provides: Real-Git behavioral regression coverage for launch selection, guard decisions and refusal preservation.
     - path: tests/test_install.py
-      provides: Generated installed-adapter assertions and reproducible actual-native local-provider smoke.
+      provides: Non-executing generated-file/configuration export assertions; native generated-adapter proof remains blocked and unverified.
     - path: .ai/references/same-agent-worktree.md
       provides: Canonical Codex startup instructions and unchanged conditional Claude movement contract.
   key_links:
@@ -113,6 +105,78 @@ prove relocation of an existing agent. No app-server controller product,
 detached-worktree adoption, active-agent child substitute, data copy, implicit
 sync/fetch, phase creation, cleanup, installation, benchmark or PR merge is added.
 </objective>
+
+## Binding safe-continuation amendment after platform flag
+
+The latest human restrictions in CONTEXT's "Restricted safe continuation after
+platform flag", recorded at 56a2773960d4474338f678c645ca8adfcc64db81, supersede
+every earlier executable instruction/check in this plan and prior producer
+summaries that would run generated commands, hooks, launchers, native Codex,
+model servers, command-injection probes or suspected flagged operations. Do not
+disable safeguards, retry a denial, or move a blocked action to another route.
+Stop a newly denied action and report its exact target. The flag's original
+invocation is unavailable; do not reconstruct or investigate it by execution.
+
+Current source authorization is only saved-review CR-01 Windows literal-prompt
+handling/direct native .exe prerequisite with .cmd/.bat refusal, and CR-02
+ordinary primary-note preservation through UserPromptSubmit. Use static review
+and safe in-process unit fixtures with stub process runners. No new effective
+feature, RPC or policy behavior is authorized by this continuation; the earlier
+feature question remains unverified. The active source fixer owns those repairs;
+other workers do not inspect or edit its uncommitted files.
+
+After those repairs and independent static review integrate, B may edit its
+existing installer/configuration/assets and write non-executing export fixtures
+selected by codex_worktree_export_safe in the three owned installer test files.
+Their future permitted design is import/render/merge and temporary installed-file
+export inspection; all Python execution is now paused as specified below.
+No generated command, hook, launcher, native executable or server is executed.
+Do not run full mixed runtime/installer suites, the retained installed tracer,
+native fixtures, or alternative proof routes. Leave the retained tracer active
+and unmodified, explicitly unrun/pending under this restriction; do not skip,
+xfail, weaken or report it GREEN.
+
+C updates the eleven assigned documents against committed generated source and
+safe receipts, with static inspection only. Source/doc/integration specialists
+review one frozen revision statically. Final verification remains human_needed
+and incomplete: CW-05 actual shell AND patch proof is blocked/unverified, and
+other runtime/live CW/AW claims need their original evidence. Safe unit/export
+results do not satisfy native acceptance or ship readiness. No issue closes or
+PR merges. Preserve historical receipts/capability observations as history, not
+permission to repeat their operations.
+
+Keep the existing CI workflow, actions, tests, protections and failure semantics;
+no skip-ci directive, removed gate or manual probe run. An ordinary authorized
+push may trigger configured CI; observe those results without manually invoking
+probes or converting CI into a new native acceptance claim. PR97 stays an
+explicitly incomplete draft on its existing stack, with the original six frozen
+and PR99 routing separate.
+
+All technical contracts below remain intended/source-review context unless
+the current safe tasks explicitly authorize an edit. In particular, the earlier
+native helper instructions, full-suite commands, actual-native evidence steps
+and retained-tracer execution/GREEN directions are suspended, not waived. The
+current task bodies/checks below define executable continuation scope.
+
+### Subsequent execution block: all Python checks NOT_RUN
+
+After the restriction above, a safe-unit selector was denied before Python
+started at the exact target
+`C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe`
+with ResourceUnavailable/file-access refusal, as reported by the coordinator.
+All further Python execution on this host is now paused, including unit/export
+tests, imports/render execution, runtime validators and static Python validators.
+Do not retry the target, escalate, select another interpreter, use a manual
+remote CI route, or build an alternative PowerShell test harness. Stop/report
+the denied target; no new denial investigation or workaround is authorized.
+
+Static defensive source, installer/configuration/document edits and writing
+non-executing regression fixtures remain allowed, as does ordinary Git. The
+active checks list therefore contains only git diff --check. Planned safe unit
+and export selectors are future specifications below, all currently NOT_RUN;
+they establish no RED/GREEN or component pass. Native CW-05 and other unproved
+acceptance remain blocked without waiver. Normal authorized push/configured CI
+observation stays unchanged; no manual workflow dispatch or test rerouting.
 
 <execution_context>
 @.ai/commands/execute-phase.md
@@ -347,19 +411,20 @@ pinned isolated worktrees and commit only owned paths plus their SUMMARY.
 
 | Component | Needs / creates | Exact ownership | Order |
 |---|---|---|---|
-| A: runtime and guard | Existing session and source classifiers; creates launcher_main/hook_main and behavioral tests | .ai/runtime/lib/codex_worktree.py; .ai/hooks/codex-worktree.py; tests/test_codex_worktree.py; CODEX-RUNTIME-SUMMARY.md in this maintenance directory | First |
-| B: installation and native integration | A API and committed hook/module; creates reachable installed launcher, registrations, installer and actual-native evidence | .ai/install-assets/codex-worktree.py; .ai/install.py; tests/test_install.py; tests/test_install_update.py; tests/test_install_migration.py; CODEX-INSTALL-SUMMARY.md in this directory | Depends on integrated A |
-| C: documentation consumers | Integrated A+B and actual results; creates accurate guides and six workflow references | All eleven documentation paths in frontmatter; tests/test_same_agent_worktree.py for documentation/export assertions only; CODEX-DOCUMENTATION-SUMMARY.md in this directory | Depends on integrated A+B |
+| A: committed runtime plus defensive follow-up | Existing launcher_main/hook_main; current edits only CR-01/CR-02 and written stub fixtures | .ai/runtime/lib/codex_worktree.py; .ai/hooks/codex-worktree.py; tests/test_codex_worktree.py; CODEX-RUNTIME-SUMMARY.md in this maintenance directory | First |
+| B: static installation/export continuation | Committed repaired A API; edits generated launcher/registrations/config and writes non-executing export fixtures; execution NOT_RUN | .ai/install-assets/codex-worktree.py; .ai/install.py; tests/test_install.py; tests/test_install_update.py; tests/test_install_migration.py; CODEX-INSTALL-SUMMARY.md in this directory | Depends on integrated A |
+| C: static documentation consumers | Integrated safe A+B and static receipts; writes eleven guides/six references with runtime/native gaps | All eleven documentation paths in frontmatter; tests/test_same_agent_worktree.py frozen; CODEX-DOCUMENTATION-SUMMARY.md in this directory | Depends on integrated A+B |
 
-Disjoint paths alone do not establish test independence. B's installed/native
-checks consume A, so A -> B -> C is deliberate. Do not dispatch B against
+Disjoint paths alone do not establish independence. B's generated source and
+written export expectations consume A, so A -> B -> C remains deliberate. Do not dispatch B against
 unintegrated A and call broken fixtures RED or fabricate parallel GREEN. There
 is no shared mutable native fixture across workers. Keep summaries distinct;
 coordinator writes shared CONTEXT/MATRIX/VERIFICATION and the PR body. No worker
 owns model tables, agent TOMLs, .planning/config.yaml, source-prewrite.sh,
 worktree-guard.sh, .github, runtime lifecycle/cleanup or the six original drafts.
 
-A names direct-runtime cases with `runtime` in their unittest method names.
+Historical TDD/registration frontier (execution suspended by the binding safe
+amendment): A names direct-runtime cases with `runtime` in their unittest method names.
 First run `python -m unittest discover -s tests -p test_codex_worktree.py -k
 installed_primary_shell_is_denied -v` against current registrations: require a
 named assertion showing the primary mutation proceeded after successful setup,
@@ -383,64 +448,51 @@ ordinary note-only operations; source enforcement belongs at the source tool
 boundary and the explicitly selected startup route.
 
 <tasks>
-<task type="auto" tdd="true">
-  <name>Task 6A: Enforce the validated Codex launch and supported-tool root contract</name>
-  <files>.ai/runtime/lib/codex_worktree.py, .ai/hooks/codex-worktree.py, tests/test_codex_worktree.py</files>
-  <read_first>AGENTS.md, .ai/RULES.md, .ai/agents/coder.md, .ai/runtime/TEMPLATE-CONTRACT.md, .ai/references/methods/tdd.md, docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/CODEX-RESEARCH.md, this plan's fixed interfaces, .ai/runtime/lib/worktrees.py session_for/open_session/locate_phase, .ai/runtime/lib/prewrite.py facts/existing_session/classification/source_decision, .ai/runtime/phase.py verb_session_open, .ai/hooks/destructive-git-guard.py, tests/test_prewrite.py, tests/test_session_delivery.py, tests/test_same_agent_worktree.py fixture patterns</read_first>
-  <precondition>Independent phase-checker has accepted this plan; coordinator supplies exact root/branch/base pins and research native schema/help evidence. No source implementation starts merely because preparation completed.</precondition>
-  <behavior>The named test_codex_worktree_installed_primary_shell_is_denied exercises the current installed Bash-hook pipeline: installation/dispatch succeeds but the primary mutation proceeds, establishing behavioral RED before the new guard/registration. Missing new modules or scripts are setup errors, not RED. Retain that tracer unchanged through B's final registration GREEN. Real disposable Git fixtures cover one selected phase/quick destination, reuse without duplication, mismatched unit/common-root/branch/base, detached/unregistered/foreign worktree, preserved primary staged/unstaged/untracked/ignored data, missing destination installed inputs, disabled/untrusted guard setup, stricter/differing/ambiguous sandbox and approval settings, prelaunch policy changes and narrow note controls. A real worktrees.create active worker without a phase/quick session permits structured source edits, shell tests and ordinary commits; two distinct concurrent worker units and accumulated HEAD remain valid. An adopted ordinary named phase session at a non-generated path also passes source/shell use with accumulated commits; wrong phase/label, branch or recorded path refuses without relying on generated naming. Unit/common-root/path/branch/base, detached, duplicate, malformed, non-active and foreign-manifest cases refuse. A successful isolated shell operation such as tests or an ordinary commit stays usable.</behavior>
-  <action>Implement CONTEXT's six Codex decisions and CW-01/02/04. Start with the retained installed-current Bash tracer and a test-only RED commit; fixture/import/syntax errors, missing new entry points and zero cases are invalid RED. A's direct-runtime tests then become GREEN, while the installed tracer intentionally awaits B; record that dependency and do not claim full Task6/CW acceptance at A's handoff. The first retained end-to-end slice selects a real runtime phase/quick worktree, validates it and records native launch argv/cwd through a child-process spy, then demonstrates refusal when that root or a structured mutation target is primary. This traces session selection through launch and guard; the spy is explicitly simulated native invocation, with actual native proof assigned to B. Complete the refusal matrix after that slice. Expose a bounded launcher CLI KIND LABEL with optional --base COMMIT, --prompt TEXT and --exec only; no arbitrary trailing native argv. Internally use supported native --cd DESTINATION and invocation-scoped --enable hooks, preserving configured model/effort and all effective sandbox/approval restrictions through the config/read preservation-or-refusal protocol in PC-06-codex-context_compliance-01 above. Pass no sandbox/approval override; stricter, differing or ambiguous effective policy must refuse before a model run. Reject every other argument, including cwd redirection, hook disable, configuration/requirements bypass, profile/config override, extra writable roots, resume/fork/worktree and sandbox/approval weakening. Treat prompt text as data in an argv element. The launcher is a startup entry point only; do not wire it as an active-agent recovery action or infer authenticated host identity from unverified environment names. Validate all known options before worktree creation. Resolve the selected unit through existing runtime helpers, create with explicit captured local base and sync=False only when absent, then independently validate exact registered canonical path/common Git repository, live non-detached isolated branch, unique open unit record, stored base and ancestry. Do not admit a linked tree solely because it is linked or apply Claude's native-journal exception to Codex. Validate both caller and destination installed runtime/configuration/guard files and handler launchability; missing committed installation at the selected base is a dependency, never permission to copy dirty files. Validate effective hooks via the read-only native exchange above before model startup. Known setup failures return bounded diagnostics/nonzero without running a model; preserve any prepared unit for coordinator inspection. Recheck the destination and required file identities immediately before launch. Do not rewrite global features.hooks=false or trust. Hook handling is synchronous, validates payload/default cwd agreement, and normalizes expected/unexpected adapter errors to denial exit2 with actionable stderr. Use existing prewrite classification for structured file/patch operations so tracked source, mixed targets, external/nested repositories, links/reparse/hardlinks and rename/delete retain their existing handling; ordinary allowed scratchpad/OS-temp create/update notes remain allowed without session identity. For hook handling only, validate either the exact unique open phase/quick session or exact unique active runtime-owned wave entry under PC-06-codex-worker-compatibility-01 above; preserve launcher selection as ordinary phase/quick only. Use existing worktrees.state_dir/load_manifest/create metadata, screen malformed input instead of silently accepting load_manifest's empty fallback, validate the actual worker path independently of branch spelling, and preserve active-worker source/shell/commit use without adding lifecycle or schema changes. For ordinary adopted phase sessions validate authoritative receipt/Git/phase identity rather than a generated path or kind-label branch naming rule; do not introduce a new adoption operation. For shell/opaque supported tool calls, apply default-root/unit validity and any actual structured cwd/workdir/path fields the native payload exposes. In primary/invalid roots, deny potentially source-changing or ambiguous actions; narrowly recognized read-only diagnostics may pass. In a validated isolated unit allow ordinary shell tests/commits under workspace-write policy without inventing a general shell-language analyzer. Treat unknown supported tool kinds conservatively at invalid roots. Never parse arbitrary shell text to promise universal target confinement. Startup/pre-prompt handlers revalidate the root and surface refusal according to the actual event contract; do not assume SessionStart has a hard-stop semantic it lacks. Launcher preflight owns the before-model guarantee, PreToolUse owns supported-tool cancellation. Persist no transcript/prompt/secret contents. Record RED/GREEN and any refactor in the owned runtime summary.</action>
-  <acceptance_criteria>Public launcher and hook APIs exist; real Git selection/reuse and negative cases are assertion-tested; known unsafe setup/options never reach the native-launch spy. Supported source decisions refuse primary/invalid roots and structured cross-root mutations, allowed notes and isolated tests/commits remain functional, and primary bytes/index are preserved. Global/user models, trust, features and effective sandbox/approval restrictions are unchanged. Read-only, policy mismatch/ambiguity or snapshot drift produces zero model-launch calls; matching workspace-write retains all network/temp/root and granular approval/reviewer settings without policy argv overrides. Valid ordinary adopted named phase sessions remain usable at their recorded non-generated paths with no naming inference. Active runtime-owned workers without session records remain usable through exact wave identity; concurrent distinct workers pass, while malformed/ambiguous/non-active/foreign ownership and root/branch/base mismatches refuse without primary/index loss. The shell/opaque transport boundary is explicit.</acceptance_criteria>
+<task type="auto">
+  <name>Task 6A continuation: CR-01 and CR-02 defensive repairs only</name>
+  <files>.ai/runtime/lib/codex_worktree.py, tests/test_codex_worktree.py</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/CONTEXT.md restricted continuation, this binding safe amendment, saved source REVIEW-01 CR-01/CR-02, committed CODEX-RUNTIME-SUMMARY.md from a832c6c65cbda7195f7d25962d142b8382d74078, the fixer's own assigned module/tests</read_first>
+  <precondition>The already assigned isolated source fixer alone owns the active repair files; other workers wait for its committed result and static review. All Python execution remains paused after the exact reported target refusal.</precondition>
+  <behavior>Written safe unit fixtures specify literal Windows prompt argv and direct .exe prerequisites, refusal of .cmd/.bat before any runner, and ordinary primary note allowance through UserPromptSubmit while source attempts remain subject to PreToolUse. Every process/native/RPC boundary in those fixtures is a stub; the fixtures are NOT_RUN under the current block.</behavior>
+  <action>Repair only saved-review CR-01 and CR-02. Preserve literal prompt data and native argument separation using the direct Windows executable prerequisite; refuse Windows batch shims visibly instead of invoking their shell parsing. Do not execute injection strings or a launcher/native probe to investigate quoting. Preserve primary note-only lifecycle use at UserPromptSubmit while retaining the existing supported-tool source decision boundary. Write bounded in-process unit fixtures with stub process runners and ordinary harmless input; do not execute them now. Do not introduce new feature/RPC/effective-policy behavior or rerun the historical feature question. Preserve the checked policy/worker/adopted-session contracts outside these two defects. Leave the retained installed tracer active and unchanged but do not run it, the mixed runtime suite, generated hooks or native tools. Commit the authorized defensive edits and repair summary with static findings and tests NOT_RUN; report blocked acceptance rather than component GREEN. If any action is denied, stop that action and report its exact target without retry, escalation or alternate execution route.</action>
+  <acceptance_criteria>Static review traces both defensive repairs and their written stub fixtures; primary note lifecycle and source tool decisions remain distinct. No native/batch/generated-command execution or safeguard bypass occurs. Runtime/native acceptance and required test outcomes remain unverified, not completed by source inspection.</acceptance_criteria>
   <verify>
-    <automated>python -m unittest discover -s tests -p test_codex_worktree.py -k runtime -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, a required launch/refusal case skipped, unsafe setup or stricter/differing/ambiguous policy reaching the model-launch spy, policy-changing argv/config, a changed primary/index sentinel, legitimate active-worker source/shell/tests/commits blocked by a session-only rule, or invalid/ambiguous/non-active wave ownership admitted.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_prewrite.py -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, altered narrow-note/source classification or weakened Claude native identity/confirmation behavior.</fails_when>
+    <automated>git diff --check</automated>
+    <fails_when>Nonzero exit or whitespace/conflict-marker diagnostics; exit0 proves only this static diff property.</fails_when>
+    <inspection>Fresh independent static source review examines the committed CR-01/CR-02 diff and stub fixture design. Safe-unit execution is NOT_RUN because the Python target was denied; no replacement harness or component pass.</inspection>
   </verify>
-  <done>A's test-only behavioral RED precedes source changes, direct-runtime checks pass, and public APIs/hook are committed with CODEX-RUNTIME-SUMMARY. The retained installed tracer is explicitly pending B, not reported GREEN; A's interface is ready for B, while Task6 acceptance remains pending. No actual native success is inferred from the spy. Coordinator integrates A before B.</done>
-</task>
-
-<task type="auto" tdd="true">
-  <name>Task 6B: Generate and verify the installed Codex launch and guard path</name>
-  <files>.ai/install-assets/codex-worktree.py, .ai/install.py, tests/test_install.py, tests/test_install_update.py, tests/test_install_migration.py</files>
-  <read_first>AGENTS.md, .ai/RULES.md, .ai/agents/coder.md, .ai/runtime/TEMPLATE-CONTRACT.md, .ai/references/methods/tdd.md, docs/maintenance/issue87-auto-worktree/CODEX-PLAN.md, docs/maintenance/issue87-auto-worktree/CODEX-RUNTIME-SUMMARY.md, .ai/runtime/lib/codex_worktree.py, .ai/hooks/codex-worktree.py, .ai/install.py payload/host_payload/merge_toml/MANAGED_HOOKS/HOST_HOOKS/managed_scripts/hook_settings, all three owned installer suites, research's saved schema/help/probe helper</read_first>
-  <precondition>A is integrated and its direct-runtime GREEN is recorded, while the installed tracer remains explicitly pending B with no skip/xfail or weakened assertion. Existing native Codex and research's reproducible local-provider helper/help are available for actual smoke; absent capability is reported, never repaired with installation or external model access.</precondition>
-  <behavior>Fresh, repeated and managed-update fixtures must ship one Codex-only launcher and one required synchronous registration per event without disturbing old managed/custom hooks. features.hooks=false, user ordinary config, native agent model/effort TOMLs and Claude payload remain preserved. Actual generated Windows/POSIX commands propagate denial. Generated-launcher regressions preserve sandbox/approval settings and refuse stricter, differing or ambiguous policies before model startup. Generated-guard fixtures also prove active runtime-owned worker source/shell allowance without a session record and adopted ordinary phase-session use at a non-generated path, and reject malformed, duplicate, foreign or non-active wave ownership and adopted wrong-unit/branch/path records. Real native shell and apply_patch calls reach the installed adapter and are denied with no primary mutation.</behavior>
-  <action>Implement CW-03/04/05 using A's agreed APIs. Commit genuine test-only RED before installer changes: assert missing reachable generated launcher/required registration or an installed primary shell mutation actually proceeds, with existing installation/setup succeeding. Add the Codex-only thin asset as .codex/codex-worktree.py using the existing payload/manifest ownership and update mechanisms; source install-assets stay excluded from ordinary payload except this explicit asset mapping. The hook/module copy through existing .ai-to-host paths; do not ship a Codex launch feature into Claude or change any agent/model rendering. Register the new Codex Python guard for synchronous PreToolUse with broad supported-tool matching plus SessionStart and UserPromptSubmit. Use native hook event names in config and actual hooks/list eventName spelling when validating, without inventing an event. Include every new script in managed registration identity/conservation, updater and migration inventories. Keep the existing shared editing group advisory-first/source-second byte behavior, all destructive/planning/context controls, existing timeouts and custom-hook conservation; host-specific guard registrations must not broaden Claude's namespace contract. Use the existing Python/runpy platform launcher pattern and bounded synchronous timeout, preserving actual exit2 and Unicode paths; test missing Python/runtime/script and unexpected adapter errors. Preserve user/global hooks=false and all config unrelated to this feature; --no-hooks install remains unregistered and the launcher then refuses known unenforced setup. Native --enable hooks applies only to the selected invocation. Use the observed OS-selected hooks/list command identity, comparing commandWindows on Windows and command on POSIX; route any actual-platform mismatch to A's owner through the coordinator. Test fresh/reinstall/update/migration, aged managed groups, custom commands in managed groups, malformed config, duplicate registration, features=false, untrusted/modified/managed-disabled and launchability failures with sentinel byte preservation. Through the installed generated guard, create a real active plan worker via worktrees.create and prove structured source and shell calls are allowed with no ordinary session, while malformed/ambiguous/non-active/foreign wave ownership refuses; also prove a valid adopted named ordinary phase session at its recorded non-generated path remains usable and wrong phase/label, branch or path records refuse. Preserve root/branch/base and primary/index controls. Persist the bounded local mock Responses provider and native fixture in tests/test_install.py, adapting canned_guard_fixture.py from the capability directory above. Its new helper is AST/help-only evidence until these actual runs; the old inline probe alone established the successful wire protocol. The native test must never use account credentials or contact an external model: use a new OS-temp CODEX_HOME/Git fixture, explicit sanitized child environment with no inherited credential/provider variables, loopback-only canned provider, finite request count, process/network timeouts and captured sanitized request/response/hook logs. Disable plugins with the actually established --disable plugins feature control in the temporary native fixture; disabledPluginIds alone does not filter capabilities. Inspect the effective fixture and outgoing requests; if plugin suppression cannot be demonstrated, report the exact limitation and do not claim an entirely local clean smoke. Do not change the real Codex home or user hook trust. A vetted fixture-only trust bypass may be used to exercise known temporary hooks; label it and prove the production launcher has no bypass. Run two separately attributed actual-native checks: successful launcher destination/default-root evidence under valid reviewed trust, and PreToolUse refusal for shell plus patch against primary/invalid roots. If SessionStart prevents the latter model from issuing a tool, use a reviewed temporary fixture registration limited to the generated PreToolUse handler to exercise that handler independently; retain a separate full-registration startup-refusal case. Capture canonical native tool_name/tool_input/cwd, the generated handler's denial reason, returned tool denial and unchanged primary/index sentinels. A fixture-only capture shim may log the sanitized hook payload and forward identical stdin to the exact emitted generated command, preserving stdout/stderr/exit; label the shim and verify that the production handler, not the shim or machine policy, supplied denial. Do not add production transcript logging. Absence of a tool call, generic probe denial, simulated router, machine-policy block, missing config or setup error is not CW-05. Record the exact native executable/version, source/install revision, fixture trust exception, environment/provider constraints, per-case results and sanitized local evidence paths. Native-unavailable CI skips are explicit and cannot satisfy the required local CW-05 receipt. Commit owned installation changes and CODEX-INSTALL-SUMMARY.</action>
-  <acceptance_criteria>The installed entry point reaches A's launcher and required guard registrations are enabled/trusted when native policy permits; all known unsafe setups, including read-only or ambiguous/differing effective policy, fail before a model run without sandbox/approval overrides. Existing user/managed hooks and unrelated model/config bytes survive all supported install paths. Installed active-worker source/shell allowance and invalid wave refusal are demonstrated separately from launcher phase/quick selection. Actual generated-adapter native Bash and apply_patch denials have distinct captured evidence; startup defaults/refusal and simulated cases are reported separately.</acceptance_criteria>
-  <verify>
-    <automated>python -m unittest discover -s tests -p test_codex_worktree.py -k installed_primary_shell_is_denied -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, skipped/xfail tracer, weakened assertion or primary mutation proceeding; the identical retained behavioral RED must now be GREEN.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_install.py -k codex_worktree_install -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, missing generated path/registration or native denial, corrupted custom/model/config bytes; a required actual-native case skipped or blocked only by startup/machine policy leaves CW-05 unverified.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_install.py -k codex_worktree_native_generated_guard -v</automated>
-    <fails_when>Nonzero exit, zero cases, any skip, no actual generated-handler shell or patch denial, external-provider/credential use, missing captured native payload/reason, or changed primary/index sentinels.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_install.py -k selected_host_preserves_settings_instructions_and_worker_routes -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, lost custom hook, modified features.hooks=false/model values, damaged personal instructions or changed worker routes.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_install_update.py -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, lost/duplicated managed/custom hook, changed user features/model values or unreviewed ownership/config replacement.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_install_migration.py -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, changed migration preservation/backup behavior, missing relocated guard or changed Claude/model routing.</fails_when>
-  </verify>
-  <done>B's RED/GREEN and native receipts are committed with CODEX-INSTALL-SUMMARY; actual shell AND patch refusal are observed before CW-05 is claimed. Coordinator integrates B and reruns A's SAME retained installed tracer plus full test_codex_worktree suite to establish final installed GREEN, then supplies interfaces/results to C.</done>
+  <done>Owned defensive repair and summary are committed, reviewed statically and integrated by the coordinator. A's safe repair boundary can be handed to B; Task6 remains incomplete and no new runtime or native GREEN is claimed.</done>
 </task>
 
 <task type="auto">
-  <name>Task 6C: Document reachable startup isolation and preserve the active-session truth</name>
-  <files>.ai/references/same-agent-worktree.md, .ai/references/worktree-sessions.md, .ai/hooks/README.md, .ai/runtime/README.md, .ai/RULES.md, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md, tests/test_same_agent_worktree.py</files>
-  <read_first>AGENTS.md, .ai/RULES.md, .ai/agents/doc-writer.md, .ai/runtime/TEMPLATE-CONTRACT.md, docs/maintenance/issue87-auto-worktree/CODEX-PLAN.md, docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/CODEX-RESEARCH.md, docs/maintenance/issue87-auto-worktree/CODEX-RUNTIME-SUMMARY.md, docs/maintenance/issue87-auto-worktree/CODEX-INSTALL-SUMMARY.md, all eleven exact documentation paths in frontmatter, tests/test_same_agent_worktree.py existing six-consumer and workflow-order assertions, installed launcher CLI and hook behavior</read_first>
-  <precondition>Integrated A+B interfaces and actual checks are available. Unsupported or skipped behavior remains explicitly unverified; documentation does not convert it to acceptance.</precondition>
-  <action>Implement CW-06 and preserve CW-01..05 instructions with the full doc-writer method. Add one canonical Codex startup section to same-agent-worktree.md with executable installed launcher examples for explicit existing phase/quick labels, local base semantics, required installed destination files, native hook review/trust, workspace-write roots, preserved effective sandbox/approval restrictions with read-only/differing/ambiguous-policy refusal, invocation-only hook enabling and precise refusal/remediation paths. Explain the strict ordinary phase/quick launcher selection separately from hook validation of an existing active runtime-owned plan-worker wave entry; include exact active identity and rejection of merged/closed/stale or ambiguous metadata without any linked-branch shortcut. Preserve ordinary adopted phase-session receipt/Git validation at non-generated paths and distinguish it from excluded Claude-journal or detached adoption. Explain starting a new native run versus continuing an existing active conversation; the latter needs supported idle native entry or an authenticated controlling host not owned here. Retain the existing precise unsupported automatic in-flight boundary and Claude conditional native-entry sequence; do not replace truthful historical evidence with a universal success claim. Explain broad supported-tool hooks, startup/pre-prompt validation and known fail-open paths, missing/modified/untrusted hooks, unsupported tools, opaque shell/MCP writers, write_stdin sessions not re-hooked, specialized opt-outs and outer sandbox scope. Distinguish actual-native generated-adapter evidence from simulated contracts and the earlier generic probe, including fixture-only trust. State no complete security-boundary promise. Add short Codex-specific references to the canonical section in all six workflows; preserve Claude request/begin/confirm, locate/init ordering, native existing-path approvals and fresh reconstructed edit behavior. A shell cd or model-spawned child never becomes same-agent movement. Keep skills/commands as mirrors that point to workflows; do not duplicate whole workflow text there. Update worktree-sessions, hooks/runtime README and only the relevant Hooks and validation/worktree prose in RULES for reachable launch, install preservation and transport limits. Source-before-doc conflicts go to the source owner, not prose that excuses a defect. In tests/test_same_agent_worktree.py touch only documentation/export/reference assertions needed to verify six installed Codex references and preserved Claude order/permissions; retain the 13 existing native/Claude behaviors without weakening assertions. Use suitable scoped inspection for prose and existing behavioral checks for the changed consumer contract, not artificial word-count tests. Commit owned docs/assertions with CODEX-DOCUMENTATION-SUMMARY and a per-path claim/evidence handoff.</action>
-  <acceptance_criteria>All eleven assigned documents match installed source and actual receipts. Six workflows reach one canonical Codex protocol; Claude behavior/order and precise active-session limitation remain. Examples use only the implemented CLI. Original AW pending/human_needed acceptance and open issue87 are preserved.</acceptance_criteria>
+  <name>Task 6B continuation: installer/configuration and non-executing export fixtures only</name>
+  <files>.ai/install-assets/codex-worktree.py, .ai/install.py, tests/test_install.py, tests/test_install_update.py, tests/test_install_migration.py</files>
+  <read_first>AGENTS.md, .ai/RULES.md, .ai/agents/coder.md, this safe amendment, committed CODEX-RUNTIME-SUMMARY.md from a832c6c65cbda7195f7d25962d142b8382d74078, committed CR-01/CR-02 repair summary/static review, .ai/install.py payload/host_payload/merge_toml/managed inventory/hook_settings, all five exact owned files or their creation contract</read_first>
+  <precondition>Defensive A repairs and independent static source review are integrated. Read only committed producer code/summaries; do not inspect active fixer files. Python tests/imports/render execution remain blocked.</precondition>
+  <behavior>Written codex_worktree_export_safe fixtures specify fresh/repeated/update/migration generated-file and TOML preservation without executing generated commands, hooks, launchers, native Codex or model servers. They assert the agreed producer API and OS-selected command definitions, synchronous matcher/event/timeout inventory and unchanged custom/model/config values. They are currently NOT_RUN.</behavior>
+  <action>Edit only the existing installer/assets/configuration surface and its three owned test files. Generate the thin Codex-only .codex/codex-worktree.py asset using adjacent runtime lib.codex_worktree.launcher_main, with no arbitrary native passthrough. The committed A CLI is phase|quick LABEL with --base, --prompt and --exec; literal flag-looking prompts use --prompt=--literal-flag and native prompt separation. Preserve CR-01's direct Windows .exe prerequisite and batch refusal. Use the committed guard_commands() definitions as the authoritative exported strings; read them statically now rather than invoking Python. Register the Codex-only synchronous PreToolUse matcher *, SessionStart and UserPromptSubmit definitions with timeout30, retaining exact existing advisory-first/source-second editing group behavior, all old managed/custom hooks and the ordinary Claude payload. Extend managed inventory/update/migration handling without agent/model/routing or .planning/config.yaml edits. Preserve features.hooks=false and every unrelated user value; hooks enabling remains invocation-scoped in source and known unsafe setup still has no acceptance claim until observed. Write only non-executing export fixtures named with codex_worktree_export_safe in test_install.py, test_install_update.py and test_install_migration.py. Their future permitted design is import/render/merge and temporary installed-file export/content inspection, with runners that reject any generated-command/hook/launcher/native/server execution. Cover exact asset mapping/API text, TOML registration identity/events/matcher/synchronous timeout, custom-hook conservation, repeated-install idempotence, managed update/migration preservation and unchanged model/effort/config values. Current Python execution block means none of these tests, imports or render routines are run now. Do not implement or execute the earlier native canned-provider fixture; no model server, host probe, injection probe, generated-command launch, installed behavioral tracer or full mixed suite is authorized. Leave existing retained tests/assertions intact. Keep configured CI/actions/protections unchanged; no skip-ci, disabled gate, manual dispatch or test reroute. Record static inspection, written fixture coverage and all test/native outcomes NOT_RUN in CODEX-INSTALL-SUMMARY, with incomplete/blocked behavioral acceptance. Commit only owned files and that summary.</action>
+  <acceptance_criteria>Static inspection confirms reachable generated file paths, producer API references and registration/config preservation design with no unrelated model/PR99/Claude change. Written export fixtures use the exact safe selector and cannot invoke generated commands or native/model processes. No export/runtime/native GREEN is claimed while execution is blocked; CW-03 runtime installation and CW-05 remain pending.</acceptance_criteria>
   <verify>
-    <automated>python -m unittest discover -s tests -p test_same_agent_worktree.py -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, a lost native/Claude case, incorrect workflow initialization order, missing installed Codex canonical reference or simulation labeled actual host movement.</fails_when>
-    <automated>python -m unittest discover -s tests -p test_workflow_links.py -v</automated>
-    <fails_when>Nonzero exit, Ran 0 tests, unresolved source/installed workflow references or host namespace/link drift.</fails_when>
+    <automated>git diff --check</automated>
+    <fails_when>Nonzero exit or whitespace/conflict-marker diagnostics; exit0 is not export or native acceptance.</fails_when>
+    <inspection>Inspect the full scoped installer/asset/test diff and compare generated-string expectations against committed A guard_commands/launcher_main source without importing or executing it. The three future export selectors below remain NOT_RUN. Independent static source/integration review checks producer-consumer wiring.</inspection>
+  </verify>
+  <done>B's authorized source/configuration and written non-executing export fixtures are committed with CODEX-INSTALL-SUMMARY. Coordinator integrates and assigns C using static evidence; B reports behavioral acceptance incomplete, never installed-tracer or native GREEN.</done>
+</task>
+
+<task type="auto">
+  <name>Task 6C continuation: document committed source and blocked acceptance</name>
+  <files>.ai/references/same-agent-worktree.md, .ai/references/worktree-sessions.md, .ai/hooks/README.md, .ai/runtime/README.md, .ai/RULES.md, .ai/workflows/quick.md, .ai/workflows/discuss-phase.md, .ai/workflows/plan-phase.md, .ai/workflows/execute-phase.md, .ai/workflows/verify-work.md, .ai/workflows/ship.md</files>
+  <read_first>AGENTS.md, .ai/RULES.md, .ai/agents/doc-writer.md, this safe amendment, committed A/B source and summaries/static reviews, all eleven assigned documentation paths, original CW/AW acceptance and historical CODEX-RESEARCH.md</read_first>
+  <precondition>A then B committed safe changes and static evidence are integrated. No active fixer source is read. Current execution limits remain in force; tests/test_same_agent_worktree.py is frozen in this continuation.</precondition>
+  <action>Update only the eleven assigned documents against actual committed generated source. Keep one canonical Codex startup section and short references in all six workflows. Describe phase/quick startup versus an existing active agent precisely; no active-agent movement claim. Explain the exact Windows direct native .exe prerequisite, literal prompt handling and refusal of .cmd/.bat shims. Explain ordinary primary-note lifecycle allowance at UserPromptSubmit separately from source enforcement at supported PreToolUse; preserve Claude native-entry/fresh-read ordering, narrow notes, ordinary adopted-phase and active-worker identities, and the existing sandbox/approval preservation-or-refusal source contract. State what source inspection supports and which behavior remains unverified, including the prior effective-feature question, real generated-adapter shell/patch evidence, transport/opaque-writer limits and the Python execution block. Do not make historical probes current or present static/export fixtures as actual native success. Preserve native trust prerequisites; no bypass/retry/alternative route. Examples describe source API use but are not executed in this work. Keep the original AW human_needed outcomes, CW-05 blocked/unverified and PR97 incomplete, with issue87 open. Do not edit or run tests/test_same_agent_worktree.py or any mixed workflow test suite. Commit docs with CODEX-DOCUMENTATION-SUMMARY and a per-path static claim/evidence packet.</action>
+  <acceptance_criteria>All eleven documents match committed generated source, label unverified runtime/native claims and state current execution restrictions. Six consumers point to one protocol, Claude behavior is preserved, and no startup/source-code claim substitutes for active-session movement or CW-05 acceptance.</acceptance_criteria>
+  <verify>
     <automated>git diff --check</automated>
     <fails_when>Nonzero exit or whitespace/conflict-marker diagnostics.</fails_when>
+    <inspection>Independent doc-verifier statically traces per-path claims to committed source and actual historical/safe receipts. Required unobserved runtime/native claims remain unverifiable. No Python, generated example, native host or replacement test harness is executed.</inspection>
   </verify>
-  <done>C is committed with its summary and per-document claim packet; coordinator obtains a fresh doc-verifier and code/integration review on the integrated revision. No claimed full acceptance follows merely from passing documentation checks.</done>
+  <done>Eleven docs and summary are committed and statically reviewed on the joined revision. Final verifier reports human_needed/incomplete with explicit NOT_RUN checks and blocked native acceptance; no ship-ready, issue-closing or merge claim.</done>
 </task>
 </tasks>
 
@@ -457,9 +509,9 @@ boundary and the explicitly selected startup route.
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |---|---|---|---|---|---|
-| [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Tampering / Elevation of Privilege | Codex root/structured-target guard and writable-root boundary | high | mitigate | A validates root/unit and structured mutations, preserves narrow notes and source/index sentinels; A test_codex_worktree/test_prewrite and B native shell/patch cases. C states opaque/unhooked host limits; outer workspace-write policy is required. |
-| [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Spoofing / Tampering / Denial of Service | Session selection, captured base and conflicting launcher options | high | mitigate | A reuses existing session.open without sync for launch selection and separately validates active worker wave identity for hooks under PC-06-codex-worker-compatibility-01. Exact common root/registered path/branch/unit/base and active status are required for worker units; ordinary adopted phase sessions use authoritative receipt/Git/phase identity without generated-name inference; malformed/duplicate/foreign/closed ownership and detached/unsafe options refuse. A real-Git and B installed-worker cases preserve parallel worker behavior; this is the same unit-identity risk occurrence. |
-| [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Spoofing / Tampering | Native hook capability/trust, generated registration and startup claims | high | mitigate | A's native hooks/list and config/read preservation-or-refusal preflight with bounded launchability checks; B install/update/migration conservation and actual generated-native denials; C separates startup, active-session, simulation and actual evidence. Native trust/fail-open and later host changes remain explicit external limits. |
+| [T-AW-01](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-01) | Tampering / Elevation of Privilege | Codex root/structured-target guard and writable-root boundary | high | mitigate | A validates root/unit and structured mutations, preserves narrow notes and source/index sentinels; historical A unit evidence and written B export expectations. Native shell/patch proof remains blocked/unverified. C states opaque/unhooked host limits; outer workspace-write policy is required. |
+| [T-AW-02](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-02) | Spoofing / Tampering / Denial of Service | Session selection, captured base and conflicting launcher options | high | mitigate | A reuses existing session.open without sync for launch selection and separately validates active worker wave identity for hooks under PC-06-codex-worker-compatibility-01. Exact common root/registered path/branch/unit/base and active status are required for worker units; ordinary adopted phase sessions use authoritative receipt/Git/phase identity without generated-name inference; malformed/duplicate/foreign/closed ownership and detached/unsafe options refuse. Historical A real-Git evidence and written B worker/export expectations preserve the compatibility contract without current execution; this is the same unit-identity risk occurrence. |
+| [T-AW-03](https://github.com/Tasaddar12/ai-engineering-template/issues/98#t-aw-03) | Spoofing / Tampering | Native hook capability/trust, generated registration and startup claims | high | mitigate | A's native hooks/list and config/read preservation-or-refusal preflight with bounded launchability checks; B static install/update/migration conservation design, with actual generated-native denials still blocked/unverified; C separates startup, active-session, simulation and actual evidence. Native trust/fail-open and later host changes remain explicit external limits. |
 
 Reuse issue98's canonical keys
 `Tasaddar12/ai-engineering-template/source-prewrite/target-confinement`,
@@ -471,87 +523,97 @@ L2 review applies to these changed validation/isolation boundaries.
 </threat_model>
 
 <verification>
-Preparation runs no tests or native probes and edits no source. Commands above
-are grounded in existing unittest discovery patterns; A creates the new suite,
-B creates the named native test before running it, and all other files already
-exist. Each command has an explicit failing direction. Genuine behavioral RED
-must precede production and have a committed test-only receipt; setup failures,
-zero discovery and unexpected preexisting GREEN require correction before
-implementation. Refactor only within owned changed code and rerun affected tests.
+Current executable verification is static inspection and ordinary Git only.
+All Python unit/export/runtime/static-validator execution is NOT_RUN after the
+reported file-access denial; no interpreter retry, escalation, alternative
+harness, manual remote CI or native probe route is authorized.
 
-Coordinator checklist, on captured integrated revisions:
+The following safe export selectors are retained as written future check
+specifications, not commands to execute during this continuation. B creates the
+named fixtures before any future separately authorized execution. They inspect
+exports/configuration without running generated commands, hooks or launchers.
 
-- Obtain independent phase-checker acceptance before source release; route
-  concrete findings without another implementation-authorization question.
-- Pin each worker root/branch/base; preserve unrelated index/working changes;
-  commit with exact-path --only and each required summary. Integrate A, then B,
-  then C; no worker push/merge/rebase/cleanup/provider edits.
-- Retain actual A/B RED and corresponding named GREEN receipts. Run the
-  frontmatter focused checks once on joined source/installed inputs; repeat only
-  checks affected by corrections. Include existing installed planning-integrity
-  and runtime-verb-contract tests if installer registration changes affect them.
-- Require CW-05's actual generated-native shell AND patch denial with native
-  payload/root/denial/no-change evidence, and separate native startup destination
-  defaults/refusal. No generic capability probe or startup-only refusal substitutes.
-- Require reproducible saved local-provider fixture, sanitized environment,
-  controlled native trust exception and proven plugin suppression; if missing,
-  retain the exact unverified claim rather than fabricate a receipt.
-- Verify byte/content preservation for custom hooks, features.hooks=false,
-  models/agent TOMLs, Claude registrations/behavior, GitHub/GitLab provider paths,
-  planning skeleton and primary staged/unstaged/untracked/ignored data. Check
-  source diff against the assigned revision; no PR99 routing hunk is absorbed.
-- Obtain fresh independent code-reviewer, doc-verifier and integration-checker
-  reports on one frozen integrated revision. Review the native trust/preflight
-  and error paths, actual generated registration/launcher, workflow reachability,
-  note controls and absence of any child/controller/movement overclaim. Wait for
-  all results before accepting the batch or fixing sources.
-- A fresh verifier reconciles CW-01..06 and original AW outcomes against exact
-  source/receipt revisions; original live-native human_needed remains unless
-  separately observed. Do not relabel historical original-six composition or
-  generic Codex capability receipts as new execution.
-- Coordinator publishes only to existing draft97 on93-on92, keeps frozen parent
-  heads and original six untouched, preserves separate unmerged PR99, updates
-  canonical issue98 tracking and issue87's open acceptance honestly. Observe
-  current required CI on the actual published revision: both platforms, full
-  configured Python/four Bash suites and aggregate validate. Prior CI is not
-  the new run. No unchanged full original-six suites/benchmarks are required.
+| Future check specification | Expected result / failing direction | Current result |
+|---|---|---|
+| python -m unittest discover -s tests -p test_install.py -k codex_worktree_export_safe -v | Nonempty safe export cases pass; nonzero exit, zero cases, unexpected generated/native/server execution or changed custom/model/config expectation would fail | NOT_RUN: Python target blocked |
+| python -m unittest discover -s tests -p test_install_update.py -k codex_worktree_export_safe -v | Managed/update content conservation passes; nonzero exit, zero cases, lost/duplicated hook or changed unrelated settings would fail | NOT_RUN: Python target blocked |
+| python -m unittest discover -s tests -p test_install_migration.py -k codex_worktree_export_safe -v | Migration/export content and user values survive; nonzero exit, zero cases, namespace/ownership/config damage would fail | NOT_RUN: Python target blocked |
+
+A's two defensive stub-unit fixtures are likewise written but NOT_RUN. Its
+historical direct-runtime receipts and retained installed RED remain evidence
+at their recorded revisions only. Do not run the retained tracer, full mixed
+suite or suspected flagged operation; keep the tracer active/unmodified with
+pending acceptance, never skip/xfail or claim it GREEN.
+
+Coordinator checklist for this bounded continuation:
+
+- Obtain independent static check of this amendment before B source release.
+  The earlier plan approvals do not waive the latest user restrictions.
+- Wait for the active CR-01/CR-02 fixer, integrate its committed defensive diff
+  and summary, and obtain fresh static source review. Do not add unrelated
+  effective-feature, RPC or policy changes or inspect active uncommitted files.
+- Dispatch B after integrated A and its static review, then C after integrated B.
+  Keep exact isolated worker ownership and required summaries. B writes export
+  fixtures but does not execute Python/import/render routines under the block.
+- Preserve custom hooks/config, user features.hooks=false, model/agent TOMLs,
+  separate PR99 routing, ordinary Claude behavior, primary/index data, adopted
+  sessions and active-worker source contracts through scoped static review.
+- Join independent static source, doc and integration reviews at one frozen
+  revision before repairs or accepting evidence. Record source/API wiring,
+  per-document unverifiable claims and written fixture design honestly.
+- Final verifier records human_needed/incomplete, tests NOT_RUN and CW-05
+  generated-native shell AND patch proof blocked/unverified. Other original CW
+  and AW live/runtime requirements retain their evidence obligations. Static
+  wiring, historical probes and written safe fixtures cannot pass them.
+- Stop/report a newly denied action with its exact target. No safeguard disable,
+  retry, interpreter substitution, new harness or alternate native route.
+- Coordinator may publish reviewed safe commits through the ordinary existing
+  draft97 stack. Keep current configured CI/actions/tests/protections unchanged;
+  no skip-ci, gate bypass, manual workflow dispatch or test reroute. Observe any
+  automatically triggered CI as that run's evidence only, without new native
+  acceptance claims or ship readiness. All PRs remain unmerged; issue87 stays
+  open, original six frozen, PR99 separate, adoption skeleton unchanged.
 </verification>
 
 ## Four-source coverage audit
 
 | Source | ID | Required outcome / disposition | Component | Status |
 |---|---|---|---|---|
-| GOAL | Task 6 | Supported forced Codex workflow in existing PR97; preserve original same-agent acceptance | A/B/C + coordinator final verification | Covered |
-| REQ | ISSUE87 / CW-01 | Runtime-owned selection and native destination defaults, no primary-data change | A selection tests; B actual launch evidence | Covered |
-| REQ | CW-02 | Supported synchronous denial and narrow note allowance | A guard/real-Git controls; B generated-native cases | Covered |
-| REQ | CW-03 | Fresh/repeated/update installation and preservation | B installer/update/migration | Covered |
-| REQ | CW-04 | Known setup/option failures and sandbox/approval preservation-or-refusal before model run | A policy/hook preflight; B installed trust/error controls | Covered |
-| REQ | CW-05 | Actual installed Codex generated shell and patch denial | B reproducible native fixture; verifier reconciles | Covered, future execution required |
-| REQ | CW-06 | Exact startup/active-session/trust/root/transport guarantees | C eleven documents/six consumers; coordinator PR | Covered |
+| GOAL | Task 6 | Supported forced Codex workflow in existing PR97; preserve original same-agent acceptance | Restricted A/B/C source/docs and coordinator incomplete report | Full goal incomplete; safe scope planned |
+| REQ | ISSUE87 / CW-01 | Runtime-owned selection and native destination defaults, no primary-data change | Historical A fixtures/source; current static generated-source review | Native/default-root acceptance unverified |
+| REQ | CW-02 | Supported synchronous denial and narrow note allowance | CR-02 defensive source/static review; existing historical controls | Current generated behavior unverified |
+| REQ | CW-03 | Fresh/repeated/update installation and preservation | B static installer/config edits and written export fixtures | Export checks NOT_RUN |
+| REQ | CW-04 | Known setup/option failures and sandbox/approval preservation-or-refusal before model run | Existing source contract preserved; CR-01 defensive repair/static review | Native/effective-feature behavior unverified |
+| REQ | CW-05 | Actual installed Codex generated shell and patch denial | No current native fixture implementation/execution; verifier retains obligation | BLOCKED / UNVERIFIED under latest user restriction |
+| REQ | CW-06 | Exact startup/active-session/trust/root/transport guarantees | C eleven documents/six consumers; coordinator incomplete PR | Static claims planned; runtime claims labeled unverified |
 | CONTEXT | Codex startup/no detached adoption | Existing runtime phase/quick route, no controller or child substitute | A/C | Covered |
 | CONTEXT | Guard/note/advisory preservation | Structured-target classifier reused; advisory script unchanged | A/B/C | Covered |
 | CONTEXT | Configuration/trust preservation | Invocation hook enabling; effective native trust/known disable refusal; no model edits | A/B | Covered |
 | CONTEXT | Installed destination/no dirty copy | Missing committed runtime/config is a dependency, not sync/copy authority | A/B/C | Covered |
 | CONTEXT | Disjoint isolated workers / existing stack | Exact A/B/C paths and genuine prerequisite order; coordinator publication only | Execution table/checklist | Covered |
-| CONTEXT | Native local evidence and scope limits | Generated-adapter shell/patch proof; no external model/credentials/install/benchmark | B/checklist | Covered |
+| CONTEXT | Restricted safe continuation and subsequent Python denial | Only two defensive repairs, static installer/docs and written safe export fixtures; no execution retry/reroute | Current A/B/C/checklist | Covered as bounded work; runtime/native acceptance incomplete |
 | RESEARCH | Actual native capability, schema and fail-open limits | Reuse evidence, validate effective handler representation, distinct new receipts | A/B/C | Covered |
 | RESEARCH | Native --worktree detached / idle worktree / controller | Detached shortcut and active-turn controller excluded; accurate idle/active limitations | A rejects; C explains | Covered |
 | EXCLUSION | Original six, 73/74, PR99 routing, Whiskance/game, infrastructure/cleanup | No edits, import, merge or revalidation project | All components | Preserved |
 
 <success_criteria>
-All six CW outcomes have implemented producer/consumer wiring and appropriate
-behavioral evidence, with actual native cases distinguished from fixtures.
-No unresolved required behavior is hidden by changed prose, skips or generic
-capability success. Original AW acceptance remains independently reported;
-issue87 stays open and all PRs remain unmerged. Missing credentials/capability,
-trust or host transport coverage is an explicit dependent blocker, not an excuse
-to broaden scope or silently start an unenforced model.
+The original full-goal success condition still requires all six CW outcomes
+and appropriate behavioral/native evidence; it is not met or waived by this
+safe continuation. Current deliverables are committed defensive repairs,
+installer/configuration source, written non-executing export fixtures and eleven
+accurate docs with static review. Python checks are NOT_RUN; CW-05 and other
+unproved runtime/live outcomes remain blocked/unverified. Final status is
+human_needed/incomplete, not ship-ready. Preserve original AW acceptance,
+issue87 open, all PRs unmerged and every latest user execution restriction.
 </success_criteria>
 
 <output>
-Each component returns its owned commits, exact test/install/native revisions,
-RED/GREEN evidence, required summary, coverage and remaining limitations to the
-coordinator. No adoption ROADMAP/STATE/PROJECT update is proposed. Coordinator
-adds this checked companion as existing maintenance Task 6, reconciles shared
-CONTEXT/MATRIX/VERIFICATION and draft97, and retains all historical evidence.
+Each current worker returns its owned safe commits, static review evidence,
+written fixture coverage, exact NOT_RUN checks, blocked acceptance and required
+summary to the coordinator. Historical RED/GREEN retains its original revision;
+no new runtime/native or component-pass claim follows from this continuation.
+No adoption ROADMAP/STATE/PROJECT update is proposed. Coordinator reconciles
+shared CONTEXT/MATRIX/VERIFICATION and incomplete draft97, retains historical
+evidence and obtains independent static check before B. Final verification is
+human_needed/incomplete; no issue close, ship readiness or merge.
 </output>
