@@ -16,7 +16,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
-                 issue_format, models, phase_issues, phases, planning_integrity, project_record, quick, requirements, state,
+                 issue_format, models, phase_issues, phases, planning_integrity, prewrite,
+                 project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
@@ -29,6 +30,7 @@ from lib.text import slugify  # noqa: E402
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
 LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
                 "findings", "files_read", "only", "todos"}
+NATIVE_ADAPTERS = frozenset({"prewrite.request", "prewrite.begin", "prewrite.confirm"})
 
 
 def parse(argv):
@@ -85,7 +87,12 @@ def run_verb(workspace, verb, positionals, options):
 
     handler = VERBS.get(verb)
     require(handler is not None, "unknown verb: " + verb, "unknown-verb")
-    # Snapshot existing records only. This covers every dispatch path, including
+    # These registered adapters discover bounded UTF-8 Git facts and write only
+    # Git-common-dir journal/session metadata, not canonical planning records.
+    # Validate the handler first; future prefix-sharing verbs stay ordinary.
+    if verb in NATIVE_ADAPTERS:
+        return handler(workspace, positionals, options)
+    # Snapshot existing records only. This covers ordinary dispatch, including
     # milestone/bookkeeping and conservative repair, without creating records.
     before = planning_integrity.snapshot(workspace)
     try:
@@ -229,6 +236,24 @@ def verb_session_open(workspace, positionals, options):
 def verb_session_adopt(workspace, positionals, options):
     return worktrees.adopt_session(workspace, argument(positionals, 0, "kind"),
                                   argument(positionals, 1, "phase"))
+
+
+def verb_prewrite_request(workspace, positionals, options):
+    return prewrite.workflow_request(workspace, argument(positionals, 0, "kind"),
+                                    argument(positionals, 1, "label"), option_text(options, "mode"),
+                                    option_text(options, "session_id"), option_text(options, "agent_id"))
+
+
+def verb_prewrite_begin(workspace, positionals, options):
+    return prewrite.begin(workspace, argument(positionals, 0, "request"),
+                          argument(positionals, 1, "kind"), argument(positionals, 2, "label"),
+                          option_text(options, "mode"), option_text(options, "session_id"),
+                          option_text(options, "agent_id"))
+
+
+def verb_prewrite_confirm(workspace, positionals, options):
+    return prewrite.confirm(workspace, argument(positionals, 0, "request"),
+                            option_text(options, "session_id"), option_text(options, "agent_id"))
 
 
 def verb_session_status(workspace, positionals, options):
@@ -811,6 +836,9 @@ VERBS = {
     "dispatch-isolation": verb_dispatch_isolation,
     "session.open": verb_session_open,
     "session.adopt": verb_session_adopt,
+    "prewrite.request": verb_prewrite_request,
+    "prewrite.begin": verb_prewrite_begin,
+    "prewrite.confirm": verb_prewrite_confirm,
     "session.status": verb_session_status,
     "session.close": verb_session_close,
     "pr.open": verb_pr_open,
@@ -933,13 +961,21 @@ def main(argv=None):
     raw = bool(options.pop("raw", False))
     options["raw"] = raw
     try:
-        workspace = Workspace()
+        # Native request adapters resolve bounded UTF-8 Git facts themselves.
+        # Do not precede their internal deadline with the generic 30s root
+        # lookup or use its locale-decoded Windows path as native evidence.
+        workspace = None if verb in NATIVE_ADAPTERS else Workspace()
         result = run_verb(workspace, verb, positionals, options)
     except VerbError as exc:
         payload = failure(str(exc), exc.code)
         if getattr(exc, 'integrity_warnings', None):
             payload['integrity_warnings'] = exc.integrity_warnings
         emit(payload)
+        return 1
+    except OSError as exc:
+        if verb not in NATIVE_ADAPTERS:
+            raise
+        emit(failure("prewrite I/O failed; preserve and inspect: " + str(exc), "prewrite-io"))
         return 1
     if raw and not isinstance(result, dict):
         emit(result, raw=True)

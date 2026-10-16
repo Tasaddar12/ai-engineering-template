@@ -1,0 +1,22 @@
+Static review complete at frozen HEAD `54c41fbc06a376d8cbebb92d745536558bf0a615`. The checkout was clean. I found no demonstrably false claims in the 11 guides or the summary. Source inspection supports the documented launcher, argument handling, session/root conditions, three synchronous hook registrations, and policy/trust checks. It does not establish live runtime or native behavior.
+
+```json
+[
+  {"doc_path":".ai/references/same-agent-worktree.md","verdict":"PASS_STATIC","evidence":"Lines 8–56 match the launcher source and state runtime limits; lines 58 onward retain Claude’s gated native-entry and fresh-read protocol.","errors":[],"unverifiable":["Live host transition, effective-feature behavior, generated shell/patch denial, and runtime success remain unverified."]},
+  {"doc_path":".ai/references/worktree-sessions.md","verdict":"PASS_STATIC","evidence":"Lines 49–120 distinguish Claude same-caller entry from Codex new-run startup and preserve session adoption, request, and no-replay rules.","errors":[],"unverifiable":["Native movement and default host binding are not established statically."]},
+  {"doc_path":".ai/hooks/README.md","verdict":"PASS_STATIC","evidence":"Lines 33–48 describe the three synchronous Codex events and distinguish UserPromptSubmit note lifecycle from PreToolUse source enforcement; .ai/install.py lines 482–492 and runtime source corroborate the wiring.","errors":[],"unverifiable":["Installation source does not prove the live host loaded or executed the hooks."]},
+  {"doc_path":".ai/runtime/README.md","verdict":"PASS_STATIC","evidence":"Lines 733–737 describe a new run in a validated session and link the canonical protocol; launcher implementation is in .ai/runtime/lib/codex_worktree.py lines 394–446.","errors":[],"unverifiable":["No runtime or native acceptance was observed."]},
+  {"doc_path":".ai/RULES.md","verdict":"PASS_STATIC","evidence":"Lines 267–271 preserve the Codex/Claude distinction; lines 406–412 and 445–449 keep live evidence boundaries explicit.","errors":[],"unverifiable":["Native host binding remains unproven."]},
+  {"doc_path":".ai/workflows/quick.md","verdict":"PASS_STATIC","evidence":"Lines 18–22 point to canonical Codex startup; lines 134–145 retain the conditional Claude route.","errors":[],"unverifiable":["No native entry was observed."]},
+  {"doc_path":".ai/workflows/discuss-phase.md","verdict":"PASS_STATIC","evidence":"Lines 18–21 point to the canonical Codex protocol; lines 164–177 retain Claude’s gated route and destination reload.","errors":[],"unverifiable":["No native entry was observed."]},
+  {"doc_path":".ai/workflows/plan-phase.md","verdict":"PASS_STATIC","evidence":"Lines 17–20 point to the canonical Codex protocol; lines 80–93 retain Claude’s gated route and destination checks.","errors":[],"unverifiable":["No native entry was observed."]},
+  {"doc_path":".ai/workflows/execute-phase.md","verdict":"PASS_STATIC","evidence":"Lines 26–29 describe Codex startup as a new run; lines 129–142 retain Claude’s conditional route.","errors":[],"unverifiable":["No native entry was observed."]},
+  {"doc_path":".ai/workflows/verify-work.md","verdict":"PASS_STATIC","evidence":"Lines 24–27 point to canonical Codex startup; lines 89–102 retain Claude’s prerequisites and fresh destination read.","errors":[],"unverifiable":["No native entry was observed."]},
+  {"doc_path":".ai/workflows/ship.md","verdict":"PASS_STATIC","evidence":"Lines 20–23 say Codex startup does not bypass ship gates; lines 99–104 and 131–133 preserve Claude gating and validated-session use.","errors":[],"unverifiable":["No native entry was observed."]},
+  {"doc_path":"docs/maintenance/issue87-auto-worktree/CODEX-DOCUMENTATION-SUMMARY.md","verdict":"PASS_STATIC_WITH_SCOPE_NOTE","evidence":"The summary records static-only scope, outstanding AW/CW-05 and policy evidence, and B export fixtures as NOT_RUN. Git history confirms the destructive-guard matcher concern was from input revision 804afd78 and excludes later fix ef74673.","errors":[],"unverifiable":["No runtime/native pass or active-agent movement is demonstrated."]}
+]
+```
+
+Source evidence includes `.ai/runtime/lib/codex_worktree.py` lines 73–117 for root and receipt validation, lines 195–229 and 357–380 for installed/native hook checks, lines 234–260 for policy inspection, and lines 394–446 for launcher arguments and argv. The summary is located under `docs/maintenance/issue87-auto-worktree/`, rather than the checkout root.
+
+No Python, tests, validators, hooks, launchers, or native commands were run.

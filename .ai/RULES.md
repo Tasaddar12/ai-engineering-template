@@ -264,6 +264,12 @@ Do not call `todo.add`. Ask the user only the `/ship` merge question.
 
 ## Worktrees, integration and cleanup
 
+Codex phase/quick startup can launch a new run in a validated session worktree;
+it does not move an active conversation or agent. Use the canonical [Codex
+startup protocol](references/same-agent-worktree.md#codex-startup) for its
+invocation and guard boundaries. Claude native entry remains conditional on the
+same caller's actual native tool/schema, role, policy and trusted hook.
+
 **Every executor runs in its own worktree. This is not configurable.** Without
 isolation, concurrent agents edit one working tree and interleave their commits
 into one history, and a plan can no longer be attributed or reverted. Declaring
@@ -396,12 +402,50 @@ correct the roadmap.
 Hooks are optional. Notices and `worktree-guard.sh` remain advisory: they warn
 and return success. The separate
 [destructive Git guard](references/destructive-operations.md) refuses its
-documented destructive shell operations. Hooks neither grant permission nor
-create a sandbox, and lexical path detection has limits.
+documented destructive shell operations. The planning integrity hook validates
+prospective changed canonical planning records. The
+installed `source-prewrite.sh` is a separate synchronous decision for source
+mutations: it cancels the original edit and returns a same-agent native-entry
+request for eligible Claude callers. It does not create a worktree. The caller
+must positively gate the actual advertised `EnterWorktree` schema, role,
+eligibility, policy and trusted `WorktreeCreate` registration. Native completion
+and destination defaults must be observed before fresh reads, one rebuilt edit
+and Git-only confirmation. Confirmation reports `host_binding_verified: false`;
+it does not prove host identity, permissions or loaded context. Cancellation,
+shell `cd`, per-call cwd/path overrides and a replacement child/fork do not
+fulfill movement. This template's Codex integration has no authenticated
+same-thread controller; that is not a product-wide claim.
+
+For known phase and quick workflow entry, `prewrite.request` binds an explicit
+unit in `new` or `existing` mode before any edit. New mode reserves a fresh
+ticketed name and its creation callback uses the pinned local base. Existing
+mode validates the ordinary session and preserves accumulated HEAD, historical
+base and ownership; its native path form must honor required approval. Never
+reuse a creation name to bypass approval. Ordinary dispatch worktree reuse and
+the advisory worktree guard retain their existing behavior. Untracked
+scratchpads, handoff scratch notes and plain OS-temp notes remain within their
+narrow note rules; the advisory guard continues warning on primary-checkout
+writes, including scratchpads. Hooks do not grant permission or create a
+sandbox, and lexical path detection has limits.
+
+The runtime validates handler registration before dispatch. Only
+`prewrite.request`, `prewrite.begin` and `prewrite.confirm` use their own bounded
+UTF-8 Git discovery and skip canonical planning snapshots: they write journal or
+session metadata in the Git common directory, not canonical `.planning` records.
+Unknown names and future verbs sharing that prefix gain no exception. Ordinary
+registered mutations retain authored-content `integrity_warnings` on success
+and expected errors. Prospective malformed canonical planning commits still
+block without changing the real index; destructive-operation refusal remains
+a separate control. Python hook entrypoints use Python/runpy launchers, while
+shell entrypoints retain Bash and native exit-status propagation.
 
 Run checks appropriate to the changed behavior plus the project's required
 commands. Runtime changes need real Git and subprocess tests; hook changes need
-their Bash suites. Report actual outcomes, failures and skips. A check that
+their Bash suites, including the source-prewrite and worktree-location suites.
+Report actual outcomes, failures and skips. Fixtures may simulate native host
+behavior; label those results SIMULATED. Installed hooks and Git tests do not
+prove live same-agent entry, host binding or default-context changes. Report
+live host smoke as unverified unless it was actually observed. A check that
 restates the implementation's wording does not establish behavior.
 [Config](../.planning/config.yaml) owns command values and the model and effort
 overrides; [runtime documentation](runtime/README.md) owns the verb interface.

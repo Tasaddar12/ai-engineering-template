@@ -1,10 +1,10 @@
 ---
 tier: contract
 authority: agent
-title: Host hooks
+title: Managed host hooks
 ---
 
-# Host hooks
+# Managed host hooks
 
 [Installation](../commands/install.md) registers the existing scripts directly:
 
@@ -13,14 +13,58 @@ title: Host hooks
 | [destructive-git-guard.py](destructive-git-guard.py) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Blocking refusal JSON with stable `reason_code` and exit 2 for recognized unsafe Git/backup operations |
 | [planning-integrity.sh](planning-integrity.sh) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Exit 2 with a diagnostic when prospective commits contain malformed changed canonical planning records |
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
+| [source-prewrite.sh](source-prewrite.sh) | `PreToolUse` on write tools | Cancels source mutations that need isolation; Claude can receive a ticketed same-agent native-entry instruction, while Codex cannot move that caller (its separate launcher starts a new run) |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
 | [context-handoff.sh](context-handoff.sh) | `PostToolUse` | A `CONTEXT HANDOFF` advisory, injected as `additionalContext`, once the session crosses its token limit |
 | [context-handoff.sh](context-handoff.sh) | `SubagentStop` | Nothing on stdout; writes a handoff record for an executor that stopped without a `complete` SUMMARY. Works on both hosts, from different inputs — see below |
 | [context-handoff.sh](context-handoff.sh) | `Stop` | Nothing; clears the session's debounce state |
 | [context-handoff.sh](context-handoff.sh) | `SessionStart` (Codex only) | Nothing on stdout; writes the orchestrator's transcript path to `.planning/handoffs/.root-<session>.json` |
-| [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Creates `.worktrees/<name>` on branch `worktree-<name>` from the dispatching checkout's `HEAD`; prints the path |
-| [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Runs `git worktree remove` without `--force`; keeps the branch |
+| [worktree-location.sh](worktree-location.sh) | `WorktreeCreate` (Claude only) | Ordinary dispatch creation retains name reuse and starts from the dispatching checkout's `HEAD`; reserved `wf-entry-<request>` creation is ticket-validated, fresh-only, and starts from its pinned local base |
+| [worktree-location.sh](worktree-location.sh) | `WorktreeRemove` (Claude only) | Ordinary removal runs `git worktree remove` without `--force`; native-entry candidates are preserved for inspection |
+
+`source-prewrite.sh` runs after the advisory guard in the managed editing group.
+It treats source, mixed, tracked and unsafe mutations as source decisions; it
+does not precreate a worktree. Untracked planning scratchpads and handoff scratch
+notes, plus plain add/update notes under the OS temporary directory outside any
+repository, retain their narrow allow path. The advisory guard still warns on
+primary-checkout writes, including scratchpads; its behavior is unchanged.
+
+For Codex, the installed `.codex/codex-worktree.py` starts a **new** phase or
+quick run in a validated session worktree. It does not move the active caller.
+The Codex guard registers synchronous `PreToolUse` (`*`), `SessionStart` and
+`UserPromptSubmit` handlers. Lifecycle events provide repository diagnostics;
+the primary checkout's ordinary note lifecycle remains available at
+`UserPromptSubmit`, while supported source operations remain subject to
+`PreToolUse`. The canonical startup reference explains direct-executable
+requirements, trust and policy checks, and unverified host behavior.
+Installation or export inspection alone does not prove that a live Codex host
+ran a generated guard.
+
+The Claude continuation is conditional on the same existing agent actually
+having a compatible native `EnterWorktree` tool/schema, an eligible role, policy
+permission, and the trusted registered creation hook. The installed coordinator
+and coder roles export the native tool, but an export alone does not prove that
+the active host advertises or permits it. After source denial, the caller uses
+the request ID from the reason and the documented `prewrite.begin` verb. For a
+new unit, only the reserved fresh `wf-entry-` name enters the ticketed
+`WorktreeCreate` path, which verifies source root/branch/HEAD and creates from
+that pinned local commit. A creation callback or returned path is not movement:
+the same agent must observe native completion and prove that later calls use the
+destination by default, then run `prewrite.confirm` for Git checks. Confirmation
+returns `host_binding_verified: false`; it does not authenticate host binding,
+permissions or loaded context. Fresh destination reads and a rebuilt edit are
+required, and the cancelled mutation is never replayed.
+
+Phase and quick workflows also request native entry before their first edit,
+without inventing a pending mutation. `prewrite.request` binds a known unit in
+explicit `new` or `existing` mode. Existing mode targets the validated ordinary
+session and preserves its accumulated HEAD, historical base and ownership; it
+uses the host's native existing-path form and honors any required approval.
+Native creation never reuses an existing name to bypass that approval. The
+regular `session.open` route still creates or resumes ordinary sessions with
+its existing behavior. See [same-agent native entry](../references/same-agent-worktree.md)
+for the full gate and recovery protocol.
 
 `worktree-guard.sh` is advisory for both dispatches and editing tools. It warns
 and continues when a write-capable dispatch lacks `isolation="worktree"`, when a
@@ -57,6 +101,8 @@ silently did not run:
 Scripts live in the selected host's `hooks` folder. Python suffixes use the
 `python` interpreter; shell scripts use Bash. The command locates the script
 from the active Git root, including when the host starts from a subdirectory.
+`source-prewrite.sh` is a shell entrypoint delegating its source decision to
+`runtime/lib/prewrite.py`.
 The Codex Python `commandWindows` resolves that root inside Python, runs the
 entrypoint with `runpy` and propagates `$LASTEXITCODE`. Python source is never
 interpreted as Bash. Both `.codex` and `.claude` copies import their adjacent
@@ -66,6 +112,19 @@ The planning integrity hook has a 10-second host timeout and invokes its
 installed sibling Python checker through the same Bash launcher on both hosts.
 It validates prospective commit bytes without modifying the real Git index;
 missing required frontmatter such as `issue_refs` blocks the commit with exit 2.
+Ordinary runtime mutations also retain canonical planning snapshots and return
+authored-content `integrity_warnings` on success or expected errors. The exact
+registered `prewrite.request`, `prewrite.begin` and `prewrite.confirm` adapters
+instead use bounded UTF-8 Git discovery and write Git-common-dir journal/session
+metadata, so they skip canonical `.planning` snapshots. Handler registration is
+checked first; unknown names and future prefix-sharing verbs have no exception.
+This adapter boundary does not disable the installed planning commit hook.
+
+The managed editing group remains advisory guard first, source decision second.
+Python hook entries have a 120-second timeout, `source-prewrite.sh` has 30 seconds,
+and other shared shell hooks have 10 seconds; Claude creation/removal retain their
+180/60-second timeouts. User hooks and distinct dispatch/editing registrations
+remain preserved when the workflow is installed or updated.
 
 The destructive hook has a 120-second host timeout and an 80-second evidence
 budget, with individual subprocess calls limited to 20 seconds. Missing or
@@ -91,7 +150,9 @@ Add/Update/Delete/Move headers.
 
 `ai-tier-notice.sh` is advisory: it exits successfully and never emits a
 permission decision. `worktree-guard.sh` warns and exits 0 for both dispatch and
-write checks. `context-handoff.sh` is advisory throughout: losing a handoff costs
+write checks. `source-prewrite.sh` is the separate blocking source decision; it
+cancels the original call when required and never turns cancellation into native
+movement. `context-handoff.sh` is advisory throughout: losing a handoff costs
 a re-read, blocking the agent costs the session. These hooks do not parse
 arbitrary scripts, resolve every symlink, validate runtime ownership or create
 a sandbox. Repository

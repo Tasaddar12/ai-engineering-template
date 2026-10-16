@@ -17,6 +17,11 @@ decide that unverified work is good enough, and it does not merge on a check
 verdict that is anything other than genuinely green.
 </purpose>
 
+**Codex startup:** a new Codex run for this phase can be started in its
+validated session worktree with the installed launcher. This does not move an
+active agent or replace `/ship`'s validated-session and delivery gates; see the
+[canonical Codex startup protocol](../references/same-agent-worktree.md#codex-startup).
+
 <required_reading>
 @~/.ai/references/universal-anti-patterns.md
 </required_reading>
@@ -91,6 +96,16 @@ session for Phase {PHASE}; /ship requires its existing session worktree.` and ex
 If `worktree` is null, stop and report the locator result as inconsistent.
 
 The locator-selected session must be used before loading phase data. Run the
+conditional Claude [native entry](../references/same-agent-worktree.md) route
+first: `prewrite.request phase <padded_phase> --mode existing`, then gate the
+actual native path tool/schema, role, policy and required approval. Enter as
+this existing caller, prove destination defaults, confirm Git and reload the
+runtime/locate/init there. Skip the shell cd below after native completion.
+Already-correct isolated callers need no move; unsupported native entry stops
+precisely, without a child/shell substitute or new session. For ordinary runtime
+consumers, retain the following explicit directory route; it is not native proof.
+
+The ordinary locator-selected session must be used before loading phase data. Run the
 explicit quoted `cd` to its absolute `worktree`; keep `PHASE_RUNTIME` absolute
 so the launcher remains available after the directory change. Stop if `cd` fails.
 

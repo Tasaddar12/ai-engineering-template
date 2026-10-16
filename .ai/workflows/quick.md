@@ -15,6 +15,12 @@ With `--validate`: adds plan checking before execution and verification after it
 Use when the change touches something you cannot afford to get wrong.
 </purpose>
 
+**Codex startup:** to start a new Codex run for a quick task in its validated
+session worktree, use the installed launcher described in the [canonical Codex
+startup protocol](../references/same-agent-worktree.md#codex-startup). It does
+not move an already-running agent; ordinary workflow session and worker checks
+still apply.
+
 <required_reading>
 @~/.ai/references/worktree-sessions.md
 Read all files referenced by the invoking prompt's execution_context before starting.
@@ -125,6 +131,17 @@ Use AskUserQuestion (header: "Quick task"; options: "Start a new one" /
 </step>
 
 <step name="open_session">
+**Conditional Claude same-caller route:** Before the shell route below, follow
+[native entry](../references/same-agent-worktree.md). Use the stable QUICK_LABEL
+described below and exact session facts; `prewrite.request quick <label> --mode
+<new|existing>` bootstraps without an edit. Gate the actual native tool/schema,
+role, policy and trusted hook, invoke EnterWorktree as this existing caller,
+prove default destination context, confirm Git and reload init/runtime there.
+Then skip the shell session.open/cd route in this step. If native entry is
+unsupported, stop precisely; no child or shell movement substitutes for it.
+Already-correct isolated sessions need no move. The remaining route is for
+ordinary runtime session consumers, not Claude native movement proof.
+
 Open the worktree this work lives in, before writing anything. Read
 @~/.ai/references/worktree-sessions.md for the full contract.
 

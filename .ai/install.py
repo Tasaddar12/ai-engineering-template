@@ -109,6 +109,10 @@ def payload(source, host="codex", hooks=True):
     if host not in ("codex", "claude"):
         raise ValueError(f"Unknown host: {host}")
     if host == "codex":
+        origin = ASSETS + "codex-worktree.py"
+        if modes.get(origin) not in ("100644", "100755"):
+            raise ValueError(f"Missing or unsupported Codex launcher install asset: {origin}")
+        selected[".ai/codex-worktree.py"] = (source / origin).read_bytes()
         # Native Codex definitions point to the full role, beside the installed TOML.
         # Packaging inputs stay out of Claude installs and are required per role.
         for name, content in list(selected.items()):
@@ -143,6 +147,17 @@ def render_asset(name, content, host):
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
     if name in (".ai/agents/scout.md", ".ai/agents/targeted-fixer.md") and host == "claude":
         text = claude_fixed_role_metadata(text)
+    if host == "claude" and name in (".ai/agents/coordinator.md", ".ai/agents/coder.md"):
+        text = re.sub(r"(?m)^(tools: .+)$", lambda match: match[1] + ", EnterWorktree"
+                      if "EnterWorktree" not in match[1].split(", ") else match[1], text, count=1)
+    if host == "claude" and name == "AGENTS.md":
+        standing = ("## Same-existing-agent native entry\n\n"
+                    "After source denial, the same existing caller follows "
+                    "[the native entry protocol](.ai/references/same-agent-worktree.md). "
+                    "Gate actual tool/schema, eligible role, policy and trusted hooks; "
+                    "invoke native entry, verify destination defaults, then read afresh and rebuild "
+                    "the edit once. Never replay the cancelled call or substitute a child/cd.\n\n")
+        text = text.replace(AGENT_END, standing + AGENT_END)
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -440,6 +455,8 @@ MANAGED_HOOKS = (
     ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
     ("PreToolUse", "worktree-guard.sh",
      "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
+    ("PreToolUse", "source-prewrite.sh",
+     "^(Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
     # The handoff hook measures on PostToolUse, catches an executor that
     # stopped early on SubagentStop, and clears its own session state on Stop.
     # SubagentStop and Stop carry no tool, so neither carries a tool matcher.
@@ -469,6 +486,9 @@ HOST_HOOKS = {
     ),
     "codex": (
         ("SessionStart", "context-handoff.sh", 10),
+        ("PreToolUse", "codex-worktree.py", 30),
+        ("SessionStart", "codex-worktree.py", 30),
+        ("UserPromptSubmit", "codex-worktree.py", 30),
     ),
 }
 
@@ -482,9 +502,10 @@ def managed_scripts():
 
 def hook_settings(host):
     events = {}
-    registrations = [(event, script, matcher, 120 if script.endswith(".py") else 10)
+    registrations = [(event, script, matcher,
+                      120 if script.endswith(".py") else 30 if script == "source-prewrite.sh" else 10)
                      for event, script, matcher in MANAGED_HOOKS]
-    registrations += [(event, script, None, timeout)
+    registrations += [(event, script, "*" if event == "PreToolUse" else None, timeout)
                       for event, script, timeout in HOST_HOOKS.get(host, ())]
     for event, script, matcher, timeout in registrations:
         interpreter = "python" if script.endswith(".py") else "bash"
@@ -545,7 +566,11 @@ def hook_settings(host):
                 "exit $LASTEXITCODE")
         group = {"hooks": [handler]} if matcher is None else {"matcher": matcher,
                                                                "hooks": [handler]}
-        events.setdefault(event, []).append(group)
+        if script == "source-prewrite.sh":
+            editing = next(item for item in events[event] if item.get("matcher") == matcher)
+            editing["hooks"].append(handler)
+        else:
+            events.setdefault(event, []).append(group)
     return {"hooks": events}
 
 
@@ -594,28 +619,50 @@ def merge_hooks(current, incoming, path, replace=False):
         additions = json.loads(incoming)["hooks"]
         changed = False
         scripts = managed_scripts()
+        known = {handler["command"]: handler
+                 for host in ("claude", "codex")
+                 for groups in hook_settings(host)["hooks"].values()
+                 for group in groups for handler in group["hooks"]}
+
+        def owned_script(handler):
+            """Recognize shipped commands, never a user command mentioning one.
+
+            Timeouts and the historical missing Windows exit suffix may age;
+            unknown commands/fields and mixed user handlers remain conflicts.
+            """
+            reference = known.get(handler.get("command"))
+            if (not reference or handler.get("type") != "command"
+                    or set(handler) - {"type", "command", "commandWindows", "timeout"}):
+                return None
+            if "commandWindows" in handler:
+                windows = reference.get("commandWindows")
+                if not windows or handler["commandWindows"] not in (
+                        windows, windows.replace("; exit $LASTEXITCODE", "")):
+                    return None
+            return next((name for name in scripts if "/hooks/" + name + '"' in reference["command"]), None)
+
         for event, groups in additions.items():
             existing = events.setdefault(event, [])
             for group in groups:
-                if group in existing:
-                    continue
-                script = next((name for name in scripts
-                               if f"/hooks/{name}" in json.dumps(group)), None)
+                group_scripts = {owned_script(handler) for handler in group["hooks"]} - {None}
                 # A group already registering THIS script under THIS matcher,
                 # but not byte-identical, is a customized or older managed
                 # registration. A user hook on the same event that names a
                 # different script is theirs, and is left alone.
                 stale = [other for other in existing
-                         if script and f"/hooks/{script}" in json.dumps(other)
+                         if any(f"/hooks/{name}" in json.dumps(other) for name in group_scripts)
                          and other.get("matcher") == group.get("matcher")]
+                if len(stale) == 1 and stale[0] == group:
+                    continue
                 # An update replaces a stale registration, as it replaces any
                 # other shipped file, once the caller has backed the settings
                 # up. A group that also carries a user handler is not wholly
                 # ours to replace, and an install never replaces at all.
                 if stale and not (replace and all(
-                        all(f"/hooks/{script}" in json.dumps(handler)
-                            for handler in other["hooks"]) for other in stale)):
-                    raise ValueError(f"managed {event} registration for {script} "
+                        not (set(other) - {"matcher", "hooks"}) and other["hooks"]
+                        and all(owned_script(handler) in group_scripts
+                                for handler in other["hooks"]) for other in stale)):
+                    raise ValueError(f"managed {event} registration for {', '.join(sorted(group_scripts))} "
                                      "differs; reconcile it manually")
                 existing[:] = [other for other in existing if other not in stale]
                 existing.append(group)

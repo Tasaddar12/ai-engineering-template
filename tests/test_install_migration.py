@@ -343,20 +343,77 @@ class MigrationTests(unittest.TestCase):
         self.assertNotIn("PreToolUse", settings["hooks"])
 
     def test_existing_managed_hooks_relocate_without_duplicate_registration(self):
-        settings = installer.hooks_toml(installer.hook_settings("codex")["hooks"]).replace(b"/.codex/hooks/", b"/.ai/hooks/")
-        self.write(".codex/config.toml", settings)
-        changes, _, _ = self.plan()
+        def identities(events):
+            return collections.Counter(
+                (event, group.get("matcher"), tuple(sorted(handler.items())))
+                for event, groups in events.items()
+                for group in groups
+                for handler in group["hooks"])
+
+        host = "codex"
+        canonical = installer.hook_settings(host)["hooks"]
+        fixture = {event: [dict(group, hooks=[dict(handler) for handler in group["hooks"]])
+                           for group in groups]
+                   for event, groups in canonical.items()}
+        editing_matcher = next(matcher for event, script, matcher in installer.MANAGED_HOOKS
+                               if event == "PreToolUse" and script == "source-prewrite.sh")
+        user_handler = {
+            "type": "command",
+            "command": "python user-editing-hook.py",
+            "commandWindows": "python user-editing-hook.py",
+        }
+        fixture["PreToolUse"].append({"matcher": editing_matcher,
+                                       "hooks": [user_handler]})
+        settings = installer.hooks_toml(fixture).replace(
+            b"/." + host.encode() + b"/hooks/", b"/.ai/hooks/")
+        self.write("." + host + "/config.toml", settings)
+
+        changes, _, _ = self.plan(host)
         self.apply(changes)
-        result = tomllib.loads((self.target / ".codex/config.toml").read_text())
-        # Counted from MANAGED_HOOKS rather than written as a literal. The
-        # assertion here is "relocated, not duplicated"; a hardcoded count means
-        # the next hook added to an already-registered event fails this test for
-        # a reason that has nothing to do with migration.
-        expected = collections.Counter(event for event, _, _ in installer.MANAGED_HOOKS)
-        for event, count in expected.items():
-            self.assertEqual(count, len(result["hooks"][event]),
-                             f"{event} registrations were duplicated rather than relocated")
-            self.assertNotIn("/.ai/hooks/", str(result["hooks"][event]))
+        result = tomllib.loads((self.target / ("." + host) / "config.toml").read_text())
+        migrated = result["hooks"]
+        expected = identities(canonical)
+        expected[("PreToolUse", editing_matcher, tuple(sorted(user_handler.items())))] += 1
+        self.assertEqual(expected, identities(migrated),
+                         "migration must retain each complete registration exactly once")
+        user_groups = [group for group in migrated["PreToolUse"]
+                       if group.get("matcher") == editing_matcher
+                       and group["hooks"] == [user_handler]]
+        self.assertEqual(1, len(user_groups),
+                         "the standalone user editing group must survive exactly once")
+
+        expected_editing = next(group for group in canonical["PreToolUse"]
+                                if group.get("matcher") == editing_matcher)
+        migrated_editing = [group for group in migrated["PreToolUse"]
+                            if group.get("matcher") == editing_matcher
+                            and any("source-prewrite.sh" in handler.get("command", "")
+                                    for handler in group["hooks"])]
+        self.assertEqual(1, len(migrated_editing),
+                         "managed editing handlers must remain in one group")
+        expected_commands = [handler["command"] for handler in expected_editing["hooks"]]
+        self.assertEqual(expected_commands,
+                         [handler["command"] for handler in migrated_editing[0]["hooks"]],
+                         "editing advisory must precede the source prewrite handler")
+
+        canonical_commands = collections.Counter(
+            (event, group.get("matcher"), handler["command"], handler.get("commandWindows"))
+            for event, groups in canonical.items()
+            for group in groups
+            for handler in group["hooks"])
+        migrated_commands = collections.Counter(
+            (event, group.get("matcher"), handler["command"], handler.get("commandWindows"))
+            for event, groups in migrated.items()
+            for group in groups
+            for handler in group["hooks"]
+            if any(script in handler.get("command", "")
+                   for script in installer.managed_scripts()))
+        self.assertEqual(canonical_commands, migrated_commands,
+                         "all managed POSIX and Windows commands must match canonical Codex settings")
+        self.assertIn("SessionStart", migrated,
+                      "Codex's host-specific SessionStart registration must migrate")
+        self.assertFalse((self.target / ".ai/hooks").exists(),
+                         "legacy hook tree must be absent after migration")
+        self.assertNotIn("/.ai/hooks/", str(migrated))
 
     def test_two_old_paths_mapping_to_same_destination_are_rejected(self):
         self.write(".ai/skills/custom/SKILL.md", b"Different custom content")
@@ -393,6 +450,114 @@ class MigrationTests(unittest.TestCase):
         finally:
             link.rmdir() if os.name == "nt" and not link.is_symlink() else link.unlink()
 
+
+class CodexWorktreeExportSafeTests(unittest.TestCase):
+    """Content-only export specifications; never execute an exported entry point.
+
+    These fixtures are currently NOT_RUN under the Python execution restriction.
+    They deliberately avoid the real-Git/process setup in the older test classes.
+    """
+
+    def setUp(self):
+        from unittest.mock import patch
+
+        temporary = tempfile.TemporaryDirectory(prefix="codex-worktree-export-safe-")
+        self.addCleanup(temporary.cleanup)
+        self.target = Path(temporary.name)
+        for name in ("run", "Popen", "call", "check_call", "check_output"):
+            self.enterContext(patch.object(subprocess, name, side_effect=AssertionError(
+                "safe export forbids generated/native/model/server process execution")))
+        for name in ("system", "popen"):
+            self.enterContext(patch("os." + name, side_effect=AssertionError(
+                "safe export forbids shell execution")))
+        # payload() needs only tracked path/mode metadata. Fabricate that one
+        # listing from file names, rejecting every other runner request.
+        self.enterContext(patch.object(installer, "run", side_effect=self._listing))
+
+    def _listing(self, *args, cwd=None, capture=False):
+        self.assertEqual(("git", "ls-files", "--stage", "-z"), args)
+        self.assertEqual(ROOT, cwd)
+        self.assertIs(capture, True)
+        names = sorted(path.relative_to(ROOT).as_posix()
+                       for folder in (".ai", ".agents", ".planning")
+                       for path in (ROOT / folder).rglob("*")
+                       if path.is_file() and "__pycache__" not in path.parts
+                       and path.suffix != ".pyc")
+        return "".join("100644 " + "0" * 40 + " 0\t" + name + "\0" for name in names)
+
+    def _write(self, name, content):
+        path = self.target / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return path
+
+    def _export(self, changes):
+        # Materialize planned bytes in this disposable directory for inspection.
+        # Never call installer.main(), a generated command or a native runner.
+        for path, content in changes:
+            if content is None:
+                path.rmdir() if path.is_dir() else path.unlink()
+            else:
+                self._write(path.relative_to(self.target), content)
+
+    def test_codex_worktree_export_safe_migration_and_followup_export(self):
+        incoming = installer.payload(ROOT, "codex", True)
+        self._write(".ai/runtime/phase.py", b"# old implementation\n")
+        self._write(".ai/hooks/custom.py", b"# customer hook data; never execute\n")
+        self._write(".ai/RULES.md", b"# Custom rules\n")
+        planning = b"# customer model/effort configuration\nagents: {coder: {model: custom, effort: max}}\n"
+        self._write(".planning/config.yaml", planning)
+        project = b"# Real project identity\n"
+        self._write(".planning/PROJECT.md", project)
+        agent = b'model = "customer-agent"\nmodel_reasoning_effort = "high"\n'
+        self._write(".ai/agents/customer.toml", agent)
+        canonical = installer.hook_settings("codex")["hooks"]
+        old = {event: [group for group in groups if not any(
+            "codex-worktree.py" in h["command"] for h in group["hooks"])]
+               for event, groups in canonical.items()}
+        user = {"matcher": "*", "hooks": [{"type": "command", "command": "customer-hook"}]}
+        old["PreToolUse"].append(user)
+        prefix = (b'# keep user settings verbatim\nmodel = "keep-model"\n'
+                  b'model_reasoning_effort = "high"\nsandbox_mode = "workspace-write"\n'
+                  b'approval_policy = "never"\n[features]\nhooks = false\n'
+                  b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+                  b'[agents.customer]\nconfig_file = "agents/customer.toml"\n')
+        current = prefix + installer.hooks_toml(old).replace(b"/.codex/", b"/.ai/").replace(
+            b"/'.codex'/", b"/'.ai'/")
+        config = self._write(".codex/config.toml", current)
+        before = {p.relative_to(self.target): p.read_bytes()
+                  for p in self.target.rglob("*") if p.is_file()}
+        changes, originals, _ = migration.plan_migration(ROOT, self.target, "codex", True, installer)
+        self.assertEqual(before, {p.relative_to(self.target): p.read_bytes()
+                                 for p in self.target.rglob("*") if p.is_file()})
+        self.assertIn(config, originals)
+        self.assertIn(self.target / ".ai/agents/customer.toml", originals)
+        self._export(changes)
+        self.assertFalse((self.target / ".ai").exists())
+        content = config.read_bytes()
+        self.assertTrue(content.startswith(prefix))
+        parsed = tomllib.loads(content.decode())
+        self.assertIs(parsed["features"]["hooks"], False)
+        self.assertEqual("keep-model", parsed["model"])
+        self.assertEqual("high", parsed["model_reasoning_effort"])
+        for event, groups in canonical.items():
+            for group in groups:
+                self.assertEqual(1, parsed["hooks"][event].count(group))
+        self.assertIn(user, parsed["hooks"]["PreToolUse"])
+        self.assertNotIn("/.ai/hooks/", str(parsed["hooks"]))
+        self.assertEqual(agent, (self.target / ".codex/agents/customer.toml").read_bytes())
+        self.assertEqual(planning, (self.target / ".planning/config.yaml").read_bytes())
+        self.assertEqual(project, (self.target / ".planning/PROJECT.md").read_bytes())
+        for name in (".codex/codex-worktree.py", ".codex/hooks/codex-worktree.py",
+                     ".codex/runtime/lib/codex_worktree.py"):
+            self.assertEqual(incoming[name], (self.target / name).read_bytes())
+        # Migration's required update is also only a planned-byte export here.
+        changes, _, _ = update.plan_update(ROOT, self.target, "codex", True, installer)
+        self._export(changes)
+        self.assertEqual([], update.plan_update(ROOT, self.target, "codex", True, installer)[0])
+        self.assertEqual(agent, (self.target / ".codex/agents/customer.toml").read_bytes())
+        self.assertEqual(planning, (self.target / ".planning/config.yaml").read_bytes())
+        self.assertIs(tomllib.loads(config.read_text(encoding="utf-8"))["features"]["hooks"], False)
 
 if __name__ == "__main__":
     unittest.main()

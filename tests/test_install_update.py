@@ -308,6 +308,41 @@ class UpdateTests(unittest.TestCase):
             self.plan()
         self.assertIn("differs", str(caught.exception))
 
+    def test_old_advisory_only_editing_group_upgrades_once_and_keeps_user_hooks(self):
+        events = installer.hook_settings(self.host)["hooks"]
+        editing = next(group for group in events["PreToolUse"] if "NotebookEdit" in group.get("matcher", ""))
+        editing["hooks"] = editing["hooks"][:1]  # Real shape before source-prewrite existed.
+        user = {"matcher": "Write", "hooks": [{"type": "command", "command": "my-own-hook"}]}
+        events["PreToolUse"].append(user)
+        content = (installer.hooks_toml(events) if self.host == "codex"
+                   else installer.json_bytes({"hooks": events}))
+        self.write(self.settings_name(), content)
+        self.apply(self.plan()[0])
+        result = self.read(self.settings_name())
+        parsed = installer.tomllib.loads(result.decode()) if self.host == "codex" else installer.json.loads(result)
+        actual = [group for group in parsed["hooks"]["PreToolUse"] if "NotebookEdit" in group.get("matcher", "")]
+        self.assertEqual(1, len(actual))
+        self.assertEqual(2, len(actual[0]["hooks"]))
+        self.assertIn("worktree-guard.sh", actual[0]["hooks"][0]["command"])
+        self.assertIn("source-prewrite.sh", actual[0]["hooks"][1]["command"])
+        self.assertIn(user, parsed["hooks"]["PreToolUse"])
+        self.assertEqual([], self.plan()[0])
+
+    def test_unknown_user_commands_in_managed_editing_group_are_preserved_by_refusal(self):
+        for forged in (False, True):
+            events = installer.hook_settings(self.host)["hooks"]
+            editing = next(group for group in events["PreToolUse"] if "NotebookEdit" in group.get("matcher", ""))
+            if forged:
+                editing["hooks"][0]["command"] += "; user-action"
+            else:
+                editing["hooks"].append({"type": "command", "command": "my-own-hook"})
+            content = (installer.hooks_toml(events) if self.host == "codex"
+                       else installer.json_bytes({"hooks": events}))
+            path = self.write(self.settings_name(), content)
+            with self.assertRaisesRegex(ValueError, "differs"):
+                self.plan()
+            self.assertEqual(content, path.read_bytes())
+
     # --- files this revision no longer ships ---------------------------------
 
     def test_an_unshipped_file_is_reported_and_kept(self):
@@ -747,6 +782,116 @@ class ReviewedUpdates(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(update.load_manifest(target, "codex")["files"][".codex/RULES.md"]["classification"], "customized")
 
+
+class CodexWorktreeExportSafeTests(unittest.TestCase):
+    """Content-only export specifications; never execute an exported entry point.
+
+    These fixtures are currently NOT_RUN under the Python execution restriction.
+    They deliberately avoid the real-Git/process setup in the older test classes.
+    """
+
+    def setUp(self):
+        from unittest.mock import patch
+
+        temporary = tempfile.TemporaryDirectory(prefix="codex-worktree-export-safe-")
+        self.addCleanup(temporary.cleanup)
+        self.target = Path(temporary.name)
+        for name in ("run", "Popen", "call", "check_call", "check_output"):
+            self.enterContext(patch.object(subprocess, name, side_effect=AssertionError(
+                "safe export forbids generated/native/model/server process execution")))
+        for name in ("system", "popen"):
+            self.enterContext(patch("os." + name, side_effect=AssertionError(
+                "safe export forbids shell execution")))
+        # payload() needs only tracked path/mode metadata. Fabricate that one
+        # listing from file names, rejecting every other runner request.
+        self.enterContext(patch.object(installer, "run", side_effect=self._listing))
+
+    def _listing(self, *args, cwd=None, capture=False):
+        self.assertEqual(("git", "ls-files", "--stage", "-z"), args)
+        self.assertEqual(ROOT, cwd)
+        self.assertIs(capture, True)
+        names = sorted(path.relative_to(ROOT).as_posix()
+                       for folder in (".ai", ".agents", ".planning")
+                       for path in (ROOT / folder).rglob("*")
+                       if path.is_file() and "__pycache__" not in path.parts
+                       and path.suffix != ".pyc")
+        return "".join("100644 " + "0" * 40 + " 0\t" + name + "\0" for name in names)
+
+    def _write(self, name, content):
+        path = self.target / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return path
+
+    def _export(self, changes):
+        # Materialize planned bytes in this disposable directory for inspection.
+        # Never call installer.main(), a generated command or a native runner.
+        for path, content in changes:
+            if content is None:
+                path.rmdir() if path.is_dir() else path.unlink()
+            else:
+                self._write(path.relative_to(self.target), content)
+
+    def test_codex_worktree_export_safe_managed_update_conservation(self):
+        incoming = installer.payload(ROOT, "codex", True)
+        for name, content in incoming.items():
+            if name not in (".codex/codex-worktree.py", ".codex/hooks/codex-worktree.py"):
+                self._write(name, content)
+        # The older installation lacks this guard but retains every old one.
+        events = installer.hook_settings("codex")["hooks"]
+        old = {event: [group for group in groups if not any(
+            "codex-worktree.py" in h["command"] for h in group["hooks"])]
+               for event, groups in events.items()}
+        user = {"matcher": "*", "hooks": [{"type": "command", "command": "customer-hook"}]}
+        old["PreToolUse"].append(user)
+        prefix = (b'# preserve custom model/policy/feature values\nmodel = "custom-model"\n'
+                  b'model_reasoning_effort = "max"\nsandbox_mode = "workspace-write"\n'
+                  b'approval_policy = "never"\n[features]\nhooks = false\n'
+                  b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+                  b'[agents.coder]\nconfig_file = "custom-coder.toml"\n')
+        current = prefix + installer.hooks_toml(old)
+        config = self._write(".codex/config.toml", current)
+        planning = b"# custom PR99-independent routing\nagents: {coder: {model: keep, effort: high}}\n"
+        self._write(".planning/config.yaml", planning)
+        roles = {name: content for name, content in incoming.items()
+                 if name.startswith(".codex/agents/") and name.endswith(".toml")}
+        changes, originals, _ = legacy_update.plan_update(ROOT, self.target, "codex", True, installer)
+        self.assertIn(config, originals)
+        self.assertEqual(current, config.read_bytes(), "planning must not write")
+        self._export(changes)
+        content = config.read_bytes()
+        self.assertTrue(content.startswith(current))
+        parsed = installer.tomllib.loads(content.decode())
+        self.assertIs(parsed["features"]["hooks"], False)
+        for event, groups in events.items():
+            for group in groups:
+                self.assertEqual(1, parsed["hooks"][event].count(group))
+        self.assertIn(user, parsed["hooks"]["PreToolUse"])
+        self.assertEqual(planning, (self.target / ".planning/config.yaml").read_bytes())
+        for name, expected in roles.items():
+            self.assertEqual(expected, (self.target / name).read_bytes())
+        for name in (".codex/codex-worktree.py", ".codex/hooks/codex-worktree.py"):
+            self.assertEqual(incoming[name], (self.target / name).read_bytes())
+        self.assertEqual([], legacy_update.plan_update(ROOT, self.target, "codex", True, installer)[0])
+
+    def test_codex_worktree_export_safe_stale_managed_guard_replaced(self):
+        incoming = installer.payload(ROOT, "codex", True)
+        for name, content in incoming.items():
+            self._write(name, content)
+        events = installer.hook_settings("codex")["hooks"]
+        for groups in events.values():
+            for group in groups:
+                for handler in group["hooks"]:
+                    if "codex-worktree.py" in handler["command"]:
+                        handler["timeout"] = 5
+        current = installer.hooks_toml(events)
+        config = self._write(".codex/config.toml", current)
+        changes, originals, _ = legacy_update.plan_update(ROOT, self.target, "codex", True, installer)
+        self.assertIn(config, originals)
+        self._export(changes)
+        self.assertEqual(installer.hook_settings("codex")["hooks"],
+                         installer.tomllib.loads(config.read_text(encoding="utf-8"))["hooks"])
+        self.assertEqual([], legacy_update.plan_update(ROOT, self.target, "codex", True, installer)[0])
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,6 +15,11 @@ are the builder. Your job is to capture decisions that will guide research and
 planning, not to figure out implementation yourself.
 </purpose>
 
+**Codex startup:** a new Codex run for this phase can be started in its
+validated session worktree with the installed launcher. This does not move an
+active agent; see the [canonical Codex startup protocol](../references/same-agent-worktree.md#codex-startup)
+for prerequisites and limits.
+
 <required_reading>
 @~/.ai/references/domain-probes.md
 @~/.ai/references/gate-prompts.md
@@ -156,12 +161,31 @@ Use /progress to see available phases.
 
 Exit the workflow.
 
-When `worktree` is set, it is the locator-validated phase checkout. Run the
+**Conditional Claude same-caller route, before destination initialization:**
+From the original primary default cwd, use these read-only locator facts to
+follow [native entry](../references/same-agent-worktree.md):
+`prewrite.request phase <label> --mode <new|existing>`, with the known padded
+phase as label and existing mode only for the exact validated open session.
+Do this before any session `cd` or destination init. Positively gate the actual
+native tool/schema, eligible role, policy and trusted creation hook, bind the
+request with prewrite.begin, then invoke EnterWorktree as this same existing
+caller. Existing-path entry must honor its actual native approval requirements.
+Observe native completion, destination default cwd/root/branch/base, permissions
+and loaded project context; confirm Git with prewrite.confirm. Re-resolve
+PHASE_RUNTIME and rerun phase.locate from that native default destination, then
+load fresh destination inputs with INIT below. A shell cd, child or per-call cwd
+override is never movement proof. Unsupported native entry stops precisely.
+Already-correct isolated callers validate their selected session and need no move
+or primary-only bootstrap. Native callers skip the ordinary locator cd below.
+
+**Ordinary runtime consumers only:** When `worktree` is set, it is the
+locator-validated phase checkout. Run the
 explicit quoted `cd` to that absolute path before loading phase data. Keep
 `PHASE_RUNTIME` absolute so the launcher still resolves after the directory
 change. Stop if `cd` fails.
 
 ```bash
+# Ordinary consumers only; native callers already use destination defaults.
 if [ -n "${worktree:-}" ]; then cd -- "${worktree}" || exit 1; fi
 INIT=$(phase_run query init.phase-op "${PHASE}")
 ```
@@ -222,6 +246,13 @@ answered from the context in `.continue-here.md`, stop and ask the user.
 </step>
 
 <step name="open_session">
+Native callers completed entry and fresh destination initialization in
+`initialize`. Retain that confirmed session and the reloaded locator/init facts;
+skip this step's shell session.open/adopt/cd route. Do not bootstrap or invoke
+native entry a second time here. Already-correct isolated callers retain their
+validated session. The remaining route is for ordinary runtime consumers and is
+not native movement proof.
+
 `phase.locate` has already confirmed the phase and selected any existing session.
 If `session` from `LOCATE` is present, require its absolute `worktree`, then use
 its `worktree`, `branch`, `base`, `reused` and `synced` fields. Do not call

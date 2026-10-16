@@ -148,6 +148,11 @@ class InstallerTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("Source-only project history", encoding="utf-8")
         command("git", "init", "--quiet", str(cls.source))
+        # Disposable fixture writers must finish before TemporaryDirectory
+        # cleanup. Git supports these foreground maintenance controls on both
+        # platforms; this prevents a detached pack writer racing rmtree.
+        command("git", "config", "gc.autoDetach", "false", cwd=cls.source)
+        command("git", "config", "maintenance.autoDetach", "false", cwd=cls.source)
         command("git", "add", ".", cwd=cls.source)
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
                 "commit", "--quiet", "-m", "Template fixture", cwd=cls.source)
@@ -160,7 +165,7 @@ class InstallerTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="installer-target-")
         self.addCleanup(self.temporary.cleanup)
-        self.base = Path(self.temporary.name)
+        self.base = Path(self.temporary.name).resolve()
         self.target = self.base / "project with spaces"
 
     def install(self, *extra):
@@ -198,10 +203,46 @@ issue_refs: []
         for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
             with self.subTest(host=host):
                 self.target = self.base / (host + " projet caf" + chr(0xE9) + " nested")
+                user_group = {"matcher": "UserTool", "hooks": [{"type": "command", "command": "echo user-owned"}]}
+                settings_path = self.target / name
+                settings_path.parent.mkdir(parents=True)
+                settings_path.write_bytes(installer.hooks_toml({"PreToolUse": [user_group]}) if host == "codex"
+                                          else json.dumps({"hooks": {"PreToolUse": [user_group]}}).encode("utf-8"))
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
                 settings = read_settings(self.target / name)
                 groups = settings["hooks"]["PreToolUse"]
+                self.assertIn(user_group, groups)
+                identities = []
+                for event, registrations in settings["hooks"].items():
+                    for group in registrations:
+                        for entry in group["hooks"]:
+                            match = re.search(r"/hooks/([^/\"]+)", entry["command"])
+                            if not match:
+                                continue  # the preserved user command is not a managed registration
+                            script = match[1]
+                            identities.append((event, group.get("matcher"), script))
+                            expected_timeout = (30 if script == "codex-worktree.py" else
+                                                120 if script.endswith(".py") else
+                                                30 if script == "source-prewrite.sh" else 10)
+                            if event == "WorktreeCreate":
+                                expected_timeout = 180
+                            elif event == "WorktreeRemove":
+                                expected_timeout = 60
+                            self.assertEqual(expected_timeout, entry["timeout"], (host, event, script))
+                            if script.endswith(".py"):
+                                self.assertTrue(entry["command"].startswith("python "))
+                                if host == "codex":
+                                    self.assertIn("runpy.run_path", entry["commandWindows"])
+                                    self.assertTrue(entry["commandWindows"].endswith("exit $LASTEXITCODE"))
+                self.assertEqual(len(identities), len(set(identities)), "managed identities must remain unique")
+                editing = [group for group in groups if "NotebookEdit" in group.get("matcher", "")]
+                self.assertEqual(1, len(editing))
+                self.assertEqual(["worktree-guard.sh", "source-prewrite.sh"],
+                                 [re.search(r"/hooks/([^/\"]+)", entry["command"])[1] for entry in editing[0]["hooks"]])
+                self.assertEqual(2, sum(script == "worktree-guard.sh" for _, _, script in identities),
+                                 "advisory dispatch and editing registrations are distinct")
+                self.assertEqual(1, sum(script == "destructive-git-guard.py" for _, _, script in identities))
                 matches = [group for group in groups
                            if group.get("matcher") == "^(Bash|exec_command|shell_command|shell)$"
                            and "planning-integrity.sh" in group["hooks"][0]["command"]]
@@ -229,6 +270,11 @@ issue_refs: []
                 (self.target / unrelated).write_text("preserve staged index\n", encoding="utf-8")
                 command("git", "add", unrelated, cwd=self.target)
                 staged_before = command("git", "diff", "--cached", "--name-only", cwd=self.target)
+                index_before = (self.target / ".git/index").read_bytes()
+                authored = self.target / ".planning/authored-notes.md"
+                authored.write_bytes(b"untracked authored sentinel\n")
+                authored_before = {path: path.read_bytes() for path in
+                                   (authored, self.target / ".planning/STATE.md", self.target / ".planning/ROADMAP.md")}
                 environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
                 launcher = self.launcher_argv(host, handler)
                 tools = ("Bash", "exec_command", "shell_command", "shell")
@@ -245,6 +291,8 @@ issue_refs: []
                     self.assertEqual(head, command("git", "rev-parse", "HEAD", cwd=self.target).strip())
                     self.assertEqual(staged_before, command("git", "diff", "--cached", "--name-only",
                                                             cwd=self.target))
+                    self.assertEqual(index_before, (self.target / ".git/index").read_bytes())
+                    self.assertEqual(authored_before, {path: path.read_bytes() for path in authored_before})
 
                 # A complete record using --only is checked from prospective
                 # worktree bytes; unrelated staged content remains in the index.
@@ -265,6 +313,8 @@ issue_refs: []
                                      observed.stderr.decode("utf-8", "replace"))
                     self.assertEqual(staged_before, command("git", "diff", "--cached", "--name-only",
                                                             cwd=self.target))
+                    self.assertEqual(index_before, (self.target / ".git/index").read_bytes())
+                    self.assertEqual(authored_before, {path: path.read_bytes() for path in authored_before})
 
     def test_installed_runtime_answers_its_verb_contract(self):
         """The installed runtime resolves its own namespace and returns pure results."""
@@ -286,6 +336,13 @@ issue_refs: []
                                            cwd=self.target))["verbs"]
                 self.assertIn("phase.locate", verbs)
                 self.assertIn("session.adopt", verbs)
+                for verb in ("planning.integrity", "prewrite.request", "prewrite.begin", "prewrite.confirm"):
+                    self.assertIn(verb, verbs)
+                unknown = subprocess.run([sys.executable, runtime, "query", "prewrite.unknown"], cwd=self.target,
+                                         capture_output=True, encoding="utf-8")
+                self.assertEqual(1, unknown.returncode)
+                self.assertNotIn("Traceback", unknown.stderr)
+                self.assertEqual("unknown-verb", json.loads(unknown.stdout)["code"])
                 before = self.snapshot()
                 located = json.loads(command(sys.executable, runtime, "query", "phase.locate", "01",
                                              cwd=self.target))
@@ -756,6 +813,148 @@ issue_refs: []
         self.assertIsNotNone(bash, "Claude hooks require Bash (Git Bash on Windows)")
         return [bash, "-c", handler["command"]]
 
+    def prewrite_fixture(self, host):
+        """Install real settings/assets and capture a committed, offline base."""
+        self.target = self.base / (host + " prewrite café nested project")
+        installed = self.install("--host", host)
+        self.assertEqual(0, installed.returncode, installed.stderr)
+        command("git", "config", "gc.autoDetach", "false", cwd=self.target)
+        command("git", "config", "maintenance.autoDetach", "false", cwd=self.target)
+        command("git", "config", "user.email", "prewrite@example.test", cwd=self.target)
+        command("git", "config", "user.name", "Prewrite Fixture", cwd=self.target)
+        (self.target / "source.txt").write_bytes(b"committed source\n")
+        command("git", "add", ".", cwd=self.target)
+        command("git", "commit", "-qm", "installed fixture", cwd=self.target)
+        setting = ".codex/config.toml" if host == "codex" else ".claude/settings.json"
+        groups = read_settings(self.target / setting)["hooks"]["PreToolUse"]
+        editing = [g for g in groups if "NotebookEdit" in g.get("matcher", "")]
+        self.assertEqual(1, len(editing))
+        nested = self.target / "nested cwd"
+        nested.mkdir()
+        return editing[0], nested
+
+    def prewrite_pipeline(self, host, group, cwd, payload, destination, mutation=None,
+                          *, environment_overrides=None):
+        """Model synchronous native decisions, executing the fake edit only if allowed.
+
+        An ordinary hook error is deliberately failure-open, as documented by Codex.
+        A setup/launcher error is asserted separately and never counts as RED.
+        """
+        denied, results = False, []
+        environment = dict(os.environ, PYTHONIOENCODING="utf-8",
+                           PATH=str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"])
+        environment.update(environment_overrides or {})
+        for handler in group["hooks"]:
+            result = subprocess.run(self.launcher_argv(host, handler), cwd=cwd, env=environment,
+                                    input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                    capture_output=True, timeout=40)
+            self.assertIn(result.returncode, (0, 2), result.stderr.decode("utf-8", "replace"))
+            results.append(result)
+            if result.returncode == 2:
+                denied = True
+            elif result.stdout.strip():
+                output = json.loads(result.stdout)
+                decision = output.get("hookSpecificOutput", {})
+                if decision.get("permissionDecision") == "deny":
+                    self.assertEqual("PreToolUse", decision.get("hookEventName"))
+                    self.assertTrue(decision.get("permissionDecisionReason"))
+                    self.assertEqual({"hookSpecificOutput"}, set(output))
+                    denied = True
+        if not denied:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if mutation is None:
+                destination.write_bytes(b"FAKE PENDING MUTATION EXECUTED\n")
+            else:
+                mutation()
+        return denied, results
+
+    def test_prewrite_claude_first_source_tickets_without_precreating_and_cancels(self):
+        group, cwd = self.prewrite_fixture("claude")
+        source = self.target / "source.txt"
+        original = source.read_bytes()
+        payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "session_id": "parent",
+                   "agent_id": "worker-one", "tool_use_id": "request-one", "tool_name": "Edit",
+                   "tool_input": {"file_path": str(source), "old_string": "source", "new_string": "edit"}}
+        denied, results = self.prewrite_pipeline("claude", group, cwd, payload, source)
+        self.assertTrue(denied, "S1/H1: installed Claude editing pipeline allowed the original source mutation")
+        self.assertEqual(original, source.read_bytes())
+        listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+        self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()),
+                         "A1: cancellation must not precreate the native destination")
+        reasons = [json.loads(result.stdout).get("hookSpecificOutput", {}).get(
+                   "permissionDecisionReason", "") for result in results if result.stdout.strip()]
+        self.assertIn("EnterWorktree", "\n".join(reasons),
+                      "A1: denial must tell the same caller how to continue natively")
+
+    def test_prewrite_codex_shared_parent_cancels_without_guessing_unit(self):
+        group, cwd = self.prewrite_fixture("codex")
+        source = self.target / "source.txt"
+        original = source.read_bytes()
+        payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "session_id": "shared-parent",
+                   "tool_use_id": "request-one", "tool_name": "apply_patch",
+                   "tool_input": {"command": "*** Begin Patch\n*** Update File: "
+                                  + source.as_posix() + "\n@@\n-committed source\n+pending\n*** End Patch"}}
+        denied, _ = self.prewrite_pipeline("codex", group, cwd, payload, source)
+        self.assertTrue(denied, "S2/H1: installed Codex editing pipeline allowed an ambiguous shared-parent source mutation")
+        self.assertEqual(original, source.read_bytes())
+        listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+        self.assertEqual(1, sum(line.startswith("worktree ") for line in listed.splitlines()))
+
+    def test_prewrite_untracked_note_without_identity_warns_and_continues(self):
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                group, cwd = self.prewrite_fixture(host)
+                note = self.target / ".planning/scratchpads/nested/note.md"
+                listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                state = self.target / ".git/ai-phase/prewrite"
+
+                def inventory():
+                    return {p.relative_to(state).as_posix(): p.read_bytes()
+                            for p in state.rglob("*") if p.is_file()} if state.exists() else {}
+
+                before = inventory()
+                for existing in (False, True):
+                    if existing:
+                        note.write_bytes(b"existing scratchpad\n")
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
+                               "tool_input": {"file_path": str(note), "content": "note"}}
+                    denied, results = self.prewrite_pipeline(host, group, cwd, payload, note)
+                    self.assertFalse(denied)
+                    self.assertIn(b"WARNING", results[0].stderr)
+                    self.assertEqual(b"FAKE PENDING MUTATION EXECUTED\n", note.read_bytes())
+                    self.assertEqual(listed, command("git", "worktree", "list", "--porcelain", cwd=self.target))
+                    self.assertEqual(before, inventory())
+
+    def test_prewrite_external_temporary_note_without_identity_continues(self):
+        """CR-01: a plain task note outside every repo is not a source handoff."""
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                group, cwd = self.prewrite_fixture(host)
+                notes = self.base / (host + " temporary task notes")
+                notes.mkdir()
+                outside = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=notes,
+                                         capture_output=True)
+                self.assertNotEqual(0, outside.returncode, "fixture notes must be outside every repository")
+                note = notes / "draft-pr-body.md"
+                listed = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                state = self.target / ".git/ai-phase/prewrite"
+
+                def preparation_state():
+                    return {p.relative_to(state).as_posix(): p.read_bytes()
+                            for p in state.rglob("*") if p.is_file()} if state.exists() else {}
+
+                before = preparation_state()
+                for existing in (False, True):
+                    if existing:
+                        note.write_bytes(b"existing temporary task note\n")
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Write",
+                               "tool_input": {"file_path": str(note), "content": "temporary PR body"}}
+                    denied, _ = self.prewrite_pipeline(host, group, cwd, payload, note)
+                    self.assertFalse(denied, "plain external temporary note must continue without identity")
+                    self.assertEqual(b"FAKE PENDING MUTATION EXECUTED\n", note.read_bytes())
+                    self.assertEqual(listed, command("git", "worktree", "list", "--porcelain", cwd=self.target))
+                    self.assertEqual(before, preparation_state())
+
     def test_registered_hooks_execute_from_installed_subdirectory(self):
         """Every managed hook resolves the project root from a nested directory."""
         for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
@@ -787,8 +986,8 @@ issue_refs: []
             groups = settings["hooks"]["PreToolUse"]
             for tool in (("exec_command", "shell_command", "shell", "Bash") if host == "codex" else ("Bash",)):
                 matched = [group for group in groups
-                           if re.search(group.get("matcher", ".*"), tool)
-                           and "destructive-git-guard.py" in group["hooks"][0]["command"]]
+                           if "destructive-git-guard.py" in group["hooks"][0]["command"]
+                           and re.search(group.get("matcher", ".*"), tool)]
                 self.assertEqual(1, len(matched), "one destructive shell handler")
                 handler = matched[0]["hooks"][0]
                 self.assertIn('python "', handler["command"])
@@ -864,7 +1063,16 @@ issue_refs: []
                     self.assertNotIn("WorktreeRemove", hooks)
                     # It does record the orchestrator's transcript, which is how
                     # the handoff hook recognises it without an agent id.
-                    self.assertEqual(1, len(hooks["SessionStart"]))
+                    self.assertEqual(2, len(hooks["SessionStart"]))
+                    handoff = [group for group in hooks["SessionStart"] if any(
+                        "context-handoff.sh" in handler["command"] for handler in group["hooks"])]
+                    self.assertEqual(1, len(handoff))
+                    self.assertNotIn("matcher", handoff[0])
+                    startup_guard = [group for group in hooks["SessionStart"] if any(
+                        "codex-worktree.py" in handler["command"] for handler in group["hooks"])]
+                    self.assertEqual(1, len(startup_guard))
+                    self.assertEqual(installer.hook_settings("codex")["hooks"]["SessionStart"],
+                                     hooks["SessionStart"])
                     self.assertIn("/.codex/hooks/context-handoff.sh",
                                   hooks["SessionStart"][0]["hooks"][0]["command"])
                     before = self.snapshot()
@@ -1035,6 +1243,151 @@ issue_refs: []
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertTrue((self.target / ".git").is_file())
 
+
+class CodexWorktreeExportSafeTests(unittest.TestCase):
+    """Content-only export specifications; never execute an exported entry point.
+
+    These fixtures are currently NOT_RUN under the Python execution restriction.
+    They deliberately avoid the real-Git/process setup in the older test classes.
+    """
+
+    def setUp(self):
+        from unittest.mock import patch
+
+        temporary = tempfile.TemporaryDirectory(prefix="codex-worktree-export-safe-")
+        self.addCleanup(temporary.cleanup)
+        self.target = Path(temporary.name)
+        for name in ("run", "Popen", "call", "check_call", "check_output"):
+            self.enterContext(patch.object(subprocess, name, side_effect=AssertionError(
+                "safe export forbids generated/native/model/server process execution")))
+        for name in ("system", "popen"):
+            self.enterContext(patch("os." + name, side_effect=AssertionError(
+                "safe export forbids shell execution")))
+        # payload() needs only tracked path/mode metadata. Fabricate that one
+        # listing from file names, rejecting every other runner request.
+        self.enterContext(patch.object(installer, "run", side_effect=self._listing))
+
+    def _listing(self, *args, cwd=None, capture=False):
+        self.assertEqual(("git", "ls-files", "--stage", "-z"), args)
+        self.assertEqual(ROOT, cwd)
+        self.assertIs(capture, True)
+        names = sorted(path.relative_to(ROOT).as_posix()
+                       for folder in (".ai", ".agents", ".planning")
+                       for path in (ROOT / folder).rglob("*")
+                       if path.is_file() and "__pycache__" not in path.parts
+                       and path.suffix != ".pyc")
+        return "".join("100644 " + "0" * 40 + " 0\t" + name + "\0" for name in names)
+
+    def _write(self, name, content):
+        path = self.target / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return path
+
+    def _export(self, changes):
+        # Materialize planned bytes in this disposable directory for inspection.
+        # Never call installer.main(), a generated command or a native runner.
+        for path, content in changes:
+            if content is None:
+                path.rmdir() if path.is_dir() else path.unlink()
+            else:
+                self._write(path.relative_to(self.target), content)
+
+    def test_codex_worktree_export_safe_asset_commands_and_idempotence(self):
+        exported = installer.payload(ROOT, "codex", True)
+        launcher = exported[".codex/codex-worktree.py"]
+        self.assertEqual((ROOT / ".ai/install-assets/codex-worktree.py").read_bytes(), launcher)
+        self.assertIn(b'Path(__file__).resolve().parent / "runtime"', launcher)
+        self.assertIn(b"from lib.codex_worktree import launcher_main", launcher)
+        self.assertIn(b"return launcher_main()", launcher)
+        self.assertIn(b"--prompt=--literal-flag", launcher)
+        self.assertNotIn(b"subprocess", launcher)
+        self.assertEqual((ROOT / ".ai/hooks/codex-worktree.py").read_bytes(),
+                         exported[".codex/hooks/codex-worktree.py"])
+        self.assertEqual((ROOT / ".ai/runtime/lib/codex_worktree.py").read_bytes(),
+                         exported[".codex/runtime/lib/codex_worktree.py"])
+        producer = exported[".codex/runtime/lib/codex_worktree.py"].decode()
+        self.assertIn('def launcher_main(argv=None):', producer)
+        for declaration in ('parser.add_argument("kind", choices=("phase", "quick"))',
+                            'parser.add_argument("label")', 'parser.add_argument("--base")',
+                            'parser.add_argument("--prompt")',
+                            'parser.add_argument("--exec", dest="execute", action="store_true")'):
+            self.assertIn(declaration, producer)
+        self.assertIn('suffix not in (".bat", ".cmd")', producer)
+        self.assertNotIn(".codex/install-assets/codex-worktree.py", exported)
+        self.assertIn("codex-worktree.py", installer.managed_scripts())
+
+        command = 'python "$(git rev-parse --show-toplevel)/.codex/hooks/codex-worktree.py"'
+        program = ("import pathlib,runpy,subprocess; "
+                   "p=pathlib.Path(subprocess.check_output(['git','rev-parse',"
+                   "'--show-toplevel']).decode('utf-8').strip()); "
+                   "runpy.run_path(str(p/'.codex'/'hooks'/'codex-worktree.py'),run_name='__main__')")
+        handler = {"type": "command", "command": command,
+                   "commandWindows": f'& python -c "{program}"; exit $LASTEXITCODE', "timeout": 30}
+        self.assertIn("command = '" + command + "'", producer)
+        hooks = tomllib.loads(exported[".codex/config.toml"].decode())["hooks"]
+        for event in ("PreToolUse", "SessionStart", "UserPromptSubmit"):
+            groups = [group for group in hooks[event]
+                      if any("codex-worktree.py" in h["command"] for h in group["hooks"])]
+            expected = {"hooks": [handler]}
+            if event == "PreToolUse":
+                expected["matcher"] = "*"
+            self.assertEqual([expected], groups, event)
+            self.assertNotIn("async", groups[0]["hooks"][0])
+        editing = next(group for group in hooks["PreToolUse"]
+                       if "NotebookEdit" in group.get("matcher", ""))
+        self.assertEqual(2, len(editing["hooks"]))
+        self.assertIn("worktree-guard.sh", editing["hooks"][0]["command"])
+        self.assertIn("source-prewrite.sh", editing["hooks"][1]["command"])
+        for event, script, matcher in installer.MANAGED_HOOKS:
+            self.assertTrue(any(group.get("matcher") == matcher and any(
+                "/hooks/" + script in h["command"] for h in group["hooks"])
+                for group in hooks[event]), (event, script))
+
+        user = {"matcher": "*", "hooks": [{"type": "command", "command": "custom-hook"}]}
+        original = (b'# customer settings\nmodel = "keep-model"\n'
+                    b'model_reasoning_effort = "high"\nsandbox_mode = "workspace-write"\n'
+                    b'approval_policy = "never"\n[features]\nhooks = false\n'
+                    b'[agents]\nmax_concurrent_threads_per_session = 12\n'
+                    b'[agents.coder]\nconfig_file = "custom-coder.toml"\n')
+        original += installer.hooks_toml({"PreToolUse": [user]})
+        self._write(".codex/config.toml", original)
+        planning = b"# customer routing\nagents: {coder: {model: custom, effort: max}}\n"
+        self._write(".planning/config.yaml", planning)
+        self._export(installer.plan_install(ROOT, self.target, "codex", True))
+        content = (self.target / ".codex/config.toml").read_bytes()
+        self.assertTrue(content.startswith(original))
+        parsed = tomllib.loads(content.decode())
+        self.assertIn(user, parsed["hooks"]["PreToolUse"])
+        self.assertIs(parsed["features"]["hooks"], False)
+        self.assertEqual(planning, (self.target / ".planning/config.yaml").read_bytes())
+        self.assertEqual([], installer.plan_install(ROOT, self.target, "codex", True))
+        for path, content in exported.items():
+            if path.startswith(".codex/agents/") and path.endswith(".toml"):
+                self.assertEqual(content, (self.target / path).read_bytes(), path)
+        manifest = installer.ownership_manifest(ROOT, self.target, "codex", True,
+                                                "fixture", "fixture-revision", exported)
+        for path in (".codex/codex-worktree.py", ".codex/hooks/codex-worktree.py"):
+            self.assertEqual("upstream-managed", manifest["files"][path]["classification"])
+        no_hooks = installer.payload(ROOT, "codex", False)
+        self.assertEqual(launcher, no_hooks[".codex/codex-worktree.py"])
+        self.assertNotIn("hooks", tomllib.loads(no_hooks[".codex/config.toml"].decode()))
+
+    def test_codex_worktree_export_safe_claude_and_missing_asset(self):
+        claude = installer.payload(ROOT, "claude", True)
+        self.assertNotIn(".claude/codex-worktree.py", claude)
+        self.assertFalse(any("codex-worktree.py" in handler["command"]
+                             for groups in json.loads(claude[".claude/settings.json"])["hooks"].values()
+                             for group in groups for handler in group["hooks"]))
+        self.assertEqual(installer.json_bytes(installer.hook_settings("claude")),
+                         claude[".claude/settings.json"])
+        listing = self._listing("git", "ls-files", "--stage", "-z", cwd=ROOT, capture=True)
+        missing = "\0".join(entry for entry in listing.split("\0")
+                            if not entry.endswith("\t.ai/install-assets/codex-worktree.py"))
+        with patch.object(installer, "run", return_value=missing):
+            with self.assertRaisesRegex(ValueError, "Missing or unsupported Codex launcher"):
+                installer.payload(ROOT, "codex", True)
+            self.assertEqual(claude, installer.payload(ROOT, "claude", True))
 
 if __name__ == "__main__":
     unittest.main()

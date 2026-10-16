@@ -43,8 +43,9 @@ git -C "$session" commit --quiet -m "wave one"
 session_head="$(git -C "$session" rev-parse HEAD)"
 
 run_hook() { # <event> <cwd> <field> <value>
-  printf '{"hook_event_name":"%s","session_id":"s1","cwd":"%s","%s":"%s"}' "$1" "$2" "$3" "$4" \
-    | bash "$hook" 2>/dev/null
+  (cd -- "$2" &&
+    printf '{"hook_event_name":"%s","session_id":"s1","cwd":"%s","%s":"%s"}' "$1" "$2" "$3" "$4" \
+      | bash "$hook" 2>/dev/null)
 }
 
 # --- creation ------------------------------------------------------------------
@@ -111,6 +112,29 @@ mkdir -p "$outside"
 run_hook WorktreeRemove "$session" worktree_path "$outside" >/dev/null
 check "remove: a path outside the root is never touched" \
   "$([[ -d "$outside" ]] && echo kept || echo removed)" "kept"
+
+# Reserved native identities never use ordinary dispatch's name-reuse branch.
+native_name=wf-entry-0123456789abcdef0123456789abcdef
+set +e
+unknown="$(run_hook WorktreeCreate "$session" name "$native_name")"
+unknown_status=$?
+set -e
+check "native: missing ticket is refused" "$([[ $unknown_status -ne 0 ]] && echo yes || echo no)" yes
+check "native: missing ticket returns no successful path" "$unknown" ""
+native="$repo/.worktrees/$native_name"
+git -C "$repo" worktree add --quiet -b worktree-wf_0123456789abcdef0123456789abcdef "$native"
+printf 'native-private.bin\n' >> "$repo/.git/info/exclude"
+printf 'ignored native data\n' > "$native/native-private.bin"
+set +e
+reused="$(run_hook WorktreeCreate "$session" name "$native_name")"
+reused_status=$?
+set -e
+check "native: registered name cannot bypass real path approval" "$([[ $reused_status -ne 0 ]] && echo yes || echo no)" yes
+check "native: rejected reuse returns no path" "$reused" ""
+run_hook WorktreeRemove "$session" worktree_path "$native" >/dev/null
+check "native: uncertain ignored-only checkout is preserved" "$(cat "$native/native-private.bin")" "ignored native data"
+check "native: preserved checkout stays registered" \
+  "$(git -C "$native" rev-parse --is-inside-work-tree)" true
 
 printf '%s passed, %s failed\n' "$passed" "$failed"
 [[ "$failed" -eq 0 ]]
