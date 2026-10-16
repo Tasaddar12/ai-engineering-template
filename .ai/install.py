@@ -109,6 +109,10 @@ def payload(source, host="codex", hooks=True):
     if host not in ("codex", "claude"):
         raise ValueError(f"Unknown host: {host}")
     if host == "codex":
+        origin = ASSETS + "codex-worktree.py"
+        if modes.get(origin) not in ("100644", "100755"):
+            raise ValueError(f"Missing or unsupported Codex launcher install asset: {origin}")
+        selected[".ai/codex-worktree.py"] = (source / origin).read_bytes()
         # Native Codex definitions point to the full role, beside the installed TOML.
         # Packaging inputs stay out of Claude installs and are required per role.
         for name, content in list(selected.items()):
@@ -482,6 +486,9 @@ HOST_HOOKS = {
     ),
     "codex": (
         ("SessionStart", "context-handoff.sh", 10),
+        ("PreToolUse", "codex-worktree.py", 30),
+        ("SessionStart", "codex-worktree.py", 30),
+        ("UserPromptSubmit", "codex-worktree.py", 30),
     ),
 }
 
@@ -498,7 +505,7 @@ def hook_settings(host):
     registrations = [(event, script, matcher,
                       120 if script.endswith(".py") else 30 if script == "source-prewrite.sh" else 10)
                      for event, script, matcher in MANAGED_HOOKS]
-    registrations += [(event, script, None, timeout)
+    registrations += [(event, script, "*" if event == "PreToolUse" else None, timeout)
                       for event, script, timeout in HOST_HOOKS.get(host, ())]
     for event, script, matcher, timeout in registrations:
         interpreter = "python" if script.endswith(".py") else "bash"
