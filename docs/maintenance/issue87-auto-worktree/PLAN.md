@@ -8,6 +8,7 @@ autonomous: true
 requirements: [ISSUE87]
 acceptance: [AW-01, AW-02, AW-03, AW-04, AW-05, AW-06, AW-07, AW-08]
 files_modified:
+  - .github/workflows/validate.yml
   - AGENTS.md
   - .ai/install.py
   - .ai/hooks/source-prewrite.sh
@@ -153,12 +154,14 @@ observed controller, and live smoke is distinct from simulated contract evidence
 These summarize actual CONTEXT decisions, not invented discussion or approval.
 
 One feature, one TDD plan, three original tasks plus bounded Task 4 for the
-same-phase dependency join. Coordinator dispatches one
+same-phase dependency join and configuration-only Task 5 after observed CI timeout.
+Coordinator dispatches one
 isolated source worker for Tasks 1-2, then an isolated doc-writer for Task 3 after
 source integration. Sources and docs have disjoint ownership below. Task 4 follows
 integrated code-05 corrections and the coordinator's local non-rewriting PR93
 dependency merge; overlapping source/doc paths are serial, never assigned to
-concurrent writers. Preparation now owns only this PLAN, CONTEXT, STACK-PLAN and
+concurrent writers. Task 4 preparation owned this PLAN, CONTEXT, STACK-PLAN and
+PREPARER-SUMMARY. Task 5 preparation owns only PLAN, CONTEXT, CI-PLAN and
 PREPARER-SUMMARY; no code, tests or provider writes run in this assignment.
 </context>
 
@@ -175,7 +178,8 @@ PREPARER-SUMMARY; no code, tests or provider writes run in this assignment.
 | AW-07 | Bounded ticket/creation lifecycle, concurrent separation, uncertain native outcome and retry handling avoid duplicate creation, double edits or creation-name approval bypass. Already-correct worktree is a no-movement control. | Tasks 1-2; failure/race/recovery cases |
 | AW-08 | Fresh genuine behavioral native-route RED before fixes, GREEN of same case, independent source/docs/integration review, honest live evidence and completion status. | All tasks; receipts and independent verification |
 
-Source worker (Tasks 1-2) owns every files_modified path except the bounded Task 2
+Source worker (Tasks 1-2) owns every files_modified path except Task 5's
+`.github/workflows/validate.yml`, the bounded Task 2
 migration subassignment below and these Task 3
 doc-writer paths: `.ai/hooks/README.md`, `.ai/references/worktree-sessions.md`,
 `.ai/runtime/README.md`, `.ai/RULES.md`. The shared operational protocol
@@ -188,6 +192,13 @@ Task 4 is a later isolated integration assignment with exactly its six listed
 paths; it supersedes no active writer's ownership. Its overlaps are permitted only
 after earlier commits integrate and writers finish. It owns the automatic summary
 docs/maintenance/issue87-auto-worktree/STACK-SUMMARY.md.
+
+Task 5 is a later isolated repair after the independent timeout diagnosis and
+plan check join. Its exact ownership is `.github/workflows/validate.yml` plus its
+automatic `docs/maintenance/issue87-auto-worktree/CI-SUMMARY.md` receipt. Only the
+platform job budget and its adjacent explanation may change: Windows45 minutes,
+Ubuntu30. This is the sole provider-workflow exception; no earlier worker gains
+that path. CI-PLAN.md supplies the observed RED, bounded checks and handoff.
 
 Bounded Task 2 CI-regression subassignment at published source input
 ff81660b493305b5714c8efce9835ee4c2d128a0: coordinator assigns isolated targeted-fixer
@@ -212,7 +223,8 @@ and commit the test plus MIGRATION-SUMMARY. Coordinator integrates this disjoint
 repair and checks its receipt before final verification; unrelated CI errors stay
 with the currently assigned source worker.
 
-Excluded: edits to original six draft heads; GitHub/GitLab/provider workflow changes; provider
+Excluded: edits to original six draft heads; GitHub/GitLab/provider workflow changes
+except Task 5's exact validation-job budget/comment; provider
 73/74; live infrastructure, installations, cleanup and merges; generalized command
 parsing; shell/external writers; existing exec-session input; cloud hooks; new
 Codex controller; whole-host sandbox claims; broad role/tool or workflow rewrites.
@@ -467,6 +479,16 @@ with bounded coverage, not a universal filesystem enforcement boundary.
   <verify><automated>python -m unittest discover -s tests -p test_same_agent_worktree.py -v</automated><fails_when>Nonzero exit, zero cases, snapshot(None), native/ordinary-session regression, unknown-verb bypass or simulated behavior labeled live.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -k registered_hooks_run_planning_integrity_from_installed_hosts -v</automated><fails_when>Nonzero exit, zero cases, missing canonical-planning denial or changed real index/authored bytes.</fails_when><automated>python -m unittest discover -s tests -p test_install.py -k installed_runtime_answers_its_verb_contract -v</automated><fails_when>Nonzero exit, zero cases, missing native/planning verb or incorrect structured result.</fails_when><automated>python -m unittest discover -s tests -p test_install_update.py -v</automated><fails_when>Nonzero exit, zero cases, lost/duplicated managed or user hook, wrong launcher/order/timeout or damaged installed records.</fails_when><automated>python -m unittest discover -s tests -p test_planning_integrity.py -v</automated><fails_when>Nonzero exit, zero cases, malformed canonical commit allowed, absent success/error warning or lost authored/index data.</fails_when><automated>python -m unittest discover -s tests -p test_phase_runtime.py -v</automated><fails_when>Nonzero exit, zero cases or ordinary runtime verb regression.</fails_when><automated>python -m unittest discover -s tests -p test_session_delivery.py -v</automated><fails_when>Nonzero exit, zero cases, changed phase/quick session ownership/base or unintended checkout/sync.</fails_when></verify>
   <done>The exact frozen93-on92/native97 join has passing focused receipts and committed STACK-SUMMARY; independent code, integration and narrow documentation reviews confirm both controls survive. The coordinator then performs the separate disposable original-six composition check/review, without publishing it or altering those heads. Live native movement remains unverified unless separately observed.</done>
 </task>
+<task type="auto">
+  <name>Task 5: Give the observed Windows validation workload a bounded 45-minute job budget</name>
+  <files>.github/workflows/validate.yml</files>
+  <read_first>docs/maintenance/issue87-auto-worktree/CONTEXT.md, docs/maintenance/issue87-auto-worktree/CI-PLAN.md, docs/maintenance/issue87-auto-worktree/CI-DIAGNOSIS.md, docs/maintenance/issue87-auto-worktree/COMPOSITION.md, .github/workflows/validate.yml, .ai/runtime/requirements.txt, captured run38832833234 logs/metadata</read_first>
+  <precondition>Coordinator has joined the independent diagnosis of run38832833234 and obtained an independent check of this amendment, then assigns a fresh isolated targeted-fixer or coder the exact workflow path and CI-SUMMARY. Earlier source writers have finished; the intended implementation input and workflow bytes are captured.</precondition>
+  <action>Under D-01/D-04 and the bounded CI exception recorded in CONTEXT, preserve the real job-timeout RED at production21488ca: Windows Python746 passed, tier10 and advisory60 passed, context was canceled and location skipped; aggregate validate failed. Change only jobs.platform.timeout-minutes to the existing matrix.os conditional expression specified in CI-PLAN, yielding integer45 for windows-latest and30 for ubuntu-latest, with an adjacent comment grounded in observed duration. Keep the matrix, job names, triggers, permissions, Python3.11, action versions, dependency install, full Python command, all four Bash commands/order, per-test limits and aggregate failure semantics identical. This is configuration-only recovery, so the existing observed timeout is the RED; no new test, benchmark, harness, shard, cache, infrastructure or action upgrade is needed. Parse and inspect the YAML and scoped diff, record actual results in CI-SUMMARY, and commit only that receipt and the workflow. Coordinator integrates and publishes the changed CI input for a fresh run; a manual rerun of a healthy unchanged job is not the repair. Fresh bounded independent review and final verifier reconciliation must cover the actual new revision.</action>
+  <acceptance_criteria>AW-08 retains honest evidence: Windows budget45/Ubuntu30 with unchanged required coverage and fail-closed aggregate; fresh CI completes Python and all four Bash suites on both platforms and validate succeeds at the new source/config revision. Source preservation/composition receipts remain scoped to their unchanged input boundaries. AW-01/AW-04 live-host gaps remain unverified/human_needed, PR97 stays draft based on93, issue87 stays open and all six original heads remain frozen.</acceptance_criteria>
+  <verify><automated>python -c "import pathlib, yaml; d=yaml.load(pathlib.Path('.github/workflows/validate.yml').read_text(encoding='utf-8'), Loader=yaml.BaseLoader); print(d['jobs']['platform']['timeout-minutes'])"</automated><fails_when>Nonzero exit, YAML parse error, absent job budget, or printed expression differs from CI-PLAN's exact Windows45/Ubuntu30 expression on inspection.</fails_when><automated>git diff --check</automated><fails_when>Nonzero exit or whitespace diagnostics.</fails_when><manual>Compare the parsed workflow and scoped Git diff against the captured input as specified in CI-PLAN: only the platform timeout/comment differs, both matrix values resolve to their required integer budgets and every command/aggregate/protection remains identical. Coordinator then observes the new CI run: either platform incomplete/canceled/non-success, any missing Python or Bash result, or non-success validate prevents GREEN.</manual></verify>
+  <done>Workflow and CI-SUMMARY are committed with structural/diff receipts; coordinator obtains fresh actual CI GREEN, independent bounded review and revision-specific verifier reconciliation. No canceled or skipped suite is labeled passed and live acceptance is not waived.</done>
+</task>
 </tasks>
 
 ## Independent behavioral matrix and evidence layers
@@ -580,6 +602,8 @@ not fulfilled by cancellation or an unrelated host product feature.
 | RESEARCH | Native capabilities | Official target Claude semantics support instruction-driven native route | Implement gated route; this executor's missing tool limits live observation only |
 | RESEARCH | Source map | Restrictive role exports, six shell routes, creation reuse and phase-only adopt | AW-06; exact producer/consumer changes above |
 | RESEARCH | Prior RED/matrix | Cancellation/note cases useful but preparation-only assertions insufficient | Task 1 fresh native-route RED; preserve valid controls and historical receipts |
+| RESEARCH | Actual CI timeout | Run38832833234 exhausts Windows30-minute job budget after Python GREEN | Task 5 / CI-PLAN; Windows45, Ubuntu30, unchanged coverage and fresh CI required |
+| CONTEXT | D-01/D-04 CI exception | Existing implementation/recovery authority, only validate job budget/comment added | Task 5 exact ownership; other provider, frozen-head and live-host boundaries retained |
 
 Hardest constraint is real native same-agent default context, addressed by the
 first tracer and not deferred to docs. Pre-mortem controls: unavailable/schema
@@ -591,7 +615,9 @@ fresh-read tests plus live gate. No complexity/deadline-based scope reduction.
 Source and docs implement the conditional native same-agent route, required
 deterministic checks pass at the reported integrated revision with fresh genuine
 RED/GREEN, and independent reviewers confirm actual export/creation/workflow
-wiring and data safety. Actual same-agent fulfillment is verified only with live
+wiring and data safety. Task 5 additionally requires the new CI input's complete
+both-platform Python/four-Bash and aggregate GREEN; prior partial run is RED.
+Actual same-agent fulfillment is verified only with live
 native evidence. If unavailable, return implemented/fixture-verified conditional
 behavior and live acceptance unverified; no preparation/manual-child fallback is
 presented as fulfillment. Keep PR97 draft, issue87 open and never merge.
@@ -605,7 +631,10 @@ docs/maintenance/issue87-auto-worktree/DOCUMENTATION-SUMMARY.md. Summaries belon
 to assigned authors. Task 4 returns
 docs/maintenance/issue87-auto-worktree/STACK-SUMMARY.md with exact frozen parents,
 joined input/output tips, real RED/GREEN and focused receipts, preservation and
-scope-diff evidence, review obligations and unverified live behavior. Coordinator
+scope-diff evidence, review obligations and unverified live behavior. Task 5 returns
+docs/maintenance/issue87-auto-worktree/CI-SUMMARY.md with observed timeout RED,
+input/output revision, exact workflow-only delta, structural/diff receipts, and
+pending or actual fresh CI/review results; never invent future GREEN. Coordinator
 records the separate disposable composition evidence and keeps all frozen heads
 unchanged. Coordinator integrates source before docs, commits/reconciles
 native MATRIX and canonical issue98 scope, obtains independent plan recheck before

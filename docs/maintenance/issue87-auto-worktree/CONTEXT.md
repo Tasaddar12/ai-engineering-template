@@ -49,3 +49,46 @@ After final97, test/review a separate disposable local original-six composition
 without publishing it. Existing maintenance acceptance and live-native uncertainty
 remain; a real planning-preservation integration failure must be repaired, not
 deferred. Native exit stays essential preservation, with no second cleanup project.
+
+## Coordinator CI-budget reconciliation for Task 5
+
+The user's existing issue87 implementation, publication, required-CI and
+recoverable-diagnosis authorization covers a bounded response to the actual
+run38832833234 failure at production21488caa19e3b76b11d84165bf4c69fb58f3ac96.
+Coordinator captured the GitHub annotation that the job exceeded its maximum
+execution time of30m0s. Windows job116755220118 ran01:01:36..01:31:48 (30m12s):
+Python746 passed in1674.794s, skipped2; tier10 and advisory60 passed; context
+handoff began01:30:26 and was canceled01:31:45; worktree-location was skipped.
+Ubuntu job116755220585 succeeded with Python746/332.623s, skipped15, and all
+four Bash suites (357 assertions). Aggregate validate failed. The whole run and
+Windows Bash coverage are not GREEN.
+
+Prior successful run38822540901 Windows job116722266702 took27m44s; its context
+step took158s and location12s. The current context step's79s before cancellation
+is shorter than that prior normal context duration, so the quiet interval does
+not demonstrate a stall. Independent CR-CI-01 confirms budget exhaustion in
+CI-DIAGNOSIS.md at fad210d9811b44daf7335601d0ea67d06da6abd7, read from Git
+without changing this preparer's assigned input. CI-PLAN.md records evidence
+provenance and exact verification; independent plan checking remains required.
+
+Within delegated discretion, Task 5 permits only
+`.github/workflows/validate.yml` platform-job timeout/comment: Windows45 minutes,
+Ubuntu30, using existing matrix.os. All jobs, commands, four Bash suites, Python
+and action versions, per-test bounds, triggers, permissions, aggregate failure
+semantics and protections remain unchanged. No test removal, sharding, benchmark,
+cache, infrastructure, installation or action upgrade is authorized. This is the
+sole exception to earlier provider-workflow exclusions; it does not alter provider
+behavior or grant worker publication. A fresh isolated worker owns that file and
+CI-SUMMARY.md only after checked planning/diagnosis; coordinator owns integration,
+publication, new CI observation, fresh bounded independent review and final
+verifier reconciliation at the actual new revision.
+
+Prior `.github` preservation statements are historical at their recorded source
+or verification revision. The new exception changes only this job budget/comment;
+canonical planning, advisory hook, attributes and provider behavior retain their
+byte-preservation boundaries. Original-six and finalC composition evidence is
+retained only for unchanged source inputs, never relabeled a new CI execution.
+No original-six/finalC import into97, frozen-head change or PR merge is allowed.
+PR97 retains actual base93 and draft state;73/74, Whiskance/game, infrastructure
+and cleanup stay excluded. Actual native host movement/defaults/lifecycle remain
+unverified/human_needed with no acceptance waiver; issue87 remains open.
