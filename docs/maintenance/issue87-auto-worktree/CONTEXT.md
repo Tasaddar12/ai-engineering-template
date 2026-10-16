@@ -136,3 +136,11 @@ Do not weaken to an open-ended count. The retained installed behavioral tracer
 remains entirely unchanged. This corrects a directly stale export inventory;
 it grants no Python/native execution, new behavior, acceptance or policy change.
 All such fixtures and the edited existing case remain NOT_RUN in this work.
+
+Two further directly affected existing test expectations are included in the
+same bounded clarification: require the new codex-worktree.py timeout30 while
+keeping all other Python120 registrations, and filter destructive-handler
+identity before regex matching so the unrelated native literal `*` matcher is
+not parsed as a regex. Keep exactly one selected destructive handler and every
+behavioral assertion. These changes maintain test/export selection after the
+three authorized registrations; all execution restrictions remain in force.
