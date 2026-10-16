@@ -1,5 +1,32 @@
 # Independent prewrite matrix proposal
 
+## Codex safe-continuation evidence frontier
+
+The binding restricted continuation in CONTEXT supersedes executable probe and
+test directions below. These rows track evidence; they do not waive acceptance.
+Independent static plan review04 approved the amendment at `d3af0131`; fresh
+static source review02 found no defects in the two saved repairs at `7114ef66`.
+Both reports preserve all behavioral and native uncertainty.
+
+| Requirement | Committed or planned source | Current evidence / unmet acceptance |
+|---|---|---|
+| CW-01 startup selection | Runtime-owned phase/quick destination and startup argv | Historical A real-Git/launch-spy receipts keep their original revision; actual native destination/defaults remain unverified. |
+| CW-02 source versus notes | CR-02 permits primary lifecycle diagnostics; supported source tools still validate the root | Static repair review02 only. Written lifecycle/note/source fixtures are NOT_RUN. Generated native behavior remains unverified. |
+| CW-03 installation | Task6B owns Codex launcher asset, synchronous registrations and managed exports | Installer/export fixtures are current bounded work. No Python/import/render/install execution; no preservation or idempotence pass is claimed. |
+| CW-04 setup and arguments | CR-01 refuses batch launchers before preparation; accepted prompt stays one argv item | Static repair review02 only. Written stub fixtures are NOT_RUN. Native trust, managed feature behavior and effective policy remain unverified. |
+| CW-05 generated native shell and patch denial | No current native fixture implementation or execution authorized | BLOCKED / UNVERIFIED. Retained installed tracer stays active and unchanged, with no new execution or GREEN. |
+| CW-06 accurate claims | Task6C owns eleven documents and six canonical workflow references | Static document review follows integrated B; source presence cannot prove runtime acceptance or active-session movement. |
+
+All new Python checks are NOT_RUN after the exact pre-start file-access denial
+recorded in CONTEXT. No retries, alternate interpreter/host/harness, generated
+commands, native/injection probes or manual remote CI route are authorized.
+Normal authorized pushes may trigger existing configured CI; each result applies
+only to its own revision and cannot substitute for blocked CW-05 evidence.
+
+Original AW live acceptance remains pending. Issue98's three canonical risk keys
+stay unresolved; no checklist closure, original-six change, PR99 routing change,
+merge or adoption bookkeeping follows from these static receipts.
+
 ## Native-entry acceptance update
 
 The human's same-agent clarification replaces preparation-only acceptance. Read the earlier rows as historical test proposals where they conflict with this update. Scout `issue87-native-acceptance-gaps` inspected `206deb7578ca51e3bbea0caa75beed1769a08363` without tests or writes; the coordinator condensed its cited packet below. The preparer and independent checker own the executable plan and readiness verdict.
