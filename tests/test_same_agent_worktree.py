@@ -217,7 +217,9 @@ class NativeRouteTests(unittest.TestCase):
         result = subprocess.run([sys.executable, str(runtime), "query", *args, *extra],
                                 cwd=cwd or self.directory, env=environment,
                                 capture_output=True, encoding="utf-8", timeout=30)
-        self.assertNotIn("Traceback", result.stderr)
+        self.assertNotIn("Traceback", result.stderr,
+                         "installed " + args[0] + " must preserve the native/planning dispatch boundary; "
+                         + result.stderr)
         self.assertIn(result.returncode, (0, 1), result.stderr)
         value = json.loads(result.stdout)
         self.assertNotEqual("unknown-verb", value.get("code"),
@@ -314,6 +316,8 @@ class NativeRouteTests(unittest.TestCase):
 
     def test_simulated_installed_denial_native_entry_defaults_and_fresh_rebuilt_edit(self):
         """A1/A4/A6: actual pipeline -> native provider -> same simulated caller."""
+        planning_before = {name: (self.directory / ".planning" / name).read_bytes()
+                           for name in ("STATE.md", "ROADMAP.md")}
         (self.directory / "source.txt").write_bytes(b"dirty PRIMARY ONLY\n")
         (self.directory / "staged.bin").write_bytes(b"staged\x00\xffbinary")
         self.git("add", "staged.bin")
@@ -348,11 +352,104 @@ class NativeRouteTests(unittest.TestCase):
         self.assertEqual(expected, (self.host.cwd / "source.txt").read_bytes())
         self.assertEqual(1, self.host.edits)
         self.assertEqual(primary, self.primary_snapshot())
+        self.assertEqual(planning_before, {name: (self.directory / ".planning" / name).read_bytes()
+                                          for name in planning_before})
         # Later simulated turn: the same object/actor retains destination defaults.
         self.host.reads.clear()
         self.assertEqual(expected, self.host.read("source.txt"))
         self.assertEqual(target["branch"], self.host.git("branch", "--show-current").strip())
         self.assertEqual(1, len(self.host.events))
+
+    def test_stacked_exact_native_error_boundary_does_not_exempt_future_or_unknown_verbs(self):
+        """Fault injection at installed dispatch; real adapters run in other cases."""
+        runtime = self.directory / ".claude/runtime/phase.py"
+        program = '''import contextlib, io, json, runpy, sys
+from unittest.mock import patch
+scope = runpy.run_path(sys.argv[1])["main"].__globals__
+main = scope["main"]
+def unavailable(*args):
+    raise OSError("fixture native I/O unavailable")
+def no_workspace():
+    raise AssertionError("native adapter used generic Workspace")
+results = []
+for verb in ("prewrite.request", "prewrite.begin", "prewrite.confirm"):
+    output = io.StringIO()
+    with patch.dict(scope["VERBS"], {verb: unavailable}), patch.dict(scope, {"Workspace": no_workspace}):
+        with contextlib.redirect_stdout(output):
+            status = main(["query", verb])
+    value = json.loads(output.getvalue())
+    assert status == 1 and value["code"] == "prewrite-io", (verb, status, value)
+    results.append(verb)
+for verb in ("prewrite.future", "prewrite.confirm.extra", "prewrite."):
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        status = main(["query", verb])
+    assert status == 1 and json.loads(output.getvalue())["code"] == "unknown-verb", verb
+    # Prefix spelling must not inherit the native OSError handling either.
+    with patch.dict(scope, {"Workspace": unavailable}), contextlib.redirect_stdout(io.StringIO()):
+        try:
+            main(["query", verb])
+        except OSError:
+            pass
+        else:
+            raise AssertionError("unknown prefix inherited native exception: " + verb)
+def future_handler(workspace, positionals, options):
+    assert workspace is not None, "future registered handler inherited native workspace bypass"
+    (workspace.root / ".planning/ROADMAP.md").write_text("# Roadmap\\n## Authored\\n", encoding="utf-8")
+    return {"ordinary_workspace": True}
+with patch.dict(scope["VERBS"], {"prewrite.future": future_handler}):
+    from pathlib import Path
+    Path(".planning/ROADMAP.md").write_text("# Roadmap\\n## Authored\\nfuture sentinel\\n", encoding="utf-8")
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        assert main(["query", "prewrite.future"]) == 0
+    value = json.loads(output.getvalue())
+    assert value["ordinary_workspace"]
+    assert any(item["content"] == "future sentinel" for item in value["integrity_warnings"])
+# Handler validation precedes any adapter bypass, even for a reserved spelling.
+with patch.dict(scope["VERBS"], {}, clear=False):
+    handler = scope["VERBS"].pop("prewrite.request")
+    try:
+        try:
+            scope["run_verb"](None, "prewrite.request", [], {})
+        except scope["VerbError"] as error:
+            assert error.code == "unknown-verb"
+        else:
+            raise AssertionError("missing registered native handler was bypassed")
+    finally:
+        scope["VERBS"]["prewrite.request"] = handler
+print(json.dumps(results))
+'''
+        environment = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+        result = subprocess.run([sys.executable, "-c", program, str(runtime)], cwd=self.directory,
+                                env=environment, capture_output=True, encoding="utf-8", timeout=30)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(["prewrite.request", "prewrite.begin", "prewrite.confirm"], json.loads(result.stdout))
+
+    def test_stacked_installed_ordinary_success_and_error_keep_integrity_warnings(self):
+        """Use PR93's real mutating verb while retaining unrelated authored bytes/index."""
+        from test_phase_runtime import STATE, ROADMAP
+        authored = self.directory / ".planning/authored-notes.md"
+        authored.write_bytes(b"authored sentinel must survive\n")
+        self.git("add", ".planning/authored-notes.md")
+        index = (self.directory / ".git/index").read_bytes()
+        for missing_state in (False, True):
+            with self.subTest(missing_state=missing_state):
+                roadmap = self.directory / ".planning/ROADMAP.md"
+                roadmap.write_text(ROADMAP + "| authored table sentinel | retain this |\n", encoding="utf-8")
+                state = self.directory / ".planning/STATE.md"
+                if missing_state:
+                    state.unlink()
+                else:
+                    state.write_text(STATE, encoding="utf-8")
+                data = self.runtime("roadmap.update-plan-progress", "01-01", "--raw", ok=not missing_state)
+                warning = next(item for item in data["integrity_warnings"] if "authored table sentinel" in item["content"])
+                self.assertEqual("roadmap.update-plan-progress", warning["verb"])
+                self.assertEqual("## Progress", warning["section"])
+                if missing_state:
+                    self.assertEqual("missing-state", data["code"])
+                self.assertEqual(b"authored sentinel must survive\n", authored.read_bytes())
+                self.assertEqual(index, (self.directory / ".git/index").read_bytes())
 
     def test_simulated_gate_refusals_leave_ticket_and_git_untouched(self):
         """A2: positive actual-export/schema/policy/trust checks, no fallback."""

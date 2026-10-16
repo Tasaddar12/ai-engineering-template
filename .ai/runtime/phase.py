@@ -30,6 +30,7 @@ from lib.text import slugify  # noqa: E402
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
 LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
                 "findings", "files_read", "only", "todos"}
+NATIVE_ADAPTERS = frozenset({"prewrite.request", "prewrite.begin", "prewrite.confirm"})
 
 
 def parse(argv):
@@ -86,7 +87,12 @@ def run_verb(workspace, verb, positionals, options):
 
     handler = VERBS.get(verb)
     require(handler is not None, "unknown verb: " + verb, "unknown-verb")
-    # Snapshot existing records only. This covers every dispatch path, including
+    # These registered adapters discover bounded UTF-8 Git facts and write only
+    # Git-common-dir journal/session metadata, not canonical planning records.
+    # Validate the handler first; future prefix-sharing verbs stay ordinary.
+    if verb in NATIVE_ADAPTERS:
+        return handler(workspace, positionals, options)
+    # Snapshot existing records only. This covers ordinary dispatch, including
     # milestone/bookkeeping and conservative repair, without creating records.
     before = planning_integrity.snapshot(workspace)
     try:
@@ -958,7 +964,7 @@ def main(argv=None):
         # Native request adapters resolve bounded UTF-8 Git facts themselves.
         # Do not precede their internal deadline with the generic 30s root
         # lookup or use its locale-decoded Windows path as native evidence.
-        workspace = None if verb.startswith("prewrite.") else Workspace()
+        workspace = None if verb in NATIVE_ADAPTERS else Workspace()
         result = run_verb(workspace, verb, positionals, options)
     except VerbError as exc:
         payload = failure(str(exc), exc.code)
@@ -967,7 +973,7 @@ def main(argv=None):
         emit(payload)
         return 1
     except OSError as exc:
-        if not verb.startswith("prewrite."):
+        if verb not in NATIVE_ADAPTERS:
             raise
         emit(failure("prewrite I/O failed; preserve and inspect: " + str(exc), "prewrite-io"))
         return 1
