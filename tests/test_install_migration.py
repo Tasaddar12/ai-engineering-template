@@ -355,8 +355,8 @@ class MigrationTests(unittest.TestCase):
         fixture = {event: [dict(group, hooks=[dict(handler) for handler in group["hooks"]])
                            for group in groups]
                    for event, groups in canonical.items()}
-        editing_matcher = next(matcher for event, _, matcher in installer.MANAGED_HOOKS
-                               if event == "PreToolUse" and matcher != "^(Agent|Task)$")
+        editing_matcher = next(matcher for event, script, matcher in installer.MANAGED_HOOKS
+                               if event == "PreToolUse" and script == "source-prewrite.sh")
         user_handler = {
             "type": "command",
             "command": "python user-editing-hook.py",
@@ -406,8 +406,7 @@ class MigrationTests(unittest.TestCase):
             for group in groups
             for handler in group["hooks"]
             if any(script in handler.get("command", "")
-                   for script in ("ai-tier-notice.sh", "worktree-guard.sh",
-                                  "source-prewrite.sh", "context-handoff.sh")))
+                   for script in installer.managed_scripts()))
         self.assertEqual(canonical_commands, migrated_commands,
                          "all managed POSIX and Windows commands must match canonical Codex settings")
         self.assertIn("SessionStart", migrated,
