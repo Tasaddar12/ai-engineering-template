@@ -24,9 +24,7 @@ def tokens(command, grammar):
     lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
     lexer.escape = '\\' if grammar == 'bash' else ('`' if grammar == 'powershell' else '^')
     lexer.whitespace_split = True
-    # Bash treats an unquoted # at the start of a word as a comment. shlex
-    # preserves quoted, escaped and embedded hashes while honoring that rule.
-    lexer.commenters = '#' if grammar == 'bash' else ''
+    lexer.commenters = ''
     return list(lexer)
 
 
@@ -35,10 +33,11 @@ def outer_commands(command, grammar):
     if grammar == 'bash':
         command = command.replace('\\\r\n', '').replace('\\\n', '')
     escape = '\\' if grammar == 'bash' else ('`' if grammar == 'powershell' else '^')
-    result, start, index, quote = [], 0, 0, None
+    result, start, index, quote, word_open = [], 0, 0, None, False
     while index < len(command):
         char = command[index]
         if char == escape and quote != "'":
+            word_open = True
             index += 2
             continue
         if quote:
@@ -49,7 +48,8 @@ def outer_commands(command, grammar):
                 quote = None
         elif char in ("'", '"'):
             quote = char
-        elif grammar == 'bash' and char == '#' and (index == start or command[index - 1].isspace()):
+            word_open = True
+        elif grammar == 'bash' and char == '#' and not word_open:
             # A comment ends at the next newline; operators in its text are inert.
             newline = command.find('\n', index)
             if command[start:index].strip():
@@ -58,10 +58,16 @@ def outer_commands(command, grammar):
                 return result
             start = newline
             index = newline
+            word_open = False
         elif char in ';&|\r\n':
             if command[start:index].strip():
                 result.append(command[start:index])
             start = index + 1
+            word_open = False
+        elif char.isspace():
+            word_open = False
+        else:
+            word_open = True
         index += 1
     if quote:
         raise ValueError('Unterminated shell quote; cannot inspect prospective commit')
@@ -240,7 +246,7 @@ def inspect(command, cwd, grammar):
         work = set()
         if mode == 'only':
             # Paths are relative to native command cwd; queries emit repo paths.
-            work = changed_worktree(target, globals_, specs, tracked=False)
+            work = changed_worktree(target, globals_, specs, tracked=True)
             staged = set()
         elif mode == 'all':
             work = set(integrity.names(target, *globals_, 'diff', '--name-only', '--diff-filter=ACDMRT', '-z'))

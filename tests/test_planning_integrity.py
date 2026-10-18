@@ -221,6 +221,46 @@ class IntegrityTests(unittest.TestCase):
                 result = self.hook(command, tool='Bash', field='command')
                 self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_bash_hash_boundaries_preserve_only_mode_and_prospective_bytes(self):
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.git('commit', '-qm', 'valid plan')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.write(RECORD, INVALID)
+        before = self.git('ls-files', '--stage')
+        commands = [
+            'git commit -m fixture#literal --only -- ' + RECORD,
+            r'git commit -m fixture\ #literal --only -- ' + RECORD,
+            'git commit -m "fixture"#literal --only -- ' + RECORD,
+        ]
+        for command in commands:
+            with self.subTest(command=command):
+                self.assert_denied(self.hook(command, tool='Bash', field='command'))
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+
+        self.write(RECORD, VALID)
+        for command in commands:
+            with self.subTest(valid=command):
+                result = self.hook(command, tool='Bash', field='command')
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        self.assert_denied(self.hook('git commit -m fixture # comment; echo inert',
+                                     tool='Bash', field='command'))
+
+    def test_only_ignores_unadded_untracked_invalid_plan(self):
+        self.write('seed', 'tracked working change\n')
+        self.write(RECORD, INVALID)
+        self.write('unrelated', 'preserve unrelated staged blob\n')
+        self.git('add', 'unrelated')
+        before = self.git('ls-files', '--stage')
+        result = self.hook('git commit --only -m fixture -- .')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
     def test_add_then_only_checks_new_selected_record_and_preserves_index(self):
         self.write('unrelated', 'preserve this staged blob\n')
         self.git('add', 'unrelated')

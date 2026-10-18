@@ -95,3 +95,35 @@ this result as file/scope/static evidence; behavioral verification remains pendi
 
 - Coordinator and fresh code-reviewer should inspect the committed repair. The
   added behavioral regressions remain unexecuted under the no-tests instruction.
+
+## Follow-up review repair at `b9a64a9`
+
+### Changes
+
+- Keep `shlex` comments disabled. The Bash outer scanner now tracks whether a
+  lexical word is open, so `#` begins a comment only outside quotes at a true
+  word boundary. Escaped whitespace, quoted prefixes and mid-word hashes retain
+  their following `--only` arguments.
+- Limit initial `--only` worktree identities to cached/tracked paths. For an
+  earlier prospective `git add`, intersect its candidate identities with a
+  separate Git pathspec query that includes untracked paths; only that
+  intersection adds prospective new files to validation.
+- Add regressions for literal hashes before `--only`, escaped whitespace,
+  quoted-prefix hashes, inert comment operators, and unadded invalid plans.
+
+### Checks
+
+- Static AST parsing and in-memory compilation passed for the hook and regression
+  file.
+- Manual source trace: initial `--only` identities come from `ls-files --cached`
+  with the commit pathspec; untracked candidates enter `work` only through the
+  intersection of preceding-add candidates and a second Git pathspec query. Each
+  selected worktree identity is validated from `root / path`; the hook performs
+  no index writes.
+- `git diff --check` passed.
+- Behavioral tests and configured checks: not run, as instructed.
+
+### Remaining
+
+- Coordinator and fresh code-reviewer should inspect this follow-up. The added
+  behavioral regressions remain unexecuted under the no-tests instruction.
