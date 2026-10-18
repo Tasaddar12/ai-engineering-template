@@ -334,12 +334,20 @@ Execution plan for Phase {N}:
 
 A dependency cycle is a planning defect: report it and stop rather than picking
 an order.
+
+Create the coordinator's separate assignment table for each actual wave under
+[parallel wave status](../references/parallel-status.md). Show every assignment,
+role, resolved model, lifecycle state and explicit Pending evidence at grouping.
 </step>
 
 <step name="execute_waves">
 Execute waves in order. Within a wave, dispatch every plan **in a single message
 with multiple Agent calls** so they run concurrently, unless `--sequential` was
 passed or the wave has one plan.
+
+Refresh [parallel wave status](../references/parallel-status.md) at dispatch,
+actual host observations and join. Apply its interval and changed-row rules,
+including its blocking-dispatch fallback and confirmed-stop requirement.
 
 Before dispatching, capture the base every executor in this wave must fork from,
 and record each plan's declared scope so the wave can be integrated:
@@ -486,6 +494,10 @@ remaining tasks, report it as a blocker.
 </step>
 
 <step name="integrate_wave">
+After every active write-capable worker has joined, record the integration
+result/revision in [parallel wave status](../references/parallel-status.md).
+Preserve blocked rows and their evidence; a worker return alone is not acceptance.
+
 The wave's work is on branches, not in your tree — it always is, because every
 plan ran isolated. Integrate it into the **session branch** before running
 checks, reviewing, or starting the next wave. `merge-wave` merges into whatever
@@ -570,6 +582,10 @@ resolve a checkpoint by guessing.
 </step>
 
 <step name="run_checks">
+Record check evidence and verification state in
+[parallel wave status](../references/parallel-status.md) before accepting the wave.
+Refresh that table again at handoff/final report, retaining Pending dependencies.
+
 If `checks_configured` is true, run the project's configured checks once per
 wave, after the wave's agents have all returned **and the wave has been
 integrated** — checks run against the merged tree, not against a tree the
@@ -603,6 +619,9 @@ Read each SUMMARY.md and build the phase picture:
   independently of the optional code review gate.
 - Create/reuse/read back issues; update each owning PLAN's links and SUMMARY
   outcomes. Keep each PLAN register in place; do not aggregate threat content.
+- Apply the [canonical default](../references/git-workflow.md#canonical-threat-tracking)
+  for every new planned risk, including accepted/deferred; preserve matching
+  canonical trackers and standalone tracking for distinct unplanned risks.
 - Carry still-open/accepted/deferred risks and evidenced closed issues distinctly;
   retain Pending dependencies and continue independent authorized work.
 
@@ -628,6 +647,10 @@ source correctness and security findings. Wait for both results before accepting
 the phase or repairing it. If a repair changes source, rerun affected checks and
 obtain a fresh review of the repaired revision.
 
+Code review may supplement the verifier-owned
+[issue-link audit](../references/git-workflow.md#issue-link-audit). The mandatory
+audit assignment belongs to verify-work/ship even when this optional gate is skipped.
+
 ```
 Agent(
   prompt="
@@ -639,6 +662,9 @@ Review the source changes made by Phase {phase_number}.
 
 Review the changed source for correctness bugs, security issues and code quality
 problems. Judge the code as it now stands, not the summaries' claims about it.
+
+If assigned a supplementary [Issue-link audit](../references/git-workflow.md#issue-link-audit),
+follow its canonical duties and evidence packet. The verifier owns the required audit.
 
 Return:
 ## CODE REVIEW
@@ -666,6 +692,14 @@ halt problems and validated unresolved review findings, subtracting work fixed i
 this execution. Routine resolved corrections and unrelated checker notices need
 no issue. Separate threat tracking retains its own reconciliation requirements;
 generic resolved-problem exemptions do not waive them.
+
+Reconcile threats through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
+before this ordinary follow-up review: preserve planned-checklist identities,
+existing matching trackers and standalone distinct unplanned risks. Keep neutral
+links and closure authority separate from checked items and accepted/deferred outcomes.
+Provide these reconciled records and ordinary follow-up links to the independent
+[issue-link audit](../references/git-workflow.md#issue-link-audit); structural handoff
+readiness alone does not establish semantic link correctness or merge eligibility.
 
 1. Workers author explicit `issue_refs` on their first SUMMARY, including []
    after leftover review. For later coordinator amendments, preview

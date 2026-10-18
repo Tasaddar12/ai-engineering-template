@@ -205,8 +205,8 @@ substitute a generic agent type; the project's own definitions carry the prompts
 and tool permissions that make the result trustworthy. Resolve the model through
 `phase_run query resolve-model <agent>` and the reasoning effort through
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
-call; shared role definitions carry neither as frontmatter. The installer adds
-Claude `model: haiku` only to exported `scout` metadata, with no effort. A resolved `inherit` means
+call; shared role definitions carry neither as frontmatter. Claude exports default to
+scout/targeted-fixer `haiku`, coder `sonnet`, and phase-preparer `opus`/`medium`; only preparer exports effort. A resolved `inherit` means
 omit that argument and let the host choose.
 
 Agents edit only the paths their plan declares, plus their own SUMMARY. They do
@@ -232,6 +232,14 @@ before dispatch.
 Give agents their assignment, the applicable constraints, the files their plan
 names in `read_first`, and the dependency summaries they need — not every
 transcript. Follow [worker handoff](references/worker-handoff.md).
+
+A bounded host wait timeout is an observation, not worker exit. Keep active or
+unknown assignments owned until the host confirms exit/interruption; confirm the
+stop before reassigning paths. Never automatically terminate or restart a worker
+on elapsed time. Preserve completed commits and dirty work, inspect the handoff,
+and apply existing continuation checks/limits and fresh independent verification.
+Use [parallel wave status](references/parallel-status.md#bounded-stall-decision)
+for bounded wait observations and stall decisions.
 
 ## Issues found while working
 
@@ -369,11 +377,17 @@ bypassing repository protections or claiming delivery.
 
 ## Interruption and recovery
 
-An agent that times out, exhausts its context or turn limit, or returns blocked
-does not end the authorized phase and does not require another user prompt.
-Inspect what it committed, what it left dirty and what it reported, then assign
-only the remaining work to a fresh bounded agent. Preserve incomplete work, reuse
-valid completed results, and keep independent ready plans moving.
+A host wait timeout does not establish exit or interruption; the worker remains
+active or unknown. Context/turn exhaustion or a blocked report also does not
+establish that the worker has stopped. These observations do not end the
+authorized phase or require another user prompt. Before inspecting dirty files
+or reassigning paths, obtain host confirmation that the worker stopped, following
+the [confirmed-stop rule](#orchestration-and-handoffs) and
+[worker handoff](references/worker-handoff.md#dispatching-a-continuation).
+Then inspect its commits, preserved dirty work and report, and assign only the
+remaining work to a fresh bounded agent under the existing continuation checks
+and limits. Preserve incomplete work, reuse valid completed results, and keep
+independent ready plans moving. Never automatically terminate an active worker.
 
 A source-changing plan assignment whose agent reports `complete` without its
 required SUMMARY.md and owned commits is blocked. A read-only assignment reports

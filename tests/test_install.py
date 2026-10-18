@@ -127,7 +127,32 @@ class InstallerTests(unittest.TestCase):
                 advisory = [hook["command"] for group in hooks["PreToolUse"]
                             for hook in group["hooks"]]
                 self.assertTrue(advisory)
-                self.assertTrue(all("worktree-guard.sh" in command for command in advisory))
+                self.assertTrue(any("worktree-guard.sh" in command for command in advisory))
+                self.assertTrue(all("worktree-guard.sh" in command or "planning-integrity.sh" in command
+                                    for command in advisory))
+
+    def test_claude_role_defaults_replace_stale_metadata_and_preserve_body(self):
+        for name, model, effort in (("scout", "haiku", None), ("targeted-fixer", "haiku", None),
+                                    ("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):
+            with self.subTest(role=name):
+                source = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+                stale = source.replace("---\n", "---\nmodel: wrong\nmodel: stale\neffort: max\nmodel_reasoning_effort: high\n", 1)
+                exported = installer.render_asset(".ai/agents/" + name + ".md", stale.encode(), "claude").decode()
+                header = exported.split("---", 2)[1]
+                metadata = yaml.safe_load(header)
+                self.assertEqual(model, metadata["model"])
+                self.assertEqual(effort, metadata.get("effort"))
+                self.assertEqual(1, header.count("\nmodel:"))
+                self.assertEqual(int(effort is not None), header.count("\neffort:"))
+                self.assertNotIn("model_reasoning_effort", metadata)
+                # Metadata normalization must not alter the complete relocated role body.
+                clean = installer.render_asset(".ai/agents/" + name + ".md", source.encode(), "claude").decode()
+                self.assertEqual(clean.split("---", 2)[2], exported.split("---", 2)[2])
+                original = yaml.safe_load(source.split("---", 2)[1])
+                for key, value in original.items():
+                    self.assertEqual(value, metadata[key])
+                self.assertEqual(stale.split("---", 2)[1], installer.render_asset(
+                    ".ai/agents/" + name + ".md", stale.encode(), "codex").decode().split("---", 2)[1])
 
     def test_fresh_payload_excludes_source_only_maintenance_history_for_both_hosts(self):
         self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
@@ -393,11 +418,14 @@ class InstallerTests(unittest.TestCase):
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    if name in {"scout", "targeted-fixer"} and host == "claude":
-                        self.assertEqual("haiku", metadata["model"])
+                    if host == "claude" and name in {"scout", "targeted-fixer", "coder", "phase-preparer"}:
+                        self.assertEqual({"scout": "haiku", "targeted-fixer": "haiku",
+                                          "coder": "sonnet", "phase-preparer": "opus"}[name], metadata["model"])
                     else:
                         self.assertNotIn("model", metadata, name)
-                    self.assertNotIn("effort", metadata, name)
+                    self.assertEqual("medium" if host == "claude" and name == "phase-preparer" else None,
+                                     metadata.get("effort"), name)
+                    self.assertNotIn("model_reasoning_effort", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
                         (self.source / ".ai/agents" / role.name).read_bytes(), host),
@@ -411,7 +439,7 @@ class InstallerTests(unittest.TestCase):
                         self.assertEqual(methods[name][1]["description"], config["description"])
                         expected = "gpt-6.1-sol" if name in astra | sol else "gpt-6-luna"
                         self.assertEqual(expected, config["model"])
-                        checkers = {"doc-verifier", "integration-checker"}
+                        checkers = {"coder", "doc-verifier", "integration-checker"}
                         effort = "medium" if name in checkers else "high"
                         self.assertEqual(effort, config["model_reasoning_effort"])
                         role_path = ".codex/agents/" + name + ".md"
@@ -432,14 +460,20 @@ class InstallerTests(unittest.TestCase):
             with self.subTest(host=host):
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
+                runtime = "." + host + "/runtime/phase.py"
+                for name, model, effort in (("coder", "sonnet", "high"), ("phase-preparer", "opus", "medium")):
+                    default = json.loads(command(sys.executable, runtime, "query", "resolve-agent", name, cwd=self.target))
+                    self.assertEqual("gpt-6.1-sol" if host == "codex" else model, default["model"])
+                    self.assertEqual(("medium" if name == "coder" else "high") if host == "codex" else effort, default["effort"])
                 config = self.target / ".planning/config.yaml"
                 config.write_text("agents:\n  coder:\n    model: opus\n    effort: max\n"
+                                  "  phase-preparer:\n    model: sonnet\n    effort: low\n"
                                   "  scout:\n    model: wrong\n    effort: max\n"
                                   "  targeted-fixer:\n    model: wrong\n    effort: max\n")
                 if host == "codex":
                     native = self.target / ".codex/agents/coder.toml"
                     native.write_text(native.read_text().replace('"gpt-6.1-sol"', '"custom-codex"')
-                                      .replace('"high"', '"xhigh"'))
+                                      .replace('"medium"', '"xhigh"'))
                     for name in ("scout", "targeted-fixer"):
                         fixed = self.target / ".codex/agents" / (name + ".toml")
                         fixed.write_text(fixed.read_text().replace('"gpt-6-luna"', '"wrong"')
@@ -449,6 +483,9 @@ class InstallerTests(unittest.TestCase):
                                               "coder", cwd=self.target))
                 self.assertEqual("custom-codex" if host == "codex" else "opus", resolved["model"])
                 self.assertEqual("xhigh" if host == "codex" else "max", resolved["effort"])
+                preparer = json.loads(command(sys.executable, runtime, "query", "resolve-agent", "phase-preparer", cwd=self.target))
+                self.assertEqual("gpt-6.1-sol" if host == "codex" else "sonnet", preparer["model"])
+                self.assertEqual("high" if host == "codex" else "low", preparer["effort"])
                 for name in ("scout", "targeted-fixer"):
                     fixed = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
                                                name, cwd=self.target))
