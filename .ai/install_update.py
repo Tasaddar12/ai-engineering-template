@@ -77,8 +77,29 @@ def replace_managed_block(current, incoming, installer, name):
 
 
 def same_text(left, right):
-    """Compare ignoring line endings, which Git rewrites on checkout."""
-    return left.replace(b"\r\n", b"\n") == right.replace(b"\r\n", b"\n")
+    """Raw equality, or CRLF/LF equivalence of conservative UTF-8 text only."""
+    return compare_content(left, right) in ("unchanged", "line-ending-only")
+
+
+def compare_content(current, candidate):
+    """Describe content, independently of ownership and permission to write."""
+    if current == candidate:
+        return "unchanged"
+    if current is None:
+        return "added"
+    if candidate is None:
+        return "retired"
+    normalized = []
+    for content in (current, candidate):
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            return "substantive"
+        text = content.replace(b"\r\n", b"\n")
+        if b"\x00" in text or b"\r" in text:
+            return "substantive"
+        normalized.append(text)
+    return "line-ending-only" if normalized[0] == normalized[1] else "substantive"
 
 
 def summarize(label, names, limit=12):
@@ -121,7 +142,7 @@ def plan_update(source, target, host, hooks, installer, prune=False, previous=No
 
     desired = {}
     backups = set()
-    refreshed, added, preserved, customized = [], [], [], []
+    refreshed, added, preserved, customized, line_endings = [], [], [], [], []
 
     for name, content in incoming.items():
         destination = target / name
@@ -132,6 +153,8 @@ def plan_update(source, target, host, hooks, installer, prune=False, previous=No
         if destination.exists() and not destination.is_file():
             raise ValueError(f"Update destination is not a file: {destination}")
         current = destination.read_bytes() if destination.is_file() else None
+        if compare_content(current, content) == "line-ending-only":
+            line_endings.append(name)
 
         # Intent, execution history and configuration are the project's, and a
         # template revision has no authority over them.
@@ -219,6 +242,8 @@ def plan_update(source, target, host, hooks, installer, prune=False, previous=No
                      "--from-ref set to the revision this project was installed from.")
     if refreshed:
         notes.append(summarize("Refresh", refreshed))
+    if line_endings:
+        notes.append(summarize("Line-ending-only versus upstream (not ownership or write authority)", line_endings))
     if added:
         notes.append(summarize("Add", added))
     if preserved:

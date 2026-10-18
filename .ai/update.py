@@ -18,7 +18,15 @@ import tomllib
 
 _spec = importlib.util.spec_from_file_location("workflow_install", Path(__file__).with_name("install.py"))
 installer = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(installer)
+# An installed review must not create __pycache__ inside the target either.
+_write_bytecode = sys.dont_write_bytecode
+try:
+    sys.dont_write_bytecode = True
+    _spec.loader.exec_module(installer)
+finally:
+    sys.dont_write_bytecode = _write_bytecode
+compare_content = installer.runpy.run_path(
+    str(Path(__file__).with_name("install_update.py")))["compare_content"]
 
 
 def digest(content):
@@ -180,6 +188,8 @@ def managed_block(content):
 
 
 def content_diff(name, current, candidate):
+    if compare_content(current, candidate) in ("unchanged", "line-ending-only"):
+        return ""
     def lines(data):
         return (data or b"").decode("utf-8", errors="replace").splitlines(keepends=True)
     return "".join(difflib.unified_diff(lines(current), lines(candidate),
@@ -209,6 +219,15 @@ def inventory(target, roots):
     return names
 
 
+def source_fingerprints(source):
+    """Pin raw source inputs too: rendering can otherwise hide CRLF edits."""
+    names = installer.run("git", "ls-files", "-z", cwd=source, capture=True).split("\0")
+    return {name: digest(read(source, name)) for name in sorted(names)
+            if name and not name.startswith(".ai/maintenance/")
+            and (name.startswith((".ai/", ".agents/skills/"))
+                 or name in installer.PLANNING_RESOURCES)}
+
+
 def build_plan(source, target, host, hooks, source_url, revision, baseline=None, baseline_source=None):
     """Pure comparison: ownership is evidence, never a version-stamp shortcut."""
     # Apply uses a canonical root; review must use the same identity for aliases.
@@ -224,6 +243,7 @@ def build_plan(source, target, host, hooks, source_url, revision, baseline=None,
     for name in sorted(names):
         current = read(target, name)
         candidate = incoming.get(name)
+        comparison = compare_content(current, candidate)
         record = (manifest or {}).get("files", {}).get(name, {})
         known = record.get("installed_sha256") == digest(current) and current is not None
         classification = ("project" if name in installer.PROJECT_RECORDS else
@@ -283,21 +303,27 @@ def build_plan(source, target, host, hooks, source_url, revision, baseline=None,
             action = "write"
             conflict = "Local customization" if record else "Ownership unproven; reviewed classification required"
         entries.append({"path": name, "classification": classification, "action": action,
+                        "comparison": comparison,
+                        "candidate_comparison": compare_content(current, candidate),
                         "before_sha256": digest(current), "candidate_sha256": digest(candidate),
                         "upstream_sha256": digest(incoming.get(name)),
                         "candidate_base64": base64.b64encode(candidate).decode() if candidate is not None else None,
                         "diff": content_diff(name, current, candidate), "conflict": conflict,
                         "required_config": required, "optional_defaults": optional})
-    return {"schema": 1, "target": str(target), "host": host, "hooks": hooks,
+    return {"schema": 2, "target": str(target), "host": host, "hooks": hooks,
             "source": source_url, "revision": revision,
             "previous": manifest.get("current") if manifest else None,
             "baseline_revision": installer.run("git", "rev-parse", "HEAD", cwd=baseline, capture=True).strip() if baseline else None,
             "baseline_source": (baseline_source or source_url) if baseline else None,
+            "source_fingerprints": source_fingerprints(source),
+            "baseline_fingerprints": source_fingerprints(baseline) if baseline else None,
             "manifest_sha256": digest(read(target, manifest_name)), "entries": entries, "resolutions": {}}
 
 
 def apply_plan(plan, source, baseline=None):
     """Recompute all candidates and fingerprints before backing up or mutating."""
+    if plan.get("schema") != 2:
+        raise ValueError("Unsupported reviewed plan schema; generate and review a new plan")
     target = check_target(Path(plan["target"]), plan["host"])
     fresh = build_plan(source, target, plan["host"], plan["hooks"], plan["source"], plan["revision"], baseline, plan["baseline_source"])
     expected = dict(plan, resolutions={})
@@ -364,6 +390,9 @@ def apply_plan(plan, source, baseline=None):
             raise ValueError("Installed files changed during backup; update stopped")
     if digest(read(target, manifest_path.relative_to(target).as_posix())) != plan["manifest_sha256"]:
         raise ValueError("Ownership manifest changed during backup")
+    if (source_fingerprints(source) != plan["source_fingerprints"]
+            or (source_fingerprints(baseline) if baseline else None) != plan["baseline_fingerprints"]):
+        raise ValueError("Source inputs changed during backup; update stopped")
     for path, content in changed:
         installer.safe_path(path)
         if content is None:
@@ -433,8 +462,12 @@ def main(argv=None):
                     print(f"Review plan: {output}\nSHA256: {digest(output.read_bytes())}")
                 print(f"Pinned upstream: {revision}; previous: {plan['previous']}")
                 for entry in plan["entries"]:
-                    if entry["diff"] or entry["conflict"] or entry["optional_defaults"]:
-                        print(f"{entry['classification']} {entry['action']} {entry['path']}: {entry['conflict'] or 'ready'}")
+                    if entry["comparison"] != "unchanged" or entry["diff"] or entry["conflict"] or entry["optional_defaults"]:
+                        comparison = entry["comparison"]
+                        if entry["candidate_comparison"] != comparison:
+                            comparison += f"; effective candidate: {entry['candidate_comparison']}"
+                        print(f"{entry['classification']} {entry['action']} {entry['path']}: "
+                              f"{entry['conflict'] or 'ready'}; upstream comparison: {comparison}")
                         print(entry["diff"], end="")
                         if entry["optional_defaults"]:
                             print("Optional defaults (not applied): " + ", ".join(entry["optional_defaults"]))
