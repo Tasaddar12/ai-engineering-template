@@ -136,7 +136,8 @@ Roadmap updated: .planning/ROADMAP.md
 
 **Also available:**
 - `/phase <description>` — add another phase
-- `/plan-phase {phase_number}` — plan without discussing first
+- `/plan-phase {phase_number}` — plan after `/discuss-phase {phase_number}` records the
+  phase decisions
 - Review the roadmap
 
 ---

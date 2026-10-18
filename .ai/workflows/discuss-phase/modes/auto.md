@@ -39,9 +39,3 @@ CONTEXT.md or run another pass.
 
 If you have already written and committed CONTEXT.md, the discuss step is
 complete. Move on.
-
-## Combination rules
-
-  auto mode (no user prompts to render).
-  trail; selection still uses the recommended option.
-  answering — incompatible with autonomous selection).

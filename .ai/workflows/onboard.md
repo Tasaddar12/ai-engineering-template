@@ -89,8 +89,7 @@ git log --oneline -n 5 2>/dev/null || true
 ls
 ```
 
-**If there is substantial existing code**, map it before questioning — scoping
-work against a codebase you have not read produces phases that do not fit:
+**If there is substantial existing code, map it before questioning.**
 
 ```
 Agent(

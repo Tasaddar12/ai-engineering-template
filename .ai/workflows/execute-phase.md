@@ -259,9 +259,8 @@ step was skipped. Stop and open it rather than executing here.
 </step>
 
 <step name="resolve_isolation">
-Decide how this wave's executors are isolated. **This is the only step that
-decides**, and resolving it records it, so the value you branch on and the value
-on disk can never disagree.
+Resolve and record wave isolation once. Read `ISOLATION` from
+`dispatch-isolation` and use that recorded value for every executor.
 
 ```bash
 ISOLATION=$(phase_run query dispatch-isolation --raw --phase "${phase_number}")
@@ -295,11 +294,8 @@ phase_run query worktree.reap-orphans
 
 `reap-orphans` never deletes a checkout that still exists.
 
-A host that forks its dispatch worktrees from the fork base rather than from
-HEAD would start an executor on a tree missing HEAD's commits. That is caught
-where it actually happens — the executor's own branch check compares its real
-base against `EXPECTED_BASE` and halts with exit 42 — not by guessing about it
-here.
+Under `harness-worktree`, require the executor branch check to compare its actual
+base with `EXPECTED_BASE` and halt with exit 42 on mismatch.
 
 Report the outcome in one line before dispatching:
 
