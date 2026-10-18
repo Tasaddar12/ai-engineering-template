@@ -131,8 +131,7 @@ than continuing on a map that was never written.
 
 "What do you want to build?"
 
-Wait for the answer. It gives you the context you need to ask intelligent
-follow-ups.
+Wait for the answer, then ask follow-up questions based on it.
 
 Ask follow-up questions based on the user's answers. Use AskUserQuestion options
 to clarify the details they raised. Cover:
@@ -145,10 +144,10 @@ to clarify the details they raised. Cover:
 Use `@~/.ai/references/questioning.md` to clarify vague terms, make abstract
 ideas concrete, surface assumptions and identify edge cases.
 
-**Check coverage silently.** As you go, track the gaps in your head. Weave the
-missing questions in naturally — do not switch into checklist mode.
+Track coverage as you go. Ask about any missing topics through follow-up
+questions; do not present the coverage list as a checklist.
 
-**Decision gate.** When you could write a clear PROJECT.md, use AskUserQuestion:
+**Decision gate.** When the answers are sufficient to write PROJECT.md, use AskUserQuestion:
 
 - header: "Ready?"
 - question: "I think I understand what you're after. Ready to create PROJECT.md?"
@@ -186,8 +185,7 @@ Ask about, and configure:
   handoff threshold every agent is measured against, so a value below the real
   window stops agents early; do not write `200000` by default.
 - **Verification commands** — the project's real checks, as argv lists under
-  `verification.commands`. This is the single most valuable thing to get right:
-  without it, every phase is verified by reading alone.
+  `verification.commands`.
 - **Agent models** — only when the user wants to override an agent's default.
 
 If the project has no runnable checks yet, say so plainly and note that the first
@@ -226,8 +224,8 @@ the questions not reached; the limit is not a blocker.
 Present the findings and let the user decide. A `RESEARCH PARTIAL` return is
 presented the same way, with its unreached questions listed so the user can
 have them researched or decide without them. Validate a technology choice before
-recommending it: run the smallest spike that could fail, and use what it printed
-as the rationale.
+recommending it: run a spike that tests the uncertain behavior and use its
+observable output as evidence.
 
 Record each decision:
 
@@ -249,8 +247,8 @@ Each requirement is an observable capability with a REQ id, not a task:
 ```
 
 Group them into what the first milestone delivers and what is deliberately
-deferred. **The out-of-scope list is mandatory** — it is what makes the scope
-guard in `/discuss-phase` enforceable later.
+deferred. **The out-of-scope list is mandatory.** Record the capabilities
+excluded from this milestone.
 </step>
 
 <step name="create_roadmap">
@@ -338,7 +336,7 @@ Records:
 - Don't decide the technical choices for the user during research; surface the trade-offs
 - Don't create plans here — phases only
 - Don't hand-write ROADMAP.md phase entries; `phase.add` owns numbering and structure
-- Don't skip the out-of-scope list; without it nothing downstream can refuse scope creep
+- Include an out-of-scope list.
 </anti_patterns>
 
 <success_criteria>

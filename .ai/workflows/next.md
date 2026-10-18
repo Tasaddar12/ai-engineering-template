@@ -44,8 +44,7 @@ These gates stop automatic advancement. Each can be overridden with `--force`,
 and the override must be the user's explicit instruction, not an inference.
 
 1. **Uncommitted changes in planning records.** `git status --porcelain .planning`
-   non-empty → report the dirty paths and stop. Advancing over uncommitted
-   planning state loses decisions.
+   non-empty → report the dirty paths and stop.
 2. **A blocker recorded in STATE.md.** `state.blockers` non-empty → show them and
    ask whether they are resolved before advancing.
 3. **Implementation authority.** `/next` may advance through discussion,
@@ -70,8 +69,8 @@ Skip this check only with `--no-resume` or `--force`.
 <step name="prior_phase_completeness">
 Before advancing into a new phase, confirm the previous phase actually finished:
 its plans all have summaries, and it has a verification report if the project
-verifies phases. An unverified predecessor is a finding, not a formality — say so
-and let the user decide whether to proceed.
+verifies phases. Report an unverified predecessor and let the user decide
+whether to proceed.
 </step>
 
 <step name="determine_next_action">
@@ -120,7 +119,7 @@ If a `--dry-run` flag is present, report the decision and stop without executing
 <anti_patterns>
 - Don't advance past uncommitted planning changes
 - Don't start implementation on your own initiative; authorisation is explicit
-- Don't skip the incomplete-phase check — that is where work gets silently dropped
+- Before routing, check for a phase with plans but no matching summaries; resume it first.
 - Don't decide from STATE.md's position alone; phase artifacts on disk are the evidence
 </anti_patterns>
 

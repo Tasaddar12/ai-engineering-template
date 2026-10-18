@@ -83,22 +83,20 @@ The runtime handles:
 
 Extract from the result: `phase_number`, `padded`, `name`, `slug`, `goal`, `directory`.
 
-**If the result includes a `warning` field:** report that the description was
-written verbatim as the `### Phase N:` header because it was long or
-multi-sentence. Suggest a short title and moving the detail to `**Goal**:` in
-ROADMAP.md.
+**If the result includes a `warning` field:** confirm that the phase was created
+and report the warning. The description was written verbatim as the
+`### Phase N:` header. Ask the user to use a short title and move details to
+`**Goal**:` in ROADMAP.md.
 </step>
 
 <step name="update_project_state">
-Record the roadmap change in STATE.md through the runtime; PreToolUse hooks may
-block direct planning-record writes:
+Record the roadmap change in STATE.md through the runtime. Do not use raw
+`Edit` or `Write` for planning records:
 
 ```bash
 phase_run query state.add-roadmap-evolution "Phase ${phase_number} added: ${description}"
 ```
 
-The handler creates the `### Roadmap Evolution` subsection under
-`## Accumulated Context` when it is missing and skips duplicate entries.
 </step>
 
 <step name="commit">

@@ -141,9 +141,8 @@ Parse: `phase_found`, `phase_number`, `padded_phase`, `phase_name`, `phase_dir`,
 `verification`, `checks_configured`, `models`, `efforts`, `agents_installed`,
 `missing_agents`, `context_window`, `commit_docs`, `response_language`, `paths`.
 
-The bundle says nothing about isolation on purpose. It is read-only and
-resolution can fail, so `resolve_isolation` below is the only thing that
-decides — and there is no second value to reconcile it against.
+The bundle is read-only and does not include an isolation decision. Resolve
+isolation in `resolve_isolation` below.
 
 **If `response_language` is set:** all user-facing output MUST be presented in
 `{response_language}`; technical terms, code, file paths and subagent prompts
@@ -250,13 +249,10 @@ git rev-parse --abbrev-ref HEAD
 ```
 
 If the tree has uncommitted changes outside `.planning/`, report them and ask
-whether to continue. Executing over dirty state makes the phase's commits
-ambiguous.
+whether to continue.
 
-You are inside the phase's session worktree by now, so the branch that reports
-is the session branch and cannot be the default branch — `session.open` refuses
-to create one on a protected name. Check it anyway, because a wave is integrated
-by merging into the current branch and that must never be `main`.
+The reported branch must be the session branch, not the default branch. Check it
+before merging a wave into the current branch.
 
 If it reports the default branch, the session was not opened and the earlier
 step was skipped. Stop and open it rather than executing here.
@@ -503,7 +499,7 @@ Read the result rather than assuming it worked:
 | `status` | Means | What to do |
 |---|---|---|
 | `blocked` | deleted a path the plan never declared | Do not merge the branch or re-run the merge. Mark the plan blocked, list it with its `undeclared_deletions` in the closing report, and continue the wave. A rename's source path counts as a removal |
-| `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
+| `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. Stop this wave and re-form it so plans with overlapping `files_modified` run in separate waves. Report the conflict and preserve the worktree. |
 | `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
 | `empty` | the branch has no commits | Same: nothing was produced |
 

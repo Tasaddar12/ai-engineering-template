@@ -31,14 +31,11 @@ Apply response_language to all user-facing prose — narration between tool call
   prompt and proceed directly to `write_context`.
 - After `write_context`, **auto-advance** to plan-phase via `modes/chain.md`.
 
-## CRITICAL — Auto-mode pass cap
+## Auto-mode pass cap
 
-In `--auto` mode, the discuss step MUST complete in a **single pass**. After
-writing CONTEXT.md once, you are DONE — proceed immediately to
-`write_context` and then auto_advance. Do NOT re-read your own CONTEXT.md to
-find "gaps", "undefined types", or "missing decisions" and run additional
-passes. This creates a self-feeding loop where each pass generates references
-that the next pass treats as gaps, consuming unbounded time and resources.
+In `--auto` mode, complete the discuss step in a single pass. After writing
+CONTEXT.md once, continue to `write_context` and `auto_advance`. Do not reread
+CONTEXT.md or run another pass.
 
 If you have already written and committed CONTEXT.md, the discuss step is
 complete. Move on.

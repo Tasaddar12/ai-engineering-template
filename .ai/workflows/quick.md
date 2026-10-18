@@ -135,9 +135,8 @@ work — the runtime allocates the real quick id inside the session, so the
 label has to be stable before that happens.
 
 Parse `worktree`, `branch`, `base`, `reused` and `synced`. **Run every
-subsequent command in this workflow from `worktree`.** An open session for
-this quick task is reused rather than replaced, so the work accumulates onto one branch
-and arrives as one pull request.
+subsequent command in this workflow from `worktree`.** Reuse an open session
+for this quick task; do not replace it.
 
 Report it in one line:
 
@@ -145,10 +144,9 @@ Report it in one line:
 Session: {branch} ({reused ? "resumed" : "opened"}) at {worktree}
 ```
 
-If the verb fails, **stop and report its message**. It means isolation could not
-be established. Follow this stop condition even though `worktree-guard.sh`
-would only warn and continue on a primary-checkout write, including a scratchpad
-edit. The advisory hook does not replace successful session creation.
+If the verb fails, **stop and report its message**. Do not write in the primary
+checkout, including scratchpad edits. The advisory hook does not replace session
+creation.
 </step>
 
 <step name="create_task">
@@ -170,7 +168,7 @@ Capture the exact input revision before the preparer starts:
 ```bash
 PLAN_INPUT_REVISION=$(git rev-parse HEAD)
 ```
-Display: `◆ Spawning phase-preparer... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
+Display: `◆ Spawning phase-preparer... (runs in a subagent — no output until it returns)`
 
 ```
 Agent(
@@ -415,9 +413,7 @@ A coder assigned source-changing work who returns `complete` without the require
 summary file and owned commits is blocked. Read-only specialists complete with
 their assigned cited report fields and do not create commits or summaries.
 
-Integrate the executor's branch into the session branch before checking
-anything, for the same reason a wave is integrated before its checks run — the
-work is not in your tree until it is merged:
+Integrate the executor's branch into the session branch before checking it:
 
 ```bash
 phase_run query worktree.merge-wave --phase "quick-${QUICK_ID}"

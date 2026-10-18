@@ -119,14 +119,9 @@ Name the verb that resolves each warning when you present it.
 </step>
 
 <step name="route">
-**Route 0 — resume an incomplete phase (invariant).**
-
-Before any current-phase routing, check `incomplete_phase` from the init JSON.
-The runtime sets it to the lowest-numbered phase whose plan files outnumber its
-summary files. This catches the case where STATE.md's position advanced past a
-phase that still has unfinished execution — common after a session died
-mid-execution. Without this guard, routing would inspect the wrong phase and skip
-the unfinished work.
+**Route 0 — resume an incomplete phase (invariant).** Check `incomplete_phase`
+from the init JSON before routing by current position. The runtime sets it to the
+lowest-numbered phase whose plan files outnumber its summary files.
 
 Skip this check when `--no-resume` or `--force` is in `$ARGUMENTS`.
 
@@ -192,7 +187,7 @@ Present the chosen route as:
 <anti_patterns>
 - Don't read every SUMMARY.md — three recent ones is the budget
 - Don't recompute progress by hand; `init.progress` derives it from the roadmap
-- Don't skip Route 0 — an advanced position is exactly when work gets lost
+- Check Route 0 before routing by current position.
 - Don't start the recommended work; this workflow reports and routes
 </anti_patterns>
 

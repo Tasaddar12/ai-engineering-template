@@ -183,8 +183,6 @@ If `has_context` is false:
 ```
 Phase {N} has no CONTEXT.md.
 
-Planning without captured decisions means the preparer guesses at choices you
-care about, and you review them as plans instead of as questions.
 ```
 
 Use AskUserQuestion (header: "No context"; options: "Discuss first
@@ -270,7 +268,7 @@ When research is warranted:
 ```
 ### ► RESEARCHING PHASE {phase_number}
 
-◆ Spawning researcher... (runs in a subagent — no output until it returns, ~2–10 min; expected, not a freeze)
+◆ Spawning researcher... (runs in a subagent — no output until it returns)
 ```
 
 ```
@@ -387,7 +385,7 @@ PLAN_INPUT_REVISION=$(git rev-parse HEAD)
 ```
 ### ► PLANNING PHASE {phase_number}
 
-◆ Spawning phase-preparer... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
+◆ Spawning phase-preparer... (runs in a subagent — no output until it returns)
 ```
 
 ```
@@ -792,7 +790,7 @@ stop on any mismatch:
 4. Compare the existing roadmap `plans` array against the complete index. Keep
    every existing ID, including completed IDs, in the replacement list. If an
    existing roadmap ID has no indexed PLAN file, stop and report it; do not
-   silently drop it. This also keeps earlier plans present during gap closure.
+   silently drop it.
 
 Remove only the terminal `-PLAN.md` when deriving runtime IDs:
 `03-01-PLAN.md` maps to `03-01`. Never pass a PLAN

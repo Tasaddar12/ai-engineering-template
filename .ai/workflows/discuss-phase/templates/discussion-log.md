@@ -6,10 +6,8 @@ Apply response_language to all user-facing prose — narration between tool call
 > `workflows/discuss-phase.md`, immediately before writing
 > `${phase_dir}/${padded_phase}-DISCUSSION-LOG.md`.
 
-## Purpose
-
-Audit trail for human review (compliance, learning, retrospectives). NOT
-consumed by downstream agents — those read CONTEXT.md only.
+Downstream agents read CONTEXT.md only. Use this log for audit; do not use it as
+input to planning, research, or execution agents.
 
 ## Template body
 

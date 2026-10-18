@@ -152,8 +152,8 @@ Return them to their document owner for reconstruction from actual evidence.
 Workers commit their source/document slice and SUMMARY. Join results before
 integrating; retain uncompleted tasks, skips and blockers. Re-run `planning.review`
 after changes and report remaining findings even when only safe repairs were
-possible. Safe mechanical repairs are the normal cleanup path, not a separate
-approval exercise.
+possible. Apply safe mechanical repairs within the user's cleanup authorization
+without requesting separate approval.
 </step>
 
 <step name="archive_selected_records">
@@ -171,7 +171,8 @@ The positional kind is `phase`, `adr` or `quick`; every selector must resolve
 unambiguously. Preview is the default. Inspect moves, rewritten reference files,
 eligibility evidence and recovery id. Active work is never archived based on age.
 Completed phases require checked plans, complete SUMMARY evidence and passed
-VERIFICATION. Accept explicit legacy evidence only for a non-active record.
+VERIFICATION. For non-active records, accept explicit legacy evidence when
+assessing archive eligibility.
 ADRs require a superseding replacement and evidence; retain their argument and
 status history. Quick items require authored completion or retirement evidence.
 An explicitly obsolete/superseded record still needs the runtime's safe eligibility

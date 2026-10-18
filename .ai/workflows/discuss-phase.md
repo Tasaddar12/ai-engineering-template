@@ -44,10 +44,13 @@ Do not read mode files unless the corresponding flag or condition is set.
 them without asking the user again.
 **Not your job:** figure out HOW to implement. Research and planning do that with
 the decisions you capture.
+Do not ask the user to identify technical risks or supply success metrics. Leave
+technical-risk identification to the researcher. Infer success metrics from the
+scoped work.
 </downstream_awareness>
 
 <scope_guardrail>
-**CRITICAL: no scope creep.** The phase boundary comes from ROADMAP.md and is
+**No scope creep.** The phase boundary comes from ROADMAP.md and is
 FIXED. Discussion clarifies HOW to implement what is scoped, never WHETHER to add
 new capabilities.
 
@@ -96,7 +99,7 @@ patterns, performance optimization, scope (the roadmap defines it).
 </gray_area_identification>
 
 <answer_validation>
-**IMPORTANT** — after every AskUserQuestion call, if the response is empty or
+After every AskUserQuestion call, if the response is empty or
 whitespace-only:
 
 - **"Other" with empty text** (the user wants to type freeform): output
@@ -386,8 +389,8 @@ Analyze the phase to identify gray areas, grounded in both `prior_decisions` and
      full relative paths. Check REQUIREMENTS.md and PROJECT.md for specs or ADRs.
    - **From `scout_codebase`:** docs referenced by existing code (comments citing ADRs).
    - **From `discuss_areas`:** when the user says "read X", "check Y", or
-     references any doc, spec or ADR — add it immediately. These are often the
-     MOST important refs.
+     references any doc, spec or ADR — add it immediately. Prioritize these
+     references for downstream agents.
 
    Include this list in CONTEXT.md, with a full relative path for every ref.
    If no external docs exist, say so explicitly.
@@ -550,7 +553,7 @@ research; review or edit CONTEXT.md before continuing.
 <step name="record_decisions">
 Record the decisions that outlive this phase; CONTEXT.md keeps the phase's own
 implementation choices. Validate a technology choice before recommending it: run
-the smallest spike that could fail, and use what it printed as the rationale.
+a spike that tests the uncertain behavior and use its observable output as evidence.
 
 ```bash
 phase_run query state.add-decision "{the decision}" \

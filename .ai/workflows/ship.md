@@ -467,9 +467,8 @@ Add `--local-checks-passed` to `pr.merge` only in the `none` case above, and onl
 because the project's own checks passed in preflight.
 
 `session.close` returns `preserved: true` with a reason when it cannot prove the
-work merged. Report that as it stands and leave the worktree in place. **Never
-pass `--force` to tidy it up:** a preserved session is unmerged work, and the
-reason it was kept is the reason not to delete it.
+work merged. Report that result and leave the worktree in place. **Never pass
+`--force` to remove a preserved session.**
 </step>
 
 <step name="track_shipping">

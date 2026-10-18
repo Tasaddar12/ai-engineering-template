@@ -95,20 +95,19 @@ stop and recommend `/complete-milestone`.
 </step>
 
 <step name="gather_goal">
-Establish what this milestone delivers. Ask the user directly — this is vision,
-not something to infer from the codebase:
+Ask the user what this milestone delivers. Do not infer the goal from the
+codebase:
 
 - What does this milestone deliver that the last one did not?
 - What is explicitly out of scope for it?
 - What has to be true for it to ship?
 
-Keep asking until the goal is concrete enough to break into phases. A milestone
-goal that cannot be decomposed is not yet a goal.
+Ask follow-up questions until the goal is concrete enough to break into phases.
 </step>
 
 <step name="research">
-**Optional — only when the approach is unknown.** Skip when the work is
-well understood; research here is for technical unknowns, not for reassurance.
+**Optional — only when the technical approach is unknown.** Skip when the work is
+well understood.
 
 ```
 Agent(
@@ -146,8 +145,7 @@ Add requirements for this milestone to REQUIREMENTS.md, continuing the existing
 REQ id sequence — never restarting it. Each requirement is an observable
 capability, not a task.
 
-Record explicitly what is out of scope for the milestone. The out-of-scope list
-is what makes the scope guard enforceable later.
+Record explicitly what is out of scope for the milestone.
 </step>
 
 <step name="create_milestone">

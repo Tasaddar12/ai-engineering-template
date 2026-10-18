@@ -226,7 +226,7 @@ check and specialist results. Resolve conflicts or gaps with selective
 inspection or a targeted specialist follow-up, not a duplicate full inspection.
 
 ```
-◆ Spawning verifier... (runs in a subagent — no output until it returns, ~2–10 min; expected, not a freeze)
+◆ Spawning verifier... (runs in a subagent — no output until it returns)
 ```
 
 ```

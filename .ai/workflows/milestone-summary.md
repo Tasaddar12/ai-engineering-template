@@ -69,7 +69,8 @@ Write the summary. Lead with what the software does:
 
 ## What This Milestone Delivered
 
-{Two or three paragraphs in plain language describing what users can now do.}
+{Write two or three plain-language paragraphs explaining what users can do that
+they could not do before and the user benefit those capabilities provide.}
 
 ## How It Works
 

@@ -67,8 +67,8 @@ Artifact gaps before close:
 - Phase {M}: no VERIFICATION.md
 ```
 
-A phase whose plans are ticked in the roadmap but which has no summaries did not
-actually execute — say so plainly rather than closing over it.
+Report a phase with completed plan ticks but no summaries as incomplete. Do not
+close the milestone.
 </step>
 
 <step name="verify_readiness">
