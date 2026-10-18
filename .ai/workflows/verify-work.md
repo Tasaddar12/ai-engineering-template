@@ -238,6 +238,8 @@ Agent(
 **Success criteria:** {from ROADMAP.md}
 **Requirements:** {requirements}
 **Revision under review:** {frozen_revision}
+**Issue-link audit input:** {current PR/MR head and provider body/link snapshot,
+or composed unpublished body and explicit provider-readback dependency}
 ${handoff ? `
 <handoff>
 {the continuation field of phase_run query handoff.read <id>, verbatim}
@@ -267,6 +269,9 @@ infer check outcomes or finalize status.
   it as a gap, or as human_needed where the criterion itself is unverifiable
 - Do not fix anything. Report what is true
 - Name file:line for every finding so it can be checked
+- Own the independent [Issue-link audit](../references/git-workflow.md#issue-link-audit)
+  as a fresh non-author verifier. Use the supplied current source/body/link snapshot
+  and provider readback; return the canonical audit packet with the report.
 </constraints>
 
 <output>

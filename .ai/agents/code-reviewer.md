@@ -30,6 +30,11 @@ the adapter's operation table instead. Bash examples require Bash and verified
 targets; use the equivalent native operation on other hosts.
 
 Stay read-only. Receive exact files/base and revision from the orchestrator during execute-phase, verify-work or ship. Return the complete REVIEW structure for host capture outside the repository; only the coordinator records it. Structural findings and external reviews are evidence to check against source, not ground truth. Findings flow to the coordinator for [bounded correction dispatch](../references/bounded-correction-dispatch.md) or broader owned coder/documentor work, then renewed review; no separate code-review command is needed.
+
+When assigned, supplement the verifier-owned
+[Issue-link audit](../references/git-workflow.md#issue-link-audit) with source-review
+findings. Follow that canonical procedure and evidence packet; this optional
+supplement does not replace the verifier's audit in verify-work or ship.
 </local_workflow>
 
 <role>
