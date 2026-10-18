@@ -78,8 +78,8 @@ Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker
 `integration-checker`, `codebase-mapper`, `debugger`, `scout`). Resolve the model with
 `phase_run query resolve-model <agent>` and the effort with
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
-call — shared role files carry neither as frontmatter (the installer adds Claude
-`model: haiku` only to exported `scout` metadata, with no effort), and a resolved `inherit` means
+call — shared role files carry neither as frontmatter (Claude exports default to
+scout/targeted-fixer `haiku`, coder `sonnet`, and phase-preparer `opus`/`medium`; only preparer exports effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
 Use [scout dispatch](.ai/references/scout-dispatch.md) for the authoritative
@@ -88,6 +88,9 @@ unknown; send additional scouts only for separately named questions and distinct
 evidence outputs. The coordinator owns worker lifecycle, integration, shared
 records and publication. Scouts return cited read-only evidence and never
 dispatch children.
+
+Follow the [confirmed-stop rule](.ai/RULES.md#orchestration-and-handoffs) before
+reassigning worker paths; a host wait timeout does not establish worker exit.
 
 A source-changing worker returns `complete` only after committing its owned
 changes and required SUMMARY.md. A read-only scout, reviewer, verifier,
