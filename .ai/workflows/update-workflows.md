@@ -35,9 +35,10 @@ and use its runtime, never a sibling checkout or personal configuration.
    `python .codex/update.py --target . --source <repository> --ref <ref> --plan <outside-workflow-plan.json>`.
    It fetches to a temporary directory and resolves the ref to a commit. No target
    mutation occurs. `--no-hooks` preserves existing hooks and skips new registration;
-   `--from-ref <commit>` can provide a legacy content baseline but cannot prove
-   ownership. Give scout the captured plan/log input ids, exact root/revision and
-   a complete specialized `scout_assignment` with task_class `FACT_EXTRACTION`,
+   Set `--from-ref <commit>` to compare current files with a prior content
+   baseline. The ref does not establish ownership. Give scout the captured
+   plan/log input ids, exact root/revision and a complete specialized
+   `scout_assignment` with task_class `FACT_EXTRACTION`,
    question "Which supplied update candidates and classifications require review?",
    requested_fields: ownership/provenance, candidate diffs, config required/optional
    defaults/conflicts, generated hook/entry conflicts, project preservation and
@@ -60,7 +61,7 @@ and use its runtime, never a sibling checkout or personal configuration.
    A generated settings/block conflict must be reconciled or kept, then replanned.
    Do not relabel generated/project files to bypass protection. A missing manifest
    is unproven ownership even when content matches; reviewed classification makes
-   a legacy upgrade possible without claiming unknown files automatically.
+   an upgrade possible without claiming unknown files automatically.
 
 4. **Spawn independent code-reviewer before apply.** Give the frozen root/HEAD,
    pinned source revision, full candidate plan with resolutions and owned path list.
@@ -127,8 +128,8 @@ Invalid UTF-8, NUL-bearing data and lone-CR differences are substantive. Whitesp
 BOM and terminal-newline changes remain substantive; comparison never trims,
 removes BOMs, decodes with replacement or normalizes other newline characters.
 CLI output labels comparison alongside ownership/action and omits equivalent
-newline diffs while retaining substantive candidate diffs. The legacy installer
-updater reports these differences and retains its equivalent-workflow skip.
+newline diffs while retaining substantive candidate diffs. The updater reports
+these differences and retains its equivalent-workflow skip.
 
 Line-ending-only is information, never write or deletion authority. It cannot prove
 ownership, reclassify a customized/generated/project file, clear a conflict or
