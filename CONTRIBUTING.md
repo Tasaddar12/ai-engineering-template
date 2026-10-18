@@ -61,10 +61,10 @@ If checks pass, close the phase.
 **Good: complete and scannable**
 
 ```text
-1. Confirm every required check and independent review covers the integrated revision.
-2. If documentation changed, resolve its doc-verifier findings. If acceptance covers a dependency or user-facing flow, confirm integration evidence.
-3. If verification is not `passed`, a required gate fails, or evidence is missing, preserve the gap, report the blocker, and stop; do not complete the phase.
-4. Only after verification records `passed`, run `phase_run query phase.complete "${phase_number}"`.
+1. During verify-work success bookkeeping, run `phase_run query phase.complete "${phase_number}"` only when the joined verifier result is `passed` or the user explicitly accepted the recorded gaps.
+2. Otherwise, preserve the gaps and do not run this success-bookkeeping step.
+3. This call records preliminary bookkeeping; it is not the final verification verdict or shipping approval.
+4. Follow verify-work's final reconciliation and other applicable gates before reporting or shipping.
 ```
 
 ### Keep instructions scannable without losing context
