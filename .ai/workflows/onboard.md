@@ -134,20 +134,16 @@ than continuing on a map that was never written.
 Wait for the answer. It gives you the context you need to ask intelligent
 follow-ups.
 
-**Follow the thread.** Based on what they said, ask follow-ups that dig into
-their answer. Use AskUserQuestion with options that probe what they actually
-mentioned — interpretations, clarifications, concrete examples.
+Ask follow-up questions based on the user's answers. Use AskUserQuestion options
+to clarify the details they raised. Cover:
 
-Keep following threads. Each answer opens new ones. Ask about:
-
-- What excited them
-- What problem sparked this
+- What problem the project addresses
 - What they mean by vague terms
 - What it would actually look like in use
 - What is already decided
 
-Techniques are in `@~/.ai/references/questioning.md`: challenge vagueness, make
-the abstract concrete, surface assumptions, find edges, reveal motivation.
+Use `@~/.ai/references/questioning.md` to clarify vague terms, make abstract
+ideas concrete, surface assumptions and identify edge cases.
 
 **Check coverage silently.** As you go, track the gaps in your head. Weave the
 missing questions in naturally — do not switch into checklist mode.
@@ -199,7 +195,7 @@ phase should establish them.
 </step>
 
 <step name="research">
-**Optional — only for genuine project-level unknowns**, such as choosing between
+**Optional — only for project-level unknowns**, such as choosing between
 frameworks or protocols the whole project rests on. Skip it otherwise.
 
 ```

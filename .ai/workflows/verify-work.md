@@ -10,7 +10,7 @@ Verify that a phase delivered its goal — not that its tasks completed. A fresh
 verifier reads the codebase and judges what is actually true, then gaps are either
 closed or recorded honestly.
 
-Task completion is a claim. Verification is evidence.
+Verify the delivered outcome against the codebase and recorded acceptance.
 
 **Carry the phase through to publication in this session.** On `passed`,
 invoke the `ship` skill for this phase (`/ship {N}`).
@@ -308,9 +308,8 @@ Verify that Phase {phase_number} integrates with what came before.
 **Depends on:** {depends_on}
 **Revision under review:** {frozen_revision}
 
-Check that the end-to-end flows this phase participates in actually complete —
-that the seams between this phase and its dependencies hold in the code, not just
-that each side compiles.
+Verify that the end-to-end flows this phase participates in complete across the
+dependency seams.
 
 Return:
 ## INTEGRATION CHECK
@@ -491,7 +490,7 @@ Return: ## PLANNING COMPLETE with the plan path
 ```
 
 Then execute it through `workflows/execute-phase.md` and **re-verify**. Gap
-closure that is not re-verified is just more unverified work.
+closure that is not re-verified remains unverified.
 
 Leave the rest in VERIFICATION.md and the closing report. Do not create todos.
 </step>

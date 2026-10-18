@@ -6,9 +6,7 @@ consumes: STATE.md
 -->
 
 <purpose>
-Capture an idea, task or issue that surfaces mid-session as a structured todo for
-later work. Enables "thought → capture → continue" without losing context or
-derailing the current phase.
+Capture an idea, task or issue as a structured todo for later work.
 </purpose>
 
 <required_reading>

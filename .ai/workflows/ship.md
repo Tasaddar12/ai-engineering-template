@@ -12,9 +12,8 @@ the base branch. Confirm current verification, open or update the PR, judge its
 checks, then merge only with explicit user authorization; sync the base branch
 and close the session after merge.
 
-Shipping is the only route a phase's work has to the base branch. It does not
-decide that unverified work is good enough, and it does not merge on a check
-verdict that is anything other than genuinely green.
+Shipping is the only route for a phase's work to reach the base branch. Require
+current verification and passing checks before merging.
 </purpose>
 
 <required_reading>
@@ -56,9 +55,8 @@ Parse `$ARGUMENTS`: an optional phase number, plus:
 - `--no-push` — compose and show the PR body without pushing or opening anything
 - `--no-merge` — open or update the PR and stop; the session stays open
 
-`--no-merge` leaves the phase undelivered. Say so in the report, because a
-session left open is work on a branch nobody merged, and a later `/ship` of the
-same phase is what finishes it.
+`--no-merge` leaves the phase undelivered. State that the session remains open
+and a later `/ship` of the same phase completes delivery.
 
 ```bash
 _root="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"

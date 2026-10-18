@@ -6,13 +6,9 @@ consumes: PROJECT.md, REQUIREMENTS.md, STATE.md, ROADMAP.md, prior CONTEXT.md
 -->
 
 <purpose>
-Extract implementation decisions that downstream agents need. Analyze the phase to
-identify gray areas, let the user choose what to discuss, then deep-dive each
-selected area until satisfied.
-
-You are a thinking partner, not an interviewer. The user is the visionary — you
-are the builder. Your job is to capture decisions that will guide research and
-planning, not to figure out implementation yourself.
+Identify implementation decisions that need user input. Analyze the phase,
+present meaningful gray areas, and discuss each selected area until its decisions
+are clear.
 </purpose>
 
 <required_reading>
@@ -49,21 +45,6 @@ them without asking the user again.
 **Not your job:** figure out HOW to implement. Research and planning do that with
 the decisions you capture.
 </downstream_awareness>
-
-<philosophy>
-**User = founder/visionary. You = builder.**
-
-The user knows: how they imagine it working, what it should look and feel like,
-what is essential versus nice-to-have, specific behaviors or references they have
-in mind.
-
-The user does not know, and should not be asked: codebase patterns (the
-researcher reads the code), technical risks (the researcher identifies those),
-implementation approach (the preparer works it out), success metrics (inferred
-from the work).
-
-Ask about vision and implementation choices. Capture decisions for downstream agents.
-</philosophy>
 
 <scope_guardrail>
 **CRITICAL: no scope creep.** The phase boundary comes from ROADMAP.md and is
@@ -408,7 +389,7 @@ Analyze the phase to identify gray areas, grounded in both `prior_decisions` and
      references any doc, spec or ADR — add it immediately. These are often the
      MOST important refs.
 
-   This list is MANDATORY in CONTEXT.md, with a full relative path for every ref.
+   Include this list in CONTEXT.md, with a full relative path for every ref.
    If no external docs exist, say so explicitly.
 
 3. **Check prior decisions** — scan `<prior_decisions>` for gray areas already
@@ -423,8 +404,8 @@ Analyze the phase to identify gray areas, grounded in both `prior_decisions` and
    that would change the implementation. Annotate with code context.
 
 6. **Skip assessment** — if no meaningful gray areas exist (pure infrastructure,
-   clear-cut implementation, everything already decided), the phase may not need
-   discussion. Say so rather than manufacturing questions.
+   clear-cut implementation, or everything already decided), report that no
+   discussion questions are needed. Do not manufacture questions.
 </step>
 
 <step name="present_gray_areas">
@@ -483,8 +464,8 @@ AskUserQuestion with plain-text numbered lists).
 - **Canonical ref accumulation** — when the user references a doc, spec or ADR
   during any answer, immediately read it (or confirm it exists) and add it to the
   canonical refs accumulator with a full relative path. Use what you learn to
-  inform later questions. These docs are often MORE important than the roadmap's
-  refs, because the user specifically wants downstream agents to follow them.
+  inform later questions and include every user-referenced document for
+  downstream agents.
 - **Scope creep** — if the user raises something outside the phase domain, capture
   it as a deferred idea and redirect.
 - **Incremental checkpoint** — after each area completes, write

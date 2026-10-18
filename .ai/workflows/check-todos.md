@@ -186,8 +186,8 @@ TODO file and `.planning/STATE.md` before stopping; do not commit when neither
 path changed.
 
 After a successful link, sync STATE. Commit the exact selected TODO path and
-`.planning/STATE.md` whenever either changed; do not skip the commit just because
-the TODO remains pending:
+`.planning/STATE.md` whenever either changed, including when the TODO remains
+pending:
 
 ```bash
 phase_run query state.sync-todos

@@ -81,7 +81,7 @@ and friends) it happens to contain before writing it here. Taxonomy:
 
 ### Folded Todos
 [If any todos were folded into scope from the cross_reference_todos step, list them here.
-Each entry should include the todo title, original problem, and how it fits this phase's scope.
+Include each todo's title, original problem, and fit with this phase's scope.
 If no todos were folded: omit this subsection entirely.]
 
 </decisions>
@@ -94,7 +94,7 @@ If no todos were folded: omit this subsection entirely.]
 [MANDATORY section. Write the FULL accumulated canonical refs list here.
 Sources: ROADMAP.md refs + REQUIREMENTS.md refs + user-referenced docs during
 discussion + any docs discovered during codebase scout. Group by topic area.
-Every entry needs a full relative path — not just a name.]
+Use a full relative path for every entry.]
 
 ### [Topic area 1]
 - `path/to/adr-or-spec.md` — [What it decides/defines that's relevant]
@@ -111,7 +111,7 @@ Every entry needs a full relative path — not just a name.]
 ## Existing Code Insights
 
 ### Reusable Assets
-- [Component/hook/utility]: [How it could be used in this phase]
+- [Component/hook/utility]: [How it applies to this phase]
 
 ### Established Patterns
 - [Pattern]: [How it constrains/enables this phase]

@@ -6,9 +6,8 @@ consumes: ROADMAP.md, REQUIREMENTS.md, MILESTONES.md, phase artifacts
 -->
 
 <purpose>
-Generate a human-friendly summary of a milestone from its artifacts. Written for
-onboarding: someone who was not present reads the output and understands what the
-milestone delivered and why.
+Generate a plain-language milestone summary from its artifacts. Explain what the
+milestone delivered for readers who were not involved in the work.
 </purpose>
 
 <required_reading>
@@ -60,8 +59,7 @@ only for their decisions sections.
 </step>
 
 <step name="compose_summary">
-Write the summary. It is for a reader with no history here, so lead with what the
-software does, not with process:
+Write the summary. Lead with what the software does:
 
 ````
 # {Project Name} — {Milestone version} {name}
@@ -71,8 +69,7 @@ software does, not with process:
 
 ## What This Milestone Delivered
 
-{Two or three paragraphs in plain language: what a user can now do that they
-could not before, and why it was worth doing.}
+{Two or three paragraphs in plain language describing what users can now do.}
 
 ## How It Works
 

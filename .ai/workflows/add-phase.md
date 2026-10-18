@@ -83,16 +83,15 @@ The runtime handles:
 
 Extract from the result: `phase_number`, `padded`, `name`, `slug`, `goal`, `directory`.
 
-**If the result includes a `warning` field:** the description read as goal-shaped
-(long and/or multi-sentence) rather than title-shaped, and was written verbatim
-as the `### Phase N:` header. The phase was still created — surface the warning
-and suggest a short title with the detail moved to `**Goal**:` in ROADMAP.md.
+**If the result includes a `warning` field:** report that the description was
+written verbatim as the `### Phase N:` header because it was long or
+multi-sentence. Suggest a short title and moving the detail to `**Goal**:` in
+ROADMAP.md.
 </step>
 
 <step name="update_project_state">
-Record the roadmap change in STATE.md through the runtime, never with a raw
-`Edit`/`Write` — projects may ship a PreToolUse hook that blocks direct writes
-to planning records:
+Record the roadmap change in STATE.md through the runtime; PreToolUse hooks may
+block direct planning-record writes:
 
 ```bash
 phase_run query state.add-roadmap-evolution "Phase ${phase_number} added: ${description}"

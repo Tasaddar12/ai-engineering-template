@@ -6,13 +6,11 @@ consumes: STATE.md, config.yaml
 -->
 
 <purpose>
-Execute a single-outcome, ad-hoc task with the same guarantees as phase work - atomic
-commits, a recorded plan, and tracked state — without the overhead of a phase.
-Quick mode spawns the phase-preparer (quick mode) and a coder, tracks the task
-under `.planning/quick/`, and records the outcome in STATE.md.
+Execute one ad-hoc task with atomic commits, a recorded plan and tracked state.
+Quick mode dispatches a phase-preparer and coder, tracks the task under
+`.planning/quick/`, and records the outcome in STATE.md.
 
-With `--validate`: adds plan checking before execution and verification after it.
-Use when the change touches something you cannot afford to get wrong.
+`--validate` adds plan checking before execution and goal verification after it.
 </purpose>
 
 <required_reading>

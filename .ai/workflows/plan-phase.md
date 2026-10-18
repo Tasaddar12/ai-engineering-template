@@ -6,8 +6,8 @@ consumes: CONTEXT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md
 -->
 
 <purpose>
-Turn a phase's goal and captured decisions into executable plans. Optionally
-research the approach first, spawn the phase-preparer to write the plans, then
+Turn a phase's goal and captured decisions into executable plans. Research the
+approach when needed, spawn the phase-preparer to write the plans, then
 have the phase-checker verify goal-backward that executing exactly those plans
 would deliver the phase.
 
@@ -258,8 +258,8 @@ is false and `--research` was not passed.** A partial RESEARCH.md is not finishe
 research: when `research_partial` is true, go straight to a continuation dispatch
 (below) against the questions it lists as not yet researched.
 
-Decide whether research is warranted. Research answers "how do we implement this
-here?" — it is not a formality:
+Decide whether research is needed. Research answers "how do we implement this
+here?":
 
 - Unfamiliar library, protocol or external system → research
 - Approach already decided in CONTEXT.md, or the pattern exists in the codebase → skip

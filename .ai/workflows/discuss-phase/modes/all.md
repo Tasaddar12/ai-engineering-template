@@ -9,19 +9,11 @@ Apply response_language to all user-facing prose — narration between tool call
 
 - In `present_gray_areas`: auto-select ALL gray areas without asking the user
   (skips the AskUserQuestion area-selection step).
-- Discussion for each area proceeds **fully interactively** — the user drives
-  every question for every area (use the default-mode `discuss_areas` flow).
-  if you want auto-advance.
+- Discuss each area interactively using the default-mode `discuss_areas` flow.
 - Log: `[--all] Auto-selected all gray areas: [list area names].`
-
-## Why this mode exists
-
-This is the "discuss everything" shortcut: skip the selection friction, keep
-full interactive control over each individual question.
 
 ## Combination rules
 
 - `--all --auto`: `--auto` wins for the discussion phase too (Claude picks
-  recommended answers); `--all`'s contribution is just area auto-selection.
-  auto-advance to plan/execute (chain semantics).
-  apply during discussion as documented in their respective files.
+  recommended answers); `--all` still selects every area. Follow the auto-mode
+  combination rules for plan/execute advancement.

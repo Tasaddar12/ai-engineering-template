@@ -107,7 +107,7 @@ goal that cannot be decomposed is not yet a goal.
 </step>
 
 <step name="research">
-**Optional — only when the approach is genuinely unknown.** Skip when the work is
+**Optional — only when the approach is unknown.** Skip when the work is
 well understood; research here is for technical unknowns, not for reassurance.
 
 ```

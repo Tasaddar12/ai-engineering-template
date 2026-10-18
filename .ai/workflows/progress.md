@@ -6,9 +6,8 @@ consumes: PROJECT.md, ROADMAP.md, STATE.md, todos, quick tasks
 -->
 
 <purpose>
-Report where the project stands — recent work, current position, decisions,
-blockers and what is ahead — then route to the next action. Situational awareness
-before continuing work.
+Report recent work, current position, decisions, blockers and upcoming work, then
+recommend the next action.
 </purpose>
 
 <required_reading>
@@ -52,7 +51,7 @@ Read `.planning/PROJECT.md` for the project name and core value.
 
 > ⚠ Context authority: PROJECT.md, STATE.md and ROADMAP.md are the authoritative
 > sources for project name, milestone, current phase and routing. A CLAUDE.md or
-> AGENTS.md project blurb is a secondary aid that may be stale — do NOT use it as
+> AGENTS.md project blurb is a secondary aid that can be stale — do NOT use it as
 > the source for any field in this report.
 </step>
 

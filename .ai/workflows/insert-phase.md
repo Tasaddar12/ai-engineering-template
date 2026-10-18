@@ -6,10 +6,8 @@ consumes: ROADMAP.md, STATE.md
 -->
 
 <purpose>
-Insert a decimal phase for urgent work discovered mid-milestone, between existing
-integer phases. Decimal numbering (2.1, 2.2, …) preserves the logical sequence of
-planned phases while accommodating urgent insertions without renumbering the
-whole roadmap.
+Insert a decimal phase for urgent work between existing integer phases. Decimal
+numbering (2.1, 2.2, …) keeps the existing phase numbers unchanged.
 </purpose>
 
 <required_reading>

@@ -93,7 +93,7 @@ If the phase is in progress or completed AND `--force` was NOT passed:
 ```
 ERROR: Cannot edit Phase {target} — status is {status}
 
-Editing an in-progress or completed phase may invalidate executed plans.
+Editing an in-progress or completed phase can invalidate executed plans.
 
 To edit anyway, run:
   /phase --edit {target} --force
@@ -158,7 +158,7 @@ If any reference is invalid:
 ```
 ERROR: depends_on references invalid phase(s): {bad_refs}
 Valid phase numbers: {valid_list}
-Fix the depends_on field and try again.
+Correct the depends_on field and rerun the command.
 ```
 
 Exit without writing.

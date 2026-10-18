@@ -7,8 +7,7 @@ consumes: ROADMAP.md, STATE.md
 
 <purpose>
 Remove an unstarted future phase from the roadmap, delete its directory, renumber
-subsequent phases to keep a clean linear sequence, and commit the change. The git
-commit is the historical record of the removal.
+subsequent phases to keep a linear sequence, and commit the change.
 </purpose>
 
 <required_reading>

@@ -35,8 +35,9 @@ and use its runtime, never a sibling checkout or personal configuration.
    `python .codex/update.py --target . --source <repository> --ref <ref> --plan <outside-workflow-plan.json>`.
    It fetches to a temporary directory and resolves the ref to a commit. No target
    mutation occurs. `--no-hooks` preserves existing hooks and skips new registration;
-   `--from-ref <commit>` can provide a legacy content baseline but cannot prove
-   ownership. Give scout the captured plan/log input ids, exact root/revision and
+   `--from-ref <commit>` supplies an earlier content baseline for comparison but
+   does not establish ownership. Give scout the captured plan/log input ids,
+   exact root/revision and
    a complete specialized `scout_assignment` with task_class `FACT_EXTRACTION`,
    question "Which supplied update candidates and classifications require review?",
    requested_fields: ownership/provenance, candidate diffs, config required/optional
@@ -59,8 +60,8 @@ and use its runtime, never a sibling checkout or personal configuration.
    in a bounded coder change and replanned; the updater never guesses a merge.
    A generated settings/block conflict must be reconciled or kept, then replanned.
    Do not relabel generated/project files to bypass protection. A missing manifest
-   is unproven ownership even when content matches; reviewed classification makes
-   a legacy upgrade possible without claiming unknown files automatically.
+   leaves ownership unproven even when content matches; reviewed classification
+   supports an upgrade without automatically claiming unknown files.
 
 4. **Spawn independent code-reviewer before apply.** Give the frozen root/HEAD,
    pinned source revision, full candidate plan with resolutions and owned path list.

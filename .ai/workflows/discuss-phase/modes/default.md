@@ -25,18 +25,17 @@ Example with research enabled:
 ```text
 Let's talk about [Authentication Strategy].
 
-📊 Best practices research:
-• OAuth 2.0 + PKCE is the current standard for SPAs (replaces implicit flow)
-• Session tokens with httpOnly cookies preferred over localStorage for XSS protection
-• Consider passkey/WebAuthn support — adoption is accelerating in 2025-2026
+Research findings:
+• [Finding from a current source] — [source]
+• [Finding from a current source] — [source]
 
-With that context: How should users authenticate?
+With that context: [specific decision question]
 ```
 
-When disabled (default), skip the research and present questions directly as before.
+When disabled (default), present questions without research.
 
-**Philosophy:** stay adaptive. Default flow is 4 single-question turns, then
-check whether to continue. Each answer should reveal the next question.
+Ask four single-question turns per area, then ask whether to continue. Use each
+answer to shape the next question.
 
 **For each area:**
 
@@ -88,16 +87,16 @@ When the user references a doc, spec, or ADR during any answer — e.g., "read a
 2. Add it to the canonical refs accumulator with full relative path
 3. Use what you learned from the doc to inform subsequent questions
 
-These user-referenced docs are often MORE important than ROADMAP.md refs because they represent docs the user specifically wants downstream agents to follow. Never drop them.
+Include every user-referenced document in the canonical refs for downstream agents.
 
 **Question design:**
-- Options should be concrete, not abstract ("Cards" not "Option A")
-- Each answer should inform the next question or next batch
+- Use concrete options such as "Cards" instead of abstract labels such as "Option A".
+- Use each answer to shape the next question or batch.
 - If user picks "Other" to provide freeform input (e.g., "let me describe it", "something else", or an open-ended reply), ask your follow-up as plain text — NOT another AskUserQuestion. Wait for them to type at the normal prompt, then reflect their input back and confirm before resuming AskUserQuestion or the next numbered batch.
 
-**Thinking partner (conditional):**
+**Tradeoff analysis (conditional):**
 If `features.thinking_partner` is enabled in config, check the user's answer for tradeoff signals
-If a tradeoff is detected:
+If an answer signals a tradeoff:
 
 ```text
 I notice competing priorities here — {option_A} optimizes for {goal_A} while {option_B} optimizes for {goal_B}.

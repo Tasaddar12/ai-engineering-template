@@ -76,7 +76,7 @@ captured revision. Give each packet distinct paths and requested fields:
   fields, STATE position/progress, canonical references and contradictory claims.
 - Retirement candidates: ADR status/replacement/history and quick status/authored
   completion evidence, active inbound references, archive catalog and recovery
-  selectors. An old date alone is not eligibility.
+  selectors. Age alone does not establish eligibility.
 
 Use one discovery scout only if source location is unknown. Batch independent
 packets when host capacity allows; do not duplicate the runtime's extracted
@@ -135,7 +135,7 @@ phase_run query planning.repair --apply --expect <fingerprint>
 ```
 
 Use `--only state-structure` to select that proposed repair. Default is dry-run.
-Do not pass an old fingerprint or edit runtime-owned structure by hand. The
+Do not pass a prior fingerprint or edit runtime-owned structure by hand. The
 coordinator owns shared-record mutations and runs the approved runtime operations;
 workers supply bounded repair proposals and evidence, never shared status writes.
 
@@ -169,9 +169,9 @@ phase_run query planning.archive quick <id-or-path>
 
 The positional kind is `phase`, `adr` or `quick`; every selector must resolve
 unambiguously. Preview is the default. Inspect moves, rewritten reference files,
-eligibility evidence and recovery id. Active work is never archived because it is
-old. Completed phases require checked plans, complete SUMMARY evidence and passed
-VERIFICATION. Explicit legacy evidence may support a non-active record only.
+eligibility evidence and recovery id. Active work is never archived based on age.
+Completed phases require checked plans, complete SUMMARY evidence and passed
+VERIFICATION. Accept explicit legacy evidence only for a non-active record.
 ADRs require a superseding replacement and evidence; retain their argument and
 status history. Quick items require authored completion or retirement evidence.
 An explicitly obsolete/superseded record still needs the runtime's safe eligibility

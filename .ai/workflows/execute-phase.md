@@ -486,11 +486,9 @@ remaining tasks, report it as a blocker.
 </step>
 
 <step name="integrate_wave">
-The wave's work is on branches, not in your tree — it always is, because every
-plan ran isolated. Integrate it into the **session branch** before running
-checks, reviewing, or starting the next wave. `merge-wave` merges into whatever
-branch is current, which inside the session worktree is the session branch, so
-the wave lands in the phase's own pull request and never touches the base:
+Integrate the wave into the **session branch** before running checks, reviewing,
+or starting the next wave. Each plan ran in isolation. `merge-wave` targets the
+current branch; in the session worktree, that is the session branch:
 
 ```bash
 git status --porcelain     # must be clean; commit planning records first
@@ -519,8 +517,8 @@ Once the wave is clean, release its checkouts:
 phase_run query worktree.cleanup-wave --phase "${phase_number}"
 ```
 
-Cleanup is conservative on purpose. It removes a worktree only when git agrees
-its branch is an ancestor of HEAD, and reports everything it kept in
+Cleanup removes a worktree only when git confirms its branch is an ancestor of
+HEAD, and reports everything it kept in
 `preserved`, with the reason. **Never pass `--force` to get past a preserved
 entry** — that discards work whose fate has not been decided. Report what was
 preserved and let the user choose.

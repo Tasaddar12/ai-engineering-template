@@ -7,7 +7,7 @@ consumes: ROADMAP.md, STATE.md, phase SUMMARY.md files
 -->
 
 <purpose>
-Close a milestone: confirm every phase in it is genuinely complete, gather what
+Close a milestone: confirm every phase in it is complete, gather what
 shipped, write the MILESTONES.md entry, mark the milestone shipped in the
 roadmap, and commit.
 </purpose>
@@ -191,7 +191,7 @@ Recorded: .planning/MILESTONES.md
 </process>
 
 <anti_patterns>
-- Don't close a milestone with open phases; there is no force path for a reason
+- Don't close a milestone with open phases
 - Don't write the MILESTONES.md entry by hand — `milestone.complete` owns its structure
 - Don't claim accomplishments that no SUMMARY.md supports
 - Don't delete phase directories on close; they are the evidence behind the entry
