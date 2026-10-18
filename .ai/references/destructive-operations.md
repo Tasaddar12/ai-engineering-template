@@ -69,7 +69,7 @@ Provider selection comes from the `origin` remote, with GitLab project identity
 confirmed by API readback. GitHub hosts `github.com`/`github.*` use
 `gh api --hostname HOST --paginate --slurp` and all-state pull-request pages.
 GitLab hosts `gitlab.com`/`gitlab.*` use `glab api --hostname HOST --output json
--X GET`, project identity and `--paginate` all-state merge requests. Arbitrary
+-X GET`, project identity and `--paginate` all-state merge requests.
 Treat arbitrary enterprise hostnames and ambiguous fork ownership as unknown;
 preserve the target.
 GitHub pages must have complete pagination shape; GitLab's documented paginated
@@ -104,8 +104,9 @@ implementation must require a pinned route containing a schema version,
 canonical repository and common directory, snapshot ID, deterministically
 ordered exact operations, and actual human approval text or reference. Enforce
 locks, revalidation and single-use receipts in that implementation. This guard
-does not provide an approved cleanup command. Do not present legacy runtime
-cleanup verbs as that approval route.
+does not provide an approved cleanup command. Use existing runtime cleanup
+verbs only under their documented contracts. Do not treat those verbs as the
+backup-removal approval route.
 
 This is bounded preflight, not an arbitrary-shell sandbox. It does not inspect
 opaque Python/Node programs, external executable/file contents, user shell

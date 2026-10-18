@@ -14,7 +14,7 @@
 
 - Replaced launcher failure history with current Windows Codex launcher requirements, including the four Git Bash probes, no PATH fallback, root resolution, quote escaping and exit status.
 - Made unsupported Git context flags and unknown provider ownership explicit refusal/preservation instructions.
-- Stated the cleanup approval route's required evidence and safeguards directly. The destructive guard does not provide that route or an approved cleanup command; legacy runtime verbs do not satisfy it.
+- Stated the cleanup approval route's required evidence and safeguards directly. The destructive guard does not provide that route or an approved cleanup command; existing runtime cleanup verbs keep their documented contracts and do not provide backup-removal approval.
 - Preserved parser grammar, refusal conditions, evidence requirements, approval fields and GitLab validation history.
 
 ## Checks

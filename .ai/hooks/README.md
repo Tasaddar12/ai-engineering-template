@@ -30,9 +30,9 @@ work in session worktrees and dispatch isolated executors. Allowed write-capable
 dispatches, including warned and qualified roles, retain handoff tracking.
 
 Codex registrations use `.codex/config.toml`; Claude uses `.claude/settings.json`.
-The Codex Windows launcher ends in `; exit $LASTEXITCODE` so PowerShell
-`-Command` propagates the script's exit status. Keep the advisory guard's exit
-status 0 distinct from launcher failures.
+End the Codex Windows launcher with `; exit $LASTEXITCODE`. Propagate the
+script's exit status. Keep the advisory guard's exit status 0 distinct from
+launcher failures.
 
 For Windows Codex, probe `../bin/bash.exe`, `../../bin/bash.exe`,
 `../usr/bin/bash.exe` and `../../usr/bin/bash.exe` relative to `git.exe`; use
