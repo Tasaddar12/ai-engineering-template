@@ -89,6 +89,9 @@ evidence outputs. The coordinator owns worker lifecycle, integration, shared
 records and publication. Scouts return cited read-only evidence and never
 dispatch children.
 
+Follow the [confirmed-stop rule](.ai/RULES.md#orchestration-and-handoffs) before
+reassigning worker paths; a host wait timeout does not establish worker exit.
+
 A source-changing worker returns `complete` only after committing its owned
 changes and required SUMMARY.md. A read-only scout, reviewer, verifier,
 doc-verifier or integration-checker returns `complete` with its assigned cited
