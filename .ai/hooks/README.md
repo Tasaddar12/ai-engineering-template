@@ -29,29 +29,15 @@ work in session worktrees and dispatch isolated executors. Allowed write-capable
 dispatches, including warned and qualified roles, retain handoff tracking.
 
 Codex registrations use `.codex/config.toml`; Claude uses `.claude/settings.json`.
-The Codex Windows launcher ends in `; exit $LASTEXITCODE` because PowerShell
-`-Command` does not otherwise propagate the script's exit status. The advisory
-guard returns 0; launcher failures still need their actual status. Three other
-details of that one line are each load-bearing, and each was a hook that
-silently did not run:
+The Codex Windows launcher ends in `; exit $LASTEXITCODE` so PowerShell
+`-Command` propagates the script's exit status. Keep the advisory guard's exit
+status 0 distinct from launcher failures.
 
-- **Git Bash is probed, not computed.** `git.exe` sits at `<root>/cmd/git.exe`
-  in an installer-managed install but at `<root>/mingw64/bin/git.exe` in a
-  portable, scoop or winget one. Resolving `../bin/bash.exe` from the second
-  layout names a file that does not exist, so every Codex hook failed to launch
-  on those machines. The launcher now tries the known layouts and takes the
-  first bash that is really there. PATH is deliberately not a fallback: on
-  Windows it commonly finds WSL's `bash.exe`, which cannot see the Windows
-  checkout the hook is about to inspect. Finding none exits 1 -- an error worth
-  seeing rather than a silent no-op.
-- **The repository path never crosses into PowerShell.** Capturing
-  `git rev-parse` there and passing the result to bash mangles every non-ASCII
-  component; a checkout under `projet café 日本語` reached bash as box-drawing
-  characters. bash gets an ASCII-only `-c` string and resolves the root itself,
-  exactly as the POSIX `command` does.
-- **The inner quotes are written `\"`.** PowerShell re-parses a native command's
-  arguments and consumes a bare `"` rather than passing it, which re-split the
-  script at its spaces and left bash treating `rev-parse` as its own name.
+For Windows Codex, probe `../bin/bash.exe`, `../../bin/bash.exe`,
+`../usr/bin/bash.exe` and `../../usr/bin/bash.exe` relative to `git.exe`; use
+the first existing path and exit 1 if none exists. Do not use PATH as a
+fallback. Pass Bash an ASCII-only `-c` argument and resolve the repository root
+inside Bash. Escape inner quotes as `\"` in PowerShell native arguments.
 
 Scripts live in the selected host's `hooks` folder. Python suffixes use the
 `python` interpreter; shell scripts use Bash. The command locates the script
@@ -61,16 +47,16 @@ entrypoint with `runpy` and propagates `$LASTEXITCODE`. Python source is never
 interpreted as Bash. Both `.codex` and `.claude` copies import their adjacent
 `runtime/lib/destructive_guard.py` rather than the source `.ai` namespace.
 
-The destructive hook has a 120-second host timeout and an 80-second evidence
-budget, with individual subprocess calls limited to 20 seconds. Missing or
-failed Git/provider evidence refuses the recognized operation. The installed
-launcher tests verify refusal status and JSON on Windows and allow behavior
-from nested paths with spaces/non-ASCII characters. They establish launcher
-execution, not a trusted live host session.
+Set the destructive hook's host timeout to 120 seconds, its evidence budget to
+80 seconds, and each subprocess timeout to 20 seconds. Refuse a recognized
+operation when Git or provider evidence is missing or fails. Use the installed
+launcher tests to check refusal status and JSON on Windows and allow behavior
+from nested paths with spaces and non-ASCII characters. These tests establish
+launcher execution; a trusted live host session must still run the hook.
 
-See [destructive operations](../references/destructive-operations.md) for the
-literal command grammar, preservation policy and limits. This new hook is
-separate from `worktree-guard.sh`, whose bytes and advisory behavior are unchanged.
+Follow [destructive operations](../references/destructive-operations.md) for
+the literal command grammar, preservation policy and limits. Use
+`worktree-guard.sh` for advisory dispatch and write warnings.
 
 Use `--no-hooks` to skip adding registrations; existing hooks are preserved.
 Existing settings remain authoritative. Codex must trust the project and hooks
