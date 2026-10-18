@@ -63,8 +63,8 @@ Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker
 `coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
 `integration-checker`, `codebase-mapper`, `debugger`, `scout`, `targeted-fixer`). Resolve the model with
 `phase_run query resolve-model <agent>` and pass it inline on the dispatch call —
-shared role files carry no `model:` frontmatter (the installer adds Claude
-`model: haiku` only to exported `scout` and `targeted-fixer` metadata, with no effort), and a resolved `inherit` means omit the argument. Never fall back to a generic agent type.
+shared role files carry no `model:` frontmatter (Claude exports default to
+scout/targeted-fixer `haiku`, coder `sonnet`, and phase-preparer `opus`/`medium`; only preparer exports effort), and a resolved `inherit` means omit the argument. Never fall back to a generic agent type.
 
 Use [scout dispatch](.ai/references/scout-dispatch.md) for the task/output
 routing table. Send one discovery scout when source location is unknown; use

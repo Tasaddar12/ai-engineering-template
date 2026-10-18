@@ -141,8 +141,10 @@ def render_asset(name, content, host):
     if name.endswith((".py", ".json")) or not content:
         return content  # Executable code and structured data are copied unchanged.
     text = content.decode("utf-8-sig").replace("\r\n", "\n")
-    if name in (".ai/agents/scout.md", ".ai/agents/targeted-fixer.md") and host == "claude":
-        text = claude_fixed_role_metadata(text)
+    claude_defaults = {"scout": ("haiku", None), "targeted-fixer": ("haiku", None),
+                       "coder": ("sonnet", None), "phase-preparer": ("opus", "medium")}
+    if host == "claude" and name in {f".ai/agents/{role}.md" for role in claude_defaults}:
+        text = claude_role_metadata(text, *claude_defaults[Path(name).stem])
     destination = destination_path(name, host)
     if name.endswith((".md", ".txt")) or name == "AGENTS.md":
         def link(match):
@@ -185,13 +187,14 @@ def render_asset(name, content, host):
     return text.encode("utf-8")
 
 
-def claude_fixed_role_metadata(text):
-    """Export fixed Claude metadata without adding host settings to the role body."""
+def claude_role_metadata(text, model, effort):
+    """Export default Claude metadata without adding host settings to the role body."""
     frontmatter, separator, body = text.partition("\n---\n")
     if not text.startswith("---\n") or not separator:
-        raise ValueError("Claude fixed-role export requires complete Markdown frontmatter")
+        raise ValueError("Claude role export requires complete Markdown frontmatter")
     frontmatter = re.sub(r"(?m)^(?:model|effort|model_reasoning_effort):[^\n]*\n?", "", frontmatter)
-    return frontmatter + "\nmodel: haiku" + separator + body
+    metadata = "\nmodel: " + model + ("\neffort: " + effort if effort else "")
+    return frontmatter + metadata + separator + body
 
 
 def skill_root(host):
