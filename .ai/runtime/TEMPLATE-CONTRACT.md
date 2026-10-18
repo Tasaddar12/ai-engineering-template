@@ -7,7 +7,7 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 
 | Artifact | Producer | Consumer | Local additions |
 |---|---|---|---|
-| NN-CONTEXT.md | discuss-phase | researcher, phase-preparer, phase-checker | Decisions, canonical refs, code context, deferred ideas, folded todos |
+| NN-CONTEXT.md | discuss-phase | researcher, phase-preparer, phase-checker | phase, discussion, issue_refs, decisions, canonical refs, code context, deferred ideas, folded todos |
 | NN-DISCUSSION-LOG.md | discuss-phase | Human audit only | Actual questions, options, selections and rationale |
 | NN-RESEARCH.md | researcher | phase-preparer | Findings tied to a revision, with what they unblock |
 | NN-MM-PLAN.md | phase-preparer | phase-checker, orchestrator, coder | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when |
@@ -47,12 +47,18 @@ The file name is phase-local: `01-01-PLAN.md`. Frontmatter carries:
 ```yaml
 phase: 01-name
 plan: "01"
+type: execute
 wave: 1
 depends_on: []            # plan ids whose summaries must exist first
 files_modified: []        # exact paths, or directory prefixes ending in /
 files_deleted: []         # exact files only
+autonomous: true
 requirements: [REQ-01]    # never empty
 acceptance: [AUTH-01]     # the phase outcomes this plan covers
+documentation: []
+checks: []               # each command is an argv list of strings
+must_haves: {truths: [], artifacts: [], key_links: []}
+issue_refs: []           # reviewed issue declaration mappings, not URL strings
 ```
 
 `files_modified` grants exact paths or directory prefixes ending in `/`;
@@ -150,6 +156,115 @@ fields, and [ship](../commands/ship.md) gates on `passed`.
 A `must_have` the verifier cannot confirm with explicit evidence is not a pass.
 It reports the gap, or `human_needed` where the criterion itself is unverifiable.
 Only the user converts an abstention into acceptance.
+
+## Planning-record integrity
+
+Complete the required fields in each source File Template. Preserve optional
+upstream metadata. Record actual requirements, authorization, verification and
+publication evidence.
+
+| Record | Required metadata | Types and values |
+|---|---|---|
+| CONTEXT | `phase`, `discussion`, `issue_refs` | Nonempty phase string; discussion `pending`, `in-progress` or `complete`; explicit declaration list |
+| PLAN | `phase`, `plan`, `type`, `wave`, `depends_on`, `files_modified`, `autonomous`, `requirements`, `acceptance`, `documentation`, `checks`, `must_haves`, `issue_refs` | Phase/type strings; plan string or integer; type `execute` or `tdd`; positive integer wave; real boolean autonomous; explicit lists; nonempty requirements; must_haves mapping |
+| SUMMARY | `phase`, `plan`, `status`, `requirements-completed`, `acceptance`, `documentation`, `issue_refs` | Phase/status strings; plan string or integer; status `complete`, `blocked` or explicit upstream `halted`; explicit lists |
+
+Fill ID/path lists with nonempty strings. Write each `checks` entry as a nonempty
+argv list of strings. Include `truths`, `artifacts` and `key_links` lists in
+`must_haves`, preserving their runtime container shapes. Include `issue_refs` in
+all three records. Use `[]` for reviewed absence of actionable follow-ups; omission
+is incomplete metadata. Preserve mapping declarations and lifecycle rules from
+[phase issue handoffs](README.md#declared-phase-issue-handoffs) and
+[canonical Git workflow](../references/git-workflow.md#follow-up-issues);
+plain issue URL strings are not declarations. Structural validity does not
+publish issues or establish acceptance or closure.
+
+CONTEXT begins with:
+
+```yaml
+---
+phase: 01-name
+discussion: pending
+issue_refs: []
+---
+```
+
+Record `discussion: complete` only for an actual recorded discussion. Any
+implementation instruction still belongs in the authored Authorization section.
+A SUMMARY's `halted` preserves the upstream intentional-stop contract; it never
+counts as completed work.
+
+The runtime `commit` verb validates the full actual index after staging its
+requested files and before Git creates a commit. Newly added or modified active
+`.planning/phases/<number>-<name>/NN-CONTEXT.md`, `NN-MM-PLAN.md` and
+`NN-MM-SUMMARY.md` records must have valid YAML mappings, required fields and
+field types. Duplicate explicit mapping keys at any depth, including anchored
+sources, are rejected with record/key evidence; a later duplicate cannot erase
+an issue declaration or replace an invalid value. Valid YAML merge keys retain
+SafeLoader precedence, so an explicit destination key may override an inherited
+key. Apply this strict loader only to current records; use the broad frontmatter
+reader for `planning.validate`, which reports warnings unless the caller passes
+`--strict`. Directory and filename numbers use the existing phase conventions.
+Do not parse deleted records. Keep unchanged records, archives, maintenance
+records, source templates and unrelated Markdown outside this commit gate. Do not
+run a migration sweep or rewrite instructional skeletons as part of this gate.
+
+`planning.integrity --files <record> ...` is a read-only diagnostic of explicitly
+selected canonical working records using the same schema. A record/key diagnostic
+returns `code: planning-integrity`, `ok: false` and exit 1. This strict selected
+check is separate from ordinary `planning.validate`, which remains warn-only
+unless the caller explicitly chooses `--strict`.
+
+The standalone `hooks/planning-integrity.sh` / `.py` PreToolUse checker validates
+native Git commit commands using the shared schema. Ordinary commits inspect
+index bytes; explicit-path/`--only` commits inspect selected tracked working
+content; `--all` inspects tracked working changes and staged additions. Supported
+preceding `git add` commands use their selected working content. Inspection
+never stages or resets the real index. A relevant working record with a custom
+clean filter, unsupported interactive/pathspec-file commit forms or ambiguous
+shell mutations is refused with actionable stderr; stage separately and use a
+plain commit. CRLF normalization alone does not alter metadata meaning.
+
+Malformed inspected metadata containers return an explicit schema diagnostic.
+Unexpected native inspection errors also deny with exit 2 and actionable stderr,
+rather than becoming a hook crash that a host might treat as nonblocking.
+
+Provide native checker payloads with top-level `tool_name` and `cwd`, and put
+command text in `tool_input.command`, `tool_input.cmd`, top-level `command` or
+top-level `cmd`. Pass shell argv as a command list. Direct Git, `-C`/`-c` global options,
+nested directories and bounded Bash/PowerShell/cmd wrappers are recognized
+without executing command text. Bash escaped executable spellings and line
+continuations are parsed only with Bash semantics; native Windows backslashes
+remain path separators. Transparent repeated `command`, `env`, `exec`, `time`
+and `!` wrappers are recognized without environment assignments. Harmless
+command diagnostics remain allowed. Denial exits 2; inspected valid/noncommit input
+exits 0. Missing required runtime support produces an actionable failure.
+Verify installer registration for `^(Bash|exec_command|shell_command|shell)$`
+(timeout 10), copied hook files and their sibling installed runtime through each
+host launcher before claiming native direct coverage. Standalone checker tests do not prove
+installed host coverage, and this is not universal operating-system Git enforcement.
+
+### Authored-content diagnostics
+
+State section replacements and `State.save` compare original body sections
+before writing, including unknown/deeper headings. Progress and plan-registration
+state writes use the same preflight. Unexpected loss raises `planning-integrity`
+without writing that STATE candidate. Runtime dispatch snapshots existing STATE
+and ROADMAP for every regular verb, covering phase, roadmap, milestone,
+bookkeeping, archive and `planning.repair` paths. A mutation that already wrote
+returns structured `integrity_warnings` with record, verb, section, lost-content
+evidence and a potential-truncation message, including handled errors after a
+write. Inspect the saved records; no rollback or transactional guarantee is claimed.
+Read-only calls do not create records.
+
+Comparison is section-aware and ignores only newline spelling, derived
+frontmatter, owned state fields, explicitly replaced digest entries and documented
+Decisions/Roadmap Evolution rotation. Roadmap exceptions cover generated
+checklist/progress rows, explicitly selected phase fields/plan registration and
+requested phase removal/renumbering, canonical milestone status updates and
+conservative repair-owned heading restoration. Unrelated authored prose and unknown child
+headings do not inherit a parent section's exception. Ordinary successful
+mutations and warn-only conformance checking retain their established behavior.
 
 ## Threat records and ownership
 

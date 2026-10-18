@@ -4,6 +4,11 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md` - phase comple
 
 ---
 
+Required current-record metadata: `phase`, `plan`, `status`,
+`requirements-completed`, `acceptance`, `documentation` and `issue_refs`.
+Keep all applicable upstream metadata below; only claim observed completion.
+See the [planning integrity contract](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity).
+
 ## File Template
 
 ```markdown
@@ -50,6 +55,7 @@ requirements-completed: []  # REQUIRED — Include only requirement IDs from thi
 # Local runtime coverage — populate from actual delivered and checked results.
 acceptance: []  # REQUIRED — Covered acceptance IDs from this plan; these may differ from requirement IDs.
 documentation: []  # REQUIRED — Exact required documentation paths completed by this component; [] when none are assigned.
+issue_refs: []     # REQUIRED - Reviewed issue declaration mappings; [] when no actionable follow-up.
 
 # Coverage metadata — one entry per shipped deliverable for evidence review and UAT planning.
 # For legacy/prose-only SUMMARYs, inspect the ## Accomplishments evidence instead.

@@ -189,11 +189,51 @@ so an open blocker is never dropped to make room for a newer one.
 | `requirements.set-status <id> <status> [--phase]` | Set one requirement's Status cell |
 | `requirements.close-phase <phase> [--requirements ...] [--status]` | Close out a passing phase's requirements |
 | `planning.validate [--strict] [--skip ...]` | Report record drift; warn-only by default |
+| `planning.integrity --files <record> ...` | Read-only strict schema diagnostic for selected active canonical records |
 | `codebase.status` | Freshness of ARCHITECTURE.md and STACK.md, derived from git |
 
 `planning.validate` returns `ok` with a warning list so a cosmetic finding never
 stalls a session. `--strict` turns the same findings into a failure, for a caller
 that asks for it.
+
+### Planning commit and authored-content integrity
+
+The shared [integrity contract](TEMPLATE-CONTRACT.md#planning-record-integrity)
+lists every required CONTEXT/PLAN/SUMMARY field and its type, including reviewed
+`issue_refs: []` or existing declaration mappings. Runtime `commit` validates
+changed canonical active phase records from the complete staged index, including
+relevant records omitted from `--files`. Invalid YAML, absent required keys and
+wrong types return a record/key `planning-integrity` error before Git commits.
+`planning.integrity --files ...` checks selected working records with the same
+schema and failure convention. Ordinary `planning.validate` remains warn-only;
+use it for broad drift reports, and pass `--strict` only when findings must fail
+the command. Keep unchanged records, archives, maintenance records, source
+templates and unrelated Markdown outside the commit gate. Leave the adoption
+skeleton instructional.
+
+The standalone native PreToolUse checker handles Git index commits, selected
+tracked working bytes for `--only`/explicit paths, tracked `--all` changes and
+supported preceding adds. It preserves the real index, recognizes bounded
+`-C`/`-c` and shell-wrapper forms, supports native string commands and shell argv
+payloads, and exits 2 with actionable stderr on denial. Bash escape semantics
+are separate from native Windows paths; transparent repeated command/env/exec/time
+wrappers and Bash negation are recognized, while harmless diagnostics stay allowed. Ambiguous shell mutations,
+interactive/pathspec-file commits and relevant custom clean-filter working bytes
+are refused; stage separately and use a plain commit. The hook uses the installed
+sibling runtime. Verify installed registrations for `Bash`, `exec_command`, `shell_command`
+and `shell` through the host launchers. Standalone checker tests do not establish
+installed coverage or universal Git enforcement.
+
+STATE changes preflight authored section preservation before safe writes. All
+regular runtime dispatch paths snapshot existing STATE/ROADMAP, including phase,
+roadmap, milestone/bookkeeping and planning repair. Authored loss after a write
+returns `integrity_warnings` containing record, verb, section and content evidence,
+including handled errors; no rollback is attempted. Owned fields, derived
+frontmatter, newline normalization, explicit digest replacement/rotation,
+generated roadmap rows, selected phase edits/removal, canonical milestone status
+changes and conservative repair heading restoration are scoped exceptions.
+Unknown child headings and unrelated prose remain protected. Read-only verbs do
+not create planning records.
 
 ### Planning archives
 
@@ -485,9 +525,10 @@ worktree preserved, and refuses a protected target branch or a dirty tree.
 `cleanup-wave` removes a checkout only when git agrees its branch is an
 ancestor of HEAD, and reports everything it kept with the reason.
 
-The dispatch itself is enforced outside the runtime, in
-[hooks/worktree-guard.sh](../hooks/worktree-guard.sh) — a verb cannot see an
-`Agent(...)` call that never mentioned it.
+[hooks/worktree-guard.sh](../hooks/worktree-guard.sh) emits an advisory warning
+for a write-capable dispatch without worktree isolation and continues with exit 0.
+The isolated-workflow requirement and runtime creation/integration safeguards
+still apply; a verb cannot inspect an `Agent(...)` call that never mentioned it.
 
 ## Layout
 
