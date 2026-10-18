@@ -10,15 +10,14 @@ That launcher does not move an existing conversation or active agent.
 The installer exports a thin `.codex/codex-worktree.py` entry point. It accepts
 `phase|quick LABEL [--base COMMIT] [--prompt TEXT] [--exec]` and calls the
 adjacent installed `runtime/lib/codex_worktree.py` `launcher_main`; it does not
-forward arbitrary native arguments. For example, after installing and reviewing
-the Codex project hooks:
+forward arbitrary native arguments. After installing and reviewing the Codex
+project hooks, run:
 
 ```text
 python .codex/codex-worktree.py phase 12 --prompt "Review the phase context"
 python .codex/codex-worktree.py quick 261016-001-example --exec --prompt "Implement the approved change"
 ```
 
-These are source-level usage examples; this continuation did not execute them.
 The launcher selects and validates one runtime-owned phase or quick session,
 then starts the native `codex` executable with `--cd <destination> --enable
 hooks`. `--exec` adds the native `exec` subcommand. A prompt is passed as one
@@ -54,10 +53,11 @@ Whether that invocation setting interacts safely with every effective feature
 or managed-policy configuration remains an open question; do not infer an
 answer from source or export inspection.
 
-Codex automatic movement for an already-running conversation is unsupported by
-this integration because it has no authenticated same-thread controller. Do not
-invoke a launcher to simulate movement, replay a cancelled edit, or substitute a
-child/fork or per-call directory override.
+This integration has no authenticated same-thread controller; active Codex
+conversation or agent movement is unsupported. Start a new run with the phase or
+quick command above. Do not invoke the launcher to simulate movement, replay a
+cancelled edit, or substitute a child/fork or per-call directory override. Do
+not infer a product-wide Codex limitation from this integration constraint.
 
 ## Claude native entry
 
@@ -134,11 +134,12 @@ returned root. Honor eligibility, policy and required approval. Do not invoke
 creation/WorktreeCreate, adopt it again or rewrite its ownership/base. An
 ordinary phase/quick session needs no native-creation journal.
 
-On denial or unknown/timeout outcome, stop and inspect the same session's native
-state, the request journal and actual Git registration before another action.
-Do not create another random tree, repeat native entry or replay an edit. A
-missing result might hide completed entry: prove defaults or leave pending and
-unverified. A creation ticket is not authority to retry a native existing name.
+If native entry is denied, times out or returns no result, inspect the same
+session's native state, request journal and actual Git registration. Do not infer
+completion or failure from the missing result. If evidence proves entry completed,
+verify destination defaults before continuing; otherwise preserve the request as
+pending and report it unverified. Do not create another tree, repeat native
+entry, replay an edit or use a creation ticket to retry a native existing name.
 
 A repeated source attempt from the same observed caller with a new tool-use ID
 reuses its pending request only for the unchanged intent/root/branch/base. A
