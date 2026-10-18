@@ -70,6 +70,10 @@ lock under Git-common-dir `ai-cleanup/`, refreshes evidence and rereads approval
 It consumes a one-use receipt before mutation and revalidates the remaining
 ordered operations, preserved rows, repository identity and approval before each
 item. It checks exact ref identity and backup digest immediately before removal.
+The lock coordinates cleanup processes that use this CLI; it does not lock out
+other Git or filesystem writers or freeze provider state. Revalidation narrows
+these races but cannot make cleanup atomic with external changes. Report the
+observed outcomes and readback without claiming a global lock or atomic result.
 
 Report `complete`, `partial` or `refused` truthfully, with removed/failed/preserved
 rows and fresh `final_state` and `final_preserved` readback. Treat unknown readback

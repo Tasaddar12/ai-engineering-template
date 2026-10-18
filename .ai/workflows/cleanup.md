@@ -87,6 +87,10 @@ without dereferencing aliases. It never deletes remote refs, rewrites commits,
 merges, closes provider records or prunes unrelated metadata. Backups require
 separate exact entries.
 
+The lock coordinates cleanup CLI processes only. Other Git or filesystem writers
+and provider-state changes can race the evidence reads; revalidation narrows but
+cannot eliminate those races. Report only the observed outcomes and readback.
+
 Report `status`, each `removed`, `preserved` and `failed` row, and the fresh
 `final_state` and `final_preserved`, including unknown readback. Exit 0 means a
 preview succeeded or an apply completed; exit 2 means refusal/partial failure.
