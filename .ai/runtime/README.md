@@ -245,8 +245,10 @@ relevant records omitted from `--files`. Invalid YAML, absent required keys and
 wrong types return a record/key `planning-integrity` error before Git commits.
 `planning.integrity --files ...` checks selected working records with the same
 schema and failure convention. Ordinary `planning.validate` remains warn-only;
-unchanged legacy, archive, maintenance, source-template and unrelated records are
-not mass-migrated. The adoption skeleton stays instructional.
+use it for broad drift reports, and pass `--strict` only when findings must fail
+the command. Keep unchanged records, archives, maintenance records, source
+templates and unrelated Markdown outside the commit gate. Leave the adoption
+skeleton instructional.
 
 The standalone native PreToolUse checker handles Git index commits, selected
 tracked working bytes for `--only`/explicit paths, tracked `--all` changes and

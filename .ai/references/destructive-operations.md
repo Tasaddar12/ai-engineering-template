@@ -36,8 +36,8 @@ functions/loops and other unsupported shell syntax refuse with guidance.
 Nested `bash`, `sh`, `pwsh`, `powershell`, `cmd`, `eval`, `source` and related
 shell wrappers refuse, including opaque shell files. A `cd` within a conditional
 chain, followed by `||`, or in a pipeline has ambiguous context and refuses.
-Other Git context flags such
-as `--git-dir`/`--work-tree` are currently unsupported and refuse conservatively.
+Do not use other Git context flags, including `--git-dir` and `--work-tree`;
+the parser refuses those commands.
 
 In the primary checkout, branch `checkout` and `switch` refuse, including
 new/orphan/detached modes. Explicit `git checkout -- PATH` and
@@ -69,8 +69,9 @@ Provider selection comes from the `origin` remote, with GitLab project identity
 confirmed by API readback. GitHub hosts `github.com`/`github.*` use
 `gh api --hostname HOST --paginate --slurp` and all-state pull-request pages.
 GitLab hosts `gitlab.com`/`gitlab.*` use `glab api --hostname HOST --output json
--X GET`, project identity and `--paginate` all-state merge requests. Arbitrary
-enterprise hostnames and ambiguous fork ownership currently remain unknown.
+-X GET`, project identity and `--paginate` all-state merge requests.
+Treat arbitrary enterprise hostnames and ambiguous fork ownership as unknown;
+preserve the target.
 GitHub pages must have complete pagination shape; GitLab's documented paginated
 JSON is one combined array. Offline tests pin these CLI/schema contracts.
 GitLab CLI was unavailable during implementation: no live GitLab success is
@@ -96,16 +97,16 @@ wildcards that can cover protected backup paths refuse.
 Active wildcard patterns combined with a `..` path component are unsupported
 and refuse before canonicalization; use a resolved direct literal target
 without wildcard/parent traversal.
-Broad overrides,
-environment flags or approval text placed in a shell command cannot authorize
-backup removal. Ordinary shell backup removal always refuses in this slice.
-
-The dependent cleanup implementation owns an exact pinned approval route, with
-schema version, canonical repository/common-dir, snapshot ID, deterministically
-ordered exact operations and actual human approval text/reference. That route,
-locks, revalidation and single-use receipts are not implemented by this guard
-slice. There is no approved cleanup command in this revision. Legacy runtime
-cleanup verbs are unchanged and must not be represented as that approval route.
+Do not authorize backup removal from broad overrides, environment flags or
+approval text in a shell command. Refuse ordinary shell removal of protected
+backups. This guard accepts no backup-removal approval route. Any cleanup
+implementation must require a pinned route containing a schema version,
+canonical repository and common directory, snapshot ID, deterministically
+ordered exact operations, and actual human approval text or reference. Enforce
+locks, revalidation and single-use receipts in that implementation. This guard
+does not provide an approved cleanup command. Use existing runtime cleanup
+verbs only under their documented contracts. Do not treat those verbs as the
+backup-removal approval route.
 
 This is bounded preflight, not an arbitrary-shell sandbox. It does not inspect
 opaque Python/Node programs, external executable/file contents, user shell
