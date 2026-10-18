@@ -203,12 +203,12 @@ field types. Duplicate explicit mapping keys at any depth, including anchored
 sources, are rejected with record/key evidence; a later duplicate cannot erase
 an issue declaration or replace an invalid value. Valid YAML merge keys retain
 SafeLoader precedence, so an explicit destination key may override an inherited
-key. This strict loader is local to the current-record boundary; the
-broad historical/warn-only frontmatter reader is unchanged. Directory and
-filename numbers use the existing phase conventions.
-Deleted records are not parsed. Unchanged legacy records, archives, maintenance
-records, source templates and unrelated Markdown are outside this commit gate;
-there is no historical migration sweep or skeleton rewrite.
+key. Apply this strict loader only to current records; use the broad frontmatter
+reader for `planning.validate`, which reports warnings unless the caller passes
+`--strict`. Directory and filename numbers use the existing phase conventions.
+Do not parse deleted records. Keep unchanged records, archives, maintenance
+records, source templates and unrelated Markdown outside this commit gate. Do not
+run a migration sweep or rewrite instructional skeletons as part of this gate.
 
 `planning.integrity --files <record> ...` is a read-only diagnostic of explicitly
 selected canonical working records using the same schema. A record/key diagnostic
@@ -230,9 +230,9 @@ Malformed inspected metadata containers return an explicit schema diagnostic.
 Unexpected native inspection errors also deny with exit 2 and actionable stderr,
 rather than becoming a hook crash that a host might treat as nonblocking.
 
-Native checker payloads carry top-level `tool_name`, `cwd` and
-`tool_input.command` / `tool_input.cmd`; `shell` command argv lists and legacy
-top-level command strings are supported. Direct Git, `-C`/`-c` global options,
+Provide native checker payloads with top-level `tool_name` and `cwd`, and put
+command text in `tool_input.command`, `tool_input.cmd`, top-level `command` or
+top-level `cmd`. Pass shell argv as a command list. Direct Git, `-C`/`-c` global options,
 nested directories and bounded Bash/PowerShell/cmd wrappers are recognized
 without executing command text. Bash escaped executable spellings and line
 continuations are parsed only with Bash semantics; native Windows backslashes
