@@ -18,6 +18,9 @@
 - Include a concise example when it clarifies a format. Mark examples `Good` or `Bad`.
 - Describe behavior that the current files and runtime support. Cite the owning file with a relative link.
 - Keep examples and commands runnable for the stated shell and project configuration.
+- Omit fluff, welcomes, praise, motivational prose, explanations of why instructions exist, feature history, and legacy-component or migration instructions. Describe current instructions only.
+- State required actions directly. Do not hedge with `consider`, `try to`, `may want to`, or `if possible`. Use `Run`, `Read`, `Return`, `Stop`, and `Do not`; write explicit `if`/`then` branches and name the exact action instead of saying `handle appropriately`.
+- Preserve required artifact fields, including commit `Why:` and ADR rationale. Do not add explanatory guide prose around them.
 
 ### Good and bad wording
 
@@ -45,6 +48,34 @@ Run `python .ai/runtime/phase.py query planning.validate` and report its output.
 The workflow probably validates the planning files automatically.
 ```
 
+### Good and bad gate instructions
+
+**Good**
+
+```text
+If `status` is `passed`, run `phase_run query phase.complete "${phase_number}"`. If it is not `passed`, preserve the gap and report the blocker.
+```
+
+**Bad**
+
+```text
+If verification has issues, handle them appropriately and continue when possible.
+```
+
+### Good and bad bounded assignments
+
+**Good**
+
+```text
+Read `.ai/runtime/README.md`. Trace `planning.validate` to its implementation. Return the file:line definition and supported invocation; do not edit files.
+```
+
+**Bad**
+
+```text
+Look around the runtime and report anything useful.
+```
+
 ## Keep ownership clear
 
 | Layer | Owns | Do |
@@ -60,13 +91,20 @@ The workflow probably validates the planning files automatically.
 | `docs/` | Human-facing guides | Explain current use and link to authoritative procedures. |
 
 - Do not put step-by-step procedure in a command when its workflow owns it.
-- Do not put workflow routing in an agent role.
+- Keep procedure in the workflow. Preserve role-local constraints, including the role's scout routing and handoff rules.
 - Do not hand-edit runtime-owned planning structures. Use the runtime operation that owns them.
 - Do not copy a rule into another file when a link to its owner is sufficient.
 - Do not change a skill mirror without checking the corresponding command.
 - Do not claim a workflow is installed, a command is registered, or a check passed without evidence.
 
 See [shared rules](.ai/RULES.md), [command catalog](.ai/commands/README.md), [agent catalog](.ai/agents/README.md), [runtime guide](.ai/runtime/README.md), and [fact ownership](.ai/truth-map.md).
+
+## Respect phase authority
+
+- Follow [phase authority](.ai/RULES.md#phase-authority).
+- Do not infer implementation authority from phase creation, discussion, research, planning, design approval, readiness, or a suggested next action.
+- Implement a phase only when the user explicitly authorizes implementation of that phase. Honor authorization already supplied for its stated scope; do not ask for it again.
+- Record the actual instruction and covered scope in the phase CONTEXT before execution.
 
 ## Name commands, skills, and files
 
@@ -94,7 +132,7 @@ See [shared rules](.ai/RULES.md), [command catalog](.ai/commands/README.md), [ag
 - Resolve model and effort through `phase_run query resolve-model <agent>` and `phase_run query resolve-effort <agent>`. Omit a value when it resolves to `inherit`.
 - Follow [scout dispatch](.ai/references/scout-dispatch.md) for evidence-only scouting. Scouts are read-only and do not dispatch children.
 - Wait for write-capable workers before reading, editing, or integrating their owned paths.
-- Keep commits, shared records, integration, publication, and worker lifecycle with the coordinator.
+- Workers commit their assigned paths and required SUMMARY. The coordinator owns shared-record commits, integration, publication, and worker lifecycle.
 - Use [worker handoff](.ai/references/worker-handoff.md) for assignment, partial-result, and continuation details.
 
 ### Dispatch shape
@@ -110,6 +148,18 @@ Own: {exact paths}
 Constraints: {scope and exclusions}
 Checks: {required commands or explicit none}
 Output: {artifact or evidence fields and destination}
+```
+
+### Workflow-step shape
+
+Use explicit inputs, actions, branch outcomes, and outputs. Retain the consuming workflow's required fields and order.
+
+```text
+1. Input: {validated value or artifact}
+   Action: {command or bounded operation}
+   Success: {observed condition and next step}
+   Failure: {stop, preserve, or route action}
+   Output: {artifact or result fields}
 ```
 
 ### Handoff shape
@@ -134,6 +184,7 @@ Next action: {first bounded continuation}
 - A source-changing worker reports `complete` only with its owned commits and required SUMMARY.
 - A read-only worker reports `complete` only with its assigned evidence packet or report; it creates no commit or SUMMARY.
 - The coordinator alone integrates results, updates shared status, publishes, or merges.
+- Workers do not push, publish, rewrite branches, integrate, or merge. The coordinator owns those operations.
 - Follow [delivery rules](.ai/RULES.md#session-and-authorization) and the [canonical Git workflow](.ai/references/git-workflow.md).
 
 ### Blocked result shape
@@ -174,6 +225,6 @@ Do not return `complete` when required work, evidence, commits, or artifacts are
 - Stage only assigned paths. Inspect staged paths and content before committing.
 - Commit each completed meaningful slice with a descriptive `type(scope): outcome` subject and a body containing `Why:`, `Changes:`, and `Verification:`.
 - Include the required worker SUMMARY in the same owned slice when the assignment requires it.
-- Leave pushing, pull request publication, integration, branch rewrites, and merging to the coordinator unless the assignment explicitly assigns a supported operation.
+- Leave pushing, pull request publication, integration, branch rewrites, and merging to the coordinator.
 
 See the [Git workflow](.ai/references/git-workflow.md) for commit, review, and publication requirements.
