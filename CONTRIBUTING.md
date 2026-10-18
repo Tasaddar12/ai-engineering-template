@@ -18,9 +18,11 @@
 - Include a concise example when it clarifies a format. Mark examples `Good` or `Bad`.
 - Describe behavior that the current files and runtime support. Cite the owning file with a relative link.
 - Keep examples and commands runnable for the stated shell and project configuration.
-- Omit fluff, welcomes, praise, motivational prose, explanations of why instructions exist, feature history, and legacy-component or migration instructions. Describe current instructions only.
+- Keep prose concise and current. Use scannable bullets, numbered steps, short paragraphs, small tables, and bounded format blocks instead of large undifferentiated blocks.
+- Preserve the context needed to apply an instruction correctly: scope, preconditions, constraints, roles, conditions, stop gates, exceptions, and evidence. Do not remove useful context merely because it explains why a rule or field matters.
+- Keep rationale concise and include it when it affects how a requirement, gate, exception, or evidence field is used. Omit redundant motivation, feature history, and legacy-component or migration instructions. Describe current instructions only.
 - State required actions directly. Do not hedge with `consider`, `try to`, `may want to`, or `if possible`. Use `Run`, `Read`, `Return`, `Stop`, and `Do not`; write explicit `if`/`then` branches and name the exact action instead of saying `handle appropriately`.
-- Preserve required artifact fields, including commit `Why:` and ADR rationale. Do not add explanatory guide prose around them.
+- Preserve required artifact fields, including commit `Why:` and ADR rationale. Explain a required field's purpose when that context is needed to complete or review it correctly.
 
 ### Good and bad wording
 
@@ -50,17 +52,40 @@ The workflow probably validates the planning files automatically.
 
 ### Good and bad gate instructions
 
-**Good**
+**Bad: compressed until the gates disappear**
 
 ```text
-If `status` is `passed`, run `phase_run query phase.complete "${phase_number}"`. If it is not `passed`, preserve the gap and report the blocker.
+If checks pass, close the phase.
 ```
 
-**Bad**
+**Good: complete and scannable**
 
 ```text
-If verification has issues, handle them appropriately and continue when possible.
+1. Confirm every required check and independent review covers the integrated revision.
+2. If documentation changed, resolve its doc-verifier findings. If acceptance covers a dependency or user-facing flow, confirm integration evidence.
+3. If verification is not `passed`, a required gate fails, or evidence is missing, preserve the gap, report the blocker, and stop; do not complete the phase.
+4. Only after verification records `passed`, run `phase_run query phase.complete "${phase_number}"`.
 ```
+
+### Keep instructions scannable without losing context
+
+**Bad: dense block**
+
+```text
+The coordinator assigns the verifier the integrated revision and required checks, and when docs changed also the doc-verifier findings, while integration evidence is needed for dependency or user-flow acceptance; resolve findings and missing evidence before completion, but preserve any failed gate as a blocker.
+```
+
+**Good: same context, structured**
+
+```text
+The coordinator assigns the verifier the integrated revision and required checks.
+
+- If documentation changed, include the doc-verifier findings and resolve them.
+- If acceptance covers a dependency or user-facing flow, confirm integration evidence.
+- If a required gate fails or evidence is missing, preserve the gap and report the blocker.
+```
+
+Keep the role, scope, conditions, stop gates, exceptions, and required evidence visible when splitting instructions. Shortening is useful only while the instruction still leads to the same correct action.
 
 ### Good and bad bounded assignments
 
