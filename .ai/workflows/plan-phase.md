@@ -535,7 +535,11 @@ and stop. Do not write plans yourself to cover for a failed agent.
 - Reconcile each committed PLAN's threats through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking)
   before reporting preparation complete; repeat after revisions.
 - Create/reuse/read back canonical issues; update each owning PLAN's Threat ID
-  links. Keep threat content in that PLAN and issue detail in the Security risk issue.
+  links. At this mandatory reconciliation, choose the existing matching tracker
+  or an individually addressable planned phase security checklist entry under
+  that procedure; preserve each risk's stable key, aliases and full per-PLAN
+  six-column register. Distinct unplanned risks need standalone actionable issues.
+  Keep threat content in that PLAN and issue detail in its canonical destination.
 - Retain Pending dependencies; continue independent authorized work.
 
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and

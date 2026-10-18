@@ -168,6 +168,34 @@ Only the user converts an abstention into acceptance.
 - Limitation: issue.validate checks headings/order only; semantic review and
   provider reconciliation remain author/coordinator duties.
 
+### Risk-routing destinations
+
+The canonical destination above is an existing matching Security risk issue or,
+for all new planned risks, including accepted/deferred, a stable `###` entry in
+the phase checklist issue BODY,
+under [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+Use its deterministic title/label lookup before semantic risk search and mandatory
+default routing for new planned work. Entries retain each risk's stable canonical
+key, aliases/occurrences, owning PLAN assessment/mitigation links, owner,
+scope/acceptance, lifecycle/status/outcome, next action and revision/check evidence.
+Use a provider-verified heading-anchor URL, never an invented slug; renaming a
+heading breaks the link and requires reference repair/readback. Omit "(comment)"
+link-label suffixes. Follow the canonical identity rules above;
+unavailable publication stays Pending with its dependency.
+
+Then search and semantically compare existing risk trackers. Existing actionable
+full-scope matching issues remain canonical; checklists link them without
+duplicating or replacing their identities. Closed unresolved matches retain the
+reopening-authority blocker. Distinct unplanned execution/review threats require
+standalone actionable Security risk issues or existing full-scope matches, linked
+from the owning PLAN and any phase checklist. Never route threats through TODOs.
+Keep full six-column registers in each owning PLAN and linked SUMMARY/PR outcomes
+separate. Neutral links remain until scope-complete resolution evidence and
+existing explicit closure authority are verified. Checked checklist items require
+individual outcome evidence and never imply issue closure; accepted/deferred
+status and merge never establish resolution. Safe disclosure, serialized writes,
+template validation and uncertain-create readback recovery remain mandatory.
+
 ## Storage boundary
 
 Project data lives in `.planning/`; reusable instructions, workflows, templates
