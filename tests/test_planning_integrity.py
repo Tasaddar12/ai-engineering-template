@@ -200,6 +200,44 @@ class IntegrityTests(unittest.TestCase):
             with self.subTest(index_control=command):
                 self.assertEqual(self.hook(command).returncode, 0)
 
+    def test_bash_commit_comments_and_literal_hash_arguments(self):
+        self.write(RECORD, INVALID)
+        self.git('add', RECORD)
+        before = self.git('ls-files', '--stage')
+        commands = [
+            'git commit -m fixture # explanatory comment',
+            'git commit -m "fixture # quoted literal"',
+            r'git commit -m fixture\#escaped',
+            'git commit -m fixture#midtoken',
+        ]
+        for command in commands:
+            with self.subTest(command=command):
+                self.assert_denied(self.hook(command, tool='Bash', field='command'))
+                self.assertEqual(before, self.git('ls-files', '--stage'))
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        for command in commands:
+            with self.subTest(valid=command):
+                result = self.hook(command, tool='Bash', field='command')
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_add_then_only_checks_new_selected_record_and_preserves_index(self):
+        self.write('unrelated', 'preserve this staged blob\n')
+        self.git('add', 'unrelated')
+        before = self.git('ls-files', '--stage')
+        command = ('git add ' + RECORD +
+                   ' && git commit --only -m fixture -- ":(glob)**/*-PLAN.md"')
+
+        self.write(RECORD, INVALID)
+        denied = self.hook(command)
+        self.assert_denied(denied)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
+        self.write(RECORD, VALID)
+        allowed = self.hook(command)
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
     def test_review_cr01_controlled_native_cluster_cannot_commit_invalid_working_bytes(self):
         self.write(RECORD, VALID)
         self.git('add', RECORD)

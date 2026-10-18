@@ -24,7 +24,9 @@ def tokens(command, grammar):
     lexer = shlex.shlex(command, posix=True, punctuation_chars=';&|')
     lexer.escape = '\\' if grammar == 'bash' else ('`' if grammar == 'powershell' else '^')
     lexer.whitespace_split = True
-    lexer.commenters = ''
+    # Bash treats an unquoted # at the start of a word as a comment. shlex
+    # preserves quoted, escaped and embedded hashes while honoring that rule.
+    lexer.commenters = '#' if grammar == 'bash' else ''
     return list(lexer)
 
 
@@ -47,6 +49,15 @@ def outer_commands(command, grammar):
                 quote = None
         elif char in ("'", '"'):
             quote = char
+        elif grammar == 'bash' and char == '#' and (index == start or command[index - 1].isspace()):
+            # A comment ends at the next newline; operators in its text are inert.
+            newline = command.find('\n', index)
+            if command[start:index].strip():
+                result.append(command[start:index])
+            if newline < 0:
+                return result
+            start = newline
+            index = newline
         elif char in ';&|\r\n':
             if command[start:index].strip():
                 result.append(command[start:index])
@@ -229,7 +240,7 @@ def inspect(command, cwd, grammar):
         work = set()
         if mode == 'only':
             # Paths are relative to native command cwd; queries emit repo paths.
-            work = changed_worktree(target, globals_, specs, tracked=True)
+            work = changed_worktree(target, globals_, specs, tracked=False)
             staged = set()
         elif mode == 'all':
             work = set(integrity.names(target, *globals_, 'diff', '--name-only', '--diff-filter=ACDMRT', '-z'))
@@ -238,7 +249,12 @@ def inspect(command, cwd, grammar):
                 # Since Git 2, -A/-u without a pathspec is repository-wide,
                 # including when the native command starts in a subdirectory.
                 added = changed_worktree(add_cwd if add_specs else root, add_globals, add_specs, tracked)
-                if mode != 'only':
+                if mode == 'only':
+                    # The preceding add is prospective, so intersect its
+                    # identities with the commit's Git-matched pathspecs.
+                    selected = changed_worktree(target, globals_, specs, tracked=False)
+                    work.update(added & selected)
+                else:
                     work.update(added)
         relevant = {path for path in staged | work if integrity.record_kind(path)}
         if relevant and (ambiguous or unsupported):

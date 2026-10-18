@@ -68,3 +68,30 @@ Source boundary: `c9d7ae8c357574faaef6fc201ff19908fff501dc..ea67b47326e655fb273b
 
 Confirmed the assigned source, test, documentation and summary paths exist. Treat
 this result as file/scope/static evidence; behavioral verification remains pending.
+
+## Targeted hook repair at `febfa4d`
+
+### Changes
+
+- Honor Bash comments during outer command segmentation and tokenization, while
+  preserving quoted, escaped and embedded literal `#` arguments.
+- Inspect Git-selected working paths using Git's own pathspec matching. Include
+  paths selected by a prospective preceding `git add` before `commit --only`,
+  while retaining the real index and unrelated staged identities.
+- Add regressions for trailing comments, literal-hash controls, and invalid/valid
+  new selected records with unrelated staged content.
+
+### Checks
+
+- Static AST parsing and in-memory compilation of the changed Python source and
+  test file: passed for both files.
+- Manual source review of Git pathspec queries, cwd/global-option flow, wrapper
+  segmentation and index read-only behavior: completed; selection queries use
+  `git ls-files` with Git pathspecs, and hook code issues no index mutation.
+- `git diff --check`: passed.
+- Behavioral tests and configured checks: not run, as instructed.
+
+### Remaining
+
+- Coordinator and fresh code-reviewer should inspect the committed repair. The
+  added behavioral regressions remain unexecuted under the no-tests instruction.
