@@ -19,7 +19,7 @@ Publish work that verification actually passed.
 
 1. Confirm the phase's verification is `passed` and current under the documented
    exact-revision/report-only publication rule
-2. Check the tree is clean, the branch is not the base, and the configured provider CLI is authenticated
+2. Check that the tree is clean, the branch is not the base, and the configured provider CLI is available and authenticated
 3. Commit the truthful pre-publication session status
 4. Reconcile verification and check evidence on that resulting revision, and
    persist the final report as the last local write
@@ -61,7 +61,7 @@ improvise from the summary.
 
 <success_criteria>
 - Verification confirmed passed and current for the shipped revision
-- Working tree clean, branch not the base, remote and configured provider CLI available
+- Working tree clean, branch not the base, remote configured, and configured provider CLI available and authenticated
 - Configured checks have valid passing evidence for the shipped inputs
 - PR body composed from the phase's own records
 - Branch pushed, PR opened or updated

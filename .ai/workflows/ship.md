@@ -480,7 +480,7 @@ Merge: {method, evidence} | not merged ({--no-merge, declined, or check state})
 - Don't hand waiting on `pending` checks to the user
 - Don't tell the user to re-run `/ship`
 - Don't `--force` a preserved session away to make the report look clean
-- Don't report CI as passing because the PR opened; report what the selected provider observed
+- Report CI as passing only when the selected provider reports passing checks. Otherwise, report its observed state.
 - Don't compose the PR body from the diff when the phase's own records say it better
 - Don't ship over an uncommitted working tree
 </anti_patterns>
