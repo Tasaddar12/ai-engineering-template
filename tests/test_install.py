@@ -99,6 +99,38 @@ class CodexConcurrencySettings(unittest.TestCase):
 
 
 class InstallerTests(unittest.TestCase):
+    def test_standalone_cleanup_payload_for_both_hosts_without_global_guard(self):
+        cleanup_paths = ("hooks/cleanup.py", "runtime/lib/cleanup.py", "commands/cleanup.md",
+                         "workflows/cleanup.md", "references/cleanup.md")
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                namespace = "." + host
+                installed = self.target / namespace
+                payload = installer.payload(self.source, host)
+                for relative in cleanup_paths:
+                    self.assertIn(namespace + "/" + relative, payload)
+                    self.assertTrue((installed / relative).is_file(), relative)
+                skill = installer.skill_root(host) + "/cleanup/SKILL.md"
+                self.assertIn(skill, payload)
+                self.assertTrue((self.target / skill).is_file())
+                self.assertFalse((installed / "hooks/destructive-git-guard.py").exists())
+                self.assertFalse((installed / "runtime/lib/destructive_guard.py").exists())
+                settings = read_settings(installed / ("config.toml" if host == "codex" else "settings.json"))
+                hooks = settings["hooks"]
+                commands = [hook["command"] for groups in hooks.values()
+                            for group in groups for hook in group["hooks"]]
+                self.assertFalse(any("cleanup.py" in command or "destructive" in command
+                                     for command in commands))
+                advisory = [hook["command"] for group in hooks["PreToolUse"]
+                            for hook in group["hooks"]]
+                self.assertTrue(advisory)
+                self.assertTrue(any("worktree-guard.sh" in command for command in advisory))
+                self.assertTrue(all("worktree-guard.sh" in command or "planning-integrity.sh" in command
+                                    for command in advisory))
+
     def test_claude_role_defaults_replace_stale_metadata_and_preserve_body(self):
         for name, model, effort in (("scout", "haiku", None), ("targeted-fixer", "haiku", None),
                                     ("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):

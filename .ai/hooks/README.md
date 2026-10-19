@@ -229,6 +229,16 @@ Every worktree lives under `worktree.root` from `.planning/config.yaml`
 - **Codex:** create each plan's checkout with
   `phase_run query worktree.create <plan> --phase <N>`.
 
+## Standalone cleanup CLI
+
+Run [cleanup.py](cleanup.py) explicitly through the
+[cleanup workflow](../workflows/cleanup.md). It loads the adjacent
+`runtime/lib/cleanup.py` and exposes `cleanup-preview --repo REPOSITORY` and
+`cleanup-apply --repo REPOSITORY --approval-file APPROVAL_FILE`. Both modes
+return JSON; refusal or partial failure exits 2. It has no stdin hook mode or
+host hook registration. See the [cleanup contract](../references/cleanup.md)
+for eligibility, exact human approval and final-state reporting.
+
 ## Future hook work
 
 These are planned improvements, not implemented or enabled hooks.
