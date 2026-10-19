@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
-                 issue_format, models, phase_issues, phases, project_record, quick, requirements, state,
+                 issue_format, models, phase_issues, phases, planning_integrity, project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
@@ -85,7 +85,21 @@ def run_verb(workspace, verb, positionals, options):
 
     handler = VERBS.get(verb)
     require(handler is not None, "unknown verb: " + verb, "unknown-verb")
-    return handler(workspace, positionals, options)
+    # Snapshot existing records only. This covers every dispatch path, including
+    # milestone/bookkeeping and conservative repair, without creating records.
+    before = planning_integrity.snapshot(workspace)
+    try:
+        result = handler(workspace, positionals, options)
+    except VerbError as exc:
+        exc.integrity_warnings = planning_integrity.mutation_warnings(
+            workspace, before, verb, positionals, options)
+        raise
+    warnings = planning_integrity.mutation_warnings(workspace, before, verb, positionals, options, result)
+    if warnings:
+        if not isinstance(result, dict):
+            result = {"value": result}
+        result["integrity_warnings"] = warnings
+    return result
 
 
 def verb_planning_review(workspace, positionals, options):
@@ -785,6 +799,7 @@ def verb_help(workspace, positionals, options):
 
 
 VERBS = {
+    "planning.integrity": lambda w, p, o: planning_integrity.selected(w, as_list(o.get("files")) or p),
     "runtime-identity": verb_identity,
     "help": verb_help,
     "generate-slug": verb_slug,
@@ -921,7 +936,10 @@ def main(argv=None):
         workspace = Workspace()
         result = run_verb(workspace, verb, positionals, options)
     except VerbError as exc:
-        emit(failure(str(exc), exc.code))
+        payload = failure(str(exc), exc.code)
+        if getattr(exc, 'integrity_warnings', None):
+            payload['integrity_warnings'] = exc.integrity_warnings
+        emit(payload)
         return 1
     if raw and not isinstance(result, dict):
         emit(result, raw=True)

@@ -226,6 +226,100 @@ class InstallerTests(unittest.TestCase):
         return {p.relative_to(self.target).as_posix(): p.read_bytes()
                 for p in self.target.rglob("*") if p.is_file() and ".git" not in p.relative_to(self.target).parts}
 
+    def test_registered_hooks_run_planning_integrity_from_installed_hosts(self):
+        valid = '''---
+phase: 01-foundation
+plan: "01"
+type: execute
+wave: 1
+depends_on: []
+files_modified: []
+autonomous: true
+requirements: [REQ-01]
+acceptance: []
+documentation: []
+checks: []
+must_haves: {truths: [], artifacts: [], key_links: []}
+issue_refs: []
+---
+# Complete canonical plan fixture
+'''
+        valid += "\n## Goal\n\nComplete the bounded planning integrity installation integration.\n\n"
+        valid += "## Acceptance Criteria\n\n- Install hook on both supported hosts.\n"
+        invalid = valid.replace("issue_refs: []\n", "")
+        record = ".planning/phases/01-foundation/01-01-PLAN.md"
+        unrelated = "unrelated.txt"
+        for host, name in (("codex", ".codex/config.toml"), ("claude", ".claude/settings.json")):
+            with self.subTest(host=host):
+                self.target = self.base / (host + " projet caf" + chr(0xE9) + " nested")
+                result = self.install("--host", host)
+                self.assertEqual(0, result.returncode, result.stderr)
+                settings = read_settings(self.target / name)
+                groups = settings["hooks"]["PreToolUse"]
+                matches = [group for group in groups
+                           if group.get("matcher") == "^(Bash|exec_command|shell_command|shell)$"]
+                self.assertEqual(1, len(matches), "standalone planning integrity owns the shell registration")
+                handler = matches[0]["hooks"][0]
+                self.assertIn("planning-integrity.sh", handler["command"])
+                self.assertEqual(10, handler["timeout"])
+
+                cwd = self.target / "sub directory"
+                cwd.mkdir()
+                record_path = self.target / record
+                record_path.parent.mkdir(parents=True)
+                record_path.write_text(valid, encoding="utf-8")
+                (self.target / unrelated).write_text("baseline\n", encoding="utf-8")
+                command("git", "add", record, unrelated, cwd=self.target)
+                command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
+                        "commit", "--quiet", "-m", "valid fixture", cwd=self.target)
+                head = command("git", "rev-parse", "HEAD", cwd=self.target).strip()
+
+                # The index contains invalid prospective bytes while the worktree
+                # has a valid copy. Keep another real staged path to prove that
+                # the checker leaves the user's index untouched.
+                record_path.write_text(invalid, encoding="utf-8")
+                command("git", "add", record, cwd=self.target)
+                record_path.write_text(valid, encoding="utf-8")
+                (self.target / unrelated).write_text("preserve staged index\n", encoding="utf-8")
+                command("git", "add", unrelated, cwd=self.target)
+                staged_before = command("git", "ls-files", "--stage", cwd=self.target)
+                environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
+                launcher = self.launcher_argv(host, handler)
+                tools = ("Bash", "exec_command", "shell_command", "shell")
+                for index, tool in enumerate(tools):
+                    field = "command" if index % 2 == 0 else "cmd"
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": tool,
+                               "tool_input": {field: "git commit -m invalid"}}
+                    observed = subprocess.run(launcher, cwd=cwd, env=environment,
+                                              input=json.dumps(payload, ensure_ascii=True).encode("utf-8"),
+                                              capture_output=True)
+                    self.assertEqual(2, observed.returncode, observed.stderr.decode("utf-8", "replace"))
+                    self.assertIn(b"issue_refs", observed.stderr,
+                                  f"cwd={str(cwd)!r} exists={cwd.is_dir()} host={host} tool={tool}")
+                    self.assertEqual(head, command("git", "rev-parse", "HEAD", cwd=self.target).strip())
+                    self.assertEqual(staged_before, command("git", "ls-files", "--stage",
+                                                            cwd=self.target))
+
+                # A complete record using --only is checked from prospective
+                # worktree bytes; unrelated staged content remains in the index.
+                record_path.write_text(valid.replace("Complete canonical", "Updated canonical"),
+                                       encoding="utf-8")
+                payloads = (
+                    {"command": "git -C .. commit --only -m valid -- " + record},
+                    {"cmd": "git status --short"},
+                    {"command": ["git", "-C", "..", "commit", "--only", "-m", "valid", "--", record]},
+                )
+                for payload_input in payloads:
+                    payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse", "tool_name": "Bash",
+                               "tool_input": payload_input}
+                    observed = subprocess.run(launcher, cwd=cwd, env=environment,
+                                              input=json.dumps(payload, ensure_ascii=True).encode("utf-8"),
+                                              capture_output=True)
+                    self.assertEqual(0, observed.returncode,
+                                     observed.stderr.decode("utf-8", "replace"))
+                    self.assertEqual(staged_before, command("git", "ls-files", "--stage",
+                                                            cwd=self.target))
+
     def test_installed_runtime_answers_its_verb_contract(self):
         """The installed runtime resolves its own namespace and returns pure results."""
         for host in ("codex", "claude"):

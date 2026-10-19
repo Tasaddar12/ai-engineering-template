@@ -365,6 +365,15 @@ class ThreatTrackingContract(unittest.TestCase):
         root = self.fixture()
         name = ".ai/templates/phase-prompt.md"
         self.mutate(root, name, TRACK_LINK, "missing.md")
+        # The integrity-contract link is a legitimate alternate route. Removing
+        # only the direct canonical link must preserve that reachability.
+        self.assertTrue(reaches_canonical(root, name))
+        self.assertNotIn(name + ": unreachable", artifact_errors(root))
+        path = root / name
+        text = path.read_text(encoding="utf-8")
+        text = re.sub(r"\[([^\]\n]+)\]\([^)\n]+\)", r"\1", text)
+        path.write_text(text, encoding="utf-8")
+        self.assertFalse(reaches_canonical(root, name))
         self.assertIn(name + ": unreachable", artifact_errors(root))
 
     def test_routing_duty_mutations(self):
