@@ -1,15 +1,16 @@
 ---
 tier: contract
 authority: agent
-title: Advisory host hooks
+title: Host hooks
 ---
 
-# Advisory host hooks
+# Host hooks
 
 [Installation](../commands/install.md) registers the existing scripts directly:
 
 | Script | Event | Output |
 |---|---|---|
+| [planning-integrity.sh](planning-integrity.sh) | `PreToolUse` on `Bash`, `exec_command`, `shell_command`, `shell` | Exit 2 with a diagnostic for malformed changed canonical planning records in prospective commits |
 | [ai-tier-notice.sh](ai-tier-notice.sh) | `PostToolUse` | A `NOTICE` naming document ownership and responsibilities |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on `Agent`/`Task` | A stderr `WARNING` with isolation guidance; exits 0 and records the write-capable dispatch |
 | [worktree-guard.sh](worktree-guard.sh) | `PreToolUse` on write tools | A stderr `WARNING` for primary-checkout writes, including scratchpads, or paths into another checkout; exits 0 |
@@ -51,6 +52,14 @@ silently did not run:
 - **The inner quotes are written `\"`.** PowerShell re-parses a native command's
   arguments and consumes a bare `"` rather than passing it, which re-split the
   script at its spaces and left bash treating `rev-parse` as its own name.
+
+Use the planning integrity hook to validate prospective commit bytes without
+modifying the real Git index. Register it with a 10-second timeout on both hosts
+through their existing Bash launchers. Keep `planning-integrity.py` beside its
+shell entry point and the installed sibling runtime. Missing required metadata,
+including `issue_refs`, denies the commit with exit 2. Read the
+[planning integrity contract](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity)
+for supported commit forms, schema and authored-content diagnostics.
 
 Scripts live in the selected host's `hooks` folder. There is no Python hook
 adapter. The command locates the script from the active Git root, including when

@@ -434,6 +434,8 @@ def merge_codex_config(current, incoming, path, replace=False, preserve_agents=F
 #: registered twice because its two advisory jobs watch different tools --
 #: warning about an unisolated dispatch or a write outside a worktree. Both exit 0.
 MANAGED_HOOKS = (
+    ("PreToolUse", "planning-integrity.sh",
+     "^(Bash|exec_command|shell_command|shell)$"),
     ("PostToolUse", "ai-tier-notice.sh",
      "^(Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch)$"),
     ("PreToolUse", "worktree-guard.sh", "^(Agent|Task)$"),
