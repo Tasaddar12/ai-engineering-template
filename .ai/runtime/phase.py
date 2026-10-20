@@ -28,7 +28,7 @@ from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
 LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
-                "findings", "files_read", "only", "todos"}
+                "findings", "files_read", "only", "todos", "report_only_paths", "only_checks"}
 
 
 def parse(argv):
@@ -271,7 +271,8 @@ def verb_pr_merge(workspace, positionals, options):
     branch = argument(positionals, 0, "branch")
     local = options.get("local_checks_passed")
     return delivery.merge_pr(workspace, branch,
-                             local_checks_passed=True if local is True else None)
+                             local_checks_passed=True if local is True else None,
+                             expected_head=options.get("expected_head"))
 
 
 def verb_pr_sync(workspace, positionals, options):
@@ -758,7 +759,21 @@ def verb_verification_file(workspace, positionals, options):
 
 
 def verb_run_checks(workspace, positionals, options):
-    return verification.run_checks(workspace)
+    return verification.run_checks(workspace, options.get("only_checks"))
+
+
+def verb_qualify_successor(workspace, positionals, options):
+    required = {"evidence_file", "report_only_paths", "expected_head"}
+    require(not positionals and required <= set(options)
+            and not (set(options) - required - {"fresh_evidence_file", "raw"}),
+            "qualify-successor requires evidence-file, report-only-paths and expected-head", "bad-options")
+    require(all(isinstance(options[key], str) for key in ("evidence_file", "expected_head"))
+            and isinstance(options["report_only_paths"], list)
+            and ("fresh_evidence_file" not in options or isinstance(options["fresh_evidence_file"], str)),
+            "qualify-successor options require values", "bad-options")
+    return verification.qualify_successor(workspace, options["evidence_file"],
+                                          options["report_only_paths"], options["expected_head"],
+                                          options.get("fresh_evidence_file"))
 
 
 def verb_resolve_model(workspace, positionals, options):
@@ -902,6 +917,7 @@ VERBS = {
     "verification.status": verb_verification_status,
     "verification.resolve-file": verb_verification_file,
     "verification.run-checks": verb_run_checks,
+    "verification.qualify-successor": verb_qualify_successor,
 
     "resolve-model": verb_resolve_model,
     "resolve-effort": verb_resolve_effort,

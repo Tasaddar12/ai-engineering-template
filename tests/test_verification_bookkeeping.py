@@ -112,5 +112,18 @@ class BookkeepingCompensationTests(unittest.TestCase):
         self.assertIn("After every check joins, resume the verifier", ship)
 
 
+    def test_report_only_qualifier_never_exempts_success_bookkeeping(self):
+        import sys
+        sys.path.insert(0, str(ROOT / ".ai/runtime"))
+        from lib.verification_successors import prove_report_only_successor
+        baseline = self.seed()
+        self.write(".planning/STATE.md", "status: verified\n")
+        head = self.commit("success bookkeeping", ".planning/STATE.md")
+        result = prove_report_only_successor(self.repo, baseline, head, [".planning/STATE.md"])
+        self.assertFalse(result["qualified"])
+        self.assertIn("unsupported generated report owner", result["reason"])
+        self.assertEqual(head, self.git("rev-parse", "HEAD"))
+
+
 if __name__ == "__main__":
     unittest.main()
