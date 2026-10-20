@@ -53,6 +53,92 @@ the coordinator's tracked report publication after a read-only verifier has
 finished; that publication cannot change the already tested product/source. The
 exception is narrow to the exact phase report path, checked commit by commit.
 
+## Qualifying check receipts across a report-only successor
+
+Report currentness and check-receipt qualification answer different questions.
+The coordinator currentness rule above establishes whether the verifier's report
+still describes the source at HEAD. The successor qualifier establishes whether
+the original configured check results still cover HEAD. One result never stands
+in for the other, and verification.status still only reports metadata.
+
+Capture the complete passing result at tested revision R outside the
+checkout. For current HEAD H, qualify it against the exact phase report path:
+
+    phase_run query verification.run-checks > "$original_evidence"
+    phase_run query verification.qualify-successor \\
+      --evidence-file "$original_evidence" \\
+      --report-only-paths "$phase_report" \\
+      --expected-head "$H"
+
+The phase_report value must be the exact repository-relative
+NN-VERIFICATION.md path owned by its matching NN-CONTEXT.md. Arbitrary Markdown,
+quick-task reports, plans, specifications, STATE/ROADMAP/REQUIREMENTS, security
+records, and other bookkeeping are unsupported. The history proof requires a
+clean tree, available commit objects, R as an ancestor of H, and every
+intervening commit and merge-parent diff to change only the approved regular
+report. Edits later reverted, report deletion or rename, mode changes, links,
+unavailable Git objects, overridden history, and unsafe external filters fail
+closed. Missing objects are never lazy-fetched.
+
+A check qualifies only when its original schema-1 configuration already
+contained this prospective contract before the fresh baseline:
+
+    successor_independence:
+      schema: 1
+      report_paths:
+        - .planning/phases/01-example/01-VERIFICATION.md
+      protected_inputs: all-other-inputs
+      revision_semantics: provenance-only
+
+The exact command, order, specification, configuration and captured inputs
+remain bound. The contract says the named report does not affect the command's
+result, all other inputs stay protected, and revision records provenance rather
+than a command input. It is a reviewed per-check assertion, not established by
+the CLI argument. Old receipts without the contract/input bundle cannot qualify
+retroactively. Preserve revision and reuse flags; normal execution and cache
+semantics do not change. Report/HEAD-reading, opaque/full-tree diff and
+unbound-volatile checks remain fresh-required.
+
+The response separates tested_revision (R) from qualified_revision (H), and
+returns approved paths, checked commits, original receipt references, ordered
+qualifications and fresh_required zero-based indices. It preserves original
+rows and stored evidence. A qualified: true result requires complete configured
+accounting through authenticated original receipts or passing fresh H evidence.
+Invalid baseline, history or protected-input proof cannot be repaired by fresh
+rows; a failed original aggregate requires a complete fresh baseline.
+
+For only the fresh_required indices, run the unchanged checks freshly at H and
+save their JSON outside the checkout:
+
+    phase_run query verification.run-checks --only-checks 1 3 > "$fresh_evidence"
+    phase_run query verification.qualify-successor \\
+      --evidence-file "$original_evidence" \\
+      --report-only-paths "$phase_report" \\
+      --expected-head "$H" \\
+      --fresh-evidence-file "$fresh_evidence"
+
+Use the exact ordered indices returned by qualification. A proper subset keeps
+full-order indices and full configuration/order hashes, reports selected_passed,
+and always has aggregate passed: false. The qualifier accepts genuine current-H
+receipts/logs for all and only the required indices and returns complete mixed
+accounting with original R rows and fresh H rows. If the original aggregate or
+protected-input proof is invalid, run the whole configured set fresh. Keep both
+evidence files external to the report commit they validate.
+
+This qualifies check evidence only; it does not qualify a report's status or
+revision and does not replace the currentness procedure above.
+
+### Consumer adapter boundary
+
+The canonical helper and CLI validate this template's schema-1 receipts only.
+They do not read or adopt a consumer's customized schema-2 joined/profile
+validator. Consumer adoption must preserve customized owners, port the bounded
+adapter and hooks, review actual check independence, compare exact non-report
+scope, and run a complete fresh baseline after the validator/helper changes
+runtime identity. This feature does not claim Whiskance quick-work reports or
+their receipts qualify: quick-task report owners are unsupported by the
+canonical proof.
+
 ## Final-report lifecycle
 
 The verifier is read-only and returns an external report; the coordinator alone
