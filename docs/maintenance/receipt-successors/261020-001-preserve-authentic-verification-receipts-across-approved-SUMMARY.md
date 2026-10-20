@@ -177,3 +177,5 @@ After explicit human approval, the coordinator created issue110 with the separat
 - Corrected step 7 to require each approved phase report path to be inside the reviewed profile's exact allowed_paths scope in the complete fresh baseline R. An out-of-scope path is rejected; the allowlist cannot be retrofitted at H. The recipe authenticates the profile and scope at R separately from the R-to-H history proof.
 - Named .codex/runtime/lib/verification_successors.py as the portable helper destination and clarified that the helper and bounded adapter hooks are instructions only; this canonical template does not implement consumer adoption.
 - Edited only this existing SUMMARY and .ai/references/verification-evidence.md. No source changes or tests were needed for this documentation correction. Consumer adoption remains separate and requires a fresh complete baseline after its reviewed adapter/profile changes.
+
+- Added the required pre-baseline independent review of eligible check wrappers and their complete declared dependencies; no consumer execution or adoption was performed.

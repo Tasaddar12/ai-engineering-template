@@ -153,6 +153,7 @@ validator. For a Whiskance adapter, use this bounded route:
    deployment_deferred=true, selected command order, and complete default
    application-command digest plus ordered dispositions. Preserve the current
    profile owner and command policy of revision=true and reuse=false.
+   Before declaring `successor_independence`, independently review the actual eligible check wrappers and their complete declared dependencies; prove that they cannot read approved reports or branch on HEAD, and record that review before capturing the fresh baseline.
 4. Add the exact prospective successor_independence contract to check
    normalization, and bind it before execution into the original receipt
    inputs. Keep it distinct from independent=true, which only controls
