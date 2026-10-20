@@ -462,3 +462,54 @@ class SuccessorTests(unittest.TestCase):
         self.assertIn('--no-pager', args[0])
         self.assertEqual(options['env']['GIT_OPTIONAL_LOCKS'], '0')
         self.assertNotIn('GIT_EXTERNAL_DIFF', options['env'])
+
+    def test_lazy_fetch_is_disabled_for_every_proof_git_call_even_if_inherited_false(self):
+        from types import SimpleNamespace
+        with patch.dict(os.environ, {'GIT_NO_LAZY_FETCH': '0'}):
+            with patch.object(successors.subprocess, 'run', return_value=SimpleNamespace(stdout=b'')) as process:
+                for args in [('cat-file', '-e', self.r), ('rev-list', self.r), ('status', '--porcelain')]:
+                    successors.git(self.root, *args)
+        self.assertEqual(process.call_count, 3)
+        for call in process.call_args_list:
+            self.assertEqual(call.kwargs['env'].get('GIT_NO_LAZY_FETCH'), '1')
+            self.assertIn('--no-lazy-fetch', call.args[0])
+            self.assertEqual(call.kwargs['env']['GIT_OPTIONAL_LOCKS'], '0')
+            self.assertIn('core.fsmonitor=false', call.args[0])
+
+    def test_missing_promisor_blob_rejects_without_fetch_object_or_receipt_writes(self):
+        evidence = self.baseline()
+        intermediate = self.report()
+        old_blob = self.git('rev-parse', intermediate + ':' + REPORT)
+        self.write(REPORT, 'final report\n'); self.commit('final report')
+        remote = Path(self.temp.name) / 'local-only.git'
+        subprocess.run(['git', 'clone', '--bare', '--no-hardlinks', str(self.root), str(remote)],
+                       check=True, capture_output=True, timeout=30)
+        self.git('config', 'core.repositoryformatversion', '1')
+        self.git('config', 'extensions.partialClone', 'origin')
+        self.git('config', 'remote.origin.url', remote.as_uri())
+        self.git('config', 'remote.origin.promisor', 'true')
+        self.git('config', 'remote.origin.partialclonefilter', 'blob:none')
+        objects = self.root / '.git/objects'
+        missing = objects / old_blob[:2] / old_blob[2:]
+        self.assertTrue(missing.is_file())
+        self.assertTrue(missing.resolve().is_relative_to(objects.resolve()))
+        missing.chmod(0o600)  # Git loose objects are read-only on Windows.
+        missing.unlink()
+        def files(directory):
+            return {p.relative_to(directory).as_posix(): p.read_bytes()
+                    for p in directory.rglob('*') if p.is_file()}
+        original_objects = files(objects)
+        original_receipts = files(self.root / checks.STORE)
+        trace = Path(self.temp.name) / 'git-trace.json'
+        with patch.dict(os.environ, {'GIT_TRACE2_EVENT': str(trace), 'GIT_NO_LAZY_FETCH': '0'}):
+            result = self.direct(evidence)
+        self.assertFalse(result['qualified'], result)
+        self.assertEqual(result['fresh_required'], [0])
+        events = [json.loads(line) for line in trace.read_text(encoding='utf-8').splitlines()]
+        fetches = [event for event in events if event.get('event') == 'child_start'
+                   and any(part == 'fetch' or Path(part).name.startswith('git-fetch')
+                           for part in event.get('argv', []))]
+        self.assertEqual(fetches, [], 'read-only proof attempted a promisor fetch')
+        self.assertEqual(files(objects), original_objects)
+        self.assertEqual(files(self.root / checks.STORE), original_receipts)
+        self.assertFalse(missing.exists())

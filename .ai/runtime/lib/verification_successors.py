@@ -22,10 +22,10 @@ def digest(value):
 
 
 def git(root, *args, input=None):
-    environment = dict(os.environ, GIT_OPTIONAL_LOCKS="0")
+    environment = dict(os.environ, GIT_OPTIONAL_LOCKS="0", GIT_NO_LAZY_FETCH="1")
     environment.pop("GIT_EXTERNAL_DIFF", None)
     environment.pop("GIT_DIFF_OPTS", None)
-    return subprocess.run(['git', '--no-pager', '-c', 'core.fsmonitor=false', '-c', 'core.untrackedCache=false', *args],
+    return subprocess.run(['git', '--no-pager', '--no-lazy-fetch', '-c', 'core.fsmonitor=false', '-c', 'core.untrackedCache=false', *args],
                           cwd=root, input=input, env=environment, capture_output=True,
                           check=True, timeout=30).stdout
 
