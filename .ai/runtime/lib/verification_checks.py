@@ -279,6 +279,14 @@ def capture_inputs(root, commands, configuration, timeout, revision, environment
     runtime = runtime_identity()
     specifications = [entry if isinstance(entry, dict) else {"command": entry} for entry in commands]
     order = digest(specifications)
+    protected_paths = None
+    if any("successor_independence" in item for item in specifications):
+        try:
+            protected_paths = set(inventory(root))
+            for item in specifications:
+                protected_paths.update(source_paths(root, item.get("sources")))
+        except (OSError, ValueError, subprocess.SubprocessError):
+            protected_paths = None
     identities = {}
     inputs_list = []
     for index, item in enumerate(specifications):
@@ -296,8 +304,10 @@ def capture_inputs(root, commands, configuration, timeout, revision, environment
             inputs["revision"] = revision
         if "successor_independence" in item:
             try:
+                if protected_paths is None:
+                    raise ValueError("complete configured dependency inventory unavailable")
                 inputs["successor"] = successors.capture_bundle(
-                    root, revision, item["successor_independence"], inventory(root),
+                    root, revision, item["successor_independence"], protected_paths,
                     source_paths(root, item.get("sources")), digest(configuration), order, index)
             except (OSError, ValueError, subprocess.SubprocessError):
                 inputs["successor"] = None  # Checks still run; unavailable proof never qualifies.
@@ -356,6 +366,10 @@ def run(workspace, commands, configuration, timeout, only_checks=None):
     source_guards = {}
     for index in indices:
         item, inputs = specifications[index], all_inputs[index]
+        if only_checks is not None:
+            # A selected run is fresh evidence, not a cache lookup. Separate its
+            # key from the baseline even for revision-insensitive scoped checks.
+            inputs = dict(inputs, fresh_execution_revision=revision)
         key = digest(inputs)
         source_guards[key] = safe_snapshot(root, item.get("sources"), guarded=True)
         plans.append((item, inputs, key))
@@ -367,7 +381,7 @@ def run(workspace, commands, configuration, timeout, only_checks=None):
                   and source_guards[key] is not None
                   and safe_snapshot(root, item.get("sources"), guarded=True) == source_guards[key])
         cacheable = before and inputs["source"] is not None and inputs["tool"] is not None and revision is not None
-        if reuse and item.get("reuse", True) and cacheable:
+        if only_checks is None and reuse and item.get("reuse", True) and cacheable:
             cached = load_receipt(store, key, inputs)
             if cached is not None:
                 return cached, True
@@ -446,12 +460,25 @@ def run(workspace, commands, configuration, timeout, only_checks=None):
             result["passed"] = False
     return result
 
+def strict_json(content):
+    def object_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON field: " + key)
+            result[key] = value
+        return result
+    def invalid_constant(value):
+        raise ValueError("invalid JSON constant: " + value)
+    return json.loads(content, object_pairs_hook=object_pairs, parse_constant=invalid_constant)
+
+
 def read_evidence(path):
     """Read external JSON without following links or treating it as authority."""
     path = Path(path).absolute()
     successors.safe_path(Path(path.anchor), path.relative_to(path.anchor).as_posix())
     with path.open(encoding="utf-8-sig") as handle:
-        value = json.load(handle)
+        value = strict_json(handle.read())
     if not isinstance(value, dict):
         raise ValueError("evidence must be an object")
     return value
@@ -465,7 +492,7 @@ def authentic_result(root, row):
             or len(reference.split('/')) != 3):
         raise ValueError("invalid receipt reference")
     path = successors.safe_path(root, reference)
-    envelope = json.loads(path.read_text(encoding="utf-8"))
+    envelope = strict_json(path.read_text(encoding="utf-8"))
     receipt = envelope["receipt"]
     inputs = receipt["inputs"]
     key = digest(inputs)
@@ -505,13 +532,17 @@ def equivalent_current_inputs(original, current):
             and original.get("tool") is not None and current.get("tool") is not None)
 
 
+class FreshRequired(ValueError):
+    """An uncovered command needs a genuine replacement, not an inferred pass."""
+
+
 def independent_successor(root, tested, original, current, approved):
     bundle = original.get("successor")
     contract = current["specification"].get("successor_independence")
     if not contract or not isinstance(bundle, dict) or current.get("successor") is None:
-        raise ValueError("no original prospective independence/input contract")
+        raise FreshRequired("no original prospective independence/input contract")
     if not set(approved) <= set(contract["report_paths"]):
-        raise ValueError("report not covered by this check's original independence contract")
+        raise FreshRequired("report not covered by this check's original independence contract")
     expected = {"schema", "contract", "source_manifest", "protected_manifest", "reports",
                 "configuration_sha256", "order_sha256", "index", "source_sha256", "protected_sha256"}
     if (set(bundle) != expected or type(bundle["schema"]) is not int or bundle["schema"] != 1
@@ -560,12 +591,27 @@ def validate_successor(workspace, evidence, approved_paths, expected_head, comma
                 or evidence.get("snapshot_valid") is not True or evidence.get("partial", False) is not False
                 or not isinstance(evidence.get("checks"), list) or len(evidence["checks"]) != count):
             raise ValueError("complete passing original baseline aggregate required")
-        original_inputs = [authentic_result(root, row) for row in evidence["checks"]]
         source_guards = [safe_snapshot(root, (item if isinstance(item, dict) else {}).get("sources"), guarded=True)
                          for item in commands]
         if any(value is None for value in source_guards):
             raise ValueError("declared source guard unavailable")
         identity_guard = runtime_identity()
+        runtime_paths = sorted(Path(__file__).parent.glob("*.py")) + [Path(__file__).parent.parent / "phase.py"]
+        runtime_guards = [(str(p), p.stat().st_mtime_ns, p.stat().st_ctime_ns, p.stat().st_ino) for p in runtime_paths]
+        evidence_paths = []
+        for document in (evidence, fresh_evidence):
+            if document is not None:
+                if not isinstance(document.get("checks"), list):
+                    raise ValueError("invalid check list")
+                for row in document["checks"]:
+                    for field in ("receipt", "stdout_log", "stderr_log"):
+                        name = row[field]
+                        if not isinstance(name, str) or not name.startswith(STORE + "/"):
+                            raise ValueError("invalid evidence storage reference")
+                        successors.safe_path(root, name)
+                        evidence_paths.append(name)
+        evidence_guard = fingerprint(root, sorted(set(evidence_paths)), guarded=True)
+        original_inputs = [authentic_result(root, row) for row in evidence["checks"]]
         history = successors.prove_report_only_successor(root, tested, expected_head, approved_paths)
         result["checked_commits"] = history["checked_commits"]
         if history["qualified"] is not True:
@@ -584,7 +630,7 @@ def validate_successor(workspace, evidence, approved_paths, expected_head, comma
             try:
                 independent_successor(root, tested, original, current, approved_paths)
                 reason, qualified = "original receipt independently covers successor", True
-            except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+            except FreshRequired as exc:
                 reason, qualified = str(exc), False
                 required.append(index)
             result["qualifications"].append({"index": index, "qualified": qualified,
@@ -592,6 +638,7 @@ def validate_successor(workspace, evidence, approved_paths, expected_head, comma
         result["fresh_required"] = list(required)
         if fresh_evidence is not None:
             if (not isinstance(fresh_evidence, dict)
+                    or fresh_evidence.get("ok", True) is not True
                     or fresh_evidence.get("configured") is not True
                     or fresh_evidence.get("snapshot_valid") is not True
                     or fresh_evidence.get("tested_revision") != expected_head
@@ -608,7 +655,7 @@ def validate_successor(workspace, evidence, approved_paths, expected_head, comma
             for index, row in zip(required, fresh_evidence["checks"]):
                 actual = authentic_result(root, row)
                 if (row.get("tested_revision") != expected_head or row.get("full_index") != index
-                        or actual != current_inputs[index]):
+                        or digest(actual) != digest(dict(current_inputs[index], fresh_execution_revision=expected_head))):
                     raise ValueError("fresh receipt is not the exact current-H configured check")
                 result["checks"][index] = row
                 result["qualifications"][index] = {"index": index, "qualified": True,
@@ -616,6 +663,9 @@ def validate_successor(workspace, evidence, approved_paths, expected_head, comma
             result["fresh_required"] = []
         # Repeat both source and Git guards after receipt/log and fresh validation.
         if (safe_snapshot(root, guarded=True) != guard or runtime_identity() != identity_guard
+                or [(str(p), p.stat().st_mtime_ns, p.stat().st_ctime_ns, p.stat().st_ino)
+                    for p in runtime_paths] != runtime_guards
+                or fingerprint(root, sorted(set(evidence_paths)), guarded=True) != evidence_guard
                 or any(safe_snapshot(root, spec.get("sources"), guarded=True) != source_guard
                        for spec, source_guard in zip(specs, source_guards))
                 or any(tool_identity(root, spec["command"], os.environ.copy()) != current["tool"]

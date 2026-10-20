@@ -52,6 +52,32 @@ def safe_path(root, name):
     return current
 
 
+def plain_history(root):
+    # Replacement refs and legacy grafts alter traversal without changing the
+    # named commit's bytes. Such a graph cannot prove every actual commit.
+    if os.environ.get("GIT_REPLACE_REF_BASE") is not None or os.environ.get("GIT_GRAFT_FILE") is not None:
+        raise ProofError("overridden Git history is unsupported")
+    if git(root, "for-each-ref", "--format=%(refname)", "refs/replace").strip():
+        raise ProofError("Git replacement refs make ancestry proof unavailable")
+    graft_path = Path(os.fsdecode(git(root, "rev-parse", "--git-path", "info/grafts").strip()))
+    if not graft_path.is_absolute():
+        graft_path = Path(root) / graft_path
+    if graft_path.exists() and graft_path.read_bytes().strip():
+        raise ProofError("Git grafts make ancestry proof unavailable")
+
+
+def worktree_guard(root):
+    raw = git(root, "ls-files", "--cached", "--others", "--exclude-standard", "-z")
+    names = sorted({os.fsdecode(name) for name in raw.split(b"\0") if name})
+    content = manifest(root, names)
+    metadata = []
+    for name in names:
+        path = safe_path(root, name)
+        info = path.lstat()
+        metadata.append([name, info.st_mtime_ns, info.st_ctime_ns, info.st_ino])
+    return digest([content, metadata])
+
+
 def commit_id(root, value):
     if not isinstance(value, str) or not re.fullmatch(r'(?:[0-9a-f]{40}|[0-9a-f]{64})', value):
         raise ProofError('expected a full commit object ID')
@@ -73,6 +99,19 @@ def tree_entry(root, revision, name):
         raise ProofError('unsupported Git mode: ' + name)
     git(root, 'cat-file', '-e', oid)
     return {'mode': mode, 'blob': oid}
+
+
+def regular_report(root, revision, name):
+    entry = tree_entry(root, revision, name)
+    path = safe_path(root, name)
+    if entry is None:
+        if path.exists():
+            raise ProofError("report exists without its Git object: " + name)
+    elif (not path.is_file()
+          or hashlib.sha256(path.read_bytes()).digest()
+          != hashlib.sha256(git(root, "cat-file", "--filters", revision + ":" + name)).digest()):
+        raise ProofError("report differs from its Git object: " + name)
+    return entry
 
 
 def report_paths(root, paths, revision=None):
@@ -139,6 +178,7 @@ def validate_manifest(root, revision, rows):
 
 def capture_bundle(root, revision, contract, all_paths, source_paths, configuration, order, index):
     clean(root)
+    plain_history(root)
     commit_id(root, revision)
     paths = report_paths(root, contract['report_paths'], revision)
     source = manifest(root, source_paths)
@@ -146,10 +186,7 @@ def capture_bundle(root, revision, contract, all_paths, source_paths, configurat
     protected = [row for row in protected if row[0] not in paths]
     validate_manifest(root, revision, source)
     validate_manifest(root, revision, protected)
-    reports = {name: tree_entry(root, revision, name) for name in paths}
-    for name, entry in reports.items():
-        if entry and not safe_path(root, name).is_file():
-            raise ProofError('baseline report is unavailable')
+    reports = {name: regular_report(root, revision, name) for name in paths}
     return {'schema': 1, 'contract': contract, 'source_manifest': source,
             'protected_manifest': protected, 'reports': reports,
             'configuration_sha256': configuration, 'order_sha256': order, 'index': index,
@@ -163,11 +200,13 @@ def prove_report_only_successor(root, tested_revision, current_revision, approve
               'checked_commits': []}
     try:
         root = Path(root).resolve()
+        plain_history(root)
         commit_id(root, tested_revision); commit_id(root, current_revision)
         paths = report_paths(root, approved_paths, tested_revision)
         clean(root)
         if git(root, 'rev-parse', 'HEAD').decode().strip() != current_revision:
             raise ProofError('expected head is not current HEAD')
+        source_guard = worktree_guard(root)
         if git(root, 'rev-parse', '--is-shallow-repository').strip() != b'false':
             raise ProofError('complete ancestry is unavailable')
         git(root, 'merge-base', '--is-ancestor', tested_revision, current_revision)
@@ -196,13 +235,13 @@ def prove_report_only_successor(root, tested_revision, current_revision, approve
                         git(root, 'cat-file', '-e', oldoid)
             result['checked_commits'].append(commit)
         for name in paths:
-            tree_entry(root, current_revision, name)
-            path = safe_path(root, name)
-            if path.exists() and not path.is_file():
-                raise ProofError('report is not a regular file')
+            regular_report(root, current_revision, name)
         clean(root)
         if git(root, 'rev-parse', 'HEAD').decode().strip() != current_revision:
             raise ProofError('HEAD moved during history validation')
+        plain_history(root)
+        if worktree_guard(root) != source_guard:
+            raise ProofError('source/worktree changed during history validation')
         result.update(qualified=True, reason='complete report-only history proved')
     except (OSError, ValueError, TypeError, subprocess.SubprocessError) as exc:
         result['reason'] = str(exc)

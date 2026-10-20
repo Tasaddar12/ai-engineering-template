@@ -842,3 +842,94 @@ class BaseSync(SessionCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ExpectedHeadMerge(unittest.TestCase):
+    """No provider writes: every mutation and readback is intercepted."""
+    HEAD = 'a' * 40
+    BRANCH = 'phase-successor'
+
+    def setUp(self):
+        self.workspace = SimpleNamespace(root=ROOT, config=ROOT / '.planning/config.yaml')
+        self.verdict = dict(state='passing', pr_state='OPEN', head_ref_oid=self.HEAD,
+                            number=12, url='https://example.invalid/pull/12', draft=False,
+                            failing=[], pending=[])
+        self.merged = dict(state='MERGED', headRefOid=self.HEAD, headRefName=self.BRANCH,
+                           number=12, url=self.verdict['url'])
+        for target, value in [('require_gh', {}), ('checks', self.verdict),
+                              ('view', self.merged), ('merge_method', 'squash')]:
+            mock = patch.object(delivery, target, return_value=value)
+            mock.start(); self.addCleanup(mock.stop)
+        self.head = patch.object(delivery.gitops, 'head_revision', return_value=self.HEAD).start()
+        self.addCleanup(patch.stopall)
+        self.provider = patch.object(delivery, 'gh', return_value=SimpleNamespace(returncode=0, stdout='', stderr='')).start()
+
+    def merge(self, expected=None):
+        return delivery.merge_pr(self.workspace, self.BRANCH, local_checks_passed=True,
+                                 expected_head=self.HEAD if expected is None else expected)
+
+    def test_expected_head_is_bound_to_provider_mutation_and_matching_readback(self):
+        result = self.merge()
+        self.assertTrue(result['merged'])
+        call = self.provider.call_args.args
+        self.assertIn('--match-head-commit', call)
+        self.assertEqual(call[call.index('--match-head-commit') + 1], self.HEAD)
+        self.assertNotIn('--admin', call)
+
+    def test_stale_local_head_provider_head_closed_and_malformed_expected_block(self):
+        from lib.results import VerbError
+        self.head.return_value = 'b' * 40
+        with self.assertRaises(VerbError): self.merge()
+        self.provider.assert_not_called(); self.head.return_value = self.HEAD
+        for field, value in [('head_ref_oid', 'b' * 40), ('head_ref_oid', None), ('pr_state', 'CLOSED')]:
+            old = self.verdict[field]; self.verdict[field] = value
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(VerbError): self.merge()
+                self.provider.assert_not_called()
+            self.verdict[field] = old
+        with self.assertRaises(VerbError): self.merge('HEAD')
+        self.provider.assert_not_called()
+
+    def test_failing_and_pending_checks_remain_blocking(self):
+        from lib.results import VerbError
+        for state in ['failing', 'pending']:
+            self.verdict.update(state=state, failing=[{'name': 'test'}], pending=[{'name': 'test'}])
+            with self.subTest(state=state):
+                with self.assertRaises(VerbError): self.merge()
+                self.provider.assert_not_called()
+
+    def test_provider_race_is_a_refusal_and_changed_readback_is_uncertain(self):
+        from lib.results import VerbError
+        self.provider.return_value = SimpleNamespace(returncode=1, stdout='', stderr='head did not match')
+        with self.assertRaises(VerbError): self.merge()
+        self.assertIn('--match-head-commit', self.provider.call_args.args)
+        self.provider.return_value = SimpleNamespace(returncode=0, stdout='', stderr='')
+        self.merged['headRefOid'] = 'b' * 40
+        result = self.merge()
+        self.assertFalse(result['merged']); self.assertTrue(result['retryable'])
+
+    def test_legacy_call_keeps_provider_arguments_unchanged(self):
+        result = delivery.merge_pr(self.workspace, self.BRANCH, local_checks_passed=True)
+        self.assertTrue(result['merged'])
+        self.assertNotIn('--match-head-commit', self.provider.call_args.args)
+
+    def test_expected_head_dispatch_and_pr_view_include_head_identity(self):
+        import runpy
+        runtime = runpy.run_path(str(RUNTIME))
+        with patch.object(delivery, 'merge_pr', return_value={'merged': False}) as merge:
+            runtime['verb_pr_merge'](self.workspace, [self.BRANCH], {'expected_head': self.HEAD})
+            self.assertEqual(merge.call_args.kwargs['expected_head'], self.HEAD)
+        self.assertIn('headRefOid', delivery.PR_FIELDS.split(','))
+
+    def test_local_head_movement_after_draft_ready_still_blocks_merge(self):
+        from lib.results import VerbError
+        self.verdict['draft'] = True
+        self.head.side_effect = [self.HEAD, 'b' * 40]
+        with self.assertRaises(VerbError): self.merge()
+        self.assertEqual(self.provider.call_count, 1)
+        self.assertEqual(self.provider.call_args.args[1:4], ('pr', 'ready', self.BRANCH))
+
+    def test_missing_pull_request_blocks_before_provider_mutation(self):
+        from lib.results import VerbError
+        with patch.object(delivery, 'checks', side_effect=VerbError('missing', 'no-pr')):
+            with self.assertRaises(VerbError): self.merge()
+            self.provider.assert_not_called()

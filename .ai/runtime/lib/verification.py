@@ -6,7 +6,7 @@ from .phases import find_directory
 from .results import VerbError, require
 from .roadmap import display_number, pad
 from .text import split_frontmatter
-from .verification_checks import normalise, run
+from .verification_checks import normalise, run, selected_indices
 
 STATUSES = ("passed", "gaps_found", "human_needed")
 CHECK_TIMEOUT = 600
@@ -58,6 +58,8 @@ def run_checks(workspace, only_checks=None):
     """Run configured checks, reusing only matching, intact passing evidence."""
     commands = configured_checks(workspace)
     if not commands:
+        if only_checks is not None:
+            selected_indices(only_checks, 0)
         return {"configured": False, "checks": [],
                 "note": "verification.commands is empty in .planning/config.yaml"}
     return run(workspace, commands, config_get(workspace, "verification", {}), CHECK_TIMEOUT, only_checks)

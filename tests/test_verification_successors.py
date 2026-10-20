@@ -255,7 +255,7 @@ class SuccessorTests(unittest.TestCase):
         self.baseline(); self.report()
         self.write('.generated/dependency', 'two')
         result = self.direct()
-        self.assertFalse(result['qualified']); self.assertIn('protected', result['qualifications'][0]['reason'])
+        self.assertFalse(result['qualified']); self.assertIn('protected', result['reason'])
 
     def test_environment_tool_and_runtime_identity_changes_reject(self):
         self.baseline(); self.report()
@@ -333,3 +333,101 @@ class SuccessorTests(unittest.TestCase):
         fresh = self.cli('verification.run-checks')
         self.assertTrue(fresh['passed']); self.assertEqual(fresh['tested_revision'], self.git('rev-parse', 'HEAD'))
         self.assertEqual(old_receipt.read_bytes(), original)
+
+    def test_subset_is_fresh_and_preserves_revision_insensitive_baseline_key(self):
+        cheap = {'command': [sys.executable, '-c', 'import subprocess; print(subprocess.check_output(["git","rev-parse","HEAD"]).decode())'],
+                 'sources': ['input.txt'], 'environment': [], 'reuse': True}
+        self.configure([self.command, cheap]); self.commit('scoped HEAD reader')
+        evidence = self.baseline()
+        old_path = self.root / evidence['checks'][1]['receipt']; old_bytes = old_path.read_bytes()
+        head = self.report()
+        fresh = self.cli('verification.run-checks', '--only-checks', '1')
+        self.assertFalse(fresh['checks'][0]['reused'])
+        self.assertIn(head, fresh['checks'][0]['stdout_tail'])
+        self.assertNotEqual(fresh['checks'][0]['receipt'], evidence['checks'][1]['receipt'])
+        self.assertEqual(old_path.read_bytes(), old_bytes)
+        self.assertTrue(self.direct(evidence, fresh)['qualified'])
+        repeated = self.cli('verification.run-checks', '--only-checks', '1')
+        self.assertFalse(repeated['checks'][0]['reused'])
+        self.assertEqual(old_path.read_bytes(), old_bytes)
+
+    def test_declared_dependency_rewrite_restore_during_validation_rejects(self):
+        self.write('.generated/dependency', 'one')
+        self.command['sources'] = ['input.txt', '.generated/dependency']
+        self.configure([self.command]); self.commit('declared dependency')
+        self.baseline(); self.report()
+        original = checks.authentic_result
+        def mutate(root, row):
+            path = self.root / '.generated/dependency'
+            path.write_text('temporary'); path.write_text('one')
+            return original(root, row)
+        with patch.object(checks, 'authentic_result', side_effect=mutate):
+            self.assertFalse(self.direct()['qualified'])
+
+    def test_precontract_missing_bundle_and_old_validator_fingerprint_reject(self):
+        evidence = self.baseline(); self.report()
+        receipt_path = self.root / evidence['checks'][0]['receipt']
+        original = json.loads(receipt_path.read_text())
+        for change in ['bundle', 'runtime']:
+            envelope = copy.deepcopy(original)
+            if change == 'bundle': envelope['receipt']['inputs'].pop('successor')
+            else: envelope['receipt']['inputs']['runtime']['implementation'] = 'old-validator'
+            # Even a structurally self-consistent rewritten envelope cannot
+            # acquire the original prospective inputs or the current runtime.
+            key = checks.digest(envelope['receipt']['inputs'])
+            new_reference = checks.STORE + '/' + key + '.json'
+            envelope['receipt']['key'] = key
+            envelope['receipt']['result']['receipt'] = new_reference
+            envelope['sha256'] = checks.digest(envelope['receipt'])
+            (self.root / new_reference).write_text(json.dumps(envelope))
+            modified = copy.deepcopy(evidence); modified['checks'][0]['receipt'] = new_reference
+            self.assertFalse(self.direct(modified)['qualified'])
+
+    def test_duplicate_json_fields_and_boolean_schema_reject(self):
+        with self.assertRaises(ValueError): checks.strict_json('{"passed":false,"passed":true}')
+        with self.assertRaises(ValueError): checks.strict_json('{"exit_code":NaN}')
+        evidence = self.baseline(); self.report()
+        path = self.root / evidence['checks'][0]['receipt']
+        envelope = json.loads(path.read_text()); envelope['receipt']['schema'] = True
+        envelope['sha256'] = checks.digest(envelope['receipt']); path.write_text(json.dumps(envelope))
+        self.assertFalse(self.direct()['qualified'])
+
+    def test_portable_history_helper_freezes_source_during_traversal(self):
+        self.report()
+        real_git = successors.git
+        def mutation(root, *args, **kwargs):
+            if args[:3] == ('rev-list', '--reverse', '--topo-order'):
+                path = self.root / 'input.txt'
+                path.write_text('temporary'); path.write_text('source')
+            return real_git(root, *args, **kwargs)
+        with patch.object(successors, 'git', side_effect=mutation):
+            result = self.proof()
+        self.assertFalse(result['qualified'], result)
+
+    def test_all_declared_dependencies_protect_every_retained_ancestor_check(self):
+        self.write('.generated/dependency', 'one')
+        cheap = {'command': [sys.executable, '-c', 'print("cheap")'],
+                 'sources': ['.generated/dependency'], 'revision': True, 'reuse': False}
+        self.command['sources'] = ['input.txt', 'check.py']
+        self.configure([self.command, cheap]); self.commit('declare shared input inventory')
+        evidence = self.baseline(); self.report()
+        self.write('.generated/dependency', 'changed')
+        fresh = self.cli('verification.run-checks', '--only-checks', '1')
+        result = self.direct(evidence, fresh)
+        self.assertFalse(result['qualified'], result)
+        self.assertEqual(result['fresh_required'], [0, 1])
+
+    def test_replace_refs_cannot_hide_source_touch_and_revert_history(self):
+        self.write('input.txt', 'changed'); self.commit('source touch')
+        self.git('revert', '--no-edit', 'HEAD')
+        reverted = self.git('rev-parse', 'HEAD')
+        self.report()
+        self.git('replace', '--graft', reverted, self.r)
+        self.assertFalse(self.proof()['qualified'])
+
+    def test_ignored_report_without_matching_git_object_is_not_an_absent_marker(self):
+        self.write('.gitignore', '.generated/\n.planning/verification-receipts/\n' + REPORT + '\n')
+        self.commit('ignore prospective report'); self.r = self.git('rev-parse', 'HEAD')
+        self.write(REPORT, 'untracked ignored report')
+        self.git('commit', '--allow-empty', '-qm', 'no tracked report publication')
+        self.assertFalse(self.proof()['qualified'])

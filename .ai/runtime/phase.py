@@ -271,7 +271,8 @@ def verb_pr_merge(workspace, positionals, options):
     branch = argument(positionals, 0, "branch")
     local = options.get("local_checks_passed")
     return delivery.merge_pr(workspace, branch,
-                             local_checks_passed=True if local is True else None)
+                             local_checks_passed=True if local is True else None,
+                             expected_head=options.get("expected_head"))
 
 
 def verb_pr_sync(workspace, positionals, options):
