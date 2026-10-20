@@ -171,3 +171,9 @@ After explicit human approval, the coordinator created issue110 with the separat
 - The route preserves schema-1 receipt behavior and the consumer-owned schema-2 selected-profile/order/default-disposition and baseline scope at R; binds the prospective contract and complete protected/input identity; keeps R separate from qualified H; requires genuine ordered fresh-subset evidence; and retains the OPEN PR/local/provider match-H revalidation gates.
 - Explicitly states quick-task owners are unsupported and require a separately reviewed, tested eligibility implementation; no old receipts are grandfathered and no consumer adoption is claimed.
 - Only this reference and the relocated sole SUMMARY were changed. Documentation-only check: git diff --check passed. No source changes, test suites, consumer writes, provider operations, publication or issue edits were performed. The parent will obtain bounded independent documentation/goal closeout.
+
+## Consumer-adoption recipe correction (2026-10-20)
+
+- Corrected step 7 to require each approved phase report path to be inside the reviewed profile's exact allowed_paths scope in the complete fresh baseline R. An out-of-scope path is rejected; the allowlist cannot be retrofitted at H. The recipe authenticates the profile and scope at R separately from the R-to-H history proof.
+- Named .codex/runtime/lib/verification_successors.py as the portable helper destination and clarified that the helper and bounded adapter hooks are instructions only; this canonical template does not implement consumer adoption.
+- Edited only this existing SUMMARY and .ai/references/verification-evidence.md. No source changes or tests were needed for this documentation correction. Consumer adoption remains separate and requires a fresh complete baseline after its reviewed adapter/profile changes.
