@@ -154,3 +154,13 @@ Ready for independent plan checking after coordinator integration and threat rec
 ## Canonical planned-risk publication
 
 After explicit human approval, the coordinator created issue110 with the separately reviewed three-entry design-risk payload. Exact provider body, OPEN state and rendered user-content-t-rcp-01/02/03 anchors were read back. These canonical entries supersede the prior Pending publication dependency; they remain OPEN and do not claim consumer adoption or deployment acceptance. Source6313d680 has 144 passing focused tests and fresh independent correctness/security reviews with zero remaining findings. Documentation and whole-goal integration verification remain pending.
+
+## Documentation handoff - canonical receipt successors (2026-10-20)
+
+- Updated the four assigned paths: .ai/references/verification-evidence.md, .ai/runtime/README.md, .ai/workflows/verify-work.md and .ai/workflows/ship.md. They document the schema-1 prospective contract, supported report owner, read-only qualifier, history/protected-input boundaries, external evidence files, mixed original/fresh accounting and fail-closed cases.
+- Kept report currentness separate from check qualification. Workflow instructions retain the verifier's original tested revision and require the existing currentness gate independently.
+- Source and test evidence remains the coder's prior recorded evidence at 6313d680, including 144 passing focused tests and fresh independent correctness/security reviews with zero findings. This writer did not rerun the full suites or perform provider operations.
+- Documentation checks: inspected the implemented CLI parser, successor adapter/contract, partial subset result and merge guard; confirmed the four assigned documents contain the new flow; reviewed the focused diff and ran git diff --check successfully.
+- Framework PR109 remains an open tracking draft. No merge or consumer write was performed. Consumer adoption still requires its separate adapter review and fresh baseline. Independent doc-verifier and whole-goal integration evidence remain coordinator-owned and pending.
+
+- Coordinator update after the source publication: PR109 is published at source revision 1cb3; the source-only integration-checker report is available at 1cb3. This does not replace the pending independent documentation verification or whole-goal assessment. The canonical proof remains limited to supported phase reports; Whiskance schema-2/quick-report adoption is a separate adapter and fresh-baseline task.
