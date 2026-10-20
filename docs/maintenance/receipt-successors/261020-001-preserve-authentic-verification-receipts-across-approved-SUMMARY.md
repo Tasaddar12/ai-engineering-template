@@ -164,3 +164,10 @@ After explicit human approval, the coordinator created issue110 with the separat
 - Framework PR109 remains an open tracking draft. No merge or consumer write was performed. Consumer adoption still requires its separate adapter review and fresh baseline. Independent doc-verifier and whole-goal integration evidence remain coordinator-owned and pending.
 
 - Coordinator update after the source publication: PR109 is published at source revision 1cb3; the source-only integration-checker report is available at 1cb3. This does not replace the pending independent documentation verification or whole-goal assessment. The canonical proof remains limited to supported phase reports; Whiskance schema-2/quick-report adoption is a separate adapter and fresh-baseline task.
+
+## Bounded consumer-adoption documentation completion (2026-10-20)
+
+- Expanded the consumer boundary in .ai/references/verification-evidence.md into a 12-step, source-grounded schema-2 adapter route, using C:/Users/killi/AppData/Local/Temp/scanner-wave2-consumer-receipt-adoption-assessment.md and its frozen consumer/template source references.
+- The route preserves schema-1 receipt behavior and the consumer-owned schema-2 selected-profile/order/default-disposition and baseline scope at R; binds the prospective contract and complete protected/input identity; keeps R separate from qualified H; requires genuine ordered fresh-subset evidence; and retains the OPEN PR/local/provider match-H revalidation gates.
+- Explicitly states quick-task owners are unsupported and require a separately reviewed, tested eligibility implementation; no old receipts are grandfathered and no consumer adoption is claimed.
+- Only this reference and the relocated sole SUMMARY were changed. Documentation-only check: git diff --check passed. No source changes, test suites, consumer writes, provider operations, publication or issue edits were performed. The parent will obtain bounded independent documentation/goal closeout.
