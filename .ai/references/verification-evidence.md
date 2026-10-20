@@ -135,13 +135,14 @@ They do not read or adopt a consumer's customized schema-2 joined/profile
 validator. For a Whiskance adapter, use this bounded route:
 
 1. Pin the exact canonical source commit and reviewed diff. Compare them with
-   the installed ownership manifest before editing. The consumer owns
-   .codex/runtime/lib/verification_checks.py,
-   .codex/runtime/lib/verification.py,
-   .codex/runtime/lib/verification_profiles.py,
-   .codex/runtime/lib/delivery.py and .codex/runtime/phase.py; preserve
-   the project's customized files and tests rather than copying the canonical
-   runtime over them.
+   the installed ownership manifest before editing. Port the portable helper
+   to .codex/runtime/lib/verification_successors.py, then add only bounded
+   adapter hooks in the consumer-owned .codex/runtime/lib/verification_checks.py,
+   .codex/runtime/lib/verification.py, .codex/runtime/lib/verification_profiles.py,
+   .codex/runtime/lib/delivery.py and .codex/runtime/phase.py. This route only
+   instructs a consumer port; it adds no consumer helper or hook here. Preserve
+   customized files and tests rather than copying the canonical runtime over
+   them.
 2. Keep the consumer receipt schema at 1 and retain its runner,
    capture_inputs, receipt storage and validate_joined behavior. Add a separate
    schema-2 successor adapter around those authorities. Do not transplant the
@@ -172,12 +173,15 @@ validator. For a Whiskance adapter, use this bounded route:
    with their matching tracked NN-CONTEXT.md owners are eligible. Check every
    intervening commit and merge parent. Preserve the original tested R and
    return a separate qualified H.
-7. Authenticate the profile content, registry, base and allowed-path scope
-   against baseline R. Do not rerun ordinary profile selection or scope as if H
-   were a new baseline: the approved report can lie outside the original
-   allowed_paths. The independent R-to-H history proof accounts for that
-   report. Do not add a broad report exception to scope or remove the existing
-   R==HEAD/profile-scope protections.
+7. Authenticate the profile content, registry, base and exact reviewed
+   allowed_paths scope against baseline R. Require each exact approved phase
+   report path to already be inside that scope at R; reject a path outside it.
+   Do not retrofit allowed_paths at H or relax scope for an existing receipt.
+   If the reviewed profile must include a report path, establish that profile
+   before a complete fresh R baseline. Keep profile/scope proof anchored to R,
+   then separately prove R-to-H history; do not rerun ordinary selection or
+   scope as if H were a new baseline, or remove the R==HEAD/profile-scope
+   protections.
 8. Recompute and compare the current effective configuration, runtime/helper
    implementation, tool, environment, timeout, selected profile, commands,
    default dispositions and every non-report source/protected manifest against
