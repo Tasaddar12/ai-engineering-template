@@ -431,3 +431,34 @@ class SuccessorTests(unittest.TestCase):
         self.write(REPORT, 'untracked ignored report')
         self.git('commit', '--allow-empty', '-qm', 'no tracked report publication')
         self.assertFalse(self.proof()['qualified'])
+
+    def test_external_git_filter_attributes_make_read_only_proof_unavailable(self):
+        self.write('.gitattributes', '*.txt filter=external-tool\n')
+        self.commit('declare external filter dependency'); self.r = self.git('rev-parse', 'HEAD')
+        self.report()
+        self.assertFalse(self.proof()['qualified'])
+
+    def test_history_diffs_explicitly_disable_external_diff_and_textconv(self):
+        self.report()
+        original = successors.git
+        calls = []
+        def record(root, *args, **kwargs):
+            if args[0] == 'diff-tree': calls.append(args)
+            return original(root, *args, **kwargs)
+        with patch.object(successors, 'git', side_effect=record):
+            self.assertTrue(self.proof()['qualified'])
+        self.assertTrue(calls)
+        for args in calls:
+            self.assertIn('--no-ext-diff', args)
+            self.assertIn('--no-textconv', args)
+
+    def test_git_proof_wrapper_disables_fsmonitor_pager_and_optional_writes(self):
+        from types import SimpleNamespace
+        with patch.object(successors.subprocess, 'run', return_value=SimpleNamespace(stdout=b'')) as process:
+            successors.git(self.root, 'status', '--porcelain')
+        args, options = process.call_args
+        self.assertIn('core.fsmonitor=false', args[0])
+        self.assertIn('core.untrackedCache=false', args[0])
+        self.assertIn('--no-pager', args[0])
+        self.assertEqual(options['env']['GIT_OPTIONAL_LOCKS'], '0')
+        self.assertNotIn('GIT_EXTERNAL_DIFF', options['env'])

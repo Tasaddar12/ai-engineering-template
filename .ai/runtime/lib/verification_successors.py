@@ -22,7 +22,11 @@ def digest(value):
 
 
 def git(root, *args, input=None):
-    return subprocess.run(['git', *args], cwd=root, input=input, capture_output=True,
+    environment = dict(os.environ, GIT_OPTIONAL_LOCKS="0")
+    environment.pop("GIT_EXTERNAL_DIFF", None)
+    environment.pop("GIT_DIFF_OPTS", None)
+    return subprocess.run(['git', '--no-pager', '-c', 'core.fsmonitor=false', '-c', 'core.untrackedCache=false', *args],
+                          cwd=root, input=input, env=environment, capture_output=True,
                           check=True, timeout=30).stdout
 
 
@@ -52,7 +56,18 @@ def safe_path(root, name):
     return current
 
 
+def reject_external_filters(root):
+    tracked = git(root, "ls-files", "--cached", "-z")
+    attributes = git(root, "check-attr", "-z", "--stdin", "filter", input=tracked).split(b"\0")
+    if attributes[-1] != b"" or (len(attributes) - 1) % 3:
+        raise ProofError("Git filter dependency proof unavailable")
+    for index in range(0, len(attributes) - 1, 3):
+        if attributes[index + 2] not in (b"unspecified", b"unset"):
+            raise ProofError("external Git filters are unsupported: " + os.fsdecode(attributes[index]))
+
+
 def plain_history(root):
+    reject_external_filters(root)
     # Replacement refs and legacy grafts alter traversal without changing the
     # named commit's bytes. Such a graph cannot prove every actual commit.
     if os.environ.get("GIT_REPLACE_REF_BASE") is not None or os.environ.get("GIT_GRAFT_FILE") is not None:
@@ -135,6 +150,7 @@ def report_paths(root, paths, revision=None):
 
 
 def clean(root):
+    reject_external_filters(root)
     if git(root, 'status', '--porcelain=v1', '-z', '--untracked-files=all'):
         raise ProofError('worktree/index/untracked state is dirty')
 
@@ -218,7 +234,7 @@ def prove_report_only_successor(root, tested_revision, current_revision, approve
                 raise ProofError('missing parent history')
             for parent in parents:
                 commit_id(root, parent)
-                raw = git(root, 'diff-tree', '-r', '--no-renames', '--raw', '-z',
+                raw = git(root, 'diff-tree', '-r', '--no-ext-diff', '--no-textconv', '--no-renames', '--raw', '-z',
                           '--no-commit-id', parent, commit).split(b'\0')
                 for i in range(0, len(raw) - 1, 2):
                     metadata, name = raw[i], os.fsdecode(raw[i + 1])

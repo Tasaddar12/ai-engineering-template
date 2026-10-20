@@ -108,8 +108,7 @@ def file_digest(path):
 
 
 def git(root, *args):
-    return subprocess.run(["git", *args], cwd=str(root), capture_output=True,
-                          timeout=30, check=True).stdout
+    return successors.git(root, *args)
 
 
 def inventory(root):
