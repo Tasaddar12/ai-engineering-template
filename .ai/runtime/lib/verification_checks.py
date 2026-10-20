@@ -14,10 +14,11 @@ import sys
 import uuid
 
 from .results import VerbError
+from . import verification_successors as successors
 
 STORE = ".planning/verification-receipts"
 SCHEMA = 1
-FIELDS = {"command", "sources", "environment", "independent", "resources", "timeout", "revision", "reuse"}
+FIELDS = {"command", "sources", "environment", "independent", "resources", "timeout", "revision", "reuse", "successor_independence"}
 
 
 def bad(message):
@@ -69,6 +70,23 @@ def normalise(commands, timeout):
                 bad("verification sources must be literal repository-relative paths")
             if any(part in {".git", "verification-receipts"} for part in path.parts):
                 bad("verification sources must not include Git metadata or receipt storage")
+        if "successor_independence" in item:
+            contract = item["successor_independence"]
+            if (not isinstance(contract, dict)
+                    or set(contract) != {"schema", "report_paths", "protected_inputs", "revision_semantics"}
+                    or type(contract.get("schema")) is not int or contract["schema"] != 1
+                    or contract.get("protected_inputs") != "all-other-inputs"
+                    or contract.get("revision_semantics") != "provenance-only"):
+                bad("invalid successor_independence contract")
+            reports = contract.get("report_paths")
+            if (not isinstance(reports, list) or not reports
+                    or any(not isinstance(v, str) for v in reports) or len(set(reports)) != len(reports)):
+                bad("successor report_paths must be nonempty exact unique paths")
+            try:
+                for report in reports:
+                    successors.literal_path(report)
+            except ValueError as exc:
+                bad(str(exc))
         limit = item.get("timeout", timeout)
         if isinstance(limit, bool) or not isinstance(limit, (int, float)) or not math.isfinite(limit) or limit <= 0:
             bad("verification timeout must be a positive finite number")
@@ -134,7 +152,7 @@ def fingerprint(root, paths, guarded=False):
     return digest(entries)
 
 
-def snapshot(root, sources=None, guarded=False):
+def source_paths(root, sources=None):
     if sources is None:
         paths = inventory(root)
     else:
@@ -154,7 +172,11 @@ def snapshot(root, sources=None, guarded=False):
             else:
                 paths.add(name)
         paths = sorted(paths)
-    return fingerprint(root, paths, guarded)
+    return paths
+
+
+def snapshot(root, sources=None, guarded=False):
+    return fingerprint(root, source_paths(root, sources), guarded)
 
 
 def safe_snapshot(root, sources=None, guarded=False):
@@ -182,7 +204,7 @@ def load_receipt(store, key, inputs):
         if receipt["key"] != key or receipt["inputs"] != inputs:
             return None
         result = receipt["result"]
-        if result["passed"] is not True or result["exit_code"] != 0 or result.get("error"):
+        if result["passed"] is not True or (type(result["exit_code"]) is not int or result["exit_code"] != 0) or result.get("error"):
             return None
         if result["snapshot_valid"] is not True or result["command"] != inputs["command"]:
             return None
@@ -243,7 +265,65 @@ def tool_identity(root, command, environment):
         return None
 
 
-def run(workspace, commands, configuration, timeout):
+def runtime_identity():
+    directory = Path(__file__).parent
+    implementation = sorted(directory.glob("*.py")) + [directory.parent / "phase.py"]
+    return {"python": sys.version, "executable": sys.executable,
+            "platform": platform.platform(), "schema": SCHEMA,
+            "implementation": digest([[p.name, file_digest(p)] for p in implementation])}
+
+
+def capture_inputs(root, commands, configuration, timeout, revision, environment):
+    environment_inputs = ({name.upper(): value for name, value in environment.items()}
+                          if os.name == "nt" else environment)
+    runtime = runtime_identity()
+    specifications = [entry if isinstance(entry, dict) else {"command": entry} for entry in commands]
+    order = digest(specifications)
+    identities = {}
+    inputs_list = []
+    for index, item in enumerate(specifications):
+        executable = item["command"][0]
+        if executable not in identities:
+            identities[executable] = tool_identity(root, item["command"], environment)
+        relevant_env = environment_inputs if "environment" not in item else {
+            name: environment_inputs.get(name) for name in item["environment"]}
+        inputs = {"command": item["command"], "configuration": digest(configuration),
+                  "specification": item, "source": safe_snapshot(root, item.get("sources")),
+                  "environment": digest(relevant_env), "runtime": runtime,
+                  "tool": identities[executable], "root": str(root),
+                  "timeout": item.get("timeout", timeout), "index": index, "order": order}
+        if item.get("revision"):
+            inputs["revision"] = revision
+        if "successor_independence" in item:
+            try:
+                inputs["successor"] = successors.capture_bundle(
+                    root, revision, item["successor_independence"], inventory(root),
+                    source_paths(root, item.get("sources")), digest(configuration), order, index)
+            except (OSError, ValueError, subprocess.SubprocessError):
+                inputs["successor"] = None  # Checks still run; unavailable proof never qualifies.
+        inputs_list.append(inputs)
+    return specifications, inputs_list
+
+
+def selected_indices(only_checks, count):
+    if only_checks is None:
+        return list(range(count))
+    if not isinstance(only_checks, list) or not only_checks:
+        bad("only-checks requires nonempty zero-based indices")
+    result = []
+    for value in only_checks:
+        if isinstance(value, bool) or not str(value).isascii() or not str(value).isdigit():
+            bad("only-checks requires zero-based integer indices")
+        index = int(value)
+        if index >= count or index in result:
+            bad("only-checks has duplicate or out-of-range indices")
+        result.append(index)
+    if result != sorted(result):
+        bad("only-checks indices must follow configuration order")
+    return result
+
+
+def run(workspace, commands, configuration, timeout, only_checks=None):
     root = workspace.root.resolve()
     store = root / STORE
     try:
@@ -265,35 +345,17 @@ def run(workspace, commands, configuration, timeout):
     if not isinstance(reuse, bool):
         bad("verification.reuse must be boolean")
     environment = os.environ.copy()  # Each process receives the same frozen environment.
-    environment_inputs = ({name.upper(): value for name, value in environment.items()}
-                          if os.name == "nt" else environment)
     frozen = safe_snapshot(root, guarded=True)
     try:
         revision = git(root, "rev-parse", "HEAD").decode().strip()
     except (OSError, subprocess.SubprocessError):
         revision = None
-    runtime = {"python": sys.version, "executable": sys.executable,
-               "platform": platform.platform(), "schema": SCHEMA,
-               "implementation": digest([file_digest(Path(__file__)),
-                                         file_digest(Path(__file__).with_name("verification.py"))])}
-    specifications = [entry if isinstance(entry, dict) else {"command": entry} for entry in commands]
-    identities = {}
-    for item in specifications:
-        executable = item["command"][0]
-        if executable not in identities:
-            identities[executable] = tool_identity(root, item["command"], environment)
+    specifications, all_inputs = capture_inputs(root, commands, configuration, timeout, revision, environment)
+    indices = selected_indices(only_checks, len(commands))
     plans = []
     source_guards = {}
-    for item in specifications:
-        relevant_env = environment_inputs if "environment" not in item else {
-            name: environment_inputs.get(name) for name in item["environment"]}
-        inputs = {"command": item["command"], "configuration": digest(configuration),
-                  "specification": item, "source": safe_snapshot(root, item.get("sources")),
-                  "environment": digest(relevant_env), "runtime": runtime,
-                  "tool": identities[item["command"][0]], "root": str(root),
-                  "timeout": item.get("timeout", timeout)}
-        if item.get("revision"):
-            inputs["revision"] = revision
+    for index in indices:
+        item, inputs = specifications[index], all_inputs[index]
         key = digest(inputs)
         source_guards[key] = safe_snapshot(root, item.get("sources"), guarded=True)
         plans.append((item, inputs, key))
@@ -312,7 +374,7 @@ def run(workspace, commands, configuration, timeout):
         identity = uuid.uuid4().hex
         logs = {stream: store / (identity + "." + stream + ".log") for stream in ("stdout", "stderr")}
         result = {"command": item["command"], "exit_code": None, "passed": False,
-                  "reused": False, "tested_revision": revision,
+                  "reused": False, "tested_revision": revision, "full_index": inputs["index"],
                   "receipt": STORE + "/" + key + ".json"}
         with logs["stdout"].open("xb") as stdout, logs["stderr"].open("xb") as stderr:
             try:
@@ -373,5 +435,197 @@ def run(workspace, commands, configuration, timeout):
         if not result["reused"]:
             save_receipt(store, key, inputs, result)  # Failure evidence is retained, never reused as pass.
         results.append(result)
-    return {"configured": True, "checks": results, "passed": all(r["passed"] for r in results),
-            "snapshot_valid": stable, "tested_revision": revision}
+    result = {"configured": True, "checks": results, "passed": all(r["passed"] for r in results),
+              "snapshot_valid": stable, "tested_revision": revision}
+    if only_checks is not None:
+        partial = len(indices) != len(commands)
+        result.update(partial=partial, selected_indices=indices,
+                      full_configuration_sha256=digest(configuration),
+                      full_order_sha256=digest(specifications), selected_passed=result["passed"])
+        if partial:
+            result["passed"] = False
+    return result
+
+def read_evidence(path):
+    """Read external JSON without following links or treating it as authority."""
+    path = Path(path).absolute()
+    successors.safe_path(Path(path.anchor), path.relative_to(path.anchor).as_posix())
+    with path.open(encoding="utf-8-sig") as handle:
+        value = json.load(handle)
+    if not isinstance(value, dict):
+        raise ValueError("evidence must be an object")
+    return value
+
+
+def authentic_result(root, row):
+    if not isinstance(row, dict):
+        raise ValueError("invalid check result")
+    reference = row.get("receipt")
+    if (not isinstance(reference, str) or not reference.startswith(STORE + "/")
+            or len(reference.split('/')) != 3):
+        raise ValueError("invalid receipt reference")
+    path = successors.safe_path(root, reference)
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    receipt = envelope["receipt"]
+    inputs = receipt["inputs"]
+    key = digest(inputs)
+    if (type(receipt.get("schema")) is not int or receipt["schema"] != SCHEMA
+            or receipt.get("key") != key or path.name != key + '.json'
+            or envelope.get("sha256") != digest(receipt)):
+        raise ValueError("receipt envelope/key/input mismatch")
+    stored = receipt["result"]
+    if (digest(stored) != digest(row) or stored.get("passed") is not True
+            or type(stored.get("exit_code")) is not int or stored["exit_code"] != 0
+            or stored.get("snapshot_valid") is not True or stored.get("reused") is not False
+            or stored.get("error") or stored.get("command") != inputs.get("command")
+            or type(stored.get("full_index")) is not int
+            or type(inputs.get("index")) is not int
+            or stored["full_index"] != inputs.get("index")):
+        raise ValueError("original fresh passing stored result required")
+    for stream in ("stdout", "stderr"):
+        log_record = receipt[stream]
+        name = log_record["file"]
+        if not isinstance(name, str) or Path(name).name != name or not name.endswith('.' + stream + '.log'):
+            raise ValueError("invalid log reference")
+        log_ref = STORE + '/' + name
+        log = successors.safe_path(root, log_ref)
+        if (stored.get(stream + '_log') != log_ref
+                or file_digest(log) != log_record["sha256"]
+                or stored.get(stream + '_tail') != tail(log)):
+            raise ValueError("log/result hash or content mismatch")
+    return inputs
+
+
+def equivalent_current_inputs(original, current):
+    # Only the explicit dependency contract can subsequently bridge these fields.
+    ignored = {"source", "revision", "successor"}
+    return (digest({k: v for k, v in original.items() if k not in ignored})
+            == digest({k: v for k, v in current.items() if k not in ignored})
+            and original.get("source") is not None and current.get("source") is not None
+            and original.get("tool") is not None and current.get("tool") is not None)
+
+
+def independent_successor(root, tested, original, current, approved):
+    bundle = original.get("successor")
+    contract = current["specification"].get("successor_independence")
+    if not contract or not isinstance(bundle, dict) or current.get("successor") is None:
+        raise ValueError("no original prospective independence/input contract")
+    if not set(approved) <= set(contract["report_paths"]):
+        raise ValueError("report not covered by this check's original independence contract")
+    expected = {"schema", "contract", "source_manifest", "protected_manifest", "reports",
+                "configuration_sha256", "order_sha256", "index", "source_sha256", "protected_sha256"}
+    if (set(bundle) != expected or type(bundle["schema"]) is not int or bundle["schema"] != 1
+            or bundle["contract"] != contract or bundle["index"] != original["index"]
+            or type(bundle["index"]) is not int
+            or bundle["configuration_sha256"] != current["configuration"]
+            or bundle["order_sha256"] != current["order"]
+            or bundle["source_sha256"] != digest(bundle["source_manifest"])
+            or bundle["source_sha256"] != original["source"]
+            or bundle["protected_sha256"] != digest(bundle["protected_manifest"])):
+        raise ValueError("baseline input manifest binding is invalid")
+    successors.validate_manifest(root, tested, bundle["source_manifest"])
+    successors.validate_manifest(root, tested, bundle["protected_manifest"])
+    reports = {name: successors.tree_entry(root, tested, name) for name in contract["report_paths"]}
+    if bundle["reports"] != reports:
+        raise ValueError("baseline report blobs/modes changed")
+    if bundle["protected_manifest"] != current["successor"]["protected_manifest"]:
+        raise ValueError("protected inputs changed")
+    # Current source membership/content must match, allowing only these original
+    # declared reports. The full protected inventory also covers undeclared code.
+    report_set = set(contract["report_paths"])
+    old = [row for row in bundle["source_manifest"] if row[0] not in report_set]
+    new = [row for row in current["successor"]["source_manifest"] if row[0] not in report_set]
+    if old != new:
+        raise ValueError("declared source inputs changed")
+    if "revision" in original and original["revision"] != tested:
+        raise ValueError("original revision provenance mismatch")
+
+
+def validate_successor(workspace, evidence, approved_paths, expected_head, commands, configuration,
+                       timeout, fresh_evidence=None):
+    """Schema-1 adapter: attest H separately; never rewrite R receipts/results."""
+    root = workspace.root.resolve()
+    count = len(commands)
+    tested = evidence.get("tested_revision") if isinstance(evidence, dict) else None
+    result = {"qualified": False, "tested_revision": tested, "qualified_revision": expected_head,
+              "approved_paths": approved_paths, "checked_commits": [], "checks": [],
+              "original_receipts": [], "qualifications": [], "fresh_required": list(range(count))}
+    try:
+        guard = safe_snapshot(root, guarded=True)
+        if guard is None:
+            raise ValueError("current source proof unavailable")
+        if (not count or not isinstance(evidence, dict)
+                or evidence.get("ok", True) is not True
+                or evidence.get("configured") is not True or evidence.get("passed") is not True
+                or evidence.get("snapshot_valid") is not True or evidence.get("partial", False) is not False
+                or not isinstance(evidence.get("checks"), list) or len(evidence["checks"]) != count):
+            raise ValueError("complete passing original baseline aggregate required")
+        original_inputs = [authentic_result(root, row) for row in evidence["checks"]]
+        source_guards = [safe_snapshot(root, (item if isinstance(item, dict) else {}).get("sources"), guarded=True)
+                         for item in commands]
+        if any(value is None for value in source_guards):
+            raise ValueError("declared source guard unavailable")
+        identity_guard = runtime_identity()
+        history = successors.prove_report_only_successor(root, tested, expected_head, approved_paths)
+        result["checked_commits"] = history["checked_commits"]
+        if history["qualified"] is not True:
+            raise ValueError(history["reason"])
+        specs, current_inputs = capture_inputs(root, commands, configuration, timeout,
+                                               expected_head, os.environ.copy())
+        for index, (row, current, original) in enumerate(zip(evidence["checks"], current_inputs, original_inputs)):
+            if (row.get("tested_revision") != tested or row.get("full_index") != index
+                    or not equivalent_current_inputs(original, current)):
+                raise ValueError("original check order/configuration/current input identity mismatch")
+        # An invalid baseline is never selectively rehabilitated with fresh rows.
+        result["original_receipts"] = [row["receipt"] for row in evidence["checks"]]
+        result["checks"] = list(evidence["checks"])
+        required = []
+        for index, (original, current) in enumerate(zip(original_inputs, current_inputs)):
+            try:
+                independent_successor(root, tested, original, current, approved_paths)
+                reason, qualified = "original receipt independently covers successor", True
+            except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+                reason, qualified = str(exc), False
+                required.append(index)
+            result["qualifications"].append({"index": index, "qualified": qualified,
+                                              "reason": reason, "evidence_revision": tested})
+        result["fresh_required"] = list(required)
+        if fresh_evidence is not None:
+            if (not isinstance(fresh_evidence, dict)
+                    or fresh_evidence.get("configured") is not True
+                    or fresh_evidence.get("snapshot_valid") is not True
+                    or fresh_evidence.get("tested_revision") != expected_head
+                    or fresh_evidence.get("selected_indices") != required
+                    or any(type(v) is not int for v in fresh_evidence.get("selected_indices", []))
+                    or fresh_evidence.get("full_configuration_sha256") != digest(configuration)
+                    or fresh_evidence.get("full_order_sha256") != digest(specs)
+                    or fresh_evidence.get("selected_passed") is not True
+                    or fresh_evidence.get("partial") is not (len(required) != count)
+                    or fresh_evidence.get("passed") is not (len(required) == count)
+                    or not isinstance(fresh_evidence.get("checks"), list)
+                    or len(fresh_evidence["checks"]) != len(required) or not required):
+                raise ValueError("fresh evidence must exactly account for ordered fresh-required indices")
+            for index, row in zip(required, fresh_evidence["checks"]):
+                actual = authentic_result(root, row)
+                if (row.get("tested_revision") != expected_head or row.get("full_index") != index
+                        or actual != current_inputs[index]):
+                    raise ValueError("fresh receipt is not the exact current-H configured check")
+                result["checks"][index] = row
+                result["qualifications"][index] = {"index": index, "qualified": True,
+                    "reason": "genuine fresh current-H evidence", "evidence_revision": expected_head}
+            result["fresh_required"] = []
+        # Repeat both source and Git guards after receipt/log and fresh validation.
+        if (safe_snapshot(root, guarded=True) != guard or runtime_identity() != identity_guard
+                or any(safe_snapshot(root, spec.get("sources"), guarded=True) != source_guard
+                       for spec, source_guard in zip(specs, source_guards))
+                or any(tool_identity(root, spec["command"], os.environ.copy()) != current["tool"]
+                       for spec, current in zip(specs, current_inputs))):
+            raise ValueError("inputs moved during qualification")
+        again = successors.prove_report_only_successor(root, tested, expected_head, approved_paths)
+        if again != history:
+            raise ValueError("history/worktree changed during qualification")
+        result["qualified"] = not result["fresh_required"]
+        result["reason"] = "complete ordered evidence covers H" if result["qualified"] else "fresh checks required"
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, RecursionError, subprocess.SubprocessError) as exc:
+        result.update(qualified=False, fresh_required=list(range(count)), reason=str(exc))
+    return result
