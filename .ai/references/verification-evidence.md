@@ -132,12 +132,87 @@ revision and does not replace the currentness procedure above.
 
 The canonical helper and CLI validate this template's schema-1 receipts only.
 They do not read or adopt a consumer's customized schema-2 joined/profile
-validator. Consumer adoption must preserve customized owners, port the bounded
-adapter and hooks, review actual check independence, compare exact non-report
-scope, and run a complete fresh baseline after the validator/helper changes
-runtime identity. This feature does not claim Whiskance quick-work reports or
-their receipts qualify: quick-task report owners are unsupported by the
-canonical proof.
+validator. For a Whiskance adapter, use this bounded route:
+
+1. Pin the exact canonical source commit and reviewed diff. Compare them with
+   the installed ownership manifest before editing. The consumer owns
+   .codex/runtime/lib/verification_checks.py,
+   .codex/runtime/lib/verification.py,
+   .codex/runtime/lib/verification_profiles.py,
+   .codex/runtime/lib/delivery.py and .codex/runtime/phase.py; preserve
+   the project's customized files and tests rather than copying the canonical
+   runtime over them.
+2. Keep the consumer receipt schema at 1 and retain its runner,
+   capture_inputs, receipt storage and validate_joined behavior. Add a separate
+   schema-2 successor adapter around those authorities. Do not transplant the
+   canonical validate_successor over validate_joined or import the canonical
+   runtime into the consumer.
+3. Keep the schema-2 profile closed contract: exact selected profile
+   identity/content/hash/path/registry, purpose=development,
+   deployment_deferred=true, selected command order, and complete default
+   application-command digest plus ordered dispositions. Preserve the current
+   profile owner and command policy of revision=true and reuse=false.
+4. Add the exact prospective successor_independence contract to check
+   normalization, and bind it before execution into the original receipt
+   inputs. Keep it distinct from independent=true, which only controls
+   scheduling. Capture the complete protected inventory plus the union of all
+   configured declared inputs, source fingerprints, effective verification
+   configuration, runtime implementation identity, executable/tool identity,
+   environment digest, timeout, exact specification and full check order.
+   The original manifests and profile/base/allowed-path scope belong to R.
+5. After the consumer adapter and configuration are ready, run a complete,
+   fresh schema-2 development baseline at R. Authenticate it with the existing
+   validate_joined path. Require the full passing aggregate, matching tested
+   revision, actual successful exits, snapshot_valid=true and reused=false for
+   each original result; preserve the genuine original receipt and stdout/
+   stderr logs and hashes. Existing receipts without the new prospective
+   bundle cannot qualify after adoption.
+6. For candidate H, keep the worktree clean and prove R-to-H with the canonical
+   phase-report attestor. Only exact canonical phase NN-VERIFICATION.md paths
+   with their matching tracked NN-CONTEXT.md owners are eligible. Check every
+   intervening commit and merge parent. Preserve the original tested R and
+   return a separate qualified H.
+7. Authenticate the profile content, registry, base and allowed-path scope
+   against baseline R. Do not rerun ordinary profile selection or scope as if H
+   were a new baseline: the approved report can lie outside the original
+   allowed_paths. The independent R-to-H history proof accounts for that
+   report. Do not add a broad report exception to scope or remove the existing
+   R==HEAD/profile-scope protections.
+8. Recompute and compare the current effective configuration, runtime/helper
+   implementation, tool, environment, timeout, selected profile, commands,
+   default dispositions and every non-report source/protected manifest against
+   the authenticated R bundle. Each original receipt must remain ordered,
+   fresh, passing and byte/authentication-valid. A report-independence claim
+   cannot cover a changed non-report input.
+9. Run only uncovered required selected checks freshly at H. Bind their
+   receipts to their full configured order indices and H, then return complete
+   ordered accounting that preserves original R rows, fresh H rows, selected
+   profile identity and all default dispositions. A proper subset is not a
+   passing full-profile aggregate; a failed original aggregate cannot be
+   rehabilitated by omitting its failed row.
+10. Adapt delivery to consume the two-revision qualification object. Require
+    local HEAD H before and after proof/provider reads, the same OPEN PR branch
+    and headRefOid H, then pass --match-head-commit H. Revalidate the
+    qualification's R and H evidence at the final gate; do not run baseline-only
+    validate_joined at H. Preserve existing reviews, CI, platform protections
+    and the no-CI requirement for validated local evidence.
+11. Add consumer-owned profile, receipt, subset, history, moved-head and
+    provider-race regressions in .codex/tests/test_verification_profiles.py,
+    test_verification_receipts.py and test_session_delivery.py (or the nearest
+    dedicated runtime suites). Canonical helper tests do not replace consumer
+    schema-2 integration tests.
+12. Quick-task report owners are unsupported by the canonical phase-only
+    attestor. Do not claim Whiskance quick reports or receipts qualify, and do
+    not grandfather old quick receipts. Supporting them requires a separately
+    reviewed explicit quick-owner eligibility implementation and its own
+    tests; this adapter does not add that exception.
+
+A complete fresh schema-2 baseline is required after the adopted
+validator/helper, runtime, profile, contract or configuration changes. Original
+R evidence stays immutable, and a later change to any bound identity requires
+fresh evidence for the affected baseline. The canonical template remains
+phase-report-only and schema-1; this adapter recipe does not make consumer
+adoption or quick-report support an implemented feature.
 
 ## Final-report lifecycle
 
