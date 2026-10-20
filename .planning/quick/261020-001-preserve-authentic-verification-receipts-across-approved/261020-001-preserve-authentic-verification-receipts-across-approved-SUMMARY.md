@@ -93,7 +93,7 @@ None for preparation.
 
 ## Remaining Gaps
 
-- Independent phase-checker review is required before source implementation.
+- Independent phase-checker re-assessment of PC-RCP-documentation-handoff-01 is required before source implementation; the prior report is conclusive for the unchanged remaining plan claims.
 - Implement the two tasks, execute the declared selectors, obtain independent correctness/security and documentation/integration review.
 - Coordinator opens/updates the actual GitHub tracking draft; no framework merge is authorized.
 - Consumer adapter/eligible-wrapper contracts, selected profile ownership, fresh baseline and exact consumer PR/status remain to be delivered by the coordinator's separate scoped adoption work.
@@ -102,3 +102,11 @@ None for preparation.
 ## Next Readiness
 
 Ready for independent plan checking after coordinator integration and threat reconciliation. Preparation status complete does not mean the receipt capability or consumer adoption is complete.
+
+## Plan Review Correction: PC-RCP-documentation-handoff-01
+
+- Prior independent review: C:/Users/killi/AppData/Local/Temp/scanner-wave2-framework-successor-plan-review.md at 0cf4a145c6d1dd8766a6f35cd0bc1cb089f5bf74; one documentation-handoff warning, zero blockers. Other plan-level claims were conclusive in that report; this correction changes no design, API, acceptance, two-task structure or 13-path ownership set.
+- Authority: .ai/RULES.md:349-357 and .ai/references/documentation.md:26-30 require exact doc-writer authoring for changed operational sequences/cross-component explanations.
+- Correction: task 2 now reserves the four operational documents for coordinator-dispatched doc-writer after coder exit, commit and code integration. Production/tests stay coder-owned. Doc-writer continues only the existing sole matching SUMMARY after serialized ownership transfer, then commits for coordinator integration; fresh independent doc-verifier follows at the pinned integrated revision.
+- Static correction validation observed PASS: YAML/XML parse; frontmatter and 13-path ownership identical to reviewed 0cf4a145; two tasks and task-1 action unchanged; paired verification failure signals retained; exact doc-writer/four-path/prerequisite/sole-SUMMARY serialization and separate doc-verifier handoff present; diff limited to assigned PLAN+SUMMARY; git diff --check clean. No implementation tests, source edits, provider operations or consumer adoption were performed.
+- Independent checker re-assessment of this warning remains coordinator-owned; this preparer does not claim its own correction independently approved.
