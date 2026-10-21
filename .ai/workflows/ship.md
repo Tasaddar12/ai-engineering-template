@@ -232,11 +232,13 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    and requalify with fresh-evidence-file. A proper subset is not a passing
    aggregate. If baseline or proof is invalid, run the complete check set fresh.
    For ordinary preflight reuse, reuse a valid successful receipt only when its
-   tested revision and declared inputs, environment, and configuration match
-   the current check. Rerun any check with missing, invalid, unsuccessful, or
-   mismatched evidence through `verification.run-checks`; its default receipt
-   behavior reuses only valid successful matches. This ordinary reuse rule is
-   separate from successor qualification above.
+   captured inputs, environment, and configuration match the current check,
+   including the captured revision when the check declares `revision: true`.
+   Retain the receipt's original tested revision. Rerun any check with missing,
+   invalid, unsuccessful, or mismatched evidence through
+   `verification.run-checks`; its default receipt behavior reuses only valid
+   successful matches. This ordinary reuse rule is separate from successor
+   qualification above.
 
    This qualifies check evidence, not report currentness; apply both gates.
    Preserve the report's original tested revision. Failing or ambiguous checks
