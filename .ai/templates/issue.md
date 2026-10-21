@@ -30,6 +30,9 @@ and procedure.
 
 Choose exactly one variant. Copy only its fenced block; do not include this
 table, other variants or surrounding authoring guidance in the public body.
+For a consolidated Security risk body, use that variant's named
+[consolidated security checklist](#consolidated-security-checklist) block;
+its first block is for standalone risks only.
 
 ### Bug
 
@@ -201,29 +204,102 @@ table, other variants or surrounding authoring guidance in the public body.
 [1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
 ```
 
-Standalone issues require no PLAN: record their assessment, mitigation and secure
-check directly in the fields above. Only checklist containers/entries substitute
-`PLAN assessment:` and `PLAN mitigation:` links (including verification) for those
-values rather than repeating severity or mitigation. Keep every required heading.
+Standalone issues require no PLAN: use the standalone block above. Only checklist
+containers/entries use the consolidated block below, with `PLAN assessment:` and
+`PLAN mitigation:` links rather than repeating the full assessment or register.
+Both forms retain the same required Security risk headings in the same order.
 
-For new planned risks, including accepted/deferred risks, without an existing
-canonical match, this same Security risk variant is the mandatory default phase
-checklist container; keep every required heading above. Follow the deterministic title/label lookup
-before semantic risk search in
-[canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
-Under Risk assessment and lifecycle, give every risk a stable `###` heading in
-the checklist issue BODY. Use provider-verified heading-anchor URLs for entries;
-never fabricate slugs. Renaming a heading breaks the link: preserve headings on
-reruns, and repair/read back affected references after a necessary rename. Use
-descriptive link labels without a "(comment)" suffix. Each entry carries the
-stable key, aliases/occurrences, owning PLAN/Threat ID and assessment links,
-owner, scope/acceptance, lifecycle/outcome, next action, revision/check evidence
-and verified canonical reference. For these checklist entries, link the PLAN's
-assessment and mitigation; do not build a combined register.
-Existing actionable matching issues remain canonical and are linked from the
-checklist. Distinct unplanned threats require standalone Security risk issues or
-existing full-scope matches. Keep full six-column registers in their owning PLANs;
-checked entries require outcome evidence and do not authorize issue closure.
+#### Consolidated security checklist
+
+This is the **mandatory default** for new planned risks, including accepted/deferred,
+without an existing canonical match. Phase, quick-task and cross-phase
+consolidation writers must copy this block verbatim, replacing placeholders and
+repeating only the row and its matching heading/task pair per distinct risk.
+Keep these seven column names/order, one table and one task per row. Never replace
+the table with prose/list entries or add a competing compact format.
+
+```markdown
+## Security concern
+
+[One public-safe sentence naming the bounded phase/quick/consolidation scope.]
+
+## Affected surface and behavior
+
+[One sentence: affected surface and expected secure behavior; details in linked PLANs.]
+
+## Impact
+
+[One sentence: affected users/data/systems; per-risk assessment linked below.]
+
+## Risk assessment and lifecycle
+
+| Risk ID | Risk / remediation | Severity / assessment | Owner | Status | Acceptance / evidence | Sources / canonical |
+|---|---|---|---|---|---|---|
+| [stable entry ID] | [Short risk; PLAN mitigation: bounded action or next action + source link] | [PLAN assessment: severity, impact/likelihood and uncertainty link] | [Responsible party] | [unresolved/mitigated/accepted/deferred; brief outcome or reason] | [Bounded secure criterion; remediation revision + actual check/result + evidence link, or Pending: dependency] | [Stable repository/surface/failure-mode key; owning PLAN/Threat ID link; all aliases/occurrences; verified canonical issue/entry URL or Pending: provider readback] |
+
+### [stable entry ID]
+
+- [ ] Remediation verified
+
+## Safe evidence
+
+[Accessible sanitized evidence links or Pending: dependency; no private logs/exploit steps.]
+
+## Requested remediation
+
+[One sentence referring to the table's bounded actions and secure checks.]
+
+## Scope and acceptance
+
+[In/out boundary; every checked risk meets its row's secure criterion at the evidenced revision.]
+
+## Related links
+
+[Owning PLAN/SUMMARY/PR links; retain earlier canonical and historical references.]
+```
+
+**Table plus checklist:** GitHub Markdown task markers inside table cells render
+as text, not native clickable tasks. Keep the real `- [ ]` / `- [x]` tasks below
+the table, under each immutable ID heading. The checkbox is the completion
+indicator for that row; do not add a second Done column. Task labels contain only
+`Remediation verified`, never an issue/PR reference: GitHub can automatically tick
+tasks that reference a closed issue. Put canonical links in the table instead.
+Native editing depends on provider permissions/context; rendered repository
+Markdown and the rendering API may show disabled boxes. Do not promise clickable
+table cells or treat a UI toggle as verification.
+
+**Completion:** check a task only after implemented remediation meets the entire
+bounded acceptance, with a matching revision, actual secure check/result and
+accessible evidence in its row (or verified canonical evidence link). Planning,
+assessment, acceptance of residual risk, deferral, transfer, PR merge or issue
+closure alone never qualifies. Keep accepted/deferred/unresolved and Pending
+unchecked. If evidence becomes stale, fails or no longer covers the scope,
+uncheck the task and record the next action/dependency. Checking never authorizes
+issue closure.
+
+**Identity and reuse:** follow deterministic title/label lookup before semantic
+risk search in [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+Every row has one stable `###` heading in the checklist issue BODY, including
+rows linking existing canonical issues. Use provider-verified heading-anchor URLs;
+never fabricate slugs. Preserve headings on reruns; renaming a heading breaks the
+link and requires repair/readback of affected references. Use descriptive link
+labels without a "(comment)" suffix. Existing actionable matching issues remain
+canonical. Across phases, reuse that canonical issue/entry, append source
+aliases/occurrences and link it from later scopes; never mint a second canonical
+risk or copy a full risk register. Distinct unplanned threats still require
+standalone Security risk issues or existing full-scope matches. Keep full
+six-column registers in their owning PLANs. Each row links the owning assessment
+(severity/impact/likelihood/uncertainty), mitigation/verification and bounded
+acceptance; use concise linked labels instead of repeating the register.
+
+**Validation and existing records:** `issue.validate --variant "Security risk"`
+checks required headings/order only; it does not enforce this table/checklist,
+row/task correspondence or completion evidence. Before publication the author
+and non-author verifier must compare the actual body to this block, including
+the seven columns, one row/heading/task per ID, verified links and evidence for
+every checked item. Read back the saved body and rendered controls. Preserve
+historical bodies, stable headings and references; this template change does not
+authorize bulk rewrites, risk duplication or closure of existing issues.
 
 ### UAT
 

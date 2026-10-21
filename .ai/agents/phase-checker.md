@@ -560,6 +560,9 @@ exemption.
   owner, status and evidence in the issue or safe coordinator handoff.
 - Accept worker Pending with concrete dependency before publication; report
   missing required publication after reconciliation as a gap.
+- Check consolidated bodies against the exact [consolidated security checklist](../templates/issue.md#consolidated-security-checklist):
+  seven columns, one row/heading/task per ID and remediation/verification evidence
+  for checked tasks. A list-only body or planning-only completion is a gap.
 
 ## Dimension 8: Nyquist Compliance
 

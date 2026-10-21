@@ -133,6 +133,9 @@ operational gate does not prove prose completeness or actual human acceptance.
 Verify the work is ready to publish. Every check below blocks; none is advisory.
 
 - Reconcile each PLAN's threat links and SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+  Compare consolidated bodies with the exact [consolidated security checklist](../templates/issue.md#consolidated-security-checklist):
+  retain the table and ID/task pairs; require remediation and secure verification
+  evidence for checked tasks. Merging does not complete a risk.
   Read back safe issue status/evidence; keep remaining risks explicit and Pending
   publication as a gap. Preserve the readiness and critical-risk gates below.
 - Inspect the current independent [issue-link audit](../references/git-workflow.md#issue-link-audit)

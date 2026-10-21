@@ -624,6 +624,9 @@ Read each SUMMARY.md and build the phase picture:
   canonical trackers and standalone tracking for distinct unplanned risks.
 - Carry still-open/accepted/deferred risks and evidenced closed issues distinctly;
   retain Pending dependencies and continue independent authorized work.
+- For consolidated bodies, copy the exact [consolidated security checklist](../templates/issue.md#consolidated-security-checklist).
+  Reconcile rows and ID/task pairs against remediation/verification evidence;
+  planning or merge cannot check a task. Reuse canonical risks across phases.
 
 Report any phase requirement id that no summary claims. That is a gap, whether or
 not every plan reported complete.

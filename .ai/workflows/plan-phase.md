@@ -541,6 +541,8 @@ and stop. Do not write plans yourself to cover for a failed agent.
   six-column register. Distinct unplanned risks need standalone actionable issues.
   Keep threat content in that PLAN and issue detail in its canonical destination.
 - Retain Pending dependencies; continue independent authorized work.
+- For a consolidated body, load and copy the exact [consolidated security checklist](../templates/issue.md#consolidated-security-checklist).
+  Preserve its table and ID/task pairs; reuse canonical risk identities across phases.
 
 If the preparer returned `## PLANNING PARTIAL`, the plans on disk are good and
 the rest is unplanned. Re-dispatch the same `Agent(...)` call with the

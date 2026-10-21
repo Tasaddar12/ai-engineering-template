@@ -298,6 +298,13 @@ heading breaks the link and requires reference repair/readback. Omit "(comment)"
 link-label suffixes. Follow the canonical identity rules above;
 unavailable publication stays Pending with its dependency.
 
+Consolidated bodies use only the exact [consolidated security checklist](../templates/issue.md#consolidated-security-checklist):
+the table and matching ID/task pairs, never a list-only substitute. This is an
+author/verifier contract; `issue.validate` still checks Security risk headings
+and order only. It does not enforce the table or authenticate completion evidence.
+Check tasks only after evidenced remediation and secure verification at the
+matching revision; planning, acceptance/deferral and merge alone never qualify.
+
 Then search and semantically compare existing risk trackers. Existing actionable
 full-scope matching issues remain canonical; checklists link them without
 duplicating or replacing their identities. Closed unresolved matches retain the
