@@ -90,7 +90,7 @@ def require_gh(workspace):
 
 # --- pull requests --------------------------------------------------------
 
-PR_FIELDS = ("number,url,state,isDraft,baseRefName,headRefName,mergeable,"
+PR_FIELDS = ("number,url,state,isDraft,baseRefName,headRefName,headRefOid,mergeable,"
              "mergeStateStatus,statusCheckRollup,body")
 
 
@@ -263,7 +263,7 @@ def checks(workspace, branch, cwd=None, wait=0, interval=CHECK_POLL_SECONDS,
     return dict(verdict, branch=branch, number=pull.get("number"),
                 url=pull.get("url"), pr_state=pull.get("state"),
                 draft=pull.get("isDraft"), mergeable=pull.get("mergeable"),
-                merge_state=pull.get("mergeStateStatus"),
+                merge_state=pull.get("mergeStateStatus"), head_ref_oid=pull.get("headRefOid"),
                 waited=int(clock() - started))
 
 
@@ -277,7 +277,7 @@ def merge_method(workspace):
     return method
 
 
-def merge_pr(workspace, branch, local_checks_passed=None, cwd=None):
+def merge_pr(workspace, branch, local_checks_passed=None, cwd=None, expected_head=None):
     """Merge a branch's pull request once its checks are genuinely green.
 
     `local_checks_passed` is the project's own `verification.run-checks` result.
@@ -285,11 +285,24 @@ def merge_pr(workspace, branch, local_checks_passed=None, cwd=None):
     unchecked repository still has to show evidence from somewhere, and when it
     has neither this refuses rather than merging on silence.
     """
+    if expected_head is not None:
+        # Validate the literal spelling without resolving symbolic refs supplied
+        # by callers. Actual local HEAD and provider equality follow below.
+        import re
+        require(isinstance(expected_head, str)
+                and re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", expected_head),
+                "expected-head must be a full commit object ID", "bad-expected-head")
+        require(gitops.head_revision(workspace, cwd=cwd) == expected_head,
+                "local HEAD differs from expected qualifying head", "head-mismatch")
     require_gh(workspace)
     verdict = checks(workspace, branch, cwd=cwd)
     require(verdict.get("pr_state") == "OPEN",
             "pull request for " + branch + " is " + str(verdict.get("pr_state"))
             + ", not OPEN", "pr-not-open")
+
+    if expected_head is not None:
+        require(verdict.get("head_ref_oid") == expected_head,
+                "OPEN PR head differs from expected qualifying head", "head-mismatch")
 
     state = verdict["state"]
     if state == "failing":
@@ -319,6 +332,10 @@ def merge_pr(workspace, branch, local_checks_passed=None, cwd=None):
     arguments = ["pr", "merge", branch, "--" + method]
     if delete_branch:
         arguments.append("--delete-branch")
+    if expected_head is not None:
+        require(gitops.head_revision(workspace, cwd=cwd) == expected_head,
+                "local HEAD moved before provider merge", "head-mismatch")
+        arguments += ["--match-head-commit", expected_head]
     result = gh(workspace, *arguments, cwd=cwd)
     if result.returncode != 0:
         raise VerbError("merge of " + branch + " was refused by gh: "
@@ -332,7 +349,8 @@ def merge_pr(workspace, branch, local_checks_passed=None, cwd=None):
                 and isinstance(merged.get("number"), int) and not isinstance(merged["number"], bool)
                 and merged.get("number") == verdict["number"]
                 and isinstance(verdict.get("url"), str) and merged.get("url") == verdict["url"]
-                and merged.get("headRefName") == branch)
+                and merged.get("headRefName") == branch
+                and (expected_head is None or merged.get("headRefOid") == expected_head))
     return {
         "branch": branch,
         "merged": observed,

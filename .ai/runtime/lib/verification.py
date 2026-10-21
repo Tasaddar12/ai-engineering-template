@@ -6,7 +6,7 @@ from .phases import find_directory
 from .results import VerbError, require
 from .roadmap import display_number, pad
 from .text import split_frontmatter
-from .verification_checks import normalise, run
+from .verification_checks import normalise, run, selected_indices
 
 STATUSES = ("passed", "gaps_found", "human_needed")
 CHECK_TIMEOUT = 600
@@ -54,10 +54,24 @@ def configured_checks(workspace):
     return normalise(commands, CHECK_TIMEOUT)
 
 
-def run_checks(workspace):
+def run_checks(workspace, only_checks=None):
     """Run configured checks, reusing only matching, intact passing evidence."""
     commands = configured_checks(workspace)
     if not commands:
+        if only_checks is not None:
+            selected_indices(only_checks, 0)
         return {"configured": False, "checks": [],
                 "note": "verification.commands is empty in .planning/config.yaml"}
-    return run(workspace, commands, config_get(workspace, "verification", {}), CHECK_TIMEOUT)
+    return run(workspace, commands, config_get(workspace, "verification", {}), CHECK_TIMEOUT, only_checks)
+
+
+def qualify_successor(workspace, evidence_file, report_only_paths, expected_head, fresh_evidence_file=None):
+    from .verification_checks import read_evidence, validate_successor
+    try:
+        evidence = read_evidence(evidence_file)
+        fresh = read_evidence(fresh_evidence_file) if fresh_evidence_file else None
+    except (OSError, ValueError, TypeError, RecursionError) as exc:
+        raise VerbError('cannot read successor evidence: ' + str(exc), 'bad-evidence') from None
+    return validate_successor(workspace, evidence, report_only_paths, expected_head,
+                              configured_checks(workspace), config_get(workspace, 'verification', {}),
+                              CHECK_TIMEOUT, fresh)
