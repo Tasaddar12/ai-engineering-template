@@ -111,15 +111,15 @@ class SuccessorTests(unittest.TestCase):
         self.assertFalse(result['qualified'])
         self.assertEqual(result['fresh_required'], [0])
 
-    def proof(self, paths=None, tested=None, head=None):
-        return successors.prove_report_only_successor(self.root, tested or self.r,
+    def proof(self, paths=None, tested=None, head=None, root=None):
+        return successors.prove_report_only_successor(root or self.root, tested or self.r,
                     head or self.git('rev-parse', 'HEAD'), paths or [REPORT])
 
-    def direct(self, evidence=None, fresh=None):
+    def direct(self, evidence=None, fresh=None, root=None):
         configuration = yaml.safe_load((self.root / '.planning/config.yaml').read_text())['verification']
         commands = checks.normalise(configuration['commands'], 600)
         with patch.dict(os.environ, {'PYTHONIOENCODING': 'utf-8'}):
-            return checks.validate_successor(Workspace(self.root), evidence or json.loads(self.evidence.read_text()),
+            return checks.validate_successor(Workspace(root or self.root), evidence or json.loads(self.evidence.read_text()),
                         [REPORT], self.git('rev-parse', 'HEAD'), commands, configuration, 600, fresh)
 
     def test_history_checks_touches_even_after_revert(self):
@@ -271,18 +271,63 @@ class SuccessorTests(unittest.TestCase):
     def test_receipt_and_report_component_reparse_points_reject(self):
         self.baseline(); self.report()
         real_lstat = Path.lstat
-        target = self.root / '.planning/verification-receipts'
-        def reparse(path, *args, **kwargs):
-            info = real_lstat(path, *args, **kwargs)
-            if path == target:
-                from types import SimpleNamespace
-                return SimpleNamespace(st_mode=info.st_mode, st_file_attributes=0x400)
-            return info
-        with patch.object(Path, 'lstat', reparse):
-            self.assertFalse(self.direct()['qualified'])
-        target = self.root / '.planning/phases/01-test'
-        with patch.object(Path, 'lstat', reparse):
-            self.assertFalse(self.proof()['qualified'])
+        root = self.root.resolve()
+
+        def reject_target(target, check):
+            hits = []
+            def reparse(path, *args, **kwargs):
+                info = real_lstat(path, *args, **kwargs)
+                if path == target:
+                    from types import SimpleNamespace
+                    hits.append(path)
+                    return SimpleNamespace(st_mode=info.st_mode, st_file_attributes=0x400)
+                return info
+            with patch.object(Path, 'lstat', reparse):
+                result = check()
+            self.assertTrue(hits, f'reparse mock did not fire for {target}')
+            self.assertFalse(result['qualified'], result)
+            self.assertIn('link or reparse point', result['reason'])
+
+        reject_target(root / '.planning/verification-receipts', self.direct)
+        reject_target(root / '.planning/phases/01-test', self.proof)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows short-path aliases are Windows-specific')
+    def test_short_path_alias_reparse_injections_use_resolved_root(self):
+        import ctypes
+        long_root = self.root.resolve()
+        buffer = ctypes.create_unicode_buffer(32768)
+        get_short_path = ctypes.WinDLL('kernel32', use_last_error=True).GetShortPathNameW
+        get_short_path.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint)
+        get_short_path.restype = ctypes.c_uint
+        length = get_short_path(str(long_root), buffer, len(buffer))
+        if not length or length >= len(buffer):
+            self.skipTest('Windows did not provide a short-path alias for the test root')
+        alias_root = Path(buffer.value)
+        if str(alias_root).casefold() == str(long_root).casefold():
+            self.skipTest('8.3 short-path aliases are unavailable for the test root')
+        self.assertEqual(alias_root.resolve(), long_root)
+        self.baseline(); self.report()
+        real_lstat = Path.lstat
+
+        def reject_target(target, check):
+            hits = []
+            def reparse(path, *args, **kwargs):
+                info = real_lstat(path, *args, **kwargs)
+                if path == target:
+                    from types import SimpleNamespace
+                    hits.append(path)
+                    return SimpleNamespace(st_mode=info.st_mode, st_file_attributes=0x400)
+                return info
+            with patch.object(Path, 'lstat', reparse):
+                result = check()
+            self.assertTrue(hits, f'reparse mock did not fire for {target}')
+            self.assertFalse(result['qualified'], result)
+            self.assertIn('link or reparse point', result['reason'])
+
+        reject_target(long_root / '.planning/verification-receipts',
+                      lambda: self.direct(root=alias_root))
+        reject_target(long_root / '.planning/phases/01-test',
+                      lambda: self.proof(root=alias_root))
 
     def test_cli_requires_complete_option_combination(self):
         self.cli('verification.qualify-successor', '--evidence-file', 'missing', ok=False)
