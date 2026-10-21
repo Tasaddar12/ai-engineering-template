@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import yaml
+from publication_fixtures import issue_body
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / ".ai/runtime/phase.py"
@@ -187,25 +188,7 @@ class TodoIssues(unittest.TestCase):
         self.todo.write_text("---\ntitle: Private customer title\narea: tooling\nseverity: major\nfiles: [src/app.py:12]\ncustom: retain me\n---\n" + self.body,
                              encoding="utf-8")
         self.public = self.directory / "reviewed public.md"
-        self.public.write_text("""## Problem
-Blank search fails for signed-in users.
-## Expected behavior
-An empty result appears.
-## Actual behavior
-Build fixture-1 shows an error in the prepared test environment.
-## Reproduction
-Open https://example.test/search/ and click Search with an empty query.
-## Safe evidence
-https://example.test/evidence/fixture-1
-## Impact
-Users cannot clear a search.
-## Acceptance
-Blank searches show an empty result.
-## Scope
-In: blank searches. Out: ranking.
-## Related links
-https://example.test/requirements/search
-""", encoding="utf-8")
+        self.public.write_text(issue_body(), encoding="utf-8")
         self.fake = self.directory / "fake_gh.py"
         self.fake.write_text(FAKE_GH, encoding="utf-8")
         self.statefile = self.directory / "remote.json"

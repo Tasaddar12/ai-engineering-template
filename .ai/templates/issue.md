@@ -220,6 +220,8 @@ stable key, aliases/occurrences, owning PLAN/Threat ID and assessment links,
 owner, scope/acceptance, lifecycle/outcome, next action, revision/check evidence
 and verified canonical reference. For these checklist entries, link the PLAN's
 assessment and mitigation; do not build a combined register.
+Use the same seven labeled fields from Risk assessment and lifecycle beneath
+each entry heading; assessment and mitigation links belong in those field values.
 Existing actionable matching issues remain canonical and are linked from the
 checklist. Distinct unplanned threats require standalone Security risk issues or
 existing full-scope matches. Keep full six-column registers in their owning PLANs;

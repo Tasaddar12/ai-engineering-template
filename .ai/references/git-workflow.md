@@ -46,6 +46,12 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Read [the pull request template](../templates/pull-request.md) and copy only its **File Template** block into the PR body file. Keep the outcome title stable; update the body as evidence grows. Rewrite the title only when the authorized scope materially changes.
 - Ground claims in summaries and the current verification report, not the diff alone. Do not present template prompts as evidence.
+- Run `phase_run query pr.validate --body-file PATH` on the reviewed body before
+  direct CLI, API or connector publication. Publish that same file content and
+  compare the saved body with it after readback. `pr.open` applies this check to
+  phase, quick and non-phase creates and edits, including body-omitted edits.
+- Put each command, result and evidence reference in the template's Verification
+  table. Retain its section order and field shapes; record pending work in Known gaps.
 
 ## Follow-up issues
 
