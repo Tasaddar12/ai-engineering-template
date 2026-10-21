@@ -174,6 +174,16 @@ revision immediately when it equals HEAD; otherwise accept only the documented
 phase-report-only publication commits on a clean tree. Any other change requires
 re-verification. The runtime's `verification.status` result exposes report
 metadata; it does not enforce currentness.
+
+This checks report currentness only. If the exact report-only successor also
+requires check results from its tested revision, use the separate [successor
+qualification procedure](../references/verification-evidence.md#qualifying-check-receipts-across-a-report-only-successor)
+with the complete original joined evidence outside the checkout. It accepts
+only the supported exact phase report path. For fresh_required indices, run
+those checks at current HEAD with verification.run-checks --only-checks INDEX
+..., save its JSON externally and requalify with --fresh-evidence-file. If
+baseline, history or protected inputs fail proof, run a complete fresh batch.
+Qualification never replaces the verifier report or changes its tested revision.
 </step>
 
 <step name="scan_phase_artifacts">

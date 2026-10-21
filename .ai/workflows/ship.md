@@ -224,12 +224,28 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    phase_run query verification.run-checks
    ```
 
-   Reuse each valid successful receipt whose revision, declared inputs,
-   environment and configuration still match this ship revision. A matching
-   receipt is deterministic evidence; include its tested revision and receipt
-   reference. Rerun checks with missing or invalid receipts. A pass needs no AI
-   diagnosis. A failing or ambiguous check blocks; report its command and bounded
-   output tail and route diagnosis to the responsible coder or debugger.
+   If a complete passing result exists at tested revision R, the report remains
+   current, and intervening commits publish only that exact phase report, the
+   coordinator may use the separate [successor qualification
+   procedure](../references/verification-evidence.md#qualifying-check-receipts-across-a-report-only-successor).
+   Keep original joined JSON external and supply the exact report path and
+   captured HEAD as expected-head. Only qualified: true is complete check
+   evidence. For fresh_required indices, run exactly those checks at H with
+   verification.run-checks --only-checks INDEX ..., save the JSON externally,
+   and requalify with fresh-evidence-file. A proper subset is not a passing
+   aggregate. If baseline or proof is invalid, run the complete check set fresh.
+   For ordinary preflight reuse, reuse a valid successful receipt only when its
+   captured inputs, environment, and configuration match the current check,
+   including the captured revision when the check declares `revision: true`.
+   Retain the receipt's original tested revision. Rerun any check with missing,
+   invalid, unsuccessful, or mismatched evidence through
+   `verification.run-checks`; its default receipt behavior reuses only valid
+   successful matches. This ordinary reuse rule is separate from successor
+   qualification above.
+
+   This qualifies check evidence, not report currentness; apply both gates.
+   Preserve the report's original tested revision. Failing or ambiguous checks
+   block and follow the existing diagnosis route.
 </step>
 
 <step name="optional_review">
@@ -474,8 +490,19 @@ On "Leave it open", report the URL and stop. The session stays open and a later
 On "Merge now":
 
 ```bash
-MERGE=$(phase_run query pr.merge "${SESSION_BRANCH}")
+if [ -n "${qualified_head:-}" ]; then
+  MERGE=$(phase_run query pr.merge "${SESSION_BRANCH}" --expected-head "${qualified_head}")
+else
+  MERGE=$(phase_run query pr.merge "${SESSION_BRANCH}")
+fi
 ```
+
+When successor qualification was used, set qualified_head to its exact H and
+pass it as expected-head. The runtime requires local HEAD and the OPEN PR
+headRefOid to equal H, then passes --match-head-commit H to gh pr merge and
+requires matching MERGED/head readback. Local or provider head movement blocks
+the merge. Without a qualified successor, the existing invocation and gates
+apply.
 
 Require `merged: true` with matching number/URL/head and observed `pr_state:
 MERGED`. Command success alone is insufficient. Unknown/mismatched readback keeps

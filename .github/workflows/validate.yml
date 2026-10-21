@@ -16,9 +16,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # The Windows Git/process suite reaches ~20 minutes with recovery coverage;
-    # retain room for its final tests and both hook suites. Per-test limits stay intact.
-    timeout-minutes: 30
+    # The Windows test suite took about 27 minutes; allow room for all four
+    # following hook steps. Per-test limits stay intact.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

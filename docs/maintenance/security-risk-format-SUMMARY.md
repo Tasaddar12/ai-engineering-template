@@ -7,7 +7,7 @@ completion checklist across phase/quick/consolidation writers. Publication as a
 draft is authorized; merge and auto-merge are not. This maintenance change leaves
 the adoption skeleton unfilled. It changes template/instruction/test sources
 only: no executable runtime, scanner, live scan, legacy issue migration or issue
-closure. PR 109 is separately owned; its worktree and files are not used here.
+closure. PR 109 is separately owned; its worktree and branch are not edited here.
 
 ## Change
 
@@ -65,3 +65,19 @@ contracts do not authenticate risk facts, canonical links or outcome evidence.
 Final command results, exact tested revision and independent review are recorded
 in the draft PR body. Remote required CI and human review remain distinct from
 local focused checks. No issue was reformatted or closed by this work.
+
+## Reconciliation with merged main
+
+After PR 109 merged, this branch integrated main at
+`4132546a395aa2255bdd0c435b0706f854b0094e` with a normal merge, preserving the
+published template commit and review history. The sole shared path,
+`.ai/workflows/ship.md`, merged without conflict: the consolidated-risk preflight
+instruction remains alongside PR 109's receipt-reuse and successor-qualification
+instructions. The specimen and canonical schema need no change.
+
+Executable runtime, scanner and CI workflow bytes match that merged main. This
+PR adds no changes to those paths. Renewed checks include the five focused
+template suites plus the efficiency and verification-bookkeeping contracts that
+cover the integrated ship instructions. Exact tested head, fresh independent
+review and the new Linux/Windows CI result are recorded in the draft PR body.
+The PR remains draft for user review; merge and auto-merge remain unauthorized.

@@ -93,6 +93,7 @@ unless `--force` is passed.
 | Verb | Effect |
 |---|---|
 | `pr.open <branch> [--phase N] [--base BASE] [--title TITLE] [--body BODY] [--body-file PATH] [--draft]` | Create the branch's PR or update that same PR |
+| `pr.merge <branch> [--local-checks-passed] [--expected-head H]` | Merge after provider or explicit local evidence; expected-head pins local HEAD and OPEN PR through provider merge |
 
 For an existing PR, an explicit `--base` retargets it; omitting `--base`
 preserves its current target, including a nondefault parent branch. A base-only
@@ -484,7 +485,8 @@ and assignment/result fields are in [scout dispatch](../references/scout-dispatc
 | `agents.list` / `skills.list` | What is installed |
 | `verification.status <phase>` | Whether a verification report exists, and what it concluded |
 | `verification.resolve-file <phase>` | The path a verifier should write |
-| `verification.run-checks` | Run configured checks or reuse matching passing receipts, retaining full logs |
+| `verification.run-checks [--only-checks INDEX ...]` | Run checks/reuse receipts; a selected subset runs fresh with incomplete aggregate accounting |
+| `verification.qualify-successor --evidence-file PATH --report-only-paths PATH ... --expected-head H [--fresh-evidence-file PATH]` | Read-only qualification of authentic schema-1 evidence across exact approved phase reports |
 | `config-get <dotted>` / `config-set <dotted> <value>` | Read or write `.planning/config.yaml` |
 | `commit <message> --files ...` | Stage the named paths and commit, honouring `commit_docs` |
 | `git.base-branch` | The repository's default branch |
@@ -678,6 +680,43 @@ hash-mismatched receipts/logs are cache misses. Failures and timeouts retain the
 logs and receipts, and execute again on the next invocation. Log filenames are never
 reused by the runtime. Receipts are local evidence, not a replacement for phase
 verification reports, human judgments or publication gates.
+
+#### Report-only successor qualification
+
+successor_independence is an optional exact schema-1 mapping on an individual
+check. It must exist in the original configuration and receipt inputs before
+the fresh baseline. report_paths names literal canonical phase
+NN-VERIFICATION.md files with matching NN-CONTEXT.md owners;
+protected_inputs is all-other-inputs and revision_semantics is provenance-only.
+The declaration states that the check does not consume those reports and that
+all other inputs remain protected. It does not change revision, reuse, command
+or cache behavior. Older receipts remain ineligible.
+
+verification.qualify-successor reads the original joined
+verification.run-checks JSON from outside the checkout and requires exact
+report-only-paths and expected-head values. It separates tested_revision from
+qualified_revision, preserves original results/receipt references, and reports
+checked commits, per-check qualifications and fresh_required indices. It
+never rewrites evidence. Incomplete history/input proof, a report/HEAD-dependent
+check, or a failed original aggregate cannot qualify. Only regular-file content
+changes to a supported phase report may occur between R and H; see verification
+evidence for the full proof boundary.
+
+verification.run-checks --only-checks INDEX ... freshly runs selected
+zero-based configured indices while retaining full configuration/order
+identity. A proper subset returns partial, selected_indices,
+full_configuration_sha256, full_order_sha256 and selected_passed, with
+aggregate passed false. Supply that JSON using fresh-evidence-file. The
+qualifier requires authentic current-H receipts/logs for exactly the
+fresh-required indices and returns complete mixed accounting. If baseline or
+protected-input proof is invalid, run all configured checks fresh. Keep
+evidence external to the report commit it validates.
+
+When relying on a qualified successor for provider merge, pass the same full commit object ID H to
+pr.merge --expected-head H. The runtime requires local HEAD and the OPEN PR
+headRefOid to equal H, rechecks local HEAD just before merge, passes
+--match-head-commit H, and requires matching MERGED readback. Existing CI,
+draft and platform protection gates remain in force.
 
 The existing `command`, `exit_code`, `passed`, `stdout_tail` and `stderr_tail`
 result fields remain; tails are at most 2,000 characters. Each check also returns

@@ -409,5 +409,25 @@ class ReceiptTests(unittest.TestCase):
                 self.assertEqual(self.run_checks(ok=False)["code"], "bad-config")
 
 
+    def test_subset_preserves_full_identity_and_cannot_claim_aggregate_pass(self):
+        self.configure([self.command("first"), self.command("second")])
+        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        process = subprocess.run([sys.executable, str(RUNTIME), "query", "verification.run-checks",
+                                  "--only-checks", "1"], cwd=self.root, env=env,
+                                  capture_output=True, text=True, timeout=30)
+        result = json.loads(process.stdout)
+        self.assertTrue(result["ok"], result)
+        self.assertFalse(result["passed"])
+        self.assertTrue(result["selected_passed"])
+        self.assertTrue(result["partial"])
+        self.assertEqual(result["selected_indices"], [1])
+        self.assertEqual(result["checks"][0]["full_index"], 1)
+        self.assertFalse((self.root / ".generated/first.count").exists())
+        self.assertEqual(self.count("second"), 1)
+        stored = json.loads((self.root / result["checks"][0]["receipt"]).read_text())["receipt"]
+        self.assertEqual(stored["inputs"]["configuration"], result["full_configuration_sha256"])
+        self.assertEqual(stored["inputs"]["order"], result["full_order_sha256"])
+
+
 if __name__ == "__main__":
     unittest.main()
