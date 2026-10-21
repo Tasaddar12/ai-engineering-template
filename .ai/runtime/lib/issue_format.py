@@ -9,10 +9,18 @@ from pathlib import Path
 from .paths import read_text
 from .results import VerbError, require
 
+TEMPLATES = {
+    "Bug": "bug.md",
+    "Enhancement": "enhancement.md",
+    "Decision required": "decision-required.md",
+    "Security risk": "security-risk.md",
+    "UAT": "uat.md",
+}
+
 
 def template_path():
     # Source .ai and installed .codex/.claude share this runtime/templates layout.
-    return Path(__file__).resolve().parents[2] / "templates" / "issue.md"
+    return Path(__file__).resolve().parents[2] / "templates" / "issues"
 
 
 def visible_lines(content):
@@ -89,21 +97,18 @@ def separator(row):
 
 
 def schema(path=None):
+    directory = Path(path) if path is not None else template_path()
     try:
-        text = read_text(path or template_path())
+        sources = [(name, read_text(directory / filename))
+                   for name, filename in TEMPLATES.items()]
     except (VerbError, OSError, UnicodeError):
         raise VerbError("Issue template schema cannot be read", "issue-schema")
-    registry = re.search(r"^\| Variant \|.*?\n(.*?)(?=\n\n)", text, re.M | re.S)
-    require(registry is not None, "Issue variant registry missing", "issue-schema")
-    rows = [cells(line) for line in registry.group(1).splitlines()]
-    require(rows and separator(rows[0]) and all(row and len(row) == 3 for row in rows),
-            "Malformed issue variant registry", "issue-schema")
-    names = [row[0] for row in rows[1:]]
-    require(names and len(set(names)) == len(names) and all(names),
-            "Invalid issue variants", "issue-schema")
-    blocks = re.findall(r"^### ([^\n]+)\n\n```markdown\n(.*?)\n```(?=\n|$)", text, re.M | re.S)
-    require([name for name, _ in blocks] == names,
-            "Missing or malformed issue variant templates", "issue-schema")
+    blocks = []
+    for name, text in sources:
+        matches = re.findall(r"^## File Template\n\n```markdown\n(.*?)\n```(?=\n|$)",
+                             text, re.M | re.S)
+        require(len(matches) == 1, "Missing or malformed issue variant templates", "issue-schema")
+        blocks.append((name, matches[0]))
     result = {}
     for name, block in blocks:
         lines = visible_lines(block)

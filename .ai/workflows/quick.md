@@ -237,6 +237,7 @@ If the plan is missing, stop with: "phase-preparer failed to create ${QUICK_ID}-
 - Create/reuse/read back issues; update each owning PLAN's Threat ID link and
   keep its six-column register in place. Retain Pending dependencies.
 - Run in ordinary quick and quick-validate, outside check_plan; continue independent work.
+- Use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md) for consolidated risks.
 </step>
 
 <step name="check_plan">
@@ -437,6 +438,7 @@ escalate it rather than re-running the merge to get past it.
   Add discoveries to the owning PLAN; retain Pending dependencies and open risks.
 - Distinguish accepted/deferred from resolved; list closed only with readback/evidence.
 - Run in ordinary quick and quick-validate, outside verify; repeat after reviews.
+- Update consolidated risks using the [consolidated security checklist](../templates/issues/security-risk-consolidated.md).
 </step>
 
 <step name="run_checks">

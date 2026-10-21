@@ -188,7 +188,7 @@ appropriate issue/scope. Reuse links the issue without editing or closing it. If
 `gh issue comment`, then preview again; block if the issue still cannot carry the
 needed context.
 
-Use the existing issue template to select the appropriate body variant, then
+Use the [issue templates](../templates/issues/README.md) to select the body, then
 copy only that variant's fenced **File Template** block into a separately
 reviewed public body file. Never copy the whole source or all variants. Prepare
 a separately reviewed public title. Reuse the local title only after checking

@@ -413,7 +413,7 @@ claiming phases shipped when they did not is the record this exists to keep hone
   `Enhancement`, `Decision required`, `Security risk` or `UAT`. Publication checks
   headings/order and UAT table columns, sequential rows and Human acceptance
   fields before persisting a create attempt. Missing/unknown variants and missing
-  or malformed schema fail closed. The schema is `templates/issue.md` beside the
+  or malformed schema fail closed. The schemas are `templates/issues/{type}.md` beside the
   running runtime's namespace, including installed `.codex` and `.claude` trees.
   `issue.validate` runs the same check without provider calls or planning writes.
   Direct `gh`/API creates and edits bypass this gate. Structural success does
