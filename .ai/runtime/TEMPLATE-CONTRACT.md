@@ -298,12 +298,7 @@ heading breaks the link and requires reference repair/readback. Omit "(comment)"
 link-label suffixes. Follow the canonical identity rules above;
 unavailable publication stays Pending with its dependency.
 
-Consolidated bodies use only the exact [consolidated security checklist](../templates/issue.md#consolidated-security-checklist):
-the table and matching ID/task pairs, never a list-only substitute. This is an
-author/verifier contract; `issue.validate` still checks Security risk headings
-and order only. It does not enforce the table or authenticate completion evidence.
-Check tasks only after evidenced remediation and secure verification at the
-matching revision; planning, acceptance/deferral and merge alone never qualify.
+Use the [consolidated security checklist](../templates/issue.md#consolidated-security-checklist) for consolidated risks.
 
 Then search and semantically compare existing risk trackers. Existing actionable
 full-scope matching issues remain canonical; checklists link them without
@@ -313,9 +308,7 @@ standalone actionable Security risk issues or existing full-scope matches, linke
 from the owning PLAN and any phase checklist. Never route threats through TODOs.
 Keep full six-column registers in each owning PLAN and linked SUMMARY/PR outcomes
 separate. Neutral links remain until scope-complete resolution evidence and
-existing explicit closure authority are verified. Checked checklist items require
-individual outcome evidence and never imply issue closure; accepted/deferred
-status and merge never establish resolution. Safe disclosure, serialized writes,
+existing explicit closure authority are verified. Safe disclosure, serialized writes,
 template validation and uncertain-create readback recovery remain mandatory.
 
 ## Storage boundary

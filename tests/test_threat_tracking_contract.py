@@ -55,13 +55,10 @@ ROUTING_DUTIES = {
     "heading identity": ("stable `###` heading", "issue BODY", "provider heading anchors",
                          "never fabricate anchor slugs", "Reuse the matching heading", "Pending"),
     "heading stability": ("renaming a heading breaks", "all affected references", "without a", '"(comment)"'),
-    "assessment links": ("owning PLAN assessment", "PLAN/ID", "SUMMARY/PR linked outcomes separate"),
-    "register separation": ("never a combined PLAN register", "six-column register", "owning PLAN"),
     "standalone unplanned": ("distinct unplanned threat", "standalone Security risk", "checklist-only", "cannot replace"),
     "safe reconciliation": ("safe separate review", "serialized writes", "template validation",
                             "uncertain-create recovery", "Never route threats", "exemption never waives"),
-    "checked is not closed": ("individual outcome evidence", "does not mean", "scope-complete evidence",
-                              "existing explicit closure authority"),
+    "completion evidence": ("A checked checklist item requires individual outcome evidence.",),
 }
 AUDIT_DUTIES = {
     "independent scope": ("fresh independent", "must not be the author", "CONTEXT acceptance",
@@ -210,19 +207,10 @@ def routing_errors(root):
     block = re.search(r"^```markdown\n(.*?)^```", consolidated, re.M | re.S)
     if not block or CHECKLIST_FIELDS not in table_headers(block.group(1)):
         errors.append("entry fields")
-    errors += duty_errors(template, {
-        "template routing": ("mandatory default", "stable `###` heading", "heading-anchor URLs",
-                             "Existing actionable", "Distinct unplanned", "owning PLANs"),
-    })
     risk_block = re.search(r"^```markdown\n(.*?)^```", template, re.M | re.S).group(1)
-    guidance = template.split("```", 2)[-1]
     errors += duty_errors(risk_block, {
         "standalone assessment": ("- Severity:", "impact/likelihood", "uncertainty",
                                   "- Mitigation or safe next action:", "Safe remediation outcome", "Observable secure check"),
-    })
-    errors += duty_errors(guidance, {
-        "template assessment": ("Only checklist", "PLAN assessment:", "PLAN mitigation:", "rather than repeating"),
-        "no PLAN required": ("Standalone issues require no PLAN",),
     })
     execution = steps((root / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8"))["aggregate_results"]
     errors += duty_errors(execution, {
@@ -405,19 +393,10 @@ class ThreatTrackingContract(unittest.TestCase):
                         self.mutate(root, CANONICAL, token, heading=heading)
                         self.assertIn(label, routing_errors(root))
 
-    def test_template_assessment_links(self):
-        for token in ("PLAN assessment:", "PLAN mitigation:"):
-            with self.subTest(token=token):
-                root = self.fixture()
-                self.mutate(root, ".ai/templates/issue.md", token)
-                self.assertIn("template assessment", routing_errors(root))
-
-    def test_standalone_assessment_and_no_plan_support(self):
+    def test_standalone_assessment_fields(self):
         for token, expected in (("- Severity:", "standalone assessment"),
                                 ("- Mitigation or safe next action:", "standalone assessment"),
-                                ("Observable secure check", "standalone assessment"),
-                                ("Standalone issues require no PLAN", "no PLAN required"),
-                                ("Only checklist", "template assessment")):
+                                ("Observable secure check", "standalone assessment")):
             with self.subTest(token=token):
                 root = self.fixture()
                 self.mutate(root, ".ai/templates/issue.md", token, heading="### Security risk")

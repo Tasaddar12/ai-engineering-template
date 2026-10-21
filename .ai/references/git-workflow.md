@@ -143,19 +143,7 @@ canonical match, distinct entries in this phase security checklist are the
 mandatory default canonical references. Create the container only when needed after both searches, using the
 exact title and label above. Existing matching issue identities always take
 precedence, including a closed unresolved match's reopening-authority blocker.
-Use the Security risk variant's required headings and reviewed safe body;
-the checklist is a tracking container,
-never a combined PLAN register. Keep each full six-column register in its owning
-PLAN and keep SUMMARY/PR linked outcomes separate. Copy the exact
-[consolidated security checklist](../templates/issue.md#consolidated-security-checklist)
-block: its seven-column table plus matching ID heading/task pairs is the sole
-published consolidation format for phase, quick-task and cross-phase work. Never
-substitute prose entries or a list-only checklist. Keep each row concise by
-linking the owning PLAN assessment and mitigation/verification. Preserve the
-stable canonical risk key, all aliases/occurrences, PLAN/ID, responsible owner,
-bounded scope/acceptance, assessment/uncertainty, lifecycle/outcome, next action,
-matching revision/check evidence and canonical reference in the linked row.
-Do not reproduce this schema in writers; load that exact template.
+Use the [consolidated security checklist](../templates/issue.md#consolidated-security-checklist) for consolidated risk tracking issues.
 
 **Entry identity:** every risk entry is a stable `###` heading in the checklist
 issue BODY, including entries that link an existing canonical issue. Entry URLs
@@ -186,18 +174,7 @@ distinct unplanned risk. Never route threats through TODO publication. The gener
 resolved-problem exemption never waives this reconciliation, including findings
 already mitigated in the current execution.
 
-A checked checklist item requires individual outcome evidence: implemented
-remediation meeting the full bounded acceptance at the matching revision, actual
-secure check/result and accessible evidence. Planning, assessment, transfer,
-accepted/deferred status, PR merge and issue closure alone cannot check a task.
-Pending or stale/failed evidence keeps it unchecked. Use the template's native
-task below its ID heading; table-cell task markers are plain text on GitHub.
-It does not mean
-issue closure or erase accepted/deferred/open work. Closing a checklist container
-requires scope-complete evidence for every included risk and existing explicit
-closure authority; checked items, accepted/deferred status and merge never grant
-that authority. Keep unavailable publication Pending with its dependency, and
-apply safe reporting and provider fallback below/above to every destination.
+A checked checklist item requires individual outcome evidence.
 
 ### Safe reporting
 
@@ -214,7 +191,7 @@ apply safe reporting and provider fallback below/above to every destination.
 - For checklist entries, the owning PLAN assessment records severity
   (`critical|high|medium|low`), impact/likelihood, uncertainty and mitigation in
   its six-column register and associated assessment. Issue entries link that assessment rather than copying
-  the full severity rationale or mitigation register. Record owner, scope/acceptance, next action and
+  severity or mitigation. Record owner, scope/acceptance, next action and
   revision/check evidence in the tracking entry. Do not blanket-classify as critical.
 - Standalone Security risk issues require no PLAN. Record their severity,
   impact/likelihood, uncertainty, mitigation or safe next action and observable
