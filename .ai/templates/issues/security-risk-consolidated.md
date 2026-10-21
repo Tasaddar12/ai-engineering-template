@@ -1,8 +1,25 @@
-# Consolidated security risk
+# Consolidated Security Risk Template
 
-Use this block for consolidated security risks. One row and one task per risk.
-Put the task under the ID heading, label it `Remediation verified`.
+Template for a separately composed consolidated Security risk issue body.
+
+**Purpose:** Track related security risks in one concise table with one task per risk.
+
+**Key principle:** Each row and its task address the same stable risk identity.
+
+**Producer:** The coordinator or assigned author, using reviewed risk assessments.
+
+**Downstream consumers:**
+
+- Risk owners and implementers: follow each risk's remediation and source assessment.
+- Verifier and issue reviewer: inspect individual outcomes and canonical references.
+
+**Destination:** A reviewed public issue body file.
+
+Read this source in full, then copy only its fenced **File Template** into the
+body file. Replace placeholders with reviewed facts or explicit pending dependencies.
 Follow [canonical threat tracking](../../references/git-workflow.md#canonical-threat-tracking).
+
+---
 
 ## File Template
 
@@ -46,7 +63,9 @@ Follow [canonical threat tracking](../../references/git-workflow.md#canonical-th
 [Related links]
 ```
 
-**Good example** (fictional):
+## Good and bad examples
+
+**Good example excerpt** (fictional):
 
 ```markdown
 | Risk ID | Risk / remediation | Severity / assessment | Owner | Status | Acceptance / evidence | Sources / canonical |
@@ -57,3 +76,21 @@ Follow [canonical threat tracking](../../references/git-workflow.md#canonical-th
 
 - [ ] Remediation verified
 ```
+
+**Bad:** "R-001: authentication risk; done after planning."
+
+## Guidelines
+
+- Use this block for consolidated security risks. One row and one task per risk.
+  Retain the File Template headings, column order and matching risk-ID heading.
+- Put the task under the ID heading, label it `Remediation verified`.
+- Keep risk/remediation concise. Link the assessment and source records from the
+  row; record the actual owner, observed status, acceptance and available evidence.
+- Fill unavailable facts or checks with `Pending` and the specific dependency.
+
+## Completion and downstream handoff
+
+- Replace prompts and example values with the reviewed risk rows, matching tasks
+  and verified source/canonical links.
+- Reconcile the saved body under canonical threat tracking. Hand off its verified
+  per-risk references and actual outcomes, or the exact readback blocker.

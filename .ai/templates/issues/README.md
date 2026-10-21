@@ -1,6 +1,8 @@
 # Issue templates
 
-Use the template for the issue type.
+Use the template for the issue type. Read its purpose, downstream consumers,
+examples, guidelines and completion instructions, then copy only its **File Template**
+block into the reviewed issue body.
 
 | Type | Template | Validation variant |
 |---|---|---|
