@@ -412,7 +412,7 @@ and the verification you actually ran
 
 > **ORCHESTRATOR RULE**: wait for the subagent. Do not edit code while it runs.
 
-After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`. A returned
+After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`.
 A coder assigned source-changing work who returns `complete` without the required
 summary file and owned commits is blocked. Read-only specialists complete with
 their assigned cited report fields and do not create commits or summaries.
@@ -452,7 +452,8 @@ completion; hand the failure back to the coder or stop for the user.
 
 <step name="track_integrated_slice">
 After the integrated slice's applicable checks pass, push the session branch and
-open or update its tracking draft before final verification. Use the stable title
+open or update its tracking draft before final verification. Copy the
+[PR File Template](../templates/pull-request.md#file-template) for the body. Use the stable title
 `Quick: ${DESCRIPTION}` and a `--body-file` built from the QUICK record and coder
 summary. State whether final verification is pending or was not requested, and list
 unfinished work under Known gaps. On the first push, run:

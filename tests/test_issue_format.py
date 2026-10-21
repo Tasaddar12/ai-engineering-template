@@ -85,22 +85,13 @@ class IssueFormat(unittest.TestCase):
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, code, result.stdout + result.stderr)
 
-    def test_security_assessment_values_remain_structural_only(self):
+    def test_security_assessment_fields_are_required(self):
         body = bodies()["Security risk"]
-        # Correct shape with absent/incorrect risk facts still passes today.
-        # This is negative evidence: semantic review is required after validation.
         missing = re.sub(r"^- (Threat ID / risk key|Source aliases|Severity|Owner|Status|"
                          r"Mitigation or safe next action|Resolution evidence):.*\n",
                          "", body, flags=re.M)
-        wrong = re.sub(r"^- Severity:.*$", "- Severity: banana", body, flags=re.M)
-        wrong = re.sub(r"^- Status:.*$", "- Status: merged-means-secure", wrong, flags=re.M)
-        wrong = re.sub(r"^- Resolution evidence:.*$", "- Resolution evidence: unknown",
-                       wrong, flags=re.M)
-        for changed in (missing, wrong):
-            with self.subTest(body=changed):
-                result = issue_format.validate(changed, "Security risk")
-                self.assertTrue(result["valid"])
-                self.assertTrue(result["structuralOnly"])
+        self.assert_invalid(missing, "Security risk")
+        self.assert_invalid(body.replace("- Owner:", "- Unrequested field:"), "Security risk")
 
     def test_missing_unknown_or_noncanonical_variant(self):
         for variant in (None, "", "bug", "expected-behavior", True):
@@ -125,7 +116,7 @@ class IssueFormat(unittest.TestCase):
                      "    ## Problem", "> ## Problem", "| ## Problem |",
                      "<!--\n## Problem\n-->"):
             self.assert_invalid(body.replace("## Problem", fake, 1), "Bug")
-        self.assertTrue(issue_format.validate(body + "\n```\n## Problem\n```", "Bug")["valid"])
+        self.assert_invalid(body + "\n```\n## Problem\n```", "Bug")
 
     def test_uat_header_columns_separator_and_numbered_rows(self):
         body = bodies()["UAT"]
@@ -179,7 +170,7 @@ class IssueFormat(unittest.TestCase):
             with self.subTest(opening=opening):
                 self.assert_invalid(uat.replace(table, opening + "\n" + table + "\n" + closing))
 
-    def test_literal_examples_and_shallow_tables_preserve_real_structure(self):
+    def test_untemplated_literal_content_is_rejected_and_runtime_marker_preserved(self):
         for variant, body in bodies().items():
             extra = "\n<pre class=\"literal\">\n## Problem\n| Fake | Table |\n</PRE>\n"
             extra += "\n```html\n<pre>\n## Problem\n</pre>\n```\n"
@@ -187,9 +178,8 @@ class IssueFormat(unittest.TestCase):
             extra += "\n- Example with `<pre>` and inline code.\n| Example | `<pre>` |\n"
             extra += "\n<preview>\nExample unrelated tag.\n</preview>\n"
             with self.subTest(variant=variant):
-                self.assertTrue(issue_format.validate(body + extra, variant)["valid"])
-                self.assertTrue(issue_format.validate(
-                    "<preview>\nExample unrelated tag.\n</preview>\n\n" + body, variant)["valid"])
+                self.assert_invalid(body + extra, variant)
+                self.assert_invalid("<preview>\nExample unrelated tag.\n</preview>\n\n" + body, variant)
                 self.assertTrue(issue_format.validate(body + "\n<!-- todo-id: fixture -->\n", variant)["valid"])
         for spaces in (1, 2, 3):
             padded = re.sub(r"^(\|.*)$", lambda match: " " * spaces + match[1], bodies()["UAT"], flags=re.M)

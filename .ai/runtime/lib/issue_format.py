@@ -1,4 +1,4 @@
-"""Structural issue validation from the templates beside this runtime.
+"""Publication format validation from the templates beside this runtime.
 
 This deliberately checks shape, not facts, safe content, working links or human
 acceptance. Direct provider edits do not pass through this gate.
@@ -88,6 +88,114 @@ def separator(row):
     return row is not None and all(re.fullmatch(r":?-{3,}:?", cell) for cell in row)
 
 
+def _body_lines(content, issue_marker=False):
+    # This marker is appended by reviewed TODO publication, not author content.
+    if issue_marker:
+        content = re.sub(r"(?m)^<!-- todo-id: [^\n]+ -->\s*$", "", content)
+    return content.splitlines()
+
+
+def _sections(content, expected, code, optional=(), risk_entries=False, issue_marker=False):
+    raw = _body_lines(content, issue_marker)
+    entries = headings(visible_lines("\n".join(raw)))
+    titles = [title for _, title in entries]
+    require(titles == [title for title in expected if title not in optional or title in titles],
+            "Sections must match the publication template in order", code)
+    require(entries and not any(line.strip() for line in raw[:entries[0][0]]),
+            "Content before the first template section is not allowed", code)
+    result = {}
+    for n, (index, title) in enumerate(entries):
+        section = raw[index + 1:entries[n + 1][0] if n + 1 < len(entries) else len(raw)]
+        require(any(line.strip() for line in visible_lines("\n".join(section))),
+                "Empty template section: " + title, code)
+        for line in section:
+            match = re.match(r"^ {0,3}(#{1,6})\s+(.+)", line)
+            if match:
+                require(risk_entries and title == "Risk assessment and lifecycle"
+                        and len(match[1]) == 3,
+                        "Unexpected heading inside template section: " + title, code)
+            require(not re.match(r"^\s*(?:`{3,}|~{3,}|>|<!|<\?|</?[A-Za-z][A-Za-z0-9-]*(?=[\s/>]))", line),
+                    "Literal or quoted blocks are not fields in this publication template", code)
+            require(not re.fullmatch(r" {0,3}(?:=+|-+)\s*", line),
+                    "Setext headings and thematic breaks are not template fields", code)
+        result[title] = section
+    return result
+
+
+def _blocks(lines, field_lines=False):
+    result = []
+    for line in lines:
+        if not line.strip():
+            if result:
+                result[-1][2] = True
+            continue
+        kind = ("table" if cells(line) is not None else
+                "bullets" if re.match(r"^ {0,3}[-*+]\s+", line) else
+                "ordered" if re.match(r"^ {0,3}\d+\.\s+", line) else
+                "fields" if field_lines and not re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", line)
+                and re.match(r"^[A-Za-z][A-Za-z /-]*:\s*", line) else
+                "paragraph")
+        if result and kind == "paragraph" and result[-1][0] == "fields" and not result[-1][2]:
+            result[-1][1][-1] += "\n" + line
+        elif (result and kind == "paragraph" and line.startswith("  ")
+                and result[-1][0] in ("bullets", "ordered")):
+            result[-1][1].append(line)
+        elif result and result[-1][0] == kind and not result[-1][2]:
+            result[-1][1].append(line)
+        else:
+            result.append([kind, [line], False])
+    return [(kind, rows) for kind, rows, _ in result]
+
+
+def _check_blocks(actual, source, code, title):
+    fields = bool(re.search(r"(?m)^[A-Za-z][A-Za-z /-]*:\s*", "\n".join(source)))
+    wanted, found = _blocks(source, fields), _blocks(actual, fields)
+    require([kind for kind, _ in found] == [kind for kind, _ in wanted],
+            "Unexpected content blocks in template section: " + title, code)
+    for (kind, rows), (_, model) in zip(found, wanted):
+        if kind == "table":
+            values, sample = [cells(row) for row in rows], [cells(row) for row in model]
+            require(len(values) >= 3 and values[0] == sample[0] and separator(values[1])
+                    and all(len(row) == len(sample[0]) and all(row) for row in values),
+                    "Malformed template table in " + title, code)
+        elif kind in ("bullets", "ordered"):
+            pattern = r"^ {0,3}[-*+]\s+(.+)" if kind == "bullets" else r"^ {0,3}(\d+)\.\s+(.+)"
+            items = [re.match(pattern, row) for row in rows if re.match(pattern, row)]
+            require(items and all(item[item.lastindex].strip() for item in items),
+                    "Empty template list item in " + title, code)
+            if kind == "ordered":
+                require([int(item[1]) for item in items] == list(range(1, len(items) + 1)),
+                        "Numbered template actions must be sequential", code)
+                continue
+            sample_items = [re.match(pattern, row)[1] for row in model if re.match(pattern, row)]
+            minimum = sum(not re.search(r"optional|if needed|if applicable", item, re.I) for item in sample_items)
+            maximum = 4 if title == "Acceptance checklist" else len(sample_items)
+            require(minimum <= len(items) <= maximum,
+                    "Template list item count differs in " + title, code)
+            labels = [re.match(r"^([^\[\]:]+):\s*(.+)$", value) for value in sample_items]
+            expected_labels = [match[1] for match in labels if match]
+            actual_labels = [match[1] for item in items
+                             if (match := re.match(r"^([^\[\]:]+):\s*(.+)$", item[1]))]
+            require(not expected_labels or actual_labels == expected_labels,
+                    "Required template field labels differ in " + title, code)
+        elif kind == "fields":
+            labels = lambda values: [row.split(":", 1)[0] for row in values]
+            require(labels(rows) == labels(model) and all(row.split(":", 1)[1].strip() for row in rows),
+                    "Required template fields differ in " + title, code)
+
+
+def _risk_entry_sections(lines, source, code):
+    entries = [(i, match[1].strip()) for i, line in enumerate(lines)
+               if (match := re.fullmatch(r" {0,3}###\s+(.+)", line))]
+    require(entries and not any(line.strip() for line in lines[:entries[0][0]])
+            and len({name for _, name in entries}) == len(entries),
+            "Consolidated risk entries require unique headings", code)
+    for n, (index, name) in enumerate(entries):
+        value = lines[index + 1:entries[n + 1][0] if n + 1 < len(entries) else len(lines)]
+        require(any(line.strip() for line in value), "Empty risk entry: " + name, code)
+        _check_blocks(value, source, code, "Risk assessment and lifecycle")
+
+
 def schema(path=None):
     try:
         text = read_text(path or template_path())
@@ -111,7 +219,9 @@ def schema(path=None):
         titles = [title for _, title in entries]
         require(titles and len(set(titles)) == len(titles),
                 "Invalid issue template headings", "issue-schema")
-        shape = {"headings": titles}
+        shape = {"headings": titles, "sections": {
+            title: block.splitlines()[index + 1:entries[n + 1][0] if n + 1 < len(entries) else len(lines)]
+            for n, (index, title) in enumerate(entries)}}
         if name == "UAT":
             tables = [(index, cells(line)) for index, line in enumerate(lines)
                       if cells(line) is not None]
@@ -133,6 +243,7 @@ def schema(path=None):
 
 
 def validate(content, variant, schema_path=None):
+    require(isinstance(content, str), "A composed issue body is required", "issue-format")
     shapes = schema(schema_path)
     require(isinstance(variant, str) and variant in shapes,
             "Select a canonical issue variant: " + ", ".join(shapes), "issue-variant")
@@ -141,6 +252,14 @@ def validate(content, variant, schema_path=None):
     entries = headings(lines)
     require([title for _, title in entries] == shape["headings"],
             "Issue headings must match the selected template exactly in order", "issue-format")
+    sections = _sections(content, shape["headings"], "issue-format",
+                         risk_entries=variant == "Security risk", issue_marker=True)
+    for title, section in sections.items():
+        if variant == "Security risk" and title == "Risk assessment and lifecycle" and any(
+                re.match(r"^ {0,3}###\s+", line) for line in section):
+            _risk_entry_sections(section, shape["sections"][title], "issue-format")
+        else:
+            _check_blocks(section, shape["sections"][title], "issue-format", title)
     if "table" in shape:
         sections = {title: lines[index + 1:(entries[n + 1][0] if n + 1 < len(entries) else len(lines))]
                     for n, (index, title) in enumerate(entries)}
@@ -152,8 +271,9 @@ def validate(content, variant, schema_path=None):
                 and all(len(row) == len(shape["table"]) and all(row)
                         and row[0] == str(n) for n, (_, row) in enumerate(tables[2:], 1)),
                 "UAT requires the canonical table and sequential numbered action rows", "issue-format")
-        fields = re.findall(r"^([A-Za-z][A-Za-z ]*):\s*(.*)$",
-                            "\n".join(sections[shape["acceptance_heading"]]), re.M)
+        fields = [row.split(":", 1)
+                  for kind, rows in _blocks(sections[shape["acceptance_heading"]], True)
+                  if kind == "fields" for row in rows]
         require([key for key, _ in fields] == shape["fields"] and all(value.strip() for _, value in fields),
                 "UAT requires every Human acceptance field in template order", "issue-format")
     return {"variant": variant, "valid": True, "structuralOnly": True}
@@ -167,3 +287,71 @@ def validate_file(body_file, variant):
     except (VerbError, OSError, UnicodeError):
         raise VerbError("Public body file cannot be read", "issue-review")
     return validate(content, variant)
+
+
+def validate_pr(content, template=None):
+    require(isinstance(content, str), "A composed PR body is required", "pr-format")
+    path = (Path(template) if template is not None else
+            Path(__file__).resolve().parents[2] / "templates" / "pull-request.md")
+    try:
+        source = read_text(path)
+    except (VerbError, OSError, UnicodeError):
+        raise VerbError("PR template cannot be read", "pr-schema") from None
+    blocks = re.findall(r"^## File Template\n\n```markdown\n(.*?)\n```", source, re.M | re.S)
+    require(len(blocks) == 1, "Exactly one PR File Template is required", "pr-schema")
+    block = blocks[0]
+    entries = headings(block.splitlines())
+    titles = [title for _, title in entries]
+    require(titles and len(set(titles)) == len(titles)
+            and {"Verification", "Risks or rollback"}.issubset(titles),
+            "PR template is missing required unique sections", "pr-schema")
+    samples = {title: block.splitlines()[index + 1:entries[n + 1][0] if n + 1 < len(entries) else len(block.splitlines())]
+               for n, (index, title) in enumerate(entries)}
+    verification_schema = _blocks(samples["Verification"])
+    require([kind for kind, _ in verification_schema] == ["table", "table"],
+            "PR template requires revision and check tables", "pr-schema")
+    revision_model = [cells(row) for row in verification_schema[0][1]]
+    check_model = [cells(row) for row in verification_schema[1][1]]
+    require(len(revision_model) == 4 and all(len(row) == 2 for row in revision_model)
+            and separator(revision_model[1])
+            and [row[0] for row in revision_model[2:]] == ["Candidate", "Tested"]
+            and len(check_model) >= 3 and all(len(row) == 3 for row in check_model)
+            and separator(check_model[1]),
+            "Malformed PR revision or check table schema", "pr-schema")
+    sections = _sections(content, titles, "pr-format", optional=("Requirements or Issues", "Stack"))
+    for title, section in sections.items():
+        sample = samples[title]
+        if title == "Risks or rollback":
+            # The template explicitly permits None identified with inspected scope.
+            sentinel = [i for i, line in enumerate(sample) if line.startswith("[Use None identified")]
+            require(len(sentinel) == 1, "PR risk omission instruction is missing", "pr-schema")
+            sample = sample[:sentinel[0]]
+            values = _blocks(section)
+            if len(values) == 2 and values[1][0] == "paragraph":
+                require(" ".join(values[1][1]).startswith("None identified:")
+                        and bool(" ".join(values[1][1]).partition(":")[2].strip()),
+                        "Use None identified with the inspected risk scope", "pr-format")
+                table_start = next((i for i, line in enumerate(sample) if cells(line) is not None), None)
+                require(table_start is not None, "PR risk table is missing", "pr-schema")
+                sample = sample[:table_start]
+                _check_blocks(values[0][1], sample, "pr-format", title)
+                continue
+        _check_blocks(section, sample, "pr-format", title)
+    verification = _blocks(sections["Verification"])
+    rows = [cells(row) for row in verification[0][1]]
+    require([row[0] for row in rows[2:]] == ["Candidate", "Tested"],
+            "PR revision table requires Candidate and Tested", "pr-format")
+    require(re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", rows[2][1].strip("`"))
+            and (re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", rows[3][1].strip("`"))
+                 or rows[3][1].startswith("Pending")),
+            "PR revisions require full SHAs or Pending tested evidence", "pr-format")
+    return {"valid": True, "structuralOnly": True, "template": "pull-request.md"}
+
+
+def validate_pr_file(body_file):
+    require(isinstance(body_file, str) and body_file.strip(), "A PR body file is required", "pr-review")
+    try:
+        content = read_text(body_file)
+    except (VerbError, OSError, UnicodeError):
+        raise VerbError("PR body file cannot be read", "pr-review") from None
+    return validate_pr(content)
