@@ -517,7 +517,7 @@ transferred threats require the rationale and responsible boundary/party. Apply
   to its issue; return Pending with dependency until coordinator reconciliation.
 - Keep descriptions, category, component, severity, disposition and mitigation
   in that PLAN; keep keys, aliases, owner, observed status and evidence in the issue.
-- For consolidated handoffs, use the [consolidated security checklist](../templates/issue.md#consolidated-security-checklist).
+- For consolidated handoffs, use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md).
 
 When none of those triggers applies, state `Security review: not applicable`
 with the exact unchanged boundary or documentation/configuration-only scope in

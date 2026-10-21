@@ -294,8 +294,8 @@ else:
 
     def uat_body(self):
         import re
-        template = (fixtures.ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8")
-        return re.search(r"### UAT\n\n```markdown\n(.*?)\n```", template, re.S)[1]
+        template = (fixtures.ROOT / ".ai/templates/issues/uat.md").read_text(encoding="utf-8")
+        return re.search(r"## File Template\n\n```markdown\n(.*?)\n```", template, re.S)[1]
 
     def accepted_uat_body(self):
         body = self.uat_body()

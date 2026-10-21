@@ -458,9 +458,8 @@ https://example.test/requirements/search
         preview = self.preview()
         before = self.todo.read_bytes()
         before_calls = self.remote()["calls"]
-        templates = dict(re.findall(r"^### ([^\n]+)\n\n```markdown\n(.*?)\n```",
-                                   (ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8"),
-                                   re.M | re.S))
+        from test_issue_format import bodies
+        templates = bodies()
         cases = [(variant, "<" + tag + ">\n" + templates[variant] + "\n</" + tag + ">")
                  for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")]
         cases += [(variant, opening + "\n" + templates[variant] + "\n</" + tag + ">")
@@ -496,13 +495,13 @@ https://example.test/requirements/search
         before_calls = self.remote()["calls"]
         runtime = self.directory / ".codex/runtime"
         shutil.copytree(RUNTIME.parent, runtime)
-        templates = self.directory / ".codex/templates"
-        templates.mkdir()
+        templates = self.directory / ".codex/templates/issues"
+        templates.mkdir(parents=True)
         self.environment.update(FAKE_RUNTIME=str(runtime / "phase.py"),
                                 FAKE_RUNTIME_LIB=str(runtime))
         for schema in (None, "malformed schema"):
             if schema is not None:
-                (templates / "issue.md").write_text(schema, encoding="utf-8")
+                (templates / "bug.md").write_text(schema, encoding="utf-8")
             failure = self.publish(preview, ok=False)
             self.assertEqual(failure["code"], "issue-schema")
             self.assertEqual(self.todo.read_bytes(), before)

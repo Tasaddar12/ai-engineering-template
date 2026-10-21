@@ -298,7 +298,7 @@ heading breaks the link and requires reference repair/readback. Omit "(comment)"
 link-label suffixes. Follow the canonical identity rules above;
 unavailable publication stays Pending with its dependency.
 
-Use the [consolidated security checklist](../templates/issue.md#consolidated-security-checklist) for consolidated risks.
+Use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md) for consolidated risks.
 
 Then search and semantically compare existing risk trackers. Existing actionable
 full-scope matching issues remain canonical; checklists link them without

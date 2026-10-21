@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ".ai/references/git-workflow.md"
 PRODUCERS = (
     ".ai/templates/phase-prompt.md", ".ai/templates/summary.md",
-    ".ai/templates/issue.md", ".ai/templates/pull-request.md",
+    ".ai/templates/issues/security-risk.md", ".ai/templates/issues/security-risk-consolidated.md",
+    ".ai/templates/pull-request.md",
     ".ai/agents/phase-preparer.md", ".ai/agents/coder.md",
     ".ai/agents/phase-checker.md", ".ai/agents/verifier.md",
     ".ai/agents/code-reviewer.md", ".ai/workflows/plan-phase.md",
@@ -23,7 +24,7 @@ FLAG_FIELDS = ("Flag", "File", "Description")
 OUTCOME_FIELDS = ("PLAN / Threat ID", "Canonical issue", "Outcome", "Git state", "Evidence")
 CHECKLIST_FIELDS = ("Risk ID", "Risk / remediation", "Severity / assessment", "Owner", "Status",
                     "Acceptance / evidence", "Sources / canonical")
-CHECKLIST_LINK = "../templates/issue.md#consolidated-security-checklist"
+CHECKLIST_LINK = "../templates/issues/security-risk-consolidated.md"
 AUDIT_LINK = "../references/git-workflow.md#issue-link-audit"
 TRACK_LINK = "git-workflow.md#canonical-threat-tracking"
 TRACK_STEPS = (
@@ -202,8 +203,8 @@ def routing_errors(root):
         errors.append("entry template")
     if routing.find("Checklist lookup") >= routing.find("Then perform"):
         errors.append("lookup ordering")
-    template = section((root / ".ai/templates/issue.md").read_text(encoding="utf-8"), "### Security risk")
-    consolidated = section(template, "#### Consolidated security checklist")
+    template = (root / ".ai/templates/issues/security-risk.md").read_text(encoding="utf-8")
+    consolidated = (root / ".ai/templates/issues/security-risk-consolidated.md").read_text(encoding="utf-8")
     block = re.search(r"^```markdown\n(.*?)^```", consolidated, re.M | re.S)
     if not block or CHECKLIST_FIELDS not in table_headers(block.group(1)):
         errors.append("entry fields")
@@ -380,8 +381,7 @@ class ThreatTrackingContract(unittest.TestCase):
         for field in CHECKLIST_FIELDS:
             with self.subTest(field=field):
                 root = self.fixture()
-                self.mutate(root, ".ai/templates/issue.md", "| " + field + " |",
-                            heading="#### Consolidated security checklist")
+                self.mutate(root, ".ai/templates/issues/security-risk-consolidated.md", "| " + field + " |")
                 self.assertIn("entry fields", routing_errors(root))
 
     def test_publication_safety_mutations(self):
@@ -399,7 +399,7 @@ class ThreatTrackingContract(unittest.TestCase):
                                 ("Observable secure check", "standalone assessment")):
             with self.subTest(token=token):
                 root = self.fixture()
-                self.mutate(root, ".ai/templates/issue.md", token, heading="### Security risk")
+                self.mutate(root, ".ai/templates/issues/security-risk.md", token)
                 self.assertIn(expected, routing_errors(root))
 
     def test_execution_and_runtime_default_seams(self):

@@ -139,7 +139,7 @@ use `previewToken` as `preview_token`.
 
 Compare its private local input with all open and closed issue candidates and
 related PR context. Runtime supplies candidates but does not semantically dedupe.
-Use the existing issue template to select the appropriate body variant, then
+Use the [issue templates](../templates/issues/README.md) to select the body, then
 copy only that variant's fenced **File Template** block into a separately
 reviewed public body file. Never copy the whole source or all variants. Prepare
 a separately reviewed public title. Keep private metadata and sensitive context

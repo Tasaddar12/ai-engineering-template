@@ -24,8 +24,7 @@ READERS = (
 
 class ConsolidatedSecurityFormat(unittest.TestCase):
     def test_template_and_filled_example_use_canonical_columns_and_tasks(self):
-        text = (ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8")
-        template = section(text, "#### Consolidated security checklist")
+        template = (ROOT / ".ai/templates/issues/security-risk-consolidated.md").read_text(encoding="utf-8")
         blocks = re.findall(r"^```markdown\n(.*?)^```", template, re.M | re.S)
         self.assertEqual(2, len(blocks))
         for block in blocks:

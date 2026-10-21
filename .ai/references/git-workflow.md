@@ -49,10 +49,8 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 ## Follow-up issues
 
-- Read [the issue template](../templates/issue.md), select the appropriate
-  variant and copy only that variant's fenced **File Template** block into the
-  separately reviewed public issue body file. Never copy the whole source or all
-  variants. Authorized execution includes necessary issue creation/update for
+- Read the [issue templates](../templates/issues/README.md) and copy the selected file's **File Template** block into the reviewed public body file.
+  Authorized execution includes necessary issue creation/update for
   every actionable unresolved problem at normal, deferred or early handoff;
   do not request another issue approval. Honor actual platform permissions and
   sensitive-security reporting requirements.
@@ -77,6 +75,13 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
   reconciliation alone. Resolved inline work needs no new issue; this generic
   exemption does not waive separate threat-record tracking requirements.
 - Remove secrets, private logs and sensitive data from publishable text. Close an issue only after acceptance is demonstrated and closure is authorized. Do not use premature auto-closing references for tracking or deferred work.
+
+### Issue type and title
+
+- Use `type(scope): summary` for issue titles.
+- Preserve an existing issue's type from its original intent, labels and prior body.
+- Record bugs discovered during UAT as Bug issues and engineering prerequisites as engineering issues.
+- Use the [UAT authoring contract](../templates/UAT.md#authoring-contract) for human-test issues.
 
 ## Canonical threat tracking
 
@@ -108,7 +113,7 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
    Compare semantic scope; reuse an actionable full-scope match. Reuse resolved closed matches only
    with matching resolution evidence. For unresolved closed matches, use existing
    reopening authority or record the blocker; do not duplicate. Separate distinct risks.
-3. Serialize coordinator writes. Review the [Security risk template](../templates/issue.md)
+3. Serialize coordinator writes. Review the [Security risk template](../templates/issues/security-risk.md)
    title/body; run `phase_run query issue.validate --variant "Security risk" --body-file PATH`
    before authorized writes. Never create a TODO or use `todo.issue-publish` for threats.
 4. Create/reuse; read back key, aliases, scope, lifecycle, evidence and URL. After
@@ -143,7 +148,7 @@ canonical match, distinct entries in this phase security checklist are the
 mandatory default canonical references. Create the container only when needed after both searches, using the
 exact title and label above. Existing matching issue identities always take
 precedence, including a closed unresolved match's reopening-authority blocker.
-Use the [consolidated security checklist](../templates/issue.md#consolidated-security-checklist) for consolidated risk tracking issues.
+Use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md) for consolidated risk tracking issues.
 
 **Entry identity:** every risk entry is a stable `###` heading in the checklist
 issue BODY, including entries that link an existing canonical issue. Entry URLs

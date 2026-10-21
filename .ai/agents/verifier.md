@@ -154,7 +154,7 @@ Extract phase goal from ROADMAP.md — this is the outcome to verify, not the ta
   issue readback. Check assessment, aliases, owner, status and evidence in the issue.
 - Report unavailable required publication as a gap; Pending is not a verified URL.
   Keep open/accepted/deferred visible and require readback/evidence for actual closed.
-- Compare consolidated bodies to the [consolidated security checklist](../templates/issue.md#consolidated-security-checklist).
+- Compare consolidated bodies to the [consolidated security checklist](../templates/issues/security-risk-consolidated.md).
 - Independently perform [Issue-link audit](../references/git-workflow.md#issue-link-audit)
   as the owning non-author verifier. Return its canonical evidence packet and
   unresolved dependencies; apply its currentness and provider-readback gates.
