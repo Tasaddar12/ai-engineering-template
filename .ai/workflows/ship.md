@@ -231,8 +231,12 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
    verification.run-checks --only-checks INDEX ..., save the JSON externally,
    and requalify with fresh-evidence-file. A proper subset is not a passing
    aggregate. If baseline or proof is invalid, run the complete check set fresh.
-   Otherwise, use the default run-checks receipt/cache behavior for ordinary
-   exact-revision and matching-input cases.
+   For ordinary preflight reuse, reuse a valid successful receipt only when its
+   tested revision and declared inputs, environment, and configuration match
+   the current check. Rerun any check with missing, invalid, unsuccessful, or
+   mismatched evidence through `verification.run-checks`; its default receipt
+   behavior reuses only valid successful matches. This ordinary reuse rule is
+   separate from successor qualification above.
 
    This qualifies check evidence, not report currentness; apply both gates.
    Preserve the report's original tested revision. Failing or ambiguous checks
