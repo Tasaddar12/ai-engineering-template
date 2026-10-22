@@ -12,7 +12,8 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 | NN-RESEARCH.md | [researcher](../agents/researcher.md) | [phase-preparer](../agents/phase-preparer.md) | Findings tied to a revision, with what they unblock | Manual: [research review](../agents/phase-checker.md); no runtime semantic validator |
 | NN-MM-PLAN.md | [phase-preparer](../agents/phase-preparer.md) | [phase-checker](../agents/phase-checker.md), [orchestrator](../agents/coordinator.md), [coder](../agents/coder.md) | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when | [planning integrity](lib/planning_integrity.py); [valid/invalid fixtures](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_plan` |
 | NN-MM-SUMMARY.md | [coder](../agents/coder.md) / [doc-writer](../agents/doc-writer.md) | [orchestrator](../agents/coordinator.md), downstream plans, [verifier](../agents/verifier.md) | status, commits, acceptance and documentation coverage, actual check results | [planning integrity](lib/planning_integrity.py); [valid/invalid fixtures](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_summary` |
-| NN-VERIFICATION.md | [verifier](../agents/verifier.md) | [orchestrator](../agents/coordinator.md), [ship gate](../workflows/ship.md) | status, reviewed revision, verified_at, finding counts | [verification checks](lib/verification_checks.py); [receipt acceptance/invalidation](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_verification_receipts` |
+| NN-VERIFICATION.md | [verifier](../agents/verifier.md) | [orchestrator](../agents/coordinator.md), [ship gate](../workflows/ship.md) | status, reviewed revision, verified_at, finding counts | [report status reader](lib/verification.py), [completion evidence checks](lib/planning_review.py); [valid/invalid report fixtures](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_verification_report` |
+| Verification check receipts | [configured check runner](lib/verification_checks.py) | [verification runtime](lib/verification.py), [verifier](../agents/verifier.md) | Executed command, result, tested revision, logs and reuse evidence | [receipt checks](lib/verification_checks.py); [acceptance/invalidation fixtures](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_verification_receipts` |
 | ARCHITECTURE.md, STACK.md | [codebase-mapper](../agents/codebase-mapper.md) | [plan-phase](../workflows/plan-phase.md), [researcher](../agents/researcher.md) | freshness derived from the commit that last wrote the file, via `codebase.status` | Manual: [map content review](../agents/codebase-mapper.md); freshness is not a semantic validator |
 | Issue body | [issue workflow](../references/git-workflow.md) | [provider publication](../references/git-workflow.md) | Selected canonical type and structural fields | [issue format](lib/issue_format.py); [valid/invalid fixtures](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_issue_bodies` |
 | Pull request body | [ship](../workflows/ship.md) | [provider publication](../references/git-workflow.md) | Canonical PR sections and evidence tables | [publication format](lib/issue_format.py); [valid/invalid fixtures](../../tests/test_contribution_conformance.py) `BehaviorFixtures.test_pr_body` |
@@ -20,6 +21,11 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 The contribution suite resolves every producer, consumer and validator link in
 this table and executes each named behavioral fixture. Manual rows identify the
 review owner explicitly; structural acceptance never proves semantic quality.
+The report reader exposes metadata; completion review requires `passed` and
+nonempty revision/date fields. It does not validate SHA/date syntax, authenticate
+the report or establish its semantic claims. Manual verifier/coordinator review
+must assess those facts. Receipt validation supplies separate executed-check
+evidence and does not validate the authored report.
 Extend this table when adding a runtime artifact; do not maintain a second index.
 
 ## Author a context

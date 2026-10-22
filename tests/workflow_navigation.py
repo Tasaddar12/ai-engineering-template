@@ -8,22 +8,37 @@ from urllib.parse import unquote, urlsplit
 
 
 def without_fences(text, inline=True):
-    lines, fence, list_context = [], None, False
-    for line in text.splitlines():
-        if re.match(r'^\s*(?:[-*+] |\d+[.)] )', line):
-            list_context = True
-        elif line.strip() and not line[0].isspace():
-            list_context = False
-        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
-        if match:
-            mark, tail = match.groups()
-            if fence is None:
-                fence = mark
-            elif mark[0] == fence[0] and len(mark) >= len(fence) and not tail.strip():
+    lines, fence, containers = [], None, []
+    fence_indent = 0
+    for line in text.expandtabs(4).splitlines():
+        indent = len(line) - len(line.lstrip())
+        if fence:
+            closing = re.match(r"^\s*(`{3,}|~{3,})(.*)$", line)
+            if (closing and indent <= fence_indent + 3
+                    and closing[1][0] == fence[0] and len(closing[1]) >= len(fence)
+                    and not closing[2].strip()):
                 fence = None
             lines.append("")
-        elif fence or (not list_context and (line.startswith("    ") or line.startswith("\t"))):
+            continue
+        if line.strip():
+            while containers and indent < containers[-1]:
+                containers.pop()
+        marker = re.match(r"^( *)(?:[-*+]|\d+[.)])([ ]+)(.*)$", line)
+        container = containers[-1] if containers else 0
+        candidate = line[container:]
+        if marker and indent <= container + 3:
+            # A list item introduces a content column. Indented fences are
+            # interpreted relative to that column, not the document margin.
+            content_column = len(line) - len(marker[3])
+            containers.append(content_column)
+            candidate = marker[3]
+            container = content_column
+        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", candidate)
+        if match:
+            fence, fence_indent = match[1], container
             lines.append("")
+        elif indent >= container + 4:
+            lines.append("")  # Indented literal block outside list content.
         else:
             lines.append(line)
     text = "\n".join(lines)
@@ -74,7 +89,13 @@ def anchors(text):
 def audit(source, root):
     text = source.read_text(encoding='utf-8-sig')
     # Exact destinations only: an annotation never exempts neighboring links.
-    placeholders = set(re.findall(r'<!-- guidance-placeholder:\s*(\S+)\s+\|\s*[^\n]+?-->', text))
+    comments = without_fences(text, inline=False)
+    comments = re.sub(r"(`+)(.*?)\1", "", comments)
+    placeholders = set()
+    for comment in re.findall(r'<!--(.*?)-->', comments, re.S):
+        annotation = re.fullmatch(r'\s*guidance-placeholder:\s*(\S+)\s+\|([^\n]*)', comment)
+        if annotation and annotation[2].strip():
+            placeholders.add(annotation[1])
     failures = []
     for target in links(text):
         if target in placeholders:

@@ -69,6 +69,25 @@ class NavigationFixtures(unittest.TestCase):
         self.assertEqual(1, len(self.check(body + '[required](missing.md)')))
         self.assertTrue(self.check('[output]({phase}-SETUP.md)'))
 
+    def test_literal_annotations_cannot_exempt_real_links(self):
+        annotation = '<!-- guidance-placeholder: missing.md | instructional example -->'
+        for literal in ('```markdown\n' + annotation + '\n```',
+                        '`' + annotation + '`',
+                        '<!-- guidance-placeholder: missing.md |    -->',
+                        '<!-- guidance-placeholder: missing.md |\t -->'):
+            with self.subTest(literal=literal):
+                self.assertEqual(1, len(self.check(literal + '\n[real](missing.md)')))
+
+    def test_list_contained_fences_preserve_real_nested_navigation(self):
+        for body in ('- Example:\n\n    ```markdown\n    [sample](missing.md)\n    ```',
+                     '- Example:\n    - Nested:\n\n        ~~~markdown\n        [sample](missing.md)\n        ~~~',
+                     '- ```markdown\n  [sample](missing.md)\n  ```'):
+            with self.subTest(body=body):
+                self.assertEqual([], self.check(body))
+                self.assertEqual(1, len(self.check(body + '\n    - [real](required.md)')))
+        self.assertEqual(1, len(self.check('- Guidance\n\n    [real](missing.md)')))
+        self.assertEqual([], self.check('    - [literal](missing.md)'))
+
 
 class BehaviorFixtures(unittest.TestCase):
     def record(self, kind, data, invalid):
@@ -136,6 +155,45 @@ class BehaviorFixtures(unittest.TestCase):
                                         cwd=directory, capture_output=True, text=True)
                 self.assertEqual(expected, result.returncode, result.stdout + result.stderr)
                 self.assertIsInstance(json.loads(result.stdout), dict)
+
+    def test_verification_report(self):
+        from lib import planning_review, verification
+        from lib.paths import Workspace, write_text
+        from test_planning_review import PROJECT, REQUIREMENTS, ROADMAP, STATE
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Workspace(Path(directory))
+            for name, content in (('PROJECT.md', PROJECT), ('REQUIREMENTS.md', REQUIREMENTS),
+                                  ('STATE.md', STATE), ('ROADMAP.md', ROADMAP.replace('- [ ] 01-01', '- [x] 01-01'))):
+                write_text(workspace.planning / name, content)
+            report = workspace.phases_dir / '01-foundation/01-VERIFICATION.md'
+            valid = dict(status='passed', revision='a' * 40,
+                         verified_at='2026-10-22T16:00:00Z', findings={})
+            def inspect(data):
+                write_text(report, '---\n' + yaml.safe_dump(data) + '---\n# Authored verification\n')
+                result = verification.status(workspace, '1')
+                findings = planning_review.review(workspace)['findings']
+                completion = [finding for finding in findings if finding['check'] == 'completion-evidence'
+                              and finding['record'] == '.planning/phases/01-foundation']
+                return result, completion
+            result, findings = inspect(valid)
+            self.assertTrue(result['exists'])
+            self.assertTrue(result['known_status'])
+            self.assertEqual(valid['revision'], result['revision'])
+            self.assertEqual(valid['verified_at'], result['verified_at'])
+            self.assertEqual([], findings)
+            for invalid in (dict(status='invented'), dict(status='gaps_found'),
+                            dict(revision=''), dict(verified_at='')):
+                with self.subTest(invalid=invalid):
+                    result, findings = inspect(dict(valid, **invalid))
+                    self.assertEqual(1, len(findings))
+                    if 'status' in invalid:
+                        self.assertEqual(invalid['status'] in verification.STATUSES, result['known_status'])
+            # Negative evidence: these consumers check presence, not SHA/date
+            # syntax, attestation authenticity or the truth of report claims.
+            result, findings = inspect(dict(valid, revision='not-a-revision', verified_at='not-a-date'))
+            self.assertEqual('not-a-revision', result['revision'])
+            self.assertEqual('not-a-date', result['verified_at'])
+            self.assertEqual([], findings)
 
     def test_verification_receipts(self):
         # Reuse existing runtime scenarios rather than implementing a second
