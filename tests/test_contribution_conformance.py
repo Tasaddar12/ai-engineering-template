@@ -118,6 +118,8 @@ class BehaviorFixtures(unittest.TestCase):
 
     def test_pr_body(self):
         if not hasattr(issue_format, 'validate_pr'):
+            self.assertTrue(issue_format.template_path().is_file(),
+                            'Per-type publication schema requires the pr.validate implementation')
             self.skipTest('pr.validate arrives with prerequisite item 1; rerun after restack')
         from publication_fixtures import pr_body
         body = pr_body()
