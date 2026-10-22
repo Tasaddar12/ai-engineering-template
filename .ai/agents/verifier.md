@@ -387,7 +387,7 @@ For each requirement ID from plans:
 3. Determine status:
    - ✓ SATISFIED: Implementation evidence found that fulfills the requirement
    - ✗ BLOCKED: No evidence or contradicting evidence
-   - ? NEEDS HUMAN: Can't verify programmatically (UI behavior, UX quality)
+   - ? NEEDS HUMAN: Required observation cannot be established by authorized evidence, or a subjective acceptance choice remains unresolved
 
 **6c. Check for orphaned requirements:**
 
@@ -558,7 +558,14 @@ Present every other deliverable to the human with the exact failed or missing
 condition. Handle empty coverage and legacy omitted coverage by the template's
 separate rules. Missing classification is missing verification evidence.
 
-**Always needs human:** Visual appearance, user flow completion, real-time behavior, external service integration, performance feel, error message clarity.
+**Objective browser acceptance:** Apply [acceptance routing](../references/ui-screenshots.md#acceptance-routing).
+Accept passing revision-applicable assertions against explicit criteria automatically,
+including appearance and user-flow criteria. Use the ONE producer's evidence and
+existing checks; capture coverage alone does not prove acceptance. Preserve missing
+or inaccessible objective evidence as Pending/Unverified under the existing nonpass
+rules, with its exact missing observation. Return unresolved subjective choices to
+the user through the coordinator; do not invent aesthetic rules or repeat a
+recorded decision. Preserve explicitly required human-only UAT.
 
 **Needs human verification:** Acceptance requires an observation the authorized
 source, passing behavioral test, configured check or specialist evidence cannot

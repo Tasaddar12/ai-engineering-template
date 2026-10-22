@@ -59,3 +59,34 @@ publication is optional.
 Require the producer adapter to establish served revision, resolved URL, state and
 readiness through actual browser observations. Record unavailable observations as
 missing; JSON validation cannot establish them.
+
+## Acceptance routing
+
+Use the approved acceptance criteria and effective UI contract to decide what
+the browser evidence must establish. Run objective browser assertions through
+the existing consumer harness and ONE evidence producer; join their actual
+results with the manifest in the existing verifier report. Do not require a
+human review merely because a criterion concerns appearance, a user flow,
+real-time behavior or an external service.
+
+| Criterion and evidence | Required result |
+|---|---|
+| An explicit observable criterion has passing, revision-applicable browser assertions or other conclusive evidence | Mark that criterion passed automatically; cite the criterion, route/state/viewport, assertion/result and evidence reference |
+| Evidence demonstrates a violation of an approved criterion | Mark failed and report the exact mismatch through existing gap handling |
+| Required objective evidence is missing, inaccessible, stale or inconclusive | Keep the criterion Pending/Unverified with the missing observation, reason and next check; preserve missing cells/errors and the existing nonpass status rules |
+| A subjective choice remains unresolved, such as which visual treatment the user prefers | Return the specific choice and alternatives to the user through the coordinator; block only dependent acceptance/work |
+
+For example, approved bounds for overflow at a named viewport, an accessible
+control name, or a flow's visible success state can have automatic assertions.
+An unspecified preference such as "looks better" needs a user decision. Do not
+invent label, font-count or aesthetic rules to turn a preference into a check.
+An already recorded choice supplies the criterion for verification; it does
+not require another preference review.
+
+When authorized automation cannot establish a required objective observation,
+record that limitation and propose a concrete human observation only for the
+remaining claim. A capture matrix marked `complete` does not itself pass any
+visual or behavioral assertion. Preserve explicitly required human-only UAT
+and actual human acceptance decisions; automated evidence never fabricates them.
+Reuse valid evidence and existing phase routes rather than adding a review
+phase, another producer or an extra approval loop.

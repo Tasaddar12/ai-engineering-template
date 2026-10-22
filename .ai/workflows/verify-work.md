@@ -244,6 +244,12 @@ For UI scope:
    If coverage is incomplete, report its exact gaps; a homepage capture covers
    only its declared cells. Reuse the producer and existing review route.
 
+Apply [acceptance routing](../references/ui-screenshots.md#acceptance-routing):
+use explicit criteria and the producer's actual browser assertions for automatic
+objective acceptance. Keep missing objective evidence Pending/Unverified with its
+reason and required observation; return unresolved subjective choices to the user
+through the existing decision/UAT route. Preserve required human-only acceptance.
+
 This step, `check_integration`, `verify_docs`, and configured checks are one
 read-only dispatch batch. Start the provisional verifier, each applicable
 specialist and configured checks together against the `frozen_revision` captured

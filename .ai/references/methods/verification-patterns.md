@@ -591,17 +591,15 @@ VERIFICATION.md; a grep hit alone is not proof of behavior or a defect.
 
 ## When to Require Human Verification
 
-Some things can't be verified programmatically. Flag these for human testing:
-
-**Always human:**
-- Visual appearance (does it look right?)
-- User flow completion (can you actually do the thing?)
-- Real-time behavior (WebSocket, SSE)
-- External service integration (Stripe, email sending)
-- Error message clarity (is the message helpful?)
-- Performance feel (does it feel fast?)
+Apply [browser acceptance routing](../ui-screenshots.md#acceptance-routing).
+Objective criteria use automatic assertions and revision-applicable evidence,
+including visual appearance, user flows, real-time and external-service results.
+Return unresolved subjective choices to the user through the coordinator. Keep
+missing objective evidence Pending/Unverified; a browser-related category alone
+does not require human review. Preserve explicitly required human-only UAT.
 
 **Route to human verification when:**
+- A subjective acceptance choice requires a user decision that is not already recorded.
 - Acceptance requires a visual, accessibility, usability, external-service or
   real-time observation and no assigned evidence establishes that observation.
 - A behavior-dependent acceptance truth has no passing behavioral test.

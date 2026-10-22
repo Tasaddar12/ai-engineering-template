@@ -57,15 +57,21 @@ component before preparing an executable continuation.
 <checkpoint_types>
 
 <type name="human-verify">
-## checkpoint:human-verify (Most Common - 90%)
+## checkpoint:human-verify
 
-**When:** the agent completed automated work, human confirms it works correctly.
+**When:** a required human-only observation or acceptance remains after authorized
+automated checks. Apply [browser acceptance routing](../ui-screenshots.md#acceptance-routing)
+before assigning UI checks to a human. Automatically accept explicit objective
+criteria with conclusive evidence; route unresolved subjective choices as decisions.
 
 Human observations are collected through the local phase UAT procedure when
 required. Record the expected behavior and concrete steps in the plan's validation
 notes; do not rely on an unimplemented mode flag to suppress or approve checkpoints.
 
 **Use for:**
+The following domains require a human only for observations automation cannot
+establish or explicitly required human-only UAT. They are not blanket human gates.
+
 - Visual UI checks (layout, styling, responsiveness)
 - Interactive flows (click through wizard, test user flows)
 - Functional verification (feature works as expected)
@@ -826,9 +832,9 @@ Checkpoints formalize human-in-the-loop points for verification and decisions, n
 **The golden rule:** Perform authorized, automatable work with available tools; request only the human input actually needed.
 
 **Checkpoint priority:**
-1. **checkpoint:human-verify** (90%) - the agent automated everything, human confirms visual/functional correctness
-2. **checkpoint:decision** (9%) - Human makes architectural/technology choices
-3. **checkpoint:human-action** (1%) - Truly unavoidable manual steps with no API/CLI
+1. **checkpoint:human-verify** - Required human-only observations or acceptance remain after automated checks
+2. **checkpoint:decision** - Human resolves choices outside delegated discretion, including unresolved subjective preferences
+3. **checkpoint:human-action** - Truly unavoidable manual steps with no API/CLI
 
 **When NOT to use checkpoints:**
 - Things the agent can verify programmatically (tests, builds)

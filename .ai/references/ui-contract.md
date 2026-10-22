@@ -84,6 +84,7 @@ unknown, record the exact question and blocked work.
 
 - Compare shared rules plus scoped delta with actual imports, rendered states
   and production usage at the assigned revision.
+- Apply [acceptance routing](ui-screenshots.md#acceptance-routing).
 - Join check receipts; observe missing evidence.
 - Record each rule/scenario as passed, failed or unverified in
   Acceptance/Findings with its evidence.
