@@ -1,0 +1,29 @@
+name: Validate saved PR body
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  saved-pr-body:
+    name: saved PR body
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      # pull_request_target uses the default branch workflow. Pin that exact
+      # trusted revision, including the script, parser and canonical template.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Validate actual saved body
+        env:
+          PHASE_PR_TOKEN: ${{ github.token }}
+          PHASE_PR_API_URL: ${{ github.api_url }}
+          PHASE_PR_REPOSITORY: ${{ github.repository }}
+          PHASE_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 -I .github/scripts/validate_saved_pr.py

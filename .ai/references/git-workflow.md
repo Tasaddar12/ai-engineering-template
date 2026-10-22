@@ -317,3 +317,34 @@ unavailable readback first. The audit grants no new merge or issue closure autho
 - Preserve dirty, unmerged, blocked, unowned or unclear worktrees and ignored data. Remove only owned clean worktrees with repository evidence that their work integrated or merged.
 - Limit the planning-record-only exception to the named runtime-owned planning workflows in [worktree sessions](worktree-sessions.md). Reusable `.ai` instructions, templates or tooling, and changes mixed with source use the source session and PR path. Template maintenance does not broaden the exception.
 - `auto_advance` may advance already-authorized transitions; it never waives implementation authority, merge confirmation or verified ship gates.
+
+## Saved PR body provider check
+
+The [saved-body workflow](../../.github/workflows/validate-saved-pr.yml) uses
+`pull_request_target` and checks out the immutable `github.workflow_sha` from the
+trusted default-branch workflow context. It uses `contents: read` and
+`pull-requests: read`, disables persisted checkout credentials, and runs only the
+trusted script, parser and canonical template. It never checks out or executes
+PR head content, installs dependencies, or restores caches. Pass API URL,
+repository, PR number and token through the step environment; never interpolate
+body text into shell commands.
+
+The [validator](../../.github/scripts/validate_saved_pr.py) fetches the saved PR
+through authenticated GET requests, validates its identity, and calls the canonical
+`lib.issue_format.validate_pr` parser. It re-reads body, update timestamp, head and
+base revisions/ref identities before reporting success. A changed snapshot,
+unavailable provider, malformed response or invalid body fails the check. HTTP
+reads have time and size limits; diagnostics exclude body, token and provider
+error text. The event's body is not validation evidence.
+
+**Pending rollout:** the trusted default branch must contain this workflow,
+script, parser and template before the provider check can run. A draft introducing
+these files does not prove provider execution. Confirm an actual provider run
+before claiming the check is active; future GitHub event-policy applicability
+remains unverified. The workflow changes no repository policy, protections or
+issue state and introduces no event opt-out.
+
+A pass establishes structural validity of the observed saved snapshot only.
+Edits after the final read need a new check; it does not atomically lock the body
+or replace semantic review, the independent issue-link audit, verification
+currentness, readiness gates or explicit merge/closure authority.
